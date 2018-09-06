@@ -1,0 +1,168 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2018-06-12 03:10+0300\n"
+"PO-Revision-Date: 2018-06-12 03:24+0300\n"
+"Last-Translator: dayllenger <dayllenger@protonmail.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.0.6\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Language: ru\n"
+
+msgid "Ok"
+msgstr "Ок"
+
+msgid "Cancel"
+msgstr "Отмена"
+
+msgid "Yes"
+msgstr "Да"
+
+msgid "Apply"
+msgstr "Применить"
+
+msgid "No"
+msgstr "Нет"
+
+msgid "Close"
+msgstr "Закрыть"
+
+msgid "Abort"
+msgstr "Прервать"
+
+msgid "Retry"
+msgstr "Повтор"
+
+msgid "Ignore"
+msgstr "Игнорировать"
+
+msgid "Open"
+msgstr "Открыть"
+
+msgid "Select directory"
+msgstr "Выбрать папку"
+
+msgid "Save"
+msgstr "Сохранить"
+
+msgid "Save all"
+msgstr "Сохранить все"
+
+msgid "Discard"
+msgstr "Отбросить изменения"
+
+msgid "Discard all"
+msgstr "Отбросить все"
+
+msgid "New folder"
+msgstr "Новая папка"
+
+msgid "Create new folder"
+msgstr "Создать папку"
+
+msgid "Input folder name"
+msgstr "Введите имя для папки"
+
+msgid "Cannot create folder"
+msgstr "Ошибка создания папки"
+
+msgid "Folder creation is failed"
+msgstr "Не удалось создать папку"
+
+msgid "Confirm overwrite"
+msgstr "Подтвердите перезапись"
+
+msgid "A file named \"%s\" already exists. Do you want to replace it?"
+msgstr "Файл с именем \"%s\" уже существует. Хотите ли вы заменить его?"
+
+msgid "Toggle bookmark"
+msgstr "Переключить закладку"
+
+msgid "Go to next bookmark"
+msgstr "Перейти к следующей закладке"
+
+msgid "Go to previous bookmark"
+msgstr "Перейти к предыдущей закладке"
+
+msgid "Find..."
+msgstr "Найти..."
+
+msgid "Replace..."
+msgstr "Заменить..."
+
+msgid "Show in file manager"
+msgstr "Показать в файловом менеджере"
+
+msgid "Find next"
+msgstr "Найти след"
+
+msgid "Find prev"
+msgstr "Найти пред"
+
+msgid "Find previous"
+msgstr "Найти предыдущий"
+
+msgid "Replace"
+msgstr "Заменить"
+
+msgid "Replace and find"
+msgstr "Заменить и найти"
+
+msgid "Replace all"
+msgstr "Заменить все"
+
+msgid "Case sensitive"
+msgstr "С учетом регистра"
+
+msgid "Whole words"
+msgstr "Cлова целиком"
+
+msgid "Selection only"
+msgstr "Только в выделенном"
+
+msgid "Open File"
+msgstr "Открыть файл"
+
+msgid "New chart"
+msgstr "Новый график"
+
+msgid "Name"
+msgstr "Имя"
+
+msgid "Size"
+msgstr "Размер"
+
+msgid "Modified"
+msgstr "Изменен"
+
+msgid "Error"
+msgstr "Ошибка"
+
+msgid "Path"
+msgstr "Путь"
+
+msgid "Executable files"
+msgstr "Исполняемые файлы"
+
+msgid "All files"
+msgstr "Все файлы"
+
+msgid "&Copy"
+msgstr "&Копировать"
+
+msgid "&Paste"
+msgstr "&Вставить"
+
+msgid "Cu&t"
+msgstr "Вырезать"
+
+msgid "&Undo"
+msgstr "&Отмена"
+
+msgid "&Redo"
+msgstr "&Повторить"
+
