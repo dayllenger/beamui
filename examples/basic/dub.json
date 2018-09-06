@@ -1,0 +1,49 @@
+{
+    "name": "basic",
+    "description": "Basic example for beamui",
+    "homepage": "https://github.com/dayllenger/beamui",
+    "license": "Boost",
+    "authors": ["dayllenger"],
+
+    "targetName": "basic",
+    "targetPath": "bin",
+    "targetType": "executable",
+
+    "stringImportPaths": ["res"],
+
+    "sourceFiles-windows": ["$PACKAGE_DIR/src/win_app.def"],
+
+    "dependencies": {
+        "beamui": {"path": "../../"}
+    },
+
+    "configurations" : [
+        {
+            "name" : "default",
+        },
+        {
+            "name" : "console",
+            "subConfigurations" : {
+                "beamui" : "console"
+            }
+        },
+        {
+            "name" : "sdl",
+            "subConfigurations" : {
+                "beamui" : "sdl"
+            }
+        },
+        {
+            "name" : "x11",
+            "subConfigurations" : {
+                "beamui" : "x11"
+            }
+        },
+        {
+            "name" : "minimal",
+            "subConfigurations" : {
+                "beamui" : "minimal"
+            }
+        }
+    ]
+}
