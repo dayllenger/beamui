@@ -201,10 +201,13 @@ struct Parser
                     r.popFront();
                     sel.entries ~= SelectorEntry(SelectorEntryType.pseudoElement, r.front.text);
                 }
-                else if (r.front.type == delim && r.front.text == "!")
+                else if (r.front.type == func && r.front.text == "not")
                 {
                     r.popFront();
                     sel.entries ~= SelectorEntry(SelectorEntryType.pseudoClass, "!" ~ r.front.text);
+                    r.popFront();
+                    if (r.front.type != closeParen)
+                        emitUnexpected(t, "selector");
                 }
                 else
                     sel.entries ~= SelectorEntry(SelectorEntryType.pseudoClass, r.front.text);

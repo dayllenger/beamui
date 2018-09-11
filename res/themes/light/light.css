@@ -18,7 +18,7 @@ Label {
     padding: 4pt 2pt;
 }
 
-Label:!enabled {
+Label:not(enabled) {
     color: #a0000000;
 }
 
@@ -49,11 +49,11 @@ Button:pressed, Button:checked {
     background: linear(170deg, #eeeeee, #dddddd);
 }
 
-Button:hovered:!checked {
+Button:hovered:not(checked) {
     border: #4e93da 1;
 }
 
-Button:!enabled {
+Button:not(enabled) {
     border: #ccc 1;
     alpha: 160;
 }
@@ -63,7 +63,7 @@ Button::icon, Button::label {
     margin: 2pt;
 }
 
-Button::icon:!enabled, Button::label:!enabled {
+Button::icon:not(enabled), Button::label:not(enabled) {
     alpha: 160;
 }
 
@@ -75,7 +75,7 @@ Button::label:hovered {
     color: #4e93da;
 }
 
-Button::label:!enabled {
+Button::label:not(enabled) {
     color: #80000000;
 }
 
@@ -93,7 +93,7 @@ LinkButton::label:hovered {
     text-flags: underline;
 }
 
-LinkButton::label:!enabled {
+LinkButton::label:not(enabled) {
     color: #60c0c0ff;
 }
 
@@ -107,15 +107,15 @@ CheckBox::icon {
     background: btn_check_off;
 }
 
-CheckBox::icon:!checked:hovered {
+CheckBox::icon:not(checked):hovered {
     background: btn_check_off_focused;
 }
 
-CheckBox::icon:!checked:pressed {
+CheckBox::icon:not(checked):pressed {
     background: btn_check_off_pressed;
 }
 
-CheckBox::icon:!checked:!enabled {
+CheckBox::icon:not(checked):not(enabled) {
     alpha: 160;
 }
 
@@ -131,7 +131,7 @@ CheckBox::icon:checked:pressed {
     background: btn_check_on_pressed;
 }
 
-CheckBox::icon:checked:!enabled {
+CheckBox::icon:checked:not(enabled) {
     background: btn_check_on;
     alpha: 160;
 }
@@ -144,7 +144,7 @@ CheckBox::label:hovered, RadioButton::label:hovered {
     color: #4e93da;
 }
 
-CheckBox::label:!enabled, RadioButton::label:!enabled {
+CheckBox::label:not(enabled), RadioButton::label:not(enabled) {
     color: #80000000;
 }
 
@@ -152,15 +152,15 @@ RadioButton::icon {
     background: btn_radio_off;
 }
 
-RadioButton::icon:!checked:hovered {
+RadioButton::icon:not(checked):hovered {
     background: btn_radio_off_focused;
 }
 
-RadioButton::icon:!checked:pressed {
+RadioButton::icon:not(checked):pressed {
     background: btn_radio_off_pressed;
 }
 
-RadioButton::icon:!checked:!enabled {
+RadioButton::icon:not(checked):not(enabled) {
     alpha: 160;
 }
 
@@ -176,7 +176,7 @@ RadioButton::icon:checked:pressed {
     background: btn_radio_on_pressed;
 }
 
-RadioButton::icon:checked:!enabled {
+RadioButton::icon:checked:not(enabled) {
     background: btn_radio_on;
     alpha: 160;
 }
@@ -186,7 +186,7 @@ SwitchButton {
     background: switch_off;
 }
 
-SwitchButton:!checked:!enabled {
+SwitchButton:not(checked):not(enabled) {
     alpha: 160;
 }
 
@@ -194,7 +194,7 @@ SwitchButton:checked {
     background: switch_on;
 }
 
-SwitchButton:checked:!enabled {
+SwitchButton:checked:not(enabled) {
     background: switch_on;
     alpha: 160;
 }
@@ -293,7 +293,7 @@ ListWidget:enabled:focused {
     border: #2040ff 1;
 }
 
-ListWidget:!enabled {
+ListWidget:not(enabled) {
     background-color: #f0f0f0;
 }
 
@@ -339,7 +339,7 @@ ComboBox:hovered {
     border: #4e93da 1;
 }
 
-ComboBox:!enabled {
+ComboBox:not(enabled) {
     border: #ccc 1;
     alpha: 160;
 }
@@ -363,7 +363,7 @@ ComboBox::button {
     padding: 2pt 3pt;
 }
 
-ComboBox::body:!enabled, ComboBox::button:!enabled {
+ComboBox::body:not(enabled), ComboBox::button:not(enabled) {
     alpha: 160;
 }
 
@@ -378,7 +378,7 @@ ComboBox::list:enabled:focused {
     border: #aa2040ff 1;
 }
 
-ComboBox::list:!enabled {
+ComboBox::list:not(enabled) {
     background-color: #44f0f0f0;
 }
 
@@ -435,7 +435,7 @@ MenuItem::icon {
     padding: 2pt 0;
 }
 
-MenuItem::icon:!enabled {
+MenuItem::icon:not(enabled) {
     alpha: 160;
 }
 
@@ -461,8 +461,8 @@ MenuItem::shortcut:selected {
     color: #eee;
 }
 
-MenuItem::label:!enabled,
-MenuItem::shortcut:!enabled {
+MenuItem::label:not(enabled),
+MenuItem::shortcut:not(enabled) {
     color: #80404040;
 }
 
@@ -533,7 +533,7 @@ StringGridWidget:enabled:focused, FileDialog::grid:enabled:focused {
     border: #2040ff 1;
 }
 
-StringGridWidget:!enabled, FileDialog::grid:!enabled {
+StringGridWidget:not(enabled), FileDialog::grid:not(enabled) {
     background-color: #f0f0f0;
 }
 
@@ -584,7 +584,7 @@ SliderButton:hovered {
     border: #4e93da 1;
 }
 
-SliderButton:!enabled {
+SliderButton:not(enabled) {
     border: #ccc 1;
     alpha: 160;
 }
@@ -677,7 +677,7 @@ TabUpButtonDarkText {
     color: #000000;
 }
 
-TabUpButtonDarkText:!selected:!focused:hovered {
+TabUpButtonDarkText:not(selected):not(focused):hovered {
     color: #9c9c9c;
 }
 
@@ -695,7 +695,7 @@ EditLine:enabled:focused {
     border: #2040ff 1;
 }
 
-EditLine:!enabled {
+EditLine:not(enabled) {
     background-color: #f0f0f0;
 }
 
@@ -711,7 +711,7 @@ EditBox:enabled:focused, LogWidget:enabled:focused {
     border: #2040ff 1;
 }
 
-EditBox:!enabled, LogWidget:!enabled {
+EditBox:not(enabled), LogWidget:not(enabled) {
     background-color: #f0f0f0;
 }
 
@@ -785,7 +785,7 @@ ToolBarButton, ToolBar::button {
     background: toolbar_button_background;
 }
 
-ToolBarButton:!enabled, ToolBar::button:!enabled {
+ToolBarButton:not(enabled), ToolBar::button:not(enabled) {
     background: toolbar_button_null;
     alpha: 160;
 }
@@ -797,7 +797,7 @@ ToolBarComboBox {
     background: toolbar_control_background;
 }
 
-ToolBarComboBox:!enabled {
+ToolBarComboBox:not(enabled) {
     background: none;
     alpha: 160;
 }
