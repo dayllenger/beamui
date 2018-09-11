@@ -1090,7 +1090,7 @@ private void applyAtRule(Theme theme, AtRule rule)
         foreach (p; ps)
         {
             string id = p.name;
-            uint color = decodeHexColorCSS(p.value);
+            uint color = decodeColorCSS(p.value);
             theme.setColor(id, color);
         }
     }
@@ -1175,16 +1175,16 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
             style.maxLines = decodeDimensionCSS(p.value[0]);
             break;
         case "background-color":
-            style.backgroundColor = decodeHexColorCSS(p.value);
+            style.backgroundColor = decodeColorCSS(p.value);
             break;
         case "alpha":
             style.alpha = decodeDimensionCSS(p.value[0]);
             break;
         case "color":
-            style.textColor = decodeHexColorCSS(p.value);
+            style.textColor = decodeColorCSS(p.value);
             break;
         case "focus-rect-color":
-            style.focusRectColor = decodeHexColorCSS(p.value);
+            style.focusRectColor = decodeColorCSS(p.value);
             break;
         default:
             break;
@@ -1446,19 +1446,44 @@ TextFlag decodeTextFlagsCSS(Token[] tokens)
             res |= TextFlag.parent;
             break;
         default:
-            Log.e("CSS(%s): unknown text flag: ", t.line, t.text);
+            Log.fe("CSS(%s): unknown text flag: %s", t.line, t.text);
             break;
         }
     }
     return res;
 }
 
-uint decodeHexColorCSS(Token[] tokens)
+uint decodeColorCSS(Token[] tokens)
 {
     auto t = tokens[0];
     if (t.type == TokenType.hash)
         return decodeHexColor("#" ~ t.text);
     if (t.type == TokenType.ident)
-        return decodeHexColor(t.text);
+        return decodeTextColor(t.text);
+    if (t.type == TokenType.func)
+    {
+        if (tokens[$ - 1].type != TokenType.closeParen)
+        {
+            Log.fe("CSS(%s): expected closing parenthesis", t.line);
+            return 0;
+        }
+        string fn = t.text;
+        if (fn == "rgb" || fn == "rgba")
+        {
+            tokens = tokens.efilter!(t => t.type == TokenType.number);
+            auto convert = (size_t idx) => tokens.length > idx ? clamp(to!uint(tokens[idx].text), 0, 255) : 0;
+            uint r = convert(0);
+            uint g = convert(1);
+            uint b = convert(2);
+            uint a = tokens.length > 3 ? 255 - clamp(to!uint(to!float(tokens[3].text) * 255), 0, 255) : 0;
+            return makeRGBA(r, g, b, a);
+        }
+        // TODO: hsl, hsla
+        else
+        {
+            Log.fe("CSS(%s): unknown color function: %s", t.line, fn);
+            return 0;
+        }
+    }
     return 0;
 }

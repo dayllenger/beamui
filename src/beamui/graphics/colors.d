@@ -16,6 +16,7 @@ module beamui.graphics.colors;
 
 import std.conv : to;
 import std.string : strip;
+import beamui.core.logger;
 import beamui.core.parseutils;
 import beamui.core.types;
 
@@ -179,27 +180,10 @@ uint makeRGBA(T)(T r, T g, T b, T a) pure nothrow
     return (cast(uint)a << 24) | (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
 }
 
-/// Decode color string  supported formats: #RGB #ARGB #RRGGBB #AARRGGBB
+/// Decode color string in one of formats: #RGB #ARGB #RRGGBB #AARRGGBB
 uint decodeHexColor(string s, uint defValue = 0) pure
 {
     s = strip(s);
-    switch (s)
-    {
-    case "@null":
-    case "none":
-    case "transparent":
-        return COLOR_TRANSPARENT;
-    default:
-        break;
-    }
-    try
-    {
-        Color c = to!Color(s);
-        return to!uint(c);
-    }
-    catch (Exception e) // not a named color. TODO: print some message if typo?
-    {
-    }
     if (s.length != 4 && s.length != 5 && s.length != 7 && s.length != 9)
         return defValue;
     if (s[0] != '#')
@@ -215,6 +199,25 @@ uint decodeHexColor(string s, uint defValue = 0) pure
             value = (value << 4) | digit;
     }
     return value;
+}
+
+/// Decode named color either from `Color` enum, `@null`, `none`, or `transparent`
+uint decodeTextColor(string s, uint defValue = 0) pure
+{
+    s = strip(s);
+    if (s == "@null" || s == "none" || s == "transparent")
+        return COLOR_TRANSPARENT;
+
+    try
+    {
+        Color c = to!Color(s);
+        return to!uint(c);
+    }
+    catch (Exception e) // not a named color
+    {
+        debug Log.e("Unknown color value: ", s);
+        return defValue;
+    }
 }
 
 /// Blend two RGB pixels using alpha
