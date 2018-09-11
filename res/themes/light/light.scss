@@ -515,11 +515,11 @@ StringGridWidget, FileDialog::grid {
 }
 
 @define-colors {
-    grid_selection_color: fade-out(#4040ff, 0.5);
-    grid_selection_color_row: fade-out(#a0b0ff, 0.8);
+    grid_selection: fade-out(#4040ff, 0.5);
+    grid_selection_row: fade-out(#a0b0ff, 0.8);
     grid_cell_background_fixed: fade-out(#e0e0e0, 0.8);
-    grid_cell_border_color: fade-out(#c0c0c0, 0.8);
-    grid_cell_border_color_header: fade-out(#202020, 0.8);
+    grid_cell_border: fade-out(#c0c0c0, 0.8);
+    grid_cell_border_header: fade-out(#202020, 0.8);
     grid_cell_background_header: fade-out(#909090, 0.8);
     grid_cell_background_header_selected: fade-out(#ffc040, 0.5);
 }
@@ -702,14 +702,6 @@ LogWidget {
     editor_matching_bracket_highlight: fade-out(#ffe0b0, 0.4);
     editor_search_highlight_current: fade-out(#a0c0ff, 0.4);
     editor_search_highlight_other: fade-out(#f0d080, 0.6);
-    editor_left_pane_background: #f4f4f4;
-    editor_left_pane_background2: #ffffff;
-    editor_left_pane_background3: #f0f0f0;
-    editor_left_pane_line_number_text: #444;
-    editor_left_pane_line_number_background: #f8f8f8;
-    editor_left_pane_line_icon_color_breakpoint: #f21818;
-    editor_left_pane_line_icon_color_bookmark: #1818f2;
-    editor_left_pane_line_icon_color_error: fade-out(#f21818, 0.5);
 }
 
 /* ==========================================================================
@@ -720,6 +712,17 @@ SourceEdit {
     font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console";
     font-family: monospace;
     font-size: 10pt;
+}
+
+@define-colors {
+    editor_left_pane_background: #f4f4f4;
+    editor_left_pane_background2: #ffffff;
+    editor_left_pane_background3: #f0f0f0;
+    editor_left_pane_line_number_text: #444;
+    editor_left_pane_line_number_background: #f8f8f8;
+    editor_left_pane_line_icon_breakpoint: #f21818;
+    editor_left_pane_line_icon_bookmark: #1818f2;
+    editor_left_pane_line_icon_error: fade-out(#f21818, 0.5);
 }
 
 /* ==========================================================================
@@ -799,9 +802,9 @@ SimpleBarChart {
 }
 
 @define-colors {
-    chart_background_color: #ffffff;
-    chart_axis_color: #c0c0c0;
-    chart_segment_tag_color: #c0c0c0;
+    chart_background: #ffffff;
+    chart_axis: #c0c0c0;
+    chart_segment_tag: #c0c0c0;
 }
 
 /* ==========================================================================
@@ -898,7 +901,7 @@ FilePathPanelItem {
 }
 
 @define-colors {
-    file_dialog_dir_name_color: #000080;
+    file_dialog_dir_name: #000080;
 }
 
 /* ==========================================================================

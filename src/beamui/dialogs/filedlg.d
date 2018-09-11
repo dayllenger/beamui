@@ -609,7 +609,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             int offset = BACKEND_CONSOLE ? 0 : 1;
             uint cl = _fileList.textColor;
             if (_entries[row].isDir)
-                cl = currentTheme.getColor("file_dialog_dir_name_color", cl);
+                cl = currentTheme.getColor("file_dialog_dir_name", cl);
             fnt.drawText(buf, b.x + offset, b.y + offset, txt, cl);
             return;
         }

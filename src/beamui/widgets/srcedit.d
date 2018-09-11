@@ -186,9 +186,9 @@ class SourceEdit : EditBox
         _leftPaneLineNumberBackgroundColorCurrentLine = currentTheme.getColor(
                 "editor_left_pane_line_number_background_current_line", 0xC08080FF);
         _leftPaneLineNumberBackgroundColor = currentTheme.getColor("editor_left_pane_line_number_background");
-        _colorIconBreakpoint = currentTheme.getColor("editor_left_pane_line_icon_color_breakpoint", 0xFF0000);
-        _colorIconBookmark = currentTheme.getColor("editor_left_pane_line_icon_color_bookmark", 0x0000FF);
-        _colorIconError = currentTheme.getColor("editor_left_pane_line_icon_color_error", 0x80FF0000);
+        _colorIconBreakpoint = currentTheme.getColor("editor_left_pane_line_icon_breakpoint", 0xFF0000);
+        _colorIconBookmark = currentTheme.getColor("editor_left_pane_line_icon_bookmark", 0x0000FF);
+        _colorIconError = currentTheme.getColor("editor_left_pane_line_icon_error", 0x80FF0000);
     }
 
     override protected bool onLeftPaneMouseClick(MouseEvent event)

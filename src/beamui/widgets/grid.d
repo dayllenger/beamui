@@ -2239,7 +2239,7 @@ class StringGridWidget : StringGridWidgetBase
         applyAlign(b, sz, ha, Align.vcenter);
         int offset = BACKEND_CONSOLE ? 0 : 1;
         uint cl = textColor;
-        cl = currentTheme.getColor("grid_cell_text_color_header", cl);
+        cl = currentTheme.getColor("grid_cell_text_header", cl);
         fnt.drawText(buf, b.x + offset, b.y + offset, txt, cl);
     }
 
@@ -2336,12 +2336,12 @@ class StringGridWidget : StringGridWidgetBase
     override void onThemeChanged()
     {
         super.onThemeChanged();
-        _selectionColor = currentTheme.getColor("grid_selection_color", 0x804040FF);
-        _selectionColorRowSelect = currentTheme.getColor("grid_selection_color_row", 0xC0A0B0FF);
+        _selectionColor = currentTheme.getColor("grid_selection", 0x804040FF);
+        _selectionColorRowSelect = currentTheme.getColor("grid_selection_row", 0xC0A0B0FF);
         _fixedCellBackgroundColor = currentTheme.getColor("grid_cell_background_fixed", 0xC0E0E0E0);
-        _cellBorderColor = currentTheme.getColor("grid_cell_border_color", 0xC0C0C0C0);
-        _fixedCellBorderColor = currentTheme.getColor("grid_cell_border_color_fixed", _cellBorderColor);
-        _cellHeaderBorderColor = currentTheme.getColor("grid_cell_border_color_header", 0xC0202020);
+        _cellBorderColor = currentTheme.getColor("grid_cell_border", 0xC0C0C0C0);
+        _fixedCellBorderColor = currentTheme.getColor("grid_cell_border_fixed", _cellBorderColor);
+        _cellHeaderBorderColor = currentTheme.getColor("grid_cell_border_header", 0xC0202020);
         _cellHeaderBackgroundColor = currentTheme.getColor("grid_cell_background_header", 0xC0909090);
         _cellHeaderSelectedBackgroundColor = currentTheme.getColor("grid_cell_background_header_selected", 0x80FFC040);
         _cellHeaderBackgroundDrawable = currentTheme.getDrawable("grid_cell_background_header");

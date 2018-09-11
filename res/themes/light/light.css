@@ -205,11 +205,11 @@ StringGridWidget:enabled:focused, FileDialog::grid:enabled:focused { border: #2e
 
 StringGridWidget:not(enabled), FileDialog::grid:not(enabled) { background-color: #f0f0f0; }
 
-@define-colors { grid_selection_color: rgba(64, 64, 255, 0.5);
-  grid_selection_color_row: rgba(160, 176, 255, 0.2);
+@define-colors { grid_selection: rgba(64, 64, 255, 0.5);
+  grid_selection_row: rgba(160, 176, 255, 0.2);
   grid_cell_background_fixed: rgba(224, 224, 224, 0.2);
-  grid_cell_border_color: rgba(192, 192, 192, 0.2);
-  grid_cell_border_color_header: rgba(32, 32, 32, 0.2);
+  grid_cell_border: rgba(192, 192, 192, 0.2);
+  grid_cell_border_header: rgba(32, 32, 32, 0.2);
   grid_cell_background_header: rgba(144, 144, 144, 0.2);
   grid_cell_background_header_selected: rgba(255, 192, 64, 0.5); }
 
@@ -287,18 +287,19 @@ LogWidget { font-family: monospace; font-size: 9pt; }
   editor_selection_normal: rgba(96, 160, 255, 0.1);
   editor_matching_bracket_highlight: rgba(255, 224, 176, 0.6);
   editor_search_highlight_current: rgba(160, 192, 255, 0.6);
-  editor_search_highlight_other: rgba(240, 208, 128, 0.4);
-  editor_left_pane_background: #f4f4f4;
+  editor_search_highlight_other: rgba(240, 208, 128, 0.4); }
+
+/* ========================================================================== srcedit.d */
+SourceEdit { font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console"; font-family: monospace; font-size: 10pt; }
+
+@define-colors { editor_left_pane_background: #f4f4f4;
   editor_left_pane_background2: #ffffff;
   editor_left_pane_background3: #f0f0f0;
   editor_left_pane_line_number_text: #444;
   editor_left_pane_line_number_background: #f8f8f8;
-  editor_left_pane_line_icon_color_breakpoint: #f21818;
-  editor_left_pane_line_icon_color_bookmark: #1818f2;
-  editor_left_pane_line_icon_color_error: rgba(242, 24, 24, 0.5); }
-
-/* ========================================================================== srcedit.d */
-SourceEdit { font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console"; font-family: monospace; font-size: 10pt; }
+  editor_left_pane_line_icon_breakpoint: #f21818;
+  editor_left_pane_line_icon_bookmark: #1818f2;
+  editor_left_pane_line_icon_error: rgba(242, 24, 24, 0.5); }
 
 /* ========================================================================== statusline.d */
 StatusLine { weight: 0; padding: 1pt; background-color: #eceffa; }
@@ -326,9 +327,9 @@ DockHostBody { margin: 3pt; padding: 0; }
 /* ========================================================================== charts.d */
 SimpleBarChart { min-width: 250pt; margin: 2pt; padding: 2pt; }
 
-@define-colors { chart_background_color: #ffffff;
-  chart_axis_color: #c0c0c0;
-  chart_segment_tag_color: #c0c0c0; }
+@define-colors { chart_background: #ffffff;
+  chart_axis: #c0c0c0;
+  chart_segment_tag: #c0c0c0; }
 
 /* ========================================================================== progressbar.d */
 ProgressBarWidget { min-width: 50pt; min-height: 12pt; padding: 2pt; background: progress_bar_background_frame; }
@@ -366,7 +367,7 @@ FilePathPanelItem::button { padding: 1pt 0; }
 
 FilePathPanelItem::button:hovered { background-color: rgba(65, 127, 191, 0.2); }
 
-@define-colors { file_dialog_dir_name_color: #000080; }
+@define-colors { file_dialog_dir_name: #000080; }
 
 /* ========================================================================== settingsdialog.d */
 SettingsDialog { padding: 4pt; }

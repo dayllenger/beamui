@@ -171,33 +171,33 @@ class SimpleBarChart : Widget
 
         uint chartBackgroundColor() const
         {
-            return currentTheme.getColor("chart_background_color");
+            return currentTheme.getColor("chart_background");
         }
         SimpleBarChart chartBackgroundColor(uint newColor)
         {
-            //ownStyle.setCustomColor("chart_background_color", newColor); // TODO
+            //ownStyle.setCustomColor("chart_background", newColor); // TODO
             invalidate();
             return this;
         }
 
         uint chartAxisColor() const
         {
-            return currentTheme.getColor("chart_axis_color");
+            return currentTheme.getColor("chart_axis");
         }
         SimpleBarChart chartAxisColor(uint newColor)
         {
-            //ownStyle.setCustomColor("chart_axis_color", newColor); // TODO
+            //ownStyle.setCustomColor("chart_axis", newColor); // TODO
             invalidate();
             return this;
         }
 
         uint chartSegmentTagColor() const
         {
-            return currentTheme.getColor("chart_segment_tag_color");
+            return currentTheme.getColor("chart_segment_tag");
         }
         SimpleBarChart chartSegmentTagColor(uint newColor)
         {
-            //ownStyle.setCustomColor("chart_segment_tag_color", newColor); // TODO
+            //ownStyle.setCustomColor("chart_segment_tag", newColor); // TODO
             invalidate();
             return this;
         }
