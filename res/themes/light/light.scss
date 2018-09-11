@@ -68,7 +68,7 @@ Button {
 
     &:not(enabled) {
         border: #ccc 1;
-        alpha: 160;
+        opacity: 0.4;
     }
 
     &::icon, &::label {
@@ -76,7 +76,7 @@ Button {
         margin: 2pt;
 
         &:not(enabled) {
-            alpha: 160;
+            opacity: 0.4;
         }
     }
 
@@ -141,7 +141,7 @@ CheckBox::icon {
     }
 
     &:not(checked):not(enabled) {
-        alpha: 160;
+        opacity: 0.4;
     }
 
     &:checked {
@@ -158,7 +158,7 @@ CheckBox::icon {
 
     &:checked:not(enabled) {
         background: btn_check_on;
-        alpha: 160;
+        opacity: 0.4;
     }
 }
 
@@ -174,7 +174,7 @@ RadioButton::icon {
     }
 
     &:not(checked):not(enabled) {
-        alpha: 160;
+        opacity: 0.4;
     }
 
     &:checked {
@@ -191,7 +191,7 @@ RadioButton::icon {
 
     &:checked:not(enabled) {
         background: btn_radio_on;
-        alpha: 160;
+        opacity: 0.4;
     }
 }
 
@@ -200,7 +200,7 @@ SwitchButton {
     background: switch_off;
 
     &:not(checked):not(enabled) {
-        alpha: 160;
+        opacity: 0.4;
     }
 
     &:checked {
@@ -209,7 +209,7 @@ SwitchButton {
 
     &:checked:not(enabled) {
         background: switch_on;
-        alpha: 160;
+        opacity: 0.4;
     }
 }
 
@@ -322,7 +322,7 @@ ComboBox {
 
     &:not(enabled) {
         border: #ccc 1;
-        alpha: 160;
+        opacity: 0.4;
     }
 
     &::body {
@@ -345,7 +345,7 @@ ComboBox {
     }
 
     &::body:not(enabled), &::button:not(enabled) {
-        alpha: 160;
+        opacity: 0.4;
     }
 
     &::list {
@@ -417,7 +417,7 @@ MenuItem {
     }
 
     &::icon:not(enabled) {
-        alpha: 160;
+        opacity: 0.4;
     }
 
     &::label {
@@ -561,7 +561,7 @@ SliderButton {
 
     &:not(enabled) {
         border: #ccc 1;
-        alpha: 160;
+        opacity: 0.4;
     }
 }
 
@@ -754,7 +754,7 @@ ToolBarButton, ToolBar::button {
 
     &:not(enabled) {
         background: toolbar_button_null;
-        alpha: 160;
+        opacity: 0.4;
     }
 }
 
@@ -766,7 +766,7 @@ ToolBarComboBox {
 
     &:not(enabled) {
         background: none;
-        alpha: 160;
+        opacity: 0.4;
     }
 }
 

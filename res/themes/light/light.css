@@ -18,11 +18,11 @@ Button:pressed, Button:checked { border: #417fbf 1; background: linear(170deg, #
 
 Button:hovered:not(checked) { border: #4e93da 1; }
 
-Button:not(enabled) { border: #ccc 1; alpha: 160; }
+Button:not(enabled) { border: #ccc 1; opacity: 0.4; }
 
 Button::icon, Button::label { align: center; margin: 2pt; }
 
-Button::icon:not(enabled), Button::label:not(enabled) { alpha: 160; }
+Button::icon:not(enabled), Button::label:not(enabled) { opacity: 0.4; }
 
 Button::label { text-flags: underline-hotkeys; }
 
@@ -52,7 +52,7 @@ CheckBox::icon:not(checked):hovered { background: btn_check_off_focused; }
 
 CheckBox::icon:not(checked):pressed { background: btn_check_off_pressed; }
 
-CheckBox::icon:not(checked):not(enabled) { alpha: 160; }
+CheckBox::icon:not(checked):not(enabled) { opacity: 0.4; }
 
 CheckBox::icon:checked { background: btn_check_on; }
 
@@ -60,7 +60,7 @@ CheckBox::icon:checked:hovered { background: btn_check_on_focused; }
 
 CheckBox::icon:checked:pressed { background: btn_check_on_pressed; }
 
-CheckBox::icon:checked:not(enabled) { background: btn_check_on; alpha: 160; }
+CheckBox::icon:checked:not(enabled) { background: btn_check_on; opacity: 0.4; }
 
 RadioButton::icon { background: btn_radio_off; }
 
@@ -68,7 +68,7 @@ RadioButton::icon:not(checked):hovered { background: btn_radio_off_focused; }
 
 RadioButton::icon:not(checked):pressed { background: btn_radio_off_pressed; }
 
-RadioButton::icon:not(checked):not(enabled) { alpha: 160; }
+RadioButton::icon:not(checked):not(enabled) { opacity: 0.4; }
 
 RadioButton::icon:checked { background: btn_radio_on; }
 
@@ -76,15 +76,15 @@ RadioButton::icon:checked:hovered { background: btn_radio_on_focused; }
 
 RadioButton::icon:checked:pressed { background: btn_radio_on_pressed; }
 
-RadioButton::icon:checked:not(enabled) { background: btn_radio_on; alpha: 160; }
+RadioButton::icon:checked:not(enabled) { background: btn_radio_on; opacity: 0.4; }
 
 SwitchButton { align: center; background: switch_off; }
 
-SwitchButton:not(checked):not(enabled) { alpha: 160; }
+SwitchButton:not(checked):not(enabled) { opacity: 0.4; }
 
 SwitchButton:checked { background: switch_on; }
 
-SwitchButton:checked:not(enabled) { background: switch_on; alpha: 160; }
+SwitchButton:checked:not(enabled) { background: switch_on; opacity: 0.4; }
 
 CanvasWidget { min-width: 50pt; min-height: 50pt; }
 
@@ -130,7 +130,7 @@ ComboBox:pressed { border: #417fbf 1; background: linear(170deg, #eeeeee, #ddddd
 
 ComboBox:hovered { border: #4e93da 1; }
 
-ComboBox:not(enabled) { border: #ccc 1; alpha: 160; }
+ComboBox:not(enabled) { border: #ccc 1; opacity: 0.4; }
 
 ComboBox::body { min-width: 40pt; align: left vcenter; padding: 2pt; }
 
@@ -140,7 +140,7 @@ ComboBox::body:enabled:hovered { color: #4e93da; }
 
 ComboBox::button { align: center; padding: 2pt 3pt; }
 
-ComboBox::body:not(enabled), ComboBox::button:not(enabled) { alpha: 160; }
+ComboBox::body:not(enabled), ComboBox::button:not(enabled) { opacity: 0.4; }
 
 ComboBox::list { min-width: 0; min-height: 0; border: #aaa 1; background-color: rgba(255, 255, 255, 0.75); }
 
@@ -165,7 +165,7 @@ MenuItem::separator { min-width: 1; min-height: 1; background: #bbb; }
 
 MenuItem::icon { align: left vcenter; padding: 2pt 0; }
 
-MenuItem::icon:not(enabled) { alpha: 160; }
+MenuItem::icon:not(enabled) { opacity: 0.4; }
 
 MenuItem::label { align: left vcenter; padding: 4pt 0; text-flags: parent; }
 
@@ -224,7 +224,7 @@ SliderButton:pressed { border: #417fbf 1; background: linear(100deg, #eeeeee, #d
 
 SliderButton:hovered { border: #4e93da 1; }
 
-SliderButton:not(enabled) { border: #ccc 1; alpha: 160; }
+SliderButton:not(enabled) { border: #ccc 1; opacity: 0.4; }
 
 PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
 
@@ -310,11 +310,11 @@ ToolBar { margin: 2pt 1pt; background: toolbar_background; }
 
 ToolBarButton, ToolBar::button { align: center; margin: 1pt; padding: 2pt; background: toolbar_button_background; }
 
-ToolBarButton:not(enabled), ToolBar::button:not(enabled) { background: toolbar_button_null; alpha: 160; }
+ToolBarButton:not(enabled), ToolBar::button:not(enabled) { background: toolbar_button_null; opacity: 0.4; }
 
 ToolBarComboBox { align: center; margin: 1pt; padding: 2pt; background: toolbar_control_background; }
 
-ToolBarComboBox:not(enabled) { background: none; alpha: 160; }
+ToolBarComboBox:not(enabled) { background: none; opacity: 0.4; }
 
 ToolBarSeparator { align: center; }
 

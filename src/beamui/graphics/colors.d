@@ -14,8 +14,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.graphics.colors;
 
-import std.conv : to;
 import std.string : strip;
+import beamui.core.functions : clamp, to;
 import beamui.core.logger;
 import beamui.core.parseutils;
 import beamui.core.types;
@@ -218,6 +218,12 @@ uint decodeTextColor(string s, uint defValue = 0) pure
         debug Log.e("Unknown color value: ", s);
         return defValue;
     }
+}
+
+/// Convert opacity [0.0, 1.0] color to [0, 255] alpha color (0 - opaque, 255 - transparent)
+ubyte opacityToAlpha(float a) pure nothrow @nogc
+{
+    return 255 - cast(ubyte)(clamp(a, 0.0, 1.0) * 255);
 }
 
 /// Blend two RGB pixels using alpha

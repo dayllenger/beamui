@@ -515,12 +515,12 @@ public:
         }
 
         /// Widget drawing alpha value (0=opaque .. 255=transparent)
-        uint alpha() const
+        ubyte alpha() const
         {
             return stateStyle.alpha;
         }
         /// ditto
-        Widget alpha(uint value)
+        Widget alpha(ubyte value)
         {
             ownStyle.alpha = value;
             invalidate();
@@ -2048,7 +2048,7 @@ public:
                 "layoutWeight", "textColor", "backgroundColor", "fontSize", "fontWeight"));
         if (name == "alpha")
         {
-            alpha = cast(ushort)clamp(value, 0, 255);
+            alpha = cast(ubyte)clamp(value, 0, 255);
             return true;
         }
         if (name == "alignment")

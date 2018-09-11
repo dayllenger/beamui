@@ -232,7 +232,7 @@ private:
     int _maxLines = 1;
     // colors
     uint _backgroundColor = COLOR_TRANSPARENT;
-    uint _alpha = 0;
+    ubyte _alpha = 0;
     uint _textColor = 0x000000; // black
     uint _focusRectColor = COLOR_UNSPECIFIED; // disabled by default
     // 24 overall
@@ -435,7 +435,7 @@ public:
         return this;
     }
     /// Alpha (0 = opaque ... 255 = transparent)
-    Style alpha(uint value)
+    Style alpha(ubyte value)
     {
         _alpha = value;
         overrideMap[21] = true;
@@ -602,7 +602,7 @@ public:
             return parent.backgroundColor;
         return _backgroundColor;
     }
-    uint alpha() const pure
+    ubyte alpha() const pure
     {
         if (parent && !overrideMap[21])
             return parent.alpha;
@@ -1177,8 +1177,8 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
         case "background-color":
             style.backgroundColor = decodeColorCSS(p.value);
             break;
-        case "alpha":
-            style.alpha = decodeDimensionCSS(p.value[0]);
+        case "opacity":
+            style.alpha = opacityToAlpha(to!float(p.value[0].text));
             break;
         case "color":
             style.textColor = decodeColorCSS(p.value);
@@ -1475,7 +1475,7 @@ uint decodeColorCSS(Token[] tokens)
             uint r = convert(0);
             uint g = convert(1);
             uint b = convert(2);
-            uint a = tokens.length > 3 ? 255 - clamp(to!uint(to!float(tokens[3].text) * 255), 0, 255) : 0;
+            uint a = tokens.length > 3 ? opacityToAlpha(to!float(tokens[3].text)) : 0;
             return makeRGBA(r, g, b, a);
         }
         // TODO: hsl, hsla
