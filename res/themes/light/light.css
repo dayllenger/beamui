@@ -40,6 +40,12 @@ LinkButton::label:not(enabled) { color: rgba(192, 192, 255, 0.7); }
 
 CheckBox { padding: 2pt; }
 
+CheckBox::label, RadioButton::label { align: left vcenter; }
+
+CheckBox::label:hovered, RadioButton::label:hovered { color: #4e93da; }
+
+CheckBox::label:not(enabled), RadioButton::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
+
 CheckBox::icon { min-width: 10pt; max-height: 10pt; background: btn_check_off; }
 
 CheckBox::icon:not(checked):hovered { background: btn_check_off_focused; }
@@ -55,12 +61,6 @@ CheckBox::icon:checked:hovered { background: btn_check_on_focused; }
 CheckBox::icon:checked:pressed { background: btn_check_on_pressed; }
 
 CheckBox::icon:checked:not(enabled) { background: btn_check_on; alpha: 160; }
-
-CheckBox::label, RadioButton::label { align: left vcenter; }
-
-CheckBox::label:hovered, RadioButton::label:hovered { color: #4e93da; }
-
-CheckBox::label:not(enabled), RadioButton::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 RadioButton::icon { background: btn_radio_off; }
 
@@ -95,11 +95,11 @@ VSpacer { min-height: 5; weight: 100; }
 
 ResizerWidget { min-width: 3pt; min-height: 3pt; }
 
-ResizerWidget:focused, ResizerWidget:focused { background-color: rgba(192, 192, 0, 0.8); }
+ResizerWidget:focused { background-color: rgba(192, 192, 0, 0.8); }
 
-ResizerWidget:pressed, ResizerWidget:pressed { background-color: rgba(78, 147, 218, 0.8); }
+ResizerWidget:pressed { background-color: rgba(78, 147, 218, 0.8); }
 
-ResizerWidget:hovered, ResizerWidget:hovered { background-color: rgba(255, 255, 0, 0.2); }
+ResizerWidget:hovered { background-color: rgba(255, 255, 0, 0.2); }
 
 /* ========================================================================== groupbox.d */
 GroupBox { padding: 10pt 16pt 10pt 12pt; }
@@ -113,15 +113,14 @@ GroupBox::caption { align: left vcenter; padding: 1pt; color: #504840; }
 /* ========================================================================== lists.d */
 ListWidget { min-width: 100pt; min-height: 100pt; border: #aaa 1; background-color: #fff; }
 
-ListWidget:enabled:focused { border: #2040ff 1; }
+ListWidget:enabled:focused { border: #2e93fa 1; }
 
 ListWidget:not(enabled) { background-color: #f0f0f0; }
 
 StringListAdapter::item, IconStringListAdapter::item { padding: 4pt 2pt; }
 
-StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { background: #d044aaff; }
+StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { background: rgba(68, 170, 255, 0.2); }
 
-/* StringListAdapter::item:pressed, IconStringListAdapter::item:pressed { background: #3377ee; } */
 StringListAdapter::item:focused, StringListAdapter::item:selected, IconStringListAdapter::item:focused, IconStringListAdapter::item:selected { background: #3399ff; color: #f0f0f0; }
 
 /* ========================================================================== combobox.d */
@@ -156,7 +155,7 @@ MenuBar { weight: 0; margin: 0; padding: 0; border: none; box-shadow: 0 0 5 #888
 
 MenuItem { padding: 4pt 5pt; text-flags: parent; }
 
-MenuItem:hovered { background: #d044aaff; }
+MenuItem:hovered { background: rgba(68, 170, 255, 0.2); }
 
 MenuItem:focused { background: #3388ff; }
 
@@ -185,7 +184,7 @@ TreeItemWidget::expander { align: left vcenter; text-flags: parent; }
 
 TreeItemWidget::body { align: left vcenter; padding: 4pt 2pt; text-flags: parent; }
 
-TreeItemWidget::body:hovered { background: #d044aaff; }
+TreeItemWidget::body:hovered { background: rgba(68, 170, 255, 0.2); }
 
 TreeItemWidget::body:pressed { background: #3399ff; }
 
@@ -202,7 +201,7 @@ TreeItemWidget::label:default { fontWeight: bold; }
 /* ========================================================================== grid.d */
 StringGridWidget, FileDialog::grid { min-width: 100; min-height: 60; border: #aaa 1; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; }
 
-StringGridWidget:enabled:focused, FileDialog::grid:enabled:focused { border: #2040ff 1; }
+StringGridWidget:enabled:focused, FileDialog::grid:enabled:focused { border: #2e93fa 1; }
 
 StringGridWidget:not(enabled), FileDialog::grid:not(enabled) { background-color: #f0f0f0; }
 
@@ -215,7 +214,7 @@ StringGridWidget:not(enabled), FileDialog::grid:not(enabled) { background-color:
   grid_cell_background_header_selected: rgba(255, 192, 64, 0.5); }
 
 /* ========================================================================== scrollbar.d */
-ScrollBar { background-color: #f5000000; }
+ScrollBar { background-color: rgba(0, 0, 0, 0.05); }
 
 Slider { border: #888 1; background-color: #fff; }
 
@@ -227,9 +226,9 @@ SliderButton:hovered { border: #4e93da 1; }
 
 SliderButton:not(enabled) { border: #ccc 1; alpha: 160; }
 
-PageScrollButton:pressed { background-color: #e0404080; }
+PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
 
-PageScrollButton:hovered { background-color: #f0404080; }
+PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
 
 @define-drawables { scrollbar_button_up: 'scrollbar_btn_up';
   scrollbar_button_down: 'scrollbar_btn_down';
@@ -247,11 +246,11 @@ TabUp { border: #dd000000 0 0 0 1; background-color: transparent; }
 
 TabUp:selected { background: tab_up_backgrond_selected; }
 
-TabItemWidget { padding: 0 5pt 1pt 0; border: #ff4e93da 0 0 0 2; }
+TabItemWidget { padding: 0 5pt 1pt 0; border: #ffffffff 0 0 0 2; }
 
 TabItemWidget:selected { border: #4e93da 0 0 0 2; }
 
-TabItemWidget::label { align: hcenter bottom; padding: 3pt 0 3pt 3pt; color: #404040; }
+TabItemWidget::label { align: hcenter bottom; padding: 3pt 0 3pt 3pt; }
 
 TabItemWidget::label:hovered, TabItemWidget::label:selected, TabItemWidget::label:focused, TabItemWidget::label:selected:focused { color: #4e93da; }
 
@@ -263,20 +262,20 @@ TabUpDark { background: dock_window_caption_background; }
 
 TabUpButtonDark { padding: 5pt 1pt 1pt 1pt; background: tab_btn_dark_up; }
 
-TabUpButtonDarkText { align: center; color: #000000; }
+TabUpButtonDarkText { align: center; color: black; }
 
 TabUpButtonDarkText:not(selected):not(focused):hovered { color: #9c9c9c; }
 
 /* ========================================================================== editors.d */
 EditLine { padding: 4pt; border: #aaa 1; background-color: #fff; }
 
-EditLine:enabled:focused { border: #2040ff 1; }
+EditLine:enabled:focused { border: #2e93fa 1; }
 
 EditLine:not(enabled) { background-color: #f0f0f0; }
 
 EditBox, LogWidget { min-width: 100; min-height: 60; border: #aaa 1; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; }
 
-EditBox:enabled:focused, LogWidget:enabled:focused { border: #2040ff 1; }
+EditBox:enabled:focused, LogWidget:enabled:focused { border: #2e93fa 1; }
 
 EditBox:not(enabled), LogWidget:not(enabled) { background-color: #f0f0f0; }
 
@@ -302,12 +301,12 @@ LogWidget { font-family: monospace; font-size: 9pt; }
 SourceEdit { font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console"; font-family: monospace; font-size: 10pt; }
 
 /* ========================================================================== statusline.d */
-StatusLine { /*width: fill;    */ /*height: wrap;    */ weight: 0; padding: 1pt; background-color: #eceffa; }
+StatusLine { weight: 0; padding: 1pt; background-color: #eceffa; }
 
 /* ========================================================================== toolbars.d */
-ToolBarHost { /*width: fill;    */ /*height: wrap;    */ padding: 1pt; background: toolbar_host_background; }
+ToolBarHost { padding: 1pt; background: toolbar_host_background; }
 
-ToolBar { /*width: wrap;    */ /*height: wrap;    */ margin: 2pt 1pt; background: toolbar_background; }
+ToolBar { margin: 2pt 1pt; background: toolbar_background; }
 
 ToolBarButton, ToolBar::button { align: center; margin: 1pt; padding: 2pt; background: toolbar_button_background; }
 
@@ -361,11 +360,11 @@ FilePathPanelButtons { padding: 3pt 0 6pt 0; }
 
 FilePathPanelItem::label { align: center; padding: 3pt 2pt; }
 
-FilePathPanelItem::label:hovered { background-color: #d0417fbf; }
+FilePathPanelItem::label:hovered { background-color: rgba(65, 127, 191, 0.2); }
 
 FilePathPanelItem::button { padding: 1pt 0; }
 
-FilePathPanelItem::button:hovered { background-color: #d0417fbf; }
+FilePathPanelItem::button:hovered { background-color: rgba(65, 127, 191, 0.2); }
 
 @define-colors { file_dialog_dir_name_color: #000080; }
 
