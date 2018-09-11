@@ -27,6 +27,7 @@ struct AtRule
 {
     string keyword;
     Token[] content;
+    Property[] properties;
 }
 
 struct RuleSet
@@ -126,8 +127,29 @@ struct Parser
         r.popFront();
         if (r.empty)
             return Nullable!AtRule.init;
-        rule.content = consumeValue();
-        if (rule.content.length > 0)
+
+        Token[] list;
+        while (true) with (TokenType)
+        {
+            if (r.empty || r.front.type == closeCurly)
+                break;
+            T t = r.front;
+            r.popFront();
+            if (t.type == openCurly)
+            {
+                // consume block
+                rule.properties = consumeDeclarationList();
+                break;
+            }
+            if (t.type == semicolon)
+                break;
+            else
+                // consume values
+                list ~= t;
+        }
+        rule.content = list;
+
+        if (rule.content.length > 0 || rule.properties.length > 0)
             return nullable(rule);
         else
             return Nullable!AtRule.init;

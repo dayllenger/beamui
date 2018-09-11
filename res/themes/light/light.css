@@ -1,62 +1,12 @@
-@define-drawable btn_check 'btn_check';
-@define-drawable btn_radio 'btn_radio';
-@define-drawable scrollbar_button_up 'scrollbar_btn_up';
-@define-drawable scrollbar_button_down 'scrollbar_btn_down';
-@define-drawable scrollbar_button_left 'scrollbar_btn_left';
-@define-drawable scrollbar_button_right 'scrollbar_btn_right';
-@define-drawable scrollbar_indicator_vertical 'none';
-@define-drawable scrollbar_indicator_horizontal 'none';
-@define-drawable group_box_frame_up_left 'group_box_frame_up_left';
-@define-drawable group_box_frame_up_right 'group_box_frame_up_right';
-@define-drawable group_box_frame_bottom 'group_box_frame_bottom';
-@define-drawable progress_bar_gauge '#4080ff';
-@define-drawable progress_bar_gauge_animation 'progress_bar_gauge_animation.tiled';
-@define-drawable progress_bar_indeterminate '#80c080';
-@define-drawable progress_bar_indeterminate_animation 'progress_bar_gauge_animation.tiled';
-
-@define-color main-color #4e93da;
-@define-color secondary-color #417fbf;
-@define-color main-text-color #404040;
-@define-color secondary-text-color #f0f0f0;
-
-@define-color window_background #f0f1f1;
-@define-color dialog_background #eee;
-@define-color edit_caret #000000;
-@define-color edit_caret_replace #808080ff;
-@define-color editor_selection_focused #b060a0ff;
-@define-color editor_selection_normal #d060a0ff;
-@define-color editor_matching_bracket_highlight #60ffe0b0;
-@define-color editor_search_highlight_current #60a0c0ff;
-@define-color editor_search_highlight_other #90f0d080;
-@define-color editor_left_pane_background #f4f4f4;
-@define-color editor_left_pane_background2 #ffffff;
-@define-color editor_left_pane_background3 #f0f0f0;
-@define-color editor_left_pane_line_number_text #444;
-@define-color editor_left_pane_line_number_background #f8f8f8;
-@define-color editor_left_pane_line_icon_color_breakpoint #f21818;
-@define-color editor_left_pane_line_icon_color_bookmark #1818f2;
-@define-color editor_left_pane_line_icon_color_error #80f21818;
-
-@define-color grid_selection_color #804040ff;
-@define-color grid_selection_color_row #c0a0b0ff;
-@define-color grid_cell_background_fixed #c0e0e0e0;
-@define-color grid_cell_border_color #c0c0c0c0;
-@define-color grid_cell_border_color_header #c0202020;
-@define-color grid_cell_background_header #c0909090;
-@define-color grid_cell_background_header_selected #80ffc040;
-
-@define-color file_dialog_dir_name_color #000080;
-
-@define-color chart_background_color #ffffff;
-@define-color chart_axis_color #c0c0c0;
-@define-color chart_segment_tag_color #c0c0c0;
-
-
 * {
     font-face: "Helvetica Neue, Liberation Sans, DejaVu Sans, Verdana, Arial, Helvetica, Roboto, Droid Sans";
     font-family: sans-serif;
     font-size: 10pt;
     color: #404040;
+}
+
+@define-colors {
+    window_background: #f0f1f1;
 }
 
 /* ==========================================================================
@@ -146,7 +96,6 @@ LinkButton::label:hovered {
 LinkButton::label:!enabled {
     color: #60c0c0ff;
 }
-
 
 CheckBox {
     padding: 2pt;
@@ -278,7 +227,6 @@ Button.transparent.background {
 }
 */
 
-
 /* ==========================================================================
    layouts.d
 */
@@ -310,7 +258,6 @@ ResizerWidget:hovered, ResizerWidget:hovered {
     background-color: #c0ffff00;
 }
 
-
 /* ==========================================================================
    groupbox.d
 */
@@ -325,6 +272,11 @@ GroupBox::caption {
     color: #504840;
 }
 
+@define-drawables {
+    group_box_frame_up_left: 'group_box_frame_up_left';
+    group_box_frame_up_right: 'group_box_frame_up_right';
+    group_box_frame_bottom: 'group_box_frame_bottom';
+}
 
 /* ==========================================================================
    lists.d
@@ -514,7 +466,6 @@ MenuItem::shortcut:!enabled {
     color: #80404040;
 }
 
-
 /* ==========================================================================
    tree.d
 */
@@ -566,7 +517,6 @@ TreeItemWidget::label:default {
     fontWeight: bold;
 }
 
-
 /* ==========================================================================
    grid.d
 */
@@ -587,6 +537,15 @@ StringGridWidget:!enabled, FileDialog::grid:!enabled {
     background-color: #f0f0f0;
 }
 
+@define-colors {
+    grid_selection_color: #804040ff;
+    grid_selection_color_row: #c0a0b0ff;
+    grid_cell_background_fixed: #c0e0e0e0;
+    grid_cell_border_color: #c0c0c0c0;
+    grid_cell_border_color_header: #c0202020;
+    grid_cell_background_header: #c0909090;
+    grid_cell_background_header_selected: #80ffc040;
+}
 
 /* ==========================================================================
    scrollbar.d
@@ -641,6 +600,14 @@ PageScrollButton:hovered {
     background-color: #f0404080;
 }
 
+@define-drawables {
+    scrollbar_button_up: 'scrollbar_btn_up';
+    scrollbar_button_down: 'scrollbar_btn_down';
+    scrollbar_button_left: 'scrollbar_btn_left';
+    scrollbar_button_right: 'scrollbar_btn_right';
+    scrollbar_indicator_vertical: none;
+    scrollbar_indicator_horizontal: none;
+}
 
 /* ==========================================================================
    tabs.d
@@ -714,7 +681,6 @@ TabUpButtonDarkText:!selected:!focused:hovered {
     color: #9c9c9c;
 }
 
-
 /* ==========================================================================
    editors.d
 */
@@ -754,6 +720,23 @@ LogWidget {
     font-size: 9pt;
 }
 
+@define-colors {
+    edit_caret: #000000;
+    edit_caret_replace: #808080ff;
+    editor_selection_focused: #b060a0ff;
+    editor_selection_normal: #d060a0ff;
+    editor_matching_bracket_highlight: #60ffe0b0;
+    editor_search_highlight_current: #60a0c0ff;
+    editor_search_highlight_other: #90f0d080;
+    editor_left_pane_background: #f4f4f4;
+    editor_left_pane_background2: #ffffff;
+    editor_left_pane_background3: #f0f0f0;
+    editor_left_pane_line_number_text: #444;
+    editor_left_pane_line_number_background: #f8f8f8;
+    editor_left_pane_line_icon_color_breakpoint: #f21818;
+    editor_left_pane_line_icon_color_bookmark: #1818f2;
+    editor_left_pane_line_icon_color_error: #80f21818;
+}
 
 /* ==========================================================================
    srcedit.d
@@ -764,7 +747,6 @@ SourceEdit {
     font-family: monospace;
     font-size: 10pt;
 }
-
 
 /* ==========================================================================
    statusline.d
@@ -777,7 +759,6 @@ StatusLine {
     padding: 1pt;
     background-color: #eceffa;
 }
-
 
 /* ==========================================================================
    toolbars.d
@@ -825,7 +806,6 @@ ToolBarSeparator {
     align: center;
 }
 
-
 /* ==========================================================================
    docks.d
 */
@@ -840,7 +820,6 @@ DockHostBody {
     padding: 0;
 }
 
-
 /* ==========================================================================
    charts.d
 */
@@ -851,6 +830,11 @@ SimpleBarChart {
     padding: 2pt;
 }
 
+@define-colors {
+    chart_background_color: #ffffff;
+    chart_axis_color: #c0c0c0;
+    chart_segment_tag_color: #c0c0c0;
+}
 
 /* ==========================================================================
    progressbar.d
@@ -863,6 +847,12 @@ ProgressBarWidget {
     background: progress_bar_background_frame;
 }
 
+@define-drawables {
+    progress_bar_gauge: #4080ff;
+    progress_bar_gauge_animation: 'progress_bar_gauge_animation.tiled';
+    progress_bar_indeterminate: #80c080;
+    progress_bar_indeterminate_animation: 'progress_bar_gauge_animation.tiled';
+}
 
 /* ==========================================================================
    winframe.d
@@ -887,14 +877,12 @@ WindowFrame::body {
     padding: 3pt;
 }
 
-
 /* ==========================================================================
    appframe.d
 */
 
 AppFrame {
 }
-
 
 /* ==========================================================================
    dialog.d
@@ -906,6 +894,9 @@ DialogFrame {
     box-shadow: 0 4 18 #555;
 }
 
+@define-colors {
+    dialog_background: #eee;
+}
 
 /* ==========================================================================
    filedlg.d
@@ -934,6 +925,10 @@ FilePathPanelItem::button {
 
 FilePathPanelItem::button:hovered {
     background-color: #d0417fbf;
+}
+
+@define-colors {
+    file_dialog_dir_name_color: #000080;
 }
 
 /* ==========================================================================

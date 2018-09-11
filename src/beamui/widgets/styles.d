@@ -1082,48 +1082,26 @@ private void loadThemeFromCSS(Theme theme, StyleSheet stylesheet)
 private void applyAtRule(Theme theme, AtRule rule)
 {
     auto kw = rule.keyword;
-    auto ts = rule.content;
-    assert(ts.length > 0);
+    auto ps = rule.properties;
+    assert(ps.length > 0);
 
-    if (kw == "define-color")
+    if (kw == "define-colors")
     {
-        if (ts.length == 1)
+        foreach (p; ps)
         {
-            Log.e("CSS: should be two tokens in @define-color - name and color");
-            return;
-        }
-        if (ts.length > 2)
-        {
-            Log.w("CSS: too many tokens in @define-color - should be only name and color");
-        }
-        if (ts[0].type == TokenType.ident && ts[1].type == TokenType.hash)
-        {
-            string id = ts[0].text;
-            uint color = decodeHexColorCSS(ts[1 .. 2]);
+            string id = p.name;
+            uint color = decodeHexColorCSS(p.value);
             theme.setColor(id, color);
         }
-        else
-            Log.e("CSS: wrong token types in @define-color - should be name and color");
     }
-    else if (kw == "define-drawable")
+    else if (kw == "define-drawables")
     {
-        if (ts.length == 1)
+        foreach (p; ps)
         {
-            Log.e("CSS: should be two tokens in @define-drawable - name and string");
-            return;
+            string id = p.name;
+            string bg = decodeBackgroundCSS(p.value);
+            theme.setDrawable(id, bg);
         }
-        if (ts.length > 2)
-        {
-            Log.w("CSS: too many tokens in @define-drawable - should be only name and string");
-        }
-        if (ts[0].type == TokenType.ident && ts[1].type == TokenType.str)
-        {
-            string id = ts[0].text;
-            string value = ts[1].text;
-            theme.setDrawable(id, value);
-        }
-        else
-            Log.e("CSS: wrong token types in @define-drawable - should be name and string");
     }
     else
         Log.w("CSS: unknown at-rule keyword: ", kw);
@@ -1378,7 +1356,8 @@ string decodeBackgroundCSS(Token[] tokens) pure nothrow
     return tokens.emap!((t) {
         if (t.type == TokenType.func || t.type == TokenType.hash)
             return "#" ~ t.text;
-        if (t.type == TokenType.number || t.type == TokenType.dimension || t.type == TokenType.ident)
+        if (t.type == TokenType.number || t.type == TokenType.dimension ||
+            t.type == TokenType.ident || t.type == TokenType.str)
             return t.text;
         return null;
     }).efilter!(t => t !is null).join(',');
