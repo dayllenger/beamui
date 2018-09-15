@@ -41,14 +41,6 @@ MultilineLabel {
     max-lines: 0;
 }
 
-Label#tooltip {
-    margin: 2pt 7pt 2pt 1pt;
-    padding: 3pt;
-    box-shadow: 0 2 7 #888;
-    background-color: #222;
-    color: #eee;
-}
-
 Button {
     align: center;
     padding: 4pt;
@@ -930,4 +922,19 @@ SettingsPage::title {
     weight: 0;
     padding: 4pt 4pt 4pt 14pt;
     font-size: 120%;
+}
+
+/* ==========================================================================
+   Tooltips
+*/
+
+Label#tooltip {
+    padding: 3pt;
+    box-shadow: 0 2 7 #888;
+    background-color: #222;
+    color: #eee;
+}
+
+Popup#tooltip-popup {
+    padding: 2pt 10pt 2pt 1pt;
 }

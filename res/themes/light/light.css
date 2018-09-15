@@ -10,8 +10,6 @@ Label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 MultilineLabel { padding: 1pt; max-lines: 0; }
 
-Label#tooltip { margin: 2pt 7pt 2pt 1pt; padding: 3pt; box-shadow: 0 2 7 #888; background-color: #222; color: #eee; }
-
 Button { align: center; padding: 4pt; border: #aaa 1; background: linear(0deg, #eeeeee, #dddddd); text-flags: underline-hotkeys; focus-rect-color: #bbb; }
 
 Button:pressed, Button:checked { border: #417fbf 1; background: linear(170deg, #eeeeee, #dddddd); }
@@ -377,3 +375,8 @@ SettingsDialog::tree { weight: 3; margin: 8pt; padding: 4pt; border: #ee000000 1
 SettingsDialog::page { weight: 5; margin: 0 8pt 8pt 8pt; padding: 4pt; }
 
 SettingsPage::title { weight: 0; padding: 4pt 4pt 4pt 14pt; font-size: 120%; }
+
+/* ========================================================================== Tooltips */
+Label#tooltip { padding: 3pt; box-shadow: 0 2 7 #888; background-color: #222; color: #eee; }
+
+Popup#tooltip-popup { padding: 2pt 10pt 2pt 1pt; }

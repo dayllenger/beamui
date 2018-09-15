@@ -765,7 +765,8 @@ class Window : CustomEventTarget
     protected TooltipInfo _tooltip;
 
     /// Schedule tooltip for widget be shown with specified delay
-    void scheduleTooltip(Widget ownerWidget, long delay, PopupAlign alignment = PopupAlign.below, int x = 0, int y = 0)
+    void scheduleTooltip(Widget ownerWidget, long delay, PopupAlign alignment = PopupAlign.point,
+                         int x = int.min, int y = int.min)
     {
         debug (tooltips)
             Log.d("schedule tooltip");
@@ -796,7 +797,7 @@ class Window : CustomEventTarget
 
     /// Show tooltip immediately
     Popup showTooltip(Widget content, Widget anchor = null,
-            PopupAlign alignment = PopupAlign.center, int x = 0, int y = 0)
+            PopupAlign alignment = PopupAlign.center, int x = int.min, int y = int.min)
     {
         hideTooltip();
         debug (tooltips)
@@ -804,6 +805,12 @@ class Window : CustomEventTarget
         if (!content)
             return null;
         auto res = new Popup(content, this);
+        res.id = "tooltip-popup";
+        // default behaviour is to place tooltip under the mouse cursor
+        if (x == int.min)
+            x = _lastMouseX;
+        if (y == int.min)
+            y = _lastMouseY;
         res.anchor = PopupAnchor(anchor !is null ? anchor : _mainWidget, x, y, alignment);
         _tooltip.popup = res;
         return res;
@@ -1552,24 +1559,25 @@ class Window : CustomEventTarget
         // check tooltip
         if (event.action == MouseAction.move)
         {
-            if (_tooltip.popup)
-            {
-                if (_tooltip.popup.isPointInside(event.x, event.y))
-                {
-                    // freely move mouse inside of tooltip
-                    return true;
-                }
-                else
-                {
-                    import std.math : abs;
+            import std.math : abs;
 
-                    int threshold = 3;
-                    if (abs(_lastMouseX - event.x) > threshold || abs(_lastMouseY - event.y) > threshold)
-                        hideTooltip();
-                }
+            if (_tooltip.popup && _tooltip.popup.isPointInside(event.x, event.y))
+            {
+                // freely move mouse inside of tooltip
+                return true;
             }
+            int threshold = 3;
+            if (abs(_lastMouseX - event.x) > threshold || abs(_lastMouseY - event.y) > threshold)
+                hideTooltip();
             _lastMouseX = event.x;
             _lastMouseY = event.y;
+        }
+        if (event.action == MouseAction.buttonDown || event.action == MouseAction.wheel)
+        {
+            if (_tooltip.popup)
+            {
+                hideTooltip();
+            }
         }
 
         Popup modal = modalPopup();

@@ -1020,18 +1020,14 @@ public:
     Widget createTooltip(int mouseX, int mouseY, ref PopupAlign alignment, ref int x, ref int y)
     {
         // default implementation supports tooltips when tooltipText property is set
-        if (_tooltipText)
-        {
-            import beamui.widgets.controls;
+        import beamui.widgets.controls;
 
-            return new Label(_tooltipText).id("tooltip");
-        }
-        else
-            return null;
+        return _tooltipText ? new Label(_tooltipText).id("tooltip") : null;
     }
 
     /// Schedule tooltip
-    void scheduleTooltip(long delay = 300, PopupAlign alignment = PopupAlign.below, int x = 0, int y = 0)
+    void scheduleTooltip(long delay = 300, PopupAlign alignment = PopupAlign.point,
+                         int x = int.min, int y = int.min)
     {
         if (auto w = window)
             w.scheduleTooltip(this, delay, alignment, x, y);
