@@ -163,7 +163,7 @@ class Dialog : Column
                 };
             }
             _popup = _parentWindow.showPopup(_frame);
-            _popup.flags = PopupFlags.modal;
+            _popup.modal = true;
         }
         else
         {

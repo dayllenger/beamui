@@ -854,7 +854,7 @@ class Window : CustomEventTarget
                 _popups.length--;
                 destroy(p);
                 // force redraw
-                _mainWidget.invalidate();
+                _mainWidget.maybe.invalidate();
                 return true;
             }
         }
@@ -866,7 +866,7 @@ class Window : CustomEventTarget
     {
         foreach_reverse (p; _popups)
         {
-            if (p.flags & PopupFlags.modal)
+            if (p.modal)
                 return p;
         }
         return null;
@@ -1549,15 +1549,28 @@ class Window : CustomEventTarget
         if (!_mainWidget)
             return false;
 
-        bool actualChange = true;
+        // check tooltip
         if (event.action == MouseAction.move)
         {
-            actualChange = (_lastMouseX != event.x || _lastMouseY != event.y);
+            if (_tooltip.popup)
+            {
+                if (_tooltip.popup.isPointInside(event.x, event.y))
+                {
+                    // freely move mouse inside of tooltip
+                    return true;
+                }
+                else
+                {
+                    import std.math : abs;
+
+                    int threshold = 3;
+                    if (abs(_lastMouseX - event.x) > threshold || abs(_lastMouseY - event.y) > threshold)
+                        hideTooltip();
+                }
+            }
             _lastMouseX = event.x;
             _lastMouseY = event.y;
         }
-        if (actualChange)
-            hideTooltip();
 
         Popup modal = modalPopup();
 
@@ -1687,16 +1700,14 @@ class Window : CustomEventTarget
             {
                 if (p is modal)
                     break;
-                if (!insideOneOfPopups)
+                if (insideOneOfPopups)
                 {
-                    if (event.action == MouseAction.buttonDown)
-                        return true; // mouse button down should do nothing when click outside when popup visible
-                    if (p.onMouseEventOutside(event))
-                        return true; // mouse button up should do nothing when click outside when popup visible
+                    if (dispatchMouseEvent(p, event, cursorIsSet))
+                        return true;
                 }
                 else
                 {
-                    if (dispatchMouseEvent(p, event, cursorIsSet))
+                    if (p.onMouseEventOutside(event))
                         return true;
                 }
             }

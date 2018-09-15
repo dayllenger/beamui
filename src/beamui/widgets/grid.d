@@ -1235,7 +1235,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             import beamui.widgets.popup;
 
             auto popup = window.showPopup(menu, this, PopupAlign.point | PopupAlign.right, xx, yy);
-            popup.flags = PopupFlags.closeOnClickOutside;
             popup.popupClosed = (Popup p) { p.removeChild(menu); };
         }
     }

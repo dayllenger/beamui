@@ -1013,7 +1013,6 @@ class FilePathPanelItem : Row
             }();
         }
         auto popup = window.showPopup(menu, _button, PopupAlign.below);
-        popup.flags = PopupFlags.closeOnClickOutside;
         return true;
     }
 }

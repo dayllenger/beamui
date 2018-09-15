@@ -525,7 +525,6 @@ class Menu : ListWidget
         _openedSubmenuIndex = itemIndex;
         auto popup = window.showPopup(submenu, item,
                 orientation == Orientation.horizontal ? PopupAlign.below : PopupAlign.right);
-        popup.flags = PopupFlags.closeOnClickOutside;
         popup.popupClosed = &onSubmenuPopupClosed;
 
         if (navigatingUsingKeys)

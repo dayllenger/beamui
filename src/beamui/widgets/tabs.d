@@ -566,7 +566,6 @@ class TabControl : WidgetGroupDefaultDrawing
         {
             auto popup = window.showPopup(menu, _moreButton,
                     tabAlignment == Align.top ? PopupAlign.below : PopupAlign.above);
-            popup.flags = PopupFlags.closeOnClickOutside;
             menu.selectItem(tabIndex(selectedTabID));
             return true;
         }

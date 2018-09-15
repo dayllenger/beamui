@@ -45,22 +45,24 @@ struct PopupAnchor
     PopupAlign alignment = PopupAlign.center;
 }
 
-/// Popup behavior flags
-enum PopupFlags : uint
+/// Popup close policy defines when we want to close popup
+enum PopupClosePolicy : uint // TODO: on(Press|Release)OutsideParent, onEscapeKey
 {
-    /// Close popup when mouse is moved outside this popup
-    closeOnMouseMoveOutside = 1,
+    /// Close manually
+    none = 0,
+    /// Close popup when mouse button pressed outside of its bounds
+    onPressOutside = 1,
     /// Close popup when mouse button clicked outside of its bounds
-    closeOnClickOutside = 2,
-    /// Modal popup - keypresses and mouse events can be routed to this popup only
-    modal = 4,
+    onReleaseOutside = 2,
 }
 
 /// Popup widget container
 class Popup : LinearLayout
 {
     PopupAnchor anchor;
-    PopupFlags flags;
+    PopupClosePolicy closePolicy = PopupClosePolicy.onPressOutside;
+    /// Modal popup - keypresses and mouse events can be routed to this popup only
+    bool modal;
 
     /// Popup close signal
     Signal!(void delegate(Popup)) popupClosed;
@@ -82,29 +84,15 @@ class Popup : LinearLayout
     /// Called for mouse activity outside shown popup bounds
     bool onMouseEventOutside(MouseEvent event)
     {
-        if (visibility != Visibility.visible)
-            return false;
-        if (flags & PopupFlags.closeOnClickOutside)
+        with (PopupClosePolicy)
         {
-            if (event.action == MouseAction.buttonUp)
+            if (closePolicy == none || visibility != Visibility.visible)
+                return false;
+            if (closePolicy & onPressOutside && event.action == MouseAction.buttonDown ||
+                closePolicy & onReleaseOutside && event.action == MouseAction.buttonUp)
             {
-                // clicked outside - close popup
                 close();
                 return true;
-            }
-        }
-        if (flags & PopupFlags.closeOnMouseMoveOutside)
-        {
-            if (event.action == MouseAction.move || event.action == MouseAction.wheel)
-            {
-                int threshold = 3;
-                if (event.x < _box.x - threshold || event.x > _box.x + _box.w + threshold ||
-                        event.y < _box.y - threshold || event.y > _box.y + _box.h + threshold)
-                {
-                    Log.d("Closing popup due to PopupFlags.closeOnMouseMoveOutside flag");
-                    close();
-                    return false;
-                }
             }
         }
         return false;

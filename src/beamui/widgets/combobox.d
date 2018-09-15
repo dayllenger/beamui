@@ -157,7 +157,6 @@ class ComboBoxBase : Row
             return; // don't show empty popup
         _popupList = createPopup();
         _popup = window.showPopup(_popupList, this, PopupAlign.below | PopupAlign.fitAnchorSize);
-        _popup.flags = PopupFlags.closeOnClickOutside;
         _popup.popupClosed = delegate(Popup source) {
             _lastPopupCloseTimestamp = currentTimeMillis;
             _popup = null;

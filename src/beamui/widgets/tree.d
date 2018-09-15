@@ -712,7 +712,6 @@ class TreeItemWidget : Row
                 {
                     auto popup = window.showPopup(menu, this,
                             PopupAlign.point | PopupAlign.right, event.x, event.y);
-                    popup.flags = PopupFlags.closeOnClickOutside;
                     return true;
                 }
             }
