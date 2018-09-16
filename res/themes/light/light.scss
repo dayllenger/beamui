@@ -125,15 +125,15 @@ CheckBox::icon {
     max-height: 10pt;
     background: btn_check_off;
 
-    &:not(checked):hovered {
+    &:hovered {
         background: btn_check_off_focused;
     }
 
-    &:not(checked):pressed {
+    &:pressed {
         background: btn_check_off_pressed;
     }
 
-    &:not(checked):not(enabled) {
+    &:not(enabled) {
         opacity: 0.4;
     }
 
@@ -158,15 +158,15 @@ CheckBox::icon {
 RadioButton::icon {
     background: btn_radio_off;
 
-    &:not(checked):hovered {
+    &:hovered {
         background: btn_radio_off_focused;
     }
 
-    &:not(checked):pressed {
+    &:pressed {
         background: btn_radio_off_pressed;
     }
 
-    &:not(checked):not(enabled) {
+    &:not(enabled) {
         opacity: 0.4;
     }
 
@@ -192,7 +192,7 @@ SwitchButton {
     align: center;
     background: switch_off;
 
-    &:not(checked):not(enabled) {
+    &:not(enabled) {
         opacity: 0.4;
     }
 
@@ -272,7 +272,7 @@ ListWidget {
     border: #aaa 1;
     background-color: #fff;
 
-    &:enabled:focused {
+    &:focused {
         border: $focused-border-color 1;
     }
 
@@ -327,7 +327,7 @@ ComboBox {
             color: $secondary-color;
         }
 
-        &:enabled:hovered {
+        &:hovered {
             color: $hovered-label-color;
         }
     }
@@ -347,7 +347,7 @@ ComboBox {
         border: #aaa 1;
         background-color: fade-out(white, 0.25);
 
-        &:enabled:focused {
+        &:focused {
             border: #aa2040ff 1;
         }
 
@@ -498,7 +498,7 @@ StringGridWidget, FileDialog::grid {
     background-color: #fff;
     font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console";
 
-    &:enabled:focused {
+    &:focused {
         border: $focused-border-color 1;
     }
 
@@ -657,7 +657,7 @@ EditLine {
     border: #aaa 1;
     background-color: #fff;
 
-    &:enabled:focused {
+    &:focused {
         border: $focused-border-color 1;
     }
 
@@ -673,7 +673,7 @@ EditBox, LogWidget {
     background-color: #fff;
     font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console";
 
-    &:enabled:focused {
+    &:focused {
         border: $focused-border-color 1;
     }
 

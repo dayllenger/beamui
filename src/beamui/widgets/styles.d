@@ -772,11 +772,16 @@ private:
         debug (styles)
             Log.d("Creating substate: ", specified);
         // TODO: inherit from parent state style
+        // TODO: inherit from less specific state style
         auto s = new Style;
         s.parent = this;
         stateStyles ~= StateStyle(s, specified, enabled);
-        // sort state styles by specificity. TODO: find a better approach to choose state styles
-        stateStyles.sort!((a, b) => a.specified < b.specified);
+
+        import core.bitop;
+
+        // sort state styles by state value and its bit count
+        stateStyles.sort!((a, b) => a.specified * a.specified * popcnt(a.specified) >
+                                    b.specified * b.specified * popcnt(b.specified));
         return s;
     }
 }

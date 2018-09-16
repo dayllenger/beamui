@@ -550,31 +550,32 @@ enum State : uint
     /// Indefinite state
     unspecified = 0, // TODO: think about it
     /// State not specified / normal
-    normal = 4 | 256, // normal is enabled
-    /// Pressed (e.g. clicked by mouse)
-    pressed = 1,
-    /// Widget has focus
-    focused = 2,
-    /// Widget can process mouse and key events
-    enabled = 4,
+    normal = enabled | windowFocused,
+
     /// Mouse pointer is over this widget
-    hovered = 8, // mouse pointer is over control, buttons not pressed
-    /// Widget is selected
-    selected = 16,
-    /// Widget can be checked
-    checkable = 32,
-    /// Widget is checked
-    checked = 64,
+    hovered = 1, // mouse pointer is over control, buttons not pressed
     /// Widget is activated
-    activated = 128,
+    activated = 1 << 1,
+    /// Widget is selected
+    selected = 1 << 2,
+    /// Widget can be checked
+    checkable = 1 << 3,
+    /// Widget is checked
+    checked = 1 << 4,
+    /// Widget has focus
+    focused = 1 << 5,
+    /// Pressed (e.g. clicked by mouse)
+    pressed = 1 << 6,
+    /// Widget can process mouse and key events
+    enabled = 1 << 7,
     /// Window is focused
-    windowFocused = 256,
+    windowFocused = 1 << 8,
     /// Widget is default control for form (should be focused when window gains focus first time)
-    default_ = 512,
+    default_ = 1 << 9,
     /// Widget has been focused by keyboard navigation
-    keyboardFocused = 1024,
+    keyboardFocused = 1 << 10,
     /// Returns state of parent instead of widget's state when requested
-    parent = 0x10000,
+    parent = 1 << 20,
 }
 
 /// Subpixel rendering mode for fonts (aka ClearType)
