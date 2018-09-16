@@ -1,10 +1,12 @@
 $main-color: #4e93da;
 $secondary-color: #417fbf;
+$hovered-color: lighten($main-color, 35%);
+$secondary-hovered-color: lighten($secondary-color, 35%);
 $disabled-color: #f0f0f0;
 $text-color: #404040;
 $inverse-text-color: #f0f0f0;
+$hovered-label-color: mix($text-color, $main-color, 60%);
 $disabled-text-color: fade-out($text-color, 0.5);
-$hovered-label-color: mix($text-color, $main-color, 50%);
 $focused-border-color: saturate($main-color, 30%);
 
 /*
@@ -50,13 +52,13 @@ Button {
     text-flags: underline-hotkeys;
     focus-rect-color: #bbb;
 
+    &:hovered:not(checked) {
+        border: $main-color 1;
+    }
+
     &:pressed, &:checked {
         border: $secondary-color 1;
         background: linear(170deg, #eeeeee, #dddddd);
-    }
-
-    &:hovered:not(checked) {
-        border: $main-color 1;
     }
 
     &:not(enabled) {
@@ -78,6 +80,10 @@ Button {
 
         &:hovered {
             color: $hovered-label-color;
+        }
+
+        &:pressed {
+            color: $secondary-color;
         }
 
         &:not(enabled) {
@@ -229,16 +235,16 @@ ResizerWidget {
     min-width: 3pt;
     min-height: 3pt;
 
+    &:hovered {
+        background-color: fade-out(#ffff00, 0.8);
+    }
+
     &:focused {
         background-color: fade-out(#c0c000, 0.2);
     }
 
     &:pressed {
         background-color: fade-out($main-color, 0.2);
-    }
-
-    &:hovered {
-        background-color: fade-out(#ffff00, 0.8);
     }
 }
 
@@ -285,7 +291,7 @@ StringListAdapter::item, IconStringListAdapter::item {
     padding: 4pt 2pt;
 
     &:hovered {
-        background-color: lighten($main-color, 35%);
+        background-color: $hovered-color;
     }
 
     &:focused, &:selected {
@@ -304,13 +310,13 @@ ComboBox {
     border: #aaa 1;
     background: linear(0deg, #eeeeee, #dddddd);
 
+    &:hovered {
+        border: $main-color 1;
+    }
+
     &:pressed {
         border: $secondary-color 1;
         background: linear(170deg, #eeeeee, #dddddd);
-    }
-
-    &:hovered {
-        border: $main-color 1;
     }
 
     &:not(enabled) {
@@ -323,12 +329,12 @@ ComboBox {
         align: left vcenter;
         padding: 2pt;
 
-        &:pressed {
-            color: $secondary-color;
-        }
-
         &:hovered {
             color: $hovered-label-color;
+        }
+
+        &:pressed {
+            color: $secondary-color;
         }
     }
 
@@ -387,7 +393,7 @@ MenuItem {
     text-flags: parent;
 
     &:hovered {
-        background-color: lighten($main-color, 35%);
+        background-color: $hovered-color;
     }
 
     &:focused {
@@ -457,7 +463,7 @@ TreeItemWidget {
         text-flags: parent;
 
         &:hovered {
-            background-color: lighten($main-color, 35%);
+            background-color: $secondary-hovered-color;
         }
 
         &:pressed {
@@ -543,13 +549,13 @@ SliderButton {
     border: #aaa 1;
     background: linear(-80deg, #eeeeee, #dddddd);
 
+    &:hovered {
+        border: $main-color 1;
+    }
+
     &:pressed {
         border: $secondary-color 1;
         background: linear(100deg, #eeeeee, #dddddd);
-    }
-
-    &:hovered {
-        border: $main-color 1;
     }
 
     &:not(enabled) {
@@ -881,7 +887,7 @@ FilePathPanelItem {
     }
 
     &::label:hovered {
-        background-color: lighten($secondary-color, 35%);
+        background-color: $secondary-hovered-color;
     }
 
     &::button {
@@ -889,7 +895,7 @@ FilePathPanelItem {
     }
 
     &::button:hovered {
-        background-color: lighten($secondary-color, 35%);
+        background-color: $secondary-hovered-color;
     }
 }
 
