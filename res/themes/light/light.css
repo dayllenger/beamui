@@ -24,7 +24,7 @@ Button::icon:not(enabled), Button::label:not(enabled) { opacity: 0.4; }
 
 Button::label { text-flags: underline-hotkeys; }
 
-Button::label:hovered { color: #4e93da; }
+Button::label:hovered { color: #476a8d; }
 
 Button::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
@@ -40,7 +40,7 @@ CheckBox { padding: 2pt; }
 
 CheckBox::label, RadioButton::label { align: left vcenter; }
 
-CheckBox::label:hovered, RadioButton::label:hovered { color: #4e93da; }
+CheckBox::label:hovered, RadioButton::label:hovered { color: #476a8d; }
 
 CheckBox::label:not(enabled), RadioButton::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
@@ -117,9 +117,9 @@ ListWidget:not(enabled) { background-color: #f0f0f0; }
 
 StringListAdapter::item, IconStringListAdapter::item { padding: 4pt 2pt; }
 
-StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { background: rgba(68, 170, 255, 0.2); }
+StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { background-color: #e2edf9; }
 
-StringListAdapter::item:focused, StringListAdapter::item:selected, IconStringListAdapter::item:focused, IconStringListAdapter::item:selected { background: #3399ff; color: #f0f0f0; }
+StringListAdapter::item:focused, StringListAdapter::item:selected, IconStringListAdapter::item:focused, IconStringListAdapter::item:selected { background-color: #4e93da; color: #f0f0f0; }
 
 /* ========================================================================== combobox.d */
 ComboBox { min-width: 40pt; padding: 4pt 3pt; border: #aaa 1; background: linear(0deg, #eeeeee, #dddddd); }
@@ -134,7 +134,7 @@ ComboBox::body { min-width: 40pt; align: left vcenter; padding: 2pt; }
 
 ComboBox::body:pressed { color: #417fbf; }
 
-ComboBox::body:enabled:hovered { color: #4e93da; }
+ComboBox::body:enabled:hovered { color: #476a8d; }
 
 ComboBox::button { align: center; padding: 2pt 3pt; }
 
@@ -153,11 +153,11 @@ MenuBar { weight: 0; margin: 0; padding: 0; border: none; box-shadow: 0 0 5 #888
 
 MenuItem { padding: 4pt 5pt; text-flags: parent; }
 
-MenuItem:hovered { background: rgba(68, 170, 255, 0.2); }
+MenuItem:hovered { background-color: #e2edf9; }
 
-MenuItem:focused { background: #3388ff; }
+MenuItem:focused { background-color: #4e93da; }
 
-MenuItem:selected { background: #33aaff; }
+MenuItem:selected { background-color: #417fbf; }
 
 MenuItem::separator { min-width: 1; min-height: 1; background: #bbb; }
 
@@ -182,11 +182,11 @@ TreeItemWidget::expander { align: left vcenter; text-flags: parent; }
 
 TreeItemWidget::body { align: left vcenter; padding: 4pt 2pt; text-flags: parent; }
 
-TreeItemWidget::body:hovered { background: rgba(68, 170, 255, 0.2); }
+TreeItemWidget::body:hovered { background-color: #e2edf9; }
 
-TreeItemWidget::body:pressed { background: #3399ff; }
+TreeItemWidget::body:pressed { background-color: #417fbf; }
 
-TreeItemWidget::body:focused, TreeItemWidget::body:selected { background: #44aaff; }
+TreeItemWidget::body:focused, TreeItemWidget::body:selected { background-color: #4e93da; }
 
 TreeItemWidget::icon, TreeItemWidget::label { align: left vcenter; text-flags: parent; }
 
@@ -359,11 +359,11 @@ FilePathPanelButtons { padding: 3pt 0 6pt 0; }
 
 FilePathPanelItem::label { align: center; padding: 3pt 2pt; }
 
-FilePathPanelItem::label:hovered { background-color: rgba(65, 127, 191, 0.2); }
+FilePathPanelItem::label:hovered { background-color: #c7d9ec; }
 
 FilePathPanelItem::button { padding: 1pt 0; }
 
-FilePathPanelItem::button:hovered { background-color: rgba(65, 127, 191, 0.2); }
+FilePathPanelItem::button:hovered { background-color: #c7d9ec; }
 
 @define-colors { file_dialog_dir_name: #000080; }
 

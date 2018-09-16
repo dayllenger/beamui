@@ -1,9 +1,10 @@
 $main-color: #4e93da;
 $secondary-color: #417fbf;
 $disabled-color: #f0f0f0;
-$main-text-color: #404040;
-$secondary-text-color: #f0f0f0;
-$disabled-text-color: fade-out($main-text-color, 0.5);
+$text-color: #404040;
+$inverse-text-color: #f0f0f0;
+$disabled-text-color: fade-out($text-color, 0.5);
+$hovered-label-color: mix($text-color, $main-color, 50%);
 $focused-border-color: saturate($main-color, 30%);
 
 /*
@@ -16,7 +17,7 @@ $focused-border-color: saturate($main-color, 30%);
     font-face: "Helvetica Neue, Liberation Sans, DejaVu Sans, Verdana, Arial, Helvetica, Roboto, Droid Sans";
     font-family: sans-serif;
     font-size: 10pt;
-    color: $main-text-color;
+    color: $text-color;
 }
 
 @define-colors {
@@ -76,7 +77,7 @@ Button {
         text-flags: underline-hotkeys;
 
         &:hovered {
-            color: $main-color;
+            color: $hovered-label-color;
         }
 
         &:not(enabled) {
@@ -111,7 +112,7 @@ CheckBox::label, RadioButton::label {
     align: left vcenter;
 
     &:hovered {
-        color: $main-color;
+        color: $hovered-label-color;
     }
 
     &:not(enabled) {
@@ -284,12 +285,12 @@ StringListAdapter::item, IconStringListAdapter::item {
     padding: 4pt 2pt;
 
     &:hovered {
-        background: fade-out(#44aaff, 0.8);
+        background-color: lighten($main-color, 35%);
     }
 
     &:focused, &:selected {
-        background: #3399ff;
-        color: $secondary-text-color;
+        background-color: $main-color;
+        color: $inverse-text-color;
     }
 }
 
@@ -327,7 +328,7 @@ ComboBox {
         }
 
         &:enabled:hovered {
-            color: $main-color;
+            color: $hovered-label-color;
         }
     }
 
@@ -351,7 +352,7 @@ ComboBox {
         }
 
         &:not(enabled) {
-            background-color: fade-out($secondary-text-color, 0.25);
+            background-color: fade-out($inverse-text-color, 0.25);
         }
     }
 }
@@ -386,15 +387,15 @@ MenuItem {
     text-flags: parent;
 
     &:hovered {
-        background: fade-out(#44aaff, 0.8);
+        background-color: lighten($main-color, 35%);
     }
 
     &:focused {
-        background: #3388ff;
+        background-color: $main-color;
     }
 
     &:selected {
-        background: #33aaff;
+        background-color: $secondary-color;
     }
 
     &::separator {
@@ -456,15 +457,15 @@ TreeItemWidget {
         text-flags: parent;
 
         &:hovered {
-            background: fade-out(#44aaff, 0.8);
+            background-color: lighten($main-color, 35%);
         }
 
         &:pressed {
-            background: #3399ff;
+            background-color: $secondary-color;
         }
 
         &:focused, &:selected {
-            background: #44aaff;
+            background-color: $main-color;
         }
     }
 
@@ -478,7 +479,7 @@ TreeItemWidget {
     }
 
     &::label:focused, &::label:selected {
-        color: $secondary-text-color;
+        color: $inverse-text-color;
     }
 
     &::label:default {
@@ -880,7 +881,7 @@ FilePathPanelItem {
     }
 
     &::label:hovered {
-        background-color: fade-out($secondary-color, 0.8);
+        background-color: lighten($secondary-color, 35%);
     }
 
     &::button {
@@ -888,7 +889,7 @@ FilePathPanelItem {
     }
 
     &::button:hovered {
-        background-color: fade-out($secondary-color, 0.8);
+        background-color: lighten($secondary-color, 35%);
     }
 }
 
