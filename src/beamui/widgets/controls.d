@@ -623,7 +623,7 @@ class CheckBox : LinearLayout
     override protected bool handleClick()
     {
         checked = !checked;
-        return super.handleClick();
+        return clicked.assigned ? clicked(this) : false;
     }
 }
 
@@ -633,6 +633,18 @@ class RadioButton : CheckBox
     this(dstring labelText = null)
     {
         super(labelText);
+    }
+
+    override protected bool handleClick()
+    {
+        checked = true;
+        return clicked.assigned ? clicked(this) : false;
+    }
+
+    override protected void handleCheckChange(bool checked)
+    {
+        if (!blockUnchecking)
+            uncheckSiblings();
     }
 
     private bool blockUnchecking = false;
@@ -657,18 +669,6 @@ class RadioButton : CheckBox
                 rb.checked = false;
             }
         }
-    }
-
-    override protected bool handleClick()
-    {
-        uncheckSiblings();
-        return super.handleClick();
-    }
-
-    override protected void handleCheckChange(bool checked)
-    {
-        if (!blockUnchecking)
-            uncheckSiblings();
     }
 }
 
