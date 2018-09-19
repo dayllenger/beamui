@@ -287,6 +287,16 @@ ListWidget {
     }
 }
 
+StringListWidget {
+    &:focused {
+        border: $focused-border-color 1;
+    }
+
+    &:not(enabled) {
+        background-color: $disabled-color;
+    }
+}
+
 StringListAdapter::item, IconStringListAdapter::item {
     padding: 4pt 2pt;
 
@@ -711,6 +721,14 @@ SourceEdit {
     font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console";
     font-family: monospace;
     font-size: 10pt;
+
+    &:focused {
+        border: $focused-border-color 1;
+    }
+
+    &:not(enabled) {
+        background-color: $disabled-color;
+    }
 }
 
 @define-colors {

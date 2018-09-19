@@ -117,6 +117,10 @@ ListWidget:focused { border: #2e93fa 1; }
 
 ListWidget:not(enabled) { background-color: #f0f0f0; }
 
+StringListWidget:focused { border: #2e93fa 1; }
+
+StringListWidget:not(enabled) { background-color: #f0f0f0; }
+
 StringListAdapter::item, IconStringListAdapter::item { padding: 4pt 2pt; }
 
 StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { background-color: #e2edf9; }
@@ -291,6 +295,10 @@ LogWidget { font-family: monospace; font-size: 9pt; }
 
 /* ========================================================================== srcedit.d */
 SourceEdit { font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console"; font-family: monospace; font-size: 10pt; }
+
+SourceEdit:focused { border: #2e93fa 1; }
+
+SourceEdit:not(enabled) { background-color: #f0f0f0; }
 
 @define-colors { editor_left_pane_background: #f4f4f4;
   editor_left_pane_background2: #ffffff;

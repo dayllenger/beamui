@@ -174,14 +174,14 @@ class WidgetListAdapter : ListAdapterBase
     {
         return _widgets.get(index).resetState(flags).state;
     }
-    /// Add item
+    /// Add or insert item
     WidgetListAdapter add(Widget item, int index = -1)
     {
         _widgets.insert(item, index);
         updateViews();
         return this;
     }
-    /// Remove item
+    /// Remove item and destroy it
     WidgetListAdapter remove(int index)
     {
         auto item = _widgets.remove(index);
