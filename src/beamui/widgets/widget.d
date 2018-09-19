@@ -1641,19 +1641,19 @@ public:
         return bs;
     }
 
-    /// Calculate minimum size of widget
+    /// Calculate minimum size of widget content
     Size computeMinSize()
     {
         return Size(0, 0);
     }
 
-    /// Calculate natural (preferred) size of widget
+    /// Calculate natural (preferred) size of widget content
     Size computeNaturalSize()
     {
         return Size(0, 0);
     }
 
-    /// Calculate maximum size of widget
+    /// Calculate maximum size of widget content
     Size computeMaxSize()
     {
         return Size.none;

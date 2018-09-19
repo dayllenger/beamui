@@ -116,10 +116,10 @@ class GroupBox : LinearLayout
     override Boundaries computeBoundaries()
     {
         Boundaries bs = super.computeBoundaries();
-        Size csz = _caption.computeNaturalSize();
+        int cw = _caption.computeBoundaries().nat.w;
         // expand if the caption is bigger than the content
         // frame is already calculated
-        int w = csz.w + _topFrameLeft + _topFrameRight;
+        int w = cw + _topFrameLeft + _topFrameRight;
         bs.nat.w = min(max(bs.nat.w, w), bs.max.w);
         return bs;
     }
@@ -132,9 +132,9 @@ class GroupBox : LinearLayout
 
         super.layout(geom);
         // layout the caption
-        Size csz = _caption.computeNaturalSize();
-        int cw = geom.w - _topFrameLeft - _topFrameRight;
-        Box b = Box(geom.x + _topFrameLeft, geom.y, min(csz.w, cw), _captionHeight);
+        int cw = _caption.computeBoundaries().nat.w;
+        int cwinv = geom.w - _topFrameLeft - _topFrameRight;
+        Box b = Box(geom.x + _topFrameLeft, geom.y, min(cw, cwinv), _captionHeight);
         _caption.layout(b);
     }
 
