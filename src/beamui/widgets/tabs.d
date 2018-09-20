@@ -134,7 +134,7 @@ class TabItem
 
     void updateAccessTs()
     {
-        _lastAccessTs = _lastAccessCounter++; //std.datetime.Clock.currStdTime;
+        _lastAccessTs = _lastAccessCounter++;
     }
 }
 
@@ -233,17 +233,6 @@ class TabControl : WidgetGroupDefaultDrawing
 {
     @property
     {
-        /// When true, more button is visible
-        bool enableMoreButton()
-        {
-            return _moreButton.visibility == Visibility.visible;
-        }
-        /// ditto
-        void enableMoreButton(bool flagVisible)
-        {
-            _moreButton.visibility = flagVisible ? Visibility.visible : Visibility.gone;
-        }
-
         /// More button custom icon
         string moreButtonIcon()
         {
@@ -272,16 +261,18 @@ class TabControl : WidgetGroupDefaultDrawing
 
     /// When true, shows close buttons in tabs
     bool enableCloseButton;
-    /// When true, automatically generate popup menu for more button - allowing to select tab from list
-    bool autoMoreButtonMenu = true;
+    /// When true, more button is visible
+    bool enableMoreButton = true;
 
     Align tabAlignment;
+
+    import std.typecons : Tuple, tuple;
 
     protected
     {
         TabItem[] _items;
         Button _moreButton;
-        TabItemWidget[] _sortedItems;
+        Tuple!(TabItem, size_t)[] _sortedItems;
 
         string _tabStyle;
         string _tabButtonStyle;
@@ -355,17 +346,15 @@ class TabControl : WidgetGroupDefaultDrawing
         // TODO:
     }
 
-    static bool accessTimeComparator(TabItemWidget a, TabItemWidget b)
-    {
-        return (a.tabItem.lastAccessTs > b.tabItem.lastAccessTs);
-    }
-
-    protected TabItemWidget[] sortedItems()
+    protected Tuple!(TabItem, size_t)[] sortedItems()
     {
         _sortedItems.length = _items.length;
-        foreach (i; 0 .. cast(int)_items.length)
-            _sortedItems[i] = cast(TabItemWidget)_children.get(i + 1);
-        _sortedItems.sort!accessTimeComparator;
+        foreach (i, it; _items)
+        {
+            _sortedItems[i][0] = it;
+            _sortedItems[i][1] = i;
+        }
+        _sortedItems.sort!((a, b) => a[0].lastAccessTs > b[0].lastAccessTs);
         return _sortedItems;
     }
 
@@ -376,17 +365,17 @@ class TabControl : WidgetGroupDefaultDrawing
             return -1;
         if (_items.length == 1)
             return 0;
-        TabItemWidget[] items = sortedItems();
-        foreach (i; 0 .. cast(int)items.length)
+        auto items = sortedItems();
+        foreach (i; 0 .. items.length)
         {
-            if (items[i].id == _selectedTabID)
+            if (items[i][0].id == _selectedTabID)
             {
-                int next = i + direction;
+                size_t next = i + direction;
                 if (next < 0)
-                    next = cast(int)(items.length - 1);
+                    next = items.length - 1;
                 if (next >= items.length)
                     next = 0;
-                return tabIndex(items[next].id);
+                return tabIndex(items[next][0].id);
             }
         }
         return -1;
@@ -515,7 +504,11 @@ class TabControl : WidgetGroupDefaultDrawing
             return;
         }
         if (_children.get(index + 1).compareID(_selectedTabID))
+        {
+            if (updateAccess)
+                updateAccessTs();
             return; // already selected
+        }
         string previousSelectedTab = _selectedTabID;
         for (int i = 1; i < _children.count; i++)
         {
@@ -581,22 +574,23 @@ class TabControl : WidgetGroupDefaultDrawing
                 return menu;
             }
         }
-        if (autoMoreButtonMenu)
-        {
-            if (!tabCount)
-                return null;
 
-            auto res = new Menu;
-            foreach (i, item; _items)
+        if (!tabCount)
+            return null;
+
+        auto res = new Menu;
+        foreach (i; 1 .. _children.count)
+        {
+            // only hidden tabs should appear in the menu
+            if (_children.get(i).visibility == Visibility.visible)
+                continue;
+
+            (int idx) // separate function because of the loop
             {
-                (int idx) // separate function because of the loop
-                {
-                    res.addAction(item.text, null, { selectTab(idx, true); });
-                }(cast(int)i);
-            }
-            return res;
+                res.addAction(_items[idx].text, null, { selectTab(idx, true); });
+            }(i - 1);
         }
-        return null;
+        return res;
     }
 
     Size[] itemSizes;
@@ -607,7 +601,7 @@ class TabControl : WidgetGroupDefaultDrawing
 
         Boundaries bs;
         // measure 'more' button
-        if (_moreButton.visibility == Visibility.visible)
+        if (enableMoreButton)
         {
             bs = _moreButton.computeBoundaries();
             itemSizes[0] = bs.nat;
@@ -636,32 +630,42 @@ class TabControl : WidgetGroupDefaultDrawing
 
         _box = geom;
         applyPadding(geom);
-        // more button
-        if (_moreButton.visibility == Visibility.visible)
-        {
-            Size msz = itemSizes[0];
-            _moreButton.layout(
-                Box(geom.x + geom.w - msz.w, geom.y + (geom.h - msz.h) / 2, // TODO: generalize?
-                msz.w, geom.h));
-            geom.w -= msz.w;
-        }
+
+        // consider more button space if it is enabled
+        if (enableMoreButton)
+            geom.w -= itemSizes[0].w;
+
         // tabs
         // update visibility
-        // TODO
-        /+
+        bool needMoreButton;
         int w = 0;
-        foreach (widget; sortedItems())
+        foreach (item; sortedItems())
         {
-            if (w + widget.computedWidth <= cb.w)
+            size_t idx = item[1] + 1;
+            auto widget = _children.get(cast(int)idx);
+            if (w + itemSizes[idx].w <= geom.w)
             {
-                w += widget.computedWidth;
+                w += itemSizes[idx].w;
                 widget.visibility = Visibility.visible;
             }
             else
             {
                 widget.visibility = Visibility.gone;
+                needMoreButton = true;
             }
-        }+/
+        }
+        // more button
+        if (enableMoreButton && needMoreButton)
+        {
+            _moreButton.visibility = Visibility.visible;
+            Size msz = itemSizes[0];
+            _moreButton.layout(Box(geom.x + geom.w, geom.y + (geom.h - msz.h) / 2, // TODO: generalize?
+                                   msz.w, geom.h));
+        }
+        else
+        {
+            _moreButton.visibility = Visibility.gone;
+        }
         // layout visible items
         int pen;
         foreach (i; 1 .. _children.count)
@@ -670,7 +674,7 @@ class TabControl : WidgetGroupDefaultDrawing
             if (tab.visibility != Visibility.visible)
                 continue;
 
-            int w = itemSizes[i].w;
+            w = itemSizes[i].w;
             tab.layout(Box(geom.x + pen, geom.y, w, geom.h));
             pen += w;
         }

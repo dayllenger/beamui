@@ -242,7 +242,7 @@ PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
   scrollbar_indicator_horizontal: none; }
 
 /* ========================================================================== tabs.d */
-TabControl::more { padding: 0 0 2pt 2pt; }
+TabControl::more { padding: 0 0 2pt 4pt; }
 
 TabHost { padding: 6pt; background-color: #f2f4f5; }
 
