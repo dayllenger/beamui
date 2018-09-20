@@ -162,7 +162,9 @@ class GLDrawBuf : DrawBuf
     {
         if (!clipLine(_clipRect, p1, p2))
             return;
-        glSupport.queue.addLine(Rect(p1, p2), color, color);
+        color = applyAlpha(color);
+        if (!isFullyTransparentColor(color))
+            glSupport.queue.addLine(p1, p2, color, color);
     }
 
     /// Draw filled triangle in float coordinates; clipping is already applied

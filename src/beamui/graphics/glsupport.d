@@ -17,7 +17,6 @@ module beamui.graphics.glsupport;
 import beamui.core.config;
 
 static if (USE_OPENGL):
-import beamui.core.math3d;
 import std.array;
 import std.conv;
 import std.string;
@@ -1223,8 +1222,7 @@ private final class OpenGLQueue
     }
 
     /// Add line to queue
-    /// Rc is a line (left, top) - (right, bottom)
-    void addLine(Rect rc, uint color1, uint color2)
+    void addLine(Point p1, Point p2, uint color1, uint color2)
     {
         if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.line)
         {
@@ -1236,10 +1234,11 @@ private final class OpenGLQueue
         uint[2] colorsARGB = [color1, color2];
         float[] colors = convertColors(colorsARGB);
 
-        float x0 = cast(float)(rc.left);
-        float y0 = cast(float)(glSupport.bufferDy - rc.top);
-        float x1 = cast(float)(rc.right);
-        float y1 = cast(float)(glSupport.bufferDy - rc.bottom);
+        // half-pixel offset is essential for correct result
+        float x0 = cast(float)(p1.x) + 0.5;
+        float y0 = cast(float)(glSupport.bufferDy - p1.y) - 0.5;
+        float x1 = cast(float)(p2.x) + 0.5;
+        float y1 = cast(float)(glSupport.bufferDy - p2.y) - 0.5;
 
         float[3 * 2] vertices = [x0, y0, Z_2D, x1, y1, Z_2D];
         // fill texture coords buffer with zeros
