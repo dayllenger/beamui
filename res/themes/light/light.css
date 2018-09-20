@@ -333,7 +333,7 @@ DockHost { padding: 2pt; background-color: #eceffa; }
 DockHostBody { margin: 3pt; padding: 0; }
 
 /* ========================================================================== charts.d */
-SimpleBarChart { min-width: 250pt; margin: 2pt; padding: 2pt; }
+SimpleBarChart { padding: 2pt; }
 
 @define-colors { chart_background: #ffffff;
   chart_axis: #c0c0c0;

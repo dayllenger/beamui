@@ -66,7 +66,7 @@ class SimpleBarChart : Widget
     protected BarData[] _bars;
     protected double _maxY = 0;
 
-    size_t barCount()
+    @property size_t barCount()
     {
         return _bars.length;
     }
@@ -91,6 +91,13 @@ class SimpleBarChart : Widget
             if (bar.y > _maxY)
                 _maxY = bar.y;
         }
+        requestLayout();
+    }
+
+    void removeAllBars()
+    {
+        _bars = [];
+        _maxY = 0;
         requestLayout();
     }
 
@@ -207,10 +214,10 @@ class SimpleBarChart : Widget
     {
         Size maxDescriptionSize = Size(30, 20);
         int thickness = 1;
-        int arrowSize = 20;
         int segmentTagLength = 4;
         int zeroValueDist = 3;
         int lengthFromZeroToArrow = 200;
+        int arrowSize = 20;
     }
 
     AxisData _axisX;
@@ -225,7 +232,7 @@ class SimpleBarChart : Widget
 
         int _minBarWidth = 10;
         int _barWidth = 10;
-        int _barDistance = 3;
+        int _barSpacing = 3;
 
         int _axisXMinWfromZero = 150;
         int _axisYMinDescWidth = 30;
@@ -278,69 +285,6 @@ class SimpleBarChart : Widget
         _measuredDescMinSize = f.textSize(_minDescSizeTester, MAX_WIDTH_UNSPECIFIED, 4);
     }
 
-/+
-    {
-        _axisY.maxDescriptionSize = measureAxisYDesc();
-
-        RectOffset p = padding;
-        int usedWidth = _axisY.maxDescriptionSize.w + _axisY.thickness + _axisY.segmentTagLength +
-            _axisX.zeroValueDist + p.left + p.right + _axisX.arrowSize;
-
-        int currentMinBarWidth = max(_minBarWidth, _measuredDescMinSize.w);
-        _axisX.maxDescriptionSize.h = _measuredDescMinSize.h;
-
-        // axis length
-        _axisX.lengthFromZeroToArrow = max(cast(int)barCount * (currentMinBarWidth + _barDistance),
-                                           _axisXMinWfromZero);
-
-        // minWidth check
-        _axisX.lengthFromZeroToArrow = max(_axisX.lengthFromZeroToArrow, minWidth - usedWidth);
-
-        // fill width support
-        if (bounds.w != SIZE_UNSPECIFIED && this.fillsWidth)
-        {
-            _axisX.lengthFromZeroToArrow = max(_axisX.lengthFromZeroToArrow, bounds.w - usedWidth);
-        }
-
-        // initialize axis y length
-        _axisY.lengthFromZeroToArrow = cast(int)round(_axisRatio * _axisX.lengthFromZeroToArrow);
-
-        // is axis Y enought long
-        int usedHeight = _axisX.maxDescriptionSize.h + _axisX.thickness + _axisX.segmentTagLength +
-            _axisY.zeroValueDist + ((_showTitle) ? _titleSize.h + _marginAfterTitle : 0) +
-                p.top + p.bottom + _axisY.arrowSize;
-        // minHeight check
-        if (minHeight > _axisY.lengthFromZeroToArrow + usedHeight)
-        {
-            _axisY.lengthFromZeroToArrow = minHeight - usedHeight;
-            _axisX.lengthFromZeroToArrow = cast(int)round(_axisY.lengthFromZeroToArrow / _axisRatio);
-        }
-
-        // fill height support
-        if (bounds.h != SIZE_UNSPECIFIED && this.fillsHeight)
-        {
-            _axisY.lengthFromZeroToArrow = max(_axisY.lengthFromZeroToArrow, bounds.h - usedHeight);
-        }
-
-        if (barCount > 0)
-            _barWidth = cast(int)((_axisX.lengthFromZeroToArrow - (_barDistance * barCount)) / barCount);
-
-        // compute X axis max description height
-        _axisX.maxDescriptionSize = measureAxisXDesc();
-
-        // compute chart size
-        Size sz;
-        sz.w = _axisY.maxDescriptionSize.w + _axisY.thickness + _axisY.segmentTagLength +
-            _axisX.zeroValueDist + _axisX.lengthFromZeroToArrow + _axisX.arrowSize;
-        if (_showTitle)
-            sz.w = max(sz.w, _titleSize.h); // FIXME
-
-        sz.h = _axisX.maxDescriptionSize.h + _axisX.thickness + _axisX.segmentTagLength + _axisY.zeroValueDist +
-            _axisY.lengthFromZeroToArrow + ((_showTitle) ? _titleSize.h + _marginAfterTitle : 0) + _axisY.arrowSize;
-
-        return sz;
-    }
-+/
     protected Size measureAxisXDesc()
     {
         FontRef f = font();
@@ -371,6 +315,58 @@ class SimpleBarChart : Widget
         return Size(maxDescWidth, sz.h);
     }
 
+    override Boundaries computeBoundaries()
+    {
+        int extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
+        int extraSizeY = _axisX.thickness + _axisX.segmentTagLength + _axisY.zeroValueDist + _axisY.arrowSize;
+
+        _axisY.maxDescriptionSize = measureAxisYDesc();
+
+        int currentMinBarWidth = max(_minBarWidth, _measuredDescMinSize.w);
+
+        int minAxisXLength = max(cast(int)barCount * (currentMinBarWidth + _barSpacing), _axisXMinWfromZero);
+        int minAxixYLength = cast(int)round(_axisRatio * minAxisXLength);
+
+        Boundaries bs;
+        bs.min.w = _axisY.maxDescriptionSize.w + minAxisXLength + extraSizeX;
+        bs.min.h = minAxixYLength + extraSizeY;
+        if (_showTitle)
+        {
+            bs.min.h += _titleSize.h + _marginAfterTitle;
+            bs.nat.w = max(bs.min.w, _titleSize.w);
+        }
+
+        applyStyle(bs);
+        return bs;
+    }
+
+    override void layout(Box geom)
+    {
+        _needLayout = false;
+        if (visibility == Visibility.gone)
+            return;
+
+        _box = geom;
+        applyPadding(geom);
+
+        int extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
+        int extraSizeY = _axisX.thickness + _axisX.segmentTagLength + _axisY.zeroValueDist + _axisY.arrowSize;
+
+        // X axis length
+        _axisX.lengthFromZeroToArrow = geom.w - _axisY.maxDescriptionSize.w - extraSizeX;
+
+        // update bars width
+        if (barCount > 0)
+            _barWidth = cast(int)((_axisX.lengthFromZeroToArrow - _barSpacing * barCount) / barCount);
+
+        // compute X axis max description height (necessary to know _barWidth here)
+        _axisX.maxDescriptionSize = measureAxisXDesc();
+
+        // Y axis length
+        _axisY.lengthFromZeroToArrow = geom.h - _axisX.maxDescriptionSize.h - extraSizeY -
+            (_showTitle ? _titleSize.h + _marginAfterTitle : 0);
+    }
+
     override void onDraw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
@@ -385,7 +381,8 @@ class SimpleBarChart : Widget
 
         FontRef font = font();
         if (_showTitle)
-            font.drawText(buf, b.x + (_box.w - _titleSize.w) / 2, b.y, _title,
+            // align to center
+            font.drawText(buf, b.x + (b.w - _titleSize.w) / 2, b.y, _title,
                     textColor, 4, 0, textFlags);
 
         // draw axes
@@ -399,7 +396,7 @@ class SimpleBarChart : Widget
         buf.fillRect(Rect(x1, y1, x2, y2), chartBackgroundColor);
 
         // y axis
-        buf.drawLine(Point(x1 + 1, y1), Point(x1 + 1, y2), chartAxisColor);
+        buf.drawLine(Point(x1, y1), Point(x1, y2), chartAxisColor);
 
         // x axis
         buf.drawLine(Point(x1, y2 - 1), Point(x2, y2 - 1), chartAxisColor);
@@ -408,7 +405,7 @@ class SimpleBarChart : Widget
         buf.drawLine(Point(x1, y1), Point(x2, y1), chartAxisColor);
 
         // right line - will be optional in the future
-        buf.drawLine(Point(x2, y1), Point(x2, y2), chartAxisColor);
+        buf.drawLine(Point(x2 - 1, y1), Point(x2 - 1, y2), chartAxisColor);
 
         // draw bars
 
@@ -424,7 +421,7 @@ class SimpleBarChart : Widget
 
             // draw x axis segment under bar
             buf.drawLine(Point(firstBarX + _barWidth / 2, y2), Point(firstBarX + _barWidth / 2,
-                    b.y + b.h - _axisX.maxDescriptionSize.h), chartSegmentTagColor);
+                    y2 + _axisX.segmentTagLength), chartSegmentTagColor);
 
             // draw x axis description
             fmt.format(bar.title, font, 0, _barWidth, 4, 0, textFlags);
@@ -432,7 +429,7 @@ class SimpleBarChart : Widget
                     b.y + b.h - _axisX.maxDescriptionSize.h + (_axisX.maxDescriptionSize.h - bar._titleSize.h) / 2,
                     font, textColor, Align.hcenter);
 
-            firstBarX += _barWidth + _barDistance;
+            firstBarX += _barWidth + _barSpacing;
         }
 
         // segments on y axis and values (now only max and max/2)
@@ -445,10 +442,11 @@ class SimpleBarChart : Widget
         int yMax = yZero - _axisY.lengthFromZeroToArrow;
         int yAvg = (yZero + yMax) / 2;
 
-        buf.drawLine(Point(b.x + _axisY.maxDescriptionSize.w, yMax),
-                Point(b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength, yMax), chartSegmentTagColor);
-        buf.drawLine(Point(b.x + _axisY.maxDescriptionSize.w, yAvg),
-                Point(b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength, yAvg), chartSegmentTagColor);
+        int horTagStart = b.x + _axisY.maxDescriptionSize.w;
+        buf.drawLine(Point(horTagStart, yMax), Point(horTagStart + _axisY.segmentTagLength, yMax),
+                     chartSegmentTagColor);
+        buf.drawLine(Point(horTagStart, yAvg), Point(horTagStart + _axisY.segmentTagLength, yAvg),
+                     chartSegmentTagColor);
 
         font.drawText(buf, b.x + (_axisY.maxDescriptionSize.w - _axisYMaxValueDescWidth),
                 yMax - _axisY.maxDescriptionSize.h / 2, to!dstring(currentMaxValue), textColor, 4, 0, textFlags);
