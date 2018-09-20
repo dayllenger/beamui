@@ -915,7 +915,7 @@ class ListWidget : WidgetGroup
     }
 
     /// Handle scroll event
-    protected bool onScrollEvent(AbstractSlider source, ScrollEvent event)
+    protected void onScrollEvent(AbstractSlider source, ScrollEvent event)
     {
         int newPosition = _scrollPosition;
         if (event.action == ScrollAction.sliderMoved)
@@ -933,7 +933,6 @@ class ListWidget : WidgetGroup
             _scrollPosition = clamp(newPosition, 0, _maxScrollPosition);
             invalidate();
         }
-        return true;
     }
 
     /// List navigation using keys

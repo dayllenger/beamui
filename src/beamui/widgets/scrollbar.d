@@ -102,7 +102,7 @@ class AbstractSlider : WidgetGroup
     }
 
     /// Scroll event listeners
-    Signal!(bool delegate(AbstractSlider source, ScrollEvent event)) scrolled;
+    Signal!(void delegate(AbstractSlider source, ScrollEvent event)) scrolled;
 
     protected
     {

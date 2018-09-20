@@ -2558,7 +2558,7 @@ class EditBox : EditWidgetBase
         _vscrollbar.position = _firstVisibleLine;
     }
 
-    override bool onHScroll(ScrollEvent event)
+    override void onHScroll(ScrollEvent event)
     {
         if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
         {
@@ -2584,10 +2584,9 @@ class EditBox : EditWidgetBase
         {
             scrollRight();
         }
-        return true;
     }
 
-    override bool onVScroll(ScrollEvent event)
+    override void onVScroll(ScrollEvent event)
     {
         if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
         {
@@ -2614,7 +2613,6 @@ class EditBox : EditWidgetBase
         {
             scrollLineDown();
         }
-        return true;
     }
 
     override bool onKeyEvent(KeyEvent event)

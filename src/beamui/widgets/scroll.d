@@ -231,28 +231,22 @@ class ScrollAreaBase : WidgetGroup
     }
 
     /// Handle scroll event
-    protected bool onScrollEvent(AbstractSlider source, ScrollEvent event)
+    protected void onScrollEvent(AbstractSlider source, ScrollEvent event)
     {
         if (source.orientation == Orientation.horizontal)
-        {
-            return onHScroll(event);
-        }
+            onHScroll(event);
         else
-        {
-            return onVScroll(event);
-        }
+            onVScroll(event);
     }
 
     /// Process horizontal scrollbar event
-    bool onHScroll(ScrollEvent event)
+    void onHScroll(ScrollEvent event)
     {
-        return true;
     }
 
     /// Process vertical scrollbar event
-    bool onVScroll(ScrollEvent event)
+    void onVScroll(ScrollEvent event)
     {
-        return true;
     }
 
     void makeBoxVisible(Box b, bool alignHorizontally = true, bool alignVertically = true)
@@ -553,7 +547,7 @@ class ScrollArea : ScrollAreaBase
 //         invalidate();
     }
 
-    override bool onHScroll(ScrollEvent event)
+    override void onHScroll(ScrollEvent event)
     {
         if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
         {
@@ -575,10 +569,9 @@ class ScrollArea : ScrollAreaBase
         {
             scrollTo(scrollPos.x + _clientBox.w / 10, scrollPos.y);
         }
-        return true;
     }
 
-    override bool onVScroll(ScrollEvent event)
+    override void onVScroll(ScrollEvent event)
     {
         if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
         {
@@ -600,7 +593,6 @@ class ScrollArea : ScrollAreaBase
         {
             scrollTo(scrollPos.x, scrollPos.y + _clientBox.h / 10);
         }
-        return true;
     }
 
     void makeWidgetVisible(Widget widget, bool alignHorizontally = true, bool alignVertically = true)

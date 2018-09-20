@@ -981,7 +981,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Process horizontal scrollbar event
-    override bool onHScroll(ScrollEvent event)
+    override void onHScroll(ScrollEvent event)
     {
         // scroll w/o changing selection
         if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
@@ -1016,11 +1016,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             scrollBy(1, 0);
         }
-        return true;
     }
 
     /// Process vertical scrollbar event
-    override bool onVScroll(ScrollEvent event)
+    override void onVScroll(ScrollEvent event)
     {
         // scroll w/o changing selection
         if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
@@ -1056,7 +1055,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             if (lastScrollRow < _rows - 1)
                 scrollBy(0, 1);
         }
-        return true;
     }
 
     /// Ensure that cell is visible (scroll if necessary)

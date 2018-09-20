@@ -225,7 +225,7 @@ extern (C) int UIAppMain(string[] args)
         gb32.addChild(new Button(fileOpenAction).orientation(Orientation.vertical));
         auto btnToggle = new Button("Toggle action above"d, null, true);
         btnToggle.checked(fileOpenAction.enabled);
-        btnToggle.clicked = (Widget w) {
+        btnToggle.clicked = delegate(Widget w) {
             fileOpenAction.enabled = !fileOpenAction.enabled;
             return true;
         };
@@ -248,11 +248,15 @@ extern (C) int UIAppMain(string[] args)
         auto line2 = new Row;
         controls.addChild(line2);
 
+        auto sb = new ScrollBar(Orientation.horizontal);
+        sb.scrolled = delegate(AbstractSlider src, ScrollEvent event) { Log.d("scrollbar: ", event.action); };
         auto gb5 = new GroupBox("horizontal ScrollBar"d);
-        gb5.addChild(new ScrollBar(Orientation.horizontal));
+        gb5.addChild(sb);
         line2.addChild(gb5);
+        auto sl = new Slider(Orientation.horizontal);
+        sl.scrolled = delegate(AbstractSlider src, ScrollEvent event) { Log.d("slider: ", event.action); };
         auto gb6 = new GroupBox("horizontal Slider"d);
-        gb6.addChild(new Slider(Orientation.horizontal));
+        gb6.addChild(sl);
         line2.addChild(gb6);
         auto gb7 = new GroupBox("EditLine"d);
         gb7.addChild(new EditLine("Some text"d).minWidth(120.pt));
@@ -286,9 +290,6 @@ extern (C) int UIAppMain(string[] args)
             grid.setColTitle(cast(int)index, month);
         foreach (y; 0 .. grid.rows)
             grid.setRowTitle(y, to!dstring(y + 1));
-        //grid.alignment = Align.right;
-        grid.setColWidth(0, 30.pt);
-        grid.autoFit();
 
         import std.random;
 
@@ -300,13 +301,14 @@ extern (C) int UIAppMain(string[] args)
                 grid.setCellText(x, y, "%.2f"d.format(n / 100.0));
             }
         }
+        //grid.alignment = Align.right;
+        grid.setColWidth(0, 30.pt);
+        grid.autoFit();
         gbgrid.addChild(grid.fillH());
         line4.addChild(gbgrid.fillW());
 
         auto gbtree = new GroupBox("TreeWidget"d, Orientation.vertical);
         auto tree = new TreeWidget;
-        //tree.layoutWidth(WRAP_CONTENT).fillH();
-//         tree.maxHeight(200.pt);
         TreeItem tree1 = tree.items.newChild("group1", "Group 1"d, "document-open");
         tree1.newChild("g1_1", "Group 1 item 1"d);
         tree1.newChild("g1_2", "Group 1 item 2"d);
