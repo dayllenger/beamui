@@ -15,6 +15,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.platforms.common.platform;
 
+import beamui.core.animations;
 import beamui.core.asyncsocket;
 import beamui.core.collections;
 import beamui.core.config;
@@ -378,6 +379,8 @@ class Window : CustomEventTarget
 
         /// Keep overrided cursor type to `notSet` to get cursor from widget
         CursorType _overrideCursorType = CursorType.notSet;
+
+        Animation[] animations;
     }
 
     this()
@@ -799,7 +802,9 @@ class Window : CustomEventTarget
     Popup showTooltip(Widget content, Widget anchor = null,
             PopupAlign alignment = PopupAlign.center, int x = int.min, int y = int.min)
     {
+        bool noTooltipBefore = _tooltip.popup is null;
         hideTooltip();
+
         debug (tooltips)
             Log.d("show tooltip");
         if (!content)
@@ -812,6 +817,20 @@ class Window : CustomEventTarget
         if (y == int.min)
             y = _lastMouseY;
         res.anchor = PopupAnchor(anchor !is null ? anchor : _mainWidget, x, y, alignment);
+
+        // add a smooth fade-in transition when there is no tooltip already shown
+        if (noTooltipBefore)
+        {
+            auto tr = Transition(100, TimingFunction.easeIn);
+            res.alpha = 255;
+            addAnimation(tr.duration, (double t) {
+                if (_tooltip.popup is res) // may be destroyed
+                {
+                    res.alpha = cast(ubyte)tr.mix(255, 0, t);
+                }
+            });
+        }
+
         _tooltip.popup = res;
         return res;
     }
@@ -839,6 +858,21 @@ class Window : CustomEventTarget
     {
         auto res = new Popup(content, this);
         res.anchor = PopupAnchor(anchor/+anchor !is null ? anchor : _mainWidget+/, x, y, alignment); // TODO: test all cases
+
+        // add a smooth fade-in transition
+        auto tr = Transition(150, TimingFunction.easeIn);
+        res.alpha = 255;
+        addAnimation(tr.duration, (double t) {
+            foreach (p; _popups)
+            {
+                if (p is res) // may be destroyed
+                {
+                    res.alpha = cast(ubyte)tr.mix(255, 0, t);
+                    break;
+                }
+            }
+        });
+
         _popups ~= res;
         setFocus(content);
         _mainWidget.maybe.requestLayout();
@@ -975,6 +1009,12 @@ class Window : CustomEventTarget
         postEvent(ev);
     }
 
+    void addAnimation(long duration, void delegate(double) handler)
+    {
+        assert(duration > 0 && handler);
+        animations ~= Animation(duration * ONE_SECOND / 1000, handler);
+    }
+
     private void animate(Widget root, long interval)
     {
         if (root is null)
@@ -989,10 +1029,33 @@ class Window : CustomEventTarget
 
     private void animate(long interval)
     {
+        // process global animations
+        bool someAnimationsFinished;
+        foreach (ref a; animations)
+        {
+            if (!a.isAnimating)
+            {
+                a.start();
+            }
+            else
+            {
+                a.tick(interval);
+                if (!a.isAnimating)
+                {
+                    a.handler = null;
+                    someAnimationsFinished = true;
+                }
+            }
+        }
+        if (someAnimationsFinished)
+            animations = animations.efilter!(a => a.handler !is null);
+
+        // process widget ones
         animate(_mainWidget, interval);
         foreach (p; _popups)
-            p.animate(interval);
-        _tooltip.popup.maybe.animate(interval);
+            animate(p, interval);
+        if (auto p = _tooltip.popup)
+            animate(p, interval);
     }
 
     /// OpenGL-specific routines
@@ -1739,6 +1802,9 @@ class Window : CustomEventTarget
         needDraw = needLayout = animationActive = false;
         if (_mainWidget is null)
             return false;
+
+        animationActive = animations.length > 0;
+
         checkUpdateNeeded(_mainWidget, needDraw, needLayout, animationActive);
         foreach (p; _popups)
             checkUpdateNeeded(p, needDraw, needLayout, animationActive);

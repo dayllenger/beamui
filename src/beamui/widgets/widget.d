@@ -2185,7 +2185,7 @@ class WidgetGroupDefaultDrawing : WidgetGroup
         Box b = _box;
         applyMargins(b);
         applyPadding(b);
-        auto saver = ClipRectSaver(buf, b);
+        auto saver = ClipRectSaver(buf, b, alpha);
         foreach (i; 0 .. _children.count)
         {
             Widget item = _children.get(i);
