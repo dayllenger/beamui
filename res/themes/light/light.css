@@ -146,14 +146,14 @@ ComboBox::button { align: center; padding: 2pt 3pt; }
 
 ComboBox::body:not(enabled), ComboBox::button:not(enabled) { opacity: 0.4; }
 
-ComboBox::list { min-width: 0; min-height: 0; border: #aaa 1; background-color: rgba(255, 255, 255, 0.75); }
+ComboBox::list { min-width: 0; min-height: 0; border: #aaa 1; box-shadow: 0 3 6 #b0000000; background-color: white; }
 
 ComboBox::list:focused { border: #aa2040ff 1; }
 
-ComboBox::list:not(enabled) { background-color: rgba(240, 240, 240, 0.75); }
+ComboBox::list:not(enabled) { background-color: #f0f0f0; }
 
 /* ========================================================================== menu.d */
-Menu { width: none; height: none; min-width: 0; min-height: 0; padding: 0 1pt; border: #aaa 1; box-shadow: 0 3 6 #888; background-color: #f4f4f4; text-flags: underline-hotkeys-on-alt; }
+Menu { width: none; height: none; min-width: 0; min-height: 0; padding: 0 1pt; border: #aaa 1; box-shadow: 0 3 6 #b0000000; background-color: #f4f4f4; text-flags: underline-hotkeys-on-alt; }
 
 MenuBar { weight: 0; margin: 0; padding: 0; border: none; box-shadow: 0 0 5 #888; background-color: #f3f4f5; }
 
@@ -161,9 +161,7 @@ MenuItem { padding: 4pt 5pt; text-flags: parent; }
 
 MenuItem:hovered { background-color: #e2edf9; }
 
-MenuItem:focused { background-color: #4e93da; }
-
-MenuItem:selected { background-color: #417fbf; }
+MenuItem:focused, MenuItem:selected { background-color: #4e93da; }
 
 MenuItem::separator { min-width: 1; min-height: 1; background: #bbb; }
 

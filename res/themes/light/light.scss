@@ -361,14 +361,15 @@ ComboBox {
         min-width: 0;
         min-height: 0;
         border: #aaa 1;
-        background-color: fade-out(white, 0.25);
+        box-shadow: 0 3 6 #b0000000;
+        background-color: white;
 
         &:focused {
             border: #aa2040ff 1;
         }
 
         &:not(enabled) {
-            background-color: fade-out($inverse-text-color, 0.25);
+            background-color: $inverse-text-color;
         }
     }
 }
@@ -384,7 +385,7 @@ Menu {
     min-height: 0;
     padding: 0 1pt;
     border: #aaa 1;
-    box-shadow: 0 3 6 #888;
+    box-shadow: 0 3 6 #b0000000;
     background-color: #f4f4f4;
     text-flags: underline-hotkeys-on-alt;
 }
@@ -406,12 +407,8 @@ MenuItem {
         background-color: $hovered-color;
     }
 
-    &:focused {
+    &:focused, &:selected {
         background-color: $main-color;
-    }
-
-    &:selected {
-        background-color: $secondary-color;
     }
 
     &::separator {
