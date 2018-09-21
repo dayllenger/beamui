@@ -56,7 +56,7 @@ enum Visibility : ubyte
 {
     /// Visible on screen (default)
     visible,
-    /// Not visible, but occupies a space in layout
+    /// Not visible, but occupies a space in layout. Does not receive mouse or key events.
     invisible,
     /// Completely hidden, as not has been added
     gone
@@ -682,7 +682,7 @@ public:
     }
 
     //===============================================================
-    // Layout and drawing related properties methods
+    // Layout and drawing related properties/methods
 
     @property
     {

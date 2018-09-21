@@ -753,6 +753,9 @@ class Window : CustomEventTarget
         update(true);
     }
 
+    //===============================================================
+    // Popups, tooltips, message and input boxes
+
     protected Popup[] _popups;
 
     protected static struct TooltipInfo
@@ -912,6 +915,26 @@ class Window : CustomEventTarget
         }
         return null;
     }
+
+    /// Show message box with specified title and message
+    void showMessageBox(dstring title, dstring message, Action[] actions = [ACTION_OK],
+            int defaultActionIndex = 0, void delegate(const Action result) handler = null)
+    {
+        import beamui.dialogs.msgbox;
+
+        auto dlg = new MessageBox(title, message, this, actions, defaultActionIndex, handler);
+        dlg.show();
+    }
+
+    void showInputBox(dstring title, dstring message, dstring initialText, void delegate(dstring result) handler)
+    {
+        import beamui.dialogs.inputbox;
+
+        auto dlg = new InputBox(title, message, this, initialText, handler);
+        dlg.show();
+    }
+
+    //===============================================================
 
     /// Called when user dragged file(s) to application window
     void handleDroppedFiles(string[] filenames)
@@ -1126,6 +1149,7 @@ class Window : CustomEventTarget
             checkUpdateNeeded(needDraw, needLayout, animationActive);
             if (needLayout || animationActive)
                 needDraw = true;
+
             long ts = std.datetime.Clock.currStdTime;
             if (animationActive && lastDrawTs != 0)
             {
@@ -1134,6 +1158,7 @@ class Window : CustomEventTarget
                 checkUpdateNeeded(needDraw, needLayout, animationActive);
             }
             lastDrawTs = ts;
+
             if (needLayout)
             {
                 debug (redraw)
@@ -1145,16 +1170,16 @@ class Window : CustomEventTarget
                     if (layoutEnd - layoutStart > PERFORMANCE_LOGGING_THRESHOLD_MS)
                         Log.d("layout took ", layoutEnd - layoutStart, " ms");
                 }
-                //checkUpdateNeeded(needDraw, needLayout, animationActive);
             }
+
             debug (redraw)
                 long drawStart = currentTimeMillis;
+
             // draw main widget
             _mainWidget.onDraw(buf);
 
-            Popup modal = modalPopup();
-
             // draw popups
+            Popup modal = modalPopup();
             foreach (p; _popups)
             {
                 if (p is modal)
@@ -1165,6 +1190,7 @@ class Window : CustomEventTarget
                 p.onDraw(buf);
             }
 
+            // and draw tooltip
             _tooltip.popup.maybe.onDraw(buf);
 
             debug (redraw)
@@ -1188,14 +1214,11 @@ class Window : CustomEventTarget
         // override if necessary
     }
 
-    protected void setCaptureWidget(Widget w, MouseEvent event)
-    {
-        _mouseCaptureWidget = w;
-        _mouseCaptureButtons = event.flags & (MouseFlag.lbutton | MouseFlag.rbutton | MouseFlag.mbutton);
-    }
+    //===============================================================
+    // Focused widget
 
     protected Widget _focusedWidget;
-    protected auto _focusStateToApply = State.focused;
+    protected State _focusStateToApply = State.focused;
     /// Returns current focused widget
     @property Widget focusedWidget()
     {
@@ -1280,6 +1303,9 @@ class Window : CustomEventTarget
             removeFocus();
         windowActivityChanged(this, isWindowActive);
     }
+
+    //===============================================================
+    // Events and actions
 
     /// Call an action, considering action context
     bool call(Action action)
@@ -1376,6 +1402,7 @@ class Window : CustomEventTarget
     /// Dispatch key event to widgets which have wantsKeyTracking == true
     protected bool dispatchKeyEvent(Widget root, KeyEvent event)
     {
+        // route key events to visible widgets only
         if (root.visibility != Visibility.visible)
             return false;
         if (root.wantsKeyTracking)
@@ -1388,222 +1415,6 @@ class Window : CustomEventTarget
             Widget w = root.child(i);
             if (dispatchKeyEvent(w, event))
                 return true;
-        }
-        return false;
-    }
-
-    protected bool dispatchMouseEvent(Widget root, MouseEvent event, ref bool cursorIsSet)
-    {
-        // only route mouse events to visible widgets
-        if (root.visibility != Visibility.visible)
-            return false;
-        if (!root.isPointInside(event.x, event.y))
-            return false;
-        // offer event to children first
-        foreach (i; 0 .. root.childCount)
-        {
-            Widget child = root.child(i);
-            if (dispatchMouseEvent(child, event, cursorIsSet))
-                return true;
-        }
-
-        if (event.action == MouseAction.move && !cursorIsSet)
-        {
-            CursorType cursorType = root.getCursorType(event.x, event.y);
-            if (cursorType != CursorType.notSet)
-            {
-                setCursorType(cursorType);
-                cursorIsSet = true;
-            }
-        }
-        // if not processed by children, offer event to root
-        if (sendAndCheckOverride(root, event))
-        {
-            debug (mouse)
-                Log.d("MouseEvent is processed");
-            if (event.action == MouseAction.buttonDown && _mouseCaptureWidget is null && !event.doNotTrackButtonDown)
-            {
-                debug (mouse)
-                    Log.d("Setting active widget");
-                setCaptureWidget(root, event);
-            }
-            else if (event.action == MouseAction.move)
-            {
-                addTracking(root);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /// Widget which tracks Move events
-    protected Widget[] _mouseTrackingWidgets;
-    private void addTracking(Widget w)
-    {
-        foreach (mtw; _mouseTrackingWidgets)
-            if (w is mtw)
-                return;
-        _mouseTrackingWidgets ~= w;
-        debug (mouse)
-            Log.d("addTracking: ", w.id, ", items after: ", _mouseTrackingWidgets.length);
-    }
-
-    private bool checkRemoveTracking(MouseEvent event)
-    {
-        bool res;
-        foreach_reverse (ref w; _mouseTrackingWidgets)
-        {
-            if (!isChild(w))
-            {
-                w = null;
-                continue;
-            }
-            if (event.action == MouseAction.leave || !w.isPointInside(event.x, event.y))
-            {
-                // send Leave message
-                auto leaveEvent = new MouseEvent(event);
-                leaveEvent.changeAction(MouseAction.leave);
-                res = w.onMouseEvent(leaveEvent) || res;
-                debug (mouse)
-                    Log.d("removeTracking of ", w.id);
-                w = null;
-            }
-        }
-        _mouseTrackingWidgets = _mouseTrackingWidgets.efilter!(a => a !is null);
-        debug (mouse)
-            Log.d("removeTracking, items after: ", _mouseTrackingWidgets.length);
-        return res;
-    }
-
-    /// Widget which tracks all events after processed ButtonDown
-    protected Widget _mouseCaptureWidget;
-    protected ushort _mouseCaptureButtons;
-    protected bool _mouseCaptureFocusedOut;
-    /// Does current capture widget want to receive move events even if pointer left it
-    protected bool _mouseCaptureFocusedOutTrackMovements;
-
-    protected void clearMouseCapture()
-    {
-        _mouseCaptureWidget = null;
-        _mouseCaptureFocusedOut = false;
-        _mouseCaptureFocusedOutTrackMovements = false;
-        _mouseCaptureButtons = 0;
-    }
-
-    protected bool dispatchCancel(MouseEvent event)
-    {
-        event.changeAction(MouseAction.cancel);
-        bool res = _mouseCaptureWidget.onMouseEvent(event);
-        clearMouseCapture();
-        return res;
-    }
-
-    protected bool sendAndCheckOverride(Widget widget, MouseEvent event)
-    {
-        if (!isChild(widget))
-            return false;
-        bool res = widget.onMouseEvent(event);
-        if (event.trackingWidget !is null && _mouseCaptureWidget !is event.trackingWidget)
-        {
-            setCaptureWidget(event.trackingWidget, event);
-        }
-        return res;
-    }
-
-    /// Returns true if mouse is currently captured
-    bool isMouseCaptured()
-    {
-        return (_mouseCaptureWidget !is null && isChild(_mouseCaptureWidget));
-    }
-
-    /// Handle theme change: e.g. reload some themed resources
-    void dispatchThemeChanged()
-    {
-        _mainWidget.maybe.onThemeChanged();
-        foreach (p; _popups)
-            p.onThemeChanged();
-        _tooltip.popup.maybe.onThemeChanged();
-        if (currentTheme)
-        {
-            _backgroundColor = currentTheme.getColor("window_background");
-        }
-        invalidate();
-    }
-
-    /// Post event to handle in UI thread (this method can be used from background thread)
-    void postEvent(CustomEvent event)
-    {
-        // override to post event into window message queue
-        _eventList.put(event);
-    }
-
-    /// Post task to execute in UI thread (this method can be used from background thread)
-    void executeInUiThread(void delegate() runnable)
-    {
-        auto event = new RunnableEvent(CUSTOM_RUNNABLE, null, runnable);
-        postEvent(event);
-    }
-
-    /// Creates async socket
-    AsyncSocket createAsyncSocket(AsyncSocketCallback callback)
-    {
-        return new AsyncClientConnection(new AsyncSocketCallbackProxy(callback, &executeInUiThread));
-    }
-
-    /// Remove event from queue by unique id if not yet dispatched (this method can be used from background thread)
-    void cancelEvent(uint uniqueID)
-    {
-        CustomEvent ev = _eventList.get(uniqueID);
-        if (ev)
-        {
-            //destroy(ev);
-        }
-    }
-
-    /// Remove event from queue by unique id if not yet dispatched and dispatch it
-    void handlePostedEvent(uint uniqueID)
-    {
-        CustomEvent ev = _eventList.get(uniqueID);
-        if (ev)
-        {
-            dispatchCustomEvent(ev);
-        }
-    }
-
-    /// Handle all events from queue, if any (call from UI thread only)
-    void handlePostedEvents()
-    {
-        while (true)
-        {
-            CustomEvent e = _eventList.get();
-            if (!e)
-                break;
-            dispatchCustomEvent(e);
-        }
-    }
-
-    /// Dispatch custom event
-    bool dispatchCustomEvent(CustomEvent event)
-    {
-        if (event.destinationWidget)
-        {
-            if (!isChild(event.destinationWidget))
-            {
-                //Event is sent to widget which does not exist anymore
-                return false;
-            }
-            return event.destinationWidget.onEvent(event);
-        }
-        else
-        {
-            // no destination widget
-            RunnableEvent runnable = cast(RunnableEvent)event;
-            if (runnable)
-            {
-                // handle runnable
-                runnable.run();
-                return true;
-            }
         }
         return false;
     }
@@ -1646,8 +1457,8 @@ class Window : CustomEventTarget
         Popup modal = modalPopup();
 
         // check if _mouseCaptureWidget and _mouseTrackingWidget still exist in child of root widget
-        if (_mouseCaptureWidget !is null && (!isChild(_mouseCaptureWidget) || (modal &&
-                !modal.isChild(_mouseCaptureWidget))))
+        if (_mouseCaptureWidget && (!isChild(_mouseCaptureWidget) ||
+                                    modal && !modal.isChild(_mouseCaptureWidget)))
         {
             clearMouseCapture();
         }
@@ -1657,7 +1468,7 @@ class Window : CustomEventTarget
 
         bool res;
         ushort currentButtons = event.flags & (MouseFlag.lbutton | MouseFlag.rbutton | MouseFlag.mbutton);
-        if (_mouseCaptureWidget !is null)
+        if (_mouseCaptureWidget)
         {
             // try to forward message directly to active widget
             if (event.action == MouseAction.move)
@@ -1790,6 +1601,230 @@ class Window : CustomEventTarget
         return res || processed || _mainWidget.needDraw;
     }
 
+    protected bool dispatchMouseEvent(Widget root, MouseEvent event, ref bool cursorIsSet)
+    {
+        // route mouse events to visible widgets only
+        if (root.visibility != Visibility.visible)
+            return false;
+        if (!root.isPointInside(event.x, event.y))
+            return false;
+        // offer event to children first
+        foreach (i; 0 .. root.childCount)
+        {
+            Widget child = root.child(i);
+            if (dispatchMouseEvent(child, event, cursorIsSet))
+                return true;
+        }
+
+        if (event.action == MouseAction.move && !cursorIsSet)
+        {
+            CursorType cursorType = root.getCursorType(event.x, event.y);
+            if (cursorType != CursorType.notSet)
+            {
+                setCursorType(cursorType);
+                cursorIsSet = true;
+            }
+        }
+        // if not processed by children, offer event to the root
+        if (sendAndCheckOverride(root, event))
+        {
+            debug (mouse)
+                Log.d("MouseEvent is processed");
+            if (event.action == MouseAction.buttonDown && _mouseCaptureWidget is null && !event.doNotTrackButtonDown)
+            {
+                debug (mouse)
+                    Log.d("Setting active widget");
+                setCaptureWidget(root, event);
+            }
+            else if (event.action == MouseAction.move)
+            {
+                addTracking(root);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /// Widget which tracks Move events
+    protected Widget[] _mouseTrackingWidgets;
+    private void addTracking(Widget w)
+    {
+        foreach (mtw; _mouseTrackingWidgets)
+            if (w is mtw)
+                return;
+        _mouseTrackingWidgets ~= w;
+        debug (mouse)
+            Log.d("addTracking: ", w.id, ", items after: ", _mouseTrackingWidgets.length);
+    }
+
+    private bool checkRemoveTracking(MouseEvent event)
+    {
+        bool res;
+        foreach_reverse (ref w; _mouseTrackingWidgets)
+        {
+            if (!isChild(w))
+            {
+                w = null;
+                continue;
+            }
+            if (event.action == MouseAction.leave || !w.isPointInside(event.x, event.y))
+            {
+                // send Leave message
+                auto leaveEvent = new MouseEvent(event);
+                leaveEvent.changeAction(MouseAction.leave);
+                res = w.onMouseEvent(leaveEvent) || res;
+                debug (mouse)
+                    Log.d("removeTracking of ", w.id);
+                w = null;
+            }
+        }
+        _mouseTrackingWidgets = _mouseTrackingWidgets.efilter!(a => a !is null);
+        debug (mouse)
+            Log.d("removeTracking, items after: ", _mouseTrackingWidgets.length);
+        return res;
+    }
+
+    /// Widget which tracks all events after processed ButtonDown
+    protected Widget _mouseCaptureWidget;
+    protected ushort _mouseCaptureButtons;
+    protected bool _mouseCaptureFocusedOut;
+    /// Does current capture widget want to receive move events even if pointer left it
+    protected bool _mouseCaptureFocusedOutTrackMovements;
+
+    protected void setCaptureWidget(Widget w, MouseEvent event)
+    {
+        _mouseCaptureWidget = w;
+        _mouseCaptureButtons = event.flags & (MouseFlag.lbutton | MouseFlag.rbutton | MouseFlag.mbutton);
+    }
+
+    protected void clearMouseCapture()
+    {
+        _mouseCaptureWidget = null;
+        _mouseCaptureFocusedOut = false;
+        _mouseCaptureFocusedOutTrackMovements = false;
+        _mouseCaptureButtons = 0;
+    }
+
+    protected bool dispatchCancel(MouseEvent event)
+    {
+        event.changeAction(MouseAction.cancel);
+        bool res = _mouseCaptureWidget.onMouseEvent(event);
+        clearMouseCapture();
+        return res;
+    }
+
+    protected bool sendAndCheckOverride(Widget widget, MouseEvent event)
+    {
+        if (!isChild(widget))
+            return false;
+        bool res = widget.onMouseEvent(event);
+        if (event.trackingWidget !is null && _mouseCaptureWidget !is event.trackingWidget)
+        {
+            setCaptureWidget(event.trackingWidget, event);
+        }
+        return res;
+    }
+
+    /// Returns true if mouse is currently captured
+    bool isMouseCaptured()
+    {
+        return _mouseCaptureWidget !is null && isChild(_mouseCaptureWidget);
+    }
+
+    /// Handle theme change: e.g. reload some themed resources
+    void dispatchThemeChanged()
+    {
+        _mainWidget.maybe.onThemeChanged();
+        foreach (p; _popups)
+            p.onThemeChanged();
+        _tooltip.popup.maybe.onThemeChanged();
+        if (currentTheme)
+        {
+            _backgroundColor = currentTheme.getColor("window_background");
+        }
+        invalidate();
+    }
+
+    /// Post event to handle in UI thread (this method can be used from background thread)
+    void postEvent(CustomEvent event)
+    {
+        // override to post event into window message queue
+        _eventList.put(event);
+    }
+
+    /// Post task to execute in UI thread (this method can be used from background thread)
+    void executeInUiThread(void delegate() runnable)
+    {
+        auto event = new RunnableEvent(CUSTOM_RUNNABLE, null, runnable);
+        postEvent(event);
+    }
+
+    /// Creates async socket
+    AsyncSocket createAsyncSocket(AsyncSocketCallback callback)
+    {
+        return new AsyncClientConnection(new AsyncSocketCallbackProxy(callback, &executeInUiThread));
+    }
+
+    /// Remove event from queue by unique id if not yet dispatched (this method can be used from background thread)
+    void cancelEvent(uint uniqueID)
+    {
+        CustomEvent ev = _eventList.get(uniqueID);
+        if (ev)
+        {
+            //destroy(ev);
+        }
+    }
+
+    /// Remove event from queue by unique id if not yet dispatched and dispatch it
+    void handlePostedEvent(uint uniqueID)
+    {
+        CustomEvent ev = _eventList.get(uniqueID);
+        if (ev)
+        {
+            dispatchCustomEvent(ev);
+        }
+    }
+
+    /// Handle all events from queue, if any (call from UI thread only)
+    void handlePostedEvents()
+    {
+        while (true)
+        {
+            CustomEvent e = _eventList.get();
+            if (!e)
+                break;
+            dispatchCustomEvent(e);
+        }
+    }
+
+    /// Dispatch custom event
+    bool dispatchCustomEvent(CustomEvent event)
+    {
+        if (event.destinationWidget)
+        {
+            if (!isChild(event.destinationWidget))
+            {
+                //Event is sent to widget which does not exist anymore
+                return false;
+            }
+            return event.destinationWidget.onEvent(event);
+        }
+        else
+        {
+            // no destination widget
+            RunnableEvent runnable = cast(RunnableEvent)event;
+            if (runnable)
+            {
+                // handle runnable
+                runnable.run();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //===============================================================
+
     /// Set cursor type for window
     protected void setCursorType(CursorType cursorType)
     {
@@ -1860,23 +1895,8 @@ class Window : CustomEventTarget
                     ", animationActive: ", _animationActive);
     }
 
-    /// Show message box with specified title and message
-    void showMessageBox(dstring title, dstring message, Action[] actions = [ACTION_OK],
-            int defaultActionIndex = 0, void delegate(const Action result) handler = null)
-    {
-        import beamui.dialogs.msgbox;
-
-        auto dlg = new MessageBox(title, message, this, actions, defaultActionIndex, handler);
-        dlg.show();
-    }
-
-    void showInputBox(dstring title, dstring message, dstring initialText, void delegate(dstring result) handler)
-    {
-        import beamui.dialogs.inputbox;
-
-        auto dlg = new InputBox(title, message, this, initialText, handler);
-        dlg.show();
-    }
+    //===============================================================
+    // Timers
 
     protected TimerQueue _timerQueue;
 
