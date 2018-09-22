@@ -54,6 +54,8 @@ enum PopupClosePolicy : uint // TODO: on(Press|Release)OutsideParent, onEscapeKe
     onPressOutside = 1,
     /// Close popup when mouse button clicked outside of its bounds
     onReleaseOutside = 2,
+    /// Exclude anchor widget from the above 'outside'
+    anchor = 4,
 }
 
 /// Popup widget container
@@ -65,7 +67,7 @@ class Popup : LinearLayout
     bool modal;
 
     /// Popup close signal
-    Signal!(void delegate(Popup)) popupClosed;
+    Signal!(void delegate(Popup, bool byEvent)) popupClosed;
 
     this(Widget content, Window window)
     {
@@ -77,10 +79,11 @@ class Popup : LinearLayout
     /// Close and destroy popup
     void close()
     {
-        popupClosed(this);
+        popupClosed(this, closedByEvent);
         window.removePopup(this);
     }
 
+    private bool closedByEvent;
     /// Called for mouse activity outside shown popup bounds
     bool onMouseEventOutside(MouseEvent event)
     {
@@ -91,6 +94,14 @@ class Popup : LinearLayout
             if (closePolicy & onPressOutside && event.action == MouseAction.buttonDown ||
                 closePolicy & onReleaseOutside && event.action == MouseAction.buttonUp)
             {
+                if (closePolicy & anchor && this.anchor.widget &&
+                    this.anchor.widget.isPointInside(event.x, event.y))
+                    return false;
+
+                closedByEvent = true;
+                scope (exit)
+                    closedByEvent = false;
+
                 close();
                 return true;
             }

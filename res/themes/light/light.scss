@@ -383,9 +383,8 @@ Menu {
     height: none;
     min-width: 0;
     min-height: 0;
-    padding: 0 1pt;
-    border: #aaa 1;
-    box-shadow: 0 3 6 #b0000000;
+    border: none;
+    box-shadow: 0 2 8 #b0000000;
     background-color: #f4f4f4;
     text-flags: underline-hotkeys-on-alt;
 }
@@ -393,14 +392,13 @@ Menu {
 MenuBar {
     weight: 0;
     margin: 0;
-    padding: 0;
-    border: none;
+    padding: 3pt 0 0 0;
     box-shadow: 0 0 5 #888;
     background-color: #f3f4f5;
 }
 
 MenuItem {
-    padding: 4pt 5pt;
+    padding: 4pt 5pt 4pt 4pt;
     text-flags: parent;
 
     &:hovered {

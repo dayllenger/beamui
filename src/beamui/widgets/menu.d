@@ -477,7 +477,7 @@ class Menu : ListWidget
 
     protected ulong _submenuOpenTimer = 0;
     protected int _submenuOpenItemIndex = -1;
-    protected enum MENU_OPEN_DELAY_MS = 400; // TODO: make changeable
+    protected enum MENU_OPEN_DELAY_MS = 200; // TODO: make changeable
 
     protected void scheduleSubmenuOpening(int itemIndex)
     {
@@ -535,7 +535,7 @@ class Menu : ListWidget
         }
     }
 
-    protected void onSubmenuPopupClosed(Popup p)
+    protected void onSubmenuPopupClosed(Popup p, bool byEvent)
     {
         assert(p && _openedSubmenu);
         debug (menus)
@@ -543,6 +543,17 @@ class Menu : ListWidget
 
         // save submenu
         p.removeChild(_openedSubmenu);
+        // now _openedSubmenu.thisPopup is null
+        if (byEvent)
+        {
+            // close whole menu
+            Menu top = this;
+            while (top._parentMenu)
+            {
+                top = top._parentMenu;
+            }
+            top.close();
+        }
         _openedSubmenu = null;
     }
 
@@ -794,15 +805,6 @@ class MenuBar : Menu
     {
         super(null, Orientation.horizontal);
         selectOnHover = false;
-//         _clickOnButtonDown = true; // TODO: popup closeOnPress policy
-    }
-
-    override protected void onSubmenuPopupClosed(Popup p)
-    {
-        super.onSubmenuPopupClosed(p);
-        // second click on main menu opened item or click outside
-        if (_openedSubmenuIndex == _selectedItemIndex)
-            close();
     }
 
     /// Deactivate main menu and return focus to previously focused widget
@@ -828,20 +830,22 @@ class MenuBar : Menu
         debug (menus)
             Log.d("MenuBar: selection changed from ", previouslySelectedItem, " to ", index);
 
-        closeSubmenu();
         if (auto item = menuItem(index))
         {
             if (item.hasSubmenu)
             {
-                if (!_openedSubmenu)
-                    openSubmenu(index);
+                closeSubmenu();
+                selectOnHover = true;
+                openSubmenu(index);
             }
         }
     }
 
     override protected void onItemClicked(int index)
     {
-        selectOnHover = true;
+        if (!navigatingUsingKeys) // open submenu here by enter/space/down keys only
+            return;
+
         if (auto item = menuItem(index))
         {
             debug (menus)
