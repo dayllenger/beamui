@@ -15,6 +15,123 @@ enum int SIZE_IN_POINTS_FLAG = 1 << 28;
 /// Use in styles to specify size in percents * 100 (e.g. 0 == 0%, 10000 == 100%, 100 = 1%)
 enum int SIZE_IN_PERCENTS_FLAG = 1 << 27;
 
+enum LengthUnit
+{
+    // absolute
+    device = 0,
+    cm,
+    mm,
+    inch,
+    pt,
+    // semi-absolute
+    px,
+    // relative
+    em,
+    percent
+}
+
+struct Dimension
+{
+    private float value;
+    private LengthUnit type;
+
+    /// Zero value
+    enum Dimension zero = Dimension(0);
+    /// Unspecified value
+    enum Dimension none = Dimension(SIZE_UNSPECIFIED);
+
+    @disable this();
+
+    /// Construct with raw device pixels
+    this(int devicePixels)
+    {
+        if (devicePixels != SIZE_UNSPECIFIED)
+            value = cast(float)devicePixels;
+    }
+    /// Construct with some value and type
+    this(float value, LengthUnit type)
+    {
+        this.value = value;
+        this.type = type;
+    }
+
+    /// For absolute units - converts them to device pixels, for relative - multiplies by 100, adds flag
+    int toDevice() const
+    {
+        import std.math : isNaN;
+
+        if (value.isNaN)
+            return SIZE_UNSPECIFIED;
+
+        if (type == LengthUnit.device)
+            return cast(int)value;
+
+        if (type == LengthUnit.cm)
+            return cast(int)(value * SCREEN_DPI / 2.54);
+        if (type == LengthUnit.mm)
+            return cast(int)(value * SCREEN_DPI / 25.4);
+        if (type == LengthUnit.inch)
+            return cast(int)(value * SCREEN_DPI);
+        if (type == LengthUnit.pt)
+            return cast(int)(value * SCREEN_DPI / 72);
+
+        if (type == LengthUnit.px)
+            return cast(int)value; // TODO: low-dpi/hi-dpi
+
+        if (type == LengthUnit.em)
+            return cast(int)(value * 100);
+        if (type == LengthUnit.percent)
+            return cast(int)(value * 100) | SIZE_IN_PERCENTS_FLAG;
+
+        return 0;
+    }
+
+    bool opEquals(Dimension u) const
+    {
+        import core.stdc.string;
+        // workaround for NaN != NaN
+        return memcmp(cast(void*)&this, cast(void*)&u, Dimension.sizeof) == 0;
+    }
+
+    /// Parse pair (value, unit), where value is a real number, unit is: cm, mm, in, pt, px, em, %.
+    /// Returns Dimension.none if cannot parse.
+    static Dimension parse(string value, string units)
+    {
+        import std.conv : to;
+
+        if (!value.length || !units.length)
+            return Dimension.none;
+
+        LengthUnit type;
+        if (units == "cm")
+            type = LengthUnit.cm;
+        else if (units == "mm")
+            type = LengthUnit.mm;
+        else if (units == "in")
+            type = LengthUnit.inch;
+        else if (units == "pt")
+            type = LengthUnit.pt;
+        else if (units == "px")
+            type = LengthUnit.px;
+        else if (units == "em")
+            type = LengthUnit.em;
+        else if (units == "%")
+            type = LengthUnit.percent;
+        else
+            return Dimension.none;
+
+        try
+        {
+            float v = to!float(value);
+            return Dimension(v, type);
+        }
+        catch (Exception e)
+        {
+            return Dimension.none;
+        }
+    }
+}
+
 nothrow @nogc:
 
 /// Convert custom size to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
