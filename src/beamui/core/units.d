@@ -55,7 +55,23 @@ struct Dimension
         this.type = type;
     }
 
-    /// For absolute units - converts them to device pixels, for relative - multiplies by 100, adds flag
+    /// Dimension.unit(value) syntax
+    static Dimension opDispatch(string op)(float value)
+    {
+        return mixin("Dimension(value, LengthUnit." ~ op ~ ")");
+    }
+
+    bool is_em() const
+    {
+        return type == LengthUnit.em;
+    }
+
+    bool is_percent() const
+    {
+        return type == LengthUnit.percent;
+    }
+
+    /// For absolute units - converts them to device pixels, for relative - multiplies by 100
     int toDevice() const
     {
         import std.math : isNaN;
@@ -81,7 +97,7 @@ struct Dimension
         if (type == LengthUnit.em)
             return cast(int)(value * 100);
         if (type == LengthUnit.percent)
-            return cast(int)(value * 100) | SIZE_IN_PERCENTS_FLAG;
+            return cast(int)(value * 100);
 
         return 0;
     }

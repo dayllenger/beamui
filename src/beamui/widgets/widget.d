@@ -639,7 +639,7 @@ public:
         /// ditto
         Widget fontSize(int size)
         {
-            ownStyle.fontSize = size;
+            ownStyle.fontSize = Dimension(size);
             handleFontChanged();
             requestLayout();
             return this;
@@ -747,7 +747,7 @@ public:
         /// ditto
         Widget width(int value)
         {
-            ownStyle.width = value;
+            ownStyle.width = Dimension(value);
             return this;
         }
         /// Widget hard height (SIZE_UNSPECIFIED if not set)
@@ -758,7 +758,7 @@ public:
         /// ditto
         Widget height(int value)
         {
-            ownStyle.height = value;
+            ownStyle.height = Dimension(value);
             return this;
         }
         /// Min width style constraint (0 for no constraint)
@@ -769,7 +769,7 @@ public:
         /// ditto
         Widget minWidth(int value) // TODO: clamp
         {
-            ownStyle.minWidth = value;
+            ownStyle.minWidth = Dimension(value);
             return this;
         }
         /// Max width style constraint (SIZE_UNSPECIFIED if no constraint set)
@@ -780,7 +780,7 @@ public:
         /// ditto
         Widget maxWidth(int value)
         {
-            ownStyle.maxWidth = value;
+            ownStyle.maxWidth = Dimension(value);
             return this;
         }
         /// Min height style constraint (0 for no constraint)
@@ -791,7 +791,7 @@ public:
         /// ditto
         Widget minHeight(int value)
         {
-            ownStyle.minHeight = value;
+            ownStyle.minHeight = Dimension(value);
             return this;
         }
         /// Max height style constraint (SIZE_UNSPECIFIED if no constraint set)
@@ -802,7 +802,7 @@ public:
         /// ditto
         Widget maxHeight(int value)
         {
-            ownStyle.maxHeight = value;
+            ownStyle.maxHeight = Dimension(value);
             return this;
         }
         /// Layout weight (while resizing to fill parent, widget will be resized proportionally to this value)

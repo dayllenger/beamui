@@ -208,12 +208,12 @@ final class Style
 {
 private:
     // layout
-    int _width = SIZE_UNSPECIFIED;
-    int _height = SIZE_UNSPECIFIED;
-    int _minWidth = 0;
-    int _maxWidth = SIZE_UNSPECIFIED;
-    int _minHeight = 0;
-    int _maxHeight = SIZE_UNSPECIFIED;
+    Dimension _width = Dimension.none;
+    Dimension _height = Dimension.none;
+    Dimension _minWidth = Dimension.zero;
+    Dimension _maxWidth = Dimension.none;
+    Dimension _minHeight = Dimension.zero;
+    Dimension _maxHeight = Dimension.none;
     int _weight = 1;
     Align _alignment = Align.topleft;
     RectOffset _margins = RectOffset(0);
@@ -225,7 +225,7 @@ private:
     // text
     string _fontFace = "Arial"; // TODO(dlangui): from settings
     FontFamily _fontFamily = FontFamily.sans_serif;
-    int _fontSize = 9 | SIZE_IN_POINTS_FLAG; // TODO(dlangui): from settings or screen properties / DPI
+    Dimension _fontSize = Dimension.pt(9); // TODO(dlangui): from settings or screen properties / DPI
     FontStyle _fontStyle = FontStyle.normal;
     ushort _fontWeight = 400;
     TextFlag _textFlags = TextFlag.unspecified;
@@ -277,41 +277,45 @@ public:
     //===================================================
     // layout properties
 
-    Style width(int value)
+    Style width(Dimension value)
     {
         _width = value;
         overrideMap[0] = true;
         return this;
     }
-    Style height(int value)
+    Style height(Dimension value)
     {
         _height = value;
         overrideMap[1] = true;
         return this;
     }
-    /// Min width constraint, 0 to unset limit
-    Style minWidth(int value)
+    /// Min width constraint, Dimension.zero or Dimension.none to unset limit
+    Style minWidth(Dimension value)
     {
+        if (value == Dimension.none)
+            value = Dimension.zero;
         _minWidth = value;
         overrideMap[2] = true;
         return this;
     }
-    /// Max width constraint, SIZE_UNSPECIFIED to unset limit
-    Style maxWidth(int value)
+    /// Max width constraint, Dimension.none to unset limit
+    Style maxWidth(Dimension value)
     {
         _maxWidth = value;
         overrideMap[3] = true;
         return this;
     }
-    /// Min height constraint, 0 to unset limit
-    Style minHeight(int value)
+    /// Min height constraint, Dimension.zero or Dimension.none to unset limit
+    Style minHeight(Dimension value)
     {
+        if (value == Dimension.none)
+            value = Dimension.zero;
         _minHeight = value;
         overrideMap[4] = true;
         return this;
     }
-    /// Max height constraint, SIZE_UNSPECIFIED to unset limit
-    Style maxHeight(int value)
+    /// Max height constraint, Dimension.none to unset limit
+    Style maxHeight(Dimension value)
     {
         _maxHeight = value;
         overrideMap[5] = true;
@@ -386,8 +390,11 @@ public:
         overrideMap[14] = true;
         return this;
     }
-    Style fontSize(int value)
+    Style fontSize(Dimension value)
     {
+        if (value == Dimension.none)
+            value = Dimension.pt(9);
+
         if (_fontSize != value)
             clearCachedObjects();
         _fontSize = value;
@@ -460,41 +467,41 @@ public:
     //===================================================
     // layout properties
 
-    int width() const pure
+    int width() const
     {
         if (parent && !overrideMap[0])
             return parent.width;
-        return _width;
+        return _width.toDevice;
     }
-    int height() const pure
+    int height() const
     {
         if (parent && !overrideMap[1])
             return parent.height;
-        return _height;
+        return _height.toDevice;
     }
     int minWidth() const
     {
         if (parent && !overrideMap[2])
             return parent.minWidth;
-        return _minWidth.toPixels;
+        return _minWidth.toDevice;
     }
     int maxWidth() const
     {
         if (parent && !overrideMap[3])
             return parent.maxWidth;
-        return _maxWidth.toPixels;
+        return _maxWidth.toDevice;
     }
     int minHeight() const
     {
         if (parent && !overrideMap[4])
             return parent.minHeight;
-        return _minHeight.toPixels;
+        return _minHeight.toDevice;
     }
     int maxHeight() const
     {
         if (parent && !overrideMap[5])
             return parent.maxHeight;
-        return _maxHeight.toPixels;
+        return _maxHeight.toDevice;
     }
     int weight() const pure
     {
@@ -564,9 +571,12 @@ public:
     {
         if (parent && !overrideMap[15])
             return parent.fontSize;
-        if (_fontSize & SIZE_IN_PERCENTS_FLAG) // FIXME
-            return parent.fontSize * (_fontSize ^ SIZE_IN_PERCENTS_FLAG) / 10000;
-        return _fontSize.toPixels;
+        int res = _fontSize.toDevice;
+        if (_fontSize.is_em)
+            return parent.fontSize * res / 100;
+        if (_fontSize.is_percent)
+            return parent.fontSize * res / 10000;
+        return res;
     }
     FontStyle fontStyle() const pure
     {
@@ -1024,7 +1034,7 @@ Theme createDefaultTheme()
     }
     static if (BACKEND_GUI)
     {
-        theme.root.fontSize = makePointSize(12);
+        theme.root.fontSize = Dimension.pt(12);
 
         auto label = theme.get("Label");
         label.alignment(Align.left | Align.vcenter).padding(RectOffset(4.pt, 2.pt));
@@ -1123,10 +1133,10 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
         switch (p.name)
         {
         case "width":
-            style.width = decodeLayoutDimensionCSS(p.value);
+            style.width = decodeDimensionCSS(p.value[0]);
             break;
         case "height":
-            style.height = decodeLayoutDimensionCSS(p.value);
+            style.height = decodeDimensionCSS(p.value[0]);
             break;
         case "min-width":
             style.minWidth = decodeDimensionCSS(p.value[0]);
@@ -1141,7 +1151,7 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
             style.maxHeight = decodeDimensionCSS(p.value[0]);
             break;/+
         case "weight":
-            style.weight = decodeDimensionCSS(p.value[0]); // TODO
+            style.weight = to!int(p.value[0].text); // TODO
             break;+/
         case "align":
             style.alignment = decodeAlignmentCSS(p.value);
@@ -1168,7 +1178,7 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
             style.fontFamily = decodeFontFamilyCSS(p.value);
             break;
         case "font-size":
-            style.fontSize = cast(int)decodeDimensionCSS(p.value[0]);
+            style.fontSize = decodeDimensionCSS(p.value[0]);
             break;
         case "font-weight":
             style.fontWeight = cast(ushort)decodeFontWeightCSS(p.value);
@@ -1177,7 +1187,7 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
             style.textFlags = decodeTextFlagsCSS(p.value);
             break;
         case "max-lines":
-            style.maxLines = decodeDimensionCSS(p.value[0]);
+            style.maxLines = to!int(p.value[0].text);
             break;
         case "background-color":
             style.backgroundColor = decodeColorCSS(p.value);
@@ -1289,7 +1299,7 @@ RectOffset decodeRectOffsetCSS(Token[] tokens)
     foreach (t; tokens)
     {
         if (t.type == TokenType.number || t.type == TokenType.dimension)
-            values[valueCount++] = decodeDimensionCSS(t);
+            values[valueCount++] = decodeDimensionCSS(t).toDevice;
         else
         {
             Log.fe("CSS(%s): rectangle value should be numeric, not '%s'", t.line, t.type);
@@ -1315,30 +1325,43 @@ RectOffset decodeRectOffsetCSS(Token[] tokens)
     return RectOffset(0);
 }
 
-
-uint decodeDimensionCSS(Token t)
+/// Decode dimension, e.g. 1px, 20%, 1.2em or `none`
+Dimension decodeDimensionCSS(Token t)
 {
-    if (t.type != TokenType.number && t.type != TokenType.dimension && t.type != TokenType.percentage)
-    {
-        Log.fe("CSS(%s): dimension should be a numeric value, not '%s'", t.line, t.type);
-        return 0;
-    }
-    return decodeDimension(t.text ~ t.dimensionUnit); // TODO
-}
-
-/// Decode layout dimension (fill, wrap, or just size)
-int decodeLayoutDimensionCSS(Token[] tokens)
-{
-    auto t = tokens[0];
     if (t.type == TokenType.ident)
     {
         if (t.text == "none")
-            return SIZE_UNSPECIFIED;
-        Log.fe("CSS(%s): unknown layout identifier: '%s'", t.line, t.text);
-        return 0;
+            return Dimension.none;
+        else
+            Log.fe("CSS(%s): unknown length identifier: '%s'", t.line, t.text);
+    }
+    else if (t.type == TokenType.number)
+    {
+        if (t.text == "0")
+            return Dimension.zero;
+        else
+            Log.fe("CSS(%s): length units are mandatory", t.line);
+    }
+    else if (t.type == TokenType.dimension)
+    {
+        Dimension u = Dimension.parse(t.text, t.dimensionUnit);
+        if (u != Dimension.none)
+            return u;
+        else
+            Log.fe("CSS(%s): can't parse length", t.line);
+    }
+    else if (t.type == TokenType.percentage)
+    {
+        Dimension u = Dimension.parse(t.text, "%");
+        if (u != Dimension.none)
+            return u;
+        else
+            Log.fe("CSS(%s): can't parse percent", t.line);
     }
     else
-        return decodeDimensionCSS(t);
+        Log.fe("CSS(%s): invalid length: '%s'", t.line, t.type);
+
+    return Dimension.none;
 }
 
 string decodeBorderCSS(Token[] tokens) pure nothrow
