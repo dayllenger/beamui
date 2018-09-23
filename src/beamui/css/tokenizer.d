@@ -2,6 +2,7 @@
 CSS tokenizer.
 
 The tokenizer follows this document: https://www.w3.org/TR/css-syntax-3
+
 Tokenizer does not parse numbers.
 Whitespace, cdo and cdc tokens are not included into result.
 
@@ -604,19 +605,18 @@ pure nothrow:
         }
         if (r[i] == 'e' || r[i] == 'E')
         {
-            appender ~= r[i];
-            i++;
-            if ((r[i] == '-' || r[i] == '+') && isDigit(r[i + 1]))
+            if (isDigit(r[i + 1]) ||
+                (r[i + 1] == '-' || r[i + 1] == '+') && isDigit(r[i + 2]))
             {
                 appender ~= r[i];
                 appender ~= r[i + 1];
                 i += 2;
-            }
-            integer = false;
-            while (isDigit(r[i]))
-            {
-                appender ~= r[i];
-                i++;
+                integer = false;
+                while (isDigit(r[i]))
+                {
+                    appender ~= r[i];
+                    i++;
+                }
             }
         }
         static struct Result
@@ -769,7 +769,7 @@ unittest
     auto tr = Tokenizer(preprocessInput(`
         identifier-1#id[*=12345] {
             'str1' "str2"
-            -moz-what: 1.23px /* the comment */
+            -moz-what: 1.23px 0.75em /* the comment */
             @keyword U+140?! -.234e+5;
             url(  'stuff.css')
             url(bad url);
@@ -811,6 +811,12 @@ good'
     assert(t.text == "1.23");
     assert(t.typeFlagInteger == false);
     assert(t.dimensionUnit == "px");
+    assert(next == Token(TokenType.whitespace));
+    t = next;
+    assert(t.type == TokenType.dimension);
+    assert(t.text == "0.75");
+    assert(t.typeFlagInteger == false);
+    assert(t.dimensionUnit == "em");
     assert(next == Token(TokenType.whitespace));
     assert(next == Token(TokenType.whitespace));
 

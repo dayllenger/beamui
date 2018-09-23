@@ -358,7 +358,9 @@ unittest
 {
     auto tr = tokenizeCSS(
 `       @import url('secondary.css');
-        @define-color fg-color #fff000;
+        @define-colors {
+            fg-color: #fff000;
+        }
 
         tag.class#id[attr*='text'], second * {
             color: #fff;
@@ -367,7 +369,7 @@ unittest
             font-size: 120%;
         }
 
-        third#id::sub:!hovered {
+        third#id::sub:not(hovered) {
             'malformed': block ;
 
 
@@ -389,10 +391,11 @@ unittest
         assert(rs[0].keyword == "import");
         assert(rs[0].content[0].type == TokenType.url);
         assert(rs[0].content[0].text == "secondary.css");
-        assert(rs[1].keyword == "define-color");
-        assert(rs[1].content[0].text == "fg-color");
-        assert(rs[1].content[1].type == TokenType.hash);
-        assert(rs[1].content[1].text == "fff000");
+        assert(rs[1].keyword == "define-colors");
+        assert(rs[1].content.length == 0);
+        assert(rs[1].properties[0].name == "fg-color");
+        assert(rs[1].properties[0].value[0].type == TokenType.hash);
+        assert(rs[1].properties[0].value[0].text == "fff000");
         assert(rs[2].keyword == "define-drawable");
         assert(rs[2].content[0].text == "the-drawable");
         assert(rs[2].content[1].type == TokenType.str);
