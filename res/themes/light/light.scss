@@ -32,7 +32,7 @@ $focused-border-color: saturate($main-color, 30%);
 
 Label {
     align: left vcenter;
-    padding: 4pt 2pt;
+    padding: 4px 2px;
 
     &:not(enabled) {
         color: $disabled-text-color;
@@ -40,13 +40,13 @@ Label {
 }
 
 MultilineLabel {
-    padding: 1pt;
+    padding: 1px;
     max-lines: 0;
 }
 
 Button {
     align: center;
-    padding: 4pt;
+    padding: 4px;
     border: #aaa 1;
     background: linear(0deg, #eeeeee, #dddddd);
     text-flags: underline-hotkeys;
@@ -68,7 +68,6 @@ Button {
 
     &::icon, &::label {
         align: center;
-        margin: 2pt;
 
         &:not(enabled) {
             opacity: 0.4;
@@ -93,7 +92,7 @@ Button {
 }
 
 LinkButton {
-    padding: 3pt;
+    padding: 3px;
     border: none;
     background: none;
 
@@ -111,7 +110,7 @@ LinkButton {
 }
 
 CheckBox {
-    padding: 2pt;
+    padding: 2px;
 }
 
 CheckBox::label, RadioButton::label {
@@ -127,8 +126,8 @@ CheckBox::label, RadioButton::label {
 }
 
 CheckBox::icon {
-    min-width: 10pt;
-    max-height: 10pt;
+    min-width: 16px;
+    max-height: 16px;
     background: btn_check_off;
 
     &:hovered {
@@ -213,8 +212,8 @@ SwitchButton {
 }
 
 CanvasWidget {
-    min-width: 50pt;
-    min-height: 50pt;
+    min-width: 50px;
+    min-height: 50px;
 }
 
 /* ==========================================================================
@@ -222,18 +221,18 @@ CanvasWidget {
 */
 
 HSpacer {
-    min-width: 5;
+    min-width: 5px;
     weight: 100;
 }
 
 VSpacer {
-    min-height: 5;
+    min-height: 5px;
     weight: 100;
 }
 
 ResizerWidget {
-    min-width: 3pt;
-    min-height: 3pt;
+    min-width: 3px;
+    min-height: 3px;
 
     &:hovered {
         background-color: fade-out(#ffff00, 0.8);
@@ -253,12 +252,12 @@ ResizerWidget {
 */
 
 GroupBox {
-    padding: 10pt 16pt 10pt 12pt;
+    padding: 10px 16px 10px 12px;
 }
 
 GroupBox::caption {
     align: left vcenter;
-    padding: 1pt;
+    padding: 1px;
     color: #504840;
 }
 
@@ -273,8 +272,8 @@ GroupBox::caption {
 */
 
 ListWidget {
-    min-width: 100pt;
-    min-height: 100pt;
+    min-width: 100px;
+    min-height: 100px;
     border: #aaa 1;
     background-color: #fff;
 
@@ -298,7 +297,7 @@ StringListWidget {
 }
 
 StringListAdapter::item, IconStringListAdapter::item {
-    padding: 4pt 2pt;
+    padding: 4px 2px;
 
     &:hovered {
         background-color: $hovered-color;
@@ -315,8 +314,8 @@ StringListAdapter::item, IconStringListAdapter::item {
 */
 
 ComboBox {
-    min-width: 40pt;
-    padding: 4pt 3pt;
+    min-width: 40px;
+    padding: 4px 3px;
     border: #aaa 1;
     background: linear(0deg, #eeeeee, #dddddd);
 
@@ -335,9 +334,9 @@ ComboBox {
     }
 
     &::body {
-        min-width: 40pt;
+        min-width: 40px;
         align: left vcenter;
-        padding: 2pt;
+        padding: 2px;
 
         &:hovered {
             color: $hovered-label-color;
@@ -350,7 +349,7 @@ ComboBox {
 
     &::button {
         align: center;
-        padding: 2pt 3pt;
+        padding: 2px 3px;
     }
 
     &::body:not(enabled), &::button:not(enabled) {
@@ -361,7 +360,7 @@ ComboBox {
         min-width: 0;
         min-height: 0;
         border: #aaa 1;
-        box-shadow: 0 3 6 #b0000000;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
         background-color: white;
 
         &:focused {
@@ -384,7 +383,7 @@ Menu {
     min-width: 0;
     min-height: 0;
     border: none;
-    box-shadow: 0 2 8 #b0000000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     background-color: #f4f4f4;
     text-flags: underline-hotkeys-on-alt;
 }
@@ -392,13 +391,13 @@ Menu {
 MenuBar {
     weight: 0;
     margin: 0;
-    padding: 3pt 0 0 0;
-    box-shadow: 0 0 5 #888;
+    padding: 3px 0 0 0;
+    box-shadow: 0 0 5px #888;
     background-color: #f3f4f5;
 }
 
 MenuItem {
-    padding: 4pt 5pt 4pt 4pt;
+    padding: 4px 5px 4px 4px;
     text-flags: parent;
 
     &:hovered {
@@ -410,14 +409,14 @@ MenuItem {
     }
 
     &::separator {
-        min-width: 1;
-        min-height: 1;
+        min-width: 1px;
+        min-height: 1px;
         background: #bbb;
     }
 
     &::icon {
         align: left vcenter;
-        padding: 2pt 0;
+        padding: 2px 0;
     }
 
     &::icon:not(enabled) {
@@ -426,13 +425,13 @@ MenuItem {
 
     &::label {
         align: left vcenter;
-        padding: 4pt 0;
+        padding: 4px 0;
         text-flags: parent;
     }
 
     &::shortcut {
         align: right vcenter;
-        padding: 8pt 0 2pt 0;
+        padding: 8px 0 2px 0;
     }
 
     &::open {
@@ -454,8 +453,8 @@ MenuItem {
 */
 
 TreeItemWidget {
-    min-width: 100;
-    min-height: 14;
+    min-width: 100px;
+    min-height: 14px;
 
     &::expander {
         align: left vcenter;
@@ -464,7 +463,7 @@ TreeItemWidget {
 
     &::body {
         align: left vcenter;
-        padding: 4pt 2pt;
+        padding: 4px 2px;
         text-flags: parent;
 
         &:hovered {
@@ -486,7 +485,7 @@ TreeItemWidget {
     }
 
     &::icon {
-        padding: 0 0 3pt 0;
+        padding: 0 0 3px 0;
     }
 
     &::label:focused, &::label:selected {
@@ -503,8 +502,8 @@ TreeItemWidget {
 */
 
 StringGridWidget, FileDialog::grid {
-    min-width: 100;
-    min-height: 60;
+    min-width: 100px;
+    min-height: 60px;
     border: #aaa 1;
     background-color: #fff;
     font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console";
@@ -550,7 +549,7 @@ Slider {
 }
 
 SliderButton {
-    padding: 3pt;
+    padding: 3px;
     border: #aaa 1;
     background: linear(-80deg, #eeeeee, #dddddd);
 
@@ -596,11 +595,11 @@ TabWidget {
 }
 
 TabControl::more {
-    padding: 0 0 2pt 4pt;
+    padding: 0 0 2px 4px;
 }
 
 TabHost {
-    padding: 6pt;
+    padding: 6px;
     background-color: #f2f4f5;
 }
 
@@ -614,7 +613,7 @@ TabUp:selected {
 }
 
 TabItemWidget {
-    padding: 0 5pt 1pt 0;
+    padding: 0 6px 1px 0;
     border: #ffffffff 0 0 0 2;
 }
 
@@ -624,7 +623,7 @@ TabItemWidget:selected {
 
 TabItemWidget::label {
     align: hcenter bottom;
-    padding: 3pt 0 3pt 3pt;
+    padding: 3px 0 3px 3px;
 
     &:hovered, &:selected,
     &:focused, &:selected:focused {
@@ -637,7 +636,7 @@ TabDownDark {
 }
 
 TabDownButtonDark {
-    padding: 5pt 1pt 1pt 1pt;
+    padding: 5px 1px 1px 1px;
     background: tab_btn_dark_down;
 }
 
@@ -646,7 +645,7 @@ TabUpDark {
 }
 
 TabUpButtonDark {
-    padding: 5pt 1pt 1pt 1pt;
+    padding: 5px 1px 1px 1px;
     background: tab_btn_dark_up;
 }
 
@@ -664,7 +663,7 @@ TabUpButtonDarkText:not(selected):not(focused):hovered {
 */
 
 EditLine {
-    padding: 4pt;
+    padding: 4px;
     border: #aaa 1;
     background-color: #fff;
 
@@ -678,8 +677,8 @@ EditLine {
 }
 
 EditBox, LogWidget {
-    min-width: 100;
-    min-height: 60;
+    min-width: 100px;
+    min-height: 60px;
     border: #aaa 1;
     background-color: #fff;
     font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console";
@@ -743,7 +742,7 @@ SourceEdit {
 
 StatusLine {
     weight: 0;
-    padding: 1pt;
+    padding: 1px;
     background-color: #eceffa;
 }
 
@@ -752,19 +751,19 @@ StatusLine {
 */
 
 ToolBarHost {
-    padding: 1pt;
+    padding: 1px;
     background: toolbar_host_background;
 }
 
 ToolBar {
-    margin: 2pt 1pt;
+    margin: 2px 1px;
     background: toolbar_background;
 }
 
 ToolBarButton, ToolBar::button {
     align: center;
-    margin: 1pt;
-    padding: 2pt;
+    margin: 1px;
+    padding: 2px;
     background: toolbar_button_background;
 
     &:not(enabled) {
@@ -775,8 +774,8 @@ ToolBarButton, ToolBar::button {
 
 ToolBarComboBox {
     align: center;
-    margin: 1pt;
-    padding: 2pt;
+    margin: 1px;
+    padding: 2px;
     background: toolbar_control_background;
 
     &:not(enabled) {
@@ -794,12 +793,12 @@ ToolBarSeparator {
 */
 
 DockHost {
-    padding: 2pt;
+    padding: 2px;
     background-color: #eceffa;
 }
 
 DockHostBody {
-    margin: 3pt;
+    margin: 3px;
     padding: 0;
 }
 
@@ -808,7 +807,7 @@ DockHostBody {
 */
 
 SimpleBarChart {
-    padding: 2pt;
+    padding: 2px;
 }
 
 @define-colors {
@@ -822,9 +821,9 @@ SimpleBarChart {
 */
 
 ProgressBarWidget {
-    min-width: 50pt;
-    min-height: 12pt;
-    padding: 2pt;
+    min-width: 50px;
+    min-height: 12px;
+    padding: 2px;
     background: progress_bar_background_frame;
 }
 
@@ -843,18 +842,18 @@ WindowFrame {
     background: #f4f4f4;
 
     &::caption {
-        padding: 1pt;
+        padding: 1px;
         background: #e4e4e4;
     }
 
     &::label {
         align: left vcenter;
-        padding: 3pt;
+        padding: 3px;
         color: #000;
     }
 
     &::body {
-        padding: 3pt;
+        padding: 3px;
     }
 }
 
@@ -872,7 +871,7 @@ AppFrame {
 DialogFrame {
     padding: 0;
     border: #888 1;
-    box-shadow: 0 4 18 #555;
+    box-shadow: 0 4px 18px #555;
 }
 
 @define-colors {
@@ -884,17 +883,17 @@ DialogFrame {
 */
 
 FileDialog {
-    padding: 4pt;
+    padding: 4px;
 }
 
 FilePathPanelButtons {
-    padding: 3pt 0 6pt 0;
+    padding: 3px 0 6px 0;
 }
 
 FilePathPanelItem {
     &::label {
         align: center;
-        padding: 3pt 2pt;
+        padding: 3px 2px;
     }
 
     &::label:hovered {
@@ -902,7 +901,7 @@ FilePathPanelItem {
     }
 
     &::button {
-        padding: 1pt 0;
+        padding: 1px 0;
     }
 
     &::button:hovered {
@@ -919,26 +918,26 @@ FilePathPanelItem {
 */
 
 SettingsDialog {
-    padding: 4pt;
+    padding: 4px;
 
     &::tree {
         weight: 3;
-        margin: 8pt;
-        padding: 4pt;
+        margin: 8px;
+        padding: 4px;
         border: #ee000000 1;
         background-color: #fff;
     }
 
     &::page {
         weight: 5;
-        margin: 0 8pt 8pt 8pt;
-        padding: 4pt;
+        margin: 0 8px 8px 8px;
+        padding: 4px;
     }
 }
 
 SettingsPage::title {
     weight: 0;
-    padding: 4pt 4pt 4pt 14pt;
+    padding: 4px 4px 4px 14px;
     font-size: 120%;
 }
 
@@ -947,12 +946,12 @@ SettingsPage::title {
 */
 
 Label#tooltip {
-    padding: 3pt;
-    box-shadow: 0 2 7 #888;
+    padding: 3px;
+    box-shadow: 0 2px 7px #888;
     background-color: #222;
     color: #eee;
 }
 
 Popup#tooltip-popup {
-    padding: 2pt 10pt 2pt 1pt;
+    padding: 2px 10px 2px 1px;
 }
