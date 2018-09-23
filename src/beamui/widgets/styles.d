@@ -221,7 +221,7 @@ private:
     // background
     string _border;
     string _backgroundImageID;
-    string _boxShadow;
+    BoxShadowDrawable _boxShadow;
     // text
     string _fontFace = "Arial"; // TODO(dlangui): from settings
     FontFamily _fontFamily = FontFamily.sans_serif;
@@ -363,7 +363,7 @@ public:
         overrideMap[11] = true;
         return this;
     }
-    Style boxShadow(string value)
+    Style boxShadow(BoxShadowDrawable value)
     {
         _boxShadow = value;
         _backgroundDrawable.clear();
@@ -545,7 +545,7 @@ public:
             return null;
         return _backgroundImageID != COLOR_DRAWABLE ? _backgroundImageID : null;
     }
-    string boxShadow() const pure
+    inout(BoxShadowDrawable) boxShadow() inout pure
     {
         if (parent && !overrideMap[12])
             return parent.boxShadow;
@@ -644,12 +644,12 @@ public:
         uint color = backgroundColor;
         string image = backgroundImageID;
         string borders = border;
-        string shadows = boxShadow;
-        if (borders !is null || shadows !is null)
+        BoxShadowDrawable shadows = s.boxShadow;
+        if (borders || shadows)
         {
             s._backgroundDrawable = new CombinedDrawable(color, image, borders, shadows);
         }
-        else if (image !is null)
+        else if (image)
         {
             s._backgroundDrawable = drawableCache.get(image);
         }
@@ -1044,8 +1044,8 @@ Theme createDefaultTheme()
         mlabel.padding(RectOffset(1.pt)).maxLines(0);
 
         auto tooltip = theme.get("Label", "tooltip");
-        tooltip.padding(RectOffset(3.pt)).boxShadow("0,2,7,#888").backgroundColor(0x222222).
-            textColor(0xeeeeee);
+        tooltip.padding(RectOffset(3.pt)).boxShadow(new BoxShadowDrawable(0, 2, 7, 0x888888)).
+            backgroundColor(0x222222).textColor(0xeeeeee);
 
         auto button = theme.get("Button");
         button.alignment(Align.center).padding(RectOffset(4.pt)).border("#aaa,1").
@@ -1391,17 +1391,36 @@ string decodeBackgroundCSS(Token[] tokens) pure nothrow
     }).efilter!(t => t !is null).join(',');
 }
 
-string decodeBoxShadowCSS(Token[] tokens) pure nothrow
+/// Create a drawable from box-shadow property
+BoxShadowDrawable decodeBoxShadowCSS(Token[] tokens)
 {
-    import std.string : join;
-
-    return tokens.emap!((t) {
-        if (t.type == TokenType.func || t.type == TokenType.hash)
-            return "#" ~ t.text;
-        if (t.type == TokenType.number)
-            return t.text;
+    if (tokens.length < 4)
+    {
+        Log.fe("CSS(%s): correct form for box-shadow is: 'h-offset v-offset blur color'", tokens[0].line);
         return null;
-    }).efilter!(t => t !is null).join(',');
+    }
+
+    Dimension xoffset = decodeDimensionCSS(tokens[0]);
+    if (xoffset == Dimension.none)
+    {
+        Log.fe("CSS(%s): invalid x-offset value", tokens[0].line);
+        return null;
+    }
+    Dimension yoffset = decodeDimensionCSS(tokens[1]);
+    if (yoffset == Dimension.none)
+    {
+        Log.fe("CSS(%s): invalid y-offset value", tokens[1].line);
+        return null;
+    }
+    Dimension blur = decodeDimensionCSS(tokens[2]);
+    if (blur == Dimension.none)
+    {
+        Log.fe("CSS(%s): invalid blur value", tokens[2].line);
+        return null;
+    }
+    uint color = decodeColorCSS(tokens[3 .. $]);
+
+    return new BoxShadowDrawable(xoffset.toDevice, yoffset.toDevice, blur.toDevice, color);
 }
 
 FontFamily decodeFontFamilyCSS(Token[] tokens)
