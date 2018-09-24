@@ -75,134 +75,6 @@ enum TextFlag : uint
     parent = 32
 }
 
-/// Custom drawable attribute container for styles
-class DrawableAttribute
-{
-    @property
-    {
-        string id() const
-        {
-            return _id;
-        }
-
-        string drawableID() const
-        {
-            return _drawableID;
-        }
-
-        void drawableID(string newDrawable)
-        {
-            _drawableID = newDrawable;
-            clear();
-        }
-
-        ref DrawableRef drawable() const
-        {
-            if (!_drawable.isNull)
-                return (cast(DrawableAttribute)this)._drawable;
-            (cast(DrawableAttribute)this)._drawable = drawableCache.get(_drawableID);
-            (cast(DrawableAttribute)this)._initialized = true;
-            return (cast(DrawableAttribute)this)._drawable;
-        }
-    }
-
-    protected
-    {
-        string _id;
-        string _drawableID;
-        DrawableRef _drawable;
-        bool _initialized;
-    }
-
-    this(string id, string drawableID)
-    {
-        _id = id;
-        _drawableID = drawableID;
-    }
-
-    ~this()
-    {
-        clear();
-    }
-
-    void clear()
-    {
-        _drawable.clear();
-        _initialized = false;
-    }
-
-    void onThemeChanged()
-    {
-        if (!_drawableID)
-        {
-            _drawable.clear();
-            _initialized = false;
-        }
-    }
-}
-
-struct DrawableAttributeList
-{
-    DrawableAttribute[string] _customDrawables;
-
-    ~this()
-    {
-        clear();
-    }
-
-    void clear()
-    {
-        eliminate(_customDrawables);
-    }
-
-    bool hasKey(string key) const
-    {
-        return (key in _customDrawables) !is null;
-    }
-
-    ref DrawableRef drawable(string id) const
-    {
-        return _customDrawables[id].drawable;
-    }
-    /// Get custom drawable attribute
-    string drawableID(string id) const
-    {
-        return _customDrawables[id].drawableID;
-    }
-
-    void set(string id, string resourceID)
-    {
-        if (id in _customDrawables)
-        {
-            _customDrawables[id].drawableID = resourceID;
-        }
-        else
-        {
-            _customDrawables[id] = new DrawableAttribute(id, resourceID);
-        }
-    }
-
-    void copyFrom(ref DrawableAttributeList v)
-    {
-        clear();
-        foreach (key, value; v._customDrawables)
-        {
-            set(key, value.drawableID);
-        }
-    }
-
-    void onThemeChanged()
-    {
-        foreach (key, ref value; _customDrawables)
-        {
-            if (value)
-            {
-                value.onThemeChanged();
-            }
-        }
-    }
-}
-
 /// Style - widget property container
 final class Style
 {
@@ -808,7 +680,7 @@ private:
     string _name;
     Style defaultStyle;
     Style[StyleID] styles;
-    DrawableAttributeList drawables;
+    DrawableRef[string] drawables;
     uint[string] colors;
 
 public:
@@ -827,6 +699,8 @@ public:
         Log.d("Destroying theme");
         eliminate(defaultStyle);
         eliminate(styles);
+        foreach (ref dr; drawables)
+            dr.clear();
         destroy(drawables);
     }
 
@@ -935,26 +809,24 @@ public:
     }
 
     /// Get custom drawable
-    ref DrawableRef getDrawable(string name) const
+    ref DrawableRef getDrawable(string name)
     {
-        if (drawables.hasKey(name))
-            return drawables.drawable(name);
-        return (cast(Theme)this)._emptyDrawable;
+        if (auto p = name in drawables)
+            return *p;
+        else
+            return _emptyDrawable;
     }
     private DrawableRef _emptyDrawable;
 
-    /// Get drawable id of custom drawable
     string getDrawableID(string name) const
     {
-        if (drawables.hasKey(name))
-            return drawables.drawableID(name);
         return null;
     }
 
     /// Set custom drawable for theme
-    Theme setDrawable(string name, string id)
+    Theme setDrawable(string name, Drawable dr)
     {
-        drawables.set(name, id);
+        drawables[name] = dr;
         return this;
     }
 
@@ -978,14 +850,13 @@ public:
         {
             s.onThemeChanged();
         }
-        drawables.onThemeChanged();
     }
 
     /// Print out theme stats
     void printStats()
     {
         Log.fd("Theme: %s, styles: %s, drawables: %s, colors: %s", _name, styles.length,
-            drawables._customDrawables.length, colors.length);
+            drawables.length, colors.length);
     }
 }
 
@@ -1112,8 +983,23 @@ private void applyAtRule(Theme theme, AtRule rule)
         foreach (p; ps)
         {
             string id = p.name;
-            string bg = decodeBackgroundCSS(p.value);
-            theme.setDrawable(id, bg);
+            Drawable dr;
+
+            uint color;
+            Drawable image;
+            decodeBackgroundCSS(p.value, color, image);
+
+            if (!isFullyTransparentColor(color))
+            {
+                if (image)
+                    dr = new CombinedDrawable(color, image, null, null);
+                else
+                    dr = new SolidFillDrawable(color);
+            }
+            else if (image)
+                dr = image;
+
+            theme.setDrawable(id, dr);
         }
     }
     else

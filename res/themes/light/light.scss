@@ -262,9 +262,9 @@ GroupBox::caption {
 }
 
 @define-drawables {
-    group_box_frame_up_left: 'group_box_frame_up_left';
-    group_box_frame_up_right: 'group_box_frame_up_right';
-    group_box_frame_bottom: 'group_box_frame_bottom';
+    group_box_frame_up_left: url(group_box_frame_up_left);
+    group_box_frame_up_right: url(group_box_frame_up_right);
+    group_box_frame_bottom: url(group_box_frame_bottom);
 }
 
 /* ==========================================================================
@@ -579,10 +579,10 @@ PageScrollButton {
 }
 
 @define-drawables {
-    scrollbar_button_up: 'scrollbar_btn_up';
-    scrollbar_button_down: 'scrollbar_btn_down';
-    scrollbar_button_left: 'scrollbar_btn_left';
-    scrollbar_button_right: 'scrollbar_btn_right';
+    scrollbar_button_up: url(scrollbar_btn_up);
+    scrollbar_button_down: url(scrollbar_btn_down);
+    scrollbar_button_left: url(scrollbar_btn_left);
+    scrollbar_button_right: url(scrollbar_btn_right);
     scrollbar_indicator_vertical: none;
     scrollbar_indicator_horizontal: none;
 }
@@ -829,9 +829,9 @@ ProgressBar {
 
 @define-drawables {
     progress_bar_gauge: #4080ff;
-    progress_bar_gauge_animation: 'progress_bar_gauge_animation.tiled';
+    progress_bar_gauge_animation: url(progress_bar_gauge_animation.tiled);
     progress_bar_indeterminate: #80c080;
-    progress_bar_indeterminate_animation: 'progress_bar_gauge_animation.tiled';
+    progress_bar_indeterminate_animation: url(progress_bar_gauge_animation.tiled);
 }
 
 /* ==========================================================================
