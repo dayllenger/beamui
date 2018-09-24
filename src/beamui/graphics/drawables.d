@@ -3,8 +3,6 @@ This module contains drawables implementation.
 
 imageCache is RAM cache of decoded images (as DrawBuf).
 
-drawableCache is cache of various Drawables.
-
 Supports nine-patch PNG images in .9.png files (like in Android).
 
 
@@ -586,7 +584,7 @@ class ImageDrawable : Drawable
         return _instanceCount;
     }
 
-    this(ref DrawBufRef image, bool tiled = false)
+    this(DrawBufRef image, bool tiled = false)
     {
         _image = image;
         _tiled = tiled;
@@ -753,135 +751,6 @@ class CombinedDrawable : Drawable
         return backgroundImage.padding + border.padding;
     }
 }
-
-__gshared DrawableCache _drawableCache;
-/// Drawable cache singleton
-@property DrawableCache drawableCache()
-{
-    return _drawableCache;
-}
-/// Drawable cache singleton
-@property void drawableCache(DrawableCache cache)
-{
-    eliminate(_drawableCache);
-    _drawableCache = cache;
-}
-
-final class DrawableCache
-{
-    private DrawableRef[string] _map;
-    private DrawableRef _nullDrawable;
-
-    this()
-    {
-        debug Log.i("Creating DrawableCache");
-    }
-
-    ~this()
-    {
-        debug (resalloc)
-            Log.e("Drawable instance count before destroying of DrawableCache: ", Drawable.instanceCount);
-
-        Log.i("Destroying DrawableCache");
-        clear();
-
-        debug if (Drawable.instanceCount)
-            Log.e("Drawable instance count after destroying of DrawableCache: ", Drawable.instanceCount);
-    }
-
-    /// Clear cache
-    void clear()
-    {
-        foreach (k, item; _map)
-            item.clear();
-        destroy(_map);
-    }
-
-    /// Returns drawable (loads from file if necessary)
-    DrawableRef get(string id)
-    {
-        if (!id)
-            return _nullDrawable;
-        id = id.strip;
-        if (id == "@null" || id == "none")
-            return _nullDrawable;
-        if (id in _map)
-            return _map[id];
-        // not found - create it
-        auto dr = makeDrawableFromID(id);
-        _map[id] = dr;
-        return DrawableRef(dr);
-    }
-}
-
-/// This function takes an id and creates a drawable
-/// ID may be a name of resource, #directive, color or json
-private Drawable makeDrawableFromID(string id)
-{
-    bool tiled;
-    if (id.endsWith(".tiled"))
-    {
-        id = id[0 .. $ - 6]; // remove .tiled
-        tiled = true;
-    }
-    string filename = resourceList.getPathByID(id);
-    if (filename)
-        id = filename;
-
-    if (id.endsWith(".xml") || id.endsWith(".XML"))
-    {
-        Log.d("XML drawables are not supported anymore: ", id);
-    }
-    else if (id.endsWith(".tim") || id.endsWith(".TIM"))
-    {
-        static if (BACKEND_CONSOLE)
-        {
-            try
-            {
-                // .tim (text image) drawables support
-                string s = cast(string)loadResourceBytes(id);
-                if (s.length)
-                {
-                    auto d = new TextDrawable(s);
-                    if (d.width && d.height)
-                    {
-                        return d;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                // cannot find drawable file
-            }
-        }
-    }
-    else if (id.startsWith("#"))
-    {
-        Log.d("Color drawable: ", id);
-    }
-    else if (id.startsWith("{"))
-    {
-        // json in {} with text drawable description
-        static if (BACKEND_CONSOLE)
-        {
-            return createTextDrawable(id);
-        }
-    }
-    else
-    {
-        static if (BACKEND_GUI)
-        {
-            // PNG/JPEG drawables support
-            DrawBufRef image = imageCache.get(id);
-            if (!image.isNull)
-                return new ImageDrawable(image, tiled);
-            else
-                Log.e("Failed to load image from ", id);
-        }
-    }
-    return null;
-}
-
 
 static if (BACKEND_GUI):
 

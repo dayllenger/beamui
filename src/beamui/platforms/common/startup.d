@@ -574,7 +574,6 @@ extern (C) void initResourceManagers()
         }
         imageCache = new ImageCache;
     }
-    _drawableCache = new DrawableCache;
 
     static if (USE_OPENGL)
     {
@@ -618,7 +617,15 @@ extern (C) void releaseResourcesOnAppExit()
     }
 
     currentTheme = null;
-    drawableCache = null;
+
+    debug
+    {
+        if (Drawable.instanceCount > 0)
+        {
+            Log.e("Drawable instance count after theme destruction: ", Drawable.instanceCount);
+        }
+    }
+
     static if (BACKEND_GUI)
     {
         try
