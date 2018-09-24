@@ -723,7 +723,7 @@ class TreeItemWidget : Row
     {
         if (_expander)
         {
-            _expander.drawable = _item.expanded ? "arrow_right_down_black" : "arrow_right_hollow";
+            _expander.imageID = _item.expanded ? "arrow_right_down_black" : "arrow_right_hollow";
         }
         if (_item.isVisible)
             visibility = Visibility.visible;

@@ -968,7 +968,7 @@ class FilePathPanelItem : Row
         _text.trackHover = true;
         _text.clickable = true;
         _text.clicked = &onTextClick;
-        _button = new Button(null, ATTR_SCROLLBAR_BUTTON_RIGHT);
+        _button = new Button(null, "scrollbar_btn_right");
         _button.bindSubItem(this, "button");
         _button.focusable = false;
         _button.clicked = &onButtonClick;

@@ -44,7 +44,7 @@ class Label : Widget
         {
             return style.maxLines;
         }
-        /// Set max lines to show
+        /// ditto
         Label maxLines(int n)
         {
             ownStyle.maxLines = n;
@@ -52,12 +52,12 @@ class Label : Widget
             return this;
         }
 
-        /// Get widget text
+        /// Text to show
         override dstring text() const
         {
             return _text;
         }
-        /// Set text to show
+        /// ditto
         override Label text(dstring s)
         {
             _text = s;
@@ -159,56 +159,44 @@ class ImageWidget : Widget
 {
     @property
     {
-        /// Get drawable image id
-        string drawableID() const
+        /// Resource id for this image
+        string imageID() const
         {
-            return _drawableID;
+            return _imageID;
         }
-        /// Set drawable image id
-        ImageWidget drawableID(string id)
+        /// ditto
+        ImageWidget imageID(string id)
         {
-            _drawableID = id;
+            _imageID = id;
             _drawable.clear();
+            if (_imageID)
+            {
+                auto img = getImage(_imageID);
+                if (!img.isNull)
+                    _drawable = new ImageDrawable(img);
+            }
             requestLayout();
             return this;
         }
-        /// Get drawable
-        ref DrawableRef drawable()
-        {
-            if (!_drawable.isNull)
-                return _drawable;
-            if (_drawableID !is null)
-                _drawable = drawableCache.get(overrideCustomDrawableID(_drawableID));
-            return _drawable;
-        }
-        /// Set custom drawable (not one from resources)
+
+        /// Set custom drawable to show (not one from resources) instead of image
         ImageWidget drawable(DrawableRef img)
         {
+            imageID = null;
             _drawable = img;
-            _drawableID = null;
-            return this;
-        }
-        /// Set custom drawable (not one from resources)
-        ImageWidget drawable(string drawableID)
-        {
-            if (_drawableID == drawableID)
-                return this;
-            _drawableID = drawableID;
-            _drawable.clear();
-            requestLayout();
             return this;
         }
     }
 
     /// Set string property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setStringProperty", "string", "drawableID"));
+    mixin(generatePropertySettersMethodOverride("setStringProperty", "string", "imageID"));
 
-    protected string _drawableID; // TODO: humanify
+    protected string _imageID;
     protected DrawableRef _drawable;
 
-    this(string drawableID = null)
+    this(string imageID = null)
     {
-        _drawableID = drawableID;
+        this.imageID = imageID;
     }
 
     ~this()
@@ -216,16 +204,9 @@ class ImageWidget : Widget
         _drawable.clear();
     }
 
-    override void onThemeChanged()
-    {
-        super.onThemeChanged();
-        if (_drawableID !is null)
-            _drawable.clear(); // remove cached drawable
-    }
-
     override Size computeMinSize()
     {
-        DrawableRef img = drawable;
+        DrawableRef img = _drawable;
         if (!img.isNull)
             return Size(img.width, img.height);
         else
@@ -234,7 +215,7 @@ class ImageWidget : Widget
 
     override Size computeNaturalSize()
     {
-        DrawableRef img = drawable;
+        DrawableRef img = _drawable;
         if (!img.isNull)
             return Size(img.width, img.height);
         else
@@ -251,7 +232,7 @@ class ImageWidget : Widget
         applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
         applyPadding(b);
-        DrawableRef img = drawable;
+        DrawableRef img = _drawable;
         if (!img.isNull)
         {
             Size sz = Size(img.width, img.height);
@@ -267,13 +248,13 @@ class Button : LinearLayout, ActionHolder
 {
     @property
     {
-        /// Get icon drawable id
-        string drawableID() const
+        /// Icon id
+        string iconID() const
         {
-            return _icon.drawableID;
+            return _icon ? _icon.imageID : null;
         }
-        /// Set icon drawable
-        Button drawableID(string id)
+        /// ditto
+        Button iconID(string id)
         {
             if (!id)
             {
@@ -288,8 +269,23 @@ class Button : LinearLayout, ActionHolder
                 addChild(_icon);
             }
             else
-                _icon.drawableID = id;
+                _icon.imageID = id;
             requestLayout();
+            return this;
+        }
+
+        /// Set custom drawable for icon
+        Button drawable(DrawableRef img)
+        {
+            if (!_icon)
+            {
+                _icon = new ImageWidget;
+                _icon.id = "icon";
+                _icon.bindSubItem(this, "icon");
+                _icon.state = State.parent;
+                addChild(_icon);
+            }
+            _icon.drawable = img;
             return this;
         }
 
@@ -453,10 +449,10 @@ class Button : LinearLayout, ActionHolder
         Action _action;
     }
 
-    this(dstring caption = null, string drawableID = null, bool checkable = false)
+    this(dstring caption = null, string iconID = null, bool checkable = false)
     {
         super(Orientation.horizontal);
-        this.drawableID = drawableID;
+        this.iconID = iconID;
         this.text = caption;
         this.checkable = checkable;
         clickable = true;
@@ -483,7 +479,7 @@ class Button : LinearLayout, ActionHolder
 
     protected void updateContent()
     {
-        drawableID = _action.iconID;
+        iconID = _action.iconID;
         text = _action.label;
         checkable = _action.checkable;
     }
@@ -515,7 +511,7 @@ class Button : LinearLayout, ActionHolder
     }
 
     /// Set string property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setStringProperty", "string", "drawableID"));
+    mixin(generatePropertySettersMethodOverride("setStringProperty", "string", "iconID"));
 }
 
 /// Button looking like URL, executing specified action

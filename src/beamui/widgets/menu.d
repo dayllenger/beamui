@@ -164,7 +164,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
                 addChild(_icon);
             }
             else
-                _icon.drawableID = iconID;
+                _icon.imageID = iconID;
         }
         // label
         if (!_label)

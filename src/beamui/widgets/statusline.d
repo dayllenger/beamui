@@ -54,12 +54,12 @@ class StatusLineIconPanel : Row
 
     @property string iconID()
     {
-        return _icon.drawableID;
+        return _icon.imageID;
     }
 
     @property void iconID(string icon)
     {
-        _icon.drawableID = icon;
+        _icon.imageID = icon;
     }
 }
 
@@ -78,12 +78,12 @@ class StatusLineTextAndIconPanel : StatusLineTextPanel
 
     @property string iconID()
     {
-        return _icon.drawableID;
+        return _icon.imageID;
     }
 
     @property void iconID(string icon)
     {
-        _icon.drawableID = icon;
+        _icon.imageID = icon;
     }
 }
 

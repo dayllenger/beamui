@@ -94,7 +94,7 @@ class AbstractSlider : WidgetGroup
             if (_orient != value)
             {
                 _orient = value;
-                updateDrawableIDs();
+                updateDrawables();
                 requestLayout();
             }
             return this;
@@ -162,10 +162,10 @@ class AbstractSlider : WidgetGroup
     override void onThemeChanged()
     {
         super.onThemeChanged();
-        updateDrawableIDs();
+        updateDrawables();
     }
 
-    protected void updateDrawableIDs()
+    protected void updateDrawables()
     {
         // override
     }
@@ -340,9 +340,8 @@ class AbstractSlider : WidgetGroup
 
         Box _scrollArea;
 
-        this(string resourceID)
+        this()
         {
-            super(null, resourceID);
             id = "SLIDER_BUTTON";
         }
 
@@ -477,18 +476,16 @@ class ScrollBar : AbstractSlider
     this(Orientation orient = Orientation.vertical)
     {
         _orient = orient;
-        _btnBack = new Button(null, currentTheme.getDrawableID(orient == Orientation.vertical ?
-            ATTR_SCROLLBAR_BUTTON_UP : ATTR_SCROLLBAR_BUTTON_LEFT));
+        _btnBack = new Button;
         _btnBack.id = "BACK";
         _btnBack.bindSubItem(this, "button");
-        _btnForward = new Button(null, currentTheme.getDrawableID(orient == Orientation.vertical ?
-            ATTR_SCROLLBAR_BUTTON_DOWN : ATTR_SCROLLBAR_BUTTON_RIGHT));
+        _btnForward = new Button;
         _btnForward.id = "FORWARD";
         _btnForward.bindSubItem(this, "button");
         _pageUp = new PageScrollButton("PAGE_UP");
         _pageDown = new PageScrollButton("PAGE_DOWN");
-        _indicator = new SliderButton(currentTheme.getDrawableID(orient == Orientation.vertical ?
-            ATTR_SCROLLBAR_INDICATOR_VERTICAL : ATTR_SCROLLBAR_INDICATOR_HORIZONTAL));
+        _indicator = new SliderButton;
+        updateDrawables();
         addChild(_btnBack);
         addChild(_btnForward);
         addChild(_indicator);
@@ -507,14 +504,14 @@ class ScrollBar : AbstractSlider
         return _pageSize >= _maxValue - _minValue;
     }
 
-    override protected void updateDrawableIDs()
+    override protected void updateDrawables()
     {
-        _btnBack.drawableID = currentTheme.getDrawableID(_orient == Orientation.vertical ?
-            ATTR_SCROLLBAR_BUTTON_UP : ATTR_SCROLLBAR_BUTTON_LEFT);
-        _btnForward.drawableID = currentTheme.getDrawableID(_orient == Orientation.vertical ?
-            ATTR_SCROLLBAR_BUTTON_DOWN : ATTR_SCROLLBAR_BUTTON_RIGHT);
-        _indicator.drawableID = currentTheme.getDrawableID(_orient == Orientation.vertical ?
-            ATTR_SCROLLBAR_INDICATOR_VERTICAL : ATTR_SCROLLBAR_INDICATOR_HORIZONTAL);
+        _btnBack.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
+            "scrollbar_button_up" : "scrollbar_button_left");
+        _btnForward.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
+            "scrollbar_button_down" : "scrollbar_button_right");
+        _indicator.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
+            "scrollbar_indicator_vertical" : "scrollbar_indicator_horizontal");
     }
 
     override protected void updateState()
@@ -623,8 +620,8 @@ class Slider : AbstractSlider
         _pageSize = 1;
         _pageUp = new PageScrollButton("PAGE_UP");
         _pageDown = new PageScrollButton("PAGE_DOWN");
-        _indicator = new SliderButton(currentTheme.getDrawableID(_orient == Orientation.vertical ?
-            ATTR_SCROLLBAR_INDICATOR_VERTICAL : ATTR_SCROLLBAR_INDICATOR_HORIZONTAL));
+        _indicator = new SliderButton;
+        updateDrawables();
         addChild(_indicator);
         addChild(_pageUp);
         addChild(_pageDown);
@@ -633,10 +630,10 @@ class Slider : AbstractSlider
         _pageDown.clicked = (Widget w) => sendScrollEvent(ScrollAction.pageDown, position);
     }
 
-    override protected void updateDrawableIDs()
+    override protected void updateDrawables()
     {
-        _indicator.drawableID = currentTheme.getDrawableID(_orient == Orientation.vertical ?
-            ATTR_SCROLLBAR_INDICATOR_VERTICAL : ATTR_SCROLLBAR_INDICATOR_HORIZONTAL);
+        _indicator.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
+            "scrollbar_indicator_vertical" : "scrollbar_indicator_horizontal");
     }
 
     override protected void updateState()

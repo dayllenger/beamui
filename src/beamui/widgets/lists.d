@@ -483,7 +483,7 @@ class IconStringListAdapter : StringListAdapterBase
         if (_items[index].iconID)
         {
             _iconWidget.visibility = Visibility.visible;
-            _iconWidget.drawableID = _items[index].iconID;
+            _iconWidget.imageID = _items[index].iconID;
         }
         else
         {

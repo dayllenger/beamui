@@ -123,7 +123,7 @@ class ComboBoxBase : Row
 
     protected Button createButton()
     {
-        auto res = new Button(null, ATTR_SCROLLBAR_BUTTON_DOWN);
+        auto res = new Button(null, "scrollbar_btn_down");
         res.id = "COMBOBOX_BUTTON";
         res.bindSubItem(this, "button");
         res.layoutWeight = 0;

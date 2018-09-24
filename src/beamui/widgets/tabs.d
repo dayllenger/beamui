@@ -211,7 +211,7 @@ class TabItemWidget : Row
         if (item.iconID !is null)
         {
             _icon.visibility = Visibility.visible;
-            _icon.drawableID = item.iconID;
+            _icon.imageID = item.iconID;
         }
         else
         {
@@ -236,12 +236,12 @@ class TabControl : WidgetGroupDefaultDrawing
         /// More button custom icon
         string moreButtonIcon()
         {
-            return _moreButton.drawableID;
+            return _moreButton.iconID;
         }
         /// ditto
         void moreButtonIcon(string resourceID)
         {
-            _moreButton.drawableID = resourceID;
+            _moreButton.iconID = resourceID;
         }
 
         string selectedTabID() const

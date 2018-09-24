@@ -818,11 +818,6 @@ public:
     }
     private DrawableRef _emptyDrawable;
 
-    string getDrawableID(string name) const
-    {
-        return null;
-    }
-
     /// Set custom drawable for theme
     Theme setDrawable(string name, Drawable dr)
     {
@@ -873,24 +868,10 @@ private __gshared Theme _currentTheme;
     _currentTheme = theme;
 }
 
-/// Returns custom drawable replacement id for specified id from current theme, or returns passed value if not found or no current theme
-string overrideCustomDrawableID(string id)
-{
-    string res = currentTheme ? currentTheme.getDrawableID(id) : id;
-    return !res ? id : res;
-}
-
 shared static ~this()
 {
     currentTheme = null;
 }
-
-immutable ATTR_SCROLLBAR_BUTTON_UP = "scrollbar_button_up";
-immutable ATTR_SCROLLBAR_BUTTON_DOWN = "scrollbar_button_down";
-immutable ATTR_SCROLLBAR_BUTTON_LEFT = "scrollbar_button_left";
-immutable ATTR_SCROLLBAR_BUTTON_RIGHT = "scrollbar_button_right";
-immutable ATTR_SCROLLBAR_INDICATOR_VERTICAL = "scrollbar_indicator_vertical";
-immutable ATTR_SCROLLBAR_INDICATOR_HORIZONTAL = "scrollbar_indicator_horizontal";
 
 Theme createDefaultTheme()
 {
