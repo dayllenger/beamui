@@ -112,14 +112,13 @@ class GradientDrawable : Drawable
     protected uint _color3; // top right
     protected uint _color4; // bottom right
 
-    this(uint angle, uint color1, uint color2)
+    this(float angle, uint color1, uint color2)
     {
         // rotate a gradient; angle goes clockwise
         import std.math;
 
-        float radians = angle * PI / 180;
-        float c = cos(radians);
-        float s = sin(radians);
+        float c = cos(angle);
+        float s = sin(angle);
         if (s >= 0)
         {
             if (c >= 0)
@@ -286,19 +285,6 @@ class BoxShadowDrawable : Drawable
     }
 }
 
-/// Decode angle; only Ndeg format for now
-uint decodeAngle(string s)
-{
-    int angle;
-    if (s.endsWith("deg"))
-        angle = to!int(s[0 .. $ - 3]);
-    else
-        Log.e("Invalid angle format: ", s);
-
-    // transform the angle to [0, 360)
-    return ((angle % 360) + 360) % 360;
-}
-
 static if (BACKEND_CONSOLE)
 {
     /**
@@ -320,55 +306,6 @@ static if (BACKEND_CONSOLE)
             return null;
         return drawable;
     }
-}
-
-/**
-    Decode solid color / gradient drawable from string
-
-    SolidFillDrawable: #AARRGGBB  - e.g. #8090A0 or #80ffffff
-    GradientDrawable: #linear,Ndeg,firstColor,secondColor
-*/
-Drawable createColorDrawable(string s)
-{
-    debug (drawables)
-        Log.d("creating color drawable ", s);
-
-    enum DrawableType
-    {
-        SolidColor,
-        LinearGradient,
-    }
-
-    auto type = DrawableType.SolidColor;
-
-    string[] items = s.split(',');
-    uint[] values;
-    int[] ivalues;
-    if (items.length != 0)
-    {
-        if (items[0] == "#linear")
-            type = DrawableType.LinearGradient;
-        else if (items[0].startsWith("#"))
-            values ~= decodeHexColor(items[0]);
-
-        foreach (i, item; items[1 .. $])
-        {
-            if (item.startsWith("#"))
-                values ~= decodeHexColor(item);
-            else if (item.endsWith("deg"))
-                values ~= decodeAngle(item);
-            if (i >= 6)
-                break;
-        }
-    }
-
-    if (type == DrawableType.SolidColor && values.length == 1) // only color #AARRGGBB
-        return new SolidFillDrawable(values[0]);
-    else if (type == DrawableType.LinearGradient && values.length == 3) // angle and two gradient colors
-        return new GradientDrawable(values[0], values[1], values[2]);
-
-    Log.e("Invalid drawable string format: ", s);
-    return new EmptyDrawable; // invalid format - just return empty drawable
 }
 
 static if (BACKEND_CONSOLE)
@@ -772,13 +709,11 @@ class CombinedDrawable : Drawable
     DrawableRef background;
     DrawableRef border;
 
-    this(uint backgroundColor, string backgroundImageID, BorderDrawable borderDrawable, BoxShadowDrawable boxShadowDrawable)
+    this(uint backgroundColor, Drawable backgroundImage, BorderDrawable borderDrawable, BoxShadowDrawable boxShadowDrawable)
     {
         boxShadow = boxShadowDrawable ? boxShadowDrawable : new EmptyDrawable;
-        background = (backgroundImageID !is null) ? drawableCache.get(backgroundImageID)
-            : (!backgroundColor.isFullyTransparentColor) ? new SolidFillDrawable(backgroundColor) : null;
-        if (background is null)
-            background = new EmptyDrawable;
+        background = backgroundImage ? backgroundImage : !backgroundColor.isFullyTransparentColor ?
+            new SolidFillDrawable(backgroundColor) : new EmptyDrawable;
         border = borderDrawable ? borderDrawable : new EmptyDrawable;
     }
 
@@ -918,8 +853,7 @@ private Drawable makeDrawableFromID(string id)
     }
     else if (id.startsWith("#"))
     {
-        // color reference #AARRGGBB, e.g. #5599AA, a gradient, border description, etc.
-        return createColorDrawable(id);
+        Log.d("Color drawable: ", id);
     }
     else if (id.startsWith("{"))
     {

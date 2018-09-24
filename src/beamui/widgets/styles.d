@@ -219,6 +219,7 @@ private:
     RectOffset _margins = RectOffset(0);
     RectOffset _padding = RectOffset(0);
     // background
+    Drawable _backgroundImage;
     BorderDrawable _border;
     string _backgroundImageID;
     BoxShadowDrawable _boxShadow;
@@ -349,6 +350,13 @@ public:
     //===================================================
     // background properties
 
+    Style backgroundImage(Drawable value)
+    {
+        _backgroundImage = value;
+        _backgroundDrawable.clear();
+        overrideMap[11] = true;
+        return this;
+    }
     Style border(BorderDrawable value)
     {
         _border = value;
@@ -531,6 +539,12 @@ public:
     //===================================================
     // background properties
 
+    inout(Drawable) backgroundImage() inout pure
+    {
+        if (parent && !overrideMap[11])
+            return parent.backgroundImage;
+        return _backgroundImage;
+    }
     inout(BorderDrawable) border() inout pure
     {
         if (parent && !overrideMap[10])
@@ -642,7 +656,7 @@ public:
             return s._backgroundDrawable;
 
         uint color = backgroundColor;
-        string image = backgroundImageID;
+        Drawable image = s.backgroundImage;
         BorderDrawable borders = s.border;
         BoxShadowDrawable shadows = s.boxShadow;
         if (borders || shadows)
@@ -651,7 +665,7 @@ public:
         }
         else if (image)
         {
-            s._backgroundDrawable = drawableCache.get(image);
+            s._backgroundDrawable = image;
         }
         else
         {
@@ -1167,7 +1181,7 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
             style.border = decodeBorderCSS(tokens);
             break;
         case "background":
-            style.backgroundImageID = decodeBackgroundCSS(tokens);
+            style.backgroundImage = decodeDrawableCSS(tokens);
             break;
         case "box-shadow":
             style.boxShadow = decodeBoxShadowCSS(tokens);
@@ -1365,6 +1379,88 @@ Dimension decodeDimensionCSS(Token t)
     return Dimension.none;
 }
 
+Drawable decodeDrawableCSS(Token[] tokens)
+{
+    if (startsWithColorCSS(tokens))
+    {
+        uint color = decodeColorCSS(tokens);
+        return !isFullyTransparentColor(color) ? new SolidFillDrawable(color) : null;
+    }
+    else
+    {
+        return decodeBackgroundImageCSS(tokens);
+    }
+}
+
+/// Decode background image. This function mutates the range - skips found values
+Drawable decodeBackgroundImageCSS(ref Token[] tokens)
+{
+    Token t0 = tokens[0];
+    // #0: none
+    if (t0.type == TokenType.ident)
+    {
+        if (t0.text == "none")
+            return null;
+        else
+            Log.fe("CSS(%s): unknown image identifier: '%s'", t0.line, t0.text);
+    }
+    // #1: image id
+    if (t0.type == TokenType.url)
+    {
+        tokens = tokens[1 .. $];
+        static if (BACKEND_GUI)
+        {
+            string id = t0.text;
+            bool tiled;
+            if (id.endsWith(".tiled"))
+            {
+                id = id[0 .. $ - 6]; // remove .tiled
+                tiled = true;
+            }
+            // PNG/JPEG image
+            DrawBufRef image = getImage(id);
+            if (!image.isNull)
+                return new ImageDrawable(image, tiled);
+        }
+        return null;
+    }
+    // #2: gradient
+    if (t0.type == TokenType.func && t0.text == "linear")
+    {
+        import std.math : isNaN;
+
+        float angle;
+        uint color1, color2;
+        if (tokens[1].type == TokenType.dimension)
+        {
+            angle = parseAngle(tokens[1].text, tokens[1].dimensionUnit);
+        }
+        if (angle.isNaN)
+        {
+            Log.fe("CSS(%s): 1st linear gradient parameter should be angle (deg, grad, rad or turn)", tokens[1].line);
+            return null;
+        }
+        else
+            tokens = tokens[2 .. $];
+
+        if (tokens[0].type == TokenType.comma)
+            tokens = tokens[1 .. $];
+
+        color1 = decodeColorCSS(tokens);
+
+        if (tokens[0].type == TokenType.comma)
+            tokens = tokens[1 .. $];
+
+        color2 = decodeColorCSS(tokens);
+
+        if (tokens[0].type == TokenType.closeParen)
+            tokens = tokens[1 .. $];
+
+        return new GradientDrawable(angle, color1, color2);
+    }
+    return null;
+}
+
 /// Create a drawable from border property
 BorderDrawable decodeBorderCSS(Token[] tokens)
 {
@@ -1517,6 +1613,20 @@ TextFlag decodeTextFlagsCSS(Token[] tokens)
         }
     }
     return res;
+}
+
+bool startsWithColorCSS(Token[] tokens)
+{
+    Token t = tokens[0];
+    if (t.type == TokenType.hash || t.type == TokenType.ident)
+        return true;
+    if (t.type == TokenType.func)
+    {
+        string fn = t.text;
+        if (fn == "rgb" || fn == "rgba" || fn == "hsl" || fn == "hsla")
+            return true;
+    }
+    return false;
 }
 
 /// Decode CSS color. This function mutates the range - skips found color value

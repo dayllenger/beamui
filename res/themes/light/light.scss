@@ -128,14 +128,14 @@ CheckBox::label, RadioButton::label {
 CheckBox::icon {
     min-width: 16px;
     max-height: 16px;
-    background: btn_check_off;
+    background: url(btn_check_off);
 
     &:hovered {
-        background: btn_check_off_focused;
+        background: url(btn_check_off_focused);
     }
 
     &:pressed {
-        background: btn_check_off_pressed;
+        background: url(btn_check_off_pressed);
     }
 
     &:not(enabled) {
@@ -143,32 +143,32 @@ CheckBox::icon {
     }
 
     &:checked {
-        background: btn_check_on;
+        background: url(btn_check_on);
     }
 
     &:checked:hovered {
-        background: btn_check_on_focused;
+        background: url(btn_check_on_focused);
     }
 
     &:checked:pressed {
-        background: btn_check_on_pressed;
+        background: url(btn_check_on_pressed);
     }
 
     &:checked:not(enabled) {
-        background: btn_check_on;
+        background: url(btn_check_on);
         opacity: 0.4;
     }
 }
 
 RadioButton::icon {
-    background: btn_radio_off;
+    background: url(btn_radio_off);
 
     &:hovered {
-        background: btn_radio_off_focused;
+        background: url(btn_radio_off_focused);
     }
 
     &:pressed {
-        background: btn_radio_off_pressed;
+        background: url(btn_radio_off_pressed);
     }
 
     &:not(enabled) {
@@ -176,37 +176,37 @@ RadioButton::icon {
     }
 
     &:checked {
-        background: btn_radio_on;
+        background: url(btn_radio_on);
     }
 
     &:checked:hovered {
-        background: btn_radio_on_focused;
+        background: url(btn_radio_on_focused);
     }
 
     &:checked:pressed {
-        background: btn_radio_on_pressed;
+        background: url(btn_radio_on_pressed);
     }
 
     &:checked:not(enabled) {
-        background: btn_radio_on;
+        background: url(btn_radio_on);
         opacity: 0.4;
     }
 }
 
 SwitchButton {
     align: center;
-    background: switch_off;
+    background: url(switch_off);
 
     &:not(enabled) {
         opacity: 0.4;
     }
 
     &:checked {
-        background: switch_on;
+        background: url(switch_on);
     }
 
     &:checked:not(enabled) {
-        background: switch_on;
+        background: url(switch_on);
         opacity: 0.4;
     }
 }
@@ -609,7 +609,7 @@ TabUp {
 }
 
 TabUp:selected {
-    background: tab_up_backgrond_selected;
+    background: url(tab_up_backgrond_selected);
 }
 
 TabItemWidget {
@@ -632,21 +632,21 @@ TabItemWidget::label {
 }
 
 TabDownDark {
-    background: dock_window_caption_background_down;
+    background: url(dock_window_caption_background_down);
 }
 
 TabDownButtonDark {
     padding: 5px 1px 1px 1px;
-    background: tab_btn_dark_down;
+    background: url(tab_btn_dark_down);
 }
 
 TabUpDark {
-    background: dock_window_caption_background;
+    background: url(dock_window_caption_background);
 }
 
 TabUpButtonDark {
     padding: 5px 1px 1px 1px;
-    background: tab_btn_dark_up;
+    background: url(tab_btn_dark_up);
 }
 
 TabUpButtonDarkText {
@@ -752,22 +752,22 @@ StatusLine {
 
 ToolBarHost {
     padding: 1px;
-    background: toolbar_host_background;
+    background: url(toolbar_host_background);
 }
 
 ToolBar {
     margin: 2px 1px;
-    background: toolbar_background;
+    background: url(toolbar_background);
 }
 
 ToolBarButton, ToolBar::button {
     align: center;
     margin: 1px;
     padding: 2px;
-    background: toolbar_button_background;
+    background: url(toolbar_button_background);
 
     &:not(enabled) {
-        background: toolbar_button_null;
+        background: url(toolbar_button_null);
         opacity: 0.4;
     }
 }
@@ -776,7 +776,7 @@ ToolBarComboBox {
     align: center;
     margin: 1px;
     padding: 2px;
-    background: toolbar_control_background;
+    background: url(toolbar_control_background);
 
     &:not(enabled) {
         background: none;

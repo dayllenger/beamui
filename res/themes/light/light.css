@@ -46,45 +46,45 @@ CheckBox::label:hovered, RadioButton::label:hovered { color: #46617e; }
 
 CheckBox::label:not(enabled), RadioButton::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
-CheckBox::icon { min-width: 16px; max-height: 16px; background: btn_check_off; }
+CheckBox::icon { min-width: 16px; max-height: 16px; background: url(btn_check_off); }
 
-CheckBox::icon:hovered { background: btn_check_off_focused; }
+CheckBox::icon:hovered { background: url(btn_check_off_focused); }
 
-CheckBox::icon:pressed { background: btn_check_off_pressed; }
+CheckBox::icon:pressed { background: url(btn_check_off_pressed); }
 
 CheckBox::icon:not(enabled) { opacity: 0.4; }
 
-CheckBox::icon:checked { background: btn_check_on; }
+CheckBox::icon:checked { background: url(btn_check_on); }
 
-CheckBox::icon:checked:hovered { background: btn_check_on_focused; }
+CheckBox::icon:checked:hovered { background: url(btn_check_on_focused); }
 
-CheckBox::icon:checked:pressed { background: btn_check_on_pressed; }
+CheckBox::icon:checked:pressed { background: url(btn_check_on_pressed); }
 
-CheckBox::icon:checked:not(enabled) { background: btn_check_on; opacity: 0.4; }
+CheckBox::icon:checked:not(enabled) { background: url(btn_check_on); opacity: 0.4; }
 
-RadioButton::icon { background: btn_radio_off; }
+RadioButton::icon { background: url(btn_radio_off); }
 
-RadioButton::icon:hovered { background: btn_radio_off_focused; }
+RadioButton::icon:hovered { background: url(btn_radio_off_focused); }
 
-RadioButton::icon:pressed { background: btn_radio_off_pressed; }
+RadioButton::icon:pressed { background: url(btn_radio_off_pressed); }
 
 RadioButton::icon:not(enabled) { opacity: 0.4; }
 
-RadioButton::icon:checked { background: btn_radio_on; }
+RadioButton::icon:checked { background: url(btn_radio_on); }
 
-RadioButton::icon:checked:hovered { background: btn_radio_on_focused; }
+RadioButton::icon:checked:hovered { background: url(btn_radio_on_focused); }
 
-RadioButton::icon:checked:pressed { background: btn_radio_on_pressed; }
+RadioButton::icon:checked:pressed { background: url(btn_radio_on_pressed); }
 
-RadioButton::icon:checked:not(enabled) { background: btn_radio_on; opacity: 0.4; }
+RadioButton::icon:checked:not(enabled) { background: url(btn_radio_on); opacity: 0.4; }
 
-SwitchButton { align: center; background: switch_off; }
+SwitchButton { align: center; background: url(switch_off); }
 
 SwitchButton:not(enabled) { opacity: 0.4; }
 
-SwitchButton:checked { background: switch_on; }
+SwitchButton:checked { background: url(switch_on); }
 
-SwitchButton:checked:not(enabled) { background: switch_on; opacity: 0.4; }
+SwitchButton:checked:not(enabled) { background: url(switch_on); opacity: 0.4; }
 
 CanvasWidget { min-width: 50px; min-height: 50px; }
 
@@ -246,7 +246,7 @@ TabHost { padding: 6px; background-color: #f2f4f5; }
 
 TabUp { /*     border: #dd000000 0 0 0 1; */ background-color: transparent; }
 
-TabUp:selected { background: tab_up_backgrond_selected; }
+TabUp:selected { background: url(tab_up_backgrond_selected); }
 
 TabItemWidget { padding: 0 6px 1px 0; /*     border: #ffffffff 0 0 0 2; */ }
 
@@ -256,13 +256,13 @@ TabItemWidget::label { align: hcenter bottom; padding: 3px 0 3px 3px; }
 
 TabItemWidget::label:hovered, TabItemWidget::label:selected, TabItemWidget::label:focused, TabItemWidget::label:selected:focused { color: #4e93da; }
 
-TabDownDark { background: dock_window_caption_background_down; }
+TabDownDark { background: url(dock_window_caption_background_down); }
 
-TabDownButtonDark { padding: 5px 1px 1px 1px; background: tab_btn_dark_down; }
+TabDownButtonDark { padding: 5px 1px 1px 1px; background: url(tab_btn_dark_down); }
 
-TabUpDark { background: dock_window_caption_background; }
+TabUpDark { background: url(dock_window_caption_background); }
 
-TabUpButtonDark { padding: 5px 1px 1px 1px; background: tab_btn_dark_up; }
+TabUpButtonDark { padding: 5px 1px 1px 1px; background: url(tab_btn_dark_up); }
 
 TabUpButtonDarkText { align: center; color: black; }
 
@@ -311,15 +311,15 @@ SourceEdit:not(enabled) { background-color: #f0f0f0; }
 StatusLine { weight: 0; padding: 1px; background-color: #eceffa; }
 
 /* ========================================================================== toolbars.d */
-ToolBarHost { padding: 1px; background: toolbar_host_background; }
+ToolBarHost { padding: 1px; background: url(toolbar_host_background); }
 
-ToolBar { margin: 2px 1px; background: toolbar_background; }
+ToolBar { margin: 2px 1px; background: url(toolbar_background); }
 
-ToolBarButton, ToolBar::button { align: center; margin: 1px; padding: 2px; background: toolbar_button_background; }
+ToolBarButton, ToolBar::button { align: center; margin: 1px; padding: 2px; background: url(toolbar_button_background); }
 
-ToolBarButton:not(enabled), ToolBar::button:not(enabled) { background: toolbar_button_null; opacity: 0.4; }
+ToolBarButton:not(enabled), ToolBar::button:not(enabled) { background: url(toolbar_button_null); opacity: 0.4; }
 
-ToolBarComboBox { align: center; margin: 1px; padding: 2px; background: toolbar_control_background; }
+ToolBarComboBox { align: center; margin: 1px; padding: 2px; background: url(toolbar_control_background); }
 
 ToolBarComboBox:not(enabled) { background: none; opacity: 0.4; }
 
