@@ -47,22 +47,22 @@ MultilineLabel {
 Button {
     align: center;
     padding: 4px;
-    border: #aaa 1;
+    border: 1px solid #aaa;
     background: linear(0deg, #eeeeee, #dddddd);
     text-flags: underline-hotkeys;
     focus-rect-color: #bbb;
 
     &:hovered:not(checked) {
-        border: $main-color 1;
+        border: 1px solid $main-color;
     }
 
     &:pressed, &:checked {
-        border: $secondary-color 1;
+        border: 1px solid $secondary-color;
         background: linear(170deg, #eeeeee, #dddddd);
     }
 
     &:not(enabled) {
-        border: #ccc 1;
+        border: 1px solid #ccc;
         opacity: 0.4;
     }
 
@@ -274,11 +274,11 @@ GroupBox::caption {
 ListWidget {
     min-width: 100px;
     min-height: 100px;
-    border: #aaa 1;
+    border: 1px solid #aaa;
     background-color: #fff;
 
     &:focused {
-        border: $focused-border-color 1;
+        border: 1px solid $focused-border-color;
     }
 
     &:not(enabled) {
@@ -288,7 +288,7 @@ ListWidget {
 
 StringListWidget {
     &:focused {
-        border: $focused-border-color 1;
+        border: 1px solid $focused-border-color;
     }
 
     &:not(enabled) {
@@ -316,20 +316,20 @@ StringListAdapter::item, IconStringListAdapter::item {
 ComboBox {
     min-width: 40px;
     padding: 4px 3px;
-    border: #aaa 1;
+    border: 1px solid #aaa;
     background: linear(0deg, #eeeeee, #dddddd);
 
     &:hovered {
-        border: $main-color 1;
+        border: 1px solid $main-color;
     }
 
     &:pressed {
-        border: $secondary-color 1;
+        border: 1px solid $secondary-color;
         background: linear(170deg, #eeeeee, #dddddd);
     }
 
     &:not(enabled) {
-        border: #ccc 1;
+        border: 1px solid #ccc;
         opacity: 0.4;
     }
 
@@ -359,12 +359,12 @@ ComboBox {
     &::list {
         min-width: 0;
         min-height: 0;
-        border: #aaa 1;
+        border: 1px solid #aaa;
         box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
         background-color: white;
 
         &:focused {
-            border: #aa2040ff 1;
+            border: 1px solid fade-out(#2040ff, 0.25);
         }
 
         &:not(enabled) {
@@ -504,12 +504,12 @@ TreeItemWidget {
 StringGridWidget, FileDialog::grid {
     min-width: 100px;
     min-height: 60px;
-    border: #aaa 1;
+    border: 1px solid #aaa;
     background-color: #fff;
     font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console";
 
     &:focused {
-        border: $focused-border-color 1;
+        border: 1px solid $focused-border-color;
     }
 
     &:not(enabled) {
@@ -544,26 +544,26 @@ ScrollBar::button {
 }
 
 Slider {
-    border: #888 1;
+    border: 1px solid #888;
     background-color: #fff;
 }
 
 SliderButton {
     padding: 3px;
-    border: #aaa 1;
+    border: 1px solid #aaa;
     background: linear(-80deg, #eeeeee, #dddddd);
 
     &:hovered {
-        border: $main-color 1;
+        border: 1px solid $main-color;
     }
 
     &:pressed {
-        border: $secondary-color 1;
+        border: 1px solid $secondary-color;
         background: linear(100deg, #eeeeee, #dddddd);
     }
 
     &:not(enabled) {
-        border: #ccc 1;
+        border: 1px solid #ccc;
         opacity: 0.4;
     }
 }
@@ -604,7 +604,7 @@ TabHost {
 }
 
 TabUp {
-    border: #dd000000 0 0 0 1;
+/*     border: #dd000000 0 0 0 1; */
     background-color: transparent;
 }
 
@@ -614,11 +614,11 @@ TabUp:selected {
 
 TabItemWidget {
     padding: 0 6px 1px 0;
-    border: #ffffffff 0 0 0 2;
+/*     border: #ffffffff 0 0 0 2; */
 }
 
 TabItemWidget:selected {
-    border: $main-color 0 0 0 2;
+/*     border: $main-color 0 0 0 2; */
 }
 
 TabItemWidget::label {
@@ -664,11 +664,11 @@ TabUpButtonDarkText:not(selected):not(focused):hovered {
 
 EditLine {
     padding: 4px;
-    border: #aaa 1;
+    border: 1px solid #aaa;
     background-color: #fff;
 
     &:focused {
-        border: $focused-border-color 1;
+        border: 1px solid $focused-border-color;
     }
 
     &:not(enabled) {
@@ -679,12 +679,12 @@ EditLine {
 EditBox, LogWidget {
     min-width: 100px;
     min-height: 60px;
-    border: #aaa 1;
+    border: 1px solid #aaa;
     background-color: #fff;
     font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console";
 
     &:focused {
-        border: $focused-border-color 1;
+        border: 1px solid $focused-border-color;
     }
 
     &:not(enabled) {
@@ -717,7 +717,7 @@ SourceEdit {
     font-size: 10pt;
 
     &:focused {
-        border: $focused-border-color 1;
+        border: 1px solid $focused-border-color;
     }
 
     &:not(enabled) {
@@ -870,7 +870,7 @@ AppFrame {
 
 DialogFrame {
     padding: 0;
-    border: #888 1;
+    border: 1px solid #888;
     box-shadow: 0 4px 18px #555;
 }
 
@@ -924,7 +924,7 @@ SettingsDialog {
         weight: 3;
         margin: 8px;
         padding: 4px;
-        border: #ee000000 1;
+        border: 1px solid rgba(0, 0, 0, 0.1);
         background-color: #fff;
     }
 

@@ -865,14 +865,14 @@ class CombinedDrawable : Drawable
         border = borderDescription !is null ? drawableCache.get("#border," ~ borderDescription) : new EmptyDrawable;
     }
 
-    this(uint backgroundColor, string backgroundImageID, string borderDescription, BoxShadowDrawable boxShadowDrawable)
+    this(uint backgroundColor, string backgroundImageID, BorderDrawable borderDrawable, BoxShadowDrawable boxShadowDrawable)
     {
         boxShadow = boxShadowDrawable ? boxShadowDrawable : new EmptyDrawable;
         background = (backgroundImageID !is null) ? drawableCache.get(backgroundImageID)
             : (!backgroundColor.isFullyTransparentColor) ? new SolidFillDrawable(backgroundColor) : null;
         if (background is null)
             background = new EmptyDrawable;
-        border = borderDescription !is null ? drawableCache.get("#border," ~ borderDescription) : new EmptyDrawable;
+        border = borderDrawable ? borderDrawable : new EmptyDrawable;
     }
 
     ~this()

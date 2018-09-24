@@ -10,13 +10,13 @@ Label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 MultilineLabel { padding: 1px; max-lines: 0; }
 
-Button { align: center; padding: 4px; border: #aaa 1; background: linear(0deg, #eeeeee, #dddddd); text-flags: underline-hotkeys; focus-rect-color: #bbb; }
+Button { align: center; padding: 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); text-flags: underline-hotkeys; focus-rect-color: #bbb; }
 
-Button:hovered:not(checked) { border: #4e93da 1; }
+Button:hovered:not(checked) { border: 1px solid #4e93da; }
 
-Button:pressed, Button:checked { border: #417fbf 1; background: linear(170deg, #eeeeee, #dddddd); }
+Button:pressed, Button:checked { border: 1px solid #417fbf; background: linear(170deg, #eeeeee, #dddddd); }
 
-Button:not(enabled) { border: #ccc 1; opacity: 0.4; }
+Button:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
 Button::icon, Button::label { align: center; }
 
@@ -111,13 +111,13 @@ GroupBox::caption { align: left vcenter; padding: 1px; color: #504840; }
   group_box_frame_bottom: 'group_box_frame_bottom'; }
 
 /* ========================================================================== lists.d */
-ListWidget { min-width: 100px; min-height: 100px; border: #aaa 1; background-color: #fff; }
+ListWidget { min-width: 100px; min-height: 100px; border: 1px solid #aaa; background-color: #fff; }
 
-ListWidget:focused { border: #2e93fa 1; }
+ListWidget:focused { border: 1px solid #2e93fa; }
 
 ListWidget:not(enabled) { background-color: #f0f0f0; }
 
-StringListWidget:focused { border: #2e93fa 1; }
+StringListWidget:focused { border: 1px solid #2e93fa; }
 
 StringListWidget:not(enabled) { background-color: #f0f0f0; }
 
@@ -128,13 +128,13 @@ StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { backgroun
 StringListAdapter::item:focused, StringListAdapter::item:selected, IconStringListAdapter::item:focused, IconStringListAdapter::item:selected { background-color: #4e93da; color: #f0f0f0; }
 
 /* ========================================================================== combobox.d */
-ComboBox { min-width: 40px; padding: 4px 3px; border: #aaa 1; background: linear(0deg, #eeeeee, #dddddd); }
+ComboBox { min-width: 40px; padding: 4px 3px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); }
 
-ComboBox:hovered { border: #4e93da 1; }
+ComboBox:hovered { border: 1px solid #4e93da; }
 
-ComboBox:pressed { border: #417fbf 1; background: linear(170deg, #eeeeee, #dddddd); }
+ComboBox:pressed { border: 1px solid #417fbf; background: linear(170deg, #eeeeee, #dddddd); }
 
-ComboBox:not(enabled) { border: #ccc 1; opacity: 0.4; }
+ComboBox:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
 ComboBox::body { min-width: 40px; align: left vcenter; padding: 2px; }
 
@@ -146,9 +146,9 @@ ComboBox::button { align: center; padding: 2px 3px; }
 
 ComboBox::body:not(enabled), ComboBox::button:not(enabled) { opacity: 0.4; }
 
-ComboBox::list { min-width: 0; min-height: 0; border: #aaa 1; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); background-color: white; }
+ComboBox::list { min-width: 0; min-height: 0; border: 1px solid #aaa; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); background-color: white; }
 
-ComboBox::list:focused { border: #aa2040ff 1; }
+ComboBox::list:focused { border: 1px solid rgba(32, 64, 255, 0.75); }
 
 ComboBox::list:not(enabled) { background-color: #f0f0f0; }
 
@@ -201,9 +201,9 @@ TreeItemWidget::label:focused, TreeItemWidget::label:selected { color: #f0f0f0; 
 TreeItemWidget::label:default { fontWeight: bold; }
 
 /* ========================================================================== grid.d */
-StringGridWidget, FileDialog::grid { min-width: 100px; min-height: 60px; border: #aaa 1; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; }
+StringGridWidget, FileDialog::grid { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; }
 
-StringGridWidget:focused, FileDialog::grid:focused { border: #2e93fa 1; }
+StringGridWidget:focused, FileDialog::grid:focused { border: 1px solid #2e93fa; }
 
 StringGridWidget:not(enabled), FileDialog::grid:not(enabled) { background-color: #f0f0f0; }
 
@@ -218,15 +218,15 @@ StringGridWidget:not(enabled), FileDialog::grid:not(enabled) { background-color:
 /* ========================================================================== scrollbar.d */
 ScrollBar { background-color: rgba(0, 0, 0, 0.05); }
 
-Slider { border: #888 1; background-color: #fff; }
+Slider { border: 1px solid #888; background-color: #fff; }
 
-SliderButton { padding: 3px; border: #aaa 1; background: linear(-80deg, #eeeeee, #dddddd); }
+SliderButton { padding: 3px; border: 1px solid #aaa; background: linear(-80deg, #eeeeee, #dddddd); }
 
-SliderButton:hovered { border: #4e93da 1; }
+SliderButton:hovered { border: 1px solid #4e93da; }
 
-SliderButton:pressed { border: #417fbf 1; background: linear(100deg, #eeeeee, #dddddd); }
+SliderButton:pressed { border: 1px solid #417fbf; background: linear(100deg, #eeeeee, #dddddd); }
 
-SliderButton:not(enabled) { border: #ccc 1; opacity: 0.4; }
+SliderButton:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
 PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
 
@@ -244,13 +244,13 @@ TabControl::more { padding: 0 0 2px 4px; }
 
 TabHost { padding: 6px; background-color: #f2f4f5; }
 
-TabUp { border: #dd000000 0 0 0 1; background-color: transparent; }
+TabUp { /*     border: #dd000000 0 0 0 1; */ background-color: transparent; }
 
 TabUp:selected { background: tab_up_backgrond_selected; }
 
-TabItemWidget { padding: 0 6px 1px 0; border: #ffffffff 0 0 0 2; }
+TabItemWidget { padding: 0 6px 1px 0; /*     border: #ffffffff 0 0 0 2; */ }
 
-TabItemWidget:selected { border: #4e93da 0 0 0 2; }
+TabItemWidget:selected { /*     border: $main-color 0 0 0 2; */ }
 
 TabItemWidget::label { align: hcenter bottom; padding: 3px 0 3px 3px; }
 
@@ -269,15 +269,15 @@ TabUpButtonDarkText { align: center; color: black; }
 TabUpButtonDarkText:not(selected):not(focused):hovered { color: #9c9c9c; }
 
 /* ========================================================================== editors.d */
-EditLine { padding: 4px; border: #aaa 1; background-color: #fff; }
+EditLine { padding: 4px; border: 1px solid #aaa; background-color: #fff; }
 
-EditLine:focused { border: #2e93fa 1; }
+EditLine:focused { border: 1px solid #2e93fa; }
 
 EditLine:not(enabled) { background-color: #f0f0f0; }
 
-EditBox, LogWidget { min-width: 100px; min-height: 60px; border: #aaa 1; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; }
+EditBox, LogWidget { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; }
 
-EditBox:focused, LogWidget:focused { border: #2e93fa 1; }
+EditBox:focused, LogWidget:focused { border: 1px solid #2e93fa; }
 
 EditBox:not(enabled), LogWidget:not(enabled) { background-color: #f0f0f0; }
 
@@ -294,7 +294,7 @@ LogWidget { font-family: monospace; font-size: 9pt; }
 /* ========================================================================== srcedit.d */
 SourceEdit { font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console"; font-family: monospace; font-size: 10pt; }
 
-SourceEdit:focused { border: #2e93fa 1; }
+SourceEdit:focused { border: 1px solid #2e93fa; }
 
 SourceEdit:not(enabled) { background-color: #f0f0f0; }
 
@@ -356,7 +356,7 @@ WindowFrame::body { padding: 3px; }
 
 /* ========================================================================== appframe.d */
 /* ========================================================================== dialog.d */
-DialogFrame { padding: 0; border: #888 1; box-shadow: 0 4px 18px #555; }
+DialogFrame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px #555; }
 
 @define-colors { dialog_background: #eee; }
 
@@ -378,7 +378,7 @@ FilePathPanelItem::button:hovered { background-color: #c7d9ec; }
 /* ========================================================================== settingsdialog.d */
 SettingsDialog { padding: 4px; }
 
-SettingsDialog::tree { weight: 3; margin: 8px; padding: 4px; border: #ee000000 1; background-color: #fff; }
+SettingsDialog::tree { weight: 3; margin: 8px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; }
 
 SettingsDialog::page { weight: 5; margin: 0 8px 8px 8px; padding: 4px; }
 

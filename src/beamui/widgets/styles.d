@@ -219,7 +219,7 @@ private:
     RectOffset _margins = RectOffset(0);
     RectOffset _padding = RectOffset(0);
     // background
-    string _border;
+    BorderDrawable _border;
     string _backgroundImageID;
     BoxShadowDrawable _boxShadow;
     // text
@@ -349,7 +349,7 @@ public:
     //===================================================
     // background properties
 
-    Style border(string value)
+    Style border(BorderDrawable value)
     {
         _border = value;
         _backgroundDrawable.clear();
@@ -531,7 +531,7 @@ public:
     //===================================================
     // background properties
 
-    string border() const pure
+    inout(BorderDrawable) border() inout pure
     {
         if (parent && !overrideMap[10])
             return parent.border;
@@ -643,7 +643,7 @@ public:
 
         uint color = backgroundColor;
         string image = backgroundImageID;
-        string borders = border;
+        BorderDrawable borders = s.border;
         BoxShadowDrawable shadows = s.boxShadow;
         if (borders || shadows)
         {
@@ -752,7 +752,7 @@ private:
         res._alignment = _alignment;
         res._margins = _margins;
         res._padding = _padding;
-        res._border = _border;
+        res._border = _border; // TODO: deep copy
         res._backgroundImageID = _backgroundImageID;
         res._boxShadow = _boxShadow;
         res._fontFace = _fontFace;
@@ -1048,10 +1048,10 @@ Theme createDefaultTheme()
             backgroundColor(0x222222).textColor(0xeeeeee);
 
         auto button = theme.get("Button");
-        button.alignment(Align.center).padding(RectOffset(4.pt)).border("#aaa,1").
+        button.alignment(Align.center).padding(RectOffset(4.pt)).border(new BorderDrawable(0xaaaaaa, 1)).
             textFlags(TextFlag.underlineHotkeys).focusRectColor(0xbbbbbb);
         button.getOrCreateState(State.hovered | State.checked, State.hovered).
-            border("#4e93da,1");
+            border(new BorderDrawable(0x4e93da, 1));
     }
     else // console
     {
@@ -1364,17 +1364,29 @@ Dimension decodeDimensionCSS(Token t)
     return Dimension.none;
 }
 
-string decodeBorderCSS(Token[] tokens) pure nothrow
+/// Create a drawable from border property
+BorderDrawable decodeBorderCSS(Token[] tokens)
 {
-    import std.string : join;
-
-    return tokens.emap!((t) {
-        if (t.type == TokenType.func || t.type == TokenType.hash)
-            return "#" ~ t.text;
-        if (t.type == TokenType.number)
-            return t.text;
+    Token t0 = tokens[0];
+    if (t0.type == TokenType.ident && t0.text == "none")
         return null;
-    }).efilter!(t => t !is null).join(',');
+
+    if (tokens.length < 3)
+    {
+        Log.fe("CSS(%s): correct form for border is: 'width style color'", t0.line);
+        return null;
+    }
+
+    Dimension width = decodeDimensionCSS(tokens[0]);
+    if (width == Dimension.none)
+    {
+        Log.fe("CSS(%s): invalid border width", tokens[0].line);
+        return null;
+    }
+    // style is not implemented yet
+    uint color = decodeColorCSS(tokens[2 .. $]);
+
+    return new BorderDrawable(color, width.toDevice);
 }
 
 string decodeBackgroundCSS(Token[] tokens) pure nothrow
@@ -1394,9 +1406,13 @@ string decodeBackgroundCSS(Token[] tokens) pure nothrow
 /// Create a drawable from box-shadow property
 BoxShadowDrawable decodeBoxShadowCSS(Token[] tokens)
 {
+    Token t0 = tokens[0];
+    if (t0.type == TokenType.ident && t0.text == "none")
+        return null;
+
     if (tokens.length < 4)
     {
-        Log.fe("CSS(%s): correct form for box-shadow is: 'h-offset v-offset blur color'", tokens[0].line);
+        Log.fe("CSS(%s): correct form for box-shadow is: 'h-offset v-offset blur color'", t0.line);
         return null;
     }
 
