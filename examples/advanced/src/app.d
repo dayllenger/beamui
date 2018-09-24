@@ -373,6 +373,18 @@ extern (C) int UIAppMain(string[] args)
         tabs.addTab(controls.id("CONTROLS"), tr("Controls"));
     }
 
+    // indicators
+    {
+        auto indicators = new Column;
+
+        auto pb = new ProgressBar;
+        pb.progress = 250;
+        pb.animationInterval = 50;
+        indicators.addChild(pb);
+
+        tabs.addTab(indicators.id("INDICATORS"), tr("Indicators"));
+    }
+
     // two long lists
     // left one is list with widgets as items
     // right one is list with string list adapter

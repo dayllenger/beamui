@@ -252,7 +252,7 @@ ResizerWidget {
 */
 
 GroupBox {
-    padding: 10px 16px 10px 12px;
+    padding: 10px 20px 10px 16px;
 }
 
 GroupBox::caption {
@@ -820,11 +820,11 @@ SimpleBarChart {
    progressbar.d
 */
 
-ProgressBarWidget {
+ProgressBar {
     min-width: 50px;
-    min-height: 12px;
+    min-height: 16px;
     padding: 2px;
-    background: progress_bar_background_frame;
+    border: 1px solid #ccc;
 }
 
 @define-drawables {

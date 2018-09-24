@@ -102,7 +102,7 @@ ResizerWidget:focused { background-color: rgba(192, 192, 0, 0.8); }
 ResizerWidget:pressed { background-color: rgba(78, 147, 218, 0.8); }
 
 /* ========================================================================== groupbox.d */
-GroupBox { padding: 10px 16px 10px 12px; }
+GroupBox { padding: 10px 20px 10px 16px; }
 
 GroupBox::caption { align: left vcenter; padding: 1px; color: #504840; }
 
@@ -338,7 +338,7 @@ SimpleBarChart { padding: 2px; }
   chart_segment_tag: #c0c0c0; }
 
 /* ========================================================================== progressbar.d */
-ProgressBarWidget { min-width: 50px; min-height: 12px; padding: 2px; background: progress_bar_background_frame; }
+ProgressBar { min-width: 50px; min-height: 16px; padding: 2px; border: 1px solid #ccc; }
 
 @define-drawables { progress_bar_gauge: #4080ff;
   progress_bar_gauge_animation: 'progress_bar_gauge_animation.tiled';
