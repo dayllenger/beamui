@@ -483,22 +483,17 @@ public:
             return this;
         }
 
-        /// Background image id
-        string backgroundImageID() const
+        /// Background image drawable
+        const(Drawable) backgroundImage() const
         {
-            return style.backgroundImageID;
+            return style.backgroundImage;
         }
         /// ditto
-        Widget backgroundImageID(string imageID)
+        Widget backgroundImage(Drawable image)
         {
-            ownStyle.backgroundImageID = imageID;
+            ownStyle.backgroundImage = image;
+            invalidate();
             return this;
-        }
-
-        /// Get color to draw focus rectangle, COLOR_UNSPECIFIED if no focus rect should be drawn
-        uint focusRectColor() const
-        {
-            return style.focusRectColor;
         }
 
         /// Background drawable
@@ -545,6 +540,12 @@ public:
             ownStyle.textColor = color;
             invalidate();
             return this;
+        }
+
+        /// Get color to draw focus rectangle, COLOR_UNSPECIFIED if no focus rect should be drawn
+        uint focusRectColor() const
+        {
+            return style.focusRectColor;
         }
 
         /// Text flags (bit set of TextFlag enum values)
@@ -1980,8 +1981,7 @@ public:
     /// Set string property value, for ML loaders
     bool setStringProperty(string name, string value)
     {
-        mixin(generatePropertySetters("id", "styleID", "backgroundImageID", "backgroundColor",
-                "textColor", "fontFace"));
+        mixin(generatePropertySetters("id", "backgroundColor", "textColor", "fontFace"));
         if (name == "text")
         {
             text = tr(value);

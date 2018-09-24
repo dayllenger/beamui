@@ -706,21 +706,24 @@ static if (USE_OPENGL)
 class CombinedDrawable : Drawable
 {
     DrawableRef boxShadow;
-    DrawableRef background;
+    DrawableRef backgroundColor;
+    DrawableRef backgroundImage;
     DrawableRef border;
 
-    this(uint backgroundColor, Drawable backgroundImage, BorderDrawable borderDrawable, BoxShadowDrawable boxShadowDrawable)
+    this(uint backgroundColor, Drawable backgroundImage, BorderDrawable border, BoxShadowDrawable boxShadow)
     {
-        boxShadow = boxShadowDrawable ? boxShadowDrawable : new EmptyDrawable;
-        background = backgroundImage ? backgroundImage : !backgroundColor.isFullyTransparentColor ?
+        this.boxShadow = boxShadow ? boxShadow : new EmptyDrawable;
+        this.backgroundColor = !backgroundColor.isFullyTransparentColor ?
             new SolidFillDrawable(backgroundColor) : new EmptyDrawable;
-        border = borderDrawable ? borderDrawable : new EmptyDrawable;
+        this.backgroundImage = backgroundImage ? backgroundImage : new EmptyDrawable;
+        this.border = border ? border : new EmptyDrawable;
     }
 
     ~this()
     {
         boxShadow.clear();
-        background.clear();
+        backgroundColor.clear();
+        backgroundImage.clear();
         border.clear();
     }
 
@@ -730,23 +733,24 @@ class CombinedDrawable : Drawable
         // make background image smaller to fit borders
         Box back = b;
         back.shrink(border.padding);
-        background.drawTo(buf, back, state, tilex0, tiley0);
+        backgroundColor.drawTo(buf, back, state, tilex0, tiley0);
+        backgroundImage.drawTo(buf, back, state, tilex0, tiley0);
         border.drawTo(buf, b, state, tilex0, tiley0);
     }
 
     override @property int width()
     {
-        return background.width + border.padding.left + border.padding.right;
+        return backgroundImage.width + border.padding.left + border.padding.right;
     }
 
     override @property int height()
     {
-        return background.height + border.padding.top + border.padding.bottom;
+        return backgroundImage.height + border.padding.top + border.padding.bottom;
     }
 
     override @property RectOffset padding()
     {
-        return background.padding + border.padding;
+        return backgroundImage.padding + border.padding;
     }
 }
 

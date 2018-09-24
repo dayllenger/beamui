@@ -219,9 +219,9 @@ private:
     RectOffset _margins = RectOffset(0);
     RectOffset _padding = RectOffset(0);
     // background
+    uint _backgroundColor = COLOR_TRANSPARENT;
     Drawable _backgroundImage;
     BorderDrawable _border;
-    string _backgroundImageID;
     BoxShadowDrawable _boxShadow;
     // text
     string _fontFace = "Arial"; // TODO(dlangui): from settings
@@ -232,7 +232,6 @@ private:
     TextFlag _textFlags = TextFlag.unspecified;
     int _maxLines = 1;
     // colors
-    uint _backgroundColor = COLOR_TRANSPARENT;
     ubyte _alpha = 0;
     uint _textColor = 0x000000; // black
     uint _focusRectColor = COLOR_UNSPECIFIED; // disabled by default
@@ -350,6 +349,13 @@ public:
     //===================================================
     // background properties
 
+    Style backgroundColor(uint value)
+    {
+        _backgroundColor = value;
+        _backgroundDrawable.clear();
+        overrideMap[10] = true;
+        return this;
+    }
     Style backgroundImage(Drawable value)
     {
         _backgroundImage = value;
@@ -361,21 +367,14 @@ public:
     {
         _border = value;
         _backgroundDrawable.clear();
-        overrideMap[10] = true;
-        return this;
-    }
-    Style backgroundImageID(string value)
-    {
-        _backgroundImageID = value;
-        _backgroundDrawable.clear();
-        overrideMap[11] = true;
+        overrideMap[12] = true;
         return this;
     }
     Style boxShadow(BoxShadowDrawable value)
     {
         _boxShadow = value;
         _backgroundDrawable.clear();
-        overrideMap[12] = true;
+        overrideMap[13] = true;
         return this;
     }
 
@@ -387,7 +386,7 @@ public:
         if (_fontFace != value)
             clearCachedObjects();
         _fontFace = value;
-        overrideMap[13] = true;
+        overrideMap[14] = true;
         return this;
     }
     Style fontFamily(FontFamily value)
@@ -395,7 +394,7 @@ public:
         if (_fontFamily != value)
             clearCachedObjects();
         _fontFamily = value;
-        overrideMap[14] = true;
+        overrideMap[15] = true;
         return this;
     }
     Style fontSize(Dimension value)
@@ -406,7 +405,7 @@ public:
         if (_fontSize != value)
             clearCachedObjects();
         _fontSize = value;
-        overrideMap[15] = true;
+        overrideMap[16] = true;
         return this;
     }
     Style fontStyle(FontStyle value)
@@ -414,7 +413,7 @@ public:
         if (_fontStyle != value)
             clearCachedObjects();
         _fontStyle = value;
-        overrideMap[16] = true;
+        overrideMap[17] = true;
         return this;
     }
     Style fontWeight(ushort value)
@@ -422,33 +421,25 @@ public:
         if (_fontWeight != value)
             clearCachedObjects();
         _fontWeight = value;
-        overrideMap[17] = true;
+        overrideMap[18] = true;
         return this;
     }
     Style textFlags(TextFlag value)
     {
         _textFlags = value;
-        overrideMap[18] = true;
+        overrideMap[19] = true;
         return this;
     }
     Style maxLines(int value)
     {
         _maxLines = value;
-        overrideMap[19] = true;
+        overrideMap[20] = true;
         return this;
     }
 
     //===================================================
     // color properties
 
-    Style backgroundColor(uint value)
-    {
-        _backgroundColor = value;
-        _backgroundImageID = COLOR_DRAWABLE;
-        _backgroundDrawable.clear();
-        overrideMap[20] = true;
-        return this;
-    }
     /// Alpha (0 = opaque ... 255 = transparent)
     Style alpha(ubyte value)
     {
@@ -539,6 +530,12 @@ public:
     //===================================================
     // background properties
 
+    uint backgroundColor() const pure
+    {
+        if (parent && !overrideMap[10])
+            return parent.backgroundColor;
+        return _backgroundColor;
+    }
     inout(Drawable) backgroundImage() inout pure
     {
         if (parent && !overrideMap[11])
@@ -547,21 +544,13 @@ public:
     }
     inout(BorderDrawable) border() inout pure
     {
-        if (parent && !overrideMap[10])
+        if (parent && !overrideMap[12])
             return parent.border;
         return _border;
     }
-    string backgroundImageID() const pure
-    {
-        if (parent && !overrideMap[11])
-            return parent.backgroundImageID;
-        if (_backgroundImageID == COLOR_DRAWABLE)
-            return null;
-        return _backgroundImageID != COLOR_DRAWABLE ? _backgroundImageID : null;
-    }
     inout(BoxShadowDrawable) boxShadow() inout pure
     {
-        if (parent && !overrideMap[12])
+        if (parent && !overrideMap[13])
             return parent.boxShadow;
         return _boxShadow;
     }
@@ -571,19 +560,19 @@ public:
 
     string fontFace() const pure
     {
-        if (parent && !overrideMap[13])
+        if (parent && !overrideMap[14])
             return parent.fontFace;
         return _fontFace;
     }
     FontFamily fontFamily() const pure
     {
-        if (parent && !overrideMap[14])
+        if (parent && !overrideMap[15])
             return parent.fontFamily;
         return _fontFamily;
     }
     int fontSize() const
     {
-        if (parent && !overrideMap[15])
+        if (parent && !overrideMap[16])
             return parent.fontSize;
         int res = _fontSize.toDevice;
         if (_fontSize.is_em)
@@ -594,25 +583,25 @@ public:
     }
     FontStyle fontStyle() const pure
     {
-        if (parent && !overrideMap[16])
+        if (parent && !overrideMap[17])
             return parent.fontStyle;
         return _fontStyle;
     }
     ushort fontWeight() const pure
     {
-        if (parent && !overrideMap[17])
+        if (parent && !overrideMap[18])
             return parent.fontWeight;
         return _fontWeight;
     }
     TextFlag textFlags() const pure
     {
-        if (parent && !overrideMap[18])
+        if (parent && !overrideMap[19])
             return parent.textFlags;
         return _textFlags;
     }
     int maxLines() const pure
     {
-        if (parent && !overrideMap[19])
+        if (parent && !overrideMap[20])
             return parent.maxLines;
         return _maxLines;
     }
@@ -620,12 +609,6 @@ public:
     //===================================================
     // color properties
 
-    uint backgroundColor() const pure
-    {
-        if (parent && !overrideMap[20])
-            return parent.backgroundColor;
-        return _backgroundColor;
-    }
     ubyte alpha() const pure
     {
         if (parent && !overrideMap[21])
@@ -718,9 +701,10 @@ public:
         static foreach (i, p; [
             "width", "height", "minWidth", "maxWidth", "minHeight", "maxHeight",
             "weight", "alignment", "margins", "padding",
-            "border", "backgroundImageID", "boxShadow", "fontFace", "fontFamily",
-            "fontSize", "fontStyle", "fontWeight", "textFlags", "maxLines",
-            "backgroundColor", "alpha", "textColor", "focusRectColor"])
+            "backgroundColor", "backgroundImage", "border", "boxShadow",
+            "fontFace", "fontFamily", "fontSize", "fontStyle", "fontWeight",
+            "textFlags", "maxLines",
+            "alpha", "textColor", "focusRectColor"])
         {
             Log.d(overrideMap[i] ? p ~ " (o): " : p ~ ": ", mixin(p));
         }
@@ -766,8 +750,9 @@ private:
         res._alignment = _alignment;
         res._margins = _margins;
         res._padding = _padding;
+        res._backgroundColor = _backgroundColor;
+        res._backgroundImage = _backgroundImage;
         res._border = _border; // TODO: deep copy
-        res._backgroundImageID = _backgroundImageID;
         res._boxShadow = _boxShadow;
         res._fontFace = _fontFace;
         res._fontFamily = _fontFamily;
@@ -776,7 +761,6 @@ private:
         res._fontWeight = _fontWeight;
         res._textFlags = _textFlags;
         res._maxLines = _maxLines;
-        res._backgroundColor = _backgroundColor;
         res._alpha = _alpha;
         res._textColor = _textColor;
         res._focusRectColor = _focusRectColor;
@@ -1180,8 +1164,18 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
         case "border":
             style.border = decodeBorderCSS(tokens);
             break;
+        case "background-color":
+            style.backgroundColor = decodeColorCSS(tokens);
+            break;
+        case "background-image":
+            style.backgroundImage = decodeBackgroundImageCSS(tokens);
+            break;
         case "background":
-            style.backgroundImage = decodeDrawableCSS(tokens);
+            uint color;
+            Drawable image;
+            decodeBackgroundCSS(tokens, color, image);
+            style.backgroundColor = color;
+            style.backgroundImage = image;
             break;
         case "box-shadow":
             style.boxShadow = decodeBoxShadowCSS(tokens);
@@ -1203,9 +1197,6 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
             break;
         case "max-lines":
             style.maxLines = to!int(tokens[0].text);
-            break;
-        case "background-color":
-            style.backgroundColor = decodeColorCSS(tokens);
             break;
         case "opacity":
             style.alpha = opacityToAlpha(to!float(tokens[0].text));
@@ -1379,17 +1370,16 @@ Dimension decodeDimensionCSS(Token t)
     return Dimension.none;
 }
 
-Drawable decodeDrawableCSS(Token[] tokens)
+/// Decode shortcut background property
+void decodeBackgroundCSS(Token[] tokens, out uint color, out Drawable image)
 {
     if (startsWithColorCSS(tokens))
-    {
-        uint color = decodeColorCSS(tokens);
-        return !isFullyTransparentColor(color) ? new SolidFillDrawable(color) : null;
-    }
+        color = decodeColorCSS(tokens);
     else
-    {
-        return decodeBackgroundImageCSS(tokens);
-    }
+        color = COLOR_TRANSPARENT;
+
+    if (tokens.length > 0)
+        image = decodeBackgroundImageCSS(tokens);
 }
 
 /// Decode background image. This function mutates the range - skips found values
