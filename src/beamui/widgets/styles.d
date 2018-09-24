@@ -1129,77 +1129,78 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
         return;
     foreach (p; properties)
     {
-        assert(p.value.length > 0);
+        Token[] tokens = p.value;
+        assert(tokens.length > 0);
         switch (p.name)
         {
         case "width":
-            style.width = decodeDimensionCSS(p.value[0]);
+            style.width = decodeDimensionCSS(tokens[0]);
             break;
         case "height":
-            style.height = decodeDimensionCSS(p.value[0]);
+            style.height = decodeDimensionCSS(tokens[0]);
             break;
         case "min-width":
-            style.minWidth = decodeDimensionCSS(p.value[0]);
+            style.minWidth = decodeDimensionCSS(tokens[0]);
             break;
         case "max-width":
-            style.maxWidth = decodeDimensionCSS(p.value[0]);
+            style.maxWidth = decodeDimensionCSS(tokens[0]);
             break;
         case "min-height":
-            style.minHeight = decodeDimensionCSS(p.value[0]);
+            style.minHeight = decodeDimensionCSS(tokens[0]);
             break;
         case "max-height":
-            style.maxHeight = decodeDimensionCSS(p.value[0]);
+            style.maxHeight = decodeDimensionCSS(tokens[0]);
             break;/+
         case "weight":
-            style.weight = to!int(p.value[0].text); // TODO
+            style.weight = to!int(tokens[0].text); // TODO
             break;+/
         case "align":
-            style.alignment = decodeAlignmentCSS(p.value);
+            style.alignment = decodeAlignmentCSS(tokens);
             break;
         case "margin":
-            style.margins = decodeRectOffsetCSS(p.value);
+            style.margins = decodeRectOffsetCSS(tokens);
             break;
         case "padding":
-            style.padding = decodeRectOffsetCSS(p.value);
+            style.padding = decodeRectOffsetCSS(tokens);
             break;
         case "border":
-            style.border = decodeBorderCSS(p.value);
+            style.border = decodeBorderCSS(tokens);
             break;
         case "background":
-            style.backgroundImageID = decodeBackgroundCSS(p.value);
+            style.backgroundImageID = decodeBackgroundCSS(tokens);
             break;
         case "box-shadow":
-            style.boxShadow = decodeBoxShadowCSS(p.value);
+            style.boxShadow = decodeBoxShadowCSS(tokens);
             break;
         case "font-face":
-            style.fontFace = p.value[0].text;
+            style.fontFace = tokens[0].text;
             break;
         case "font-family":
-            style.fontFamily = decodeFontFamilyCSS(p.value);
+            style.fontFamily = decodeFontFamilyCSS(tokens);
             break;
         case "font-size":
-            style.fontSize = decodeDimensionCSS(p.value[0]);
+            style.fontSize = decodeDimensionCSS(tokens[0]);
             break;
         case "font-weight":
-            style.fontWeight = cast(ushort)decodeFontWeightCSS(p.value);
+            style.fontWeight = cast(ushort)decodeFontWeightCSS(tokens);
             break;
         case "text-flags":
-            style.textFlags = decodeTextFlagsCSS(p.value);
+            style.textFlags = decodeTextFlagsCSS(tokens);
             break;
         case "max-lines":
-            style.maxLines = to!int(p.value[0].text);
+            style.maxLines = to!int(tokens[0].text);
             break;
         case "background-color":
-            style.backgroundColor = decodeColorCSS(p.value);
+            style.backgroundColor = decodeColorCSS(tokens);
             break;
         case "opacity":
-            style.alpha = opacityToAlpha(to!float(p.value[0].text));
+            style.alpha = opacityToAlpha(to!float(tokens[0].text));
             break;
         case "color":
-            style.textColor = decodeColorCSS(p.value);
+            style.textColor = decodeColorCSS(tokens);
             break;
         case "focus-rect-color":
-            style.focusRectColor = decodeColorCSS(p.value);
+            style.focusRectColor = decodeColorCSS(tokens);
             break;
         default:
             break;
@@ -1384,7 +1385,8 @@ BorderDrawable decodeBorderCSS(Token[] tokens)
         return null;
     }
     // style is not implemented yet
-    uint color = decodeColorCSS(tokens[2 .. $]);
+    Token[] rest = tokens[2 .. $];
+    uint color = decodeColorCSS(rest);
 
     return new BorderDrawable(color, width.toDevice);
 }
@@ -1434,7 +1436,8 @@ BoxShadowDrawable decodeBoxShadowCSS(Token[] tokens)
         Log.fe("CSS(%s): invalid blur value", tokens[2].line);
         return null;
     }
-    uint color = decodeColorCSS(tokens[3 .. $]);
+    Token[] rest = tokens[3 .. $];
+    uint color = decodeColorCSS(rest);
 
     return new BoxShadowDrawable(xoffset.toDevice, yoffset.toDevice, blur.toDevice, color);
 }
@@ -1516,29 +1519,48 @@ TextFlag decodeTextFlagsCSS(Token[] tokens)
     return res;
 }
 
-uint decodeColorCSS(Token[] tokens)
+/// Decode CSS color. This function mutates the range - skips found color value
+uint decodeColorCSS(ref Token[] tokens)
 {
-    auto t = tokens[0];
+    Token t = tokens[0];
     if (t.type == TokenType.hash)
+    {
+        tokens = tokens[1 .. $];
         return decodeHexColor("#" ~ t.text);
+    }
     if (t.type == TokenType.ident)
+    {
+        tokens = tokens[1 .. $];
         return decodeTextColor(t.text);
+    }
     if (t.type == TokenType.func)
     {
-        if (tokens[$ - 1].type != TokenType.closeParen)
+        Token[] func;
+        foreach (i, tok; tokens)
+        {
+            if (tok.type == TokenType.closeParen)
+            {
+                func = tokens[0 .. i];
+                break;
+            }
+        }
+        if (func is null)
         {
             Log.fe("CSS(%s): expected closing parenthesis", t.line);
             return 0;
         }
+        else
+            tokens = tokens[func.length + 1 .. $];
+
         string fn = t.text;
         if (fn == "rgb" || fn == "rgba")
         {
-            tokens = tokens.efilter!(t => t.type == TokenType.number);
-            auto convert = (size_t idx) => tokens.length > idx ? clamp(to!uint(tokens[idx].text), 0, 255) : 0;
+            func = func.efilter!(t => t.type == TokenType.number);
+            auto convert = (size_t idx) => func.length > idx ? clamp(to!uint(func[idx].text), 0, 255) : 0;
             uint r = convert(0);
             uint g = convert(1);
             uint b = convert(2);
-            uint a = tokens.length > 3 ? opacityToAlpha(to!float(tokens[3].text)) : 0;
+            uint a = func.length > 3 ? opacityToAlpha(to!float(func[3].text)) : 0;
             return makeRGBA(r, g, b, a);
         }
         // TODO: hsl, hsla
