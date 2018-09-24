@@ -43,13 +43,13 @@ struct Dimension
     @disable this();
 
     /// Construct with raw device pixels
-    this(int devicePixels)
+    this(int devicePixels) pure
     {
         if (devicePixels != SIZE_UNSPECIFIED)
             value = cast(float)devicePixels;
     }
     /// Construct with some value and type
-    this(float value, LengthUnit type)
+    this(float value, LengthUnit type) pure
     {
         this.value = value;
         this.type = type;
@@ -61,12 +61,12 @@ struct Dimension
         return mixin("Dimension(value, LengthUnit." ~ op ~ ")");
     }
 
-    bool is_em() const
+    bool is_em() const pure
     {
         return type == LengthUnit.em;
     }
 
-    bool is_percent() const
+    bool is_percent() const pure
     {
         return type == LengthUnit.percent;
     }
@@ -102,7 +102,7 @@ struct Dimension
         return 0;
     }
 
-    bool opEquals(Dimension u) const
+    bool opEquals(Dimension u) const pure
     {
         import core.stdc.string;
         // workaround for NaN != NaN
@@ -111,27 +111,27 @@ struct Dimension
 
     /// Parse pair (value, unit), where value is a real number, unit is: cm, mm, in, pt, px, em, %.
     /// Returns Dimension.none if cannot parse.
-    static Dimension parse(string value, string units)
+    static Dimension parse(string value, string unit) pure
     {
         import std.conv : to;
 
-        if (!value.length || !units.length)
+        if (!value.length || !unit.length)
             return Dimension.none;
 
         LengthUnit type;
-        if (units == "cm")
+        if (unit == "cm")
             type = LengthUnit.cm;
-        else if (units == "mm")
+        else if (unit == "mm")
             type = LengthUnit.mm;
-        else if (units == "in")
+        else if (unit == "in")
             type = LengthUnit.inch;
-        else if (units == "pt")
+        else if (unit == "pt")
             type = LengthUnit.pt;
-        else if (units == "px")
+        else if (unit == "px")
             type = LengthUnit.px;
-        else if (units == "em")
+        else if (unit == "em")
             type = LengthUnit.em;
-        else if (units == "%")
+        else if (unit == "%")
             type = LengthUnit.percent;
         else
             return Dimension.none;
@@ -146,6 +146,47 @@ struct Dimension
             return Dimension.none;
         }
     }
+}
+
+/// Parse angle with deg, grad, rad or turn unit. Returns an angle in radians, or NaN if cannot parse.
+float parseAngle(string value, string unit) pure
+{
+    import std.conv : to;
+    import std.math : PI;
+
+    if (!value.length || !unit.length)
+        return float.nan;
+
+    float angle;
+    try
+    {
+        angle = to!float(value);
+    }
+    catch (Exception e)
+    {
+        return float.nan;
+    }
+
+    if (unit == "rad")
+        return angle;
+    else if (unit == "deg")
+        return angle * PI / 180;
+    else if (unit == "grad")
+        return angle * PI / 200;
+    else if (unit == "turn")
+        return angle * PI * 2;
+    else
+        return float.nan;
+}
+
+unittest
+{
+    import std.math : approxEqual;
+
+    assert(parseAngle("120.5", "deg").approxEqual(2.10312, 1e-5));
+    assert(parseAngle("15", "grad").approxEqual(0.23562, 1e-5));
+    assert(parseAngle("-27.7", "rad").approxEqual(-27.7, 1e-5));
+    assert(parseAngle("2", "turn").approxEqual(12.56637, 1e-5));
 }
 
 nothrow @nogc:
