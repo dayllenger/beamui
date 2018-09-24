@@ -286,55 +286,6 @@ class BoxShadowDrawable : Drawable
     }
 }
 
-/// Decode size string, e.g. 1px or 2 or 3pt
-uint decodeDimension(string s) pure nothrow @nogc
-{
-    enum DimensionUnits
-    {
-        pixels,
-        points,
-        percents
-    }
-
-    uint value;
-    DimensionUnits units = DimensionUnits.pixels;
-    bool dotFound;
-    uint afterPointValue = 0;
-    uint afterPointDivider = 1;
-    foreach (c; s)
-    {
-        int digit = -1;
-        if (c >= '0' && c <= '9')
-            digit = c - '0';
-        if (digit >= 0)
-        {
-            if (dotFound)
-            {
-                afterPointValue = afterPointValue * 10 + digit;
-                afterPointDivider *= 10;
-            }
-            else
-            {
-                value = value * 10 + digit;
-            }
-        }
-        else if (c == 't') // just test by containing 't' - for NNNpt
-            units = DimensionUnits.points; // "pt"
-        else if (c == '%')
-            units = DimensionUnits.percents;
-        else if (c == '.')
-            dotFound = true;
-    }
-    // TODO: convert points to pixels
-    if (units == DimensionUnits.points)
-        // need to convert points to pixels
-        value |= SIZE_IN_POINTS_FLAG;
-    else if (units == DimensionUnits.percents)
-        // need to convert percents
-        value = ((value * 100) + (afterPointValue * 100 / afterPointDivider)) | SIZE_IN_PERCENTS_FLAG;
-    return value;
-}
-
 /// Decode angle; only Ndeg format for now
 uint decodeAngle(string s)
 {
@@ -372,14 +323,10 @@ static if (BACKEND_CONSOLE)
 }
 
 /**
-    Decode solid color / gradient / border drawable from string like #AARRGGBB, e.g. #5599AA
+    Decode solid color / gradient drawable from string
 
     SolidFillDrawable: #AARRGGBB  - e.g. #8090A0 or #80ffffff
     GradientDrawable: #linear,Ndeg,firstColor,secondColor
-    BorderDrawable: #border,borderColor,borderWidth[,middleColor]
-                or #border,borderColor,leftBorderWidth,topBorderWidth,rightBorderWidth,bottomBorderWidth[,middleColor]
-                e.g. #border,#000000,2,#C0FFFFFF - black border of width 2 with 75% transparent white middle
-               e.g. #border,#0000FF,2,3,4,5,#FFFFFF - blue border with left,top,right,bottom borders of width 2,3,4,5 and white inner area
 */
 Drawable createColorDrawable(string s)
 {
@@ -390,8 +337,6 @@ Drawable createColorDrawable(string s)
     {
         SolidColor,
         LinearGradient,
-        Border,
-        BoxShadow
     }
 
     auto type = DrawableType.SolidColor;
@@ -403,10 +348,6 @@ Drawable createColorDrawable(string s)
     {
         if (items[0] == "#linear")
             type = DrawableType.LinearGradient;
-        else if (items[0] == "#border")
-            type = DrawableType.Border;
-        else if (items[0] == "#box-shadow")
-            type = DrawableType.BoxShadow;
         else if (items[0].startsWith("#"))
             values ~= decodeHexColor(items[0]);
 
@@ -416,10 +357,6 @@ Drawable createColorDrawable(string s)
                 values ~= decodeHexColor(item);
             else if (item.endsWith("deg"))
                 values ~= decodeAngle(item);
-            else if (type == DrawableType.BoxShadow) // offsets may be negative
-                ivalues ~= item.startsWith("-") ? -decodeDimension(item) : decodeDimension(item);
-            else
-                values ~= decodeDimension(item);
             if (i >= 6)
                 break;
         }
@@ -429,26 +366,7 @@ Drawable createColorDrawable(string s)
         return new SolidFillDrawable(values[0]);
     else if (type == DrawableType.LinearGradient && values.length == 3) // angle and two gradient colors
         return new GradientDrawable(values[0], values[1], values[2]);
-    else if (type == DrawableType.Border)
-    {
-        if (values.length == 2) // border color and border width, with transparent inner area - #AARRGGBB,NN
-            return new BorderDrawable(values[0], values[1]);
-        else if (values.length == 3) // border color, border width, inner area color - #AARRGGBB,NN,#AARRGGBB
-            return new BorderDrawable(values[0], values[1], values[2]);
-        else if (values.length == 5) // border color, border widths for left,top,right,bottom and transparent inner area - #AARRGGBB,NNleft,NNtop,NNright,NNbottom
-            return new BorderDrawable(values[0], RectOffset(values[1], values[2], values[3], values[4]));
-        else if (values.length == 6) // border color, border widths for left,top,right,bottom, inner area color - #AARRGGBB,NNleft,NNtop,NNright,NNbottom,#AARRGGBB
-            return new BorderDrawable(values[0], RectOffset(values[1], values[2], values[3], values[4]), values[5]);
-    }
-    else if (type == DrawableType.BoxShadow)
-    {
-        if (ivalues.length == 2 && values.length == 0) // shadow X and Y offsets
-            return new BoxShadowDrawable(ivalues[0], ivalues[1]);
-        else if (ivalues.length == 3 && values.length == 0) // shadow offsets and blur size
-            return new BoxShadowDrawable(ivalues[0], ivalues[1], ivalues[2]);
-        else if (ivalues.length == 3 && values.length == 1) // shadow offsets, blur size and color
-            return new BoxShadowDrawable(ivalues[0], ivalues[1], ivalues[2], values[0]);
-    }
+
     Log.e("Invalid drawable string format: ", s);
     return new EmptyDrawable; // invalid format - just return empty drawable
 }
@@ -853,17 +771,6 @@ class CombinedDrawable : Drawable
     DrawableRef boxShadow;
     DrawableRef background;
     DrawableRef border;
-
-    this(uint backgroundColor, string backgroundImageID, string borderDescription, string boxShadowDescription)
-    {
-        boxShadow = boxShadowDescription !is null ? drawableCache.get("#box-shadow," ~ boxShadowDescription)
-            : new EmptyDrawable;
-        background = (backgroundImageID !is null) ? drawableCache.get(backgroundImageID)
-            : (!backgroundColor.isFullyTransparentColor) ? new SolidFillDrawable(backgroundColor) : null;
-        if (background is null)
-            background = new EmptyDrawable;
-        border = borderDescription !is null ? drawableCache.get("#border," ~ borderDescription) : new EmptyDrawable;
-    }
 
     this(uint backgroundColor, string backgroundImageID, BorderDrawable borderDrawable, BoxShadowDrawable boxShadowDrawable)
     {
