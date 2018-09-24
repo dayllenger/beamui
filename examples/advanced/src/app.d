@@ -655,7 +655,7 @@ void main()
 
     window.mainWidget = frame;
     static if (BACKEND_GUI)
-        window.icon = getImage("beamui-logo");
+        window.icon = imageCache.get("beamui-logo");
     window.show();
 
     return platform.enterMessageLoop();

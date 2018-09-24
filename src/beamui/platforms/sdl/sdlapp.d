@@ -91,7 +91,7 @@ final class SDLWindow : Window
         create();
 
         if (platform.defaultWindowIcon.length != 0)
-            this.icon = getImage(platform.defaultWindowIcon);
+            this.icon = imageCache.get(platform.defaultWindowIcon);
     }
 
     ~this()

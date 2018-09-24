@@ -1275,7 +1275,7 @@ Drawable decodeBackgroundImageCSS(ref Token[] tokens)
                 tiled = true;
             }
             // PNG/JPEG image
-            DrawBufRef image = getImage(id);
+            DrawBufRef image = imageCache.get(id);
             if (!image.isNull)
                 return new ImageDrawable(image, tiled);
         }
@@ -1342,20 +1342,6 @@ BorderDrawable decodeBorderCSS(Token[] tokens)
     uint color = decodeColorCSS(rest);
 
     return new BorderDrawable(color, width.toDevice);
-}
-
-string decodeBackgroundCSS(Token[] tokens) pure nothrow
-{
-    import std.string : join;
-
-    return tokens.emap!((t) {
-        if (t.type == TokenType.func || t.type == TokenType.hash)
-            return "#" ~ t.text;
-        if (t.type == TokenType.number || t.type == TokenType.dimension ||
-            t.type == TokenType.ident || t.type == TokenType.str)
-            return t.text;
-        return null;
-    }).efilter!(t => t !is null).join(',');
 }
 
 /// Create a drawable from box-shadow property

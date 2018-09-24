@@ -567,7 +567,11 @@ class FileDialog : Dialog, CustomGridCellAdapter
         string iconID = toUTF8(_fileList.cellText(0, row));
         DrawableRef res;
         if (iconID.length)
-            res = drawableCache.get(iconID);
+        {
+            auto img = imageCache.get(iconID);
+            if (!img.isNull)
+                res = new ImageDrawable(img); // TODO: reduce allocations
+        }
         return res;
     }
 

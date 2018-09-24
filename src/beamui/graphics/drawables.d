@@ -885,26 +885,13 @@ private Drawable makeDrawableFromID(string id)
 
 static if (BACKEND_GUI):
 
-/// Load or get cached image (DrawBuf) by full or short filename
-DrawBufRef getImage(string name)
-{
-    // TODO: hdpi
-//         if (SCREEN_DPI > 110)
-//         {
-        // HIGH DPI resources are in /hdpi/ directory and started with hdpi_ prefix
-//             filename = "hdpi_" ~ filename;
-//         }
-    string filename = resourceList.getPathByID(name);
-    return imageCache.get(filename);
-}
-
-__gshared ImageCache _imageCache;
+private __gshared ImageCache _imageCache;
 /// Image cache singleton
 @property ImageCache imageCache()
 {
     return _imageCache;
 }
-/// Image cache singleton
+/// ditto
 @property void imageCache(ImageCache cache)
 {
     eliminate(_imageCache);
@@ -935,21 +922,29 @@ final class ImageCache
         destroy(_map);
     }
 
-    /// Get and cache image by exact filename
-    DrawBufRef get(string filename)
+    /// Find an image by resource ID, load and cache it
+    DrawBufRef get(string imageID)
     {
-        if (auto p = filename in _map)
+        if (auto p = imageID in _map)
             return *p;
 
+        DrawBuf drawbuf;
+
+        string filename = resourceList.getPathByID(imageID);
         auto data = loadResourceBytes(filename);
         if (data)
         {
-            DrawBuf drawbuf = loadImage(data, filename);
+            drawbuf = loadImage(data, filename);
             if (filename.endsWith(".9.png") || filename.endsWith(".9.PNG"))
                 drawbuf.detectNinePatch();
-            _map[filename] = drawbuf;
-            return DrawBufRef(drawbuf);
         }
-        return DrawBufRef(cast(DrawBuf)null);
+        _map[imageID] = drawbuf;
+        return DrawBufRef(drawbuf);
+    }
+
+    /// Remove an image with resource ID `imageID` from the cache
+    void remove(string imageID)
+    {
+        _map.remove(imageID);
     }
 }

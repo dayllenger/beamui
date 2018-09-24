@@ -274,7 +274,7 @@ class X11Window : DWindow
         create();
 
         if (platform.defaultWindowIcon.length != 0)
-            this.icon = getImage(platform.defaultWindowIcon);
+            this.icon = imageCache.get(platform.defaultWindowIcon);
     }
 
     ~this()

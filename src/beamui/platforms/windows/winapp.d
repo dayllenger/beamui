@@ -336,7 +336,7 @@ class Win32Window : Window
         handleWindowStateChange(WindowState.unspecified, Box(rect.left, rect.top, _w, _h));
 
         if (platform.defaultWindowIcon.length != 0)
-            this.icon = getImage(platform.defaultWindowIcon);
+            this.icon = imageCache.get(platform.defaultWindowIcon);
     }
 
     protected Box getScreenDimensions()

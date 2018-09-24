@@ -53,9 +53,9 @@ class Dialog : Column
             if (_window)
             {
                 if (_icon.length == 0)
-                    _window.icon = getImage(platform.defaultWindowIcon);
+                    _window.icon = imageCache.get(platform.defaultWindowIcon);
                 else
-                    _window.icon = getImage(_icon);
+                    _window.icon = imageCache.get(_icon);
             }
         }
         return this;

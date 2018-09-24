@@ -171,7 +171,7 @@ class ImageWidget : Widget
             _drawable.clear();
             if (_imageID)
             {
-                auto img = getImage(_imageID);
+                auto img = imageCache.get(_imageID);
                 if (!img.isNull)
                     _drawable = new ImageDrawable(img);
             }

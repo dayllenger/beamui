@@ -572,7 +572,7 @@ extern (C) void initResourceManagers()
 
             initWin32FontsTables();
         }
-        _imageCache = new ImageCache;
+        imageCache = new ImageCache;
     }
     _drawableCache = new DrawableCache;
 
