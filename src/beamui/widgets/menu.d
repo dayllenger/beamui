@@ -400,10 +400,9 @@ class Menu : ListWidget
         return res;
     }
     /// Convenient function to add menu item by the action arguments
-    Action addAction(dstring label, string iconID = null, void delegate() func = null)
+    Action addAction(dstring label, string iconID = null, uint keyCode = 0, uint keyFlags = 0)
     {
         auto a = new Action(label, iconID);
-        a.bind(this, func);
         add(a);
         return a;
     }
@@ -633,16 +632,19 @@ class Menu : ListWidget
             debug (menus)
                 Log.d("Menu: process item ", item.action.label);
 
-            // copy menu item click listeners
+            // copy stuff we need
             auto menuItemClickedCopy = menuItemClicked;
+            auto w = window;
+            auto a = item.action;
 
             close();
-            // TODO: process checkbox and radio controls
-            if (auto w = window)
-                w.call(item.action);
 
-            // this pointer now can be invalid - if popup removed
-            menuItemClickedCopy(item);
+            // TODO: process checkbox and radio controls
+            if (w)
+                w.call(a);
+
+            // `this` pointer now can be invalid - if popup removed
+            menuItemClickedCopy(item); // FIXME: `item` can be invalid too
         }
     }
 

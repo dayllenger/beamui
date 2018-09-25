@@ -142,32 +142,34 @@ extern (C) int UIAppMain(string[] args)
 
     auto viewMenu = mainMenu.addSubmenu(tr("&View"));
     auto themeMenu = viewMenu.addSubmenu(tr("&Theme"));
-    themeMenu.addAction(tr("Reload theme"), null, { platform.reloadTheme(); });
-    themeMenu.addAction(tr("Default"), null, {
-        platform.uiTheme = "default";
-    }).checkable(true);
-    themeMenu.addAction(tr("Light"), null, {
-        platform.uiTheme = "light";
-    }).checkable(true).checked(true);
-    themeMenu.addAction(tr("Dark"), null, {
-        platform.uiTheme = "dark";
-    }).checkable(true);
+    themeMenu.addAction(tr("Reload theme")).bind(frame, &platform.reloadTheme);
+    themeMenu.addAction(tr("Default"))
+        .checkable(true)
+        .bind(frame, { platform.uiTheme = "default"; });
+    themeMenu.addAction(tr("Light"))
+        .checkable(true).checked(true)
+        .bind(frame, { platform.uiTheme = "light"; });
+    themeMenu.addAction(tr("Dark"))
+        .checkable(true)
+        .bind(frame, { platform.uiTheme = "dark"; });
 
     auto windowMenu = mainMenu.addSubmenu(tr("&Window"));
     windowMenu.addAction(tr("&Preferences"));
     windowMenu.addSeparator();
-    windowMenu.addAction(tr("Minimize"), null, { window.minimize(); });
-    windowMenu.addAction(tr("Maximize"), null, { window.maximize(); });
-    windowMenu.addAction(tr("Restore"), null, { window.restore(); });
+    windowMenu.addAction(tr("Minimize")).bind(frame, { window.minimize(); });
+    windowMenu.addAction(tr("Maximize")).bind(frame, { window.maximize(); });
+    windowMenu.addAction(tr("Restore")).bind(frame, { window.restore(); });
 
     auto helpMenu = mainMenu.addSubmenu(tr("&Help"));
-    helpMenu.addAction(tr("&View help"), null, {
-        platform.openURL("https://github.com/dayllenger/beamui");
-    });
-    helpMenu.addAction(tr("&About"), null, {
-        window.showMessageBox("About"d,
-            "beamui demo app\n(c) dayllenger, 2018\nhttp://github.com/dayllenger/beamui"d);
-    });
+    helpMenu.addAction(tr("&View help"))
+        .bind(frame, {
+            platform.openURL("https://github.com/dayllenger/beamui");
+        });
+    helpMenu.addAction(tr("&About"))
+        .bind(frame, {
+            window.showMessageBox("About"d,
+                "beamui demo app\n(c) dayllenger, 2018\nhttp://github.com/dayllenger/beamui"d);
+        });
 
     frame.addChild(mainMenu);
 

@@ -427,7 +427,7 @@ class TabControl : WidgetGroupDefaultDrawing
             Widget w = _children.remove(index + 1);
             if (w)
                 destroy(w);
-            _items.remove(index);
+            _items = _items.remove(index);
             if (id == _selectedTabID)
                 _selectedTabID = null;
             requestLayout();
@@ -587,7 +587,7 @@ class TabControl : WidgetGroupDefaultDrawing
 
             (int idx) // separate function because of the loop
             {
-                res.addAction(_items[idx].text, null, { selectTab(idx, true); });
+                res.addAction(_items[idx].text).bind(this, { selectTab(idx, true); });
             }(i - 1);
         }
         return res;

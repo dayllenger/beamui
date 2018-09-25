@@ -774,7 +774,8 @@ class FileDialog : Dialog, CustomGridCellAdapter
             Menu menu = new Menu;
             DirEntry e = _entries[row];
             // show in explorer action
-            menu.addAction(tr("Show in file manager"), null, { platform.showInFileManager(e.name); });
+            menu.addAction(tr("Show in file manager"))
+                .bind(this, { platform.showInFileManager(e.name); });
             // create directory action
 //             if (_flags & FileDialogFlag.enableCreateDirectory)
 //                 menu.add(ACTION_CREATE_DIRECTORY); // TODO
@@ -1010,7 +1011,7 @@ class FilePathPanelItem : Row
             () {
                 string fullPath = e.name;
                 string d = baseName(fullPath);
-                menu.addAction(toUTF32(d), null, {
+                menu.addAction(toUTF32(d)).bind(this, {
                     if (pathSelected.assigned)
                         pathSelected(fullPath);
                 });
