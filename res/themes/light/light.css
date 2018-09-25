@@ -157,13 +157,15 @@ Menu { width: none; height: none; min-width: 0; min-height: 0; border: none; box
 
 MenuBar { weight: 0; margin: 0; padding: 3px 0 0 0; box-shadow: 0 0 5px #888; background-color: #f3f4f5; }
 
-MenuItem { padding: 4px 5px 4px 4px; text-flags: parent; }
+MenuItem { padding: 4px 6px; text-flags: parent; }
+
+MenuItem#menu-separator { padding: 4px; }
 
 MenuItem:hovered { background-color: #e2edf9; }
 
 MenuItem:focused, MenuItem:selected { background-color: #4e93da; }
 
-MenuItem::separator { min-width: 1px; min-height: 1px; background: #bbb; }
+MenuItem::separator { min-width: 1px; min-height: 1px; background: #ccc; }
 
 MenuItem::icon { align: left vcenter; padding: 2px 0; }
 
@@ -220,11 +222,11 @@ ScrollBar { background-color: rgba(0, 0, 0, 0.05); }
 
 Slider { border: 1px solid #888; background-color: #fff; }
 
-SliderButton { padding: 3px; border: 1px solid #aaa; background: linear(-80deg, #eeeeee, #dddddd); }
+SliderButton { padding: 3px; background-color: #c2c2c2; background-image: none; border: none; }
 
-SliderButton:hovered { border: 1px solid #4e93da; }
+SliderButton:hovered { background-color: #d2d2d2; }
 
-SliderButton:pressed { border: 1px solid #417fbf; background: linear(100deg, #eeeeee, #dddddd); }
+SliderButton:pressed { background-color: #d8d8d8; }
 
 SliderButton:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 

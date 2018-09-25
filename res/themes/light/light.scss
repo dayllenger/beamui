@@ -397,8 +397,12 @@ MenuBar {
 }
 
 MenuItem {
-    padding: 4px 5px 4px 4px;
+    padding: 4px 6px;
     text-flags: parent;
+
+    &#menu-separator {
+        padding: 4px;
+    }
 
     &:hovered {
         background-color: $hovered-color;
@@ -411,7 +415,7 @@ MenuItem {
     &::separator {
         min-width: 1px;
         min-height: 1px;
-        background: #bbb;
+        background: #ccc;
     }
 
     &::icon {
@@ -550,16 +554,16 @@ Slider {
 
 SliderButton {
     padding: 3px;
-    border: 1px solid #aaa;
-    background: linear(-80deg, #eeeeee, #dddddd);
+    background-color: #c2c2c2;
+    background-image: none;
+    border: none;
 
     &:hovered {
-        border: 1px solid $main-color;
+        background-color: #d2d2d2;
     }
 
     &:pressed {
-        border: 1px solid $secondary-color;
-        background: linear(100deg, #eeeeee, #dddddd);
+        background-color: #d8d8d8;
     }
 
     &:not(enabled) {
