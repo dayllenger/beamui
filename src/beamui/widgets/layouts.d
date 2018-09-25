@@ -11,7 +11,7 @@ FrameLayout - children occupy the same place, usually one one is visible at a ti
 
 TableLayout - children aligned into rows and columns.
 
-ResizerWidget - widget to resize sibling widgets in a layout.
+Resizer - widget to resize sibling widgets in a layout.
 
 Synopsis:
 ---
@@ -100,7 +100,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
     /// Add a resizer
     LinearLayout addResizer()
     {
-        addChild(new ResizerWidget);
+        addChild(new Resizer);
         return this;
     }
 
@@ -202,7 +202,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         // apply resizers
         foreach (i; 1 .. items.length - 1)
         {
-            auto resizer = cast(ResizerWidget)items[i].wt;
+            auto resizer = cast(Resizer)items[i].wt;
             if (resizer)
             {
                 LayoutItem* left  = &items[i - 1];
@@ -686,7 +686,7 @@ enum ResizerEventType
     Put it between other items in LinearLayout to allow resizing its siblings.
     While dragging, it will resize previous and next children in layout.
 */
-class ResizerWidget : Widget
+class Resizer : Widget
 {
     /// Orientation: vertical to resize vertically, horizontal to resize horizontally
     @property Orientation orientation()
@@ -699,7 +699,7 @@ class ResizerWidget : Widget
         return _previousWidget && _nextWidget;
     }
 
-    Signal!(void delegate(ResizerWidget, ResizerEventType, int dragDelta)) resized;
+    Signal!(void delegate(Resizer, ResizerEventType, int dragDelta)) resized;
 
     protected
     {

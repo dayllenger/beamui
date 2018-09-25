@@ -45,7 +45,7 @@ treeItemLabel.fillWH();
 treeItemLabel.alignment = Align.center;
 treeControlledPanel.addChild(treeItemLabel);
 treeLayout.addChild(tree);
-treeLayout.addChild(new ResizerWidget);
+treeLayout.addResizer();
 treeLayout.addChild(treeControlledPanel);
 
 tree.selectionListener = delegate(TreeItems source, TreeItem selectedItem, bool activated) {

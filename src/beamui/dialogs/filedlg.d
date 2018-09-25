@@ -820,7 +820,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         rightPanel.addChild(new Label(tr("Path") ~ ":"));
 
         content.addChild(leftPanel);
-        content.addChild(new ResizerWidget);
+        content.addResizer();
         content.addChild(rightPanel);
 
         _edPath = new FilePathPanel;

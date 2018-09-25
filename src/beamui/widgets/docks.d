@@ -47,7 +47,7 @@ struct DockSpace
             return _alignment;
         }
 
-        ResizerWidget resizer()
+        Resizer resizer()
         {
             return _resizer;
         }
@@ -64,27 +64,27 @@ struct DockSpace
         DockWindow[] _docks;
         DockHost _host;
         DockAlignment _alignment;
-        ResizerWidget _resizer;
+        Resizer _resizer;
         int _space;
     }
 
-    ResizerWidget initialize(DockHost host, DockAlignment a)
+    Resizer initialize(DockHost host, DockAlignment a)
     {
         _host = host;
         _alignment = a;
         final switch (a) with (DockAlignment)
         {
         case top:
-            _resizer = new ResizerWidget(Orientation.vertical);
+            _resizer = new Resizer(Orientation.vertical);
             break;
         case bottom:
-            _resizer = new ResizerWidget(Orientation.vertical);
+            _resizer = new Resizer(Orientation.vertical);
             break;
         case left:
-            _resizer = new ResizerWidget(Orientation.horizontal);
+            _resizer = new Resizer(Orientation.horizontal);
             break;
         case right:
-            _resizer = new ResizerWidget(Orientation.horizontal);
+            _resizer = new Resizer(Orientation.horizontal);
             break;
         }
         _resizer.visibility = Visibility.gone;
@@ -94,7 +94,7 @@ struct DockSpace
 
     protected int _dragStartSpace;
 
-    protected void onResize(ResizerWidget source, ResizerEventType event, int dragDelta)
+    protected void onResize(Resizer source, ResizerEventType event, int dragDelta)
     {
         if (!_space)
             return;

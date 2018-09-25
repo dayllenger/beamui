@@ -93,13 +93,13 @@ HSpacer { min-width: 5px; weight: 100; }
 
 VSpacer { min-height: 5px; weight: 100; }
 
-ResizerWidget { min-width: 3px; min-height: 3px; }
+Resizer { min-width: 3px; min-height: 3px; }
 
-ResizerWidget:hovered { background-color: rgba(255, 255, 0, 0.2); }
+Resizer:hovered { background-color: rgba(255, 255, 0, 0.2); }
 
-ResizerWidget:focused { background-color: rgba(192, 192, 0, 0.8); }
+Resizer:focused { background-color: rgba(192, 192, 0, 0.8); }
 
-ResizerWidget:pressed { background-color: rgba(78, 147, 218, 0.8); }
+Resizer:pressed { background-color: rgba(78, 147, 218, 0.8); }
 
 /* ========================================================================== groupbox.d */
 GroupBox { padding: 10px 20px 10px 16px; }
