@@ -669,7 +669,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             }
             else
             {
-                handleAction1(_action);
+                handleAction(_action);
             }
         }
     }
@@ -697,7 +697,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         }
     }
 
-    override void handleAction1(const Action action)
+    override void handleAction(const Action action)
     {
         if (action is ACTION_CANCEL)
         {
@@ -758,7 +758,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         window.showMessageBox(tr("Confirm overwrite"d),
             format(tr("A file named \"%s\" already exists. Do you want to replace it?"), baseName(filename)),
             [ACTION_YES, ACTION_NO], 1,
-            delegate(const Action a) { if (a is ACTION_YES) handleAction1(_action); }
+            delegate(const Action a) { if (a is ACTION_YES) handleAction(_action); }
         );
     }
 

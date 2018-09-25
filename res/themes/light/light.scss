@@ -925,14 +925,17 @@ SettingsDialog {
     padding: 4px;
 
     &::tree {
+        min-width: 50px;
         weight: 3;
         margin: 8px;
         padding: 4px;
         border: 1px solid rgba(0, 0, 0, 0.1);
         background-color: #fff;
+        font-size: 14pt;
     }
 
     &::page {
+        min-width: 100px;
         weight: 5;
         margin: 0 8px 8px 8px;
         padding: 4px;
@@ -941,7 +944,7 @@ SettingsDialog {
 
 SettingsPage::title {
     weight: 0;
-    padding: 4px 4px 4px 14px;
+    padding: 4px 4px 4px 12px;
     font-size: 120%;
 }
 

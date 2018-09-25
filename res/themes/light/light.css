@@ -380,11 +380,11 @@ FilePathPanelItem::button:hovered { background-color: #c7d9ec; }
 /* ========================================================================== settingsdialog.d */
 SettingsDialog { padding: 4px; }
 
-SettingsDialog::tree { weight: 3; margin: 8px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; }
+SettingsDialog::tree { min-width: 50px; weight: 3; margin: 8px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; font-size: 14pt; }
 
-SettingsDialog::page { weight: 5; margin: 0 8px 8px 8px; padding: 4px; }
+SettingsDialog::page { min-width: 100px; weight: 5; margin: 0 8px 8px 8px; padding: 4px; }
 
-SettingsPage::title { weight: 0; padding: 4px 4px 4px 14px; font-size: 120%; }
+SettingsPage::title { weight: 0; padding: 4px 4px 4px 12px; font-size: 120%; }
 
 /* ========================================================================== Tooltips */
 Label#tooltip { padding: 3px; box-shadow: 0 2px 7px #888; background-color: #222; color: #eee; }

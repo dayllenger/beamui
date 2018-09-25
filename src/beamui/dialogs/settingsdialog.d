@@ -523,13 +523,11 @@ class SettingsPage
     {
         auto res = new Column;
         res.id = _id;
-        res.minWidth(80.pt).minHeight(200.pt).fillWH();
         if (itemCount > 0)
         {
             auto caption = new Label(_label);
             caption.id = "prop-body-caption-" ~ _id;
             caption.bindSubItem(this, "title");
-            caption.fillW();
             res.addChild(caption);
             TableLayout tbl;
             foreach (i; 0 .. itemCount)
@@ -594,17 +592,14 @@ class SettingsDialog : Dialog
     {
         import beamui.widgets.scroll;
 
-        fillWH().minWidth(150.pt).minHeight(150.pt);
         _tree = new TreeWidget(ScrollBarMode.automatic, ScrollBarMode.automatic);
         _tree.bindSubItem(this, "tree");
-        _tree.fillWH().minWidth(50.pt).minHeight(200.pt);
-        _tree.fontSize = 16;
         _tree.itemSelected = &onTreeItemSelected;
         _frame = new FrameLayout;
         _frame.bindSubItem(this, "page");
-        _frame.fillWH().minWidth(100.pt).minHeight(200.pt);
+        _frame.fillW();
         createControls(_layout, _tree.items);
-        auto content = new Row;
+        auto content = new Row(2);
         content.addChild(_tree);
         content.addResizer();
         content.addChild(_frame);

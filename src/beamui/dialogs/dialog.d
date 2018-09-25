@@ -122,7 +122,7 @@ class Dialog : Column
             if (splitBeforeIndex == i)
                 res.addSpacer();
             auto btn = new Button(a);
-            btn.clicked = delegate(Widget w) { handleAction1((cast(Button)w).action); return true; };
+            btn.clicked = delegate(Widget w) { handleAction((cast(Button)w).action); return true; };
             if (defaultActionIndex == i)
             {
                 btn.setState(State.default_);
@@ -158,7 +158,7 @@ class Dialog : Column
             if (_cancelButton)
             {
                 _frame.closeButtonClick = delegate(Widget w) {
-                    handleAction1(_cancelButton.action);
+                    handleAction(_cancelButton.action);
                     return true;
                 };
             }
@@ -199,7 +199,7 @@ class Dialog : Column
     }
 
     /// Handle dialog button action. Default is to simply call `close`
-    protected void handleAction1(const Action action)
+    protected void handleAction(const Action action)
     {
         close(action);
     }
@@ -209,7 +209,7 @@ class Dialog : Column
     {
         if (_defaultButton)
         {
-            handleAction1(_defaultButton.action);
+            handleAction(_defaultButton.action);
             return true;
         }
         return false;
@@ -220,7 +220,7 @@ class Dialog : Column
     {
         if (_cancelButton)
         {
-            handleAction1(_cancelButton.action);
+            handleAction(_cancelButton.action);
             return true;
         }
         return false;
@@ -228,7 +228,7 @@ class Dialog : Column
 
     override bool onKeyEvent(KeyEvent event)
     {
-        if (event.action == KeyAction.keyUp)
+        if (event.action == KeyAction.keyDown)
         {
             if (event.keyCode == KeyCode.enter && event.modifiers == KeyFlag.control)
             {
