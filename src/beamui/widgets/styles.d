@@ -577,9 +577,14 @@ public:
             "fontFace", "fontFamily", "fontSize", "fontStyle", "fontWeight",
             "textFlags", "maxLines",
             "alpha", "textColor", "focusRectColor"])
-        {
-            Log.d(overrideMap[i] ? p ~ " (o): " : p ~ ": ", mixin(p));
-        }
+        {{
+            static if (is(typeof(mixin("Style." ~ p)) == class)) // print only type of drawable
+                enum msg = p ~ " ? typeid(this." ~ p ~ ").name : `-`";
+            else
+                enum msg = p;
+
+            Log.d(overrideMap[i] ? p ~ " (o): " : p ~ ": ", mixin(msg));
+        }}
     }
 
     debug @property static int instanceCount() { return _instanceCount; }
