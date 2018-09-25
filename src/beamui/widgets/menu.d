@@ -141,7 +141,14 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
             checkable = _action.checkable;
             if (checkable && !_checkbox)
             {
-                _checkbox = new CheckBox;
+                if (_action.isRadio)
+                {
+                    _checkbox = new RadioButton;
+                }
+                else
+                {
+                    _checkbox = new CheckBox;
+                }
                 _checkbox.id = "menu-checkbox";
                 _checkbox.bindSubItem(this, "checkbox");
                 _checkbox.state = State.parent;
@@ -406,6 +413,16 @@ class Menu : ListWidget
         add(a);
         return a;
     }
+    /// Add several actions as a group - to be radio button items
+    Menu addActionGroup(Action[] actions...)
+    {
+        Action.groupActions(actions);
+        foreach (a; actions)
+        {
+            add(a);
+        }
+        return this;
+    }
 
     /// Add separator item
     MenuItem addSeparator()
@@ -639,7 +656,7 @@ class Menu : ListWidget
 
             close();
 
-            // TODO: process checkbox and radio controls
+            // call item's action
             if (w)
                 w.call(a);
 

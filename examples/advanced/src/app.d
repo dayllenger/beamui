@@ -143,15 +143,15 @@ extern (C) int UIAppMain(string[] args)
     auto viewMenu = mainMenu.addSubmenu(tr("&View"));
     auto themeMenu = viewMenu.addSubmenu(tr("&Theme"));
     themeMenu.addAction(tr("Reload theme")).bind(frame, &platform.reloadTheme);
-    themeMenu.addAction(tr("Default"))
-        .checkable(true)
-        .bind(frame, { platform.uiTheme = "default"; });
-    themeMenu.addAction(tr("Light"))
-        .checkable(true).checked(true)
-        .bind(frame, { platform.uiTheme = "light"; });
-    themeMenu.addAction(tr("Dark"))
-        .checkable(true)
-        .bind(frame, { platform.uiTheme = "dark"; });
+    {
+        Action def = new Action(tr("Default")).checkable(true);
+        Action light = new Action(tr("Light")).checkable(true).checked(true);
+        Action dark = new Action(tr("Dark")).checkable(true);
+        def.bind(frame, { platform.uiTheme = "default"; });
+        light.bind(frame, { platform.uiTheme = "light"; });
+        dark.bind(frame, { platform.uiTheme = "dark"; });
+        themeMenu.addActionGroup(def, light, dark);
+    }
 
     auto windowMenu = mainMenu.addSubmenu(tr("&Window"));
     windowMenu.addAction(tr("&Preferences"));

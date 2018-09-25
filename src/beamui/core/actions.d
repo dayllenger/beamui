@@ -255,7 +255,7 @@ bool matchKeyFlags(uint eventFlags, uint requestedFlags)
     return true;
 }
 
-/// Defines where an action is active
+/// Defines where the user can invoke the action
 enum ActionContext
 {
     widget, /// Only in associated widget, when it has focus
@@ -368,7 +368,7 @@ class Action
             return this;
         }
 
-        /// When false, control showing this action should be disabled
+        /// When false, action cannot be called and control showing this action should be disabled
         bool enabled() const
         {
             return (_state & ActionState.enabled) != 0;
@@ -418,7 +418,13 @@ class Action
             return this;
         }
 
-        /// When true, checkbox/radiobutton-like controls should shown as checked
+        /// When true, this action is included to a group of radio actions
+        bool isRadio() const
+        {
+            return actionGroup !is null;
+        }
+
+        /// When true, checkbox/radiobutton-like controls should be shown as checked
         bool checked() const
         {
             return (_state & ActionState.checked) != 0;
@@ -455,6 +461,30 @@ class Action
         bool _checkable;
         ActionState _state = ActionState.enabled | ActionState.visible;
 
+        static struct ActionGroup
+        {
+            private Action[] actions;
+
+            /// Check an action and uncheck others
+            void check(Action what)
+            {
+                foreach (a; actions)
+                {
+                    a.checked = a is what;
+                }
+            }
+
+            /// Remove action from group
+            void remove(Action what)
+            {
+                foreach (ref a; actions)
+                    if (a is what)
+                        a = null;
+                actions = actions.remove!(a => a is null);
+            }
+        }
+        ActionGroup* actionGroup;
+
         static Action[string] nameMap;
         static ActionShortcutMap shortcutMap;
     }
@@ -476,6 +506,23 @@ class Action
             addShortcut(keyCode, keyFlags);
         if (label)
             nameMap[id] = this;
+    }
+
+    ~this()
+    {
+        if (actionGroup)
+            actionGroup.remove(this);
+    }
+
+    /// Group actions to make them react as radio buttons
+    static void groupActions(Action[] actions...)
+    {
+        auto gr = new ActionGroup(actions);
+        foreach (a; actions)
+        {
+            a.actionGroup = gr;
+            a.changed();
+        }
     }
 
     /// Add one more shortcut
@@ -525,11 +572,23 @@ class Action
     bool call(bool delegate(Widget) chooser)
     {
         assert(chooser !is null);
+        // do not call deactivated action
+        if (!enabled)
+            return false;
 
         foreach (wt, slot; receivers)
         {
             if (chooser(wt))
             {
+                // check/uncheck
+                if (checkable)
+                {
+                    if (actionGroup)
+                        actionGroup.check(this);
+                    else
+                        checked = !checked;
+                }
+                // call chosen delegate
                 slot();
                 triggered();
                 return true;
