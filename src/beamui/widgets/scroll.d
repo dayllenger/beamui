@@ -330,11 +330,15 @@ class ScrollAreaBase : WidgetGroup
             Box b = Box(geom.x, geom.y + geom.h - _sbsz.h, sz.w - vsbw, _sbsz.h);
             _hscrollbar.layout(b);
         }
+        else
+            _hscrollbar.cancelLayout();
         if (needVScroll)
         {
             Box b = Box(geom.x + geom.w - _sbsz.w, geom.y, _sbsz.w, sz.h - hsbh);
             _vscrollbar.layout(b);
         }
+        else
+            _vscrollbar.cancelLayout();
     }
 
     /// Show or hide scrollbars

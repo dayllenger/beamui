@@ -232,7 +232,6 @@ auto bunch(TS...)(TS vars) if (TS.length > 0) // TODO: type checks, more testing
     {
         TS vars;
 
-        pragma(inline, true)
         void opDispatch(string m, Args...)(auto ref Args args)
         {
             foreach (var; vars)

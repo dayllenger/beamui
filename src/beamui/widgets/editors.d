@@ -2291,7 +2291,7 @@ class EditLine : EditWidgetBase
 
 //         Size sz = Size(rc.width, computedHeight);
 //         applyAlign(rc, sz);
-        _box = geom;
+        super.layout(geom);
 
         applyMargins(geom);
         applyPadding(geom);
