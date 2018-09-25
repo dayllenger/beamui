@@ -45,13 +45,6 @@ enum SettingType
     NULL
 }
 
-/// Settings file format
-enum SettingsFileFormat
-{
-    JSON,
-    SDL,
-}
-
 /// Settings object whith file information
 class SettingsFile
 {
@@ -59,7 +52,6 @@ class SettingsFile
     protected string _filename;
     protected SysTime _lastModificationTime;
     protected bool _loaded;
-    protected SettingsFileFormat _format = SettingsFileFormat.JSON;
 
     @property Setting setting()
     {
@@ -1941,12 +1933,11 @@ final class Setting
     {
         string json;
         int pos;
-        bool allowEol; // for SDL parsing where EOLs are meaningful
-        void initialize(string s, bool allowEol)
+
+        void initialize(string s)
         {
             json = s;
             pos = 0;
-            this.allowEol = allowEol;
         }
         /// Returns current char
         @property char peek()
@@ -2052,8 +2043,7 @@ final class Setting
             {
                 char ch = json[pos];
                 char nextch = pos + 1 < json.length ? json[pos + 1] : 0;
-                if (allowEol && ch == '\n')
-                    break;
+
                 if (ch == '#' || (ch == '/' && nextch == '/') || (ch == '-' && nextch == '-'))
                 {
                     // skip one line comment // or # or --
@@ -2064,8 +2054,6 @@ final class Setting
                         if (ch == '\n')
                             break;
                     }
-                    if (allowEol && ch == '\n')
-                        break;
                     continue;
                 }
                 else if (ch == '/' && nextch == '*')
@@ -2420,373 +2408,17 @@ final class Setting
     {
         clear(SettingType.NULL);
         JsonParser parser;
-        parser.initialize(normalizeEOLs(s), false);
+        parser.initialize(normalizeEOLs(s));
         parseJSON(parser);
     }
 
-    /// SDL identifiers to be converted to JSON array (name should be changed, with 's' suffix)
-    private static immutable(string[]) identsToConvertToArrays = ["subPackage", // in JSON it's subPackages
-        "configuration", // in JSON it's configurations
-        "buildType", // in JSON it's buildTypes
-        ];
-
-    /// SDL identifiers to be converted to JSON object (name should be changed, with 's' suffix)
-    private static immutable(string[]) identsToConvertToObjects = ["dependency", // in JSON it's dependencies
-        "subConfiguration", // in JSON it's subConfigurations
-        ];
-
-    /// SDL identifiers of JSON array w/o name conversion
-    private static immutable(string[]) arrayIdents = [
-        "authors", "x:ddoxFilterArgs", "sourcePaths", "importPaths", "buildOptions", "libs",
-        "sourceFiles", "buildRequirements", "excludedSourceFiles",
-        "copyFiles", "versions", "debugVersions",
-        "stringImportPaths", "preGenerateCommands", "postGenerateCommands", "preBuildCommands",
-        "postBuildCommands", "dflags", "lflags", "platforms",
-    ];
-
-    protected bool isArrayItemNameIdent(string ident)
-    {
-        foreach (s; identsToConvertToArrays)
-        {
-            if (ident == s)
-                return true;
-        }
-        return false;
-    }
-
-    protected bool isObjectItemNameIdent(string ident)
-    {
-        foreach (s; identsToConvertToObjects)
-        {
-            if (ident == s)
-                return true;
-        }
-        return false;
-    }
-
-    protected bool isArrayIdent(string ident)
-    {
-        foreach (s; arrayIdents)
-        {
-            if (ident == s)
-                return true;
-        }
-        return false;
-    }
-
-    private void skipEol(ref JsonParser parser)
-    {
-        char ch = parser.skipSpaces;
-        if (ch == 0)
-            return;
-        if (ch == '\n')
-        {
-            parser.nextChar;
-            return;
-        }
-        parser.error("end of line expected");
-    }
-
-    private void parseSDLAttributes(ref JsonParser parser, bool ignorePlatformAttribute = true)
-    {
-        string attrName;
-        Setting attrValue;
-        while (true)
-        {
-            char ch = parser.skipSpaces;
-            if (ch == 0)
-                return;
-            if (ch == '\n')
-            {
-                parser.nextChar;
-                return;
-            }
-            if (!JsonParser.isAlpha(ch))
-                parser.error("attr=value expected");
-            attrName = parser.parseIdent();
-            attrValue = new Setting;
-            ch = parser.skipSpaces;
-            if (ch != '=')
-                parser.error("= expected after " ~ attrName);
-            ch = parser.nextChar; // skip '='
-            ch = parser.skipSpaces;
-            if (ch == '\"' || ch == '`')
-            {
-                // string value
-                string v = parser.parseString;
-                attrValue = v;
-                if (!ignorePlatformAttribute || attrName != "platform")
-                    this[attrName] = attrValue;
-                continue;
-            }
-            if (JsonParser.isAlpha(ch))
-            {
-                string v = parser.parseIdent;
-                if (v == "true" || v == "on")
-                {
-                    attrValue = true;
-                    this[attrName] = attrValue;
-                    continue;
-                }
-                if (v == "false" || v == "off")
-                {
-                    attrValue = false;
-                    this[attrName] = attrValue;
-                    continue;
-                }
-                parser.error("unexpected attribue value " ~ v);
-            }
-            parser.error("only string and boolean values supported for SDL attributes now");
-        }
-    }
-
-    // peek platform="value" from current line
-    private string peekSDLPlatformAttribute(ref JsonParser parser)
-    {
-        string res = null;
-        int oldpos = parser.pos; // save position
-        while (true)
-        {
-            char ch = parser.skipSpaces;
-            if (ch == 0 || ch == '\n' || ch == '{' || ch == '}')
-                break;
-            if (parser.isAlpha(ch))
-            {
-                string ident = parser.parseIdent;
-                ch = parser.skipSpaces;
-                if (ch != '=')
-                    continue;
-                parser.nextChar;
-                ch = parser.skipSpaces;
-                string attrvalue;
-                if (ch == '\"' || ch == '`')
-                    attrvalue = parser.parseString;
-                else if (parser.isAlpha(ch))
-                    attrvalue = parser.parseIdent;
-                if (ident == "platform")
-                {
-                    res = attrvalue;
-                    break;
-                }
-            }
-            else if (ch == '\"' || ch == '`')
-            {
-                string str = parser.parseString;
-            }
-            else if (ch == '=')
-            {
-                parser.nextChar;
-                continue;
-            }
-            else
-            {
-                break;
-            }
-        }
-        parser.pos = oldpos; // restore position
-        return res;
-    }
-
-    private void skipPlatformAttribute(ref JsonParser parser)
-    {
-        char ch = parser.skipSpaces;
-        int oldpos = parser.pos;
-        if (parser.isAlpha(ch))
-        {
-            string attrName = parser.parseIdent;
-            if (attrName == "platform")
-            {
-                ch = parser.skipSpaces;
-                if (ch == '=')
-                {
-                    parser.nextChar;
-                    ch = parser.skipSpaces;
-                    string value = parser.parseString;
-                    return; // skipped platform attribute
-                }
-            }
-        }
-        // no changes
-        parser.pos = oldpos;
-    }
-
-    private Setting parseSDL(ref JsonParser parser, bool insideCurly = false)
-    {
-        //static import std.ascii;
-        while (true)
-        {
-            // looking for ident
-            char ch = parser.skipSpaces;
-            if (ch == 0)
-                break;
-            if (ch == '\n')
-            {
-                parser.nextChar; // skip
-                continue;
-            }
-            if (ch == '}')
-            {
-                if (!insideCurly)
-                    parser.error("unexpected }");
-                parser.nextChar; // skip
-                return this;
-            }
-            string ident = parser.parseIdent();
-            if (!ident.length)
-                parser.error("identifier expected");
-            ch = parser.skipSpaces;
-            string platform = peekSDLPlatformAttribute(parser);
-            bool isArrayConvName = isArrayItemNameIdent(ident);
-            bool isObjectConvName = isObjectItemNameIdent(ident);
-            bool isArrayName = isArrayIdent(ident) || isArrayConvName;
-            if (isArrayConvName || isObjectConvName)
-            {
-                import std.algorithm : endsWith;
-
-                if (ident.endsWith("y"))
-                    ident = ident[0 .. $ - 1] ~ "ies"; // e.g. dependency->dependencies
-                else if (!ident.endsWith("s"))
-                    ident = ident ~ "s"; // a.g. author->authors
-            }
-            if (platform.length)
-                ident = ident ~ "-" ~ platform;
-            Setting valueObj = this[ident]; // looking for existing object
-            if (!valueObj)
-            { // create if not exist
-                valueObj = new Setting;
-                this[ident] = valueObj;
-            }
-            if (isArrayName)
-            {
-                if (!valueObj.isArray)
-                {
-                    // convert to array
-                    valueObj.clear(SettingType.ARRAY);
-                }
-            }
-            // now we have identifier
-            if (ch == '\"' || ch == '`')
-            {
-                string value = parser.parseString;
-                skipPlatformAttribute(parser);
-                ch = parser.skipSpaces;
-                if (ch == '{')
-                {
-                    /*
-                        ident "name" {
-                            //...
-                        }
-                    */
-                    parser.nextChar; // skip {
-                    Setting obj = isArrayName ? new Setting : valueObj;
-                    obj["name"] = value;
-                    obj.parseSDL(parser, true);
-                    if (isArrayName)
-                        valueObj.array = valueObj.array ~ obj;
-                    continue;
-                }
-                if (JsonParser.isAlpha(ch))
-                {
-                    // ident=value pairs after "name"
-                    Setting obj = (isArrayName || isObjectConvName) ? new Setting : valueObj;
-                    if (!isObjectConvName)
-                        obj["name"] = value;
-                    obj.parseSDLAttributes(parser);
-                    if (isArrayName)
-                        valueObj.array = valueObj.array ~ obj;
-                    else if (isObjectConvName)
-                        valueObj[value] = obj;
-                    continue;
-                }
-                if (isArrayName)
-                {
-                    Setting[] values = valueObj.array;
-                    auto svalue = new Setting;
-                    svalue = value;
-                    values ~= svalue;
-                    while (true)
-                    {
-                        skipPlatformAttribute(parser);
-                        ch = parser.skipSpaces;
-                        if (ch == '\n' || ch == 0)
-                            break;
-                        if (ch == '\"' || ch == '`')
-                        {
-                            value = parser.parseString;
-                            svalue = new Setting;
-                            svalue = value;
-                            values ~= svalue;
-                        }
-                        else
-                            parser.error("array of strings expected");
-                    }
-                    valueObj.array = values;
-                }
-                else
-                {
-                    if (isObjectConvName)
-                    {
-                        string svalue = parser.parseString;
-                        valueObj[value] = svalue;
-                    }
-                    else
-                    {
-                        valueObj = value;
-                    }
-                }
-                skipPlatformAttribute(parser);
-                skipEol(parser);
-                continue;
-            }
-            else if (ch == '{')
-            {
-                // object
-                parser.nextChar; // skip {
-                if (isArrayName)
-                {
-                    Setting[] values = valueObj.array;
-                    auto item = new Setting;
-                    item.clear(SettingType.OBJECT);
-                    item.parseSDL(parser, true);
-                    values ~= item;
-                    valueObj.array = values;
-                }
-                else
-                {
-                    valueObj.parseSDL(parser, true);
-                }
-                continue;
-            }
-            else
-            {
-                parser.error("cannot parse SDL value");
-            }
-        }
-        if (insideCurly)
-            parser.error("} expected");
-        return this;
-    }
-
-    void parseSDL(string s)
-    {
-        clear(SettingType.NULL);
-        JsonParser parser;
-        parser.initialize(normalizeEOLs(s), true);
-        parseSDL(parser);
-    }
-
-    /// Load from file; autodetect SDL format using ".sdl" and ".SDL" extension mask; returns true if loaded successfully
+    /// Load JSON from file; returns true if loaded successfully
     bool load(string filename)
     {
         try
         {
-            import std.algorithm : endsWith;
-
             string s = readText(filename);
-            if (filename.endsWith(".sdl") || filename.endsWith(".SDL"))
-                parseSDL(s);
-            else
-                parseJSON(s);
+            parseJSON(s);
             return true;
         }
         catch (Exception e)
