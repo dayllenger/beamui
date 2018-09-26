@@ -15,7 +15,7 @@ import beamui.core.settings;
 auto s = new Setting;
 ---
 
-Copyright: Vadim Lopatin 2014-2016
+Copyright: Vadim Lopatin 2015-2016, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -36,7 +36,6 @@ enum SettingType
 {
     STRING,
     INTEGER,
-    UINTEGER,
     FLOAT,
     OBJECT,
     ARRAY,
@@ -238,16 +237,16 @@ final class Setting
     {
         string str;
         long integer;
-        ulong uinteger;
         double floating;
         SettingArray array;
         SettingMap* map;
     }
 
-    private Setting _parent;
     private Store _store;
-    private bool _changed;
     private SettingType _type = SettingType.NULL;
+
+    private Setting _parent;
+    private bool _changed;
 
     this()
     {
@@ -257,11 +256,6 @@ final class Setting
     this(long v)
     {
         integer = v;
-    }
-
-    this(ulong v)
-    {
-        uinteger = v;
     }
 
     this(string v)
@@ -313,6 +307,7 @@ final class Setting
     private static struct SettingArray
     {
         Setting[] list;
+
         @property bool empty() inout
         {
             return list.length == 0;
@@ -373,6 +368,7 @@ final class Setting
     {
         Setting[] list;
         int[string] map;
+
         @property bool empty() inout
         {
             return list.length == 0;
@@ -476,19 +472,19 @@ final class Setting
         }
     }
 
-    /// Get parent
+    /// Parent setting
     @property inout(Setting) parent() inout
     {
         return _parent;
     }
-    /// Set parent
+    /// ditto
     @property Setting parent(Setting v)
     {
         _parent = v;
         return v;
     }
 
-    /// Returns SettingType of setting
+    /// Returns type of the setting
     @property SettingType type() const
     {
         return _type;
@@ -502,11 +498,6 @@ final class Setting
     @property bool isInteger()
     {
         return _type == SettingType.INTEGER;
-    }
-
-    @property bool isUinteger()
-    {
-        return _type == SettingType.UINTEGER;
     }
 
     @property bool isFloating()
@@ -561,9 +552,6 @@ final class Setting
         case INTEGER:
             _store.integer = _store.integer.init;
             break;
-        case UINTEGER:
-            _store.uinteger = _store.uinteger.init;
-            break;
         case FLOAT:
             _store.floating = _store.floating.init;
             break;
@@ -608,9 +596,6 @@ final class Setting
         case INTEGER:
             res._store.integer = _store.integer;
             break;
-        case UINTEGER:
-            res._store.uinteger = _store.uinteger;
-            break;
         case FLOAT:
             res._store.floating = _store.floating;
             break;
@@ -632,8 +617,6 @@ final class Setting
             return _store.str;
         case INTEGER:
             return to!string(_store.integer);
-        case UINTEGER:
-            return to!string(_store.uinteger);
         case FLOAT:
             return to!string(_store.floating);
         case TRUE:
@@ -655,8 +638,6 @@ final class Setting
             return _store.str;
         case INTEGER:
             return to!string(_store.integer);
-        case UINTEGER:
-            return to!string(_store.uinteger);
         case FLOAT:
             return to!string(_store.floating);
         case TRUE:
@@ -687,8 +668,6 @@ final class Setting
             return [_store.str];
         case INTEGER:
             return [to!string(_store.integer)];
-        case UINTEGER:
-            return [to!string(_store.uinteger)];
         case FLOAT:
             return [to!string(_store.floating)];
         case TRUE:
@@ -723,7 +702,6 @@ final class Setting
         {
         case STRING:
         case INTEGER:
-        case UINTEGER:
         case FLOAT:
         case TRUE:
         case FALSE:
@@ -756,7 +734,6 @@ final class Setting
         {
         case STRING:
         case INTEGER:
-        case UINTEGER:
         case FLOAT:
         case TRUE:
         case FALSE:
@@ -789,7 +766,6 @@ final class Setting
         {
         case STRING:
         case INTEGER:
-        case UINTEGER:
         case FLOAT:
         case TRUE:
         case FALSE:
@@ -827,7 +803,6 @@ final class Setting
         {
         case STRING:
         case INTEGER:
-        case UINTEGER:
         case FLOAT:
         case TRUE:
         case FALSE:
@@ -859,7 +834,6 @@ final class Setting
         {
         case STRING:
         case INTEGER:
-        case UINTEGER:
         case FLOAT:
         case TRUE:
         case FALSE:
@@ -960,8 +934,6 @@ final class Setting
             return parseLong(_store.str);
         case INTEGER:
             return _store.integer;
-        case UINTEGER:
-            return cast(long)_store.uinteger;
         case FLOAT:
             return cast(long)_store.floating;
         case TRUE:
@@ -973,7 +945,6 @@ final class Setting
             return 0;
         }
     }
-
     /// Read as long value
     inout(long) integerDef(long defValue) inout
     {
@@ -983,8 +954,6 @@ final class Setting
             return parseLong(_store.str, defValue);
         case INTEGER:
             return _store.integer;
-        case UINTEGER:
-            return cast(long)_store.uinteger;
         case FLOAT:
             return cast(long)_store.floating;
         case TRUE:
@@ -1006,60 +975,6 @@ final class Setting
         return v;
     }
 
-    /// Read as ulong value
-    @property inout(long) uinteger() inout
-    {
-        final switch (_type) with (SettingType)
-        {
-        case STRING:
-            return parseULong(_store.str);
-        case INTEGER:
-            return cast(ulong)_store.integer;
-        case UINTEGER:
-            return _store.uinteger;
-        case FLOAT:
-            return cast(ulong)_store.floating;
-        case TRUE:
-            return 1;
-        case FALSE:
-        case NULL:
-        case ARRAY:
-        case OBJECT:
-            return 0;
-        }
-    }
-    /// Read as ulong value
-    inout(long) uintegerDef(ulong defValue) inout
-    {
-        final switch (_type) with (SettingType)
-        {
-        case STRING:
-            return parseULong(_store.str, defValue);
-        case INTEGER:
-            return cast(ulong)_store.integer;
-        case UINTEGER:
-            return _store.uinteger;
-        case FLOAT:
-            return cast(ulong)_store.floating;
-        case TRUE:
-            return 1;
-        case FALSE:
-            return 0;
-        case NULL:
-        case ARRAY:
-        case OBJECT:
-            return defValue;
-        }
-    }
-    /// Set ulong value for object
-    @property ulong uinteger(ulong v)
-    {
-        if (_type != SettingType.UINTEGER)
-            clear(SettingType.UINTEGER);
-        _store.uinteger = v;
-        return v;
-    }
-
     /// Read as double value
     @property inout(double) floating() inout
     {
@@ -1069,8 +984,6 @@ final class Setting
             return 0; //parseULong(_store.str);
         case INTEGER:
             return cast(double)_store.integer;
-        case UINTEGER:
-            return cast(double)_store.uinteger;
         case FLOAT:
             return _store.floating;
         case TRUE:
@@ -1091,8 +1004,6 @@ final class Setting
             return defValue; //parseULong(_store.str);
         case INTEGER:
             return cast(double)_store.integer;
-        case UINTEGER:
-            return cast(double)_store.uinteger;
         case FLOAT:
             return _store.floating;
         case TRUE:
@@ -1145,8 +1056,6 @@ final class Setting
             return parseBool(_store.str);
         case INTEGER:
             return _store.integer != 0;
-        case UINTEGER:
-            return _store.uinteger != 0;
         case FLOAT:
             return _store.floating != 0;
         case TRUE:
@@ -1169,8 +1078,6 @@ final class Setting
             return parseBool(_store.str, defValue);
         case INTEGER:
             return _store.integer != 0;
-        case UINTEGER:
-            return _store.uinteger != 0;
         case FLOAT:
             return _store.floating != 0;
         case TRUE:
@@ -1291,11 +1198,6 @@ final class Setting
     long opAssign(long value)
     {
         return (integer = value);
-    }
-    // assign ulong value
-    ulong opAssign(ulong value)
-    {
-        return (uinteger = value);
     }
     // assign string value
     string opAssign(string value)
@@ -1534,11 +1436,6 @@ final class Setting
     {
         return opIndexAssign(value, index);
     }
-    /// Set ulong item by index of array or map
-    ulong setUinteger(int index, ulong value)
-    {
-        return opIndexAssign(value, index);
-    }
     /// Set bool item by index of array or map
     bool setBoolean(int index, bool value)
     {
@@ -1555,27 +1452,22 @@ final class Setting
         return opIndexAssign(value, index);
     }
 
-    /// Set long item by index of array or map only if it's фдкуфвн present
+    /// Set long item by index of array or map only if it's already present
     long setIntegerDef(int index, long value)
     {
         return setDef(value, index);
     }
-    /// Set ulong item by index of array or map only if it's фдкуфвн present
-    ulong setUintegerDef(int index, ulong value)
-    {
-        return setDef(value, index);
-    }
-    /// Set bool item by index of array or map only if it's фдкуфвн present
+    /// Set bool item by index of array or map only if it's already present
     bool setBooleanDef(int index, bool value)
     {
         return setDef(value, index);
     }
-    /// Set double item by index of array or map only if it's фдкуфвн present
+    /// Set double item by index of array or map only if it's already present
     double setFloatingDef(int index, double value)
     {
         return setDef(value, index);
     }
-    /// Set str item by index of array or map only if it's фдкуфвн present
+    /// Set str item by index of array or map only if it's already present
     string setStringDef(int index, string value)
     {
         return setDef(value, index);
@@ -1586,13 +1478,6 @@ final class Setting
     {
         if (auto item = opIndex(index))
             return item.integerDef(defValue);
-        return defValue;
-    }
-    /// Returns ulong item by index of array or map
-    ulong getUinteger(int index, ulong defValue = 0)
-    {
-        if (auto item = opIndex(index))
-            return item.uintegerDef(defValue);
         return defValue;
     }
     /// Returns bool item by index of array or map
@@ -1622,11 +1507,6 @@ final class Setting
     {
         return opIndexAssign(value, key);
     }
-    /// Set ulong item of map
-    ulong setUinteger(string key, ulong value)
-    {
-        return opIndexAssign(value, key);
-    }
     /// Set bool item of map
     bool setBoolean(string key, bool value)
     {
@@ -1645,11 +1525,6 @@ final class Setting
 
     /// Set long item of map if key is not yet present in map
     long setIntegerDef(string key, long value)
-    {
-        return setDef(value, key);
-    }
-    /// Set ulong item of map if key is not yet present in map
-    ulong setUintegerDef(string key, ulong value)
     {
         return setDef(value, key);
     }
@@ -1674,13 +1549,6 @@ final class Setting
     {
         if (auto item = opIndex(key))
             return item.integerDef(defValue);
-        return defValue;
-    }
-    /// Returns ulong item by key from map
-    ulong getUinteger(string key, ulong defValue = 0)
-    {
-        if (auto item = opIndex(key))
-            return item.uintegerDef(defValue);
         return defValue;
     }
     /// Returns bool item by key from map
@@ -1843,9 +1711,6 @@ final class Setting
             break;
         case INTEGER:
             buf.append(to!string(_store.integer));
-            break;
-        case UINTEGER:
-            buf.append(to!string(_store.uinteger));
             break;
         case FLOAT:
             buf.append(to!string(_store.floating));
@@ -2223,7 +2088,7 @@ final class Setting
             }
             if (!isDigit(ch))
                 error("cannot parse number");
-            ulong n = 0;
+            long n = 0;
             while (isDigit(ch))
             {
                 n = n * 10 + (ch - '0');
@@ -2286,10 +2151,8 @@ final class Setting
                 // integer
                 if (isAlpha(ch))
                     error("cannot parse number");
-                if (sign < 0 || !(n & 0x8000000000000000L))
-                    res.integer = cast(long)(n * sign); // signed
-                else
-                    res.uinteger = n; // unsigned
+
+                res.integer = n * sign;
             }
         }
     }
