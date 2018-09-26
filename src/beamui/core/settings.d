@@ -11,8 +11,6 @@ Has a lot of methods for convenient storing/accessing of settings.
 Synopsis:
 ---
 import beamui.core.settings;
-
-auto s = new Setting;
 ---
 
 Copyright: Vadim Lopatin 2015-2016, dayllenger 2018
@@ -31,7 +29,56 @@ import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.parseutils;
 
-/// Settings object whith file information
+///
+unittest
+{
+    // create an empty setting
+    auto s = new Setting;
+    assert(s.isNull);
+    // now it returns only default values
+    assert(s.str is null);
+    assert(s.integer == 0);
+    assert(s.integerDef(25) == 25);
+    assert(s.boolean == false);
+    assert(s.strMap is null);
+    // and so on.
+
+    // let's make a settings tree
+    Setting p = s.add("properties");
+    Setting pos = p.add("position");
+    Setting font = p.add("font");
+    pos.add("x").integer = 100;
+    pos.add("y").integer = 50;
+    font.add("size").integer = 15;
+    font.add("style").str = "italic";
+    assert(s["properties"]["position"][0].integer == 100);
+
+    // you can add a whole array
+    Setting arr = s.add("values");
+    arr.intArray = [0, 1, 4, 9, 16, 25];
+    assert(arr.length == 6);
+    assert(arr[4].integer == 16);
+
+    // indexing never returns null - rather it returns a special dummy setting, which cannot be modified
+    assert(s[4].isset == false);
+    s["key"].integer = 50;
+    assert(s["key"].integerDef(1) == 1);
+
+    // second `add` replaces existing item
+    Setting prev = pos["x"];
+    pos.add("x").integer = 300;
+    assert(prev !is pos["x"]);
+    // but when you need just to change the value or the type, use indexing
+    pos["x"].integer = 200;
+
+    // initialize an item with default value
+    pos.setup("z").integer = 100;
+    // which does nothing if item is already present
+    pos.setup("x").integer = 100;
+    assert(pos["x"].integer == 200);
+}
+
+/// Settings object with file information
 class SettingsFile
 {
     protected Setting _setting;
@@ -245,6 +292,8 @@ final class Setting
 
     private Setting _parent;
     private bool _changed;
+
+    private static __gshared Setting dummy = new Setting;
 
     /// Array
     private static struct SettingArray
@@ -472,6 +521,17 @@ final class Setting
         {
             return type == SettingType.nothing;
         }
+        /// Check whether this setting exists
+        bool isset()
+        {
+            return this !is null && this !is dummy;
+        }
+    }
+
+    /// Returns true whether this setting has equal type as the parameter
+    bool compareType(Setting s)
+    {
+        return type == s.type;
     }
 
     //===============================================================
@@ -480,6 +540,8 @@ final class Setting
     /// Clear setting value and set the new type
     void clear(SettingType newType)
     {
+        if (!isset)
+            return;
         if (newType != type)
         {
             clear();
@@ -490,6 +552,8 @@ final class Setting
     /// Clear setting value
     void clear()
     {
+        if (!isset)
+            return;
         final switch (type) with (SettingType)
         {
         case str:
@@ -517,6 +581,8 @@ final class Setting
 
     void apply(Setting settings)
     {
+        if (!isset)
+            return;
         if (settings.isObject)
         {
             foreach (key, value; settings.map)
@@ -529,6 +595,8 @@ final class Setting
     /// Deep copy of settings
     Setting clone()
     {
+        if (!isset)
+            return dummy;
         auto res = new Setting;
         res.clear(type);
         final switch (type) with (SettingType)
@@ -572,6 +640,8 @@ final class Setting
     /// Add and return an empty setting for array by an integer index
     Setting add(size_t index)
     {
+        if (!isset)
+            return dummy;
         if (!isArray)
             clear(SettingType.array);
         auto s = new Setting;
@@ -581,6 +651,8 @@ final class Setting
     /// Add and return an empty setting for object by a string key
     Setting add(string key)
     {
+        if (!isset)
+            return dummy;
         if (!isObject)
             clear(SettingType.object);
         auto s = new Setting;
@@ -589,26 +661,32 @@ final class Setting
     }
 
     /// Add and return an empty setting for array by an integer index only if it's not present
-    Setting addDef(size_t index)
+    Setting setup(size_t index)
     {
-        if (this[index] is null)
-            return add(index);
+        if (!isset)
+            return dummy;
+        if (this[index].isset)
+            return dummy;
         else
-            return null;
+            return add(index);
     }
     /// Add and return an empty setting for object by a string key only if it's not present
-    Setting addDef(string key)
+    Setting setup(string key)
     {
-        if (this[key] is null)
-            return add(key);
+        if (!isset)
+            return dummy;
+        if (this[key].isset)
+            return dummy;
         else
-            return null;
+            return add(key);
     }
 
     /// Remove array or object item by an index.
     /// Returns removed item or null if index is out of bounds or setting is neither array nor object.
     Setting remove(size_t index)
     {
+        if (!isset)
+            return null;
         if (isArray)
             return store.array.remove(index);
         else if (isObject)
@@ -620,6 +698,8 @@ final class Setting
     /// Returns removed item or null if is not found or setting is not an object
     Setting remove(string key)
     {
+        if (!isset)
+            return null;
         if (isObject)
             return store.map.remove(key);
         else
@@ -639,6 +719,8 @@ final class Setting
     /// ditto
     @property string str(string value)
     {
+        if (!isset)
+            return value;
         if (!isString)
             clear(SettingType.str);
         return store.str = value;
@@ -657,6 +739,8 @@ final class Setting
     /// ditto
     @property long integer(long value)
     {
+        if (!isset)
+            return value;
         if (!isInteger)
             clear(SettingType.integer);
         return store.integer = value;
@@ -675,6 +759,8 @@ final class Setting
     /// ditto
     @property double floating(double value)
     {
+        if (!isset)
+            return value;
         if (!isFloating)
             clear(SettingType.floating);
         return store.floating = value;
@@ -693,6 +779,8 @@ final class Setting
     /// ditto
     @property bool boolean(bool value)
     {
+        if (!isset)
+            return value;
         if (!isBoolean)
             clear(SettingType.boolean);
         return store.boolean = value;
@@ -721,6 +809,8 @@ final class Setting
     /// ditto
     @property string[] strArray(string[] list)
     {
+        if (!isset)
+            return list;
         clear(SettingType.array);
         foreach (item; list)
         {
@@ -747,6 +837,8 @@ final class Setting
     /// ditto
     @property int[] intArray(int[] list)
     {
+        if (!isset)
+            return list;
         clear(SettingType.array);
         foreach (item; list)
         {
@@ -773,6 +865,8 @@ final class Setting
     /// ditto
     @property Setting[] array(Setting[] list)
     {
+        if (!isset)
+            return list;
         clear(SettingType.array);
         foreach (s; list)
         {
@@ -800,6 +894,8 @@ final class Setting
     /// ditto
     @property string[string] strMap(string[string] list)
     {
+        if (!isset)
+            return list;
         clear(SettingType.object);
         foreach (key, value; list)
         {
@@ -826,6 +922,8 @@ final class Setting
     /// ditto
     @property int[string] intMap(int[string] list)
     {
+        if (!isset)
+            return list;
         clear(SettingType.object);
         foreach (key, value; list)
         {
@@ -852,6 +950,8 @@ final class Setting
     /// ditto
     @property Setting[string] map(Setting[string] list)
     {
+        if (!isset)
+            return list;
         clear(SettingType.object);
         foreach (key, value; list)
         {
@@ -933,25 +1033,27 @@ final class Setting
     /// For array or object returns item by index, null if index is out of bounds or setting is neither array nor object
     Setting opIndex(size_t index)
     {
+        Setting res;
         if (isArray)
-            return store.array.get(index);
+            res = store.array.get(index);
         else if (isObject)
-            return store.map.get(index);
-        else
-            return null;
+            res = store.map.get(index);
+        return res ? res : dummy;
     }
     /// For object returns item by key, null if not found or this setting is not an object
     Setting opIndex(string key)
     {
+        Setting res;
         if (isObject)
-            return store.map.get(key);
-        else
-            return null;
+            res = store.map.get(key);
+        return res ? res : dummy;
     }
 
     /// Assign setting to array by integer index
     Setting opIndexAssign(Setting value, size_t index)
     {
+        if (!isset)
+            return dummy;
         if (!isArray)
             clear(SettingType.array);
         store.array.set(index, value, this);
@@ -960,6 +1062,8 @@ final class Setting
     /// Assign setting to object by string key
     Setting opIndexAssign(Setting value, string key)
     {
+        if (!isset)
+            return dummy;
         if (!isObject)
             clear(SettingType.object);
         store.map.set(key, value, this);
@@ -972,6 +1076,8 @@ final class Setting
     /// Returns setting by path like "editors/sourceEditor/tabSize", creates object tree "editors/sourceEditor" and object of specified type if part of path does not exist.
     Setting settingByPath(string path, bool createIfNotExist = true)
     {
+        if (!isset)
+            return dummy;
         if (!isObject)
             clear(SettingType.object);
         string part1, part2;
@@ -1001,6 +1107,8 @@ final class Setting
     /// Get (or optionally create) object (map) by slash delimited path (e.g. key1/subkey2/subkey3)
     Setting objectByPath(string path, bool createIfNotExist = false)
     {
+        if (!isset)
+            return dummy;
         if (!isObject)
         {
             if (!createIfNotExist)
@@ -1254,21 +1362,6 @@ final class Setting
             }
             buf.append('}');
             break;
-        }
-    }
-
-    /// Save to file
-    bool save(string filename, bool pretty = true)
-    {
-        try
-        {
-            write(filename, toJSON(pretty));
-            return true;
-        }
-        catch (Exception e)
-        {
-            Log.e("exception while saving settings file: ", e);
-            return false;
         }
     }
 
@@ -1751,6 +1844,24 @@ final class Setting
         JsonParser parser;
         parser.initialize(normalizeEOLs(s));
         parseJSON(parser);
+    }
+
+    //===============================================================
+    // File save/load
+
+    /// Save to file
+    bool save(string filename, bool pretty = true)
+    {
+        try
+        {
+            write(filename, toJSON(pretty));
+            return true;
+        }
+        catch (Exception e)
+        {
+            Log.e("exception while saving settings file: ", e);
+            return false;
+        }
     }
 
     /// Load JSON from file; returns true if loaded successfully
