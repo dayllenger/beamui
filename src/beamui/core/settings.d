@@ -31,19 +31,6 @@ import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.parseutils;
 
-/// Setting types - same as in std.json
-enum SettingType
-{
-    STRING,
-    INTEGER,
-    FLOAT,
-    OBJECT,
-    ARRAY,
-    TRUE,
-    FALSE,
-    NULL
-}
-
 /// Settings object whith file information
 class SettingsFile
 {
@@ -233,110 +220,66 @@ class SettingsFile
 /// Setting object
 final class Setting
 {
-    union Store
+    private union Store
     {
         string str;
         long integer;
         double floating;
+        bool boolean;
         SettingArray array;
         SettingMap* map;
     }
+    private enum SettingType
+    {
+        str,
+        integer,
+        floating,
+        boolean,
+        object,
+        array,
+        nothing
+    }
 
-    private Store _store;
-    private SettingType _type = SettingType.NULL;
+    private Store store;
+    private SettingType type = SettingType.nothing;
 
     private Setting _parent;
     private bool _changed;
-
-    this()
-    {
-        // NULL setting
-    }
-
-    this(long v)
-    {
-        integer = v;
-    }
-
-    this(string v)
-    {
-        str = v;
-    }
-
-    this(double v)
-    {
-        floating = v;
-    }
-
-    this(bool v)
-    {
-        boolean = v;
-    }
-
-    this(Setting[] v)
-    {
-        clear(SettingType.ARRAY);
-        _store.array.list = v;
-    }
-
-    this(string[] v)
-    {
-        clear(SettingType.ARRAY);
-        this.strArray = v;
-    }
-
-    this(string[string] v)
-    {
-        clear(SettingType.ARRAY);
-        this.strMap = v;
-    }
-
-    /// Returns true if setting has been changed
-    @property bool changed()
-    {
-        return _changed;
-    }
-
-    /// Set change flag
-    @property void changed(bool changed)
-    {
-        _changed = changed;
-    }
 
     /// Array
     private static struct SettingArray
     {
         Setting[] list;
 
-        @property bool empty() inout
+        @property bool empty() const
         {
             return list.length == 0;
         }
 
-        Setting set(int index, Setting value, Setting parent = null)
+        Setting set(size_t index, Setting value, Setting parent = null)
         {
             if (index < 0)
-                index = cast(int)(list.length);
+                index = list.length;
             if (index >= list.length)
             {
-                int oldlen = cast(int)list.length;
+                size_t oldlen = list.length;
                 list.length = index + 1;
                 foreach (i; oldlen .. index)
-                    list[i] = new Setting; // insert NULL items in holes
+                    list[i] = new Setting; // insert null items in holes
             }
             list[index] = value;
             value.parent = parent;
             return value;
         }
         /// Get item by index, returns null if index out of bounds
-        Setting get(int index)
+        Setting get(size_t index)
         {
             if (index < 0 || index >= list.length)
                 return null;
             return list[index];
         }
         /// Remove by index, returns removed value
-        Setting remove(int index)
+        Setting remove(size_t index)
         {
             Setting res = get(index);
             if (!res)
@@ -348,9 +291,9 @@ final class Setting
             return res;
         }
 
-        @property int length()
+        @property size_t length() const
         {
-            return cast(int)list.length;
+            return list.length;
         }
         /// Deep copy
         void copyFrom(ref SettingArray v)
@@ -367,14 +310,14 @@ final class Setting
     private static struct SettingMap
     {
         Setting[] list;
-        int[string] map;
+        size_t[string] map;
 
         @property bool empty() inout
         {
             return list.length == 0;
         }
         /// Get item by index, returns null if index out of bounds
-        Setting get(int index)
+        Setting get(size_t index)
         {
             if (index < 0 || index >= list.length)
                 return null;
@@ -402,13 +345,13 @@ final class Setting
             {
                 // new value
                 list ~= value;
-                map[key] = cast(int)list.length - 1;
+                map[key] = list.length - 1;
             }
             return value;
         }
 
         /// Remove by index, returns removed value
-        Setting remove(int index)
+        Setting remove(size_t index)
         {
             Setting res = get(index);
             if (!res)
@@ -434,7 +377,7 @@ final class Setting
             return res;
         }
         /// Returns key for index
-        string keyByIndex(int index)
+        string keyByIndex(size_t index)
         {
             foreach (k, ref v; map)
             {
@@ -472,6 +415,12 @@ final class Setting
         }
     }
 
+    /// True if setting has been changed
+    @property bool changed()
+    {
+        return _changed;
+    }
+
     /// Parent setting
     @property inout(Setting) parent() inout
     {
@@ -484,80 +433,84 @@ final class Setting
         return v;
     }
 
-    /// Returns type of the setting
-    @property SettingType type() const
+    //===============================================================
+    // Type checks
+
+    @property const
     {
-        return _type;
+        bool isString()
+        {
+            return type == SettingType.str;
+        }
+
+        bool isInteger()
+        {
+            return type == SettingType.integer;
+        }
+
+        bool isFloating()
+        {
+            return type == SettingType.floating;
+        }
+
+        bool isBoolean()
+        {
+            return type == SettingType.boolean;
+        }
+
+        bool isArray()
+        {
+            return type == SettingType.array;
+        }
+
+        bool isObject()
+        {
+            return type == SettingType.object;
+        }
+
+        bool isNull()
+        {
+            return type == SettingType.nothing;
+        }
     }
 
-    @property bool isString()
-    {
-        return _type == SettingType.STRING;
-    }
+    //===============================================================
+    // Utility
 
-    @property bool isInteger()
-    {
-        return _type == SettingType.INTEGER;
-    }
-
-    @property bool isFloating()
-    {
-        return _type == SettingType.FLOAT;
-    }
-
-    @property bool isObject()
-    {
-        return _type == SettingType.OBJECT;
-    }
-
-    @property bool isArray()
-    {
-        return _type == SettingType.ARRAY;
-    }
-
-    @property bool isBoolean()
-    {
-        return _type == SettingType.TRUE || _type == SettingType.FALSE;
-    }
-
-    @property bool isNull()
-    {
-        return _type == SettingType.NULL;
-    }
-
-    /// Clear value and set new type
+    /// Clear setting value and set the new type
     void clear(SettingType newType)
     {
-        if (newType != _type)
+        if (newType != type)
         {
             clear();
-            _type = newType;
+            type = newType;
         }
         clear();
     }
-    /// Clear value
+    /// Clear setting value
     void clear()
     {
-        final switch (_type) with (SettingType)
+        final switch (type) with (SettingType)
         {
-        case STRING:
-            _store.str = null;
+        case str:
+            store.str = store.str.init;
             break;
-        case ARRAY:
-            _store.array = _store.array.init;
+        case integer:
+            store.integer = store.integer.init;
             break;
-        case OBJECT:
-            _store.map = _store.map.init;
+        case floating:
+            store.floating = store.floating.init;
             break;
-        case INTEGER:
-            _store.integer = _store.integer.init;
+        case boolean:
+            store.boolean = store.boolean.init;
             break;
-        case FLOAT:
-            _store.floating = _store.floating.init;
+        case array:
+            store.array = store.array.init;
             break;
-        case TRUE:
-        case FALSE:
-        case NULL:
+        case object:
+            store.map = store.map.init;
+            break;
+        case nothing:
             break;
         }
     }
@@ -577,181 +530,260 @@ final class Setting
     Setting clone()
     {
         auto res = new Setting;
-        res.clear(_type);
-        final switch (_type) with (SettingType)
+        res.clear(type);
+        final switch (type) with (SettingType)
         {
-        case STRING:
-            res._store.str = _store.str;
+        case str:
+            res.store.str = store.str;
             break;
-        case ARRAY:
-            res._store.array.copyFrom(_store.array);
+        case integer:
+            res.store.integer = store.integer;
             break;
-        case OBJECT:
-            if (_store.map)
+        case floating:
+            res.store.floating = store.floating;
+            break;
+        case boolean:
+            res.store.boolean = store.boolean;
+            break;
+        case array:
+            res.store.array.copyFrom(store.array);
+            break;
+        case object:
+            if (store.map)
             {
-                res._store.map = new SettingMap;
-                res._store.map.copyFrom(_store.map);
+                res.store.map = new SettingMap;
+                res.store.map.copyFrom(store.map);
             }
             break;
-        case INTEGER:
-            res._store.integer = _store.integer;
-            break;
-        case FLOAT:
-            res._store.floating = _store.floating;
-            break;
-        case TRUE:
-        case FALSE:
-        case NULL:
+        case nothing:
             break;
         }
         res._changed = false;
         return res;
     }
 
-    /// Read as string value
-    @property inout(string) str() inout
+    /// Get number of elements for array or map, returns 0 for other types
+    @property size_t length() const
     {
-        final switch (_type) with (SettingType)
+        if (isArray)
         {
-        case STRING:
-            return _store.str;
-        case INTEGER:
-            return to!string(_store.integer);
-        case FLOAT:
-            return to!string(_store.floating);
-        case TRUE:
-            return "true";
-        case FALSE:
-            return "false";
-        case NULL:
-        case ARRAY:
-        case OBJECT:
-            return null;
+            return store.array.list.length;
         }
-    }
-    /// Read as string value
-    inout(string) strDef(string defValue) inout
-    {
-        final switch (_type) with (SettingType)
+        else if (isObject)
         {
-        case STRING:
-            return _store.str;
-        case INTEGER:
-            return to!string(_store.integer);
-        case FLOAT:
-            return to!string(_store.floating);
-        case TRUE:
-            return "true";
-        case FALSE:
-            return "false";
-        case NULL:
-        case ARRAY:
-        case OBJECT:
-            return defValue;
+            return store.map ? store.map.list.length : 0;
         }
-    }
-    /// Set string value for object
-    @property string str(string v)
-    {
-        if (_type != SettingType.STRING)
-            clear(SettingType.STRING);
-        _store.str = v;
-        return v;
+        else
+            return 0;
     }
 
-    /// Returns items as string array
+    /// Add and return an empty setting for array by an integer index
+    Setting add(size_t index)
+    {
+        if (!isArray)
+            clear(SettingType.array);
+        auto s = new Setting;
+        store.array.set(index, s, this);
+        return s;
+    }
+    /// Add and return an empty setting for object by a string key
+    Setting add(string key)
+    {
+        if (!isObject)
+            clear(SettingType.object);
+        if (!store.map)
+            store.map = new SettingMap;
+        auto s = new Setting;
+        store.map.set(key, s, this);
+        return s;
+    }
+
+    /// Add and return an empty setting for array by an integer index only if it's not present
+    Setting addDef(size_t index)
+    {
+        if (this[index] is null)
+            return add(index);
+        else
+            return null;
+    }
+    /// Add and return an empty setting for object by a string key only if it's not present
+    Setting addDef(string key)
+    {
+        if (this[key] is null)
+            return add(key);
+        else
+            return null;
+    }
+
+    /// Remove array or object item by an index.
+    /// Returns removed item or null if index is out of bounds or setting is neither array nor object.
+    Setting remove(size_t index)
+    {
+        if (isArray)
+            return store.array.remove(index);
+        else if (isObject)
+            return store.map ? store.map.remove(index) : null;
+        else
+            return null;
+    }
+    /// Remove object item by a key.
+    /// Returns removed item or null if is not found or setting is not an object
+    Setting remove(string key)
+    {
+        if (isObject)
+            return store.map ? store.map.remove(key) : null;
+        else
+            return null;
+    }
+
+    //===============================================================
+    // Value getters and setters
+
+    // basic
+
+    /// String value of this setting. Getter returns null if setting holds wrong type.
+    @property string str() const
+    {
+        return isString ? store.str : null;
+    }
+    /// ditto
+    @property string str(string value)
+    {
+        if (!isString)
+            clear(SettingType.str);
+        return store.str = value;
+    }
+    /// Get string value of this setting or `defaultValue` if setting holds wrong type
+    string strDef(string defaultValue) const
+    {
+        return isString ? store.str : defaultValue;
+    }
+
+    /// Long value of this setting. Getter returns 0 if setting holds wrong type.
+    @property long integer() const
+    {
+        return isInteger ? store.integer : 0;
+    }
+    /// ditto
+    @property long integer(long value)
+    {
+        if (!isInteger)
+            clear(SettingType.integer);
+        return store.integer = value;
+    }
+    /// Get long value of this setting or `defaultValue` if setting holds wrong type
+    long integerDef(long defaultValue) const
+    {
+        return isInteger ? store.integer : defaultValue;
+    }
+
+    /// Double value of this setting. Getter returns 0.0 if setting holds wrong type.
+    @property double floating() const
+    {
+        return isFloating ? store.floating : 0;
+    }
+    /// ditto
+    @property double floating(double value)
+    {
+        if (!isFloating)
+            clear(SettingType.floating);
+        return store.floating = value;
+    }
+    /// Get double value of this setting or `defaultValue` if setting holds wrong type
+    double floatingDef(double defaultValue) const
+    {
+        return isFloating ? store.floating : defaultValue;
+    }
+
+    /// Bool value of this setting. Getter returns false if setting holds wrong type.
+    @property bool boolean() const
+    {
+        return isBoolean ? store.boolean : false;
+    }
+    /// ditto
+    @property bool boolean(bool value)
+    {
+        if (!isBoolean)
+            clear(SettingType.boolean);
+        return store.boolean = value;
+    }
+    /// Get bool value of this setting or `defaultValue` if setting holds wrong type
+    bool booleanDef(bool defaultValue) const
+    {
+        return isBoolean ? store.boolean : defaultValue;
+    }
+
+    // complex
+
+    /// Items as a string array
     @property string[] strArray()
     {
-        final switch (_type) with (SettingType)
+        if (isArray || isObject)
         {
-        case STRING:
-            return [_store.str];
-        case INTEGER:
-            return [to!string(_store.integer)];
-        case FLOAT:
-            return [to!string(_store.floating)];
-        case TRUE:
-            return ["true"];
-        case FALSE:
-            return ["false"];
-        case NULL:
-            return null;
-        case ARRAY:
-        case OBJECT:
             string[] res;
             foreach (i; 0 .. length)
                 res ~= this[i].str;
             return res;
         }
+        else
+            return null;
     }
-    /// Set string array
+    /// ditto
     @property string[] strArray(string[] list)
     {
-        clear(SettingType.ARRAY);
-        foreach (s; list)
+        clear(SettingType.array);
+        foreach (item; list)
         {
-            this[length] = new Setting(s);
+            auto s = new Setting;
+            s.str = item;
+            this[length] = s;
         }
         return list;
     }
 
-    /// Returns items as int array
+    /// Items as an int array
     @property int[] intArray()
     {
-        final switch (_type) with (SettingType)
+        if (isArray || isObject)
         {
-        case STRING:
-        case INTEGER:
-        case FLOAT:
-        case TRUE:
-        case FALSE:
-            return [cast(int)integer];
-        case NULL:
-            return null;
-        case ARRAY:
-        case OBJECT:
             int[] res;
             foreach (i; 0 .. length)
                 res ~= cast(int)this[i].integer;
             return res;
         }
+        else
+            return null;
     }
-    /// Set int array
+    /// ditto
     @property int[] intArray(int[] list)
     {
-        clear(SettingType.ARRAY);
-        foreach (s; list)
+        clear(SettingType.array);
+        foreach (item; list)
         {
-            this[length] = new Setting(cast(long)s);
+            auto s = new Setting;
+            s.integer = cast(long)item;
+            this[length] = s;
         }
         return list;
     }
 
-    /// Returns items as Setting array
+    /// Items as a Setting array
     @property Setting[] array()
     {
-        final switch (_type) with (SettingType)
+        if (isArray || isObject)
         {
-        case STRING:
-        case INTEGER:
-        case FLOAT:
-        case TRUE:
-        case FALSE:
-            return [this];
-        case NULL:
-            return null;
-        case ARRAY:
-        case OBJECT:
             Setting[] res;
             foreach (i; 0 .. length)
                 res ~= this[i];
             return res;
         }
+        else
+            return null;
     }
-    /// Set Setting array
+    /// ditto
     @property Setting[] array(Setting[] list)
     {
-        clear(SettingType.ARRAY);
+        clear(SettingType.array);
         foreach (s; list)
         {
             this[length] = s;
@@ -759,98 +791,81 @@ final class Setting
         return list;
     }
 
-    /// Returns items as string[string] map
+    /// Items as a string[string] map
     @property string[string] strMap()
     {
-        final switch (_type) with (SettingType)
+        if (isObject)
         {
-        case STRING:
-        case INTEGER:
-        case FLOAT:
-        case TRUE:
-        case FALSE:
-        case NULL:
-        case ARRAY:
-            return null;
-        case OBJECT:
             string[string] res;
-            if (_store.map)
+            if (store.map)
             {
-                foreach (key, value; _store.map.map)
+                foreach (key, value; store.map.map)
                 {
-                    Setting v = _store.map.get(value);
+                    Setting v = store.map.get(value);
                     res[key] = v ? v.str : null;
                 }
             }
             return res;
         }
+        else
+            return null;
     }
-    /// Set string[string] map
+    /// ditto
     @property string[string] strMap(string[string] list)
     {
-        clear(SettingType.OBJECT);
+        clear(SettingType.object);
         foreach (key, value; list)
         {
-            this[key] = new Setting(value);
+            auto s = new Setting;
+            s.str = value;
+            this[length] = s;
         }
         return list;
     }
 
-    /// Returns items as int[string] map
+    /// Items as an int[string] map
     @property int[string] intMap()
     {
-        final switch (_type) with (SettingType)
+        if (isObject)
         {
-        case STRING:
-        case INTEGER:
-        case FLOAT:
-        case TRUE:
-        case FALSE:
-        case NULL:
-        case ARRAY:
-            return null;
-        case OBJECT:
             int[string] res;
-            foreach (key, value; _store.map.map)
+            foreach (key, value; store.map.map)
                 res[key] = cast(int)this[value].integer;
             return res;
         }
+        else
+            return null;
     }
-    /// Set int[string] map
+    /// ditto
     @property int[string] intMap(int[string] list)
     {
-        clear(SettingType.OBJECT);
+        clear(SettingType.object);
         foreach (key, value; list)
         {
-            this[key] = new Setting(cast(long)value);
+            auto s = new Setting;
+            s.integer = cast(long)value;
+            this[length] = s;
         }
         return list;
     }
 
-    /// Returns items as Setting[string] map
+    /// Items as a Setting[string] map
     @property Setting[string] map()
     {
-        final switch (_type) with (SettingType)
+        if (isObject)
         {
-        case STRING:
-        case INTEGER:
-        case FLOAT:
-        case TRUE:
-        case FALSE:
-        case NULL:
-        case ARRAY:
-            return null;
-        case OBJECT:
             Setting[string] res;
-            foreach (key, value; _store.map.map)
+            foreach (key, value; store.map.map)
                 res[key] = this[value];
             return res;
         }
+        else
+            return null;
     }
-    /// Set Setting[string] map
+    /// ditto
     @property Setting[string] map(Setting[string] list)
     {
-        clear(SettingType.OBJECT);
+        clear(SettingType.object);
         foreach (key, value; list)
         {
             this[key] = value;
@@ -858,24 +873,27 @@ final class Setting
         return list;
     }
 
+    //===============================================================
+    // Operators
+
     /// To iterate using foreach
     int opApply(int delegate(ref Setting) dg)
     {
         int result = 0;
-        if (_type == SettingType.ARRAY)
+        if (isArray)
         {
-            for (int i = 0; i < _store.array.list.length; i++)
+            for (int i = 0; i < store.array.list.length; i++)
             {
-                result = dg(_store.array.list[i]);
+                result = dg(store.array.list[i]);
                 if (result)
                     break;
             }
         }
-        else if (_type == SettingType.OBJECT)
+        else if (isObject)
         {
-            for (int i = 0; i < _store.map.list.length; i++)
+            for (int i = 0; i < store.map.list.length; i++)
             {
-                result = dg(_store.map.list[i]);
+                result = dg(store.map.list[i]);
                 if (result)
                     break;
             }
@@ -883,16 +901,16 @@ final class Setting
         return result;
     }
 
-    /// To iterate over OBJECT using foreach (key, value; map)
+    /// To iterate over object using foreach (key, value; map)
     int opApply(int delegate(ref string, ref Setting) dg)
     {
         int result = 0;
-        if (_type == SettingType.OBJECT)
+        if (isObject)
         {
-            for (int i = 0; i < _store.map.list.length; i++)
+            for (int i = 0; i < store.map.list.length; i++)
             {
-                string key = _store.map.keyByIndex(i);
-                result = dg(key, _store.map.list[i]);
+                string key = store.map.keyByIndex(i);
+                result = dg(key, store.map.list[i]);
                 if (result)
                     break;
             }
@@ -904,20 +922,20 @@ final class Setting
     int opApplyReverse(int delegate(ref Setting) dg)
     {
         int result = 0;
-        if (_type == SettingType.ARRAY)
+        if (isArray)
         {
-            for (int i = cast(int)_store.array.list.length - 1; i >= 0; i--)
+            for (int i = cast(int)store.array.list.length - 1; i >= 0; i--)
             {
-                result = dg(_store.array.list[i]);
+                result = dg(store.array.list[i]);
                 if (result)
                     break;
             }
         }
-        else if (_type == SettingType.OBJECT)
+        else if (isObject)
         {
-            for (int i = cast(int)_store.map.list.length - 1; i >= 0; i--)
+            for (int i = cast(int)store.map.list.length - 1; i >= 0; i--)
             {
-                result = dg(_store.map.list[i]);
+                result = dg(store.map.list[i]);
                 if (result)
                     break;
             }
@@ -925,377 +943,52 @@ final class Setting
         return result;
     }
 
-    /// Read as long value
-    @property inout(long) integer() inout
-    {
-        final switch (_type) with (SettingType)
-        {
-        case STRING:
-            return parseLong(_store.str);
-        case INTEGER:
-            return _store.integer;
-        case FLOAT:
-            return cast(long)_store.floating;
-        case TRUE:
-            return 1;
-        case FALSE:
-        case NULL:
-        case ARRAY:
-        case OBJECT:
-            return 0;
-        }
-    }
-    /// Read as long value
-    inout(long) integerDef(long defValue) inout
-    {
-        final switch (_type) with (SettingType)
-        {
-        case STRING:
-            return parseLong(_store.str, defValue);
-        case INTEGER:
-            return _store.integer;
-        case FLOAT:
-            return cast(long)_store.floating;
-        case TRUE:
-            return 1;
-        case FALSE:
-            return 0;
-        case NULL:
-        case ARRAY:
-        case OBJECT:
-            return defValue;
-        }
-    }
-    /// Set long value for object
-    @property long integer(long v)
-    {
-        if (_type != SettingType.INTEGER)
-            clear(SettingType.INTEGER);
-        _store.integer = v;
-        return v;
-    }
-
-    /// Read as double value
-    @property inout(double) floating() inout
-    {
-        final switch (_type) with (SettingType)
-        {
-        case STRING:
-            return 0; //parseULong(_store.str);
-        case INTEGER:
-            return cast(double)_store.integer;
-        case FLOAT:
-            return _store.floating;
-        case TRUE:
-            return 1;
-        case FALSE:
-        case NULL:
-        case ARRAY:
-        case OBJECT:
-            return 0;
-        }
-    }
-    /// Read as double value with default
-    inout(double) floatingDef(double defValue) inout
-    {
-        final switch (_type) with (SettingType)
-        {
-        case STRING:
-            return defValue; //parseULong(_store.str);
-        case INTEGER:
-            return cast(double)_store.integer;
-        case FLOAT:
-            return _store.floating;
-        case TRUE:
-            return 1;
-        case FALSE:
-            return 0;
-        case NULL:
-        case ARRAY:
-        case OBJECT:
-            return defValue;
-        }
-    }
-    /// Set ulong value for object
-    @property double floating(double v)
-    {
-        if (_type != SettingType.FLOAT)
-            clear(SettingType.FLOAT);
-        _store.floating = v;
-        return v;
-    }
-
-    /// Parse string as boolean; supports 1, 0, y, n, yes, no, t, f, true, false; returns defValue if cannot be parsed
-    static bool parseBool(inout string v, bool defValue = false)
-    {
-        int len = cast(int)v.length;
-        if (len == 0)
-            return defValue;
-        char ch = v[0];
-        if (len == 1)
-        {
-            if (ch == '1' || ch == 'y' || ch == 't')
-                return true;
-            if (ch == '1' || ch == 'y' || ch == 't')
-                return false;
-            return defValue;
-        }
-        if (v == "yes" || v == "true")
-            return true;
-        if (v == "no" || v == "false")
-            return false;
-        return defValue;
-    }
-
-    /// Read as boolean value
-    @property inout(bool) boolean() inout
-    {
-        final switch (_type) with (SettingType)
-        {
-        case STRING:
-            return parseBool(_store.str);
-        case INTEGER:
-            return _store.integer != 0;
-        case FLOAT:
-            return _store.floating != 0;
-        case TRUE:
-            return true;
-        case FALSE:
-        case NULL:
-            return false;
-        case ARRAY:
-            return !_store.array.empty;
-        case OBJECT:
-            return _store.map && !_store.map.empty;
-        }
-    }
-    /// Read as boolean value
-    inout(bool) booleanDef(bool defValue) inout
-    {
-        final switch (_type) with (SettingType)
-        {
-        case STRING:
-            return parseBool(_store.str, defValue);
-        case INTEGER:
-            return _store.integer != 0;
-        case FLOAT:
-            return _store.floating != 0;
-        case TRUE:
-            return true;
-        case FALSE:
-        case NULL:
-            return false;
-        case ARRAY:
-            return defValue;
-        case OBJECT:
-            return defValue;
-        }
-    }
-    /// Set bool value for object
-    @property bool boolean(bool v)
-    {
-        if (_type == SettingType.TRUE)
-        {
-            if (!v)
-                _type = SettingType.FALSE;
-        }
-        else if (_type == SettingType.FALSE)
-        {
-            if (v)
-                _type = SettingType.TRUE;
-        }
-        else
-        {
-            clear(v ? SettingType.TRUE : SettingType.FALSE);
-        }
-        return v;
-    }
-
-    /// Get number of elements for array or map, returns 0 for other types
-    int length() inout
-    {
-        if (_type == SettingType.ARRAY)
-        {
-            return cast(int)_store.array.list.length;
-        }
-        else if (_type == SettingType.OBJECT)
-        {
-            return _store.map ? cast(int)_store.map.list.length : 0;
-        }
-        else
-            return 0;
-    }
-
     /// For array or object returns item by index, null if index is out of bounds or setting is neither array nor object
-    Setting opIndex(int index)
+    Setting opIndex(size_t index)
     {
-        if (_type == SettingType.ARRAY)
-        {
-            return _store.array.get(index);
-        }
-        else if (_type == SettingType.OBJECT)
-        {
-            if (!_store.map)
-                return null;
-            return _store.map.get(index);
-        }
+        if (isArray)
+            return store.array.get(index);
+        else if (isObject)
+            return store.map ? store.map.get(index) : null;
         else
-        {
             return null;
-        }
     }
-
     /// For object returns item by key, null if not found or this setting is not an object
     Setting opIndex(string key)
     {
-        if (_type == SettingType.OBJECT)
-        {
-            if (!_store.map)
-                return null;
-            return _store.map.get(key);
-        }
+        if (isObject)
+            return store.map ? store.map.get(key) : null;
         else
-        {
             return null;
-        }
     }
 
-    /// For array or object remove item by index, returns removed item or null if index is out of bounds or setting is neither array nor object
-    Setting remove(int index)
+    /// Assign setting to array by integer index
+    Setting opIndexAssign(Setting value, size_t index)
     {
-        if (_type == SettingType.ARRAY)
-        {
-            return _store.array.remove(index);
-        }
-        else if (_type == SettingType.OBJECT)
-        {
-            if (!_store.map)
-                return null;
-            return _store.map.remove(index);
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    /// For object remove item by key, returns removed item or null if is not found or setting is not an object
-    Setting remove(string key)
-    {
-        if (_type == SettingType.OBJECT)
-        {
-            if (!_store.map)
-                return null;
-            return _store.map.remove(key);
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    // assign long value
-    long opAssign(long value)
-    {
-        return (integer = value);
-    }
-    // assign string value
-    string opAssign(string value)
-    {
-        return (str = value);
-    }
-    // assign bool value
-    bool opAssign(bool value)
-    {
-        return (boolean = value);
-    }
-    // assign double value
-    double opAssign(double value)
-    {
-        return (floating = value);
-    }
-    // assign int[] value
-    int[] opAssign(int[] value)
-    {
-        return (intArray = value);
-    }
-    // assign string[string] value
-    string[string] opAssign(string[string] value)
-    {
-        return (strMap = value);
-    }
-    // assign string[] value
-    string[] opAssign(string[] value)
-    {
-        return (strArray = value);
-    }
-    // assign int[string] value
-    int[string] opAssign(int[string] value)
-    {
-        return (intMap = value);
-    }
-    // assign Setting[] value
-    Setting[] opAssign(Setting[] value)
-    {
-        return (array = value);
-    }
-    // assign Setting[string] value
-    Setting[string] opAssign(Setting[string] value)
-    {
-        return (map = value);
-    }
-
-    // array methods
-    /// Set value for array item by integer index
-    T opIndexAssign(T)(T value, int index)
-    {
-        if (_type != SettingType.ARRAY)
-            clear(SettingType.ARRAY);
-        static if (is(T : Setting))
-        {
-            _store.array.set(index, value, this);
-        }
-        else
-        {
-            Setting item = _store.array.get(index);
-            if (item)
-            {
-                // existing item
-                item = value;
-            }
-            else
-            {
-                // create new item
-                _store.array.set(index, new Setting(value), this);
-            }
-        }
+        if (!isArray)
+            clear(SettingType.array);
+        store.array.set(index, value, this);
         return value;
     }
-    /// Set value for array item by integer index if not already present
-    T setDef(T)(T value, int index)
+    /// Assign setting to object by string key
+    Setting opIndexAssign(Setting value, string key)
     {
-        if (_type != SettingType.ARRAY)
-            clear(SettingType.ARRAY);
-        Setting item = _store.array.get(index);
-        if (item)
-            return value;
-        static if (is(value == Setting))
-        {
-            _store.array.set(index, value, this);
-        }
-        else
-        {
-            // create new item
-            _store.array.set(index, new Setting(value), this);
-        }
+        if (!isObject)
+            clear(SettingType.object);
+        if (!store.map)
+            store.map = new SettingMap;
+        store.map.set(key, value, this);
         return value;
     }
+
+    //===============================================================
+    // Path selectors
 
     /// Returns setting by path like "editors/sourceEditor/tabSize", creates object tree "editors/sourceEditor" and object of specified type if part of path does not exist.
-    Setting settingByPath(string path, SettingType type, bool createIfNotExist = true)
+    Setting settingByPath(string path, bool createIfNotExist = true)
     {
-        if (_type != SettingType.OBJECT)
-            clear(SettingType.OBJECT);
+        if (!isObject)
+            clear(SettingType.object);
         string part1, part2;
         if (splitKey(path, part1, part2))
         {
@@ -1303,10 +996,10 @@ final class Setting
             if (!s)
             {
                 s = new Setting;
-                s.clear(SettingType.OBJECT);
+                s.clear(SettingType.object);
                 this[part1] = s;
             }
-            return s.settingByPath(part2, type);
+            return s.settingByPath(part2);
         }
         else
         {
@@ -1314,7 +1007,6 @@ final class Setting
             if (!s && createIfNotExist)
             {
                 s = new Setting;
-                s.clear(type);
                 this[path] = s;
             }
             return s;
@@ -1324,12 +1016,12 @@ final class Setting
     /// Get (or optionally create) object (map) by slash delimited path (e.g. key1/subkey2/subkey3)
     Setting objectByPath(string path, bool createIfNotExist = false)
     {
-        if (type != SettingType.OBJECT)
+        if (!isObject)
         {
             if (!createIfNotExist)
                 return null;
             // do we need to allow this conversion to object?
-            clear(SettingType.OBJECT);
+            clear(SettingType.object);
         }
         string part1, part2;
         if (splitKey(path, part1, part2))
@@ -1340,7 +1032,7 @@ final class Setting
                 if (!createIfNotExist)
                     return null;
                 s = new Setting;
-                s.clear(SettingType.OBJECT);
+                s.clear(SettingType.object);
                 this[part1] = s;
             }
             return s.objectByPath(part2, createIfNotExist);
@@ -1353,7 +1045,7 @@ final class Setting
                 if (!createIfNotExist)
                     return null;
                 s = new Setting;
-                s.clear(SettingType.OBJECT);
+                s.clear(SettingType.object);
                 this[path] = s;
             }
             return s;
@@ -1381,204 +1073,8 @@ final class Setting
         return false;
     }
 
-    // map methods
-    /// Set value for object item by string key
-    T opIndexAssign(T)(T value, string key)
-    {
-        if (_type != SettingType.OBJECT)
-            clear(SettingType.OBJECT);
-        if (!_store.map)
-            _store.map = new SettingMap;
-        static if (is(T : Setting))
-        {
-            _store.map.set(key, value, this);
-        }
-        else
-        {
-            Setting item = _store.map.get(key);
-            if (item)
-            {
-                // existing item
-                item = value;
-            }
-            else
-            {
-                // create new item
-                _store.map.set(key, new Setting(value), this);
-            }
-        }
-        return value;
-    }
-    /// Set value for object item by string key
-    T setDef(T)(T value, string key)
-    {
-        if (_type != SettingType.OBJECT)
-            clear(SettingType.OBJECT);
-        if (!_store.map)
-            _store.map = new SettingMap;
-        Setting item = _store.map.get(key);
-        if (item)
-            return value;
-        static if (is(value == Setting))
-        {
-            _store.map.set(key, value, this);
-        }
-        else
-        {
-            // create new item
-            _store.map.set(key, new Setting(value), this);
-        }
-        return value;
-    }
-
-    /// Set long item by index of array or map
-    long setInteger(int index, long value)
-    {
-        return opIndexAssign(value, index);
-    }
-    /// Set bool item by index of array or map
-    bool setBoolean(int index, bool value)
-    {
-        return opIndexAssign(value, index);
-    }
-    /// Set double item by index of array or map
-    double setFloating(int index, double value)
-    {
-        return opIndexAssign(value, index);
-    }
-    /// Set str item by index of array or map
-    string setString(int index, string value)
-    {
-        return opIndexAssign(value, index);
-    }
-
-    /// Set long item by index of array or map only if it's already present
-    long setIntegerDef(int index, long value)
-    {
-        return setDef(value, index);
-    }
-    /// Set bool item by index of array or map only if it's already present
-    bool setBooleanDef(int index, bool value)
-    {
-        return setDef(value, index);
-    }
-    /// Set double item by index of array or map only if it's already present
-    double setFloatingDef(int index, double value)
-    {
-        return setDef(value, index);
-    }
-    /// Set str item by index of array or map only if it's already present
-    string setStringDef(int index, string value)
-    {
-        return setDef(value, index);
-    }
-
-    /// Returns long item by index of array or map
-    long getInteger(int index, long defValue = 0)
-    {
-        if (auto item = opIndex(index))
-            return item.integerDef(defValue);
-        return defValue;
-    }
-    /// Returns bool item by index of array or map
-    bool getBoolean(int index, bool defValue = false)
-    {
-        if (auto item = opIndex(index))
-            return item.booleanDef(defValue);
-        return defValue;
-    }
-    /// Returns double item by index of array or map
-    double getFloating(int index, double defValue = 0)
-    {
-        if (auto item = opIndex(index))
-            return item.floatingDef(defValue);
-        return defValue;
-    }
-    /// Returns str item by index of array or map
-    string getString(int index, string defValue = null)
-    {
-        if (auto item = opIndex(index))
-            return item.strDef(defValue);
-        return defValue;
-    }
-
-    /// Set long item of map
-    long setInteger(string key, long value)
-    {
-        return opIndexAssign(value, key);
-    }
-    /// Set bool item of map
-    bool setBoolean(string key, bool value)
-    {
-        return opIndexAssign(value, key);
-    }
-    /// Set double item of map
-    double setFloating(string key, double value)
-    {
-        return opIndexAssign(value, key);
-    }
-    /// Set str item of map
-    string setString(string key, string value)
-    {
-        return opIndexAssign(value, key);
-    }
-
-    /// Set long item of map if key is not yet present in map
-    long setIntegerDef(string key, long value)
-    {
-        return setDef(value, key);
-    }
-    /// Set bool item of map if key is not yet present in map
-    bool setBooleanDef(string key, bool value)
-    {
-        return setDef(value, key);
-    }
-    /// Set double item of map if key is not yet present in map
-    double setFloatingDef(string key, double value)
-    {
-        return setDef(value, key);
-    }
-    /// Set str item of map if key is not yet present in map
-    string setStringDef(string key, string value)
-    {
-        return setDef(value, key);
-    }
-
-    /// Returns long item by key from map
-    long getInteger(string key, long defValue = 0)
-    {
-        if (auto item = opIndex(key))
-            return item.integerDef(defValue);
-        return defValue;
-    }
-    /// Returns bool item by key from map
-    bool getBoolean(string key, bool defValue = false)
-    {
-        if (auto item = opIndex(key))
-            return item.booleanDef(defValue);
-        return defValue;
-    }
-    /// Returns double item by key from map
-    double getFloating(string key, double defValue = 0)
-    {
-        if (auto item = opIndex(key))
-            return item.floatingDef(defValue);
-        return defValue;
-    }
-    /// Returns str item by key from map
-    string getString(string key, string defValue = null)
-    {
-        if (auto item = opIndex(key))
-            return item.strDef(defValue);
-        return defValue;
-    }
-    /// Returns string array item by key from map, returns null if not found
-    string[] getStringArray(string key)
-    {
-        if (auto item = opIndex(key))
-            return item.strArray();
-        return null;
-    }
+    //===============================================================
+    // JSON
 
     /// Serialize to json
     string toJSON(bool pretty = false)
@@ -1704,36 +1200,33 @@ final class Setting
     void toJSON(ref Buf buf, int level, bool pretty)
     {
         buf.reserve(1024);
-        final switch (_type) with (SettingType)
+        final switch (type) with (SettingType)
         {
-        case STRING:
-            buf.appendJSONString(_store.str);
+        case str:
+            buf.appendJSONString(store.str);
             break;
-        case INTEGER:
-            buf.append(to!string(_store.integer));
+        case integer:
+            buf.append(to!string(store.integer));
             break;
-        case FLOAT:
-            buf.append(to!string(_store.floating));
+        case floating:
+            buf.append(to!string(store.floating));
             break;
-        case TRUE:
-            buf.append("true");
+        case boolean:
+            buf.append(store.boolean ? "true" : "false");
             break;
-        case FALSE:
-            buf.append("false");
-            break;
-        case NULL:
+        case nothing:
             buf.append("null");
             break;
-        case ARRAY:
+        case array:
             buf.append('[');
-            if (pretty && _store.array.length > 0)
+            if (pretty && store.array.length > 0)
                 buf.appendEOL();
-            foreach (i; 0 .. _store.array.length)
+            foreach (i; 0 .. store.array.length)
             {
                 if (pretty)
                     buf.appendTabs(level + 1);
-                _store.array.get(i).toJSON(buf, level + 1, pretty);
-                if (i >= _store.array.length - 1)
+                store.array.get(i).toJSON(buf, level + 1, pretty);
+                if (i >= store.array.length - 1)
                     break;
                 buf.append(',');
                 if (pretty)
@@ -1746,23 +1239,23 @@ final class Setting
             }
             buf.append(']');
             break;
-        case OBJECT:
+        case object:
             buf.append('{');
-            if (_store.map && _store.map.length)
+            if (store.map && store.map.length)
             {
                 if (pretty)
                     buf.appendEOL();
                 for (int i = 0;; i++)
                 {
-                    string key = _store.map.keyByIndex(i);
+                    string key = store.map.keyByIndex(i);
                     if (pretty)
                         buf.appendTabs(level + 1);
                     buf.appendJSONString(key);
                     buf.append(':');
                     if (pretty)
                         buf.append(' ');
-                    _store.map.get(i).toJSON(buf, level + 1, pretty);
-                    if (i >= _store.map.length - 1)
+                    store.map.get(i).toJSON(buf, level + 1, pretty);
+                    if (i >= store.map.length - 1)
                         break;
                     buf.append(',');
                     if (pretty)
@@ -2159,7 +1652,7 @@ final class Setting
 
     private void parseMap(ref JsonParser parser)
     {
-        clear(SettingType.OBJECT);
+        clear(SettingType.object);
         int startPos = parser.pos;
         //Log.v("parseMap at context ", parser.currentContext);
         char ch = parser.peek;
@@ -2201,7 +1694,7 @@ final class Setting
 
     private void parseArray(ref JsonParser parser)
     {
-        clear(SettingType.ARRAY);
+        clear(SettingType.array);
         parser.nextChar; // skip initial [
         while (true)
         {
@@ -2213,7 +1706,7 @@ final class Setting
             }
             auto value = new Setting;
             value.parseJSON(parser);
-            this[_store.array.length] = value;
+            this[store.array.length] = value;
             ch = parser.skipSpaces;
             if (ch == ',')
             {
@@ -2234,7 +1727,7 @@ final class Setting
         char ch = parser.skipSpaces;
         if (ch == '\"')
         {
-            this = parser.parseString;
+            this.str = parser.parseString();
         }
         else if (ch == '[')
         {
@@ -2246,15 +1739,15 @@ final class Setting
         }
         else if (parser.parseKeyword("null"))
         {
-            // do nothing - we already have NULL value
+            // do nothing - we already have null value
         }
         else if (parser.parseKeyword("true"))
         {
-            this = true;
+            this.boolean = true;
         }
         else if (parser.parseKeyword("false"))
         {
-            this = false;
+            this.boolean = false;
         }
         else if (ch == '-' || std.ascii.isDigit(ch))
         {
@@ -2269,7 +1762,7 @@ final class Setting
 
     void parseJSON(string s)
     {
-        clear(SettingType.NULL);
+        clear(SettingType.nothing);
         JsonParser parser;
         parser.initialize(normalizeEOLs(s));
         parseJSON(parser);

@@ -214,10 +214,11 @@ class AppFrame : Column
             if (name)
             {
                 auto shortcuts = a.shortcuts;
+                Setting s = _shortcutSettings.add(name);
                 if (shortcuts.length == 1)
-                    _shortcutSettings[name] = shortcuts[0].toString;
+                    s.str = shortcuts[0].toString;
                 else if (shortcuts.length > 1)
-                    _shortcutSettings[name] = shortcuts.emap!(a => a.toString);
+                    s.strArray = shortcuts.emap!(a => a.toString);
             }
         }
         return shortcutSettings.save();

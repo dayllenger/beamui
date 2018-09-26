@@ -423,14 +423,13 @@ class Window : CustomEventTarget
         if (state == WindowState.fullscreen || state == WindowState.minimized ||
                 state == WindowState.maximized || state == WindowState.normal)
         {
-            //
-            setting.setInteger("windowState", state);
+            setting.add("windowState").integer = state;
             if (rect.width > 0 && rect.height > 0)
             {
-                setting.setInteger("windowPositionX", rect.x);
-                setting.setInteger("windowPositionY", rect.y);
-                setting.setInteger("windowWidth", rect.width);
-                setting.setInteger("windowHeight", rect.height);
+                setting.add("windowPositionX").integer = rect.x;
+                setting.add("windowPositionY").integer = rect.y;
+                setting.add("windowWidth").integer = rect.width;
+                setting.add("windowHeight").integer = rect.height;
             }
         }
     }
@@ -440,12 +439,12 @@ class Window : CustomEventTarget
     {
         if (!setting)
             return false;
-        WindowState state = cast(WindowState)setting.getInteger("windowState", WindowState.unspecified);
+        WindowState state = cast(WindowState)setting["windowState"].integerDef(WindowState.unspecified);
         Box rect;
-        rect.x = cast(int)setting.getInteger("windowPositionX", WindowState.unspecified);
-        rect.y = cast(int)setting.getInteger("windowPositionY", 0);
-        int w = cast(int)setting.getInteger("windowWidth", 0);
-        int h = cast(int)setting.getInteger("windowHeight", 0);
+        rect.x = cast(int)setting["windowPositionX"].integer;
+        rect.y = cast(int)setting["windowPositionY"].integer;
+        int w = cast(int)setting["windowWidth"].integer;
+        int h = cast(int)setting["windowHeight"].integer;
         if (w <= 0 || h <= 0)
             return false;
         rect.width = w;

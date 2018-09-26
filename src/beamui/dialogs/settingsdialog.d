@@ -77,7 +77,8 @@ class CheckboxItem : SettingsItem
         auto cb = new CheckBox(_label);
         cb.id = _id;
         cb.fillW().minWidth(60.pt);
-        Setting setting = settings.settingByPath(_id, SettingType.FALSE);
+        Setting setting = settings.settingByPath(_id);
+        setting.boolean = setting.boolean;
         cb.checked = setting.boolean ^ _inverse;
         cb.checkChanged = (Widget source, bool checked) { setting.boolean = checked ^ _inverse; };
         return [cb];
@@ -102,8 +103,9 @@ class StringComboBoxItem : SettingsItem
         auto cb = new ComboBox(_items);
         cb.id = _id;
         cb.fillW().minWidth(60.pt);
-        Setting setting = settings.settingByPath(_id, SettingType.STRING);
+        Setting setting = settings.settingByPath(_id);
         string itemID = setting.str;
+        setting.str = itemID;
         int index = -1;
         foreach (i; 0 .. cast(int)_items.length)
         {
@@ -141,7 +143,8 @@ class IntComboBoxItem : SettingsItem
         auto cb = new ComboBox(_items);
         cb.id = _id;
         cb.fillW().minWidth(60.pt);
-        auto setting = settings.settingByPath(_id, SettingType.INTEGER);
+        auto setting = settings.settingByPath(_id);
+        setting.integer = setting.integer;
         long itemID = setting.integer;
         int index = -1;
         foreach (i; 0 .. cast(int)_items.length)
@@ -182,7 +185,8 @@ class FloatComboBoxItem : SettingsItem
         auto cb = new ComboBox(_items);
         cb.id = _id;
         cb.fillW().minWidth(60.pt);
-        auto setting = settings.settingByPath(_id, SettingType.FLOAT);
+        auto setting = settings.settingByPath(_id);
+        setting.floating = setting.floating;
         long itemID = cast(long)(setting.floating * _divider + 0.5f);
         int index = -1;
         foreach (i; 0 .. cast(int)_items.length)
@@ -213,7 +217,7 @@ class NumberEditItem : SettingsItem
     protected int _maxValue;
     protected int _defaultValue;
 
-    this(string id, dstring label, int minValue = int.max, int maxValue = int.max, int defaultValue = 0)
+    this(string id, dstring label, int minValue = int.min, int maxValue = int.max, int defaultValue = 0)
     {
         super(id, label);
         _minValue = minValue;
@@ -228,19 +232,16 @@ class NumberEditItem : SettingsItem
         auto ed = new EditLine(_label);
         ed.id = _id ~ "-edit";
         ed.fillW().minWidth(60.pt);
-        auto setting = settings.settingByPath(_id, SettingType.INTEGER);
+        auto setting = settings.settingByPath(_id);
         int n = cast(int)setting.integerDef(_defaultValue);
-        if (_minValue != int.max && n < _minValue)
-            n = _minValue;
-        if (_maxValue != int.max && n > _maxValue)
-            n = _maxValue;
+        n = clamp(n, _minValue, _maxValue);
         setting.integer = cast(long)n;
-        ed.text = toUTF32(to!string(n));
+        ed.text = to!dstring(n);
         ed.contentChanged = delegate(EditableContent content) {
             long v = parseLong(toUTF8(content.text), long.max);
             if (v != long.max)
             {
-                if ((_minValue == int.max || v >= _minValue) && (_maxValue == int.max || v <= _maxValue))
+                if (_minValue <= v && v <= _maxValue)
                 {
                     setting.integer = v;
                     ed.textColor = 0x000000;
@@ -272,9 +273,8 @@ class StringEditItem : SettingsItem
         auto ed = new EditLine;
         ed.id = _id ~ "-edit";
         ed.fillW().minWidth(60.pt);
-        auto setting = settings.settingByPath(_id, SettingType.STRING);
-        string value = setting.strDef(_defaultValue);
-        setting.str = value;
+        auto setting = settings.settingByPath(_id);
+        string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
         ed.contentChanged = delegate(EditableContent content) {
             string value = toUTF8(content.text);
@@ -303,7 +303,7 @@ class FileNameEditItem : SettingsItem
         auto ed = new FileNameEditLine;
         ed.id = _id ~ "-filename-edit";
         ed.minWidth = 60.pt;
-        auto setting = settings.settingByPath(_id, SettingType.STRING);
+        auto setting = settings.settingByPath(_id);
         string value = setting.strDef(_defaultValue);
         setting.str = value;
         ed.text = toUTF32(value);
@@ -335,7 +335,7 @@ class ExecutableFileNameEditItem : SettingsItem
         ed.id = _id ~ "-filename-edit";
         ed.addFilter(FileFilterEntry(tr("Executable files"), "*.exe", true));
         ed.fillW().minWidth(60.pt);
-        auto setting = settings.settingByPath(_id, SettingType.STRING);
+        auto setting = settings.settingByPath(_id);
         string value = setting.strDef(_defaultValue);
         setting.str = value;
         ed.text = toUTF32(value);
@@ -367,7 +367,7 @@ class PathNameEditItem : SettingsItem
         ed.id = _id ~ "-path-edit";
         ed.addFilter(FileFilterEntry(tr("All files"), "*.*"));
         ed.fillW().minWidth(60.pt);
-        auto setting = settings.settingByPath(_id, SettingType.STRING);
+        auto setting = settings.settingByPath(_id);
         string value = setting.strDef(_defaultValue);
         setting.str = value;
         ed.text = toUTF32(value);
@@ -457,7 +457,7 @@ class SettingsPage
     }
 
     /// Add EditLine to edit number
-    NumberEditItem addNumberEdit(string id, dstring label, int minValue = int.max,
+    NumberEditItem addNumberEdit(string id, dstring label, int minValue = int.min,
             int maxValue = int.max, int defaultValue = 0)
     {
         auto res = new NumberEditItem(id, label, minValue, maxValue, defaultValue);
