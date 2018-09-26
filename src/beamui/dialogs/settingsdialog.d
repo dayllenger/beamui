@@ -78,8 +78,7 @@ class CheckboxItem : SettingsItem
         cb.id = _id;
         cb.fillW().minWidth(60.pt);
         Setting setting = settings.settingByPath(_id);
-        setting.boolean = setting.boolean;
-        cb.checked = setting.boolean ^ _inverse;
+        cb.checked = setting.boolean = setting.boolean ^ _inverse;
         cb.checkChanged = (Widget source, bool checked) { setting.boolean = checked ^ _inverse; };
         return [cb];
     }
@@ -104,8 +103,7 @@ class StringComboBoxItem : SettingsItem
         cb.id = _id;
         cb.fillW().minWidth(60.pt);
         Setting setting = settings.settingByPath(_id);
-        string itemID = setting.str;
-        setting.str = itemID;
+        string itemID = setting.str = setting.str;
         int index = -1;
         foreach (i; 0 .. cast(int)_items.length)
         {
@@ -144,8 +142,7 @@ class IntComboBoxItem : SettingsItem
         cb.id = _id;
         cb.fillW().minWidth(60.pt);
         auto setting = settings.settingByPath(_id);
-        setting.integer = setting.integer;
-        long itemID = setting.integer;
+        long itemID = setting.integer = setting.integer;
         int index = -1;
         foreach (i; 0 .. cast(int)_items.length)
         {
@@ -304,8 +301,7 @@ class FileNameEditItem : SettingsItem
         ed.id = _id ~ "-filename-edit";
         ed.minWidth = 60.pt;
         auto setting = settings.settingByPath(_id);
-        string value = setting.strDef(_defaultValue);
-        setting.str = value;
+        string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
         ed.contentChanged = delegate(EditableContent content) {
             string value = toUTF8(content.text);
@@ -336,8 +332,7 @@ class ExecutableFileNameEditItem : SettingsItem
         ed.addFilter(FileFilterEntry(tr("Executable files"), "*.exe", true));
         ed.fillW().minWidth(60.pt);
         auto setting = settings.settingByPath(_id);
-        string value = setting.strDef(_defaultValue);
-        setting.str = value;
+        string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
         ed.contentChanged = delegate(EditableContent content) {
             string value = toUTF8(content.text);
@@ -368,8 +363,7 @@ class PathNameEditItem : SettingsItem
         ed.addFilter(FileFilterEntry(tr("All files"), "*.*"));
         ed.fillW().minWidth(60.pt);
         auto setting = settings.settingByPath(_id);
-        string value = setting.strDef(_defaultValue);
-        setting.str = value;
+        string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
         ed.contentChanged = delegate(EditableContent content) {
             string value = toUTF8(content.text);

@@ -1084,7 +1084,7 @@ final class Setting
         if (splitKey(path, part1, part2))
         {
             auto s = this[part1];
-            if (!s)
+            if (!s.isset)
             {
                 s = new Setting;
                 s.clear(SettingType.object);
@@ -1095,7 +1095,7 @@ final class Setting
         else
         {
             auto s = this[path];
-            if (!s && createIfNotExist)
+            if (!s.isset && createIfNotExist)
             {
                 s = new Setting;
                 this[path] = s;
@@ -1112,7 +1112,7 @@ final class Setting
         if (!isObject)
         {
             if (!createIfNotExist)
-                return null;
+                return dummy;
             // do we need to allow this conversion to object?
             clear(SettingType.object);
         }
@@ -1120,10 +1120,10 @@ final class Setting
         if (splitKey(path, part1, part2))
         {
             auto s = this[part1];
-            if (!s)
+            if (!s.isset)
             {
                 if (!createIfNotExist)
-                    return null;
+                    return dummy;
                 s = new Setting;
                 s.clear(SettingType.object);
                 this[part1] = s;
@@ -1133,10 +1133,10 @@ final class Setting
         else
         {
             auto s = this[path];
-            if (!s)
+            if (!s.isset)
             {
                 if (!createIfNotExist)
-                    return null;
+                    return dummy;
                 s = new Setting;
                 s.clear(SettingType.object);
                 this[path] = s;
