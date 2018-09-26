@@ -227,7 +227,7 @@ final class Setting
         double floating;
         bool boolean;
         SettingArray array;
-        SettingMap* map;
+        SettingMap map;
     }
     private enum SettingType
     {
@@ -549,11 +549,7 @@ final class Setting
             res.store.array.copyFrom(store.array);
             break;
         case object:
-            if (store.map)
-            {
-                res.store.map = new SettingMap;
-                res.store.map.copyFrom(store.map);
-            }
+            res.store.map.copyFrom(&store.map);
             break;
         case nothing:
             break;
@@ -566,13 +562,9 @@ final class Setting
     @property size_t length() const
     {
         if (isArray)
-        {
             return store.array.list.length;
-        }
         else if (isObject)
-        {
-            return store.map ? store.map.list.length : 0;
-        }
+            return store.map.list.length;
         else
             return 0;
     }
@@ -591,8 +583,6 @@ final class Setting
     {
         if (!isObject)
             clear(SettingType.object);
-        if (!store.map)
-            store.map = new SettingMap;
         auto s = new Setting;
         store.map.set(key, s, this);
         return s;
@@ -622,7 +612,7 @@ final class Setting
         if (isArray)
             return store.array.remove(index);
         else if (isObject)
-            return store.map ? store.map.remove(index) : null;
+            return store.map.remove(index);
         else
             return null;
     }
@@ -631,7 +621,7 @@ final class Setting
     Setting remove(string key)
     {
         if (isObject)
-            return store.map ? store.map.remove(key) : null;
+            return store.map.remove(key);
         else
             return null;
     }
@@ -797,13 +787,10 @@ final class Setting
         if (isObject)
         {
             string[string] res;
-            if (store.map)
+            foreach (key, value; store.map.map)
             {
-                foreach (key, value; store.map.map)
-                {
-                    Setting v = store.map.get(value);
-                    res[key] = v ? v.str : null;
-                }
+                Setting v = store.map.get(value);
+                res[key] = v ? v.str : null;
             }
             return res;
         }
@@ -949,7 +936,7 @@ final class Setting
         if (isArray)
             return store.array.get(index);
         else if (isObject)
-            return store.map ? store.map.get(index) : null;
+            return store.map.get(index);
         else
             return null;
     }
@@ -957,7 +944,7 @@ final class Setting
     Setting opIndex(string key)
     {
         if (isObject)
-            return store.map ? store.map.get(key) : null;
+            return store.map.get(key);
         else
             return null;
     }
@@ -975,8 +962,6 @@ final class Setting
     {
         if (!isObject)
             clear(SettingType.object);
-        if (!store.map)
-            store.map = new SettingMap;
         store.map.set(key, value, this);
         return value;
     }
@@ -1241,7 +1226,7 @@ final class Setting
             break;
         case object:
             buf.append('{');
-            if (store.map && store.map.length)
+            if (store.map.length)
             {
                 if (pretty)
                     buf.appendEOL();
