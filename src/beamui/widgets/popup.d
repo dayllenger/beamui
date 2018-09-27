@@ -10,7 +10,7 @@ Synopsis:
 import beamui.widgets.popup;
 ---
 
-Copyright: Vadim Lopatin 2014-2016
+Copyright: Vadim Lopatin 2014-2016, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */

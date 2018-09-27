@@ -13,8 +13,8 @@ extern (C) int UIAppMain(string[] args)
 {
     // create a window
     Window window = platform.createWindow("My Window", null);
-    // create some widget to show in window
-    window.mainWidget = new Button(null, "Hello, world!"d);
+    // create some widget to show in the window
+    window.mainWidget = new Button("Hello, world!"d);
     // show window
     window.show();
     // run message loop

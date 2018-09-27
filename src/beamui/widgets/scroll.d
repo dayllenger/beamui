@@ -12,48 +12,23 @@ Synopsis:
 import beamui.widgets.scroll;
 
 // Scroll view example
-auto scroll = new ScrollArea;
+
 auto scrollContent = new Column;
-scrollContent.padding = RectOffset(10);
+scrollContent.padding = 10;
 
-auto table2 = new TableLayout;
-table2.colCount = 2;
-// headers
-table2.addChild((new Label("Parameter Name"d)).alignment(Align.right | Align.vcenter));
-table2.addChild((new Label("Edit Box to edit parameter"d)).alignment(Align.left | Align.vcenter));
-// row 1
-table2.addChild((new Label("Parameter 1 name"d)).alignment(Align.right | Align.vcenter));
-table2.addChild((new EditLine("Text 1"d)).fillW());
-// row 2
-table2.addChild((new Label("Parameter 2 name bla bla"d)).alignment(Align.right | Align.vcenter));
-table2.addChild((new EditLine("Some text for parameter 2 blah blah blah"d)).fillW());
-// row 3
-table2.addChild((new Label("Param 3"d)).alignment(Align.right | Align.vcenter));
-table2.addChild((new EditLine("Parameter 3 value"d)).fillW());
-// row 4
-table2.addChild((new Label("Param 4"d)).alignment(Align.right | Align.vcenter));
-table2.addChild((new EditLine("Parameter 4 value shdjksdfh hsjdfas hdjkf hdjsfk ah"d)).fillW());
-// row 5
-table2.addChild((new Label("Param 5 - edit text here - blah blah blah"d)).alignment(Align.right | Align.vcenter));
-table2.addChild((new EditLine("Parameter 5 value"d)).fillW());
-// row 6
-table2.addChild((new Label("Param 6 - just to fill content widget"d)).alignment(Align.right | Align.vcenter));
-table2.addChild((new EditLine("Parameter 5 value"d)).fillW());
-// row 7
-table2.addChild((new Label("Param 7 - just to fill content widget"d)).alignment(Align.right | Align.vcenter));
-table2.addChild((new EditLine("Parameter 5 value"d)).fillW());
-// row 8
-table2.addChild((new Label("Param 8 - just to fill content widget"d)).alignment(Align.right | Align.vcenter));
-table2.addChild((new EditLine("Parameter 5 value"d)).fillW());
-scrollContent.addChild(table2);
-
-scrollContent.addChild(new Label("Now - some buttons"d));
+scrollContent.addChild(new Label("Some buttons"d));
 scrollContent.addChild(new Button("Close"d, "fileclose"));
 scrollContent.addChild(new Button("Open"d, "fileopen"));
 scrollContent.addChild(new Label("And checkboxes"d));
 scrollContent.addChild(new CheckBox("CheckBox 1"d));
 scrollContent.addChild(new CheckBox("CheckBox 2"d));
+scrollContent.addChild(new CheckBox("CheckBox 3"d));
+scrollContent.addChild(new CheckBox("CheckBox 4"d).checked(true));
+scrollContent.addChild(new CheckBox("CheckBox 5"d).checked(true));
 
+// create a scroll view with invisible horizontal and automatic vertical scrollbars
+auto scroll = new ScrollArea(ScrollBarMode.invisible, ScrollBarMode.automatic);
+// assign
 scroll.contentWidget = scrollContent;
 ---
 
@@ -63,7 +38,6 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.scroll;
 
-import beamui.widgets.controls;
 import beamui.widgets.scrollbar;
 import beamui.widgets.widget;
 

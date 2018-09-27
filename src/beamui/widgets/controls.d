@@ -1,23 +1,5 @@
 /**
-This module contains simple controls widgets implementation.
-
-
-Label - static text
-
-ImageWidget - image
-
-Button - button with text and image
-
-LinkButton - URL link button
-
-SwitchButton - switch widget
-
-CheckBox - button with check mark
-
-RadioButton - radio button
-
-CanvasWidget - for drawing arbitrary graphics
-
+This module contains simple controls - labels, buttons, and so on.
 
 Synopsis:
 ---
@@ -34,12 +16,12 @@ import beamui.core.stdaction;
 import beamui.widgets.layouts;
 import beamui.widgets.widget;
 
-/// Static text widget
+/// Static text widget, single-line by default
 class Label : Widget
 {
     @property
     {
-        /// Max lines to show
+        /// Max lines to show, 0 if no limit
         int maxLines() const
         {
             return style.maxLines;
@@ -154,7 +136,7 @@ class MultilineLabel : Label
     }
 }
 
-/// Static image widget
+/// Static image widget. Can accept any drawable instead of the image (e.g. a gradient).
 class ImageWidget : Widget
 {
     @property
@@ -514,7 +496,7 @@ class Button : LinearLayout, ActionHolder
     mixin(generatePropertySettersMethodOverride("setStringProperty", "string", "iconID"));
 }
 
-/// Button looking like URL, executing specified action
+/// Hyperlink button. Like Button, may execute arbitrary actions.
 class LinkButton : Button // FIXME: in horizontal layout this button expands horizontally
 {
     this(dstring labelText, string url, string icon = "applications-internet")
@@ -587,7 +569,7 @@ class SwitchButton : Widget
     }
 }
 
-/// Check box
+/// Check button that can be toggled on or off
 class CheckBox : LinearLayout
 {
     protected
@@ -623,7 +605,7 @@ class CheckBox : LinearLayout
     }
 }
 
-/// Radio button
+/// Radio button control, which is a mutually exclusive check box
 class RadioButton : CheckBox
 {
     this(dstring labelText = null)
@@ -668,7 +650,7 @@ class RadioButton : CheckBox
     }
 }
 
-/// Canvas widget - draw on it either by overriding of doDraw() or by assigning of `drawCalled`
+/// Canvas widget - draw arbitrary graphics on it either by overriding of doDraw() or by assigning of `drawCalled`
 class CanvasWidget : Widget
 {
     Listener!(void delegate(DrawBuf buf, Box area)) drawCalled;

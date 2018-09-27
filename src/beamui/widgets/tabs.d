@@ -1,15 +1,21 @@
 /**
 This module contains declaration of tabbed view controls.
 
-TabItemWidget - single tab header in tab control
-TabWidget
-TabHost
-TabControl
-
+Mostly you will use only TabWidget class. Other classes are ancillary.
 
 Synopsis:
 ---
 import beamui.widgets.tabs;
+
+// create tab widget
+auto tabs = new TabWidget;
+// and add tabs
+// content widgets must have different non-null ids
+tabs.addTab(new Label("1st tab content"d).id("tab1"), "Tab 1");
+tabs.addTab(new Label("2st tab content"d).id("tab2"), "Tab 2");
+// tab widget consists of two parts: tabControl and tabHost
+tabs.tabHost.padding = 12;
+tabs.tabHost.backgroundColor = 0xbbbbbb;
 ---
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
@@ -18,7 +24,6 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.tabs;
 
-import beamui.core.stdaction;
 import beamui.widgets.controls;
 import beamui.widgets.layouts;
 import beamui.widgets.menu;

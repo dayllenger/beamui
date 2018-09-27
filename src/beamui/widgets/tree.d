@@ -48,7 +48,7 @@ treeLayout.addChild(tree);
 treeLayout.addResizer();
 treeLayout.addChild(treeControlledPanel);
 
-tree.selectionListener = delegate(TreeItems source, TreeItem selectedItem, bool activated) {
+tree.itemSelected = delegate(TreeItems source, TreeItem selectedItem, bool activated) {
     dstring label = "Selected item: "d ~ toUTF32(selectedItem.id) ~ (activated ? " selected + activated"d : " selected"d);
     treeItemLabel.text = label;
 };

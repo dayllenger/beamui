@@ -1,14 +1,19 @@
 /**
 This module contains simple scrollbar-like controls implementation.
 
-ScrollBar - scrollbar control
-
-Slider - slider control
-
-
 Synopsis:
 ---
 import beamui.widgets.scrollbar;
+
+auto slider = new Slider(Orientation.horizontal);
+// sliders have obvious API
+slider.minValue = -50;
+slider.maxValue = 50;
+slider.position = 0;
+slider.scrolled = delegate(AbstractSlider source, ScrollEvent event) {
+    if (event.action == ScrollAction.sliderMoved)
+        Log.d(source.position);
+};
 ---
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
@@ -17,9 +22,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.scrollbar;
 
-import beamui.core.stdaction;
 import beamui.widgets.controls;
-import beamui.widgets.layouts;
 import beamui.widgets.widget;
 
 /// Base class for widgets like scrollbars and sliders

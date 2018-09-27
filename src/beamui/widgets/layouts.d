@@ -462,7 +462,7 @@ class TableLayout : WidgetGroupDefaultDrawing
             return (childCount + (_colCount - 1)) / _colCount * _colCount;
         }
 
-        /// Space between rows
+        /// Space between rows (vertical)
         int rowSpacing() const
         {
             return _rowSpacing;
@@ -478,7 +478,7 @@ class TableLayout : WidgetGroupDefaultDrawing
             return this;
         }
 
-        /// Space between rows
+        /// Space between columns (horizontal)
         int colSpacing() const
         {
             return _colSpacing;
