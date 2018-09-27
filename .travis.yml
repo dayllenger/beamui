@@ -1,16 +1,35 @@
-language: d
+sudo: false
 
+language: d
 d:
-  - dmd
+- dmd
+
+branches:
+  only:
+  - master
 
 addons:
   apt:
     packages:
-      - gcc-multilib
-      - libx11-dev
-      - libx11-dev:i386
-      - zlib1g-dev
-      - zlib1g-dev:i386
+    - gcc-multilib
+    - libx11-dev
+    - libx11-dev:i386
+    - zlib1g-dev
+    - zlib1g-dev:i386
+    - libevent-dev
 
 script:
-  - dub test
+- dub test
+- dub build -b ddox
+
+deploy:
+  local_dir: docs
+  provider: pages
+  skip_cleanup: true
+  github_token: $GH_TOKEN
+  on:
+    branch: master
+
+cache:
+  directories:
+    - $HOME/.dub
