@@ -1817,7 +1817,7 @@ public:
         import beamui.widgets.popup;
 
         auto popup = window.showPopup(_popupMenu, this, PopupAlign.point | PopupAlign.right, x, y);
-        popup.popupClosed = (Popup p, bool b) { p.removeChild(_popupMenu); };
+        popup.ownContent = false;
     }
 
     //===============================================================

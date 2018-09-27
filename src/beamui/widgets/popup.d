@@ -65,6 +65,8 @@ class Popup : LinearLayout
     PopupClosePolicy closePolicy = PopupClosePolicy.onPressOutside;
     /// Modal popup - keypresses and mouse events can be routed to this popup only
     bool modal;
+    /// Should popup destroy the content widget on close?
+    bool ownContent = true;
 
     /// Popup close signal
     Signal!(void delegate(Popup, bool byEvent)) popupClosed;
@@ -79,6 +81,8 @@ class Popup : LinearLayout
     /// Close and destroy popup
     void close()
     {
+        if (!ownContent)
+            removeChild(0);
         popupClosed(this, closedByEvent);
         window.removePopup(this);
     }

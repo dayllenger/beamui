@@ -544,6 +544,7 @@ class Menu : ListWidget
         auto popup = window.showPopup(submenu, item,
                 orientation == Orientation.horizontal ? PopupAlign.below : PopupAlign.right);
         popup.popupClosed = &onSubmenuPopupClosed;
+        popup.ownContent = false;
 
         if (navigatingUsingKeys)
         {
@@ -559,8 +560,6 @@ class Menu : ListWidget
         debug (menus)
             Log.d("Menu: closing submenu popup");
 
-        // save submenu
-        p.removeChild(_openedSubmenu);
         // now _openedSubmenu.thisPopup is null
         if (byEvent)
         {
