@@ -358,6 +358,7 @@ class Menu : ListWidget
     protected
     {
         Menu _parentMenu;
+        Menu visualParentMenu;
     }
 
     this(Menu parentMenu = null, Orientation orient = Orientation.vertical)
@@ -538,6 +539,7 @@ class Menu : ListWidget
         assert(item && item.hasSubmenu);
 
         Menu submenu = _openedSubmenu = item.submenu;
+        submenu.visualParentMenu = this;
         _openedSubmenuIndex = itemIndex;
         auto popup = window.showPopup(submenu, item,
                 orientation == Orientation.horizontal ? PopupAlign.below : PopupAlign.right);
@@ -564,9 +566,9 @@ class Menu : ListWidget
         {
             // close whole menu
             Menu top = this;
-            while (top._parentMenu)
+            while (top.visualParentMenu)
             {
-                top = top._parentMenu;
+                top = top.visualParentMenu;
             }
             top.close();
         }
@@ -593,8 +595,23 @@ class Menu : ListWidget
         closeSubmenu();
         selectItem(-1);
         setHoverItem(-1);
-        _parentMenu.maybe.setFocus();
+        if (visualParentMenu)
+            visualParentMenu = null;
+        else
+            window.setFocus(_previousFocusedWidget);
         thisPopup.maybe.close();
+    }
+
+    protected Widget _previousFocusedWidget;
+
+    override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
+    {
+        if (focused && !visualParentMenu)
+        {
+            // on activating
+            _previousFocusedWidget = window.focusedWidget;
+        }
+        super.handleFocusChange(focused);
     }
 
     override protected void onSelectionChanged(int index, int previouslySelectedItem = -1)
@@ -637,9 +654,9 @@ class Menu : ListWidget
     /// Process menu item action in a top level menu
     protected void onMenuItem(MenuItem item)
     {
-        if (_parentMenu)
+        if (visualParentMenu)
             // send up
-            _parentMenu.onMenuItem(item);
+            visualParentMenu.onMenuItem(item);
         else
         {
             if (item.isSeparator)
@@ -668,15 +685,15 @@ class Menu : ListWidget
     protected bool _navigatingUsingKeys;
     protected @property bool navigatingUsingKeys() const
     {
-        if (_parentMenu)
-            return _parentMenu.navigatingUsingKeys;
+        if (visualParentMenu)
+            return visualParentMenu.navigatingUsingKeys;
         else
             return _navigatingUsingKeys;
     }
     protected @property void navigatingUsingKeys(bool flag)
     {
-        if (_parentMenu)
-            _parentMenu.navigatingUsingKeys = flag;
+        if (visualParentMenu)
+            visualParentMenu.navigatingUsingKeys = flag;
         else
             _navigatingUsingKeys = flag;
     }
@@ -702,10 +719,10 @@ class Menu : ListWidget
                 }
                 if (event.keyCode == KeyCode.up)
                 {
-                    if (_parentMenu && _parentMenu.orientation == Orientation.vertical)
+                    if (visualParentMenu && visualParentMenu.orientation == Orientation.vertical)
                     {
                         // parent is a popup menu
-                        _parentMenu.moveSelection(-1);
+                        visualParentMenu.moveSelection(-1);
                     }
                     else
                     {
@@ -725,9 +742,9 @@ class Menu : ListWidget
             {
                 if (event.keyCode == KeyCode.left)
                 {
-                    if (_parentMenu)
+                    if (visualParentMenu)
                     {
-                        if (_parentMenu.orientation == Orientation.vertical)
+                        if (visualParentMenu.orientation == Orientation.vertical)
                         {
                             // back to parent menu on Left key
                             close();
@@ -735,7 +752,7 @@ class Menu : ListWidget
                         else
                         {
                             // parent is a menu bar
-                            _parentMenu.moveSelection(-1);
+                            visualParentMenu.moveSelection(-1);
                         }
                     }
                     return true;
@@ -748,9 +765,9 @@ class Menu : ListWidget
                         if (!_openedSubmenu)
                             openSubmenu(_selectedItemIndex);
                     }
-                    else if (_parentMenu && _parentMenu.orientation == Orientation.horizontal)
+                    else if (visualParentMenu && visualParentMenu.orientation == Orientation.horizontal)
                     {
-                        _parentMenu.moveSelection(1);
+                        visualParentMenu.moveSelection(1);
                     }
                     return true;
                 }
@@ -818,8 +835,6 @@ class MenuBar : Menu
         return true;
     }
 
-    protected Widget _previousFocusedWidget;
-
     this()
     {
         super(null, Orientation.horizontal);
@@ -831,17 +846,6 @@ class MenuBar : Menu
     {
         super.close();
         selectOnHover = false;
-        window.setFocus(_previousFocusedWidget);
-    }
-
-    override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
-    {
-        if (focused && !_openedSubmenu)
-        {
-            // on activating
-            _previousFocusedWidget = window.focusedWidget;
-        }
-        super.handleFocusChange(focused);
     }
 
     override protected void onSelectionChanged(int index, int previouslySelectedItem = -1)
