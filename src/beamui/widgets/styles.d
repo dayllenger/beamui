@@ -606,8 +606,13 @@ private:
             eliminate(s.s);
         destroy(stateStyles);
         stateStyles = null;
+
+        destroy(_backgroundImage);
+        destroy(_border);
+        destroy(_boxShadow);
         _font.clear();
         _backgroundDrawable.clear();
+
         debug _instanceCount--;
         debug (resalloc)
             Log.d("Destroyed style, count: ", _instanceCount);

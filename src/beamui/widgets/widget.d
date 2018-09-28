@@ -197,7 +197,8 @@ public:
             Log.fd("Destroyed widget `%s` %s, count: %s", _id, this.classinfo.name, _instanceCount);
         debug if (APP_IS_SHUTTING_DOWN)
             onResourceDestroyWhileShutdown(_id, this.classinfo.name);
-        _style = null;
+        if (isOwnStyle)
+            eliminate(_style);
         _backgroundDrawable.clear();
         eliminate(_popupMenu);
         if (_isDestroyed !is null)

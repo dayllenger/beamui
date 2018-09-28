@@ -1217,7 +1217,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         y -= clientBox.y;
         pointToCell(x, y, col, row, b);
         Menu menu = getCellPopupMenu(col - _headerCols, row - _headerRows);
-        return menu !is null; // TODO
+        bool result = menu !is null; // FIXME
+        destroy(menu);
+        return result;
     }
 
     /// Shows popup menu at (x,y)

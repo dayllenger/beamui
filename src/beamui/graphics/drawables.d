@@ -222,7 +222,7 @@ class BoxShadowDrawable : Drawable
     protected int _offsetY;
     protected int _blurSize;
     protected uint _color;
-    protected Ref!ColorDrawBuf texture;
+    protected ColorDrawBuf texture;
 
     this(int offsetX, int offsetY, uint blurSize = 0, uint color = 0x0)
     {
@@ -246,7 +246,7 @@ class BoxShadowDrawable : Drawable
 
     ~this()
     {
-        texture.clear();
+        eliminate(texture);
     }
 
     override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
@@ -262,9 +262,9 @@ class BoxShadowDrawable : Drawable
         // now draw
         if (_blurSize > 0)
         {
-            buf.drawNinePatch(Rect(b), texture.get, Rect(0, 0, texture.width, texture.height));
+            buf.drawNinePatch(Rect(b), texture, Rect(0, 0, texture.width, texture.height));
             // debug
-            // buf.drawFragment(b.x, b.y, texture.get, Rect(0, 0, texture.width, texture.height));
+            // buf.drawFragment(b.x, b.y, texture, Rect(0, 0, texture.width, texture.height));
         }
         else
         {
@@ -786,7 +786,7 @@ final class ImageCache
     /// Clear cache
     void clear()
     {
-        foreach (item; _map)
+        foreach (ref item; _map)
             item.clear();
         destroy(_map);
     }

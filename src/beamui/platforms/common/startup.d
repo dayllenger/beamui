@@ -595,25 +595,12 @@ extern (C) void registerStandardWidgets();
 /// Call this when all resources are supposed to be freed to report counts of non-freed resources by type
 extern (C) void releaseResourcesOnAppExit()
 {
-    import core.exception;
-    import core.memory;
-    import core.thread;
-
     debug
     {
         if (Widget.instanceCount > 0)
         {
             Log.e("Non-zero Widget instance count when exiting: ", Widget.instanceCount);
         }
-    }
-
-    try
-    {
-        GC.collect();
-    }
-    catch(InvalidMemoryOperationError e)
-    {
-        Log.d(e);
     }
 
     currentTheme = null;
@@ -628,24 +615,7 @@ extern (C) void releaseResourcesOnAppExit()
 
     static if (BACKEND_GUI)
     {
-        try
-        {
-            GC.collect();
-        }
-        catch(InvalidMemoryOperationError e)
-        {
-            Log.d(e);
-        }
-
         imageCache = null;
-    }
-    try
-    {
-        GC.collect();
-    }
-    catch(InvalidMemoryOperationError e)
-    {
-        Log.d(e);
     }
 
     FontManager.instance = null;
@@ -655,16 +625,6 @@ extern (C) void releaseResourcesOnAppExit()
 
         destroyGLCaches();
     }
-
-    try
-    {
-        GC.collect();
-    }
-    catch(InvalidMemoryOperationError e)
-    {
-        Log.d(e);
-    }
-
 
     debug
     {
