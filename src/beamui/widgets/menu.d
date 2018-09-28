@@ -601,14 +601,14 @@ class Menu : ListWidget
         thisPopup.maybe.close();
     }
 
-    protected Widget _previousFocusedWidget;
+    protected WeakRef!Widget _previousFocusedWidget;
 
     override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
     {
         if (focused && !visualParentMenu)
         {
             // on activating
-            _previousFocusedWidget = window.focusedWidget;
+            _previousFocusedWidget = weakRef(window.focusedWidget);
         }
         super.handleFocusChange(focused);
     }

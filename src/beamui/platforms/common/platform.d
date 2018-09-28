@@ -151,12 +151,12 @@ class TimerInfo
         ulong _id;
         long _interval;
         long _nextTimestamp;
-        Widget _targetWidget;
+        WeakRef!Widget _targetWidget;
     }
 
     static __gshared ulong nextID;
 
-    this(Widget targetWidget, long intervalMillis)
+    this(WeakRef!Widget targetWidget, long intervalMillis)
     {
         _id = ++nextID;
         assert(intervalMillis >= 0 && intervalMillis < 7 * 24 * 60 * 60 * 1000L);
@@ -183,21 +183,21 @@ class TimerInfo
             return _nextTimestamp;
         }
         /// Widget to route timer event to
-        Widget targetWidget()
+        WeakRef!Widget targetWidget()
         {
             return _targetWidget;
         }
         /// Returns true if timer is not yet cancelled
         bool valid() const
         {
-            return _targetWidget !is null;
+            return !_targetWidget.isNull;
         }
     }
 
     /// Cancel timer
     void cancel()
     {
-        _targetWidget = null;
+        _targetWidget = WeakRef!Widget(null);
     }
     /// Cancel timer
     void notify()
@@ -207,7 +207,7 @@ class TimerInfo
             _nextTimestamp = currentTimeMillis + _interval;
             if (!_targetWidget.onTimer(_id))
             {
-                _targetWidget = null;
+                _targetWidget = WeakRef!Widget(null);
             }
         }
     }
@@ -761,7 +761,7 @@ class Window : CustomEventTarget
     {
         Popup popup;
         ulong timerID;
-        Widget ownerWidget;
+        WeakRef!Widget ownerWidget;
         int x;
         int y;
         PopupAlign alignment;
@@ -770,7 +770,7 @@ class Window : CustomEventTarget
     protected TooltipInfo _tooltip;
 
     /// Schedule tooltip for widget be shown with specified delay
-    void scheduleTooltip(Widget ownerWidget, long delay, PopupAlign alignment = PopupAlign.point,
+    void scheduleTooltip(WeakRef!Widget ownerWidget, long delay, PopupAlign alignment = PopupAlign.point,
                          int x = int.min, int y = int.min)
     {
         debug (tooltips)
@@ -788,7 +788,7 @@ class Window : CustomEventTarget
         debug (tooltips)
             Log.d("onTooltipTimer");
         _tooltip.timerID = 0;
-        if (isChild(_tooltip.ownerWidget))
+        if (_tooltip.ownerWidget)
         {
             debug (tooltips)
                 Log.d("onTooltipTimer: create tooltip");
@@ -801,7 +801,7 @@ class Window : CustomEventTarget
     }
 
     /// Show tooltip immediately
-    Popup showTooltip(Widget content, Widget anchor = null,
+    Popup showTooltip(Widget content, WeakRef!Widget anchor = null,
             PopupAlign alignment = PopupAlign.center, int x = int.min, int y = int.min)
     {
         bool noTooltipBefore = _tooltip.popup is null;
@@ -876,7 +876,7 @@ class Window : CustomEventTarget
         });
 
         _popups ~= res;
-        setFocus(content);
+        setFocus(weakRef(content));
         _mainWidget.maybe.requestLayout();
         update(false);
         return res;
@@ -1220,21 +1220,17 @@ class Window : CustomEventTarget
     //===============================================================
     // Focused widget
 
-    protected Widget _focusedWidget;
+    protected WeakRef!Widget _focusedWidget;
     protected State _focusStateToApply = State.focused;
     /// Returns current focused widget
     @property Widget focusedWidget()
     {
-        if (!isChild(_focusedWidget))
-            _focusedWidget = null;
         return _focusedWidget;
     }
 
     /// Change focus to widget
-    Widget setFocus(Widget newFocus, FocusReason reason = FocusReason.unspecified)
+    Widget setFocus(WeakRef!Widget newFocus, FocusReason reason = FocusReason.unspecified)
     {
-        if (!isChild(_focusedWidget))
-            _focusedWidget = null;
         Widget oldFocus = _focusedWidget;
         auto targetState = State.focused;
         if (reason == FocusReason.tabFocus)
@@ -1268,8 +1264,6 @@ class Window : CustomEventTarget
 
     protected Widget applyFocus()
     {
-        if (!isChild(_focusedWidget))
-            _focusedWidget = null;
         if (_focusedWidget)
         {
             _focusedWidget.setState(_focusStateToApply);
@@ -1280,8 +1274,6 @@ class Window : CustomEventTarget
 
     protected Widget removeFocus()
     {
-        if (!isChild(_focusedWidget))
-            _focusedWidget = null;
         if (_focusedWidget)
         {
             _focusedWidget.resetState(_focusStateToApply);
@@ -1459,9 +1451,8 @@ class Window : CustomEventTarget
 
         Popup modal = modalPopup();
 
-        // check if _mouseCaptureWidget and _mouseTrackingWidget still exist in child of root widget
-        if (_mouseCaptureWidget && (!isChild(_mouseCaptureWidget) ||
-                                    modal && !modal.isChild(_mouseCaptureWidget)))
+        // check if _mouseCaptureWidget still exist
+        if (_mouseCaptureWidget.isNull)
         {
             clearMouseCapture();
         }
@@ -1587,7 +1578,7 @@ class Window : CustomEventTarget
                     break;
                 if (insideOneOfPopups)
                 {
-                    if (dispatchMouseEvent(p, event, cursorIsSet))
+                    if (dispatchMouseEvent(weakRef(cast(Widget)p), event, cursorIsSet))
                         return true;
                 }
                 else
@@ -1597,14 +1588,14 @@ class Window : CustomEventTarget
                 }
             }
             if (!modal)
-                res = dispatchMouseEvent(_mainWidget, event, cursorIsSet);
+                res = dispatchMouseEvent(weakRef(_mainWidget), event, cursorIsSet);
             else
-                res = dispatchMouseEvent(modal, event, cursorIsSet);
+                res = dispatchMouseEvent(weakRef(cast(Widget)modal), event, cursorIsSet);
         }
         return res || processed || _mainWidget.needDraw;
     }
 
-    protected bool dispatchMouseEvent(Widget root, MouseEvent event, ref bool cursorIsSet)
+    protected bool dispatchMouseEvent(WeakRef!Widget root, MouseEvent event, ref bool cursorIsSet)
     {
         // route mouse events to visible widgets only
         if (root.visibility != Visibility.visible)
@@ -1615,7 +1606,7 @@ class Window : CustomEventTarget
         foreach (i; 0 .. root.childCount)
         {
             Widget child = root.child(i);
-            if (dispatchMouseEvent(child, event, cursorIsSet))
+            if (dispatchMouseEvent(weakRef(child), event, cursorIsSet))
                 return true;
         }
 
@@ -1633,7 +1624,7 @@ class Window : CustomEventTarget
         {
             debug (mouse)
                 Log.d("MouseEvent is processed");
-            if (event.action == MouseAction.buttonDown && _mouseCaptureWidget is null && !event.doNotTrackButtonDown)
+            if (event.action == MouseAction.buttonDown && _mouseCaptureWidget.isNull && !event.doNotTrackButtonDown)
             {
                 debug (mouse)
                     Log.d("Setting active widget");
@@ -1649,8 +1640,8 @@ class Window : CustomEventTarget
     }
 
     /// Widget which tracks Move events
-    protected Widget[] _mouseTrackingWidgets;
-    private void addTracking(Widget w)
+    protected WeakRef!Widget[] _mouseTrackingWidgets;
+    private void addTracking(WeakRef!Widget w)
     {
         foreach (mtw; _mouseTrackingWidgets)
             if (w is mtw)
@@ -1665,11 +1656,8 @@ class Window : CustomEventTarget
         bool res;
         foreach_reverse (ref w; _mouseTrackingWidgets)
         {
-            if (!isChild(w))
-            {
-                w = null;
+            if (w.isNull)
                 continue;
-            }
             if (event.action == MouseAction.leave || !w.isPointInside(event.x, event.y))
             {
                 // send Leave message
@@ -1678,23 +1666,23 @@ class Window : CustomEventTarget
                 res = w.onMouseEvent(leaveEvent) || res;
                 debug (mouse)
                     Log.d("removeTracking of ", w.id);
-                w = null;
+                w = WeakRef!Widget(null);
             }
         }
-        _mouseTrackingWidgets = _mouseTrackingWidgets.efilter!(a => a !is null);
+        _mouseTrackingWidgets = _mouseTrackingWidgets.efilter!(a => !a.isNull);
         debug (mouse)
             Log.d("removeTracking, items after: ", _mouseTrackingWidgets.length);
         return res;
     }
 
     /// Widget which tracks all events after processed ButtonDown
-    protected Widget _mouseCaptureWidget;
+    protected WeakRef!Widget _mouseCaptureWidget;
     protected ushort _mouseCaptureButtons;
     protected bool _mouseCaptureFocusedOut;
     /// Does current capture widget want to receive move events even if pointer left it
     protected bool _mouseCaptureFocusedOutTrackMovements;
 
-    protected void setCaptureWidget(Widget w, MouseEvent event)
+    protected void setCaptureWidget(WeakRef!Widget w, MouseEvent event)
     {
         _mouseCaptureWidget = w;
         _mouseCaptureButtons = event.flags & (MouseFlag.lbutton | MouseFlag.rbutton | MouseFlag.mbutton);
@@ -1702,7 +1690,7 @@ class Window : CustomEventTarget
 
     protected void clearMouseCapture()
     {
-        _mouseCaptureWidget = null;
+        _mouseCaptureWidget = WeakRef!Widget(null);
         _mouseCaptureFocusedOut = false;
         _mouseCaptureFocusedOutTrackMovements = false;
         _mouseCaptureButtons = 0;
@@ -1716,14 +1704,14 @@ class Window : CustomEventTarget
         return res;
     }
 
-    protected bool sendAndCheckOverride(Widget widget, MouseEvent event)
+    protected bool sendAndCheckOverride(WeakRef!Widget widget, MouseEvent event)
     {
-        if (!isChild(widget))
+        if (widget.isNull)
             return false;
         bool res = widget.onMouseEvent(event);
         if (event.trackingWidget !is null && _mouseCaptureWidget !is event.trackingWidget)
         {
-            setCaptureWidget(event.trackingWidget, event);
+            setCaptureWidget(weakRef(event.trackingWidget), event);
         }
         return res;
     }
@@ -1731,7 +1719,7 @@ class Window : CustomEventTarget
     /// Returns true if mouse is currently captured
     bool isMouseCaptured()
     {
-        return _mouseCaptureWidget !is null && isChild(_mouseCaptureWidget);
+        return !_mouseCaptureWidget.isNull;
     }
 
     /// Handle theme change: e.g. reload some themed resources
@@ -1943,7 +1931,7 @@ class Window : CustomEventTarget
     }
 
     /// Set timer for destination widget - destination.onTimer() will be called after interval expiration; returns timer id
-    ulong setTimer(Widget destination, long intervalMillis)
+    ulong setTimer(WeakRef!Widget destination, long intervalMillis)
     {
         if (!isChild(destination))
         {
@@ -1970,7 +1958,7 @@ class Window : CustomEventTarget
     {
         protected TimerInfo[] _queue;
         /// Add new timer, returns timer id
-        ulong add(Widget destination, long intervalMillis)
+        ulong add(WeakRef!Widget destination, long intervalMillis)
         {
             TimerInfo item = new TimerInfo(destination, intervalMillis);
             _queue ~= item;
@@ -2051,9 +2039,11 @@ class Window : CustomEventTarget
                     }
                     else
                     {
-                        Widget w = _queue[i].targetWidget;
-                        if (w && !isChild(w))
+                        WeakRef!Widget w = _queue[i].targetWidget;
+                        if (w.isNull)
+                        {
                             _queue[i].cancel();
+                        }
                         else
                         {
                             _queue[i].notify();
@@ -2070,9 +2060,11 @@ class Window : CustomEventTarget
         {
             for (int i = 0; i < _queue.length; i++)
             {
-                Widget w = _queue[i].targetWidget;
-                if (w && !isChild(w))
+                WeakRef!Widget w = _queue[i].targetWidget;
+                if (w.isNull)
+                {
                     _queue[i].cancel();
+                }
             }
             cleanup();
         }

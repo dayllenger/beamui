@@ -35,6 +35,7 @@ public
     import beamui.core.functions;
     import beamui.core.i18n;
     import beamui.core.logger;
+    import beamui.core.ownership;
     import beamui.core.signals;
     import beamui.core.types;
     import beamui.core.units;
@@ -160,6 +161,9 @@ protected:
 
     DrawableRef _backgroundDrawable;
 
+private:
+    bool* _isDestroyed;
+
 public:
 
     /// Empty parameter list constructor - for usage by factory
@@ -170,6 +174,7 @@ public:
     /// Create with ID parameter
     this(string ID)
     {
+        _isDestroyed = new bool;
         _id = ID;
         _state = State.normal;
         _style = currentTheme.get(typeid(this), _id);
@@ -195,6 +200,14 @@ public:
         _style = null;
         _backgroundDrawable.clear();
         eliminate(_popupMenu);
+        if (_isDestroyed !is null)
+            *_isDestroyed = true;
+    }
+
+    /// Flag for WeakRef that indicates widget destruction
+    @property const(bool*) isDestroyed() const
+    {
+        return _isDestroyed;
     }
 
     //===============================================================
@@ -1031,7 +1044,7 @@ public:
                          int x = int.min, int y = int.min)
     {
         if (auto w = window)
-            w.scheduleTooltip(this, delay, alignment, x, y);
+            w.scheduleTooltip(weakRef(this), delay, alignment, x, y);
     }
 
     //===============================================================
@@ -1396,11 +1409,11 @@ public:
             if (!w)
                 w = findFocusableChild(false);
             if (w)
-                return window.setFocus(w, reason);
+                return window.setFocus(weakRef(w), reason);
             // try to find focusable child
             return window.focusedWidget;
         }
-        return window.setFocus(this, reason);
+        return window.setFocus(weakRef(this), reason);
     }
     /// Search children for first focusable item, returns null if not found
     Widget findFocusableChild(bool defaultOnly)
@@ -1450,7 +1463,7 @@ public:
     ulong setTimer(long intervalMillis)
     {
         if (auto w = window)
-            return w.setTimer(this, intervalMillis);
+            return w.setTimer(weakRef(this), intervalMillis);
         return 0; // no window - no timer
     }
 
