@@ -270,7 +270,7 @@ class SourceEdit : EditBox
                 if (menu.openingSubmenu.assigned)
                     if (!menu.openingSubmenu(_popupMenu))
                         return true;
-                auto popup = window.showPopup(menu, this,
+                auto popup = window.showPopup(menu, WeakRef!Widget(this),
                         PopupAlign.point | PopupAlign.right, event.x, event.y);
             }
             return true;

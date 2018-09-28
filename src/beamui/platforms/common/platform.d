@@ -818,7 +818,7 @@ class Window : CustomEventTarget
             x = _lastMouseX;
         if (y == int.min)
             y = _lastMouseY;
-        res.anchor = PopupAnchor(anchor !is null ? anchor : _mainWidget, x, y, alignment);
+        res.anchor = PopupAnchor(!anchor.isNull ? anchor : weakRef(_mainWidget), x, y, alignment);
 
         // add a smooth fade-in transition when there is no tooltip already shown
         if (noTooltipBefore)
@@ -855,7 +855,7 @@ class Window : CustomEventTarget
     }
 
     /// Show new popup
-    Popup showPopup(Widget content, Widget anchor = null,
+    Popup showPopup(Widget content, WeakRef!Widget anchor = WeakRef!Widget(null),
             PopupAlign alignment = PopupAlign.center, int x = 0, int y = 0)
     {
         auto res = new Popup(content, this);
@@ -1578,7 +1578,7 @@ class Window : CustomEventTarget
                     break;
                 if (insideOneOfPopups)
                 {
-                    if (dispatchMouseEvent(weakRef(cast(Widget)p), event, cursorIsSet))
+                    if (dispatchMouseEvent(WeakRef!Widget(p), event, cursorIsSet))
                         return true;
                 }
                 else
@@ -1590,7 +1590,7 @@ class Window : CustomEventTarget
             if (!modal)
                 res = dispatchMouseEvent(weakRef(_mainWidget), event, cursorIsSet);
             else
-                res = dispatchMouseEvent(weakRef(cast(Widget)modal), event, cursorIsSet);
+                res = dispatchMouseEvent(WeakRef!Widget(modal), event, cursorIsSet);
         }
         return res || processed || _mainWidget.needDraw;
     }

@@ -562,7 +562,7 @@ class TabControl : WidgetGroupDefaultDrawing
     {
         if (auto menu = getMoreButtonPopupMenu())
         {
-            auto popup = window.showPopup(menu, _moreButton,
+            auto popup = window.showPopup(menu, WeakRef!Widget(_moreButton),
                     tabAlignment == Align.top ? PopupAlign.below : PopupAlign.above);
             menu.selectItem(tabIndex(selectedTabID));
             return true;

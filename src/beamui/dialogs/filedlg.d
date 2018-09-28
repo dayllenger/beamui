@@ -1017,7 +1017,7 @@ class FilePathPanelItem : Row
                 });
             }();
         }
-        auto popup = window.showPopup(menu, _button, PopupAlign.below);
+        auto popup = window.showPopup(menu, WeakRef!Widget(_button), PopupAlign.below);
         return true;
     }
 }

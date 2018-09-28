@@ -1829,7 +1829,7 @@ public:
 
         import beamui.widgets.popup;
 
-        auto popup = window.showPopup(_popupMenu, this, PopupAlign.point | PopupAlign.right, x, y);
+        auto popup = window.showPopup(_popupMenu, weakRef(this), PopupAlign.point | PopupAlign.right, x, y);
         popup.ownContent = false;
     }
 

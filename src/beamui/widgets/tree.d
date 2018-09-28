@@ -710,7 +710,7 @@ class TreeItemWidget : Row
             {
                 if (auto menu = popupMenuBuilder(_item.root, _item))
                 {
-                    auto popup = window.showPopup(menu, this,
+                    auto popup = window.showPopup(menu, WeakRef!Widget(this),
                             PopupAlign.point | PopupAlign.right, event.x, event.y);
                     return true;
                 }

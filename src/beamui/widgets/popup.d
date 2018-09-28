@@ -39,7 +39,7 @@ enum PopupAlign : uint
 
 struct PopupAnchor
 {
-    Widget widget;
+    WeakRef!Widget widget;
     int x;
     int y;
     PopupAlign alignment = PopupAlign.center;
@@ -148,7 +148,7 @@ class Popup : LinearLayout
         else // aligned to a widget (or the window if null)
         {
             Box anchorbox;
-            if (anchor.widget !is null)
+            if (anchor.widget)
                 anchorbox = anchor.widget.box;
             else
                 anchorbox = windowBox;
