@@ -24,9 +24,9 @@ import beamui.graphics.colors;
 struct NinePatch
 {
     /// Frame (non-scalable) part size for left, top, right, bottom edges.
-    RectOffset frame;
+    Insets frame;
     /// Padding (distance to content area) for left, top, right, bottom edges.
-    RectOffset padding;
+    Insets padding;
 }
 
 enum PatternType : uint
@@ -508,7 +508,7 @@ class DrawBuf : RefCountedObject
         }
     }
     /// Draws rectangle frame of specified color, widths (per side), pattern and optinally fills inner area
-    void drawFrame(Rect rc, uint frameColor, RectOffset frameSideWidths, uint innerAreaColor = 0xFFFFFFFF,
+    void drawFrame(Rect rc, uint frameColor, Insets frameSideWidths, uint innerAreaColor = 0xFFFFFFFF,
             PatternType pattern = PatternType.solid)
     {
         // draw frame

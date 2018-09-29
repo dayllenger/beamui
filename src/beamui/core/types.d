@@ -261,20 +261,20 @@ pure nothrow @nogc:
     }
 
     /// Expand box dimensions by a margin
-    void expand(RectOffset ro)
+    void expand(Insets ins)
     {
-        x -= ro.left;
-        y -= ro.top;
-        w += ro.left + ro.right;
-        h += ro.top + ro.bottom;
+        x -= ins.left;
+        y -= ins.top;
+        w += ins.left + ins.right;
+        h += ins.top + ins.bottom;
     }
     /// Shrink box dimensions by a margin
-    void shrink(RectOffset ro)
+    void shrink(Insets ins)
     {
-        x += ro.left;
-        y += ro.top;
-        w -= ro.left + ro.right;
-        h -= ro.top + ro.bottom;
+        x += ins.left;
+        y += ins.top;
+        w -= ins.left + ins.right;
+        h -= ins.top + ins.bottom;
     }
 
     /// Move this box to fit `b` bounds, retaining the same size
@@ -480,7 +480,7 @@ pure nothrow @nogc:
 }
 
 /// Represents area around rectangle. Used for margin, border and padding
-struct RectOffset
+struct Insets
 {
     int left, top, right, bottom;
 
@@ -523,25 +523,25 @@ pure nothrow @nogc:
     }
 
     /// Sum two areas
-    RectOffset opBinary(string op)(RectOffset ro) const if (op == "+")
+    Insets opBinary(string op)(Insets ins) const if (op == "+")
     {
-        return RectOffset(left + ro.left, top + ro.top, right + ro.right, bottom + ro.bottom);
+        return Insets(left + ins.left, top + ins.top, right + ins.right, bottom + ins.bottom);
     }
 
     /// Multiply area by a number
-    RectOffset opBinary(string op)(int n) const if (op == "*")
+    Insets opBinary(string op)(int n) const if (op == "*")
     {
-        return RectOffset(left * n, top * n, right * n, bottom * n);
+        return Insets(left * n, top * n, right * n, bottom * n);
     }
 
     /// Sum two areas
-    void add(RectOffset ro)
+    void add(Insets ins)
     {
-        left += ro.left;
-        top += ro.top;
-        right += ro.right;
-        bottom += ro.bottom;
-    }
+        left += ins.left;
+        top += ins.top;
+        right += ins.right;
+        bottom += ins.bottom;
+     }
 }
 
 /// Widget state bit flags

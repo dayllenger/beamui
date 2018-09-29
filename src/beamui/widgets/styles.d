@@ -79,8 +79,8 @@ private:
     Dimension _maxHeight = Dimension.none;
     int _weight = 1;
     Align _alignment = Align.topleft;
-    RectOffset _margins = RectOffset(0);
-    RectOffset _padding = RectOffset(0);
+    Insets _margins = Insets(0);
+    Insets _padding = Insets(0);
     // background
     uint _backgroundColor = COLOR_TRANSPARENT;
     Drawable _backgroundImage;
@@ -196,13 +196,13 @@ public:
         overrideMap[7] = true;
         return this;
     }
-    Style margins(RectOffset value)
+    Style margins(Insets value)
     {
         _margins = value;
         overrideMap[8] = true;
         return this;
     }
-    Style padding(RectOffset value)
+    Style padding(Insets value)
     {
         _padding = value;
         overrideMap[9] = true;
@@ -377,13 +377,13 @@ public:
             return parent.alignment;
         return _alignment;
     }
-    RectOffset margins() const
+    Insets margins() const
     {
         if (parent && !overrideMap[8]) // FIXME: _stateMask || ????
             return parent.margins;
-        return RectOffset(0);//_margins.toPixels;
+        return Insets(0);//_margins.toPixels;
     }
-    RectOffset padding() const
+    Insets padding() const
     {
         if (parent && !overrideMap[9])
             return parent.padding;
@@ -888,18 +888,18 @@ Theme createDefaultTheme()
         theme.root.fontSize = Dimension.pt(12);
 
         auto label = theme.get("Label");
-        label.alignment(Align.left | Align.vcenter).padding(RectOffset(4.pt, 2.pt));
+        label.alignment(Align.left | Align.vcenter).padding(Insets(4.pt, 2.pt));
         label.getOrCreateState(State.enabled, State.unspecified).textColor(0xa0000000);
 
         auto mlabel = theme.get("MultilineLabel");
-        mlabel.padding(RectOffset(1.pt)).maxLines(0);
+        mlabel.padding(Insets(1.pt)).maxLines(0);
 
         auto tooltip = theme.get("Label", "tooltip");
-        tooltip.padding(RectOffset(3.pt)).boxShadow(new BoxShadowDrawable(0, 2, 7, 0x888888)).
+        tooltip.padding(Insets(3.pt)).boxShadow(new BoxShadowDrawable(0, 2, 7, 0x888888)).
             backgroundColor(0x222222).textColor(0xeeeeee);
 
         auto button = theme.get("Button");
-        button.alignment(Align.center).padding(RectOffset(4.pt)).border(new BorderDrawable(0xaaaaaa, 1)).
+        button.alignment(Align.center).padding(Insets(4.pt)).border(new BorderDrawable(0xaaaaaa, 1)).
             textFlags(TextFlag.underlineHotkeys).focusRectColor(0xbbbbbb);
         button.getOrCreateState(State.hovered | State.checked, State.hovered).
             border(new BorderDrawable(0x4e93da, 1));
@@ -1024,10 +1024,10 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
             style.alignment = decodeAlignmentCSS(tokens);
             break;
         case "margin":
-            style.margins = decodeRectOffsetCSS(tokens);
+            style.margins = decodeInsetsCSS(tokens);
             break;
         case "padding":
-            style.padding = decodeRectOffsetCSS(tokens);
+            style.padding = decodeInsetsCSS(tokens);
             break;
         case "border":
             style.border = decodeBorderCSS(tokens);
@@ -1165,8 +1165,8 @@ Align decodeAlignmentCSS(Token[] tokens)
     return res;
 }
 
-/// Parses CSS rectangle declaration to RectOffset
-RectOffset decodeRectOffsetCSS(Token[] tokens)
+/// Parses CSS rectangle declaration to Insets
+Insets decodeInsetsCSS(Token[] tokens)
 {
     uint[4] values;
     size_t valueCount;
@@ -1188,15 +1188,15 @@ RectOffset decodeRectOffsetCSS(Token[] tokens)
     // TODO: rotate. Should be: top right bottom left
     // or adapt?
     if (valueCount == 1) // same value for all dimensions
-        return RectOffset(values[0]);
+        return Insets(values[0]);
     else if (valueCount == 2) // one value of horizontal, and one for vertical
-        return RectOffset(values[0], values[1]);
+        return Insets(values[0], values[1]);
     else if (valueCount == 3) // values for left, right, and one for vertical
-        return RectOffset(values[0], values[1], values[2], values[1]);
+        return Insets(values[0], values[1], values[2], values[1]);
     else if (valueCount == 4) // separate left, top, right, bottom
-        return RectOffset(values[0], values[1], values[2], values[3]);
+        return Insets(values[0], values[1], values[2], values[3]);
     Log.fe("CSS(%s): empty rectangle", tokens[0].line);
-    return RectOffset(0);
+    return Insets(0);
 }
 
 /// Decode dimension, e.g. 1px, 20%, 1.2em or `none`

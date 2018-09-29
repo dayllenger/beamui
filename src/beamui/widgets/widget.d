@@ -15,10 +15,10 @@ import beamui.widgets.widget;
 
 auto w = new Widget("id1");
 // access attributes as properties
-w.padding = RectOffset(10);
+w.padding = 10;
 w.backgroundColor = 0xAAAA00;
 // same, but using chained method call
-auto w = new Widget("id1").padding(RectOffset(10)).backgroundColor(0xFFFF00).
+auto w = new Widget("id1").padding(10).backgroundColor(0xFFFF00).
 ---
 
 Copyright: Vadim Lopatin 2014-2018, Andrzej Kilijański 2017-2018, dayllenger 2018
@@ -415,35 +415,35 @@ public:
         }
 
         /// Margins (between widget bounds and its background)
-        RectOffset margins() const
+        Insets margins() const
         {
             return style.margins;
         }
         /// ditto
-        Widget margins(RectOffset rc)
+        Widget margins(Insets value)
         {
-            ownStyle.margins = rc;
+            ownStyle.margins = value;
             requestLayout();
             return this;
         }
         /// ditto
         Widget margins(int v)
         {
-            ownStyle.margins = RectOffset(v);
+            ownStyle.margins = Insets(v);
             requestLayout();
             return this;
         }
 
         enum FOCUS_RECT_PADDING = 2;
         /// Padding (between background bounds and content of widget)
-        RectOffset padding() const
+        Insets padding() const
         {
             // get max padding from style padding and background drawable padding
-            RectOffset p = style.padding;
+            Insets p = style.padding;
             DrawableRef d = backgroundDrawable;
             if (!d.isNull)
             {
-                RectOffset dp = d.padding;
+                Insets dp = d.padding;
                 if (p.left < dp.left)
                     p.left = dp.left;
                 if (p.right < dp.right)
@@ -457,21 +457,21 @@ public:
             {
                 // add two pixels to padding when focus rect is required
                 // one pixel for focus rect, one for additional space
-                p.add(RectOffset(FOCUS_RECT_PADDING));
+                p.add(Insets(FOCUS_RECT_PADDING));
             }
             return p;
         }
         /// ditto
-        Widget padding(RectOffset rc)
+        Widget padding(Insets value)
         {
-            ownStyle.padding = rc;
+            ownStyle.padding = value;
             requestLayout();
             return this;
         }
         /// ditto
         Widget padding(int v)
         {
-            ownStyle.padding = RectOffset(v);
+            ownStyle.padding = Insets(v);
             requestLayout();
             return this;
         }
@@ -1737,7 +1737,7 @@ public:
         if (cs[0] != COLOR_UNSPECIFIED)
         {
             Box b = _box;
-            b.shrink(RectOffset(FOCUS_RECT_PADDING));
+            b.shrink(Insets(FOCUS_RECT_PADDING));
             buf.drawFocusRect(Rect(b), cs);
         }
     }
@@ -2067,19 +2067,19 @@ public:
         }
         if (name == "margins")
         { // use same value for all sides
-            margins = RectOffset(value);
+            margins = Insets(value);
             return true;
         }
         if (name == "padding")
         { // use same value for all sides
-            padding = RectOffset(value);
+            padding = Insets(value);
             return true;
         }
         return false;
     }
 
-    /// Set RectOffset property value, for ML loaders
-    bool setRectOffsetProperty(string name, RectOffset value)
+    /// Set Insets property value, for ML loaders
+    bool setInsetsProperty(string name, Insets value)
     {
         mixin(generatePropertySetters("margins", "padding"));
         return false;

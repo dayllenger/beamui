@@ -52,9 +52,9 @@ class Drawable : RefCountedObject
     abstract void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0);
     abstract @property int width();
     abstract @property int height();
-    @property RectOffset padding()
+    @property Insets padding()
     {
-        return RectOffset(0);
+        return Insets(0);
     }
 }
 
@@ -177,10 +177,10 @@ class GradientDrawable : Drawable
 class BorderDrawable : Drawable
 {
     protected uint _borderColor;
-    protected RectOffset _borderWidths; // border widths, in pixels
+    protected Insets _borderWidths; // border widths, in pixels
     protected uint _middleColor; // middle area color (may be transparent)
 
-    this(uint borderColor, RectOffset borderWidths, uint innerAreaColor = 0xFFFFFFFF)
+    this(uint borderColor, Insets borderWidths, uint innerAreaColor = 0xFFFFFFFF)
     {
         _borderColor = borderColor;
         _borderWidths = borderWidths;
@@ -190,7 +190,7 @@ class BorderDrawable : Drawable
     this(uint borderColor, int borderWidth, uint innerAreaColor = 0xFFFFFFFF)
     {
         _borderColor = borderColor;
-        _borderWidths = RectOffset(borderWidth, borderWidth, borderWidth, borderWidth);
+        _borderWidths = Insets(borderWidth, borderWidth, borderWidth, borderWidth);
         _middleColor = innerAreaColor;
     }
 
@@ -209,7 +209,7 @@ class BorderDrawable : Drawable
         return 1 + _borderWidths.top + _borderWidths.bottom;
     }
 
-    override @property RectOffset padding()
+    override @property Insets padding()
     {
         return _borderWidths;
     }
@@ -241,7 +241,7 @@ class BoxShadowDrawable : Drawable
         texture.blur(blurSize);
         // set 9-patch frame
         uint sz = _blurSize * 2;
-        texture.ninePatch = new NinePatch(RectOffset(sz), RectOffset(sz));
+        texture.ninePatch = new NinePatch(Insets(sz), Insets(sz));
     }
 
     ~this()
@@ -254,7 +254,7 @@ class BoxShadowDrawable : Drawable
         // move and expand the shadow
         b.x += _offsetX;
         b.y += _offsetY;
-        b.expand(RectOffset(_blurSize));
+        b.expand(Insets(_blurSize));
 
         // apply new clipping to the DrawBuf to draw outside of the widget
         auto saver = ClipRectSaver(buf, Rect(b), 0, false);
@@ -339,7 +339,7 @@ static if (BACKEND_CONSOLE)
             dchar[] _text;
             uint[] _bgColors;
             uint[] _textColors;
-            RectOffset _padding;
+            Insets _padding;
             Rect _ninePatch;
             bool _tiled;
             bool _stretched;
@@ -493,7 +493,7 @@ static if (BACKEND_CONSOLE)
                 //if (pad[k-1] < nine[k-1])
                 //    pad[k-1] = nine[k-1];
             }
-            _padding = RectOffset(pad[0], pad[1], pad[2], pad[3]);
+            _padding = Insets(pad[0], pad[1], pad[2], pad[3]);
             _ninePatch = Rect(nine[0], nine[1], nine[2], nine[3]);
             // pad colors
             for (int k = 1; k <= _width * _height; k++)
@@ -515,7 +515,7 @@ static if (BACKEND_CONSOLE)
             return _height;
         }
 
-        override @property RectOffset padding()
+        override @property Insets padding()
         {
             return _padding;
         }
@@ -619,12 +619,12 @@ class ImageDrawable : Drawable
         return _image.height;
     }
 
-    override @property RectOffset padding()
+    override @property Insets padding()
     {
         if (!_image.isNull && _image.hasNinePatch)
             return _image.ninePatch.padding;
         else
-            return RectOffset(0);
+            return Insets(0);
     }
 
     override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
@@ -746,7 +746,7 @@ class CombinedDrawable : Drawable
         return backgroundImage.height + border.padding.top + border.padding.bottom;
     }
 
-    override @property RectOffset padding()
+    override @property Insets padding()
     {
         return backgroundImage.padding + border.padding;
     }

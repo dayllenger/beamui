@@ -3434,7 +3434,7 @@ class EditBox : EditWidgetBase
             //TODO: Figure out why a little slow to catch up
             if (_wordWrap)
                 visibleRect.offset(0, -caretHeightOffset);
-            buf.drawFrame(visibleRect, 0xA0808080, RectOffset(1));
+            buf.drawFrame(visibleRect, 0xA0808080, Insets(1));
         }
     }
 

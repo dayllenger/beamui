@@ -2201,7 +2201,7 @@ class StringGridWidget : StringGridWidgetBase
             return _customCellAdapter.drawCell(buf, b, col, row);
         }
         if (BACKEND_GUI)
-            b.shrink(RectOffset(2, 1));
+            b.shrink(Insets(2, 1));
         else
             b.width--;
         FontRef fnt = font;
@@ -2218,7 +2218,7 @@ class StringGridWidget : StringGridWidgetBase
     override protected void drawHeaderCell(DrawBuf buf, Box b, int col, int row)
     {
         if (BACKEND_GUI)
-            b.shrink(RectOffset(2, 1));
+            b.shrink(Insets(2, 1));
         else
             b.width--;
         FontRef fnt = font;
@@ -2318,9 +2318,9 @@ class StringGridWidget : StringGridWidgetBase
             static if (BACKEND_GUI)
             {
                 if (_rowSelect)
-                    buf.drawFrame(rc, _selectionColorRowSelect, RectOffset(0, 1), _cellBorderColor);
+                    buf.drawFrame(rc, _selectionColorRowSelect, Insets(0, 1), _cellBorderColor);
                 else
-                    buf.drawFrame(rc, _selectionColor, RectOffset(1), _cellBorderColor);
+                    buf.drawFrame(rc, _selectionColor, Insets(1), _cellBorderColor);
             }
             else
             {

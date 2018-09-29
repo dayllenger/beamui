@@ -267,9 +267,9 @@ private:
             error("unknown string list property " ~ propName);
     }
 
-    void setRectOffsetProperty(string propName, RectOffset value)
+    void setInsetsProperty(string propName, Insets value)
     {
-        if (!_currentWidget.setRectOffsetProperty(propName, value))
+        if (!_currentWidget.setInsetsProperty(propName, value))
             error("unknown Rect property " ~ propName);
     }
 
@@ -398,7 +398,7 @@ private:
             }
 
         }
-        setRectOffsetProperty(propName, RectOffset(values[0], values[1], values[2], values[3]));
+        setInsetsProperty(propName, Insets(values[0], values[1], values[2], values[3]));
     }
 
     // something in []

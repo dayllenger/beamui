@@ -304,7 +304,7 @@ class DockHost : WidgetGroupDefaultDrawing
             if (a == DockAlignment.bottom)
                 _bottomSpace.beforeLayout(geom, getDockedWindowList(DockAlignment.bottom));
         }
-        RectOffset sp;
+        Insets sp;
         foreach (a; _layoutPriority)
         {
             Box b = geom;

@@ -189,7 +189,7 @@ extern (C) int UIAppMain(string[] args)
     // most of controls example
     {
         auto controls = new Column;
-        controls.padding = RectOffset(12.pt);
+        controls.padding = 12;
 
         auto line1 = new Row;
         controls.addChild(line1);
@@ -277,7 +277,7 @@ extern (C) int UIAppMain(string[] args)
         tabs1.addTab(new Label("Label on tab page\nLabels can be\nMultiline"d).
                 maxLines(3).id("tab1"), "Tab 1"d);
         tabs1.addTab(new ImageWidget("beamui-logo").id("tab2"), "Tab 2"d);
-        tabs1.tabHost.padding = RectOffset(10.pt);
+        tabs1.tabHost.padding = 10;
         tabs1.tabHost.backgroundColor = 0xE0E0E0;
         gbtabs.addChild(tabs1);
         line3.addChild(gbtabs);
@@ -625,7 +625,7 @@ void main()
 
             canvas.font.drawText(buf, x + 400, y, "frame"d, 0x208020);
             buf.drawFrame(Rect(x + 400, y + lh + 1, x + 550, y + 150),
-                          0x2090A0, RectOffset(6, 6, 6, 18), 0);
+                          0x2090A0, Insets(6, 6, 6, 18), 0);
 
             canvas.font.drawText(buf, x + 20, y + 300, "points"d, 0x000080);
             for (int i = 0; i < 100; i += 2)

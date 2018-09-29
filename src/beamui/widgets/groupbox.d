@@ -51,10 +51,10 @@ class GroupBox : LinearLayout
             return this;
         }
 
-        RectOffset padding() const
+        Insets padding() const
         {
             // get default padding
-            RectOffset p = super.padding;
+            Insets p = super.padding;
             // correct padding based on frame drawables and caption
             (cast(GroupBox)this).calcFrame(); // hack
             p.top = max(p.top, _topHeight);
@@ -64,7 +64,7 @@ class GroupBox : LinearLayout
             return p;
         }
 
-        Widget padding(RectOffset p)
+        Widget padding(Insets p)
         {
             return super.padding(p);
         }
@@ -84,7 +84,7 @@ class GroupBox : LinearLayout
 
     protected void calcFrame()
     {
-        RectOffset cp = _caption.padding;
+        Insets cp = _caption.padding;
         int captFontHeight = _caption.font.height;
         _captionHeight = cp.top + cp.bottom + captFontHeight;
 
@@ -99,7 +99,7 @@ class GroupBox : LinearLayout
         DrawableRef bottomDrawable = currentTheme.getDrawable("group_box_frame_bottom");
         if (!bottomDrawable.isNull)
         {
-            RectOffset dp = bottomDrawable.padding;
+            Insets dp = bottomDrawable.padding;
             _frameLeft = dp.left;
             _frameRight = dp.right;
             _frameBottom = dp.bottom;

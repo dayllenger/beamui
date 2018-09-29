@@ -213,10 +213,10 @@ Rect toPixels(const Rect r)
     return Rect(toPixels(r.left), toPixels(r.top), toPixels(r.right), toPixels(r.bottom));
 }
 
-/// Convert custom size RectOffset to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
-RectOffset toPixels(const RectOffset ro)
+/// Convert custom size Insets to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
+Insets toPixels(const Insets ins)
 {
-    return RectOffset(toPixels(ro.left), toPixels(ro.top), toPixels(ro.right), toPixels(ro.bottom));
+    return Insets(toPixels(ins.left), toPixels(ins.top), toPixels(ins.right), toPixels(ins.bottom));
 }
 
 /// Make size value with SIZE_IN_POINTS_FLAG set
