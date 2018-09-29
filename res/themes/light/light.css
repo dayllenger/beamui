@@ -155,7 +155,7 @@ ComboBox::list:not(enabled) { background-color: #f0f0f0; }
 /* ========================================================================== menu.d */
 Menu { width: none; height: none; min-width: 0; min-height: 0; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; text-flags: underline-hotkeys-on-alt; }
 
-MenuBar { weight: 0; margin: 0; padding: 0 0 0 3px; box-shadow: 0 0 5px #888; background-color: #f3f4f5; }
+MenuBar { weight: 0; margin: 0; padding-left: 3px; box-shadow: 0 0 5px #888; background-color: #f3f4f5; }
 
 MenuItem { padding: 6px 4px; text-flags: parent; }
 
@@ -173,7 +173,7 @@ MenuItem::icon:not(enabled) { opacity: 0.4; }
 
 MenuItem::label { align: left vcenter; padding: 0 4px; text-flags: parent; }
 
-MenuItem::shortcut { align: right vcenter; padding: 0 2px 0 8px; }
+MenuItem::shortcut { align: right vcenter; padding-left: 8px; padding-right: 2px; }
 
 MenuItem::open { align: center; }
 
@@ -196,7 +196,7 @@ TreeItemWidget::body:focused, TreeItemWidget::body:selected { background-color: 
 
 TreeItemWidget::icon, TreeItemWidget::label { align: left vcenter; text-flags: parent; }
 
-TreeItemWidget::icon { padding: 0 3px 0 0; }
+TreeItemWidget::icon { padding-right: 3px; }
 
 TreeItemWidget::label:focused, TreeItemWidget::label:selected { color: #f0f0f0; }
 
@@ -242,7 +242,7 @@ PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
   scrollbar_indicator_horizontal: none; }
 
 /* ========================================================================== tabs.d */
-TabControl { padding: 0 0 0 3px; }
+TabControl { padding-left: 3px; }
 
 TabControl::more { padding: 0 2px 4px 0; opacity: 0.6; }
 
@@ -369,7 +369,7 @@ DialogFrame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px #555; }
 /* ========================================================================== filedlg.d */
 FileDialog { padding: 4px; }
 
-FilePathPanelButtons { padding: 0 6px 0 3px; }
+FilePathPanelButtons { padding-left: 3px; padding-right: 6px; }
 
 FilePathPanelItem::label { align: center; padding: 2px 3px; }
 
@@ -386,7 +386,7 @@ SettingsDialog { padding: 4px; }
 
 SettingsDialog::tree { min-width: 50px; weight: 3; margin: 8px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; font-size: 14pt; }
 
-SettingsDialog::page { min-width: 100px; weight: 5; margin: 8px 8px 8px 0; padding: 4px; }
+SettingsDialog::page { min-width: 100px; weight: 5; margin: 8px; margin-left: 0; padding: 4px; }
 
 SettingsPage::title { weight: 0; padding: 4px 4px 12px; font-size: 120%; }
 

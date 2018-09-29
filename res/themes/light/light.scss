@@ -391,7 +391,7 @@ Menu {
 MenuBar {
     weight: 0;
     margin: 0;
-    padding: 0 0 0 3px;
+    padding-left: 3px;
     box-shadow: 0 0 5px #888;
     background-color: #f3f4f5;
 }
@@ -435,7 +435,8 @@ MenuItem {
 
     &::shortcut {
         align: right vcenter;
-        padding: 0 2px 0 8px;
+        padding-left: 8px;
+        padding-right: 2px;
     }
 
     &::open {
@@ -489,7 +490,7 @@ TreeItemWidget {
     }
 
     &::icon {
-        padding: 0 3px 0 0;
+        padding-right: 3px;
     }
 
     &::label:focused, &::label:selected {
@@ -599,7 +600,7 @@ TabWidget {
 }
 
 TabControl {
-    padding: 0 0 0 3px;
+    padding-left: 3px;
 }
 
 TabControl::more {
@@ -901,7 +902,8 @@ FileDialog {
 }
 
 FilePathPanelButtons {
-    padding: 0 6px 0 3px;
+    padding-left: 3px;
+    padding-right: 6px;
 }
 
 FilePathPanelItem {
@@ -947,7 +949,8 @@ SettingsDialog {
     &::page {
         min-width: 100px;
         weight: 5;
-        margin: 8px 8px 8px 0;
+        margin: 8px;
+        margin-left: 0;
         padding: 4px;
     }
 }

@@ -997,6 +997,7 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
     {
         Token[] tokens = p.value;
         assert(tokens.length > 0);
+    Switch:
         switch (p.name)
         {
         case "width":
@@ -1029,6 +1030,19 @@ private void applyRule(Theme theme, Selector selector, Property[] properties)
         case "padding":
             style.padding = decodeInsetsCSS(tokens);
             break;
+        static foreach (s; ["top", "right", "bottom", "left"])
+        {
+        case "margin-" ~ s:
+            Insets insets = style.margins;
+            __traits(getMember, insets, s) = decodeDimensionCSS(tokens[0]).toDevice;
+            style.margins = insets;
+            break Switch;
+        case "padding-" ~ s:
+            Insets insets = style.padding;
+            __traits(getMember, insets, s) = decodeDimensionCSS(tokens[0]).toDevice;
+            style.padding = insets;
+            break Switch;
+        }
         case "border":
             style.border = decodeBorderCSS(tokens);
             break;
