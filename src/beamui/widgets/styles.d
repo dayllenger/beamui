@@ -1,18 +1,10 @@
 /**
-This module contains declaration of themes and styles implementation.
-
-Style - style container
-Theme - parent for all styles
-
+This module contains style and theme classes, theme CSS loader and other related stuff.
 
 Synopsis:
 ---
 import beamui.widgets.styles;
 ---
-
-Recent changes:
-     Dimensions like fontSize, padding, margins, min/max width and height can be specified in points, e.g. minWidth = "3pt" margins="1pt,2pt,1pt,2pt"
-     % for font size, based on parent font size, e.g. fontSize="120.5%" means parentStyle.fontSize * 120.5 / 100.0;
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2018
 License:   Boost License 1.0
@@ -21,7 +13,6 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.widgets.styles;
 
 import beamui.core.config;
-
 import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types;

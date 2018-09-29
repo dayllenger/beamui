@@ -598,8 +598,17 @@ PageScrollButton {
 TabWidget {
 }
 
+TabControl {
+    padding: 3px 0 0 0;
+}
+
 TabControl::more {
     padding: 0 0 2px 4px;
+    opacity: 0.6;
+
+    &:hovered {
+        opacity: 1;
+    }
 }
 
 TabHost {
@@ -827,6 +836,7 @@ SimpleBarChart {
 ProgressBar {
     min-width: 50px;
     min-height: 16px;
+    max-height: 16px;
     padding: 2px;
     border: 1px solid #ccc;
 }
@@ -954,7 +964,7 @@ SettingsPage::title {
 
 Label#tooltip {
     padding: 3px;
-    box-shadow: 0 2px 7px #888;
+    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.4);
     background-color: #222;
     color: #eee;
 }

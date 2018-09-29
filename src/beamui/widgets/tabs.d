@@ -293,7 +293,7 @@ class TabControl : WidgetGroupDefaultDrawing
         setStyles("TabUp", "TabUpButton", "TabUpButtonText");
         _moreButton = new Button(null, "tab_more");
         _moreButton.id = "MORE";
-        _moreButton.bindSubItem(this, "more"); // FIXME: was Button.transparent
+        _moreButton.bindSubItem(this, "more");
         _moreButton.mouseEvent = &onMouseMoreBtn;
         enableCloseButton = true;
         styleID = _tabStyle;
@@ -554,7 +554,7 @@ class TabControl : WidgetGroupDefaultDrawing
                 return true;
             moreButtonClicked(this); // FIXME: emit signal every time?
         }
-        return true;
+        return false;
     }
 
     /// Try to invoke popup menu, return true if popup menu is shown
@@ -875,6 +875,7 @@ class TabWidget : Column
     protected TabControl _tabControl;
     protected TabHost _tabHost;
 
+    /// Construct a new tab widget with top or bottom tab control placement
     this(Align tabAlignment = Align.top)
     {
         spacing = 0;

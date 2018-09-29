@@ -860,11 +860,13 @@ class TreeWidgetBase : ScrollArea, ActionOperator
     protected void onTreeContentChange(TreeItems source)
     {
         _needUpdateWidgets = true;
+        requestLayout();
     }
 
     protected void onTreeStateChange(TreeItems source)
     {
         _needUpdateWidgetStates = true;
+        requestLayout();
     }
 
     protected void onTreeItemExpanded(TreeItems source, TreeItem item)
@@ -932,9 +934,9 @@ class TreeWidgetBase : ScrollArea, ActionOperator
             Log.d("Tree `", id, "`: bind actions");
 
         // TODO: implement page up
-        ACTION_PAGE_UP.bind(this, { _tree.selectPrevious(); });
+        ACTION_PAGE_UP.bind(this, &_tree.selectPrevious);
         // TODO: implement page down
-        ACTION_PAGE_DOWN.bind(this, { _tree.selectNext(); });
+        ACTION_PAGE_DOWN.bind(this, &_tree.selectNext);
         ACTION_PAGE_BEGIN.bind(this, { _vscrollbar.maybe.sendScrollEvent(ScrollAction.pageUp); });
         ACTION_PAGE_END.bind(this, { _vscrollbar.maybe.sendScrollEvent(ScrollAction.pageDown); });
 
