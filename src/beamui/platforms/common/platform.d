@@ -197,7 +197,7 @@ class TimerInfo
     /// Cancel timer
     void cancel()
     {
-        _targetWidget = WeakRef!Widget(null);
+        _targetWidget.nullify();
     }
     /// Cancel timer
     void notify()
@@ -207,7 +207,7 @@ class TimerInfo
             _nextTimestamp = currentTimeMillis + _interval;
             if (!_targetWidget.onTimer(_id))
             {
-                _targetWidget = WeakRef!Widget(null);
+                _targetWidget.nullify();
             }
         }
     }
@@ -1666,7 +1666,7 @@ class Window : CustomEventTarget
                 res = w.onMouseEvent(leaveEvent) || res;
                 debug (mouse)
                     Log.d("removeTracking of ", w.id);
-                w = WeakRef!Widget(null);
+                w.nullify();
             }
         }
         _mouseTrackingWidgets = _mouseTrackingWidgets.efilter!(a => !a.isNull);
@@ -1690,7 +1690,7 @@ class Window : CustomEventTarget
 
     protected void clearMouseCapture()
     {
-        _mouseCaptureWidget = WeakRef!Widget(null);
+        _mouseCaptureWidget.nullify();
         _mouseCaptureFocusedOut = false;
         _mouseCaptureFocusedOutTrackMovements = false;
         _mouseCaptureButtons = 0;

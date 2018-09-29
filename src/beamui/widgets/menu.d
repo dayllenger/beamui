@@ -618,7 +618,7 @@ class Menu : ListWidget
         if (_previousFocusedWidget)
         {
             window.setFocus(_previousFocusedWidget);
-            _previousFocusedWidget = WeakRef!Widget(null);
+            _previousFocusedWidget.nullify();
         }
     }
 
