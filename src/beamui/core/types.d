@@ -482,65 +482,69 @@ pure nothrow @nogc:
 /// Represents area around rectangle. Used for margin, border and padding
 struct Insets
 {
-    int left, top, right, bottom;
+    int top, right, bottom, left;
 
 pure nothrow @nogc:
 
     /// Create equal offset on all sides
     this(int all)
     {
-        left = top = right = bottom = all;
+        top = right = bottom = left = all;
     }
     /// Create separate horizontal and vertical offsets
-    this(int h, int v)
+    this(int v, int h)
     {
-        left = right = h;
         top = bottom = v;
+        right = left = h;
     }
     /// Create offsets one by one
-    this(int left, int top, int right, int bottom)
+    this(int top, int right, int bottom, int left)
     {
-        this.left = left;
         this.top = top;
         this.right = right;
         this.bottom = bottom;
+        this.left = left;
     }
 
-    /// Get overall offset
+    /// Get total offset
     @property Size size() const
     {
         return Size(left + right, top + bottom);
     }
-    /// Get overall horizontal offset
-    @property int horizontal() const
+    /// Get total horizontal offset
+    @property int width() const
     {
         return left + right;
     }
-    /// Get overall vertical offset
-    @property int vertical() const
+    /// Get total vertical offset
+    @property int height() const
     {
         return top + bottom;
     }
 
-    /// Sum two areas
     Insets opBinary(string op)(Insets ins) const if (op == "+")
     {
-        return Insets(left + ins.left, top + ins.top, right + ins.right, bottom + ins.bottom);
+        return Insets(top + ins.top, right + ins.right, bottom + ins.bottom, left + ins.left);
     }
 
-    /// Multiply area by a number
-    Insets opBinary(string op)(int n) const if (op == "*")
+    Insets opBinary(string op)(Insets ins) const if (op == "-")
     {
-        return Insets(left * n, top * n, right * n, bottom * n);
+        return Insets(top - ins.top, right - ins.right, bottom - ins.bottom, left - ins.left);
+    }
+
+    Insets opBinary(string op)(float factor) const if (op == "*")
+    {
+        return Insets(cast(int)(top * factor), cast(int)(right * factor),
+                      cast(int)(bottom * factor), cast(int)(left * factor));
     }
 
     /// Sum two areas
     void add(Insets ins)
     {
-        left += ins.left;
         top += ins.top;
         right += ins.right;
         bottom += ins.bottom;
+        left += ins.left;
      }
 }
 

@@ -4,7 +4,7 @@
 @define-colors { window_background: #f0f1f1; }
 
 /* ========================================================================== controls.d */
-Label { align: left vcenter; padding: 4px 2px; }
+Label { align: left vcenter; padding: 2px 4px; }
 
 Label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
@@ -102,7 +102,7 @@ Resizer:focused { background-color: rgba(192, 192, 0, 0.8); }
 Resizer:pressed { background-color: rgba(78, 147, 218, 0.8); }
 
 /* ========================================================================== groupbox.d */
-GroupBox { padding: 10px 20px 10px 16px; }
+GroupBox { padding: 20px 10px 16px; }
 
 GroupBox::caption { align: left vcenter; padding: 1px; color: #504840; }
 
@@ -121,14 +121,14 @@ StringListWidget:focused { border: 1px solid #2e93fa; }
 
 StringListWidget:not(enabled) { background-color: #f0f0f0; }
 
-StringListAdapter::item, IconStringListAdapter::item { padding: 4px 2px; }
+StringListAdapter::item, IconStringListAdapter::item { padding: 2px 4px; }
 
 StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { background-color: #e2edf9; }
 
 StringListAdapter::item:focused, StringListAdapter::item:selected, IconStringListAdapter::item:focused, IconStringListAdapter::item:selected { background-color: #4e93da; color: #f0f0f0; }
 
 /* ========================================================================== combobox.d */
-ComboBox { min-width: 40px; padding: 4px 3px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); }
+ComboBox { min-width: 40px; padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); }
 
 ComboBox:hovered { border: 1px solid #4e93da; }
 
@@ -142,7 +142,7 @@ ComboBox::body:hovered { color: #46617e; }
 
 ComboBox::body:pressed { color: #417fbf; }
 
-ComboBox::button { align: center; padding: 2px 3px; }
+ComboBox::button { align: center; padding: 3px 2px; }
 
 ComboBox::body:not(enabled), ComboBox::button:not(enabled) { opacity: 0.4; }
 
@@ -155,9 +155,9 @@ ComboBox::list:not(enabled) { background-color: #f0f0f0; }
 /* ========================================================================== menu.d */
 Menu { width: none; height: none; min-width: 0; min-height: 0; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; text-flags: underline-hotkeys-on-alt; }
 
-MenuBar { weight: 0; margin: 0; padding: 3px 0 0 0; box-shadow: 0 0 5px #888; background-color: #f3f4f5; }
+MenuBar { weight: 0; margin: 0; padding: 0 0 0 3px; box-shadow: 0 0 5px #888; background-color: #f3f4f5; }
 
-MenuItem { padding: 4px 6px; text-flags: parent; }
+MenuItem { padding: 6px 4px; text-flags: parent; }
 
 MenuItem#menu-separator { padding: 4px; }
 
@@ -167,13 +167,13 @@ MenuItem:focused, MenuItem:selected { background-color: #4e93da; }
 
 MenuItem::separator { min-width: 1px; min-height: 1px; background: #ccc; }
 
-MenuItem::icon { align: left vcenter; padding: 2px 0; }
+MenuItem::icon { align: left vcenter; padding: 0 2px; }
 
 MenuItem::icon:not(enabled) { opacity: 0.4; }
 
-MenuItem::label { align: left vcenter; padding: 4px 0; text-flags: parent; }
+MenuItem::label { align: left vcenter; padding: 0 4px; text-flags: parent; }
 
-MenuItem::shortcut { align: right vcenter; padding: 8px 0 2px 0; }
+MenuItem::shortcut { align: right vcenter; padding: 0 2px 0 8px; }
 
 MenuItem::open { align: center; }
 
@@ -186,7 +186,7 @@ TreeItemWidget { min-width: 100px; min-height: 14px; }
 
 TreeItemWidget::expander { align: left vcenter; text-flags: parent; }
 
-TreeItemWidget::body { align: left vcenter; padding: 4px 2px; text-flags: parent; }
+TreeItemWidget::body { align: left vcenter; padding: 2px 4px; text-flags: parent; }
 
 TreeItemWidget::body:hovered { background-color: #c7d9ec; }
 
@@ -196,7 +196,7 @@ TreeItemWidget::body:focused, TreeItemWidget::body:selected { background-color: 
 
 TreeItemWidget::icon, TreeItemWidget::label { align: left vcenter; text-flags: parent; }
 
-TreeItemWidget::icon { padding: 0 0 3px 0; }
+TreeItemWidget::icon { padding: 0 3px 0 0; }
 
 TreeItemWidget::label:focused, TreeItemWidget::label:selected { color: #f0f0f0; }
 
@@ -242,9 +242,9 @@ PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
   scrollbar_indicator_horizontal: none; }
 
 /* ========================================================================== tabs.d */
-TabControl { padding: 3px 0 0 0; }
+TabControl { padding: 0 0 0 3px; }
 
-TabControl::more { padding: 0 0 2px 4px; opacity: 0.6; }
+TabControl::more { padding: 0 2px 4px 0; opacity: 0.6; }
 
 TabControl::more:hovered { opacity: 1; }
 
@@ -254,21 +254,21 @@ TabUp { /*     border: #dd000000 0 0 0 1; */ background-color: transparent; }
 
 TabUp:selected { background: url(tab_up_backgrond_selected); }
 
-TabItemWidget { padding: 0 6px 1px 0; /*     border: #ffffffff 0 0 0 2; */ }
+TabItemWidget { padding: 6px 1px 0 0; /*     border: #ffffffff 0 0 0 2; */ }
 
 TabItemWidget:selected { /*     border: $main-color 0 0 0 2; */ }
 
-TabItemWidget::label { align: hcenter bottom; padding: 3px 0 3px 3px; }
+TabItemWidget::label { align: hcenter bottom; padding: 0 3px 3px; }
 
 TabItemWidget::label:hovered, TabItemWidget::label:selected, TabItemWidget::label:focused, TabItemWidget::label:selected:focused { color: #4e93da; }
 
 TabDownDark { background: url(dock_window_caption_background_down); }
 
-TabDownButtonDark { padding: 5px 1px 1px 1px; background: url(tab_btn_dark_down); }
+TabDownButtonDark { padding: 1px 1px 1px 5px; background: url(tab_btn_dark_down); }
 
 TabUpDark { background: url(dock_window_caption_background); }
 
-TabUpButtonDark { padding: 5px 1px 1px 1px; background: url(tab_btn_dark_up); }
+TabUpButtonDark { padding: 1px 1px 1px 5px; background: url(tab_btn_dark_up); }
 
 TabUpButtonDarkText { align: center; color: black; }
 
@@ -319,7 +319,7 @@ StatusLine { weight: 0; padding: 1px; background-color: #eceffa; }
 /* ========================================================================== toolbars.d */
 ToolBarHost { padding: 1px; background: url(toolbar_host_background); }
 
-ToolBar { margin: 2px 1px; background: url(toolbar_background); }
+ToolBar { margin: 1px 2px; background: url(toolbar_background); }
 
 ToolBarButton, ToolBar::button { align: center; margin: 1px; padding: 2px; background: url(toolbar_button_background); }
 
@@ -369,13 +369,13 @@ DialogFrame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px #555; }
 /* ========================================================================== filedlg.d */
 FileDialog { padding: 4px; }
 
-FilePathPanelButtons { padding: 3px 0 6px 0; }
+FilePathPanelButtons { padding: 0 6px 0 3px; }
 
-FilePathPanelItem::label { align: center; padding: 3px 2px; }
+FilePathPanelItem::label { align: center; padding: 2px 3px; }
 
 FilePathPanelItem::label:hovered { background-color: #c7d9ec; }
 
-FilePathPanelItem::button { padding: 1px 0; }
+FilePathPanelItem::button { padding: 0 1px; }
 
 FilePathPanelItem::button:hovered { background-color: #c7d9ec; }
 
@@ -386,11 +386,11 @@ SettingsDialog { padding: 4px; }
 
 SettingsDialog::tree { min-width: 50px; weight: 3; margin: 8px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; font-size: 14pt; }
 
-SettingsDialog::page { min-width: 100px; weight: 5; margin: 0 8px 8px 8px; padding: 4px; }
+SettingsDialog::page { min-width: 100px; weight: 5; margin: 8px 8px 8px 0; padding: 4px; }
 
-SettingsPage::title { weight: 0; padding: 4px 4px 4px 12px; font-size: 120%; }
+SettingsPage::title { weight: 0; padding: 4px 4px 12px; font-size: 120%; }
 
 /* ========================================================================== Tooltips */
 Label#tooltip { padding: 3px; box-shadow: 0 2px 7px rgba(0, 0, 0, 0.4); background-color: #222; color: #eee; }
 
-Popup#tooltip-popup { padding: 2px 10px 2px 1px; }
+Popup#tooltip-popup { padding: 10px 2px 1px; }

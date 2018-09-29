@@ -216,7 +216,7 @@ Rect toPixels(const Rect r)
 /// Convert custom size Insets to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
 Insets toPixels(const Insets ins)
 {
-    return Insets(toPixels(ins.left), toPixels(ins.top), toPixels(ins.right), toPixels(ins.bottom));
+    return Insets(toPixels(ins.top), toPixels(ins.right), toPixels(ins.bottom), toPixels(ins.left));
 }
 
 /// Make size value with SIZE_IN_POINTS_FLAG set

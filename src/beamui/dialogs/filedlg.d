@@ -601,7 +601,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         if (col == 1)
         {
             if (BACKEND_GUI)
-                b.shrink(Insets(2, 1));
+                b.shrink(Insets(1, 2));
             else
                 b.width--;
             FontRef fnt = _fileList.font;
@@ -635,7 +635,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         {
             auto btn = new Button(root.label, root.icon);
             static if (BACKEND_CONSOLE)
-                btn.margins = Insets(1, 1, 0, 0); // TODO: move to styles?
+                btn.margins = Insets(1, 0, 0, 1); // TODO: move to styles?
             btn.orientation = Orientation.vertical;
             btn.styleID = "TransparentButtonBackground"; // FIXME
             btn.focusable = false;
@@ -980,7 +980,7 @@ class FilePathPanelItem : Row
         trackHover = true;
         addChild(_text);
         addChild(_button);
-        margins(Insets(2.pt + 1, 0)); // TODO: move to styles?
+        margins(Insets(0, 2.pt + 1)); // TODO: move to styles?
     }
 
     private bool onTextClick(Widget src)

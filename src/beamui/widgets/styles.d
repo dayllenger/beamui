@@ -888,7 +888,7 @@ Theme createDefaultTheme()
         theme.root.fontSize = Dimension.pt(12);
 
         auto label = theme.get("Label");
-        label.alignment(Align.left | Align.vcenter).padding(Insets(4.pt, 2.pt));
+        label.alignment(Align.left | Align.vcenter).padding(Insets(2.pt, 4.pt));
         label.getOrCreateState(State.enabled, State.unspecified).textColor(0xa0000000);
 
         auto mlabel = theme.get("MultilineLabel");
@@ -1185,15 +1185,13 @@ Insets decodeInsetsCSS(Token[] tokens)
             break;
         }
     }
-    // TODO: rotate. Should be: top right bottom left
-    // or adapt?
     if (valueCount == 1) // same value for all dimensions
         return Insets(values[0]);
-    else if (valueCount == 2) // one value of horizontal, and one for vertical
+    else if (valueCount == 2) // one value for vertical, one for horizontal
         return Insets(values[0], values[1]);
-    else if (valueCount == 3) // values for left, right, and one for vertical
+    else if (valueCount == 3) // values for top, bottom, and one for horizontal
         return Insets(values[0], values[1], values[2], values[1]);
-    else if (valueCount == 4) // separate left, top, right, bottom
+    else if (valueCount == 4) // separate top, right, bottom, left
         return Insets(values[0], values[1], values[2], values[3]);
     Log.fe("CSS(%s): empty rectangle", tokens[0].line);
     return Insets(0);

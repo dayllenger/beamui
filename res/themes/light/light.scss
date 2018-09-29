@@ -32,7 +32,7 @@ $focused-border-color: saturate($main-color, 30%);
 
 Label {
     align: left vcenter;
-    padding: 4px 2px;
+    padding: 2px 4px;
 
     &:not(enabled) {
         color: $disabled-text-color;
@@ -252,7 +252,7 @@ Resizer {
 */
 
 GroupBox {
-    padding: 10px 20px 10px 16px;
+    padding: 20px 10px 16px;
 }
 
 GroupBox::caption {
@@ -297,7 +297,7 @@ StringListWidget {
 }
 
 StringListAdapter::item, IconStringListAdapter::item {
-    padding: 4px 2px;
+    padding: 2px 4px;
 
     &:hovered {
         background-color: $hovered-color;
@@ -315,7 +315,7 @@ StringListAdapter::item, IconStringListAdapter::item {
 
 ComboBox {
     min-width: 40px;
-    padding: 4px 3px;
+    padding: 3px 4px;
     border: 1px solid #aaa;
     background: linear(0deg, #eeeeee, #dddddd);
 
@@ -349,7 +349,7 @@ ComboBox {
 
     &::button {
         align: center;
-        padding: 2px 3px;
+        padding: 3px 2px;
     }
 
     &::body:not(enabled), &::button:not(enabled) {
@@ -391,13 +391,13 @@ Menu {
 MenuBar {
     weight: 0;
     margin: 0;
-    padding: 3px 0 0 0;
+    padding: 0 0 0 3px;
     box-shadow: 0 0 5px #888;
     background-color: #f3f4f5;
 }
 
 MenuItem {
-    padding: 4px 6px;
+    padding: 6px 4px;
     text-flags: parent;
 
     &#menu-separator {
@@ -420,7 +420,7 @@ MenuItem {
 
     &::icon {
         align: left vcenter;
-        padding: 2px 0;
+        padding: 0 2px;
     }
 
     &::icon:not(enabled) {
@@ -429,13 +429,13 @@ MenuItem {
 
     &::label {
         align: left vcenter;
-        padding: 4px 0;
+        padding: 0 4px;
         text-flags: parent;
     }
 
     &::shortcut {
         align: right vcenter;
-        padding: 8px 0 2px 0;
+        padding: 0 2px 0 8px;
     }
 
     &::open {
@@ -467,7 +467,7 @@ TreeItemWidget {
 
     &::body {
         align: left vcenter;
-        padding: 4px 2px;
+        padding: 2px 4px;
         text-flags: parent;
 
         &:hovered {
@@ -489,7 +489,7 @@ TreeItemWidget {
     }
 
     &::icon {
-        padding: 0 0 3px 0;
+        padding: 0 3px 0 0;
     }
 
     &::label:focused, &::label:selected {
@@ -599,11 +599,11 @@ TabWidget {
 }
 
 TabControl {
-    padding: 3px 0 0 0;
+    padding: 0 0 0 3px;
 }
 
 TabControl::more {
-    padding: 0 0 2px 4px;
+    padding: 0 2px 4px 0;
     opacity: 0.6;
 
     &:hovered {
@@ -626,7 +626,7 @@ TabUp:selected {
 }
 
 TabItemWidget {
-    padding: 0 6px 1px 0;
+    padding: 6px 1px 0 0;
 /*     border: #ffffffff 0 0 0 2; */
 }
 
@@ -636,7 +636,7 @@ TabItemWidget:selected {
 
 TabItemWidget::label {
     align: hcenter bottom;
-    padding: 3px 0 3px 3px;
+    padding: 0 3px 3px;
 
     &:hovered, &:selected,
     &:focused, &:selected:focused {
@@ -649,7 +649,7 @@ TabDownDark {
 }
 
 TabDownButtonDark {
-    padding: 5px 1px 1px 1px;
+    padding: 1px 1px 1px 5px;
     background: url(tab_btn_dark_down);
 }
 
@@ -658,7 +658,7 @@ TabUpDark {
 }
 
 TabUpButtonDark {
-    padding: 5px 1px 1px 1px;
+    padding: 1px 1px 1px 5px;
     background: url(tab_btn_dark_up);
 }
 
@@ -769,7 +769,7 @@ ToolBarHost {
 }
 
 ToolBar {
-    margin: 2px 1px;
+    margin: 1px 2px;
     background: url(toolbar_background);
 }
 
@@ -901,13 +901,13 @@ FileDialog {
 }
 
 FilePathPanelButtons {
-    padding: 3px 0 6px 0;
+    padding: 0 6px 0 3px;
 }
 
 FilePathPanelItem {
     &::label {
         align: center;
-        padding: 3px 2px;
+        padding: 2px 3px;
     }
 
     &::label:hovered {
@@ -915,7 +915,7 @@ FilePathPanelItem {
     }
 
     &::button {
-        padding: 1px 0;
+        padding: 0 1px;
     }
 
     &::button:hovered {
@@ -947,14 +947,14 @@ SettingsDialog {
     &::page {
         min-width: 100px;
         weight: 5;
-        margin: 0 8px 8px 8px;
+        margin: 8px 8px 8px 0;
         padding: 4px;
     }
 }
 
 SettingsPage::title {
     weight: 0;
-    padding: 4px 4px 4px 12px;
+    padding: 4px 4px 12px;
     font-size: 120%;
 }
 
@@ -970,5 +970,5 @@ Label#tooltip {
 }
 
 Popup#tooltip-popup {
-    padding: 2px 10px 2px 1px;
+    padding: 10px 2px 1px;
 }
