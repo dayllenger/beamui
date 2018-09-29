@@ -332,11 +332,12 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return this;
         }
 
+        /// Text in the editor
         override dstring text() const
         {
             return _content.text;
         }
-
+        /// ditto
         override Widget text(dstring s)
         {
             _content.text = s;
@@ -413,7 +414,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         bindActions();
     }
 
-    /// Free resources
     ~this()
     {
         unbindActions();
@@ -444,7 +444,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
     {
         if (focused)
+        {
+            updateActions();
             startCaretBlinking();
+        }
         else
         {
             stopCaretBlinking();
@@ -745,7 +748,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 ensureCaretVisible();
                 correctCaretPos();
                 requestLayout();
-                requestActionsUpdate();
+                updateActions();
             }
             else if (operation.action == EditAction.saveContent)
             {
@@ -760,7 +763,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 updateMaxLineWidth();
                 measureVisibleText();
                 ensureCaretVisible();
-                requestActionsUpdate();
+                updateActions();
                 processSmartIndent(operation);
             }
         }
@@ -770,7 +773,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             measureVisibleText();
             correctCaretPos();
             requestLayout();
-            requestActionsUpdate();
+            updateActions();
         }
         invalidate();
         if (modifiedStateChanged.assigned)
@@ -779,7 +782,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             {
                 _lastReportedModifiedState = content.modified;
                 modifiedStateChanged(this, content.modified);
-                requestActionsUpdate();
+                updateActions();
             }
         }
         contentChanged(_content);
@@ -1120,7 +1123,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             _selectionRange.end = _caretPos;
         }
         invalidate();
-        requestActionsUpdate();
+        updateActions();
         handleEditorStateChange();
     }
 
@@ -1193,7 +1196,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             _selectionRange = r;
             _caretPos = r.end;
             invalidate();
-            requestActionsUpdate();
+            updateActions();
         }
         else
         {
@@ -1215,7 +1218,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             _selectionRange = r;
             _caretPos = r.end;
             invalidate();
-            requestActionsUpdate();
+            updateActions();
         }
         else
         {
@@ -1290,7 +1293,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         return _content.lineRange(_caretPos.line);
     }
 
-    /// Clears selection (don't change text, just unselect)
+    /// Clear selection (doesn't change text, just deselects)
     void clearSelection()
     {
         _selectionRange = TextRange(_caretPos, _caretPos);
@@ -1314,79 +1317,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
     //===============================================================
     // Actions
-/+
-    override bool isActionEnabled(const OldAction action)
-    {
-        switch (action.id) with (EditorActions)
-        {
-        case Indent:
-        case Unindent:
-            return enabled;
-        case Copy:
-            return _copyCurrentLineWhenNoSelection || !_selectionRange.empty;
-        case Cut:
-            return enabled && (_copyCurrentLineWhenNoSelection || !_selectionRange.empty);
-        case Paste:
-            return enabled && platform.hasClipboardText();
-        case Undo:
-            return enabled && _content.hasUndo;
-        case Redo:
-            return enabled && _content.hasRedo;
-        case ToggleBookmark:
-            return _content.multiline;
-        case GoToNextBookmark:
-            return _content.multiline && _content.lineIcons.hasBookmarks;
-        case GoToPreviousBookmark:
-            return _content.multiline && _content.lineIcons.hasBookmarks;
-
-        case Replace:
-            return _content.multiline && !readOnly;
-        case Find:
-        case FindNext:
-        case FindPrev:
-            return _content.multiline;
-        default:
-            return super.isActionEnabled(action);
-        }
-    }
-
-    override bool handleActionStateRequest(const OldAction a)
-    {
-        switch (a.id) with (EditorActions)
-        {
-        case ToggleBlockComment:
-            if (!_content.syntaxSupport || !_content.syntaxSupport.supportsToggleBlockComment)
-                a.state = ACTION_STATE_INVISIBLE;
-            else if (enabled && _content.syntaxSupport.canToggleBlockComment(_selectionRange))
-                a.state = ACTION_STATE_ENABLED;
-            else
-                a.state = ACTION_STATE_DISABLE;
-            return true;
-        case ToggleLineComment:
-            if (!_content.syntaxSupport || !_content.syntaxSupport.supportsToggleLineComment)
-                a.state = ACTION_STATE_INVISIBLE;
-            else if (enabled && _content.syntaxSupport.canToggleLineComment(_selectionRange))
-                a.state = ACTION_STATE_ENABLED;
-            else
-                a.state = ACTION_STATE_DISABLE;
-            return true;
-        case Copy:
-        case Cut:
-        case Paste:
-        case Undo:
-        case Redo:
-        case Indent:
-        case Unindent:
-            if (isActionEnabled(a))
-                a.state = ACTION_STATE_ENABLED;
-            else
-                a.state = ACTION_STATE_DISABLE;
-            return true;
-        default:
-            return super.handleActionStateRequest(a);
-        }
-    }
-+/
 
     protected void bindActions()
     {
@@ -1450,6 +1380,22 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             ACTION_PASTE,
             ACTION_ED_TOGGLE_REPLACE_MODE
         ).unbind(this);
+    }
+
+    protected void updateActions()
+    {
+        debug (editors)
+            Log.d("Editor `", id, "`: update actions");
+
+        ACTION_ED_INDENT.enabled = enabled && _wantTabs;
+        ACTION_ED_UNINDENT.enabled = enabled && _wantTabs;
+
+        ACTION_UNDO.enabled = enabled && _content.hasUndo;
+        ACTION_REDO.enabled = enabled && _content.hasRedo;
+
+        ACTION_CUT.enabled = enabled && (_copyCurrentLineWhenNoSelection || !_selectionRange.empty);
+        ACTION_COPY.enabled = _copyCurrentLineWhenNoSelection || !_selectionRange.empty;
+        ACTION_PASTE.enabled = enabled && platform.hasClipboardText();
     }
 
     protected void LineBegin(bool select)
@@ -1738,6 +1684,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _caretPos = _selectionRange.end;
         ensureCaretVisible();
         invalidate();
+        updateActions();
     }
 
     protected TextRange spaceBefore(TextPosition pos)
@@ -2439,83 +2386,6 @@ class EditBox : EditWidgetBase
         eliminate(_findPanel);
     }
 
-    override protected void bindActions()
-    {
-        super.bindActions();
-
-        ACTION_PAGE_UP.bind(this, { PageUp(false); });
-        ACTION_PAGE_DOWN.bind(this, { PageDown(false); });
-        ACTION_PAGE_BEGIN.bind(this, { PageBegin(false); });
-        ACTION_PAGE_END.bind(this, { PageEnd(false); });
-        ACTION_SELECT_PAGE_UP.bind(this, { PageUp(true); });
-        ACTION_SELECT_PAGE_DOWN.bind(this, { PageDown(true); });
-        ACTION_SELECT_PAGE_BEGIN.bind(this, { PageBegin(true); });
-        ACTION_SELECT_PAGE_END.bind(this, { PageEnd(true); });
-
-        ACTION_ZOOM_IN.bind(this, { zoom(true); });
-        ACTION_ZOOM_OUT.bind(this, { zoom(false); });
-
-        ACTION_ENTER.bind(this, &InsertNewLine);
-        ACTION_ED_PREPEND_NEW_LINE.bind(this, &PrependNewLine);
-        ACTION_ED_APPEND_NEW_LINE.bind(this, &AppendNewLine);
-        ACTION_ED_DELETE_LINE.bind(this, &DeleteLine);
-
-        ACTION_ED_TOGGLE_BOOKMARK.bind(this, {
-            _content.lineIcons.toggleBookmark(_caretPos.line);
-        });
-        ACTION_ED_GOTO_NEXT_BOOKMARK.bind(this, {
-            LineIcon mark = _content.lineIcons.findNext(LineIconType.bookmark,
-                    _selectionRange.end.line, 1);
-            if (mark)
-                setCaretPos(mark.line, 0, true);
-        });
-        ACTION_ED_GOTO_PREVIOUS_BOOKMARK.bind(this, {
-            LineIcon mark = _content.lineIcons.findNext(LineIconType.bookmark,
-                    _selectionRange.end.line, -1);
-            if (mark)
-                setCaretPos(mark.line, 0, true);
-        });
-
-        ACTION_ED_TOGGLE_LINE_COMMENT.bind(this, &ToggleLineComment);
-        ACTION_ED_TOGGLE_BLOCK_COMMENT.bind(this, &ToggleBlockComment);
-
-        ACTION_ED_FIND.bind(this, &openFindPanel);
-        ACTION_ED_FIND_NEXT.bind(this, { findNext(false); });
-        ACTION_ED_FIND_PREV.bind(this, { findNext(true); });
-        ACTION_ED_REPLACE.bind(this, &openReplacePanel);
-    }
-
-    override protected void unbindActions()
-    {
-        super.unbindActions();
-
-        bunch(
-            ACTION_PAGE_UP,
-            ACTION_PAGE_DOWN,
-            ACTION_PAGE_BEGIN,
-            ACTION_PAGE_END,
-            ACTION_SELECT_PAGE_UP,
-            ACTION_SELECT_PAGE_DOWN,
-            ACTION_SELECT_PAGE_BEGIN,
-            ACTION_SELECT_PAGE_END,
-            ACTION_ZOOM_IN,
-            ACTION_ZOOM_OUT,
-            ACTION_ENTER,
-            ACTION_ED_TOGGLE_BOOKMARK,
-            ACTION_ED_GOTO_NEXT_BOOKMARK,
-            ACTION_ED_GOTO_PREVIOUS_BOOKMARK,
-            ACTION_ED_TOGGLE_LINE_COMMENT,
-            ACTION_ED_TOGGLE_BLOCK_COMMENT,
-            ACTION_ED_PREPEND_NEW_LINE,
-            ACTION_ED_APPEND_NEW_LINE,
-            ACTION_ED_DELETE_LINE,
-            ACTION_ED_FIND,
-            ACTION_ED_FIND_NEXT,
-            ACTION_ED_FIND_PREV,
-            ACTION_ED_REPLACE
-        ).unbind(this);
-    }
-
     override void wordWrapRefresh()
     {
         _needRewrap = true;
@@ -2901,7 +2771,107 @@ class EditBox : EditWidgetBase
     //===============================================================
     // Actions
 
-    /// Zoom in when `zoomIn` is true and out vice versa, if supported by an editor
+    override protected void bindActions()
+    {
+        super.bindActions();
+
+        ACTION_PAGE_UP.bind(this, { PageUp(false); });
+        ACTION_PAGE_DOWN.bind(this, { PageDown(false); });
+        ACTION_PAGE_BEGIN.bind(this, { PageBegin(false); });
+        ACTION_PAGE_END.bind(this, { PageEnd(false); });
+        ACTION_SELECT_PAGE_UP.bind(this, { PageUp(true); });
+        ACTION_SELECT_PAGE_DOWN.bind(this, { PageDown(true); });
+        ACTION_SELECT_PAGE_BEGIN.bind(this, { PageBegin(true); });
+        ACTION_SELECT_PAGE_END.bind(this, { PageEnd(true); });
+
+        ACTION_ZOOM_IN.bind(this, { zoom(true); });
+        ACTION_ZOOM_OUT.bind(this, { zoom(false); });
+
+        ACTION_ENTER.bind(this, &InsertNewLine);
+        ACTION_ED_PREPEND_NEW_LINE.bind(this, &PrependNewLine);
+        ACTION_ED_APPEND_NEW_LINE.bind(this, &AppendNewLine);
+        ACTION_ED_DELETE_LINE.bind(this, &DeleteLine);
+
+        ACTION_ED_TOGGLE_BOOKMARK.bind(this, {
+            _content.lineIcons.toggleBookmark(_caretPos.line);
+        });
+        ACTION_ED_GOTO_NEXT_BOOKMARK.bind(this, {
+            LineIcon mark = _content.lineIcons.findNext(LineIconType.bookmark,
+                    _selectionRange.end.line, 1);
+            if (mark)
+                setCaretPos(mark.line, 0, true);
+        });
+        ACTION_ED_GOTO_PREVIOUS_BOOKMARK.bind(this, {
+            LineIcon mark = _content.lineIcons.findNext(LineIconType.bookmark,
+                    _selectionRange.end.line, -1);
+            if (mark)
+                setCaretPos(mark.line, 0, true);
+        });
+
+        ACTION_ED_TOGGLE_LINE_COMMENT.bind(this, &ToggleLineComment);
+        ACTION_ED_TOGGLE_BLOCK_COMMENT.bind(this, &ToggleBlockComment);
+
+        ACTION_ED_FIND.bind(this, &openFindPanel);
+        ACTION_ED_FIND_NEXT.bind(this, { findNext(false); });
+        ACTION_ED_FIND_PREV.bind(this, { findNext(true); });
+        ACTION_ED_REPLACE.bind(this, &openReplacePanel);
+    }
+
+    override protected void unbindActions()
+    {
+        super.unbindActions();
+
+        bunch(
+            ACTION_PAGE_UP,
+            ACTION_PAGE_DOWN,
+            ACTION_PAGE_BEGIN,
+            ACTION_PAGE_END,
+            ACTION_SELECT_PAGE_UP,
+            ACTION_SELECT_PAGE_DOWN,
+            ACTION_SELECT_PAGE_BEGIN,
+            ACTION_SELECT_PAGE_END,
+            ACTION_ZOOM_IN,
+            ACTION_ZOOM_OUT,
+            ACTION_ENTER,
+            ACTION_ED_TOGGLE_BOOKMARK,
+            ACTION_ED_GOTO_NEXT_BOOKMARK,
+            ACTION_ED_GOTO_PREVIOUS_BOOKMARK,
+            ACTION_ED_TOGGLE_LINE_COMMENT,
+            ACTION_ED_TOGGLE_BLOCK_COMMENT,
+            ACTION_ED_PREPEND_NEW_LINE,
+            ACTION_ED_APPEND_NEW_LINE,
+            ACTION_ED_DELETE_LINE,
+            ACTION_ED_FIND,
+            ACTION_ED_FIND_NEXT,
+            ACTION_ED_FIND_PREV,
+            ACTION_ED_REPLACE
+        ).unbind(this);
+    }
+
+    override protected void updateActions()
+    {
+        super.updateActions();
+
+        ACTION_ED_GOTO_NEXT_BOOKMARK.enabled = _content.lineIcons.hasBookmarks;
+        ACTION_ED_GOTO_PREVIOUS_BOOKMARK.enabled = _content.lineIcons.hasBookmarks;
+
+        {
+            Action a = ACTION_ED_TOGGLE_LINE_COMMENT;
+            a.visible = _content.syntaxSupport && _content.syntaxSupport.supportsToggleLineComment;
+            if (a.visible)
+                a.enabled = enabled && _content.syntaxSupport.canToggleLineComment(_selectionRange);
+        }
+        {
+            Action a = ACTION_ED_TOGGLE_BLOCK_COMMENT;
+            a.visible = _content.syntaxSupport && _content.syntaxSupport.supportsToggleBlockComment;
+            if (a.visible)
+                a.enabled = enabled && _content.syntaxSupport.canToggleBlockComment(_selectionRange);
+        }
+
+        ACTION_ED_REPLACE.enabled = !readOnly;
+    }
+
+    /// Zoom in when `zoomIn` is true and out vice versa
     void zoom(bool zoomIn)
     {
         int dir = zoomIn ? 1 : -1;
