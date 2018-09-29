@@ -81,9 +81,9 @@ class Popup : LinearLayout
     /// Close and destroy popup
     void close()
     {
+        popupClosed(this, closedByEvent);
         if (!ownContent)
             removeChild(0);
-        popupClosed(this, closedByEvent);
         window.removePopup(this);
     }
 

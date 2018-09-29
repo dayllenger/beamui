@@ -543,7 +543,6 @@ class Menu : ListWidget
         _openedSubmenuIndex = itemIndex;
         auto popup = window.showPopup(submenu, WeakRef!Widget(item),
                 orientation == Orientation.horizontal ? PopupAlign.below : PopupAlign.right);
-        popup.popupClosed = &onSubmenuPopupClosed;
         popup.ownContent = false;
 
         if (navigatingUsingKeys)
@@ -554,61 +553,83 @@ class Menu : ListWidget
         }
     }
 
-    protected void onSubmenuPopupClosed(Popup p, bool byEvent)
-    {
-        assert(p && _openedSubmenu);
-        debug (menus)
-            Log.d("Menu: closing submenu popup");
-
-        // now _openedSubmenu.thisPopup is null
-        if (byEvent)
-        {
-            // close whole menu
-            Menu top = this;
-            while (top.visualParentMenu)
-            {
-                top = top.visualParentMenu;
-            }
-            top.close();
-        }
-        _openedSubmenu = null;
-    }
-
     protected void closeSubmenu()
     {
         cancelSubmenuOpening();
-        if (_openedSubmenu)
-        {
-            _openedSubmenuIndex = -1;
-            _openedSubmenu.close();
-            _openedSubmenu = null;
-        }
+        _openedSubmenu.maybe.close();
     }
 
-    /// Close this menu (if popup) and its submenus
+    /// Close or deactivate (if no popup) this menu and its submenus
     void close()
     {
         debug (menus)
             Log.d("Menu: closing menu");
 
+        if (auto p = thisPopup)
+            p.close();
+        else
+            handleClose();
+    }
+
+    protected void onThisPopupClosed(Popup p, bool byEvent)
+    {
+        assert(p);
+        debug (menus)
+            Log.d("Menu: closing popup");
+
+        handleClose();
+        // remove submenu from the parent
+        if (visualParentMenu)
+        {
+            visualParentMenu._openedSubmenu = null;
+            visualParentMenu._openedSubmenuIndex = -1;
+        }
+        // if clicked outside
+        if (byEvent)
+        {
+            // close the whole menu
+            Menu top = visualParentMenu;
+            while (top)
+            {
+                if (top.visualParentMenu)
+                    top = top.visualParentMenu;
+                else
+                {
+                    top.close();
+                    break;
+                }
+            }
+        }
+        visualParentMenu = null;
+
+        p.popupClosed -= &onThisPopupClosed;
+        needToSetPopupClosedHandler = true;
+    }
+
+    private bool needToSetPopupClosedHandler = true;
+
+    protected void handleClose()
+    {
         closeSubmenu();
+        // deselect items
         selectItem(-1);
         setHoverItem(-1);
-        if (visualParentMenu)
-            visualParentMenu = null;
-        else
+        // revert focus
+        if (_previousFocusedWidget)
+        {
             window.setFocus(_previousFocusedWidget);
-        thisPopup.maybe.close();
+            _previousFocusedWidget = WeakRef!Widget(null);
+        }
     }
 
     protected WeakRef!Widget _previousFocusedWidget;
 
     override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
     {
-        if (focused && !visualParentMenu)
+        if (focused && !_previousFocusedWidget)
         {
             // on activating
-            _previousFocusedWidget = weakRef(window.focusedWidget);
+            _previousFocusedWidget = visualParentMenu ? WeakRef!Widget(visualParentMenu) : window.focusedWidget;
         }
         super.handleFocusChange(focused);
     }
@@ -824,6 +845,27 @@ class Menu : ListWidget
         }
         return super.computeBoundaries();
     }
+
+    override void onDraw(DrawBuf buf)
+    {
+        if (visibility != Visibility.visible)
+            return;
+
+        // ok, this menu needs to know whether popup is closed
+        // but popup doesn't care about the menu
+        // so, when menu appears, we add our slot to popupClosed
+        // and remove it on menu close
+        if (needToSetPopupClosedHandler)
+        {
+            if (auto p = thisPopup)
+            {
+                p.popupClosed ~= &onThisPopupClosed;
+            }
+            needToSetPopupClosedHandler = false;
+        }
+
+        super.onDraw(buf);
+    }
 }
 
 /// Menu bar (like main menu)
@@ -840,11 +882,10 @@ class MenuBar : Menu
         selectOnHover = false;
     }
 
-    /// Deactivate main menu and return focus to previously focused widget
-    override void close()
+    override protected void handleClose()
     {
-        super.close();
         selectOnHover = false;
+        super.handleClose();
     }
 
     override protected void onSelectionChanged(int index, int previouslySelectedItem = -1)

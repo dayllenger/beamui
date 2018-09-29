@@ -1223,7 +1223,7 @@ class Window : CustomEventTarget
     protected WeakRef!Widget _focusedWidget;
     protected State _focusStateToApply = State.focused;
     /// Returns current focused widget
-    @property Widget focusedWidget()
+    @property WeakRef!Widget focusedWidget()
     {
         return _focusedWidget;
     }
