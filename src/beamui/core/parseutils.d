@@ -19,7 +19,7 @@ alias isUpperWordChar = isUpper;
 /// Returns true whether `ch` is a lower alphabetic unicode char or `_`
 bool isLowerWordChar(dchar ch) pure nothrow @nogc
 {
-    return ch == '_' || isAlpha(ch);
+    return ch == '_' || isLower(ch);
 }
 /// Returns true whether char is a digit
 alias isDigit = isNumber;

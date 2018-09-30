@@ -276,6 +276,8 @@ enum ActionState
     UI action.
 
     For using in menus, toolbars, etc.
+
+    Actions are stored globally, and you can fetch them with `findBy*` functions.
  */
 class Action
 {

@@ -99,22 +99,22 @@ Action ACTION_PASTE;
 
 void initStandardActions()
 {
-    ACTION_OK = new Action(tr("Ok"d), "dialog-ok");
-    ACTION_CANCEL = new Action(tr("Cancel"d), "dialog-cancel", KeyCode.escape);
-    ACTION_APPLY = new Action(tr("Apply"d));
-    ACTION_YES = new Action(tr("Yes"d), "dialog-ok");
-    ACTION_NO = new Action(tr("No"d), "dialog-cancel");
-    ACTION_CLOSE = new Action(tr("Close"d), "dialog-close");
-    ACTION_ABORT = new Action(tr("Abort"d));
-    ACTION_RETRY = new Action(tr("Retry"d));
-    ACTION_IGNORE = new Action(tr("Ignore"d));
-    ACTION_OPEN = new Action(tr("Open"d));
-    ACTION_OPEN_DIRECTORY = new Action(tr("Select directory"d));
-    ACTION_CREATE_DIRECTORY = new Action(tr("New folder"d));
-    ACTION_SAVE = new Action(tr("Save"d));
-    ACTION_SAVE_ALL = new Action(tr("Save all"d));
-    ACTION_DISCARD_CHANGES = new Action(tr("Discard"d));
-    ACTION_DISCARD_ALL = new Action(tr("Discard all"d));
+    ACTION_OK = new Action(tr("Ok"), "dialog-ok");
+    ACTION_CANCEL = new Action(tr("Cancel"), "dialog-cancel", KeyCode.escape);
+    ACTION_APPLY = new Action(tr("Apply"));
+    ACTION_YES = new Action(tr("Yes"), "dialog-ok");
+    ACTION_NO = new Action(tr("No"), "dialog-cancel");
+    ACTION_CLOSE = new Action(tr("Close"), "dialog-close");
+    ACTION_ABORT = new Action(tr("Abort"));
+    ACTION_RETRY = new Action(tr("Retry"));
+    ACTION_IGNORE = new Action(tr("Ignore"));
+    ACTION_OPEN = new Action(tr("Open"));
+    ACTION_OPEN_DIRECTORY = new Action(tr("Select directory"));
+    ACTION_CREATE_DIRECTORY = new Action(tr("New folder"));
+    ACTION_SAVE = new Action(tr("Save"));
+    ACTION_SAVE_ALL = new Action(tr("Save all"));
+    ACTION_DISCARD_CHANGES = new Action(tr("Discard"));
+    ACTION_DISCARD_ALL = new Action(tr("Discard all"));
     ACTION_OPEN_URL = new Action("applications-internet");
 
     ACTION_LINE_BEGIN = new Action(null, KeyCode.home);
@@ -135,20 +135,20 @@ void initStandardActions()
     ACTION_SELECT_DOCUMENT_BEGIN = new Action(null, KeyCode.home, KeyFlag.control | KeyFlag.shift);
     ACTION_SELECT_DOCUMENT_END = new Action(null, KeyCode.end, KeyFlag.control | KeyFlag.shift);
 
-    ACTION_ENTER = new Action(tr("Enter"d), KeyCode.enter);
-    ACTION_BACKSPACE = new Action(tr("Backspace"d), KeyCode.backspace);
-    ACTION_DELETE = new Action(tr("Delete"d), KeyCode.del);
+    ACTION_ENTER = new Action(tr("Enter"), KeyCode.enter);
+    ACTION_BACKSPACE = new Action(tr("Backspace"), KeyCode.backspace);
+    ACTION_DELETE = new Action(tr("Delete"), KeyCode.del);
 
-    ACTION_SELECT_ALL = new Action(tr("Select all"d), KeyCode.A, KeyFlag.control);
+    ACTION_SELECT_ALL = new Action(tr("Select all"), KeyCode.A, KeyFlag.control);
 
     ACTION_ZOOM_IN = new Action(tr("Zoom In"), KeyCode.numAdd, KeyFlag.control); // BUG: such combinations do not work
     ACTION_ZOOM_OUT = new Action(tr("Zoom Out"), KeyCode.numSub, KeyFlag.control);
 
-    ACTION_UNDO = new Action(tr("&Undo"d), KeyCode.Z, KeyFlag.control).enabled(false);
-    ACTION_REDO = new Action(tr("&Redo"d), KeyCode.Y, KeyFlag.control).addShortcut(KeyCode.Z, KeyFlag.control | KeyFlag.shift).enabled(false);
-    ACTION_CUT = new Action(tr("Cu&t"d), KeyCode.X, KeyFlag.control).addShortcut(KeyCode.del, KeyFlag.shift).enabled(false);
-    ACTION_COPY = new Action(tr("&Copy"d), KeyCode.C, KeyFlag.control).addShortcut(KeyCode.ins, KeyFlag.control).enabled(false);
-    ACTION_PASTE = new Action(tr("&Paste"d), KeyCode.V, KeyFlag.control).addShortcut(KeyCode.ins, KeyFlag.shift)/+.enabled(false)+/;
+    ACTION_UNDO = new Action(tr("&Undo"), KeyCode.Z, KeyFlag.control).enabled(false);
+    ACTION_REDO = new Action(tr("&Redo"), KeyCode.Y, KeyFlag.control).addShortcut(KeyCode.Z, KeyFlag.control | KeyFlag.shift).enabled(false);
+    ACTION_CUT = new Action(tr("Cu&t"), KeyCode.X, KeyFlag.control).addShortcut(KeyCode.del, KeyFlag.shift).enabled(false);
+    ACTION_COPY = new Action(tr("&Copy"), KeyCode.C, KeyFlag.control).addShortcut(KeyCode.ins, KeyFlag.control).enabled(false);
+    ACTION_PASTE = new Action(tr("&Paste"), KeyCode.V, KeyFlag.control).addShortcut(KeyCode.ins, KeyFlag.shift)/+.enabled(false)+/;
 
     import beamui.core.functions : bunch;
 

@@ -236,17 +236,17 @@ pure nothrow @nogc:
     /// Returns center of the box
     @property Point middle() const
     {
-        return Point((x + w) / 2, (y + h) / 2);
+        return Point(x + w / 2, y + h / 2);
     }
     /// Returns x coordinate of the center
     @property int middlex() const
     {
-        return (x + w) / 2;
+        return x + w / 2;
     }
     /// Returns y coordinate of the center
     @property int middley() const
     {
-        return (y + h) / 2;
+        return y + h / 2;
     }
 
     /// Returns true if point is inside of this rectangle

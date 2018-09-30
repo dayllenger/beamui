@@ -108,21 +108,21 @@ void initStandardEditorActions()
     ACTION_ED_INDENT = new Action(null, KeyCode.tab);
     ACTION_ED_UNINDENT = new Action(null, KeyCode.tab, KeyFlag.shift);
 
-    ACTION_ED_PREPEND_NEW_LINE = new Action(tr("Prepend new line"d), KeyCode.enter, KeyFlag.control | KeyFlag.shift);
-    ACTION_ED_APPEND_NEW_LINE = new Action(tr("Append new line"d), KeyCode.enter, KeyFlag.control);
-    ACTION_ED_DELETE_LINE = new Action(tr("Delete line"d), KeyCode.D, KeyFlag.control).addShortcut(KeyCode.L, KeyFlag.control);
-    ACTION_ED_TOGGLE_REPLACE_MODE = new Action(tr("Replace mode"d), KeyCode.ins);
-    ACTION_ED_TOGGLE_LINE_COMMENT = new Action(tr("Toggle line comment"d), KeyCode.divide, KeyFlag.control);
-    ACTION_ED_TOGGLE_BLOCK_COMMENT = new Action(tr("Toggle block comment"d), KeyCode.divide, KeyFlag.control | KeyFlag.shift);
+    ACTION_ED_PREPEND_NEW_LINE = new Action(tr("Prepend new line"), KeyCode.enter, KeyFlag.control | KeyFlag.shift);
+    ACTION_ED_APPEND_NEW_LINE = new Action(tr("Append new line"), KeyCode.enter, KeyFlag.control);
+    ACTION_ED_DELETE_LINE = new Action(tr("Delete line"), KeyCode.D, KeyFlag.control).addShortcut(KeyCode.L, KeyFlag.control);
+    ACTION_ED_TOGGLE_REPLACE_MODE = new Action(tr("Replace mode"), KeyCode.ins);
+    ACTION_ED_TOGGLE_LINE_COMMENT = new Action(tr("Toggle line comment"), KeyCode.divide, KeyFlag.control);
+    ACTION_ED_TOGGLE_BLOCK_COMMENT = new Action(tr("Toggle block comment"), KeyCode.divide, KeyFlag.control | KeyFlag.shift);
 
-    ACTION_ED_TOGGLE_BOOKMARK = new Action(tr("Toggle bookmark"d), KeyCode.B, KeyFlag.control | KeyFlag.shift);
-    ACTION_ED_GOTO_NEXT_BOOKMARK = new Action(tr("Go to next bookmark"d), KeyCode.down, KeyFlag.control | KeyFlag.shift | KeyFlag.alt);
-    ACTION_ED_GOTO_PREVIOUS_BOOKMARK = new Action(tr("Go to previous bookmark"d), KeyCode.up, KeyFlag.control | KeyFlag.shift | KeyFlag.alt);
+    ACTION_ED_TOGGLE_BOOKMARK = new Action(tr("Toggle bookmark"), KeyCode.B, KeyFlag.control | KeyFlag.shift);
+    ACTION_ED_GOTO_NEXT_BOOKMARK = new Action(tr("Go to next bookmark"), KeyCode.down, KeyFlag.control | KeyFlag.shift | KeyFlag.alt);
+    ACTION_ED_GOTO_PREVIOUS_BOOKMARK = new Action(tr("Go to previous bookmark"), KeyCode.up, KeyFlag.control | KeyFlag.shift | KeyFlag.alt);
 
-    ACTION_ED_FIND = new Action(tr("Find..."d), KeyCode.F, KeyFlag.control);
-    ACTION_ED_FIND_NEXT = new Action(tr("Find next"d), KeyCode.F3, 0);
-    ACTION_ED_FIND_PREV = new Action(tr("Find previous"d), KeyCode.F3, KeyFlag.shift);
-    ACTION_ED_REPLACE = new Action(tr("Replace..."d), KeyCode.H, KeyFlag.control);
+    ACTION_ED_FIND = new Action(tr("Find..."), KeyCode.F, KeyFlag.control);
+    ACTION_ED_FIND_NEXT = new Action(tr("Find next"), KeyCode.F3, 0);
+    ACTION_ED_FIND_PREV = new Action(tr("Find previous"), KeyCode.F3, KeyFlag.shift);
+    ACTION_ED_REPLACE = new Action(tr("Replace..."), KeyCode.H, KeyFlag.control);
 
     bunch(
         ACTION_ED_DEL_PREV_WORD,

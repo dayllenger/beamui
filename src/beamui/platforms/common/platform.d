@@ -824,12 +824,12 @@ class Window : CustomEventTarget
         if (noTooltipBefore)
         {
             auto tr = Transition(100, TimingFunction.easeIn);
-            res.alpha = 255;
+            // may be destroyed
+            auto popup = weakRef(res);
+            popup.alpha = 255;
             addAnimation(tr.duration, (double t) {
-                if (_tooltip.popup is res) // may be destroyed
-                {
-                    res.alpha = cast(ubyte)tr.mix(255, 0, t);
-                }
+                if (popup)
+                    popup.alpha = cast(ubyte)tr.mix(255, 0, t);
             });
         }
 
@@ -863,16 +863,12 @@ class Window : CustomEventTarget
 
         // add a smooth fade-in transition
         auto tr = Transition(150, TimingFunction.easeIn);
-        res.alpha = 255;
+        // may be destroyed
+        auto popup = weakRef(res);
+        popup.alpha = 255;
         addAnimation(tr.duration, (double t) {
-            foreach (p; _popups)
-            {
-                if (p is res) // may be destroyed
-                {
-                    res.alpha = cast(ubyte)tr.mix(255, 0, t);
-                    break;
-                }
-            }
+            if (popup)
+                popup.alpha = cast(ubyte)tr.mix(255, 0, t);
         });
 
         _popups ~= res;

@@ -13,9 +13,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.editable;
 
-import std.algorithm;
-import std.conv : to;
 import beamui.core.collections;
+import beamui.core.functions;
 import beamui.core.linestream;
 import beamui.core.logger;
 import beamui.core.parseutils;

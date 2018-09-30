@@ -755,7 +755,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
     /// Shows question "override file?"
     protected void showConfirmOverwriteQuestion(string filename)
     {
-        window.showMessageBox(tr("Confirm overwrite"d),
+        window.showMessageBox(tr("Confirm overwrite"),
             format(tr("A file named \"%s\" already exists. Do you want to replace it?"), baseName(filename)),
             [ACTION_YES, ACTION_NO], 1,
             delegate(const Action a) { if (a is ACTION_YES) handleAction(_action); }

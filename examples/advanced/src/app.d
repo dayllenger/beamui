@@ -70,10 +70,10 @@ extern (C) int UIAppMain(string[] args)
     fileOpenAction.bind(frame, {
         auto dlg = new FileDialog("Open Text File"d, window);
         dlg.allowMultipleFiles = true;
-        dlg.addFilter(FileFilterEntry(tr("All files"d), "*"));
-        dlg.addFilter(FileFilterEntry(tr("Text files"d), "*.txt;*.log"));
-        dlg.addFilter(FileFilterEntry(tr("Source files"d), "*.d;*.dd;*.c;*.cpp;*.h;*.hpp"));
-        dlg.addFilter(FileFilterEntry(tr("Executable files"d), "*", true));
+        dlg.addFilter(FileFilterEntry(tr("All files"), "*"));
+        dlg.addFilter(FileFilterEntry(tr("Text files"), "*.txt;*.log"));
+        dlg.addFilter(FileFilterEntry(tr("Source files"), "*.d;*.dd;*.c;*.cpp;*.h;*.hpp"));
+        dlg.addFilter(FileFilterEntry(tr("Executable files"), "*", true));
         dlg.dialogClosed = delegate(Dialog dlg, const Action result) {
             import std.path : baseName;
 
@@ -562,7 +562,7 @@ void main()
 
         gridTab.addChild(grid.fillH());
 
-        tabs.addTab(gridTab.id("GRID"), tr("Grid"d));
+        tabs.addTab(gridTab.id("GRID"), tr("Grid"));
     }
 
     // charts
@@ -606,7 +606,7 @@ void main()
         chartColumn2.addChild(barChart4);
         chartsLayout.addChild(chartColumn2);
 
-        tabs.addTab(chartsLayout.id("CHARTS"), tr("Charts"d));
+        tabs.addTab(chartsLayout.id("CHARTS"), tr("Charts"));
     }
 
     // canvas
@@ -625,7 +625,7 @@ void main()
 
             canvas.font.drawText(buf, x + 400, y, "frame"d, 0x208020);
             buf.drawFrame(Rect(x + 400, y + lh + 1, x + 550, y + 150),
-                          0x2090A0, Insets(6, 6, 6, 18), 0);
+                          0x2090A0, Insets(6, 6, 18, 6), 0);
 
             canvas.font.drawText(buf, x + 20, y + 300, "points"d, 0x000080);
             for (int i = 0; i < 100; i += 2)
