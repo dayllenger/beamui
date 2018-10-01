@@ -42,7 +42,7 @@ import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types;
 import beamui.graphics.drawbuf;
-import beamui.widgets.styles;
+import beamui.style.types;
 
 /// Font families enum
 enum FontFamily : ubyte

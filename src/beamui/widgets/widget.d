@@ -44,12 +44,15 @@ public
     import beamui.graphics.drawbuf;
     import beamui.graphics.fonts;
 
+    import beamui.style.theme : currentTheme;
+    import beamui.style.types;
+
     import beamui.widgets.popup : PopupAlign;
-    import beamui.widgets.styles;
 }
 import beamui.dml.annotations;
 import beamui.graphics.colors;
 import beamui.platforms.common.platform;
+import beamui.style.style;
 import beamui.widgets.menu;
 
 /// Widget visibility
@@ -128,7 +131,7 @@ protected:
         string parentID;
         string subName;
 
-        bool bound() { return parentType !is null; }
+        bool bound() const { return parentType !is null; }
     }
     /// Style of the widget
     Style _style;

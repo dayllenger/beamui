@@ -30,7 +30,6 @@ import beamui.graphics.fonts;
 import beamui.graphics.ftfonts;
 import beamui.graphics.resources;
 import beamui.platforms.common.platform;
-import beamui.widgets.styles;
 import beamui.widgets.widget;
 static if (USE_OPENGL)
 {

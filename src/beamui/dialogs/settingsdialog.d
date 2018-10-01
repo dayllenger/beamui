@@ -22,7 +22,6 @@ import beamui.widgets.editors;
 import beamui.widgets.layouts;
 import beamui.widgets.lists;
 import beamui.widgets.menu;
-import beamui.widgets.styles;
 import beamui.widgets.tree;
 
 /// Item on settings page

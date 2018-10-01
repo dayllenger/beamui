@@ -24,6 +24,7 @@ import beamui.core.stdaction;
 import beamui.graphics.drawbuf;
 import beamui.graphics.iconprovider;
 import beamui.graphics.resources;
+import beamui.style.theme;
 import beamui.widgets.popup;
 import beamui.widgets.scrollbar;
 import beamui.widgets.widget;

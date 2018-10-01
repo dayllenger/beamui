@@ -11,7 +11,6 @@ import std.utf : toUTF32;
 import beamui.core.config;
 import beamui.graphics.fonts;
 import beamui.graphics.resources;
-import beamui.widgets.styles;
 import beamui.widgets.widget;
 
 static if (BACKEND_GUI)
@@ -595,6 +594,9 @@ extern (C) void registerStandardWidgets();
 /// Call this when all resources are supposed to be freed to report counts of non-freed resources by type
 extern (C) void releaseResourcesOnAppExit()
 {
+    import beamui.style.style;
+    import beamui.style.theme;
+
     debug
     {
         if (Widget.instanceCount > 0)
