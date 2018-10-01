@@ -6,6 +6,8 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.style.types;
 
+import beamui.core.types : State;
+
 /// Align option bit constants
 enum Align : uint
 {
@@ -46,4 +48,12 @@ enum TextFlag : uint
     strikeThrough = 16, // TODO:
     /// Use text flags from parent widget
     parent = 32
+}
+
+struct Selector
+{
+    const(TypeInfo_Class) widgetType;
+    string id;
+    string pseudoElement;
+    State state;
 }
