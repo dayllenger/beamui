@@ -161,6 +161,8 @@ CheckBox::icon {
 }
 
 RadioButton::icon {
+    min-width: 16px;
+    max-height: 16px;
     background: url(btn_radio_off);
 
     &:hovered {

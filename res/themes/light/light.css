@@ -62,7 +62,7 @@ CheckBox::icon:checked:pressed { background: url(btn_check_on_pressed); }
 
 CheckBox::icon:checked:not(enabled) { background: url(btn_check_on); opacity: 0.4; }
 
-RadioButton::icon { background: url(btn_radio_off); }
+RadioButton::icon { min-width: 16px; max-height: 16px; background: url(btn_radio_off); }
 
 RadioButton::icon:hovered { background: url(btn_radio_off_focused); }
 

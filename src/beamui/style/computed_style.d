@@ -352,13 +352,10 @@ struct ComputedStyle
             uint color = backgroundColor;
             Drawable image = s.backgroundImage;
             BoxShadowDrawable shadows = s.boxShadow;
-            if (borders || shadows)
+            // here we can only create drawables, we can't capture existing one e.g. background image
+            if (borders || shadows || image)
             {
                 s._backgroundDrawable = new CombinedDrawable(color, image, borders, shadows);
-            }
-            else if (image)
-            {
-                s._backgroundDrawable = image;
             }
             else
             {
@@ -406,8 +403,8 @@ struct ComputedStyle
 
     ~this()
     {
-        _font.clear();
         _backgroundDrawable.clear();
+        _font.clear();
         eliminate(_elementStyle);
     }
 
@@ -426,6 +423,7 @@ struct ComputedStyle
         if (_elementStyle)
             chain ~= _elementStyle;
 
+        _backgroundDrawable.clear();
         _font.clear();
         static foreach (i; 0 .. StyleProperties.tupleof.length)
         {
@@ -440,11 +438,5 @@ struct ComputedStyle
                 }
             }
         }
-    }
-
-    void onThemeChanged()
-    {
-        _backgroundDrawable.clear();
-        _font.clear();
     }
 }
