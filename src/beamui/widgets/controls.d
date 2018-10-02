@@ -29,7 +29,7 @@ class Label : Widget
         /// ditto
         Label maxLines(int n)
         {
-            ownStyle.maxLines = n;
+            style.maxLines = n;
             heightDependsOnWidth = n != 1;
             return this;
         }

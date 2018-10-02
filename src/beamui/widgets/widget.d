@@ -52,6 +52,7 @@ public
 import beamui.dml.annotations;
 import beamui.graphics.colors;
 import beamui.platforms.common.platform;
+import beamui.style.computed_style;
 import beamui.style.style;
 import beamui.widgets.menu;
 
@@ -133,12 +134,12 @@ protected:
 
         bool bound() const { return parentType !is null; }
     }
-    /// Style of the widget
-    Style _style;
+    /// Computed style of the widget
+    ComputedStyle _computedStyle;
     /// Structure needed when this widget is subitem of another
     StyleSubItemInfo subInfo;
-    /// The style can be copied and owned by widget to override some of style properties
-    bool isOwnStyle;
+
+    bool _needToRecomputeStyle = true;
 
     /// Widget state (set of flags from State enum)
     State _state;
@@ -180,7 +181,6 @@ public:
         _isDestroyed = new bool;
         _id = ID;
         _state = State.normal;
-        _style = currentTheme.get(typeid(this), _id);
         debug _instanceCount++;
         debug (resalloc)
             Log.fd("Created widget `%s` %s, count: %s", _id, this.classinfo.name, _instanceCount);
@@ -200,9 +200,9 @@ public:
             Log.fd("Destroyed widget `%s` %s, count: %s", _id, this.classinfo.name, _instanceCount);
         debug if (APP_IS_SHUTTING_DOWN)
             onResourceDestroyWhileShutdown(_id, this.classinfo.name);
-        if (isOwnStyle)
-            eliminate(_style);
+
         _backgroundDrawable.clear();
+        destroy(_computedStyle);
         eliminate(_popupMenu);
         if (_isDestroyed !is null)
             *_isDestroyed = true;
@@ -228,15 +228,7 @@ public:
         if (_id != id)
         {
             _id = id;
-            Style s;
-            if (subInfo.bound)
-                s = currentTheme.get(subInfo.parentType, subInfo.parentID, subInfo.subName);
-            else
-                s = currentTheme.get(typeid(this), _id);
-            if (isOwnStyle)
-                _style.reinherit(s);
-            else
-                _style = s;
+            _needToRecomputeStyle = true;
         }
         return this;
     }
@@ -267,7 +259,9 @@ public:
         {
             State oldState = _state;
             _state = newState;
-            // need to redraw
+            // need to recompute the style
+            needToRecomputeStateStyle();
+            // and to redraw
             invalidate();
             // notify focus changes
             if ((oldState & State.focused) && !(newState & State.focused))
@@ -316,35 +310,24 @@ public:
     //===============================================================
     // Style
 
-    /// Returns current widget style
-    protected @property const(Style) style() const
+    /// Returns computed widget style
+    protected @property inout(ComputedStyle*) style() inout
     {
-        return _style;
-    }
-    /// Returns style for specified state
-    protected @property const(Style) style(State stateFlags) const
-    {
-        auto normalStyle = style();
-        if (stateFlags == State.normal)
-            return normalStyle;
-        else
-            return normalStyle.forState(stateFlags);
-    }
-    /// Returns style for current widget state
-    protected @property const(Style) stateStyle() const
-    {
-        return style(state);
+        if (_needToRecomputeStyle)
+        {
+            Widget wt = cast(Widget)this;
+            wt._computedStyle.recompute(getStyleSelector());
+            wt._needToRecomputeStyle = false;
+        }
+        return &_computedStyle;
     }
 
-    /// Enforces widget's own style - allows override some of style properties
-    @property Style ownStyle()
+    Selector getStyleSelector() const
     {
-        if (!isOwnStyle)
-        {
-            _style = currentTheme.modifyStyle(_style);
-            isOwnStyle = true;
-        }
-        return _style;
+        if (subInfo.bound)
+            return Selector(cast(TypeInfo_Class)subInfo.parentType, subInfo.parentID, subInfo.subName, state);
+        else
+            return Selector(cast(TypeInfo_Class)typeid(this), _id, null, state);
     }
 
     /// Set this widget to be a subitem in stylesheet
@@ -352,15 +335,27 @@ public:
     {
         assert(parent && subName);
         auto t = typeid(parent);
-        static if (__traits(hasMember, parent, "id"))
+        static if (__traits(hasMember, parent, "id")) // FIXME
         {
             subInfo = StyleSubItemInfo(t, parent.id, subName);
-            _style = currentTheme.get(t, parent.id, subName);
         }
         else
         {
             subInfo = StyleSubItemInfo(t, null, subName);
-            _style = currentTheme.get(t, null, subName);
+        }
+        _needToRecomputeStyle = true;
+    }
+
+    private void needToRecomputeStateStyle()
+    {
+        _needToRecomputeStyle = true;
+        foreach (i; 0 .. childCount)
+        {
+            Widget item = child(i);
+            if (item && item._state & State.parent)
+            {
+                item.needToRecomputeStateStyle();
+            }
         }
     }
 
@@ -370,18 +365,8 @@ public:
         // default implementation: call recursive for children
         foreach (i; 0 .. childCount)
             child(i).onThemeChanged();
-        Style s;
-        if (subInfo.bound)
-            s = currentTheme.get(subInfo.parentType, subInfo.parentID, subInfo.subName);
-        else
-            s = currentTheme.get(typeid(this), _id);
-        if (isOwnStyle)
-        {
-            _style.reinherit(s);
-            _style.onThemeChanged();
-        }
-        else
-            _style = s;
+
+        _needToRecomputeStyle = true;
     }
 
     @property void styleID(string id)
@@ -402,7 +387,7 @@ public:
         /// ditto
         Widget alignment(Align value)
         {
-            ownStyle.alignment = value;
+            style.alignment = value;
             requestLayout();
             return this;
         }
@@ -425,14 +410,14 @@ public:
         /// ditto
         Widget margins(Insets value)
         {
-            ownStyle.margins = value;
+            style.margins = value;
             requestLayout();
             return this;
         }
         /// ditto
         Widget margins(int v)
         {
-            ownStyle.margins = Insets(v);
+            style.margins = Insets(v);
             requestLayout();
             return this;
         }
@@ -467,14 +452,14 @@ public:
         /// ditto
         Widget padding(Insets value)
         {
-            ownStyle.padding = value;
+            style.padding = value;
             requestLayout();
             return this;
         }
         /// ditto
         Widget padding(int v)
         {
-            ownStyle.padding = Insets(v);
+            style.padding = Insets(v);
             requestLayout();
             return this;
         }
@@ -482,12 +467,12 @@ public:
         /// Background color of widget
         uint backgroundColor() const
         {
-            return stateStyle.backgroundColor;
+            return style.backgroundColor;
         }
         /// ditto
         Widget backgroundColor(uint color)
         {
-            ownStyle.backgroundColor = color;
+            style.backgroundColor = color;
             invalidate();
             return this;
         }
@@ -495,7 +480,7 @@ public:
         Widget backgroundColor(string colorString)
         {
             uint color = decodeHexColor(colorString, COLOR_TRANSPARENT);
-            ownStyle.backgroundColor = color;
+            style.backgroundColor = color;
             invalidate();
             return this;
         }
@@ -508,7 +493,7 @@ public:
         /// ditto
         Widget backgroundImage(Drawable image)
         {
-            ownStyle.backgroundImage = image;
+            style.backgroundImage = image;
             invalidate();
             return this;
         }
@@ -517,7 +502,7 @@ public:
         DrawableRef backgroundDrawable() const
         {
             if (_backgroundDrawable.isNull)
-                return stateStyle.backgroundDrawable;
+                return style.backgroundDrawable;
             return (cast(Widget)this)._backgroundDrawable;
         }
         /// ditto
@@ -529,24 +514,24 @@ public:
         /// Widget drawing alpha value (0=opaque .. 255=transparent)
         ubyte alpha() const
         {
-            return stateStyle.alpha;
+            return style.alpha;
         }
         /// ditto
         Widget alpha(ubyte value)
         {
-            ownStyle.alpha = value;
+            style.alpha = value;
             invalidate();
             return this;
         }
         /// Text color (ARGB 32 bit value)
         uint textColor() const
         {
-            return stateStyle.textColor;
+            return style.textColor;
         }
         /// ditto
         Widget textColor(uint value)
         {
-            ownStyle.textColor = value;
+            style.textColor = value;
             invalidate();
             return this;
         }
@@ -554,7 +539,7 @@ public:
         Widget textColor(string colorString)
         {
             uint color = decodeHexColor(colorString, 0x000000);
-            ownStyle.textColor = color;
+            style.textColor = color;
             invalidate();
             return this;
         }
@@ -568,7 +553,7 @@ public:
         /// Text flags (bit set of TextFlag enum values)
         TextFlag textFlags() const
         {
-            TextFlag res = stateStyle.textFlags;
+            TextFlag res = style.textFlags;
             if (res == TextFlag.parent)
             {
                 if (parent)
@@ -597,8 +582,8 @@ public:
         /// ditto
         Widget textFlags(TextFlag value)
         {
-            ownStyle.textFlags = value;
-            bool oldHotkeys = (ownStyle.textFlags & (
+            style.textFlags = value;
+            bool oldHotkeys = (style.textFlags & (
                     TextFlag.hotkeys | TextFlag.underlineHotkeys | TextFlag.underlineHotkeysOnAlt)) != 0;
             bool newHotkeys = (value & (
                     TextFlag.hotkeys | TextFlag.underlineHotkeys | TextFlag.underlineHotkeysOnAlt)) != 0;
@@ -613,12 +598,12 @@ public:
         /// Font face for widget
         string fontFace() const
         {
-            return stateStyle.fontFace;
+            return style.fontFace;
         }
         /// ditto
         Widget fontFace(string face)
         {
-            ownStyle.fontFace = face;
+            style.fontFace = face;
             handleFontChanged();
             requestLayout();
             return this;
@@ -626,12 +611,12 @@ public:
         /// Font family for widget
         FontFamily fontFamily() const
         {
-            return stateStyle.fontFamily;
+            return style.fontFamily;
         }
         /// ditto
         Widget fontFamily(FontFamily family)
         {
-            ownStyle.fontFamily = family;
+            style.fontFamily = family;
             handleFontChanged();
             requestLayout();
             return this;
@@ -639,12 +624,12 @@ public:
         /// Font style (italic/normal) for widget
         bool fontItalic() const
         {
-            return stateStyle.fontItalic;
+            return style.fontItalic;
         }
         /// ditto
         Widget fontItalic(bool italic)
         {
-            ownStyle.fontStyle = italic ? FontStyle.italic : FontStyle.normal;
+            style.fontStyle = italic ? FontStyle.italic : FontStyle.normal;
             handleFontChanged();
             requestLayout();
             return this;
@@ -652,12 +637,12 @@ public:
         /// Font size in pixels
         int fontSize() const
         {
-            return stateStyle.fontSize;
+            return style.fontSize;
         }
         /// ditto
         Widget fontSize(int size)
         {
-            ownStyle.fontSize = Dimension(size);
+            style.fontSize = Dimension(size);
             handleFontChanged();
             requestLayout();
             return this;
@@ -665,12 +650,12 @@ public:
         /// Font weight for widget
         ushort fontWeight() const
         {
-            return stateStyle.fontWeight;
+            return style.fontWeight;
         }
         /// ditto
         Widget fontWeight(int weight)
         {
-            ownStyle.fontWeight = cast(ushort)clamp(weight, 100, 900);
+            style.fontWeight = cast(ushort)clamp(weight, 100, 900);
             handleFontChanged();
             requestLayout();
             return this;
@@ -679,7 +664,7 @@ public:
         /// Returns font set for widget using style or set manually
         FontRef font() const
         {
-            return stateStyle.font;
+            return style.font;
         }
 
         /// Widget content text (override to support this)
@@ -765,7 +750,7 @@ public:
         /// ditto
         Widget width(int value)
         {
-            ownStyle.width = Dimension(value);
+            style.width = Dimension(value);
             return this;
         }
         /// Widget hard height (SIZE_UNSPECIFIED if not set)
@@ -776,7 +761,7 @@ public:
         /// ditto
         Widget height(int value)
         {
-            ownStyle.height = Dimension(value);
+            style.height = Dimension(value);
             return this;
         }
         /// Min width style constraint (0 for no constraint)
@@ -787,7 +772,7 @@ public:
         /// ditto
         Widget minWidth(int value) // TODO: clamp
         {
-            ownStyle.minWidth = Dimension(value);
+            style.minWidth = Dimension(value);
             return this;
         }
         /// Max width style constraint (SIZE_UNSPECIFIED if no constraint set)
@@ -798,7 +783,7 @@ public:
         /// ditto
         Widget maxWidth(int value)
         {
-            ownStyle.maxWidth = Dimension(value);
+            style.maxWidth = Dimension(value);
             return this;
         }
         /// Min height style constraint (0 for no constraint)
@@ -809,7 +794,7 @@ public:
         /// ditto
         Widget minHeight(int value)
         {
-            ownStyle.minHeight = Dimension(value);
+            style.minHeight = Dimension(value);
             return this;
         }
         /// Max height style constraint (SIZE_UNSPECIFIED if no constraint set)
@@ -820,7 +805,7 @@ public:
         /// ditto
         Widget maxHeight(int value)
         {
-            ownStyle.maxHeight = Dimension(value);
+            style.maxHeight = Dimension(value);
             return this;
         }
         /// Layout weight (while resizing to fill parent, widget will be resized proportionally to this value)
@@ -831,7 +816,7 @@ public:
         /// ditto
         Widget layoutWeight(int value)
         {
-            ownStyle.weight = value;
+            style.weight = value;
             return this;
         }
 

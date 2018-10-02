@@ -2331,7 +2331,6 @@ class Platform
         {
             imageCache.clear();
         }
-        currentTheme.maybe.onThemeChanged();
     }
 }
 

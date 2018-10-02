@@ -13,6 +13,7 @@ import beamui.graphics.colors;
 import beamui.graphics.drawables;
 import beamui.graphics.fonts;
 import beamui.style.style;
+import beamui.style.theme : currentTheme;
 import beamui.style.types;
 
 struct ComputedStyle
@@ -24,87 +25,87 @@ struct ComputedStyle
 
         int width() const
         {
-            return _width.toDevice;
+            return sp.width.toDevice;
         }
         /// ditto
         void width(Dimension value)
         {
-            _width = value;
+            sp.width = value;
             elementStyle.width = value;
         }
         int height() const
         {
-            return _height.toDevice;
+            return sp.height.toDevice;
         }
         /// ditto
         void height(Dimension value)
         {
-            _height = value;
+            sp.height = value;
             elementStyle.height = value;
         }
         int minWidth() const
         {
-            return _minWidth.toDevice;
+            return sp.minWidth.toDevice;
         }
         /// Min width constraint, Dimension.zero or Dimension.none to unset limit
         void minWidth(Dimension value)
         {
             if (value == Dimension.none)
                 value = Dimension.zero;
-            _minWidth = value;
+            sp.minWidth = value;
             elementStyle.minWidth = value;
         }
         int maxWidth() const
         {
-            return _maxWidth.toDevice;
+            return sp.maxWidth.toDevice;
         }
         /// Max width constraint, Dimension.none to unset limit
         void maxWidth(Dimension value)
         {
-            _maxWidth = value;
+            sp.maxWidth = value;
             elementStyle.maxWidth = value;
         }
         int minHeight() const
         {
-            return _minHeight.toDevice;
+            return sp.minHeight.toDevice;
         }
         /// Min height constraint, Dimension.zero or Dimension.none to unset limit
         void minHeight(Dimension value)
         {
             if (value == Dimension.none)
                 value = Dimension.zero;
-            _minHeight = value;
+            sp.minHeight = value;
             elementStyle.minHeight = value;
         }
         int maxHeight() const
         {
-            return _maxHeight.toDevice;
+            return sp.maxHeight.toDevice;
         }
         /// Max height constraint, Dimension.none to unset limit
         void maxHeight(Dimension value)
         {
-            _maxHeight = value;
+            sp.maxHeight = value;
             elementStyle.maxHeight = value;
         }
         int weight() const pure
         {
-            return _weight;
+            return sp.weight;
         }
         /// ditto
         void weight(int value)
         {
-            _weight = value;
+            sp.weight = value;
             elementStyle.weight = value;
         }
 
         Align alignment() const
         {
-            return _alignment;
+            return sp.alignment;
         }
         /// ditto
         void alignment(Align value)
         {
-            _alignment = value;
+            sp.alignment = value;
             elementStyle.alignment = value;
         }
         Insets margins() const
@@ -114,17 +115,17 @@ struct ComputedStyle
         /// ditto
         void margins(Insets value)
         {
-            _margins = value;
+            sp.margins = value;
             elementStyle.margins = value;
         }
         Insets padding() const
         {
-            return _padding.toPixels;
+            return sp.padding.toPixels;
         }
         /// ditto
         void padding(Insets value)
         {
-            _padding = value;
+            sp.padding = value;
             elementStyle.padding = value;
         }
 
@@ -133,45 +134,45 @@ struct ComputedStyle
 
         uint backgroundColor() const pure
         {
-            return _backgroundColor;
+            return sp.backgroundColor;
         }
         /// ditto
         void backgroundColor(uint value)
         {
-            _backgroundColor = value;
+            sp.backgroundColor = value;
             _backgroundDrawable.clear();
             elementStyle.backgroundColor = value;
         }
         inout(Drawable) backgroundImage() inout pure
         {
-            return _backgroundImage;
+            return sp.backgroundImage;
         }
         /// ditto
         void backgroundImage(Drawable value)
         {
-            _backgroundImage = value;
+            sp.backgroundImage = value;
             _backgroundDrawable.clear();
             elementStyle.backgroundImage = value;
         }
         inout(BorderDrawable) border() inout pure
         {
-            return _border;
+            return sp.border;
         }
         /// ditto
         void border(BorderDrawable value)
         {
-            _border = value;
+            sp.border = value;
             _backgroundDrawable.clear();
             elementStyle.border = value;
         }
         inout(BoxShadowDrawable) boxShadow() inout pure
         {
-            return _boxShadow;
+            return sp.boxShadow;
         }
         /// ditto
         void boxShadow(BoxShadowDrawable value)
         {
-            _boxShadow = value;
+            sp.boxShadow = value;
             _backgroundDrawable.clear();
             elementStyle.boxShadow = value;
         }
@@ -181,31 +182,31 @@ struct ComputedStyle
 
         string fontFace() const pure
         {
-            return _fontFace;
+            return sp.fontFace;
         }
         /// ditto
         void fontFace(string value)
         {
-            if (_fontFace != value)
+            if (sp.fontFace != value)
                 _font.clear();
-            _fontFace = value;
+            sp.fontFace = value;
             elementStyle.fontFace = value;
         }
         FontFamily fontFamily() const pure
         {
-            return _fontFamily;
+            return sp.fontFamily;
         }
         /// ditto
         void fontFamily(FontFamily value)
         {
-            if (_fontFamily != value)
+            if (sp.fontFamily != value)
                 _font.clear();
-            _fontFamily = value;
+            sp.fontFamily = value;
             elementStyle.fontFamily = value;
         }
         int fontSize() const
         {
-            return _fontSize.toDevice;
+            return sp.fontSize.toDevice;
         }
         /// ditto
         void fontSize(Dimension value)
@@ -213,53 +214,53 @@ struct ComputedStyle
             if (value == Dimension.none)
                 value = Dimension.pt(9);
 
-            if (_fontSize != value)
+            if (sp.fontSize != value)
                 _font.clear();
-            _fontSize = value;
+            sp.fontSize = value;
             elementStyle.fontSize = value;
         }
         FontStyle fontStyle() const pure
         {
-            return _fontStyle;
+            return sp.fontStyle;
         }
         /// ditto
         void fontStyle(FontStyle value)
         {
-            if (_fontStyle != value)
+            if (sp.fontStyle != value)
                 _font.clear();
-            _fontStyle = value;
+            sp.fontStyle = value;
             elementStyle.fontStyle = value;
         }
         ushort fontWeight() const pure
         {
-            return _fontWeight;
+            return sp.fontWeight;
         }
         /// ditto
         void fontWeight(ushort value)
         {
-            if (_fontWeight != value)
+            if (sp.fontWeight != value)
                 _font.clear();
-            _fontWeight = value;
+            sp.fontWeight = value;
             elementStyle.fontWeight = value;
         }
         TextFlag textFlags() const pure
         {
-            return _textFlags;
+            return sp.textFlags;
         }
         /// ditto
         void textFlags(TextFlag value)
         {
-            _textFlags = value;
+            sp.textFlags = value;
             elementStyle.textFlags = value;
         }
         int maxLines() const pure
         {
-            return _maxLines;
+            return sp.maxLines;
         }
         /// ditto
         void maxLines(int value)
         {
-            _maxLines = value;
+            sp.maxLines = value;
             elementStyle.maxLines = value;
         }
 
@@ -269,33 +270,33 @@ struct ComputedStyle
         /// Alpha (0 = opaque ... 255 = transparent)
         ubyte alpha() const pure
         {
-            return _alpha;
+            return sp.alpha;
         }
         /// ditto
         void alpha(ubyte value)
         {
-            _alpha = value;
+            sp.alpha = value;
             elementStyle.alpha = value;
         }
         uint textColor() const pure
         {
-            return _textColor;
+            return sp.textColor;
         }
         /// ditto
         void textColor(uint value)
         {
-            _textColor = value;
+            sp.textColor = value;
             elementStyle.textColor = value;
         }
         /// Colors to draw focus rectangle (one for solid, two for vertical gradient) or null if no focus rect should be drawn for style
         uint focusRectColor() const pure
         {
-            return _focusRectColor;
+            return sp.focusRectColor;
         }
         /// ditto
         void focusRectColor(uint value)
         {
-            _focusRectColor = value;
+            sp.focusRectColor = value;
             elementStyle.focusRectColor = value;
         }
 
@@ -347,6 +348,7 @@ struct ComputedStyle
 
         //===================================================
 
+        /// Widget's own style
         Style elementStyle()
         {
             if (!_elementStyle)
@@ -357,60 +359,48 @@ struct ComputedStyle
 
     private
     {
-        // layout
-        Dimension _width = void;
-        Dimension _height = void;
-        Dimension _minWidth = void;
-        Dimension _maxWidth = void;
-        Dimension _minHeight = void;
-        Dimension _maxHeight = void;
-        int _weight = void;
-        Align _alignment = void;
-        Insets _margins = void;
-        Insets _padding = void;
-        // background
-        uint _backgroundColor = void;
-        Drawable _backgroundImage = void;
-        BorderDrawable _border = void;
-        BoxShadowDrawable _boxShadow = void;
-        // text
-        string _fontFace = void;
-        FontFamily _fontFamily = void;
-        Dimension _fontSize = void;
-        FontStyle _fontStyle = void;
-        ushort _fontWeight = void;
-        TextFlag _textFlags = void;
-        int _maxLines = void;
-        // colors
-        ubyte _alpha = void;
-        uint _textColor = void;
-        uint _focusRectColor = void;
+        StyleProperties sp = void;
+        Style _elementStyle;
 
         DrawableRef _backgroundDrawable;
         FontRef _font;
-
-        Style _elementStyle;
-    }
-
-    @disable this();
-
-    this(Selector initial)
-    {
-        recompute(initial);
     }
 
     ~this()
     {
-        eliminate(_backgroundImage);
-        eliminate(_border);
-        eliminate(_boxShadow);
         _font.clear();
         _backgroundDrawable.clear();
         eliminate(_elementStyle);
     }
 
+    /// Resolve style cascading and update all properties
     void recompute(Selector selector)
     {
+        Style[] chain = currentTheme.selectChain(selector);
+
+        if (selector.state != State.normal)
+        {
+            Style last = chain[$ - 1];
+            Style st = last.forState(selector.state);
+            if (st !is last)
+                chain ~= st;
+        }
+        if (_elementStyle)
+            chain ~= _elementStyle;
+
+        static foreach (i; 0 .. StyleProperties.tupleof.length)
+        {
+            // find nearest written property
+            foreach_reverse (st; chain)
+            {
+                if (st.written[i])
+                {
+                    // copy it directly
+                    sp.tupleof[i] = st.properties.tupleof[i];
+                    break;
+                }
+            }
+        }
     }
 
     void onThemeChanged()

@@ -26,7 +26,7 @@ private:
     {
         string name; // name of a widget or custom name
         string widgetID; // id, #id from css
-        string sub; // subitem, ::sub from css
+        string sub; // subitem, ::pseudo-element from css
     }
 
     string _name;
@@ -44,6 +44,7 @@ public:
     {
         _name = name;
         defaultStyle = new Style;
+        defaultStyle.written[] = true;
     }
 
     ~this()
@@ -56,49 +57,80 @@ public:
         destroy(drawables);
     }
 
-    /// A root of style hierarchy. Same as `theme.get(null)`
+    /// The root of style hierarchy. Same as `theme.get(Selector())`
     @property Style root()
     {
         return defaultStyle;
     }
 
-    /// Get a style OR create it if it's not exist
-    Style get(TypeInfo_Class widgetType, string widgetID = null, string sub = null)
+    /// Returns an inheritance chain for the selector, least specific first. Does not consider state.
+    Style[] selectChain(Selector selector)
     {
-        // TODO: check correctness
-        if (!widgetType)
+        // TODO: review carefully
+        TypeInfo_Class wtype = selector.widgetType;
+        if (!wtype)
+            return [defaultStyle];
+
+        import std.string : split;
+        // get short name
+        string name = wtype.name.split('.')[$ - 1];
+        // try to find exact style
+        auto p = StyleID(name, selector.id, selector.pseudoElement) in styles;
+
+        Style[] chain;
+        if (selector.id)
+        {
+            // SomeWidget#id::subelement -> SomeWidget::subelement
+            selector.id = null;
+            chain = selectChain(selector);
+        }
+        else
+        {
+            // if this class is not on top of hierarhy and has no subwidgets
+            if (wtype.base !is typeid(Object) && !selector.pseudoElement)
+            {
+                // SomeWidget -> BaseWidget
+                selector.widgetType = wtype.base;
+                chain = selectChain(selector);
+            }
+            else
+            {
+                // SomeWidget or SomeWidget::subelement
+                chain = [defaultStyle];
+            }
+        }
+        return p ? chain ~ *p : chain;
+    }
+
+    /// Get a style OR create it if it's not exist
+    Style get(Selector selector)
+    {
+        TypeInfo_Class wtype = selector.widgetType;
+        string widgetID = selector.id;
+        string sub = selector.pseudoElement;
+        if (!wtype)
             return defaultStyle;
 
         import std.string : split;
         // get short name
-        string name = widgetType.name.split('.')[$ - 1];
+        string name = wtype.name.split('.')[$ - 1];
         // try to find exact style
         auto p = StyleID(name, widgetID, sub) in styles;
         if (!p && widgetID)
         {
             // try to find a style without widget id
-            // because otherwise it will create an empty style for every widget
             p = StyleID(name, null, sub) in styles;
         }
         if (p)
         {
-            auto style = *p;
-            // if this style was created by stylesheet loader, parent may not be set
-            // because class hierarhy is not known there
-            if (!style.parent)
-                style.parent = getParent(widgetType, sub);
-            return style;
+            return *p;
         }
         else
         {
-            // creating style without widget id
-            auto style = new Style;
-            style.parent = getParent(widgetType, sub);
-            styles[StyleID(name, null, sub)] = style;
-            return style;
+            // create a style
+            return styles[StyleID(name, widgetID, sub)] = new Style;
         }
     }
-
     /// ditto
     private Style get(string widgetTypeName, string widgetID = null, string sub = null)
     {
@@ -109,55 +141,7 @@ public:
         if (auto p = id in styles)
             return *p;
         else
-        {
-            auto style = new Style;
-            // set parent for #id styles
-            if (widgetID)
-                style.parent = get(widgetTypeName, null, sub);
-            styles[id] = style;
-            return style;
-        }
-    }
-
-    /// Utility - find parent of style
-    private Style getParent(TypeInfo_Class widgetType, string sub)
-    {
-        import std.string : split;
-        // if this class is not on top of hierarhy
-        if (widgetType.base !is typeid(Object))
-        {
-            if (sub)
-            {
-                // inherit only if parent subitem exists
-                if (auto psub = StyleID(widgetType.base.name.split('.')[$ - 1], null, sub) in styles)
-                    return *psub;
-            }
-            else
-                return get(widgetType.base);
-        }
-        return defaultStyle;
-    }
-
-    /// Create wrapper style of an existing - to modify some base style properties in widget
-    Style modifyStyle(Style parent)
-    {
-        if (parent && parent !is defaultStyle)
-        {
-            auto s = new Style;
-            s.parent = parent;
-            // clone state styles
-            foreach (item; parent.stateStyles)
-            {
-                auto clone = item.s.clone();
-                clone.parent = s;
-                s.stateStyles ~= Style.StateStyle(clone, item.specified, item.enabled);
-            }
-            return s;
-        }
-        else
-        {
-            return new Style;
-        }
+            return styles[id] = new Style;
     }
 
     /// Get custom drawable
@@ -188,15 +172,6 @@ public:
     {
         colors[name] = color;
         return this;
-    }
-
-    void onThemeChanged()
-    {
-        defaultStyle.onThemeChanged();
-        foreach (s; styles)
-        {
-            s.onThemeChanged();
-        }
     }
 
     /// Print out theme stats

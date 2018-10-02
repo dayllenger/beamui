@@ -52,8 +52,8 @@ enum TextFlag : uint
 
 struct Selector
 {
-    const(TypeInfo_Class) widgetType;
+    TypeInfo_Class widgetType;
     string id;
     string pseudoElement;
-    State state;
+    State state = State.normal;
 }
