@@ -6,7 +6,9 @@ Authors:   dayllenger
 */
 module beamui.style.computed_style;
 
+import beamui.core.animations;
 import beamui.core.functions;
+import beamui.core.logger;
 import beamui.core.types;
 import beamui.core.units;
 import beamui.graphics.colors;
@@ -30,7 +32,7 @@ struct ComputedStyle
         /// ditto
         void width(Dimension value)
         {
-            sp.width = value;
+            set!"width"(value);
             elementStyle.width = value;
         }
         int height() const
@@ -40,7 +42,7 @@ struct ComputedStyle
         /// ditto
         void height(Dimension value)
         {
-            sp.height = value;
+            set!"height"(value);
             elementStyle.height = value;
         }
         int minWidth() const
@@ -52,7 +54,7 @@ struct ComputedStyle
         {
             if (value == Dimension.none)
                 value = Dimension.zero;
-            sp.minWidth = value;
+            set!"minWidth"(value);
             elementStyle.minWidth = value;
         }
         int maxWidth() const
@@ -62,7 +64,7 @@ struct ComputedStyle
         /// Max width constraint, Dimension.none to unset limit
         void maxWidth(Dimension value)
         {
-            sp.maxWidth = value;
+            set!"maxWidth"(value);
             elementStyle.maxWidth = value;
         }
         int minHeight() const
@@ -74,7 +76,7 @@ struct ComputedStyle
         {
             if (value == Dimension.none)
                 value = Dimension.zero;
-            sp.minHeight = value;
+            set!"minHeight"(value);
             elementStyle.minHeight = value;
         }
         int maxHeight() const
@@ -84,7 +86,7 @@ struct ComputedStyle
         /// Max height constraint, Dimension.none to unset limit
         void maxHeight(Dimension value)
         {
-            sp.maxHeight = value;
+            set!"maxHeight"(value);
             elementStyle.maxHeight = value;
         }
         int weight() const pure
@@ -94,7 +96,7 @@ struct ComputedStyle
         /// ditto
         void weight(int value)
         {
-            sp.weight = value;
+            set!"weight"(value);
             elementStyle.weight = value;
         }
 
@@ -105,7 +107,7 @@ struct ComputedStyle
         /// ditto
         void alignment(Align value)
         {
-            sp.alignment = value;
+            set!"alignment"(value);
             elementStyle.alignment = value;
         }
         Insets margins() const
@@ -115,10 +117,10 @@ struct ComputedStyle
         /// ditto
         void margins(Insets value)
         {
-            sp.marginTop = Dimension(value.top);
-            sp.marginRight = Dimension(value.right);
-            sp.marginBottom = Dimension(value.bottom);
-            sp.marginLeft = Dimension(value.left);
+            set!"marginTop"(Dimension(value.top));
+            set!"marginRight"(Dimension(value.right));
+            set!"marginBottom"(Dimension(value.bottom));
+            set!"marginLeft"(Dimension(value.left));
             elementStyle.marginTop = Dimension(value.top);
             elementStyle.marginRight = Dimension(value.right);
             elementStyle.marginBottom = Dimension(value.bottom);
@@ -132,10 +134,10 @@ struct ComputedStyle
         /// ditto
         void padding(Insets value)
         {
-            sp.paddingTop = Dimension(value.top);
-            sp.paddingRight = Dimension(value.right);
-            sp.paddingBottom = Dimension(value.bottom);
-            sp.paddingLeft = Dimension(value.left);
+            set!"paddingTop"(Dimension(value.top));
+            set!"paddingRight"(Dimension(value.right));
+            set!"paddingBottom"(Dimension(value.bottom));
+            set!"paddingLeft"(Dimension(value.left));
             elementStyle.paddingTop = Dimension(value.top);
             elementStyle.paddingRight = Dimension(value.right);
             elementStyle.paddingBottom = Dimension(value.bottom);
@@ -152,8 +154,8 @@ struct ComputedStyle
         /// ditto
         void borderColor(uint value)
         {
-            sp.borderColor = value;
             _backgroundDrawable.clear();
+            set!"borderColor"(value);
             elementStyle.borderColor = value;
         }
         Insets borderWidth() const
@@ -165,10 +167,10 @@ struct ComputedStyle
         void borderWidth(Insets value)
         {
             _backgroundDrawable.clear();
-            sp.borderWidthTop = Dimension(value.top);
-            sp.borderWidthRight = Dimension(value.right);
-            sp.borderWidthBottom = Dimension(value.bottom);
-            sp.borderWidthLeft = Dimension(value.left);
+            set!"borderWidthTop"(Dimension(value.top));
+            set!"borderWidthRight"(Dimension(value.right));
+            set!"borderWidthBottom"(Dimension(value.bottom));
+            set!"borderWidthLeft"(Dimension(value.left));
             elementStyle.borderWidthTop = Dimension(value.top);
             elementStyle.borderWidthRight = Dimension(value.right);
             elementStyle.borderWidthBottom = Dimension(value.bottom);
@@ -181,8 +183,8 @@ struct ComputedStyle
         /// ditto
         void backgroundColor(uint value)
         {
-            sp.backgroundColor = value;
             _backgroundDrawable.clear();
+            set!"backgroundColor"(value);
             elementStyle.backgroundColor = value;
         }
         inout(Drawable) backgroundImage() inout pure
@@ -192,8 +194,8 @@ struct ComputedStyle
         /// ditto
         void backgroundImage(Drawable value)
         {
-            sp.backgroundImage = value;
             _backgroundDrawable.clear();
+            set!"backgroundImage"(value);
             elementStyle.backgroundImage = value;
         }
         inout(BoxShadowDrawable) boxShadow() inout pure
@@ -203,8 +205,8 @@ struct ComputedStyle
         /// ditto
         void boxShadow(BoxShadowDrawable value)
         {
-            sp.boxShadow = value;
             _backgroundDrawable.clear();
+            set!"boxShadow"(value);
             elementStyle.boxShadow = value;
         }
 
@@ -220,7 +222,7 @@ struct ComputedStyle
         {
             if (sp.fontFace != value)
                 _font.clear();
-            sp.fontFace = value;
+            set!"fontFace"(value);
             elementStyle.fontFace = value;
         }
         FontFamily fontFamily() const pure
@@ -232,7 +234,7 @@ struct ComputedStyle
         {
             if (sp.fontFamily != value)
                 _font.clear();
-            sp.fontFamily = value;
+            set!"fontFamily"(value);
             elementStyle.fontFamily = value;
         }
         int fontSize() const // TODO: em and percent
@@ -252,7 +254,7 @@ struct ComputedStyle
 
             if (sp.fontSize != value)
                 _font.clear();
-            sp.fontSize = value;
+            set!"fontSize"(value);
             elementStyle.fontSize = value;
         }
         FontStyle fontStyle() const pure
@@ -264,7 +266,7 @@ struct ComputedStyle
         {
             if (sp.fontStyle != value)
                 _font.clear();
-            sp.fontStyle = value;
+            set!"fontStyle"(value);
             elementStyle.fontStyle = value;
         }
         ushort fontWeight() const pure
@@ -276,7 +278,7 @@ struct ComputedStyle
         {
             if (sp.fontWeight != value)
                 _font.clear();
-            sp.fontWeight = value;
+            set!"fontWeight"(value);
             elementStyle.fontWeight = value;
         }
         TextFlag textFlags() const pure
@@ -286,7 +288,7 @@ struct ComputedStyle
         /// ditto
         void textFlags(TextFlag value)
         {
-            sp.textFlags = value;
+            set!"textFlags"(value);
             elementStyle.textFlags = value;
         }
         int maxLines() const pure
@@ -296,7 +298,7 @@ struct ComputedStyle
         /// ditto
         void maxLines(int value)
         {
-            sp.maxLines = value;
+            set!"maxLines"(value);
             elementStyle.maxLines = value;
         }
 
@@ -311,7 +313,7 @@ struct ComputedStyle
         /// ditto
         void alpha(ubyte value)
         {
-            sp.alpha = value;
+            set!"alpha"(value);
             elementStyle.alpha = value;
         }
         uint textColor() const pure
@@ -321,7 +323,7 @@ struct ComputedStyle
         /// ditto
         void textColor(uint value)
         {
-            sp.textColor = value;
+            set!"textColor"(value);
             elementStyle.textColor = value;
         }
         /// Colors to draw focus rectangle (one for solid, two for vertical gradient) or null if no focus rect should be drawn for style
@@ -332,7 +334,7 @@ struct ComputedStyle
         /// ditto
         void focusRectColor(uint value)
         {
-            sp.focusRectColor = value;
+            set!"focusRectColor"(value);
             elementStyle.focusRectColor = value;
         }
 
@@ -386,6 +388,19 @@ struct ComputedStyle
             return fontStyle == FontStyle.italic;
         }
 
+        /// When true, some property is being animated now
+        bool hasActiveAnimations() const
+        {
+            return animations.length > 0;
+        }
+
+        /// Check whether the style can make transition for a property
+        bool hasTransitionFor(string property) const
+        {
+            return (sp.transitionProperty == "all" || sp.transitionProperty == property) &&
+                    sp.transitionTimingFunction !is null && sp.transitionDuration > 0;
+        }
+
         //===================================================
 
         /// Widget's own style
@@ -395,15 +410,42 @@ struct ComputedStyle
                 _elementStyle = new Style;
             return _elementStyle;
         }
+
+        /// Set a property value, taking transitions into account
+        private void set(string name, T)(T value)
+        {
+            static if (isAnimatable(name))
+            {
+                if (hasTransitionFor(name))
+                {
+                    auto current = mixin("sp." ~ name);
+                    if (current != value)
+                    {
+                        auto tr = new Transition(sp.transitionDuration,
+                                                 sp.transitionTimingFunction,
+                                                 sp.transitionDelay);
+                        animations[name] = Animation(tr.duration * ONE_SECOND / 1000,
+                            delegate(double t) {
+                                mixin("sp." ~ name) = tr.mix(current, value, t);
+                        });
+                    }
+                    return;
+                }
+            }
+            // copy it directly otherwise
+            mixin("sp." ~ name) = value;
+        }
     }
 
     private
     {
-        StyleProperties sp = void;
+        StyleProperties sp; // TODO: void?
         Style _elementStyle;
 
         DrawableRef _backgroundDrawable;
         FontRef _font;
+
+        Animation[string] animations; // key is a property name
     }
 
     ~this()
@@ -430,6 +472,7 @@ struct ComputedStyle
 
         _backgroundDrawable.clear();
         _font.clear();
+
         static foreach (i; 0 .. StyleProperties.tupleof.length)
         {
             // find nearest written property
@@ -437,11 +480,37 @@ struct ComputedStyle
             {
                 if (st.written[i])
                 {
-                    // copy it directly
-                    sp.tupleof[i] = st.properties.tupleof[i];
+                    set!(StyleProperties.tupleof[i].stringof)(st.properties.tupleof[i]);
                     break;
                 }
             }
+        }
+    }
+
+    void tickAnimations(long interval)
+    {
+        bool someAnimationsFinished;
+        foreach (ref a; animations)
+        {
+            if (!a.isAnimating)
+            {
+                a.start();
+            }
+            else
+            {
+                a.tick(interval);
+                if (!a.isAnimating)
+                {
+                    a.handler = null;
+                    someAnimationsFinished = true;
+                }
+            }
+        }
+        if (someAnimationsFinished)
+        {
+            foreach (k, a; animations)
+                if (a.handler is null)
+                    animations.remove(k);
         }
     }
 }

@@ -245,3 +245,39 @@ package (beamui.style):
         return s;
     }
 }
+
+/// Returns true whether the property may have transition or animation. Name should be as in the StyleProperties.
+bool isAnimatable(string property) pure nothrow @nogc
+{
+    switch (property)
+    {
+    case "width":
+    case "height":
+    case "minWidth":
+    case "maxWidth":
+    case "minHeight":
+    case "maxHeight":
+    case "marginTop":
+    case "marginRight":
+    case "marginBottom":
+    case "marginLeft":
+    case "paddingTop":
+    case "paddingRight":
+    case "paddingBottom":
+    case "paddingLeft":
+    case "borderColor":
+    case "borderWidthTop":
+    case "borderWidthRight":
+    case "borderWidthBottom":
+    case "borderWidthLeft":
+    case "backgroundColor":
+    //case "fontSize":
+    //case "fontWeight":
+    case "alpha":
+    case "textColor":
+    //case "focusRectColor":
+        return true;
+    default:
+        return false;
+    }
+}

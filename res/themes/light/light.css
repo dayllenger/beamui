@@ -10,7 +10,7 @@ Label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 MultilineLabel { padding: 1px; max-lines: 0; }
 
-Button { align: center; padding: 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); text-flags: underline-hotkeys; focus-rect-color: #bbb; }
+Button { align: center; padding: 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); text-flags: underline-hotkeys; focus-rect-color: #bbb; transition: opacity 100ms ease-in-out; }
 
 Button:hovered:not(checked) { border: 1px solid #4e93da; }
 

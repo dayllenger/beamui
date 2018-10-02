@@ -690,7 +690,7 @@ public:
         /// Returns true is widget is being animated - need to call animate() and redraw
         bool animating() const
         {
-            return false;
+            return style.hasActiveAnimations;
         }
 
         /// Get current widget box in pixels (computed and set in layout())
@@ -836,6 +836,10 @@ public:
     /// Animate widget; interval is time left from previous draw, in hnsecs (1/10000000 of second)
     void animate(long interval)
     {
+        if (style.hasActiveAnimations)
+        {
+            style.tickAnimations(interval);
+        }
     }
 
     /// Shortcut to set filling both width and height
@@ -2245,8 +2249,6 @@ struct TextTypingShortcutHelper
             cancel();
     }
 }
-
-enum ONE_SECOND = 10_000_000L;
 
 /// Helper to handle animation progress
 struct AnimationHelper

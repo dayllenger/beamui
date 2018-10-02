@@ -109,6 +109,17 @@ struct Dimension
         return memcmp(cast(void*)&this, cast(void*)&u, Dimension.sizeof) == 0;
     }
 
+    Dimension opBinary(string op : "+")(Dimension u) const
+    {
+        assert(type == u.type);
+        return Dimension(value + u.value, type);
+    }
+
+    Dimension opBinary(string op : "*")(double factor) const
+    {
+        return Dimension(value * factor, type);
+    }
+
     /// Parse pair (value, unit), where value is a real number, unit is: cm, mm, in, pt, px, em, %.
     /// Returns Dimension.none if cannot parse.
     static Dimension parse(string value, string unit) pure
@@ -188,6 +199,9 @@ unittest
     assert(parseAngle("-27.7", "rad").approxEqual(-27.7, 1e-5));
     assert(parseAngle("2", "turn").approxEqual(12.56637, 1e-5));
 }
+
+/// Number of hnsecs (those we use in animations, for example) in one second
+enum long ONE_SECOND = 10_000_000L;
 
 nothrow @nogc:
 

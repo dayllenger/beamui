@@ -19,7 +19,6 @@ struct Animation
     void start()
     {
         t = 0;
-        handler(0);
     }
 
     void stop()
