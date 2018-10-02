@@ -11,6 +11,7 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.style.style;
 
+import beamui.core.animations : TimingFunction;
 import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types;
@@ -61,6 +62,11 @@ struct StyleProperties
     ubyte alpha = 0;
     uint textColor = 0x000000;
     uint focusRectColor = COLOR_UNSPECIFIED;
+    // transitions and animations
+    string transitionProperty;
+    TimingFunction transitionTimingFunction;
+    uint transitionDuration;
+    uint transitionDelay;
 }
 
 /// Style - holds properties for a single selector

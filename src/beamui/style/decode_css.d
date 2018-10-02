@@ -6,6 +6,7 @@ Authors:   dayllenger
 */
 module beamui.style.decode_css;
 
+import beamui.core.animations : TimingFunction;
 import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types;
@@ -61,7 +62,7 @@ Dimension[] decodeInsets(Token[] tokens)
         }
         if (values.length > 4)
         {
-            Log.fe("CSS(%s): too much values for rectangle", t.line);
+            Log.fw("CSS(%s): too many values for rectangle", t.line);
             break;
         }
     }
@@ -405,4 +406,121 @@ uint decodeColor(ref Token[] tokens)
         }
     }
     return 0;
+}
+
+/// Decode seconds or milliseconds in CSS. Returns time in msecs.
+uint decodeTime(Token t)
+{
+    if (t.type == TokenType.dimension)
+    {
+        uint res = to!uint(t.text);
+        if (t.dimensionUnit == "s")
+            return res * 1000;
+        if (t.dimensionUnit == "ms")
+            return res;
+    }
+    Log.fe("CSS(%s): time must be like 200ms or 1s", t.line);
+    return 0;
+}
+
+/// Decode name of property which is a subject of transition
+string decodeTransitionProperty(Token t)
+{
+    if (t.type == TokenType.ident)
+    {
+        switch (t.text)
+        {
+        case "all":
+        case "width":
+        case "height":
+            return t.text;
+        case "min-width":
+            return "minWidth";
+        case "max-width":
+            return "maxWidth";
+        case "min-height":
+            return "minHeight";
+        case "max-height":
+            return "maxHeight";
+        case "margin-top":
+            return "marginTop";
+        case "margin-right":
+            return "marginRight";
+        case "margin-bottom":
+            return "marginBottom";
+        case "margin-left":
+            return "marginLeft";
+        case "padding-top":
+            return "paddingTop";
+        case "padding-right":
+            return "paddingRight";
+        case "padding-bottom":
+            return "paddingBottom";
+        case "padding-left":
+            return "paddingLeft";
+        case "border-color":
+            return "borderColor";
+        case "border-top-width":
+            return "borderWidthTop";
+        case "border-right-width":
+            return "borderWidthRight";
+        case "border-bottom-width":
+            return "borderWidthBottom";
+        case "border-left-width":
+            return "borderWidthLeft";
+        case "background-color":
+            return "backgroundColor";
+        case "opacity":
+            return "alpha";
+        case "color":
+            return "textColor";
+        default:
+            Log.fe("CSS(%s): unknown or unsupported transition property: %s", t.line, t.text);
+        }
+    }
+    else
+        Log.fe("CSS(%s): transition property must be an identifier", t.line);
+    return null;
+}
+
+/// Decode transition timing function like linear or ease-in-out
+TimingFunction decodeTransitionTimingFunction(Token t)
+{
+    if (t.type == TokenType.ident)
+    {
+        switch (t.text)
+        {
+        case "linear":
+            return cast(TimingFunction)TimingFunction.linear;
+        case "ease":
+            return cast(TimingFunction)TimingFunction.ease;
+        case "ease-in":
+            return cast(TimingFunction)TimingFunction.easeIn;
+        case "ease-out":
+            return cast(TimingFunction)TimingFunction.easeOut;
+        case "ease-in-out":
+            return cast(TimingFunction)TimingFunction.easeInOut;
+        default:
+            Log.fe("CSS(%s): unknown or unsupported transition timing function: %s", t.line, t.text);
+            break;
+        }
+    }
+    else
+        Log.fe("CSS(%s): transition timing function must be an identifier", t.line);
+    return null;
+}
+
+/// Decode shorthand transition property
+void decodeTransition(Token[] tokens, ref string property, ref TimingFunction func, ref uint dur, ref uint delay)
+{
+    if (tokens.length > 0)
+        property = decodeTransitionProperty(tokens[0]);
+    if (tokens.length > 1)
+        dur = decodeTime(tokens[1]);
+    if (tokens.length > 2)
+        func = decodeTransitionTimingFunction(tokens[2]);
+    if (tokens.length > 3)
+        delay = decodeTime(tokens[3]);
+    if (tokens.length > 4)
+        Log.fw("CSS(%s): too many values for transition", tokens[0].line);
 }

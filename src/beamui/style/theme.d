@@ -6,6 +6,7 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.style.theme;
 
+import beamui.core.animations : TimingFunction;
 import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types;
@@ -448,6 +449,33 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
             break;
         case "focus-rect-color":
             style.focusRectColor = decodeColor(tokens);
+            break;
+        case "transition-property":
+            style.transitionProperty = decodeTransitionProperty(tokens[0]);
+            break;
+        case "transition-timing-function":
+            style.transitionTimingFunction = decodeTransitionTimingFunction(tokens[0]);
+            break;
+        case "transition-duration":
+            style.transitionDuration = decodeTime(tokens[0]);
+            break;
+        case "transition-delay":
+            style.transitionDelay = decodeTime(tokens[0]);
+            break;
+        case "transition":
+            string prop;
+            TimingFunction func;
+            uint dur = uint.max;
+            uint del = uint.max;
+            decodeTransition(tokens, prop, func, dur, del);
+            if (prop)
+                style.transitionProperty = prop;
+            if (func)
+                style.transitionTimingFunction = func;
+            if (dur != uint.max)
+                style.transitionDuration = dur;
+            if (del != uint.max)
+                style.transitionDelay = del;
             break;
         default:
             break;
