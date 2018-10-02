@@ -703,26 +703,23 @@ static if (USE_OPENGL)
 /// Drawable which allows to combine together background image, gradient, borders, box shadows, etc.
 class CombinedDrawable : Drawable
 {
-    DrawableRef boxShadow;
-    DrawableRef backgroundColor;
-    DrawableRef backgroundImage;
-    DrawableRef border;
+    Drawable backgroundColor;
+    Drawable backgroundImage;
+    Drawable border;
+    Drawable boxShadow;
 
     this(uint backgroundColor, Drawable backgroundImage, BorderDrawable border, BoxShadowDrawable boxShadow)
     {
-        this.boxShadow = boxShadow ? boxShadow : new EmptyDrawable;
+        this.backgroundImage = backgroundImage ? backgroundImage : new EmptyDrawable;
         this.backgroundColor = !backgroundColor.isFullyTransparentColor ?
             new SolidFillDrawable(backgroundColor) : new EmptyDrawable;
-        this.backgroundImage = backgroundImage ? backgroundImage : new EmptyDrawable;
         this.border = border ? border : new EmptyDrawable;
+        this.boxShadow = boxShadow ? boxShadow : new EmptyDrawable;
     }
 
     ~this()
     {
-        boxShadow.clear();
-        backgroundColor.clear();
-        backgroundImage.clear();
-        border.clear();
+        eliminate(backgroundColor);
     }
 
     override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)

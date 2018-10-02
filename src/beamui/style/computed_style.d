@@ -304,7 +304,7 @@ struct ComputedStyle
         // DERIVATIVES
 
         /// Get background drawable for this style
-        ref DrawableRef backgroundDrawable() const
+        DrawableRef backgroundDrawable() const
         {
             ComputedStyle* s = cast(ComputedStyle*)&this;
             if (!s._backgroundDrawable.isNull)
@@ -331,7 +331,7 @@ struct ComputedStyle
         }
 
         /// Get font
-        ref FontRef font() const
+        FontRef font() const
         {
             ComputedStyle* s = cast(ComputedStyle*)&this;
             if (!s._font.isNull)
@@ -388,6 +388,7 @@ struct ComputedStyle
         if (_elementStyle)
             chain ~= _elementStyle;
 
+        _font.clear();
         static foreach (i; 0 .. StyleProperties.tupleof.length)
         {
             // find nearest written property

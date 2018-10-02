@@ -138,11 +138,11 @@ protected:
     ComputedStyle _computedStyle;
     /// Structure needed when this widget is subitem of another
     StyleSubItemInfo subInfo;
-
+    /// If true, the style will be recomputed on next usage
     bool _needToRecomputeStyle = true;
 
     /// Widget state (set of flags from State enum)
-    State _state;
+    State _state = State.normal;
     /// Widget visibility: either visible, invisible, gone
     Visibility _visibility = Visibility.visible; // visible by default
 
@@ -163,8 +163,6 @@ protected:
     /// Does widget need to track mouse hover
     bool _trackHover;
 
-    DrawableRef _backgroundDrawable;
-
 private:
     bool* _isDestroyed;
 
@@ -180,7 +178,6 @@ public:
     {
         _isDestroyed = new bool;
         _id = ID;
-        _state = State.normal;
         debug _instanceCount++;
         debug (resalloc)
             Log.fd("Created widget `%s` %s, count: %s", _id, this.classinfo.name, _instanceCount);
@@ -201,8 +198,6 @@ public:
         debug if (APP_IS_SHUTTING_DOWN)
             onResourceDestroyWhileShutdown(_id, this.classinfo.name);
 
-        _backgroundDrawable.clear();
-        destroy(_computedStyle);
         eliminate(_popupMenu);
         if (_isDestroyed !is null)
             *_isDestroyed = true;
@@ -501,14 +496,7 @@ public:
         /// Background drawable
         DrawableRef backgroundDrawable() const
         {
-            if (_backgroundDrawable.isNull)
-                return style.backgroundDrawable;
-            return (cast(Widget)this)._backgroundDrawable;
-        }
-        /// ditto
-        void backgroundDrawable(DrawableRef drawable)
-        {
-            _backgroundDrawable = drawable;
+            return style.backgroundDrawable;
         }
 
         /// Widget drawing alpha value (0=opaque .. 255=transparent)
