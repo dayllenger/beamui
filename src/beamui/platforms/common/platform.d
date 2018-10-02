@@ -1708,7 +1708,7 @@ class Window : CustomEventTarget
         bool res = widget.onMouseEvent(event);
         if (event.trackingWidget !is null && _mouseCaptureWidget !is event.trackingWidget)
         {
-            setCaptureWidget(weakRef(event.trackingWidget), event);
+            setCaptureWidget(event.trackingWidget, event);
         }
         return res;
     }
@@ -1743,7 +1743,7 @@ class Window : CustomEventTarget
     /// Post task to execute in UI thread (this method can be used from background thread)
     void executeInUiThread(void delegate() runnable)
     {
-        auto event = new RunnableEvent(CUSTOM_RUNNABLE, null, runnable);
+        auto event = new RunnableEvent(CUSTOM_RUNNABLE, WeakRef!Widget(null), runnable);
         postEvent(event);
     }
 

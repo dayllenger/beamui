@@ -131,13 +131,11 @@ protected:
         TypeInfo_Class parentType;
         string parentID;
         string subName;
-
-        bool bound() const { return parentType !is null; }
     }
     /// Computed style of the widget
     ComputedStyle _computedStyle;
     /// Structure needed when this widget is subitem of another
-    StyleSubItemInfo subInfo;
+    StyleSubItemInfo* subInfo;
     /// If true, the style will be recomputed on next usage
     bool _needToRecomputeStyle = true;
 
@@ -198,13 +196,14 @@ public:
         debug if (APP_IS_SHUTTING_DOWN)
             onResourceDestroyWhileShutdown(_id, this.classinfo.name);
 
+        eliminate(subInfo);
         eliminate(_popupMenu);
         if (_isDestroyed !is null)
             *_isDestroyed = true;
     }
 
     /// Flag for WeakRef that indicates widget destruction
-    @property const(bool*) isDestroyed() const
+    final @property const(bool*) isDestroyed() const
     {
         return _isDestroyed;
     }
@@ -317,9 +316,10 @@ public:
         return &_computedStyle;
     }
 
-    Selector getStyleSelector() const
+    /// Get stylesheet selector of this widget
+    protected Selector getStyleSelector() const
     {
-        if (subInfo.bound)
+        if (subInfo)
             return Selector(cast(TypeInfo_Class)subInfo.parentType, subInfo.parentID, subInfo.subName, state);
         else
             return Selector(cast(TypeInfo_Class)typeid(this), _id, null, state);
@@ -330,13 +330,13 @@ public:
     {
         assert(parent && subName);
         auto t = typeid(parent);
-        static if (__traits(hasMember, parent, "id")) // FIXME
+        if (auto wt = cast(Widget)parent)
         {
-            subInfo = StyleSubItemInfo(t, parent.id, subName);
+            subInfo = new StyleSubItemInfo(t, wt.id, subName);
         }
         else
         {
-            subInfo = StyleSubItemInfo(t, null, subName);
+            subInfo = new StyleSubItemInfo(t, null, subName);
         }
         _needToRecomputeStyle = true;
     }
@@ -1595,7 +1595,7 @@ public:
     {
         if (!window)
             return;
-        auto event = new RunnableEvent(CUSTOM_RUNNABLE, this, runnable);
+        auto event = new RunnableEvent(CUSTOM_RUNNABLE, weakRef(this), runnable);
         window.postEvent(event);
     }
 

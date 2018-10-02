@@ -165,6 +165,7 @@ struct ResourceList
         bool searchWithExt = extension(id) !is null;
 
         string tmp;
+        string normID = buildNormalizedPath(id);
 
         // search in embedded
         // search backwards to allow overriding standard resources (which are added first)
@@ -176,7 +177,7 @@ struct ResourceList
                 tmp = baseName(tmp);
             if (!searchWithExt)
                 tmp = stripExtension(stripExtension(tmp));
-            if (tmp == buildNormalizedPath(id))
+            if (tmp == normID)
             {
                 // found
                 string fn = EMBEDDED_RESOURCE_PREFIX ~ r.filename;
@@ -194,7 +195,7 @@ struct ResourceList
                     tmp = baseName(tmp);
                 if (!searchWithExt)
                     tmp = stripExtension(stripExtension(tmp));
-                if (tmp == buildNormalizedPath(id))
+                if (tmp == normID)
                 {
                     // found
                     idToPath[id] = fn;

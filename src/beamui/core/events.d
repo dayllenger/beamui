@@ -210,7 +210,7 @@ struct ButtonDetails
 /**
     Mouse event
 */
-class MouseEvent
+final class MouseEvent
 {
     protected
     {
@@ -229,7 +229,7 @@ class MouseEvent
         /// Wheel delta
         short _wheelDelta;
         /// Widget which currently tracks mouse events
-        Widget _trackingWidget;
+        WeakRef!Widget _trackingWidget;
         /// Left button state details
         ButtonDetails _lbutton;
         /// Middle button state details
@@ -295,12 +295,12 @@ class MouseEvent
             return _lbutton;
         }
         /// Button which caused ButtonUp or ButtonDown action
-        MouseButton button()
+        MouseButton button() const
         {
             return _button;
         }
         /// Action
-        MouseAction action()
+        MouseAction action() const
         {
             return _action;
         }
@@ -369,16 +369,16 @@ class MouseEvent
         }
 
         /// Get event tracking widget to override
-        Widget trackingWidget()
+        WeakRef!Widget trackingWidget()
         {
             return _trackingWidget;
         }
-        /// Returns mouse button tracking flag
+        /// Mouse button tracking flag
         bool doNotTrackButtonDown() const
         {
             return _doNotTrackButtonDown;
         }
-        /// Set mouse button tracking flag
+        /// ditto
         void doNotTrackButtonDown(bool flag)
         {
             _doNotTrackButtonDown = flag;
@@ -391,7 +391,7 @@ class MouseEvent
         _action = a;
     }
     /// Override mouse tracking widget
-    void track(Widget w)
+    void track(WeakRef!Widget w)
     {
         _trackingWidget = w;
     }
@@ -700,7 +700,7 @@ enum KeyCode : uint
 }
 
 /// Keyboard event
-class KeyEvent
+final class KeyEvent
 {
     protected
     {
@@ -789,7 +789,7 @@ enum ScrollAction : ubyte
 }
 
 /// Slider/scrollbar event
-class ScrollEvent
+final class ScrollEvent
 {
     private
     {
@@ -898,7 +898,7 @@ class ScrollEvent
 
     For unknown key code, returns 0.
 */
-uint parseKeyName(string name)
+uint parseKeyName(string name) pure nothrow @nogc
 {
     switch (name)
     {
@@ -1078,7 +1078,7 @@ uint parseKeyName(string name)
 
     For unknown key code, prints its hex value.
 */
-string keyName(uint keyCode)
+string keyName(uint keyCode) pure
 {
     switch (keyCode)
     {
@@ -1257,7 +1257,7 @@ class CustomEvent
 
         static __gshared uint _uniqueIDGenerator;
 
-        Widget _destinationWidget;
+        WeakRef!Widget _destinationWidget;
         Object _objectParam;
         int _intParam;
     }
@@ -1281,7 +1281,7 @@ class CustomEvent
             return _uniqueID;
         }
 
-        Widget destinationWidget()
+        WeakRef!Widget destinationWidget()
         {
             return _destinationWidget;
         }
@@ -1315,7 +1315,7 @@ class RunnableEvent : CustomEvent
 {
     protected void delegate() _action;
 
-    this(int ID, Widget destinationWidget, void delegate() action)
+    this(int ID, WeakRef!Widget destinationWidget, void delegate() action)
     {
         super(ID);
         _destinationWidget = destinationWidget;
@@ -1341,7 +1341,7 @@ class QueueDestroyEvent : RunnableEvent
     this(Widget widgetToDestroy)
     {
         _widgetToDestroy = widgetToDestroy;
-        super(1, null, delegate void() {
+        super(1, WeakRef!Widget(null), delegate void() {
             if (_widgetToDestroy.parent)
                 _widgetToDestroy.parent.removeChild(_widgetToDestroy);
             destroy(_widgetToDestroy);

@@ -733,7 +733,7 @@ class TabHost : FrameLayout
         {
             _tabControl = newWidget;
             if (_tabControl !is null)
-                _tabControl.tabChanged = &onTabChanged;
+                _tabControl.tabChanged ~= &onTabChanged;
             return this;
         }
 
@@ -758,7 +758,7 @@ class TabHost : FrameLayout
     {
         _tabControl = tabControl;
         if (_tabControl !is null)
-            _tabControl.tabChanged = &onTabChanged;
+            _tabControl.tabChanged ~= &onTabChanged;
     }
 
     protected void onTabChanged(string newActiveTabID, string previousTabID)

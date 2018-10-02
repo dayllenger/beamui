@@ -71,9 +71,16 @@ public:
         if (!wtype)
             return [defaultStyle];
 
-        import std.string : split;
-        // get short name
-        string name = wtype.name.split('.')[$ - 1];
+        // get short type name
+        string name = wtype.name;
+        for (size_t i = name.length - 1; i >= 0; i--)
+        {
+            if (name[i] == '.')
+            {
+                name = name[i + 1 .. $];
+                break;
+            }
+        }
         // try to find exact style
         auto p = StyleID(name, selector.id, selector.pseudoElement) in styles;
 
@@ -111,9 +118,16 @@ public:
         if (!wtype)
             return defaultStyle;
 
-        import std.string : split;
-        // get short name
-        string name = wtype.name.split('.')[$ - 1];
+        // get short type name
+        string name = wtype.name;
+        for (size_t i = name.length - 1; i >= 0; i--)
+        {
+            if (name[i] == '.')
+            {
+                name = name[i + 1 .. $];
+                break;
+            }
+        }
         // try to find exact style
         auto p = StyleID(name, widgetID, sub) in styles;
         if (!p && widgetID)

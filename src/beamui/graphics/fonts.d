@@ -834,7 +834,7 @@ class FontManager
         SubpixelRenderingMode _subpixelRenderingMode = SubpixelRenderingMode.none;
     }
 
-    /// Set new font manager singleton instance
+    /// Font manager singleton instance
     static @property void instance(FontManager manager)
     {
         foreach (ref f; fontCache)
@@ -844,8 +844,7 @@ class FontManager
         eliminate(_instance);
         _instance = manager;
     }
-
-    /// Returns font manager singleton instance
+    /// ditto
     static @property FontManager instance()
     {
         return _instance;
@@ -885,13 +884,12 @@ class FontManager
     /// Removes entries not used after last call of checkpoint() or cleanup()
     abstract void cleanup();
 
-    /// Get min font size for antialiased fonts (0 means antialiasing always on, some big value = always off)
+    /// Min font size for antialiased fonts (0 means antialiasing always on, some big value = always off)
     static @property int minAntialiasedFontSize()
     {
         return _minAntialiasedFontSize;
     }
-
-    /// Set new min font size for antialiased fonts - fonts with size >= specified value will be antialiased (0 means antialiasing always on, some big value = always off)
+    /// ditto
     static @property void minAntialiasedFontSize(int size)
     {
         if (_minAntialiasedFontSize != size)
@@ -902,13 +900,12 @@ class FontManager
         }
     }
 
-    /// Get current hinting mode (Normal, AutoHint, Disabled)
+    /// Current hinting mode (Normal, AutoHint, Disabled)
     static @property HintingMode hintingMode()
     {
         return _hintingMode;
     }
-
-    /// Set hinting mode (Normal, AutoHint, Disabled)
+    /// ditto
     static @property void hintingMode(HintingMode mode)
     {
         if (_hintingMode != mode)
@@ -919,25 +916,24 @@ class FontManager
         }
     }
 
-    /// Get current subpixel rendering mode for fonts (aka ClearType)
+    /// Current subpixel rendering mode for fonts (aka ClearType)
     static @property SubpixelRenderingMode subpixelRenderingMode()
     {
         return _subpixelRenderingMode;
     }
-
-    /// Set subpixel rendering mode for fonts (aka ClearType)
+    /// ditto
     static @property void subpixelRenderingMode(SubpixelRenderingMode mode)
     {
         _subpixelRenderingMode = mode;
     }
 
     private static __gshared double _fontGamma = 1.0;
-    /// Get font gamma (1.0 is neutral, < 1.0 makes glyphs lighter, >1.0 makes glyphs bolder)
+    /// Font gamma (1.0 is neutral, < 1.0 makes glyphs lighter, >1.0 makes glyphs bolder)
     static @property double fontGamma()
     {
         return _fontGamma;
     }
-    /// Set font gamma (1.0 is neutral, < 1.0 makes glyphs lighter, >1.0 makes glyphs bolder)
+    /// ditto
     static @property void fontGamma(double v)
     {
         double gamma = clamp(v, 0.1, 4);

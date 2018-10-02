@@ -235,9 +235,14 @@ struct ComputedStyle
             sp.fontFamily = value;
             elementStyle.fontFamily = value;
         }
-        int fontSize() const
+        int fontSize() const // TODO: em and percent
         {
-            return sp.fontSize.toDevice;
+            int res = sp.fontSize.toDevice;
+            if (sp.fontSize.is_em)
+                return res / 100;
+            if (sp.fontSize.is_percent)
+                return res / 10000;
+            return res;
         }
         /// ditto
         void fontSize(Dimension value)

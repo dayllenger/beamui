@@ -1798,7 +1798,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             {
                 // start column resizing
                 startColResize(resizeCol, event.x);
-                event.track(this);
+                event.track(WeakRef!Widget(this));
                 return true;
             }
             if (cellFound && normalCell)
