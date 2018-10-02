@@ -32,8 +32,14 @@ struct StyleProperties
     Dimension maxHeight = Dimension.none;
     int weight = 1;
     Align alignment = Align.topleft;
-    Insets margins = Insets(0);
-    Insets padding = Insets(0);
+    Dimension marginTop = Dimension.zero;
+    Dimension marginRight = Dimension.zero;
+    Dimension marginBottom = Dimension.zero;
+    Dimension marginLeft = Dimension.zero;
+    Dimension paddingTop = Dimension.zero;
+    Dimension paddingRight = Dimension.zero;
+    Dimension paddingBottom = Dimension.zero;
+    Dimension paddingLeft = Dimension.zero;
     // background
     uint backgroundColor = COLOR_TRANSPARENT;
     Drawable backgroundImage;
@@ -76,6 +82,42 @@ final class Style
         );
     }
 
+    //===================================================
+    // shorthands
+
+    Style margins(Dimension[] list...)
+    in
+    {
+        assert(list !is null);
+        assert(0 < list.length && list.length <= 4);
+    }
+    body
+    {
+        // [all], [vertical horizontal], [top horizontal bottom], [top right bottom left]
+        marginTop = list[0];
+        marginRight = list[list.length > 1 ? 1 : 0];
+        marginBottom = list[list.length > 2 ? 2 : 0];
+        marginLeft = list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1];
+        return this;
+    }
+
+    Style padding(Dimension[] list...)
+    in
+    {
+        assert(list !is null);
+        assert(0 < list.length && list.length <= 4);
+    }
+    body
+    {
+        paddingTop = list[0];
+        paddingRight = list[list.length > 1 ? 1 : 0];
+        paddingBottom = list[list.length > 2 ? 2 : 0];
+        paddingLeft = list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1];
+        return this;
+    }
+
+    //===================================================
+
     /// Find substyle based on widget state (e.g. focused, pressed, ...)
     inout(Style) forState(State state) inout
     {
@@ -96,7 +138,8 @@ final class Style
         Log.d("--- Style stats ---");
         static foreach (i, p; [
             "width", "height", "minWidth", "maxWidth", "minHeight", "maxHeight",
-            "weight", "alignment", "margins", "padding",
+            "weight", "alignment", "marginTop", "marginRight", "marginBottom", "marginLeft",
+            "paddingTop", "paddingRight", "paddingBottom", "paddingLeft",
             "backgroundColor", "backgroundImage", "border", "boxShadow",
             "fontFace", "fontFamily", "fontSize", "fontStyle", "fontWeight",
             "textFlags", "maxLines",

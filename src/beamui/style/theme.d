@@ -216,18 +216,18 @@ Theme createDefaultTheme()
         theme.root.fontSize = Dimension.pt(12);
 
         auto label = theme.get("Label");
-        label.alignment(Align.left | Align.vcenter).padding(Insets(2.pt, 4.pt));
+        label.alignment(Align.left | Align.vcenter).padding(Dimension.pt(2), Dimension.pt(4));
         label.getOrCreateState(State.enabled, State.unspecified).textColor(0xa0000000);
 
         auto mlabel = theme.get("MultilineLabel");
-        mlabel.padding(Insets(1.pt)).maxLines(0);
+        mlabel.padding(Dimension.pt(1)).maxLines(0);
 
         auto tooltip = theme.get("Label", "tooltip");
-        tooltip.padding(Insets(3.pt)).boxShadow(new BoxShadowDrawable(0, 2, 7, 0x888888)).
+        tooltip.padding(Dimension.pt(3)).boxShadow(new BoxShadowDrawable(0, 2, 7, 0x888888)).
             backgroundColor(0x222222).textColor(0xeeeeee);
 
         auto button = theme.get("Button");
-        button.alignment(Align.center).padding(Insets(4.pt)).border(new BorderDrawable(0xaaaaaa, 1)).
+        button.alignment(Align.center).padding(Dimension.pt(4)).border(new BorderDrawable(0xaaaaaa, 1)).
             textFlags(TextFlag.underlineHotkeys).focusRectColor(0xbbbbbb);
         button.getOrCreateState(State.hovered | State.checked, State.hovered).
             border(new BorderDrawable(0x4e93da, 1));
@@ -320,6 +320,8 @@ private void applyAtRule(Theme theme, CSS.AtRule rule)
 
 private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] properties)
 {
+    import std.string : capitalize;
+
     auto style = selectStyle(theme, selector);
     if (!style)
         return;
@@ -355,22 +357,20 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
             style.alignment = decodeAlignment(tokens);
             break;
         case "margin":
-            style.margins = decodeInsets(tokens);
+            if (auto vs = decodeInsets(tokens))
+                style.margins = vs;
             break;
         case "padding":
-            style.padding = decodeInsets(tokens);
+            if (auto vs = decodeInsets(tokens))
+                style.padding = vs;
             break;
-        static foreach (s; ["top", "right", "bottom", "left"])
+        static foreach (side; ["top", "right", "bottom", "left"])
         {
-        case "margin-" ~ s:
-            Insets insets = style.margins;
-            __traits(getMember, insets, s) = decodeDimension(tokens[0]).toDevice;
-            style.margins = insets;
+        case "margin-" ~ side:
+            __traits(getMember, style, "margin" ~ side.capitalize) = decodeDimension(tokens[0]);
             break Switch;
-        case "padding-" ~ s:
-            Insets insets = style.padding;
-            __traits(getMember, insets, s) = decodeDimension(tokens[0]).toDevice;
-            style.padding = insets;
+        case "padding-" ~ side:
+            __traits(getMember, style, "padding" ~ side.capitalize) = decodeDimension(tokens[0]);
             break Switch;
         }
         case "border":

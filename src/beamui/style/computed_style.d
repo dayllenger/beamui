@@ -115,18 +115,31 @@ struct ComputedStyle
         /// ditto
         void margins(Insets value)
         {
-            sp.margins = value;
-            elementStyle.margins = value;
+            sp.marginTop = Dimension(value.top);
+            sp.marginRight = Dimension(value.right);
+            sp.marginBottom = Dimension(value.bottom);
+            sp.marginLeft = Dimension(value.left);
+            elementStyle.marginTop = Dimension(value.top);
+            elementStyle.marginRight = Dimension(value.right);
+            elementStyle.marginBottom = Dimension(value.bottom);
+            elementStyle.marginLeft = Dimension(value.left);
         }
         Insets padding() const
         {
-            return sp.padding.toPixels;
+            return Insets(sp.paddingTop.toDevice, sp.paddingRight.toDevice,
+                          sp.paddingBottom.toDevice, sp.paddingLeft.toDevice);
         }
         /// ditto
         void padding(Insets value)
         {
-            sp.padding = value;
-            elementStyle.padding = value;
+            sp.paddingTop = Dimension(value.top);
+            sp.paddingRight = Dimension(value.right);
+            sp.paddingBottom = Dimension(value.bottom);
+            sp.paddingLeft = Dimension(value.left);
+            elementStyle.paddingTop = Dimension(value.top);
+            elementStyle.paddingRight = Dimension(value.right);
+            elementStyle.paddingBottom = Dimension(value.bottom);
+            elementStyle.paddingLeft = Dimension(value.left);
         }
 
         //===================================================

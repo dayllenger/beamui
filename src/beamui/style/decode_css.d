@@ -45,36 +45,33 @@ Align decodeAlignment(Token[] tokens)
     return res;
 }
 
-/// Parses CSS rectangle declaration to Insets
-Insets decodeInsets(Token[] tokens)
+/// Parses CSS rectangle declaration to Dimension[]
+Dimension[] decodeInsets(Token[] tokens)
 {
-    uint[4] values;
-    size_t valueCount;
+    Dimension[] values;
+    values.reserve(4);
     foreach (t; tokens)
     {
         if (t.type == TokenType.number || t.type == TokenType.dimension)
-            values[valueCount++] = decodeDimension(t).toDevice;
+            values ~= decodeDimension(t);
         else
         {
             Log.fe("CSS(%s): rectangle value should be numeric, not '%s'", t.line, t.type);
             break;
         }
-        if (valueCount > 4)
+        if (values.length > 4)
         {
             Log.fe("CSS(%s): too much values for rectangle", t.line);
             break;
         }
     }
-    if (valueCount == 1) // same value for all dimensions
-        return Insets(values[0]);
-    else if (valueCount == 2) // one value for vertical, one for horizontal
-        return Insets(values[0], values[1]);
-    else if (valueCount == 3) // values for top, bottom, and one for horizontal
-        return Insets(values[0], values[1], values[2], values[1]);
-    else if (valueCount == 4) // separate top, right, bottom, left
-        return Insets(values[0], values[1], values[2], values[3]);
-    Log.fe("CSS(%s): empty rectangle", tokens[0].line);
-    return Insets(0);
+    if (values.length > 0)
+        return values;
+    else
+    {
+        Log.fe("CSS(%s): empty rectangle", tokens[0].line);
+        return null;
+    }
 }
 
 /// Decode dimension, e.g. 1px, 20%, 1.2em or `none`
