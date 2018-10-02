@@ -385,8 +385,7 @@ class ConsoleFontManager : FontManager
 
     private FontRef _font;
 
-    /// Get font instance best matched specified parameters
-    override ref FontRef getFont(int size, int weight, bool italic, FontFamily family, string face)
+    override protected ref FontRef getFontImpl(int size, int weight, bool italic, FontFamily family, string face)
     {
         return _font;
     }

@@ -617,8 +617,7 @@ class Win32FontManager : FontManager
     /// For returning of not found font
     FontRef _emptyFontRef;
 
-    /// Get font by properties
-    override ref FontRef getFont(int size, int weight, bool italic, FontFamily family, string face)
+    override protected ref FontRef getFontImpl(int size, int weight, bool italic, FontFamily family, string face)
     {
         //Log.i("getFont()");
         FontDef* def = findFace(family, face);

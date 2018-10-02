@@ -792,8 +792,7 @@ class FreeTypeFontManager : FontManager
             FT_Done_FreeType(_library);
     }
 
-    /// Get font instance with specified parameters
-    override ref FontRef getFont(int size, int weight, bool italic, FontFamily family, string face)
+    override protected ref FontRef getFontImpl(int size, int weight, bool italic, FontFamily family, string face)
     {
         FontFileItem f = findBestMatch(weight, italic, family, face);
         if (f is null)

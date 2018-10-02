@@ -837,6 +837,10 @@ class FontManager
     /// Set new font manager singleton instance
     static @property void instance(FontManager manager)
     {
+        foreach (ref f; fontCache)
+            f.clear();
+        fontCache.clear();
+
         eliminate(_instance);
         _instance = manager;
     }
@@ -847,8 +851,27 @@ class FontManager
         return _instance;
     }
 
+    // Font cache for fast getFont()
+    private
+    {
+        import std.typecons : Tuple;
+
+        alias FontArgsTuple = Tuple!(int, int, bool, FontFamily, string);
+        static FontRef[FontArgsTuple] fontCache;
+    }
+
     /// Get font instance best matched specified parameters
-    abstract ref FontRef getFont(int size, int weight, bool italic, FontFamily family, string face);
+    final FontRef getFont(int size, int weight, bool italic, FontFamily family, string face)
+    {
+        auto t = FontArgsTuple(size, weight, italic, family, face);
+        if (auto p = t in fontCache)
+            return *p;
+        FontRef res = getFontImpl(size, weight, italic, family, face);
+        fontCache[t] = res;
+        return res;
+    }
+    /// Non-caching implementation of getFont()
+    abstract protected ref FontRef getFontImpl(int size, int weight, bool italic, FontFamily family, string face);
 
     /// Override to return list of font faces available
     FontFaceProps[] getFaces()
