@@ -281,3 +281,59 @@ bool isAnimatable(string property) pure nothrow @nogc
         return false;
     }
 }
+
+/// Returns true whether the property affects widget layout
+bool isLayoutProperty(string name) pure nothrow @nogc
+{
+    switch (name)
+    {
+    case "width":
+    case "height":
+    case "minWidth":
+    case "maxWidth":
+    case "minHeight":
+    case "maxHeight":
+    case "weight":
+    case "alignment":
+    case "marginTop":
+    case "marginRight":
+    case "marginBottom":
+    case "marginLeft":
+    case "paddingTop":
+    case "paddingRight":
+    case "paddingBottom":
+    case "paddingLeft":
+    case "borderWidthTop":
+    case "borderWidthRight":
+    case "borderWidthBottom":
+    case "borderWidthLeft":
+    case "backgroundImage":
+    case "fontFace":
+    case "fontFamily":
+    case "fontSize":
+    case "fontStyle":
+    case "fontWeight":
+    case "maxLines":
+        return true;
+    default:
+        return false;
+    }
+}
+
+/// Returns true whether the property affects only widget appearance
+bool isVisualProperty(string name) pure nothrow @nogc
+{
+    switch (name)
+    {
+    case "borderColor":
+    case "backgroundColor":
+    case "boxShadow":
+    case "textFlags":
+    case "alpha":
+    case "textColor":
+    case "focusRectColor":
+        return true;
+    default:
+        return false;
+    }
+}

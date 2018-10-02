@@ -414,12 +414,12 @@ struct ComputedStyle
         /// Set a property value, taking transitions into account
         private void set(string name, T)(T value)
         {
+            auto current = mixin("sp." ~ name);
             static if (isAnimatable(name))
             {
                 if (hasTransitionFor(name))
                 {
-                    auto current = mixin("sp." ~ name);
-                    if (current != value)
+                    if (current !is value)
                     {
                         auto tr = new Transition(sp.transitionDuration,
                                                  sp.transitionTimingFunction,
@@ -427,14 +427,31 @@ struct ComputedStyle
                         animations[name] = Animation(tr.duration * ONE_SECOND / 1000,
                             delegate(double t) {
                                 mixin("sp." ~ name) = tr.mix(current, value, t);
+                                static if (isLayoutProperty(name))
+                                    layoutPropertiesChanged = true;
+                                static if (isVisualProperty(name))
+                                    visualPropertiesChanged = true;
                         });
                     }
                     return;
                 }
             }
-            // copy it directly otherwise
-            mixin("sp." ~ name) = value;
+            if (current !is value)
+            {
+                static if (isLayoutProperty(name))
+                    layoutPropertiesChanged = true;
+                static if (isVisualProperty(name))
+                    visualPropertiesChanged = true;
+                // copy it directly otherwise
+                mixin("sp." ~ name) = value;
+            }
         }
+    }
+
+    package (beamui)
+    {
+        bool layoutPropertiesChanged;
+        bool visualPropertiesChanged;
     }
 
     private

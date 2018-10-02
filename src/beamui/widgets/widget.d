@@ -255,8 +255,6 @@ public:
             _state = newState;
             // need to recompute the style
             needToRecomputeStateStyle();
-            // and to redraw
-            invalidate();
             // notify focus changes
             if ((oldState & State.focused) && !(newState & State.focused))
             {
@@ -310,7 +308,19 @@ public:
         if (_needToRecomputeStyle)
         {
             Widget wt = cast(Widget)this;
-            wt._computedStyle.recompute(getStyleSelector());
+            ComputedStyle* st = &wt._computedStyle;
+
+            st.recompute(getStyleSelector());
+            if (st.layoutPropertiesChanged)
+            {
+                st.layoutPropertiesChanged = false;
+                wt.requestLayout();
+            }
+            else if (st.visualPropertiesChanged)
+            {
+                st.visualPropertiesChanged = false;
+                wt.invalidate();
+            }
             wt._needToRecomputeStyle = false;
         }
         return &_computedStyle;
@@ -839,6 +849,11 @@ public:
         if (style.hasActiveAnimations)
         {
             style.tickAnimations(interval);
+            if (style.layoutPropertiesChanged)
+            {
+                requestLayout();
+                style.layoutPropertiesChanged = false;
+            }
         }
     }
 
