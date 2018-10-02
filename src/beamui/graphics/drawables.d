@@ -173,45 +173,44 @@ class GradientDrawable : Drawable
     }
 }
 
-/// Solid borders (may have different width) and, optionally, solid inner area
+/// Solid borders (may have different width)
 class BorderDrawable : Drawable
 {
-    protected uint _borderColor;
-    protected Insets _borderWidths; // border widths, in pixels
-    protected uint _middleColor; // middle area color (may be transparent)
+    /// Border color
+    uint color;
+    /// Border width, in pixels
+    Insets widths;
 
-    this(uint borderColor, Insets borderWidths, uint innerAreaColor = 0xFFFFFFFF)
+    this(uint color, Insets widths)
     {
-        _borderColor = borderColor;
-        _borderWidths = borderWidths;
-        _middleColor = innerAreaColor;
+        this.color = color;
+        this.widths = widths;
     }
 
-    this(uint borderColor, int borderWidth, uint innerAreaColor = 0xFFFFFFFF)
+    this(uint color, int width)
     {
-        _borderColor = borderColor;
-        _borderWidths = Insets(borderWidth, borderWidth, borderWidth, borderWidth);
-        _middleColor = innerAreaColor;
+        this.color = color;
+        this.widths = Insets(width);
     }
 
     override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
     {
-        buf.drawFrame(Rect(b), _borderColor, _borderWidths, _middleColor);
+        buf.drawFrame(Rect(b), color, widths, COLOR_TRANSPARENT);
     }
 
     override @property int width()
     {
-        return 1 + _borderWidths.left + _borderWidths.right;
+        return 1 + widths.left + widths.right;
     }
 
     override @property int height()
     {
-        return 1 + _borderWidths.top + _borderWidths.bottom;
+        return 1 + widths.top + widths.bottom;
     }
 
     override @property Insets padding()
     {
-        return _borderWidths;
+        return widths;
     }
 }
 

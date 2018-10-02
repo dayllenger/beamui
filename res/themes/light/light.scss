@@ -618,7 +618,6 @@ TabHost {
 }
 
 TabUp {
-/*     border: #dd000000 0 0 0 1; */
     background-color: transparent;
 }
 
@@ -628,11 +627,12 @@ TabUp:selected {
 
 TabItemWidget {
     padding: 6px 1px 0 0;
-/*     border: #ffffffff 0 0 0 2; */
+    border-color: transparent;
+    border-bottom-width: 2px;
 }
 
 TabItemWidget:selected {
-/*     border: $main-color 0 0 0 2; */
+    border-color: $main-color;
 }
 
 TabItemWidget::label {

@@ -227,10 +227,10 @@ Theme createDefaultTheme()
             backgroundColor(0x222222).textColor(0xeeeeee);
 
         auto button = theme.get("Button");
-        button.alignment(Align.center).padding(Dimension.pt(4)).border(new BorderDrawable(0xaaaaaa, 1)).
+        button.alignment(Align.center).padding(Dimension.pt(4)).borderColor(0xaaaaaa).borderWidth(Dimension.px(1)).
             textFlags(TextFlag.underlineHotkeys).focusRectColor(0xbbbbbb);
         button.getOrCreateState(State.hovered | State.checked, State.hovered).
-            border(new BorderDrawable(0x4e93da, 1));
+            borderColor(0x4e93da).borderWidth(Dimension.px(1));
     }
     else // console
     {
@@ -372,9 +372,25 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
         case "padding-" ~ side:
             __traits(getMember, style, "padding" ~ side.capitalize) = decodeDimension(tokens[0]);
             break Switch;
+        case "border-" ~ side ~ "-width":
+            __traits(getMember, style, "borderWidth" ~ side.capitalize) = decodeDimension(tokens[0]);
+            break Switch;
         }
+        case "border-color":
+            style.borderColor = decodeColor(tokens);
+            break;
+        case "border-width":
+            if (auto vs = decodeInsets(tokens))
+                style.borderWidth = vs;
+            break;
         case "border":
-            style.border = decodeBorder(tokens);
+            uint color = COLOR_UNSPECIFIED;
+            Dimension width = Dimension.none;
+            decodeBorder(tokens, color, width);
+            if (width != Dimension.none)
+                style.borderWidth = width;
+            if (color != COLOR_UNSPECIFIED)
+                style.borderColor = color;
             break;
         case "background-color":
             style.backgroundColor = decodeColor(tokens);

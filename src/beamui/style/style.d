@@ -41,9 +41,13 @@ struct StyleProperties
     Dimension paddingBottom = Dimension.zero;
     Dimension paddingLeft = Dimension.zero;
     // background
+    uint borderColor = COLOR_UNSPECIFIED;
+    Dimension borderWidthTop = Dimension.zero;
+    Dimension borderWidthRight = Dimension.zero;
+    Dimension borderWidthBottom = Dimension.zero;
+    Dimension borderWidthLeft = Dimension.zero;
     uint backgroundColor = COLOR_TRANSPARENT;
     Drawable backgroundImage;
-    BorderDrawable border;
     BoxShadowDrawable boxShadow;
     // text
     string fontFace = "Arial";
@@ -116,6 +120,21 @@ final class Style
         return this;
     }
 
+    Style borderWidth(Dimension[] list...)
+    in
+    {
+        assert(list !is null);
+        assert(0 < list.length && list.length <= 4);
+    }
+    body
+    {
+        borderWidthTop = list[0];
+        borderWidthRight = list[list.length > 1 ? 1 : 0];
+        borderWidthBottom = list[list.length > 2 ? 2 : 0];
+        borderWidthLeft = list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1];
+        return this;
+    }
+
     //===================================================
 
     /// Find substyle based on widget state (e.g. focused, pressed, ...)
@@ -140,7 +159,8 @@ final class Style
             "width", "height", "minWidth", "maxWidth", "minHeight", "maxHeight",
             "weight", "alignment", "marginTop", "marginRight", "marginBottom", "marginLeft",
             "paddingTop", "paddingRight", "paddingBottom", "paddingLeft",
-            "backgroundColor", "backgroundImage", "border", "boxShadow",
+            "borderColor", "borderWidthTop", "borderWidthRight", "borderWidthBottom", "borderWidthLeft",
+            "backgroundColor", "backgroundImage", "boxShadow",
             "fontFace", "fontFamily", "fontSize", "fontStyle", "fontWeight",
             "textFlags", "maxLines",
             "alpha", "textColor", "focusRectColor"])
@@ -190,7 +210,6 @@ package (beamui.style):
         stateStyles = null;
 
         eliminate(properties.backgroundImage);
-        eliminate(properties.border);
         eliminate(properties.boxShadow);
 
         debug _instanceCount--;

@@ -250,13 +250,13 @@ TabControl::more:hovered { opacity: 1; }
 
 TabHost { padding: 6px; background-color: #f2f4f5; }
 
-TabUp { /*     border: #dd000000 0 0 0 1; */ background-color: transparent; }
+TabUp { background-color: transparent; }
 
 TabUp:selected { background: url(tab_up_backgrond_selected); }
 
-TabItemWidget { padding: 6px 1px 0 0; /*     border: #ffffffff 0 0 0 2; */ }
+TabItemWidget { padding: 6px 1px 0 0; border-color: transparent; border-bottom-width: 2px; }
 
-TabItemWidget:selected { /*     border: $main-color 0 0 0 2; */ }
+TabItemWidget:selected { border-color: #4e93da; }
 
 TabItemWidget::label { align: hcenter bottom; padding: 0 3px 3px; }
 

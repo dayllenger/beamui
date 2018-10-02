@@ -145,6 +145,35 @@ struct ComputedStyle
         //===================================================
         // background properties
 
+        uint borderColor() const pure
+        {
+            return sp.borderColor;
+        }
+        /// ditto
+        void borderColor(uint value)
+        {
+            sp.borderColor = value;
+            _backgroundDrawable.clear();
+            elementStyle.borderColor = value;
+        }
+        Insets borderWidth() const
+        {
+            return Insets(sp.borderWidthTop.toDevice, sp.borderWidthRight.toDevice,
+                          sp.borderWidthBottom.toDevice, sp.borderWidthLeft.toDevice);
+        }
+        /// ditto
+        void borderWidth(Insets value)
+        {
+            _backgroundDrawable.clear();
+            sp.borderWidthTop = Dimension(value.top);
+            sp.borderWidthRight = Dimension(value.right);
+            sp.borderWidthBottom = Dimension(value.bottom);
+            sp.borderWidthLeft = Dimension(value.left);
+            elementStyle.borderWidthTop = Dimension(value.top);
+            elementStyle.borderWidthRight = Dimension(value.right);
+            elementStyle.borderWidthBottom = Dimension(value.bottom);
+            elementStyle.borderWidthLeft = Dimension(value.left);
+        }
         uint backgroundColor() const pure
         {
             return sp.backgroundColor;
@@ -166,17 +195,6 @@ struct ComputedStyle
             sp.backgroundImage = value;
             _backgroundDrawable.clear();
             elementStyle.backgroundImage = value;
-        }
-        inout(BorderDrawable) border() inout pure
-        {
-            return sp.border;
-        }
-        /// ditto
-        void border(BorderDrawable value)
-        {
-            sp.border = value;
-            _backgroundDrawable.clear();
-            elementStyle.border = value;
         }
         inout(BoxShadowDrawable) boxShadow() inout pure
         {
@@ -323,9 +341,16 @@ struct ComputedStyle
             if (!s._backgroundDrawable.isNull)
                 return s._backgroundDrawable;
 
+            // create border drawable if needed
+            BorderDrawable borders;
+            uint borderColor = s.borderColor;
+            Insets borderWidth = s.borderWidth;
+            if (borderColor != COLOR_UNSPECIFIED && borderWidth != Insets(0))
+            {
+                borders = new BorderDrawable(borderColor, borderWidth);
+            }
             uint color = backgroundColor;
             Drawable image = s.backgroundImage;
-            BorderDrawable borders = s.border;
             BoxShadowDrawable shadows = s.boxShadow;
             if (borders || shadows)
             {

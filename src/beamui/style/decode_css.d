@@ -197,30 +197,32 @@ Drawable decodeBackgroundImage(ref Token[] tokens)
     return null;
 }
 
-/// Create a drawable from border property
-BorderDrawable decodeBorder(Token[] tokens)
+/// Decode shortcut border property
+void decodeBorder(Token[] tokens, ref uint color, ref Dimension width)
 {
     Token t0 = tokens[0];
     if (t0.type == TokenType.ident && t0.text == "none")
-        return null;
+    {
+        color = COLOR_TRANSPARENT;
+        width = Dimension(0);
+        return;
+    }
 
     if (tokens.length < 3)
     {
         Log.fe("CSS(%s): correct form for border is: 'width style color'", t0.line);
-        return null;
+        return;
     }
 
-    Dimension width = decodeDimension(tokens[0]);
+    width = decodeDimension(tokens[0]);
     if (width == Dimension.none)
     {
         Log.fe("CSS(%s): invalid border width", tokens[0].line);
-        return null;
+        return;
     }
     // style is not implemented yet
     Token[] rest = tokens[2 .. $];
-    uint color = decodeColor(rest);
-
-    return new BorderDrawable(color, width.toDevice);
+    color = decodeColor(rest);
 }
 
 /// Create a drawable from box-shadow property
