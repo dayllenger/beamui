@@ -173,47 +173,6 @@ class GradientDrawable : Drawable
     }
 }
 
-/// Solid borders (may have different width)
-class BorderDrawable : Drawable
-{
-    /// Border color
-    uint color;
-    /// Border width, in pixels
-    Insets widths;
-
-    this(uint color, Insets widths)
-    {
-        this.color = color;
-        this.widths = widths;
-    }
-
-    this(uint color, int width)
-    {
-        this.color = color;
-        this.widths = Insets(width);
-    }
-
-    override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
-    {
-        buf.drawFrame(Rect(b), color, widths, COLOR_TRANSPARENT);
-    }
-
-    override @property int width()
-    {
-        return 1 + widths.left + widths.right;
-    }
-
-    override @property int height()
-    {
-        return 1 + widths.top + widths.bottom;
-    }
-
-    override @property Insets padding()
-    {
-        return widths;
-    }
-}
-
 /// Box shadows drawable, can be blurred
 class BoxShadowDrawable : Drawable
 {
@@ -699,52 +658,62 @@ static if (USE_OPENGL)
     }
 }
 
-/// Drawable which allows to combine together background image, gradient, borders, box shadows, etc.
-class CombinedDrawable : Drawable
+/// Solid borders description
+struct Border
 {
-    Drawable backgroundColor;
-    Drawable backgroundImage;
-    Drawable border;
-    Drawable boxShadow;
+    /// Border color
+    uint color = COLOR_TRANSPARENT;
+    /// Border width, in pixels
+    Insets size;
+}
 
-    this(uint backgroundColor, Drawable backgroundImage, BorderDrawable border, BoxShadowDrawable boxShadow)
+/// Standard widget background. It can combine together background color,
+/// image (raster, gradient, etc.), borders and box shadows.
+class Background
+{
+    uint color = COLOR_TRANSPARENT;
+    Drawable image;
+    Border border;
+    BoxShadowDrawable shadow;
+
+    @property int width()
     {
-        this.backgroundImage = backgroundImage ? backgroundImage : new EmptyDrawable;
-        this.backgroundColor = !backgroundColor.isFullyTransparentColor ?
-            new SolidFillDrawable(backgroundColor) : new EmptyDrawable;
-        this.border = border ? border : new EmptyDrawable;
-        this.boxShadow = boxShadow ? boxShadow : new EmptyDrawable;
+        if (image)
+            return image.width + border.size.width;
+        else
+            return border.size.width;
     }
 
-    ~this()
+    @property int height()
     {
-        eliminate(backgroundColor);
+        if (image)
+            return image.height + border.size.height;
+        else
+            return border.size.height;
     }
 
-    override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
+    @property Insets padding()
     {
-        boxShadow.drawTo(buf, b, state, tilex0, tiley0);
+        if (image)
+            return image.padding + border.size;
+        else
+            return border.size;
+    }
+
+    void drawTo(DrawBuf buf, Box b)
+    {
+        // shadow
+        shadow.maybe.drawTo(buf, b);
         // make background image smaller to fit borders
         Box back = b;
-        back.shrink(border.padding);
-        backgroundColor.drawTo(buf, back, state, tilex0, tiley0);
-        backgroundImage.drawTo(buf, back, state, tilex0, tiley0);
-        border.drawTo(buf, b, state, tilex0, tiley0);
-    }
-
-    override @property int width()
-    {
-        return backgroundImage.width + border.padding.left + border.padding.right;
-    }
-
-    override @property int height()
-    {
-        return backgroundImage.height + border.padding.top + border.padding.bottom;
-    }
-
-    override @property Insets padding()
-    {
-        return backgroundImage.padding + border.padding;
+        back.shrink(border.size);
+        // color
+        if (!color.isFullyTransparentColor)
+            buf.fillRect(Rect(back), color);
+        // image
+        image.maybe.drawTo(buf, back);
+        // border
+        buf.drawFrame(Rect(b), border.color, border.size);
     }
 }
 

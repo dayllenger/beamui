@@ -533,20 +533,14 @@ class SwitchButton : Widget
 
     override Size computeMinSize()
     {
-        DrawableRef img = backgroundDrawable;
-        if (!img.isNull)
-            return Size(img.width, img.height);
-        else
-            return Size(0, 0);
+        auto bg = background;
+        return Size(bg.width, bg.height);
     }
 
     override Size computeNaturalSize()
     {
-        DrawableRef img = backgroundDrawable;
-        if (!img.isNull)
-            return Size(img.width, img.height);
-        else
-            return Size(0, 0);
+        auto bg = background;
+        return Size(bg.width, bg.height);
     }
 
     override void onDraw(DrawBuf buf)
@@ -557,14 +551,12 @@ class SwitchButton : Widget
         Box b = _box;
         applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
-        DrawableRef img = backgroundDrawable;
-        if (!img.isNull)
-        {
-            Size sz = Size(img.width, img.height);
-            applyAlign(b, sz);
-            uint st = state;
-            img.drawTo(buf, b, st);
-        }
+
+        auto bg = background;
+        Size sz = Size(bg.width, bg.height);
+        applyAlign(b, sz);
+        bg.drawTo(buf, b);
+
         _needDraw = false;
     }
 }

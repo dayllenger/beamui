@@ -452,11 +452,9 @@ class ScrollAreaBase : WidgetGroup
         applyMargins(b);
 
         auto saver = ClipRectSaver(buf, b, alpha);
-        DrawableRef bg = backgroundDrawable;
-        if (!bg.isNull)
-        {
-            bg.drawTo(buf, b, state);
-        }
+        auto bg = background;
+        bg.drawTo(buf, b);
+
         applyPadding(b);
         // draw scrollbars
         _hscrollbar.maybe.onDraw(buf);

@@ -433,19 +433,17 @@ public:
         {
             // get max padding from style padding and background drawable padding
             Insets p = style.padding;
-            DrawableRef d = backgroundDrawable;
-            if (!d.isNull)
-            {
-                Insets dp = d.padding;
-                if (p.left < dp.left)
-                    p.left = dp.left;
-                if (p.right < dp.right)
-                    p.right = dp.right;
-                if (p.top < dp.top)
-                    p.top = dp.top;
-                if (p.bottom < dp.bottom)
-                    p.bottom = dp.bottom;
-            }
+            auto bg = (cast(Widget)this).background;
+            Insets bp = bg.padding;
+            if (p.left < bp.left)
+                p.left = bp.left;
+            if (p.right < bp.right)
+                p.right = bp.right;
+            if (p.top < bp.top)
+                p.top = bp.top;
+            if (p.bottom < bp.bottom)
+                p.bottom = bp.bottom;
+
             if ((focusable || ((state & State.parent) && parent.focusable)) && focusRectColor != COLOR_UNSPECIFIED)
             {
                 // add two pixels to padding when focus rect is required
@@ -503,10 +501,10 @@ public:
             return this;
         }
 
-        /// Background drawable
-        DrawableRef backgroundDrawable() const
+        /// Widget standard background
+        Background background()
         {
-            return style.backgroundDrawable;
+            return style.background;
         }
 
         /// Widget drawing alpha value (0=opaque .. 255=transparent)
@@ -695,6 +693,9 @@ public:
         /// Returns true if redraw is required for widget and its children
         bool needDraw() const
         {
+            // a bit tricky: we need to be sure that the style is updated
+            // it might set this or _needLayout flag
+            auto st = style;
             return _needDraw;
         }
         /// Returns true is widget is being animated - need to call animate() and redraw
@@ -1713,11 +1714,10 @@ public:
         Box b = _box;
         applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
-        DrawableRef bg = backgroundDrawable;
-        if (!bg.isNull)
-        {
-            bg.drawTo(buf, b, state);
-        }
+
+        auto bg = background;
+        bg.drawTo(buf, b);
+
         if (state & State.focused)
         {
             drawFocusRect(buf);

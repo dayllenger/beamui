@@ -154,7 +154,6 @@ struct ComputedStyle
         /// ditto
         void borderColor(uint value)
         {
-            _backgroundDrawable.clear();
             set!"borderColor"(value);
             elementStyle.borderColor = value;
         }
@@ -166,7 +165,6 @@ struct ComputedStyle
         /// ditto
         void borderWidth(Insets value)
         {
-            _backgroundDrawable.clear();
             set!"borderWidthTop"(Dimension(value.top));
             set!"borderWidthRight"(Dimension(value.right));
             set!"borderWidthBottom"(Dimension(value.bottom));
@@ -183,7 +181,6 @@ struct ComputedStyle
         /// ditto
         void backgroundColor(uint value)
         {
-            _backgroundDrawable.clear();
             set!"backgroundColor"(value);
             elementStyle.backgroundColor = value;
         }
@@ -194,7 +191,6 @@ struct ComputedStyle
         /// ditto
         void backgroundImage(Drawable value)
         {
-            _backgroundDrawable.clear();
             set!"backgroundImage"(value);
             elementStyle.backgroundImage = value;
         }
@@ -205,7 +201,6 @@ struct ComputedStyle
         /// ditto
         void boxShadow(BoxShadowDrawable value)
         {
-            _backgroundDrawable.clear();
             set!"boxShadow"(value);
             elementStyle.boxShadow = value;
         }
@@ -341,35 +336,19 @@ struct ComputedStyle
         //===================================================
         // DERIVATIVES
 
-        /// Get background drawable for this style
-        DrawableRef backgroundDrawable() const
+        /// Get widget background for this style. The background object has the same lifetime as the style.
+        Background background()
         {
-            ComputedStyle* s = cast(ComputedStyle*)&this;
-            if (!s._backgroundDrawable.isNull)
-                return s._backgroundDrawable;
-
-            // create border drawable if needed
-            BorderDrawable borders;
-            uint borderColor = s.borderColor;
-            Insets borderWidth = s.borderWidth;
-            if (borderColor != COLOR_UNSPECIFIED && borderWidth != Insets(0))
+            if (backgroundPropertiesChanged)
             {
-                borders = new BorderDrawable(borderColor, borderWidth);
+                _background.border.color = sp.borderColor;
+                _background.border.size = borderWidth;
+                _background.color = sp.backgroundColor;
+                _background.image = sp.backgroundImage;
+                _background.shadow = sp.boxShadow;
+                backgroundPropertiesChanged = false;
             }
-            uint color = backgroundColor;
-            Drawable image = s.backgroundImage;
-            BoxShadowDrawable shadows = s.boxShadow;
-            // here we can only create drawables, we can't capture existing one e.g. background image
-            if (borders || shadows || image)
-            {
-                s._backgroundDrawable = new CombinedDrawable(color, image, borders, shadows);
-            }
-            else
-            {
-                s._backgroundDrawable = isFullyTransparentColor(color) ?
-                    new EmptyDrawable : new SolidFillDrawable(color);
-            }
-            return s._backgroundDrawable;
+            return _background;
         }
 
         /// Get font
@@ -431,6 +410,8 @@ struct ComputedStyle
                                     layoutPropertiesChanged = true;
                                 static if (isVisualProperty(name))
                                     visualPropertiesChanged = true;
+                                static if (isBackgroundProperty(name))
+                                    backgroundPropertiesChanged = true;
                         });
                     }
                     return;
@@ -442,6 +423,8 @@ struct ComputedStyle
                     layoutPropertiesChanged = true;
                 static if (isVisualProperty(name))
                     visualPropertiesChanged = true;
+                static if (isBackgroundProperty(name))
+                    backgroundPropertiesChanged = true;
                 // copy it directly otherwise
                 mixin("sp." ~ name) = value;
             }
@@ -459,16 +442,18 @@ struct ComputedStyle
         StyleProperties sp; // TODO: void?
         Style _elementStyle;
 
-        DrawableRef _backgroundDrawable;
+        Background _background;
         FontRef _font;
 
         Animation[string] animations; // key is a property name
+
+        bool backgroundPropertiesChanged = true;
     }
 
     ~this()
     {
-        _backgroundDrawable.clear();
         _font.clear();
+        eliminate(_background);
         eliminate(_elementStyle);
     }
 
@@ -487,7 +472,8 @@ struct ComputedStyle
         if (_elementStyle)
             chain ~= _elementStyle;
 
-        _backgroundDrawable.clear();
+        if (_background is null)
+            _background = new Background;
         _font.clear();
 
         static foreach (i; 0 .. StyleProperties.tupleof.length)

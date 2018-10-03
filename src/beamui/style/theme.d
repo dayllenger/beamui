@@ -309,22 +309,18 @@ private void applyAtRule(Theme theme, CSS.AtRule rule)
     {
         foreach (p; ps)
         {
+            CSS.Token[] tokens = p.value;
             string id = p.name;
             Drawable dr;
 
-            uint color;
-            Drawable image;
-            decodeBackground(p.value, color, image);
-
-            if (!isFullyTransparentColor(color))
+            // color, image, or none
+            if (startsWithColor(tokens))
             {
-                if (image)
-                    dr = new CombinedDrawable(color, image, null, null);
-                else
-                    dr = new SolidFillDrawable(color);
+                uint color = decodeColor(tokens);
+                dr = new SolidFillDrawable(color);
             }
-            else if (image)
-                dr = image;
+            else if (tokens.length > 0)
+                dr = decodeBackgroundImage(tokens);
 
             theme.setDrawable(id, dr);
         }
@@ -464,14 +460,13 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
             break;
         case "transition":
             string prop;
-            TimingFunction func;
+            TimingFunction func = cast(TimingFunction)TimingFunction.linear;
             uint dur = uint.max;
             uint del = uint.max;
             decodeTransition(tokens, prop, func, dur, del);
             if (prop)
                 style.transitionProperty = prop;
-            if (func)
-                style.transitionTimingFunction = func;
+            style.transitionTimingFunction = func;
             if (dur != uint.max)
                 style.transitionDuration = dur;
             if (del != uint.max)

@@ -42,7 +42,7 @@ struct StyleProperties
     Dimension paddingBottom = Dimension.zero;
     Dimension paddingLeft = Dimension.zero;
     // background
-    uint borderColor = COLOR_UNSPECIFIED;
+    uint borderColor = COLOR_TRANSPARENT;
     Dimension borderWidthTop = Dimension.zero;
     Dimension borderWidthRight = Dimension.zero;
     Dimension borderWidthBottom = Dimension.zero;
@@ -332,6 +332,21 @@ bool isVisualProperty(string name) pure nothrow @nogc
     case "alpha":
     case "textColor":
     case "focusRectColor":
+        return true;
+    default:
+        return false;
+    }
+}
+
+/// Returns true whether the property affects widget background
+bool isBackgroundProperty(string name) pure nothrow @nogc
+{
+    switch (name)
+    {
+    case "borderColor":
+    case "backgroundColor":
+    case "backgroundImage":
+    case "boxShadow":
         return true;
     default:
         return false;

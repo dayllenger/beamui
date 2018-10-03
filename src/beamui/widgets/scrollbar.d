@@ -694,8 +694,7 @@ class Slider : AbstractSlider
         Box b = _box;
         applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
-        DrawableRef bg = backgroundDrawable;
-        if (!bg.isNull)
+        auto bg = background;
         {
             if (_orient == Orientation.vertical)
             {
@@ -709,7 +708,7 @@ class Slider : AbstractSlider
                 b.y += (b.h - dh) / 2;
                 b.h = dh;
             }
-            bg.drawTo(buf, b, state);
+            bg.drawTo(buf, b);
         }
         if (state & State.focused)
         {
