@@ -254,12 +254,12 @@ class Window : CustomEventTarget
         }
 
         /// Window background color
-        uint backgroundColor() const
+        Color backgroundColor() const
         {
             return _backgroundColor;
         }
         /// ditto
-        void backgroundColor(uint color)
+        void backgroundColor(Color color)
         {
             _backgroundColor = color;
         }
@@ -360,7 +360,7 @@ class Window : CustomEventTarget
         int _w;
         int _h;
         uint _keyboardModifiers;
-        uint _backgroundColor;
+        Color _backgroundColor = Color(0xFFFFFF);
         Widget _mainWidget;
         EventList _eventList;
         WindowFlag _flags;
@@ -388,7 +388,6 @@ class Window : CustomEventTarget
     {
         _eventList = new EventList;
         _timerQueue = new TimerQueue;
-        _backgroundColor = 0xFFFFFF;
         if (currentTheme)
             _backgroundColor = currentTheme.getColor("window_background");
     }
@@ -1094,11 +1093,9 @@ class Window : CustomEventTarget
             bindContext();
             glDisable(GL_DEPTH_TEST);
             glViewport(0, 0, _w, _h);
-            float a = 1.0f;
-            float r = ((_backgroundColor >> 16) & 255) / 255.0f;
-            float g = ((_backgroundColor >> 8) & 255) / 255.0f;
-            float b = ((_backgroundColor >> 0) & 255) / 255.0f;
-            glClearColor(r, g, b, a);
+            float r, g, b;
+            _backgroundColor.rgbf(r, g, b);
+            glClearColor(r, g, b, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
             if (!buf)
                 buf = new GLDrawBuf(_w, _h);
@@ -1185,7 +1182,7 @@ class Window : CustomEventTarget
                 if (p is modal)
                 {
                     // TODO: get shadow color from theme
-                    buf.fillRect(Rect(0, 0, buf.width, buf.height), 0xD0404040);
+                    buf.fillRect(Rect(0, 0, buf.width, buf.height), Color(0xD0404040));
                 }
                 p.onDraw(buf);
             }

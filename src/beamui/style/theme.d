@@ -177,9 +177,9 @@ public:
     }
 
     /// Get custom color - transparent by default
-    uint getColor(string name, uint defaultColor = COLOR_TRANSPARENT)
+    Color getColor(string name, Color defaultColor = Color.transparent)
     {
-        return colors.get(name, Color(defaultColor)).hex;
+        return colors.get(name, defaultColor);
     }
 
     /// Set custom color for theme

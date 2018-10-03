@@ -89,7 +89,7 @@ class SolidFillDrawable : Drawable
     override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
     {
         if (!_color.isFullyTransparent)
-            buf.fillRect(Rect(b), _color.hex);
+            buf.fillRect(Rect(b), _color);
     }
 
     override @property int width() const
@@ -105,15 +105,13 @@ class SolidFillDrawable : Drawable
 
 class GradientDrawable : Drawable
 {
-    protected uint _color1; // top left
-    protected uint _color2; // bottom left
-    protected uint _color3; // top right
-    protected uint _color4; // bottom right
+    protected Color _color1; // top left
+    protected Color _color2; // bottom left
+    protected Color _color3; // top right
+    protected Color _color4; // bottom right
 
-    this(float angle, Color c1, Color c2)
+    this(float angle, Color color1, Color color2)
     {
-        uint color1 = c1.hex;
-        uint color2 = c2.hex;
         // rotate a gradient; angle goes clockwise
         import std.math;
 
@@ -124,17 +122,17 @@ class GradientDrawable : Drawable
             if (c >= 0)
             {
                 // 0-90 degrees
-                _color1 = blendARGB(color1, color2, cast(uint)(255 * c));
+                _color1 = Color.blend(color1, color2, cast(uint)(255 * c));
                 _color2 = color2;
                 _color3 = color1;
-                _color4 = blendARGB(color1, color2, cast(uint)(255 * s));
+                _color4 = Color.blend(color1, color2, cast(uint)(255 * s));
             }
             else
             {
                 // 90-180 degrees
                 _color1 = color2;
-                _color2 = blendARGB(color1, color2, cast(uint)(255 * -c));
-                _color3 = blendARGB(color1, color2, cast(uint)(255 * s));
+                _color2 = Color.blend(color1, color2, cast(uint)(255 * -c));
+                _color3 = Color.blend(color1, color2, cast(uint)(255 * s));
                 _color4 = color1;
             }
         }
@@ -143,17 +141,17 @@ class GradientDrawable : Drawable
             if (c < 0)
             {
                 // 180-270 degrees
-                _color1 = blendARGB(color1, color2, cast(uint)(255 * -s));
+                _color1 = Color.blend(color1, color2, cast(uint)(255 * -s));
                 _color2 = color1;
                 _color3 = color2;
-                _color4 = blendARGB(color1, color2, cast(uint)(255 * -c));
+                _color4 = Color.blend(color1, color2, cast(uint)(255 * -c));
             }
             else
             {
                 // 270-360 degrees
                 _color1 = color1;
-                _color2 = blendARGB(color1, color2, cast(uint)(255 * -s));
-                _color3 = blendARGB(color1, color2, cast(uint)(255 * c));
+                _color2 = Color.blend(color1, color2, cast(uint)(255 * -s));
+                _color3 = Color.blend(color1, color2, cast(uint)(255 * c));
                 _color4 = color2;
             }
         }
@@ -194,9 +192,11 @@ class BoxShadowDrawable : Drawable
         uint size = 4 * blurSize + 1;
         texture = new ColorDrawBuf(size, size); // TODO: get from/put to cache
         // clear
-        texture.fill(color.hex | 0xFF000000);
+        Color cc = color;
+        cc.alpha = 0xFF;
+        texture.fill(cc);
         // draw a square in center of the texture
-        texture.fillRect(Rect(blurSize, blurSize, size - blurSize, size - blurSize), color.hex);
+        texture.fillRect(Rect(blurSize, blurSize, size - blurSize, size - blurSize), color);
         // blur the square
         texture.blur(blurSize);
         // set 9-patch frame
@@ -228,7 +228,7 @@ class BoxShadowDrawable : Drawable
         }
         else
         {
-            buf.fillRect(Rect(b), _color.hex);
+            buf.fillRect(Rect(b), _color);
         }
     }
 
@@ -711,11 +711,11 @@ class Background
         back.shrink(border.size);
         // color
         if (!color.isFullyTransparent)
-            buf.fillRect(Rect(back), color.hex);
+            buf.fillRect(Rect(back), color);
         // image
         image.maybe.drawTo(buf, back);
         // border
-        buf.drawFrame(Rect(b), border.color.hex, border.size);
+        buf.drawFrame(Rect(b), border.color, border.size);
     }
 }
 

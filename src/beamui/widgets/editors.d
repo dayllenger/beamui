@@ -387,14 +387,14 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
         bool _replaceMode;
 
-        uint _selectionColorFocused = 0xB060A0FF;
-        uint _selectionColorNormal = 0xD060A0FF;
-        uint _searchHighlightColorCurrent = 0x808080FF;
-        uint _searchHighlightColorOther = 0xC08080FF;
+        Color _selectionColorFocused = Color(0xB060A0FF);
+        Color _selectionColorNormal = Color(0xD060A0FF);
+        Color _searchHighlightColorCurrent = Color(0x808080FF);
+        Color _searchHighlightColorOther = Color(0xC08080FF);
 
-        uint _caretColor = 0x000000;
-        uint _caretColorReplace = 0x808080FF;
-        uint _matchingBracketHightlightColor = 0x60FFE0B0;
+        Color _caretColor = Color(0x0);
+        Color _caretColorReplace = Color(0x808080FF);
+        Color _matchingBracketHightlightColor = Color(0x60FFE0B0);
 
         /// When true, call measureVisibleText on next layout
         bool _contentChanged = true;
@@ -3141,7 +3141,7 @@ class EditBox : EditWidgetBase
             {
                 TextRange r = TextRange(TextPosition(lineIndex, cast(int)start),
                         TextPosition(lineIndex, cast(int)(start + pattern.length)));
-                uint color = r.isInsideOrNext(caretPos) ? _searchHighlightColorCurrent : _searchHighlightColorOther;
+                Color color = r.isInsideOrNext(caretPos) ? _searchHighlightColorCurrent : _searchHighlightColorOther;
                 highlightLineRange(buf, lineRect, color, r);
             }
             start += pattern.length;
@@ -3253,7 +3253,7 @@ class EditBox : EditWidgetBase
         return true;
     }
 
-    protected void highlightLineRange(DrawBuf buf, Rect lineRect, uint color, TextRange r)
+    protected void highlightLineRange(DrawBuf buf, Rect lineRect, Color color, TextRange r)
     {
         Box start = textPosToClient(r.start);
         Box end = textPosToClient(r.end);
@@ -3272,7 +3272,7 @@ class EditBox : EditWidgetBase
     }
 
     /// Used in place of directly calling buf.fillRect in word wrap mode
-    void wordWrapFillRect(DrawBuf buf, int line, Rect lineToDivide, uint color)
+    void wordWrapFillRect(DrawBuf buf, int line, Rect lineToDivide, Color color)
     {
         Rect rc = lineToDivide;
         auto limitNumber = (int num, int limit) => num > limit ? limit : num;
@@ -3434,7 +3434,7 @@ class EditBox : EditWidgetBase
             //TODO: Figure out why a little slow to catch up
             if (_wordWrap)
                 visibleRect.offset(0, -caretHeightOffset);
-            buf.drawFrame(visibleRect, 0xA0808080, Insets(1));
+            buf.drawFrame(visibleRect, Color(0xA0808080), Insets(1));
         }
     }
 
@@ -3476,7 +3476,7 @@ class EditBox : EditWidgetBase
     protected CustomCharProps[ubyte] _tokenHighlightColors;
 
     /// Set highlight options for particular token category
-    void setTokenHightlightColor(ubyte tokenCategory, uint color, bool underline = false, bool strikeThrough = false)
+    void setTokenHightlightColor(ubyte tokenCategory, Color color, bool underline = false, bool strikeThrough = false)
     {
         _tokenHighlightColors[tokenCategory] = CustomCharProps(color, underline, strikeThrough);
     }
@@ -3519,7 +3519,7 @@ class EditBox : EditWidgetBase
                     colors[i] = _tokenHighlightColors[(p & TOKEN_CATEGORY_MASK)];
                 else
                     colors[i].color = textColor;
-                if (isFullyTransparentColor(colors[i].color))
+                if (colors[i].color.isFullyTransparent)
                     colors[i].color = textColor;
             }
             return colors;
@@ -3568,7 +3568,8 @@ class EditBox : EditWidgetBase
         {
             int spaceWidth = font.charWidth(' ');
             Rect rc = lineRect;
-            uint color = addAlpha(textColor, 0xC0);
+            Color color = textColor;
+            color.addAlpha(0xC0);
             for (int i = 0; i < maxCol; i += tabSize)
             {
                 rc.left = lineRect.left + i * spaceWidth;
@@ -3601,7 +3602,8 @@ class EditBox : EditWidgetBase
         bool spacesOnly = txt.length > 0 && firstNonSpace < 0;
         if (firstNonSpace <= 0 && lastNonSpace >= txt.length && !hasTabs && !spacesOnly)
             return;
-        uint color = addAlpha(textColor, 0xC0);
+        Color color = textColor;
+        color.addAlpha(0xC0);
         static int[] textSizeBuffer;
         int charsMeasured = font.measureText(txt, textSizeBuffer, MAX_WIDTH_UNSPECIFIED, tabSize, 0, 0);
         int ts = clamp(tabSize, 1, 8);

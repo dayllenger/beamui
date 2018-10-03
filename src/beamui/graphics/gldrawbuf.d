@@ -77,49 +77,49 @@ class GLDrawBuf : DrawBuf
         }
     }
 
-    override void fill(uint color)
+    override void fill(Color color)
     {
         if (hasClipping)
         {
             fillRect(_clipRect, color);
             return;
         }
-        glSupport.queue.addSolidRect(Rect(0, 0, _w, _h), applyAlpha(color));
+        applyAlpha(color);
+        glSupport.queue.addSolidRect(Rect(0, 0, _w, _h), color);
     }
 
-    override void fillRect(Rect rc, uint color)
+    override void fillRect(Rect rc, Color color)
     {
-        color = applyAlpha(color);
-        if (!isFullyTransparentColor(color) && applyClipping(rc))
+        applyAlpha(color);
+        if (!color.isFullyTransparent && applyClipping(rc))
             glSupport.queue.addSolidRect(rc, color);
     }
 
-    override void fillGradientRect(Rect rc, uint color1, uint color2, uint color3, uint color4)
+    override void fillGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4)
     {
-        color1 = applyAlpha(color1);
-        color2 = applyAlpha(color2);
-        color3 = applyAlpha(color3);
-        color4 = applyAlpha(color4);
-        if (!(isFullyTransparentColor(color1) && isFullyTransparentColor(color3)) && applyClipping(rc))
+        applyAlpha(color1);
+        applyAlpha(color2);
+        applyAlpha(color3);
+        applyAlpha(color4);
+        if (!(color1.isFullyTransparent && color3.isFullyTransparent) && applyClipping(rc))
             glSupport.queue.addGradientRect(rc, color1, color2, color3, color4);
     }
 
-    override void drawPixel(int x, int y, uint color)
+    override void drawPixel(int x, int y, Color color)
     {
         if (!_clipRect.isPointInside(x, y))
             return;
-        color = applyAlpha(color);
-        if (isFullyTransparentColor(color))
-            return;
-        glSupport.queue.addSolidRect(Rect(x, y, x + 1, y + 1), color);
+        applyAlpha(color);
+        if (!color.isFullyTransparent)
+            glSupport.queue.addSolidRect(Rect(x, y, x + 1, y + 1), color);
     }
 
-    override void drawGlyph(int x, int y, Glyph* glyph, uint color)
+    override void drawGlyph(int x, int y, Glyph* glyph, Color color)
     {
         Rect dstrect = Rect(x, y, x + glyph.correctedBlackBoxX, y + glyph.blackBoxY);
         Rect srcrect = Rect(0, 0, glyph.correctedBlackBoxX, glyph.blackBoxY);
-        color = applyAlpha(color);
-        if (!isFullyTransparentColor(color) && applyClipping(dstrect, srcrect))
+        applyAlpha(color);
+        if (!color.isFullyTransparent && applyClipping(dstrect, srcrect))
         {
             if (!glGlyphCache.isInCache(glyph.id))
                 glGlyphCache.put(glyph);
@@ -134,7 +134,9 @@ class GLDrawBuf : DrawBuf
         {
             if (!glImageCache.isInCache(src.id))
                 glImageCache.put(src);
-            glImageCache.drawItem(src.id, dstrect, srcrect, applyAlpha(0xFFFFFF), 0, null);
+            Color color = Color(0xFFFFFF);
+            applyAlpha(color);
+            glImageCache.drawItem(src.id, dstrect, srcrect, color, 0, null);
         }
     }
 
@@ -144,20 +146,22 @@ class GLDrawBuf : DrawBuf
         {
             if (!glImageCache.isInCache(src.id))
                 glImageCache.put(src);
-            glImageCache.drawItem(src.id, dstrect, srcrect, applyAlpha(0xFFFFFF), 0, null);
+            Color color = Color(0xFFFFFF);
+            applyAlpha(color);
+            glImageCache.drawItem(src.id, dstrect, srcrect, color, 0, null);
         }
     }
 
-    override void drawLine(Point p1, Point p2, uint color)
+    override void drawLine(Point p1, Point p2, Color color)
     {
         if (!clipLine(_clipRect, p1, p2))
             return;
-        color = applyAlpha(color);
-        if (!isFullyTransparentColor(color))
+        applyAlpha(color);
+        if (!color.isFullyTransparent)
             glSupport.queue.addLine(p1, p2, color, color);
     }
 
-    override protected void fillTriangleFClipped(PointF p1, PointF p2, PointF p3, uint color)
+    override protected void fillTriangleFClipped(PointF p1, PointF p2, PointF p3, Color color)
     {
         glSupport.queue.addTriangle(p1, p2, p3, color, color, color);
     }
@@ -329,9 +333,7 @@ private abstract class GLCache
                 if (!_drawbuf)
                 {
                     _drawbuf = new ColorDrawBuf(_tdx, _tdy);
-                    //_drawbuf.SetBackgroundColor(0x000000);
-                    //_drawbuf.SetTextColor(0xFFFFFF);
-                    _drawbuf.fill(0xFF000000);
+                    _drawbuf.fill(Color(0xFF000000));
                 }
                 _x += width + spacer;
                 _needUpdateTexture = true;
@@ -486,7 +488,7 @@ private class GLImageCache : GLCache
             return cacheItem;
         }
 
-        void drawItem(GLCacheItem item, Rect dstrc, Rect srcrc, uint color, uint options, Rect* clip)
+        void drawItem(GLCacheItem item, Rect dstrc, Rect srcrc, Color color, uint options, Rect* clip)
         {
             if (_needUpdateTexture)
                 updateTexture();
@@ -557,7 +559,7 @@ private class GLImageCache : GLCache
         _map[img.id] = res;
     }
     /// Draw cached item
-    void drawItem(uint objectID, Rect dstrc, Rect srcrc, uint color, int options, Rect* clip)
+    void drawItem(uint objectID, Rect dstrc, Rect srcrc, Color color, int options, Rect* clip)
     {
         GLCacheItem* item = objectID in _map;
         if (item)
@@ -589,7 +591,7 @@ private class GLGlyphCache : GLCache
             return cacheItem;
         }
 
-        void drawItem(GLCacheItem item, Rect dstrc, Rect srcrc, uint color, Rect* clip)
+        void drawItem(GLCacheItem item, Rect dstrc, Rect srcrc, Color color, Rect* clip)
         {
             if (_needUpdateTexture)
                 updateTexture();
@@ -649,7 +651,7 @@ private class GLGlyphCache : GLCache
         _map[glyph.id] = res;
     }
     /// Draw cached item
-    void drawItem(uint objectID, Rect dstrc, Rect srcrc, uint color, Rect* clip)
+    void drawItem(uint objectID, Rect dstrc, Rect srcrc, Color color, Rect* clip)
     {
         GLCacheItem* item = objectID in _map;
         if (item)

@@ -24,6 +24,7 @@ import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.math3d;
 import beamui.core.types;
+import beamui.graphics.colors : Color;
 
 version (Android)
 {
@@ -1129,8 +1130,8 @@ private final class OpenGLQueue
     static immutable float Z_2D = -2.0f;
 
     /// Add textured rectangle to queue
-    void addTexturedRect(Tex2D texture, int textureDx, int textureDy, uint color1, uint color2,
-            uint color3, uint color4, Rect srcrc, Rect dstrc, bool linear)
+    void addTexturedRect(Tex2D texture, int textureDx, int textureDy, Color color1, Color color2,
+            Color color3, Color color4, Rect srcrc, Rect dstrc, bool linear)
     {
         if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.texturedRect ||
                 batches.data[$ - 1].texture.ID != texture.ID || batches.data[$ - 1].textureLinear != linear)
@@ -1140,8 +1141,11 @@ private final class OpenGLQueue
                 batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
         }
 
-        uint[4] colorsARGB = [color1, color2, color3, color4];
-        float[] colors = convertColors(colorsARGB);
+        float[4 * 4] colors;
+        color1.rgbaf(colors[0], colors[1], colors[2], colors[3]);
+        color2.rgbaf(colors[4], colors[5], colors[6], colors[7]);
+        color3.rgbaf(colors[8], colors[9], colors[10], colors[11]);
+        color4.rgbaf(colors[12], colors[13], colors[14], colors[15]);
 
         float dstx0 = cast(float)dstrc.left;
         float dsty0 = cast(float)(glSupport.bufferDy - dstrc.top);
@@ -1162,13 +1166,13 @@ private final class OpenGLQueue
     }
 
     /// Add solid rectangle to queue
-    void addSolidRect(Rect dstRect, uint color)
+    void addSolidRect(Rect dstRect, Color color)
     {
         addGradientRect(dstRect, color, color, color, color);
     }
 
     /// Add gradient rectangle to queue
-    void addGradientRect(Rect rc, uint color1, uint color2, uint color3, uint color4)
+    void addGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4)
     {
         if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.rect)
         {
@@ -1177,8 +1181,11 @@ private final class OpenGLQueue
                 batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
         }
 
-        uint[4] colorsARGB = [color1, color2, color3, color4];
-        float[] colors = convertColors(colorsARGB);
+        float[4 * 4] colors;
+        color1.rgbaf(colors[0], colors[1], colors[2], colors[3]);
+        color2.rgbaf(colors[4], colors[5], colors[6], colors[7]);
+        color3.rgbaf(colors[8], colors[9], colors[10], colors[11]);
+        color4.rgbaf(colors[12], colors[13], colors[14], colors[15]);
 
         float x0 = cast(float)(rc.left);
         float y0 = cast(float)(glSupport.bufferDy - rc.top);
@@ -1194,7 +1201,7 @@ private final class OpenGLQueue
     }
 
     /// Add triangle to queue
-    void addTriangle(PointF p1, PointF p2, PointF p3, uint color1, uint color2, uint color3)
+    void addTriangle(PointF p1, PointF p2, PointF p3, Color color1, Color color2, Color color3)
     {
         if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.triangle)
         {
@@ -1203,8 +1210,10 @@ private final class OpenGLQueue
                 batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
         }
 
-        uint[3] colorsARGB = [color1, color2, color3];
-        float[] colors = convertColors(colorsARGB);
+        float[4 * 3] colors;
+        color1.rgbaf(colors[0], colors[1], colors[2], colors[3]);
+        color2.rgbaf(colors[4], colors[5], colors[6], colors[7]);
+        color3.rgbaf(colors[8], colors[9], colors[10], colors[11]);
 
         float x0 = p1.x;
         float y0 = glSupport.bufferDy - p1.y;
@@ -1222,7 +1231,7 @@ private final class OpenGLQueue
     }
 
     /// Add line to queue
-    void addLine(Point p1, Point p2, uint color1, uint color2)
+    void addLine(Point p1, Point p2, Color color1, Color color2)
     {
         if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.line)
         {
@@ -1231,8 +1240,9 @@ private final class OpenGLQueue
                 batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
         }
 
-        uint[2] colorsARGB = [color1, color2];
-        float[] colors = convertColors(colorsARGB);
+        float[4 * 2] colors;
+        color1.rgbaf(colors[0], colors[1], colors[2], colors[3]);
+        color2.rgbaf(colors[4], colors[5], colors[6], colors[7]);
 
         // half-pixel offset is essential for correct result
         float x0 = cast(float)(p1.x) + 0.5;
@@ -1285,27 +1295,4 @@ private final class OpenGLQueue
         _texCoords ~= cast(float[])texCoords;
         _indices ~= cast(int[])indices;
     };
-}
-
-import std.functional : memoize;
-/// Convert ARGB color array to float 4-vectors
-alias convertColors = memoize!(convertColorsImpl);
-
-float[] convertColorsImpl(uint[] cols) pure nothrow
-{
-    float[] colors;
-    colors.length = cols.length * 4;
-    foreach (i; 0 .. cols.length)
-    {
-        uint color = cols[i];
-        float r = ((color >> 16) & 255) / 255.0;
-        float g = ((color >> 8) & 255) / 255.0;
-        float b = ((color >> 0) & 255) / 255.0;
-        float a = (((color >> 24) & 255) ^ 255) / 255.0;
-        colors[i * 4 + 0] = r;
-        colors[i * 4 + 1] = g;
-        colors[i * 4 + 2] = b;
-        colors[i * 4 + 3] = a;
-    }
-    return colors;
 }

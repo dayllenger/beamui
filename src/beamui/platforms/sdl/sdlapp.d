@@ -448,7 +448,7 @@ final class SDLWindow : Window
         auto iconDraw = new ColorDrawBuf(iconw, iconh);
         scope (exit)
             destroy(iconDraw);
-        iconDraw.fill(0xFF000000);
+        iconDraw.fill(Color(0xFF000000));
         iconDraw.drawRescaled(Rect(0, 0, iconw, iconh), ic, Rect(0, 0, ic.width, ic.height));
         iconDraw.invertAndPreMultiplyAlpha();
         SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(iconDraw.scanLine(0), iconDraw.width,
@@ -585,9 +585,10 @@ final class SDLWindow : Window
         else
         {
             // Select the color for drawing.
-            ubyte r = cast(ubyte)((_backgroundColor >> 16) & 255);
-            ubyte g = cast(ubyte)((_backgroundColor >> 8) & 255);
-            ubyte b = cast(ubyte)((_backgroundColor >> 0) & 255);
+            Color c = _backgroundColor;
+            ubyte r = cast(ubyte)c.red;
+            ubyte g = cast(ubyte)c.green;
+            ubyte b = cast(ubyte)c.blue;
             SDL_SetRenderDrawColor(_renderer, r, g, b, 255);
             // Clear the entire screen to our selected color.
             SDL_RenderClear(_renderer);

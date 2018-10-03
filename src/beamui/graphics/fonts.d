@@ -41,6 +41,7 @@ import beamui.core.config;
 import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types;
+import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
 import beamui.style.types;
 
@@ -86,13 +87,12 @@ enum dchar UNICODE_NB_HYPHEN = 0x2011;
 /// Custom character properties - for char-by-char drawing of text string with different character color and style
 struct CustomCharProps
 {
-    uint color;
-    uint textFlags;
+    Color color;
+    TextFlag textFlags = TextFlag.unspecified;
 
-    this(uint color, bool underline = false, bool strikeThrough = false)
+    this(Color color, bool underline = false, bool strikeThrough = false)
     {
         this.color = color;
-        this.textFlags = 0;
         if (underline)
             this.textFlags |= TextFlag.underline;
         if (strikeThrough)
@@ -387,7 +387,7 @@ class Font : RefCountedObject
      *      tabOffset = when string is drawn not from left position, use to move tab stops left/right
      *      textFlags = set of TextFlag bit fields
      ****************************************************************************************/
-    void drawText(DrawBuf buf, int x, int y, const dchar[] text, uint color, int tabSize = 4,
+    void drawText(DrawBuf buf, int x, int y, const dchar[] text, Color color, int tabSize = 4,
             int tabOffset = 0, uint textFlags = 0)
     {
         if (text.length == 0)
@@ -480,7 +480,7 @@ class Font : RefCountedObject
         foreach (int i; 0 .. charsMeasured)
         {
             dchar ch = text[i];
-            uint color = i < charProps.length ? charProps[i].color : charProps[$ - 1].color;
+            Color color = i < charProps.length ? charProps[i].color : charProps[$ - 1].color;
             customizedTextFlags = (i < charProps.length ? charProps[i].textFlags : charProps[$ - 1].textFlags) |
                 textFlags;
             underline = (customizedTextFlags & TextFlag.underline) != 0;
@@ -534,7 +534,7 @@ class Font : RefCountedObject
     }
 
     /// Draws multiline text with line splitting
-    void drawMultilineText(DrawBuf buf, int x, int y, const dchar[] text, uint color, int maxLines = 0,
+    void drawMultilineText(DrawBuf buf, int x, int y, const dchar[] text, Color color, int maxLines = 0,
             int maxWidth = 0, int tabSize = 4, int tabOffset = 0, uint textFlags = 0)
     {
         SimpleTextFormatter fmt;
@@ -674,7 +674,7 @@ struct SimpleTextFormatter
     }
 
     /// Draw formatted text
-    void draw(DrawBuf buf, int x, int y, FontRef fnt, uint color)
+    void draw(DrawBuf buf, int x, int y, FontRef fnt, Color color)
     {
         int lineHeight = fnt.height;
         foreach (line; _lines)
@@ -685,7 +685,7 @@ struct SimpleTextFormatter
     }
 
     /// Draw horizontaly aligned formatted text
-    void draw(DrawBuf buf, int x, int y, FontRef fnt, uint color, ubyte alignment)
+    void draw(DrawBuf buf, int x, int y, FontRef fnt, Color color, ubyte alignment)
     {
         int lineHeight = fnt.height;
         dstring line;

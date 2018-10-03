@@ -568,30 +568,30 @@ void main()
     // charts
     {
         auto barChart1 = new SimpleBarChart("SimpleBarChart Example"d);
-        barChart1.addBar(12.0, makeRGBA(255, 0, 0, 0), "Red bar"d);
-        barChart1.addBar(24.0, makeRGBA(0, 255, 0, 0), "Green bar"d);
-        barChart1.addBar(5.0, makeRGBA(0, 0, 255, 0), "Blue bar"d);
-        barChart1.addBar(12.0, makeRGBA(230, 126, 34, 0), "Orange bar"d);
+        barChart1.addBar(12.0, Color(255, 0, 0), "Red bar"d);
+        barChart1.addBar(24.0, Color(0, 255, 0), "Green bar"d);
+        barChart1.addBar(5.0, Color(0, 0, 255), "Blue bar"d);
+        barChart1.addBar(12.0, Color(230, 126, 34), "Orange bar"d);
         //barChart1.fillWH();
 
         auto barChart2 = new SimpleBarChart("SimpleBarChart Example - long descriptions"d);
-        barChart2.addBar(12.0, makeRGBA(255, 0, 0, 0), "Red bar\n(12.0)"d);
-        barChart2.addBar(24.0, makeRGBA(0, 255, 0, 0), "Green bar\n(24.0)"d);
-        barChart2.addBar(5.0, makeRGBA(0, 0, 255, 0), "Blue bar\n(5.0)"d);
-        barChart2.addBar(12.0, makeRGBA(230, 126, 34, 0), "Orange bar\n(12.0)\nlong long long description added here"d);
+        barChart2.addBar(12.0, Color(255, 0, 0), "Red bar\n(12.0)"d);
+        barChart2.addBar(24.0, Color(0, 255, 0), "Green bar\n(24.0)"d);
+        barChart2.addBar(5.0, Color(0, 0, 255), "Blue bar\n(5.0)"d);
+        barChart2.addBar(12.0, Color(230, 126, 34), "Orange bar\n(12.0)\nlong long long description added here"d);
 
         auto barChart3 = new SimpleBarChart("SimpleBarChart Example with axis ratio 0.3"d);
-        barChart3.addBar(12.0, makeRGBA(255, 0, 0, 0), "Red bar"d);
-        barChart3.addBar(24.0, makeRGBA(0, 255, 0, 0), "Green bar"d);
-        barChart3.addBar(5.0, makeRGBA(0, 0, 255, 0), "Blue bar"d);
-        barChart3.addBar(12.0, makeRGBA(230, 126, 34, 0), "Orange bar"d);
+        barChart3.addBar(12.0, Color(255, 0, 0), "Red bar"d);
+        barChart3.addBar(24.0, Color(0, 255, 0), "Green bar"d);
+        barChart3.addBar(5.0, Color(0, 0, 255), "Blue bar"d);
+        barChart3.addBar(12.0, Color(230, 126, 34), "Orange bar"d);
         barChart3.axisRatio = 0.3;
 
         auto barChart4 = new SimpleBarChart("SimpleBarChart Example with axis ratio 1.3"d);
-        barChart4.addBar(12.0, makeRGBA(255, 0, 0, 0), "Red bar"d);
-        barChart4.addBar(24.0, makeRGBA(0, 255, 0, 0), "Green bar"d);
-        barChart4.addBar(5.0, makeRGBA(0, 0, 255, 0), "Blue bar"d);
-        barChart4.addBar(12.0, makeRGBA(230, 126, 34, 0), "Orange bar"d);
+        barChart4.addBar(12.0, Color(255, 0, 0), "Red bar"d);
+        barChart4.addBar(24.0, Color(0, 255, 0), "Green bar"d);
+        barChart4.addBar(5.0, Color(0, 0, 255), "Blue bar"d);
+        barChart4.addBar(12.0, Color(230, 126, 34), "Orange bar"d);
         barChart4.axisRatio = 1.3;
 
         auto chartsLayout = new Row;
@@ -614,32 +614,33 @@ void main()
     {
         auto canvas = new CanvasWidget;
         canvas.drawCalled = delegate(DrawBuf buf, Box area) {
-            buf.fill(0xFFFFFF);
+            buf.fill(Color(0xFFFFFF));
 
             int lh = canvas.font.height;
             int x = area.x + 5;
             int y = area.y + 5;
-            canvas.font.drawText(buf, x + 20, y, "solid rectangles"d, 0xC080C0);
-            buf.fillRect(Rect(x + 20, y + lh + 1, x + 150, y + 200), 0x80FF80);
-            buf.fillRect(Rect(x + 90, y + 80, x + 250, y + 250), 0x80FF80FF);
+            canvas.font.drawText(buf, x + 20, y, "solid rectangles"d, Color(0xC080C0));
+            buf.fillRect(Rect(x + 20, y + lh + 1, x + 150, y + 200), Color(0x80FF80));
+            buf.fillRect(Rect(x + 90, y + 80, x + 250, y + 250), Color(0x80FF80FF));
 
-            canvas.font.drawText(buf, x + 400, y, "frame"d, 0x208020);
+            canvas.font.drawText(buf, x + 400, y, "frame"d, Color(0x208020));
             buf.drawFrame(Rect(x + 400, y + lh + 1, x + 550, y + 150),
-                          0x2090A0, Insets(6, 6, 18, 6), 0);
+                          Color(0x2090A0), Insets(6, 6, 18, 6), Color(0x0));
 
-            canvas.font.drawText(buf, x + 20, y + 300, "points"d, 0x000080);
+            canvas.font.drawText(buf, x + 20, y + 300, "points"d, Color(0x000080));
             for (int i = 0; i < 100; i += 2)
-                buf.drawPixel(x + 20 + i, y + lh + 305, 0xFF0000 + i * 2);
+                buf.drawPixel(x + 20 + i, y + lh + 305, Color(0xFF0000 + i * 2));
 
-            canvas.font.drawText(buf, x + 450, y + 300, "lines"d, 0x800020);
+            canvas.font.drawText(buf, x + 450, y + 300, "lines"d, Color(0x800020));
             for (int i = 0; i < 40; i += 3)
-                buf.drawLine(Point(x + 400 + i * 4, y + 250), Point(x + 350 + i * 7, y + 320 + i * 2), 0x008000 + i * 5);
+                buf.drawLine(Point(x + 400 + i * 4, y + 250), Point(x + 350 + i * 7, y + 320 + i * 2),
+                             Color(0x008000 + i * 5));
 
-            canvas.font.drawText(buf, x + 20, y + 500, "ellipse"d, 0x208050);
-            buf.drawEllipseF(x + 100, y + 600, 100, 80, 3, 0x80008000, 0x804040FF);
+            canvas.font.drawText(buf, x + 20, y + 500, "ellipse"d, Color(0x208050));
+            buf.drawEllipseF(x + 100, y + 600, 100, 80, 3, Color(0x80008000), Color(0x804040FF));
 
-            canvas.font.drawText(buf, x + 320, y + 500, "ellipse arc"d, 0x208050);
-            buf.drawEllipseArcF(x + 350, y + lh + 505, 150, 180, 45, 130, 3, 0x40008000, 0x804040FF);
+            canvas.font.drawText(buf, x + 320, y + 500, "ellipse arc"d, Color(0x208050));
+            buf.drawEllipseArcF(x + 350, y + lh + 505, 150, 180, 45, 130, 3, Color(0x40008000), Color(0x804040FF));
         };
 
         tabs.addTab(canvas.id("CANVAS"), tr("Canvas"));

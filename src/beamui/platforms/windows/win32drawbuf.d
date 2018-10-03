@@ -23,6 +23,7 @@ import beamui.core.config;
 static if (BACKEND_GUI):
 import core.sys.windows.windows;
 import beamui.core.logger;
+import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
 
 /// Win32 context ARGB drawing buffer
@@ -52,7 +53,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
     {
         this(w, h);
         resetClipping();
-        fill(0xFFFFFFFF);
+        fill(Color.transparent);
         if (_w == w && _h == h)
             drawImage(0, 0, v);
         else
@@ -169,7 +170,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         }
     }
 
-    override void fill(uint color)
+    override void fill(Color color)
     {
         if (hasClipping)
         {
@@ -177,9 +178,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
             return;
         }
         int len = _w * _h;
-        //for (int i = 0; i < len; i++)
-        //    _pixels[i] = color;
-        _pixels[0 .. len] = color;
+        _pixels[0 .. len] = color.hex;
     }
 
     /// Draw to win32 device context

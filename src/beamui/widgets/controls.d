@@ -341,9 +341,9 @@ class Button : LinearLayout, ActionHolder
             return this;
         }
 
-        uint textColor() const
+        Color textColor() const
         {
-            return _label ? _label.textColor : 0;
+            return _label ? _label.textColor : Color(0x0);
         }
         Button textColor(string colorString)
         {

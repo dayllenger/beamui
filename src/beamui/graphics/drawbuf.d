@@ -130,17 +130,16 @@ class DrawBuf : RefCountedObject
         _alpha = blendAlpha(_alpha, alpha);
     }
 
-    /// Applies current drawbuf alpha to argb color value
-    uint applyAlpha(uint argb)
+    /// Applies current drawbuf alpha to color
+    void applyAlpha(ref Color c)
     {
         if (!_alpha)
-            return argb; // no drawbuf alpha
-        uint a1 = (argb >> 24) & 0xFF;
+            return; // no drawbuf alpha
+        uint a1 = c.alpha;
         if (a1 == 0xFF)
-            return argb; // fully transparent
+            return; // fully transparent
         uint a2 = _alpha & 0xFF;
-        uint a = blendAlpha(a1, a2);
-        return (argb & 0xFFFFFF) | (a << 24);
+        c.alpha = blendAlpha(a1, a2);
     }
 
     //===============================================================
@@ -350,17 +349,16 @@ class DrawBuf : RefCountedObject
     // Drawing methods
 
     /// Fill the whole buffer with solid color (no clipping applied)
-    abstract void fill(uint color);
+    abstract void fill(Color color);
     /// Fill rectangle with solid color (clipping is applied)
-    abstract void fillRect(Rect rc, uint color);
+    abstract void fillRect(Rect rc, Color color);
     /// Fill rectangle with a gradient (clipping is applied)
-    abstract void fillGradientRect(Rect rc, uint color1, uint color2, uint color3, uint color4);
+    abstract void fillGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4);
 
     /// Fill rectangle with solid color and pattern (clipping is applied)
-    void fillRectPattern(Rect rc, uint color, PatternType pattern)
+    void fillRectPattern(Rect rc, Color color, PatternType pattern)
     {
-        uint alpha = color >> 24;
-        if (alpha == 255) // fully transparent
+        if (color.isFullyTransparent)
             return;
         if (applyClipping(rc))
         {
@@ -371,7 +369,7 @@ class DrawBuf : RefCountedObject
                 break;
             case dotted:
                 auto img = makeTemporaryImage(2, 2);
-                img.fill(COLOR_TRANSPARENT);
+                img.fill(Color.transparent);
                 foreach (x; 0 .. 2)
                 {
                     foreach (y; 0 .. 2)
@@ -387,9 +385,9 @@ class DrawBuf : RefCountedObject
         }
     }
     /// Draw pixel at (x, y) with specified color (clipping is applied)
-    abstract void drawPixel(int x, int y, uint color);
+    abstract void drawPixel(int x, int y, Color color);
     /// Draw 8bit alpha image - usually font glyph using specified color (clipping is applied)
-    abstract void drawGlyph(int x, int y, Glyph* glyph, uint color);
+    abstract void drawGlyph(int x, int y, Glyph* glyph, Color color);
     /// Draw source buffer rectangle contents to destination buffer (clipping is applied)
     abstract void drawFragment(int x, int y, DrawBuf src, Rect srcrect);
     /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
@@ -508,11 +506,11 @@ class DrawBuf : RefCountedObject
         }
     }
     /// Draws rectangle frame of specified color, widths (per side), pattern and optinally fills inner area
-    void drawFrame(Rect rc, uint frameColor, Insets frameSideWidths, uint innerAreaColor = 0xFFFFFFFF,
+    void drawFrame(Rect rc, Color frameColor, Insets frameSideWidths, Color innerAreaColor = Color.transparent,
             PatternType pattern = PatternType.solid)
     {
         // draw frame
-        if (!isFullyTransparentColor(frameColor))
+        if (!frameColor.isFullyTransparent)
         {
             Rect r;
             // left side
@@ -540,7 +538,7 @@ class DrawBuf : RefCountedObject
                 fillRectPattern(rc2, frameColor, pattern);
         }
         // draw internal area
-        if (!isFullyTransparentColor(innerAreaColor))
+        if (!innerAreaColor.isFullyTransparent)
         {
             rc.left += frameSideWidths.left;
             rc.top += frameSideWidths.top;
@@ -552,14 +550,14 @@ class DrawBuf : RefCountedObject
     }
 
     /// Draw focus rectangle; vertical gradient supported - colors[0] is top color, colors[1] is bottom color
-    void drawFocusRect(Rect rc, const uint[] colors)
+    void drawFocusRect(Rect rc, const Color[] colors)
     {
         // override for faster performance when using OpenGL
         if (colors.length < 1)
             return;
-        uint color1 = colors[0];
-        uint color2 = colors.length > 1 ? colors[1] : color1;
-        if (isFullyTransparentColor(color1) && isFullyTransparentColor(color2))
+        Color color1 = colors[0];
+        Color color2 = colors.length > 1 ? colors[1] : color1;
+        if (color1.isFullyTransparent && color2.isFullyTransparent)
             return;
         // draw horizontal lines
         foreach (int x; rc.left .. rc.right)
@@ -572,7 +570,7 @@ class DrawBuf : RefCountedObject
         // draw vertical lines
         foreach (int y; rc.top + 1 .. rc.bottom - 1)
         {
-            uint color = color1 == color2 ? color1 : blendARGB(color2, color1, 255 / (rc.bottom - rc.top));
+            Color color = color1 == color2 ? color1 : Color.blend(color2, color1, 255 / (rc.bottom - rc.top));
             if ((y ^ rc.left) & 1)
                 fillRect(Rect(rc.left, y, rc.left + 1, y + 1), color);
             if ((y ^ (rc.right - 1)) & 1)
@@ -581,7 +579,7 @@ class DrawBuf : RefCountedObject
     }
 
     /// Draw filled triangle in float coordinates; clipping is already applied
-    protected void fillTriangleFClipped(PointF p1, PointF p2, PointF p3, uint colour)
+    protected void fillTriangleFClipped(PointF p1, PointF p2, PointF p3, Color color)
     {
         // override and implement it
     }
@@ -651,7 +649,7 @@ class DrawBuf : RefCountedObject
     }
 
     /// Draw filled triangle in float coordinates
-    void fillTriangleF(PointF p1, PointF p2, PointF p3, uint colour)
+    void fillTriangleF(PointF p1, PointF p2, PointF p3, Color color)
     {
         if (_clipRect.empty) // clip rectangle is empty - all drawables are clipped out
             return;
@@ -665,7 +663,7 @@ class DrawBuf : RefCountedObject
         if (p1insideClip && p2insideClip && p3insideClip)
         {
             // all points inside clipping area - no clipping required
-            fillTriangleFClipped(p1, p2, p3, colour);
+            fillTriangleFClipped(p1, p2, p3, color);
             return;
         }
         // do triangle clipping
@@ -715,86 +713,86 @@ class DrawBuf : RefCountedObject
         if (!p1moved && !p2moved && !p3moved)
         {
             // no moved - no clipping
-            fillTriangleFClipped(p1, p2, p3, colour);
+            fillTriangleFClipped(p1, p2, p3, color);
         }
         else if (p1moved && !p2moved && !p3moved)
         {
-            fillTriangleFClipped(p11, p2, p3, colour);
-            fillTriangleFClipped(p3, p13, p11, colour);
+            fillTriangleFClipped(p11, p2, p3, color);
+            fillTriangleFClipped(p3, p13, p11, color);
         }
         else if (!p1moved && p2moved && !p3moved)
         {
-            fillTriangleFClipped(p22, p3, p1, colour);
-            fillTriangleFClipped(p1, p21, p22, colour);
+            fillTriangleFClipped(p22, p3, p1, color);
+            fillTriangleFClipped(p1, p21, p22, color);
         }
         else if (!p1moved && !p2moved && p3moved)
         {
-            fillTriangleFClipped(p33, p1, p2, colour);
-            fillTriangleFClipped(p2, p32, p33, colour);
+            fillTriangleFClipped(p33, p1, p2, color);
+            fillTriangleFClipped(p2, p32, p33, color);
         }
         else if (p1moved && p2moved && !p3moved)
         {
             if (!side1clipped)
             {
-                fillTriangleFClipped(p13, p11, p21, colour);
-                fillTriangleFClipped(p21, p22, p13, colour);
+                fillTriangleFClipped(p13, p11, p21, color);
+                fillTriangleFClipped(p21, p22, p13, color);
             }
-            fillTriangleFClipped(p22, p3, p13, colour);
+            fillTriangleFClipped(p22, p3, p13, color);
         }
         else if (!p1moved && p2moved && p3moved)
         {
             if (!side2clipped)
             {
-                fillTriangleFClipped(p21, p22, p32, colour);
-                fillTriangleFClipped(p32, p33, p21, colour);
+                fillTriangleFClipped(p21, p22, p32, color);
+                fillTriangleFClipped(p32, p33, p21, color);
             }
-            fillTriangleFClipped(p21, p33, p1, colour);
+            fillTriangleFClipped(p21, p33, p1, color);
         }
         else if (p1moved && !p2moved && p3moved)
         {
             if (!side3clipped)
             {
-                fillTriangleFClipped(p13, p11, p32, colour);
-                fillTriangleFClipped(p32, p33, p13, colour);
+                fillTriangleFClipped(p13, p11, p32, color);
+                fillTriangleFClipped(p32, p33, p13, color);
             }
-            fillTriangleFClipped(p11, p2, p32, colour);
+            fillTriangleFClipped(p11, p2, p32, color);
         }
         else if (p1moved && p2moved && p3moved)
         {
             if (side1clipped)
             {
-                fillTriangleFClipped(p13, p22, p32, colour);
-                fillTriangleFClipped(p32, p33, p13, colour);
+                fillTriangleFClipped(p13, p22, p32, color);
+                fillTriangleFClipped(p32, p33, p13, color);
             }
             else if (side2clipped)
             {
-                fillTriangleFClipped(p11, p21, p33, colour);
-                fillTriangleFClipped(p33, p13, p11, colour);
+                fillTriangleFClipped(p11, p21, p33, color);
+                fillTriangleFClipped(p33, p13, p11, color);
             }
             else if (side3clipped)
             {
-                fillTriangleFClipped(p11, p21, p22, colour);
-                fillTriangleFClipped(p22, p32, p11, colour);
+                fillTriangleFClipped(p11, p21, p22, color);
+                fillTriangleFClipped(p22, p32, p11, color);
             }
             else
             {
-                fillTriangleFClipped(p13, p11, p21, colour);
-                fillTriangleFClipped(p21, p22, p13, colour);
-                fillTriangleFClipped(p22, p32, p33, colour);
-                fillTriangleFClipped(p33, p13, p22, colour);
+                fillTriangleFClipped(p13, p11, p21, color);
+                fillTriangleFClipped(p21, p22, p13, color);
+                fillTriangleFClipped(p22, p32, p33, color);
+                fillTriangleFClipped(p33, p13, p22, color);
             }
         }
     }
 
     /// Draw filled quad in float coordinates
-    void fillQuadF(PointF p1, PointF p2, PointF p3, PointF p4, uint colour)
+    void fillQuadF(PointF p1, PointF p2, PointF p3, PointF p4, Color color)
     {
-        fillTriangleF(p1, p2, p3, colour);
-        fillTriangleF(p3, p4, p1, colour);
+        fillTriangleF(p1, p2, p3, color);
+        fillTriangleF(p3, p4, p1, color);
     }
 
     /// Draw line of arbitrary width in float coordinates
-    void drawLineF(PointF p1, PointF p2, float width, uint colour)
+    void drawLineF(PointF p1, PointF p2, float width, Color color)
     {
         // direction vector
         PointF v = (p2 - p1).normalized;
@@ -807,7 +805,7 @@ class DrawBuf : RefCountedObject
         // offset by normal * half_width
         n *= width / 2;
         // draw line using quad
-        fillQuadF(p1 - n, p2 - n, p2 + n, p1 + n, colour);
+        fillQuadF(p1 - n, p2 - n, p2 + n, p1 + n, color);
     }
 
     // find intersection point for two vectors with start points p1, p2 and normalized directions dir1, dir2
@@ -879,25 +877,25 @@ class DrawBuf : RefCountedObject
     }
     /// Draw line of arbitrary width in float coordinates p1..p2 with angle based on
     /// Previous (p0..p1) and next (p2..p3) segments
-    void drawLineSegmentF(PointF p0, PointF p1, PointF p2, PointF p3, float width, uint colour)
+    void drawLineSegmentF(PointF p0, PointF p1, PointF p2, PointF p3, float width, Color color)
     {
         PointF[4] quad;
         calcLineSegmentQuad(p0, p1, p2, p3, width, quad);
-        fillQuadF(quad[0], quad[1], quad[2], quad[3], colour);
+        fillQuadF(quad[0], quad[1], quad[2], quad[3], color);
     }
 
     /// Draw poly line of arbitrary width in float coordinates;
     /// When cycled is true, connect first and last point (optionally fill inner area)
-    void polyLineF(PointF[] points, float width, uint colour, bool cycled = false,
-            uint innerAreaColour = COLOR_TRANSPARENT)
+    void polyLineF(PointF[] points, float width, Color color, bool cycled = false,
+            Color innerAreaColor = Color.transparent)
     {
         if (points.length < 2)
             return;
-        bool hasInnerArea = !isFullyTransparentColor(innerAreaColour);
-        if (isFullyTransparentColor(colour))
+        bool hasInnerArea = !innerAreaColor.isFullyTransparent;
+        if (color.isFullyTransparent)
         {
             if (hasInnerArea)
-                fillPolyF(points, innerAreaColour);
+                fillPolyF(points, innerAreaColor);
             return;
         }
         int len = cast(int)points.length;
@@ -935,9 +933,9 @@ class DrawBuf : RefCountedObject
                 calcLineSegmentQuad(points[index0], points[index1], points[index2], points[index3], width, quad);
                 innerArea ~= quad[3];
             }
-            fillPolyF(innerArea, innerAreaColour);
+            fillPolyF(innerArea, innerAreaColor);
         }
-        if (!isFullyTransparentColor(colour))
+        if (!color.isFullyTransparent)
         {
             for (int i = 0; i < len; i++)
             {
@@ -965,13 +963,13 @@ class DrawBuf : RefCountedObject
                 }
                 //Log.d("lineSegment - outer ", index0, ", ", index1, ", ", index2, ", ", index3);
                 if (cycled || i + 1 < len)
-                    drawLineSegmentF(points[index0], points[index1], points[index2], points[index3], width, colour);
+                    drawLineSegmentF(points[index0], points[index1], points[index2], points[index3], width, color);
             }
         }
     }
 
     /// Draw filled polyline (vertexes must be in clockwise order)
-    void fillPolyF(PointF[] points, uint colour)
+    void fillPolyF(PointF[] points, Color color)
     {
         if (points.length < 3)
         {
@@ -979,7 +977,7 @@ class DrawBuf : RefCountedObject
         }
         if (points.length == 3)
         {
-            fillTriangleF(points[0], points[1], points[2], colour);
+            fillTriangleF(points[0], points[1], points[2], color);
             return;
         }
         PointF[] list = points.dup;
@@ -996,7 +994,7 @@ class DrawBuf : RefCountedObject
                 if (cross > 0)
                 {
                     // draw triangle
-                    fillTriangleF(p1, p2, p3, colour);
+                    fillTriangleF(p1, p2, p3, color);
                     int indexToRemove = (i + 1) % (cast(int)list.length);
                     // remove triangle from poly
                     for (int j = indexToRemove; j + 1 < list.length; j++)
@@ -1008,7 +1006,7 @@ class DrawBuf : RefCountedObject
             }
             if (list.length == 3)
             {
-                fillTriangleF(list[0], list[1], list[2], colour);
+                fillTriangleF(list[0], list[1], list[2], color);
                 break;
             }
             if (!moved)
@@ -1018,7 +1016,7 @@ class DrawBuf : RefCountedObject
 
     /// Draw ellipse or filled ellipse
     void drawEllipseF(float centerX, float centerY, float xRadius, float yRadius, float lineWidth,
-            uint lineColor, uint fillColor = COLOR_TRANSPARENT)
+            Color lineColor, Color fillColor = Color.transparent)
     {
         import std.math : sin, cos, PI;
 
@@ -1045,7 +1043,7 @@ class DrawBuf : RefCountedObject
 
     /// Draw ellipse arc or filled ellipse arc
     void drawEllipseArcF(float centerX, float centerY, float xRadius, float yRadius, float startAngle,
-            float endAngle, float lineWidth, uint lineColor, uint fillColor = COLOR_TRANSPARENT)
+            float endAngle, float lineWidth, Color lineColor, Color fillColor = Color.transparent)
     {
         import std.math : sin, cos, PI;
 
@@ -1079,20 +1077,20 @@ class DrawBuf : RefCountedObject
     }
 
     /// Draw poly line of width == 1px; when cycled is true, connect first and last point
-    void polyLine(Point[] points, uint colour, bool cycled)
+    void polyLine(Point[] points, Color color, bool cycled)
     {
         if (points.length < 2)
             return;
         for (int i = 0; i + 1 < points.length; i++)
         {
-            drawLine(points[i], points[i + 1], colour);
+            drawLine(points[i], points[i + 1], color);
         }
         if (cycled && points.length > 2)
-            drawLine(points[$ - 1], points[0], colour);
+            drawLine(points[$ - 1], points[0], color);
     }
 
     /// Draw line from point p1 to p2 with specified color
-    void drawLine(Point p1, Point p2, uint colour)
+    void drawLine(Point p1, Point p2, Color color)
     {
         if (!clipLine(_clipRect, p1, p2))
             return;
@@ -1105,7 +1103,7 @@ class DrawBuf : RefCountedObject
         int dy = p2.y - p1.y;
         immutable int iy = (dy > 0) - (dy < 0);
         immutable int dy2 = abs(dy) * 2;
-        drawPixel(p1.x, p1.y, colour);
+        drawPixel(p1.x, p1.y, color);
         if (dx2 >= dy2)
         {
             int error = dy2 - (dx2 / 2);
@@ -1118,7 +1116,7 @@ class DrawBuf : RefCountedObject
                 }
                 error += dy2;
                 p1.x += ix;
-                drawPixel(p1.x, p1.y, colour);
+                drawPixel(p1.x, p1.y, color);
             }
         }
         else
@@ -1133,7 +1131,7 @@ class DrawBuf : RefCountedObject
                 }
                 error += dx2;
                 p1.y += iy;
-                drawPixel(p1.x, p1.y, colour);
+                drawPixel(p1.x, p1.y, color);
             }
         }
     }
@@ -1228,12 +1226,12 @@ class DrawBuf : RefCountedObject
     }
 
     /// Draws rect with rounded corners
-    void drawRoundedRectF(Rect rect, vec4 corners, bool keepSquareXY, float frameWidth, uint frameColor,
-            uint fillColor = COLOR_TRANSPARENT)
+    void drawRoundedRectF(Rect rect, vec4 corners, bool keepSquareXY, float frameWidth,
+                          Color frameColor, Color fillColor = Color.transparent)
     {
         auto fullPath = makeRoundedRectPath(rect, corners, keepSquareXY);
         // fill inner area, doing this manually by sectors to reduce flickering artifacts
-        if (fillColor != COLOR_TRANSPARENT)
+        if (!fillColor.isFullyTransparent)
         {
             PointF center = PointF(rect.middlex, rect.middley);
             for (int i = 0; i < fullPath.length - 1; i++)
@@ -1241,7 +1239,7 @@ class DrawBuf : RefCountedObject
                 fillTriangleF(center, fullPath[i], fullPath[i + 1], fillColor);
             }
         }
-        if (frameColor != COLOR_TRANSPARENT && frameWidth > 0)
+        if (!frameColor.isFullyTransparent && frameWidth > 0)
         {
             for (int i = 0; i < fullPath.length - 1; i++)
             {
@@ -1545,13 +1543,13 @@ class ColorDrawBufBase : DrawBuf
         return true;
     }
 
-    override void drawGlyph(int x, int y, Glyph* glyph, uint color)
+    override void drawGlyph(int x, int y, Glyph* glyph, Color color)
     {
         ubyte[] src = glyph.glyph;
         int srcdx = glyph.blackBoxX;
         int srcdy = glyph.blackBoxY;
         bool clipping = true; //!_clipRect.empty();
-        color = applyAlpha(color);
+        applyAlpha(color);
         bool subpixel = glyph.subpixelMode != SubpixelRenderingMode.none;
         foreach (int yy; 0 .. srcdy)
         {
@@ -1569,7 +1567,7 @@ class ColorDrawBufBase : DrawBuf
                     continue;
                 if (colx < 0 || colx >= _w)
                     continue;
-                uint alpha2 = (color >> 24);
+                uint alpha2 = color.alpha;
                 uint alpha1 = srcrow[xx] ^ 255;
                 uint alpha = ((((alpha1 ^ 255) * (alpha2 ^ 255)) >> 8) ^ 255) & 255;
                 if (subpixel)
@@ -1589,7 +1587,7 @@ class ColorDrawBufBase : DrawBuf
                         else
                         {
                             // apply blending
-                            row[colx] = blendARGB(pixel, color, alpha);
+                            row[colx] = blendARGB(pixel, color.hex, alpha);
                         }
                     }
                 }
@@ -1633,31 +1631,32 @@ class ColorDrawBufBase : DrawBuf
         }
     }
 
-    override void fillRect(Rect rc, uint color)
+    override void fillRect(Rect rc, Color color)
     {
-        uint alpha = color >> 24;
         if (applyClipping(rc))
         {
+            uint c = color.hex;
+            uint alpha = color.alpha;
             foreach (y; rc.top .. rc.bottom)
             {
                 uint* row = scanLine(y);
                 if (!alpha)
                 {
-                    row[rc.left .. rc.right] = color;
+                    row[rc.left .. rc.right] = c;
                 }
                 else if (alpha < 254)
                 {
                     foreach (x; rc.left .. rc.right)
                     {
                         // apply blending
-                        row[x] = blendARGB(row[x], color, alpha);
+                        row[x] = blendARGB(row[x], c, alpha);
                     }
                 }
             }
         }
     }
 
-    override void fillGradientRect(Rect rc, uint color1, uint color2, uint color3, uint color4)
+    override void fillGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4)
     {
         if (applyClipping(rc))
         {
@@ -1665,35 +1664,36 @@ class ColorDrawBufBase : DrawBuf
             {
                 // interpolate vertically at the side edges
                 uint ay = (255 * (y - rc.top)) / (rc.bottom - rc.top);
-                uint cl = blendARGB(color2, color1, ay);
-                uint cr = blendARGB(color4, color3, ay);
+                Color cl = Color.blend(color2, color1, ay);
+                Color cr = Color.blend(color4, color3, ay);
 
                 uint* row = scanLine(y);
                 foreach (x; rc.left .. rc.right)
                 {
                     // interpolate horizontally
                     uint ax = (255 * (x - rc.left)) / (rc.right - rc.left);
-                    row[x] = blendARGB(cr, cl, ax);
+                    row[x] = Color.blend(cr, cl, ax).hex;
                 }
             }
         }
     }
 
-    override void drawPixel(int x, int y, uint color)
+    override void drawPixel(int x, int y, Color color)
     {
         if (!_clipRect.isPointInside(x, y))
             return;
-        color = applyAlpha(color);
+        applyAlpha(color);
+        uint c = color.hex;
+        uint alpha = color.alpha;
         uint* row = scanLine(y);
-        uint alpha = color >> 24;
         if (!alpha)
         {
-            row[x] = color;
+            row[x] = c;
         }
         else if (alpha < 254)
         {
             // apply blending
-            row[x] = blendARGB(row[x], color, alpha);
+            row[x] = blendARGB(row[x], c, alpha);
         }
     }
 }
@@ -1740,7 +1740,7 @@ class GrayDrawBuf : DrawBuf
         resetClipping();
     }
 
-    override void fill(uint color)
+    override void fill(Color color)
     {
         if (hasClipping)
         {
@@ -1749,7 +1749,7 @@ class GrayDrawBuf : DrawBuf
         }
         int len = _w * _h;
         ubyte* p = _buf.ptr;
-        ubyte cl = rgbToGray(color);
+        ubyte cl = color.toGray;
         foreach (i; 0 .. len)
             p[i] = cl;
     }
@@ -1888,7 +1888,7 @@ class GrayDrawBuf : DrawBuf
         return true;
     }
 
-    override void drawGlyph(int x, int y, Glyph* glyph, uint color)
+    override void drawGlyph(int x, int y, Glyph* glyph, Color color)
     {
         ubyte[] src = glyph.glyph;
         int srcdx = glyph.blackBoxX;
@@ -1911,7 +1911,7 @@ class GrayDrawBuf : DrawBuf
                 if (colx < 0 || colx >= _w)
                     continue;
                 uint alpha1 = srcrow[xx] ^ 255;
-                uint alpha2 = (color >> 24);
+                uint alpha2 = color.alpha;
                 uint alpha = ((((alpha1 ^ 255) * (alpha2 ^ 255)) >> 8) ^ 255) & 255;
                 uint pixel = row[colx];
                 if (!alpha)
@@ -1919,18 +1919,18 @@ class GrayDrawBuf : DrawBuf
                 else if (alpha < 255)
                 {
                     // apply blending
-                    row[colx] = cast(ubyte)blendARGB(pixel, color, alpha);
+                    row[colx] = cast(ubyte)blendARGB(pixel, color.hex, alpha);
                 }
             }
         }
     }
 
-    override void fillRect(Rect rc, uint color)
+    override void fillRect(Rect rc, Color color)
     {
         if (applyClipping(rc))
         {
-            uint alpha = color >> 24;
-            ubyte cl = rgbToGray(color);
+            uint alpha = color.alpha;
+            ubyte cl = color.toGray;
             foreach (y; rc.top .. rc.bottom)
             {
                 ubyte* row = scanLine(y);
@@ -1948,14 +1948,14 @@ class GrayDrawBuf : DrawBuf
         }
     }
 
-    override void fillGradientRect(Rect rc, uint color1, uint color2, uint color3, uint color4)
+    override void fillGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4)
     {
         if (applyClipping(rc))
         {
-            ubyte c1 = rgbToGray(color1);
-            ubyte c2 = rgbToGray(color2);
-            ubyte c3 = rgbToGray(color3);
-            ubyte c4 = rgbToGray(color4);
+            ubyte c1 = color1.toGray;
+            ubyte c2 = color2.toGray;
+            ubyte c3 = color3.toGray;
+            ubyte c4 = color4.toGray;
             foreach (y; rc.top .. rc.bottom)
             {
                 // interpolate vertically at the side edges
@@ -1974,14 +1974,14 @@ class GrayDrawBuf : DrawBuf
         }
     }
 
-    override void drawPixel(int x, int y, uint color)
+    override void drawPixel(int x, int y, Color color)
     {
         if (!_clipRect.isPointInside(x, y))
             return;
-        color = applyAlpha(color);
-        ubyte cl = rgbToGray(color);
+        applyAlpha(color);
+        ubyte cl = color.toGray;
+        uint alpha = color.alpha;
         ubyte* row = scanLine(y);
-        uint alpha = color >> 24;
         if (!alpha)
         {
             row[x] = cl;
@@ -2014,7 +2014,7 @@ class ColorDrawBuf : ColorDrawBufBase
     this(ColorDrawBuf v, int dx, int dy)
     {
         this(dx, dy);
-        fill(0xFFFFFFFF);
+        fill(Color.transparent);
         drawRescaled(Rect(0, 0, dx, dy), v, Rect(0, 0, v.width, v.height));
     }
 
@@ -2078,7 +2078,7 @@ class ColorDrawBuf : ColorDrawBufBase
         resetClipping();
     }
 
-    override void fill(uint color)
+    override void fill(Color color)
     {
         if (hasClipping)
         {
@@ -2088,7 +2088,7 @@ class ColorDrawBuf : ColorDrawBufBase
         int len = _w * _h;
         uint* p = _buf.ptr;
         foreach (i; 0 .. len)
-            p[i] = color;
+            p[i] = color.hex;
     }
 
     /// NOT USED

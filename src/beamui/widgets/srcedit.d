@@ -120,18 +120,18 @@ class SourceEdit : EditBox
         uint _foldingPaneWidth = BACKEND_CONSOLE ? 1 : 12;
         uint _modificationMarksPaneWidth = BACKEND_CONSOLE ? 1 : 4;
 
-        uint _leftPaneBackgroundColor = 0xF4F4F4;
-        uint _leftPaneBackgroundColor2 = 0xFFFFFF;
-        uint _leftPaneBackgroundColor3 = 0xF8F8F8;
-        uint _leftPaneLineNumberColor = 0x4060D0;
-        uint _leftPaneLineNumberColorEdited = 0xC0C000;
-        uint _leftPaneLineNumberColorSaved = 0x00C000;
-        uint _leftPaneLineNumberColorCurrentLine = 0xFFFFFFFF;
-        uint _leftPaneLineNumberBackgroundColorCurrentLine = 0xC08080FF;
-        uint _leftPaneLineNumberBackgroundColor = 0xF4F4F4;
-        uint _colorIconBreakpoint = 0xFF0000;
-        uint _colorIconBookmark = 0x0000FF;
-        uint _colorIconError = 0x80FF0000;
+        Color _leftPaneBgColor = Color(0xF4F4F4);
+        Color _leftPaneBgColor2 = Color(0xFFFFFF);
+        Color _leftPaneBgColor3 = Color(0xF8F8F8);
+        Color _leftPaneLineNumColor = Color(0x4060D0);
+        Color _leftPaneLineNumColorEdited = Color(0xC0C000);
+        Color _leftPaneLineNumColorSaved = Color(0x00C000);
+        Color _leftPaneLineNumColorCurrentLine = Color.transparent;
+        Color _leftPaneLineNumBgColorCurrLine = Color(0xC08080FF);
+        Color _leftPaneLineNumBgColor = Color(0xF4F4F4);
+        Color _colorIconBreakpoint = Color(0xFF0000);
+        Color _colorIconBookmark = Color(0x0000FF);
+        Color _colorIconError = Color(0x80FF0000);
 
         string _filename;
     }
@@ -175,20 +175,19 @@ class SourceEdit : EditBox
     override void onThemeChanged()
     {
         super.onThemeChanged();
-        _leftPaneBackgroundColor = currentTheme.getColor("editor_left_pane_background");
-        _leftPaneBackgroundColor2 = currentTheme.getColor("editor_left_pane_background2");
-        _leftPaneBackgroundColor3 = currentTheme.getColor("editor_left_pane_background3");
-        _leftPaneLineNumberColor = currentTheme.getColor("editor_left_pane_line_number_text");
-        _leftPaneLineNumberColorEdited = currentTheme.getColor("editor_left_pane_line_number_text_edited", 0xC0C000);
-        _leftPaneLineNumberColorSaved = currentTheme.getColor("editor_left_pane_line_number_text_saved", 0x00C000);
-        _leftPaneLineNumberColorCurrentLine = currentTheme.getColor("editor_left_pane_line_number_text_current_line",
-                0xFFFFFFFF);
-        _leftPaneLineNumberBackgroundColorCurrentLine = currentTheme.getColor(
-                "editor_left_pane_line_number_background_current_line", 0xC08080FF);
-        _leftPaneLineNumberBackgroundColor = currentTheme.getColor("editor_left_pane_line_number_background");
-        _colorIconBreakpoint = currentTheme.getColor("editor_left_pane_line_icon_breakpoint", 0xFF0000);
-        _colorIconBookmark = currentTheme.getColor("editor_left_pane_line_icon_bookmark", 0x0000FF);
-        _colorIconError = currentTheme.getColor("editor_left_pane_line_icon_error", 0x80FF0000);
+        _leftPaneBgColor = currentTheme.getColor("editor_left_pane_background");
+        _leftPaneBgColor2 = currentTheme.getColor("editor_left_pane_background2");
+        _leftPaneBgColor3 = currentTheme.getColor("editor_left_pane_background3");
+        _leftPaneLineNumColor = currentTheme.getColor("editor_left_pane_line_number_text");
+        _leftPaneLineNumColorEdited = currentTheme.getColor("editor_left_pane_line_number_text_edited", Color(0xC0C000));
+        _leftPaneLineNumColorSaved = currentTheme.getColor("editor_left_pane_line_number_text_saved", Color(0x00C000));
+        _leftPaneLineNumColorCurrentLine = currentTheme.getColor("editor_left_pane_line_number_text_current_line");
+        _leftPaneLineNumBgColorCurrLine = currentTheme.getColor(
+                "editor_left_pane_line_number_background_current_line", Color(0xC08080FF));
+        _leftPaneLineNumBgColor = currentTheme.getColor("editor_left_pane_line_number_background");
+        _colorIconBreakpoint = currentTheme.getColor("editor_left_pane_line_icon_breakpoint", Color(0xFF0000));
+        _colorIconBookmark = currentTheme.getColor("editor_left_pane_line_icon_bookmark", Color(0x0000FF));
+        _colorIconError = currentTheme.getColor("editor_left_pane_line_icon_error", Color(0x80FF0000));
     }
 
     override protected bool onLeftPaneMouseClick(MouseEvent event)
@@ -311,9 +310,9 @@ class SourceEdit : EditBox
 
     override protected void drawLeftPane(DrawBuf buf, Rect rc, int line)
     {
-        buf.fillRect(rc, _leftPaneBackgroundColor);
-        //buf.fillRect(Rect(rc.right - 2, rc.top, rc.right - 1, rc.bottom), _leftPaneBackgroundColor2);
-        //buf.fillRect(Rect(rc.right - 1, rc.top, rc.right - 0, rc.bottom), _leftPaneBackgroundColor3);
+        buf.fillRect(rc, _leftPaneBgColor);
+        //buf.fillRect(Rect(rc.right - 2, rc.top, rc.right - 1, rc.bottom), _leftPaneBgColor2);
+        //buf.fillRect(Rect(rc.right - 1, rc.top, rc.right - 0, rc.bottom), _leftPaneBgColor3);
         rc.right -= BACKEND_CONSOLE ? 1 : 3;
         if (_foldingWidth)
         {
@@ -343,7 +342,7 @@ class SourceEdit : EditBox
 
     protected void drawLeftPaneFolding(DrawBuf buf, Rect rc, int line)
     {
-        buf.fillRect(rc, _leftPaneBackgroundColor2);
+        buf.fillRect(rc, _leftPaneBgColor2);
     }
 
     protected void drawLeftPaneModificationMarks(DrawBuf buf, Rect rc, int line)
@@ -354,21 +353,21 @@ class SourceEdit : EditBox
             if (m == EditStateMark.changed)
             {
                 // modified, not saved
-                buf.fillRect(rc, 0xFFD040);
+                buf.fillRect(rc, Color(0xFFD040));
             }
             else if (m == EditStateMark.saved)
             {
                 // modified, saved
-                buf.fillRect(rc, 0x20C020);
+                buf.fillRect(rc, Color(0x20C020));
             }
         }
     }
 
     protected void drawLeftPaneLineNumbers(DrawBuf buf, Rect rc, int line)
     {
-        uint bgcolor = _leftPaneLineNumberBackgroundColor;
-        if (line == _caretPos.line && !isFullyTransparentColor(_leftPaneLineNumberBackgroundColorCurrentLine))
-            bgcolor = _leftPaneLineNumberBackgroundColorCurrentLine;
+        Color bgcolor = _leftPaneLineNumBgColor;
+        if (line == _caretPos.line && !_leftPaneLineNumBgColorCurrLine.isFullyTransparent)
+            bgcolor = _leftPaneLineNumBgColorCurrLine;
         buf.fillRect(rc, bgcolor);
         if (line < 0)
             return;
@@ -377,21 +376,21 @@ class SourceEdit : EditBox
         Size sz = fnt.textSize(s);
         int x = rc.right - sz.w;
         int y = rc.top + (rc.height - sz.h) / 2;
-        uint color = _leftPaneLineNumberColor;
-        if (line == _caretPos.line && !isFullyTransparentColor(_leftPaneLineNumberColorCurrentLine))
-            color = _leftPaneLineNumberColorCurrentLine;
+        Color color = _leftPaneLineNumColor;
+        if (line == _caretPos.line && !_leftPaneLineNumColorCurrentLine.isFullyTransparent)
+            color = _leftPaneLineNumColorCurrentLine;
         if (line >= 0 && line < content.length)
         {
             EditStateMark m = content.editMark(line);
             if (m == EditStateMark.changed)
             {
                 // modified, not saved
-                color = _leftPaneLineNumberColorEdited;
+                color = _leftPaneLineNumColorEdited;
             }
             else if (m == EditStateMark.saved)
             {
                 // modified, saved
-                color = _leftPaneLineNumberColorSaved;
+                color = _leftPaneLineNumColorSaved;
             }
         }
         fnt.drawText(buf, x, y, s, color);
@@ -399,7 +398,7 @@ class SourceEdit : EditBox
 
     protected void drawLeftPaneIcons(DrawBuf buf, Rect rc, int line)
     {
-        buf.fillRect(rc, _leftPaneBackgroundColor3);
+        buf.fillRect(rc, _leftPaneBgColor3);
         drawLeftPaneIcon(buf, rc, content.lineIcons.findByLineAndType(line, LineIconType.error));
         drawLeftPaneIcon(buf, rc, content.lineIcons.findByLineAndType(line, LineIconType.bookmark));
         drawLeftPaneIcon(buf, rc, content.lineIcons.findByLineAndType(line, LineIconType.breakpoint));

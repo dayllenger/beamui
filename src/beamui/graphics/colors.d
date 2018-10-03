@@ -15,7 +15,7 @@ Authors:   Vadim Lopatin
 module beamui.graphics.colors;
 
 import std.string : strip;
-import std.traits : isUnsigned;
+import std.traits : isIntegral;
 import beamui.core.functions : clamp, to;
 import beamui.core.logger;
 import beamui.core.parseutils;
@@ -26,13 +26,13 @@ immutable uint COLOR_UNSPECIFIED = 0xFFDEADFF;
 /// Transparent color constant
 immutable uint COLOR_TRANSPARENT = 0xFFFFFFFF;
 
-alias ARGB8 = uint;
+alias ARGB = uint;
 
 /// The main color data type, library-wide used
 struct Color
 {
     /// Internal color representation
-    private ARGB8 data;
+    private ARGB data;
 
     /// Special color constant to identify value as not a color (to use default/parent value instead)
     enum none = Color(0xFFDEADFF);
@@ -46,8 +46,13 @@ pure nothrow @nogc:
     {
         data = argb8;
     }
+    /// Make an opaque color from 3 integer components
+    this(T)(T r, T g, T b) if (isIntegral!T)
+    {
+        data = (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
+    }
     /// Make a color from 4 integer components
-    this(T)(T r, T g, T b, T a) if (isUnsigned!T)
+    this(T)(T r, T g, T b, T a) if (isIntegral!T)
     {
         data = (cast(uint)a << 24) | (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
     }
@@ -94,20 +99,20 @@ pure nothrow @nogc:
     }
 
     /// Get the "hexadecimal" 32-bit representation
-    ARGB8 hex() const
+    ARGB hex() const
     {
         return data;
     }
 
     /// Fills 3-vector with the values of red, green and blue channel in [0 .. 1] range
-    void rgbf(ref float r, ref float g, ref float b)
+    void rgbf(ref float r, ref float g, ref float b) const
     {
         r = ((data >> 16) & 255) / 255.0;
         g = ((data >> 8) & 255) / 255.0;
         b = ((data >> 0) & 255) / 255.0;
     }
     /// Fills 4-vector with the values of red, green, blue and alpha channel in [0 .. 1] range
-    void rgbaf(ref float r, ref float g, ref float b, ref float a)
+    void rgbaf(ref float r, ref float g, ref float b, ref float a) const
     {
         r = ((data >> 16) & 255) / 255.0;
         g = ((data >> 8) & 255) / 255.0;
@@ -115,10 +120,40 @@ pure nothrow @nogc:
         a = (((data >> 24) & 255) ^ 255) / 255.0;
     }
 
+    ubyte toGray() const
+    {
+        uint srcr = (data >> 16) & 0xFF;
+        uint srcg = (data >> 8) & 0xFF;
+        uint srcb = (data >> 0) & 0xFF;
+        return ((srcr + srcg + srcg + srcb) >> 2) & 0xFF;
+    }
+
     /// Returns true if the color has the alpha value meaning complete transparency
     bool isFullyTransparent() const
     {
         return (data >> 24) == 0xFF;
+    }
+
+    //===============================================================
+
+    /// Applies additional alpha to the color
+    void addAlpha(uint a)
+    {
+        a = blendAlpha(this.alpha, a);
+        this.alpha = a;
+    }
+
+    /// Blend two colors using alpha
+    static Color blend(Color dst, Color src, uint alpha)
+    {
+        uint dstalpha = dst.alpha;
+        if (dstalpha > 0x80)
+            return src;
+        uint ialpha = 255 - alpha;
+        uint r = ((src.red * ialpha + dst.red * alpha) >> 8) & 0xFF;
+        uint g = ((src.green * ialpha + dst.green * alpha) >> 8) & 0xFF;
+        uint b = ((src.blue * ialpha + dst.blue * alpha) >> 8) & 0xFF;
+        return Color(r, g, b);
     }
 }
 
@@ -383,32 +418,11 @@ uint blendAlpha(uint a1, uint a2) pure nothrow @nogc
     return (((a1 ^ 0xFF) * (a2 ^ 0xFF)) >> 8) ^ 0xFF;
 }
 
-/// Applies additional alpha to color
-uint addAlpha(uint color, uint alpha) pure nothrow @nogc
-{
-    alpha = blendAlpha(color >> 24, alpha);
-    return (color & 0xFFFFFF) | (alpha << 24);
-}
-
-ubyte rgbToGray(uint color) pure nothrow @nogc
-{
-    uint srcr = (color >> 16) & 0xFF;
-    uint srcg = (color >> 8) & 0xFF;
-    uint srcb = (color >> 0) & 0xFF;
-    return cast(uint)(((srcr + srcg + srcg + srcb) >> 2) & 0xFF);
-}
-
 /// Blend two RGB pixels using alpha
 ubyte blendGray(ubyte dst, ubyte src, uint alpha) pure nothrow @nogc
 {
     uint ialpha = 256 - alpha;
     return cast(ubyte)(((src * ialpha + dst * alpha) >> 8) & 0xFF);
-}
-
-/// Returns true if color is #FFxxxxxx (color alpha is 255)
-bool isFullyTransparentColor(uint color) pure nothrow @nogc
-{
-    return (color >> 24) == 0xFF;
 }
 
 /// NOT USED

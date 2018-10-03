@@ -529,9 +529,9 @@ public:
             return this;
         }
         /// Text color
-        uint textColor() const
+        Color textColor() const
         {
-            return style.textColor.hex;
+            return style.textColor;
         }
         /// ditto
         Widget textColor(Color value)
@@ -1746,8 +1746,8 @@ public:
     /// Draw focus rectangle, if enabled in styles
     void drawFocusRect(DrawBuf buf)
     {
-        uint[1] cs = [focusRectColor.hex];
-        if (cs[0] != COLOR_UNSPECIFIED)
+        Color[1] cs = [focusRectColor];
+        if (cs[0] != Color.none)
         {
             Box b = _box;
             b.shrink(Insets(FOCUS_RECT_PADDING));

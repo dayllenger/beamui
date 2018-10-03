@@ -11,10 +11,10 @@ import beamui.widgets.charts;
 auto chart = new SimpleBarChart("Chart");
 
 // add bars
-chart.addBar(12.2, makeRGBA(255, 0, 0, 0), "new bar"c);
+chart.addBar(12.2, Color(255, 0, 0), "new bar"c);
 
 // update bar with index 0
-chart.updateBar(0, 10, makeRGBA(255, 255, 0, 0), "new bar updated"c);
+chart.updateBar(0, 10, Color(255, 255, 0), "new bar updated"c);
 chart.updateBar(0, 20);
 
 // remove bars with index 0
@@ -53,9 +53,9 @@ class SimpleBarChart : Widget
         double y;
         dstring title;
         private Size _titleSize;
-        uint color;
+        Color color;
 
-        this(double y, uint color, dstring title)
+        this(double y, Color color, dstring title)
         {
             this.y = y;
             this.color = color;
@@ -71,7 +71,7 @@ class SimpleBarChart : Widget
         return _bars.length;
     }
 
-    void addBar(double y, uint color, dstring barTitle)
+    void addBar(double y, Color color, dstring barTitle)
     {
         if (y < 0)
             return; // current limitation only positive values
@@ -101,7 +101,7 @@ class SimpleBarChart : Widget
         requestLayout();
     }
 
-    void updateBar(size_t index, double y, uint color, dstring barTitle)
+    void updateBar(size_t index, double y, Color color, dstring barTitle)
     {
         if (y < 0)
             return; // current limitation only positive values
@@ -176,33 +176,33 @@ class SimpleBarChart : Widget
             return this;
         }
 
-        uint chartBackgroundColor() const
+        Color chartBackgroundColor() const
         {
             return currentTheme.getColor("chart_background");
         }
-        SimpleBarChart chartBackgroundColor(uint newColor)
+        SimpleBarChart chartBackgroundColor(Color newColor)
         {
             //ownStyle.setCustomColor("chart_background", newColor); // TODO
             invalidate();
             return this;
         }
 
-        uint chartAxisColor() const
+        Color chartAxisColor() const
         {
             return currentTheme.getColor("chart_axis");
         }
-        SimpleBarChart chartAxisColor(uint newColor)
+        SimpleBarChart chartAxisColor(Color newColor)
         {
             //ownStyle.setCustomColor("chart_axis", newColor); // TODO
             invalidate();
             return this;
         }
 
-        uint chartSegmentTagColor() const
+        Color chartSegmentTagColor() const
         {
             return currentTheme.getColor("chart_segment_tag");
         }
-        SimpleBarChart chartSegmentTagColor(uint newColor)
+        SimpleBarChart chartSegmentTagColor(Color newColor)
         {
             //ownStyle.setCustomColor("chart_segment_tag", newColor); // TODO
             invalidate();
