@@ -350,7 +350,7 @@ class Button : LinearLayout, ActionHolder
             _label.maybe.textColor(colorString);
             return this;
         }
-        Button textColor(uint value)
+        Button textColor(Color value)
         {
             _label.maybe.textColor(value);
             return this;

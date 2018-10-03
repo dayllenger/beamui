@@ -42,12 +42,12 @@ struct StyleProperties
     Dimension paddingBottom = Dimension.zero;
     Dimension paddingLeft = Dimension.zero;
     // background
-    uint borderColor = COLOR_TRANSPARENT;
+    Color borderColor = Color.transparent;
     Dimension borderWidthTop = Dimension.zero;
     Dimension borderWidthRight = Dimension.zero;
     Dimension borderWidthBottom = Dimension.zero;
     Dimension borderWidthLeft = Dimension.zero;
-    uint backgroundColor = COLOR_TRANSPARENT;
+    Color backgroundColor = Color.transparent;
     Drawable backgroundImage;
     BoxShadowDrawable boxShadow;
     // text
@@ -60,8 +60,8 @@ struct StyleProperties
     int maxLines = 1;
     // colors
     ubyte alpha = 0;
-    uint textColor = 0x000000;
-    uint focusRectColor = COLOR_UNSPECIFIED;
+    Color textColor = Color(0x000000);
+    Color focusRectColor = Color.none;
     // transitions and animations
     string transitionProperty;
     TimingFunction transitionTimingFunction;

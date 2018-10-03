@@ -55,8 +55,14 @@ struct Transition
 
     T mix(T)(T a, T b, double t)
     {
+        import beamui.graphics.colors;
+
         double x = timingFunction.get(t);
-        return cast(T)(a * (1 - x) + b * x);
+        static if (is(T == Color))
+            // temporary solution
+            return Color(blendARGB(a.hex, b.hex, 255 - cast(uint)(t * 255)));
+        else
+            return cast(T)(a * (1 - x) + b * x);
     }
 }
 

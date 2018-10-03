@@ -115,12 +115,12 @@ Dimension decodeDimension(Token t)
 }
 
 /// Decode shortcut background property
-void decodeBackground(Token[] tokens, out uint color, out Drawable image)
+void decodeBackground(Token[] tokens, out Color color, out Drawable image)
 {
     if (startsWithColor(tokens))
         color = decodeColor(tokens);
     else
-        color = COLOR_TRANSPARENT;
+        color = Color.transparent;
 
     if (tokens.length > 0)
         image = decodeBackgroundImage(tokens);
@@ -167,7 +167,7 @@ Drawable decodeBackgroundImage(ref Token[] tokens)
         import std.math : isNaN;
 
         float angle;
-        uint color1, color2;
+        Color color1, color2;
         if (tokens[1].type == TokenType.dimension)
         {
             angle = parseAngle(tokens[1].text, tokens[1].dimensionUnit);
@@ -199,12 +199,12 @@ Drawable decodeBackgroundImage(ref Token[] tokens)
 }
 
 /// Decode shortcut border property
-void decodeBorder(Token[] tokens, ref uint color, ref Dimension width)
+void decodeBorder(Token[] tokens, ref Color color, ref Dimension width)
 {
     Token t0 = tokens[0];
     if (t0.type == TokenType.ident && t0.text == "none")
     {
-        color = COLOR_TRANSPARENT;
+        color = Color.transparent;
         width = Dimension(0);
         return;
     }
@@ -258,7 +258,7 @@ BoxShadowDrawable decodeBoxShadow(Token[] tokens)
         return null;
     }
     Token[] rest = tokens[3 .. $];
-    uint color = decodeColor(rest);
+    Color color = decodeColor(rest);
 
     return new BoxShadowDrawable(xoffset.toDevice, yoffset.toDevice, blur.toDevice, color);
 }
@@ -355,7 +355,7 @@ bool startsWithColor(Token[] tokens)
 }
 
 /// Decode CSS color. This function mutates the range - skips found color value
-uint decodeColor(ref Token[] tokens)
+Color decodeColor(ref Token[] tokens)
 {
     Token t = tokens[0];
     if (t.type == TokenType.hash)
@@ -382,7 +382,7 @@ uint decodeColor(ref Token[] tokens)
         if (func is null)
         {
             Log.fe("CSS(%s): expected closing parenthesis", t.line);
-            return 0;
+            return Color(0);
         }
         else
             tokens = tokens[func.length + 1 .. $];
@@ -396,16 +396,16 @@ uint decodeColor(ref Token[] tokens)
             uint g = convert(1);
             uint b = convert(2);
             uint a = func.length > 3 ? opacityToAlpha(to!float(func[3].text)) : 0;
-            return makeRGBA(r, g, b, a);
+            return Color(r, g, b, a);
         }
         // TODO: hsl, hsla
         else
         {
             Log.fe("CSS(%s): unknown color function: %s", t.line, fn);
-            return 0;
+            return Color(0);
         }
     }
-    return 0;
+    return Color(0);
 }
 
 /// Decode seconds or milliseconds in CSS. Returns time in msecs.

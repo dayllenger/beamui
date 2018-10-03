@@ -147,12 +147,12 @@ struct ComputedStyle
         //===================================================
         // background properties
 
-        uint borderColor() const pure
+        Color borderColor() const pure
         {
             return sp.borderColor;
         }
         /// ditto
-        void borderColor(uint value)
+        void borderColor(Color value)
         {
             set!"borderColor"(value);
             elementStyle.borderColor = value;
@@ -174,12 +174,12 @@ struct ComputedStyle
             elementStyle.borderWidthBottom = Dimension(value.bottom);
             elementStyle.borderWidthLeft = Dimension(value.left);
         }
-        uint backgroundColor() const pure
+        Color backgroundColor() const pure
         {
             return sp.backgroundColor;
         }
         /// ditto
-        void backgroundColor(uint value)
+        void backgroundColor(Color value)
         {
             set!"backgroundColor"(value);
             elementStyle.backgroundColor = value;
@@ -311,23 +311,23 @@ struct ComputedStyle
             set!"alpha"(value);
             elementStyle.alpha = value;
         }
-        uint textColor() const pure
+        Color textColor() const pure
         {
             return sp.textColor;
         }
         /// ditto
-        void textColor(uint value)
+        void textColor(Color value)
         {
             set!"textColor"(value);
             elementStyle.textColor = value;
         }
         /// Colors to draw focus rectangle (one for solid, two for vertical gradient) or null if no focus rect should be drawn for style
-        uint focusRectColor() const pure
+        Color focusRectColor() const pure
         {
             return sp.focusRectColor;
         }
         /// ditto
-        void focusRectColor(uint value)
+        void focusRectColor(Color value)
         {
             set!"focusRectColor"(value);
             elementStyle.focusRectColor = value;

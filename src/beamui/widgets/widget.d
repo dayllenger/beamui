@@ -40,6 +40,7 @@ public
     import beamui.core.types;
     import beamui.core.units;
 
+    import beamui.graphics.colors;
     import beamui.graphics.drawables;
     import beamui.graphics.drawbuf;
     import beamui.graphics.fonts;
@@ -50,7 +51,6 @@ public
     import beamui.widgets.popup : PopupAlign;
 }
 import beamui.dml.annotations;
-import beamui.graphics.colors;
 import beamui.platforms.common.platform;
 import beamui.style.computed_style;
 import beamui.style.style;
@@ -444,7 +444,7 @@ public:
             if (p.bottom < bp.bottom)
                 p.bottom = bp.bottom;
 
-            if ((focusable || ((state & State.parent) && parent.focusable)) && focusRectColor != COLOR_UNSPECIFIED)
+            if ((focusable || ((state & State.parent) && parent.focusable)) && focusRectColor != Color.none)
             {
                 // add two pixels to padding when focus rect is required
                 // one pixel for focus rect, one for additional space
@@ -467,23 +467,30 @@ public:
             return this;
         }
 
-        /// Background color of widget
-        uint backgroundColor() const
+        /// Background color of the widget
+        Color backgroundColor() const
         {
             return style.backgroundColor;
         }
         /// ditto
-        Widget backgroundColor(uint color)
+        Widget backgroundColor(Color value)
         {
-            style.backgroundColor = color;
+            style.backgroundColor = value;
+            invalidate();
+            return this;
+        }
+        /// Set background color as ARGB 32 bit value
+        Widget backgroundColor(uint value)
+        {
+            style.backgroundColor = Color(value);
             invalidate();
             return this;
         }
         /// Set background color from string like "#5599CC" or "white"
         Widget backgroundColor(string colorString)
         {
-            uint color = decodeHexColor(colorString, COLOR_TRANSPARENT);
-            style.backgroundColor = color;
+            Color value = decodeHexColor(colorString, Color.transparent); // FIXME
+            style.backgroundColor = value;
             invalidate();
             return this;
         }
@@ -519,29 +526,36 @@ public:
             invalidate();
             return this;
         }
-        /// Text color (ARGB 32 bit value)
+        /// Text color
         uint textColor() const
         {
-            return style.textColor;
+            return style.textColor.hex;
         }
         /// ditto
-        Widget textColor(uint value)
+        Widget textColor(Color value)
         {
             style.textColor = value;
+            invalidate();
+            return this;
+        }
+        /// Se text color as ARGB 32 bit value
+        Widget textColor(uint value)
+        {
+            style.textColor = Color(value);
             invalidate();
             return this;
         }
         /// Set text color from string like "#5599CC" or "white"
         Widget textColor(string colorString)
         {
-            uint color = decodeHexColor(colorString, 0x000000);
-            style.textColor = color;
+            Color value = decodeHexColor(colorString);
+            style.textColor = value;
             invalidate();
             return this;
         }
 
-        /// Get color to draw focus rectangle, COLOR_UNSPECIFIED if no focus rect should be drawn
-        uint focusRectColor() const
+        /// Get color to draw focus rectangle, Color.none if no focus rect should be drawn
+        Color focusRectColor() const
         {
             return style.focusRectColor;
         }
@@ -1728,7 +1742,7 @@ public:
     /// Draw focus rectangle, if enabled in styles
     void drawFocusRect(DrawBuf buf)
     {
-        uint[1] cs = [focusRectColor];
+        uint[1] cs = [focusRectColor.hex];
         if (cs[0] != COLOR_UNSPECIFIED)
         {
             Box b = _box;

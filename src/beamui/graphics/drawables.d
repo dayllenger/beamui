@@ -79,17 +79,17 @@ class EmptyDrawable : Drawable
 
 class SolidFillDrawable : Drawable
 {
-    protected uint _color;
+    protected Color _color;
 
-    this(uint color)
+    this(Color color)
     {
         _color = color;
     }
 
     override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
     {
-        if (!_color.isFullyTransparentColor)
-            buf.fillRect(Rect(b), _color);
+        if (!_color.isFullyTransparent)
+            buf.fillRect(Rect(b), _color.hex);
     }
 
     override @property int width() const
@@ -110,8 +110,10 @@ class GradientDrawable : Drawable
     protected uint _color3; // top right
     protected uint _color4; // bottom right
 
-    this(float angle, uint color1, uint color2)
+    this(float angle, Color c1, Color c2)
     {
+        uint color1 = c1.hex;
+        uint color2 = c2.hex;
         // rotate a gradient; angle goes clockwise
         import std.math;
 
@@ -179,10 +181,10 @@ class BoxShadowDrawable : Drawable
     protected int _offsetX;
     protected int _offsetY;
     protected int _blurSize;
-    protected uint _color;
+    protected Color _color;
     protected ColorDrawBuf texture;
 
-    this(int offsetX, int offsetY, uint blurSize = 0, uint color = 0x0)
+    this(int offsetX, int offsetY, uint blurSize = 0, Color color = Color(0x0))
     {
         _offsetX = offsetX;
         _offsetY = offsetY;
@@ -192,9 +194,9 @@ class BoxShadowDrawable : Drawable
         uint size = 4 * blurSize + 1;
         texture = new ColorDrawBuf(size, size); // TODO: get from/put to cache
         // clear
-        texture.fill(color | 0xFF000000);
+        texture.fill(color.hex | 0xFF000000);
         // draw a square in center of the texture
-        texture.fillRect(Rect(blurSize, blurSize, size - blurSize, size - blurSize), color);
+        texture.fillRect(Rect(blurSize, blurSize, size - blurSize, size - blurSize), color.hex);
         // blur the square
         texture.blur(blurSize);
         // set 9-patch frame
@@ -226,7 +228,7 @@ class BoxShadowDrawable : Drawable
         }
         else
         {
-            buf.fillRect(Rect(b), _color);
+            buf.fillRect(Rect(b), _color.hex);
         }
     }
 
@@ -662,7 +664,7 @@ static if (USE_OPENGL)
 struct Border
 {
     /// Border color
-    uint color = COLOR_TRANSPARENT;
+    Color color = Color.transparent;
     /// Border width, in pixels
     Insets size;
 }
@@ -671,7 +673,7 @@ struct Border
 /// image (raster, gradient, etc.), borders and box shadows.
 class Background
 {
-    uint color = COLOR_TRANSPARENT;
+    Color color = Color.transparent;
     Drawable image;
     Border border;
     BoxShadowDrawable shadow;
@@ -708,12 +710,12 @@ class Background
         Box back = b;
         back.shrink(border.size);
         // color
-        if (!color.isFullyTransparentColor)
-            buf.fillRect(Rect(back), color);
+        if (!color.isFullyTransparent)
+            buf.fillRect(Rect(back), color.hex);
         // image
         image.maybe.drawTo(buf, back);
         // border
-        buf.drawFrame(Rect(b), border.color, border.size);
+        buf.drawFrame(Rect(b), border.color.hex, border.size);
     }
 }
 

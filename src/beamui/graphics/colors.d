@@ -52,6 +52,12 @@ pure nothrow @nogc:
         data = (cast(uint)a << 24) | (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
     }
 
+    /// Get the hexadecimal 32-bit representation
+    ARGB8 hex() const
+    {
+        return data;
+    }
+
     /// Returns true if the color has the alpha value meaning complete transparency
     bool isFullyTransparent() const
     {
@@ -213,7 +219,7 @@ uint makeRGBA(T)(T r, T g, T b, T a) pure nothrow
 }
 
 /// Decode color string in one of formats: #RGB #ARGB #RRGGBB #AARRGGBB
-uint decodeHexColor(string s, uint defValue = 0) pure
+Color decodeHexColor(string s, Color defValue = Color(0x0)) pure
 {
     s = strip(s);
     if (s.length != 4 && s.length != 5 && s.length != 7 && s.length != 9)
@@ -230,20 +236,20 @@ uint decodeHexColor(string s, uint defValue = 0) pure
         if (s.length < 7) // double the same digit for short forms
             value = (value << 4) | digit;
     }
-    return value;
+    return Color(value);
 }
 
 /// Decode named color either from `Color` enum, `@null`, `none`, or `transparent`
-uint decodeTextColor(string s, uint defValue = 0) pure
+Color decodeTextColor(string s, Color defValue = Color(0x0)) pure
 {
     s = strip(s);
     if (s == "@null" || s == "none" || s == "transparent")
-        return COLOR_TRANSPARENT;
+        return Color.transparent;
 
     try
     {
         NamedColor c = to!NamedColor(s);
-        return to!uint(c);
+        return Color(c);
     }
     catch (Exception e) // not a named color
     {

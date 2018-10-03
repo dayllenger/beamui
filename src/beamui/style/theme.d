@@ -34,7 +34,7 @@ private:
     Style defaultStyle;
     Style[StyleID] styles;
     DrawableRef[string] drawables;
-    uint[string] colors;
+    Color[string] colors;
 
 public:
     /// Unique name of theme
@@ -179,11 +179,11 @@ public:
     /// Get custom color - transparent by default
     uint getColor(string name, uint defaultColor = COLOR_TRANSPARENT)
     {
-        return colors.get(name, defaultColor);
+        return colors.get(name, Color(defaultColor)).hex;
     }
 
     /// Set custom color for theme
-    Theme setColor(string name, uint color)
+    Theme setColor(string name, Color color)
     {
         colors[name] = color;
         return this;
@@ -231,21 +231,7 @@ Theme createDefaultTheme()
         theme.root.fontSize = Dimension.pt(12);
 
         auto label = theme.get("Label");
-        label.alignment(Align.left | Align.vcenter).padding(Dimension.pt(2), Dimension.pt(4));
-        label.getOrCreateState(State.enabled, State.unspecified).textColor(0xa0000000);
-
-        auto mlabel = theme.get("MultilineLabel");
-        mlabel.padding(Dimension.pt(1)).maxLines(0);
-
-        auto tooltip = theme.get("Label", "tooltip");
-        tooltip.padding(Dimension.pt(3)).boxShadow(new BoxShadowDrawable(0, 2, 7, 0x888888)).
-            backgroundColor(0x222222).textColor(0xeeeeee);
-
-        auto button = theme.get("Button");
-        button.alignment(Align.center).padding(Dimension.pt(4)).borderColor(0xaaaaaa).borderWidth(Dimension.px(1)).
-            textFlags(TextFlag.underlineHotkeys).focusRectColor(0xbbbbbb);
-        button.getOrCreateState(State.hovered | State.checked, State.hovered).
-            borderColor(0x4e93da).borderWidth(Dimension.px(1));
+        // TODO
     }
     else // console
     {
@@ -301,7 +287,7 @@ private void applyAtRule(Theme theme, CSS.AtRule rule)
         foreach (p; ps)
         {
             string id = p.name;
-            uint color = decodeColor(p.value);
+            Color color = decodeColor(p.value);
             theme.setColor(id, color);
         }
     }
@@ -316,7 +302,7 @@ private void applyAtRule(Theme theme, CSS.AtRule rule)
             // color, image, or none
             if (startsWithColor(tokens))
             {
-                uint color = decodeColor(tokens);
+                Color color = decodeColor(tokens);
                 dr = new SolidFillDrawable(color);
             }
             else if (tokens.length > 0)
@@ -395,12 +381,12 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
                 style.borderWidth = vs;
             break;
         case "border":
-            uint color = COLOR_UNSPECIFIED;
+            Color color = Color.none;
             Dimension width = Dimension.none;
             decodeBorder(tokens, color, width);
             if (width != Dimension.none)
                 style.borderWidth = width;
-            if (color != COLOR_UNSPECIFIED)
+            if (color != Color.none)
                 style.borderColor = color;
             break;
         case "background-color":
@@ -410,7 +396,7 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
             style.backgroundImage = decodeBackgroundImage(tokens);
             break;
         case "background":
-            uint color;
+            Color color;
             Drawable image;
             decodeBackground(tokens, color, image);
             style.backgroundColor = color;
