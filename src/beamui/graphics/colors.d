@@ -52,10 +52,67 @@ pure nothrow @nogc:
         data = (cast(uint)a << 24) | (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
     }
 
-    /// Get the hexadecimal 32-bit representation
+    /// Red component
+    uint red() const
+    {
+        return (data >> 16) & 0xFF;
+    }
+    /// ditto
+    void red(uint r)
+    {
+        data = (data & 0xFF00FFFF) | (r << 16);
+    }
+    /// Green component
+    uint green() const
+    {
+        return (data >> 8) & 0xFF;
+    }
+    /// ditto
+    void green(uint g)
+    {
+        data = (data & 0xFFFF00FF) | (g << 8);
+    }
+    /// Blue component
+    uint blue() const
+    {
+        return (data >> 0) & 0xFF;
+    }
+    /// ditto
+    void blue(uint b)
+    {
+        data = (data & 0xFFFFFF00) | (b << 0);
+    }
+    /// Alpha component (0=opaque .. 255=transparent)
+    uint alpha() const
+    {
+        return (data >> 24) & 0xFF;
+    }
+    /// ditto
+    void alpha(uint a)
+    {
+        data = (data & 0xFFFFFF) | (a << 24);
+    }
+
+    /// Get the "hexadecimal" 32-bit representation
     ARGB8 hex() const
     {
         return data;
+    }
+
+    /// Fills 3-vector with the values of red, green and blue channel in [0 .. 1] range
+    void rgbf(ref float r, ref float g, ref float b)
+    {
+        r = ((data >> 16) & 255) / 255.0;
+        g = ((data >> 8) & 255) / 255.0;
+        b = ((data >> 0) & 255) / 255.0;
+    }
+    /// Fills 4-vector with the values of red, green, blue and alpha channel in [0 .. 1] range
+    void rgbaf(ref float r, ref float g, ref float b, ref float a)
+    {
+        r = ((data >> 16) & 255) / 255.0;
+        g = ((data >> 8) & 255) / 255.0;
+        b = ((data >> 0) & 255) / 255.0;
+        a = (((data >> 24) & 255) ^ 255) / 255.0;
     }
 
     /// Returns true if the color has the alpha value meaning complete transparency

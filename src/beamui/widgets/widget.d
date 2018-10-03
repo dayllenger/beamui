@@ -489,7 +489,9 @@ public:
         /// Set background color from string like "#5599CC" or "white"
         Widget backgroundColor(string colorString)
         {
-            Color value = decodeHexColor(colorString, Color.transparent); // FIXME
+            Color value = decodeHexColor(colorString, Color.none);
+            if (value == Color.none)
+                value = decodeTextColor(colorString, Color.transparent);
             style.backgroundColor = value;
             invalidate();
             return this;
@@ -548,7 +550,9 @@ public:
         /// Set text color from string like "#5599CC" or "white"
         Widget textColor(string colorString)
         {
-            Color value = decodeHexColor(colorString);
+            Color value = decodeHexColor(colorString, Color.none);
+            if (value == Color.none)
+                value = decodeTextColor(colorString, Color(0x0));
             style.textColor = value;
             invalidate();
             return this;
