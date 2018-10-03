@@ -10,19 +10,17 @@ Label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 MultilineLabel { padding: 1px; max-lines: 0; }
 
-Button { align: center; padding: 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); text-flags: underline-hotkeys; focus-rect-color: #bbb; transition: opacity 100ms ease-in-out; }
+Button { align: center; padding: 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); text-flags: underline-hotkeys; focus-rect-color: #bbb; transition: border-color 75ms ease; }
 
-Button:hovered:not(checked) { border: 1px solid #4e93da; }
+Button:hovered:not(checked) { border-color: #417fbf; }
 
-Button:pressed, Button:checked { border: 1px solid #417fbf; background: linear(170deg, #eeeeee, #dddddd); }
+Button:pressed, Button:checked { border-color: #4e93da; background: linear(190deg, #e3e3e3, #dfdfdf); }
 
 Button:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
 Button::icon, Button::label { align: center; }
 
-Button::icon:not(enabled), Button::label:not(enabled) { opacity: 0.4; }
-
-Button::label { text-flags: underline-hotkeys; }
+Button::label { text-flags: underline-hotkeys; transition: color 75ms ease; }
 
 Button::label:hovered { color: #46617e; }
 
@@ -40,7 +38,7 @@ LinkButton::label:not(enabled) { color: rgba(192, 192, 255, 0.7); }
 
 CheckBox { padding: 2px; }
 
-CheckBox::label, RadioButton::label { align: left vcenter; }
+CheckBox::label, RadioButton::label { align: left vcenter; transition: color 100ms ease; }
 
 CheckBox::label:hovered, RadioButton::label:hovered { color: #46617e; }
 
@@ -111,15 +109,11 @@ GroupBox::caption { align: left vcenter; padding: 1px; color: #504840; }
   group_box_frame_bottom: url(group_box_frame_bottom); }
 
 /* ========================================================================== lists.d */
-ListWidget { min-width: 100px; min-height: 100px; border: 1px solid #aaa; background-color: #fff; }
+ListWidget { min-width: 100px; min-height: 100px; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
 
-ListWidget:focused { border: 1px solid #2e93fa; }
+ListWidget:focused { border-color: #2e93fa; }
 
 ListWidget:not(enabled) { background-color: #f0f0f0; }
-
-StringListWidget:focused { border: 1px solid #2e93fa; }
-
-StringListWidget:not(enabled) { background-color: #f0f0f0; }
 
 StringListAdapter::item, IconStringListAdapter::item { padding: 2px 4px; }
 
@@ -128,15 +122,15 @@ StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { backgroun
 StringListAdapter::item:focused, StringListAdapter::item:selected, IconStringListAdapter::item:focused, IconStringListAdapter::item:selected { background-color: #4e93da; color: #f0f0f0; }
 
 /* ========================================================================== combobox.d */
-ComboBox { min-width: 40px; padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); }
+ComboBox { min-width: 40px; padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
 
-ComboBox:hovered { border: 1px solid #4e93da; }
+ComboBox:hovered { border-color: #417fbf; }
 
-ComboBox:pressed { border: 1px solid #417fbf; background: linear(170deg, #eeeeee, #dddddd); }
+ComboBox:pressed { border-color: #4e93da; background: linear(180deg, #eeeeee, #dddddd); }
 
-ComboBox:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
+ComboBox:not(enabled) { border-color: #ccc; opacity: 0.4; }
 
-ComboBox::body { min-width: 40px; align: left vcenter; padding: 2px; }
+ComboBox::body { min-width: 40px; align: left vcenter; padding: 2px; transition: color 100ms ease; }
 
 ComboBox::body:hovered { color: #46617e; }
 
@@ -203,9 +197,9 @@ TreeItemWidget::label:focused, TreeItemWidget::label:selected { color: #f0f0f0; 
 TreeItemWidget::label:default { fontWeight: bold; }
 
 /* ========================================================================== grid.d */
-StringGridWidget, FileDialog::grid { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; }
+StringGridWidget, FileDialog::grid { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; transition: border-color 100ms ease; }
 
-StringGridWidget:focused, FileDialog::grid:focused { border: 1px solid #2e93fa; }
+StringGridWidget:focused, FileDialog::grid:focused { border-color: #2e93fa; }
 
 StringGridWidget:not(enabled), FileDialog::grid:not(enabled) { background-color: #f0f0f0; }
 
@@ -244,7 +238,7 @@ PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
 /* ========================================================================== tabs.d */
 TabControl { padding-left: 3px; }
 
-TabControl::more { padding: 0 2px 4px 0; opacity: 0.6; }
+TabControl::more { padding: 0 2px 4px 0; opacity: 0.6; transition: opacity 100ms ease; }
 
 TabControl::more:hovered { opacity: 1; }
 
@@ -258,7 +252,7 @@ TabItemWidget { padding: 6px 1px 0 0; border-color: transparent; border-bottom-w
 
 TabItemWidget:selected { border-color: #4e93da; }
 
-TabItemWidget::label { align: hcenter bottom; padding: 0 3px 3px; }
+TabItemWidget::label { align: hcenter bottom; padding: 0 3px 3px; transition: color 100ms ease; }
 
 TabItemWidget::label:hovered, TabItemWidget::label:selected, TabItemWidget::label:focused, TabItemWidget::label:selected:focused { color: #4e93da; }
 
@@ -275,15 +269,15 @@ TabUpButtonDarkText { align: center; color: black; }
 TabUpButtonDarkText:not(selected):not(focused):hovered { color: #9c9c9c; }
 
 /* ========================================================================== editors.d */
-EditLine { padding: 4px; border: 1px solid #aaa; background-color: #fff; }
+EditLine { padding: 4px; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
 
-EditLine:focused { border: 1px solid #2e93fa; }
+EditLine:focused { border-color: #2e93fa; }
 
 EditLine:not(enabled) { background-color: #f0f0f0; }
 
-EditBox, LogWidget { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; }
+EditBox, LogWidget { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; transition: border-color 100ms ease; }
 
-EditBox:focused, LogWidget:focused { border: 1px solid #2e93fa; }
+EditBox:focused, LogWidget:focused { border-color: #2e93fa; }
 
 EditBox:not(enabled), LogWidget:not(enabled) { background-color: #f0f0f0; }
 

@@ -51,15 +51,15 @@ Button {
     background: linear(0deg, #eeeeee, #dddddd);
     text-flags: underline-hotkeys;
     focus-rect-color: #bbb;
-    transition: opacity 100ms ease-in-out;
+    transition: border-color 75ms ease;
 
     &:hovered:not(checked) {
-        border: 1px solid $main-color;
+        border-color: $secondary-color;
     }
 
     &:pressed, &:checked {
-        border: 1px solid $secondary-color;
-        background: linear(170deg, #eeeeee, #dddddd);
+        border-color: $main-color;
+        background: linear(190deg, #e3e3e3, #dfdfdf);
     }
 
     &:not(enabled) {
@@ -69,14 +69,11 @@ Button {
 
     &::icon, &::label {
         align: center;
-
-        &:not(enabled) {
-            opacity: 0.4;
-        }
     }
 
     &::label {
         text-flags: underline-hotkeys;
+        transition: color 75ms ease;
 
         &:hovered {
             color: $hovered-label-color;
@@ -116,6 +113,7 @@ CheckBox {
 
 CheckBox::label, RadioButton::label {
     align: left vcenter;
+    transition: color 100ms ease;
 
     &:hovered {
         color: $hovered-label-color;
@@ -279,19 +277,10 @@ ListWidget {
     min-height: 100px;
     border: 1px solid #aaa;
     background-color: #fff;
+    transition: border-color 100ms ease;
 
     &:focused {
-        border: 1px solid $focused-border-color;
-    }
-
-    &:not(enabled) {
-        background-color: $disabled-color;
-    }
-}
-
-StringListWidget {
-    &:focused {
-        border: 1px solid $focused-border-color;
+        border-color: $focused-border-color;
     }
 
     &:not(enabled) {
@@ -321,18 +310,19 @@ ComboBox {
     padding: 3px 4px;
     border: 1px solid #aaa;
     background: linear(0deg, #eeeeee, #dddddd);
+    transition: border-color 100ms ease;
 
     &:hovered {
-        border: 1px solid $main-color;
+        border-color: $secondary-color;
     }
 
     &:pressed {
-        border: 1px solid $secondary-color;
-        background: linear(170deg, #eeeeee, #dddddd);
+        border-color: $main-color;
+        background: linear(180deg, #eeeeee, #dddddd);
     }
 
     &:not(enabled) {
-        border: 1px solid #ccc;
+        border-color: #ccc;
         opacity: 0.4;
     }
 
@@ -340,6 +330,7 @@ ComboBox {
         min-width: 40px;
         align: left vcenter;
         padding: 2px;
+        transition: color 100ms ease;
 
         &:hovered {
             color: $hovered-label-color;
@@ -515,9 +506,10 @@ StringGridWidget, FileDialog::grid {
     border: 1px solid #aaa;
     background-color: #fff;
     font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console";
+    transition: border-color 100ms ease;
 
     &:focused {
-        border: 1px solid $focused-border-color;
+        border-color: $focused-border-color;
     }
 
     &:not(enabled) {
@@ -609,6 +601,7 @@ TabControl {
 TabControl::more {
     padding: 0 2px 4px 0;
     opacity: 0.6;
+    transition: opacity 100ms ease;
 
     &:hovered {
         opacity: 1;
@@ -641,6 +634,7 @@ TabItemWidget:selected {
 TabItemWidget::label {
     align: hcenter bottom;
     padding: 0 3px 3px;
+    transition: color 100ms ease;
 
     &:hovered, &:selected,
     &:focused, &:selected:focused {
@@ -683,9 +677,10 @@ EditLine {
     padding: 4px;
     border: 1px solid #aaa;
     background-color: #fff;
+    transition: border-color 100ms ease;
 
     &:focused {
-        border: 1px solid $focused-border-color;
+        border-color: $focused-border-color;
     }
 
     &:not(enabled) {
@@ -699,9 +694,10 @@ EditBox, LogWidget {
     border: 1px solid #aaa;
     background-color: #fff;
     font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console";
+    transition: border-color 100ms ease;
 
     &:focused {
-        border: 1px solid $focused-border-color;
+        border-color: $focused-border-color;
     }
 
     &:not(enabled) {
