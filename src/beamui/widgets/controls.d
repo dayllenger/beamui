@@ -219,8 +219,7 @@ class ImageWidget : Widget
         {
             Size sz = Size(img.width, img.height);
             applyAlign(b, sz);
-            uint st = state;
-            img.drawTo(buf, b, st);
+            img.drawTo(buf, b);
         }
     }
 }

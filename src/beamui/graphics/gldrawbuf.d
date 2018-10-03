@@ -1,7 +1,7 @@
 /**
-This module contains opengl based drawing buffer implementation.
+This module contains OpenGL based drawing buffer implementation.
 
-To enable OpenGL support, build with version(USE_OPENGL);
+OpenGL support is enabled by default, build with version = NO_OPENGL to disable it.
 
 Synopsis:
 ---
@@ -35,18 +35,15 @@ class GLDrawBuf : DrawBuf
         resize(dx, dy);
     }
 
-    /// Returns current width
-    override @property int width()
+    override @property int width() const
     {
         return _w;
     }
-    /// Returns current height
-    override @property int height()
+    override @property int height() const
     {
         return _h;
     }
 
-    /// Reserved for hardware-accelerated drawing - begins drawing queue
     override void beforeDrawing()
     {
         _alpha = 0;
@@ -54,14 +51,12 @@ class GLDrawBuf : DrawBuf
         glSupport.beforeRenderGUI();
     }
 
-    /// Reserved for hardware-accelerated drawing - ends drawing queue
     override void afterDrawing()
     {
         glSupport.queue.flush();
         glSupport.flushGL();
     }
 
-    /// Resize buffer
     override void resize(int width, int height)
     {
         _w = width;
@@ -69,7 +64,6 @@ class GLDrawBuf : DrawBuf
         resetClipping();
     }
 
-    /// Draw custom OpenGL scene
     override void drawCustomOpenGLScene(Rect rc, OpenGLDrawableDelegate handler)
     {
         if (handler)
@@ -83,7 +77,6 @@ class GLDrawBuf : DrawBuf
         }
     }
 
-    /// Fill the whole buffer with solid color (clipping is applied)
     override void fill(uint color)
     {
         if (hasClipping)
@@ -93,7 +86,7 @@ class GLDrawBuf : DrawBuf
         }
         glSupport.queue.addSolidRect(Rect(0, 0, _w, _h), applyAlpha(color));
     }
-    /// Fill rectangle with solid color (clipping is applied)
+
     override void fillRect(Rect rc, uint color)
     {
         color = applyAlpha(color);
@@ -101,7 +94,6 @@ class GLDrawBuf : DrawBuf
             glSupport.queue.addSolidRect(rc, color);
     }
 
-    /// Fill rectangle with a gradient (clipping is applied)
     override void fillGradientRect(Rect rc, uint color1, uint color2, uint color3, uint color4)
     {
         color1 = applyAlpha(color1);
@@ -112,7 +104,6 @@ class GLDrawBuf : DrawBuf
             glSupport.queue.addGradientRect(rc, color1, color2, color3, color4);
     }
 
-    /// Draw pixel at (x, y) with specified color (clipping is applied)
     override void drawPixel(int x, int y, uint color)
     {
         if (!_clipRect.isPointInside(x, y))
@@ -122,7 +113,7 @@ class GLDrawBuf : DrawBuf
             return;
         glSupport.queue.addSolidRect(Rect(x, y, x + 1, y + 1), color);
     }
-    /// Draw 8bit alpha image - usually font glyph using specified color (clipping is applied)
+
     override void drawGlyph(int x, int y, Glyph* glyph, uint color)
     {
         Rect dstrect = Rect(x, y, x + glyph.correctedBlackBoxX, y + glyph.blackBoxY);
@@ -135,7 +126,7 @@ class GLDrawBuf : DrawBuf
             glGlyphCache.drawItem(glyph.id, dstrect, srcrect, color, null);
         }
     }
-    /// Draw source buffer rectangle contents to destination buffer
+
     override void drawFragment(int x, int y, DrawBuf src, Rect srcrect)
     {
         Rect dstrect = Rect(x, y, x + srcrect.width, y + srcrect.height);
@@ -146,7 +137,7 @@ class GLDrawBuf : DrawBuf
             glImageCache.drawItem(src.id, dstrect, srcrect, applyAlpha(0xFFFFFF), 0, null);
         }
     }
-    /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
+
     override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
     {
         if (applyClipping(dstrect, srcrect))
@@ -157,7 +148,6 @@ class GLDrawBuf : DrawBuf
         }
     }
 
-    /// Draw line from point p1 to p2 with specified color
     override void drawLine(Point p1, Point p2, uint color)
     {
         if (!clipLine(_clipRect, p1, p2))
@@ -167,7 +157,6 @@ class GLDrawBuf : DrawBuf
             glSupport.queue.addLine(p1, p2, color, color);
     }
 
-    /// Draw filled triangle in float coordinates; clipping is already applied
     override protected void fillTriangleFClipped(PointF p1, PointF p2, PointF p3, uint color)
     {
         glSupport.queue.addTriangle(p1, p2, p3, color, color, color);

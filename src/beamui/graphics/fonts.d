@@ -223,11 +223,11 @@ class Font : RefCountedObject
 
     protected bool _allowKerning;
     /// Override to enable kerning support
-    @property bool allowKerning()
+    @property bool allowKerning() const
     {
         return false;
     }
-    /// Override to enable kerning support
+    /// ditto
     @property void allowKerning(bool allow)
     {
         _allowKerning = allow;
@@ -553,10 +553,10 @@ class Font : RefCountedObject
     /// Clears glyph cache
     abstract void clearGlyphCache();
 
+    /// Cleanup resources
     void clear()
     {
     }
-
 }
 
 alias FontRef = Ref!Font;
@@ -570,6 +570,7 @@ struct SimpleTextFormatter
     int _tabSize;
     int _tabOffset;
     uint _textFlags;
+
     /// Split text into lines and measure it; returns size in pixels
     Size format(const dchar[] text, FontRef fnt, int maxLines = 0, int maxWidth = 0, int tabSize = 4,
             int tabOffset = 0, uint textFlags = 0)
@@ -671,6 +672,7 @@ struct SimpleTextFormatter
         _maxLineWidth = sz.w;
         return sz;
     }
+
     /// Draw formatted text
     void draw(DrawBuf buf, int x, int y, FontRef fnt, uint color)
     {
@@ -878,7 +880,7 @@ class FontManager
         return null;
     }
 
-    /// Clear usage flags for all entries -- for cleanup of unused fonts
+    /// Clear usage flags for all entries - to clean up unused fonts
     abstract void checkpoint();
 
     /// Removes entries not used after last call of checkpoint() or cleanup()
@@ -947,6 +949,7 @@ class FontManager
         }
     }
 
+    /// Clear glyph cache
     void clearGlyphCaches()
     {
         // override to clear glyph caches

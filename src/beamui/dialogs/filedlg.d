@@ -622,8 +622,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         {
             Size sz = Size(img.width, img.height);
             applyAlign(b, sz, Align.hcenter, Align.vcenter);
-            uint st = state;
-            img.drawTo(buf, b, st);
+            img.drawTo(buf, b);
         }
     }
 

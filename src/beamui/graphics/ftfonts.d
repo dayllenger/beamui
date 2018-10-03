@@ -466,7 +466,6 @@ class FreeTypeFont : Font
 
     private GlyphCache _glyphCache;
 
-    /// Cleanup resources
     override void clear()
     {
         _files.clear();
@@ -492,8 +491,8 @@ class FreeTypeFont : Font
         return false;
     }
 
-    /// Override to allow kerning
-    override @property bool allowKerning()
+    /// Does this font allow kerning?
+    override @property bool allowKerning() const
     {
         return _allowKerning;
     }
@@ -559,19 +558,16 @@ class FreeTypeFont : Font
         return _files.length > 0;
     }
 
-    /// Clear usage flags for all entries
     override void checkpoint()
     {
         _glyphCache.checkpoint();
     }
 
-    /// Removes entries not used after last call of checkpoint() or cleanup()
     override void cleanup()
     {
         _glyphCache.cleanup();
     }
 
-    /// Clears glyph cache
     override void clearGlyphCache()
     {
         _glyphCache.clear();
@@ -800,7 +796,6 @@ class FreeTypeFontManager : FontManager
         return f.get(size);
     }
 
-    /// Clear usage flags for all entries
     override void checkpoint()
     {
         foreach (ref ff; _fontFiles)
@@ -809,7 +804,6 @@ class FreeTypeFontManager : FontManager
         }
     }
 
-    /// Removes entries not used after last call of checkpoint() or cleanup()
     override void cleanup()
     {
         foreach (ref ff; _fontFiles)
@@ -818,7 +812,6 @@ class FreeTypeFontManager : FontManager
         }
     }
 
-    /// Clears glyph cache
     override void clearGlyphCaches()
     {
         foreach (ref ff; _fontFiles)
@@ -930,7 +923,6 @@ class FreeTypeFontManager : FontManager
     {
         return cast(int)_fontFiles.length;
     }
-
 }
 
 private int myabs(int n)

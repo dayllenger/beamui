@@ -1002,7 +1002,7 @@ class MenuBar : Menu
                 }
                 else
                 {
-                    window.setFocus(this);
+                    window.setFocus(WeakRef!Widget(this));
                     selectItem(0);
                 }
                 return true;

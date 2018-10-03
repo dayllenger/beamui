@@ -35,7 +35,6 @@ import beamui.graphics.images;
 import beamui.platforms.common.platform;
 import beamui.platforms.windows.win32drawbuf;
 import beamui.platforms.windows.win32fonts;
-import beamui.widgets.styles;
 import beamui.widgets.widget;
 static if (USE_OPENGL)
 {

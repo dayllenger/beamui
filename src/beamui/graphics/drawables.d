@@ -49,10 +49,10 @@ class Drawable : RefCountedObject
             Log.d("Destroyed drawable ", this.classinfo.name, ", count: ", _instanceCount);
     }
 
-    abstract void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0);
-    abstract @property int width();
-    abstract @property int height();
-    @property Insets padding()
+    abstract void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0);
+    abstract @property int width() const;
+    abstract @property int height() const;
+    @property Insets padding() const
     {
         return Insets(0);
     }
@@ -62,16 +62,16 @@ alias DrawableRef = Ref!Drawable;
 
 class EmptyDrawable : Drawable
 {
-    override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
     {
     }
 
-    override @property int width()
+    override @property int width() const
     {
         return 0;
     }
 
-    override @property int height()
+    override @property int height() const
     {
         return 0;
     }
@@ -86,18 +86,18 @@ class SolidFillDrawable : Drawable
         _color = color;
     }
 
-    override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
     {
         if (!_color.isFullyTransparentColor)
             buf.fillRect(Rect(b), _color);
     }
 
-    override @property int width()
+    override @property int width() const
     {
         return 1;
     }
 
-    override @property int height()
+    override @property int height() const
     {
         return 1;
     }
@@ -157,17 +157,17 @@ class GradientDrawable : Drawable
         }
     }
 
-    override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
     {
         buf.fillGradientRect(Rect(b), _color1, _color2, _color3, _color4);
     }
 
-    override @property int width()
+    override @property int width() const
     {
         return 1;
     }
 
-    override @property int height()
+    override @property int height() const
     {
         return 1;
     }
@@ -207,7 +207,7 @@ class BoxShadowDrawable : Drawable
         eliminate(texture);
     }
 
-    override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
     {
         // move and expand the shadow
         b.x += _offsetX;
@@ -230,12 +230,12 @@ class BoxShadowDrawable : Drawable
         }
     }
 
-    override @property int width()
+    override @property int width() const
     {
         return 1;
     }
 
-    override @property int height()
+    override @property int height() const
     {
         return 1;
     }
@@ -497,7 +497,7 @@ static if (BACKEND_CONSOLE)
             return left + (ninewidth - left - right) * (v - left) / (width - left - right);
         }
 
-        override void drawTo(DrawBuf drawbuf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
+        override void drawTo(DrawBuf drawbuf, Box b, int tilex0 = 0, int tiley0 = 0)
         {
             if (!_width || !_height)
                 return; // empty image
@@ -559,7 +559,7 @@ class ImageDrawable : Drawable
             Log.d("Destroyed ImageDrawable, count: ", _instanceCount);
     }
 
-    override @property int width()
+    override @property int width() const
     {
         if (_image.isNull)
             return 0;
@@ -568,7 +568,7 @@ class ImageDrawable : Drawable
         return _image.width;
     }
 
-    override @property int height()
+    override @property int height() const
     {
         if (_image.isNull)
             return 0;
@@ -577,7 +577,7 @@ class ImageDrawable : Drawable
         return _image.height;
     }
 
-    override @property Insets padding()
+    override @property Insets padding() const
     {
         if (!_image.isNull && _image.hasNinePatch)
             return _image.ninePatch.padding;
@@ -585,7 +585,7 @@ class ImageDrawable : Drawable
             return Insets(0);
     }
 
-    override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
     {
         if (_image.isNull)
             return;
@@ -641,17 +641,17 @@ static if (USE_OPENGL)
             }
         }
 
-        override void drawTo(DrawBuf buf, Box b, uint state = 0, int tilex0 = 0, int tiley0 = 0)
+        override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
         {
             buf.drawCustomOpenGLScene(Rect(b), &onDraw);
         }
 
-        override @property int width()
+        override @property int width() const
         {
             return 20; // dummy size
         }
 
-        override @property int height()
+        override @property int height() const
         {
             return 20; // dummy size
         }
@@ -676,7 +676,7 @@ class Background
     Border border;
     BoxShadowDrawable shadow;
 
-    @property int width()
+    @property int width() const
     {
         if (image)
             return image.width + border.size.width;
@@ -684,7 +684,7 @@ class Background
             return border.size.width;
     }
 
-    @property int height()
+    @property int height() const
     {
         if (image)
             return image.height + border.size.height;
@@ -692,7 +692,7 @@ class Background
             return border.size.height;
     }
 
-    @property Insets padding()
+    @property Insets padding() const
     {
         if (image)
             return image.padding + border.size;

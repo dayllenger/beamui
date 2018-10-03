@@ -206,7 +206,7 @@ class ProgressBar : AbstractProgressBar
                 scheduleAnimation();
             int w = animDrawable.width;
             _animationPhase %= w * 1000;
-            animDrawable.drawTo(buf, b, 0, cast(int)(_animationPhase * _animationSpeedPixelsPerSecond / 1000), 0);
+            animDrawable.drawTo(buf, b, cast(int)(_animationPhase * _animationSpeedPixelsPerSecond / 1000), 0);
             //Log.d("progress animation draw ", _animationPhase, " b=", b);
         }
     }

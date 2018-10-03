@@ -59,6 +59,11 @@ class Win32ColorDrawBuf : ColorDrawBufBase
             drawRescaled(Rect(0, 0, w, h), v, Rect(0, 0, v.width, v.height));
     }
 
+    ~this()
+    {
+        clear();
+    }
+
     /// Invert alpha in buffer content
     void invertAlpha()
     {
@@ -107,7 +112,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         destroy(this);
         return res;
     }
-    /// Returns pointer to scan line
+
     override uint* scanLine(int y)
     {
         if (y >= 0 && y < _h)
@@ -115,10 +120,6 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         return null;
     }
 
-    ~this()
-    {
-        clear();
-    }
     /// Clear buffer contents, set dimension to 0, 0
     override void clear()
     {
@@ -135,7 +136,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
             _h = 0;
         }
     }
-    /// Change buffer size
+
     override void resize(int width, int height)
     {
         if (width < 0)
@@ -167,7 +168,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
             SelectObject(_drawdc, _drawbmp);
         }
     }
-    /// Fill with solid color
+
     override void fill(uint color)
     {
         if (hasClipping)
@@ -180,6 +181,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         //    _pixels[i] = color;
         _pixels[0 .. len] = color;
     }
+
     /// Draw to win32 device context
     void drawTo(HDC dc, int x, int y)
     {

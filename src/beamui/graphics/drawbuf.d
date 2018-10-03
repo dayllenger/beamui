@@ -113,12 +113,12 @@ class DrawBuf : RefCountedObject
         }
     }
 
-    /// Get current alpha setting (to be applied to all drawing operations)
-    @property uint alpha()
+    /// Current alpha setting (applied to all drawing operations)
+    @property uint alpha() const
     {
         return _alpha;
     }
-    /// Set new alpha setting (to be applied to all drawing operations)
+    /// ditto
     @property void alpha(uint alpha)
     {
         _alpha = min(alpha, 0xFF);
@@ -157,7 +157,7 @@ class DrawBuf : RefCountedObject
         _ninePatch = ninePatch;
     }
     /// Check whether there is nine-patch information available for drawing buffer
-    @property bool hasNinePatch()
+    @property bool hasNinePatch() const
     {
         return _ninePatch !is null;
     }
@@ -168,12 +168,12 @@ class DrawBuf : RefCountedObject
     }
 
     /// Returns current width
-    @property int width()
+    @property int width() const
     {
         return 0;
     }
     /// Returns current height
-    @property int height()
+    @property int height() const
     {
         return 0;
     }
@@ -187,7 +187,7 @@ class DrawBuf : RefCountedObject
         _clipRect = Rect(0, 0, width, height);
     }
 
-    @property bool hasClipping()
+    @property bool hasClipping() const
     {
         return _clipRect.left != 0 || _clipRect.top != 0 || _clipRect.right != width || _clipRect.bottom != height;
     }
@@ -338,7 +338,7 @@ class DrawBuf : RefCountedObject
     {
     }
     /// Returns buffer bits per pixel
-    @property int bpp()
+    @property int bpp() const
     {
         return 0;
     }
@@ -386,11 +386,11 @@ class DrawBuf : RefCountedObject
             }
         }
     }
-    /// Draw pixel at (x, y) with specified color
+    /// Draw pixel at (x, y) with specified color (clipping is applied)
     abstract void drawPixel(int x, int y, uint color);
     /// Draw 8bit alpha image - usually font glyph using specified color (clipping is applied)
     abstract void drawGlyph(int x, int y, Glyph* glyph, uint color);
-    /// Draw source buffer rectangle contents to destination buffer
+    /// Draw source buffer rectangle contents to destination buffer (clipping is applied)
     abstract void drawFragment(int x, int y, DrawBuf src, Rect srcrect);
     /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
     abstract void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect);
@@ -1311,18 +1311,15 @@ class ColorDrawBufBase : DrawBuf
     protected int _w;
     protected int _h;
 
-    /// Returns buffer bits per pixel
-    override @property int bpp()
+    override @property int bpp() const
     {
         return 32;
     }
-
-    override @property int width()
+    override @property int width() const
     {
         return _w;
     }
-
-    override @property int height()
+    override @property int height() const
     {
         return _h;
     }
@@ -1333,7 +1330,6 @@ class ColorDrawBufBase : DrawBuf
         return null;
     }
 
-    /// Draw source buffer rectangle contents to destination buffer
     override void drawFragment(int x, int y, DrawBuf src, Rect srcrect)
     {
         Rect dstrect = Rect(x, y, x + srcrect.width, y + srcrect.height);
@@ -1403,7 +1399,6 @@ class ColorDrawBufBase : DrawBuf
         return res;
     }
 
-    /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
     override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
     {
         //Log.d("drawRescaled ", dstrect, " <- ", srcrect);
@@ -1662,7 +1657,6 @@ class ColorDrawBufBase : DrawBuf
         }
     }
 
-    /// Fill rectangle with a gradient (clipping is applied)
     override void fillGradientRect(Rect rc, uint color1, uint color2, uint color3, uint color4)
     {
         if (applyClipping(rc))
@@ -1685,7 +1679,6 @@ class ColorDrawBufBase : DrawBuf
         }
     }
 
-    /// Draw pixel at (x, y) with specified color
     override void drawPixel(int x, int y, uint color)
     {
         if (!_clipRect.isPointInside(x, y))
@@ -1709,18 +1702,16 @@ class GrayDrawBuf : DrawBuf
 {
     protected int _w;
     protected int _h;
-    /// Returns buffer bits per pixel
-    override @property int bpp()
+
+    override @property int bpp() const
     {
         return 8;
     }
-
-    override @property int width()
+    override @property int width() const
     {
         return _w;
     }
-
-    override @property int height()
+    override @property int height() const
     {
         return _h;
     }
@@ -1763,7 +1754,6 @@ class GrayDrawBuf : DrawBuf
             p[i] = cl;
     }
 
-    /// Draw source buffer rectangle contents to destination buffer
     override void drawFragment(int x, int y, DrawBuf src, Rect srcrect)
     {
         Rect dstrect = Rect(x, y, x + srcrect.width, y + srcrect.height);
@@ -1801,7 +1791,7 @@ class GrayDrawBuf : DrawBuf
             res[i] = src0 + i * sd / dd;
         return res;
     }
-    /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
+
     override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
     {
         //Log.d("drawRescaled ", dstrect, " <- ", srcrect);
@@ -1958,7 +1948,6 @@ class GrayDrawBuf : DrawBuf
         }
     }
 
-    /// Fill rectangle with a gradient (clipping is applied)
     override void fillGradientRect(Rect rc, uint color1, uint color2, uint color3, uint color4)
     {
         if (applyClipping(rc))
@@ -1985,7 +1974,6 @@ class GrayDrawBuf : DrawBuf
         }
     }
 
-    /// Draw pixel at (x, y) with specified color
     override void drawPixel(int x, int y, uint color)
     {
         if (!_clipRect.isPointInside(x, y))

@@ -342,35 +342,30 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         _console.uninit();
     }
 
-    /// Returns current width
-    override @property int width()
+    override @property int width() const
     {
         return _console.width;
     }
-    /// Returns current height
-    override @property int height()
+    override @property int height() const
     {
         return _console.height;
     }
 
-    /// Reserved for hardware-accelerated drawing - begins drawing batch
     override void beforeDrawing()
     {
         // TODO?
     }
-    /// Reserved for hardware-accelerated drawing - ends drawing batch
     override void afterDrawing()
     {
         // TODO?
     }
-    /// Returns buffer bits per pixel
-    override @property int bpp()
+    override @property int bpp() const
     {
         return 4;
     }
     // returns pointer to ARGB scanline, null if y is out of range or buffer doesn't provide access to its memory
     //uint * scanLine(int y) { return null; }
-    /// Resize buffer
+
     override void resize(int width, int height)
     {
         // IGNORE
@@ -380,7 +375,6 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
     //===============================================================
     // Drawing methods
 
-    /// Fill the whole buffer with solid color (no clipping applied)
     override void fill(uint color)
     {
         // TODO
@@ -475,7 +469,6 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
 
     static immutable dstring SPACE_STRING = "                                                                                                    " ~ "                                                                                                    " ~ "                                                                                                    " ~ "                                                                                                    " ~ "                                                                                                    ";
 
-    /// Fill rectangle with solid color (clipping is applied)
     override void fillRect(Rect rc, uint color)
     {
         uint alpha = color >> 24;
@@ -499,14 +492,12 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         fillRect(rc, color1);
     }
 
-    /// Fill rectangle with solid color and pattern (clipping is applied)
     override void fillRectPattern(Rect rc, uint color, PatternType pattern)
     {
         // default implementation: does not support patterns
         fillRect(rc, color);
     }
 
-    /// Draw pixel at (x, y) with specified color
     override void drawPixel(int x, int y, uint color)
     {
         // TODO
@@ -526,19 +517,16 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         _console.writeText(cast(dstring)text);
     }
 
-    /// Draw 8bit alpha image - usually font glyph using specified color (clipping is applied)
     override void drawGlyph(int x, int y, Glyph* glyph, uint color)
     {
         // TODO
     }
 
-    /// Draw source buffer rectangle contents to destination buffer
     override void drawFragment(int x, int y, DrawBuf src, Rect srcrect)
     {
         // not supported
     }
 
-    /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
     override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
     {
         // not supported
