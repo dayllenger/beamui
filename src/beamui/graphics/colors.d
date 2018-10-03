@@ -15,6 +15,7 @@ Authors:   Vadim Lopatin
 module beamui.graphics.colors;
 
 import std.string : strip;
+import std.traits : isUnsigned;
 import beamui.core.functions : clamp, to;
 import beamui.core.logger;
 import beamui.core.parseutils;
@@ -25,12 +26,43 @@ immutable uint COLOR_UNSPECIFIED = 0xFFDEADFF;
 /// Transparent color constant
 immutable uint COLOR_TRANSPARENT = 0xFFFFFFFF;
 
-immutable string COLOR_DRAWABLE = "#color";
+alias ARGB8 = uint;
+
+/// The main color data type, library-wide used
+struct Color
+{
+    /// Internal color representation
+    private ARGB8 data;
+
+    /// Special color constant to identify value as not a color (to use default/parent value instead)
+    enum none = Color(0xFFDEADFF);
+    /// Transparent color constant
+    enum transparent = Color(0xFFFFFFFF);
+
+pure nothrow @nogc:
+
+    /// Make a color from hex value
+    this(uint argb8)
+    {
+        data = argb8;
+    }
+    /// Make a color from 4 integer components
+    this(T)(T r, T g, T b, T a) if (isUnsigned!T)
+    {
+        data = (cast(uint)a << 24) | (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
+    }
+
+    /// Returns true if the color has the alpha value meaning complete transparency
+    bool isFullyTransparent() const
+    {
+        return (data >> 24) == 0xFF;
+    }
+}
 
 /// Color constants enum, contributed by zhaopuming
 /// Refer to http://rapidtables.com/web/color/RGB_Color.htm#color%20table
 /// #275
-enum Color
+enum NamedColor : uint
 {
     maroon = 0x800000,
     dark_red = 0x8B0000,
@@ -210,7 +242,7 @@ uint decodeTextColor(string s, uint defValue = 0) pure
 
     try
     {
-        Color c = to!Color(s);
+        NamedColor c = to!NamedColor(s);
         return to!uint(c);
     }
     catch (Exception e) // not a named color
