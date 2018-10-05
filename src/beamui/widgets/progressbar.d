@@ -65,16 +65,16 @@ class AbstractProgressBar : Widget
             return _animationInterval;
         }
         /// ditto
-        AbstractProgressBar animationInterval(int animationIntervalMillis)
+        AbstractProgressBar animationInterval(int interval)
         {
-            animationIntervalMillis = clamp(animationIntervalMillis, 0, 5000);
-            if (_animationInterval != animationIntervalMillis)
+            interval = clamp(interval, 0, 5000);
+            if (_animationInterval != interval)
             {
-                _animationInterval = animationIntervalMillis;
-                if (!animationIntervalMillis)
-                    stopAnimation();
-                else
+                _animationInterval = interval;
+                if (interval > 0)
                     scheduleAnimation();
+                else
+                    stopAnimation();
             }
             return this;
         }

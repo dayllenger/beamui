@@ -10,13 +10,15 @@ module beamui.platforms.ansi_console.consolefont;
 import beamui.core.config;
 
 static if (BACKEND_ANSI_CONSOLE):
+import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
 import beamui.graphics.fonts;
-import beamui.widgets.styles;
+import beamui.style.types : TextFlag;
 
 class ConsoleFont : Font
 {
     private Glyph _glyph;
+
     this()
     {
         _spaceWidth = 1;
@@ -30,88 +32,57 @@ class ConsoleFont : Font
         _glyph.glyph = [0];
     }
 
-    /// Returns font size (as requested from font engine)
     override @property int size()
     {
         return 1;
     }
-    /// Returns actual font height including interline space
     override @property int height()
     {
         return 1;
     }
-    /// Returns font weight
     override @property int weight()
     {
         return 400;
     }
-    /// Returns baseline offset
     override @property int baseline()
     {
         return 0;
     }
-    /// Returns true if font is italic
     override @property bool italic()
     {
         return false;
     }
-    /// Returns font face name
     override @property string face()
     {
         return "console";
     }
-    /// Returns font family
     override @property FontFamily family()
     {
         return FontFamily.monospace;
     }
-    /// Returns true if font object is not yet initialized / loaded
     override @property bool isNull()
     {
         return false;
     }
-
-    /// Returns true if antialiasing is enabled, false if not enabled
     override @property bool antialiased()
     {
         return false;
     }
-
-    /// Returns true if font has fixed pitch (all characters have equal width)
     override @property bool isFixed()
     {
         return true;
     }
-
-    /// Returns true if font is fixed
     override @property int spaceWidth()
     {
         return 1;
     }
-
-    /// Returns character width
     override int charWidth(dchar ch)
     {
         return 1;
     }
 
-    /*******************************************************************************************
-    * Measure text string, return accumulated widths[] (distance to end of n-th character), returns number of measured chars.
-    *
-    * Supports Tab character processing and processing of menu item labels like '&File'.
-    *
-    * Params:
-    *          text = text string to measure
-    *          widths = output buffer to put measured widths (widths[i] will be set to cumulative widths text[0..i])
-    *          maxWidth = maximum width to measure - measure is stopping if max width is reached (pass MAX_WIDTH_UNSPECIFIED to measure all characters)
-    *          tabSize = tabulation size, in number of spaces
-    *          tabOffset = when string is drawn not from left position, use to move tab stops left/right
-    *          textFlags = TextFlag bit set - to control underline, hotkey label processing, etc...
-    * Returns:
-    *          number of characters measured (may be less than text.length if maxWidth is reached)
-    ******************************************************************************************/
     override int measureText(const dchar[] text, ref int[] widths, int maxWidth = MAX_WIDTH_UNSPECIFIED,
-            int tabSize = 4, int tabOffset = 0, uint textFlags = 0)
+            int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         if (text.length == 0)
             return 0;
@@ -157,21 +128,8 @@ class ConsoleFont : Font
         return charsMeasured;
     }
 
-    /*****************************************************************************************
-    * Draw text string to buffer.
-    *
-    * Params:
-    *      buf =   graphics buffer to draw text to
-    *      x =     x coordinate to draw first character at
-    *      y =     y coordinate to draw first character at
-    *      text =  text string to draw
-    *      color =  color for drawing of glyphs
-    *      tabSize = tabulation size, in number of spaces
-    *      tabOffset = when string is drawn not from left position, use to move tab stops left/right
-    *      textFlags = set of TextFlag bit fields
-    ****************************************************************************************/
-    override void drawText(DrawBuf drawBuf, int x, int y, const dchar[] text, uint color, int tabSize = 4,
-            int tabOffset = 0, uint textFlags = 0)
+    override void drawText(DrawBuf drawBuf, int x, int y, const dchar[] text, Color color, int tabSize = 4,
+            int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         if (text.length == 0)
             return; // nothing to draw - empty text
@@ -235,21 +193,9 @@ class ConsoleFont : Font
         buf.console.underline = false;
     }
 
-    /*****************************************************************************************
-    * Draw text string to buffer.
-    *
-    * Params:
-    *      buf =   graphics buffer to draw text to
-    *      x =     x coordinate to draw first character at
-    *      y =     y coordinate to draw first character at
-    *      text =  text string to draw
-    *      charProps =  array of character properties, charProps[i] are properties for character text[i]
-    *      tabSize = tabulation size, in number of spaces
-    *      tabOffset = when string is drawn not from left position, use to move tab stops left/right
-    *      textFlags = set of TextFlag bit fields
-    ****************************************************************************************/
     override void drawColoredText(DrawBuf drawBuf, int x, int y, const dchar[] text,
-            const CustomCharProps[] charProps, int tabSize = 4, int tabOffset = 0, uint textFlags = 0)
+            const CustomCharProps[] charProps, int tabSize = 4, int tabOffset = 0,
+            TextFlag textFlags = TextFlag.unspecified)
     {
         if (text.length == 0)
             return; // nothing to draw - empty text
@@ -276,7 +222,7 @@ class ConsoleFont : Font
         foreach (int i; 0 .. charsMeasured)
         {
             dchar ch = text[i];
-            uint color = i < charProps.length ? charProps[i].color : charProps[$ - 1].color;
+            Color color = i < charProps.length ? charProps[i].color : charProps[$ - 1].color;
             buf.console.textColor = ANSIConsoleDrawBuf.toConsoleColor(color);
             customizedTextFlags = (i < charProps.length ? charProps[i].textFlags : charProps[$ - 1].textFlags) |
                 textFlags;
@@ -325,18 +271,17 @@ class ConsoleFont : Font
         }
     }
 
-    /// Measure multiline text with line splitting, returns width and height in pixels
     override Size measureMultilineText(const dchar[] text, int maxLines = 0, int maxWidth = 0,
-            int tabSize = 4, int tabOffset = 0, uint textFlags = 0)
+            int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         SimpleTextFormatter fmt;
         FontRef fnt = FontRef(this);
         return fmt.format(text, fnt, maxLines, maxWidth, tabSize, tabOffset, textFlags);
     }
 
-    /// Draws multiline text with line splitting
-    override void drawMultilineText(DrawBuf buf, int x, int y, const dchar[] text, uint color,
-            int maxLines = 0, int maxWidth = 0, int tabSize = 4, int tabOffset = 0, uint textFlags = 0)
+    override void drawMultilineText(DrawBuf buf, int x, int y, const dchar[] text, Color color,
+            int maxLines = 0, int maxWidth = 0, int tabSize = 4, int tabOffset = 0,
+            TextFlag textFlags = TextFlag.unspecified)
     {
         SimpleTextFormatter fmt;
         FontRef fnt = FontRef(this);
@@ -344,23 +289,19 @@ class ConsoleFont : Font
         fmt.draw(buf, x, y, fnt, color);
     }
 
-    /// Get character glyph information
     override Glyph* getCharGlyph(dchar ch, bool withImage = true)
     {
         return &_glyph;
     }
 
-    /// Clear usage flags for all entries
     override void checkpoint()
     {
         // ignore
     }
-    /// Removes entries not used after last call of checkpoint() or cleanup()
     override void cleanup()
     {
         // ignore
     }
-    /// Clears glyph cache
     override void clearGlyphCache()
     {
         // ignore
@@ -390,13 +331,11 @@ class ConsoleFontManager : FontManager
         return _font;
     }
 
-    /// Clear usage flags for all entries -- for cleanup of unused fonts
     override void checkpoint()
     {
         // ignore
     }
 
-    /// Removes entries not used after last call of checkpoint() or cleanup()
     override void cleanup()
     {
         // ignore

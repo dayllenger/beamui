@@ -20,7 +20,7 @@ Button:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
 Button::icon, Button::label { align: center; }
 
-Button::label { text-flags: underline-hotkeys; transition: color 75ms ease; }
+Button::label { text-flags: parent; transition: color 75ms ease; }
 
 Button::label:hovered { color: #46617e; }
 

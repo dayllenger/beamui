@@ -16,7 +16,6 @@ import beamui.graphics.fonts;
 import beamui.platforms.ansi_console.consolefont;
 import beamui.platforms.ansi_console.dconsole;
 import beamui.platforms.common.platform;
-import beamui.widgets.styles;
 import beamui.widgets.widget;
 
 class ConsoleWindow : Window
@@ -375,7 +374,7 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
     //===============================================================
     // Drawing methods
 
-    override void fill(uint color)
+    override void fill(Color color)
     {
         // TODO
         fillRect(Rect(0, 0, width, height), color);
@@ -446,13 +445,13 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         ];
     }
 
-    static ubyte toConsoleColor(uint color, bool forBackground = false)
+    static ubyte toConsoleColor(Color color, bool forBackground = false)
     {
-        if (forBackground && ((color >> 24) & 0xFF) >= 0x80)
+        if (forBackground && color.alpha >= 0x80)
             return CONSOLE_TRANSPARENT_BACKGROUND;
-        int r = (color >> 16) & 0xFF;
-        int g = (color >> 8) & 0xFF;
-        int b = (color >> 0) & 0xFF;
+        int r = color.red;
+        int g = color.green;
+        int b = color.blue;
         int bestMatch = CONSOLE_COLORS_RGB[0].match(r, g, b);
         int bestMatchIndex = 0;
         for (int i = 1; i < 16; i++)
@@ -469,9 +468,9 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
 
     static immutable dstring SPACE_STRING = "                                                                                                    " ~ "                                                                                                    " ~ "                                                                                                    " ~ "                                                                                                    " ~ "                                                                                                    ";
 
-    override void fillRect(Rect rc, uint color)
+    override void fillRect(Rect rc, Color color)
     {
-        uint alpha = color >> 24;
+        uint alpha = color.alpha;
         if (alpha >= 128)
             return; // transparent
         _console.backgroundColor = toConsoleColor(color);
@@ -486,24 +485,24 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         }
     }
 
-    override void fillGradientRect(Rect rc, uint color1, uint color2, uint color3, uint color4)
+    override void fillGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4)
     {
         // TODO
         fillRect(rc, color1);
     }
 
-    override void fillRectPattern(Rect rc, uint color, PatternType pattern)
+    override void fillRectPattern(Rect rc, Color color, PatternType pattern)
     {
         // default implementation: does not support patterns
         fillRect(rc, color);
     }
 
-    override void drawPixel(int x, int y, uint color)
+    override void drawPixel(int x, int y, Color color)
     {
         // TODO
     }
 
-    override void drawChar(int x, int y, dchar ch, uint color, uint bgcolor)
+    override void drawChar(int x, int y, dchar ch, Color color, Color bgcolor)
     {
         if (x < _clipRect.left || x >= _clipRect.right || y < _clipRect.top || y >= _clipRect.bottom)
             return;
@@ -517,7 +516,7 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         _console.writeText(cast(dstring)text);
     }
 
-    override void drawGlyph(int x, int y, Glyph* glyph, uint color)
+    override void drawGlyph(int x, int y, Glyph* glyph, Color color)
     {
         // TODO
     }

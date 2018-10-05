@@ -444,7 +444,7 @@ public:
             if (p.bottom < bp.bottom)
                 p.bottom = bp.bottom;
 
-            if ((focusable || ((state & State.parent) && parent.focusable)) && focusRectColor != Color.none)
+            if ((focusable || ((state & State.parent) && parent.focusable)) && focusRectColor != Color.transparent)
             {
                 // add two pixels to padding when focus rect is required
                 // one pixel for focus rect, one for additional space
@@ -558,7 +558,7 @@ public:
             return this;
         }
 
-        /// Get color to draw focus rectangle, Color.none if no focus rect should be drawn
+        /// Get color to draw focus rectangle, Color.transparent if no focus rect should be drawn
         Color focusRectColor() const
         {
             return style.focusRectColor;
@@ -1747,7 +1747,7 @@ public:
     void drawFocusRect(DrawBuf buf)
     {
         Color[1] cs = [focusRectColor];
-        if (cs[0] != Color.none)
+        if (cs[0] != Color.transparent)
         {
             Box b = _box;
             b.shrink(Insets(FOCUS_RECT_PADDING));

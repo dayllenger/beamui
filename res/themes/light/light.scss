@@ -72,7 +72,7 @@ Button {
     }
 
     &::label {
-        text-flags: underline-hotkeys;
+        text-flags: parent;
         transition: color 75ms ease;
 
         &:hovered {

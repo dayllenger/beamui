@@ -255,7 +255,7 @@ class Font : RefCountedObject
      *          number of characters measured (may be less than text.length if maxWidth is reached)
      ******************************************************************************************/
     int measureText(const dchar[] text, ref int[] widths, int maxWidth = MAX_WIDTH_UNSPECIFIED,
-            int tabSize = 4, int tabOffset = 0, uint textFlags = 0)
+            int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         if (text.length == 0)
             return 0;
@@ -354,7 +354,7 @@ class Font : RefCountedObject
      *          textFlags = TextFlag bit set - to control underline, hotkey label processing, etc...
      ************************************************************************/
     Size textSize(dstring text, int maxWidth = MAX_WIDTH_UNSPECIFIED, int tabSize = 4,
-            int tabOffset = 0, uint textFlags = 0)
+            int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         return textSizeMemoized(this, text, maxWidth, tabSize, tabOffset, textFlags);
     }
@@ -364,7 +364,7 @@ class Font : RefCountedObject
     alias textSizeMemoized = memoize!(Font.textSizeImpl);
 
     static Size textSizeImpl(Font font, const dchar[] text, int maxWidth = MAX_WIDTH_UNSPECIFIED,
-            int tabSize = 4, int tabOffset = 0, uint textFlags = 0)
+            int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         if (font._textSizeBuffer.length < text.length + 1)
             font._textSizeBuffer.length = text.length + 1;
@@ -388,7 +388,7 @@ class Font : RefCountedObject
      *      textFlags = set of TextFlag bit fields
      ****************************************************************************************/
     void drawText(DrawBuf buf, int x, int y, const dchar[] text, Color color, int tabSize = 4,
-            int tabOffset = 0, uint textFlags = 0)
+            int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         if (text.length == 0)
             return; // nothing to draw - empty text
@@ -460,7 +460,7 @@ class Font : RefCountedObject
     *      textFlags = set of TextFlag bit fields
     ****************************************************************************************/
     void drawColoredText(DrawBuf buf, int x, int y, const dchar[] text, const CustomCharProps[] charProps,
-            int tabSize = 4, int tabOffset = 0, uint textFlags = 0)
+            int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         if (text.length == 0)
             return; // nothing to draw - empty text
@@ -526,7 +526,7 @@ class Font : RefCountedObject
 
     /// Measure multiline text with line splitting, returns width and height in pixels
     Size measureMultilineText(const dchar[] text, int maxLines = 0, int maxWidth = 0, int tabSize = 4,
-            int tabOffset = 0, uint textFlags = 0)
+            int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         SimpleTextFormatter fmt;
         FontRef fnt = FontRef(this);
@@ -535,7 +535,7 @@ class Font : RefCountedObject
 
     /// Draws multiline text with line splitting
     void drawMultilineText(DrawBuf buf, int x, int y, const dchar[] text, Color color, int maxLines = 0,
-            int maxWidth = 0, int tabSize = 4, int tabOffset = 0, uint textFlags = 0)
+            int maxWidth = 0, int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         SimpleTextFormatter fmt;
         FontRef fnt = FontRef(this);
@@ -569,11 +569,11 @@ struct SimpleTextFormatter
     int _maxLineWidth;
     int _tabSize;
     int _tabOffset;
-    uint _textFlags;
+    TextFlag _textFlags;
 
     /// Split text into lines and measure it; returns size in pixels
     Size format(const dchar[] text, FontRef fnt, int maxLines = 0, int maxWidth = 0, int tabSize = 4,
-            int tabOffset = 0, uint textFlags = 0)
+            int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         _tabSize = tabSize;
         _tabOffset = tabOffset;

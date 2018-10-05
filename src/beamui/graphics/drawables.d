@@ -270,7 +270,7 @@ static if (BACKEND_CONSOLE)
 {
     abstract class ConsoleDrawBuf : DrawBuf
     {
-        abstract void drawChar(int x, int y, dchar ch, uint color, uint bgcolor);
+        abstract void drawChar(int x, int y, dchar ch, Color color, Color bgcolor);
     }
 
     /**
@@ -297,8 +297,8 @@ static if (BACKEND_CONSOLE)
             int _width;
             int _height;
             dchar[] _text;
-            uint[] _bgColors;
-            uint[] _textColors;
+            Color[] _bgColors;
+            Color[] _textColors;
             Insets _padding;
             Rect _ninePatch;
             bool _tiled;
@@ -306,7 +306,7 @@ static if (BACKEND_CONSOLE)
             bool _hasNinePatch;
         }
 
-        this(int dx, int dy, dstring text, uint textColor, uint bgColor)
+        this(int dx, int dy, dstring text, Color textColor, Color bgColor)
         {
             _width = dx;
             _height = dy;
@@ -402,11 +402,11 @@ static if (BACKEND_CONSOLE)
                     switch (mode)
                     {
                     case Mode.BackgroundColor:
-                        _bgColors ~= tokens[i].intvalue;
+                        _bgColors ~= Color(tokens[i].intvalue);
                         break;
                     case Mode.TextColor:
                     case Mode.Text:
-                        _textColors ~= tokens[i].intvalue;
+                        _textColors ~= Color(tokens[i].intvalue);
                         break;
                     case Mode.Padding:
                         pad ~= tokens[i].intvalue;
@@ -459,23 +459,23 @@ static if (BACKEND_CONSOLE)
             for (int k = 1; k <= _width * _height; k++)
             {
                 if (_textColors.length < k)
-                    _textColors ~= _textColors.length ? _textColors[$ - 1] : 0;
+                    _textColors ~= _textColors.length ? _textColors[$ - 1] : Color(0x0);
                 if (_bgColors.length < k)
-                    _bgColors ~= _bgColors.length ? _bgColors[$ - 1] : 0xFFFFFFFF;
+                    _bgColors ~= _bgColors.length ? _bgColors[$ - 1] : Color.transparent;
             }
         }
 
-        override @property int width()
+        override @property int width() const
         {
             return _width;
         }
 
-        override @property int height()
+        override @property int height() const
         {
             return _height;
         }
 
-        override @property Insets padding()
+        override @property Insets padding() const
         {
             return _padding;
         }
@@ -485,7 +485,7 @@ static if (BACKEND_CONSOLE)
             if (srcx < 0 || srcx >= _width || srcy < 0 || srcy >= _height)
                 return;
             int index = srcy * _width + srcx;
-            if (_textColors[index].isFullyTransparentColor && _bgColors[index].isFullyTransparentColor)
+            if (_textColors[index].isFullyTransparent && _bgColors[index].isFullyTransparent)
                 return; // do not draw
             buf.drawChar(dstx, dsty, _text[index], _textColors[index], _bgColors[index]);
         }
@@ -719,8 +719,6 @@ class Background
     }
 }
 
-static if (BACKEND_GUI):
-
 private __gshared ImageCache _imageCache;
 /// Image cache singleton
 @property ImageCache imageCache()
@@ -761,21 +759,27 @@ final class ImageCache
     /// Find an image by resource ID, load and cache it
     DrawBufRef get(string imageID)
     {
-        if (auto p = imageID in _map)
-            return *p;
-
-        DrawBuf drawbuf;
-
-        string filename = resourceList.getPathByID(imageID);
-        auto data = loadResourceBytes(filename);
-        if (data)
+        // console images are not supported for now in any way
+        static if (BACKEND_GUI)
         {
-            drawbuf = loadImage(data, filename);
-            if (filename.endsWith(".9.png") || filename.endsWith(".9.PNG"))
-                drawbuf.detectNinePatch();
+            if (auto p = imageID in _map)
+                return *p;
+
+            DrawBuf drawbuf;
+
+            string filename = resourceList.getPathByID(imageID);
+            auto data = loadResourceBytes(filename);
+            if (data)
+            {
+                drawbuf = loadImage(data, filename);
+                if (filename.endsWith(".9.png") || filename.endsWith(".9.PNG"))
+                    drawbuf.detectNinePatch();
+            }
+            _map[imageID] = drawbuf;
+            return DrawBufRef(drawbuf);
         }
-        _map[imageID] = drawbuf;
-        return DrawBufRef(drawbuf);
+        else
+            return DrawBufRef.init;
     }
 
     /// Remove an image with resource ID `imageID` from the cache

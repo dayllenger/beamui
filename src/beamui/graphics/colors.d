@@ -21,11 +21,6 @@ import beamui.core.logger;
 import beamui.core.parseutils;
 import beamui.core.types;
 
-/// Special color constant to identify value as not a color (to use default/parent value instead)
-immutable uint COLOR_UNSPECIFIED = 0xFFDEADFF;
-/// Transparent color constant
-immutable uint COLOR_TRANSPARENT = 0xFFFFFFFF;
-
 alias ARGB = uint;
 
 /// The main color data type, library-wide used
@@ -58,48 +53,48 @@ pure nothrow @nogc:
     }
 
     /// Red component
-    uint red() const
+    @property uint red() const
     {
         return (data >> 16) & 0xFF;
     }
     /// ditto
-    void red(uint r)
+    @property void red(uint r)
     {
         data = (data & 0xFF00FFFF) | (r << 16);
     }
     /// Green component
-    uint green() const
+    @property uint green() const
     {
         return (data >> 8) & 0xFF;
     }
     /// ditto
-    void green(uint g)
+    @property void green(uint g)
     {
         data = (data & 0xFFFF00FF) | (g << 8);
     }
     /// Blue component
-    uint blue() const
+    @property uint blue() const
     {
         return (data >> 0) & 0xFF;
     }
     /// ditto
-    void blue(uint b)
+    @property void blue(uint b)
     {
         data = (data & 0xFFFFFF00) | (b << 0);
     }
     /// Alpha component (0=opaque .. 255=transparent)
-    uint alpha() const
+    @property uint alpha() const
     {
         return (data >> 24) & 0xFF;
     }
     /// ditto
-    void alpha(uint a)
+    @property void alpha(uint a)
     {
         data = (data & 0xFFFFFF) | (a << 24);
     }
 
     /// Get the "hexadecimal" 32-bit representation
-    ARGB hex() const
+    @property ARGB hex() const
     {
         return data;
     }

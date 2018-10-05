@@ -235,7 +235,7 @@ Theme createDefaultTheme()
     }
     else // console
     {
-        theme.root.fontSize = 1;
+        theme.root.fontSize = Dimension(1);
     }
     return theme;
 }
@@ -351,7 +351,9 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
             style.weight = to!int(tokens[0].text); // TODO
             break;+/
         case "align":
-            style.alignment = decodeAlignment(tokens);
+            Align a = decodeAlignment(tokens);
+            if (a != Align.unspecified)
+                style.alignment = a;
             break;
         case "margin":
             if (auto vs = decodeInsets(tokens))
@@ -364,17 +366,25 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
         static foreach (side; ["top", "right", "bottom", "left"])
         {
         case "margin-" ~ side:
-            __traits(getMember, style, "margin" ~ side.capitalize) = decodeDimension(tokens[0]);
+            auto dm = decodeDimension(tokens[0]);
+            if (dm != Dimension.none)
+                __traits(getMember, style, "margin" ~ side.capitalize) = dm;
             break Switch;
         case "padding-" ~ side:
-            __traits(getMember, style, "padding" ~ side.capitalize) = decodeDimension(tokens[0]);
+            auto dm = decodeDimension(tokens[0]);
+            if (dm != Dimension.none)
+                __traits(getMember, style, "padding" ~ side.capitalize) = dm;
             break Switch;
         case "border-" ~ side ~ "-width":
-            __traits(getMember, style, "borderWidth" ~ side.capitalize) = decodeDimension(tokens[0]);
+            auto dm = decodeDimension(tokens[0]);
+            if (dm != Dimension.none)
+                __traits(getMember, style, "borderWidth" ~ side.capitalize) = dm;
             break Switch;
         }
         case "border-color":
-            style.borderColor = decodeColor(tokens);
+            Color c = decodeColor(tokens);
+            if (c != Color.none)
+                style.borderColor = c;
             break;
         case "border-width":
             if (auto vs = decodeInsets(tokens))
@@ -390,7 +400,9 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
                 style.borderColor = color;
             break;
         case "background-color":
-            style.backgroundColor = decodeColor(tokens);
+            Color c = decodeColor(tokens);
+            if (c != Color.none)
+                style.backgroundColor = c;
             break;
         case "background-image":
             style.backgroundImage = decodeBackgroundImage(tokens);
@@ -399,7 +411,8 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
             Color color;
             Drawable image;
             decodeBackground(tokens, color, image);
-            style.backgroundColor = color;
+            if (color != Color.none)
+                style.backgroundColor = color;
             style.backgroundImage = image;
             break;
         case "box-shadow":
@@ -412,7 +425,9 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
             style.fontFamily = decodeFontFamily(tokens);
             break;
         case "font-size":
-            style.fontSize = decodeDimension(tokens[0]);
+            auto dm = decodeDimension(tokens[0]);
+            if (dm != Dimension.none)
+                style.fontSize = dm;
             break;
         case "font-weight":
             style.fontWeight = cast(ushort)decodeFontWeight(tokens);
@@ -427,10 +442,14 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
             style.alpha = opacityToAlpha(to!float(tokens[0].text));
             break;
         case "color":
-            style.textColor = decodeColor(tokens);
+            Color c = decodeColor(tokens);
+            if (c != Color.none)
+                style.textColor = c;
             break;
         case "focus-rect-color":
-            style.focusRectColor = decodeColor(tokens);
+            Color c = decodeColor(tokens);
+            if (c != Color.none)
+                style.focusRectColor = c;
             break;
         case "transition-property":
             style.transitionProperty = decodeTransitionProperty(tokens[0]);

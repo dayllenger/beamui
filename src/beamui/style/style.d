@@ -61,7 +61,7 @@ struct StyleProperties
     // colors
     ubyte alpha = 0;
     Color textColor = Color(0x000000);
-    Color focusRectColor = Color.none;
+    Color focusRectColor = Color.transparent;
     // transitions and animations
     string transitionProperty;
     TimingFunction transitionTimingFunction;

@@ -15,6 +15,7 @@ enum int SIZE_IN_POINTS_FLAG = 1 << 28;
 /// Use in styles to specify size in percents * 100 (e.g. 0 == 0%, 10000 == 100%, 100 = 1%)
 enum int SIZE_IN_PERCENTS_FLAG = 1 << 27;
 
+/// Supported types of distance measurement unit
 enum LengthUnit
 {
     // absolute
@@ -30,6 +31,7 @@ enum LengthUnit
     percent
 }
 
+/// Represents length with specified measurement unit
 struct Dimension
 {
     private float value;
@@ -104,15 +106,16 @@ struct Dimension
 
     bool opEquals(Dimension u) const pure
     {
-        import core.stdc.string;
         // workaround for NaN != NaN
-        return memcmp(cast(void*)&this, cast(void*)&u, Dimension.sizeof) == 0;
+        return this is u;
     }
 
     Dimension opBinary(string op : "+")(Dimension u) const
     {
-        assert(type == u.type);
-        return Dimension(value + u.value, type);
+        if (type != u.type) // FIXME: different types
+            return this;
+        else
+            return Dimension(value + u.value, type);
     }
 
     Dimension opBinary(string op : "*")(double factor) const

@@ -356,16 +356,6 @@ class Button : LinearLayout, ActionHolder
             return this;
         }
 
-        TextFlag textFlags() const
-        {
-            return _label ? _label.textFlags : TextFlag.unspecified;
-        }
-        Button textFlags(TextFlag value)
-        {
-            _label.maybe.textFlags(value);
-            return this;
-        }
-
         string fontFace() const
         {
             return _label ? _label.fontFace : null;

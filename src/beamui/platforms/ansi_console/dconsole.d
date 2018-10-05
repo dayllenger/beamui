@@ -111,22 +111,22 @@ struct ConsoleBuf
     protected int _cursorY;
     protected ConsoleChar[] _chars;
 
-    @property int width()
+    @property int width() const
     {
         return _width;
     }
 
-    @property int height()
+    @property int height() const
     {
         return _height;
     }
 
-    @property int cursorX()
+    @property int cursorX() const
     {
         return _cursorX;
     }
 
-    @property int cursorY()
+    @property int cursorY() const
     {
         return _cursorY;
     }
@@ -152,7 +152,7 @@ struct ConsoleBuf
         _chars[y * _width + x].set(ch);
     }
 
-    ConsoleChar get(int x, int y)
+    ConsoleChar get(int x, int y) const
     {
         return _chars[y * _width + x];
     }
@@ -269,44 +269,50 @@ else
 /// Console I/O support
 class Console
 {
-    private int _cursorX;
-    private int _cursorY;
-    private int _width;
-    private int _height;
-
-    private ConsoleBuf _buf;
-    private ConsoleBuf _batchBuf;
-    private uint _consoleAttr;
-    private bool _stopped;
-
-    @property int width()
+    @property
     {
-        return _width;
+        int width() const
+        {
+            return _width;
+        }
+
+        int height() const
+        {
+            return _height;
+        }
+
+        int cursorX() const
+        {
+            return _cursorX;
+        }
+
+        void cursorX(int x)
+        {
+            _cursorX = x;
+        }
+
+        int cursorY() const
+        {
+            return _cursorY;
+        }
+
+        @property void cursorY(int y)
+        {
+            _cursorY = y;
+        }
     }
 
-    @property int height()
+    private
     {
-        return _height;
-    }
+        int _cursorX;
+        int _cursorY;
+        int _width;
+        int _height;
 
-    @property int cursorX()
-    {
-        return _cursorX;
-    }
-
-    @property int cursorY()
-    {
-        return _cursorY;
-    }
-
-    @property void cursorX(int x)
-    {
-        _cursorX = x;
-    }
-
-    @property void cursorY(int y)
-    {
-        _cursorY = y;
+        ConsoleBuf _buf;
+        ConsoleBuf _batchBuf;
+        uint _consoleAttr;
+        bool _stopped;
     }
 
     version (Windows)

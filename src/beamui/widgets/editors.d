@@ -3605,7 +3605,7 @@ class EditBox : EditWidgetBase
         Color color = textColor;
         color.addAlpha(0xC0);
         static int[] textSizeBuffer;
-        int charsMeasured = font.measureText(txt, textSizeBuffer, MAX_WIDTH_UNSPECIFIED, tabSize, 0, 0);
+        int charsMeasured = font.measureText(txt, textSizeBuffer, MAX_WIDTH_UNSPECIFIED, tabSize);
         int ts = clamp(tabSize, 1, 8);
         int spaceIndex = 0;
         for (int i = 0; i < txt.length && i < charsMeasured; i++)

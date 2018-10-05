@@ -54,7 +54,11 @@ Dimension[] decodeInsets(Token[] tokens)
     foreach (t; tokens)
     {
         if (t.type == TokenType.number || t.type == TokenType.dimension)
-            values ~= decodeDimension(t);
+        {
+            auto dm = decodeDimension(t);
+            if (dm != Dimension.none)
+                values ~= dm;
+        }
         else
         {
             Log.fe("CSS(%s): rectangle value should be numeric, not '%s'", t.line, t.type);
@@ -361,12 +365,12 @@ Color decodeColor(ref Token[] tokens)
     if (t.type == TokenType.hash)
     {
         tokens = tokens[1 .. $];
-        return decodeHexColor("#" ~ t.text);
+        return decodeHexColor("#" ~ t.text, Color.none);
     }
     if (t.type == TokenType.ident)
     {
         tokens = tokens[1 .. $];
-        return decodeTextColor(t.text);
+        return decodeTextColor(t.text, Color.none);
     }
     if (t.type == TokenType.func)
     {
@@ -382,7 +386,7 @@ Color decodeColor(ref Token[] tokens)
         if (func is null)
         {
             Log.fe("CSS(%s): expected closing parenthesis", t.line);
-            return Color(0);
+            return Color.none;
         }
         else
             tokens = tokens[func.length + 1 .. $];
@@ -402,10 +406,10 @@ Color decodeColor(ref Token[] tokens)
         else
         {
             Log.fe("CSS(%s): unknown color function: %s", t.line, fn);
-            return Color(0);
+            return Color.none;
         }
     }
-    return Color(0);
+    return Color.none;
 }
 
 /// Decode seconds or milliseconds in CSS. Returns time in msecs.
