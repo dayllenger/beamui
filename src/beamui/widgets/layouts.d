@@ -381,12 +381,9 @@ class FrameLayout : WidgetGroupDefaultDrawing
             if (item is null || item.visibility == Visibility.gone)
                 continue;
 
-            if (item.visibility == Visibility.visible) // FIXME: choose a good behaviour
-            {
-                Boundaries wbs = item.computeBoundaries();
-                bs.maximizeWidth(wbs);
-                bs.maximizeHeight(wbs);
-            }
+            Boundaries wbs = item.computeBoundaries();
+            bs.maximizeWidth(wbs);
+            bs.maximizeHeight(wbs);
         }
         applyStyle(bs);
         return bs;
