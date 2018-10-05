@@ -24,9 +24,9 @@ import beamui.core.stdaction;
 import beamui.graphics.drawbuf;
 import beamui.graphics.iconprovider;
 import beamui.graphics.resources;
+import beamui.platforms.common.timer;
 import beamui.style.theme;
 import beamui.widgets.popup;
-import beamui.widgets.scrollbar;
 import beamui.widgets.widget;
 
 /// Entry point - declare such function to use as main for beamui app
@@ -142,101 +142,6 @@ class EventList
         }
         // not found
         return null;
-    }
-}
-
-class TimerInfo
-{
-    protected
-    {
-        ulong _id;
-        long _interval;
-        long _nextTimestamp;
-        WeakRef!Widget _targetWidget;
-    }
-
-    static __gshared ulong nextID;
-
-    this(WeakRef!Widget targetWidget, long intervalMillis)
-    {
-        _id = ++nextID;
-        assert(intervalMillis >= 0 && intervalMillis < 7 * 24 * 60 * 60 * 1000L);
-        _targetWidget = targetWidget;
-        _interval = intervalMillis;
-        _nextTimestamp = currentTimeMillis + _interval;
-    }
-
-    @property
-    {
-        /// Unique ID of timer
-        ulong id() const
-        {
-            return _id;
-        }
-        /// Timer interval, milliseconds
-        long interval() const
-        {
-            return _interval;
-        }
-        /// Next timestamp to invoke timer at, as per currentTimeMillis()
-        long nextTimestamp() const
-        {
-            return _nextTimestamp;
-        }
-        /// Widget to route timer event to
-        WeakRef!Widget targetWidget()
-        {
-            return _targetWidget;
-        }
-        /// Returns true if timer is not yet cancelled
-        bool valid() const
-        {
-            return !_targetWidget.isNull;
-        }
-    }
-
-    /// Cancel timer
-    void cancel()
-    {
-        _targetWidget.nullify();
-    }
-    /// Cancel timer
-    void notify()
-    {
-        if (_targetWidget)
-        {
-            _nextTimestamp = currentTimeMillis + _interval;
-            if (!_targetWidget.onTimer(_id))
-            {
-                _targetWidget.nullify();
-            }
-        }
-    }
-
-    override bool opEquals(Object obj) const
-    {
-        TimerInfo b = cast(TimerInfo)obj;
-        if (!b)
-            return false;
-        return b._nextTimestamp == _nextTimestamp;
-    }
-
-    override int opCmp(Object obj)
-    {
-        TimerInfo b = cast(TimerInfo)obj;
-        if (!b)
-            return false;
-        if (valid && !b.valid)
-            return -1;
-        if (!valid && b.valid)
-            return 1;
-        if (!valid && !b.valid)
-            return 0;
-        if (_nextTimestamp < b._nextTimestamp)
-            return -1;
-        if (_nextTimestamp > b._nextTimestamp)
-            return 1;
-        return 0;
     }
 }
 
@@ -1945,123 +1850,6 @@ class Window : CustomEventTarget
     void cancelTimer(ulong timerID)
     {
         _timerQueue.cancelTimer(timerID);
-    }
-
-    /// Timers queue
-    private class TimerQueue
-    {
-        protected TimerInfo[] _queue;
-        /// Add new timer, returns timer id
-        ulong add(WeakRef!Widget destination, long intervalMillis)
-        {
-            TimerInfo item = new TimerInfo(destination, intervalMillis);
-            _queue ~= item;
-            sort(_queue);
-            return item.id;
-        }
-        /// Cancel timer
-        void cancelTimer(ulong timerID)
-        {
-            if (!_queue.length)
-                return;
-            for (int i = cast(int)_queue.length - 1; i >= 0; i--)
-            {
-                if (_queue[i].id == timerID)
-                {
-                    _queue[i].cancel();
-                    break;
-                }
-            }
-        }
-        /// Returns interval if millis of next scheduled event or -1 if no events queued
-        long nextIntervalMillis()
-        {
-            if (!_queue.length || !_queue[0].valid)
-                return -1;
-            long delta = _queue[0].nextTimestamp - currentTimeMillis;
-            if (delta < 1)
-                delta = 1;
-            return delta;
-        }
-
-        private void cleanup()
-        {
-            if (!_queue.length)
-                return;
-            sort(_queue);
-            size_t newsize = _queue.length;
-            for (int i = cast(int)_queue.length - 1; i >= 0; i--)
-            {
-                if (!_queue[i].valid)
-                {
-                    newsize = i;
-                }
-            }
-            if (_queue.length > newsize)
-                _queue.length = newsize;
-        }
-
-        private TimerInfo[] expired()
-        {
-            if (!_queue.length)
-                return null;
-            long ts = currentTimeMillis;
-            TimerInfo[] res;
-            for (int i = 0; i < _queue.length; i++)
-            {
-                if (_queue[i].nextTimestamp <= ts)
-                    res ~= _queue[i];
-            }
-            return res;
-        }
-        /// Returns true if at least one widget was notified
-        bool notify()
-        {
-            bool res = false;
-            checkValidWidgets();
-            TimerInfo[] list = expired();
-            if (list)
-            {
-                for (int i = 0; i < list.length; i++)
-                {
-                    if (_queue[i].id == _tooltip.timerID)
-                    {
-                        // special case for tooltip timer
-                        onTooltipTimer();
-                        _queue[i].cancel();
-                        res = true;
-                    }
-                    else
-                    {
-                        WeakRef!Widget w = _queue[i].targetWidget;
-                        if (w.isNull)
-                        {
-                            _queue[i].cancel();
-                        }
-                        else
-                        {
-                            _queue[i].notify();
-                            res = true;
-                        }
-                    }
-                }
-            }
-            cleanup();
-            return res;
-        }
-
-        private void checkValidWidgets()
-        {
-            for (int i = 0; i < _queue.length; i++)
-            {
-                WeakRef!Widget w = _queue[i].targetWidget;
-                if (w.isNull)
-                {
-                    _queue[i].cancel();
-                }
-            }
-            cleanup();
-        }
     }
 }
 

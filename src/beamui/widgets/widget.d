@@ -2283,7 +2283,8 @@ struct TextTypingShortcutHelper
     }
 }
 
-/// Helper to handle animation progress
+/// Helper to handle animation progress.
+/// NOT USED
 struct AnimationHelper
 {
     private long _timeElapsed;

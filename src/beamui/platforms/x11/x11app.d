@@ -27,6 +27,7 @@ import beamui.core.logger;
 import beamui.graphics.drawbuf;
 import beamui.widgets.widget;
 import beamui.platforms.common.platform;
+import beamui.platforms.common.timer;
 static if (USE_OPENGL)
 {
     import derelict.opengl3.gl;
@@ -639,7 +640,7 @@ class X11Window : DWindow
         auto iconDraw = new ColorDrawBuf(iconw, iconh);
         scope (exit)
             destroy(iconDraw);
-        iconDraw.fill(0xFF000000);
+        iconDraw.fill(Color(0xFF000000));
         iconDraw.drawRescaled(Rect(0, 0, iconw, iconh), ic, Rect(0, 0, ic.width, ic.height));
         iconDraw.invertAndPreMultiplyAlpha();
         c_long[] propData = new c_long[2 + iconw * iconh];
@@ -1889,94 +1890,6 @@ class X11Platform : Platform
         super.onThemeChanged();
         foreach (w; _windowMap)
             w.dispatchThemeChanged();
-    }
-}
-
-import core.thread;
-import core.sync.mutex;
-import core.sync.condition;
-
-class TimerThread : Thread
-{
-    Mutex mutex;
-    Condition condition;
-    bool stopped;
-    long nextEventTs;
-    void delegate() callback;
-
-    this(void delegate() timerCallback)
-    {
-        callback = timerCallback;
-        mutex = new Mutex;
-        condition = new Condition(mutex);
-        super(&run);
-        start();
-    }
-
-    ~this()
-    {
-        stop();
-        destroy(condition);
-        destroy(mutex);
-    }
-
-    void set(long nextTs)
-    {
-        mutex.lock();
-        if (nextEventTs == 0 || nextEventTs > nextTs)
-        {
-            nextEventTs = nextTs;
-            condition.notify();
-        }
-        mutex.unlock();
-    }
-
-    void run()
-    {
-        while (!stopped)
-        {
-            bool expired = false;
-
-            mutex.lock();
-
-            long ts = currentTimeMillis;
-            long timeToWait = nextEventTs == 0 ? 1000000 : nextEventTs - ts;
-            if (timeToWait < 10)
-                timeToWait = 10;
-
-            if (nextEventTs == 0)
-                condition.wait();
-            else
-                condition.wait(dur!"msecs"(timeToWait));
-
-            if (stopped)
-            {
-                mutex.unlock();
-                break;
-            }
-            ts = currentTimeMillis;
-            if (nextEventTs && nextEventTs < ts && !stopped)
-            {
-                expired = true;
-                nextEventTs = 0;
-            }
-
-            mutex.unlock();
-
-            if (expired)
-                callback();
-        }
-    }
-
-    void stop()
-    {
-        if (stopped)
-            return;
-        stopped = true;
-        mutex.lock();
-        condition.notify();
-        mutex.unlock();
-        join();
     }
 }
 
