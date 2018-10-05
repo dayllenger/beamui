@@ -728,6 +728,7 @@ class ListWidget : WidgetGroup
     /// Item list has changed
     protected void onAdapterChange(ListAdapter source)
     {
+        needToRecalculateItemSizes = true;
         requestLayout();
     }
 
@@ -1059,12 +1060,47 @@ class ListWidget : WidgetGroup
         Box b = _box;
         applyMargins(b);
         applyPadding(b);
-        foreach (i; 0 .. itemCount)
+        // ----- same as in onDraw -----
+        // fast bisect to find where is the viewport
+        int start = 0;
+        int end = itemCount - 1;
+        bool vert = _orientation == Orientation.vertical;
+        while (true)
+        {
+            Box ib1 = _itemBoxes[start];
+            Box ib2 = _itemBoxes[end];
+            if (vert)
+            {
+                if (scrollOffset.y - ib1.y < ib2.y + ib2.h - scrollOffset.y)
+                {
+                    end -= (end - start) / 2;
+                }
+                else
+                {
+                    start += (end - start) / 2;
+                }
+            }
+            else
+            {
+                if (scrollOffset.x - ib1.x < ib2.x + ib2.w - scrollOffset.x)
+                {
+                    end -= (end - start) / 2;
+                }
+                else
+                {
+                    start += (end - start) / 2;
+                }
+            }
+            if (end - start < 5)
+                break;
+        }
+        // ----------
+        foreach (i; start .. itemCount)
         {
             Box ib = _itemBoxes[i];
             ib.x += b.x - scrollOffset.x;
             ib.y += b.y - scrollOffset.y;
-            if (ib.isPointInside(event.x, event.y)) // TODO: optimize for long lists
+            if (ib.isPointInside(event.x, event.y))
             {
                 if (_adapter && _adapter.wantMouseEvents)
                 {
@@ -1117,10 +1153,23 @@ class ListWidget : WidgetGroup
         return true;
     }
 
+    // TODO: fully test this optimization
+    // this and other little hacks allow to use millions of items in list
+    protected bool needToRecalculateItemSizes;
+    protected Boundaries cachedBoundaries;
+
     override Boundaries computeBoundaries()
     {
+        if (!needToRecalculateItemSizes && !sumItemSizes)
+        {
+            Boundaries bs = cachedBoundaries;
+            applyStyle(bs);
+            return bs;
+        }
+
         Boundaries bs;
         // measure children
+        int p;
         foreach (i; 0 .. itemCount)
         {
             Widget wt = itemWidget(i);
@@ -1133,15 +1182,18 @@ class ListWidget : WidgetGroup
                 bs.maximizeWidth(wbs);
                 if (sumItemSizes)
                     bs.addHeight(wbs);
+                p += wbs.nat.h;
             }
             else
             {
                 bs.maximizeHeight(wbs);
                 if (sumItemSizes)
                     bs.addWidth(wbs);
+                p += wbs.nat.w;
             }
         }
-
+        _totalSize = p;
+        cachedBoundaries = bs;
         applyStyle(bs);
         return bs;
     }
@@ -1219,32 +1271,50 @@ class ListWidget : WidgetGroup
             }
 
             // recalculate with scrollbar
-            p = 0;
-            foreach (i; 0 .. itemCount)
+            if (needToRecalculateItemSizes)
             {
-                Widget wt = itemWidget(i);
-                if (wt is null || wt.visibility == Visibility.gone)
+                p = 0;
+                foreach (i; 0 .. itemCount)
                 {
-                    _itemBoxes[i].w = _itemBoxes[i].h = 0;
-                    continue;
-                }
+                    Widget wt = itemWidget(i);
+                    if (wt is null || wt.visibility == Visibility.gone)
+                    {
+                        _itemBoxes[i].w = _itemBoxes[i].h = 0;
+                        continue;
+                    }
 
-                Boundaries wbs = wt.computeBoundaries();
-                if (_orientation == Orientation.vertical)
-                {
-                    _itemBoxes[i].x = 0;
-                    _itemBoxes[i].y = p;
-                    _itemBoxes[i].w = geom.w;
-                    _itemBoxes[i].h = wbs.nat.h;
-                    p += wbs.nat.h;
+                    Boundaries wbs = wt.computeBoundaries();
+                    if (_orientation == Orientation.vertical)
+                    {
+                        _itemBoxes[i].x = 0;
+                        _itemBoxes[i].y = p;
+                        _itemBoxes[i].w = geom.w;
+                        _itemBoxes[i].h = wbs.nat.h;
+                        p += wbs.nat.h;
+                    }
+                    else
+                    {
+                        _itemBoxes[i].x = p;
+                        _itemBoxes[i].y = 0;
+                        _itemBoxes[i].w = wbs.nat.w;
+                        _itemBoxes[i].h = geom.h;
+                        p += wbs.nat.w;
+                    }
                 }
-                else
+                needToRecalculateItemSizes = false;
+            }
+            else
+            {
+                foreach (i; 0 .. itemCount)
                 {
-                    _itemBoxes[i].x = p;
-                    _itemBoxes[i].y = 0;
-                    _itemBoxes[i].w = wbs.nat.w;
-                    _itemBoxes[i].h = geom.h;
-                    p += wbs.nat.w;
+                    if (_orientation == Orientation.vertical)
+                    {
+                        _itemBoxes[i].w = geom.w;
+                    }
+                    else
+                    {
+                        _itemBoxes[i].h = geom.h;
+                    }
                 }
             }
         }
@@ -1253,7 +1323,6 @@ class ListWidget : WidgetGroup
             _scrollbar.visibility = Visibility.gone;
         }
         _clientBox = geom;
-        _totalSize = p;
 
         // maximum scroll position
         if (_orientation == Orientation.vertical)
@@ -1266,13 +1335,13 @@ class ListWidget : WidgetGroup
         {
             if (_orientation == Orientation.vertical)
             {
-                _scrollbar.setRange(0, p);
+                _scrollbar.setRange(0, _totalSize);
                 _scrollbar.pageSize = _clientBox.height;
                 _scrollbar.position = _scrollPosition;
             }
             else
             {
-                _scrollbar.setRange(0, p);
+                _scrollbar.setRange(0, _totalSize);
                 _scrollbar.pageSize = _clientBox.width;
                 _scrollbar.position = _scrollPosition;
             }
@@ -1327,20 +1396,57 @@ class ListWidget : WidgetGroup
         {
             scrollOffset.x = _scrollPosition;
         }
+        // fast bisect to find where is the viewport
+        int start = 0;
+        int end = itemCount - 1;
+        bool vert = _orientation == Orientation.vertical;
+        while (true)
+        {
+            Box ib1 = _itemBoxes[start];
+            Box ib2 = _itemBoxes[end];
+            if (vert)
+            {
+                if (scrollOffset.y - ib1.y < ib2.y + ib2.h - scrollOffset.y)
+                {
+                    end -= (end - start) / 2;
+                }
+                else
+                {
+                    start += (end - start) / 2;
+                }
+            }
+            else
+            {
+                if (scrollOffset.x - ib1.x < ib2.x + ib2.w - scrollOffset.x)
+                {
+                    end -= (end - start) / 2;
+                }
+                else
+                {
+                    start += (end - start) / 2;
+                }
+            }
+            if (end - start < 5)
+                break;
+        }
         // draw items
-        foreach (i; 0 .. itemCount)
+        bool started;
+        foreach (i; start .. itemCount)
         {
             Box ib = _itemBoxes[i];
             ib.x += b.x - scrollOffset.x;
             ib.y += b.y - scrollOffset.y;
-            if (Rect(ib).intersects(Rect(b))) // TODO: optimize for long lists
+            if (Rect(ib).intersects(Rect(b)))
             {
                 Widget w = itemWidget(i);
                 if (w is null || w.visibility != Visibility.visible)
                     continue;
                 w.layout(ib);
                 w.onDraw(buf);
+                started = true;
             }
+            else if (started)
+                break;
         }
     }
 
