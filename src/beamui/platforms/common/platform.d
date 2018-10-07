@@ -1102,7 +1102,13 @@ class Window : CustomEventTarget
                     Log.d("draw took ", drawEnd - drawStart, " ms");
             }
             if (animationActive)
+            {
+                import core.thread;
+
+                // stupid solution, will be reworked soon
+                Thread.sleep(12.msecs);
                 scheduleAnimation();
+            }
         }
         catch (Exception e)
         {
