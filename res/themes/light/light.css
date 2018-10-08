@@ -283,6 +283,8 @@ EditBox:not(enabled), LogWidget:not(enabled) { background-color: #f0f0f0; }
 
 LogWidget { font-family: monospace; font-size: 9pt; }
 
+FindPanel { padding: 4px; }
+
 @define-colors { edit_caret: black;
   edit_caret_replace: rgba(128, 128, 255, 0.5);
   editor_selection_focused: rgba(96, 160, 255, 0.3);

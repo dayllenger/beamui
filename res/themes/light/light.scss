@@ -710,6 +710,10 @@ LogWidget {
     font-size: 9pt;
 }
 
+FindPanel {
+    padding: 4px;
+}
+
 @define-colors {
     edit_caret: black;
     edit_caret_replace: fade-out(#8080ff, 0.5);

@@ -4013,15 +4013,12 @@ class FindPanel : Row
         CheckBox _cbSelection;
         Button _btnFindNext;
         Button _btnFindPrev;
-        Button _btnReplace;
-        Button _btnReplaceAndFind;
-        Button _btnReplaceAll;
-        Button _btnClose;
         bool _replaceMode;
     }
 
     this(EditBox editor, bool selectionOnly, bool replace, dstring initialText = ""d)
     {
+        _editor = editor;
         _replaceMode = replace;
         import beamui.dml.parser;
 
@@ -4030,31 +4027,27 @@ class FindPanel : Row
             parseML(q{
                 {
                     fillsWidth: true
-                    padding: 4pt
                     Column {
                         fillsWidth: true
                         Row {
-                            fillsWidth: true
                             EditLine { id: edFind; fillsWidth: true; alignment: vcenter }
-                            Button { id: btnFindNext; text: EDIT_FIND_NEXT }
-                            Button { id: btnFindPrev; text: EDIT_FIND_PREV }
+                            Button { id: btnFindNext; text: "Find next" }
+                            Button { id: btnFindPrev; text: "Find previous" }
                             Column {
                                 VSpacer {}
                                 Row {
                                     Button {
                                         id: cbCaseSensitive
                                         checkable: true
-                                        drawableID: "find_case_sensitive"
-                                        tooltipText: EDIT_FIND_CASE_SENSITIVE
-                                        styleID: TOOLBAR_BUTTON
+                                        iconID: "find_case_sensitive"
+                                        tooltipText: "Case sensitive"
                                         alignment: vcenter
                                     }
                                     Button {
                                         id: cbWholeWords
                                         checkable: true
-                                        drawableID: "find_whole_words"
-                                        tooltipText: EDIT_FIND_WHOLE_WORDS
-                                        styleID: TOOLBAR_BUTTON
+                                        iconID: "find_whole_words"
+                                        tooltipText: "Whole words"
                                         alignment: vcenter
                                     }
                                     CheckBox { id: cbSelection; text: "Sel" }
@@ -4064,16 +4057,15 @@ class FindPanel : Row
                         }
                         Row {
                             id: replace
-                            fillsWidth: true;
                             EditLine { id: edReplace; fillsWidth: true; alignment: vcenter }
-                            Button { id: btnReplace; text: EDIT_REPLACE_NEXT }
-                            Button { id: btnReplaceAndFind; text: EDIT_REPLACE_AND_FIND }
-                            Button { id: btnReplaceAll; text: EDIT_REPLACE_ALL }
+                            Button { id: btnReplace; text: "Replace" }
+                            Button { id: btnReplaceAndFind; text: "Replace and find" }
+                            Button { id: btnReplaceAll; text: "Replace all" }
                         }
                     }
                     Column {
                         VSpacer {}
-                        Button { id: btnClose; drawableID: close; styleID: BUTTON_TRANSPARENT }
+                        Button { id: btnClose; iconID: close }
                         VSpacer {}
                     }
                 }
@@ -4083,7 +4075,6 @@ class FindPanel : Row
         {
             Log.e("Exception while parsing DML: ", e);
         }
-        _editor = editor;
         _edFind = childByID!EditLine("edFind");
         _edReplace = childByID!EditLine("edReplace");
 
@@ -4095,33 +4086,32 @@ class FindPanel : Row
         debug (editors)
             Log.d("currentText=", _edFind.text);
 
-        _edFind.enterKeyPressed.connect((EditWidgetBase e) {
+        _edFind.enterKeyPressed ~= (EditWidgetBase e) {
             findNext(_backDirection);
             return true;
-        });
-        _edFind.contentChanged.connect(&onFindTextChange);
+        };
+        _edFind.contentChanged ~= &onFindTextChange;
 
         _btnFindNext = childByID!Button("btnFindNext");
-        _btnFindNext.clicked = &onButtonClick;
         _btnFindPrev = childByID!Button("btnFindPrev");
+        _btnFindNext.clicked = &onButtonClick;
         _btnFindPrev.clicked = &onButtonClick;
-        _btnReplace = childByID!Button("btnReplace");
-        _btnReplace.clicked = &onButtonClick;
-        _btnReplaceAndFind = childByID!Button("btnReplaceAndFind");
-        _btnReplaceAndFind.clicked = &onButtonClick;
-        _btnReplaceAll = childByID!Button("btnReplaceAll");
-        _btnReplaceAll.clicked = &onButtonClick;
-        _btnClose = childByID!Button("btnClose");
-        _btnClose.clicked = &onButtonClick;
+
+        childByID("btnReplace").clicked = &onButtonClick;
+        childByID("btnReplaceAndFind").clicked = &onButtonClick;
+        childByID("btnReplaceAll").clicked = &onButtonClick;
+        childByID("btnClose").clicked = &onButtonClick;
+
         _cbCaseSensitive = childByID!Button("cbCaseSensitive");
         _cbWholeWords = childByID!Button("cbWholeWords");
         _cbSelection = childByID!CheckBox("cbSelection");
         _cbCaseSensitive.checkChanged = &onCaseSensitiveCheckChange;
         _cbWholeWords.checkChanged = &onCaseSensitiveCheckChange;
         _cbSelection.checkChanged = &onCaseSensitiveCheckChange;
-        focusGroup = true;
         if (!replace)
             childByID("replace").visibility = Visibility.gone;
+
+        focusGroup = true;
 
         setDirection(false);
         updateHighlight();
