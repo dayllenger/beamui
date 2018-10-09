@@ -446,7 +446,7 @@ class FreeTypeFont : Font
         _fontItem = item;
         _size = size;
         _height = size;
-        _allowKerning = true;
+        allowKerning = true;
         debug _instanceCount++;
         debug (resalloc)
             Log.d("Created font, count: ", _instanceCount);
@@ -491,16 +491,10 @@ class FreeTypeFont : Font
         return false;
     }
 
-    /// Does this font allow kerning?
-    override @property bool allowKerning() const
-    {
-        return _allowKerning;
-    }
-
     /// Get kerning between two chars
     override int getKerningOffset(dchar prevChar, dchar currentChar)
     {
-        if (!_allowKerning || !prevChar || !currentChar)
+        if (!allowKerning || !prevChar || !currentChar)
             return 0;
         FT_UInt index1;
         FreeTypeFontFile file1;

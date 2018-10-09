@@ -27,8 +27,8 @@ import beamui.graphics.glsupport;
 /// Drawing buffer - image container which allows to perform some drawing operations
 class GLDrawBuf : DrawBuf
 {
-    protected int _w;
-    protected int _h;
+    private int _w;
+    private int _h;
 
     this(int dx, int dy)
     {
@@ -46,7 +46,7 @@ class GLDrawBuf : DrawBuf
 
     override void beforeDrawing()
     {
-        _alpha = 0;
+        alpha = 0;
         glSupport.setOrthoProjection(Rect(0, 0, _w, _h), Rect(0, 0, _w, _h));
         glSupport.beforeRenderGUI();
     }
@@ -81,7 +81,7 @@ class GLDrawBuf : DrawBuf
     {
         if (hasClipping)
         {
-            fillRect(_clipRect, color);
+            fillRect(clipRect, color);
             return;
         }
         applyAlpha(color);
@@ -107,7 +107,7 @@ class GLDrawBuf : DrawBuf
 
     override void drawPixel(int x, int y, Color color)
     {
-        if (!_clipRect.isPointInside(x, y))
+        if (!clipRect.isPointInside(x, y))
             return;
         applyAlpha(color);
         if (!color.isFullyTransparent)
@@ -154,7 +154,7 @@ class GLDrawBuf : DrawBuf
 
     override void drawLine(Point p1, Point p2, Color color)
     {
-        if (!clipLine(_clipRect, p1, p2))
+        if (!clipLine(clipRect, p1, p2))
             return;
         applyAlpha(color);
         if (!color.isFullyTransparent)

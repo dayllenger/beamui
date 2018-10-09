@@ -35,10 +35,10 @@ class ConsoleWindow : Window
 
     override void show()
     {
-        if (!_mainWidget)
+        if (!mainWidget)
         {
             Log.e("Window is shown without main widget");
-            _mainWidget = new Widget;
+            mainWidget = new Widget;
         }
         _visible = true;
         handleWindowStateChange(WindowState.normal, Box(0, 0, _platform.console.width, _platform.console.height));
@@ -117,7 +117,7 @@ class ConsolePlatform : Platform
         _console.inputIdleEvent = &onInputIdle;
         _console.init();
         _console.setCursorType(ConsoleCursorType.invisible);
-        _uiDialogDisplayMode = DialogDisplayMode.allTypesOfDialogsInPopup;
+        uiDialogDisplayMode = DialogDisplayMode.allTypesOfDialogsInPopup;
         _drawBuf = new ANSIConsoleDrawBuf(_console);
     }
 
@@ -504,7 +504,7 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
 
     override void drawChar(int x, int y, dchar ch, Color color, Color bgcolor)
     {
-        if (x < _clipRect.left || x >= _clipRect.right || y < _clipRect.top || y >= _clipRect.bottom)
+        if (!clipRect.isPointInside(x, y))
             return;
         ubyte tc = toConsoleColor(color, false);
         ubyte bc = toConsoleColor(bgcolor, true);

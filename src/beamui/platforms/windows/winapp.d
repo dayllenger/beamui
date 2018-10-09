@@ -426,17 +426,17 @@ class Win32Window : Window
 
     override void show()
     {
-        if (!_mainWidget)
+        if (!mainWidget)
         {
             Log.e("Window is shown without main widget");
-            _mainWidget = new Widget;
+            mainWidget = new Widget;
         }
         ReleaseCapture();
 
         adjustSize();
         adjustPosition();
 
-        _mainWidget.setFocus();
+        mainWidget.setFocus();
 
         if (_flags & WindowFlag.fullscreen)
         {
@@ -781,7 +781,7 @@ class Win32Window : Window
             _drawbuf.resize(_w, _h);
         _drawbuf.resetClipping();
 
-        _drawbuf.fill(_backgroundColor);
+        _drawbuf.fill(backgroundColor);
         onDraw(_drawbuf);
         (cast(Win32ColorDrawBuf)_drawbuf).drawTo(hdc, 0, 0);
     }

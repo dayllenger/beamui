@@ -221,14 +221,14 @@ class Font : RefCountedObject
         return !g ? 0 : g.widthPixels;
     }
 
-    protected bool _allowKerning;
-    /// Override to enable kerning support
+    private bool _allowKerning;
+    /// Does this font allow kerning?
     @property bool allowKerning() const
     {
-        return false;
+        return _allowKerning;
     }
     /// ditto
-    @property void allowKerning(bool allow)
+    protected @property void allowKerning(bool allow)
     {
         _allowKerning = allow;
     }
@@ -724,7 +724,7 @@ struct SimpleTextFormatter
 /// Font instance collection - utility class, for font manager implementations
 struct FontList
 {
-    FontRef[] _list;
+    private FontRef[] _list;
 
     ~this()
     {
@@ -837,7 +837,7 @@ struct FontFaceProps
 /// Access points to fonts.
 class FontManager
 {
-    protected static __gshared
+    private static __gshared
     {
         FontManager _instance;
         int _minAntialiasedFontSize = DEF_MIN_ANTIALIASED_FONT_SIZE;
@@ -846,6 +846,11 @@ class FontManager
     }
 
     /// Font manager singleton instance
+    static @property FontManager instance()
+    {
+        return _instance;
+    }
+    /// ditto
     static @property void instance(FontManager manager)
     {
         foreach (ref f; fontCache)
@@ -854,11 +859,6 @@ class FontManager
 
         eliminate(_instance);
         _instance = manager;
-    }
-    /// ditto
-    static @property FontManager instance()
-    {
-        return _instance;
     }
 
     // Font cache for fast getFont()

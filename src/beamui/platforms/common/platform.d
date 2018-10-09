@@ -71,7 +71,7 @@ enum WindowState
 }
 
 /// Dialog display modes - used to configure dialogs should be showed as a popup or window
-enum DialogDisplayMode : ulong
+enum DialogDisplayMode : uint
 {
     /// Show all types of dialogs in windows
     allTypesOfDialogsInWindow = 0,
@@ -97,8 +97,8 @@ class EventList
 {
     import core.sync.mutex;
 
-    protected Mutex _mutex;
-    protected Collection!CustomEvent _events;
+    private Mutex _mutex;
+    private Collection!CustomEvent _events;
 
     this()
     {
@@ -844,7 +844,7 @@ class Window : CustomEventTarget
             _onFilesDropped(filenames);
     }
 
-    protected void delegate(string[]) _onFilesDropped;
+    private void delegate(string[]) _onFilesDropped;
     /// Get handler for files dropped to app window
     @property void delegate(string[]) onFilesDropped()
     {
@@ -857,7 +857,7 @@ class Window : CustomEventTarget
         return this;
     }
 
-    protected bool delegate() _onCanClose;
+    private bool delegate() _onCanClose;
     /// Get handler for closing of app (it must return true to allow immediate close, false to cancel close or close window later)
     @property bool delegate() onCanClose()
     {
@@ -870,7 +870,7 @@ class Window : CustomEventTarget
         return this;
     }
 
-    protected void delegate() _onClose;
+    private void delegate() _onClose;
     /// Get handler for closing of window
     @property void delegate() onClose()
     {
@@ -1125,8 +1125,8 @@ class Window : CustomEventTarget
     //===============================================================
     // Focused widget
 
-    protected WeakRef!Widget _focusedWidget;
-    protected State _focusStateToApply = State.focused;
+    private WeakRef!Widget _focusedWidget;
+    private State _focusStateToApply = State.focused;
     /// Returns current focused widget
     @property WeakRef!Widget focusedWidget()
     {
@@ -1545,7 +1545,7 @@ class Window : CustomEventTarget
     }
 
     /// Widget which tracks Move events
-    protected WeakRef!Widget[] _mouseTrackingWidgets;
+    private WeakRef!Widget[] _mouseTrackingWidgets;
     private void addTracking(WeakRef!Widget w)
     {
         foreach (mtw; _mouseTrackingWidgets)
@@ -1581,11 +1581,11 @@ class Window : CustomEventTarget
     }
 
     /// Widget which tracks all events after processed ButtonDown
-    protected WeakRef!Widget _mouseCaptureWidget;
-    protected ushort _mouseCaptureButtons;
-    protected bool _mouseCaptureFocusedOut;
+    private WeakRef!Widget _mouseCaptureWidget;
+    private ushort _mouseCaptureButtons;
+    private bool _mouseCaptureFocusedOut;
     /// Does current capture widget want to receive move events even if pointer left it
-    protected bool _mouseCaptureFocusedOutTrackMovements;
+    private bool _mouseCaptureFocusedOutTrackMovements;
 
     protected void setCaptureWidget(WeakRef!Widget w, MouseEvent event)
     {
@@ -1765,7 +1765,7 @@ class Window : CustomEventTarget
             checkUpdateNeeded(root.child(i), needDraw, needLayout, animationActive);
     }
 
-    protected bool _animationActive;
+    private bool _animationActive;
 
     @property bool isAnimationActive()
     {
@@ -1794,7 +1794,7 @@ class Window : CustomEventTarget
     //===============================================================
     // Timers
 
-    protected TimerQueue _timerQueue;
+    private TimerQueue _timerQueue;
 
     /// Schedule timer for interval in milliseconds - call window.onTimer when finished
     protected void scheduleSystemTimer(long intervalMillis)
@@ -1929,11 +1929,12 @@ class Platform
     /// Call request layout for all windows
     abstract void requestLayout();
 
-    protected
+    private
     {
         string _uiLanguage;
         string _themeName;
-        ulong _uiDialogDisplayMode = DialogDisplayMode.messageBoxInPopup | DialogDisplayMode.inputBoxInPopup;
+        DialogDisplayMode _uiDialogDisplayMode =
+            DialogDisplayMode.messageBoxInPopup | DialogDisplayMode.inputBoxInPopup;
 
         /// Default icon for new created windows
         string _defaultWindowIcon = "beamui-logo";
@@ -2000,16 +2001,15 @@ class Platform
             requestLayout();
         }
 
-        /// Returns how dialogs should be displayed - as popup or window
-        ulong uiDialogDisplayMode()
+        /// How dialogs should be displayed - as popup or window
+        DialogDisplayMode uiDialogDisplayMode()
         {
             return _uiDialogDisplayMode;
         }
-        /// Set how dialogs should be displayed - as popup or window - use DialogDisplayMode enumeration
-        Platform uiDialogDisplayMode(ulong newDialogDisplayMode)
+        /// ditto
+        void uiDialogDisplayMode(DialogDisplayMode value)
         {
-            _uiDialogDisplayMode = newDialogDisplayMode;
-            return this;
+            _uiDialogDisplayMode = value;
         }
 
         /// Returns list of resource directories
@@ -2017,19 +2017,19 @@ class Platform
         {
             return resourceList.resourceDirs;
         }
-        /// Set list of directories to load resources from
+        /// ditto
         void resourceDirs(string[] dirs)
         {
             // TODO: this function is reserved
             resourceList.resourceDirs = dirs;
         }
 
-        /// Set default icon for new created windows
+        /// Default icon for new created windows
         void defaultWindowIcon(string newIcon)
         {
             _defaultWindowIcon = newIcon;
         }
-        /// Get default icon for new created windows
+        /// ditto
         string defaultWindowIcon()
         {
             return _defaultWindowIcon;

@@ -282,15 +282,15 @@ final class SDLWindow : Window
     {
         Log.d("SDLWindow.show - ", title);
 
-        if (!_mainWidget)
+        if (!mainWidget)
         {
             Log.e("Window is shown without main widget");
-            _mainWidget = new Widget;
+            mainWidget = new Widget;
         }
         adjustSize();
         adjustPosition();
 
-        _mainWidget.setFocus();
+        mainWidget.setFocus();
 
         SDL_ShowWindow(_win);
         fixSize();
@@ -585,7 +585,7 @@ final class SDLWindow : Window
         else
         {
             // Select the color for drawing.
-            Color c = _backgroundColor;
+            Color c = backgroundColor;
             ubyte r = cast(ubyte)c.red;
             ubyte g = cast(ubyte)c.green;
             ubyte b = cast(ubyte)c.blue;
@@ -597,7 +597,7 @@ final class SDLWindow : Window
                 _drawbuf = new ColorDrawBuf(_w, _h);
             else
                 _drawbuf.resize(_w, _h);
-            _drawbuf.fill(_backgroundColor);
+            _drawbuf.fill(c);
             onDraw(_drawbuf);
 
             updateBufferSize();

@@ -195,7 +195,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         }
     }
 
-    protected
+    private
     {
         FilePathPanel _edPath;
         EditLine _edFilename;
@@ -955,7 +955,7 @@ class FilePathPanelItem : Row
 {
     Listener!onPathSelectionHandler pathSelected;
 
-    protected
+    private
     {
         string _path;
         Label _text;
@@ -1026,7 +1026,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
 {
     Listener!onPathSelectionHandler pathSelected;
 
-    protected string _path;
+    private string _path;
 
     this()
     {
@@ -1057,7 +1057,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
         return pathSelected.assigned ? pathSelected(path) : false;
     }
 
-    protected int[] itemSizes;
+    private int[] itemSizes;
     override Boundaries computeBoundaries()
     {
         Boundaries bs;
@@ -1152,7 +1152,7 @@ class FilePathPanel : FrameLayout
     static const ID_SEGMENTS = "SEGMENTS";
     static const ID_EDITOR = "ED_PATH";
 
-    protected
+    private
     {
         FilePathPanelButtons _segments;
         EditLine _edPath;
@@ -1303,7 +1303,7 @@ class FileNameEditLine : Row
     /// Editor content is changed
     Signal!(void delegate(EditableContent)) contentChanged;
 
-    protected
+    private
     {
         EditLine _edFileName;
         Button _btn;

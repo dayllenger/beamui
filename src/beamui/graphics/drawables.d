@@ -79,7 +79,7 @@ class EmptyDrawable : Drawable
 
 class SolidFillDrawable : Drawable
 {
-    protected Color _color;
+    private Color _color;
 
     this(Color color)
     {
@@ -105,10 +105,10 @@ class SolidFillDrawable : Drawable
 
 class GradientDrawable : Drawable
 {
-    protected Color _color1; // top left
-    protected Color _color2; // bottom left
-    protected Color _color3; // top right
-    protected Color _color4; // bottom right
+    private Color _color1; // top left
+    private Color _color2; // bottom left
+    private Color _color3; // top right
+    private Color _color4; // bottom right
 
     this(float angle, Color color1, Color color2)
     {
@@ -176,11 +176,11 @@ class GradientDrawable : Drawable
 /// Box shadows drawable, can be blurred
 class BoxShadowDrawable : Drawable
 {
-    protected int _offsetX;
-    protected int _offsetY;
-    protected int _blurSize;
-    protected Color _color;
-    protected ColorDrawBuf texture;
+    private int _offsetX;
+    private int _offsetY;
+    private int _blurSize;
+    private Color _color;
+    private ColorDrawBuf texture;
 
     this(int offsetX, int offsetY, uint blurSize = 0, Color color = Color(0x0))
     {
@@ -535,8 +535,8 @@ static if (BACKEND_CONSOLE)
 /// Drawable which just draws images
 class ImageDrawable : Drawable
 {
-    protected DrawBufRef _image;
-    protected bool _tiled;
+    private DrawBufRef _image;
+    private bool _tiled;
 
     debug static __gshared int _instanceCount;
     debug @property static int instanceCount()

@@ -448,15 +448,15 @@ class X11Window : DWindow
     {
         Log.d("X11Window.show - ", _title);
 
-        if (!_mainWidget)
+        if (!mainWidget)
         {
             Log.e("Window is shown without main widget");
-            _mainWidget = new Widget;
+            mainWidget = new Widget;
         }
         adjustSize();
         adjustPosition();
 
-        _mainWidget.setFocus();
+        mainWidget.setFocus();
 
         XMapRaised(x11display, _win);
         XFlush(x11display);

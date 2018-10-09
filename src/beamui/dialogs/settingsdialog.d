@@ -38,7 +38,7 @@ class SettingsItem
         return _label;
     }
 
-    protected
+    private
     {
         string _id;
         dstring _label;
@@ -86,7 +86,7 @@ class CheckboxItem : SettingsItem
 /// ComboBox based setting with string keys
 class StringComboBoxItem : SettingsItem
 {
-    protected StringListValue[] _items;
+    private StringListValue[] _items;
 
     this(string id, dstring label, StringListValue[] items)
     {
@@ -125,7 +125,7 @@ class StringComboBoxItem : SettingsItem
 /// ComboBox based setting with int keys
 class IntComboBoxItem : SettingsItem
 {
-    protected StringListValue[] _items;
+    private StringListValue[] _items;
 
     this(string id, dstring label, StringListValue[] items)
     {
@@ -164,8 +164,8 @@ class IntComboBoxItem : SettingsItem
 /// ComboBox based setting with floating point keys (actualy, fixed point digits after period is specidied by divider constructor parameter)
 class FloatComboBoxItem : SettingsItem
 {
-    protected StringListValue[] _items;
-    protected long _divider;
+    private StringListValue[] _items;
+    private long _divider;
 
     this(string id, dstring label, StringListValue[] items, long divider = 1000)
     {
@@ -209,9 +209,9 @@ class FloatComboBoxItem : SettingsItem
 
 class NumberEditItem : SettingsItem
 {
-    protected int _minValue;
-    protected int _maxValue;
-    protected int _defaultValue;
+    private int _minValue;
+    private int _maxValue;
+    private int _defaultValue;
 
     this(string id, dstring label, int minValue = int.min, int maxValue = int.max, int defaultValue = 0)
     {
@@ -254,7 +254,7 @@ class NumberEditItem : SettingsItem
 
 class StringEditItem : SettingsItem
 {
-    string _defaultValue;
+    private string _defaultValue;
 
     this(string id, dstring label, string defaultValue)
     {
@@ -282,7 +282,7 @@ class StringEditItem : SettingsItem
 
 class FileNameEditItem : SettingsItem
 {
-    string _defaultValue;
+    private string _defaultValue;
 
     this(string id, dstring label, string defaultValue)
     {
@@ -312,7 +312,7 @@ class FileNameEditItem : SettingsItem
 
 class ExecutableFileNameEditItem : SettingsItem
 {
-    string _defaultValue;
+    private string _defaultValue;
 
     this(string id, dstring label, string defaultValue)
     {
@@ -343,7 +343,7 @@ class ExecutableFileNameEditItem : SettingsItem
 
 class PathNameEditItem : SettingsItem
 {
-    string _defaultValue;
+    private string _defaultValue;
 
     this(string id, dstring label, string defaultValue)
     {
@@ -390,7 +390,7 @@ class SettingsPage
         return cast(int)_children.length;
     }
 
-    protected
+    private
     {
         SettingsPage _parent;
         SettingsPage[] _children;
@@ -564,7 +564,7 @@ class SettingsPage
 
 class SettingsDialog : Dialog
 {
-    protected
+    private
     {
         TreeWidget _tree;
         FrameLayout _frame;

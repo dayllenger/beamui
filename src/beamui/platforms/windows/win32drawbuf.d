@@ -174,7 +174,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
     {
         if (hasClipping)
         {
-            fillRect(_clipRect, color);
+            fillRect(clipRect, color);
             return;
         }
         int len = _w * _h;

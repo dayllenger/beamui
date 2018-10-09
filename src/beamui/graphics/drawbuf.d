@@ -47,13 +47,13 @@ alias OpenGLDrawableDelegate = void delegate(Rect windowRect, Rect rc);
 /// Drawing buffer - image container which allows to perform some drawing operations
 class DrawBuf : RefCountedObject
 {
-    protected Rect _clipRect;
-    protected NinePatch* _ninePatch;
-    protected uint _alpha;
+    private Rect _clipRect;
+    private NinePatch* _ninePatch;
+    private uint _alpha;
 
     static if (USE_OPENGL)
     {
-        protected uint _id;
+        private uint _id;
         /// Unique ID of drawbuf instance, for using with hardware accelerated rendering for caching
         @property uint id()
         {
@@ -87,26 +87,17 @@ class DrawBuf : RefCountedObject
         clear();
     }
 
-    protected void function(uint) _onDestroyCallback;
-    @property void onDestroyCallback(void function(uint) callback)
-    {
-        _onDestroyCallback = callback;
-    }
-
-    @property void function(uint) onDestroyCallback()
-    {
-        return _onDestroyCallback;
-    }
+    void function(uint) onDestroyCallback;
 
     /// Call to remove this image from OpenGL cache when image is updated.
     void invalidate()
     {
         static if (USE_OPENGL)
         {
-            if (_onDestroyCallback)
+            if (onDestroyCallback)
             {
                 // remove from cache
-                _onDestroyCallback(_id);
+                onDestroyCallback(_id);
                 // assign new ID
                 _id = drawBufIDGenerator++;
             }

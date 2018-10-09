@@ -29,7 +29,7 @@ class InputBox : Dialog
         return this;
     }
 
-    protected
+    private
     {
         dstring _message;
         Action[] _actions;

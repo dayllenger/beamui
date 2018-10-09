@@ -36,8 +36,8 @@ import beamui.platforms.common.platform;
 /// Message box
 class MessageBox : Dialog
 {
-    protected dstring _message;
-    protected Action[] _actions;
+    private dstring _message;
+    private Action[] _actions;
 
     this(dstring caption, dstring message, Window parentWindow = null,
             Action[] buttons = [ACTION_OK], int defaultButtonIndex = 0,

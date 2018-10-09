@@ -997,7 +997,7 @@ class MenuBar : Menu
             if (toggleMenu)
             {
                 // if activated - deactivate
-                if (focused || _selectedItemIndex >= 0 || _openedSubmenu !is null)
+                if (focused || selectedItemIndex >= 0 || _openedSubmenu !is null)
                 {
                     close();
                 }
