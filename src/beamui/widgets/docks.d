@@ -199,7 +199,7 @@ class DockHost : WidgetGroupDefaultDrawing
 
         void bodyWidget(Widget widget)
         {
-            _children.replace(widget, _bodyWidget);
+            replaceChild(widget, _bodyWidget);
             _bodyWidget = widget;
             _bodyWidget.fillWH();
             _bodyWidget.parent = this;
@@ -253,9 +253,9 @@ class DockHost : WidgetGroupDefaultDrawing
     protected DockWindow[] getDockedWindowList(DockAlignment alignType)
     {
         DockWindow[] list;
-        foreach (i; 0 .. _children.count)
+        foreach (i; 0 .. childCount)
         {
-            DockWindow item = cast(DockWindow)_children.get(i);
+            DockWindow item = cast(DockWindow)child(i);
             if (!item)
                 continue; // not a docked window
             if (item.dockAlignment == alignType && item.visibility == Visibility.visible)
@@ -269,9 +269,9 @@ class DockHost : WidgetGroupDefaultDrawing
     override Boundaries computeBoundaries()
     {
         Boundaries bs;
-        foreach (i; 0 .. _children.count)
+        foreach (i; 0 .. childCount)
         {
-            Widget item = _children.get(i);
+            Widget item = child(i);
             // TODO: fix
             if (item.visibility != Visibility.gone)
             {

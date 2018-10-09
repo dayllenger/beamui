@@ -1037,7 +1037,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
     protected void initialize(string path)
     {
         _path = path;
-        _children.clear();
+        removeAllChildren();
         string itemPath = path;
         while (true)
         {
@@ -1049,7 +1049,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
 
             itemPath = parentDir(itemPath);
         }
-        itemSizes.length = _children.length;
+        itemSizes.length = childCount;
     }
 
     protected bool onPathSelected(string path)
@@ -1062,9 +1062,9 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
     {
         Boundaries bs;
         Size min;
-        foreach (i; 0 .. _children.count)
+        foreach (i; 0 .. childCount)
         {
-            Widget item = _children.get(i);
+            Widget item = child(i);
             item.visibility = Visibility.visible;
 
             Boundaries wbs = item.computeBoundaries();
@@ -1095,7 +1095,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
         int visibleItems;
         bool exceeded;
         // update visibility
-        foreach (i; 0 .. _children.count)
+        foreach (i; 0 .. childCount)
         {
             if (totalw + itemSizes[i] > maxw)
             {
@@ -1108,7 +1108,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
             }
             else
             {
-                Widget item = _children.get(i);
+                Widget item = child(i);
                 item.visibility = Visibility.gone;
             }
         }
@@ -1117,7 +1117,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
         Box ibox = geom;
         for (int i = visibleItems - 1; i >= 0; i--)
         {
-            Widget item = _children.get(i);
+            Widget item = child(i);
             if (item.visibility != Visibility.gone)
             {
                 ibox.w = itemSizes[i];

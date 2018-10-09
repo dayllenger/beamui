@@ -306,9 +306,9 @@ class TabControl : WidgetGroupDefaultDrawing
         _tabButtonStyle = tabButtonStyle;
         _tabButtonTextStyle = tabButtonTextStyle;
         styleID = _tabStyle;
-        for (int i = 1; i < _children.count; i++)
+        foreach (i; 1 .. childCount)
         {
-            TabItemWidget w = cast(TabItemWidget)_children[i];
+            TabItemWidget w = cast(TabItemWidget)child(i);
             if (w)
             {
                 w.setStyles(_tabButtonStyle, _tabButtonTextStyle);
@@ -400,7 +400,7 @@ class TabControl : WidgetGroupDefaultDrawing
         widget.mouseEvent = &onMouseTabBtn;
         widget.setStyles(_tabButtonStyle, _tabButtonTextStyle);
         widget.tabClosed = &onTabClose;
-        _children.insert(widget, index);
+        insertChild(widget, index);
         updateTabs();
         requestLayout();
         return this;
@@ -429,7 +429,7 @@ class TabControl : WidgetGroupDefaultDrawing
         int index = tabIndex(id);
         if (index >= 0)
         {
-            Widget w = _children.remove(index + 1);
+            Widget w = removeChild(index + 1);
             if (w)
                 destroy(w);
             _items = _items.remove(index);
@@ -462,9 +462,9 @@ class TabControl : WidgetGroupDefaultDrawing
     void renameTab(int index, dstring name)
     {
         _items[index].text = name;
-        for (int i = 0; i < _children.count; i++)
+        foreach (i; 0 .. childCount)
         {
-            auto widget = cast(TabItemWidget)_children[i];
+            auto widget = cast(TabItemWidget)child(i);
             if (widget && widget.item is _items[index])
             {
                 widget.setItem(_items[index]);
@@ -479,9 +479,9 @@ class TabControl : WidgetGroupDefaultDrawing
     {
         _items[index].text = name;
         _items[index].id = id;
-        for (int i = 0; i < _children.count; i++)
+        foreach (i; 0 .. childCount)
         {
-            auto widget = cast(TabItemWidget)_children[i];
+            auto widget = cast(TabItemWidget)child(i);
             if (widget && widget.item is _items[index])
             {
                 widget.setItem(_items[index]);
@@ -503,30 +503,30 @@ class TabControl : WidgetGroupDefaultDrawing
 
     void selectTab(int index, bool updateAccess)
     {
-        if (index < 0 || index + 1 >= _children.count)
+        if (index < 0 || index + 1 >= childCount)
         {
-            Log.e("Tried to access tab out of bounds (index = %d, count = %d)", index, _children.count - 1);
+            Log.e("Tried to access tab out of bounds (index = %d, count = %d)", index, childCount - 1);
             return;
         }
-        if (_children.get(index + 1).compareID(_selectedTabID))
+        if (child(index + 1).compareID(_selectedTabID))
         {
             if (updateAccess)
                 updateAccessTs();
             return; // already selected
         }
         string previousSelectedTab = _selectedTabID;
-        for (int i = 1; i < _children.count; i++)
+        foreach (i; 1 .. childCount)
         {
             if (index == i - 1)
             {
-                _children.get(i).state = State.selected;
-                _selectedTabID = _children.get(i).id;
+                child(i).state = State.selected;
+                _selectedTabID = child(i).id;
                 if (updateAccess)
                     updateAccessTs();
             }
             else
             {
-                _children.get(i).state = State.normal;
+                child(i).state = State.normal;
             }
         }
         tabChanged(_selectedTabID, previousSelectedTab);
@@ -584,10 +584,10 @@ class TabControl : WidgetGroupDefaultDrawing
             return null;
 
         auto res = new Menu;
-        foreach (i; 1 .. _children.count)
+        foreach (i; 1 .. childCount)
         {
             // only hidden tabs should appear in the menu
-            if (_children.get(i).visibility == Visibility.visible)
+            if (child(i).visibility == Visibility.visible)
                 continue;
 
             (int idx) // separate function because of the loop
@@ -601,8 +601,8 @@ class TabControl : WidgetGroupDefaultDrawing
     Size[] itemSizes;
     override Boundaries computeBoundaries()
     {
-        if (itemSizes.length < _children.count)
-            itemSizes.length = _children.count;
+        if (itemSizes.length < childCount)
+            itemSizes.length = childCount;
 
         Boundaries bs;
         // measure 'more' button
@@ -612,9 +612,9 @@ class TabControl : WidgetGroupDefaultDrawing
             itemSizes[0] = bs.nat;
         }
         // measure tab buttons
-        foreach (i; 1 .. _children.count)
+        foreach (i; 1 .. childCount)
         {
-            Widget tab = _children.get(i);
+            Widget tab = child(i);
             tab.visibility = Visibility.visible;
             Boundaries wbs = tab.computeBoundaries();
             itemSizes[i] = wbs.nat;
@@ -647,7 +647,7 @@ class TabControl : WidgetGroupDefaultDrawing
         foreach (item; sortedItems())
         {
             size_t idx = item[1] + 1;
-            auto widget = _children.get(cast(int)idx);
+            auto widget = child(cast(int)idx);
             if (w + itemSizes[idx].w <= geom.w)
             {
                 w += itemSizes[idx].w;
@@ -673,9 +673,9 @@ class TabControl : WidgetGroupDefaultDrawing
         }
         // layout visible items
         int pen;
-        foreach (i; 1 .. _children.count)
+        foreach (i; 1 .. childCount)
         {
-            Widget tab = _children.get(i);
+            Widget tab = child(i);
             if (tab.visibility != Visibility.visible)
                 continue;
 
@@ -696,9 +696,9 @@ class TabControl : WidgetGroupDefaultDrawing
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b);
         // draw all items except selected
-        for (int i = _children.count - 1; i >= 0; i--)
+        for (int i = childCount - 1; i >= 0; i--)
         {
-            Widget item = _children.get(i);
+            Widget item = child(i);
             if (item.visibility != Visibility.visible)
                 continue;
             if (item.id == _selectedTabID) // skip selected
@@ -706,9 +706,9 @@ class TabControl : WidgetGroupDefaultDrawing
             item.onDraw(buf);
         }
         // draw selected item
-        for (int i = 0; i < _children.count; i++)
+        for (int i = 0; i < childCount; i++)
         {
-            Widget item = _children.get(i);
+            Widget item = child(i);
             if (item.visibility != Visibility.visible)
                 continue;
             if (item.id != _selectedTabID) // skip all except selected
@@ -773,10 +773,10 @@ class TabHost : FrameLayout
     /// Get tab content widget by id
     Widget tabBody(string id)
     {
-        foreach (i; 0 .. _children.count)
+        foreach (i; 0 .. childCount)
         {
-            if (_children[i].compareID(id))
-                return _children[i];
+            if (child(i).compareID(id))
+                return child(i);
         }
         return null;
     }
@@ -798,7 +798,7 @@ class TabHost : FrameLayout
     {
         assert(_tabControl !is null, "No TabControl set for TabHost");
         assert(widget.id !is null, "ID for tab host page is mandatory");
-        assert(_children.indexOf(id) == -1, "duplicate ID for tab host page");
+        assert(childIndex(widget.id) == -1, "duplicate ID for tab host page");
         _tabControl.addTab(widget.id, label, iconID, enableCloseButton, tooltipText);
         tabInitialization(widget);
         //widget.focusGroup = true; // doesn't allow move focus outside of tab content

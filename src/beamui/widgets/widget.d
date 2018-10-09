@@ -1863,7 +1863,7 @@ public:
     /// Add child, returns added item
     Widget addChild(Widget item)
     {
-        assert(false, "addChild: children not suported for this widget type");
+        assert(false, "addChild: this widget does not support having children");
     }
     /// Add child, returns added item
     Widget addChildren(Widget[] items)
@@ -1877,22 +1877,27 @@ public:
     /// Insert child at given index, returns inserted item
     Widget insertChild(Widget item, int index)
     {
-        assert(false, "insertChild: children not suported for this widget type");
+        assert(false, "insertChild: this widget does not support having children");
     }
     /// Remove child by index, returns removed item
     Widget removeChild(int index)
     {
-        assert(false, "removeChild: children not suported for this widget type");
+        assert(false, "removeChild: this widget does not support having children");
     }
     /// Remove child by ID, returns removed item
     Widget removeChild(string id)
     {
-        assert(false, "removeChild: children not suported for this widget type");
+        assert(false, "removeChild: this widget does not support having children");
     }
     /// Remove child, returns removed item
     Widget removeChild(Widget child)
     {
-        assert(false, "removeChild: children not suported for this widget type");
+        assert(false, "removeChild: this widget does not support having children");
+    }
+    /// Returns index of widget in child list, -1 if there is no child with this ID
+    int childIndex(string id)
+    {
+        return -1;
     }
     /// Returns index of widget in child list, -1 if passed widget is not a child of this widget
     int childIndex(Widget item)
@@ -2124,7 +2129,7 @@ class WidgetGroup : Widget
         super(ID);
     }
 
-    protected WidgetList _children;
+    private WidgetList _children;
 
     override @property int childCount() const
     {
@@ -2138,11 +2143,13 @@ class WidgetGroup : Widget
 
     override Widget addChild(Widget item)
     {
+        assert(item !is null, "Widget must exist");
         return _children.add(item).parent(this);
     }
 
     override Widget insertChild(Widget item, int index)
     {
+        assert(item !is null, "Widget must exist");
         return _children.insert(item, index).parent(this);
     }
 
@@ -2172,6 +2179,11 @@ class WidgetGroup : Widget
         return removeChild(index);
     }
 
+    override int childIndex(string id)
+    {
+        return _children.indexOf(id);
+    }
+
     override int childIndex(Widget item)
     {
         return _children.indexOf(item);
@@ -2185,6 +2197,7 @@ class WidgetGroup : Widget
     /// Replace child with other child
     void replaceChild(Widget newChild, Widget oldChild)
     {
+        assert(newChild !is null && oldChild !is null, "Widgets must exist");
         _children.replace(newChild, oldChild);
     }
 }

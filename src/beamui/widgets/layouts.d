@@ -108,12 +108,11 @@ class LinearLayout : WidgetGroupDefaultDrawing
     {
         // fill items array
         items.length = 0;
-        foreach (wt; _children)
+        foreach (i; 0 .. childCount)
         {
-            if (wt is null || wt.visibility == Visibility.gone)
-                continue;
-
-            items ~= LayoutItem(wt);
+            Widget wt = child(i);
+            if (wt.visibility != Visibility.gone)
+                items ~= LayoutItem(wt);
         }
         // now we can safely work with items
 
@@ -375,10 +374,10 @@ class FrameLayout : WidgetGroupDefaultDrawing
     override Boundaries computeBoundaries()
     {
         Boundaries bs;
-        foreach (i; 0 .. _children.count)
+        foreach (i; 0 .. childCount)
         {
-            Widget item = _children.get(i);
-            if (item is null || item.visibility == Visibility.gone)
+            Widget item = child(i);
+            if (item.visibility == Visibility.gone)
                 continue;
 
             Boundaries wbs = item.computeBoundaries();
@@ -397,9 +396,9 @@ class FrameLayout : WidgetGroupDefaultDrawing
 
         _box = geom;
         applyPadding(geom);
-        foreach (i; 0 .. _children.count)
+        foreach (i; 0 .. childCount)
         {
-            Widget item = _children.get(i);
+            Widget item = child(i);
             if (item.visibility == Visibility.visible)
             {
                 item.layout(geom);
@@ -412,9 +411,9 @@ class FrameLayout : WidgetGroupDefaultDrawing
     {
         bool found;
         Widget foundWidget;
-        foreach (i; 0 .. _children.count)
+        foreach (i; 0 .. childCount)
         {
-            Widget item = _children.get(i);
+            Widget item = child(i);
             if (item.compareID(ID))
             {
                 item.visibility = Visibility.visible;
@@ -559,9 +558,9 @@ class TableLayout : WidgetGroupDefaultDrawing
         // measure cells
         foreach (int i; 0 .. rc * cc)
         {
-            if (i < _children.count)
+            if (i < childCount)
             {
-                Widget item = _children.get(i);
+                Widget item = child(i);
                 Boundaries wbs = item.computeBoundaries();
                 _cells[i].wt = item;
                 _cells[i].bs = wbs;
