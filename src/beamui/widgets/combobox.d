@@ -67,7 +67,7 @@ class ComboBoxBase : Row
     /// Handle item click
     Signal!(void delegate(Widget, int)) itemSelected;
 
-    protected
+    private
     {
         Widget _body;
         Button _button;
@@ -143,9 +143,9 @@ class ComboBoxBase : Row
         return list;
     }
 
-    protected Popup _popup;
-    protected ListWidget _popupList;
-    protected long _lastPopupCloseTimestamp;
+    private Popup _popup;
+    private ListWidget _popupList;
+    private long _lastPopupCloseTimestamp;
 
     protected void popupClosed()
     {
@@ -445,7 +445,7 @@ class ComboEdit : ComboBox
     /// Set bool property value, for ML loaders
     mixin(generatePropertySettersMethodOverride("setBoolProperty", "bool", "readOnly"));
 
-    protected EditLine _edit;
+    private EditLine _edit;
 
     this(dstring[] items = null)
     {

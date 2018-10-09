@@ -26,7 +26,7 @@ import beamui.widgets.widget;
 /// To update status for background operation in AppFrame
 class BackgroundOperationWatcher
 {
-    protected
+    private
     {
         AppFrame _frame;
         bool _cancelRequested;
@@ -141,7 +141,7 @@ class AppFrame : Column
         }
     }
 
-    protected
+    private
     {
         MenuBar _mainMenu;
         StatusLine _statusLine;

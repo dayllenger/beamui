@@ -259,14 +259,14 @@ class Dialog : Column
 /// Frame with caption for dialog
 class DialogFrame : WindowFrame
 {
-    protected Dialog _dialog;
+    private Dialog _dialog;
 
     this(Dialog dialog, bool enableCloseButton)
     {
         super(enableCloseButton);
         id = dialog.id ~ "_frame";
         _dialog = dialog;
-        _title.text = _dialog.windowTitle;
+        title.text = _dialog.windowTitle;
         bodyWidget = _dialog;
     }
 }

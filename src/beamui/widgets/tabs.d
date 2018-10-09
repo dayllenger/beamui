@@ -115,7 +115,7 @@ class TabItem
         }
     }
 
-    protected
+    private
     {
         static __gshared long _lastAccessCounter;
         string _iconRes;
@@ -177,7 +177,7 @@ class TabItemWidget : Row
 
     Signal!tabClosedHandler tabClosed;
 
-    protected
+    private
     {
         ImageWidget _icon;
         Label _label;
@@ -273,7 +273,7 @@ class TabControl : WidgetGroupDefaultDrawing
 
     import std.typecons : Tuple, tuple;
 
-    protected
+    private
     {
         TabItem[] _items;
         Button _moreButton;
@@ -598,7 +598,7 @@ class TabControl : WidgetGroupDefaultDrawing
         return res;
     }
 
-    Size[] itemSizes;
+    private Size[] itemSizes;
     override Boundaries computeBoundaries()
     {
         if (itemSizes.length < childCount)
@@ -629,11 +629,10 @@ class TabControl : WidgetGroupDefaultDrawing
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         applyPadding(geom);
 
         // consider more button space if it is enabled
@@ -683,6 +682,8 @@ class TabControl : WidgetGroupDefaultDrawing
             tab.layout(Box(geom.x + pen, geom.y, w, geom.h));
             pen += w;
         }
+
+        layed();
     }
 
     override void onDraw(DrawBuf buf)
@@ -691,7 +692,7 @@ class TabControl : WidgetGroupDefaultDrawing
             return;
 
         super.Widget.onDraw(buf);
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b);
@@ -751,8 +752,8 @@ class TabHost : FrameLayout
     /// Signal of tab change (e.g. by clicking on tab header)
     Signal!tabChangedHandler tabChanged;
 
-    protected TabControl _tabControl;
-    protected Visibility _hiddenTabsVisibility = Visibility.invisible;
+    private TabControl _tabControl;
+    private Visibility _hiddenTabsVisibility = Visibility.invisible;
 
     this(TabControl tabControl = null)
     {
@@ -872,8 +873,8 @@ class TabWidget : Column
     /// Signal on tab close button
     Signal!tabClosedHandler tabClosed;
 
-    protected TabControl _tabControl;
-    protected TabHost _tabHost;
+    private TabControl _tabControl;
+    private TabHost _tabHost;
 
     /// Construct a new tab widget with top or bottom tab control placement
     this(Align tabAlignment = Align.top)
@@ -924,19 +925,17 @@ class TabWidget : Column
         return this;
     }
 
-    /// Change name of tab
+    /// Change name of the tab
     void renameTab(string ID, dstring name)
     {
         _tabControl.renameTab(ID, name);
     }
-
-    /// Change name of tab
+    /// ditto
     void renameTab(int index, dstring name)
     {
         _tabControl.renameTab(index, name);
     }
-
-    /// Change name of tab
+    /// ditto
     void renameTab(int index, string id, dstring name)
     {
         _tabControl.renameTab(index, id, name);
@@ -947,8 +946,7 @@ class TabWidget : Column
     {
         _tabHost.selectTab(ID, updateAccess);
     }
-
-    /// Select tab
+    /// ditto
     void selectTab(int index, bool updateAccess = true)
     {
         _tabControl.selectTab(index, updateAccess);
@@ -959,15 +957,14 @@ class TabWidget : Column
     {
         return _tabHost.tabBody(id);
     }
-
-    /// Get tab content widget by id
+    /// Get tab content widget by index
     Widget tabBody(int index)
     {
         string id = _tabControl.tab(index).id;
         return _tabHost.tabBody(id);
     }
 
-    /// Returns tab item by id (null if index out of range)
+    /// Returns tab item by index (null if index out of range)
     TabItem tab(int index)
     {
         return _tabControl.tab(index);

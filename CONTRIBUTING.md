@@ -20,9 +20,9 @@ class A
 
     // public fields
 
-    protected
+    private
     {
-        // protected or private fields
+        // private or protected fields
     }
 
     // constructors
@@ -50,7 +50,7 @@ If you write a lot of code, split parts with the following line:
 
 The lefthand attributes and qualifiers should have such order:
 ```D
-abstract/final/static/override public/protected/package/private @property
+abstract/final/override public/protected/package/private static @property
 ```
 The righthand:
 ```D

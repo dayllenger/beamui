@@ -61,7 +61,7 @@ class Label : Widget
         }
     }
 
-    protected
+    private
     {
         dstring _text;
         immutable dstring minSizeTesterS = "aaaaa"; // TODO: test all this stuff
@@ -117,7 +117,7 @@ class Label : Widget
             return;
 
         super.onDraw(buf);
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
@@ -185,8 +185,8 @@ class ImageWidget : Widget
     /// Set string property value, for ML loaders
     mixin(generatePropertySettersMethodOverride("setStringProperty", "string", "imageID"));
 
-    protected string _imageID;
-    protected DrawableRef _drawable;
+    private string _imageID;
+    private DrawableRef _drawable;
 
     this(string imageID = null)
     {
@@ -222,7 +222,7 @@ class ImageWidget : Widget
             return;
 
         super.onDraw(buf);
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
         applyPadding(b);
@@ -424,7 +424,7 @@ class Button : LinearLayout, ActionHolder
         }
     }
 
-    protected
+    private
     {
         ImageWidget _icon;
         Label _label;
@@ -549,7 +549,7 @@ class SwitchButton : Widget
         if (visibility != Visibility.visible)
             return;
 
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
 
@@ -558,14 +558,14 @@ class SwitchButton : Widget
         applyAlign(b, sz);
         bg.drawTo(buf, b);
 
-        _needDraw = false;
+        drawn();
     }
 }
 
 /// Check button that can be toggled on or off
 class CheckBox : LinearLayout
 {
-    protected
+    private
     {
         Widget _icon;
         Label _label;
@@ -660,7 +660,7 @@ class CanvasWidget : Widget
             return;
 
         super.onDraw(buf);
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
         applyPadding(b);

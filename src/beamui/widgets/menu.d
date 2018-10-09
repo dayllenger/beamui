@@ -74,7 +74,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         }
     }
 
-    protected
+    private
     {
         bool _fromMenuBar;
         Menu _submenu;
@@ -312,11 +312,10 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
 
     override void layout(Box b)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = b;
+        box = b;
         applyPadding(b);
 
         if (isSeparator)
@@ -344,6 +343,8 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         b.w = _arrowWidth;
         _arrow.maybe.layout(b);
         b.x += b.w;
+
+        layed();
     }
 }
 
@@ -355,7 +356,7 @@ class Menu : ListWidget
     /// Prepare for opening of submenu, return true if opening is allowed
     Signal!(bool delegate(Menu)) openingSubmenu;
 
-    protected
+    private
     {
         Menu _parentMenu;
         Menu visualParentMenu;
@@ -373,21 +374,21 @@ class Menu : ListWidget
 
     protected @property bool isMenuBar()
     {
-        return _orientation == Orientation.horizontal;
+        return orientation == Orientation.horizontal;
     }
 
     /// Get menu item by index
     MenuItem menuItem(int index)
     {
-        if (_adapter && index >= 0)
-            return cast(MenuItem)_adapter.itemWidget(index);
+        if (adapter && index >= 0)
+            return cast(MenuItem)adapter.itemWidget(index);
         else
             return null;
     }
 
     @property MenuItem selectedMenuItem()
     {
-        return menuItem(_selectedItemIndex);
+        return menuItem(selectedItemIndex);
     }
 
     /// Add menu item
@@ -492,9 +493,9 @@ class Menu : ListWidget
         return cast(Popup)parent;
     }
 
-    protected ulong _submenuOpenTimer = 0;
-    protected int _submenuOpenItemIndex = -1;
-    protected enum MENU_OPEN_DELAY_MS = 200; // TODO: make changeable
+    private ulong _submenuOpenTimer = 0;
+    private int _submenuOpenItemIndex = -1;
+    private enum MENU_OPEN_DELAY_MS = 200; // TODO: make changeable
 
     protected void scheduleSubmenuOpening(int itemIndex)
     {
@@ -525,8 +526,8 @@ class Menu : ListWidget
         return false;
     }
 
-    protected Menu _openedSubmenu;
-    protected int _openedSubmenuIndex;
+    private Menu _openedSubmenu;
+    private int _openedSubmenuIndex;
 
     protected void openSubmenu(int itemIndex)
     {
@@ -622,7 +623,7 @@ class Menu : ListWidget
         }
     }
 
-    protected WeakRef!Widget _previousFocusedWidget;
+    private WeakRef!Widget _previousFocusedWidget;
 
     override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
     {
@@ -702,7 +703,7 @@ class Menu : ListWidget
         }
     }
 
-    protected bool _navigatingUsingKeys;
+    private bool _navigatingUsingKeys;
     protected @property bool navigatingUsingKeys() const
     {
         if (visualParentMenu)
@@ -730,11 +731,11 @@ class Menu : ListWidget
         }
         if (orientation == Orientation.horizontal)
         {
-            if (_selectedItemIndex >= 0 && event.action == KeyAction.keyDown)
+            if (selectedItemIndex >= 0 && event.action == KeyAction.keyDown)
             {
                 if (event.keyCode == KeyCode.down)
                 {
-                    onItemClicked(_selectedItemIndex);
+                    onItemClicked(selectedItemIndex);
                     return true;
                 }
                 if (event.keyCode == KeyCode.up)
@@ -783,7 +784,7 @@ class Menu : ListWidget
                     if (item && item.hasSubmenu)
                     {
                         if (!_openedSubmenu)
-                            openSubmenu(_selectedItemIndex);
+                            openSubmenu(selectedItemIndex);
                     }
                     else if (visualParentMenu && visualParentMenu.orientation == Orientation.horizontal)
                     {
@@ -822,7 +823,7 @@ class Menu : ListWidget
     override Boundaries computeBoundaries()
     {
         // align items for vertical menu
-        if (_orientation == Orientation.vertical)
+        if (orientation == Orientation.vertical)
         {
             int maxHeight;
             int maxCheckBoxWidth;
@@ -926,7 +927,7 @@ class MenuBar : Menu
         }
     }
 
-    protected bool _menuToggleState;
+    private bool _menuToggleState;
 
     override bool onKeyEvent(KeyEvent event)
     {
@@ -950,7 +951,7 @@ class MenuBar : Menu
             int index = cast(int)findSubitemByHotkey(hotkey); // TODO: doesn't work with non-latin keys
             if (index >= 0)
             {
-                int prevIndex = _selectedItemIndex;
+                int prevIndex = selectedItemIndex;
                 if (index != prevIndex)
                 {
                     selectItem(index);

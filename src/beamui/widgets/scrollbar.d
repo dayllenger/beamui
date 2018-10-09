@@ -107,7 +107,7 @@ class AbstractSlider : WidgetGroup
     /// Scroll event listeners
     Signal!(void delegate(AbstractSlider source, ScrollEvent event)) scrolled;
 
-    protected
+    private
     {
         int _minValue = 0;
         int _maxValue = 100;
@@ -362,7 +362,7 @@ class AbstractSlider : WidgetGroup
                 _dragStart.x = event.x;
                 _dragStart.y = event.y;
                 _dragStartPosition = _position;
-                _dragStartBox = _box;
+                _dragStartBox = box;
                 sendScrollEvent(ScrollAction.sliderPressed);
                 return true;
             }
@@ -468,7 +468,7 @@ class AbstractSlider : WidgetGroup
 /// Scroll bar - either vertical or horizontal
 class ScrollBar : AbstractSlider
 {
-    protected
+    private
     {
         Button _btnBack;
         Button _btnForward;
@@ -569,11 +569,10 @@ class ScrollBar : AbstractSlider
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         applyPadding(geom);
 
         if (_orient == Orientation.vertical)
@@ -598,6 +597,8 @@ class ScrollBar : AbstractSlider
         _scrollArea = geom;
         _indicator.scrollArea = geom;
         layoutButtons();
+
+        layed();
     }
 
     override void onDraw(DrawBuf buf)
@@ -606,7 +607,7 @@ class ScrollBar : AbstractSlider
             return;
 
         super.onDraw(buf);
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
@@ -674,16 +675,17 @@ class Slider : AbstractSlider
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         applyPadding(geom);
 
         _scrollArea = geom;
         _indicator.scrollArea = geom;
         layoutButtons();
+
+        layed();
     }
 
     override void onDraw(DrawBuf buf)
@@ -691,7 +693,7 @@ class Slider : AbstractSlider
         if (visibility != Visibility.visible)
             return;
 
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
         auto bg = background;
@@ -714,7 +716,8 @@ class Slider : AbstractSlider
         {
             drawFocusRect(buf);
         }
-        _needDraw = false;
         bunch(_pageUp, _pageDown, _indicator).onDraw(buf);
+
+        drawn();
     }
 }

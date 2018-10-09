@@ -1081,11 +1081,10 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         applyMargins(geom);
         applyPadding(geom);
 
@@ -1127,6 +1126,8 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
                 ibox.x += ibox.w;
             }
         }
+
+        layed();
     }
 }
 

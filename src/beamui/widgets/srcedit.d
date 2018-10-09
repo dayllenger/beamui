@@ -104,7 +104,7 @@ class SourceEdit : EditBox
     mixin(generatePropertySettersMethodOverride("setBoolProperty", "bool",
             "showIcons", "showFolding", "showModificationMarks", "showLineNumbers"));
 
-    protected
+    private
     {
         bool _showLineNumbers = true; /// show line numbers in left pane
         bool _showModificationMarks = true; /// show modification marks in left pane
@@ -196,8 +196,8 @@ class SourceEdit : EditBox
             return false;
 
         Box cb = clientBox;
-        Box lineBox = Box(cb.x - _leftPaneWidth, cb.y, _leftPaneWidth, _lineHeight);
-        int i = _firstVisibleLine;
+        Box lineBox = Box(cb.x - _leftPaneWidth, cb.y, _leftPaneWidth, lineHeight);
+        int i = firstVisibleLine;
         while (true)
         {
             if (lineBox.y > cb.y + cb.h)
@@ -206,7 +206,7 @@ class SourceEdit : EditBox
                 return handleLeftPaneMouseClick(event, lineBox, i);
 
             i++;
-            lineBox.y += _lineHeight;
+            lineBox.y += lineHeight;
         }
         return false;
     }
@@ -267,7 +267,7 @@ class SourceEdit : EditBox
             if (auto menu = getLeftPaneIconsPopupMenu(line))
             {
                 if (menu.openingSubmenu.assigned)
-                    if (!menu.openingSubmenu(_popupMenu))
+                    if (!menu.openingSubmenu(popupMenu))
                         return true;
                 auto popup = window.showPopup(menu, WeakRef!Widget(this),
                         PopupAlign.point | PopupAlign.right, event.x, event.y);
@@ -281,7 +281,7 @@ class SourceEdit : EditBox
     {
         Menu menu = new Menu;
         ACTION_ED_TOGGLE_BOOKMARK.bind(this, {
-            _content.lineIcons.toggleBookmark(line);
+            content.lineIcons.toggleBookmark(line);
         });
         menu.add(ACTION_ED_TOGGLE_BOOKMARK);
         return menu;
@@ -366,7 +366,7 @@ class SourceEdit : EditBox
     protected void drawLeftPaneLineNumbers(DrawBuf buf, Rect rc, int line)
     {
         Color bgcolor = _leftPaneLineNumBgColor;
-        if (line == _caretPos.line && !_leftPaneLineNumBgColorCurrLine.isFullyTransparent)
+        if (line == caretPos.line && !_leftPaneLineNumBgColorCurrLine.isFullyTransparent)
             bgcolor = _leftPaneLineNumBgColorCurrLine;
         buf.fillRect(rc, bgcolor);
         if (line < 0)
@@ -377,7 +377,7 @@ class SourceEdit : EditBox
         int x = rc.right - sz.w;
         int y = rc.top + (rc.height - sz.h) / 2;
         Color color = _leftPaneLineNumColor;
-        if (line == _caretPos.line && !_leftPaneLineNumColorCurrentLine.isFullyTransparent)
+        if (line == caretPos.line && !_leftPaneLineNumColorCurrentLine.isFullyTransparent)
             color = _leftPaneLineNumColorCurrentLine;
         if (line >= 0 && line < content.length)
         {

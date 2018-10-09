@@ -21,7 +21,7 @@ import beamui.widgets.widget;
 
 class GroupBox : LinearLayout
 {
-    protected Label _caption;
+    private Label _caption;
 
     this(dstring caption = ""d, Orientation orientation = Orientation.vertical)
     {
@@ -126,7 +126,6 @@ class GroupBox : LinearLayout
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
@@ -144,7 +143,7 @@ class GroupBox : LinearLayout
             return;
 
         super.onDraw(buf);
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
 
         _caption.onDraw(buf);

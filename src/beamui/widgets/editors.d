@@ -318,14 +318,14 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             // horizontal scrollbar should not be visible in word wrap mode
             if (v)
             {
-                _hscrollbar.visibility = Visibility.invisible;
+                hscrollbar.visibility = Visibility.invisible;
                 previousXScrollPos = _scrollPos.x;
                 _scrollPos.x = 0;
                 wordWrapRefresh();
             }
             else
             {
-                _hscrollbar.visibility = Visibility.visible;
+                hscrollbar.visibility = Visibility.visible;
                 _scrollPos.x = previousXScrollPos;
             }
             invalidate();
@@ -343,6 +343,11 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             _content.text = s;
             requestLayout();
             return this;
+        }
+
+        protected int lineHeight()
+        {
+            return _lineHeight;
         }
     }
 
@@ -363,7 +368,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     /// Signal to emit when editor cursor position or Insert/Replace mode is changed.
     Signal!(void delegate(Widget, ref EditorStateInfo editorState)) stateChanged;
 
-    protected
+    // left pane - can be used to show line numbers, collapse controls, bookmarks, breakpoints, custom icons
+    protected int _leftPaneWidth;
+
+    private
     {
         EditableContent _content;
         /// When _ownContent is false, _content should not be destroyed in editor destructor
@@ -373,9 +381,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         Point _scrollPos;
         bool _fixedFont;
         int _spaceWidth;
-
-        // left pane - can be used to show line numbers, collapse controls, bookmarks, breakpoints, custom icons
-        int _leftPaneWidth;
 
         int _minFontSize = -1; // disable zooming
         int _maxFontSize = -1; // disable zooming
@@ -600,8 +605,8 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     }
 
     /// Information about line span into several lines - in word wrap mode
-    protected LineSpan[] _span;
-    protected LineSpan[] _spanCache;
+    private LineSpan[] _span;
+    private LineSpan[] _spanCache;
 
     /// Finds good visual wrapping point for string
     int findWrapPoint(dstring text)
@@ -702,17 +707,17 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
     override bool canShowPopupMenu(int x, int y)
     {
-        if (_popupMenu is null)
+        if (popupMenu is null)
             return false;
-        if (_popupMenu.openingSubmenu.assigned)
-            if (!_popupMenu.openingSubmenu(_popupMenu))
+        if (popupMenu.openingSubmenu.assigned)
+            if (!popupMenu.openingSubmenu(popupMenu))
                 return false;
         return true;
     }
 
     override CursorType getCursorType(int x, int y)
     {
-        return x < _box.x + _leftPaneWidth ? CursorType.arrow : CursorType.ibeam;
+        return x < box.x + _leftPaneWidth ? CursorType.arrow : CursorType.ibeam;
     }
 
     protected void updateMaxLineWidth()
@@ -798,7 +803,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
     abstract protected Size measureVisibleText();
 
-    protected
+    private
     {
         bool _lastReportedModifiedState;
 
@@ -945,7 +950,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     }
 
     /// In word wrap mode, set by caretRect so ensureCaretVisible will know when to scroll
-    protected int caretHeightOffset;
+    private int caretHeightOffset;
 
     /// Returns cursor rectangle
     protected Rect caretRect()
@@ -1127,8 +1132,8 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         handleEditorStateChange();
     }
 
-    protected dstring _textToHighlight;
-    protected uint _textToHighlightOptions;
+    private dstring _textToHighlight;
+    private uint _textToHighlightOptions;
 
     /// Text pattern to highlight - e.g. for search
     @property dstring textToHighlight()
@@ -1254,7 +1259,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         return _selectionRange.end.line > _selectionRange.start.line;
     }
 
-    protected bool _camelCasePartsAsWords = true;
+    private bool _camelCasePartsAsWords = true;
 
     void replaceSelectionText(dstring newText)
     {
@@ -1943,10 +1948,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         return super.onKeyEvent(event);
     }
 
-    protected TextPosition _hoverTextPosition;
-    protected Point _hoverMousePosition;
-    protected ulong _hoverTimer;
-    protected long _hoverTimeoutMillis = 800;
+    private TextPosition _hoverTextPosition;
+    private Point _hoverMousePosition;
+    private ulong _hoverTimer;
+    private long _hoverTimeoutMillis = 800;
 
     /// Override to handle mouse hover timeout in text
     protected void onHoverTimeout(Point pt, TextPosition pos)
@@ -2086,7 +2091,7 @@ class EditLine : EditWidgetBase
     /// Handle Enter key press inside line editor
     Signal!(bool delegate(EditWidgetBase)) enterKeyPressed; // FIXME: better name
 
-    protected
+    private
     {
         dstring _measuredText;
         int[] _measuredTextWidths;
@@ -2232,7 +2237,6 @@ class EditLine : EditWidgetBase
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
@@ -2242,7 +2246,7 @@ class EditLine : EditWidgetBase
 
         applyMargins(geom);
         applyPadding(geom);
-        _clientBox = geom;
+        clientBox = geom;
 
         if (_contentChanged)
         {
@@ -2283,7 +2287,7 @@ class EditLine : EditWidgetBase
             return;
 
         super.onDraw(buf);
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
@@ -2352,9 +2356,14 @@ class EditBox : EditWidgetBase
             }
             return this;
         }
+
+        protected int firstVisibleLine()
+        {
+            return _firstVisibleLine;
+        }
     }
 
-    protected
+    private
     {
         int _firstVisibleLine;
 
@@ -2414,18 +2423,18 @@ class EditBox : EditWidgetBase
 
     override protected void updateHScrollBar() // TODO: bug as in ScrollArea.updateScrollBars when delete text
     {
-        _hscrollbar.setRange(0, _maxLineWidth + (_extendRightScrollBound ? clientBox.width / 16 : 0));
-        _hscrollbar.pageSize = clientBox.width;
-        _hscrollbar.position = _scrollPos.x;
+        hscrollbar.setRange(0, _maxLineWidth + (_extendRightScrollBound ? clientBox.width / 16 : 0));
+        hscrollbar.pageSize = clientBox.width;
+        hscrollbar.position = _scrollPos.x;
     }
 
     override protected void updateVScrollBar()
     {
         // fully visible lines
         int visibleLines = _lineHeight ? max(clientBox.height / _lineHeight, 1) : 1;
-        _vscrollbar.setRange(0, _content.length);
-        _vscrollbar.pageSize = visibleLines;
-        _vscrollbar.position = _firstVisibleLine;
+        vscrollbar.setRange(0, _content.length);
+        vscrollbar.pageSize = visibleLines;
+        vscrollbar.position = _firstVisibleLine;
     }
 
     override void onHScroll(ScrollEvent event)
@@ -2636,7 +2645,7 @@ class EditBox : EditWidgetBase
         return super.onMouseEvent(event);
     }
 
-    protected bool _enableScrollAfterText = true;
+    private bool _enableScrollAfterText = true;
     override protected void ensureCaretVisible(bool center = false)
     {
         _caretPos.line = clamp(_caretPos.line, 0, _content.length - 1);
@@ -3313,11 +3322,10 @@ class EditBox : EditWidgetBase
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        if (geom != _box)
+        if (geom != box)
             _contentChanged = true;
 
         Box content = geom;
@@ -3336,7 +3344,7 @@ class EditBox : EditWidgetBase
             _contentChanged = false;
         }
 
-        _box = geom;
+        box = geom;
     }
 
     override protected Size measureVisibleText()
@@ -3473,7 +3481,7 @@ class EditBox : EditWidgetBase
         }
     }
 
-    protected CustomCharProps[ubyte] _tokenHighlightColors;
+    private CustomCharProps[ubyte] _tokenHighlightColors;
 
     /// Set highlight options for particular token category
     void setTokenHightlightColor(ubyte tokenCategory, Color color, bool underline = false, bool strikeThrough = false)
@@ -3527,7 +3535,7 @@ class EditBox : EditWidgetBase
         return null;
     }
 
-    TextRange _matchingBraces;
+    private TextRange _matchingBraces;
 
     /// Find max tab mark column position for line
     protected int findMaxTabMarkColumn(int lineIndex)
@@ -3773,7 +3781,7 @@ class EditBox : EditWidgetBase
         drawCaret(buf);
     }
 
-    protected FindPanel _findPanel;
+    private FindPanel _findPanel;
 
     dstring selectionText(bool singleLineOnly = false)
     {
@@ -3905,8 +3913,8 @@ class LogWidget : EditBox
         }
     }
 
-    protected int _maxLines;
-    protected bool _scrollLock;
+    private int _maxLines;
+    private bool _scrollLock;
 
     this()
     {
@@ -3957,7 +3965,6 @@ class LogWidget : EditBox
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
@@ -4003,7 +4010,7 @@ class FindPanel : Row
         }
     }
 
-    protected
+    private
     {
         EditBox _editor;
         EditLine _edFind;
@@ -4172,7 +4179,7 @@ class FindPanel : Row
         return true;
     }
 
-    protected bool _backDirection;
+    private bool _backDirection;
     void setDirection(bool back)
     {
         _backDirection = back;

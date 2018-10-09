@@ -80,8 +80,8 @@ class AbstractProgressBar : Widget
         }
     }
 
-    protected int _progress = PROGRESS_INDETERMINATE;
-    protected int _animationInterval = 0; // no animation by default
+    private int _progress = PROGRESS_INDETERMINATE;
+    private int _animationInterval = 0; // no animation by default
 
     this(int progress = PROGRESS_INDETERMINATE)
     {
@@ -89,7 +89,7 @@ class AbstractProgressBar : Widget
         _progress = progress;
     }
 
-    protected ulong _animationTimerID;
+    private ulong _animationTimerID;
     protected void scheduleAnimation()
     {
         if (!visible || !_animationInterval)
@@ -113,9 +113,9 @@ class AbstractProgressBar : Widget
         _lastAnimationTs = 0;
     }
 
-    protected int _animationSpeedPixelsPerSecond = 20;
-    protected long _animationPhase;
-    protected long _lastAnimationTs;
+    private int _animationSpeedPixelsPerSecond = 20;
+    private long _animationPhase;
+    private long _lastAnimationTs;
     /// Called on animation timer
     protected void onAnimationTimer(long millisElapsed)
     {
@@ -177,7 +177,7 @@ class ProgressBar : AbstractProgressBar
             return;
 
         super.onDraw(buf);
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         applyPadding(b);
         DrawableRef animDrawable;

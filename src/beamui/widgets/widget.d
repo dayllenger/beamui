@@ -122,7 +122,7 @@ enum CursorType
 /// Base class for all widgets.
 @dmlwidget class Widget
 {
-protected:
+private:
     /// Widget id
     string _id;
 
@@ -161,7 +161,6 @@ protected:
     /// Does widget need to track mouse hover
     bool _trackHover;
 
-private:
     bool* _isDestroyed;
 
 public:
@@ -727,6 +726,10 @@ public:
         {
             return _box;
         }
+        final protected void box(ref Box b)
+        {
+            _box = b;
+        }
 
         /// Widget occupies all available width in layouts
         bool fillsWidth() const
@@ -901,7 +904,7 @@ public:
     //===============================================================
     // State related properties and methods
 
-    protected
+    private
     {
         bool _clickable;
         bool _checkable;
@@ -1025,7 +1028,7 @@ public:
     //===============================================================
     // Tooltips
 
-    protected dstring _tooltipText;
+    private dstring _tooltipText;
     /// Tooltip text - when not empty, widget will show tooltips automatically
     /// for advanced tooltips - override hasTooltip and createTooltip
     @property dstring tooltipText()
@@ -1065,7 +1068,7 @@ public:
     //===============================================================
     // About focus
 
-    protected bool _focusGroup;
+    private bool _focusGroup;
     /**
     Focus group flag for container widget.
 
@@ -1252,7 +1255,7 @@ public:
         return result;
     }
 
-    protected ushort _tabOrder;
+    private ushort _tabOrder;
     /// Tab order - hint for focus movement using Tab/Shift+Tab
     @property ushort tabOrder()
     {
@@ -1655,6 +1658,16 @@ public:
     {
         _needDraw = true;
     }
+    /// Indicate that layout process is done
+    protected void layed()
+    {
+        _needLayout = false;
+    }
+    /// Indicate that drawing is done
+    protected void drawn()
+    {
+        _needDraw = false;
+    }
 
     /// Measure widget - compute minimal, natural and maximal sizes for the widget
     Boundaries computeBoundaries()
@@ -1811,7 +1824,7 @@ public:
     //===============================================================
     // Popup (contextual) menu support
 
-    protected Menu _popupMenu;
+    private Menu _popupMenu;
     @property Menu popupMenu()
     {
         return _popupMenu;
@@ -1997,7 +2010,7 @@ public:
         return null;
     }
     /// Set window (to be used for top level widget from Window implementation).
-    @property void window(Window window) // TODO: hide it from API?
+    package(beamui) @property void window(Window window)
     {
         _window = window;
     }

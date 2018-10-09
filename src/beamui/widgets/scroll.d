@@ -128,15 +128,25 @@ class ScrollAreaBase : WidgetGroup
         }
 
         /// Inner area, excluding additional controls like scrollbars
-        Box clientBox() const
+        ref const(Box) clientBox() const
         {
             return _clientBox;
+        }
+        /// ditto
+        protected void clientBox(ref Box b)
+        {
+            _clientBox = b;
         }
 
         /// Scroll offset in pixels
         Point scrollPos()
         {
             return _scrollPos;
+        }
+        /// ditto
+        protected void scrollPos(Point p)
+        {
+            _scrollPos = p;
         }
 
         /// Get full content size in pixels
@@ -153,7 +163,7 @@ class ScrollAreaBase : WidgetGroup
         }
     }
 
-    protected
+    private
     {
         ScrollBarMode _vscrollbarMode;
         ScrollBarMode _hscrollbarMode;
@@ -271,11 +281,10 @@ class ScrollAreaBase : WidgetGroup
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         applyPadding(geom);
 
         Size sz = geom.size;
@@ -313,6 +322,8 @@ class ScrollAreaBase : WidgetGroup
         }
         else
             _vscrollbar.cancelLayout();
+
+        layed();
     }
 
     /// Show or hide scrollbars
@@ -443,12 +454,11 @@ class ScrollAreaBase : WidgetGroup
 
     override void onDraw(DrawBuf buf)
     {
-        _needDraw = false;
         if (visibility != Visibility.visible)
             return;
 
         super.onDraw(buf);
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
 
         auto saver = ClipRectSaver(buf, b, alpha);
@@ -503,9 +513,9 @@ class ScrollArea : ScrollAreaBase
         return _fullContentSize;
     }
 
-    protected Widget _contentWidget;
+    private Widget _contentWidget;
     /// Size of content widget
-    protected Size _fullContentSize;
+    private Size _fullContentSize;
 
     this(ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
          ScrollBarMode vscrollbarMode = ScrollBarMode.automatic)
@@ -595,7 +605,6 @@ class ScrollArea : ScrollAreaBase
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 

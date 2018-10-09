@@ -233,7 +233,7 @@ class TreeItem
         }
     }
 
-    protected
+    private
     {
         TreeItem _parent;
         string _id;
@@ -462,8 +462,8 @@ class TreeItems : TreeItem
 
     bool noCollapseForSingleTopLevelItem;
 
-    protected TreeItem _selectedItem;
-    protected TreeItem _defaultItem;
+    private TreeItem _selectedItem;
+    private TreeItem _defaultItem;
 
     this()
     {
@@ -588,7 +588,7 @@ const int DOUBLE_CLICK_TIME_MS = 250;
 /// Item widget for displaying in trees
 class TreeItemWidget : Row
 {
-    protected
+    private
     {
         TreeItem _item;
         Widget _indent;
@@ -770,7 +770,7 @@ class TreeWidgetBase : ScrollArea, ActionOperator
     /// Allows to provide individual popup menu for items
     Listener!(Menu delegate(TreeItems, TreeItem)) popupMenuBuilder;
 
-    protected
+    private
     {
         TreeItems _tree;
 
@@ -827,23 +827,23 @@ class TreeWidgetBase : ScrollArea, ActionOperator
     protected void addWidgets(TreeItem item)
     {
         if (item.level > 0)
-            _contentWidget.addChild(createItemWidget(item));
+            contentWidget.addChild(createItemWidget(item));
         foreach (i; 0 .. item.childCount)
             addWidgets(item.child(i));
     }
 
     protected void updateWidgets()
     {
-        _contentWidget.removeAllChildren();
+        contentWidget.removeAllChildren();
         addWidgets(_tree);
         _needUpdateWidgets = false;
     }
 
     protected void updateWidgetStates()
     {
-        foreach (i; 0 .. _contentWidget.childCount)
+        foreach (i; 0 .. contentWidget.childCount)
         {
-            (cast(TreeItemWidget)_contentWidget.child(i)).maybe.updateWidget();
+            (cast(TreeItemWidget)contentWidget.child(i)).maybe.updateWidget();
         }
         _needUpdateWidgetStates = false;
     }
@@ -887,9 +887,9 @@ class TreeWidgetBase : ScrollArea, ActionOperator
 
     TreeItemWidget findItemWidget(TreeItem item)
     {
-        foreach (i; 0 .. _contentWidget.childCount)
+        foreach (i; 0 .. contentWidget.childCount)
         {
-            TreeItemWidget child = cast(TreeItemWidget)_contentWidget.child(i);
+            TreeItemWidget child = cast(TreeItemWidget)contentWidget.child(i);
             if (child && child.item is item)
                 return child;
         }
@@ -937,8 +937,8 @@ class TreeWidgetBase : ScrollArea, ActionOperator
         ACTION_PAGE_UP.bind(this, &_tree.selectPrevious);
         // TODO: implement page down
         ACTION_PAGE_DOWN.bind(this, &_tree.selectNext);
-        ACTION_PAGE_BEGIN.bind(this, { _vscrollbar.maybe.sendScrollEvent(ScrollAction.pageUp); });
-        ACTION_PAGE_END.bind(this, { _vscrollbar.maybe.sendScrollEvent(ScrollAction.pageDown); });
+        ACTION_PAGE_BEGIN.bind(this, { vscrollbar.maybe.sendScrollEvent(ScrollAction.pageUp); });
+        ACTION_PAGE_END.bind(this, { vscrollbar.maybe.sendScrollEvent(ScrollAction.pageDown); });
 
         // TODO: ctrl+up, ctrl+left, ctrl+home, etc.
     }
@@ -966,10 +966,10 @@ class TreeWidgetBase : ScrollArea, ActionOperator
                 _tree.selectNext();
                 return true;
             case left:
-                _hscrollbar.maybe.sendScrollEvent(ScrollAction.lineUp);
+                hscrollbar.maybe.sendScrollEvent(ScrollAction.lineUp);
                 return true;
             case right:
-                _hscrollbar.maybe.sendScrollEvent(ScrollAction.lineDown);
+                hscrollbar.maybe.sendScrollEvent(ScrollAction.lineDown);
                 return true;
             default:
                 break;

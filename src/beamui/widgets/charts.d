@@ -63,8 +63,8 @@ class SimpleBarChart : Widget
         }
     }
 
-    protected BarData[] _bars;
-    protected double _maxY = 0;
+    private BarData[] _bars;
+    private double _maxY = 0;
 
     @property size_t barCount()
     {
@@ -135,7 +135,7 @@ class SimpleBarChart : Widget
         requestLayout();
     }
 
-    protected
+    private
     {
         dstring _title;
         bool _showTitle = true;
@@ -223,7 +223,7 @@ class SimpleBarChart : Widget
     AxisData _axisX;
     AxisData _axisY;
 
-    protected
+    private
     {
         int _axisYMaxValueDescWidth = 30;
         int _axisYAvgValueDescWidth = 30;
@@ -342,11 +342,10 @@ class SimpleBarChart : Widget
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         applyPadding(geom);
 
         int extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
@@ -365,6 +364,8 @@ class SimpleBarChart : Widget
         // Y axis length
         _axisY.lengthFromZeroToArrow = geom.h - _axisX.maxDescriptionSize.h - extraSizeY -
             (_showTitle ? _titleSize.h + _marginAfterTitle : 0);
+
+        layed();
     }
 
     override void onDraw(DrawBuf buf)
@@ -373,7 +374,7 @@ class SimpleBarChart : Widget
             return;
         super.onDraw(buf);
 
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         applyPadding(b);
 

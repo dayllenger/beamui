@@ -22,7 +22,7 @@ import beamui.widgets.layouts;
 
 class StatusLineTextPanel : Row
 {
-    protected Label _text;
+    private Label _text;
 
     this()
     {
@@ -44,7 +44,7 @@ class StatusLineTextPanel : Row
 
 class StatusLineIconPanel : Row
 {
-    protected ImageWidget _icon;
+    private ImageWidget _icon;
 
     this()
     {
@@ -65,7 +65,7 @@ class StatusLineIconPanel : Row
 
 class StatusLineTextAndIconPanel : StatusLineTextPanel
 {
-    protected ImageWidget _icon;
+    private ImageWidget _icon;
 
     this()
     {
@@ -94,7 +94,7 @@ class StatusLineBackgroundOperationPanel : StatusLineTextAndIconPanel
         visibility = Visibility.gone;
     }
 
-    protected uint animationProgress;
+    private uint animationProgress;
     /// Show / update / animate background operation status; when both parameters are nulls, hide background op status panel
     void setBackgroundOperationStatus(string icon, dstring statusText)
     {
@@ -168,9 +168,12 @@ class StatusLineEditorStatePanel : StatusLineTextPanel
 /// Status line control
 class StatusLine : Row
 {
-    protected Label _defStatus;
-    protected StatusLineBackgroundOperationPanel _backgroundOperationPanel;
-    protected StatusLineEditorStatePanel _editorStatePanel;
+    private
+    {
+        Label _defStatus;
+        StatusLineBackgroundOperationPanel _backgroundOperationPanel;
+        StatusLineEditorStatePanel _editorStatePanel;
+    }
 
     this()
     {

@@ -62,7 +62,7 @@ interface ListAdapter
 class ListAdapterBase : ListAdapter
 {
     /// Handle items change
-    protected Signal!onAdapterChangeHandler adapterChanged;
+    private Signal!onAdapterChangeHandler adapterChanged;
 
     override ListAdapter connect(onAdapterChangeHandler handler)
     {
@@ -218,7 +218,7 @@ class WidgetListAdapter : ListAdapterBase
 /// List adapter providing strings only
 class StringListAdapterBase : ListAdapterBase
 {
-    protected
+    private
     {
         import std.container.array;
 
@@ -363,7 +363,7 @@ class StringListAdapterBase : ListAdapterBase
 /// List adapter providing strings only
 class StringListAdapter : StringListAdapterBase
 {
-    protected Label _widget;
+    private Label _widget;
 
     /// Create empty string list adapter
     this()
@@ -435,7 +435,7 @@ class StringListAdapter : StringListAdapterBase
 /// List adapter providing strings with icons
 class IconStringListAdapter : StringListAdapterBase
 {
-    protected
+    private
     {
         Row _widget;
         Label _textWidget;
@@ -614,7 +614,7 @@ class ListWidget : WidgetGroup
     /// Policy for `computeBoundaries`: when true, it considers items' overall size
     bool sumItemSizes;
 
-    protected
+    private
     {
         Box[] _itemBoxes;
         bool _needScrollbar;
@@ -784,7 +784,7 @@ class ListWidget : WidgetGroup
         makeItemVisible(_selectedItemIndex);
     }
 
-    protected bool _makeSelectionVisibleOnNextLayout;
+    private bool _makeSelectionVisibleOnNextLayout;
     /// Ensure item is visible
     void makeItemVisible(int itemIndex)
     {
@@ -1057,7 +1057,7 @@ class ListWidget : WidgetGroup
             setFocus();
         if (itemCount > _itemBoxes.length)
             return true; // layout not yet called. TODO: investigate this case
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         applyPadding(b);
         // ----- same as in onDraw -----
@@ -1155,8 +1155,8 @@ class ListWidget : WidgetGroup
 
     // TODO: fully test this optimization
     // this and other little hacks allow to use millions of items in list
-    protected bool needToRecalculateItemSizes;
-    protected Boundaries cachedBoundaries;
+    private bool needToRecalculateItemSizes;
+    private Boundaries cachedBoundaries;
 
     override Boundaries computeBoundaries()
     {
@@ -1200,11 +1200,10 @@ class ListWidget : WidgetGroup
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         applyPadding(geom);
 
         // measure children
@@ -1371,6 +1370,8 @@ class ListWidget : WidgetGroup
             makeSelectionVisible();
             _makeSelectionVisibleOnNextLayout = false;
         }
+
+        layed();
     }
 
     override void onDraw(DrawBuf buf)
@@ -1379,7 +1380,7 @@ class ListWidget : WidgetGroup
             return;
 
         super.onDraw(buf);
-        Box b = _box;
+        Box b = box;
         applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);

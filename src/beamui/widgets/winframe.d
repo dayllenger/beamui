@@ -39,7 +39,7 @@ class WindowFrame : Column
 
     Signal!(bool delegate(Widget)) closeButtonClick;
 
-    protected
+    private
     {
         Widget _bodyWidget;
         Row _titleLayout;

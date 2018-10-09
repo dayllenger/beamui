@@ -74,7 +74,7 @@ class Popup : LinearLayout
     this(Widget content, Window window)
     {
         id = "POPUP";
-        _window = window;
+        this.window = window;
         addChild(content);
     }
 
@@ -120,8 +120,9 @@ class Popup : LinearLayout
 
         // geom position here is (0, 0) and size is a natural size of the popup
 
-        assert(_window);
-        Box windowBox = Box(0, 0, _window.width, _window.height);
+        Window win = window;
+        assert(win);
+        Box windowBox = Box(0, 0, win.width, win.height);
 
         // align by anchor and try to fit the window
         geom.w = min(geom.w, windowBox.w);

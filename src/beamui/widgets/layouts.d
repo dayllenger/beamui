@@ -75,7 +75,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         }
     }
 
-    protected
+    private
     {
         Orientation _orientation = Orientation.vertical;
         int _spacing = 6;
@@ -158,11 +158,10 @@ class LinearLayout : WidgetGroupDefaultDrawing
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         if (items.length > 0)
         {
             applyPadding(geom);
@@ -171,6 +170,8 @@ class LinearLayout : WidgetGroupDefaultDrawing
             else
                 doLayout!`h`(geom);
         }
+
+        layed();
     }
 
     private void doLayout(string dim)(Box geom)
@@ -390,11 +391,10 @@ class FrameLayout : WidgetGroupDefaultDrawing
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         applyPadding(geom);
         foreach (i; 0 .. childCount)
         {
@@ -404,6 +404,8 @@ class FrameLayout : WidgetGroupDefaultDrawing
                 item.layout(geom);
             }
         }
+
+        layed();
     }
 
     /// Make one of children (with specified ID) visible, for the rest, set visibility to otherChildrenVisibility
@@ -494,7 +496,7 @@ class TableLayout : WidgetGroupDefaultDrawing
     /// Set int property value, for ML loaders
     mixin(generatePropertySettersMethodOverride("setIntProperty", "int", "colCount"));
 
-    protected
+    private
     {
         Array!LayoutItem _cells;
         Array!LayoutItem _rows;
@@ -615,11 +617,10 @@ class TableLayout : WidgetGroupDefaultDrawing
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         applyPadding(geom);
 
         layoutItems!`h`(_rows, geom.h - rowSpace);
@@ -639,6 +640,8 @@ class TableLayout : WidgetGroupDefaultDrawing
             }
             ypen += h + _rowSpacing;
         }
+
+        layed();
     }
 }
 
@@ -697,7 +700,7 @@ class Resizer : Widget
 
     Signal!(void delegate(Resizer, ResizerEventType, int dragDelta)) resized;
 
-    protected
+    private
     {
         Orientation _orientation;
         Widget _previousWidget;
@@ -722,7 +725,7 @@ class Resizer : Widget
     {
         _previousWidget = null;
         _nextWidget = null;
-        auto parentLayout = cast(LinearLayout)_parent;
+        auto parentLayout = cast(LinearLayout)parent;
         if (parentLayout)
         {
             _orientation = parentLayout.orientation;
@@ -752,12 +755,13 @@ class Resizer : Widget
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         updateProps();
+
+        layed();
     }
 
     /// Resizer offset from initial position
@@ -766,7 +770,7 @@ class Resizer : Widget
         return _delta;
     }
 
-    protected
+    private
     {
         bool _dragging;
         int _dragStartPosition;

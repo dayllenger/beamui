@@ -58,7 +58,7 @@ struct DockSpace
         }
     }
 
-    protected
+    private
     {
         Box _box;
         DockWindow[] _docks;
@@ -92,7 +92,7 @@ struct DockSpace
         return _resizer;
     }
 
-    protected int _dragStartSpace;
+    private int _dragStartSpace;
 
     protected void onResize(Resizer source, ResizerEventType event, int dragDelta)
     {
@@ -109,8 +109,8 @@ struct DockSpace
         }
     }
 
-    protected int _minSpace;
-    protected int _maxSpace;
+    private int _minSpace;
+    private int _maxSpace;
     /// Host to be layed out
     void beforeLayout(Box box, DockWindow[] docks)
     {
@@ -216,7 +216,7 @@ class DockHost : WidgetGroupDefaultDrawing
         }
     }
 
-    protected
+    private
     {
         DockSpace _topSpace;
         DockSpace _bottomSpace;
@@ -286,11 +286,10 @@ class DockHost : WidgetGroupDefaultDrawing
 
     override void layout(Box geom)
     {
-        _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        _box = geom;
+        box = geom;
         applyPadding(geom);
 
         foreach (a; _layoutPriority)
@@ -335,6 +334,8 @@ class DockHost : WidgetGroupDefaultDrawing
         }
         geom.shrink(sp);
         _bodyWidget.maybe.layout(geom);
+
+        layed();
     }
 }
 
@@ -356,7 +357,7 @@ class DockWindow : WindowFrame
         return this;
     }
 
-    protected DockAlignment _dockAlignment;
+    private DockAlignment _dockAlignment;
 
     this()
     {
