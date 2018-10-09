@@ -427,7 +427,7 @@ class SimpleBarChart : Widget
             fmt.format(bar.title, font, 0, _barWidth, 4, 0, textFlags);
             fmt.draw(buf, firstBarX + (_barWidth - bar._titleSize.w) / 2,
                     b.y + b.h - _axisX.maxDescriptionSize.h + (_axisX.maxDescriptionSize.h - bar._titleSize.h) / 2,
-                    font, textColor, Align.hcenter);
+                    font, textColor, TextAlign.center);
 
             firstBarX += _barWidth + _barSpacing;
         }

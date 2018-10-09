@@ -291,15 +291,14 @@ FontFamily decodeFontFamily(Token[] tokens)
     return FontFamily.sans_serif;
 }
 
-FontWeight decodeFontWeight(Token[] tokens)
+FontWeight decodeFontWeight(Token t)
 {
-    auto t = tokens[0];
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): font weight should be an identifier, not '%s'", t.line, t.type);
         return FontWeight.normal;
     }
-    string s = tokens[0].text;
+    string s = t.text;
     if (s == "bold")
         return FontWeight.bold;
     if (s == "normal")
@@ -342,6 +341,27 @@ TextFlag decodeTextFlags(Token[] tokens)
         }
     }
     return res;
+}
+
+/// Decode text-align property
+TextAlign decodeTextAlign(Token t)
+{
+    if (t.type != TokenType.ident)
+    {
+        Log.fe("CSS(%s): text-align should be an identifier, '%s'", t.line, t.type);
+        return TextAlign.start;
+    }
+    string s = t.text;
+    if (s == "start")
+        return TextAlign.start;
+    if (s == "center")
+        return TextAlign.center;
+    if (s == "end")
+        return TextAlign.end;
+    if (s == "justify")
+        return TextAlign.justify;
+    Log.fe("CSS(%s): unknown text alignment: %s", t.line, s);
+    return TextAlign.start;
 }
 
 bool startsWithColor(Token[] tokens)

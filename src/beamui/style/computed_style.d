@@ -286,6 +286,16 @@ struct ComputedStyle
             set!"textFlags"(value);
             elementStyle.textFlags = value;
         }
+        TextAlign textAlign() const pure
+        {
+            return sp.textAlign;
+        }
+        /// ditto
+        void textAlign(TextAlign value)
+        {
+            set!"textAlign"(value);
+            elementStyle.textAlign = value;
+        }
         int maxLines() const pure
         {
             return sp.maxLines;

@@ -57,6 +57,7 @@ struct StyleProperties
     FontStyle fontStyle = FontStyle.normal;
     ushort fontWeight = 400;
     TextFlag textFlags = TextFlag.unspecified;
+    TextAlign textAlign = TextAlign.start;
     int maxLines = 1;
     // colors
     ubyte alpha = 0;
@@ -168,7 +169,7 @@ final class Style
             "borderColor", "borderWidthTop", "borderWidthRight", "borderWidthBottom", "borderWidthLeft",
             "backgroundColor", "backgroundImage", "boxShadow",
             "fontFace", "fontFamily", "fontSize", "fontStyle", "fontWeight",
-            "textFlags", "maxLines",
+            "textFlags", "textAlign", "maxLines",
             "alpha", "textColor", "focusRectColor"])
         {{
             static if (is(typeof(mixin("Style." ~ p)) == class)) // print only type of drawable
@@ -329,6 +330,7 @@ bool isVisualProperty(string name) pure nothrow @nogc
     case "backgroundColor":
     case "boxShadow":
     case "textFlags":
+    case "textAlign":
     case "alpha":
     case "textColor":
     case "focusRectColor":

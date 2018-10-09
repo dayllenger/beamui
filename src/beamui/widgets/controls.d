@@ -34,6 +34,19 @@ class Label : Widget
             return this;
         }
 
+        /// Text alignment - start, center, end, or justify
+        TextAlign textAlign() const
+        {
+            return style.textAlign;
+        }
+        /// ditto
+        Label textAlign(TextAlign a)
+        {
+            style.textAlign = a;
+            invalidate();
+            return this;
+        }
+
         /// Text to show
         override dstring text() const
         {
@@ -121,8 +134,7 @@ class Label : Widget
             SimpleTextFormatter fmt;
             Size sz = fmt.format(text, font, maxLines, b.width, 4, 0, textFlags);
             applyAlign(b, sz);
-            // TODO: apply align to alignment lines
-            fmt.draw(buf, b.x, b.y, font, textColor);
+            fmt.draw(buf, b.x, b.y, font, textColor, style.textAlign);
         }
     }
 }

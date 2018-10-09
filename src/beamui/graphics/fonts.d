@@ -561,6 +561,15 @@ class Font : RefCountedObject
 
 alias FontRef = Ref!Font;
 
+/// Specifies text alignment
+enum TextAlign : ubyte
+{
+    start,
+    center,
+    end,
+    justify
+}
+
 /// Helper to split text into several lines and draw it
 struct SimpleTextFormatter
 {
@@ -685,7 +694,7 @@ struct SimpleTextFormatter
     }
 
     /// Draw horizontaly aligned formatted text
-    void draw(DrawBuf buf, int x, int y, FontRef fnt, Color color, ubyte alignment)
+    void draw(DrawBuf buf, int x, int y, FontRef fnt, Color color, TextAlign alignment)
     {
         int lineHeight = fnt.height;
         dstring line;
@@ -694,16 +703,16 @@ struct SimpleTextFormatter
         {
             line = _lines[i];
             lineWidth = _linesWidths[i];
-            if ((alignment & Align.hcenter) == Align.hcenter)
+            if (alignment == TextAlign.center)
             {
                 fnt.drawText(buf, x + (_maxLineWidth - lineWidth) / 2, y, line, color, _tabSize,
                         _tabOffset, _textFlags);
             }
-            else if (alignment & Align.left)
+            else if (alignment == TextAlign.start)
             {
                 fnt.drawText(buf, x, y, line, color, _tabSize, _tabOffset, _textFlags);
             }
-            else if (alignment & Align.right)
+            else if (alignment == TextAlign.end)
             {
                 fnt.drawText(buf, x + _maxLineWidth - lineWidth, y, line, color, _tabSize, _tabOffset, _textFlags);
             }

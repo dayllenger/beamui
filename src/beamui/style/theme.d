@@ -430,10 +430,13 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
                 style.fontSize = dm;
             break;
         case "font-weight":
-            style.fontWeight = cast(ushort)decodeFontWeight(tokens);
+            style.fontWeight = cast(ushort)decodeFontWeight(tokens[0]);
             break;
         case "text-flags":
             style.textFlags = decodeTextFlags(tokens);
+            break;
+        case "text-align":
+            style.textAlign = decodeTextAlign(tokens[0]);
             break;
         case "max-lines":
             style.maxLines = to!int(tokens[0].text);
