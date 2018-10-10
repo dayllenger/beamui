@@ -40,10 +40,7 @@ enum DialogFlag : uint
 class Dialog : Column
 {
     /// Dialog icon resource id
-    @property string windowIcon()
-    {
-        return _icon;
-    }
+    @property string windowIcon() { return _icon; }
     /// ditto
     @property Dialog windowIcon(string iconResourceID)
     {
@@ -62,10 +59,7 @@ class Dialog : Column
     }
 
     /// Dialog title (caption)
-    @property dstring windowTitle()
-    {
-        return _title;
-    }
+    @property dstring windowTitle() { return _title; }
     /// ditto
     @property Dialog windowTitle(dstring caption)
     {

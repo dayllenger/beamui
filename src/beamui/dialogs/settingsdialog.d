@@ -28,15 +28,9 @@ import beamui.widgets.tree;
 class SettingsItem
 {
     /// Setting path, e.g. "editor/tabSize"
-    @property string id()
-    {
-        return _id;
-    }
+    @property string id() { return _id; }
 
-    @property dstring label()
-    {
-        return _label;
-    }
+    @property dstring label() { return _label; }
 
     private
     {
@@ -375,15 +369,9 @@ class PathNameEditItem : SettingsItem
 /// Settings page - item of settings tree, can edit several settings
 class SettingsPage
 {
-    @property string id()
-    {
-        return _id;
-    }
+    @property string id() { return _id; }
 
-    @property dstring label()
-    {
-        return _label;
-    }
+    @property dstring label() { return _label; }
 
     @property int childCount()
     {

@@ -37,6 +37,22 @@ class A
 }
 ```
 
+Write trivial getters in one line, for example:
+```D
+@property
+{
+    /// Documentation comment
+    long time() const { return _time; }
+    /// ditto
+    void time(long value)
+    {
+        _time = value;
+        requestUniverseUpdate();
+    }
+}
+private long _time;
+```
+
 Try to place functions *below* of their first call. Humans prefer to read text in up-down direction.
 
 If you write a lot of code, split parts with the following line:

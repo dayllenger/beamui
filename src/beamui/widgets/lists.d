@@ -144,11 +144,10 @@ class ListAdapterBase : ListAdapter
 class WidgetListAdapter : ListAdapterBase
 {
     private WidgetList _widgets;
+
     /// List of widgets to display
-    @property ref const(WidgetList) widgets()
-    {
-        return _widgets;
-    }
+    @property ref const(WidgetList) widgets() { return _widgets; }
+
     /// Returns number of widgets in list
     override @property int itemCount() const
     {
@@ -529,10 +528,7 @@ class ListWidget : WidgetGroup
     @property
     {
         /// List orientation (vertical, horizontal)
-        Orientation orientation()
-        {
-            return _orientation;
-        }
+        Orientation orientation() { return _orientation; }
         /// ditto
         ListWidget orientation(Orientation value)
         {
@@ -543,10 +539,7 @@ class ListWidget : WidgetGroup
         }
 
         /// When true, mouse hover selects underlying item
-        bool selectOnHover()
-        {
-            return _selectOnHover;
-        }
+        bool selectOnHover() { return _selectOnHover; }
         /// ditto
         ListWidget selectOnHover(bool select)
         {
@@ -555,10 +548,7 @@ class ListWidget : WidgetGroup
         }
 
         /// List adapter
-        ListAdapter adapter()
-        {
-            return _adapter;
-        }
+        ListAdapter adapter() { return _adapter; }
         /// ditto
         ListWidget adapter(ListAdapter adapter)
         {
@@ -595,10 +585,7 @@ class ListWidget : WidgetGroup
         }
 
         /// Selected item index
-        int selectedItemIndex()
-        {
-            return _selectedItemIndex;
-        }
+        int selectedItemIndex() { return _selectedItemIndex; }
         /// ditto
         void selectedItemIndex(int index)
         {

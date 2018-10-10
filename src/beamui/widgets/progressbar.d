@@ -37,10 +37,7 @@ class AbstractProgressBar : Widget
     @property
     {
         /// Current progress value, 0 .. 1000; -1 == indeterminate, -2 == hidden
-        int progress() const
-        {
-            return _progress;
-        }
+        int progress() const { return _progress; }
         /// ditto
         AbstractProgressBar progress(int progress)
         {
@@ -60,10 +57,7 @@ class AbstractProgressBar : Widget
         }
 
         /// Animation interval in milliseconds, if 0 - no animation
-        int animationInterval() const
-        {
-            return _animationInterval;
-        }
+        int animationInterval() const { return _animationInterval; }
         /// ditto
         AbstractProgressBar animationInterval(int interval)
         {

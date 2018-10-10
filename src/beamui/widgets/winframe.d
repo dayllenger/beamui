@@ -18,10 +18,7 @@ import beamui.widgets.layouts;
 /// Window frame with caption widget
 class WindowFrame : Column
 {
-    @property Widget bodyWidget()
-    {
-        return _bodyWidget;
-    }
+    @property Widget bodyWidget() { return _bodyWidget; }
 
     @property void bodyWidget(Widget widget)
     {
@@ -32,10 +29,7 @@ class WindowFrame : Column
         requestLayout();
     }
 
-    @property Label title()
-    {
-        return _title;
-    }
+    @property Label title() { return _title; }
 
     Signal!(bool delegate(Widget)) closeButtonClick;
 

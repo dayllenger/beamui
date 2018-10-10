@@ -27,10 +27,7 @@ class SourceEdit : EditBox
     @property
     {
         /// When true, line numbers are shown
-        bool showLineNumbers() const
-        {
-            return _showLineNumbers;
-        }
+        bool showLineNumbers() const { return _showLineNumbers; }
         /// ditto
         SourceEdit showLineNumbers(bool flag)
         {
@@ -44,10 +41,7 @@ class SourceEdit : EditBox
         }
 
         /// When true, show modification marks for lines (whether line is unchanged/modified/modified_saved)
-        bool showModificationMarks() const
-        {
-            return _showModificationMarks;
-        }
+        bool showModificationMarks() const { return _showModificationMarks; }
         /// ditto
         SourceEdit showModificationMarks(bool flag)
         {
@@ -61,10 +55,7 @@ class SourceEdit : EditBox
         }
 
         /// When true, show icons like bookmarks or breakpoints at the left
-        bool showIcons() const
-        {
-            return _showIcons;
-        }
+        bool showIcons() const { return _showIcons; }
         /// ditto
         SourceEdit showIcons(bool flag)
         {
@@ -78,10 +69,7 @@ class SourceEdit : EditBox
         }
 
         /// When true, show folding controls at the left
-        bool showFolding() const
-        {
-            return _showFolding;
-        }
+        bool showFolding() const { return _showFolding; }
         /// ditto
         SourceEdit showFolding(bool flag)
         {
@@ -94,10 +82,7 @@ class SourceEdit : EditBox
             return this;
         }
 
-        string filename()
-        {
-            return _filename;
-        }
+        string filename() { return _filename; }
     }
 
     /// Set bool property value, for ML loaders

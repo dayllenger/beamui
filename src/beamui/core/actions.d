@@ -291,10 +291,7 @@ class Action
         }
 
         /// Label unicode string to show in UI
-        dstring label() const
-        {
-            return _label;
-        }
+        dstring label() const { return _label; }
         /// ditto
         Action label(dstring text)
         {
@@ -304,10 +301,7 @@ class Action
         }
 
         /// Icon resource id
-        string iconID() const
-        {
-            return _iconID;
-        }
+        string iconID() const { return _iconID; }
         /// ditto
         Action iconID(string id)
         {
@@ -317,10 +311,7 @@ class Action
         }
 
         /// Array of shortcuts
-        inout(Shortcut)[] shortcuts() inout
-        {
-            return _shortcuts;
-        }
+        inout(Shortcut)[] shortcuts() inout { return _shortcuts; }
         /// ditto
         Action shortcuts(Shortcut[] ss)
         {
@@ -358,10 +349,7 @@ class Action
         }
 
         /// Action context; default is `ActionContext.window`
-        ActionContext context() const
-        {
-            return _context;
-        }
+        ActionContext context() const { return _context; }
         /// ditto
         Action context(ActionContext ac)
         {
@@ -405,10 +393,7 @@ class Action
         }
 
         /// When true, action is intended to use with checkbox/radiobutton-like controls
-        bool checkable() const
-        {
-            return _checkable;
-        }
+        bool checkable() const { return _checkable; }
         /// ditto
         Action checkable(bool f)
         {

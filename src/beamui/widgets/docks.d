@@ -37,25 +37,13 @@ struct DockSpace
 {
     @property
     {
-        DockWindow[] docks()
-        {
-            return _docks;
-        }
+        DockWindow[] docks() { return _docks; }
 
-        DockAlignment alignment() const
-        {
-            return _alignment;
-        }
+        DockAlignment alignment() const { return _alignment; }
 
-        Resizer resizer()
-        {
-            return _resizer;
-        }
+        Resizer resizer() { return _resizer; }
 
-        int space() const
-        {
-            return _space;
-        }
+        int space() const { return _space; }
     }
 
     private
@@ -192,10 +180,7 @@ class DockHost : WidgetGroupDefaultDrawing
 {
     @property
     {
-        Widget bodyWidget()
-        {
-            return _bodyWidget;
-        }
+        Widget bodyWidget() { return _bodyWidget; }
 
         void bodyWidget(Widget widget)
         {
@@ -345,10 +330,7 @@ class DockHost : WidgetGroupDefaultDrawing
 /// Docked window
 class DockWindow : WindowFrame
 {
-    @property DockAlignment dockAlignment()
-    {
-        return _dockAlignment;
-    }
+    @property DockAlignment dockAlignment() { return _dockAlignment; }
 
     @property DockWindow dockAlignment(DockAlignment a)
     {

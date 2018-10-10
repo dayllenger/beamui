@@ -64,20 +64,14 @@ class ScrollAreaBase : WidgetGroup
     @property
     {
         /// Mode of the vertical scrollbar
-        ScrollBarMode vscrollbarMode() const
-        {
-            return _vscrollbarMode;
-        }
+        ScrollBarMode vscrollbarMode() const { return _vscrollbarMode; }
         /// ditto
         void vscrollbarMode(ScrollBarMode m)
         {
             _vscrollbarMode = m;
         }
         /// Mode of the horizontal scrollbar
-        ScrollBarMode hscrollbarMode() const
-        {
-            return _hscrollbarMode;
-        }
+        ScrollBarMode hscrollbarMode() const { return _hscrollbarMode; }
         /// ditto
         void hscrollbarMode(ScrollBarMode m)
         {
@@ -85,10 +79,7 @@ class ScrollAreaBase : WidgetGroup
         }
 
         /// Horizontal scrollbar control
-        ScrollBar hscrollbar()
-        {
-            return _hscrollbar;
-        }
+        ScrollBar hscrollbar() { return _hscrollbar; }
         /// ditto
         void hscrollbar(ScrollBar hbar)
         {
@@ -106,10 +97,7 @@ class ScrollAreaBase : WidgetGroup
             }
         }
         /// Vertical scrollbar control
-        ScrollBar vscrollbar()
-        {
-            return _vscrollbar;
-        }
+        ScrollBar vscrollbar() { return _vscrollbar; }
         /// ditto
         void vscrollbar(ScrollBar vbar)
         {
@@ -128,10 +116,7 @@ class ScrollAreaBase : WidgetGroup
         }
 
         /// Inner area, excluding additional controls like scrollbars
-        ref const(Box) clientBox() const
-        {
-            return _clientBox;
-        }
+        ref const(Box) clientBox() const { return _clientBox; }
         /// ditto
         protected void clientBox(ref Box b)
         {
@@ -139,10 +124,7 @@ class ScrollAreaBase : WidgetGroup
         }
 
         /// Scroll offset in pixels
-        Point scrollPos()
-        {
-            return _scrollPos;
-        }
+        Point scrollPos() { return _scrollPos; }
         /// ditto
         protected void scrollPos(Point p)
         {
@@ -491,10 +473,7 @@ class ScrollAreaBase : WidgetGroup
  */
 class ScrollArea : ScrollAreaBase
 {
-    @property Widget contentWidget()
-    {
-        return _contentWidget;
-    }
+    @property Widget contentWidget() { return _contentWidget; }
     @property ScrollArea contentWidget(Widget newContent)
     {
         if (_contentWidget)
@@ -508,10 +487,7 @@ class ScrollArea : ScrollAreaBase
         return this;
     }
 
-    override @property Size fullContentSize()
-    {
-        return _fullContentSize;
-    }
+    override @property Size fullContentSize() { return _fullContentSize; }
 
     private Widget _contentWidget;
     /// Size of content widget

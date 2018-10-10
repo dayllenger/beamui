@@ -29,10 +29,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
     @property
     {
         /// Returns item action
-        Action action()
-        {
-            return _action;
-        }
+        Action action() { return _action; }
 
         /// Returns true if item is a separator
         bool isSeparator() const
@@ -47,10 +44,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         }
 
         /// Submenu, opening by hover or click on this item
-        Menu submenu()
-        {
-            return _submenu;
-        }
+        Menu submenu() { return _submenu; }
         /// ditto
         MenuItem submenu(Menu menu)
         {

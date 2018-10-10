@@ -153,11 +153,8 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     @property
     {
         /// Editor content object
-        EditableContent content()
-        {
-            return _content;
-        }
-        /// Set content object
+        EditableContent content() { return _content; }
+        /// ditto
         EditWidgetBase content(EditableContent content)
         {
             if (_content is content)
@@ -180,10 +177,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
 
         /// When true, Tab / Shift+Tab presses are processed internally in widget (e.g. insert tab character) instead of focus change navigation.
-        bool wantTabs() const
-        {
-            return _wantTabs;
-        }
+        bool wantTabs() const { return _wantTabs; }
         /// ditto
         EditWidgetBase wantTabs(bool wantTabs)
         {
@@ -205,10 +199,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
 
         /// Replace mode flag (when true, entered character replaces character under cursor)
-        bool replaceMode() const
-        {
-            return _replaceMode;
-        }
+        bool replaceMode() const { return _replaceMode; }
         /// ditto
         EditWidgetBase replaceMode(bool replaceMode)
         {
@@ -289,10 +280,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
 
         /// When true shows mark on tab positions in beginning of line
-        bool showTabPositionMarks()
-        {
-            return _showTabPositionMarks;
-        }
+        bool showTabPositionMarks() { return _showTabPositionMarks; }
         /// ditto
         EditWidgetBase showTabPositionMarks(bool flag)
         {
@@ -307,10 +295,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         /// To hold _scrollpos.x toggling between normal and word wrap mode
         private int previousXScrollPos;
         /// True if word wrap mode is set
-        bool wordWrap()
-        {
-            return _wordWrap;
-        }
+        bool wordWrap() { return _wordWrap; }
         /// Enable or disable word wrap mode
         EditWidgetBase wordWrap(bool v)
         {
@@ -345,10 +330,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return this;
         }
 
-        protected int lineHeight()
-        {
-            return _lineHeight;
-        }
+        protected int lineHeight() { return _lineHeight; }
     }
 
     /// Set bool property value, for ML loaders
@@ -823,15 +805,9 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     @property
     {
         /// Returns caret position
-        TextPosition caretPos()
-        {
-            return _caretPos;
-        }
+        TextPosition caretPos() { return _caretPos; }
 
-        dstring minSizeTester()
-        {
-            return _minSizeTester;
-        }
+        dstring minSizeTester() { return _minSizeTester; }
 
         EditWidgetBase minSizeTester(dstring txt)
         {
@@ -841,10 +817,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
 
         /// Current selection range
-        TextRange selectionRange()
-        {
-            return _selectionRange;
-        }
+        TextRange selectionRange() { return _selectionRange; }
         /// ditto
         void selectionRange(TextRange range)
         {
@@ -856,10 +829,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
 
         /// When true, enables caret blinking, otherwise it's always visible
-        bool showCaretBlinking()
-        {
-            return _caretBlinks;
-        }
+        bool showCaretBlinking() { return _caretBlinks; }
         /// ditto
         void showCaretBlinking(bool blinks)
         {
@@ -1136,10 +1106,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     private uint _textToHighlightOptions;
 
     /// Text pattern to highlight - e.g. for search
-    @property dstring textToHighlight()
-    {
-        return _textToHighlight;
-    }
+    @property dstring textToHighlight() { return _textToHighlight; }
     /// Set text to highlight -- e.g. for search
     void setTextToHighlight(dstring pattern, uint textToHighlightOptions)
     {
@@ -2072,10 +2039,7 @@ class EditLine : EditWidgetBase
     {
         /// Password character - 0 for normal editor, some character
         /// e.g. '*' to hide text by replacing all characters with this char
-        dchar passwordChar()
-        {
-            return _passwordChar;
-        }
+        dchar passwordChar() { return _passwordChar; }
         /// ditto
         EditLine passwordChar(dchar ch)
         {
@@ -2319,10 +2283,7 @@ class EditBox : EditWidgetBase
             return super.fontSize(size);
         }
 
-        int minFontSize()
-        {
-            return _minFontSize;
-        }
+        int minFontSize() { return _minFontSize; }
 
         EditBox minFontSize(int size)
         {
@@ -2330,10 +2291,7 @@ class EditBox : EditWidgetBase
             return this;
         }
 
-        int maxFontSize()
-        {
-            return _maxFontSize;
-        }
+        int maxFontSize() { return _maxFontSize; }
 
         EditBox maxFontSize(int size)
         {
@@ -2342,10 +2300,7 @@ class EditBox : EditWidgetBase
         }
 
         /// When true, show marks for tabs and spaces at beginning and end of line, and tabs inside line
-        bool showWhiteSpaceMarks() const
-        {
-            return _showWhiteSpaceMarks;
-        }
+        bool showWhiteSpaceMarks() const { return _showWhiteSpaceMarks; }
         /// ditto
         EditBox showWhiteSpaceMarks(bool show)
         {
@@ -2357,10 +2312,7 @@ class EditBox : EditWidgetBase
             return this;
         }
 
-        protected int firstVisibleLine()
-        {
-            return _firstVisibleLine;
-        }
+        protected int firstVisibleLine() { return _firstVisibleLine; }
     }
 
     private
@@ -3889,10 +3841,7 @@ class LogWidget : EditBox
     @property
     {
         /// Max lines to show (when appended more than max lines, older lines will be truncated), 0 means no limit
-        int maxLines() const
-        {
-            return _maxLines;
-        }
+        int maxLines() const { return _maxLines; }
         /// ditto
         LogWidget maxLines(int n)
         {
@@ -3901,10 +3850,7 @@ class LogWidget : EditBox
         }
 
         /// When true, automatically scrolls down when new lines are appended (usually being reset by scrollbar interaction)
-        bool scrollLock() const
-        {
-            return _scrollLock;
-        }
+        bool scrollLock() const { return _scrollLock; }
         /// ditto
         LogWidget scrollLock(bool flag)
         {
@@ -3983,10 +3929,7 @@ class FindPanel : Row
     @property
     {
         /// Returns true if panel is working in replace mode
-        bool replaceMode()
-        {
-            return _replaceMode;
-        }
+        bool replaceMode() { return _replaceMode; }
 
         FindPanel replaceMode(bool newMode)
         {

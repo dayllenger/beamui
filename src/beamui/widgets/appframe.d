@@ -92,31 +92,16 @@ class AppFrame : Column
     @property
     {
         /// Main menu widget
-        MenuBar mainMenu()
-        {
-            return _mainMenu;
-        }
+        MenuBar mainMenu() { return _mainMenu; }
         /// Status line widget
-        StatusLine statusLine()
-        {
-            return _statusLine;
-        }
+        StatusLine statusLine() { return _statusLine; }
         /// Tool bar host
-        ToolBarHost toolbars()
-        {
-            return _toolbarHost;
-        }
+        ToolBarHost toolbars() { return _toolbarHost; }
         /// Body widget
-        Widget frameBody()
-        {
-            return _body;
-        }
+        Widget frameBody() { return _body; }
 
         /// Override to return some identifier for app, e.g. to use as settings directory name
-        string appCodeName() const
-        {
-            return _appName;
-        }
+        string appCodeName() const { return _appName; }
         /// Override to return some identifier for app, e.g. to use as settings directory name
         AppFrame appCodeName(string name)
         {

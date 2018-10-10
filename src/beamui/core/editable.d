@@ -320,51 +320,33 @@ class EditOperation
     @property
     {
         /// Action performed
-        EditAction action()
-        {
-            return _action;
-        }
+        EditAction action() { return _action; }
 
         /// Source range to replace with new content
-        ref TextRange range()
-        {
-            return _range;
-        }
+        ref TextRange range() { return _range; }
 
         /// New range after operation applied
-        ref TextRange newRange()
-        {
-            return _newRange;
-        }
-
+        ref TextRange newRange() { return _newRange; }
+        /// ditto
         void newRange(TextRange range)
         {
             _newRange = range;
         }
 
         /// New content for range (if required for this action)
-        ref dstring[] content()
-        {
-            return _content;
-        }
+        ref dstring[] content() { return _content; }
 
         /// Line edit marks for old range
-        ref EditStateMark[] oldEditMarks()
-        {
-            return _oldEditMarks;
-        }
-
+        ref EditStateMark[] oldEditMarks() { return _oldEditMarks; }
+        /// ditto
         void oldEditMarks(EditStateMark[] marks)
         {
             _oldEditMarks = marks;
         }
 
         /// Old content for range
-        ref dstring[] oldContent()
-        {
-            return _oldContent;
-        }
-
+        ref dstring[] oldContent() { return _oldContent; }
+        /// ditto
         void oldContent(dstring[] content)
         {
             _oldContent = content;
@@ -683,10 +665,7 @@ class EditableContent
             return _undoBuffer.modified;
         }
 
-        SyntaxSupport syntaxSupport()
-        {
-            return _syntaxSupport;
-        }
+        SyntaxSupport syntaxSupport() { return _syntaxSupport; }
 
         EditableContent syntaxSupport(SyntaxSupport syntaxSupport)
         {
@@ -699,10 +678,7 @@ class EditableContent
             return this;
         }
 
-        const(dstring[]) lines()
-        {
-            return _lines;
-        }
+        const(dstring[]) lines() { return _lines; }
 
         /// Returns true if content has syntax highlight handler set
         bool hasSyntaxHighlight()
@@ -710,27 +686,18 @@ class EditableContent
             return _syntaxSupport !is null;
         }
 
-        bool readOnly() const
-        {
-            return _readOnly;
-        }
+        bool readOnly() const { return _readOnly; }
 
         void readOnly(bool readOnly)
         {
             _readOnly = readOnly;
         }
 
-        ref LineIcons lineIcons()
-        {
-            return _lineIcons;
-        }
+        ref LineIcons lineIcons() { return _lineIcons; }
 
-        /// Returns tab size (in number of spaces)
-        int tabSize() const
-        {
-            return _tabSize;
-        }
-        /// Set tab size (in number of spaces)
+        /// Tab size (in number of spaces)
+        int tabSize() const { return _tabSize; }
+        /// ditto
         EditableContent tabSize(int newTabSize)
         {
             if (newTabSize < 1)
@@ -741,12 +708,9 @@ class EditableContent
             return this;
         }
 
-        /// When true, spaces will be inserted instead of tabs
-        bool useSpacesForTabs() const
-        {
-            return _useSpacesForTabs;
-        }
-        /// Set new Tab key behavior flag: when true, spaces will be inserted instead of tabs
+        /// Tab key behavior flag: when true, spaces will be inserted instead of tabs
+        bool useSpacesForTabs() const { return _useSpacesForTabs; }
+        /// ditto
         EditableContent useSpacesForTabs(bool useSpacesForTabs)
         {
             _useSpacesForTabs = useSpacesForTabs;
@@ -760,11 +724,8 @@ class EditableContent
         }
 
         /// True if smart indents are enabled
-        bool smartIndents() const
-        {
-            return _smartIndents;
-        }
-        /// Set smart indents enabled flag
+        bool smartIndents() const { return _smartIndents; }
+        /// ditto
         EditableContent smartIndents(bool enabled)
         {
             _smartIndents = enabled;
@@ -772,11 +733,8 @@ class EditableContent
         }
 
         /// True if smart indents are enabled
-        bool smartIndentsAfterPaste() const
-        {
-            return _smartIndentsAfterPaste;
-        }
-        /// Set smart indents enabled flag
+        bool smartIndentsAfterPaste() const { return _smartIndentsAfterPaste; }
+        /// ditto
         EditableContent smartIndentsAfterPaste(bool enabled)
         {
             _smartIndentsAfterPaste = enabled;
@@ -784,15 +742,9 @@ class EditableContent
         }
 
         /// Returns true if miltyline content is supported
-        bool multiline() const
-        {
-            return _multiline;
-        }
+        bool multiline() const { return _multiline; }
 
-        EditStateMark[] editMarks()
-        {
-            return _editMarks;
-        }
+        EditStateMark[] editMarks() { return _editMarks; }
 
         /// Returns all lines concatenated delimited by '\n'
         dstring text() const
@@ -1617,6 +1569,9 @@ class EditableContent
         return false;
     }
 
+    //===============================================================
+    // Undo/redo
+
     /// Returns true if there is at least one operation in undo buffer
     @property bool hasUndo()
     {
@@ -1669,14 +1624,14 @@ class EditableContent
         _undoBuffer.clear();
     }
 
+    //===============================================================
+    // Load/save
+
     protected string _filename;
     protected TextFileFormat _format;
 
     /// File used to load editor content
-    @property string filename()
-    {
-        return _filename;
-    }
+    @property string filename() { return _filename; }
 
     /// Load content form input stream
     bool load(InputStream f, string fname = null)
@@ -1863,10 +1818,8 @@ struct LineIcons
     private int _len;
 
     /// Returns count of items
-    @property int length()
-    {
-        return _len;
-    }
+    @property int length() { return _len; }
+
     /// Returns item by index, or null if index out of bounds
     LineIcon opIndex(int index)
     {

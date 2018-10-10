@@ -48,10 +48,7 @@ class Label : Widget
         }
 
         /// Text to show
-        override dstring text() const
-        {
-            return _text;
-        }
+        override dstring text() const { return _text; }
         /// ditto
         override Label text(dstring s)
         {
@@ -154,10 +151,7 @@ class ImageWidget : Widget
     @property
     {
         /// Resource id for this image
-        string imageID() const
-        {
-            return _imageID;
-        }
+        string imageID() const { return _imageID; }
         /// ditto
         ImageWidget imageID(string id)
         {
@@ -283,10 +277,7 @@ class Button : LinearLayout, ActionHolder
         }
 
         /// Action to emit on click
-        Action action()
-        {
-            return _action;
-        }
+        Action action() { return _action; }
         /// ditto
         void action(Action a)
         {

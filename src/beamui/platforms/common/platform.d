@@ -153,16 +153,10 @@ class Window : CustomEventTarget
     @property
     {
         /// Get window behaviour flags
-        WindowFlag flags() const
-        {
-            return _flags;
-        }
+        WindowFlag flags() const { return _flags; }
 
         /// Window background color
-        Color backgroundColor() const
-        {
-            return _backgroundColor;
-        }
+        Color backgroundColor() const { return _backgroundColor; }
         /// ditto
         void backgroundColor(Color color)
         {
@@ -170,27 +164,15 @@ class Window : CustomEventTarget
         }
 
         /// Get current window width
-        int width() const
-        {
-            return _w;
-        }
+        int width() const { return _w; }
 
         /// Get current window height
-        int height() const
-        {
-            return _h;
-        }
+        int height() const { return _h; }
 
-        uint keyboardModifiers() const
-        {
-            return _keyboardModifiers;
-        }
+        uint keyboardModifiers() const { return _keyboardModifiers; }
 
         /// Get main widget of the window
-        inout(Widget) mainWidget() inout
-        {
-            return _mainWidget;
-        }
+        inout(Widget) mainWidget() inout { return _mainWidget; }
         /// Assign main widget to the window. Destroys previous main widget
         void mainWidget(Widget widget)
         {
@@ -205,16 +187,10 @@ class Window : CustomEventTarget
         }
 
         /// Returns parent window
-        Window parentWindow()
-        {
-            return _parent;
-        }
+        Window parentWindow() { return _parent; }
 
         /// Returns current window override cursor type or NotSet if not overriding.
-        CursorType overrideCursorType() const
-        {
-            return _overrideCursorType;
-        }
+        CursorType overrideCursorType() const { return _overrideCursorType; }
         /// Allow override cursor for entire window. Set to CursorType.notSet to remove cursor type overriding.
         void overrideCursorType(CursorType newCursorType)
         {
@@ -223,10 +199,7 @@ class Window : CustomEventTarget
         }
 
         /// Blinking caret position (empty rect if no blinking caret)
-        Rect caretRect() const
-        {
-            return _caretRect;
-        }
+        Rect caretRect() const { return _caretRect; }
         /// ditto
         void caretRect(Rect rc)
         {
@@ -234,10 +207,7 @@ class Window : CustomEventTarget
         }
 
         /// Blinking caret is in replace mode if true, insert mode if false
-        bool caretReplace() const
-        {
-            return _caretReplace;
-        }
+        bool caretReplace() const { return _caretReplace; }
         /// ditto
         void caretReplace(bool flag)
         {
@@ -245,10 +215,7 @@ class Window : CustomEventTarget
         }
 
         /// Returns current window state
-        WindowState windowState() const
-        {
-            return _windowState;
-        }
+        WindowState windowState() const { return _windowState; }
 
         /// Returns window rectangle on screen (includes window frame and title)
         Box windowRect() const
@@ -846,10 +813,7 @@ class Window : CustomEventTarget
 
     private void delegate(string[]) _onFilesDropped;
     /// Get handler for files dropped to app window
-    @property void delegate(string[]) onFilesDropped()
-    {
-        return _onFilesDropped;
-    }
+    @property void delegate(string[]) onFilesDropped() { return _onFilesDropped; }
     /// Set handler for files dropped to app window
     @property Window onFilesDropped(void delegate(string[]) handler)
     {
@@ -859,10 +823,7 @@ class Window : CustomEventTarget
 
     private bool delegate() _onCanClose;
     /// Get handler for closing of app (it must return true to allow immediate close, false to cancel close or close window later)
-    @property bool delegate() onCanClose()
-    {
-        return _onCanClose;
-    }
+    @property bool delegate() onCanClose() { return _onCanClose; }
     /// Set handler for closing of app (it must return true to allow immediate close, false to cancel close or close window later)
     @property Window onCanClose(bool delegate() handler)
     {
@@ -872,10 +833,7 @@ class Window : CustomEventTarget
 
     private void delegate() _onClose;
     /// Get handler for closing of window
-    @property void delegate() onClose()
-    {
-        return _onClose;
-    }
+    @property void delegate() onClose() { return _onClose; }
     /// Set handler for closing of window
     @property Window onClose(void delegate() handler)
     {
@@ -1767,10 +1725,7 @@ class Window : CustomEventTarget
 
     private bool _animationActive;
 
-    @property bool isAnimationActive()
-    {
-        return _animationActive;
-    }
+    @property bool isAnimationActive() { return _animationActive; }
 
     /// Request update for window (unless force is true, update will be performed only if layout, redraw or animation is required).
     void update(bool force = false)
@@ -1867,15 +1822,13 @@ class Window : CustomEventTarget
 class Platform
 {
     static __gshared Platform _instance;
+
+    static @property Platform instance() { return _instance; }
+
     static void setInstance(Platform instance)
     {
         eliminate(_instance);
         _instance = instance;
-    }
-
-    static @property Platform instance()
-    {
-        return _instance;
     }
 
     /**
@@ -1949,10 +1902,7 @@ class Platform
     @property
     {
         /// Returns currently selected UI language code
-        string uiLanguage()
-        {
-            return _uiLanguage;
-        }
+        string uiLanguage() { return _uiLanguage; }
         /// Set UI language (e.g. "en", "fr", "ru") - will relayout content of all windows if language has been changed
         Platform uiLanguage(string langCode)
         {
@@ -1970,10 +1920,7 @@ class Platform
         }
 
         /// Get name of currently active theme
-        string uiTheme()
-        {
-            return _themeName;
-        }
+        string uiTheme() { return _themeName; }
         /// Set application UI theme - will relayout content of all windows if theme has been changed
         void uiTheme(string name)
         {
@@ -2002,10 +1949,7 @@ class Platform
         }
 
         /// How dialogs should be displayed - as popup or window
-        DialogDisplayMode uiDialogDisplayMode()
-        {
-            return _uiDialogDisplayMode;
-        }
+        DialogDisplayMode uiDialogDisplayMode() { return _uiDialogDisplayMode; }
         /// ditto
         void uiDialogDisplayMode(DialogDisplayMode value)
         {
@@ -2024,15 +1968,12 @@ class Platform
             resourceList.resourceDirs = dirs;
         }
 
-        /// Default icon for new created windows
+        /// Default icon for newly created windows
+        string defaultWindowIcon() { return _defaultWindowIcon; }
+        /// ditto
         void defaultWindowIcon(string newIcon)
         {
             _defaultWindowIcon = newIcon;
-        }
-        /// ditto
-        string defaultWindowIcon()
-        {
-            return _defaultWindowIcon;
         }
 
         IconProviderBase iconProvider()

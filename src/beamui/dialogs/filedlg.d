@@ -96,16 +96,10 @@ class FileDialog : Dialog, CustomGridCellAdapter
     @property
     {
         /// Mapping of file extension to icon resource name, e.g. ".txt": "text-plain"
-        ref string[string] filetypeIcons()
-        {
-            return _filetypeIcons;
-        }
+        ref string[string] filetypeIcons() { return _filetypeIcons; }
 
         /// Filter list for file type filter combo box
-        FileFilterEntry[] filters()
-        {
-            return _filters;
-        }
+        FileFilterEntry[] filters() { return _filters; }
         /// ditto
         void filters(FileFilterEntry[] values)
         {
@@ -113,10 +107,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         }
 
         /// Filter index
-        int filterIndex() const
-        {
-            return _filterIndex;
-        }
+        int filterIndex() const { return _filterIndex; }
         /// ditto
         void filterIndex(int index)
         {
@@ -124,10 +115,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         }
 
         /// The path to the directory whose files should be displayed
-        string path() const
-        {
-            return _path;
-        }
+        string path() const { return _path; }
         /// ditto
         void path(string s)
         {
@@ -135,10 +123,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         }
 
         /// The name of the file or directory that is currently selected
-        string filename() const
-        {
-            return _filename;
-        }
+        string filename() const { return _filename; }
         /// ditto
         void filename(string s)
         {
@@ -159,20 +144,14 @@ class FileDialog : Dialog, CustomGridCellAdapter
             return res;
         }
 
-        bool showHiddenFiles() const
-        {
-            return _showHiddenFiles;
-        }
+        bool showHiddenFiles() const { return _showHiddenFiles; }
 
         void showHiddenFiles(bool b)
         {
             _showHiddenFiles = b;
         }
 
-        bool allowMultipleFiles() const
-        {
-            return _allowMultipleFiles;
-        }
+        bool allowMultipleFiles() const { return _allowMultipleFiles; }
 
         void allowMultipleFiles(bool b)
         {
@@ -1134,10 +1113,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
 /// Panel - either path segment buttons or text editor line
 class FilePathPanel : FrameLayout
 {
-    @property string path() const
-    {
-        return _path;
-    }
+    @property string path() const { return _path; }
 
     @property void path(string value)
     {
@@ -1226,20 +1202,14 @@ class FileNameEditLine : Row
             return _edFileName.enterKeyPressed;
         }
 
-        uint fileDialogFlags() const
-        {
-            return _fileDialogFlags;
-        }
+        uint fileDialogFlags() const { return _fileDialogFlags; }
 
         void fileDialogFlags(uint f)
         {
             _fileDialogFlags = f;
         }
 
-        dstring caption() const
-        {
-            return _caption;
-        }
+        dstring caption() const { return _caption; }
 
         void caption(dstring s)
         {
@@ -1258,34 +1228,20 @@ class FileNameEditLine : Row
         }
 
         /// Mapping of file extension to icon resource name, e.g. ".txt": "text-plain"
-        ref string[string] filetypeIcons()
-        {
-            return _filetypeIcons;
-        }
+        ref string[string] filetypeIcons() { return _filetypeIcons; }
 
         /// Filter list for file type filter combo box
-        FileFilterEntry[] filters()
-        {
-            return _filters;
-        }
-
-        /// Filter list for file type filter combo box
+        FileFilterEntry[] filters() { return _filters; }
+        /// ditto
         void filters(FileFilterEntry[] values)
         {
             _filters = values;
         }
 
         /// Filter index
-        int filterIndex() const
-        {
-            return _filterIndex;
-        }
-
-        /// Filter index
-        void filterIndex(int index)
-        {
-            _filterIndex = index;
-        }
+        int filterIndex() const { return _filterIndex; }
+        /// ditto
+        void filterIndex(int index) { _filterIndex = index; }
 
         bool readOnly() const
         {

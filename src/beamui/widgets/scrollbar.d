@@ -31,10 +31,7 @@ class AbstractSlider : WidgetGroup
     @property
     {
         /// Slider range min value
-        int minValue() const
-        {
-            return _minValue;
-        }
+        int minValue() const { return _minValue; }
         /// ditto
         AbstractSlider minValue(int v)
         {
@@ -43,10 +40,7 @@ class AbstractSlider : WidgetGroup
         }
 
         /// Slider range max value
-        int maxValue() const
-        {
-            return _maxValue;
-        }
+        int maxValue() const { return _maxValue; }
         /// ditto
         AbstractSlider maxValue(int v)
         {
@@ -55,10 +49,7 @@ class AbstractSlider : WidgetGroup
         }
 
         /// Page size (visible area size)
-        int pageSize() const
-        {
-            return _pageSize;
-        }
+        int pageSize() const { return _pageSize; }
         /// ditto
         AbstractSlider pageSize(int size)
         {
@@ -71,10 +62,7 @@ class AbstractSlider : WidgetGroup
         }
 
         /// Slider position
-        int position() const
-        {
-            return _position;
-        }
+        int position() const { return _position; }
         /// ditto
         AbstractSlider position(int newPosition)
         {
@@ -87,10 +75,7 @@ class AbstractSlider : WidgetGroup
         }
 
         /// Slider orientation (vertical, horizontal)
-        Orientation orientation() const
-        {
-            return _orient;
-        }
+        Orientation orientation() const { return _orient; }
         /// ditto
         AbstractSlider orientation(Orientation value)
         {

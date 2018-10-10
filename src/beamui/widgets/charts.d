@@ -146,10 +146,7 @@ class SimpleBarChart : Widget
     @property
     {
         /// Title to show
-        dstring title() const
-        {
-            return _title;
-        }
+        dstring title() const { return _title; }
         /// ditto
         SimpleBarChart title(dstring s)
         {
@@ -161,10 +158,7 @@ class SimpleBarChart : Widget
         }
 
         /// Show title?
-        bool showTitle() const
-        {
-            return _showTitle;
-        }
+        bool showTitle() const { return _showTitle; }
         /// ditto
         SimpleBarChart showTitle(bool show)
         {
@@ -243,10 +237,7 @@ class SimpleBarChart : Widget
 
     @property
     {
-        double axisRatio() const
-        {
-            return _axisRatio;
-        }
+        double axisRatio() const { return _axisRatio; }
 
         void axisRatio(double newRatio)
         {
@@ -254,10 +245,7 @@ class SimpleBarChart : Widget
             requestLayout();
         }
 
-        dstring minDescSizeTester() const
-        {
-            return _minDescSizeTester;
-        }
+        dstring minDescSizeTester() const { return _minDescSizeTester; }
 
         void minDescSizeTester(dstring txt)
         {

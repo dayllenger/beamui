@@ -211,10 +211,7 @@ public:
     // Widget ID
 
     /// Widget id, null if not set
-    @property string id() const
-    {
-        return _id;
-    }
+    @property string id() const { return _id; }
     /// ditto
     @property Widget id(string id)
     {
@@ -703,10 +700,7 @@ public:
     @property
     {
         /// Returns true if layout is required for widget and its children
-        bool needLayout() const
-        {
-            return _needLayout;
-        }
+        bool needLayout() const { return _needLayout; }
         /// Returns true if redraw is required for widget and its children
         bool needDraw() const
         {
@@ -722,20 +716,15 @@ public:
         }
 
         /// Get current widget box in pixels (computed and set in layout())
-        ref const(Box) box() const
-        {
-            return _box;
-        }
+        ref const(Box) box() const { return _box; }
+        /// Set widget box value (for usage in subclass layout())
         final protected void box(ref Box b)
         {
             _box = b;
         }
 
         /// Widget occupies all available width in layouts
-        bool fillsWidth() const
-        {
-            return _fillsWidth;
-        }
+        bool fillsWidth() const { return _fillsWidth; }
         /// ditto
         Widget fillsWidth(bool value)
         {
@@ -747,10 +736,7 @@ public:
             return this;
         }
         /// Widget occupies all available height in layouts
-        bool fillsHeight() const
-        {
-            return _fillsHeight;
-        }
+        bool fillsHeight() const { return _fillsHeight; }
         /// ditto
         Widget fillsHeight(bool value)
         {
@@ -841,10 +827,7 @@ public:
         }
 
         /// Widget visibility (visible, invisible, gone)
-        Visibility visibility() const
-        {
-            return _visibility;
-        }
+        Visibility visibility() const { return _visibility; }
         /// ditto
         Widget visibility(Visibility newVisibility)
         {
@@ -927,10 +910,7 @@ public:
         }
 
         /// When true, user can click this control, and signals `clicked`
-        bool clickable() const
-        {
-            return _clickable;
-        }
+        bool clickable() const { return _clickable; }
         /// ditto
         Widget clickable(bool flag)
         {
@@ -944,10 +924,7 @@ public:
         }
 
         /// When true, control supports `checked` state
-        bool checkable() const
-        {
-            return _checkable;
-        }
+        bool checkable() const { return _checkable; }
         /// ditto
         Widget checkable(bool flag)
         {
@@ -980,10 +957,7 @@ public:
         }
 
         /// Whether widget can be focused
-        bool focusable() const
-        {
-            return _focusable;
-        }
+        bool focusable() const { return _focusable; }
         /// ditto
         Widget focusable(bool flag)
         {
@@ -1029,12 +1003,9 @@ public:
     // Tooltips
 
     private dstring _tooltipText;
-    /// Tooltip text - when not empty, widget will show tooltips automatically
-    /// for advanced tooltips - override hasTooltip and createTooltip
-    @property dstring tooltipText()
-    {
-        return _tooltipText;
-    }
+    /// Tooltip text - when not empty, widget will show tooltips automatically.
+    /// For advanced tooltips - override hasTooltip and createTooltip methods.
+    @property dstring tooltipText() { return _tooltipText; }
     /// ditto
     @property Widget tooltipText(dstring text)
     {
@@ -1047,8 +1018,11 @@ public:
         return tooltipText.length > 0;
     }
 
-    /// Will be called from window once tooltip request timer expired
-    /// if null is returned, popup will not be shown; you can change alignment and position of popup here
+    /**
+    Will be called from window once tooltip request timer expired.
+
+    If null is returned, popup will not be shown; you can change alignment and position of popup here.
+    */
     Widget createTooltip(int mouseX, int mouseY, ref PopupAlign alignment, ref int x, ref int y)
     {
         // default implementation supports tooltips when tooltipText property is set
@@ -1077,10 +1051,7 @@ public:
     If focused widget doesn't have any parent with focusGroup == true,
     focus may be moved to any focusable within window.
     */
-    @property bool focusGroup()
-    {
-        return _focusGroup;
-    }
+    @property bool focusGroup() { return _focusGroup; }
     /// ditto
     @property Widget focusGroup(bool flag)
     {
@@ -1257,10 +1228,7 @@ public:
 
     private ushort _tabOrder;
     /// Tab order - hint for focus movement using Tab/Shift+Tab
-    @property ushort tabOrder()
-    {
-        return _tabOrder;
-    }
+    @property ushort tabOrder() { return _tabOrder; }
     /// ditto
     @property Widget tabOrder(ushort tabOrder)
     {
@@ -1825,11 +1793,9 @@ public:
     // Popup (contextual) menu support
 
     private Menu _popupMenu;
-    @property Menu popupMenu()
-    {
-        return _popupMenu;
-    }
-
+    /// Popup (contextual menu), associated with this widget
+    @property Menu popupMenu() { return _popupMenu; }
+    /// ditto
     @property Widget popupMenu(Menu popupMenu)
     {
         _popupMenu = popupMenu;

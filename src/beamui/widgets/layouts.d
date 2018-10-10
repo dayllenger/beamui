@@ -43,10 +43,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
     @property
     {
         /// Linear layout orientation (vertical, horizontal)
-        Orientation orientation() const
-        {
-            return _orientation;
-        }
+        Orientation orientation() const { return _orientation; }
         /// ditto
         LinearLayout orientation(Orientation value)
         {
@@ -59,10 +56,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         }
 
         /// Space between items
-        int spacing() const
-        {
-            return _spacing;
-        }
+        int spacing() const { return _spacing; }
         /// ditto
         LinearLayout spacing(int value)
         {
@@ -440,10 +434,7 @@ class TableLayout : WidgetGroupDefaultDrawing
     @property
     {
         /// Number of columns
-        int colCount() const
-        {
-            return _colCount;
-        }
+        int colCount() const { return _colCount; }
         /// ditto
         TableLayout colCount(int count)
         {
@@ -461,10 +452,7 @@ class TableLayout : WidgetGroupDefaultDrawing
         }
 
         /// Space between rows (vertical)
-        int rowSpacing() const
-        {
-            return _rowSpacing;
-        }
+        int rowSpacing() const { return _rowSpacing; }
         /// ditto
         TableLayout rowSpacing(int value)
         {
@@ -477,10 +465,7 @@ class TableLayout : WidgetGroupDefaultDrawing
         }
 
         /// Space between columns (horizontal)
-        int colSpacing() const
-        {
-            return _colSpacing;
-        }
+        int colSpacing() const { return _colSpacing; }
         /// ditto
         TableLayout colSpacing(int value)
         {
@@ -688,10 +673,7 @@ enum ResizerEventType
 class Resizer : Widget
 {
     /// Orientation: vertical to resize vertically, horizontal to resize horizontally
-    @property Orientation orientation()
-    {
-        return _orientation;
-    }
+    @property Orientation orientation() { return _orientation; }
 
     @property bool validProps()
     {
@@ -765,10 +747,7 @@ class Resizer : Widget
     }
 
     /// Resizer offset from initial position
-    @property int delta() // TODO: make setter?
-    {
-        return _delta;
-    }
+    @property int delta() { return _delta; } // TODO: make setter?
 
     private
     {

@@ -88,21 +88,15 @@ class StringGridAdapter : GridAdapter
     @property
     {
         /// Number of columns
-        int cols() const
-        {
-            return _cols;
-        }
-        /// Number of columns
+        int cols() const { return _cols; }
+        /// ditto
         void cols(int v)
         {
             resize(v, _rows);
         }
         /// Number of rows
-        int rows() const
-        {
-            return _rows;
-        }
-        /// Number of columns
+        int rows() const { return _rows; }
+        /// ditto
         void rows(int v)
         {
             resize(_cols, v);
@@ -197,10 +191,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     @property
     {
         /// Selected cells when multiselect is enabled
-        RedBlackTree!Point selection()
-        {
-            return _selection;
-        }
+        RedBlackTree!Point selection() { return _selection; }
         /// Selected column
         int col()
         {
@@ -216,7 +207,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             return _cols - _headerCols;
         }
-        /// Set column count
+        /// ditto
         GridWidgetBase cols(int c)
         {
             resize(c, rows);
@@ -227,19 +218,16 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             return _rows - _headerRows;
         }
-        /// Set row count
+        /// ditto
         GridWidgetBase rows(int r)
         {
             resize(cols, r);
             return this;
         }
 
-        /// Get col resizing flag; when true, allow resizing of column with mouse
-        bool allowColResizing()
-        {
-            return _allowColResizing;
-        }
-        /// Set col resizing flag; when true, allow resizing of column with mouse
+        /// Column resizing flag; when true, allow resizing of column with mouse
+        bool allowColResizing() { return _allowColResizing; }
+        /// ditto
         GridWidgetBase allowColResizing(bool flagAllowColResizing)
         {
             _allowColResizing = flagAllowColResizing;
@@ -247,11 +235,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Row header column count
-        int headerCols()
-        {
-            return _headerCols;
-        }
-
+        int headerCols() { return _headerCols; }
+        /// ditto
         GridWidgetBase headerCols(int c)
         {
             _headerCols = c;
@@ -259,11 +244,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             return this;
         }
         /// Col header row count
-        int headerRows()
-        {
-            return _headerRows;
-        }
-
+        int headerRows() { return _headerRows; }
+        /// ditto
         GridWidgetBase headerRows(int r)
         {
             _headerRows = r;
@@ -276,7 +258,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             return _gridModelAdapter is null ? _fixedCols : _gridModelAdapter.fixedCols;
         }
-
+        /// ditto
         void fixedCols(int c)
         {
             if (_gridModelAdapter is null)
@@ -290,7 +272,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             return _gridModelAdapter is null ? _fixedRows : _gridModelAdapter.fixedCols;
         }
-
+        /// ditto
         void fixedRows(int r)
         {
             if (_gridModelAdapter is null)
@@ -312,11 +294,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Default column width - for newly added columns
-        int defColumnWidth()
-        {
-            return _defColumnWidth;
-        }
-
+        int defColumnWidth() { return _defColumnWidth; }
+        /// ditto
         GridWidgetBase defColumnWidth(int v)
         {
             _defColumnWidth = v;
@@ -324,11 +303,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             return this;
         }
         /// Default row height - for newly added rows
-        int defRowHeight()
-        {
-            return _defRowHeight;
-        }
-
+        int defRowHeight() { return _defRowHeight; }
+        /// ditto
         GridWidgetBase defRowHeight(int v)
         {
             _defRowHeight = v;
@@ -337,11 +313,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// When true, allows multi cell selection
-        bool multiSelect()
-        {
-            return _multiSelect;
-        }
-
+        bool multiSelect() { return _multiSelect; }
+        /// ditto
         GridWidgetBase multiSelect(bool flag)
         {
             _multiSelect = flag;
@@ -354,11 +327,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// When true, allows only select the whole row
-        bool rowSelect()
-        {
-            return _rowSelect;
-        }
-
+        bool rowSelect() { return _rowSelect; }
+        /// ditto
         GridWidgetBase rowSelect(bool flag)
         {
             _rowSelect = flag;
@@ -372,11 +342,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Flag to enable column headers
-        bool showColHeaders()
-        {
-            return _showColHeaders;
-        }
-
+        bool showColHeaders() { return _showColHeaders; }
+        /// ditto
         GridWidgetBase showColHeaders(bool show)
         {
             if (_showColHeaders != show)
@@ -391,11 +358,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Flag to enable row headers
-        bool showRowHeaders()
-        {
-            return _showRowHeaders;
-        }
-
+        bool showRowHeaders() { return _showRowHeaders; }
+        /// ditto
         GridWidgetBase showRowHeaders(bool show)
         {
             if (_showRowHeaders != show)
@@ -431,25 +395,18 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             return fullAreaPixels - nonScrollAreaPixels;
         }
 
-        /// Get adapter to override drawing of some particular cells
-        CustomGridCellAdapter customCellAdapter()
-        {
-            return _customCellAdapter;
-        }
-
-        /// Set adapter to override drawing of some particular cells
+        /// Adapter to override drawing of some particular cells
+        CustomGridCellAdapter customCellAdapter() { return _customCellAdapter; }
+        /// ditto
         GridWidgetBase customCellAdapter(CustomGridCellAdapter adapter)
         {
             _customCellAdapter = adapter;
             return this;
         }
 
-        /// Get adapter to hold grid model data
-        GridModelAdapter gridModelAdapter()
-        {
-            return _gridModelAdapter;
-        }
-        /// Set adapter to hold grid model data
+        /// Adapter to hold grid model data
+        GridModelAdapter gridModelAdapter() { return _gridModelAdapter; }
+        /// ditto
         GridWidgetBase gridModelAdapter(GridModelAdapter adapter)
         {
             _gridModelAdapter = adapter;
@@ -457,10 +414,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Smooth horizontal scroll flag - when true - scrolling by pixels, when false - by cells
-        bool smoothHScroll() const
-        {
-            return _smoothHScroll;
-        }
+        bool smoothHScroll() const { return _smoothHScroll; }
         /// ditto
         GridWidgetBase smoothHScroll(bool flagSmoothScroll)
         {
@@ -472,12 +426,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             }
             return this;
         }
-
         /// Smooth vertical scroll flag - when true - scrolling by pixels, when false - by cells
-        bool smoothVScroll() const
-        {
-            return _smoothVScroll;
-        }
+        bool smoothVScroll() const { return _smoothVScroll; }
         /// ditto
         GridWidgetBase smoothVScroll(bool flagSmoothScroll)
         {
@@ -491,10 +441,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Extends scroll area to show full column at left when scrolled to rightmost column
-        bool fullColumnOnLeft()
-        {
-            return _fullColumnOnLeft;
-        }
+        bool fullColumnOnLeft() { return _fullColumnOnLeft; }
         /// ditto
         GridWidgetBase fullColumnOnLeft(bool newFullColumnOnLeft)
         {
@@ -505,12 +452,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             }
             return this;
         }
-
         /// Extends scroll area to show full row at top when scrolled to end row
-        bool fullRowOnTop()
-        {
-            return _fullColumnOnLeft;
-        }
+        bool fullRowOnTop() { return _fullColumnOnLeft; }
         /// ditto
         GridWidgetBase fullRowOnTop(bool newFullRowOnTop)
         {
@@ -1867,26 +1810,18 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     private int _minVisibleCols = 2;
     private int _minVisibleRows = 2;
 
-    /// Returns number of columns from 0 that are taken to measure minimum visible width
-    @property int minVisibleCols()
-    {
-        return _minVisibleCols;
-    }
-
-    /// Set number of columns from 0 that are taken to measure minimum visible width
+    /// Number of columns from 0 that are taken to measure minimum visible width
+    @property int minVisibleCols() { return _minVisibleCols; }
+    /// ditto
     @property void minVisibleCols(int newMinVisibleCols)
     {
         _minVisibleCols = newMinVisibleCols;
         requestLayout();
     }
 
-    /// Returns number of rows from 0 that are taken to measure minimum visible height
-    @property int minVisibleRows()
-    {
-        return _minVisibleRows;
-    }
-
-    /// Set number of rows from 0 that are taken to measure minimum visible height, if there are too little rows last row height is multiplied
+    /// Number of rows from 0 that are taken to measure minimum visible height; if there are too little rows last row height is multiplied
+    @property int minVisibleRows() { return _minVisibleRows; }
+    /// ditto
     @property void minVisibleRows(int newMinVisibleRows)
     {
         _minVisibleRows = newMinVisibleRows;
@@ -2126,7 +2061,6 @@ class StringGridWidget : StringGridWidgetBase
         return ""d;
     }
 
-    /// Set cell text
     override StringGridWidgetBase setCellText(int col, int row, dstring text)
     {
         if (col >= 0 && col < cols && row >= 0 && row < rows)
@@ -2134,7 +2068,6 @@ class StringGridWidget : StringGridWidgetBase
         return this;
     }
 
-    /// Set new size
     override void resize(int c, int r)
     {
         if (c == cols && r == rows)
@@ -2149,25 +2082,20 @@ class StringGridWidget : StringGridWidgetBase
         _rowTitles.length = r;
     }
 
-    /// Returns row header title
     override dstring rowTitle(int row)
     {
         return _rowTitles[row];
     }
-    /// Set row header title
     override StringGridWidgetBase setRowTitle(int row, dstring title)
     {
         _rowTitles[row] = title;
         return this;
     }
 
-    /// Returns row header title
     override dstring colTitle(int col)
     {
         return _colTitles[col];
     }
-
-    /// Set col header title
     override StringGridWidgetBase setColTitle(int col, dstring title)
     {
         _colTitles[col] = title;
@@ -2193,7 +2121,6 @@ class StringGridWidget : StringGridWidgetBase
         return sz;
     }
 
-    /// Draw cell content
     override protected void drawCell(DrawBuf buf, Box b, int col, int row)
     {
         if (_customCellAdapter && _customCellAdapter.isCustomCell(col, row))
@@ -2214,7 +2141,6 @@ class StringGridWidget : StringGridWidgetBase
         fnt.drawText(buf, b.x + offset, b.y + offset, txt, textColor);
     }
 
-    /// Draw cell content
     override protected void drawHeaderCell(DrawBuf buf, Box b, int col, int row)
     {
         if (BACKEND_GUI)
@@ -2242,7 +2168,6 @@ class StringGridWidget : StringGridWidgetBase
         fnt.drawText(buf, b.x + offset, b.y + offset, txt, cl);
     }
 
-    /// Draw cell background
     override protected void drawHeaderCellBackground(DrawBuf buf, Box b, int c, int r)
     {
         bool selectedCol = (c == col) && !_rowSelect;
@@ -2285,7 +2210,6 @@ class StringGridWidget : StringGridWidgetBase
         }
     }
 
-    /// Draw cell background
     override protected void drawCellBackground(DrawBuf buf, Box b, int c, int r)
     {
         bool selectedCol = c == col;

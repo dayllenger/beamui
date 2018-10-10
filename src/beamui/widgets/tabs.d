@@ -148,10 +148,7 @@ class TabItemWidget : Row
 {
     @property
     {
-        TabItem tabItem()
-        {
-            return _item;
-        }
+        TabItem tabItem() { return _item; }
 
         TabControl tabControl()
         {
@@ -169,10 +166,7 @@ class TabItemWidget : Row
             return this;
         }
 
-        TabItem item()
-        {
-            return _item;
-        }
+        TabItem item() { return _item; }
     }
 
     Signal!tabClosedHandler tabClosed;
@@ -249,10 +243,7 @@ class TabControl : WidgetGroupDefaultDrawing
             _moreButton.iconID = resourceID;
         }
 
-        string selectedTabID() const
-        {
-            return _selectedTabID;
-        }
+        string selectedTabID() const { return _selectedTabID; }
     }
 
     /// Signal of tab change (e.g. by clicking on tab header)
@@ -724,12 +715,9 @@ class TabHost : FrameLayout
 {
     @property
     {
-        /// Get currently set control widget
-        TabControl tabControl()
-        {
-            return _tabControl;
-        }
-        /// Set new control widget
+        /// Currently set control widget
+        TabControl tabControl() { return _tabControl; }
+        /// ditto
         TabHost tabControl(TabControl newWidget)
         {
             _tabControl = newWidget;
@@ -738,10 +726,7 @@ class TabHost : FrameLayout
             return this;
         }
 
-        Visibility hiddenTabsVisibility()
-        {
-            return _hiddenTabsVisibility;
-        }
+        Visibility hiddenTabsVisibility() { return _hiddenTabsVisibility; }
 
         void hiddenTabsVisibility(Visibility v)
         {
@@ -837,15 +822,9 @@ class TabWidget : Column
 {
     @property
     {
-        TabControl tabControl()
-        {
-            return _tabControl;
-        }
+        TabControl tabControl() { return _tabControl; }
 
-        TabHost tabHost()
-        {
-            return _tabHost;
-        }
+        TabHost tabHost() { return _tabHost; }
 
         Visibility hiddenTabsVisibility()
         {

@@ -128,16 +128,10 @@ struct ButtonDetails
     @property
     {
         /// Returns true if button is made down shortly after up
-        bool doubleClick() const
-        {
-            return _doubleClick;
-        }
-
+        bool doubleClick() const { return _doubleClick; }
         /// Returns true if button is made down twice shortly after up
-        bool tripleClick() const
-        {
-            return _tripleClick;
-        }
+        bool tripleClick() const { return _tripleClick; }
+
         /// Returns true if button is currently pressed
         bool isDown() const
         {
@@ -156,20 +150,11 @@ struct ButtonDetails
             return cast(int)(ts - _downTs);
         }
         /// X coordinate of point where button was pressed Down last time
-        short downX() const
-        {
-            return _downX;
-        }
+        short downX() const { return _downX; }
         /// Y coordinate of point where button was pressed Down last time
-        short downY() const
-        {
-            return _downY;
-        }
+        short downY() const { return _downY; }
         /// Bit set of mouse flags saved on button down
-        ushort downFlags() const
-        {
-            return _downFlags;
-        }
+        ushort downFlags() const { return _downFlags; }
     }
 
     void reset()
@@ -271,20 +256,11 @@ final class MouseEvent
     @property
     {
         /// Left button state details
-        ref inout(ButtonDetails) lbutton() inout
-        {
-            return _lbutton;
-        }
+        ref inout(ButtonDetails) lbutton() inout { return _lbutton; }
         /// Right button state details
-        ref inout(ButtonDetails) rbutton() inout
-        {
-            return _rbutton;
-        }
+        ref inout(ButtonDetails) rbutton() inout { return _rbutton; }
         /// Middle button state details
-        ref inout(ButtonDetails) mbutton() inout
-        {
-            return _mbutton;
-        }
+        ref inout(ButtonDetails) mbutton() inout { return _mbutton; }
         /// Button state details for event's button
         ref inout(ButtonDetails) buttonDetails() inout
         {
@@ -295,20 +271,11 @@ final class MouseEvent
             return _lbutton;
         }
         /// Button which caused ButtonUp or ButtonDown action
-        MouseButton button() const
-        {
-            return _button;
-        }
+        MouseButton button() const { return _button; }
         /// Action
-        MouseAction action() const
-        {
-            return _action;
-        }
+        MouseAction action() const { return _action; }
         /// Returns flags (buttons and keys state)
-        ushort flags() const
-        {
-            return _flags;
-        }
+        ushort flags() const { return _flags; }
         /// Returns mouse button flags only
         ushort buttonFlags() const
         {
@@ -320,20 +287,11 @@ final class MouseEvent
             return _flags & MouseFlag.keyMask;
         }
         /// Returns delta for Wheel event
-        short wheelDelta() const
-        {
-            return _wheelDelta;
-        }
+        short wheelDelta() const { return _wheelDelta; }
         /// x coordinate of mouse pointer (relative to window client area)
-        short x() const
-        {
-            return _x;
-        }
+        short x() const { return _x; }
         /// y coordinate of mouse pointer (relative to window client area)
-        short y() const
-        {
-            return _y;
-        }
+        short y() const { return _y; }
 
         /// Returns point for mouse cursor position
         Point pos() const
@@ -369,15 +327,9 @@ final class MouseEvent
         }
 
         /// Get event tracking widget to override
-        WeakRef!Widget trackingWidget()
-        {
-            return _trackingWidget;
-        }
+        WeakRef!Widget trackingWidget() { return _trackingWidget; }
         /// Mouse button tracking flag
-        bool doNotTrackButtonDown() const
-        {
-            return _doNotTrackButtonDown;
-        }
+        bool doNotTrackButtonDown() const { return _doNotTrackButtonDown; }
         /// ditto
         void doNotTrackButtonDown(bool flag)
         {
@@ -726,25 +678,13 @@ final class KeyEvent
     @property
     {
         /// Key action (KeyDown, KeyUp, Text, Repeat)
-        KeyAction action() const
-        {
-            return _action;
-        }
+        KeyAction action() const { return _action; }
         /// Key code (usually from KeyCode enum)
-        uint keyCode() const
-        {
-            return _keyCode;
-        }
+        uint keyCode() const { return _keyCode; }
         /// Flags (shift, ctrl, alt...) - KeyFlag enum
-        uint flags() const
-        {
-            return _flags;
-        }
+        uint flags() const { return _flags; }
         /// Entered text, for Text action
-        dstring text() const
-        {
-            return _text;
-        }
+        dstring text() const { return _text; }
 
         /// Returns true if no modifier flags are set
         bool noModifiers() const
@@ -814,35 +754,17 @@ final class ScrollEvent
     @property
     {
         /// Action
-        ScrollAction action() const
-        {
-            return _action;
-        }
+        ScrollAction action() const { return _action; }
         /// Min value
-        int minValue() const
-        {
-            return _minValue;
-        }
+        int minValue() const { return _minValue; }
         /// Max value
-        int maxValue() const
-        {
-            return _maxValue;
-        }
+        int maxValue() const { return _maxValue; }
         /// Visible part size
-        int pageSize() const
-        {
-            return _pageSize;
-        }
+        int pageSize() const { return _pageSize; }
         /// Current position
-        int position() const
-        {
-            return _position;
-        }
+        int position() const { return _position; }
         /// Returns true if position has been changed using position property setter
-        bool positionChanged() const
-        {
-            return _positionChanged;
-        }
+        bool positionChanged() const { return _positionChanged; }
         /// Change position in event handler to update slider position
         void position(int newPosition)
         {
@@ -1271,35 +1193,22 @@ class CustomEvent
     @property
     {
         // event id
-        int id() const
-        {
-            return _id;
-        }
+        int id() const { return _id; }
 
-        uint uniqueID() const
-        {
-            return _uniqueID;
-        }
+        uint uniqueID() const { return _uniqueID; }
 
-        WeakRef!Widget destinationWidget()
-        {
-            return _destinationWidget;
-        }
+        WeakRef!Widget destinationWidget() { return _destinationWidget; }
 
-        Object objectParam()
-        {
-            return _objectParam;
-        }
+        Object objectParam() { return _objectParam; }
+
         CustomEvent objectParam(Object value)
         {
             _objectParam = value;
             return this;
         }
 
-        int intParam() const
-        {
-            return _intParam;
-        }
+        int intParam() const { return _intParam; }
+
         CustomEvent intParam(int value)
         {
             _intParam = value;

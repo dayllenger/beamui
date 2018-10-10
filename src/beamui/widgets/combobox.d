@@ -34,11 +34,8 @@ import beamui.widgets.widget;
 class ComboBoxBase : Row
 {
     /// Selected item index
-    @property int selectedItemIndex()
-    {
-        return _selectedItemIndex;
-    }
-
+    @property int selectedItemIndex() { return _selectedItemIndex; }
+    /// ditto
     @property ComboBoxBase selectedItemIndex(int index)
     {
         if (_selectedItemIndex == index)
