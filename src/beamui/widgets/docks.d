@@ -199,7 +199,10 @@ class DockHost : WidgetGroupDefaultDrawing
 
         void bodyWidget(Widget widget)
         {
-            replaceChild(widget, _bodyWidget);
+            if (_bodyWidget)
+                replaceChild(widget, _bodyWidget);
+            else
+                addChild(widget);
             _bodyWidget = widget;
             _bodyWidget.fillWH();
             _bodyWidget.parent = this;
