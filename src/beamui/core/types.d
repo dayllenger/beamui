@@ -1,36 +1,11 @@
 /**
 This module declares basic data types for usage in the library.
 
-Contains reference counting support, point and rect structures, character glyph structure, misc utility functions.
+Contains reference counting support, point and rect structures, character glyph structure, etc.
 
 Synopsis:
 ---
 import beamui.core.types;
-
-// points
-Point p(5, 10);
-
-// rectangles
-Rect r(5, 13, 120, 200);
-writeln(r);
-
-// reference counted objects, useful for RAII / resource management.
-class Foo : RefCountedObject
-{
-    int[] resource;
-    ~this()
-    {
-        writeln("freeing Foo resources");
-    }
-}
-{
-    Ref!Foo ref1;
-    {
-        Ref!Foo fooRef = new RefCountedObject;
-        ref1 = fooRef;
-    }
-    // RAII: will destroy object when no more references
-}
 ---
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
@@ -51,24 +26,39 @@ struct Point
     int x;
     int y;
 
-    Point opBinary(string op)(Point v) const if (op == "+")
+pure nothrow @nogc:
+
+    Point opBinary(string op : "+")(Point v) const
     {
         return Point(x + v.x, y + v.y);
     }
-
-    Point opBinary(string op)(Point v) const if (op == "-")
+    Point opBinary(string op : "-")(Point v) const
     {
         return Point(x - v.x, y - v.y);
     }
-
-    Point opBinary(string op)(int n) const if (op == "*")
+    Point opBinary(string op : "*")(int n) const
     {
         return Point(x * n, y * n);
     }
-
-    Point opUnary(string op)() const if (op == "-")
+    Point opUnary(string op : "-")() const
     {
         return Point(-x, -y);
+    }
+
+    void opOpAssign(string op : "+")(Point v)
+    {
+        x += v.x;
+        y += v.y;
+    }
+    void opOpAssign(string op : "-")(Point v)
+    {
+        x -= v.x;
+        y -= v.y;
+    }
+    void opOpAssign(string op : "*")(int n)
+    {
+        x *= n;
+        y *= n;
     }
 
     int opCmp(ref const Point b) const
@@ -89,24 +79,44 @@ struct Size
 
     enum none = Size(SIZE_UNSPECIFIED, SIZE_UNSPECIFIED);
 
-    Size opBinary(string op)(Size v) const if (op == "+")
+pure nothrow @nogc:
+
+    Size opBinary(string op : "+")(Size v) const
     {
         return Size(w + v.w, h + v.h);
     }
-
-    Size opBinary(string op)(Size v) const if (op == "-")
+    Size opBinary(string op : "-")(Size v) const
     {
         return Size(w - v.w, h - v.h);
     }
-
-    Size opBinary(string op)(int n) const if (op == "*")
+    Size opBinary(string op : "*")(int n) const
     {
         return Size(w * n, h * n);
     }
-
-    Size opBinary(string op)(int n) const if (op == "/")
+    Size opBinary(string op : "/")(int n) const
     {
         return Size(w / n, h / n);
+    }
+
+    void opOpAssign(string op : "+")(Size v)
+    {
+        w += v.w;
+        h += v.h;
+    }
+    void opOpAssign(string op : "-")(Size v)
+    {
+        w -= v.w;
+        h -= v.h;
+    }
+    void opOpAssign(string op : "*")(int n)
+    {
+        w *= n;
+        h *= n;
+    }
+    void opOpAssign(string op : "/")(int n)
+    {
+        w /= n;
+        h /= n;
     }
 }
 
@@ -118,6 +128,8 @@ struct Boundaries
     Size min;
     Size nat;
     Size max = Size.none;
+
+pure nothrow @nogc:
 
     /// Special add operator: it clamps result between 0 and SIZE_UNSPECIFIED
     static int clampingAdd(int a, int b)
@@ -522,17 +534,17 @@ pure nothrow @nogc:
         return top + bottom;
     }
 
-    Insets opBinary(string op)(Insets ins) const if (op == "+")
+    Insets opBinary(string op : "+")(Insets ins) const
     {
         return Insets(top + ins.top, right + ins.right, bottom + ins.bottom, left + ins.left);
     }
 
-    Insets opBinary(string op)(Insets ins) const if (op == "-")
+    Insets opBinary(string op : "-")(Insets ins) const
     {
         return Insets(top - ins.top, right - ins.right, bottom - ins.bottom, left - ins.left);
     }
 
-    Insets opBinary(string op)(float factor) const if (op == "*")
+    Insets opBinary(string op : "*")(float factor) const
     {
         return Insets(cast(int)(top * factor), cast(int)(right * factor),
                       cast(int)(bottom * factor), cast(int)(left * factor));

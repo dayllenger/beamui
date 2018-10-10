@@ -593,9 +593,9 @@ class TableLayout : WidgetGroupDefaultDrawing
         }
 
         Size space = Size(rowSpace, colSpace);
-        bs.min = bs.min + space;
-        bs.nat = bs.nat + space;
-        bs.max = bs.max + space;
+        bs.min += space;
+        bs.nat += space;
+        bs.max += space;
         applyStyle(bs);
         return bs;
     }
