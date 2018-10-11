@@ -337,8 +337,6 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         b.w = _arrowWidth;
         _arrow.maybe.layout(b);
         b.x += b.w;
-
-        layed();
     }
 }
 

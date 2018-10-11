@@ -1357,8 +1357,6 @@ class ListWidget : WidgetGroup
             makeSelectionVisible();
             _makeSelectionVisibleOnNextLayout = false;
         }
-
-        layed();
     }
 
     override void onDraw(DrawBuf buf)

@@ -582,8 +582,6 @@ class ScrollBar : AbstractSlider
         _scrollArea = geom;
         _indicator.scrollArea = geom;
         layoutButtons();
-
-        layed();
     }
 
     override void onDraw(DrawBuf buf)
@@ -669,8 +667,6 @@ class Slider : AbstractSlider
         _scrollArea = geom;
         _indicator.scrollArea = geom;
         layoutButtons();
-
-        layed();
     }
 
     override void onDraw(DrawBuf buf)

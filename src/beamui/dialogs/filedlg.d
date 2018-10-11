@@ -1105,8 +1105,6 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
                 ibox.x += ibox.w;
             }
         }
-
-        layed();
     }
 }
 

@@ -673,8 +673,6 @@ class TabControl : WidgetGroupDefaultDrawing
             tab.layout(Box(geom.x + pen, geom.y, w, geom.h));
             pen += w;
         }
-
-        layed();
     }
 
     override void onDraw(DrawBuf buf)

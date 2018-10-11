@@ -164,8 +164,6 @@ class LinearLayout : WidgetGroupDefaultDrawing
             else
                 doLayout!`h`(geom);
         }
-
-        layed();
     }
 
     private void doLayout(string dim)(Box geom)
@@ -398,8 +396,6 @@ class FrameLayout : WidgetGroupDefaultDrawing
                 item.layout(geom);
             }
         }
-
-        layed();
     }
 
     /// Make one of children (with specified ID) visible, for the rest, set visibility to otherChildrenVisibility
@@ -625,8 +621,6 @@ class TableLayout : WidgetGroupDefaultDrawing
             }
             ypen += h + _rowSpacing;
         }
-
-        layed();
     }
 }
 
@@ -742,8 +736,6 @@ class Resizer : Widget
 
         box = geom;
         updateProps();
-
-        layed();
     }
 
     /// Resizer offset from initial position

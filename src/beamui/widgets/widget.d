@@ -717,10 +717,11 @@ public:
 
         /// Get current widget box in pixels (computed and set in layout())
         ref const(Box) box() const { return _box; }
-        /// Set widget box value (for usage in subclass layout())
+        /// Set widget box value and indicate that layout process is done (for usage in subclass layout())
         final protected void box(ref Box b)
         {
             _box = b;
+            _needLayout = false;
         }
 
         /// Widget occupies all available width in layouts
@@ -1625,11 +1626,6 @@ public:
     void invalidate()
     {
         _needDraw = true;
-    }
-    /// Indicate that layout process is done
-    protected void layed()
-    {
-        _needLayout = false;
     }
     /// Indicate that drawing is done
     protected void drawn()

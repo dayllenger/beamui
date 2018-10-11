@@ -304,8 +304,6 @@ class ScrollAreaBase : WidgetGroup
         }
         else
             _vscrollbar.cancelLayout();
-
-        layed();
     }
 
     /// Show or hide scrollbars

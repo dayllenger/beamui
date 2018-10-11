@@ -352,8 +352,6 @@ class SimpleBarChart : Widget
         // Y axis length
         _axisY.lengthFromZeroToArrow = geom.h - _axisX.maxDescriptionSize.h - extraSizeY -
             (_showTitle ? _titleSize.h + _marginAfterTitle : 0);
-
-        layed();
     }
 
     override void onDraw(DrawBuf buf)

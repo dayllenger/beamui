@@ -322,8 +322,6 @@ class DockHost : WidgetGroupDefaultDrawing
         }
         geom.shrink(sp);
         _bodyWidget.maybe.layout(geom);
-
-        layed();
     }
 }
 
