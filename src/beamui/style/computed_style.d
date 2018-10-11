@@ -474,10 +474,16 @@ struct ComputedStyle
 
         if (selector.state != State.normal)
         {
-            Style last = chain[$ - 1];
-            Style st = last.forState(selector.state);
-            if (st !is last)
-                chain ~= st;
+            // add nearest state style to the chain
+            foreach_reverse (last; chain)
+            {
+                Style st = last.forState(selector.state);
+                if (st !is last)
+                {
+                    chain ~= st;
+                    break;
+                }
+            }
         }
         if (_elementStyle)
             chain ~= _elementStyle;

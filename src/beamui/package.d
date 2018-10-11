@@ -49,6 +49,7 @@ public
     import beamui.graphics.fonts;
     import beamui.graphics.images;
     import beamui.graphics.resources;
+    import beamui.style.theme;
     import beamui.widgets.appframe;
     import beamui.widgets.charts;
     import beamui.widgets.combobox;

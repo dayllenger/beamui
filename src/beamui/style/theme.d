@@ -261,6 +261,13 @@ Theme loadTheme(string name)
     return theme;
 }
 
+/// Add style sheet rules from the CSS source to the theme
+void setStyleSheet(Theme theme, string source)
+{
+    auto stylesheet = CSS.createStyleSheet(source);
+    loadThemeFromCSS(theme, stylesheet);
+}
+
 private void loadThemeFromCSS(Theme theme, CSS.StyleSheet stylesheet)
 {
     foreach (r; stylesheet.atRules)
