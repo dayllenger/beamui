@@ -57,3 +57,26 @@ struct Selector
     string pseudoElement;
     State state = State.normal;
 }
+
+enum SpecialCSSType
+{
+    none,
+    fontWeight,
+    image,
+    opacity,
+    time,
+    transitionProperty,
+}
+
+/// Annotate widget property with @forCSS before using it in a style sheet
+struct forCSS
+{
+    /// Property name as it should look in CSS
+    string name;
+    SpecialCSSType specialType;
+}
+
+/// Annotate CSS property with @animatable to enable animations for it
+struct animatable
+{
+}

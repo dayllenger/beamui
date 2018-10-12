@@ -17,6 +17,104 @@ import beamui.graphics.drawables;
 import beamui.graphics.fonts;
 import beamui.style.types;
 
+enum isSupportedByCSS(T) = is(T == Align) ||
+    is(T == BoxShadowDrawable) || is(T == Color) || is(T == Dimension) ||
+    is(T == FontFamily) || is(T == int) || is(T == string) ||
+    is(T == TextAlign) || is(T == TextFlag) || is(T == TimingFunction);
+
+enum ShorthandCSSType
+{
+    undefined,
+    background,
+    border,
+    insets,
+    transition,
+}
+
+T decode(T, SpecialCSSType specialType = SpecialCSSType.none)(Token[] tokens, out bool err)
+if (isSupportedByCSS!T || specialType != SpecialCSSType.none)
+{
+    assert(tokens.length > 0);
+
+    static if (specialType != SpecialCSSType.none)
+    {
+        static if (specialType == SpecialCSSType.fontWeight)
+        {
+            return cast(ushort)decodeFontWeight(tokens[0]);
+        }
+        else static if (specialType == SpecialCSSType.image)
+        {
+            return decodeBackgroundImage(tokens);
+        }
+        else static if (specialType == SpecialCSSType.opacity)
+        {
+            return opacityToAlpha(to!float(tokens[0].text));
+        }
+        else static if (specialType == SpecialCSSType.time)
+        {
+            return decodeTime(tokens[0]);
+        }
+        else static if (specialType == SpecialCSSType.transitionProperty)
+        {
+            return decodeTransitionProperty(tokens[0]);
+        }
+    }
+    else
+    {
+        static if (is(T == Align))
+        {
+            Align a = decodeAlignment(tokens);
+            if (a == Align.unspecified)
+                err = true;
+            return a;
+        }
+        else static if (is(T == BoxShadowDrawable))
+        {
+            return decodeBoxShadow(tokens);
+        }
+        else static if (is(T == Color))
+        {
+            Color c = decodeColor(tokens);
+            if (c == Color.none)
+                err = true;
+            return c;
+        }
+        else static if (is(T == Dimension))
+        {
+            auto dm = decodeDimension(tokens[0]);
+            if (dm == Dimension.none)
+                err = true;
+            return dm;
+        }
+        else static if (is(T == FontFamily))
+        {
+            return decodeFontFamily(tokens);
+        }
+        else static if (is(T == int))
+        {
+            return to!int(tokens[0].text);
+        }
+        else static if (is(T == string))
+        {
+            return tokens[0].text;
+        }
+        else static if (is(T == TextAlign))
+        {
+            return decodeTextAlign(tokens[0]);
+        }
+        else static if (is(T == TextFlag))
+        {
+            return decodeTextFlags(tokens);
+        }
+        else static if (is(T == TimingFunction))
+        {
+            return decodeTransitionTimingFunction(tokens[0]);
+        }
+        else
+            static assert(0, "CSS does not support this type: " ~ T.stringof);
+    }
+}
+
 /// Parses CSS token sequence like "left vcenter" to Align bit set
 Align decodeAlignment(Token[] tokens)
 {

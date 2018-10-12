@@ -621,7 +621,7 @@ class TreeItemWidget : Row
         if (!_item.root.canCollapseTopLevel())
             level--;
         level = max(level, 0);
-        int w = level * style.font.size * 3 / 4;
+        int w = level * font.size * 3 / 4;
         _indent.minWidth = w;
         _indent.maxWidth = w;
         if (_item.canCollapse())

@@ -6,46 +6,45 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.style.theme;
 
-import beamui.core.animations : TimingFunction;
 import beamui.core.functions;
 import beamui.core.logger;
-import beamui.core.types;
-import beamui.core.units;
+import beamui.core.types : State;
 import CSS = beamui.css.css;
 import beamui.graphics.colors;
 import beamui.graphics.drawables;
-import beamui.graphics.resources;
-import beamui.style.decode_css;
 import beamui.style.style;
-import beamui.style.types;
+import beamui.style.types : Selector;
 
-/// Theme - a collection of widget styles, custom colors and drawables
+/// Theme - collection of widget styles, custom colors and drawables
 final class Theme
 {
-private:
-    struct StyleID
-    {
-        string name; // name of a widget or custom name
-        string widgetID; // id, #id from css
-        string sub; // subitem, ::pseudo-element from css
-    }
-
-    string _name;
-    Style defaultStyle;
-    Style[StyleID] styles;
-    DrawableRef[string] drawables;
-    Color[string] colors;
-
-public:
     /// Unique name of theme
-    @property string name() const pure { return _name; }
+    @property string name() const { return _name; }
+
+    /// The root of style hierarchy. Same as `theme.get(Selector())`
+    @property Style root() { return defaultStyle; }
+
+    private
+    {
+        struct StyleID
+        {
+            string name; // name of a widget or custom name
+            string widgetID; // id, #id from css
+            string sub; // subitem, ::pseudo-element from css
+        }
+
+        string _name;
+        Style defaultStyle;
+        Style[StyleID] styles;
+        DrawableRef[string] drawables;
+        Color[string] colors;
+    }
 
     /// Create empty theme called `name`
     this(string name)
     {
         _name = name;
         defaultStyle = new Style;
-        defaultStyle.written[] = true;
     }
 
     ~this()
@@ -56,12 +55,6 @@ public:
         foreach (ref dr; drawables)
             dr.clear();
         destroy(drawables);
-    }
-
-    /// The root of style hierarchy. Same as `theme.get(Selector())`
-    @property Style root()
-    {
-        return defaultStyle;
     }
 
     /// Returns an inheritance chain for the selector, least specific first. Does not consider state.
@@ -224,18 +217,18 @@ Theme createDefaultTheme()
 
     version (Windows)
     {
-        theme.root.fontFace = "Verdana";
+//         theme.root.fontFace = "Verdana";
     }
     static if (BACKEND_GUI)
     {
-        theme.root.fontSize = Dimension.pt(12);
+//         theme.root.fontSize = Dimension.pt(12);
 
         auto label = theme.get("Label");
         // TODO
     }
     else // console
     {
-        theme.root.fontSize = Dimension(1);
+//         theme.root.fontSize = Dimension(1);
     }
     return theme;
 }
@@ -244,6 +237,7 @@ Theme createDefaultTheme()
 Theme loadTheme(string name)
 {
     import beamui.core.config;
+    import beamui.graphics.resources;
 
     string filename = resourceList.getPathByID((BACKEND_CONSOLE ? "console_" ~ name : name) ~ ".css");
 
@@ -285,6 +279,8 @@ private void loadThemeFromCSS(Theme theme, CSS.StyleSheet stylesheet)
 
 private void applyAtRule(Theme theme, CSS.AtRule rule)
 {
+    import beamui.style.decode_css;
+
     auto kw = rule.keyword;
     auto ps = rule.properties;
     assert(ps.length > 0);
@@ -324,172 +320,13 @@ private void applyAtRule(Theme theme, CSS.AtRule rule)
 
 private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] properties)
 {
-    import std.string : capitalize;
-
     auto style = selectStyle(theme, selector);
     if (!style)
         return;
     foreach (p; properties)
     {
-        CSS.Token[] tokens = p.value;
-        assert(tokens.length > 0);
-    Switch:
-        switch (p.name)
-        {
-        case "width":
-            style.width = decodeDimension(tokens[0]);
-            break;
-        case "height":
-            style.height = decodeDimension(tokens[0]);
-            break;
-        case "min-width":
-            style.minWidth = decodeDimension(tokens[0]);
-            break;
-        case "max-width":
-            style.maxWidth = decodeDimension(tokens[0]);
-            break;
-        case "min-height":
-            style.minHeight = decodeDimension(tokens[0]);
-            break;
-        case "max-height":
-            style.maxHeight = decodeDimension(tokens[0]);
-            break;/+
-        case "weight":
-            style.weight = to!int(tokens[0].text); // TODO
-            break;+/
-        case "align":
-            Align a = decodeAlignment(tokens);
-            if (a != Align.unspecified)
-                style.alignment = a;
-            break;
-        case "margin":
-            if (auto vs = decodeInsets(tokens))
-                style.margins = vs;
-            break;
-        case "padding":
-            if (auto vs = decodeInsets(tokens))
-                style.padding = vs;
-            break;
-        static foreach (side; ["top", "right", "bottom", "left"])
-        {
-        case "margin-" ~ side:
-            auto dm = decodeDimension(tokens[0]);
-            if (dm != Dimension.none)
-                __traits(getMember, style, "margin" ~ side.capitalize) = dm;
-            break Switch;
-        case "padding-" ~ side:
-            auto dm = decodeDimension(tokens[0]);
-            if (dm != Dimension.none)
-                __traits(getMember, style, "padding" ~ side.capitalize) = dm;
-            break Switch;
-        case "border-" ~ side ~ "-width":
-            auto dm = decodeDimension(tokens[0]);
-            if (dm != Dimension.none)
-                __traits(getMember, style, "borderWidth" ~ side.capitalize) = dm;
-            break Switch;
-        }
-        case "border-color":
-            Color c = decodeColor(tokens);
-            if (c != Color.none)
-                style.borderColor = c;
-            break;
-        case "border-width":
-            if (auto vs = decodeInsets(tokens))
-                style.borderWidth = vs;
-            break;
-        case "border":
-            Color color = Color.none;
-            Dimension width = Dimension.none;
-            decodeBorder(tokens, color, width);
-            if (width != Dimension.none)
-                style.borderWidth = width;
-            if (color != Color.none)
-                style.borderColor = color;
-            break;
-        case "background-color":
-            Color c = decodeColor(tokens);
-            if (c != Color.none)
-                style.backgroundColor = c;
-            break;
-        case "background-image":
-            style.backgroundImage = decodeBackgroundImage(tokens);
-            break;
-        case "background":
-            Color color;
-            Drawable image;
-            decodeBackground(tokens, color, image);
-            if (color != Color.none)
-                style.backgroundColor = color;
-            style.backgroundImage = image;
-            break;
-        case "box-shadow":
-            style.boxShadow = decodeBoxShadow(tokens);
-            break;
-        case "font-face":
-            style.fontFace = tokens[0].text;
-            break;
-        case "font-family":
-            style.fontFamily = decodeFontFamily(tokens);
-            break;
-        case "font-size":
-            auto dm = decodeDimension(tokens[0]);
-            if (dm != Dimension.none)
-                style.fontSize = dm;
-            break;
-        case "font-weight":
-            style.fontWeight = cast(ushort)decodeFontWeight(tokens[0]);
-            break;
-        case "text-flags":
-            style.textFlags = decodeTextFlags(tokens);
-            break;
-        case "text-align":
-            style.textAlign = decodeTextAlign(tokens[0]);
-            break;
-        case "max-lines":
-            style.maxLines = to!int(tokens[0].text);
-            break;
-        case "opacity":
-            style.alpha = opacityToAlpha(to!float(tokens[0].text));
-            break;
-        case "color":
-            Color c = decodeColor(tokens);
-            if (c != Color.none)
-                style.textColor = c;
-            break;
-        case "focus-rect-color":
-            Color c = decodeColor(tokens);
-            if (c != Color.none)
-                style.focusRectColor = c;
-            break;
-        case "transition-property":
-            style.transitionProperty = decodeTransitionProperty(tokens[0]);
-            break;
-        case "transition-timing-function":
-            style.transitionTimingFunction = decodeTransitionTimingFunction(tokens[0]);
-            break;
-        case "transition-duration":
-            style.transitionDuration = decodeTime(tokens[0]);
-            break;
-        case "transition-delay":
-            style.transitionDelay = decodeTime(tokens[0]);
-            break;
-        case "transition":
-            string prop;
-            TimingFunction func = cast(TimingFunction)TimingFunction.linear;
-            uint dur = uint.max;
-            uint del = uint.max;
-            decodeTransition(tokens, prop, func, dur, del);
-            if (prop)
-                style.transitionProperty = prop;
-            style.transitionTimingFunction = func;
-            if (dur != uint.max)
-                style.transitionDuration = dur;
-            if (del != uint.max)
-                style.transitionDelay = del;
-            break;
-        default:
-            break;
-        }
+        assert(p.value.length > 0);
+        style.setRawProperty(p.name, p.value);
     }
 }
 

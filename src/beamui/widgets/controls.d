@@ -22,30 +22,27 @@ class Label : Widget
     @property
     {
         /// Max lines to show, 0 if no limit
-        int maxLines() const
-        {
-            return style.maxLines;
-        }
+        int maxLines() const { return _maxLines; }
         /// ditto
         Label maxLines(int n)
         {
-            style.maxLines = n;
-            heightDependsOnWidth = n != 1;
+            setProperty!"_maxLines" = n;
             return this;
+        }
+        private void maxLines_effect(int n)
+        {
+            heightDependsOnWidth = n != 1;
         }
 
         /// Text alignment - start, center, end, or justify
-        TextAlign textAlign() const
-        {
-            return style.textAlign;
-        }
+        TextAlign textAlign() const { return _textAlign; }
         /// ditto
         Label textAlign(TextAlign a)
         {
-            style.textAlign = a;
-            invalidate();
+            setProperty!"_textAlign" = a;
             return this;
         }
+        private alias textAlign_effect = invalidate;
 
         /// Text to show
         override dstring text() const { return _text; }
@@ -61,6 +58,10 @@ class Label : Widget
     private
     {
         dstring _text;
+
+        @forCSS("max-lines") int _maxLines = 1;
+        @forCSS("text-align") TextAlign _textAlign = TextAlign.start;
+
         immutable dstring minSizeTesterS = "aaaaa"; // TODO: test all this stuff
         immutable dstring minSizeTesterM = "aaaaa\na";
         immutable dstring natSizeTesterM =
@@ -72,6 +73,8 @@ class Label : Widget
         _text = txt;
         heightDependsOnWidth = maxLines != 1;
     }
+
+    mixin SupportCSS;
 
     override Size computeMinSize()
     {
@@ -131,7 +134,7 @@ class Label : Widget
             SimpleTextFormatter fmt;
             Size sz = fmt.format(text, font, maxLines, b.width, 4, 0, textFlags);
             applyAlign(b, sz);
-            fmt.draw(buf, b.x, b.y, font, textColor, style.textAlign);
+            fmt.draw(buf, b.x, b.y, font, textColor, textAlign);
         }
     }
 }
@@ -403,7 +406,7 @@ class Button : LinearLayout, ActionHolder
         {
             return _label ? _label.fontWeight : 0;
         }
-        Button fontWeight(int weight)
+        Button fontWeight(ushort weight)
         {
             _label.maybe.fontWeight(weight);
             return this;
