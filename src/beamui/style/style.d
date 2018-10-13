@@ -12,11 +12,15 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.style.style;
 
 import std.variant : Variant;
+import beamui.core.animations : TimingFunction;
 import beamui.core.functions;
 import beamui.core.types : State;
+import beamui.core.units : Dimension;
 import CSS = beamui.css.tokenizer;
-import beamui.style.decode_css : decode, isSupportedByCSS;
-import beamui.style.types : SpecialCSSType;
+import beamui.graphics.colors : Color;
+import beamui.graphics.drawables : Drawable;
+import beamui.style.decode_css;
+import beamui.style.types;
 
 /// Style - holds properties for a single selector
 final class Style
@@ -57,8 +61,16 @@ final class Style
         destroy(stateStyles);
         stateStyles = null;
 
-//         eliminate(properties.backgroundImage);
-//         eliminate(properties.boxShadow);
+        if (properties !is null)
+        {
+            foreach (ref v; properties)
+            {
+                if (v.convertsTo!Object)
+                    destroy(v.get!Object);
+                destroy(v);
+            }
+            destroy(properties);
+        }
 
         debug _instanceCount--;
         debug (resalloc)
@@ -67,7 +79,6 @@ final class Style
 
     /// Try to find a property in this style by exact type and CSS name
     T* peek(T, SpecialCSSType specialType = SpecialCSSType.none)(string name)
-    if (isSupportedByCSS!T || specialType != SpecialCSSType.none)
     {
         if (auto p = name in properties)
         {
@@ -81,7 +92,10 @@ final class Style
             {
                 bool err;
                 // decode and put
-                T value = decode!(T, specialType)(*p, err);
+                static if (specialType != SpecialCSSType.none)
+                    T value = decode!specialType(*p, err);
+                else
+                    T value = decode!T(*p, err);
                 if (!err)
                 {
                     Variant v = Variant(value);
@@ -96,6 +110,82 @@ final class Style
             }
             // not found
             return null;
+        }
+    }
+
+    void explode(shorthandBorder sh)()
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            Color color = Color.none;
+            Dimension width = Dimension.none;
+            decodeBorder(*p, color, width);
+
+            if (width != Dimension.none)
+            {
+                properties[sh.topWidth] = Variant(width);
+                properties[sh.rightWidth] = Variant(width);
+                properties[sh.bottomWidth] = Variant(width);
+                properties[sh.leftWidth] = Variant(width);
+            }
+            if (color != Color.none)
+                properties[sh.color] = Variant(color);
+
+            rawProperties.remove(sh.name);
+        }
+    }
+
+    void explode(shorthandDrawable sh)()
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            Color color;
+            Drawable image;
+            decodeBackground(*p, color, image);
+
+            if (color != Color.none)
+                properties[sh.color] = Variant(color);
+            properties[sh.image] = Variant(image);
+
+            rawProperties.remove(sh.name);
+        }
+    }
+
+    void explode(shorthandInsets sh)()
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            if (auto list = decodeInsets(*p))
+            {
+                // [all], [vertical horizontal], [top horizontal bottom], [top right bottom left]
+                properties[sh.top]    = Variant(list[0]);
+                properties[sh.right]  = Variant(list[list.length > 1 ? 1 : 0]);
+                properties[sh.bottom] = Variant(list[list.length > 2 ? 2 : 0]);
+                properties[sh.left]   = Variant(list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1]);
+            }
+            rawProperties.remove(sh.name);
+        }
+    }
+
+    void explode(shorthandTransition sh)()
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            string prop;
+            TimingFunction func = cast(TimingFunction)TimingFunction.linear;
+            uint dur = uint.max;
+            uint del = uint.max;
+            decodeTransition(*p, prop, func, dur, del);
+
+            if (prop)
+                properties[sh.property] = Variant(prop);
+            properties[sh.timingFunction] = Variant(func);
+            if (dur != uint.max)
+                properties[sh.duration] = Variant(dur);
+            if (del != uint.max)
+                properties[sh.delay] = Variant(del);
+
+            rawProperties.remove(sh.name);
         }
     }
 

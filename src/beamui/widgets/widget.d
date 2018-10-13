@@ -226,6 +226,17 @@ private:
     @forCSS("transition-delay", SpecialCSSType.time)
         uint _transitionDelay;
 
+    @shorthandInsets("margin", "margin-top", "margin-right", "margin-bottom", "margin-left")
+    @shorthandInsets("padding", "padding-top", "padding-right", "padding-bottom", "padding-left")
+    @shorthandInsets("border-width", "border-top-width", "border-right-width",
+                     "border-bottom-width", "border-left-width")
+    @shorthandBorder("border", "border-top-width", "border-right-width",
+                     "border-bottom-width", "border-left-width", "border-color")
+    @shorthandDrawable("background", "background-color", "background-image")
+    @shorthandTransition("transition", "transition-property", "transition-duration",
+                         "transition-timing-function", "transition-delay")
+    private static bool shorthandsForCSS;
+
     bool _fillsWidth;
     bool _fillsHeight;
 
@@ -511,6 +522,7 @@ public:
         /// Padding (between background bounds and content of widget)
         Insets padding() const
         {
+            (cast(Widget)this).updateStyles();
             // get max padding from style padding and background drawable padding
             Insets p = Insets(_paddingTop.toDevice, _paddingRight.toDevice,
                               _paddingBottom.toDevice, _paddingLeft.toDevice);
@@ -2586,21 +2598,39 @@ mixin template SupportCSS(BaseClass = Widget)
     private void recomputeStyleImpl(Style[] chain)
     {
         import std.array : split;
-        import std.traits : getUDAs, hasUDA;
+        import std.traits : getUDAs;
 
         alias This = typeof(this);
+
+        // explode shorthands first
+        static if (__traits(hasMember, This, "shorthandsForCSS"))
+        {
+            import std.meta : AliasSeq;
+
+            alias shorthands = AliasSeq!(__traits(getAttributes, shorthandsForCSS));
+            static if (shorthands.length > 0)
+            {
+                foreach_reverse (st; chain)
+                {
+                    static foreach (uda; shorthands)
+                    {
+                        st.explode!uda();
+                    }
+                }
+            }
+        }
 
         static if (is(This == struct))
         {
             static This def;
         }
         // iterate through all properties
-        static foreach (member; This.tupleof)
+        static foreach (field; This.tupleof)
         {{
-            alias udas = getUDAs!(member, forCSS);
+            alias udas = getUDAs!(field, forCSS);
             static if (udas.length > 0) // filter out
             {
-                enum var = split(member.stringof, '.')[$ - 1]; // this._smth -> _smth
+                enum var = split(field.stringof, '.')[$ - 1]; // this._smth -> _smth
                 // do nothing if property is overriden
                 if (!isOwned(var))
                 {
@@ -2608,7 +2638,7 @@ mixin template SupportCSS(BaseClass = Widget)
                     bool set;
                     foreach_reverse (st; chain)
                     {
-                        if (auto p = st.peek!(typeof(member), udas[0].specialType)(udas[0].name))
+                        if (auto p = st.peek!(typeof(field), udas[0].specialType)(udas[0].name))
                         {
                             setProperty!var(*p, false);
                             set = true;
@@ -2633,14 +2663,18 @@ mixin template SupportCSS(BaseClass = Widget)
     /// Set a property value, taking transitions into account
     private void setProperty(string var, T)(T value, bool fromOutside = true)
     {
-        import std.traits : hasUDA;
+        import std.meta : Alias;
+        import std.traits : hasUDA, isMutable, isSomeFunction;
 
-        static assert(hasUDA!(mixin(var), forCSS), "The field " ~ var ~ " is not for CSS");
+        alias field = Alias!(mixin(var));
+        static assert(isMutable!(typeof(field)), "Should be a mutable field: " ~ var);
+        static assert(!isSomeFunction!field, "Should be a field: " ~ var);
+        static assert(hasUDA!(field, forCSS), "The field " ~ var ~ " is not for CSS");
 
         if (fromOutside)
             ownProperty(var);
 
-        T current = mixin(var);
+        T current = field;
         // do nothing if changed nothing
         if (current is value)
             return;
@@ -2661,7 +2695,7 @@ mixin template SupportCSS(BaseClass = Widget)
             enum callSideEffects = "";
 
         // check animation
-        static if (hasUDA!(mixin(var), animatable))
+        static if (hasUDA!(field, animatable))
         {
             if (hasTransitionFor(name))
             {
@@ -2671,14 +2705,14 @@ mixin template SupportCSS(BaseClass = Widget)
                 animations[var] = Animation(tr.duration * ONE_SECOND / 1000,
                     delegate(double t) {
                         mixin(callSideEffects);
-                        mixin(var) = tr.mix(current, value, t);
+                        field = tr.mix(current, value, t);
                 });
                 return;
             }
         }
         // set it directly otherwise
         mixin(callSideEffects);
-        mixin(var) = value;
+        field = value;
     }
 }
 

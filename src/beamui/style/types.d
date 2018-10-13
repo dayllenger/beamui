@@ -61,11 +61,11 @@ struct Selector
 enum SpecialCSSType
 {
     none,
-    fontWeight,
-    image,
-    opacity,
-    time,
-    transitionProperty,
+    fontWeight, /// ushort
+    image, /// Drawable
+    opacity, /// ubyte
+    time, /// uint
+    transitionProperty, /// string
 }
 
 /// Annotate widget property with @forCSS before using it in a style sheet
@@ -74,6 +74,41 @@ struct forCSS
     /// Property name as it should look in CSS
     string name;
     SpecialCSSType specialType;
+}
+
+struct shorthandBorder
+{
+    string name;
+    string topWidth;
+    string rightWidth;
+    string bottomWidth;
+    string leftWidth;
+    string color;
+}
+
+struct shorthandDrawable
+{
+    string name;
+    string color;
+    string image;
+}
+
+struct shorthandInsets
+{
+    string name;
+    string top;
+    string right;
+    string bottom;
+    string left;
+}
+
+struct shorthandTransition
+{
+    string name;
+    string property;
+    string duration;
+    string timingFunction;
+    string delay;
 }
 
 /// Annotate CSS property with @animatable to enable animations for it
