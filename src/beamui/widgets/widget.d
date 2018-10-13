@@ -281,10 +281,21 @@ public:
         debug if (APP_IS_SHUTTING_DOWN)
             onResourceDestroyWhileShutdown(_id, this.classinfo.name);
 
+        animations.clear();
+
+        if (ownProperties !is null)
+        {
+            if (isOwned("_boxShadow"))
+                eliminate(_boxShadow);
+            if (isOwned("_backgroundImage"))
+                eliminate(_backgroundImage);
+            if (isOwned("_transitionTimingFunction"))
+                eliminate(_transitionTimingFunction);
+            ownProperties.clear();
+        }
+
         _font.clear();
         eliminate(_background);
-        // TODO: stop animations
-        destroy(ownProperties);
 
         eliminate(subInfo);
         eliminate(_popupMenu);
@@ -878,8 +889,32 @@ public:
         /// Check whether the widget can make transition for a property
         bool hasTransitionFor(string property) const
         {
-            return (_transitionProperty == "all" || _transitionProperty == property) &&
-                    _transitionTimingFunction !is null && _transitionDuration > 0;
+            if (_transitionTimingFunction is null || _transitionDuration <= 0)
+                return false;
+            if (_transitionProperty == "all" || _transitionProperty == property)
+                return true;
+
+            if (_transitionProperty == "margin")
+                return property == "margin-top" || property == "margin-right" ||
+                       property == "margin-bottom" || property == "margin-left";
+
+            if (_transitionProperty == "padding")
+                return property == "padding-top" || property == "padding-right" ||
+                       property == "padding-bottom" || property == "padding-left";
+
+            if (_transitionProperty == "border-width")
+                return property == "border-top-width" || property == "border-right-width" ||
+                       property == "border-bottom-width" || property == "border-left-width";
+
+            if (_transitionProperty == "border")
+                return property == "border-top-width" || property == "border-right-width" ||
+                       property == "border-bottom-width" || property == "border-left-width" ||
+                       property == "border-color";
+
+            if (_transitionProperty == "background")
+                return property == "background-color";
+
+            return false;
         }
         /// Experimental API
         protected auto transitionDuration() const { return _transitionDuration; }
@@ -2579,21 +2614,6 @@ mixin template SupportCSS(BaseClass = Widget)
         protected Style[] recomputeStyle(Selector selector)
         {
             Style[] chain = currentTheme.selectChain(selector);
-
-            if (selector.state != State.normal)
-            {
-                // add nearest state style to the chain
-                foreach_reverse (last; chain)
-                {
-                    Style st = last.forState(selector.state);
-                    if (st !is last)
-                    {
-                        chain ~= st;
-                        break;
-                    }
-                }
-            }
-
             recomputeStyleImpl(chain);
             return chain;
         }
@@ -2677,7 +2697,7 @@ mixin template SupportCSS(BaseClass = Widget)
     private void setProperty(string var, T)(T value, bool fromOutside = true)
     {
         import std.meta : Alias;
-        import std.traits : hasUDA, isMutable, isSomeFunction;
+        import std.traits : getUDAs, hasUDA, isMutable, isSomeFunction;
 
         alias field = Alias!(mixin(var));
         static assert(isMutable!(typeof(field)), "Should be a mutable field: " ~ var);
@@ -2699,7 +2719,7 @@ mixin template SupportCSS(BaseClass = Widget)
         {
             static if (__traits(compiles, mixin(sideEffectName ~ "(value)")))
             {
-                enum callSideEffects = sideEffectName ~ "(value);";
+                enum callSideEffects = sideEffectName ~ "(val);";
             }
             else
                 enum callSideEffects = sideEffectName ~ "();";
@@ -2712,19 +2732,22 @@ mixin template SupportCSS(BaseClass = Widget)
         {
             import beamui.core.animations : Animation, Transition;
 
-            if (hasTransitionFor(name))
+            string cssName = getUDAs!(field, forCSS)[0].name;
+            if (hasTransitionFor(cssName))
             {
                 auto tr = new Transition(transitionDuration,
                                          transitionTimingFunction,
                                          transitionDelay);
                 addAnimation(var, tr.duration, delegate(double t) {
+                        auto val = tr.mix(current, value, t);
                         mixin(callSideEffects);
-                        field = tr.mix(current, value, t);
+                        field = val;
                 });
                 return;
             }
         }
         // set it directly otherwise
+        alias val = value;
         mixin(callSideEffects);
         field = value;
     }

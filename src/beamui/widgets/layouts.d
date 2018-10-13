@@ -76,10 +76,9 @@ class LinearLayout : WidgetGroupDefaultDrawing
     }
 
     /// Create with orientation
-    this(Orientation orientation = Orientation.vertical, int spacing = 6)
+    this(Orientation orientation = Orientation.vertical)
     {
         _orientation = orientation;
-        _spacing = spacing;
     }
 
     mixin SupportCSS;
@@ -342,20 +341,30 @@ int distribute(string dim)(ref Array!LayoutItem items, int bounds)
 /// Arranges children horizontally
 class Row : LinearLayout
 {
-    /// Create with spacing parameter
-    this(int spacing = 6)
+    this()
     {
-        super(Orientation.horizontal, spacing);
+        super(Orientation.horizontal);
+    }
+    /// Create with spacing parameter
+    this(int spacing)
+    {
+        super(Orientation.horizontal);
+        this.spacing = spacing;
     }
 }
 
 /// Arranges children vertically
 class Column : LinearLayout
 {
-    /// Create with spacing parameter
-    this(int spacing = 6)
+    this()
     {
-        super(Orientation.vertical, spacing);
+        super(Orientation.vertical);
+    }
+    /// Create with spacing parameter
+    this(int spacing)
+    {
+        super(Orientation.vertical);
+        this.spacing = spacing;
     }
 }
 
@@ -479,12 +488,6 @@ class TableLayout : WidgetGroupDefaultDrawing
 
         @forCSS("row-spacing") @animatable int _rowSpacing = 6;
         @forCSS("column-spacing") @animatable int _colSpacing = 6;
-    }
-
-    this(int rowSpacing = 6, int colSpacing = 6)
-    {
-        _rowSpacing = rowSpacing;
-        _colSpacing = colSpacing;
     }
 
     mixin SupportCSS;

@@ -123,13 +123,13 @@ final class Style
 
             if (width != Dimension.none)
             {
-                properties[sh.topWidth] = Variant(width);
-                properties[sh.rightWidth] = Variant(width);
-                properties[sh.bottomWidth] = Variant(width);
-                properties[sh.leftWidth] = Variant(width);
+                tryToSet(sh.topWidth, Variant(width));
+                tryToSet(sh.rightWidth, Variant(width));
+                tryToSet(sh.bottomWidth, Variant(width));
+                tryToSet(sh.leftWidth, Variant(width));
             }
             if (color != Color.none)
-                properties[sh.color] = Variant(color);
+                tryToSet(sh.color, Variant(color));
 
             rawProperties.remove(sh.name);
         }
@@ -144,8 +144,8 @@ final class Style
             decodeBackground(*p, color, image);
 
             if (color != Color.none)
-                properties[sh.color] = Variant(color);
-            properties[sh.image] = Variant(image);
+                tryToSet(sh.color, Variant(color));
+            tryToSet(sh.image, Variant(image));
 
             rawProperties.remove(sh.name);
         }
@@ -158,10 +158,10 @@ final class Style
             if (auto list = decodeInsets(*p))
             {
                 // [all], [vertical horizontal], [top horizontal bottom], [top right bottom left]
-                properties[sh.top]    = Variant(list[0]);
-                properties[sh.right]  = Variant(list[list.length > 1 ? 1 : 0]);
-                properties[sh.bottom] = Variant(list[list.length > 2 ? 2 : 0]);
-                properties[sh.left]   = Variant(list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1]);
+                tryToSet(sh.top, Variant(list[0]));
+                tryToSet(sh.right, Variant(list[list.length > 1 ? 1 : 0]));
+                tryToSet(sh.bottom, Variant(list[list.length > 2 ? 2 : 0]));
+                tryToSet(sh.left, Variant(list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1]));
             }
             rawProperties.remove(sh.name);
         }
@@ -178,15 +178,21 @@ final class Style
             decodeTransition(*p, prop, func, dur, del);
 
             if (prop)
-                properties[sh.property] = Variant(prop);
-            properties[sh.timingFunction] = Variant(func);
+                tryToSet(sh.property, Variant(prop));
+            tryToSet(sh.timingFunction, Variant(func));
             if (dur != uint.max)
-                properties[sh.duration] = Variant(dur);
+                tryToSet(sh.duration, Variant(dur));
             if (del != uint.max)
-                properties[sh.delay] = Variant(del);
+                tryToSet(sh.delay, Variant(del));
 
             rawProperties.remove(sh.name);
         }
+    }
+
+    private void tryToSet(string name, lazy Variant v)
+    {
+        if (name !in rawProperties)
+            properties[name] = v;
     }
 
     void setRawProperty(string name, CSS.Token[] tokens)

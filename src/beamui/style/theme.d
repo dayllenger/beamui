@@ -57,8 +57,26 @@ final class Theme
         destroy(drawables);
     }
 
-    /// Returns an inheritance chain for the selector, least specific first. Does not consider state.
+    /// Returns an inheritance chain for the selector, least specific first
     Style[] selectChain(Selector selector)
+    {
+        Style[] result = selectChainImpl(selector);
+        if (selector.state != State.normal)
+        {
+            // add nearest state style to the chain
+            foreach_reverse (last; result)
+            {
+                Style st = last.forState(selector.state);
+                if (st !is last)
+                {
+                    result ~= st;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+    private Style[] selectChainImpl(Selector selector)
     {
         // TODO: review carefully
         TypeInfo_Class wtype = selector.widgetType;
@@ -83,7 +101,7 @@ final class Theme
         {
             // SomeWidget#id::subelement -> SomeWidget::subelement
             selector.id = null;
-            chain = selectChain(selector);
+            chain = selectChainImpl(selector);
         }
         else
         {
@@ -92,7 +110,7 @@ final class Theme
             {
                 // SomeWidget -> BaseWidget
                 selector.widgetType = wtype.base;
-                chain = selectChain(selector);
+                chain = selectChainImpl(selector);
             }
             else
             {

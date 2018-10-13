@@ -39,7 +39,10 @@ uint decode(SpecialCSSType t : SpecialCSSType.time)(Token[] tokens, out bool err
 
 string decode(SpecialCSSType t : SpecialCSSType.transitionProperty)(Token[] tokens, out bool err)
 {
-    return decodeTransitionProperty(tokens[0]);
+    string p = decodeTransitionProperty(tokens[0]);
+    if (!p)
+        err = true;
+    return p;
 }
 
 T decode(T : Align)(Token[] tokens, out bool err)
@@ -540,60 +543,12 @@ uint decodeTime(Token t)
 string decodeTransitionProperty(Token t)
 {
     if (t.type == TokenType.ident)
-    {
-        switch (t.text)
-        {
-        case "all":
-        case "width":
-        case "height":
-            return t.text;
-        case "min-width":
-            return "minWidth";
-        case "max-width":
-            return "maxWidth";
-        case "min-height":
-            return "minHeight";
-        case "max-height":
-            return "maxHeight";
-        case "margin-top":
-            return "marginTop";
-        case "margin-right":
-            return "marginRight";
-        case "margin-bottom":
-            return "marginBottom";
-        case "margin-left":
-            return "marginLeft";
-        case "padding-top":
-            return "paddingTop";
-        case "padding-right":
-            return "paddingRight";
-        case "padding-bottom":
-            return "paddingBottom";
-        case "padding-left":
-            return "paddingLeft";
-        case "border-color":
-            return "borderColor";
-        case "border-top-width":
-            return "borderWidthTop";
-        case "border-right-width":
-            return "borderWidthRight";
-        case "border-bottom-width":
-            return "borderWidthBottom";
-        case "border-left-width":
-            return "borderWidthLeft";
-        case "background-color":
-            return "backgroundColor";
-        case "opacity":
-            return "alpha";
-        case "color":
-            return "textColor";
-        default:
-            Log.fe("CSS(%s): unknown or unsupported transition property: %s", t.line, t.text);
-        }
-    }
+        return t.text;
     else
+    {
         Log.fe("CSS(%s): transition property must be an identifier", t.line);
-    return null;
+        return null;
+    }
 }
 
 /// Decode transition timing function like linear or ease-in-out
