@@ -881,6 +881,12 @@ public:
             return (_transitionProperty == "all" || _transitionProperty == property) &&
                     _transitionTimingFunction !is null && _transitionDuration > 0;
         }
+        /// Experimental API
+        protected auto transitionDuration() const { return _transitionDuration; }
+        /// Experimental API
+        protected auto transitionTimingFunction() const { return _transitionTimingFunction; }
+        /// Experimental API
+        protected auto transitionDelay() const { return _transitionDelay; }
 
         /// Get current widget box in pixels (computed and set in layout())
         ref const(Box) box() const { return _box; }
@@ -1047,6 +1053,13 @@ public:
             }
             return this;
         }
+    }
+
+    /// Experimental API
+    protected void addAnimation(string name, long duration, void delegate(double) handler)
+    {
+        assert(name && duration > 0 && handler);
+        animations[name] = Animation(duration * ONE_SECOND / 1000, handler);
     }
 
     /// Animate widget; interval is time left from previous draw, in hnsecs (1/10000000 of second)
@@ -2697,13 +2710,14 @@ mixin template SupportCSS(BaseClass = Widget)
         // check animation
         static if (hasUDA!(field, animatable))
         {
+            import beamui.core.animations : Animation, Transition;
+
             if (hasTransitionFor(name))
             {
-                auto tr = new Transition(_transitionDuration,
-                                         _transitionTimingFunction,
-                                         _transitionDelay);
-                animations[var] = Animation(tr.duration * ONE_SECOND / 1000,
-                    delegate(double t) {
+                auto tr = new Transition(transitionDuration,
+                                         transitionTimingFunction,
+                                         transitionDelay);
+                addAnimation(var, tr.duration, delegate(double t) {
                         mixin(callSideEffects);
                         field = tr.mix(current, value, t);
                 });

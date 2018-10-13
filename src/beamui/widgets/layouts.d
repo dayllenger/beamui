@@ -60,29 +60,29 @@ class LinearLayout : WidgetGroupDefaultDrawing
         /// ditto
         LinearLayout spacing(int value)
         {
-            if (_spacing != value)
-            {
-                _spacing = value;
-                requestLayout();
-            }
+            setProperty!"_spacing" = value;
             return this;
         }
+        private alias spacing_effect = requestLayout;
     }
 
     private
     {
         Orientation _orientation = Orientation.vertical;
-        int _spacing = 6;
+        @forCSS("spacing") @animatable int _spacing = 6;
 
         /// Temporary layout item list
         Array!LayoutItem items;
     }
 
     /// Create with orientation
-    this(Orientation orientation = Orientation.vertical)
+    this(Orientation orientation = Orientation.vertical, int spacing = 6)
     {
         _orientation = orientation;
+        _spacing = spacing;
     }
+
+    mixin SupportCSS;
 
     /// Add a spacer
     LinearLayout addSpacer()
@@ -345,8 +345,7 @@ class Row : LinearLayout
     /// Create with spacing parameter
     this(int spacing = 6)
     {
-        super(Orientation.horizontal);
-        this.spacing = spacing;
+        super(Orientation.horizontal, spacing);
     }
 }
 
@@ -356,8 +355,7 @@ class Column : LinearLayout
     /// Create with spacing parameter
     this(int spacing = 6)
     {
-        super(Orientation.vertical);
-        this.spacing = spacing;
+        super(Orientation.vertical, spacing);
     }
 }
 
@@ -452,26 +450,20 @@ class TableLayout : WidgetGroupDefaultDrawing
         /// ditto
         TableLayout rowSpacing(int value)
         {
-            if (_rowSpacing != value)
-            {
-                _rowSpacing = value;
-                requestLayout();
-            }
+            setProperty!"_rowSpacing" = value;
             return this;
         }
 
         /// Space between columns (horizontal)
-        int colSpacing() const { return _colSpacing; }
+        int columnSpacing() const { return _colSpacing; }
         /// ditto
-        TableLayout colSpacing(int value)
+        TableLayout columnSpacing(int value)
         {
-            if (_colSpacing != value)
-            {
-                _colSpacing = value;
-                requestLayout();
-            }
+            setProperty!"_colSpacing" = value;
             return this;
         }
+        private alias rowSpacing_effect = requestLayout;
+        private alias colSpacing_effect = requestLayout;
     }
 
     /// Set int property value, for ML loaders
@@ -485,8 +477,8 @@ class TableLayout : WidgetGroupDefaultDrawing
 
         int _colCount = 1;
 
-        int _rowSpacing = 6;
-        int _colSpacing = 6;
+        @forCSS("row-spacing") @animatable int _rowSpacing = 6;
+        @forCSS("column-spacing") @animatable int _colSpacing = 6;
     }
 
     this(int rowSpacing = 6, int colSpacing = 6)
@@ -494,6 +486,8 @@ class TableLayout : WidgetGroupDefaultDrawing
         _rowSpacing = rowSpacing;
         _colSpacing = colSpacing;
     }
+
+    mixin SupportCSS;
 
     protected int rowSpace() const
     {
