@@ -13,7 +13,7 @@ import CSS = beamui.css.css;
 import beamui.graphics.colors;
 import beamui.graphics.drawables;
 import beamui.style.style;
-import beamui.style.types : Selector;
+import beamui.style.types : Selector, SpecialCSSType;
 
 /// Theme - collection of widget styles, custom colors and drawables
 final class Theme
@@ -308,8 +308,9 @@ private void applyAtRule(Theme theme, CSS.AtRule rule)
         foreach (p; ps)
         {
             string id = p.name;
-            Color color = decodeColor(p.value);
-            theme.setColor(id, color);
+            Color color = void;
+            if (decode(p.value, color))
+                theme.setColor(id, color);
         }
     }
     else if (kw == "define-drawables")
@@ -318,18 +319,20 @@ private void applyAtRule(Theme theme, CSS.AtRule rule)
         {
             CSS.Token[] tokens = p.value;
             string id = p.name;
-            Drawable dr;
 
             // color, image, or none
             if (startsWithColor(tokens))
             {
-                Color color = decodeColor(tokens);
-                dr = new SolidFillDrawable(color);
+                Color color = void;
+                if (decode(tokens, color))
+                    theme.setDrawable(id, new SolidFillDrawable(color));
             }
             else if (tokens.length > 0)
-                dr = decodeBackgroundImage(tokens);
-
-            theme.setDrawable(id, dr);
+            {
+                Drawable dr = void;
+                if (decode!(SpecialCSSType.image)(tokens, dr))
+                    theme.setDrawable(id, dr);
+            }
         }
     }
     else

@@ -90,19 +90,19 @@ final class Style
             // not computed yet - search in sources
             if (auto p = name in rawProperties)
             {
-                bool err;
+                T value = void;
                 // decode and put
                 static if (specialType != SpecialCSSType.none)
-                    T value = decode!specialType(*p, err);
+                    bool success = decode!specialType(*p, value);
                 else
-                    T value = decode!T(*p, err);
-                if (!err)
+                    bool success = decode(*p, value);
+                if (success)
                 {
                     Variant v = Variant(value);
                     properties[name] = v;
                     return v.peek!T;
                 }
-                else
+                else // skip and forget
                 {
                     rawProperties.remove(name);
                     return null;
@@ -117,20 +117,16 @@ final class Style
     {
         if (auto p = sh.name in rawProperties)
         {
-            Color color = Color.none;
-            Dimension width = Dimension.none;
-            decodeBorder(*p, color, width);
-
-            if (width != Dimension.none)
+            Color color = void;
+            Dimension width = void;
+            if (decodeBorder(*p, color, width))
             {
                 tryToSet(sh.topWidth, Variant(width));
                 tryToSet(sh.rightWidth, Variant(width));
                 tryToSet(sh.bottomWidth, Variant(width));
                 tryToSet(sh.leftWidth, Variant(width));
-            }
-            if (color != Color.none)
                 tryToSet(sh.color, Variant(color));
-
+            }
             rawProperties.remove(sh.name);
         }
     }
@@ -139,14 +135,13 @@ final class Style
     {
         if (auto p = sh.name in rawProperties)
         {
-            Color color;
-            Drawable image;
-            decodeBackground(*p, color, image);
-
-            if (color != Color.none)
+            Color color = void;
+            Drawable image = void;
+            if (decodeBackground(*p, color, image))
+            {
                 tryToSet(sh.color, Variant(color));
-            tryToSet(sh.image, Variant(image));
-
+                tryToSet(sh.image, Variant(image));
+            }
             rawProperties.remove(sh.name);
         }
     }
@@ -155,7 +150,8 @@ final class Style
     {
         if (auto p = sh.name in rawProperties)
         {
-            if (auto list = decodeInsets(*p))
+            Dimension[] list = void;
+            if (decodeInsets(*p, list))
             {
                 // [all], [vertical horizontal], [top horizontal bottom], [top right bottom left]
                 tryToSet(sh.top, Variant(list[0]));
@@ -171,20 +167,17 @@ final class Style
     {
         if (auto p = sh.name in rawProperties)
         {
-            string prop;
-            TimingFunction func = cast(TimingFunction)TimingFunction.linear;
-            uint dur = uint.max;
-            uint del = uint.max;
-            decodeTransition(*p, prop, func, dur, del);
-
-            if (prop)
+            string prop = void;
+            TimingFunction func = void;
+            uint dur = void;
+            uint del = void;
+            if (decodeTransition(*p, prop, func, dur, del))
+            {
                 tryToSet(sh.property, Variant(prop));
-            tryToSet(sh.timingFunction, Variant(func));
-            if (dur != uint.max)
+                tryToSet(sh.timingFunction, Variant(func));
                 tryToSet(sh.duration, Variant(dur));
-            if (del != uint.max)
                 tryToSet(sh.delay, Variant(del));
-
+            }
             rawProperties.remove(sh.name);
         }
     }

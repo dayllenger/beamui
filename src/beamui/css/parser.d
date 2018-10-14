@@ -379,13 +379,6 @@ unittest
         @define-drawable the-drawable 'the/path';
     `);
     auto css = parseCSS(tr);
-    /+
-    import std.stdio;
-    foreach (r; css.atRules)
-        writeln(r);
-    foreach (r; css.rulesets)
-        writeln(r);
-    +/
     {
         auto rs = css.atRules;
         assert(rs[0].keyword == "import");

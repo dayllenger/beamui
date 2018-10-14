@@ -546,7 +546,7 @@ pure nothrow:
                 hex |= parseHexDigit(r[i]);
                 i++;
             }
-            if (isWhiteSpace(r[i])) // FIXME: repeatedly?
+            if (isWhiteSpace(r[i]))
                 i++;
             if (hex == 0 || isSurrogate(hex) || hex > 0x10FFFF)
                 return 0xFFFD;

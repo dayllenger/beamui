@@ -42,8 +42,6 @@ struct Dimension
     /// Unspecified value
     enum Dimension none = Dimension(SIZE_UNSPECIFIED);
 
-    @disable this();
-
     /// Construct with raw device pixels
     this(int devicePixels) pure
     {
