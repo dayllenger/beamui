@@ -1,0 +1,33 @@
+{
+    "name": "opengl",
+    "description": "OpenGL rendering example for beamui",
+    "homepage": "https://github.com/dayllenger/beamui",
+    "license": "Boost",
+    "authors": ["dayllenger", "Vadim Lopatin"],
+
+    "targetName": "opengl",
+    "targetPath": "bin",
+    "targetType": "executable",
+
+    "dependencies": {
+        "beamui": {"path": "../../"}
+    },
+
+    "configurations" : [
+        {
+            "name" : "default",
+        },
+        {
+            "name" : "sdl",
+            "subConfigurations" : {
+                "beamui" : "sdl"
+            }
+        },
+        {
+            "name" : "x11",
+            "subConfigurations" : {
+                "beamui" : "x11"
+            }
+        },
+    ]
+}

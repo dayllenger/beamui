@@ -666,8 +666,6 @@ version (unittest)
 {
     version (Windows)
     {
-        mixin APP_ENTRY_POINT;
-
         /// Entry point for application
         extern (C) int UIAppMain(string[] args)
         {

@@ -1,0 +1,39 @@
+{
+    "name": "css",
+    "description": "CSS sandbox example for beamui",
+    "homepage": "https://github.com/dayllenger/beamui",
+    "license": "Boost",
+    "authors": ["dayllenger"],
+
+    "targetName": "css",
+    "targetPath": "bin",
+    "targetType": "executable",
+
+    "dependencies": {
+        "beamui": {"path": "../../"}
+    },
+
+    "configurations" : [
+        {
+            "name" : "default",
+        },
+        {
+            "name" : "sdl",
+            "subConfigurations" : {
+                "beamui" : "sdl"
+            }
+        },
+        {
+            "name" : "x11",
+            "subConfigurations" : {
+                "beamui" : "x11"
+            }
+        },
+        {
+            "name" : "minimal",
+            "subConfigurations" : {
+                "beamui" : "minimal"
+            }
+        },
+    ]
+}

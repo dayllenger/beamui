@@ -34,6 +34,8 @@
     "subPackages": [
         "./examples/advanced/",
         "./examples/basic/",
+        "./examples/css/",
+        "./examples/opengl/",
     ],
 
     "dependencies": {
