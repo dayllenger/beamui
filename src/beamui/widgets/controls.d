@@ -468,13 +468,13 @@ class Button : LinearLayout, ActionHolder
         visibility = _action.visible ? Visibility.visible : Visibility.gone;
     }
 
-    override protected bool handleClick()
+    override protected void handleClick()
     {
         if (auto w = window)
             w.call(_action);
         if (checkable)
             checked = !checked;
-        return super.handleClick();
+        super.handleClick();
     }
 
     override @property bool hasTooltip()
@@ -520,10 +520,10 @@ class SwitchButton : Widget
         trackHover = true;
     }
 
-    override protected bool handleClick()
+    override protected void handleClick()
     {
         checked = !checked;
-        return super.handleClick();
+        super.handleClick();
     }
 
     override Size computeMinSize()
@@ -585,10 +585,11 @@ class CheckBox : LinearLayout
         trackHover = true;
     }
 
-    override protected bool handleClick()
+    override protected void handleClick()
     {
         checked = !checked;
-        return clicked.assigned ? clicked(this) : false;
+        if (clicked.assigned)
+            clicked(this);
     }
 }
 
@@ -600,10 +601,11 @@ class RadioButton : CheckBox
         super(labelText);
     }
 
-    override protected bool handleClick()
+    override protected void handleClick()
     {
         checked = true;
-        return clicked.assigned ? clicked(this) : false;
+        if (clicked.assigned)
+            clicked(this);
     }
 
     override protected void handleCheckChange(bool checked)

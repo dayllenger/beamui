@@ -1684,8 +1684,8 @@ public:
     //===============================================================
     // Signals
 
-    /// On click event listener, must return true if click is processed by handler
-    Signal!(bool delegate(Widget)) clicked;
+    /// On click event listener
+    Signal!(void delegate(Widget)) clicked;
 
     /// Checked state change event listener
     Signal!(void delegate(Widget, bool)) checkChanged;
@@ -1703,9 +1703,10 @@ public:
     // Events
 
     /// Called to process click and notify listeners
-    protected bool handleClick()
+    protected void handleClick()
     {
-        return clicked.assigned ? clicked(this) : false;
+        if (clicked.assigned)
+            clicked(this);
     }
 
     /// Set new timer to call onTimer() after specified interval (for recurred notifications, return true from onTimer)
@@ -1770,7 +1771,7 @@ public:
             return true; // processed by external handler
         debug (mouse)
             Log.fd("onMouseEvent '%s': %s  (%s, %s)", id, event.action, event.x, event.y);
-        // support onClick
+        // support click
         if (canClick)
         {
             if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)

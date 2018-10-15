@@ -109,13 +109,12 @@ class ComboBoxBase : Row
         return res;
     }
 
-    protected bool onClick(Widget source)
+    protected void onClick(Widget source)
     {
         if (enabled && !_popup && _lastPopupCloseTimestamp + 200 < currentTimeMillis) // TODO: fix properly
         {
             showPopup();
         }
-        return true;
     }
 
     protected Button createButton()
@@ -485,11 +484,9 @@ class ComboEdit : ComboBox
         _edit.setFocus();
     }
 
-    // called to process click and notify listeners
-    override protected bool handleClick()
+    override protected void handleClick()
     {
         _edit.setFocus();
-        return true;
     }
 
     override protected Widget createSelectedItemWidget()

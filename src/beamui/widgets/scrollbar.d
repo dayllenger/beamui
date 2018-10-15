@@ -480,10 +480,10 @@ class ScrollBar : AbstractSlider
         addChild(_pageUp);
         addChild(_pageDown);
         bunch(_btnBack, _btnForward, _indicator, _pageUp, _pageDown).focusable(false);
-        _btnBack.clicked = (Widget w) => sendScrollEvent(ScrollAction.lineUp, position);
-        _btnForward.clicked = (Widget w) => sendScrollEvent(ScrollAction.lineDown, position);
-        _pageUp.clicked = (Widget w) => sendScrollEvent(ScrollAction.pageUp, position);
-        _pageDown.clicked = (Widget w) => sendScrollEvent(ScrollAction.pageDown, position);
+        _btnBack.clicked = (Widget w) { sendScrollEvent(ScrollAction.lineUp, position); };
+        _btnForward.clicked = (Widget w) { sendScrollEvent(ScrollAction.lineDown, position); };
+        _pageUp.clicked = (Widget w) { sendScrollEvent(ScrollAction.pageUp, position); };
+        _pageDown.clicked = (Widget w) { sendScrollEvent(ScrollAction.pageDown, position); };
     }
 
     /// True if full scroll range is visible, and no need of scrolling at all
@@ -613,8 +613,8 @@ class Slider : AbstractSlider
         addChild(_pageUp);
         addChild(_pageDown);
         bunch(_indicator, _pageUp, _pageDown).focusable(false);
-        _pageUp.clicked = (Widget w) => sendScrollEvent(ScrollAction.pageUp, position);
-        _pageDown.clicked = (Widget w) => sendScrollEvent(ScrollAction.pageDown, position);
+        _pageUp.clicked = (Widget w) { sendScrollEvent(ScrollAction.pageUp, position); };
+        _pageDown.clicked = (Widget w) { sendScrollEvent(ScrollAction.pageDown, position); };
     }
 
     override protected void updateDrawables()

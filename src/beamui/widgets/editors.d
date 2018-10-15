@@ -4076,31 +4076,20 @@ class FindPanel : Row
         _edFind.setCaretPos(0, cast(int)currentText.length, true);
     }
 
-    bool onButtonClick(Widget source)
+    void onButtonClick(Widget source)
     {
         switch (source.id)
         {
-        case "btnFindNext":
-            findNext(false);
-            return true;
-        case "btnFindPrev":
-            findNext(true);
-            return true;
-        case "btnClose":
-            close();
-            return true;
-        case "btnReplace":
-            replaceOne();
-            return true;
-        case "btnReplaceAndFind":
-            replaceOne();
-            findNext(_backDirection);
-            return true;
-        case "btnReplaceAll":
-            replaceAll();
-            return true;
-        default:
-            return true;
+            case "btnFindNext": findNext(false); break;
+            case "btnFindPrev": findNext(true); break;
+            case "btnClose": close(); break;
+            case "btnReplace": replaceOne(); break;
+            case "btnReplaceAndFind":
+                replaceOne();
+                findNext(_backDirection);
+                break;
+            case "btnReplaceAll": replaceAll(); break;
+            default: break;
         }
     }
 

@@ -116,7 +116,7 @@ class Dialog : Column
             if (splitBeforeIndex == i)
                 res.addSpacer();
             auto btn = new Button(a);
-            btn.clicked = delegate(Widget w) { handleAction((cast(Button)w).action); return true; };
+            btn.clicked = (Widget w) { handleAction((cast(Button)w).action); };
             if (defaultActionIndex == i)
             {
                 btn.setState(State.default_);
@@ -151,9 +151,8 @@ class Dialog : Column
             auto _frame = new DialogFrame(this, _cancelButton !is null);
             if (_cancelButton)
             {
-                _frame.closeButtonClick = delegate(Widget w) {
+                _frame.closeButtonClick = (Widget w) {
                     handleAction(_cancelButton.action);
-                    return true;
                 };
             }
             _popup = _parentWindow.showPopup(_frame);

@@ -638,26 +638,8 @@ class TreeItemWidget : Row
             _expander.clicked = delegate(Widget source) {
                 _item.selectItem(_item);
                 _item.toggleExpand(_item);
-                return true;
             };
         }
-        clicked = delegate(Widget source) {
-            long ts = currentTimeMillis();
-            _item.selectItem(_item);
-            if (ts - lastClickTime < DOUBLE_CLICK_TIME_MS)
-            {
-                if (_item.hasChildren)
-                {
-                    _item.toggleExpand(_item);
-                }
-                else
-                {
-                    _item.activateItem(_item);
-                }
-            }
-            lastClickTime = ts;
-            return true;
-        };
         _body = new Row(0);
         _body.id = "tree-item-body";
         _body.bindSubItem(this, "body");
@@ -680,6 +662,25 @@ class TreeItemWidget : Row
         if (_expander)
             addChild(_expander);
         addChild(_body);
+    }
+
+    override protected void handleClick()
+    {
+        long ts = currentTimeMillis();
+        _item.selectItem(_item);
+        if (ts - lastClickTime < DOUBLE_CLICK_TIME_MS)
+        {
+            if (_item.hasChildren)
+            {
+                _item.toggleExpand(_item);
+            }
+            else
+            {
+                _item.activateItem(_item);
+            }
+        }
+        lastClickTime = ts;
+        super.handleClick();
     }
 
     override bool onKeyEvent(KeyEvent event)

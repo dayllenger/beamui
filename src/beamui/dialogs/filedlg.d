@@ -961,12 +961,13 @@ class FilePathPanelItem : Row
         margins(Insets(0, 2.pt + 1)); // TODO: move to styles?
     }
 
-    private bool onTextClick(Widget src)
+    private void onTextClick(Widget src)
     {
-        return pathSelected.assigned ? pathSelected(_path) : false;
+        if (pathSelected.assigned)
+            pathSelected(_path);
     }
 
-    private bool onButtonClick(Widget src)
+    private void onButtonClick(Widget src)
     {
         // show popup menu with subdirs
         string[] filters;
@@ -978,10 +979,10 @@ class FilePathPanelItem : Row
         }
         catch (Exception e)
         {
-            return false;
+            return;
         }
         if (entries.length == 0)
-            return false;
+            return;
 
         Menu menu = new Menu;
         foreach (ref DirEntry e; entries)
@@ -996,7 +997,6 @@ class FilePathPanelItem : Row
             }();
         }
         auto popup = window.showPopup(menu, WeakRef!Widget(_button), PopupAlign.below);
-        return true;
     }
 }
 
@@ -1172,13 +1172,12 @@ class FilePathPanel : FrameLayout
         return false;
     }
 
-    protected bool onSegmentsClickOutside(Widget w)
+    protected void onSegmentsClickOutside(Widget w)
     {
         // switch to editor
         _edPath.text = toUTF32(_path);
         showChild(ID_EDITOR);
         _edPath.setFocus();
-        return true;
     }
 
     protected bool onEnterKey(EditWidgetBase editor)
@@ -1306,7 +1305,6 @@ class FileNameEditLine : Row
                 }
             }
             dlg.show();
-            return true;
         };
         _edFileName.contentChanged = delegate(EditableContent content) {
             if (contentChanged.assigned)

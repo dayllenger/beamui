@@ -229,7 +229,6 @@ extern (C) int UIAppMain(string[] args)
         btnToggle.checked(fileOpenAction.enabled);
         btnToggle.clicked = delegate(Widget w) {
             fileOpenAction.enabled = !fileOpenAction.enabled;
-            return true;
         };
         gb32.addChild(btnToggle);
         col2.addChild(gb32);
@@ -357,7 +356,6 @@ extern (C) int UIAppMain(string[] args)
                 TreeItem newItem = new TreeItem(id, label);
                 item.addChild(newItem);
             }
-            return true;
         };
         btnRemoveItem.clicked = delegate(Widget source) {
             TreeItem item = tree.items.selectedItem;
@@ -366,7 +364,6 @@ extern (C) int UIAppMain(string[] args)
                 Log.d("Removing tree item ", item.id, " ", item.text);
                 item.parent.removeChild(item);
             }
-            return true;
         };
         gbtree.addChild(newTreeItemForm);
         line4.addChild(gbtree);
@@ -432,7 +429,6 @@ extern (C) int UIAppMain(string[] args)
         btn.clicked = delegate(Widget src) {
             stringList.add(itemtext.text);
             listAdapter.add(new Label(itemtext.text));
-            return true;
         };
         itemedit.addChild(btn);
         longLists.addChild(itemedit);

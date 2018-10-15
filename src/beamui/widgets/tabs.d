@@ -192,7 +192,7 @@ class TabItemWidget : Row
         _closeButton = new Button(null, "close");
         _closeButton.id = "CLOSE";
         _closeButton.bindSubItem(this, "close"); // FIXME: was Button.transparent
-        _closeButton.clicked = (Widget w) { tabClosed(_item.id); return true; };
+        _closeButton.clicked = (Widget w) { tabClosed(_item.id); };
         _closeButton.visibility = _enableCloseButton ? Visibility.visible : Visibility.gone;
         addChild(_icon);
         addChild(_label);
