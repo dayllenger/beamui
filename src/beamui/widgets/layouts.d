@@ -88,6 +88,25 @@ class LinearLayout : WidgetGroupDefaultDrawing
                 return this;
             }
 
+            /// Alignment (combined vertical and horizontal)
+            Align alignment() const { return _alignment; }
+            /// ditto
+            ref Cell alignment(Align value)
+            {
+                _alignment = value;
+                return this;
+            }
+            /// Returns horizontal alignment
+            Align valign() const
+            {
+                return _alignment & Align.vcenter;
+            }
+            /// Returns vertical alignment
+            Align halign() const
+            {
+                return _alignment & Align.hcenter;
+            }
+
             /// Margins (between widget bounds and its background)
             Insets margins() const { return _margins; }
             /// ditto
@@ -107,6 +126,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         {
             bool _fillWidth;
             bool _fillHeight;
+            Align _alignment;
             Insets _margins;
         }
     }
@@ -322,22 +342,26 @@ class LinearLayout : WidgetGroupDefaultDrawing
         int pen;
         foreach (ref item; items)
         {
-            Insets m = _cells[item.index]._margins;
-            int w = item.result.w - m.width;
-            int h = item.result.h - m.height;
+            Cell* c = &_cells[item.index];
+            Insets m = c._margins;
+            Size sz = item.result;
             static if (horiz)
             {
-                pen += m.left;
-                Box res = Box(geom.x + pen, geom.y + m.top, w, h);
+                Box res = Box(geom.x + pen + m.left, geom.y + m.top, geom.w, geom.h);
+                applyAlign(res, sz, Align.unspecified, c.valign);
+                res.w -= m.width;
+                res.h -= m.height;
                 item.wt.layout(res);
-                pen += w + m.right + _spacing;
+                pen += sz.w + _spacing;
             }
             else
             {
-                pen += m.top;
-                Box res = Box(geom.x + m.left, geom.y + pen, w, h);
+                Box res = Box(geom.x + m.left, geom.y + pen + m.top, geom.w, geom.h);
+                applyAlign(res, sz, c.halign, Align.unspecified);
+                res.w -= m.width;
+                res.h -= m.height;
                 item.wt.layout(res);
-                pen += h + m.bottom + _spacing;
+                pen += sz.h + _spacing;
             }
         }
     }

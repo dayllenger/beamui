@@ -90,8 +90,8 @@ class ComboBoxBase : Row
         _button.focusable = false;
         _body.focusable = false;
         focusable = true;
-        add(_body).fillWidth();
-        add(_button);
+        add(_body).fillWidth(true);
+        add(_button).alignment(Align.vcenter);
     }
 
     protected Widget createSelectedItemWidget()
@@ -122,7 +122,6 @@ class ComboBoxBase : Row
         auto res = new Button(null, "scrollbar_btn_down");
         res.id = "COMBOBOX_BUTTON";
         res.bindSubItem(this, "button");
-        res.alignment = Align.vcenter | Align.right;
         res.clicked = &onClick;
         return res;
     }

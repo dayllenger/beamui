@@ -256,7 +256,7 @@ class Button : LinearLayout, ActionHolder
                 _icon.id = "icon";
                 _icon.bindSubItem(this, "icon");
                 _icon.state = State.parent;
-                addChild(_icon);
+                add(_icon).alignment(Align.center);
             }
             else
                 _icon.imageID = id;
@@ -273,7 +273,7 @@ class Button : LinearLayout, ActionHolder
                 _icon.id = "icon";
                 _icon.bindSubItem(this, "icon");
                 _icon.state = State.parent;
-                addChild(_icon);
+                add(_icon).alignment(Align.center);
             }
             _icon.drawable = img;
             return this;
@@ -294,32 +294,6 @@ class Button : LinearLayout, ActionHolder
 
     override @property
     {
-        /// Orientation: vertical - image top, horizontal - image left
-        Orientation orientation() const
-        {
-            return super.orientation;
-        }
-        /// ditto
-        Button orientation(Orientation value)
-        {
-            super.orientation = value;
-            if (_icon && _label && value != orientation)
-            {
-                if (value == Orientation.horizontal)
-                {
-                    _icon.alignment = Align.left | Align.vcenter;
-                    _label.alignment = Align.right | Align.vcenter;
-                }
-                else
-                {
-                    _icon.alignment = Align.top | Align.hcenter;
-                    _label.alignment = Align.bottom | Align.hcenter;
-                }
-                requestLayout();
-            }
-            return this;
-        }
-
         /// Get label text
         dstring text() const
         {
@@ -338,7 +312,7 @@ class Button : LinearLayout, ActionHolder
                 _label.id = "label";
                 _label.bindSubItem(this, "label");
                 _label.state = State.parent;
-                add(_label).fillWidth(true);
+                add(_label).fillWidth(true).alignment(Align.center);
             }
             else
                 _label.text = s;
@@ -575,8 +549,8 @@ class CheckBox : LinearLayout
         _label.id = "label";
         _label.bindSubItem(this, "label");
         _label.state = State.parent;
-        addChild(_icon);
-        addChild(_label);
+        add(_icon).alignment(Align.center);
+        add(_label).alignment(Align.center);
         if (!labelText)
             spacing = 0;
         clickable = true;
