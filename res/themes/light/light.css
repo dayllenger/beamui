@@ -20,7 +20,7 @@ Button:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
 Button::icon, Button::label { align: center; }
 
-Button::label { text-flags: parent; transition: color 75ms ease; }
+Button::label { text-align: center; text-flags: parent; transition: color 75ms ease; }
 
 Button::label:hovered { color: #46617e; }
 
@@ -44,7 +44,7 @@ CheckBox::label:hovered, RadioButton::label:hovered { color: #46617e; }
 
 CheckBox::label:not(enabled), RadioButton::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
-CheckBox::icon { min-width: 16px; max-height: 16px; background: url(btn_check_off); }
+CheckBox::icon { align: center; min-width: 16px; max-height: 16px; background: url(btn_check_off); }
 
 CheckBox::icon:hovered { background: url(btn_check_off_focused); }
 

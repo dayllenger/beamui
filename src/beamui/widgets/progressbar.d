@@ -172,7 +172,6 @@ class ProgressBar : AbstractProgressBar
 
         super.onDraw(buf);
         Box b = box;
-        applyMargins(b);
         applyPadding(b);
         DrawableRef animDrawable;
         if (_progress >= 0)

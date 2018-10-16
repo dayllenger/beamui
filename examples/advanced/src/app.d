@@ -442,22 +442,22 @@ extern (C) int UIAppMain(string[] args)
         auto table = new TableLayout;
         table.colCount = 2;
         // headers
-        table.addChild(new Label("Parameter"d).alignment(Align.right | Align.vcenter));
-        table.addChild(new Label("Field"d).alignment(Align.left | Align.vcenter));
+        table.addChild(new Label("Parameter"d)/+.alignment(Align.right | Align.vcenter)+/);
+        table.addChild(new Label("Field"d)/+.alignment(Align.left | Align.vcenter)+/);
         // row 1
-        table.addChild(new Label("First Name"d).alignment(Align.right | Align.vcenter));
+        table.addChild(new Label("First Name"d)/+.alignment(Align.right | Align.vcenter)+/);
         table.addChild(new EditLine("John"d));
         // row 2, disabled
-        table.addChild(new Label("Last Name"d).alignment(Align.right | Align.vcenter).enabled(false));
+        table.addChild(new Label("Last Name"d)/+.alignment(Align.right | Align.vcenter)+/.enabled(false));
         table.addChild(new EditLine("Doe"d).enabled(false));
         // row 3, normal readonly combo box
-        table.addChild(new Label("Country"d).alignment(Align.right | Align.vcenter));
+        table.addChild(new Label("Country"d)/+.alignment(Align.right | Align.vcenter)+/);
         auto combo1 = new ComboBox(["Australia"d, "Canada"d, "France"d, "Germany"d,
                 "Italy"d, "Poland"d, "Russia"d, "Spain"d, "UK"d, "USA"d]);
         combo1.selectedItemIndex = 3;
         table.addChild(combo1);
         // row 4, disabled readonly combo box
-        table.addChild(new Label("City"d).alignment(Align.right | Align.vcenter));
+        table.addChild(new Label("City"d)/+.alignment(Align.right | Align.vcenter)+/);
         auto combo2 = new ComboBox(["none"d]);
         combo2.enabled = false;
         combo2.selectedItemIndex = 0;

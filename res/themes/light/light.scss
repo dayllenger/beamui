@@ -72,6 +72,7 @@ Button {
     }
 
     &::label {
+        text-align: center;
         text-flags: parent;
         transition: color 75ms ease;
 
@@ -125,6 +126,7 @@ CheckBox::label, RadioButton::label {
 }
 
 CheckBox::icon {
+    align: center;
     min-width: 16px;
     max-height: 16px;
     background: url(btn_check_off);

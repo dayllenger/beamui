@@ -118,22 +118,18 @@ class Label : Widget
 
         super.onDraw(buf);
         Box b = box;
-        applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
 
         FontRef font = font();
         if (maxLines == 1)
         {
-            Size sz = font.textSize(text);
-            applyAlign(b, sz);
             font.drawText(buf, b.x, b.y, text, textColor, 4, 0, textFlags);
         }
         else
         {
             SimpleTextFormatter fmt;
             Size sz = fmt.format(text, font, maxLines, b.width, 4, 0, textFlags);
-            applyAlign(b, sz);
             fmt.draw(buf, b.x, b.y, font, textColor, textAlign);
         }
     }
@@ -220,14 +216,13 @@ class ImageWidget : Widget
 
         super.onDraw(buf);
         Box b = box;
-        applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
         applyPadding(b);
         DrawableRef img = _drawable;
         if (!img.isNull)
         {
             Size sz = Size(img.width, img.height);
-            applyAlign(b, sz);
+            applyAlign(b, sz, Align.hcenter, Align.vcenter);
             img.drawTo(buf, b);
         }
     }
@@ -273,7 +268,7 @@ class Button : LinearLayout, ActionHolder
                 _icon.id = "icon";
                 _icon.bindSubItem(this, "icon");
                 _icon.state = State.parent;
-                add(_icon).alignment(Align.center);
+                add(_icon);
             }
             _icon.drawable = img;
             return this;
@@ -312,7 +307,7 @@ class Button : LinearLayout, ActionHolder
                 _label.id = "label";
                 _label.bindSubItem(this, "label");
                 _label.state = State.parent;
-                add(_label).fillWidth(true).alignment(Align.center);
+                add(_label).fillWidth(true).fillHeight(false);
             }
             else
                 _label.text = s;
@@ -517,12 +512,9 @@ class SwitchButton : Widget
             return;
 
         Box b = box;
-        applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
 
         auto bg = background;
-        Size sz = Size(bg.width, bg.height);
-        applyAlign(b, sz);
         bg.drawTo(buf, b);
 
         drawn();
@@ -549,8 +541,8 @@ class CheckBox : LinearLayout
         _label.id = "label";
         _label.bindSubItem(this, "label");
         _label.state = State.parent;
-        add(_icon).alignment(Align.center);
-        add(_label).alignment(Align.center);
+        add(_icon);
+        add(_label).fillHeight(false);
         if (!labelText)
             spacing = 0;
         clickable = true;
@@ -630,7 +622,6 @@ class CanvasWidget : Widget
 
         super.onDraw(buf);
         Box b = box;
-        applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
         applyPadding(b);
         doDraw(buf, b);

@@ -439,8 +439,6 @@ class ScrollAreaBase : WidgetGroup
 
         super.onDraw(buf);
         Box b = box;
-        applyMargins(b);
-
         auto saver = ClipRectSaver(buf, b, alpha);
         auto bg = background;
         bg.drawTo(buf, b);

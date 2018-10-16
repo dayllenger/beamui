@@ -361,7 +361,6 @@ class SimpleBarChart : Widget
         super.onDraw(buf);
 
         Box b = box;
-        applyMargins(b);
         applyPadding(b);
 
         auto saver = ClipRectSaver(buf, b, alpha);

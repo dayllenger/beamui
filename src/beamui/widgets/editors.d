@@ -2208,7 +2208,6 @@ class EditLine : EditWidgetBase
 //         applyAlign(rc, sz);
         super.layout(geom);
 
-        applyMargins(geom);
         applyPadding(geom);
         clientBox = geom;
 
@@ -2252,7 +2251,6 @@ class EditLine : EditWidgetBase
 
         super.onDraw(buf);
         Box b = box;
-        applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
 
@@ -3976,7 +3974,6 @@ class FindPanel : Row
         Row rowFind = new Row;
 
         _edFind = new EditLine(initialText);
-        _edFind.alignment = Align.vcenter;
         _edFind.enterKeyPressed = (EditWidgetBase e) { findNext(_backDirection); return true; };
         _edFind.contentChanged ~= &onFindTextChange;
 
@@ -3993,8 +3990,6 @@ class FindPanel : Row
         _cbWholeWords.checkable = true;
         _cbCaseSensitive.tooltipText = "Case sensitive";
         _cbWholeWords.tooltipText = "Whole words";
-        _cbCaseSensitive.alignment = Align.vcenter;
-        _cbWholeWords.alignment = Align.vcenter;
         _cbSelection = new CheckBox("Sel");
         _cbCaseSensitive.checkChanged = &onCaseSensitiveCheckChange;
         _cbWholeWords.checkChanged = &onCaseSensitiveCheckChange;
@@ -4015,7 +4010,6 @@ class FindPanel : Row
             rowReplace.visibility = Visibility.gone;
 
         _edReplace = new EditLine(initialText);
-        _edReplace.alignment = Align.vcenter;
 
         auto btnReplace = new Button("Replace");
         auto btnReplaceAndFind = new Button("Replace and find");

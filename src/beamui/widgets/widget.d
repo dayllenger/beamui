@@ -173,14 +173,9 @@ private:
         Dimension _minHeight = Dimension.zero;
     @forCSS("max-height") @animatable
         Dimension _maxHeight = Dimension.none;
-    @forCSS("align")
-        Align _alignment = Align.topleft;
 
     static foreach (side; ["top", "right", "bottom", "left"])
     {
-        @forCSS("margin-" ~ side) @animatable
-        mixin("Dimension  _margin" ~ side.capitalize ~ " = Dimension.zero;");
-
         @forCSS("padding-" ~ side) @animatable
         mixin("Dimension  _padding" ~ side.capitalize ~ " = Dimension.zero;");
 
@@ -226,7 +221,6 @@ private:
     @forCSS("transition-delay", SpecialCSSType.time)
         uint _transitionDelay;
 
-    @shorthandInsets("margin", "margin-top", "margin-right", "margin-bottom", "margin-left")
     @shorthandInsets("padding", "padding-top", "padding-right", "padding-bottom", "padding-left")
     @shorthandInsets("border-width", "border-top-width", "border-right-width",
                      "border-bottom-width", "border-left-width")
@@ -235,13 +229,10 @@ private:
     @shorthandDrawable("background", "background-color", "background-image")
     @shorthandTransition("transition", "transition-property", "transition-duration",
                          "transition-timing-function", "transition-delay")
-    private static bool shorthandsForCSS;
+    static bool shorthandsForCSS;
 
     Background _background;
     FontRef _font;
-
-    /// This is a bitmap that indicates which properties are overriden by the user
-    bool[string] ownProperties;
 
     Animation[string] animations; // key is a property name
 
@@ -400,7 +391,7 @@ public:
     mixin SupportCSS;
 
     /// Signals when styles are being recomputed. Used for mixing properties in the widget.
-    Signal!(void delegate(Style[] chain)) stylesRecomputed;
+    Listener!(void delegate(Style[] chain)) stylesRecomputed;
 
     /// Recompute styles, only if needed
     protected void updateStyles()
@@ -452,16 +443,6 @@ public:
         }
     }
 
-    protected void ownProperty(string name)
-    {
-        ownProperties[name] = true;
-    }
-
-    protected bool isOwned(string property)
-    {
-        return ownProperties.get(property, false);
-    }
-
     /// Handle theme change: e.g. reload some themed resources
     void onThemeChanged()
     {
@@ -482,50 +463,6 @@ public:
 
     @property
     {
-        /// Alignment (combined vertical and horizontal)
-        Align alignment() const { return _alignment; }
-        /// ditto
-        Widget alignment(Align value)
-        {
-            setProperty!"_alignment" = value;
-            return this;
-        }
-        private alias alignment_effect = requestLayout;
-        /// Returns horizontal alignment
-        Align valign()
-        {
-            return cast(Align)(_alignment & Align.vcenter);
-        }
-        /// Returns vertical alignment
-        Align halign()
-        {
-            return cast(Align)(_alignment & Align.hcenter);
-        }
-
-        /// Margins (between widget bounds and its background)
-        Insets margins() const
-        {
-            return Insets(0);
-        }
-        /// ditto
-        Widget margins(Insets value)
-        {
-            setProperty!"_marginTop" = Dimension(value.top);
-            setProperty!"_marginRight" = Dimension(value.right);
-            setProperty!"_marginBottom" = Dimension(value.bottom);
-            setProperty!"_marginLeft" = Dimension(value.left);
-            return this;
-        }
-        /// ditto
-        Widget margins(int v)
-        {
-            return margins = Insets(v);
-        }
-        private alias marginTop_effect = requestLayout;
-        private alias marginRight_effect = requestLayout;
-        private alias marginBottom_effect = requestLayout;
-        private alias marginLeft_effect = requestLayout;
-
         enum FOCUS_RECT_PADDING = 2;
         /// Padding (between background bounds and content of widget)
         Insets padding() const
@@ -1926,7 +1863,6 @@ public:
             return;
 
         Box b = _box;
-        applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
 
         auto bg = background;
@@ -1951,11 +1887,6 @@ public:
         }
     }
 
-    /// Helper function: applies margins to a box
-    void applyMargins(ref Box b)
-    {
-        b.shrink(margins);
-    }
     /// Helper function: applies padding to a box
     void applyPadding(ref Box b)
     {
@@ -1995,13 +1926,6 @@ public:
         {
             b.h = sz.h;
         }
-    }
-    /// Applies alignment based on widget `alignment` property to a box for content of size `sz`
-    void applyAlign(ref Box b, Size sz)
-    {
-        Align va = valign;
-        Align ha = halign;
-        applyAlign(b, sz, ha, va);
     }
 
     //===============================================================
@@ -2271,16 +2195,6 @@ public:
             alpha = cast(ubyte)clamp(value, 0, 255);
             return true;
         }
-        if (name == "alignment")
-        {
-            alignment = cast(Align)value;
-            return true;
-        }
-        if (name == "margins")
-        { // use same value for all sides
-            margins = Insets(value);
-            return true;
-        }
         if (name == "padding")
         { // use same value for all sides
             padding = Insets(value);
@@ -2292,7 +2206,7 @@ public:
     /// Set Insets property value, for ML loaders
     bool setInsetsProperty(string name, Insets value)
     {
-        mixin(generatePropertySetters("margins", "padding"));
+        mixin(generatePropertySetters("padding"));
         return false;
     }
 }
@@ -2416,7 +2330,6 @@ class WidgetGroupDefaultDrawing : WidgetGroup
 
         super.onDraw(buf);
         Box b = _box;
-        applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
         foreach (i; 0 .. _children.count)
@@ -2572,6 +2485,19 @@ mixin template SupportCSS(BaseClass = Widget)
             Style[] chain = currentTheme.selectChain(selector);
             recomputeStyleImpl(chain);
             return chain;
+        }
+
+        /// This is a bitmap that indicates which properties are overriden by the user
+        private bool[string] ownProperties;
+
+        protected void ownProperty(string name)
+        {
+            ownProperties[name] = true;
+        }
+
+        protected bool isOwned(string property)
+        {
+            return ownProperties.get(property, false);
         }
     }
     else

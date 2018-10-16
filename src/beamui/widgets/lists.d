@@ -1045,7 +1045,6 @@ class ListWidget : WidgetGroup
         if (itemCount > _itemBoxes.length)
             return true; // layout not yet called. TODO: investigate this case
         Box b = box;
-        applyMargins(b);
         applyPadding(b);
         // ----- same as in onDraw -----
         // fast bisect to find where is the viewport
@@ -1366,7 +1365,6 @@ class ListWidget : WidgetGroup
 
         super.onDraw(buf);
         Box b = box;
-        applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
         // draw scrollbar

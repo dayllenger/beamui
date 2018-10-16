@@ -91,7 +91,7 @@ class ComboBoxBase : Row
         _body.focusable = false;
         focusable = true;
         add(_body).fillWidth(true);
-        add(_button).alignment(Align.vcenter);
+        add(_button);
     }
 
     protected Widget createSelectedItemWidget()

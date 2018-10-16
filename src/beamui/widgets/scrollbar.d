@@ -591,7 +591,6 @@ class ScrollBar : AbstractSlider
 
         super.onDraw(buf);
         Box b = box;
-        applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
         bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).onDraw(buf);
@@ -675,7 +674,6 @@ class Slider : AbstractSlider
             return;
 
         Box b = box;
-        applyMargins(b);
         auto saver = ClipRectSaver(buf, b, alpha);
         auto bg = background;
         {

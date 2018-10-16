@@ -72,8 +72,7 @@ class StatusLineTextAndIconPanel : StatusLineTextPanel
         _icon = new ImageWidget;
         _icon.minWidth = BACKEND_CONSOLE ? 1 : 20;
         _icon.minHeight = BACKEND_CONSOLE ? 1 : 20;
-        _icon.alignment = Align.center;
-        addChild(_icon);
+        add(_icon).alignment(Align.center);
     }
 
     @property string iconID()
@@ -122,7 +121,7 @@ class StatusLineEditorStatePanel : StatusLineTextPanel
 
     this()
     {
-        _text.alignment = Align.vcenter | Align.right;
+        //_text.alignment = Align.vcenter | Align.right;
         //_text.backgroundColor = 0x80FF0000;
         //backgroundColor = 0x8000FF00;
         updateSize();

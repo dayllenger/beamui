@@ -144,7 +144,6 @@ class GroupBox : LinearLayout
 
         super.onDraw(buf);
         Box b = box;
-        applyMargins(b);
 
         _caption.onDraw(buf);
 

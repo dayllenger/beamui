@@ -682,7 +682,6 @@ class TabControl : WidgetGroupDefaultDrawing
 
         super.Widget.onDraw(buf);
         Box b = box;
-        applyMargins(b);
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b);
         // draw all items except selected

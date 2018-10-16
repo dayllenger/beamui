@@ -93,26 +93,33 @@ class LinearLayout : WidgetGroupDefaultDrawing
             /// ditto
             ref Cell alignment(Align value)
             {
-                _alignment = value;
+                setProperty!"_alignment" = value;
                 return this;
             }
             /// Returns horizontal alignment
-            Align valign() const
-            {
-                return _alignment & Align.vcenter;
-            }
-            /// Returns vertical alignment
             Align halign() const
             {
                 return _alignment & Align.hcenter;
             }
+            /// Returns vertical alignment
+            Align valign() const
+            {
+                return _alignment & Align.vcenter;
+            }
 
             /// Margins (between widget bounds and its background)
-            Insets margins() const { return _margins; }
+            Insets margins() const
+            {
+                return Insets(_marginTop.toDevice, _marginRight.toDevice,
+                              _marginBottom.toDevice, _marginLeft.toDevice);
+            }
             /// ditto
             ref Cell margins(Insets value)
             {
-                _margins = value;
+                setProperty!"_marginTop" = Dimension(value.top);
+                setProperty!"_marginRight" = Dimension(value.right);
+                setProperty!"_marginBottom" = Dimension(value.bottom);
+                setProperty!"_marginLeft" = Dimension(value.left);
                 return this;
             }
             /// ditto
@@ -122,13 +129,21 @@ class LinearLayout : WidgetGroupDefaultDrawing
             }
         }
 
-        private
+        private // TODO: effects
         {
             bool _fillWidth;
             bool _fillHeight;
-            Align _alignment;
-            Insets _margins;
+            @forCSS("align") Align _alignment;
+            @forCSS("margin-top") Dimension _marginTop = Dimension.zero;
+            @forCSS("margin-right") Dimension _marginRight = Dimension.zero;
+            @forCSS("margin-bottom") Dimension _marginBottom = Dimension.zero;
+            @forCSS("margin-left") Dimension _marginLeft = Dimension.zero;
+
+            @shorthandInsets("margin", "margin-top", "margin-right", "margin-bottom", "margin-left")
+            static bool shorthandsForCSS;
         }
+
+        mixin SupportCSS!Cell;
     }
 
     private
@@ -150,18 +165,12 @@ class LinearLayout : WidgetGroupDefaultDrawing
 
     mixin SupportCSS;
 
-    private Cell defaultCell() const
-    {
-        if (_orientation == Orientation.vertical)
-            return Cell(true, false);
-        else
-            return Cell(false, true);
-    }
-
     ref Cell add(Widget item)
     {
         super.addChild(item);
         _cells ~= defaultCell;
+        size_t index = _cells.length - 1;
+        item.stylesRecomputed = (Style[] chain) { updateCell(chain, index); };
         return _cells.back;
     }
 
@@ -184,6 +193,8 @@ class LinearLayout : WidgetGroupDefaultDrawing
     {
         super.addChild(item);
         _cells ~= defaultCell;
+        size_t index = _cells.length - 1;
+        item.stylesRecomputed = (Style[] chain) { updateCell(chain, index); };
         return item;
     }
 
@@ -191,12 +202,14 @@ class LinearLayout : WidgetGroupDefaultDrawing
     {
         super.insertChild(item, index);
         _cells.insertBefore(_cells[index .. $], defaultCell);
+        item.stylesRecomputed = (Style[] chain) { updateCell(chain, index); };
         return item;
     }
 
     override Widget removeChild(int index)
     {
         Widget res = super.removeChild(index);
+        res.stylesRecomputed.clear();
         if (res)
             _cells.linearRemove(_cells[index .. index + 1]);
         return res;
@@ -216,6 +229,19 @@ class LinearLayout : WidgetGroupDefaultDrawing
     {
         super.removeAllChildren(destroyObj);
         _cells.clear();
+    }
+
+    private Cell defaultCell() const
+    {
+        if (_orientation == Orientation.vertical)
+            return Cell(true, false);
+        else
+            return Cell(false, true);
+    }
+
+    private void updateCell(Style[] chain, size_t index)
+    {
+        _cells[index].recomputeStyleImpl(chain);
     }
 
     //===============================================================
@@ -244,7 +270,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         {
             Boundaries wbs = item.wt.computeBoundaries();
             // add margins
-            Size m = _cells[item.index]._margins.size;
+            Size m = _cells[item.index].margins.size;
             Boundaries ms = Boundaries(m, m, m);
             wbs.addWidth(ms);
             wbs.addHeight(ms);
@@ -302,19 +328,20 @@ class LinearLayout : WidgetGroupDefaultDrawing
         foreach (ref item; items)
         {
             Cell* c = &_cells[item.index];
+            Insets m = c.margins;
             static if (horiz)
             {
                 item.fill = c.fillWidth;
                 item.result.h = c.fillHeight ? min(geom.h, item.bs.max.h) : item.bs.nat.h;
                 if (item.wt.widthDependsOnHeight)
-                    item.bs.nat.w = item.wt.widthForHeight(item.result.h - c._margins.height) + c._margins.width;
+                    item.bs.nat.w = item.wt.widthForHeight(item.result.h - m.height) + m.width;
             }
             else
             {
                 item.fill = c.fillHeight;
                 item.result.w = c.fillWidth ? min(geom.w, item.bs.max.w) : item.bs.nat.w;
                 if (item.wt.heightDependsOnWidth)
-                    item.bs.nat.h = item.wt.heightForWidth(item.result.w - c._margins.width) + c._margins.height;
+                    item.bs.nat.h = item.wt.heightForWidth(item.result.w - m.width) + m.height;
             }
         }
         int gaps = spacing * (cast(int)items.length - 1);
@@ -343,7 +370,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         foreach (ref item; items)
         {
             Cell* c = &_cells[item.index];
-            Insets m = c._margins;
+            Insets m = c.margins;
             Size sz = item.result;
             static if (horiz)
             {
