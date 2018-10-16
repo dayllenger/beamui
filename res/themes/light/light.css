@@ -87,10 +87,6 @@ SwitchButton:checked:not(enabled) { background: url(switch_on); opacity: 0.4; }
 CanvasWidget { min-width: 50px; min-height: 50px; }
 
 /* ========================================================================== layouts.d */
-HSpacer { min-width: 5px; weight: 100; }
-
-VSpacer { min-height: 5px; weight: 100; }
-
 Resizer { min-width: 3px; min-height: 3px; }
 
 Resizer:hovered { background-color: rgba(255, 255, 0, 0.2); }

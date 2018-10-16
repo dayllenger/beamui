@@ -861,16 +861,15 @@ class TabWidget : Column
         _tabControl.tabChanged ~= &onTabChanged;
         _tabControl.tabClosed ~= &onTabClose;
         _tabHost = new TabHost(_tabControl);
-        _tabHost.fillH();
         if (tabAlignment == Align.top)
         {
-            addChild(_tabControl);
-            addChild(_tabHost);
+            add(_tabControl);
+            add(_tabHost).fillHeight(true);
         }
         else
         {
-            addChild(_tabHost);
-            addChild(_tabControl);
+            add(_tabHost).fillHeight(true);
+            add(_tabControl);
         }
         focusGroup = true;
     }

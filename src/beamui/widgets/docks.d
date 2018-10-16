@@ -189,7 +189,6 @@ class DockHost : WidgetGroupDefaultDrawing
             else
                 addChild(widget);
             _bodyWidget = widget;
-            _bodyWidget.fillWH();
             _bodyWidget.parent = this;
         }
 

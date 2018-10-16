@@ -178,8 +178,7 @@ class StatusLine : Row
     this()
     {
         _defStatus = new Label(" "d);
-        _defStatus.fillW();
-        addChild(_defStatus);
+        add(_defStatus).fillWidth(true);
         _backgroundOperationPanel = new StatusLineBackgroundOperationPanel;
         _editorStatePanel = new StatusLineEditorStatePanel;
         addChild(_backgroundOperationPanel);

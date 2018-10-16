@@ -781,32 +781,28 @@ class FileDialog : Dialog, CustomGridCellAdapter
 
         _roots = getRootPaths() ~ getBookmarkPaths();
 
-        fillWH().minWidth(BACKEND_CONSOLE ? 50 : 600).minHeight(400); // TODO: move in styles
+        minWidth(BACKEND_CONSOLE ? 50 : 600).minHeight(400); // TODO: move in styles
 
         auto content = new Row(1.pt);
         content.id = "dlgcontent";
-        content.fillWH();
 
         leftPanel = createRootsList();
         leftPanel.id = "leftPanel";
         leftPanel.minWidth = BACKEND_CONSOLE ? 7 : 40.pt;
-        leftPanel.fillH();
 
         rightPanel = new Column;
         rightPanel.id = "rightPanel";
-        rightPanel.fillW();
         rightPanel.addChild(new Label(tr("Path") ~ ":"));
 
-        content.addChild(leftPanel);
+        content.add(leftPanel);
         content.addResizer();
-        content.addChild(rightPanel);
+        content.add(rightPanel).fillWidth(true);
 
         _edPath = new FilePathPanel;
         _edPath.id = "path";
         _edPath.pathSelected = &onPathSelected;
         _edFilename = new EditLine;
         _edFilename.id = "filename";
-        _edFilename.fillW();
         _edFilename.setDefaultPopupMenu();
         if (_flags & FileDialogFlag.selectDirectory)
         {
@@ -815,7 +811,6 @@ class FileDialog : Dialog, CustomGridCellAdapter
 
         _fileList = new StringGridWidget;
         _fileList.id = "files";
-        _fileList.fillH();
         _fileList.bindSubItem(this, "grid");
         _fileList.fullColumnOnLeft(false);
         _fileList.fullRowOnTop(false);
@@ -836,9 +831,9 @@ class FileDialog : Dialog, CustomGridCellAdapter
             return false;
         };
 
-        rightPanel.addChild(_edPath);
-        rightPanel.addChild(_fileList);
-        rightPanel.addChild(_edFilename);
+        rightPanel.add(_edPath);
+        rightPanel.add(_fileList).fillHeight(true);
+        rightPanel.add(_edFilename);
 
         if (_filters.length)
         {
@@ -852,17 +847,17 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 _filterIndex = itemIndex;
                 reopenDirectory();
             };
-            rightPanel.addChild(_cbFilters);
+            rightPanel.add(_cbFilters);
         }
 
-        addChild(content);
+        add(content).fillHeight(true);
         if (_flags & FileDialogFlag.enableCreateDirectory)
         {
-            addChild(createButtonsPanel([ACTION_CREATE_DIRECTORY, _action, ACTION_CANCEL], 1, 1));
+            add(createButtonsPanel([ACTION_CREATE_DIRECTORY, _action, ACTION_CANCEL], 1, 1));
         }
         else
         {
-            addChild(createButtonsPanel([_action, ACTION_CANCEL], 0, 0));
+            add(createButtonsPanel([_action, ACTION_CANCEL], 0, 0));
         }
 
         _fileList.customCellAdapter = this;
@@ -1009,7 +1004,6 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
 
     this()
     {
-        fillW();
         clickable = true;
     }
 
@@ -1139,7 +1133,6 @@ class FilePathPanel : FrameLayout
         _segments.id = ID_SEGMENTS;
         _edPath = new EditLine;
         _edPath.id = ID_EDITOR;
-        _edPath.fillW();
         _edPath.enterKeyPressed = &onEnterKey;
         _edPath.focusChanged = &onEditorFocusChanged;
         _segments.clicked = &onSegmentsClickOutside;
@@ -1273,7 +1266,6 @@ class FileNameEditLine : Row
         _caption = tr("Open File");
         _edFileName = new EditLine;
         _edFileName.id = "FileNameEditLine_edFileName";
-        _edFileName.fillW();
         _edFileName.minWidth(BACKEND_CONSOLE ? 16 : 200);
         _btn = new Button("..."d);
         _btn.id = "FileNameEditLine_btnFile";
@@ -1314,8 +1306,8 @@ class FileNameEditLine : Row
             if (modifiedStateChanged.assigned)
                 modifiedStateChanged(src, modified);
         };
-        addChild(_edFileName);
-        addChild(_btn);
+        add(_edFileName).fillWidth(true);
+        add(_btn);
     }
 
     void setDefaultPopupMenu()

@@ -69,7 +69,7 @@ class CheckboxItem : SettingsItem
     {
         auto cb = new CheckBox(_label);
         cb.id = _id;
-        cb.fillW().minWidth(60.pt);
+        cb./+fillW().+/minWidth(60.pt);
         Setting setting = settings.settingByPath(_id);
         cb.checked = setting.boolean = setting.boolean ^ _inverse;
         cb.checkChanged = (Widget source, bool checked) { setting.boolean = checked ^ _inverse; };
@@ -94,7 +94,7 @@ class StringComboBoxItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto cb = new ComboBox(_items);
         cb.id = _id;
-        cb.fillW().minWidth(60.pt);
+        cb./+fillW().+/minWidth(60.pt);
         Setting setting = settings.settingByPath(_id);
         string itemID = setting.str = setting.str;
         int index = -1;
@@ -133,7 +133,7 @@ class IntComboBoxItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto cb = new ComboBox(_items);
         cb.id = _id;
-        cb.fillW().minWidth(60.pt);
+        cb./+fillW().+/minWidth(60.pt);
         auto setting = settings.settingByPath(_id);
         long itemID = setting.integer = setting.integer;
         int index = -1;
@@ -174,7 +174,7 @@ class FloatComboBoxItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto cb = new ComboBox(_items);
         cb.id = _id;
-        cb.fillW().minWidth(60.pt);
+        cb./+fillW().+/minWidth(60.pt);
         auto setting = settings.settingByPath(_id);
         setting.floating = setting.floating;
         long itemID = cast(long)(setting.floating * _divider + 0.5f);
@@ -221,7 +221,7 @@ class NumberEditItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto ed = new EditLine(_label);
         ed.id = _id ~ "-edit";
-        ed.fillW().minWidth(60.pt);
+        ed./+fillW().+/minWidth(60.pt);
         auto setting = settings.settingByPath(_id);
         int n = cast(int)setting.integerDef(_defaultValue);
         n = clamp(n, _minValue, _maxValue);
@@ -262,7 +262,7 @@ class StringEditItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto ed = new EditLine;
         ed.id = _id ~ "-edit";
-        ed.fillW().minWidth(60.pt);
+        ed./+fillW().+/minWidth(60.pt);
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
@@ -323,7 +323,7 @@ class ExecutableFileNameEditItem : SettingsItem
         auto ed = new FileNameEditLine;
         ed.id = _id ~ "-filename-edit";
         ed.addFilter(FileFilterEntry(tr("Executable files"), "*.exe", true));
-        ed.fillW().minWidth(60.pt);
+        ed./+fillW().+/minWidth(60.pt);
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
@@ -354,7 +354,7 @@ class PathNameEditItem : SettingsItem
         auto ed = new DirEditLine;
         ed.id = _id ~ "-path-edit";
         ed.addFilter(FileFilterEntry(tr("All files"), "*.*"));
-        ed.fillW().minWidth(60.pt);
+        ed./+fillW().+/minWidth(60.pt);
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
@@ -525,7 +525,7 @@ class SettingsPage
                     if (!tbl)
                     {
                         tbl = new TableLayout;
-                        tbl.fillW();
+//                         tbl.fillW();
                         tbl.colCount = 2;
                         res.addChild(tbl);
                     }
@@ -578,15 +578,13 @@ class SettingsDialog : Dialog
         _tree.itemSelected = &onTreeItemSelected;
         _frame = new FrameLayout;
         _frame.bindSubItem(this, "page");
-        _frame.fillW();
         createControls(_layout, _tree.items);
         auto content = new Row(2);
-        content.addChild(_tree);
+        content.add(_tree);
         content.addResizer();
-        content.addChild(_frame);
-        content.fillWH();
-        addChild(content);
-        addChild(createButtonsPanel([ACTION_APPLY, ACTION_CANCEL], 0, 0));
+        content.add(_frame).fillWidth(true);
+        add(content).fillHeight(true);
+        add(createButtonsPanel([ACTION_APPLY, ACTION_CANCEL], 0, 0));
         if (_layout.childCount > 0)
             _tree.selectItem(_layout.child(0).id);
     }

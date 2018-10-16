@@ -109,8 +109,6 @@ class Dialog : Column
         _buttonActions = actions;
         auto res = new Row;
         res.id = "buttons";
-        res.fillW();
-        res.layoutWeight = 0;
         foreach (i, a; actions)
         {
             if (splitBeforeIndex == i)
@@ -124,7 +122,7 @@ class Dialog : Column
             }
             if (a is ACTION_NO || a is ACTION_CANCEL)
                 _cancelButton = btn;
-            res.addChild(btn);
+            res.add(btn);
         }
         return res;
     }
@@ -144,7 +142,6 @@ class Dialog : Column
         if (_flags & DialogFlag.resizable)
         {
             wflags |= WindowFlag.resizable;
-            fillWH();
         }
         if (_flags & DialogFlag.popup)
         {

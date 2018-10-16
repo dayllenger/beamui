@@ -261,13 +261,13 @@ class AppFrame : Column
         if (_mainMenu)
         {
             _mainMenu.menuItemClicked = &onMenuItemClick;
-            addChild(_mainMenu);
+            add(_mainMenu);
         }
         if (_toolbarHost)
-            addChild(_toolbarHost);
-        addChild(_body);
+            add(_toolbarHost);
+        add(_body).fillHeight(true);
         if (_statusLine)
-            addChild(_statusLine);
+            add(_statusLine);
         updateShortcuts();
     }
 
@@ -303,8 +303,6 @@ class AppFrame : Column
     /// Create app body widget
     protected Widget createBody()
     {
-        Widget res = new Widget("APP_FRAME_BODY");
-        res.fillWH();
-        return res;
+        return new Widget("APP_FRAME_BODY");
     }
 }

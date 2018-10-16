@@ -586,10 +586,12 @@ class ScrollArea : ScrollAreaBase
         if (_contentWidget)
         {
             Box cb = Box(_clientBox.pos - _scrollPos, _fullContentSize);
+            /+ TODO: add some behaviour for the content widget like alignment or fill
             if (_contentWidget.fillsWidth)
                 cb.w = max(cb.w, _clientBox.w);
             if (_contentWidget.fillsHeight)
                 cb.h = max(cb.h, _clientBox.h);
+            +/
             _contentWidget.layout(cb);
         }
     }

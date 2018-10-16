@@ -31,6 +31,7 @@ import std.container.array;
 struct LayoutItem
 {
     Widget wt;
+    int index = -1;
 
     Boundaries bs;
     bool fill;
@@ -66,11 +67,42 @@ class LinearLayout : WidgetGroupDefaultDrawing
         private alias spacing_effect = requestLayout;
     }
 
+    static struct Cell
+    {
+        @property
+        {
+            /// Widget occupies all available width in layout
+            bool fillWidth() const { return _fillWidth; }
+            /// ditto
+            ref Cell fillWidth(bool b)
+            {
+                _fillWidth = b;
+                return this;
+            }
+            /// Widget occupies all available height in layout
+            bool fillHeight() const { return _fillHeight; }
+            /// ditto
+            ref Cell fillHeight(bool b)
+            {
+                _fillHeight = b;
+                return this;
+            }
+        }
+
+        private
+        {
+            bool _fillWidth;
+            bool _fillHeight;
+        }
+    }
+
     private
     {
         Orientation _orientation = Orientation.vertical;
         @forCSS("spacing") @animatable int _spacing = 6;
 
+        /// Array of cells, synchronized with the list of children
+        Array!Cell _cells;
         /// Temporary layout item list
         Array!LayoutItem items;
     }
@@ -83,19 +115,75 @@ class LinearLayout : WidgetGroupDefaultDrawing
 
     mixin SupportCSS;
 
+    private Cell defaultCell() const
+    {
+        if (_orientation == Orientation.vertical)
+            return Cell(true, false);
+        else
+            return Cell(false, true);
+    }
+
+    ref Cell add(Widget item)
+    {
+        super.addChild(item);
+        _cells ~= defaultCell;
+        return _cells.back;
+    }
+
     /// Add a spacer
     LinearLayout addSpacer()
     {
-        addChild(new Spacer);
+        super.addChild(new Spacer);
+        _cells ~= Cell(true, true);
         return this;
     }
 
     /// Add a resizer
     LinearLayout addResizer()
     {
-        addChild(new Resizer);
+        add(new Resizer);
         return this;
     }
+
+    override Widget addChild(Widget item)
+    {
+        super.addChild(item);
+        _cells ~= defaultCell;
+        return item;
+    }
+
+    override Widget insertChild(Widget item, int index)
+    {
+        super.insertChild(item, index);
+        _cells.insertBefore(_cells[index .. $], defaultCell);
+        return item;
+    }
+
+    override Widget removeChild(int index)
+    {
+        Widget res = super.removeChild(index);
+        if (res)
+            _cells.linearRemove(_cells[index .. index + 1]);
+        return res;
+    }
+
+    override Widget removeChild(string id)
+    {
+        return super.removeChild(id);
+    }
+
+    override Widget removeChild(Widget child)
+    {
+        return super.removeChild(child);
+    }
+
+    override void removeAllChildren(bool destroyObj = true)
+    {
+        super.removeAllChildren(destroyObj);
+        _cells.clear();
+    }
+
+    //===============================================================
 
     override Boundaries computeBoundaries()
     {
@@ -105,7 +193,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         {
             Widget wt = child(i);
             if (wt.visibility != Visibility.gone)
-                items ~= LayoutItem(wt);
+                items ~= LayoutItem(wt, i);
         }
         // now we can safely work with items
 
@@ -171,25 +259,25 @@ class LinearLayout : WidgetGroupDefaultDrawing
         enum horiz = dim == `w`;
 
         // expand in secondary direction
-        foreach (ref it; items)
+        foreach (ref item; items)
         {
             static if (horiz)
             {
-                it.fill = it.wt.fillsWidth;
-                it.result.h = min(geom.h, it.bs.max.h);
-                if (it.wt.widthDependsOnHeight)
-                    it.bs.nat.w = it.wt.widthForHeight(it.result.h);
+                item.fill = _cells[item.index].fillWidth;
+                item.result.h = _cells[item.index].fillHeight ? min(geom.h, item.bs.max.h) : item.bs.nat.h;
+                if (item.wt.widthDependsOnHeight)
+                    item.bs.nat.w = item.wt.widthForHeight(item.result.h);
             }
             else
             {
-                it.fill = it.wt.fillsHeight;
-                it.result.w = min(geom.w, it.bs.max.w);
-                if (it.wt.heightDependsOnWidth)
-                    it.bs.nat.h = it.wt.heightForWidth(it.result.w);
+                item.fill = _cells[item.index].fillHeight;
+                item.result.w = _cells[item.index].fillWidth ? min(geom.w, item.bs.max.w) : item.bs.nat.w;
+                if (item.wt.heightDependsOnWidth)
+                    item.bs.nat.h = item.wt.heightForWidth(item.result.w);
             }
         }
-        int space = spacing * (cast(int)items.length - 1);
-        layoutItems!dim(items, mixin("geom." ~ dim) - space);
+        int gaps = spacing * (cast(int)items.length - 1);
+        allocateSpace!dim(items, mixin("geom." ~ dim) - gaps);
         // apply resizers
         foreach (i; 1 .. items.length - 1)
         {
@@ -229,11 +317,12 @@ class LinearLayout : WidgetGroupDefaultDrawing
     }
 }
 
-void layoutItems(string dim)(ref Array!LayoutItem items, int parentSize)
+void allocateSpace(string dim)(ref Array!LayoutItem items, int parentSize)
 {
     int extraSize = distribute!dim(items, parentSize);
     if (extraSize > 0)
     {
+        // expand some widgets
         int fillCount;
         foreach (const ref it; items)
         {
@@ -245,8 +334,7 @@ void layoutItems(string dim)(ref Array!LayoutItem items, int parentSize)
             int perWidgetSize = extraSize / fillCount;
             foreach (ref it; items)
             {
-                int diff = mixin("it.bs.max." ~ dim) -
-                        mixin("it.result." ~ dim);
+                int diff = mixin("it.bs.max." ~ dim) - mixin("it.result." ~ dim);
                 // widget is bounded by max, treat as a fixed widget
                 if (perWidgetSize > diff)
                 {
@@ -552,8 +640,8 @@ class TableLayout : WidgetGroupDefaultDrawing
             row.bs.addWidth(cell.bs);
             row.bs.maximizeHeight(cell.bs);
             row.result.h = row.bs.nat.h;
-            if (cell.wt)
-                row.fill |= cell.wt.fillsHeight;
+//             if (cell.wt)
+//                 row.fill |= cell.wt.fillsHeight;
         }
 
         static void applyCellToCol(ref LayoutItem column, ref LayoutItem cell)
@@ -561,8 +649,8 @@ class TableLayout : WidgetGroupDefaultDrawing
             column.bs.maximizeWidth(cell.bs);
             column.bs.addHeight(cell.bs);
             column.result.w = column.bs.nat.w;
-            if (cell.wt)
-                column.fill |= cell.wt.fillsWidth;
+//             if (cell.wt)
+//                 column.fill |= cell.wt.fillsWidth;
         }
 
         Boundaries bs;
@@ -601,8 +689,8 @@ class TableLayout : WidgetGroupDefaultDrawing
         box = geom;
         applyPadding(geom);
 
-        layoutItems!`h`(_rows, geom.h - rowSpace);
-        layoutItems!`w`(_cols, geom.w - colSpace);
+        allocateSpace!`h`(_rows, geom.h - rowSpace);
+        allocateSpace!`w`(_cols, geom.w - colSpace);
         int ypen = 0;
         foreach (y; 0 .. rowCount)
         {
@@ -626,25 +714,6 @@ class Spacer : Widget
 {
     this()
     {
-        fillWH();
-    }
-}
-
-/// Horizontal spacer to fill empty space in horizontal layouts
-class HSpacer : Widget
-{
-    this()
-    {
-        fillW();
-    }
-}
-
-/// Vertical spacer to fill empty space in vertical layouts
-class VSpacer : Widget
-{
-    this()
-    {
-        fillH();
     }
 }
 
@@ -706,20 +775,7 @@ class Resizer : Widget
             _previousWidget = parentLayout.child(index - 1);
             _nextWidget = parentLayout.child(index + 1);
         }
-        if (validProps)
-        {
-            if (_orientation == Orientation.vertical)
-            {
-                fillsWidth = true;
-                fillsHeight = false;
-            }
-            else
-            {
-                fillsWidth = false;
-                fillsHeight = true;
-            }
-        }
-        else
+        if (!validProps)
         {
             _previousWidget = null;
             _nextWidget = null;

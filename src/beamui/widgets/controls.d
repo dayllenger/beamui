@@ -336,10 +336,9 @@ class Button : LinearLayout, ActionHolder
             {
                 _label = new Label(s);
                 _label.id = "label";
-                _label.fillW();
                 _label.bindSubItem(this, "label");
                 _label.state = State.parent;
-                addChild(_label);
+                add(_label).fillWidth(true);
             }
             else
                 _label.text = s;

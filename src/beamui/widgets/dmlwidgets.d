@@ -27,8 +27,6 @@ extern (C) void registerStandardWidgets()
     mixin(registerWidgetMetadataClass!FrameLayout);
     mixin(registerWidgetMetadataClass!TableLayout);
     mixin(registerWidgetMetadataClass!Spacer);
-    mixin(registerWidgetMetadataClass!HSpacer);
-    mixin(registerWidgetMetadataClass!VSpacer);
     mixin(registerWidgetMetadataClass!Resizer);
 
     import beamui.widgets.controls;

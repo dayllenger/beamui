@@ -237,9 +237,6 @@ private:
                          "transition-timing-function", "transition-delay")
     private static bool shorthandsForCSS;
 
-    bool _fillsWidth;
-    bool _fillsHeight;
-
     Background _background;
     FontRef _font;
 
@@ -932,31 +929,6 @@ public:
             _needLayout = false;
         }
 
-        /// Widget occupies all available width in layouts
-        bool fillsWidth() const { return _fillsWidth; }
-        /// ditto
-        Widget fillsWidth(bool value)
-        {
-            if (_fillsWidth != value)
-            {
-                _fillsWidth = value;
-                requestLayout();
-            }
-            return this;
-        }
-        /// Widget occupies all available height in layouts
-        bool fillsHeight() const { return _fillsHeight; }
-        /// ditto
-        Widget fillsHeight(bool value)
-        {
-            if (_fillsHeight != value)
-            {
-                _fillsHeight = value;
-                requestLayout();
-            }
-            return this;
-        }
-
         /// Widget hard width (SIZE_UNSPECIFIED if not set)
         int width() const
         {
@@ -1123,22 +1095,6 @@ public:
                 if (a.handler is null)
                     animations.remove(k);
         }
-    }
-
-    /// Shortcut to set filling both width and height
-    Widget fillWH()
-    {
-        return fillsWidth(true).fillsHeight(true);
-    }
-    /// Shortcut to set active `fillsWidth` policy
-    Widget fillW()
-    {
-        return fillsWidth(true);
-    }
-    /// Shortcut to set active `fillsHeight` policy
-    Widget fillH()
-    {
-        return fillsHeight(true);
     }
 
     /// Returns true if point is inside of this widget
@@ -2290,8 +2246,7 @@ public:
     /// Set bool property value, for ML loaders
     bool setBoolProperty(string name, bool value)
     {
-        mixin(generatePropertySetters("enabled", "clickable", "checkable", "focusable", "checked", "fontItalic",
-            "fillsWidth", "fillsHeight"));
+        mixin(generatePropertySetters("enabled", "clickable", "checkable", "focusable", "checked", "fontItalic"));
         return false;
     }
 

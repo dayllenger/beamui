@@ -221,16 +221,6 @@ CanvasWidget {
    layouts.d
 */
 
-HSpacer {
-    min-width: 5px;
-    weight: 100;
-}
-
-VSpacer {
-    min-height: 5px;
-    weight: 100;
-}
-
 Resizer {
     min-width: 3px;
     min-height: 3px;

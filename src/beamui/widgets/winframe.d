@@ -24,7 +24,6 @@ class WindowFrame : Column
     {
         _bodyLayout.replaceChild(widget, _bodyWidget);
         _bodyWidget = widget;
-        _bodyWidget.fillWH();
         _bodyWidget.parent = this;
         requestLayout();
     }
@@ -56,7 +55,6 @@ class WindowFrame : Column
 
         _title = new Label;
         _title.bindSubItem(this, "label");
-        _title.fillW();
 
         _closeButton = new Button(null, "close");
         _closeButton.styleID = "Button.transparent"; // TODO
@@ -64,19 +62,18 @@ class WindowFrame : Column
         if (!_showCloseButton)
             _closeButton.visibility = Visibility.gone;
 
-        _titleLayout.addChild(_title);
-        _titleLayout.addChild(_closeButton);
+        _titleLayout.add(_title);
+        _titleLayout.add(_closeButton);
 
         _bodyLayout = new Row;
         _bodyLayout.bindSubItem(this, "body");
 
         _bodyWidget = createBodyWidget();
-        _bodyLayout.addChild(_bodyWidget);
-        _bodyWidget.fillWH();
+        _bodyLayout.add(_bodyWidget).fillWidth();
         //_bodyWidget.bindSubItem(this, "body");
 
-        addChild(_titleLayout);
-        addChild(_bodyLayout);
+        add(_titleLayout);
+        add(_bodyLayout);
     }
 
     protected Widget createBodyWidget()

@@ -90,8 +90,8 @@ class ComboBoxBase : Row
         _button.focusable = false;
         _body.focusable = false;
         focusable = true;
-        addChild(_body);
-        addChild(_button);
+        add(_body).fillWidth();
+        add(_button);
     }
 
     protected Widget createSelectedItemWidget()
@@ -122,7 +122,6 @@ class ComboBoxBase : Row
         auto res = new Button(null, "scrollbar_btn_down");
         res.id = "COMBOBOX_BUTTON";
         res.bindSubItem(this, "button");
-        res.layoutWeight = 0;
         res.alignment = Align.vcenter | Align.right;
         res.clicked = &onClick;
         return res;
@@ -310,7 +309,6 @@ class ComboBox : ComboBoxBase
         res.id = "COMBOBOX_BODY";
         res.bindSubItem(this, "body");
         res.clickable = true;
-        res.fillW();
         int minItemWidth;
         foreach (i; 0 .. _adapter.itemCount)
         {
@@ -411,7 +409,6 @@ class IconTextComboBox : ComboBoxBase
         res.id = "COMBOBOX_BODY";
         res.bindSubItem(this, "body");
         res.clickable = true;
-        res.fillW();
         int minItemWidth;
         foreach (i; 0 .. _adapter.itemCount)
         {
@@ -493,7 +490,6 @@ class ComboEdit : ComboBox
     {
         auto res = new EditLine("COMBOBOX_BODY");
         res.bindSubItem(this, "body");
-        res.fillW();
         res.readOnly = false;
         _edit = res;
         postInit();
