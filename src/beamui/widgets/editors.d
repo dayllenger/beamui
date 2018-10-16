@@ -3930,13 +3930,13 @@ class FindPanel : Row
     {
         /// Returns true if panel is working in replace mode
         bool replaceMode() { return _replaceMode; }
-
+        /// ditto
         FindPanel replaceMode(bool newMode)
         {
             if (newMode != _replaceMode)
             {
                 _replaceMode = newMode;
-                childByID("replace").visibility = newMode ? Visibility.visible : Visibility.gone;
+                childByID("rowReplace").visibility = newMode ? Visibility.visible : Visibility.gone;
             }
             return this;
         }
@@ -3945,7 +3945,7 @@ class FindPanel : Row
         {
             return _edFind.text;
         }
-
+        /// ditto
         FindPanel searchText(dstring newText)
         {
             _edFind.text = newText;
@@ -3970,96 +3970,76 @@ class FindPanel : Row
     {
         _editor = editor;
         _replaceMode = replace;
-        import beamui.dml.parser;
 
-        try
-        {
-            parseML(q{
-                {
-                    fillsWidth: true
-                    Column {
-                        fillsWidth: true
-                        Row {
-                            EditLine { id: edFind; fillsWidth: true; alignment: vcenter }
-                            Button { id: btnFindNext; text: "Find next" }
-                            Button { id: btnFindPrev; text: "Find previous" }
-                            Column {
-                                VSpacer {}
-                                Row {
-                                    Button {
-                                        id: cbCaseSensitive
-                                        checkable: true
-                                        iconID: "find_case_sensitive"
-                                        tooltipText: "Case sensitive"
-                                        alignment: vcenter
-                                    }
-                                    Button {
-                                        id: cbWholeWords
-                                        checkable: true
-                                        iconID: "find_whole_words"
-                                        tooltipText: "Whole words"
-                                        alignment: vcenter
-                                    }
-                                    CheckBox { id: cbSelection; text: "Sel" }
-                                }
-                                VSpacer {}
-                            }
-                        }
-                        Row {
-                            id: replace
-                            EditLine { id: edReplace; fillsWidth: true; alignment: vcenter }
-                            Button { id: btnReplace; text: "Replace" }
-                            Button { id: btnReplaceAndFind; text: "Replace and find" }
-                            Button { id: btnReplaceAll; text: "Replace all" }
-                        }
-                    }
-                    Column {
-                        VSpacer {}
-                        Button { id: btnClose; iconID: close }
-                        VSpacer {}
-                    }
-                }
-            }, null, this);
-        }
-        catch (Exception e)
-        {
-            Log.e("Exception while parsing DML: ", e);
-        }
-        _edFind = childByID!EditLine("edFind");
-        _edReplace = childByID!EditLine("edReplace");
+        auto main = new Column;
 
-        if (initialText.length)
-        {
-            _edFind.text = initialText;
-            _edReplace.text = initialText;
-        }
-        debug (editors)
-            Log.d("currentText=", _edFind.text);
+        Row rowFind = new Row;
 
-        _edFind.enterKeyPressed ~= (EditWidgetBase e) {
-            findNext(_backDirection);
-            return true;
-        };
+        _edFind = new EditLine(initialText);
+        _edFind.alignment = Align.vcenter;
+        _edFind.enterKeyPressed = (EditWidgetBase e) { findNext(_backDirection); return true; };
         _edFind.contentChanged ~= &onFindTextChange;
 
-        _btnFindNext = childByID!Button("btnFindNext");
-        _btnFindPrev = childByID!Button("btnFindPrev");
-        _btnFindNext.clicked = &onButtonClick;
-        _btnFindPrev.clicked = &onButtonClick;
+        _btnFindNext = new Button("Find next");
+        _btnFindPrev = new Button("Find previous");
+        _btnFindNext.clicked = (Widget wt) { findNext(false); };
+        _btnFindPrev.clicked = (Widget wt) { findNext(true); };
 
-        childByID("btnReplace").clicked = &onButtonClick;
-        childByID("btnReplaceAndFind").clicked = &onButtonClick;
-        childByID("btnReplaceAll").clicked = &onButtonClick;
-        childByID("btnClose").clicked = &onButtonClick;
+        Row findSettings = new Row;
 
-        _cbCaseSensitive = childByID!Button("cbCaseSensitive");
-        _cbWholeWords = childByID!Button("cbWholeWords");
-        _cbSelection = childByID!CheckBox("cbSelection");
+        _cbCaseSensitive = new Button(null, "find_case_sensitive");
+        _cbWholeWords = new Button(null, "find_whole_words");
+        _cbCaseSensitive.checkable = true;
+        _cbWholeWords.checkable = true;
+        _cbCaseSensitive.tooltipText = "Case sensitive";
+        _cbWholeWords.tooltipText = "Whole words";
+        _cbCaseSensitive.alignment = Align.vcenter;
+        _cbWholeWords.alignment = Align.vcenter;
+        _cbSelection = new CheckBox("Sel");
         _cbCaseSensitive.checkChanged = &onCaseSensitiveCheckChange;
         _cbWholeWords.checkChanged = &onCaseSensitiveCheckChange;
         _cbSelection.checkChanged = &onCaseSensitiveCheckChange;
+
+        findSettings.add(_cbCaseSensitive);
+        findSettings.add(_cbWholeWords);
+        findSettings.add(_cbSelection);
+
+        rowFind.add(_edFind).fillWidth(true);
+        rowFind.add(_btnFindNext);
+        rowFind.add(_btnFindPrev);
+        rowFind.add(findSettings);
+
+        Row rowReplace = new Row;
+        rowReplace.id = "rowReplace";
         if (!replace)
-            childByID("replace").visibility = Visibility.gone;
+            rowReplace.visibility = Visibility.gone;
+
+        _edReplace = new EditLine(initialText);
+        _edReplace.alignment = Align.vcenter;
+
+        auto btnReplace = new Button("Replace");
+        auto btnReplaceAndFind = new Button("Replace and find");
+        auto btnReplaceAll = new Button("Replace all");
+        btnReplace.clicked = (Widget wt) { replaceOne(); };
+        btnReplaceAndFind.clicked = (Widget wt) {
+            replaceOne();
+            findNext(_backDirection);
+        };
+        btnReplaceAll.clicked = (Widget wt) { replaceAll(); };
+
+        rowReplace.add(_edReplace).fillWidth(true);
+        rowReplace.add(btnReplace);
+        rowReplace.add(btnReplaceAndFind);
+        rowReplace.add(btnReplaceAll);
+
+        main.add(rowFind);
+        main.add(rowReplace);
+
+        auto closeBtn = new Button(null, "close");
+        closeBtn.clicked = (Widget wt) { close(); };
+
+        add(main).fillWidth(true);
+        add(closeBtn).fillHeight(false);
 
         focusGroup = true;
 
@@ -4074,23 +4054,6 @@ class FindPanel : Row
         debug (editors)
             Log.d("activate.currentText=", currentText);
         _edFind.setCaretPos(0, cast(int)currentText.length, true);
-    }
-
-    void onButtonClick(Widget source)
-    {
-        switch (source.id)
-        {
-            case "btnFindNext": findNext(false); break;
-            case "btnFindPrev": findNext(true); break;
-            case "btnClose": close(); break;
-            case "btnReplace": replaceOne(); break;
-            case "btnReplaceAndFind":
-                replaceOne();
-                findNext(_backDirection);
-                break;
-            case "btnReplaceAll": replaceAll(); break;
-            default: break;
-        }
     }
 
     void close()

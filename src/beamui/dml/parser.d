@@ -29,6 +29,7 @@ import beamui.widgets.metadata;
 import beamui.widgets.widget;
 
 /// Parse DML code
+deprecated("Under revision, do not use it now")
 T parseML(T = Widget)(string code, string filename = "", Widget context = null)
 {
     Widget w = MLParser(code, filename, context).parse();
