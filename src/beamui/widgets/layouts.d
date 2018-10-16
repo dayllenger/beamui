@@ -87,12 +87,27 @@ class LinearLayout : WidgetGroupDefaultDrawing
                 _fillHeight = b;
                 return this;
             }
+
+            /// Margins (between widget bounds and its background)
+            Insets margins() const { return _margins; }
+            /// ditto
+            ref Cell margins(Insets value)
+            {
+                _margins = value;
+                return this;
+            }
+            /// ditto
+            ref Cell margins(int v)
+            {
+                return margins = Insets(v);
+            }
         }
 
         private
         {
             bool _fillWidth;
             bool _fillHeight;
+            Insets _margins;
         }
     }
 
@@ -205,10 +220,15 @@ class LinearLayout : WidgetGroupDefaultDrawing
         }
         // has items
         Boundaries bs;
-        foreach (ref it; items)
+        foreach (ref item; items)
         {
-            Boundaries wbs = it.wt.computeBoundaries();
-            it.bs = wbs;
+            Boundaries wbs = item.wt.computeBoundaries();
+            // add margins
+            Size m = _cells[item.index]._margins.size;
+            Boundaries ms = Boundaries(m, m, m);
+            wbs.addWidth(ms);
+            wbs.addHeight(ms);
+            item.bs = wbs;
             if (_orientation == Orientation.horizontal)
             {
                 bs.addWidth(wbs);
@@ -261,19 +281,20 @@ class LinearLayout : WidgetGroupDefaultDrawing
         // expand in secondary direction
         foreach (ref item; items)
         {
+            Cell* c = &_cells[item.index];
             static if (horiz)
             {
-                item.fill = _cells[item.index].fillWidth;
-                item.result.h = _cells[item.index].fillHeight ? min(geom.h, item.bs.max.h) : item.bs.nat.h;
+                item.fill = c.fillWidth;
+                item.result.h = c.fillHeight ? min(geom.h, item.bs.max.h) : item.bs.nat.h;
                 if (item.wt.widthDependsOnHeight)
-                    item.bs.nat.w = item.wt.widthForHeight(item.result.h);
+                    item.bs.nat.w = item.wt.widthForHeight(item.result.h - c._margins.height) + c._margins.width;
             }
             else
             {
-                item.fill = _cells[item.index].fillHeight;
-                item.result.w = _cells[item.index].fillWidth ? min(geom.w, item.bs.max.w) : item.bs.nat.w;
+                item.fill = c.fillHeight;
+                item.result.w = c.fillWidth ? min(geom.w, item.bs.max.w) : item.bs.nat.w;
                 if (item.wt.heightDependsOnWidth)
-                    item.bs.nat.h = item.wt.heightForWidth(item.result.w);
+                    item.bs.nat.h = item.wt.heightForWidth(item.result.w - c._margins.width) + c._margins.height;
             }
         }
         int gaps = spacing * (cast(int)items.length - 1);
@@ -299,19 +320,24 @@ class LinearLayout : WidgetGroupDefaultDrawing
         }
         // lay out items
         int pen;
-        foreach (ref it; items)
+        foreach (ref item; items)
         {
+            Insets m = _cells[item.index]._margins;
+            int w = item.result.w - m.width;
+            int h = item.result.h - m.height;
             static if (horiz)
             {
-                Box res = Box(geom.x + pen, geom.y, it.result.w, it.result.h);
-                it.wt.layout(res);
-                pen += res.w + _spacing;
+                pen += m.left;
+                Box res = Box(geom.x + pen, geom.y + m.top, w, h);
+                item.wt.layout(res);
+                pen += w + m.right + _spacing;
             }
             else
             {
-                Box res = Box(geom.x, geom.y + pen, it.result.w, it.result.h);
-                it.wt.layout(res);
-                pen += res.h + _spacing;
+                pen += m.top;
+                Box res = Box(geom.x + m.left, geom.y + pen, w, h);
+                item.wt.layout(res);
+                pen += h + m.bottom + _spacing;
             }
         }
     }
@@ -324,23 +350,23 @@ void allocateSpace(string dim)(ref Array!LayoutItem items, int parentSize)
     {
         // expand some widgets
         int fillCount;
-        foreach (const ref it; items)
+        foreach (const ref item; items)
         {
-            if (it.fill)
+            if (item.fill)
                 fillCount++;
         }
         if (fillCount > 0)
         {
             int perWidgetSize = extraSize / fillCount;
-            foreach (ref it; items)
+            foreach (ref item; items)
             {
-                int diff = mixin("it.bs.max." ~ dim) - mixin("it.result." ~ dim);
+                int diff = mixin("item.bs.max." ~ dim) - mixin("item.result." ~ dim);
                 // widget is bounded by max, treat as a fixed widget
                 if (perWidgetSize > diff)
                 {
-                    mixin("it.result." ~ dim) = mixin("it.bs.max." ~ dim);
+                    mixin("item.result." ~ dim) = mixin("item.bs.max." ~ dim);
                     extraSize -= diff;
-                    it.fill = false;
+                    item.fill = false;
                     fillCount--;
                 }
             }
@@ -352,16 +378,16 @@ void allocateSpace(string dim)(ref Array!LayoutItem items, int parentSize)
                 int front = error / 2;
                 int rear = fillCount - error + front;
                 int i;
-                foreach (ref it; items)
+                foreach (ref item; items)
                 {
-                    if (it.fill)
+                    if (item.fill)
                     {
                         int sz = perWidgetSize;
                         // apply correction
                         if (i < front || i >= rear)
                             sz++;
                         i++;
-                        mixin("it.result." ~ dim) += sz;
+                        mixin("item.result." ~ dim) += sz;
                     }
                 }
             }
@@ -373,17 +399,17 @@ int distribute(string dim)(ref Array!LayoutItem items, int bounds)
 {
     int min;
     int nat;
-    foreach (const ref it; items)
+    foreach (const ref item; items)
     {
-        min += mixin("it.bs.min." ~ dim);
-        nat += mixin("it.bs.nat." ~ dim);
+        min += mixin("item.bs.min." ~ dim);
+        nat += mixin("item.bs.nat." ~ dim);
     }
 
     if (bounds >= nat)
     {
-        foreach (ref it; items)
+        foreach (ref item; items)
         {
-            mixin("it.result." ~ dim) = mixin("it.bs.nat." ~ dim);
+            mixin("item.result." ~ dim) = mixin("item.bs.nat." ~ dim);
         }
         return bounds - nat;
     }
@@ -397,9 +423,9 @@ int distribute(string dim)(ref Array!LayoutItem items, int bounds)
             indices.length = len;
         foreach (i; 0 .. len)
         {
-            auto it = &items[i];
+            Boundaries* bs = &items[i].bs;
             indices[i][0] = cast(int)i;
-            indices[i][1] = mixin("it.bs.nat." ~ dim) - mixin("it.bs.min." ~ dim);
+            indices[i][1] = mixin("bs.nat." ~ dim) - mixin("bs.min." ~ dim);
         }
         // sort indices by difference between min and nat sizes
         sort!((a, b) => a[1] < b[1])(indices[0 .. len]);
@@ -409,16 +435,16 @@ int distribute(string dim)(ref Array!LayoutItem items, int bounds)
         foreach (i; 0 .. len)
         {
             size_t j = indices[i][0];
-            auto it = &items[j];
+            auto item = &items[j];
             int diff = indices[i][1];
             if (diff < available)
             {
-                mixin("it.result." ~ dim) = mixin("it.bs.nat." ~ dim);
+                mixin("item.result." ~ dim) = mixin("item.bs.nat." ~ dim);
                 available -= diff;
             }
             else
             {
-                mixin("it.result." ~ dim) = mixin("it.bs.min." ~ dim) + available;
+                mixin("item.result." ~ dim) = mixin("item.bs.min." ~ dim) + available;
                 available = 0;
             }
         }
