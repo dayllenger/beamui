@@ -403,7 +403,7 @@ class Menu : ListWidget
     /// Convenient function to add menu item by the action arguments
     Action addAction(dstring label, string iconID = null, uint keyCode = 0, uint keyFlags = 0)
     {
-        auto a = new Action(label, iconID);
+        auto a = new Action(label, iconID, keyCode, keyFlags);
         add(a);
         return a;
     }

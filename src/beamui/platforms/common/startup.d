@@ -596,6 +596,9 @@ extern (C) void releaseResourcesOnAppExit()
 {
     import beamui.style.style;
     import beamui.style.theme;
+    import core.memory : GC;
+
+    GC.collect();
 
     debug
     {

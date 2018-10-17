@@ -328,7 +328,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         // TODO: layout weight, percent
         enum horiz = dim == `w`;
 
-        // expand in secondary direction
+        // setup fill
         foreach (ref item; items)
         {
             Cell* c = &_cells[item.index];
@@ -376,24 +376,21 @@ class LinearLayout : WidgetGroupDefaultDrawing
             Cell* c = &_cells[item.index];
             Insets m = c.margins;
             Size sz = item.result;
+            Box res = Box(geom.x + m.left, geom.y + m.top, geom.w, geom.h);
             static if (horiz)
             {
-                Box res = Box(geom.x + pen + m.left, geom.y + m.top, geom.w, geom.h);
+                res.x += pen;
                 applyAlign(res, sz, Align.unspecified, c.valign);
-                res.w -= m.width;
-                res.h -= m.height;
-                item.wt.layout(res);
-                pen += sz.w + _spacing;
             }
             else
             {
-                Box res = Box(geom.x + m.left, geom.y + pen + m.top, geom.w, geom.h);
+                res.y += pen;
                 applyAlign(res, sz, c.halign, Align.unspecified);
-                res.w -= m.width;
-                res.h -= m.height;
-                item.wt.layout(res);
-                pen += sz.h + _spacing;
             }
+            res.w -= m.width;
+            res.h -= m.height;
+            item.wt.layout(res);
+            pen += mixin("sz." ~ dim) + _spacing;
         }
     }
 }
@@ -402,52 +399,7 @@ void allocateSpace(string dim)(ref Array!LayoutItem items, int parentSize)
 {
     int extraSize = distribute!dim(items, parentSize);
     if (extraSize > 0)
-    {
-        // expand some widgets
-        int fillCount;
-        foreach (const ref item; items)
-        {
-            if (item.fill)
-                fillCount++;
-        }
-        if (fillCount > 0)
-        {
-            int perWidgetSize = extraSize / fillCount;
-            foreach (ref item; items)
-            {
-                int diff = mixin("item.bs.max." ~ dim) - mixin("item.result." ~ dim);
-                // widget is bounded by max, treat as a fixed widget
-                if (perWidgetSize > diff)
-                {
-                    mixin("item.result." ~ dim) = mixin("item.bs.max." ~ dim);
-                    extraSize -= diff;
-                    item.fill = false;
-                    fillCount--;
-                }
-            }
-            if (fillCount > 0)
-            {
-                perWidgetSize = max(extraSize, 0) / fillCount; // FIXME: max needed?
-                // correction for perfect results
-                int error = extraSize - perWidgetSize * fillCount;
-                int front = error / 2;
-                int rear = fillCount - error + front;
-                int i;
-                foreach (ref item; items)
-                {
-                    if (item.fill)
-                    {
-                        int sz = perWidgetSize;
-                        // apply correction
-                        if (i < front || i >= rear)
-                            sz++;
-                        i++;
-                        mixin("item.result." ~ dim) += sz;
-                    }
-                }
-            }
-        }
-    }
+        expand!dim(items, extraSize);
 }
 
 int distribute(string dim)(ref Array!LayoutItem items, int bounds)
@@ -504,6 +456,58 @@ int distribute(string dim)(ref Array!LayoutItem items, int bounds)
             }
         }
         return 0;
+    }
+}
+
+void expand(string dim)(ref Array!LayoutItem items, int extraSize)
+{
+    assert(extraSize > 0);
+
+    int fillCount;
+    foreach (const ref item; items)
+    {
+        if (item.fill)
+            fillCount++;
+    }
+    if (fillCount > 0)
+    {
+        int perWidgetSize = extraSize / fillCount;
+        foreach (ref item; items)
+        {
+            if (item.fill)
+            {
+                int diff = mixin("item.bs.max." ~ dim) - mixin("item.result." ~ dim);
+                // widget is bounded by max, treat as a fixed widget
+                if (perWidgetSize > diff)
+                {
+                    mixin("item.result." ~ dim) = mixin("item.bs.max." ~ dim);
+                    extraSize -= diff;
+                    item.fill = false;
+                    fillCount--;
+                }
+            }
+        }
+        if (fillCount > 0)
+        {
+            perWidgetSize = max(extraSize, 0) / fillCount; // FIXME: max needed?
+            // correction for perfect results
+            int error = extraSize - perWidgetSize * fillCount;
+            int front = error / 2;
+            int rear = fillCount - error + front;
+            int i;
+            foreach (ref item; items)
+            {
+                if (item.fill)
+                {
+                    int sz = perWidgetSize;
+                    // apply correction
+                    if (i < front || i >= rear)
+                        sz++;
+                    i++;
+                    mixin("item.result." ~ dim) += sz;
+                }
+            }
+        }
     }
 }
 

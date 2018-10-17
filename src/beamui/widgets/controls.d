@@ -132,6 +132,16 @@ class Label : Widget
         FontRef font = font();
         if (maxLines == 1)
         {
+            // until text align will be fully implemented
+            Align ha;
+            if (textAlign == TextAlign.center)
+                ha = Align.hcenter;
+            else if (textAlign == TextAlign.end)
+                ha = Align.right;
+            else
+                ha = Align.left;
+            Size sz = font.textSize(text);
+            applyAlign(b, sz, ha, Align.vcenter);
             font.drawText(buf, b.x, b.y, text, textColor, 4, 0, textFlags);
         }
         else
@@ -259,7 +269,7 @@ class Button : LinearLayout, ActionHolder
                 _icon.id = "icon";
                 _icon.bindSubItem(this, "icon");
                 _icon.state = State.parent;
-                add(_icon).alignment(Align.center);
+                add(_icon);
             }
             else
                 _icon.imageID = id;
