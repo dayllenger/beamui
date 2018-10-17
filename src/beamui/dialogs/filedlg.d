@@ -518,9 +518,8 @@ class FileDialog : Dialog, CustomGridCellAdapter
 
     void autofitGrid()
     {
-//         _fileList.autoFitColumnWidths(); FIXME
-        //_fileList.setColWidth(1, 0);
-//         _fileList.fillColumnWidth(1);
+        _fileList.autoFitColumnWidths();
+        _fileList.fillColumnWidth(1);
     }
 
     override bool onKeyEvent(KeyEvent event)

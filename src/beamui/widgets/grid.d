@@ -602,7 +602,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
     }
 
-    /// Set new size
+    /// Set number of columns and rows in the grid
     void resize(int c, int r)
     {
         if (c == cols && r == rows)
@@ -900,8 +900,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 extra.h = b.y + b.h - maxscrolly;
         }
 
-        scrollPos.x = clamp(csz.w + extra.w - clientBox.w, 0, scrollPos.x);
-        scrollPos.y = clamp(csz.h + extra.h - clientBox.h, 0, scrollPos.y);
+        scrollPos.x = min(scrollPos.x, max(0, csz.w + extra.w - clientBox.w));
+        scrollPos.y = min(scrollPos.y, max(0, csz.h + extra.h - clientBox.h));
     }
 
     /// Set scroll position to show specified cell as top left in scrollable area; col or row -1 value means no change
@@ -923,7 +923,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return changed;
     }
 
-    /// Process horizontal scrollbar event
     override void onHScroll(ScrollEvent event)
     {
         // scroll w/o changing selection
@@ -961,7 +960,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
     }
 
-    /// Process vertical scrollbar event
     override void onVScroll(ScrollEvent event)
     {
         // scroll w/o changing selection
@@ -1691,7 +1689,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return super.onKeyEvent(event);
     }
 
-    /// Handle mouse wheel events
     override bool onMouseEvent(MouseEvent event)
     {
         if (visibility != Visibility.visible)
@@ -1939,7 +1936,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (!_cols || !_rows)
             return; // no cells
-        auto saver = ClipRectSaver(buf, clientBox, 0);
 
         int nscols = nonScrollCols;
         int nsrows = nonScrollRows;

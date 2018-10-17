@@ -118,18 +118,12 @@ class ScrollAreaBase : WidgetGroup
         /// Inner area, excluding additional controls like scrollbars
         ref const(Box) clientBox() const { return _clientBox; }
         /// ditto
-        protected void clientBox(ref Box b)
-        {
-            _clientBox = b;
-        }
+        protected ref Box clientBox() { return _clientBox; }
 
         /// Scroll offset in pixels
-        Point scrollPos() { return _scrollPos; }
+        Point scrollPos() const { return _scrollPos; }
         /// ditto
-        protected void scrollPos(Point p)
-        {
-            _scrollPos = p;
-        }
+        protected ref Point scrollPos() { return _scrollPos; }
 
         /// Get full content size in pixels
         Size fullContentSize()
@@ -181,7 +175,7 @@ class ScrollAreaBase : WidgetGroup
                 if (_hscrollbar)
                 {
                     _hscrollbar.sendScrollEvent(event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
-                    return true;
+                    return true; // TODO: return false when nothing to scroll
                 }
             }
             else if (event.flags == 0)
@@ -244,7 +238,6 @@ class ScrollAreaBase : WidgetGroup
     override Boundaries computeBoundaries()
     {
         Boundaries bs;
-        bs.min = computeMinSize();
         // do first measure to get scrollbar widths
         if (_hscrollbar && _hscrollbarMode == ScrollBarMode.visible || _hscrollbarMode == ScrollBarMode.automatic)
         {
@@ -254,7 +247,7 @@ class ScrollAreaBase : WidgetGroup
         {
             _sbsz.w = _vscrollbar.computeBoundaries().nat.w;
         }
-        bs.min = bs.min + _sbsz;
+        bs.min = computeMinSize() + _sbsz;
         bs.nat = bs.min;
 
         applyStyle(bs);
@@ -449,14 +442,14 @@ class ScrollAreaBase : WidgetGroup
         _vscrollbar.maybe.onDraw(buf);
         {
             // apply clipping
-            auto saver2 = ClipRectSaver(buf, _clientBox, alpha);
+            auto saver2 = ClipRectSaver(buf, _clientBox, 0);
             drawClient(buf);
         }
         {
             // no clipping for drawing of extended area
             Box clipb = b;
             clipb.h = _clientBox.h;
-            auto saver3 = ClipRectSaver(buf, clipb, alpha);
+            auto saver3 = ClipRectSaver(buf, clipb, 0);
             drawExtendedArea(buf);
         }
     }
