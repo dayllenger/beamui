@@ -394,14 +394,15 @@ public:
     Listener!(void delegate(Style[] chain)) stylesRecomputed;
 
     /// Recompute styles, only if needed
-    protected void updateStyles()
+    protected void updateStyles() inout
     {
         if (_needToRecomputeStyle)
         {
-            Style[] chain = recomputeStyle(getStyleSelector());
-            if (stylesRecomputed.assigned)
-                stylesRecomputed(chain);
-            _needToRecomputeStyle = false;
+            Widget wt = cast(Widget)this;
+            wt._needToRecomputeStyle = false;
+            Style[] chain = wt.recomputeStyle(getStyleSelector());
+            if (wt.stylesRecomputed.assigned)
+                wt.stylesRecomputed(chain);
         }
     }
 
@@ -467,12 +468,11 @@ public:
         /// Padding (between background bounds and content of widget)
         Insets padding() const
         {
-            (cast(Widget)this).updateStyles();
+            updateStyles();
             // get max padding from style padding and background drawable padding
             Insets p = Insets(_paddingTop.toDevice, _paddingRight.toDevice,
                               _paddingBottom.toDevice, _paddingLeft.toDevice);
-            auto bg = (cast(Widget)this).background;
-            Insets bp = bg.padding;
+            Insets bp = _background.padding;
             if (p.left < bp.left)
                 p.left = bp.left;
             if (p.right < bp.right)
@@ -512,6 +512,7 @@ public:
         ///
         Insets borderWidth() const
         {
+            updateStyles();
             return Insets(_borderWidthTop.toDevice, _borderWidthRight.toDevice,
                           _borderWidthBottom.toDevice, _borderWidthLeft.toDevice);
         }
@@ -544,7 +545,11 @@ public:
             requestLayout();
         }
         /// Color of widget border
-        Color borderColor() const { return _borderColor; }
+        Color borderColor() const
+        {
+            updateStyles();
+            return _borderColor;
+        }
         /// ditto
         Widget borderColor(Color value)
         {
@@ -558,7 +563,11 @@ public:
         }
 
         /// Background color of the widget
-        Color backgroundColor() const { return _backgroundColor; }
+        Color backgroundColor() const
+        {
+            updateStyles();
+            return _backgroundColor;
+        }
         /// ditto
         Widget backgroundColor(Color value)
         {
@@ -585,7 +594,11 @@ public:
         }
 
         /// Background image drawable
-        const(Drawable) backgroundImage() const { return _backgroundImage; }
+        const(Drawable) backgroundImage() const
+        {
+            updateStyles();
+            return _backgroundImage;
+        }
         /// ditto
         Widget backgroundImage(Drawable image)
         {
@@ -599,7 +612,11 @@ public:
         }
 
         ///
-        inout(BoxShadowDrawable) boxShadow() inout { return _boxShadow; }
+        inout(BoxShadowDrawable) boxShadow() inout
+        {
+            updateStyles();
+            return _boxShadow;
+        }
         /// ditto
         Widget boxShadow(BoxShadowDrawable shadow)
         {
@@ -615,12 +632,16 @@ public:
         /// Get widget standard background. The background object has the same lifetime as the widget.
         inout(Background) background() inout
         {
-            (cast(Widget)this).updateStyles();
+            updateStyles();
             return _background;
         }
 
         /// Widget drawing alpha value (0 = opaque .. 255 = transparent)
-        ubyte alpha() const { return _alpha; }
+        ubyte alpha() const
+        {
+            updateStyles();
+            return _alpha;
+        }
         /// ditto
         Widget alpha(ubyte value)
         {
@@ -628,8 +649,13 @@ public:
             return this;
         }
         private alias alpha_effect = invalidate;
+
         /// Text color
-        Color textColor() const { return _textColor; }
+        Color textColor() const
+        {
+            updateStyles();
+            return _textColor;
+        }
         /// ditto
         Widget textColor(Color value)
         {
@@ -652,11 +678,16 @@ public:
         private alias textColor_effect = invalidate;
 
         /// Get color to draw focus rectangle, Color.transparent if no focus rect should be drawn
-        Color focusRectColor() const { return _focusRectColor; }
+        Color focusRectColor() const
+        {
+            updateStyles();
+            return _focusRectColor;
+        }
 
         /// Text flags (bit set of TextFlag enum values)
         TextFlag textFlags() const
         {
+            updateStyles();
             TextFlag res = _textFlags;
             if (res == TextFlag.parent)
             {
@@ -702,7 +733,11 @@ public:
         }
 
         /// Font face for widget
-        string fontFace() const { return _fontFace; }
+        string fontFace() const
+        {
+            updateStyles();
+            return _fontFace;
+        }
         /// ditto
         Widget fontFace(string value)
         {
@@ -716,7 +751,11 @@ public:
             requestLayout();
         }
         /// Font family for widget
-        FontFamily fontFamily() const { return _fontFamily; }
+        FontFamily fontFamily() const
+        {
+            updateStyles();
+            return _fontFamily;
+        }
         /// ditto
         Widget fontFamily(FontFamily value)
         {
@@ -727,6 +766,7 @@ public:
         /// Font style (italic/normal) for widget
         bool fontItalic() const
         {
+            updateStyles();
             return _fontStyle == FontStyle.italic;
         }
         /// ditto
@@ -739,6 +779,7 @@ public:
         /// Font size in pixels
         int fontSize() const // TODO: em and percent
         {
+            updateStyles();
             int res = _fontSize.toDevice;
             if (_fontSize.is_em)
                 return res / 100;
@@ -762,7 +803,11 @@ public:
         }
         private alias fontSize_effect = fontFace_effect;
         /// Font weight for widget
-        ushort fontWeight() const { return _fontWeight; }
+        ushort fontWeight() const
+        {
+            updateStyles();
+            return _fontWeight;
+        }
         /// ditto
         Widget fontWeight(ushort value)
         {
@@ -775,6 +820,7 @@ public:
         /// Returns font set for widget using style or set manually
         FontRef font() const
         {
+            updateStyles();
             Widget wt = cast(Widget)this;
             if (!wt._font.isNull)
                 return wt._font;
@@ -811,7 +857,7 @@ public:
         {
             // we need to be sure that the style is updated
             // it might set _needDraw or _needLayout flag
-            (cast(Widget)this).updateStyles();
+            updateStyles();
             return _needDraw;
         }
         /// Returns true is widget is being animated - need to call animate() and redraw
@@ -869,6 +915,7 @@ public:
         /// Widget hard width (SIZE_UNSPECIFIED if not set)
         int width() const
         {
+            updateStyles();
             return _width.toDevice;
         }
         /// ditto
@@ -885,6 +932,7 @@ public:
         /// Widget hard height (SIZE_UNSPECIFIED if not set)
         int height() const
         {
+            updateStyles();
             return _height.toDevice;
         }
         /// ditto
@@ -901,6 +949,7 @@ public:
         /// Min width style constraint (0, Dimension.zero or Dimension.none for no constraint)
         int minWidth() const
         {
+            updateStyles();
             return _minWidth.toDevice;
         }
         /// ditto
@@ -919,6 +968,7 @@ public:
         /// Max width style constraint (SIZE_UNSPECIFIED or Dimension.none if no constraint)
         int maxWidth() const
         {
+            updateStyles();
             return _maxWidth.toDevice;
         }
         /// ditto
@@ -935,6 +985,7 @@ public:
         /// Min height style constraint (0, Dimension.zero or Dimension.none for no constraint)
         int minHeight() const
         {
+            updateStyles();
             return _minHeight.toDevice;
         }
         /// ditto
@@ -953,6 +1004,7 @@ public:
         /// Max height style constraint (SIZE_UNSPECIFIED or Dimension.none if no constraint)
         int maxHeight() const
         {
+            updateStyles();
             return _maxHeight.toDevice;
         }
         /// ditto

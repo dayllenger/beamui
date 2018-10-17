@@ -57,7 +57,11 @@ class LinearLayout : WidgetGroupDefaultDrawing
         }
 
         /// Space between items
-        int spacing() const { return _spacing; }
+        int spacing() const
+        {
+            updateStyles();
+            return _spacing;
+        }
         /// ditto
         LinearLayout spacing(int value)
         {
@@ -620,7 +624,11 @@ class TableLayout : WidgetGroupDefaultDrawing
         }
 
         /// Space between rows (vertical)
-        int rowSpacing() const { return _rowSpacing; }
+        int rowSpacing() const
+        {
+            updateStyles();
+            return _rowSpacing;
+        }
         /// ditto
         TableLayout rowSpacing(int value)
         {
@@ -629,7 +637,11 @@ class TableLayout : WidgetGroupDefaultDrawing
         }
 
         /// Space between columns (horizontal)
-        int columnSpacing() const { return _colSpacing; }
+        int columnSpacing() const
+        {
+            updateStyles();
+            return _colSpacing;
+        }
         /// ditto
         TableLayout columnSpacing(int value)
         {

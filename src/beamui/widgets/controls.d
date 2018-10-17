@@ -22,7 +22,11 @@ class Label : Widget
     @property
     {
         /// Max lines to show, 0 if no limit
-        int maxLines() const { return _maxLines; }
+        int maxLines() const
+        {
+            updateStyles();
+            return _maxLines;
+        }
         /// ditto
         Label maxLines(int n)
         {
@@ -35,7 +39,11 @@ class Label : Widget
         }
 
         /// Text alignment - start, center, end, or justify
-        TextAlign textAlign() const { return _textAlign; }
+        TextAlign textAlign() const
+        {
+            updateStyles();
+            return _textAlign;
+        }
         /// ditto
         Label textAlign(TextAlign a)
         {
