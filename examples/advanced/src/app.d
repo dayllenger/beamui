@@ -27,14 +27,14 @@ extern (C) int UIAppMain(string[] args)
     resourceList.embed!"resources.list";
     // and you may setup resource paths
     // not required if only embedded resources are used
+    /*
     string[] resourceDirs = [
-        //appendPath(exePath, "res/"), // at the same directory as executable
-        appendPath(exePath, "../res/"), // at project directory
-        appendPath(exePath, "../../../res/"),   // for Visual D builds
-        //appendPath(exePath, "../../../../res/"),// for Mono-D builds
+        appendPath(exePath, "res/"), // at the same directory as executable
+        appendPath(exePath, "../res/"), // at the dub project directory
     ];
     // will use only existing directories
     platform.resourceDirs = resourceDirs;
+    */
 
     // select application language, English is default
     //platform.uiLanguage = "ru";
@@ -142,7 +142,6 @@ extern (C) int UIAppMain(string[] args)
 
     auto viewMenu = mainMenu.addSubmenu(tr("&View"));
     auto themeMenu = viewMenu.addSubmenu(tr("&Theme"));
-    themeMenu.addAction(tr("Reload theme")).bind(frame, &platform.reloadTheme);
     {
         Action def = new Action(tr("Default")).checkable(true);
         Action light = new Action(tr("Light")).checkable(true).checked(true);

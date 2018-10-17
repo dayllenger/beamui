@@ -66,7 +66,7 @@
 ./themes/light/hdpi/hdpi_btn_radio_on_pressed.png
 ./themes/light/hdpi/hdpi_switch_off.png
 ./themes/light/hdpi/hdpi_switch_on.png
-#./themes/light/light.css
+./themes/light/light.css
 ./themes/light/progress_bar_gauge_animation.png
 ./themes/light/scrollbar_btn_background_normal.9.png
 ./themes/light/scrollbar_btn_down.png
