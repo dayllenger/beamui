@@ -645,13 +645,16 @@ class Window : CustomEventTarget
     void scheduleTooltip(WeakRef!Widget ownerWidget, long delay, PopupAlign alignment = PopupAlign.point,
                          int x = int.min, int y = int.min)
     {
-        debug (tooltips)
-            Log.d("schedule tooltip");
-        _tooltip.alignment = alignment;
-        _tooltip.x = x;
-        _tooltip.y = y;
-        _tooltip.ownerWidget = ownerWidget;
-        _tooltip.timerID = setTimer(ownerWidget, delay);
+        if (_tooltip.ownerWidget.get != ownerWidget.get)
+        {
+            debug (tooltips)
+                Log.d("schedule tooltip");
+            _tooltip.alignment = alignment;
+            _tooltip.x = x;
+            _tooltip.y = y;
+            _tooltip.ownerWidget = ownerWidget;
+            _tooltip.timerID = setTimer(&onTooltipTimer, delay);
+        }
     }
 
     /// Call when tooltip timer is expired
@@ -712,18 +715,23 @@ class Window : CustomEventTarget
     /// Hide tooltip if shown and cancel tooltip timer if set
     void hideTooltip()
     {
-        debug (tooltips)
-            Log.d("hide tooltip");
         if (_tooltip.popup)
         {
             debug (tooltips)
                 Log.d("destroy tooltip");
             destroy(_tooltip.popup);
             _tooltip.popup = null;
+            _tooltip.ownerWidget.nullify();
             _mainWidget.maybe.invalidate();
         }
         if (_tooltip.timerID)
+        {
+            debug (tooltips)
+                Log.d("cancel tooltip timer");
             cancelTimer(_tooltip.timerID);
+            _tooltip.timerID = 0;
+            _tooltip.ownerWidget.nullify();
+        }
     }
 
     /// Show new popup
@@ -1799,6 +1807,19 @@ class Window : CustomEventTarget
             return 0;
         }
         ulong res = _timerQueue.add(destination, intervalMillis);
+        long nextInterval = _timerQueue.nextIntervalMillis();
+        if (nextInterval > 0)
+        {
+            scheduleSystemTimer(intervalMillis);
+        }
+        return res;
+    }
+    /// Set timer with a delegate, that will be called after interval expiration; returns timer id
+    /// Node: You must cancel the timer if you destroy object this handler belongs to.
+    ulong setTimer(bool delegate() handler, long intervalMillis)
+    {
+        assert(handler !is null);
+        ulong res = _timerQueue.add(handler, intervalMillis);
         long nextInterval = _timerQueue.nextIntervalMillis();
         if (nextInterval > 0)
         {

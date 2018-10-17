@@ -28,6 +28,14 @@ class TimerQueue
         sort(queue);
         return item.id;
     }
+    /// ditto
+    ulong add(bool delegate() handler, long intervalMillis)
+    {
+        TimerInfo item = TimerInfo(handler, intervalMillis);
+        queue ~= item;
+        sort(queue);
+        return item.id;
+    }
 
     /// Cancel specified timer
     void cancelTimer(ulong timerID)
@@ -64,17 +72,7 @@ class TimerQueue
             // if expired
             if (timer.nextTimestamp <= ts)
             {
-                /+
-                if (timer.id == _tooltip.timerID)
-                {
-                    // special case for tooltip timer
-                    onTooltipTimer();
-                    timer.cancel();
-                }
-                else+/
-                {
-                    timer.notify();
-                }
+                timer.notify();
                 result = true;
             }
         }
@@ -94,12 +92,13 @@ class TimerQueue
 
 struct TimerInfo
 {
-    protected
+    private
     {
         ulong _id;
         long _interval;
         long _nextTimestamp;
         WeakRef!Widget _targetWidget;
+        bool delegate() _handler;
     }
 
     static __gshared ulong nextID;
@@ -108,11 +107,20 @@ struct TimerInfo
 
     this(WeakRef!Widget targetWidget, long intervalMillis)
     {
-        _id = ++nextID;
         assert(intervalMillis >= 0 && intervalMillis < 7 * 24 * 60 * 60 * 1000L);
-        _targetWidget = targetWidget;
+        _id = ++nextID;
         _interval = intervalMillis;
         _nextTimestamp = currentTimeMillis + _interval;
+        _targetWidget = targetWidget;
+    }
+
+    this(bool delegate() handler, long intervalMillis)
+    {
+        assert(intervalMillis >= 0 && intervalMillis < 7 * 24 * 60 * 60 * 1000L);
+        _id = ++nextID;
+        _interval = intervalMillis;
+        _nextTimestamp = currentTimeMillis + _interval;
+        _handler = handler;
     }
 
     @property
@@ -132,15 +140,10 @@ struct TimerInfo
         {
             return _nextTimestamp;
         }
-        /// Widget to route timer event to
-        WeakRef!Widget targetWidget()
-        {
-            return _targetWidget;
-        }
         /// Returns true if timer is not yet cancelled
         bool valid() const
         {
-            return !_targetWidget.isNull;
+            return !_targetWidget.isNull || _handler !is null;
         }
     }
 
@@ -155,12 +158,21 @@ struct TimerInfo
                 _targetWidget.nullify();
             }
         }
+        else if (_handler)
+        {
+            _nextTimestamp = currentTimeMillis + _interval;
+            if (!_handler())
+            {
+                _handler = null;
+            }
+        }
     }
 
     /// Cancel timer
     void cancel()
     {
         _targetWidget.nullify();
+        _handler = null;
     }
 
     bool opEquals(const ref TimerInfo b) const
