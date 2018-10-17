@@ -1732,7 +1732,12 @@ public:
                 handleClick();
                 return true;
             }
-            if (event.action == MouseAction.focusOut || event.action == MouseAction.cancel)
+            if (event.action == MouseAction.focusOut)
+            {
+                resetState(State.pressed);
+                return true;
+            }
+            if (event.action == MouseAction.cancel)
             {
                 resetState(State.pressed);
                 resetState(State.hovered);
@@ -1752,6 +1757,8 @@ public:
         {
             if (canShowPopupMenu(event.x, event.y))
             {
+                if (canFocus)
+                    setFocus();
                 showPopupMenu(event.x, event.y);
                 return true;
             }
