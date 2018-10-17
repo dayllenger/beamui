@@ -105,7 +105,7 @@ __gshared long DOUBLE_CLICK_THRESHOLD_MS = 400;
 /// Mouse button state details for MouseEvent
 struct ButtonDetails
 {
-    protected
+    private
     {
         /// Clock.currStdTime() for down event of this button (0 if button is up) set after double click to time when first click occured.
         long _prevDownTs;
@@ -197,7 +197,7 @@ struct ButtonDetails
 */
 final class MouseEvent
 {
-    protected
+    private
     {
         /// Timestamp of event
         long _eventTimestamp;
@@ -654,7 +654,7 @@ enum KeyCode : uint
 /// Keyboard event
 final class KeyEvent
 {
-    protected
+    private
     {
         /// Action
         KeyAction _action;

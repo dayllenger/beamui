@@ -534,6 +534,16 @@ class TabControl : WidgetGroupDefaultDrawing
                 selectTab(index, true);
             }
         }
+        if (event.action == MouseAction.wheel)
+        {
+            // select next or previous tab
+            int next = tabIndex(_selectedTabID) - event.wheelDelta;
+            if (next < 0)
+                next = tabCount - 1;
+            if (next >= tabCount)
+                next = 0;
+            selectTab(next, true);
+        }
         return true;
     }
 
