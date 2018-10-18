@@ -1055,10 +1055,20 @@ public:
     }
 
     /// Experimental API
+    protected bool hasAnimation(string name)
+    {
+        return (name in animations) !is null;
+    }
+    /// Experimental API
     protected void addAnimation(string name, long duration, void delegate(double) handler)
     {
         assert(name && duration > 0 && handler);
         animations[name] = Animation(duration * ONE_SECOND / 1000, handler);
+    }
+    /// Experimental API
+    protected void cancelAnimation(string name)
+    {
+        animations.remove(name);
     }
 
     /// Animate widget; interval is time left from previous draw, in hnsecs (1/10000000 of second)
@@ -2648,14 +2658,6 @@ mixin template SupportCSS(BaseClass = Widget)
         static assert(!isSomeFunction!field, "Should be a field: " ~ var);
         static assert(hasUDA!(field, forCSS), "The field " ~ var ~ " is not for CSS");
 
-        if (fromOutside)
-            ownProperty(var);
-
-        T current = field;
-        // do nothing if changed nothing
-        if (current is value)
-            return;
-
         enum name = var[0] == '_' ? var[1 .. $] : var;
         enum sideEffectName = name ~ "_effect";
 
@@ -2671,10 +2673,24 @@ mixin template SupportCSS(BaseClass = Widget)
         else
             enum callSideEffects = "";
 
+        if (fromOutside)
+            ownProperty(var);
+
+        T current = field;
+
         // check animation
         static if (hasUDA!(field, animatable))
         {
             import beamui.core.animations : Animation, Transition;
+
+            // do nothing if changed nothing
+            if (current is value)
+            {
+                // cancel possible animation
+                if (hasAnimation(var))
+                    cancelAnimation(var);
+                return;
+            }
 
             string cssName = getUDAs!(field, forCSS)[0].name;
             if (hasTransitionFor(cssName))
@@ -2690,6 +2706,8 @@ mixin template SupportCSS(BaseClass = Widget)
                 return;
             }
         }
+        if (current is value)
+            return;
         // set it directly otherwise
         alias val = value;
         mixin(callSideEffects);
