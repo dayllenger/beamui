@@ -731,31 +731,24 @@ class ListWidget : WidgetGroup
         itemClicked(this, index);
     }
 
-    /// Allow to override state for update of items
-    // previously used to treat main menu items with opened submenu as focused
-    protected @property State overrideStateForItem()
+    override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
     {
-        return state;
+        updateSelectedItemFocus();
     }
 
     protected void updateSelectedItemFocus()
     {
         if (_selectedItemIndex != -1)
         {
-            if ((_adapter.itemState(_selectedItemIndex) & State.focused) != (overrideStateForItem & State.focused))
+            if ((_adapter.itemState(_selectedItemIndex) & State.focused) != (state & State.focused))
             {
-                if (overrideStateForItem & State.focused)
+                if (state & State.focused)
                     _adapter.setItemState(_selectedItemIndex, State.focused);
                 else
                     _adapter.resetItemState(_selectedItemIndex, State.focused);
                 invalidate();
             }
         }
-    }
-
-    override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
-    {
-        updateSelectedItemFocus();
     }
 
     /// Ensure selected item is visible (scroll if necessary)
@@ -884,7 +877,7 @@ class ListWidget : WidgetGroup
         if (_selectedItemIndex != -1)
         {
             makeSelectionVisible();
-            _adapter.setItemState(_selectedItemIndex, State.selected | (overrideStateForItem & State.focused));
+            _adapter.setItemState(_selectedItemIndex, State.selected | (state & State.focused));
             invalidate();
         }
         return true;
@@ -986,29 +979,6 @@ class ListWidget : WidgetGroup
             return true;
         }
         return super.onKeyEvent(event);
-        //if (_selectedItemIndex != -1 && event.action == KeyAction.keyUp && (event.keyCode == KeyCode.SPACE || event.keyCode == KeyCode.enter)) {
-        //    itemClicked(_selectedItemIndex);
-        //    return true;
-        //}
-        //if (navigationDelta != 0) {
-        //    int p = _selectedItemIndex;
-        //    if (p < 0) {
-        //        if (navigationDelta < 0)
-        //            p = itemCount - 1;
-        //        else
-        //            p = 0;
-        //    } else {
-        //        p += navigationDelta;
-        //        if (p < 0)
-        //            p = itemCount - 1;
-        //        else if (p >= itemCount)
-        //            p = 0;
-        //    }
-        //    setHoverItem(-1);
-        //    selectItem(p);
-        //    return true;
-        //}
-        //return false;
     }
 
     override bool onMouseEvent(MouseEvent event)
@@ -1021,11 +991,29 @@ class ListWidget : WidgetGroup
             return true;
         }
         // delegate processing of mouse wheel to scrollbar widget
-        if (event.action == MouseAction.wheel && _needScrollbar)
+        if (event.action == MouseAction.wheel)
         {
-            return _scrollbar.onMouseEvent(event);
+            if (_needScrollbar) // visible
+            {
+                return _scrollbar.onMouseEvent(event);
+            }
+            else
+            {
+                _scrollbar.maybe.sendScrollEvent(event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
+                return true;
+            }
         }
-        // support onClick
+        if (event.action == MouseAction.buttonDown)
+            setFocus();
+
+        if (itemCount == 0)
+            return true;
+        if (itemCount > _itemBoxes.length)
+            return true; // layout not yet called
+
+        Box b = box;
+        applyPadding(b);
+        // ----- same as in onDraw -----
         Point scrollOffset;
         if (_orientation == Orientation.vertical)
         {
@@ -1035,18 +1023,6 @@ class ListWidget : WidgetGroup
         {
             scrollOffset.x = _scrollPosition;
         }
-        if (event.action == MouseAction.wheel)
-        {
-            _scrollbar.maybe.sendScrollEvent(event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
-            return true;
-        }
-        if (event.action == MouseAction.buttonDown && (event.flags & (MouseFlag.lbutton || MouseFlag.rbutton)))
-            setFocus();
-        if (itemCount > _itemBoxes.length)
-            return true; // layout not yet called. TODO: investigate this case
-        Box b = box;
-        applyPadding(b);
-        // ----- same as in onDraw -----
         // fast bisect to find where is the viewport
         int start = 0;
         int end = itemCount - 1;
@@ -1371,6 +1347,9 @@ class ListWidget : WidgetGroup
         if (_needScrollbar)
             _scrollbar.onDraw(buf);
 
+        if (itemCount == 0)
+            return;
+
         Point scrollOffset;
         if (_orientation == Orientation.vertical)
         {
@@ -1451,16 +1430,8 @@ class ListWidget : WidgetGroup
 
 class StringListWidget : ListWidget
 {
-    // Will be errored after other compilers will overtake phobos version 2.076
-    version (DigitalMars)
-    {
-        import std.datetime.stopwatch : StopWatch;
-    }
-    else
-    {
-        import std.datetime : dto = to, StopWatch;
-    }
-    import core.time : dur;
+    import core.time : Duration, msecs;
+    import std.datetime.stopwatch : StopWatch;
 
     @property void items(dstring[] items)
     {
@@ -1535,21 +1506,11 @@ class StringListWidget : ListWidget
                 _stopWatch.start;
             }
 
-            version (DigitalMars)
-            {
-                auto timePassed = _stopWatch.peek; //.to!("seconds", float)(); // dtop is std.datetime.to
+            Duration timePassed = _stopWatch.peek;
+            if (timePassed > 500.msecs)
+                _searchString = ""d;
 
-                if (timePassed > dur!"msecs"(500))
-                    _searchString = ""d;
-            }
-            else
-            {
-                auto timePassed = _stopWatch.peek.dto!("seconds", float)(); // dtop is std.datetime.to
-
-                if (timePassed > 0.5)
-                    _searchString = ""d;
-            }
-            _searchString ~= to!dchar(event.text.toUTF8);
+            _searchString ~= event.text;
             _stopWatch.reset;
 
             if (selectClosestMatch(_searchString))
