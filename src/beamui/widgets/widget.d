@@ -198,7 +198,7 @@ private:
         FontFamily _fontFamily = FontFamily.sans_serif;
     @forCSS("font-size")
         Dimension _fontSize = Dimension.pt(9);
-    /+@forCSS("font-style") +/
+    @forCSS("font-style")
         FontStyle _fontStyle = FontStyle.normal;
     @forCSS("font-weight", SpecialCSSType.fontWeight)
         ushort _fontWeight = 400;
@@ -744,12 +744,6 @@ public:
             setProperty!"_fontFace" = value;
             return this;
         }
-        private void fontFace_effect()
-        {
-            _font.clear();
-            handleFontChanged();
-            requestLayout();
-        }
         /// Font family for widget
         FontFamily fontFamily() const
         {
@@ -762,7 +756,6 @@ public:
             setProperty!"_fontFamily" = value;
             return this;
         }
-        private alias fontFamily_effect = fontFace_effect;
         /// Font style (italic/normal) for widget
         bool fontItalic() const
         {
@@ -777,14 +770,16 @@ public:
             return this;
         }
         /// Font size in pixels
-        int fontSize() const // TODO: em and percent
+        int fontSize() const
         {
             updateStyles();
+            if (!parent && (_fontSize.is_em || _fontSize.is_percent))
+                return 12;
             int res = _fontSize.toDevice;
             if (_fontSize.is_em)
-                return res / 100;
+                return parent.fontSize * res / 100;
             if (_fontSize.is_percent)
-                return res / 10000;
+                return parent.fontSize * res / 10000;
             return res;
         }
         /// ditto
@@ -801,7 +796,6 @@ public:
             fontSize = Dimension(size);
             return this;
         }
-        private alias fontSize_effect = fontFace_effect;
         /// Font weight for widget
         ushort fontWeight() const
         {
@@ -815,6 +809,15 @@ public:
             setProperty!"_fontWeight" = value;
             return this;
         }
+        private void fontFace_effect()
+        {
+            _font.clear();
+            handleFontChanged();
+            requestLayout();
+        }
+        private alias fontFamily_effect = fontFace_effect;
+        private alias fontStyle_effect = fontFace_effect;
+        private alias fontSize_effect = fontFace_effect;
         private alias fontWeight_effect = fontFace_effect;
 
         /// Returns font set for widget using style or set manually

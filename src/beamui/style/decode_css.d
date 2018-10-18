@@ -308,7 +308,7 @@ bool decode(Token[] tokens, out FontFamily result)
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): font family should be an identifier, not '%s'", t.line, t.type);
-        return FontFamily.sans_serif;
+        return false;
     }
     switch (t.text)
     {
@@ -321,6 +321,26 @@ bool decode(Token[] tokens, out FontFamily result)
         default:
             Log.fe("CSS(%s): unknown font family: %s", t.line, t.text);
             return false;
+    }
+    return true;
+}
+
+bool decode(Token[] tokens, out FontStyle result)
+{
+    Token t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        Log.fe("CSS(%s): font style should be an identifier, not '%s'", t.line, t.type);
+        return false;
+    }
+    if (t.text == "normal")
+        result = FontStyle.normal;
+    else if (t.text == "italic")
+        result = FontStyle.italic;
+    else
+    {
+        Log.fe("CSS(%s): unknown font style: %s", t.line, t.text);
+        return false;
     }
     return true;
 }
