@@ -160,16 +160,16 @@ class SourceEdit : EditBox
     override void onThemeChanged()
     {
         super.onThemeChanged();
-        _leftPaneBgColor = currentTheme.getColor("editor_left_pane_background");
-        _leftPaneBgColor2 = currentTheme.getColor("editor_left_pane_background2");
-        _leftPaneBgColor3 = currentTheme.getColor("editor_left_pane_background3");
-        _leftPaneLineNumColor = currentTheme.getColor("editor_left_pane_line_number_text");
+        _leftPaneBgColor = currentTheme.getColor("editor_left_pane_background", Color(0xF4F4F4));
+        _leftPaneBgColor2 = currentTheme.getColor("editor_left_pane_background2", Color(0xFFFFFF));
+        _leftPaneBgColor3 = currentTheme.getColor("editor_left_pane_background3", Color(0xF8F8F8));
+        _leftPaneLineNumColor = currentTheme.getColor("editor_left_pane_line_number_text", Color(0x4060D0));
         _leftPaneLineNumColorEdited = currentTheme.getColor("editor_left_pane_line_number_text_edited", Color(0xC0C000));
         _leftPaneLineNumColorSaved = currentTheme.getColor("editor_left_pane_line_number_text_saved", Color(0x00C000));
         _leftPaneLineNumColorCurrentLine = currentTheme.getColor("editor_left_pane_line_number_text_current_line");
         _leftPaneLineNumBgColorCurrLine = currentTheme.getColor(
                 "editor_left_pane_line_number_background_current_line", Color(0xC08080FF));
-        _leftPaneLineNumBgColor = currentTheme.getColor("editor_left_pane_line_number_background");
+        _leftPaneLineNumBgColor = currentTheme.getColor("editor_left_pane_line_number_background", Color(0xF4F4F4));
         _colorIconBreakpoint = currentTheme.getColor("editor_left_pane_line_icon_breakpoint", Color(0xFF0000));
         _colorIconBookmark = currentTheme.getColor("editor_left_pane_line_icon_bookmark", Color(0x0000FF));
         _colorIconError = currentTheme.getColor("editor_left_pane_line_icon_error", Color(0x80FF0000));

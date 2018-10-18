@@ -987,13 +987,13 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     override void onThemeChanged()
     {
         super.onThemeChanged();
-        _caretColor = currentTheme.getColor("edit_caret");
-        _caretColorReplace = currentTheme.getColor("edit_caret_replace");
-        _selectionColorFocused = currentTheme.getColor("editor_selection_focused");
-        _selectionColorNormal = currentTheme.getColor("editor_selection_normal");
-        _searchHighlightColorCurrent = currentTheme.getColor("editor_search_highlight_current");
-        _searchHighlightColorOther = currentTheme.getColor("editor_search_highlight_other");
-        _matchingBracketHightlightColor = currentTheme.getColor("editor_matching_bracket_highlight");
+        _caretColor = currentTheme.getColor("edit_caret", Color(0x0));
+        _caretColorReplace = currentTheme.getColor("edit_caret_replace", Color(0x808080FF));
+        _selectionColorFocused = currentTheme.getColor("editor_selection_focused", Color(0xB060A0FF));
+        _selectionColorNormal = currentTheme.getColor("editor_selection_normal", Color(0xD060A0FF));
+        _searchHighlightColorCurrent = currentTheme.getColor("editor_search_highlight_current", Color(0x808080FF));
+        _searchHighlightColorOther = currentTheme.getColor("editor_search_highlight_other", Color(0xC08080FF));
+        _matchingBracketHightlightColor = currentTheme.getColor("editor_matching_bracket_highlight", Color(0x60FFE0B0));
     }
 
     protected void updateFontProps()
