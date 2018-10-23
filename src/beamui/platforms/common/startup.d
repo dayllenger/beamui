@@ -7,11 +7,10 @@ Authors:   Vadim Lopatin
 */
 module beamui.platforms.common.startup;
 
-import std.utf : toUTF32;
 import beamui.core.config;
+import beamui.core.logger;
 import beamui.graphics.fonts;
 import beamui.graphics.resources;
-import beamui.widgets.widget;
 
 static if (BACKEND_GUI)
 {
@@ -20,7 +19,7 @@ static if (BACKEND_GUI)
         /// Initialize font manager - default implementation
         /// On win32 - first it tries to init freetype, and falls back to win32 fonts.
         /// On linux/mac - tries to init freetype with some hardcoded font paths
-        extern (C) bool initFontManager()
+        bool initFontManager()
         {
             import core.sys.windows.windows;
             import std.utf;
@@ -30,15 +29,12 @@ static if (BACKEND_GUI)
             static if (USE_FREETYPE)
             try
             {
-                Log.v("Trying to init FreeType font manager");
-
+                import core.sys.windows.shlobj;
                 import beamui.graphics.ftfonts;
 
-                // trying to create font manager
-                Log.v("Creating FreeTypeFontManager");
-                auto ftfontMan = new FreeTypeFontManager;
+                Log.v("Trying to init FreeType font manager");
 
-                import core.sys.windows.shlobj;
+                auto ftfontMan = new FreeTypeFontManager;
 
                 string fontsPath = "c:\\Windows\\Fonts\\";
                 static if (false)
@@ -342,7 +338,7 @@ static if (BACKEND_GUI)
         /// Initialize font manager - default implementation
         /// On win32 - first it tries to init freetype, and falls back to win32 fonts.
         /// On linux/mac - tries to init freetype with some hardcoded font paths
-        extern (C) bool initFontManager()
+        bool initFontManager()
         {
             auto ft = new FreeTypeFontManager;
 
@@ -472,7 +468,7 @@ static if (BACKEND_GUI)
     Initialize logging (for win32 and console - to file ui.log, for other platforms - stderr;
     log level is TRACE for debug builds, and WARN for release builds)
 */
-extern (C) void initLogs()
+void initLogs()
 {
     static import std.stdio;
 
@@ -538,14 +534,14 @@ extern (C) void initLogs()
 }
 
 /// Call this on application initialization
-extern (C) void initResourceManagers()
+void initResourceManagers()
 {
-    Log.d("initResourceManagers()");
-
     import beamui.core.stdaction;
     import beamui.graphics.fonts;
     import beamui.graphics.resources;
     import beamui.widgets.editors;
+
+    Log.d("Initializing resource managers");
 
     _gamma65 = new glyph_gamma_table!65(1.0);
     _gamma256 = new glyph_gamma_table!256(1.0);
@@ -565,6 +561,8 @@ extern (C) void initResourceManagers()
 
     static if (BACKEND_GUI)
     {
+        import beamui.graphics.drawables;
+
         version (Windows)
         {
             import beamui.platforms.windows.win32fonts;
@@ -592,11 +590,14 @@ extern (C) void initResourceManagers()
 extern (C) void registerStandardWidgets();
 
 /// Call this when all resources are supposed to be freed to report counts of non-freed resources by type
-extern (C) void releaseResourcesOnAppExit()
+void releaseResourcesOnAppExit()
 {
+    import core.memory : GC;
+    import beamui.graphics.drawables;
+    import beamui.graphics.drawbuf;
     import beamui.style.style;
     import beamui.style.theme;
-    import core.memory : GC;
+    import beamui.widgets.widget : Widget;
 
     GC.collect();
 
@@ -662,6 +663,8 @@ extern (C) void releaseResourcesOnAppExit()
                 Log.e("Non-zero FreeTypeFont instance count when exiting: ", FreeTypeFont.instanceCount);
             }
         }
+
+        APP_IS_SHUTTING_DOWN = true;
     }
 }
 

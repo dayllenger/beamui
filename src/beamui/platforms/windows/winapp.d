@@ -27,7 +27,6 @@ import std.file;
 import std.stdio;
 import std.string;
 import std.utf;
-import beamui.core.files;
 import beamui.core.logger;
 import beamui.graphics.drawbuf;
 import beamui.graphics.fonts;
@@ -49,8 +48,8 @@ extern (C) int UIAppMain(string[] args);
 
 immutable WIN_CLASS_NAME = "BEAMUI_APP";
 
-__gshared HINSTANCE _hInstance;
-__gshared int _cmdShow;
+private __gshared HINSTANCE _hInstance;
+private __gshared int _cmdShow;
 
 static if (USE_OPENGL)
 {
@@ -1326,137 +1325,46 @@ extern (Windows) int beamuiWinMainProfile(string[] args)
     return result;
 }
 
-/// Split command line arg list; prepend with executable file name
-string[] splitCmdLine(string line)
-{
-    string[] res;
-    res ~= exeFilename();
-    int start = 0;
-    bool insideQuotes = false;
-    for (int i = 0; i <= line.length; i++)
-    {
-        char ch = i < line.length ? line[i] : 0;
-        if (ch == '\"')
-        {
-            if (insideQuotes)
-            {
-                if (i > start)
-                    res ~= line[start .. i];
-                start = i + 1;
-                insideQuotes = false;
-            }
-            else
-            {
-                insideQuotes = true;
-                start = i + 1;
-            }
-        }
-        else if (!insideQuotes && (ch == ' ' || ch == '\t' || ch == 0))
-        {
-            if (i > start)
-            {
-                res ~= line[start .. i];
-            }
-            start = i + 1;
-        }
-    }
-    return res;
-}
-
 private __gshared Win32Platform w32platform;
 
 int myWinMain(void* hInstance, void* hPrevInstance, char* lpCmdLine, int iCmdShow)
 {
-    initLogs();
-
-    Log.d("myWinMain()");
-    string basePath = exePath();
-    Log.i("Current executable: ", exePath());
-    string cmdline = fromStringz(lpCmdLine).dup;
-    Log.i("Command line: ", cmdline);
+    string cmdline = fromStringz(lpCmdLine).idup;
     string[] args = splitCmdLine(cmdline);
-    Log.i("Command line params: ", args);
 
     _cmdShow = iCmdShow;
     _hInstance = hInstance;
 
-    Log.v("Creating platform");
-    w32platform = new Win32Platform;
-    Log.v("Registering window class");
-    if (!w32platform.registerWndClass())
-    {
-        MessageBoxA(null, "This program requires Windows NT!", "beamui app".toStringz, MB_ICONERROR);
-        return 0;
-    }
-    Platform.setInstance(w32platform);
-
-    DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
-
-    Log.v("Initializing font manager");
-    if (!initFontManager())
-    {
-        Log.e("******************************************************************");
-        Log.e("No font files found!!!");
-        Log.e("Currently, only hardcoded font paths implemented.");
-        Log.e("Probably you can modify sdlapp.d to add some fonts for your system.");
-        Log.e("******************************************************************");
-        assert(false);
-    }
-    initResourceManagers();
-
-    platform.uiTheme = "default";
-
-    static if (USE_OPENGL)
-    {
-        if (!initBasicOpenGL())
-            disableOpenGL();
-    }
-
-    // Load versions 1.2+ and all supported ARB and EXT extensions.
-
-    Log.i("Entering UIAppMain: ", args);
-    int result = -1;
-    try
-    {
-        result = UIAppMain(args);
-        Log.i("UIAppMain returned ", result);
-    }
-    catch (Exception e)
-    {
-        Log.e("Abnormal UIAppMain termination");
-        Log.e("UIAppMain exception: ", e);
-    }
-
-    releaseResourcesOnAppExit();
-
-    Log.d("Exiting main");
-    debug
-    {
-        APP_IS_SHUTTING_DOWN = true;
-        import core.memory : GC;
-
-        Log.d("Calling GC.collect");
-        GC.collect();
-        if (DrawBuf.instanceCount)
-            Log.d("Non-zero DrawBuf instance count when exiting: ", DrawBuf.instanceCount);
-    }
-
-    return result;
+    return myWinMainCommon(args);
 }
 
 int myWinMainProfile(string[] args)
 {
-    initLogs();
-
-    Log.d("myWinMain()");
-    string basePath = exePath();
-    Log.i("Current executable: ", exePath());
-    Log.i("Command line params: ", args);
-
     _cmdShow = SW_SHOW;
     _hInstance = GetModuleHandle(NULL);
 
-    Log.v("Creating platform");
+    return myWinMainCommon(args);
+}
+
+private int myWinMainCommon(string[] args)
+{
+    import beamui.platforms.common.startup;
+
+    initLogs();
+
+    if (!initFontManager())
+    {
+        Log.e("******************************************************************");
+        Log.e("No font files found!!!");
+        Log.e("Currently, only hardcoded font paths implemented.");
+        Log.e("Probably you can modify startup.d to add some fonts for your system.");
+        Log.e("******************************************************************");
+        assert(false);
+    }
+    initResourceManagers();
+
+    DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
+
     w32platform = new Win32Platform;
     Log.v("Registering window class");
     if (!w32platform.registerWndClass())
@@ -1464,23 +1372,8 @@ int myWinMainProfile(string[] args)
         MessageBoxA(null, "This program requires Windows NT!", "beamui app".toStringz, MB_ICONERROR);
         return 0;
     }
-    Platform.setInstance(w32platform);
-
-    DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
-
-    Log.v("Initializing font manager");
-    if (!initFontManager())
-    {
-        Log.e("******************************************************************");
-        Log.e("No font files found!!!");
-        Log.e("Currently, only hardcoded font paths implemented.");
-        Log.e("Probably you can modify sdlapp.d to add some fonts for your system.");
-        Log.e("******************************************************************");
-        assert(false);
-    }
-    initResourceManagers();
-
-    platform.uiTheme = "default";
+    Platform.instance = w32platform;
+    Platform.instance.uiTheme = "default";
 
     static if (USE_OPENGL)
     {
@@ -1488,14 +1381,11 @@ int myWinMainProfile(string[] args)
             disableOpenGL();
     }
 
-    // Load versions 1.2+ and all supported ARB and EXT extensions.
-
     Log.i("Entering UIAppMain: ", args);
     int result = -1;
     try
     {
         result = UIAppMain(args);
-        Log.i("UIAppMain returned ", result);
     }
     catch (Exception e)
     {
@@ -1503,20 +1393,10 @@ int myWinMainProfile(string[] args)
         Log.e("UIAppMain exception: ", e);
     }
 
+    Platform.instance = null;
     releaseResourcesOnAppExit();
 
     Log.d("Exiting main");
-    debug
-    {
-        APP_IS_SHUTTING_DOWN = true;
-        import core.memory : GC;
-
-        Log.d("Calling GC.collect");
-        GC.collect();
-        if (DrawBuf.instanceCount)
-            Log.d("Non-zero DrawBuf instance count when exiting: ", DrawBuf.instanceCount);
-    }
-
     return result;
 }
 

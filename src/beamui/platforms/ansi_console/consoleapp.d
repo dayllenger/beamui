@@ -550,11 +550,14 @@ extern (C) void mySignalHandler(int value)
 /// Entry point for console app
 extern (C) int beamuimain(string[] args)
 {
+    import beamui.platforms.common.startup;
+
     initLogs();
-    SCREEN_DPI = 10;
-    Platform.setInstance(new ConsolePlatform);
+
     FontManager.instance = new ConsoleFontManager;
     initResourceManagers();
+
+    SCREEN_DPI = 10;
 
     version (Windows)
     {
@@ -570,20 +573,20 @@ extern (C) int beamuimain(string[] args)
         sigset(SIGINT, &mySignalHandler);
     }
 
-    platform.uiTheme = "default";
+    Platform.instance = new ConsolePlatform;
+    Platform.instance.uiTheme = "default";
 
     Log.i("Entering UIAppMain: ", args);
-    int result = -1;
     version (unittest)
     {
-        result = 0;
+        int result = 0;
     }
     else
     {
+        int result = -1;
         try
         {
             result = UIAppMain(args);
-            Log.i("UIAppMain returned ", result);
         }
         catch (Exception e)
         {
@@ -592,12 +595,9 @@ extern (C) int beamuimain(string[] args)
         }
     }
 
-    Platform.setInstance(null);
-
+    Platform.instance = null;
     releaseResourcesOnAppExit();
 
     Log.d("Exiting main");
-    debug APP_IS_SHUTTING_DOWN = true;
-
     return result;
 }

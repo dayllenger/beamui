@@ -624,7 +624,7 @@ class Win32FontManager : FontManager
         //Log.i("getFont() found face ", def.face, " by requested face ", face);
         if (def !is null)
         {
-            int index = _activeFonts.find(size, weight, italic, def.family, def.face);
+            ptrdiff_t index = _activeFonts.find(size, weight, italic, def.family, def.face);
             if (index >= 0)
                 return _activeFonts.get(index);
             debug (FontResources)

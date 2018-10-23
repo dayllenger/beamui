@@ -1842,12 +1842,14 @@ class Window : CustomEventTarget
 */
 class Platform
 {
-    static __gshared Platform _instance;
+    private static __gshared Platform _instance;
 
+    /// Platform singleton instance
     static @property Platform instance() { return _instance; }
-
-    static void setInstance(Platform instance)
+    /// ditto
+    static @property void instance(Platform instance)
     {
+        debug Log.d(instance ? "Setting platform" : "Destroying platform");
         eliminate(_instance);
         _instance = instance;
     }
@@ -2127,6 +2129,45 @@ else
         // to remove import
         extern (Windows) int beamuiWinMain(void* hInstance, void* hPrevInstance, char* lpCmdLine, int nCmdShow);
         extern (Windows) int beamuiWinMainProfile(string[] args);
+
+        /// Split command line arg list; prepend with executable file name
+        string[] splitCmdLine(string line)
+        {
+            import beamui.core.files : exeFilename;
+
+            string[] res;
+            res ~= exeFilename();
+            int start = 0;
+            bool insideQuotes = false;
+            for (int i = 0; i <= line.length; i++)
+            {
+                char ch = i < line.length ? line[i] : 0;
+                if (ch == '\"')
+                {
+                    if (insideQuotes)
+                    {
+                        if (i > start)
+                            res ~= line[start .. i];
+                        start = i + 1;
+                        insideQuotes = false;
+                    }
+                    else
+                    {
+                        insideQuotes = true;
+                        start = i + 1;
+                    }
+                }
+                else if (!insideQuotes && (ch == ' ' || ch == '\t' || ch == 0))
+                {
+                    if (i > start)
+                    {
+                        res ~= line[start .. i];
+                    }
+                    start = i + 1;
+                }
+            }
+            return res;
+        }
     }
     else
     {
@@ -2196,12 +2237,3 @@ mixin template APP_ENTRY_POINT()
         }
     }
 }
-
-/// Initialize font manager on startup
-extern (C) bool initFontManager();
-/// Initialize logging (for win32 - to file ui.log, for other platforms - stderr; log level is TRACE for debug builds, and WARN for release builds)
-extern (C) void initLogs();
-/// Call this when all resources are supposed to be freed to report counts of non-freed resources by type
-extern (C) void releaseResourcesOnAppExit();
-/// Call this on application initialization
-extern (C) void initResourceManagers();

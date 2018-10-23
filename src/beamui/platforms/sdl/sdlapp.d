@@ -23,7 +23,6 @@ import std.string;
 import std.utf : toUTF32, toUTF16z;
 import derelict.sdl2.sdl;
 import beamui.core.events;
-import beamui.core.files;
 import beamui.core.logger;
 import beamui.graphics.drawbuf;
 import beamui.graphics.fonts;
@@ -745,126 +744,66 @@ final class SDLWindow : Window
     {
         switch (keyCode)
         {
-        case SDLK_0:
-            return KeyCode.alpha0;
-        case SDLK_1:
-            return KeyCode.alpha1;
-        case SDLK_2:
-            return KeyCode.alpha2;
-        case SDLK_3:
-            return KeyCode.alpha3;
-        case SDLK_4:
-            return KeyCode.alpha4;
-        case SDLK_5:
-            return KeyCode.alpha5;
-        case SDLK_6:
-            return KeyCode.alpha6;
-        case SDLK_7:
-            return KeyCode.alpha7;
-        case SDLK_8:
-            return KeyCode.alpha8;
-        case SDLK_9:
-            return KeyCode.alpha9;
-        case SDLK_a:
-            return KeyCode.A;
-        case SDLK_b:
-            return KeyCode.B;
-        case SDLK_c:
-            return KeyCode.C;
-        case SDLK_d:
-            return KeyCode.D;
-        case SDLK_e:
-            return KeyCode.E;
-        case SDLK_f:
-            return KeyCode.F;
-        case SDLK_g:
-            return KeyCode.G;
-        case SDLK_h:
-            return KeyCode.H;
-        case SDLK_i:
-            return KeyCode.I;
-        case SDLK_j:
-            return KeyCode.J;
-        case SDLK_k:
-            return KeyCode.K;
-        case SDLK_l:
-            return KeyCode.L;
-        case SDLK_m:
-            return KeyCode.M;
-        case SDLK_n:
-            return KeyCode.N;
-        case SDLK_o:
-            return KeyCode.O;
-        case SDLK_p:
-            return KeyCode.P;
-        case SDLK_q:
-            return KeyCode.Q;
-        case SDLK_r:
-            return KeyCode.R;
-        case SDLK_s:
-            return KeyCode.S;
-        case SDLK_t:
-            return KeyCode.T;
-        case SDLK_u:
-            return KeyCode.U;
-        case SDLK_v:
-            return KeyCode.V;
-        case SDLK_w:
-            return KeyCode.W;
-        case SDLK_x:
-            return KeyCode.X;
-        case SDLK_y:
-            return KeyCode.Y;
-        case SDLK_z:
-            return KeyCode.Z;
-        case SDLK_F1:
-            return KeyCode.F1;
-        case SDLK_F2:
-            return KeyCode.F2;
-        case SDLK_F3:
-            return KeyCode.F3;
-        case SDLK_F4:
-            return KeyCode.F4;
-        case SDLK_F5:
-            return KeyCode.F5;
-        case SDLK_F6:
-            return KeyCode.F6;
-        case SDLK_F7:
-            return KeyCode.F7;
-        case SDLK_F8:
-            return KeyCode.F8;
-        case SDLK_F9:
-            return KeyCode.F9;
-        case SDLK_F10:
-            return KeyCode.F10;
-        case SDLK_F11:
-            return KeyCode.F11;
-        case SDLK_F12:
-            return KeyCode.F12;
-        case SDLK_F13:
-            return KeyCode.F13;
-        case SDLK_F14:
-            return KeyCode.F14;
-        case SDLK_F15:
-            return KeyCode.F15;
-        case SDLK_F16:
-            return KeyCode.F16;
-        case SDLK_F17:
-            return KeyCode.F17;
-        case SDLK_F18:
-            return KeyCode.F18;
-        case SDLK_F19:
-            return KeyCode.F19;
-        case SDLK_F20:
-            return KeyCode.F20;
-        case SDLK_F21:
-            return KeyCode.F21;
-        case SDLK_F22:
-            return KeyCode.F22;
-        case SDLK_F23:
-            return KeyCode.F23;
-        case SDLK_F24:
-            return KeyCode.F24;
+        case SDLK_0: return KeyCode.alpha0;
+        case SDLK_1: return KeyCode.alpha1;
+        case SDLK_2: return KeyCode.alpha2;
+        case SDLK_3: return KeyCode.alpha3;
+        case SDLK_4: return KeyCode.alpha4;
+        case SDLK_5: return KeyCode.alpha5;
+        case SDLK_6: return KeyCode.alpha6;
+        case SDLK_7: return KeyCode.alpha7;
+        case SDLK_8: return KeyCode.alpha8;
+        case SDLK_9: return KeyCode.alpha9;
+        case SDLK_a: return KeyCode.A;
+        case SDLK_b: return KeyCode.B;
+        case SDLK_c: return KeyCode.C;
+        case SDLK_d: return KeyCode.D;
+        case SDLK_e: return KeyCode.E;
+        case SDLK_f: return KeyCode.F;
+        case SDLK_g: return KeyCode.G;
+        case SDLK_h: return KeyCode.H;
+        case SDLK_i: return KeyCode.I;
+        case SDLK_j: return KeyCode.J;
+        case SDLK_k: return KeyCode.K;
+        case SDLK_l: return KeyCode.L;
+        case SDLK_m: return KeyCode.M;
+        case SDLK_n: return KeyCode.N;
+        case SDLK_o: return KeyCode.O;
+        case SDLK_p: return KeyCode.P;
+        case SDLK_q: return KeyCode.Q;
+        case SDLK_r: return KeyCode.R;
+        case SDLK_s: return KeyCode.S;
+        case SDLK_t: return KeyCode.T;
+        case SDLK_u: return KeyCode.U;
+        case SDLK_v: return KeyCode.V;
+        case SDLK_w: return KeyCode.W;
+        case SDLK_x: return KeyCode.X;
+        case SDLK_y: return KeyCode.Y;
+        case SDLK_z: return KeyCode.Z;
+        case SDLK_F1: return KeyCode.F1;
+        case SDLK_F2: return KeyCode.F2;
+        case SDLK_F3: return KeyCode.F3;
+        case SDLK_F4: return KeyCode.F4;
+        case SDLK_F5: return KeyCode.F5;
+        case SDLK_F6: return KeyCode.F6;
+        case SDLK_F7: return KeyCode.F7;
+        case SDLK_F8: return KeyCode.F8;
+        case SDLK_F9: return KeyCode.F9;
+        case SDLK_F10: return KeyCode.F10;
+        case SDLK_F11: return KeyCode.F11;
+        case SDLK_F12: return KeyCode.F12;
+        case SDLK_F13: return KeyCode.F13;
+        case SDLK_F14: return KeyCode.F14;
+        case SDLK_F15: return KeyCode.F15;
+        case SDLK_F16: return KeyCode.F16;
+        case SDLK_F17: return KeyCode.F17;
+        case SDLK_F18: return KeyCode.F18;
+        case SDLK_F19: return KeyCode.F19;
+        case SDLK_F20: return KeyCode.F20;
+        case SDLK_F21: return KeyCode.F21;
+        case SDLK_F22: return KeyCode.F22;
+        case SDLK_F23: return KeyCode.F23;
+        case SDLK_F24: return KeyCode.F24;
         case SDLK_BACKSPACE:
             return KeyCode.backspace;
         case SDLK_SPACE:
@@ -1127,7 +1066,7 @@ private extern (C) uint myTimerCallbackFunc(uint interval, void* param) nothrow
     return (interval);
 }
 
-class SDLPlatform : Platform
+final class SDLPlatform : Platform
 {
     this()
     {
@@ -1570,52 +1509,10 @@ version (Windows)
         return result;
     }
 
-    /// Split command line arg list; prepend with executable file name
-    string[] splitCmdLine(string line)
-    {
-        string[] res;
-        res ~= exeFilename();
-        int start = 0;
-        bool insideQuotes = false;
-        for (int i = 0; i <= line.length; i++)
-        {
-            char ch = i < line.length ? line[i] : 0;
-            if (ch == '\"')
-            {
-                if (insideQuotes)
-                {
-                    if (i > start)
-                        res ~= line[start .. i];
-                    start = i + 1;
-                    insideQuotes = false;
-                }
-                else
-                {
-                    insideQuotes = true;
-                    start = i + 1;
-                }
-            }
-            else if (!insideQuotes && (ch == ' ' || ch == '\t' || ch == 0))
-            {
-                if (i > start)
-                {
-                    res ~= line[start .. i];
-                }
-                start = i + 1;
-            }
-        }
-        return res;
-    }
-
     int myWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int iCmdShow)
     {
-        //Log.d("myWinMain()");
-        string basePath = exePath();
-        //Log.i("Current executable: ", exePath());
-        string cmdline = fromStringz(lpCmdLine).dup;
-        //Log.i("Command line: ", cmdline);
+        string cmdline = fromStringz(lpCmdLine).idup;
         string[] args = splitCmdLine(cmdline);
-        //Log.i("Command line params: ", args);
 
         return sdlmain(args);
     }
@@ -1659,6 +1556,8 @@ bool sdlUpdateScreenDpi(int displayIndex = 0)
 
 int sdlmain(string[] args)
 {
+    import beamui.platforms.common.startup;
+
     initLogs();
 
     if (!initFontManager())
@@ -1666,8 +1565,7 @@ int sdlmain(string[] args)
         Log.e("******************************************************************");
         Log.e("No font files found!!!");
         Log.e("Currently, only hardcoded font paths implemented.");
-        Log.e("Probably you can modify sdlapp.d to add some fonts for your system.");
-        Log.e("TODO: use fontconfig");
+        Log.e("Probably you can modify startup.d to add some fonts for your system.");
         Log.e("******************************************************************");
         assert(false);
     }
@@ -1719,32 +1617,36 @@ int sdlmain(string[] args)
         SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
     }
 
-    auto sdl = new SDLPlatform;
-    Platform.setInstance(sdl);
-
     sdlUpdateScreenDpi(0);
 
-    platform.uiTheme = "default";
-
-    int res = 0;
+    Platform.instance = new SDLPlatform;
+    Platform.instance.uiTheme = "default";
 
     version (unittest)
     {
+        int result = 0;
     }
     else
     {
-        res = UIAppMain(args);
+        int result = -1;
+        try
+        {
+            result = UIAppMain(args);
+        }
+        catch (Exception e)
+        {
+            Log.e("Abnormal UIAppMain termination");
+            Log.e("UIAppMain exception: ", e);
+        }
     }
 
-    Log.d("Destroying SDL platform");
-    Platform.setInstance(null);
+    Platform.instance = null;
+
     static if (USE_OPENGL)
         glNoContext = true;
 
     releaseResourcesOnAppExit();
 
     Log.d("Exiting main");
-    debug APP_IS_SHUTTING_DOWN = true;
-
-    return res;
+    return result;
 }

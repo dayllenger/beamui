@@ -886,152 +886,66 @@ class X11Window : DWindow
         alias KeyCode = beamui.core.events.KeyCode;
         switch (keyCode)
         {
-        case XK_0:
-            return KeyCode.alpha0;
-        case XK_1:
-            return KeyCode.alpha1;
-        case XK_2:
-            return KeyCode.alpha2;
-        case XK_3:
-            return KeyCode.alpha3;
-        case XK_4:
-            return KeyCode.alpha4;
-        case XK_5:
-            return KeyCode.alpha5;
-        case XK_6:
-            return KeyCode.alpha6;
-        case XK_7:
-            return KeyCode.alpha7;
-        case XK_8:
-            return KeyCode.alpha8;
-        case XK_9:
-            return KeyCode.alpha9;
-        case XK_A:
-        case XK_a:
-            return KeyCode.A;
-        case XK_B:
-        case XK_b:
-            return KeyCode.B;
-        case XK_C:
-        case XK_c:
-            return KeyCode.C;
-        case XK_D:
-        case XK_d:
-            return KeyCode.D;
-        case XK_E:
-        case XK_e:
-            return KeyCode.E;
-        case XK_F:
-        case XK_f:
-            return KeyCode.F;
-        case XK_G:
-        case XK_g:
-            return KeyCode.G;
-        case XK_H:
-        case XK_h:
-            return KeyCode.H;
-        case XK_I:
-        case XK_i:
-            return KeyCode.I;
-        case XK_J:
-        case XK_j:
-            return KeyCode.J;
-        case XK_K:
-        case XK_k:
-            return KeyCode.K;
-        case XK_L:
-        case XK_l:
-            return KeyCode.L;
-        case XK_M:
-        case XK_m:
-            return KeyCode.M;
-        case XK_N:
-        case XK_n:
-            return KeyCode.N;
-        case XK_O:
-        case XK_o:
-            return KeyCode.O;
-        case XK_P:
-        case XK_p:
-            return KeyCode.P;
-        case XK_Q:
-        case XK_q:
-            return KeyCode.Q;
-        case XK_R:
-        case XK_r:
-            return KeyCode.R;
-        case XK_S:
-        case XK_s:
-            return KeyCode.S;
-        case XK_T:
-        case XK_t:
-            return KeyCode.T;
-        case XK_U:
-        case XK_u:
-            return KeyCode.U;
-        case XK_V:
-        case XK_v:
-            return KeyCode.V;
-        case XK_W:
-        case XK_w:
-            return KeyCode.W;
-        case XK_X:
-        case XK_x:
-            return KeyCode.X;
-        case XK_Y:
-        case XK_y:
-            return KeyCode.Y;
-        case XK_Z:
-        case XK_z:
-            return KeyCode.Z;
-        case XK_F1:
-            return KeyCode.F1;
-        case XK_F2:
-            return KeyCode.F2;
-        case XK_F3:
-            return KeyCode.F3;
-        case XK_F4:
-            return KeyCode.F4;
-        case XK_F5:
-            return KeyCode.F5;
-        case XK_F6:
-            return KeyCode.F6;
-        case XK_F7:
-            return KeyCode.F7;
-        case XK_F8:
-            return KeyCode.F8;
-        case XK_F9:
-            return KeyCode.F9;
-        case XK_F10:
-            return KeyCode.F10;
-        case XK_F11:
-            return KeyCode.F11;
-        case XK_F12:
-            return KeyCode.F12;
-        case XK_F13:
-            return KeyCode.F13;
-        case XK_F14:
-            return KeyCode.F14;
-        case XK_F15:
-            return KeyCode.F15;
-        case XK_F16:
-            return KeyCode.F16;
-        case XK_F17:
-            return KeyCode.F17;
-        case XK_F18:
-            return KeyCode.F18;
-        case XK_F19:
-            return KeyCode.F19;
-        case XK_F20:
-            return KeyCode.F20;
-        case XK_F21:
-            return KeyCode.F21;
-        case XK_F22:
-            return KeyCode.F22;
-        case XK_F23:
-            return KeyCode.F23;
-        case XK_F24:
-            return KeyCode.F24;
+        case XK_0: return KeyCode.alpha0;
+        case XK_1: return KeyCode.alpha1;
+        case XK_2: return KeyCode.alpha2;
+        case XK_3: return KeyCode.alpha3;
+        case XK_4: return KeyCode.alpha4;
+        case XK_5: return KeyCode.alpha5;
+        case XK_6: return KeyCode.alpha6;
+        case XK_7: return KeyCode.alpha7;
+        case XK_8: return KeyCode.alpha8;
+        case XK_9: return KeyCode.alpha9;
+        case XK_A: case XK_a: return KeyCode.A;
+        case XK_B: case XK_b: return KeyCode.B;
+        case XK_C: case XK_c: return KeyCode.C;
+        case XK_D: case XK_d: return KeyCode.D;
+        case XK_E: case XK_e: return KeyCode.E;
+        case XK_F: case XK_f: return KeyCode.F;
+        case XK_G: case XK_g: return KeyCode.G;
+        case XK_H: case XK_h: return KeyCode.H;
+        case XK_I: case XK_i: return KeyCode.I;
+        case XK_J: case XK_j: return KeyCode.J;
+        case XK_K: case XK_k: return KeyCode.K;
+        case XK_L: case XK_l: return KeyCode.L;
+        case XK_M: case XK_m: return KeyCode.M;
+        case XK_N: case XK_n: return KeyCode.N;
+        case XK_O: case XK_o: return KeyCode.O;
+        case XK_P: case XK_p: return KeyCode.P;
+        case XK_Q: case XK_q: return KeyCode.Q;
+        case XK_R: case XK_r: return KeyCode.R;
+        case XK_S: case XK_s: return KeyCode.S;
+        case XK_T: case XK_t: return KeyCode.T;
+        case XK_U: case XK_u: return KeyCode.U;
+        case XK_V: case XK_v: return KeyCode.V;
+        case XK_W: case XK_w: return KeyCode.W;
+        case XK_X: case XK_x: return KeyCode.X;
+        case XK_Y: case XK_y: return KeyCode.Y;
+        case XK_Z: case XK_z: return KeyCode.Z;
+        case XK_F1: return KeyCode.F1;
+        case XK_F2: return KeyCode.F2;
+        case XK_F3: return KeyCode.F3;
+        case XK_F4: return KeyCode.F4;
+        case XK_F5: return KeyCode.F5;
+        case XK_F6: return KeyCode.F6;
+        case XK_F7: return KeyCode.F7;
+        case XK_F8: return KeyCode.F8;
+        case XK_F9: return KeyCode.F9;
+        case XK_F10: return KeyCode.F10;
+        case XK_F11: return KeyCode.F11;
+        case XK_F12: return KeyCode.F12;
+        case XK_F13: return KeyCode.F13;
+        case XK_F14: return KeyCode.F14;
+        case XK_F15: return KeyCode.F15;
+        case XK_F16: return KeyCode.F16;
+        case XK_F17: return KeyCode.F17;
+        case XK_F18: return KeyCode.F18;
+        case XK_F19: return KeyCode.F19;
+        case XK_F20: return KeyCode.F20;
+        case XK_F21: return KeyCode.F21;
+        case XK_F22: return KeyCode.F22;
+        case XK_F23: return KeyCode.F23;
+        case XK_F24: return KeyCode.F24;
         case XK_BackSpace:
             return KeyCode.backspace;
         case XK_space:
@@ -1044,34 +958,34 @@ class X11Window : DWindow
         case XK_Escape:
             return KeyCode.escape;
         case XK_KP_Delete:
-        case XK_Delete: //case 0x40000063: // dirty hack for Linux - key on keypad
+        case XK_Delete:
             return KeyCode.del;
         case XK_Insert:
-        case XK_KP_Insert: //case 0x40000062: // dirty hack for Linux - key on keypad
+        case XK_KP_Insert:
             return KeyCode.ins;
         case XK_KP_Home:
-        case XK_Home: //case 0x4000005f: // dirty hack for Linux - key on keypad
+        case XK_Home:
             return KeyCode.home;
         case XK_KP_Page_Up:
-        case XK_Page_Up: //case 0x40000061: // dirty hack for Linux - key on keypad
+        case XK_Page_Up:
             return KeyCode.pageUp;
         case XK_KP_End:
-        case XK_End: //case 0x40000059: // dirty hack for Linux - key on keypad
+        case XK_End:
             return KeyCode.end;
         case XK_KP_Page_Down:
-        case XK_Page_Down: //case 0x4000005b: // dirty hack for Linux - key on keypad
+        case XK_Page_Down:
             return KeyCode.pageDown;
         case XK_KP_Left:
-        case XK_Left: //case 0x4000005c: // dirty hack for Linux - key on keypad
+        case XK_Left:
             return KeyCode.left;
         case XK_KP_Right:
-        case XK_Right: //case 0x4000005e: // dirty hack for Linux - key on keypad
+        case XK_Right:
             return KeyCode.right;
         case XK_KP_Up:
-        case XK_Up: //case 0x40000060: // dirty hack for Linux - key on keypad
+        case XK_Up:
             return KeyCode.up;
         case XK_KP_Down:
-        case XK_Down: //case 0x4000005a: // dirty hack for Linux - key on keypad
+        case XK_Down:
             return KeyCode.down;
         case XK_Control_L:
             return KeyCode.lcontrol;
@@ -1102,18 +1016,6 @@ class X11Window : DWindow
             res |= KeyFlag.shift;
         if (flags & LockMask)
             res |= KeyFlag.alt;
-        //        if (flags & KMOD_RCTRL)
-        //            res |= KeyFlag.rcontrol | KeyFlag.control;
-        //        if (flags & KMOD_RSHIFT)
-        //            res |= KeyFlag.rshift | KeyFlag.shift;
-        //        if (flags & KMOD_RALT)
-        //            res |= KeyFlag.ralt | KeyFlag.alt;
-        //        if (flags & KMOD_LCTRL)
-        //            res |= KeyFlag.lcontrol | KeyFlag.control;
-        //        if (flags & KMOD_LSHIFT)
-        //            res |= KeyFlag.lshift | KeyFlag.shift;
-        //        if (flags & KMOD_LALT)
-        //            res |= KeyFlag.lalt | KeyFlag.alt;
         return res;
     }
 
@@ -1895,6 +1797,8 @@ class X11Platform : Platform
 
 extern (C) int beamuimain(string[] args)
 {
+    import beamui.platforms.common.startup;
+
     initLogs();
 
     if (!initFontManager())
@@ -1902,8 +1806,7 @@ extern (C) int beamuimain(string[] args)
         Log.e("******************************************************************");
         Log.e("No font files found!!!");
         Log.e("Currently, only hardcoded font paths implemented.");
-        Log.e("Probably you can modify sdlapp.d to add some fonts for your system.");
-        Log.e("TODO: use fontconfig");
+        Log.e("Probably you can modify startup.d to add some fonts for your system.");
         Log.e("******************************************************************");
         assert(false);
     }
@@ -1975,23 +1878,28 @@ extern (C) int beamuimain(string[] args)
 
     Log.d("X11 display: ", x11display, ", screen: ", x11screen);
 
-    auto x11platform = new X11Platform;
-    Platform.setInstance(x11platform);
-
-    platform.uiTheme = "default";
-
-    int res = 0;
+    Platform.instance = new X11Platform;
+    Platform.instance.uiTheme = "default";
 
     version (unittest)
     {
+        int result = 0;
     }
     else
     {
-        res = UIAppMain(args);
+        int result = -1;
+        try
+        {
+            result = UIAppMain(args);
+        }
+        catch (Exception e)
+        {
+            Log.e("Abnormal UIAppMain termination");
+            Log.e("UIAppMain exception: ", e);
+        }
     }
 
-    Log.d("Destroying X11 platform");
-    Platform.setInstance(null);
+    Platform.instance = null;
 
     static if (USE_OPENGL)
     {
@@ -2006,7 +1914,5 @@ extern (C) int beamuimain(string[] args)
     XCloseDisplay(x11display2);
 
     Log.d("Exiting main");
-    debug APP_IS_SHUTTING_DOWN = true;
-
-    return res;
+    return result;
 }
