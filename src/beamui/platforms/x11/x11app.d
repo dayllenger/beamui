@@ -242,19 +242,22 @@ private GC createGC(Display* display, XWindow win)
     return gc;
 }
 
-class X11Window : DWindow
+final class X11Window : DWindow
 {
-    protected X11Platform _platform;
-    protected dstring _title;
-    protected XWindow _win;
-    protected GC _gc;
-    private __gshared XIC xic;
-
-    int _cachedWidth, _cachedHeight;
-
-    static if (USE_OPENGL)
+    private
     {
-        GLXContext _glc;
+        X11Platform _platform;
+
+        XWindow _win;
+        GC _gc;
+        __gshared XIC xic;
+        static if (USE_OPENGL)
+            GLXContext _glc;
+
+        dstring _title;
+        DrawBuf _drawbuf;
+
+        int _cachedWidth, _cachedHeight;
     }
 
     this(X11Platform platform, dstring caption, DWindow parent, WindowFlag flags, uint width = 0, uint height = 0)
@@ -444,30 +447,12 @@ class X11Window : DWindow
         handleWindowStateChange(WindowState.unspecified, Box(0, 0, _w, _h));
     }
 
-    override void show()
-    {
-        Log.d("X11Window.show - ", _title);
-
-        if (!mainWidget)
-        {
-            Log.e("Window is shown without main widget");
-            mainWidget = new Widget;
-        }
-        adjustSize();
-        adjustPosition();
-
-        mainWidget.setFocus();
-
-        XMapRaised(x11display, _win);
-        XFlush(x11display);
-    }
-
     override protected void handleWindowStateChange(WindowState newState, Box newWindowRect = Box.none)
     {
         super.handleWindowStateChange(newState, newWindowRect);
     }
 
-    final protected void changeWindowState(int action, Atom firstProperty, Atom secondProperty = None) nothrow
+    private void changeWindowState(int action, Atom firstProperty, Atom secondProperty = None) nothrow
     {
         XEvent ev;
         ev.xclient = XClientMessageEvent.init;
@@ -484,7 +469,7 @@ class X11Window : DWindow
                 SubstructureNotifyMask | SubstructureRedirectMask, &ev);
     }
 
-    protected enum
+    private enum
     {
         _NET_WM_STATE_REMOVE = 0,
         _NET_WM_STATE_ADD,
@@ -594,21 +579,17 @@ class X11Window : DWindow
     }
 
     private bool _isActive;
+    override @property bool isActive() const { return _isActive; }
+
     override protected void handleWindowActivityChange(bool isWindowActive)
     {
         _isActive = isWindowActive;
         super.handleWindowActivityChange(isWindowActive);
     }
 
-    override @property bool isActive()
-    {
-        return _isActive;
-    }
+    //===============================================================
 
-    override @property dstring title() const
-    {
-        return _title;
-    }
+    override @property dstring title() const { return _title; }
 
     override @property void title(dstring caption)
     {
@@ -655,7 +636,25 @@ class X11Window : DWindow
                 cast(ubyte*)propData.ptr, cast(int)propData.length);
     }
 
-    uint _lastRedrawEventCode;
+    override void show()
+    {
+        Log.d("X11Window.show - ", _title);
+
+        if (!mainWidget)
+        {
+            Log.e("Window is shown without main widget");
+            mainWidget = new Widget;
+        }
+        adjustSize();
+        adjustPosition();
+
+        mainWidget.setFocus();
+
+        XMapRaised(x11display, _win);
+        XFlush(x11display);
+    }
+
+    private uint _lastRedrawEventCode;
 
     override void invalidate()
     {
@@ -677,9 +676,9 @@ class X11Window : DWindow
         _platform.closeWindow(this);
     }
 
-    DrawBuf _drawbuf;
+    //===============================================================
 
-    void redraw()
+    private void redraw()
     {
         _lastRedrawEventCode = 0;
         //Use values cached by ConfigureNotify to avoid XGetWindowAttributes call.
@@ -701,7 +700,7 @@ class X11Window : DWindow
             drawUsingBitmap();
     }
 
-    protected void drawUsingBitmap()
+    private void drawUsingBitmap()
     {
         if (_w > 0 && _h > 0)
         {
@@ -751,12 +750,14 @@ class X11Window : DWindow
         }
     }
 
-    protected ButtonDetails _lbutton;
-    protected ButtonDetails _mbutton;
-    protected ButtonDetails _rbutton;
+    //===============================================================
+
+    private ButtonDetails _lbutton;
+    private ButtonDetails _mbutton;
+    private ButtonDetails _rbutton;
 
     // x11 gives flags from time prior event so if left button is pressed there is not Button1Mask
-    ushort convertMouseFlags(uint flags, MouseButton btn, bool pressed)
+    private ushort convertMouseFlags(uint x11Flags, MouseButton btn, bool pressed)
     {
         ushort res = 0;
         if (btn == MouseButton.left)
@@ -766,7 +767,7 @@ class X11Window : DWindow
             else
                 res &= ~MouseFlag.lbutton;
         }
-        else if (flags & Button1Mask)
+        else if (x11Flags & Button1Mask)
             res |= MouseFlag.lbutton;
 
         if (btn == MouseButton.middle)
@@ -776,7 +777,7 @@ class X11Window : DWindow
             else
                 res &= ~MouseFlag.mbutton;
         }
-        else if (flags & Button2Mask)
+        else if (x11Flags & Button2Mask)
             res |= MouseFlag.mbutton;
 
         if (btn == MouseButton.right)
@@ -786,30 +787,30 @@ class X11Window : DWindow
             else
                 res &= ~MouseFlag.rbutton;
         }
-        else if (flags & Button3Mask)
+        else if (x11Flags & Button3Mask)
             res |= MouseFlag.rbutton;
 
         return res;
     }
 
-    MouseButton convertMouseButton(uint button)
+    private MouseButton convertMouseButton(uint x11Button)
     {
-        if (button == Button1)
+        if (x11Button == Button1)
             return MouseButton.left;
-        if (button == Button2)
+        if (x11Button == Button2)
             return MouseButton.middle;
-        if (button == Button3)
+        if (x11Button == Button3)
             return MouseButton.right;
         return MouseButton.none;
     }
 
-    ushort lastFlags;
-    short lastx;
-    short lasty;
-    uint _keyFlags;
-    void processMouseEvent(MouseAction action, uint button, uint state, int x, int y)
+    private ushort lastFlags;
+    private short lastx, lasty;
+    private uint _keyFlags;
+
+    private void processMouseEvent(MouseAction action, uint x11Button, uint x11Flags, int x, int y)
     {
-        MouseEvent event = null;
+        MouseEvent event;
         if (action == MouseAction.wheel)
         {
             // handle wheel
@@ -831,8 +832,8 @@ class X11Window : DWindow
         }
         else
         {
-            MouseButton btn = convertMouseButton(button);
-            lastFlags = convertMouseFlags(state, btn, action == MouseAction.buttonDown);
+            MouseButton btn = convertMouseButton(x11Button);
+            lastFlags = convertMouseFlags(x11Flags, btn, action == MouseAction.buttonDown);
 
             if (_keyFlags & KeyFlag.shift)
                 lastFlags |= MouseFlag.shift;
@@ -846,12 +847,12 @@ class X11Window : DWindow
         }
         if (event)
         {
-            ButtonDetails* pbuttonDetails = null;
-            if (button == MouseButton.left)
+            ButtonDetails* pbuttonDetails;
+            if (event.button == MouseButton.left)
                 pbuttonDetails = &_lbutton;
-            else if (button == MouseButton.right)
+            else if (event.button == MouseButton.right)
                 pbuttonDetails = &_rbutton;
-            else if (button == MouseButton.middle)
+            else if (event.button == MouseButton.middle)
                 pbuttonDetails = &_mbutton;
             if (pbuttonDetails)
             {
@@ -874,17 +875,16 @@ class X11Window : DWindow
                 debug (mouse)
                     Log.d("Calling update() after mouse event");
                 update();
-                //invalidate();
             }
         }
     }
 
-    uint convertKeyCode(uint keyCode)
+    private uint convertKeyCode(uint x11Key)
     {
         import x11.keysymdef;
 
         alias KeyCode = beamui.core.events.KeyCode;
-        switch (keyCode)
+        switch (x11Key)
         {
         case XK_0: return KeyCode.alpha0;
         case XK_1: return KeyCode.alpha1;
@@ -1003,29 +1003,29 @@ class X11Window : DWindow
         case XK_KP_Divide:
             return KeyCode.divide;
         default:
-            return 0x10000 | keyCode;
+            return 0x10000 | x11Key;
         }
     }
 
-    uint convertKeyFlags(uint flags)
+    private uint convertKeyFlags(uint x11Keymod)
     {
         uint res;
-        if (flags & ControlMask)
+        if (x11Keymod & ControlMask)
             res |= KeyFlag.control;
-        if (flags & ShiftMask)
+        if (x11Keymod & ShiftMask)
             res |= KeyFlag.shift;
-        if (flags & LockMask)
+        if (x11Keymod & LockMask)
             res |= KeyFlag.alt;
         return res;
     }
 
-    bool processKeyEvent(KeyAction action, uint keyCode, uint flags)
+    private bool processKeyEvent(KeyAction action, uint x11Key, uint x11Keymod)
     {
         debug (keys)
             Log.fd("processKeyEvent %s, X11 key: 0x%08x, X11 flags: 0x%08x", action, keyCode, flags);
 
-        keyCode = convertKeyCode(keyCode);
-        flags = convertKeyFlags(flags);
+        uint keyCode = convertKeyCode(x11Key);
+        uint flags = convertKeyFlags(x11Keymod);
 
         alias KeyCode = beamui.core.events.KeyCode;
         if (action == KeyAction.keyDown)
@@ -1078,23 +1078,41 @@ class X11Window : DWindow
         {
             debug (redraw)
                 Log.d("Calling update() after key event");
-            //invalidate();
             update();
         }
         return res;
     }
 
-    bool processTextInput(dstring ds, uint flags)
+    private bool processTextInput(dstring ds, uint x11Keymod)
     {
-        flags = convertKeyFlags(flags);
+        uint flags = convertKeyFlags(x11Keymod);
         bool res = dispatchKeyEvent(new KeyEvent(KeyAction.text, 0, flags, ds));
         if (res)
         {
             debug (keys)
                 Log.d("Calling update() after text event");
-            invalidate();
+            update();
         }
         return res;
+    }
+
+    //===============================================================
+
+    override void postEvent(CustomEvent event)
+    {
+        super.postEvent(event);
+        XEvent ev;
+        ev.xclient = XClientMessageEvent.init;
+        ev.xclient.type = ClientMessage;
+        ev.xclient.window = _win;
+        ev.xclient.display = x11display2;
+        ev.xclient.message_type = atom_beamui_TASK_EVENT;
+        ev.xclient.format = 32;
+        ev.xclient.data.l[0] = event.uniqueID;
+        XLockDisplay(x11display2);
+        XSendEvent(x11display2, _win, false, StructureNotifyMask, &ev);
+        XFlush(x11display2);
+        XUnlockDisplay(x11display2);
     }
 
     override void scheduleAnimation()
@@ -1102,7 +1120,7 @@ class X11Window : DWindow
         invalidate();
     }
 
-    TimerThread timer;
+    private TimerThread timer;
     private long _nextExpectedTimerTs;
 
     override protected void scheduleSystemTimer(long intervalMillis)
@@ -1148,29 +1166,8 @@ class X11Window : DWindow
         return false;
     }
 
-    override void postEvent(CustomEvent event)
-    {
-        super.postEvent(event);
-        XEvent ev;
-        ev.xclient = XClientMessageEvent.init;
-        ev.xclient.type = ClientMessage;
-        ev.xclient.window = _win;
-        ev.xclient.display = x11display2;
-        ev.xclient.message_type = atom_beamui_TASK_EVENT;
-        ev.xclient.format = 32;
-        ev.xclient.data.l[0] = event.uniqueID;
-        XLockDisplay(x11display2);
-        XSendEvent(x11display2, _win, false, StructureNotifyMask, &ev);
-        XFlush(x11display2);
-        XUnlockDisplay(x11display2);
-        //        SDL_Event sdlevent;
-        //        sdlevent.user.type = USER_EVENT_ID;
-        //        sdlevent.user.code = cast(int)event.uniqueID;
-        //        sdlevent.user.windowID = windowID;
-        //        SDL_PushEvent(&sdlevent);
-    }
+    private CursorType _lastCursorType = CursorType.none;
 
-    protected CursorType _lastCursorType = CursorType.none;
     override protected void setCursorType(CursorType cursorType)
     {
         if (_lastCursorType != cursorType)
@@ -1187,7 +1184,7 @@ class X11Window : DWindow
 private immutable int CUSTOM_EVENT = 32;
 private immutable int TIMER_EVENT = 8;
 
-class X11Platform : Platform
+final class X11Platform : Platform
 {
     this()
     {
@@ -1246,12 +1243,12 @@ class X11Platform : Platform
         return handled;
     }
 
-    final bool allWindowsClosed()
+    bool allWindowsClosed()
     {
         return _windowMap.length == 0;
     }
 
-    protected int numberOfPendingEvents(int msecs = 10)
+    private int numberOfPendingEvents(int msecs = 10)
     {
         import core.sys.posix.sys.select;
 
@@ -1299,7 +1296,7 @@ class X11Platform : Platform
         return 0;
     }
 
-    protected void pumpEvents()
+    private void pumpEvents()
     {
         XFlush(x11display);
         // Note: only events we set the mask for are detected!
@@ -1313,7 +1310,7 @@ class X11Platform : Platform
         }
     }
 
-    protected void processXEvent(ref XEvent event)
+    private void processXEvent(ref XEvent event)
     {
         XComposeStatus compose;
         switch (event.type)
@@ -1676,7 +1673,7 @@ class X11Platform : Platform
         return XGetSelectionOwner(x11display, selectionType) != None;
     }
 
-    protected bool waitingForSelection;
+    private bool waitingForSelection;
     override dstring getClipboardText(bool mouseBuffer = false)
     {
         const selectionType = mouseBuffer ? XA_PRIMARY : atom_CLIPBOARD;

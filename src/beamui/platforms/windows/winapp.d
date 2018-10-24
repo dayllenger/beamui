@@ -247,19 +247,22 @@ static if (USE_OPENGL)
 alias unknownWindowMessageHandler =
     bool delegate(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, ref LRESULT result);
 
-class Win32Window : Window
+final class Win32Window : Window
 {
-    Win32Platform _platform;
-
-    HWND _hwnd;
-    dstring _title;
-    DrawBuf _drawbuf;
-    bool useOpengl;
-
     /// Win32 only - return window handle
-    @property HWND windowHandle()
+    @property HWND windowHandle() { return _hwnd; }
+
+    private
     {
-        return _hwnd;
+        Win32Platform _platform;
+
+        HWND _hwnd;
+
+        dstring _title;
+        DrawBuf _drawbuf;
+
+        bool useOpengl;
+        bool _destroying;
     }
 
     this(Win32Platform platform, dstring title, Window parent, WindowFlag flags, uint width = 0, uint height = 0)
@@ -337,7 +340,18 @@ class Win32Window : Window
             this.icon = imageCache.get(platform.defaultWindowIcon);
     }
 
-    protected Box getScreenDimensions()
+    ~this()
+    {
+        debug Log.d("Window destructor");
+        _destroying = true;
+        eliminate(_drawbuf);
+
+        if (_hwnd)
+            DestroyWindow(_hwnd);
+        _hwnd = null;
+    }
+
+    private Box getScreenDimensions()
     {
         MONITORINFO monitor_info;
         monitor_info.cbSize = monitor_info.sizeof;
@@ -355,59 +369,11 @@ class Win32Window : Window
         return Box(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top);
     }
 
-    protected bool _destroying;
-    ~this()
-    {
-        debug Log.d("Window destructor");
-        _destroying = true;
-        eliminate(_drawbuf);
-
-        if (_hwnd)
-            DestroyWindow(_hwnd);
-        _hwnd = null;
-    }
-
-    override void postEvent(CustomEvent event)
-    {
-        super.postEvent(event);
-        PostMessageW(_hwnd, CUSTOM_MESSAGE_ID, 0, event.uniqueID);
-    }
-
     override @property Window onFilesDropped(void delegate(string[]) handler)
     {
         super.onFilesDropped(handler);
         DragAcceptFiles(_hwnd, handler ? TRUE : FALSE);
         return this;
-    }
-
-    private long _nextExpectedTimerTs;
-    private UINT_PTR _timerID = 1;
-
-    override protected void scheduleSystemTimer(long intervalMillis)
-    {
-        if (intervalMillis < 10)
-            intervalMillis = 10;
-        long nextts = currentTimeMillis + intervalMillis;
-        if (_timerID && _nextExpectedTimerTs && _nextExpectedTimerTs < nextts + 10)
-            return; // don't reschedule timer, timer event will be received soon
-        if (_hwnd)
-        {
-            //_timerID =
-            SetTimer(_hwnd, _timerID, cast(uint)intervalMillis, null);
-            _nextExpectedTimerTs = nextts;
-        }
-    }
-
-    void handleTimer(UINT_PTR timerID)
-    {
-        //Log.d("handleTimer id=", timerID);
-        if (timerID == _timerID)
-        {
-            KillTimer(_hwnd, timerID);
-            //_timerID = 0;
-            _nextExpectedTimerTs = 0;
-            onTimer();
-        }
     }
 
     /// Custom window message handler
@@ -423,56 +389,11 @@ class Win32Window : Window
         return DefWindowProc(_hwnd, message, wParam, lParam);
     }
 
-    override void show()
+    override protected void handleWindowStateChange(WindowState newState, Box newWindowRect = Box.none)
     {
-        if (!mainWidget)
-        {
-            Log.e("Window is shown without main widget");
-            mainWidget = new Widget;
-        }
-        ReleaseCapture();
-
-        adjustSize();
-        adjustPosition();
-
-        mainWidget.setFocus();
-
-        if (_flags & WindowFlag.fullscreen)
-        {
-            Box rc = getScreenDimensions();
-            SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, rc.width, rc.height, SWP_SHOWWINDOW);
-            _windowState = WindowState.fullscreen;
-        }
-        else
-        {
-            ShowWindow(_hwnd, SW_SHOWNORMAL);
-            _windowState = WindowState.normal;
-        }
-
-        SetFocus(_hwnd);
-        //UpdateWindow(_hwnd);
-    }
-
-    override protected void handleWindowActivityChange(bool isWindowActive)
-    {
-        super.handleWindowActivityChange(isWindowActive);
-    }
-
-    override @property bool isActive()
-    {
-        return _hwnd == GetForegroundWindow();
-    }
-
-    override @property dstring title() const
-    {
-        return _title;
-    }
-
-    override @property void title(dstring caption)
-    {
-        _title = caption;
-        if (_hwnd)
-            SetWindowTextW(_hwnd, toUTF16z(_title));
+        if (_destroying)
+            return;
+        super.handleWindowStateChange(newState, newWindowRect);
     }
 
     override bool setWindowState(WindowState newState, bool activate = false, Box newWindowRect = Box.none)
@@ -603,19 +524,117 @@ class Win32Window : Window
         return res;
     }
 
-    void onCreate()
+    override @property bool isActive() const
+    {
+        return _hwnd == GetForegroundWindow();
+    }
+
+    override protected void handleWindowActivityChange(bool isWindowActive)
+    {
+        super.handleWindowActivityChange(isWindowActive);
+    }
+
+    private void onCreate()
     {
         Log.d("Window onCreate");
         _platform.onWindowCreated(_hwnd, this);
     }
 
-    void onDestroy()
+    private void onDestroy()
     {
         Log.d("Window onDestroy");
         _platform.onWindowDestroyed(_hwnd, this);
     }
 
-    protected bool _closeCalled;
+    //===============================================================
+
+    override @property dstring title() const
+    {
+        return _title;
+    }
+
+    override @property void title(dstring caption)
+    {
+        _title = caption;
+        if (_hwnd)
+            SetWindowTextW(_hwnd, toUTF16z(_title));
+    }
+
+    private HICON _icon;
+
+    override @property void icon(DrawBufRef buf)
+    {
+        if (_icon)
+            DestroyIcon(_icon);
+        _icon = null;
+        auto ic = cast(ColorDrawBuf)buf.get;
+        if (!ic)
+        {
+            Log.e("Trying to set null icon for window");
+            return;
+        }
+        auto resizedicon = new Win32ColorDrawBuf(ic, 32, 32);
+        resizedicon.invertAlpha();
+        ICONINFO ii;
+        HBITMAP mask = resizedicon.createTransparencyBitmap();
+        HBITMAP color = resizedicon.destroyLeavingBitmap();
+        ii.fIcon = TRUE;
+        ii.xHotspot = 0;
+        ii.yHotspot = 0;
+        ii.hbmMask = mask;
+        ii.hbmColor = color;
+        _icon = CreateIconIndirect(&ii);
+        if (_icon)
+        {
+            SendMessageW(_hwnd, WM_SETICON, ICON_SMALL, cast(LPARAM)_icon);
+            SendMessageW(_hwnd, WM_SETICON, ICON_BIG, cast(LPARAM)_icon);
+        }
+        else
+        {
+            Log.e("failed to create icon");
+        }
+        if (mask)
+            DeleteObject(mask);
+        DeleteObject(color);
+    }
+
+    override void show()
+    {
+        if (!mainWidget)
+        {
+            Log.e("Window is shown without main widget");
+            mainWidget = new Widget;
+        }
+        ReleaseCapture();
+
+        adjustSize();
+        adjustPosition();
+
+        mainWidget.setFocus();
+
+        if (_flags & WindowFlag.fullscreen)
+        {
+            Box rc = getScreenDimensions();
+            SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, rc.width, rc.height, SWP_SHOWWINDOW);
+            _windowState = WindowState.fullscreen;
+        }
+        else
+        {
+            ShowWindow(_hwnd, SW_SHOWNORMAL);
+            _windowState = WindowState.normal;
+        }
+
+        SetFocus(_hwnd);
+        //UpdateWindow(_hwnd);
+    }
+
+    override void invalidate()
+    {
+        InvalidateRect(_hwnd, null, FALSE);
+        //UpdateWindow(_hwnd);
+    }
+
+    private bool _closeCalled;
 
     override void close()
     {
@@ -626,20 +645,12 @@ class Win32Window : Window
         _platform.closeWindow(this);
     }
 
-    override protected void handleWindowStateChange(WindowState newState, Box newWindowRect = Box.none)
-    {
-        if (_destroying)
-            return;
-        super.handleWindowStateChange(newState, newWindowRect);
-    }
+    //===============================================================
 
-    HICON _icon;
+    private uint _cursorType;
+    private HANDLE[ushort] _cursorCache;
 
-    uint _cursorType;
-
-    HANDLE[ushort] _cursorCache;
-
-    HANDLE loadCursor(ushort id)
+    private HANDLE loadCursor(ushort id)
     {
         if (auto p = id in _cursorCache)
             return *p;
@@ -648,7 +659,7 @@ class Win32Window : Window
         return h;
     }
 
-    void onSetCursorType()
+    private void onSetCursorType()
     {
         HANDLE winCursor = null;
         switch (_cursorType) with (CursorType)
@@ -706,43 +717,7 @@ class Win32Window : Window
         onSetCursorType();
     }
 
-    override @property void icon(DrawBufRef buf)
-    {
-        if (_icon)
-            DestroyIcon(_icon);
-        _icon = null;
-        auto ic = cast(ColorDrawBuf)buf.get;
-        if (!ic)
-        {
-            Log.e("Trying to set null icon for window");
-            return;
-        }
-        auto resizedicon = new Win32ColorDrawBuf(ic, 32, 32);
-        resizedicon.invertAlpha();
-        ICONINFO ii;
-        HBITMAP mask = resizedicon.createTransparencyBitmap();
-        HBITMAP color = resizedicon.destroyLeavingBitmap();
-        ii.fIcon = TRUE;
-        ii.xHotspot = 0;
-        ii.yHotspot = 0;
-        ii.hbmMask = mask;
-        ii.hbmColor = color;
-        _icon = CreateIconIndirect(&ii);
-        if (_icon)
-        {
-            SendMessageW(_hwnd, WM_SETICON, ICON_SMALL, cast(LPARAM)_icon);
-            SendMessageW(_hwnd, WM_SETICON, ICON_BIG, cast(LPARAM)_icon);
-        }
-        else
-        {
-            Log.e("failed to create icon");
-        }
-        if (mask)
-            DeleteObject(mask);
-        DeleteObject(color);
-    }
-
-    void onPaint()
+    private void onPaint()
     {
         debug (redraw)
             Log.d("onPaint()");
@@ -787,19 +762,19 @@ class Win32Window : Window
 
     static if (USE_OPENGL)
     {
-        override void bindContext()
+        override protected void bindContext()
         {
             HDC hdc = GetDC(_hwnd);
             sharedGLContext.bind(hdc);
         }
 
-        override void swapBuffers()
+        override protected void swapBuffers()
         {
             HDC hdc = GetDC(_hwnd);
             sharedGLContext.swapBuffers(hdc);
         }
 
-        void paintUsingOpenGL()
+        private void paintUsingOpenGL()
         {
             // hack to stop infinite WM_PAINT loop
             PAINTSTRUCT ps;
@@ -810,9 +785,11 @@ class Win32Window : Window
         }
     }
 
-    protected ButtonDetails _lbutton;
-    protected ButtonDetails _mbutton;
-    protected ButtonDetails _rbutton;
+    //===============================================================
+
+    private ButtonDetails _lbutton;
+    private ButtonDetails _mbutton;
+    private ButtonDetails _rbutton;
 
     private void updateButtonsState(uint flags)
     {
@@ -825,7 +802,7 @@ class Win32Window : Window
     }
 
     private bool _mouseTracking;
-    private bool onMouse(uint message, uint flags, short x, short y)
+    private bool processMouseEvent(uint message, uint flags, short x, short y)
     {
         debug (mouse)
             Log.d("Win32 Mouse Message ", message, " flags=", flags, " x=", x, " y=", y);
@@ -906,7 +883,7 @@ class Win32Window : Window
             {
                 action = MouseAction.leave;
                 debug (mouse)
-                    Log.d("Win32Window.onMouse releasing capture");
+                    Log.d("Releasing capture");
                 _mouseTracking = false;
                 ReleaseCapture();
             }
@@ -916,27 +893,28 @@ class Win32Window : Window
             if (x >= 0 && y >= 0 && x < _w && y < _h)
             {
                 debug (mouse)
-                    Log.d("Win32Window.onMouse Setting capture");
+                    Log.d("Setting capture");
                 _mouseTracking = true;
                 SetCapture(_hwnd);
             }
         }
-        MouseEvent event = new MouseEvent(action, button, cast(ushort)flags, x, y, wheelDelta);
+        auto event = new MouseEvent(action, button, cast(ushort)flags, x, y, wheelDelta);
         event.lbutton = _lbutton;
         event.rbutton = _rbutton;
         event.mbutton = _mbutton;
         bool res = dispatchMouseEvent(event);
         if (res)
         {
-            //Log.v("Calling update() after mouse event");
+            debug (mouse)
+                Log.d("Calling update() after mouse event");
             update();
         }
         return res;
     }
 
-    protected uint _keyFlags;
+    private uint _keyFlags;
 
-    protected void updateKeyFlags(KeyAction action, KeyFlag flag, uint preserveFlag)
+    private void updateKeyFlags(KeyAction action, KeyFlag flag, uint preserveFlag)
     {
         if (action == KeyAction.keyDown)
             _keyFlags |= flag;
@@ -954,10 +932,10 @@ class Win32Window : Window
         }
     }
 
-    bool onKey(KeyAction action, uint keyCode, int repeatCount, dchar character = 0, bool syskey = false)
+    private bool processKeyEvent(KeyAction action, uint keyCode, int repeatCount, dchar character = 0, bool syskey = false)
     {
         debug (keys)
-            Log.fd("enter onKey action: %s, keyCode: %s, char: %s (%s), syskey: %s, _keyFlags: %04x",
+            Log.fd("processKeyEvent %s, keyCode: %s, char: %s (%s), syskey: %s, _keyFlags: %04x",
                 action, keyCode, character, cast(int)character, syskey, _keyFlags);
         KeyEvent event;
         if (syskey)
@@ -1029,7 +1007,7 @@ class Win32Window : Window
             {
                 if (oldFlags != _keyFlags)
                 {
-                    Log.fd("flags updated, onKey action: %s, keyCode: %s, char: %s (%s), syskey: %s, _keyFlags: %04x",
+                    Log.fd("processKeyEvent %s, flags updated: keyCode: %s, char: %s (%s), syskey: %s, _keyFlags: %04x",
                         action, keyCode, character, cast(int)character, syskey, _keyFlags);
                 }
             }
@@ -1052,13 +1030,13 @@ class Win32Window : Window
                 {
                     newFlags &= (~(KeyFlag.lralt)) & (~(KeyFlag.lrcontrol));
                     debug (keys)
-                        Log.fd("flags updated for text, onKey action: %s, keyCode: %s, char: %s (%s), syskey: %s, _keyFlags: %04x",
-                            action, keyCode, character, cast(int)character, syskey, _keyFlags);
+                        Log.fd("processKeyEvent, flags updated for text: keyCode: %s, char: %s (%s), syskey: %s, _keyFlags: %04x",
+                            keyCode, character, cast(int)character, syskey, _keyFlags);
                 }
                 event = new KeyEvent(action, 0, newFlags, cast(dstring)text);
             }
         }
-        bool res = false;
+        bool res;
         if (event !is null)
         {
             res = dispatchKeyEvent(event);
@@ -1072,24 +1050,52 @@ class Win32Window : Window
         return res;
     }
 
-    override void invalidate()
+    //===============================================================
+
+    override void postEvent(CustomEvent event)
     {
-        InvalidateRect(_hwnd, null, FALSE);
-        //UpdateWindow(_hwnd);
+        super.postEvent(event);
+        PostMessageW(_hwnd, CUSTOM_MESSAGE_ID, 0, event.uniqueID);
     }
 
     override void scheduleAnimation()
     {
         invalidate();
     }
-}
 
-class Win32Platform : Platform
-{
-    this()
+    private long _nextExpectedTimerTs;
+    private UINT_PTR _timerID = 1;
+
+    override protected void scheduleSystemTimer(long intervalMillis)
     {
+        if (intervalMillis < 10)
+            intervalMillis = 10;
+        long nextts = currentTimeMillis + intervalMillis;
+        if (_timerID && _nextExpectedTimerTs && _nextExpectedTimerTs < nextts + 10)
+            return; // don't reschedule timer, timer event will be received soon
+        if (_hwnd)
+        {
+            //_timerID =
+            SetTimer(_hwnd, _timerID, cast(uint)intervalMillis, null);
+            _nextExpectedTimerTs = nextts;
+        }
     }
 
+    void handleTimer(UINT_PTR timerID)
+    {
+        //Log.d("handleTimer id=", timerID);
+        if (timerID == _timerID)
+        {
+            KillTimer(_hwnd, timerID);
+            //_timerID = 0;
+            _nextExpectedTimerTs = 0;
+            onTimer();
+        }
+    }
+}
+
+final class Win32Platform : Platform
+{
     bool registerWndClass()
     {
         //MSG  msg;
@@ -1522,7 +1528,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_MOUSEWHEEL:
         if (window !is null)
         {
-            if (window.onMouse(message, cast(uint)wParam, cast(short)(lParam & 0xFFFF),
+            if (window.processMouseEvent(message, cast(uint)wParam, cast(short)(lParam & 0xFFFF),
                     cast(short)((lParam >> 16) & 0xFFFF)))
                 return 0; // processed
         }
@@ -1557,7 +1563,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 break;
             }
 
-            if (window.onKey(message == WM_KEYDOWN || message == WM_SYSKEYDOWN ? KeyAction.keyDown
+            if (window.processKeyEvent(message == WM_KEYDOWN || message == WM_SYSKEYDOWN ? KeyAction.keyDown
                     : KeyAction.keyUp, cast(uint)new_vk, repeatCount, 0, message == WM_SYSKEYUP ||
                     message == WM_SYSKEYDOWN))
                 return 0; // processed
@@ -1570,7 +1576,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(uint)wParam;
             debug (keys)
                 Log.d("WM_UNICHAR ", ch, " (", cast(int)ch, ")");
-            if (window.onKey(KeyAction.text, cast(uint)wParam, repeatCount, ch))
+            if (window.processKeyEvent(KeyAction.text, cast(uint)wParam, repeatCount, ch))
                 return 1; // processed
             return 1;
         }
@@ -1582,7 +1588,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(uint)wParam;
             debug (keys)
                 Log.d("WM_CHAR ", ch, " (", cast(int)ch, ")");
-            if (window.onKey(KeyAction.text, cast(uint)wParam, repeatCount, ch))
+            if (window.processKeyEvent(KeyAction.text, cast(uint)wParam, repeatCount, ch))
                 return 1; // processed
             return 1;
         }

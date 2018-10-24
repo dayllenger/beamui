@@ -20,8 +20,12 @@ import beamui.widgets.widget;
 
 class ConsoleWindow : Window
 {
-    ConsolePlatform _platform;
-    ConsoleWindow _parent;
+    private
+    {
+        ConsolePlatform _platform;
+
+        dstring _title;
+    }
 
     this(ConsolePlatform platform, dstring caption, Window parent, WindowFlag flags)
     {
@@ -31,6 +35,18 @@ class ConsoleWindow : Window
         _w = _platform.console.width;
         _h = _platform.console.height;
         _windowRect = Box(0, 0, _w, _h);
+    }
+
+    override @property dstring title() const { return _title; }
+
+    override @property void title(dstring caption)
+    {
+        _title = caption;
+    }
+
+    override @property void icon(DrawBufRef icon)
+    {
+        // ignore
     }
 
     override void show()
@@ -45,23 +61,6 @@ class ConsoleWindow : Window
         invalidate();
     }
 
-    private dstring _title;
-
-    override @property dstring title() const
-    {
-        return _title;
-    }
-
-    override @property void title(dstring caption)
-    {
-        _title = caption;
-    }
-
-    override @property void icon(DrawBufRef icon)
-    {
-        // ignore
-    }
-
     override void invalidate()
     {
         _platform.update();
@@ -73,40 +72,32 @@ class ConsoleWindow : Window
         _platform.closeWindow(this);
     }
 
-    override @property Window parentWindow()
-    {
-        return _parent;
-    }
+    //===============================================================
 
-    override protected void handleWindowActivityChange(bool isWindowActive)
-    {
-        super.handleWindowActivityChange(isWindowActive);
-    }
-
-    override @property bool isActive()
+    override @property bool isActive() const
     {
         // todo
         return true;
     }
 
-    protected bool _visible;
+    private bool _visible;
     /// Returns true if window is shown
-    @property bool visible()
-    {
-        return _visible;
-    }
+    @property bool visible() { return _visible; }
 }
 
 class ConsolePlatform : Platform
 {
-    protected Console _console;
+    @property Console console() { return _console; }
 
-    @property Console console()
+    @property DrawBuf drawBuf() { return _drawBuf; }
+
+    private
     {
-        return _console;
+        Console _console;
+        ConsoleWindow[] _windowList;
+        ANSIConsoleDrawBuf _drawBuf;
     }
 
-    protected ANSIConsoleDrawBuf _drawBuf;
     this()
     {
         _console = new Console;
@@ -129,8 +120,6 @@ class ConsolePlatform : Platform
         destroy(_drawBuf);
     }
 
-    ConsoleWindow[] _windowList;
-
     override Window createWindow(dstring title, Window parent,
             WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0)
     {
@@ -144,11 +133,6 @@ class ConsolePlatform : Platform
         if (!_windowList.length)
             return null;
         return _windowList[$ - 1];
-    }
-
-    @property DrawBuf drawBuf()
-    {
-        return _drawBuf;
     }
 
     protected bool onConsoleKey(KeyEvent event)
@@ -188,7 +172,7 @@ class ConsolePlatform : Platform
         return false;
     }
 
-    protected bool _needRedraw = true;
+    private bool _needRedraw = true;
     void update()
     {
         _needRedraw = true;
@@ -238,7 +222,7 @@ class ConsolePlatform : Platform
         return false;
     }
 
-    protected Window[] _windowsToClose;
+    private Window[] _windowsToClose;
     protected void handleCloseWindow(Window w)
     {
         for (int i = 0; i < _windowList.length; i++)
@@ -323,11 +307,9 @@ class ConsolePlatform : Platform
 /// Drawing buffer - image container which allows to perform some drawing operations
 class ANSIConsoleDrawBuf : ConsoleDrawBuf
 {
-    protected Console _console;
-    @property Console console()
-    {
-        return _console;
-    }
+    @property Console console() { return _console; }
+
+    private Console _console;
 
     this(Console console)
     {

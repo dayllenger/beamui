@@ -340,14 +340,15 @@ class Window : CustomEventTarget
     //===============================================================
     // Abstract methods: override in platform implementation
 
-    /// Show window
-    abstract void show();
     /// Get window title (caption)
     abstract @property dstring title() const;
     /// Set window title
     abstract @property void title(dstring caption);
     /// Set window icon
     abstract @property void icon(DrawBufRef icon);
+
+    /// Show window
+    abstract void show();
     /// Request window redraw
     abstract void invalidate();
     /// Close window
@@ -1002,8 +1003,9 @@ class Window : CustomEventTarget
     enum PERFORMANCE_LOGGING_THRESHOLD_MS = 2;
 
     /// Set when first draw is called: don't handle mouse/key input until draw (layout) is called
-    protected bool _firstDrawCalled = false;
+    private bool _firstDrawCalled;
     private long lastDrawTs;
+
     void onDraw(DrawBuf buf)
     {
         _firstDrawCalled = true;
@@ -1153,10 +1155,8 @@ class Window : CustomEventTarget
         return _focusedWidget;
     }
 
-    @property bool isActive()
-    {
-        return true;
-    }
+    /// Is this window focused?
+    abstract @property bool isActive() const;
 
     /// Window activate/deactivate signal
     Signal!(void delegate(Window, bool isWindowActive)) windowActivityChanged;

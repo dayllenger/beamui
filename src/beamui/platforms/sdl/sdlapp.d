@@ -67,9 +67,21 @@ private __gshared uint WINDOW_CLOSE_EVENT_ID;
 
 final class SDLWindow : Window
 {
-    SDLPlatform _platform;
-    SDL_Window* _win;
-    SDL_Renderer* _renderer;
+    @property uint windowID()
+    {
+        return _win ? SDL_GetWindowID(_win) : 0;
+    }
+
+    private
+    {
+        SDLPlatform _platform;
+
+        SDL_Window* _win;
+        SDL_Renderer* _renderer;
+
+        dstring _title;
+        DrawBuf _drawbuf;
+    }
 
     this(SDLPlatform platform, dstring caption, Window parent, WindowFlag flags, uint width = 0, uint height = 0)
     {
@@ -106,23 +118,6 @@ final class SDLWindow : Window
         if (_win)
             SDL_DestroyWindow(_win);
         eliminate(_drawbuf);
-    }
-
-    @property uint windowID()
-    {
-        if (_win)
-            return SDL_GetWindowID(_win);
-        return 0;
-    }
-
-    override void postEvent(CustomEvent event)
-    {
-        super.postEvent(event);
-        SDL_Event sdlevent;
-        sdlevent.user.type = USER_EVENT_ID;
-        sdlevent.user.code = cast(int)event.uniqueID;
-        sdlevent.user.windowID = windowID;
-        SDL_PushEvent(&sdlevent);
     }
 
     static if (USE_OPENGL)
@@ -246,7 +241,7 @@ final class SDLWindow : Window
         return true;
     }
 
-    void fixSize()
+    private void fixSize()
     {
         int w = 0;
         int h = 0;
@@ -265,42 +260,6 @@ final class SDLWindow : Window
                 SCREEN_DPI = 96 * pxw / w;
         }
         onResize(max(pxw, w), max(pxh, h));
-    }
-
-    override void setMinimumSize(Size minSize)
-    {
-        SDL_SetWindowMinimumSize(_win, max(minSize.w, 0), max(minSize.h, 0));
-    }
-
-    override void setMaximumSize(Size maxSize)
-    {
-        SDL_SetWindowMaximumSize(_win, max(maxSize.w, 0), max(maxSize.h, 0));
-    }
-
-    override void show()
-    {
-        Log.d("SDLWindow.show - ", title);
-
-        if (!mainWidget)
-        {
-            Log.e("Window is shown without main widget");
-            mainWidget = new Widget;
-        }
-        adjustSize();
-        adjustPosition();
-
-        mainWidget.setFocus();
-
-        SDL_ShowWindow(_win);
-        fixSize();
-        SDL_RaiseWindow(_win);
-        invalidate();
-    }
-
-    override void close()
-    {
-        Log.d("SDLWindow.close()");
-        _platform.closeWindow(this);
     }
 
     override protected void handleWindowStateChange(WindowState newState, Box newWindowRect = Box.none)
@@ -409,23 +368,30 @@ final class SDLWindow : Window
         return res;
     }
 
+    override void setMinimumSize(Size minSize)
+    {
+        SDL_SetWindowMinimumSize(_win, max(minSize.w, 0), max(minSize.h, 0));
+    }
+
+    override void setMaximumSize(Size maxSize)
+    {
+        SDL_SetWindowMaximumSize(_win, max(maxSize.w, 0), max(maxSize.h, 0));
+    }
+
+    override @property bool isActive() const
+    {
+        uint flags = SDL_GetWindowFlags(cast(SDL_Window*)_win);
+        return (flags & SDL_WINDOW_INPUT_FOCUS) == SDL_WINDOW_INPUT_FOCUS;
+    }
+
     override protected void handleWindowActivityChange(bool isWindowActive)
     {
         super.handleWindowActivityChange(isWindowActive);
     }
 
-    override @property bool isActive()
-    {
-        uint flags = SDL_GetWindowFlags(_win);
-        return (flags & SDL_WINDOW_INPUT_FOCUS) == SDL_WINDOW_INPUT_FOCUS;
-    }
+    //===============================================================
 
-    protected dstring _title;
-
-    override @property dstring title() const
-    {
-        return _title;
-    }
+    override @property dstring title() const { return _title; }
 
     override @property void title(dstring caption)
     {
@@ -465,13 +431,49 @@ final class SDLWindow : Window
         }
     }
 
-    override void scheduleAnimation()
+    override void show()
     {
+        Log.d("SDLWindow.show - ", title);
+
+        if (!mainWidget)
+        {
+            Log.e("Window is shown without main widget");
+            mainWidget = new Widget;
+        }
+        adjustSize();
+        adjustPosition();
+
+        mainWidget.setFocus();
+
+        SDL_ShowWindow(_win);
+        fixSize();
+        SDL_RaiseWindow(_win);
         invalidate();
     }
 
-    protected CursorType _lastCursorType = CursorType.none;
-    protected SDL_Cursor*[uint] _cursorMap;
+    private uint _lastRedrawEventCode;
+
+    override void invalidate()
+    {
+        _platform.sendRedrawEvent(windowID, ++_lastRedrawEventCode);
+    }
+
+    override void close()
+    {
+        Log.d("SDLWindow.close()");
+        _platform.closeWindow(this);
+    }
+
+    //===============================================================
+
+    private void processRedrawEvent(uint code)
+    {
+        if (code == _lastRedrawEventCode)
+            redraw();
+    }
+
+    private CursorType _lastCursorType = CursorType.none;
+    private SDL_Cursor*[uint] _cursorMap;
 
     override protected void setCursorType(CursorType cursorType)
     {
@@ -550,9 +552,9 @@ final class SDLWindow : Window
         }
     }
 
-    SDL_Texture* _texture;
-    int _txw;
-    int _txh;
+    private SDL_Texture* _texture;
+    private int _txw, _txh;
+
     private void updateBufferSize()
     {
         if (_texture && (_txw != _w || _txh != _h))
@@ -569,9 +571,7 @@ final class SDLWindow : Window
         }
     }
 
-    DrawBuf _drawbuf;
-
-    void redraw()
+    private void redraw()
     {
         // check if size has been changed
         fixSize();
@@ -615,47 +615,51 @@ final class SDLWindow : Window
 
     static if (USE_OPENGL)
     {
-        override void bindContext()
+        override protected void bindContext()
         {
             SDL_GL_MakeCurrent(_win, _context);
         }
 
-        override void swapBuffers()
+        override protected void swapBuffers()
         {
             SDL_GL_SwapWindow(_win);
         }
     }
 
-    protected ButtonDetails _lbutton;
-    protected ButtonDetails _mbutton;
-    protected ButtonDetails _rbutton;
-    ushort convertMouseFlags(uint flags)
+    //===============================================================
+
+    private ButtonDetails _lbutton;
+    private ButtonDetails _mbutton;
+    private ButtonDetails _rbutton;
+
+    private ushort convertMouseFlags(uint sdlFlags)
     {
         ushort res = 0;
-        if (flags & SDL_BUTTON_LMASK)
+        if (sdlFlags & SDL_BUTTON_LMASK)
             res |= MouseFlag.lbutton;
-        if (flags & SDL_BUTTON_RMASK)
+        if (sdlFlags & SDL_BUTTON_RMASK)
             res |= MouseFlag.rbutton;
-        if (flags & SDL_BUTTON_MMASK)
+        if (sdlFlags & SDL_BUTTON_MMASK)
             res |= MouseFlag.mbutton;
         return res;
     }
 
-    MouseButton convertMouseButton(uint button)
+    private MouseButton convertMouseButton(uint sdlButton)
     {
-        if (button == SDL_BUTTON_LEFT)
+        if (sdlButton == SDL_BUTTON_LEFT)
             return MouseButton.left;
-        if (button == SDL_BUTTON_RIGHT)
+        if (sdlButton == SDL_BUTTON_RIGHT)
             return MouseButton.right;
-        if (button == SDL_BUTTON_MIDDLE)
+        if (sdlButton == SDL_BUTTON_MIDDLE)
             return MouseButton.middle;
         return MouseButton.none;
     }
 
-    ushort lastFlags;
-    short lastx;
-    short lasty;
-    void processMouseEvent(MouseAction action, uint button, uint state, int x, int y)
+    private ushort lastFlags;
+    private short lastx, lasty;
+    private uint _keyFlags;
+
+    private void processMouseEvent(MouseAction action, uint sdlButton, uint sdlFlags, int x, int y)
     {
         // correct mouse coordinates for HIGHDPI on mac
         int drawableW = 0;
@@ -673,7 +677,7 @@ final class SDLWindow : Window
             }
         }
 
-        MouseEvent event = null;
+        MouseEvent event;
         if (action == MouseAction.wheel)
         {
             // handle wheel
@@ -695,7 +699,7 @@ final class SDLWindow : Window
         }
         else
         {
-            lastFlags = convertMouseFlags(state);
+            lastFlags = convertMouseFlags(sdlFlags);
             if (_keyFlags & KeyFlag.shift)
                 lastFlags |= MouseFlag.shift;
             if (_keyFlags & KeyFlag.control)
@@ -704,17 +708,17 @@ final class SDLWindow : Window
                 lastFlags |= MouseFlag.alt;
             lastx = cast(short)x;
             lasty = cast(short)y;
-            MouseButton btn = convertMouseButton(button);
+            MouseButton btn = convertMouseButton(sdlButton);
             event = new MouseEvent(action, btn, lastFlags, lastx, lasty);
         }
         if (event)
         {
-            ButtonDetails* pbuttonDetails = null;
-            if (button == MouseButton.left)
+            ButtonDetails* pbuttonDetails;
+            if (event.button == MouseButton.left)
                 pbuttonDetails = &_lbutton;
-            else if (button == MouseButton.right)
+            else if (event.button == MouseButton.right)
                 pbuttonDetails = &_rbutton;
-            else if (button == MouseButton.middle)
+            else if (event.button == MouseButton.middle)
                 pbuttonDetails = &_mbutton;
             if (pbuttonDetails)
             {
@@ -740,9 +744,9 @@ final class SDLWindow : Window
         }
     }
 
-    uint convertKeyCode(uint keyCode)
+    private uint convertKeyCode(uint sdlKeyCode)
     {
-        switch (keyCode)
+        switch (sdlKeyCode)
         {
         case SDLK_0: return KeyCode.alpha0;
         case SDLK_1: return KeyCode.alpha1;
@@ -865,37 +869,37 @@ final class SDLWindow : Window
         case '/':
             return KeyCode.divide;
         default:
-            return 0x10000 | keyCode;
+            return 0x10000 | sdlKeyCode;
         }
     }
 
-    uint convertKeyFlags(uint flags)
+    private uint convertKeyFlags(uint sdlKeymod)
     {
         uint res;
-        if (flags & KMOD_CTRL)
+        if (sdlKeymod & KMOD_CTRL)
             res |= KeyFlag.control;
-        if (flags & KMOD_SHIFT)
+        if (sdlKeymod & KMOD_SHIFT)
             res |= KeyFlag.shift;
-        if (flags & KMOD_ALT)
+        if (sdlKeymod & KMOD_ALT)
             res |= KeyFlag.alt;
-        if (flags & KMOD_GUI)
+        if (sdlKeymod & KMOD_GUI)
             res |= KeyFlag.menu;
-        if (flags & KMOD_RCTRL)
+        if (sdlKeymod & KMOD_RCTRL)
             res |= KeyFlag.rcontrol | KeyFlag.control;
-        if (flags & KMOD_RSHIFT)
+        if (sdlKeymod & KMOD_RSHIFT)
             res |= KeyFlag.rshift | KeyFlag.shift;
-        if (flags & KMOD_RALT)
+        if (sdlKeymod & KMOD_RALT)
             res |= KeyFlag.ralt | KeyFlag.alt;
-        if (flags & KMOD_LCTRL)
+        if (sdlKeymod & KMOD_LCTRL)
             res |= KeyFlag.lcontrol | KeyFlag.control;
-        if (flags & KMOD_LSHIFT)
+        if (sdlKeymod & KMOD_LSHIFT)
             res |= KeyFlag.lshift | KeyFlag.shift;
-        if (flags & KMOD_LALT)
+        if (sdlKeymod & KMOD_LALT)
             res |= KeyFlag.lalt | KeyFlag.alt;
         return res;
     }
 
-    bool processTextInput(const char* s)
+    private bool processTextInput(const char* s)
     {
         string str = fromStringz(s).dup;
         dstring ds = toUTF32(str);
@@ -937,14 +941,13 @@ final class SDLWindow : Window
         }
     }
 
-    uint _keyFlags;
-    bool processKeyEvent(KeyAction action, uint keyCodeIn, uint flags)
+    private bool processKeyEvent(KeyAction action, uint sdlKeyCode, uint sdlKeymod)
     {
         debug (keys)
-            Log.fd("processKeyEvent %s, SDL key: 0x%08x, SDL flags: 0x%08x", action, keyCode, flags);
+            Log.fd("processKeyEvent %s, SDL key: 0x%08x, SDL flags: 0x%08x", action, sdlKeyCode, sdlKeymod);
 
-        uint keyCode = convertKeyCode(keyCodeIn);
-        flags = convertKeyFlags(flags);
+        uint keyCode = convertKeyCode(sdlKeyCode);
+        uint flags = convertKeyFlags(sdlKeymod);
         if (action == KeyAction.keyDown)
         {
             switch (keyCode)
@@ -992,7 +995,7 @@ final class SDLWindow : Window
 
         if (action == KeyAction.keyDown || action == KeyAction.keyUp)
         {
-            if ((keyCodeIn >= SDLK_KP_1 && keyCodeIn <= SDLK_KP_0 || keyCodeIn == SDLK_KP_PERIOD //|| keyCodeIn >= 0x40000059 && keyCodeIn
+            if ((sdlKeyCode >= SDLK_KP_1 && sdlKeyCode <= SDLK_KP_0 || sdlKeyCode == SDLK_KP_PERIOD //|| sdlKeyCode >= 0x40000059 && sdlKeyCode
                 ) && isNumLockEnabled)
                 return false;
         }
@@ -1011,17 +1014,21 @@ final class SDLWindow : Window
         return res;
     }
 
-    uint _lastRedrawEventCode;
+    //===============================================================
 
-    override void invalidate()
+    override void postEvent(CustomEvent event)
     {
-        _platform.sendRedrawEvent(windowID, ++_lastRedrawEventCode);
+        super.postEvent(event);
+        SDL_Event sdlevent;
+        sdlevent.user.type = USER_EVENT_ID;
+        sdlevent.user.code = cast(int)event.uniqueID;
+        sdlevent.user.windowID = windowID;
+        SDL_PushEvent(&sdlevent);
     }
 
-    void processRedrawEvent(uint code)
+    override void scheduleAnimation()
     {
-        if (code == _lastRedrawEventCode)
-            redraw();
+        invalidate();
     }
 
     private long _nextExpectedTimerTs;
@@ -1397,7 +1404,7 @@ final class SDLPlatform : Platform
             }
             break;
         default:
-            // not supported event
+            // custom or not supported event
             if (event.type == USER_EVENT_ID)
             {
                 SDLWindow w = getWindow(event.user.windowID);
@@ -1438,13 +1445,11 @@ final class SDLPlatform : Platform
         return false;
     }
 
-    /// Check has clipboard text
     override bool hasClipboardText(bool mouseBuffer = false)
     {
         return (SDL_HasClipboardText() == SDL_TRUE);
     }
 
-    /// Retrieve text from clipboard (when mouseBuffer == true, use mouse selection clipboard - under linux)
     override dstring getClipboardText(bool mouseBuffer = false)
     {
         char* txt = SDL_GetClipboardText();
@@ -1455,7 +1460,6 @@ final class SDLPlatform : Platform
         return normalizeEOLs(toUTF32(s));
     }
 
-    /// Set text to clipboard (when mouseBuffer == true, use mouse selection clipboard - under linux)
     override void setClipboardText(dstring text, bool mouseBuffer = false)
     {
         string s = toUTF8(text);
