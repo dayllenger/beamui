@@ -654,7 +654,7 @@ class Window : CustomEventTarget
             _tooltip.x = x;
             _tooltip.y = y;
             _tooltip.ownerWidget = ownerWidget;
-            _tooltip.timerID = setTimer(&onTooltipTimer, delay);
+            _tooltip.timerID = setTimer(delay, &onTooltipTimer);
         }
     }
 
@@ -755,7 +755,7 @@ class Window : CustomEventTarget
         _popups ~= res;
         setFocus(weakRef(content));
         _mainWidget.maybe.requestLayout();
-        update(false);
+        update();
         return res;
     }
 
@@ -1770,7 +1770,7 @@ class Window : CustomEventTarget
     {
         bool res = _timerQueue.notify();
         if (res)
-            update(false);
+            update();
         return res;
     }
 
@@ -1785,7 +1785,7 @@ class Window : CustomEventTarget
             // check if update needed and redraw if so
             debug (timers)
                 Log.d("before update");
-            update(false);
+            update();
             debug (timers)
                 Log.d("after update");
         }
@@ -1798,28 +1798,12 @@ class Window : CustomEventTarget
         }
     }
 
-    /// Set timer for destination widget - destination.onTimer() will be called after interval expiration; returns timer id
-    ulong setTimer(WeakRef!Widget destination, long intervalMillis)
-    {
-        if (!isChild(destination))
-        {
-            Log.e("setTimer() is called not for child widget of window");
-            return 0;
-        }
-        ulong res = _timerQueue.add(destination, intervalMillis);
-        long nextInterval = _timerQueue.nextIntervalMillis();
-        if (nextInterval > 0)
-        {
-            scheduleSystemTimer(intervalMillis);
-        }
-        return res;
-    }
     /// Set timer with a delegate, that will be called after interval expiration; returns timer id
     /// Node: You must cancel the timer if you destroy object this handler belongs to.
-    ulong setTimer(bool delegate() handler, long intervalMillis)
+    ulong setTimer(long intervalMillis, bool delegate() handler)
     {
         assert(handler !is null);
-        ulong res = _timerQueue.add(handler, intervalMillis);
+        ulong res = _timerQueue.add(intervalMillis, handler);
         long nextInterval = _timerQueue.nextIntervalMillis();
         if (nextInterval > 0)
         {

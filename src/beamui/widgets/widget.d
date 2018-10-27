@@ -1667,11 +1667,18 @@ public:
             clicked(this);
     }
 
-    /// Set new timer to call onTimer() after specified interval (for recurred notifications, return true from onTimer)
-    ulong setTimer(long intervalMillis)
+    /// Set new timer to call a delegate after specified interval (for recurred notifications, return true from the handler)
+    /// Note: This function will safely cancel the timer if widget is destroyed.
+    ulong setTimer(long intervalMillis, bool delegate() handler)
     {
         if (auto w = window)
-            return w.setTimer(weakRef(this), intervalMillis);
+        {
+            bool* destroyed = _isDestroyed;
+            return w.setTimer(intervalMillis, {
+                // cancel timer on widget destruction
+                return !(*destroyed) ? handler() : false;
+            });
+        }
         return 0; // no window - no timer
     }
 
@@ -1680,14 +1687,6 @@ public:
     {
         if (auto w = window)
             w.cancelTimer(timerID);
-    }
-
-    /// Handle timer; return true to repeat timer event after next interval, false cancel timer
-    bool onTimer(ulong id)
-    {
-        // override to do something useful
-        // return true to repeat after the same interval, false to stop timer
-        return false;
     }
 
     /// Process key event, return true if event is processed
@@ -2378,6 +2377,7 @@ class WidgetGroup : Widget
     {
         assert(newChild !is null && oldChild !is null, "Widgets must exist");
         _children.replace(newChild, oldChild);
+        newChild.parent = this;
     }
 }
 

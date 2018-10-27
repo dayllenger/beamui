@@ -869,7 +869,17 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                         return; // don't update timer too frequently
                     cancelTimer(_caretTimerID);
                 }
-                _caretTimerID = setTimer(_caretBlingingInterval / 2);
+                _caretTimerID = setTimer(_caretBlingingInterval / 2,
+                    delegate() {
+                        _caretBlinkingPhase = !_caretBlinkingPhase;
+                        if (!_caretBlinkingPhase)
+                            _lastBlinkStartTs = currentTimeMillis;
+                        invalidate();
+                        bool repeat = focused;
+                        if (!repeat)
+                            _caretTimerID = 0;
+                        return repeat;
+                    });
                 _lastBlinkStartTs = ts;
                 _caretBlinkingPhase = false;
                 invalidate();
@@ -894,29 +904,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 }
             }
         }
-    }
-
-    override bool onTimer(ulong id)
-    {
-        if (id == _caretTimerID)
-        {
-            _caretBlinkingPhase = !_caretBlinkingPhase;
-            if (!_caretBlinkingPhase)
-                _lastBlinkStartTs = currentTimeMillis;
-            invalidate();
-            //window.update(true);
-            bool res = focused;
-            if (!res)
-                _caretTimerID = 0;
-            return res;
-        }
-        if (id == _hoverTimer)
-        {
-            cancelHoverTimer();
-            onHoverTimeout(_hoverMousePosition, _hoverTextPosition);
-            return false;
-        }
-        return super.onTimer(id);
     }
 
     /// In word wrap mode, set by caretRect so ensureCaretVisible will know when to scroll
@@ -1938,8 +1925,14 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _hoverTextPosition = clientToTextPos(Point(x, y));
         cancelHoverTimer();
         Box reversePos = textPosToClient(_hoverTextPosition);
-        if (x < reversePos.x + 10.pt)
-            _hoverTimer = setTimer(_hoverTimeoutMillis);
+        if (x < reversePos.x + 10)
+        {
+            _hoverTimer = setTimer(_hoverTimeoutMillis, delegate() {
+                onHoverTimeout(_hoverMousePosition, _hoverTextPosition);
+                _hoverTimer = 0;
+                return false;
+            });
+        }
     }
 
     protected void cancelHoverTimer()

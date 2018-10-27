@@ -493,7 +493,14 @@ class Menu : ListWidget
     {
         cancelSubmenuOpening();
         _submenuOpenItemIndex = itemIndex;
-        _submenuOpenTimer = setTimer(MENU_OPEN_DELAY_MS);
+        _submenuOpenTimer = setTimer(MENU_OPEN_DELAY_MS,
+            delegate() {
+                debug (menus)
+                    Log.d("Menu: opening submenu by timer");
+                openSubmenu(_submenuOpenItemIndex);
+                _submenuOpenTimer = 0;
+                return false;
+            });
     }
 
     protected void cancelSubmenuOpening()
@@ -503,19 +510,6 @@ class Menu : ListWidget
             cancelTimer(_submenuOpenTimer);
             _submenuOpenTimer = 0;
         }
-    }
-
-    override bool onTimer(ulong id)
-    {
-        if (id == _submenuOpenTimer)
-        {
-            _submenuOpenTimer = 0;
-            debug (menus)
-                Log.d("Menu: opening submenu by timer");
-            openSubmenu(_submenuOpenItemIndex);
-        }
-        // false to stop timer
-        return false;
     }
 
     private Menu _openedSubmenu;

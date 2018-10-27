@@ -74,8 +74,16 @@ class AbstractProgressBar : Widget
         }
     }
 
-    private int _progress = PROGRESS_INDETERMINATE;
-    private int _animationInterval = 0; // no animation by default
+    private
+    {
+        int _progress = PROGRESS_INDETERMINATE;
+        int _animationInterval = 0; // no animation by default
+
+        ulong _animationTimerID;
+        int _animationSpeedPixelsPerSecond = 20;
+        long _animationPhase;
+        long _lastAnimationTs;
+    }
 
     this(int progress = PROGRESS_INDETERMINATE)
     {
@@ -83,7 +91,6 @@ class AbstractProgressBar : Widget
         _progress = progress;
     }
 
-    private ulong _animationTimerID;
     protected void scheduleAnimation()
     {
         if (!visible || !_animationInterval)
@@ -93,7 +100,24 @@ class AbstractProgressBar : Widget
             return;
         }
         stopAnimation();
-        _animationTimerID = setTimer(_animationInterval);
+        _animationTimerID = setTimer(_animationInterval,
+            delegate() {
+                if (!visible || _progress == PROGRESS_HIDDEN)
+                {
+                    _lastAnimationTs = 0;
+                    _animationTimerID = 0;
+                    return false;
+                }
+                long elapsed = 0;
+                long ts = currentTimeMillis;
+                if (_lastAnimationTs)
+                {
+                    elapsed = clamp(ts - _lastAnimationTs, 0, 5000);
+                }
+                _lastAnimationTs = ts;
+                onAnimationTimer(elapsed);
+                return _animationInterval != 0;
+            });
         invalidate();
     }
 
@@ -107,37 +131,11 @@ class AbstractProgressBar : Widget
         _lastAnimationTs = 0;
     }
 
-    private int _animationSpeedPixelsPerSecond = 20;
-    private long _animationPhase;
-    private long _lastAnimationTs;
     /// Called on animation timer
     protected void onAnimationTimer(long millisElapsed)
     {
         _animationPhase += millisElapsed;
         invalidate();
-    }
-
-    override bool onTimer(ulong id)
-    {
-        if (id == _animationTimerID)
-        {
-            if (!visible || _progress == PROGRESS_HIDDEN)
-            {
-                stopAnimation();
-                return false;
-            }
-            long elapsed = 0;
-            long ts = currentTimeMillis;
-            if (_lastAnimationTs)
-            {
-                elapsed = clamp(ts - _lastAnimationTs, 0, 5000);
-            }
-            _lastAnimationTs = ts;
-            onAnimationTimer(elapsed);
-            return _animationInterval != 0;
-        }
-        // return true to repeat after the same interval, false to stop timer
-        return super.onTimer(id);
     }
 }
 

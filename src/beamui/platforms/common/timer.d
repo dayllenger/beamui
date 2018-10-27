@@ -11,9 +11,7 @@ import core.thread;
 import core.sync.mutex;
 import core.sync.condition;
 import beamui.core.functions;
-import beamui.core.logger;
-import beamui.core.ownership;
-import beamui.widgets.widget : Widget;
+import beamui.core.logger : currentTimeMillis;
 
 /// Timers queue
 class TimerQueue
@@ -21,17 +19,9 @@ class TimerQueue
     protected TimerInfo[] queue;
 
     /// Add new timer, returns timer id
-    ulong add(WeakRef!Widget destination, long intervalMillis)
+    ulong add(long intervalMillis, bool delegate() handler)
     {
-        TimerInfo item = TimerInfo(destination, intervalMillis);
-        queue ~= item;
-        sort(queue);
-        return item.id;
-    }
-    /// ditto
-    ulong add(bool delegate() handler, long intervalMillis)
-    {
-        TimerInfo item = TimerInfo(handler, intervalMillis);
+        TimerInfo item = TimerInfo(intervalMillis, handler);
         queue ~= item;
         sort(queue);
         return item.id;
@@ -97,7 +87,6 @@ struct TimerInfo
         ulong _id;
         long _interval;
         long _nextTimestamp;
-        WeakRef!Widget _targetWidget;
         bool delegate() _handler;
     }
 
@@ -105,16 +94,7 @@ struct TimerInfo
 
     @disable this();
 
-    this(WeakRef!Widget targetWidget, long intervalMillis)
-    {
-        assert(intervalMillis >= 0 && intervalMillis < 7 * 24 * 60 * 60 * 1000L);
-        _id = ++nextID;
-        _interval = intervalMillis;
-        _nextTimestamp = currentTimeMillis + _interval;
-        _targetWidget = targetWidget;
-    }
-
-    this(bool delegate() handler, long intervalMillis)
+    this(long intervalMillis, bool delegate() handler)
     {
         assert(intervalMillis >= 0 && intervalMillis < 7 * 24 * 60 * 60 * 1000L);
         _id = ++nextID;
@@ -143,22 +123,14 @@ struct TimerInfo
         /// Returns true if timer is not yet cancelled
         bool valid() const
         {
-            return !_targetWidget.isNull || _handler !is null;
+            return _handler !is null;
         }
     }
 
     /// Notify the target widget
     void notify()
     {
-        if (_targetWidget)
-        {
-            _nextTimestamp = currentTimeMillis + _interval;
-            if (!_targetWidget.onTimer(_id))
-            {
-                _targetWidget.nullify();
-            }
-        }
-        else if (_handler)
+        if (_handler)
         {
             _nextTimestamp = currentTimeMillis + _interval;
             if (!_handler())
@@ -171,7 +143,6 @@ struct TimerInfo
     /// Cancel timer
     void cancel()
     {
-        _targetWidget.nullify();
         _handler = null;
     }
 

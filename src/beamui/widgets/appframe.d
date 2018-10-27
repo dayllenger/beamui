@@ -133,7 +133,6 @@ class AppFrame : Column
         ToolBarHost _toolbarHost;
         Widget _body;
         BackgroundOperationWatcher _currentBackgroundOperation;
-        ulong _currentBackgroundOperationTimer;
 
         string _appName;
         string _settingsDir;
@@ -209,33 +208,6 @@ class AppFrame : Column
         return shortcutSettings.save();
     }
 
-    /// Timer handler
-    override bool onTimer(ulong timerID)
-    {
-        if (timerID == _currentBackgroundOperationTimer)
-        {
-            if (_currentBackgroundOperation)
-            {
-                _currentBackgroundOperation.update();
-                if (_currentBackgroundOperation.finished)
-                {
-                    _currentBackgroundOperation.removing();
-                    destroy(_currentBackgroundOperation);
-                    _currentBackgroundOperation = null;
-                    _currentBackgroundOperationTimer = 0;
-                    requestActionsUpdate();
-                    return false;
-                }
-                return true;
-            }
-            else
-            {
-                _currentBackgroundOperationTimer = 0;
-            }
-        }
-        return false; // stop timer
-    }
-
     /// Set background operation to show in status
     void setBackgroundOperation(BackgroundOperationWatcher op)
     {
@@ -247,7 +219,22 @@ class AppFrame : Column
         }
         _currentBackgroundOperation = op;
         if (op)
-            _currentBackgroundOperationTimer = setTimer(op.updateInterval);
+        {
+            setTimer(op.updateInterval, delegate() {
+                if (_currentBackgroundOperation)
+                {
+                    _currentBackgroundOperation.update();
+                    if (_currentBackgroundOperation.finished)
+                    {
+                        _currentBackgroundOperation.removing();
+                        destroy(_currentBackgroundOperation);
+                        _currentBackgroundOperation = null;
+                        requestActionsUpdate();
+                    }
+                }
+                return _currentBackgroundOperation !is null;
+            });
+        }
         requestActionsUpdate();
     }
 
