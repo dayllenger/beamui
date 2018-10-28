@@ -1,5 +1,5 @@
 /**
-This module contains common Plaform definitions.
+Common Platform definitions.
 
 Platform is abstraction layer for application.
 
@@ -17,11 +17,7 @@ module beamui.platforms.common.platform;
 
 import beamui.core.animations;
 import beamui.core.asyncsocket;
-import beamui.core.collections;
-import beamui.core.config;
-import beamui.core.events;
 import beamui.core.stdaction;
-import beamui.graphics.drawbuf;
 import beamui.graphics.iconprovider;
 import beamui.graphics.resources;
 import beamui.platforms.common.timer;
@@ -154,6 +150,8 @@ class Window : CustomEventTarget
     {
         /// Get window behaviour flags
         WindowFlag flags() const { return _flags; }
+        /// Assign window behaviour flags
+        protected void flags(WindowFlag value) { _flags = value; }
 
         /// Window background color
         Color backgroundColor() const { return _backgroundColor; }
@@ -165,29 +163,33 @@ class Window : CustomEventTarget
 
         /// Get current window width
         int width() const { return _w; }
+        /// Assign current window width
+        protected void width(int value) { _w = value; }
 
         /// Get current window height
         int height() const { return _h; }
-
-        uint keyboardModifiers() const { return _keyboardModifiers; }
+        /// Assign current window height
+        protected void height(int value) { _h = value; }
 
         /// Get main widget of the window
         inout(Widget) mainWidget() inout { return _mainWidget; }
-        /// Assign main widget to the window. Destroys previous main widget
+        /// Assign main widget to the window. Must not be null. Destroys previous main widget.
         void mainWidget(Widget widget)
         {
+            assert(widget, "Assigned null main widget");
             if (_mainWidget)
             {
                 _mainWidget.window = null;
                 destroy(_mainWidget);
             }
             _mainWidget = widget;
-            if (_mainWidget)
-                _mainWidget.window = this;
+            widget.window = this;
         }
 
         /// Returns parent window
         Window parentWindow() { return _parent; }
+        /// Assign parent window
+        protected void parentWindow(Window w) { _parent = w; }
 
         /// Returns current window override cursor type or NotSet if not overriding.
         CursorType overrideCursorType() const { return _overrideCursorType; }
@@ -197,6 +199,9 @@ class Window : CustomEventTarget
             _overrideCursorType = newCursorType;
             setCursorType(newCursorType);
         }
+
+        /// Get current key modifiers
+        uint keyboardModifiers() const { return _keyboardModifiers; }
 
         /// Blinking caret position (empty rect if no blinking caret)
         Rect caretRect() const { return _caretRect; }
@@ -229,9 +234,14 @@ class Window : CustomEventTarget
 
     protected
     {
+        WindowState _windowState = WindowState.normal;
+        Box _windowRect = Box.none;
+    }
+
+    private
+    {
         int _w;
         int _h;
-        uint _keyboardModifiers;
         Color _backgroundColor = Color(0xFFFFFF);
         Widget _mainWidget;
         EventList _eventList;
@@ -244,11 +254,10 @@ class Window : CustomEventTarget
         Window[] _children;
         Window _parent;
 
+        uint _keyboardModifiers;
+
         Rect _caretRect;
         bool _caretReplace;
-
-        WindowState _windowState = WindowState.normal;
-        Box _windowRect = Box.none;
 
         /// Keep overrided cursor type to `notSet` to get cursor from widget
         CursorType _overrideCursorType = CursorType.notSet;
@@ -257,8 +266,10 @@ class Window : CustomEventTarget
         ulong animationUpdateTimerID;
     }
 
+
     this()
     {
+        _children.reserve(10);
         _eventList = new EventList;
         _timerQueue = new TimerQueue;
         if (currentTheme)
@@ -275,8 +286,7 @@ class Window : CustomEventTarget
             _parent = null;
         }
 
-        if (_onClose)
-            _onClose();
+        closing();
 
         timerThread.maybe.stop();
         eliminate(_tooltip.popup);
@@ -575,7 +585,7 @@ class Window : CustomEventTarget
     /// Request layout for main widget and popups
     void requestLayout()
     {
-        _mainWidget.maybe.requestLayout();
+        _mainWidget.requestLayout();
         foreach (p; _popups)
             p.requestLayout();
         _tooltip.popup.maybe.requestLayout();
@@ -584,11 +594,10 @@ class Window : CustomEventTarget
     /// Measure and layout main widget, popups and tooltip
     void layout()
     {
-        if (_mainWidget)
         {
             Boundaries bs = _mainWidget.computeBoundaries();
             // TODO: set minimum window size
-            _mainWidget.maybe.layout(Box(0, 0, _w, _h));
+            _mainWidget.layout(Box(0, 0, _w, _h));
         }
         foreach (p; _popups)
         {
@@ -611,19 +620,19 @@ class Window : CustomEventTarget
         // fix window rect for platforms that don't set it yet
         _windowRect.width = width;
         _windowRect.height = height;
-        if (_mainWidget)
+
+        debug (resizing)
         {
-            debug (resizing)
-            {
-                Log.d("onResize ", _w, "x", _h);
-                long layoutStart = currentTimeMillis;
-            }
-            layout();
-            debug (resizing)
-            {
-                long layoutEnd = currentTimeMillis;
-                Log.d("resize: layout took ", layoutEnd - layoutStart, " ms");
-            }
+            Log.d("onResize ", _w, "x", _h);
+            long layoutStart = currentTimeMillis;
+        }
+
+        layout();
+
+        debug (resizing)
+        {
+            long layoutEnd = currentTimeMillis;
+            Log.d("resize: layout took ", layoutEnd - layoutStart, " ms");
         }
         update(true);
     }
@@ -631,7 +640,7 @@ class Window : CustomEventTarget
     //===============================================================
     // Popups, tooltips, message and input boxes
 
-    protected Popup[] _popups;
+    private Popup[] _popups;
 
     protected static struct TooltipInfo
     {
@@ -643,13 +652,13 @@ class Window : CustomEventTarget
         PopupAlign alignment;
     }
 
-    protected TooltipInfo _tooltip;
+    private TooltipInfo _tooltip;
 
     /// Schedule tooltip for widget be shown with specified delay
     void scheduleTooltip(WeakRef!Widget ownerWidget, long delay, PopupAlign alignment = PopupAlign.point,
                          int x = int.min, int y = int.min)
     {
-        if (_tooltip.ownerWidget.get != ownerWidget.get)
+        if (_tooltip.ownerWidget.get !is ownerWidget.get)
         {
             debug (tooltips)
                 Log.d("schedule tooltip");
@@ -697,7 +706,7 @@ class Window : CustomEventTarget
             x = _lastMouseX;
         if (y == int.min)
             y = _lastMouseY;
-        res.anchor = PopupAnchor(!anchor.isNull ? anchor : weakRef(_mainWidget), x, y, alignment);
+        res.anchor = PopupAnchor(anchor, x, y, alignment);
 
         // add a smooth fade-in transition when there is no tooltip already shown
         if (noTooltipBefore)
@@ -726,7 +735,7 @@ class Window : CustomEventTarget
             destroy(_tooltip.popup);
             _tooltip.popup = null;
             _tooltip.ownerWidget.nullify();
-            _mainWidget.maybe.invalidate();
+            _mainWidget.invalidate();
         }
         if (_tooltip.timerID)
         {
@@ -739,11 +748,11 @@ class Window : CustomEventTarget
     }
 
     /// Show new popup
-    Popup showPopup(Widget content, WeakRef!Widget anchor = WeakRef!Widget(null),
+    Popup showPopup(Widget content, WeakRef!Widget anchor = null,
             PopupAlign alignment = PopupAlign.center, int x = 0, int y = 0)
     {
         auto res = new Popup(content, this);
-        res.anchor = PopupAnchor(anchor/+anchor !is null ? anchor : _mainWidget+/, x, y, alignment); // TODO: test all cases
+        res.anchor = PopupAnchor(anchor, x, y, alignment);
 
         // add a smooth fade-in transition
         auto tr = Transition(150, TimingFunction.easeIn);
@@ -757,7 +766,7 @@ class Window : CustomEventTarget
 
         _popups ~= res;
         setFocus(weakRef(content));
-        _mainWidget.maybe.requestLayout();
+        _mainWidget.requestLayout();
         update();
         return res;
     }
@@ -777,7 +786,7 @@ class Window : CustomEventTarget
                 _popups.length--;
                 destroy(p);
                 // force redraw
-                _mainWidget.maybe.invalidate();
+                _mainWidget.invalidate();
                 return true;
             }
         }
@@ -815,43 +824,25 @@ class Window : CustomEventTarget
 
     //===============================================================
 
-    /// Called when user dragged file(s) to application window
-    void handleDroppedFiles(string[] filenames)
-    {
-        //Log.d("handleDroppedFiles(", filenames, ")");
-        if (_onFilesDropped)
-            _onFilesDropped(filenames);
-    }
-
-    private void delegate(string[]) _onFilesDropped;
-    /// Get handler for files dropped to app window
-    @property void delegate(string[]) onFilesDropped() { return _onFilesDropped; }
+    private Listener!(void delegate(string[])) _filesDropped;
     /// Set handler for files dropped to app window
     @property Window onFilesDropped(void delegate(string[]) handler)
     {
-        _onFilesDropped = handler;
+        _filesDropped = handler;
         return this;
     }
 
-    private bool delegate() _onCanClose;
-    /// Get handler for closing of app (it must return true to allow immediate close, false to cancel close or close window later)
-    @property bool delegate() onCanClose() { return _onCanClose; }
-    /// Set handler for closing of app (it must return true to allow immediate close, false to cancel close or close window later)
-    @property Window onCanClose(bool delegate() handler)
+    /// Called when user dragged file(s) to application window
+    void handleDroppedFiles(string[] filenames)
     {
-        _onCanClose = handler;
-        return this;
+        if (_filesDropped.assigned)
+            _filesDropped(filenames);
     }
 
-    private void delegate() _onClose;
-    /// Get handler for closing of window
-    @property void delegate() onClose() { return _onClose; }
-    /// Set handler for closing of window
-    @property Window onClose(void delegate() handler)
-    {
-        _onClose = handler;
-        return this;
-    }
+    /// Handler to ask whether it is allowed for window to close itself
+    Listener!(bool delegate()) allowClose;
+    /// Handler for window closing
+    Listener!(void delegate()) closing;
 
     /// Returns true if there is some modal window opened above this window, and this window should not process mouse/key input and should not allow closing
     @property bool hasModalWindowsAbove()
@@ -859,23 +850,21 @@ class Window : CustomEventTarget
         return platform.hasModalWindowsAbove(this);
     }
 
-    /// Call onCanClose handler if set to check if system may close window
-    bool handleCanClose()
+    /// Call `allowClose` handler if set to check if system may close window
+    bool canClose()
     {
         if (hasModalWindowsAbove)
             return false;
-        if (!_onCanClose)
-            return true;
-        bool res = _onCanClose();
-        if (!res)
+        bool result = allowClose.assigned ? allowClose() : true;
+        if (!result)
             update(true); // redraw window if it was decided to not close immediately
-        return res;
+        return result;
     }
 
     /// Returns true if widget is child of either main widget, one of popups or window scrollbar
     bool isChild(Widget w)
     {
-        if (_mainWidget && _mainWidget.isChild(w))
+        if (_mainWidget.isChild(w))
             return true;
         foreach (p; _popups)
             if (p.isChild(w))
@@ -1210,11 +1199,8 @@ class Window : CustomEventTarget
             {
                 debug (keys)
                     Log.d("Alt key: keyboardModifiers = ", _keyboardModifiers);
-                if (_mainWidget)
-                {
-                    _mainWidget.invalidate();
-                    res = true;
-                }
+                _mainWidget.invalidate();
+                res = true;
             }
         }
         if (event.action == KeyAction.text)
@@ -1251,13 +1237,12 @@ class Window : CustomEventTarget
                 return res;
             return modal.onKeyEvent(event) || res;
         }
-        else if (_mainWidget)
+        else
         {
             if (dispatchKeyEvent(_mainWidget, event))
                 return res;
             return _mainWidget.onKeyEvent(event) || res;
         }
-        return res;
     }
 
     /// Dispatch key event to widgets which have wantsKeyTracking == true
@@ -1286,9 +1271,6 @@ class Window : CustomEventTarget
     bool dispatchMouseEvent(MouseEvent event)
     {
         if (hasModalWindowsAbove || !_firstDrawCalled)
-            return false;
-        // ignore events if there is no root
-        if (!_mainWidget)
             return false;
 
         // check tooltip
@@ -1591,7 +1573,7 @@ class Window : CustomEventTarget
     /// Handle theme change: e.g. reload some themed resources
     void dispatchThemeChanged()
     {
-        _mainWidget.maybe.onThemeChanged();
+        _mainWidget.onThemeChanged();
         foreach (p; _popups)
             p.onThemeChanged();
         _tooltip.popup.maybe.onThemeChanged();
@@ -1689,12 +1671,8 @@ class Window : CustomEventTarget
     }
 
     /// Check content widgets for necessary redraw and/or layout
-    bool checkUpdateNeeded(ref bool needDraw, ref bool needLayout, ref bool animationActive)
+    bool checkUpdateNeeded(out bool needDraw, out bool needLayout, out bool animationActive)
     {
-        needDraw = needLayout = animationActive = false;
-        if (_mainWidget is null)
-            return false;
-
         animationActive = animations.length > 0;
 
         checkUpdateNeeded(_mainWidget, needDraw, needLayout, animationActive);
@@ -1733,8 +1711,6 @@ class Window : CustomEventTarget
     /// Request update for window (unless force is true, update will be performed only if layout, redraw or animation is required).
     void update(bool force = false)
     {
-        if (_mainWidget is null)
-            return;
         bool needDraw = false;
         bool needLayout = false;
         _animationActive = false;

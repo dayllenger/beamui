@@ -266,30 +266,30 @@ final class Win32Window : Window
         bool _destroying;
     }
 
-    this(Win32Platform platform, dstring title, Window parent, WindowFlag flags, uint width = 0, uint height = 0)
+    this(Win32Platform platform, dstring title, Window parent, WindowFlag flags, uint w = 0, uint h = 0)
     {
         _platform = platform;
         _title = title;
         _windowState = WindowState.hidden;
 
-        _children.reserve(10);
-        _parent = parent;
-        if (_parent)
-            _parent.addModalChild(this);
+        if (parent)
+        {
+            parentWindow = parent;
+            parent.addModalChild(this);
+        }
         auto w32parent = cast(Win32Window)parent;
         HWND parenthwnd = w32parent ? w32parent._hwnd : null;
 
-        _w = width > 0 ? width : 500;
-        _h = height > 0 ? height : 300;
-        _flags = flags;
+        width = w > 0 ? w : 500;
+        height = h > 0 ? h : 300;
+        this.flags = flags;
 
         uint ws = WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
         if (flags & WindowFlag.resizable)
             ws |= WS_OVERLAPPEDWINDOW;
         else
             ws |= WS_OVERLAPPED | WS_CAPTION | WS_CAPTION | WS_BORDER | WS_SYSMENU;
-        //if (flags & WindowFlag.fullscreen)
-        //    ws |= SDL_WINDOW_FULLSCREEN;
+
         Box screenRc = getScreenDimensions();
         Log.d("Screen dimensions: ", screenRc);
 
@@ -301,8 +301,8 @@ final class Win32Window : Window
             // fullscreen
             x = screenRc.x;
             y = screenRc.y;
-            _w = screenRc.width;
-            _h = screenRc.height;
+            width = screenRc.width;
+            height = screenRc.height;
             ws = WS_POPUP;
         }
         if (flags & WindowFlag.borderless)
@@ -315,8 +315,8 @@ final class Win32Window : Window
                 ws, // window style
                 x, // initial x position
                 y, // initial y position
-                _w, // initial x size
-                _h, // initial y size
+                width, // initial x size
+                height, // initial y size
                 parenthwnd, // parent window handle
                 null, // window menu handle
                 _hInstance, // program instance handle
@@ -335,7 +335,7 @@ final class Win32Window : Window
 
         RECT rect;
         GetWindowRect(_hwnd, &rect);
-        handleWindowStateChange(WindowState.unspecified, Box(rect.left, rect.top, _w, _h));
+        handleWindowStateChange(WindowState.unspecified, Box(rect.left, rect.top, width, height));
 
         if (platform.defaultWindowIcon.length != 0)
             this.icon = imageCache.get(platform.defaultWindowIcon);
@@ -372,9 +372,8 @@ final class Win32Window : Window
 
     override @property Window onFilesDropped(void delegate(string[]) handler)
     {
-        super.onFilesDropped(handler);
         DragAcceptFiles(_hwnd, handler ? TRUE : FALSE);
-        return this;
+        return super.onFilesDropped(handler);
     }
 
     /// Custom window message handler
@@ -613,7 +612,7 @@ final class Win32Window : Window
 
         mainWidget.setFocus();
 
-        if (_flags & WindowFlag.fullscreen)
+        if (flags & WindowFlag.fullscreen)
         {
             Box rc = getScreenDimensions();
             SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, rc.width, rc.height, SWP_SHOWWINDOW);
@@ -642,7 +641,6 @@ final class Win32Window : Window
         if (_closeCalled)
             return;
         _closeCalled = true;
-        Log.d("Window.close()");
         _platform.closeWindow(this);
     }
 
@@ -751,9 +749,9 @@ final class Win32Window : Window
             EndPaint(_hwnd, &ps);
 
         if (!_drawbuf)
-            _drawbuf = new Win32ColorDrawBuf(_w, _h);
+            _drawbuf = new Win32ColorDrawBuf(width, height);
         else
-            _drawbuf.resize(_w, _h);
+            _drawbuf.resize(width, height);
         _drawbuf.resetClipping();
 
         _drawbuf.fill(backgroundColor);
@@ -878,9 +876,9 @@ final class Win32Window : Window
         {
             pbuttonDetails.up(x, y, cast(ushort)flags);
         }
-        if (((message == WM_MOUSELEAVE) || (x < 0 || y < 0 || x >= _w || y >= _h)) && _mouseTracking)
+        if ((message == WM_MOUSELEAVE || x < 0 || y < 0 || x >= width || y >= height) && _mouseTracking)
         {
-            if (!isMouseCaptured() || (!_lbutton.isDown && !_rbutton.isDown && !_mbutton.isDown))
+            if (!isMouseCaptured || !_lbutton.isDown && !_rbutton.isDown && !_mbutton.isDown)
             {
                 action = MouseAction.leave;
                 debug (mouse)
@@ -891,7 +889,7 @@ final class Win32Window : Window
         }
         if (message != WM_MOUSELEAVE && !_mouseTracking)
         {
-            if (x >= 0 && y >= 0 && x < _w && y < _h)
+            if (0 <= x && x < width && 0 <= y && y < height)
             {
                 debug (mouse)
                     Log.d("Setting capture");
@@ -1179,7 +1177,6 @@ final class Win32Platform : Platform
         Win32Window window = cast(Win32Window)w;
         _windowsToDestroy ~= window;
         SendMessage(window._hwnd, WM_CLOSE, 0, 0);
-        //window
     }
 
     /// Destroy window objects planned for destroy
@@ -1581,13 +1578,8 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_CLOSE:
         if (window)
         {
-            bool canClose = window.handleCanClose();
-            if (!canClose)
-            {
-                Log.d("WM_CLOSE: canClose is false");
+            if (!window.canClose)
                 return 0; // prevent closing
-            }
-            Log.d("WM_CLOSE: closing window ");
             //destroy(window);
         }
         // default handler inside DefWindowProc will close window

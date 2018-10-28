@@ -259,20 +259,21 @@ final class X11Window : DWindow
         int _cachedWidth, _cachedHeight;
     }
 
-    this(X11Platform platform, dstring caption, DWindow parent, WindowFlag flags, uint width = 0, uint height = 0)
+    this(X11Platform platform, dstring caption, DWindow parent, WindowFlag flags, uint w = 0, uint h = 0)
     {
         _platform = platform;
         _title = caption;
         _windowState = WindowState.hidden;
 
-        _children.reserve(10);
-        _parent = parent;
-        if (_parent)
-            _parent.addModalChild(this);
+        if (parent)
+        {
+            parentWindow = parent;
+            parent.addModalChild(this);
+        }
 
-        _cachedWidth = _w = width > 0 ? width : 500;
-        _cachedHeight = _h = height > 0 ? height : 300;
-        _flags = flags;
+        width = _cachedWidth = w > 0 ? w : 500;
+        height = _cachedHeight = h > 0 ? h : 300;
+        this.flags = flags;
 
         create();
 
@@ -306,7 +307,7 @@ final class X11Window : DWindow
 
     private void create()
     {
-        Log.d("Creating X11 window of size ", _w, "x", _h);
+        Log.d("Creating X11 window of size ", width, "x", height);
 
         XSetWindowAttributes attrs;
         // attribute mask - only events and colormap for glx
@@ -331,7 +332,7 @@ final class X11Window : DWindow
             }
         }
 
-        _win = XCreateWindow(x11display, DefaultRootWindow(x11display), 0, 0, _w, _h, 0,
+        _win = XCreateWindow(x11display, DefaultRootWindow(x11display), 0, 0, width, height, 0,
                 depth, InputOutput, visual, mask, &attrs);
         if (!_win)
         {
@@ -439,7 +440,7 @@ final class X11Window : DWindow
         }
         Log.i(openglEnabled ? "OpenGL is enabled" : "OpenGL is disabled");
 
-        handleWindowStateChange(WindowState.unspecified, Box(0, 0, _w, _h));
+        handleWindowStateChange(WindowState.unspecified, Box(0, 0, width, height));
     }
 
     override protected void handleWindowStateChange(WindowState newState, Box newWindowRect = Box.none)
@@ -667,7 +668,6 @@ final class X11Window : DWindow
 
     override void close()
     {
-        Log.d("X11Window.close()");
         _platform.closeWindow(this);
     }
 
@@ -711,13 +711,13 @@ final class X11Window : DWindow
 
     private void drawUsingBitmap()
     {
-        if (_w > 0 && _h > 0)
+        if (width > 0 && height > 0)
         {
             // prepare drawbuf
             if (!_drawbuf)
-                _drawbuf = new ColorDrawBuf(_w, _h);
+                _drawbuf = new ColorDrawBuf(width, height);
             else
-                _drawbuf.resize(_w, _h);
+                _drawbuf.resize(width, height);
             _drawbuf.resetClipping();
             // draw widgets into buffer
             _drawbuf.fill(backgroundColor);
@@ -1183,7 +1183,6 @@ final class X11Platform : Platform
         ev.xclient.window = window._win;
         ev.xclient.display = x11display2;
         ev.xclient.format = 32;
-        Log.d("Sending close window event");
         XLockDisplay(x11display2);
         XSendEvent(x11display2, window._win, false, StructureNotifyMask, &ev);
         XFlush(x11display2);
@@ -1592,18 +1591,26 @@ final class X11Platform : Platform
                 }
                 else if (event.xclient.message_type == atom_WM_PROTOCOLS)
                 {
-                    Log.d("Handling WM_PROTOCOLS");
-                    if ((event.xclient.format == 32) && (event.xclient.data.l[0]) == atom_WM_DELETE_WINDOW)
+                    debug (x11)
+                        Log.d("Handling WM_PROTOCOLS");
+                    if (event.xclient.format == 32 && event.xclient.data.l[0] == atom_WM_DELETE_WINDOW)
                     {
-                        Log.d("Handling WM_DELETE_WINDOW");
-                        _windowMap.remove(w._win);
-                        destroy(w);
+                        debug (x11)
+                            Log.d("Handling WM_DELETE_WINDOW");
+                        if (w.canClose)
+                        {
+                            _windowMap.remove(w._win);
+                            destroy(w);
+                        }
                     }
                 }
                 else if (event.xclient.message_type == atom_beamui_CLOSE_WINDOW_EVENT)
                 {
-                    _windowMap.remove(w._win);
-                    destroy(w);
+                    if (w.canClose)
+                    {
+                        _windowMap.remove(w._win);
+                        destroy(w);
+                    }
                 }
             }
             else

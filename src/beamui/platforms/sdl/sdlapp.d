@@ -82,20 +82,21 @@ final class SDLWindow : Window
         DrawBuf _drawbuf;
     }
 
-    this(SDLPlatform platform, dstring caption, Window parent, WindowFlag flags, uint width = 0, uint height = 0)
+    this(SDLPlatform platform, dstring caption, Window parent, WindowFlag flags, uint w = 0, uint h = 0)
     {
         _platform = platform;
         _title = caption;
         _windowState = WindowState.hidden;
 
-        _children.reserve(10);
-        _parent = parent;
-        if (_parent)
-            _parent.addModalChild(this);
+        if (parent)
+        {
+            parentWindow = parent;
+            parent.addModalChild(this);
+        }
 
-        _w = width > 0 ? width : 500;
-        _h = height > 0 ? height : 300;
-        _flags = flags;
+        width = w > 0 ? w : 500;
+        height = h > 0 ? h : 300;
+        this.flags = flags;
 
         create();
 
@@ -152,14 +153,14 @@ final class SDLWindow : Window
 
     private bool create()
     {
-        debug Log.d("Creating SDL window of size ", _w, "x", _h);
+        debug Log.d("Creating SDL window of size ", width, "x", height);
 
         uint sdlWindowFlags = SDL_WINDOW_HIDDEN;
-        if (_flags & WindowFlag.resizable)
+        if (flags & WindowFlag.resizable)
             sdlWindowFlags |= SDL_WINDOW_RESIZABLE;
-        if (_flags & WindowFlag.fullscreen)
+        if (flags & WindowFlag.fullscreen)
             sdlWindowFlags |= SDL_WINDOW_FULLSCREEN;
-        if (_flags & WindowFlag.borderless)
+        if (flags & WindowFlag.borderless)
             sdlWindowFlags = SDL_WINDOW_BORDERLESS;
         sdlWindowFlags |= SDL_WINDOW_ALLOW_HIGHDPI;
         static if (USE_OPENGL)
@@ -168,7 +169,7 @@ final class SDLWindow : Window
                 sdlWindowFlags |= SDL_WINDOW_OPENGL;
         }
         _win = SDL_CreateWindow(toUTF8(_title).toStringz, SDL_WINDOWPOS_UNDEFINED,
-                SDL_WINDOWPOS_UNDEFINED, _w, _h, sdlWindowFlags);
+                SDL_WINDOWPOS_UNDEFINED, width, height, sdlWindowFlags);
         static if (USE_OPENGL)
         {
             if (!_win && openglEnabled)
@@ -178,7 +179,7 @@ final class SDLWindow : Window
                 // recreate w/o OpenGL
                 sdlWindowFlags &= ~SDL_WINDOW_OPENGL;
                 _win = SDL_CreateWindow(toUTF8(_title).toStringz, SDL_WINDOWPOS_UNDEFINED,
-                        SDL_WINDOWPOS_UNDEFINED, _w, _h, sdlWindowFlags);
+                        SDL_WINDOWPOS_UNDEFINED, width, height, sdlWindowFlags);
             }
         }
         if (!_win)
@@ -236,7 +237,7 @@ final class SDLWindow : Window
         int x = 0;
         int y = 0;
         SDL_GetWindowPosition(_win, &x, &y);
-        handleWindowStateChange(WindowState.unspecified, Box(x, y, _w, _h));
+        handleWindowStateChange(WindowState.unspecified, Box(x, y, width, height));
         return true;
     }
 
@@ -459,7 +460,6 @@ final class SDLWindow : Window
 
     override void close()
     {
-        Log.d("SDLWindow.close()");
         _platform.closeWindow(this);
     }
 
@@ -556,7 +556,7 @@ final class SDLWindow : Window
 
     private void updateBufferSize()
     {
-        if (_texture && (_txw != _w || _txh != _h))
+        if (_texture && (_txw != width || _txh != height))
         {
             SDL_DestroyTexture(_texture);
             _texture = null;
@@ -564,9 +564,9 @@ final class SDLWindow : Window
         if (!_texture)
         {
             _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, //SDL_TEXTUREACCESS_STREAMING,
-                    _w, _h);
-            _txw = _w;
-            _txh = _h;
+                    width, height);
+            _txw = width;
+            _txh = height;
         }
     }
 
@@ -592,9 +592,9 @@ final class SDLWindow : Window
             SDL_RenderClear(_renderer);
 
             if (!_drawbuf)
-                _drawbuf = new ColorDrawBuf(_w, _h);
+                _drawbuf = new ColorDrawBuf(width, height);
             else
-                _drawbuf.resize(_w, _h);
+                _drawbuf.resize(width, height);
             _drawbuf.fill(c);
             onDraw(_drawbuf);
 
@@ -1198,19 +1198,16 @@ final class SDLPlatform : Platform
                 timestampResizing = event.window.timestamp;
                 break;
             case SDL_WINDOWEVENT_CLOSE:
-                if (!w.hasVisibleModalChild)
+                if (w.canClose)
                 {
-                    if (w.handleCanClose())
-                    {
-                        debug (sdl)
-                            Log.d("SDL_WINDOWEVENT_CLOSE win: ", event.window.windowID);
-                        _windowMap.remove(windowID);
-                        destroy(w);
-                    }
-                    else
-                    {
-                        skipNextQuit = true;
-                    }
+                    debug (sdl)
+                        Log.d("SDL_WINDOWEVENT_CLOSE win: ", event.window.windowID);
+                    _windowMap.remove(windowID);
+                    destroy(w);
+                }
+                else
+                {
+                    skipNextQuit = true;
                 }
                 break;
             case SDL_WINDOWEVENT_SHOWN:
@@ -1372,33 +1369,22 @@ final class SDLPlatform : Platform
             break;
         default:
             // custom or not supported event
-            if (event.type == USER_EVENT_ID)
+            if (auto w = getWindow(event.user.windowID))
             {
-                SDLWindow w = getWindow(event.user.windowID);
-                if (w)
+                if (event.type == USER_EVENT_ID)
                 {
                     w.handlePostedEvent(cast(uint)event.user.code);
                 }
-            }
-            else if (event.type == TIMER_EVENT_ID)
-            {
-                SDLWindow w = getWindow(event.user.windowID);
-                if (w)
+                else if (event.type == TIMER_EVENT_ID)
                 {
                     w.onTimer();
                 }
-            }
-            else if (event.type == WINDOW_CLOSE_EVENT_ID)
-            {
-                SDLWindow windowToClose = getWindow(event.user.windowID);
-                if (windowToClose)
+                else if (event.type == WINDOW_CLOSE_EVENT_ID)
                 {
-                    if (windowToClose.windowID in _windowMap)
+                    if (w.canClose)
                     {
-                        Log.i("Platform.closeWindow()");
-                        _windowMap.remove(windowToClose.windowID);
-                        Log.i("windowMap.length=", _windowMap.length);
-                        destroy(windowToClose);
+                        _windowMap.remove(event.user.windowID);
+                        destroy(w);
                     }
                 }
             }

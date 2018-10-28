@@ -29,12 +29,11 @@ class ConsoleWindow : Window
 
     this(ConsolePlatform platform, dstring caption, Window parent, WindowFlag flags)
     {
-        super();
         _platform = platform;
-        _parent = cast(ConsoleWindow)parent;
-        _w = _platform.console.width;
-        _h = _platform.console.height;
-        _windowRect = Box(0, 0, _w, _h);
+        parentWindow = parent;
+        width = _platform.console.width;
+        height = _platform.console.height;
+        _windowRect = Box(0, 0, width, height);
     }
 
     override @property dstring title() const { return _title; }
@@ -84,7 +83,7 @@ class ConsoleWindow : Window
     /// Returns true if window is shown
     @property bool visible() { return _visible; }
 
-    override protected void scheduleSystemTimer()
+    override protected void scheduleSystemTimer(long timestamp)
     {
         // we poll timers manually
     }
