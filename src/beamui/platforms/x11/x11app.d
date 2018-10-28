@@ -27,7 +27,6 @@ import beamui.core.logger;
 import beamui.graphics.drawbuf;
 import beamui.widgets.widget;
 import beamui.platforms.common.platform;
-import beamui.platforms.common.timer;
 static if (USE_OPENGL)
 {
     import derelict.opengl3.gl;
@@ -284,10 +283,6 @@ final class X11Window : DWindow
     ~this()
     {
         debug Log.d("Destroying X11 window");
-        if (timer)
-        {
-            timer.stop();
-        }
         static if (USE_OPENGL)
         {
             if (_glc)
@@ -677,6 +672,20 @@ final class X11Window : DWindow
     }
 
     //===============================================================
+
+    private CursorType _lastCursorType = CursorType.none;
+
+    override protected void setCursorType(CursorType cursorType)
+    {
+        if (_lastCursorType != cursorType)
+        {
+            debug (x11)
+                Log.d("changing cursor to ", cursorType);
+            _lastCursorType = cursorType;
+            XDefineCursor(x11display, _win, x11cursors[cursorType]);
+            XFlush(x11display);
+        }
+    }
 
     private void redraw()
     {
@@ -1115,74 +1124,26 @@ final class X11Window : DWindow
         XUnlockDisplay(x11display2);
     }
 
-    override void scheduleAnimation()
+    override protected void postTimerEvent()
     {
-        invalidate();
+        XEvent ev;
+        ev.xclient = XClientMessageEvent.init;
+        ev.xclient.type = ClientMessage;
+        ev.xclient.message_type = atom_beamui_TIMER_EVENT;
+        ev.xclient.window = _win;
+        ev.xclient.display = x11display2;
+        ev.xclient.format = 32;
+        XLockDisplay(x11display2);
+        XSendEvent(x11display2, _win, false, StructureNotifyMask, &ev);
+        XFlush(x11display2);
+        XUnlockDisplay(x11display2);
     }
 
-    private TimerThread timer;
-    private long _nextExpectedTimerTs;
-
-    override protected void scheduleSystemTimer(long intervalMillis)
+    override protected void onTimer()
     {
-        if (!timer)
-        {
-            timer = new TimerThread(delegate() {
-                XEvent ev;
-                ev.xclient = XClientMessageEvent.init;
-                ev.xclient.type = ClientMessage;
-                ev.xclient.message_type = atom_beamui_TIMER_EVENT;
-                ev.xclient.window = _win;
-                ev.xclient.display = x11display2;
-                ev.xclient.format = 32;
-                //Log.d("Sending timer event");
-                XLockDisplay(x11display2);
-                XSendEvent(x11display2, _win, false, StructureNotifyMask, &ev);
-                XFlush(x11display2);
-                XUnlockDisplay(x11display2);
-            });
-        }
-        if (intervalMillis < 10)
-            intervalMillis = 10;
-        long nextts = currentTimeMillis + intervalMillis;
-        if (_nextExpectedTimerTs == 0 || _nextExpectedTimerTs > nextts)
-        {
-            _nextExpectedTimerTs = nextts;
-            timer.set(nextts);
-        }
-    }
-
-    bool handleTimer()
-    {
-        if (!_nextExpectedTimerTs)
-            return false;
-        long ts = currentTimeMillis;
-        if (ts >= _nextExpectedTimerTs)
-        {
-            _nextExpectedTimerTs = 0;
-            onTimer();
-            return true;
-        }
-        return false;
-    }
-
-    private CursorType _lastCursorType = CursorType.none;
-
-    override protected void setCursorType(CursorType cursorType)
-    {
-        if (_lastCursorType != cursorType)
-        {
-            debug (x11)
-                Log.d("changing cursor to ", cursorType);
-            _lastCursorType = cursorType;
-            XDefineCursor(x11display, _win, x11cursors[cursorType]);
-            XFlush(x11display);
-        }
+        super.onTimer();
     }
 }
-
-private immutable int CUSTOM_EVENT = 32;
-private immutable int TIMER_EVENT = 8;
 
 final class X11Platform : Platform
 {
@@ -1227,20 +1188,6 @@ final class X11Platform : Platform
         XSendEvent(x11display2, window._win, false, StructureNotifyMask, &ev);
         XFlush(x11display2);
         XUnlockDisplay(x11display2);
-    }
-
-    bool handleTimers()
-    {
-        bool handled = false;
-        foreach (w; _windowMap)
-        {
-            if (w.handleTimer())
-            {
-                handled = true;
-                break;
-            }
-        }
-        return handled;
     }
 
     bool allWindowsClosed()
@@ -1636,7 +1583,7 @@ final class X11Platform : Platform
                 }
                 else if (event.xclient.message_type == atom_beamui_TIMER_EVENT)
                 {
-                    w.handleTimer();
+                    w.onTimer();
                 }
                 else if (event.xclient.message_type == atom_beamui_REDRAW_EVENT)
                 {

@@ -83,6 +83,11 @@ class ConsoleWindow : Window
     private bool _visible;
     /// Returns true if window is shown
     @property bool visible() { return _visible; }
+
+    override protected void scheduleSystemTimer()
+    {
+        // we poll timers manually
+    }
 }
 
 class ConsolePlatform : Platform

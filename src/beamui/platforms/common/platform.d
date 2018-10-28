@@ -276,6 +276,8 @@ class Window : CustomEventTarget
 
         if (_onClose)
             _onClose();
+
+        timerThread.maybe.stop();
         eliminate(_tooltip.popup);
         eliminate(_popups);
         eliminate(_mainWidget);
@@ -1075,19 +1077,13 @@ class Window : CustomEventTarget
 
                 // stupid solution, will be reworked soon
                 Thread.sleep(12.msecs);
-                scheduleAnimation();
+                invalidate();
             }
         }
         catch (Exception e)
         {
             Log.e("Exception inside window.onDraw: ", e);
         }
-    }
-
-    /// After drawing, call to schedule redraw if animation is active
-    void scheduleAnimation()
-    {
-        // override if necessary
     }
 
     //===============================================================
@@ -1758,11 +1754,26 @@ class Window : CustomEventTarget
     // Timers
 
     private TimerQueue _timerQueue;
+    private TimerThread timerThread;
 
-    /// Schedule timer for interval in milliseconds - call window.onTimer when finished
-    protected void scheduleSystemTimer(long intervalMillis)
+    /**
+    Schedule timer for timestamp in milliseconds - post timer event when finished.
+
+    Platform timers are implemented using timer thread by default, but it is possible
+    to use platform timers - override this method, calculate an interval and set the timer there.
+    When timer expires and platform receives its event, call `window.onTimer()`.
+    */
+    protected void scheduleSystemTimer(long timestamp)
     {
-        //debug Log.d("override scheduleSystemTimer to support timers");
+        if (!timerThread)
+            timerThread = new TimerThread(&postTimerEvent);
+
+        timerThread.notifyOn(timestamp);
+    }
+
+    /// Push a timer event into the platform-specific event queue. Called from another thread.
+    protected void postTimerEvent()
+    {
     }
 
     /// Poll expired timers; returns true if update is needed
@@ -1791,10 +1802,10 @@ class Window : CustomEventTarget
         }
         debug (timers)
             Log.d("schedule next timer");
-        long nextInterval = _timerQueue.nextIntervalMillis();
-        if (nextInterval > 0)
+        long nextTimestamp = _timerQueue.nextTimestamp();
+        if (nextTimestamp > 0)
         {
-            scheduleSystemTimer(nextInterval);
+            scheduleSystemTimer(nextTimestamp);
         }
     }
 
@@ -1804,10 +1815,10 @@ class Window : CustomEventTarget
     {
         assert(handler !is null);
         ulong res = _timerQueue.add(intervalMillis, handler);
-        long nextInterval = _timerQueue.nextIntervalMillis();
-        if (nextInterval > 0)
+        long nextTimestamp = _timerQueue.nextTimestamp();
+        if (nextTimestamp > 0)
         {
-            scheduleSystemTimer(intervalMillis);
+            scheduleSystemTimer(nextTimestamp);
         }
         return res;
     }

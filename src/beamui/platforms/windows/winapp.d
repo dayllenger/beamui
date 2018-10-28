@@ -146,7 +146,8 @@ static if (USE_OPENGL)
     private __gshared bool DERELICT_GL3_RELOADED = false;
 }
 
-const uint CUSTOM_MESSAGE_ID = WM_USER + 1;
+const uint CUSTOM_MESSAGE = WM_USER + 1;
+const uint TIMER_MESSAGE = WM_USER + 2;
 
 static if (USE_OPENGL)
 {
@@ -1055,42 +1056,17 @@ final class Win32Window : Window
     override void postEvent(CustomEvent event)
     {
         super.postEvent(event);
-        PostMessageW(_hwnd, CUSTOM_MESSAGE_ID, 0, event.uniqueID);
+        PostMessageW(_hwnd, CUSTOM_MESSAGE, 0, event.uniqueID);
     }
 
-    override void scheduleAnimation()
+    override protected void postTimerEvent()
     {
-        invalidate();
+        PostMessageW(_hwnd, TIMER_MESSAGE, 0, 0);
     }
 
-    private long _nextExpectedTimerTs;
-    private UINT_PTR _timerID = 1;
-
-    override protected void scheduleSystemTimer(long intervalMillis)
+    override protected void onTimer()
     {
-        if (intervalMillis < 10)
-            intervalMillis = 10;
-        long nextts = currentTimeMillis + intervalMillis;
-        if (_timerID && _nextExpectedTimerTs && _nextExpectedTimerTs < nextts + 10)
-            return; // don't reschedule timer, timer event will be received soon
-        if (_hwnd)
-        {
-            //_timerID =
-            SetTimer(_hwnd, _timerID, cast(uint)intervalMillis, null);
-            _nextExpectedTimerTs = nextts;
-        }
-    }
-
-    void handleTimer(UINT_PTR timerID)
-    {
-        //Log.d("handleTimer id=", timerID);
-        if (timerID == _timerID)
-        {
-            KillTimer(_hwnd, timerID);
-            //_timerID = 0;
-            _nextExpectedTimerTs = 0;
-            onTimer();
-        }
+        super.onTimer();
     }
 }
 
@@ -1414,9 +1390,9 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     void* p = cast(void*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     Win32Window windowParam = p ? cast(Win32Window)(p) : null;
     Win32Window window = w32platform.getWindow(hwnd);
-    if (windowParam !is null && window !is null)
+    if (windowParam && window)
         assert(window is windowParam);
-    if (window is null && windowParam !is null)
+    if (!window && windowParam)
     {
         Log.e("Cannot find window in map by HWND");
     }
@@ -1431,89 +1407,71 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             SetWindowLongPtr(hwnd, GWLP_USERDATA, cast(LONG_PTR)ptr);
             window._hwnd = hwnd;
             window.onCreate();
-            //window.handleUnknownWindowMessage(message, wParam, lParam);
         }
         return 0;
     case WM_DESTROY:
-        if (window !is null)
-        {
-            //window.handleUnknownWindowMessage(message, wParam, lParam);
+        if (window)
             window.onDestroy();
-        }
         if (w32platform.windowCount == 0)
             PostQuitMessage(0);
         return 0;
     case WM_WINDOWPOSCHANGED:
+        if (window)
         {
-            if (window !is null)
+
+            if (IsIconic(hwnd))
             {
+                window.handleWindowStateChange(WindowState.minimized);
+            }
+            else
+            {
+                WINDOWPOS* pos = cast(WINDOWPOS*)lParam;
+                //Log.d("WM_WINDOWPOSCHANGED: ", *pos);
 
-                if (IsIconic(hwnd))
-                {
-                    window.handleWindowStateChange(WindowState.minimized);
-                }
+                GetClientRect(hwnd, &rect);
+                int dx = rect.right - rect.left;
+                int dy = rect.bottom - rect.top;
+                WindowState state = WindowState.unspecified;
+                if (IsZoomed(hwnd))
+                    state = WindowState.maximized;
+                else if (IsIconic(hwnd))
+                    state = WindowState.minimized;
+                else if (IsWindowVisible(hwnd))
+                    state = WindowState.normal;
                 else
+                    state = WindowState.hidden;
+                window.handleWindowStateChange(state, Box(pos.x, pos.y, dx, dy));
+                if (window.width != dx || window.height != dy)
                 {
-                    WINDOWPOS* pos = cast(WINDOWPOS*)lParam;
-                    //Log.d("WM_WINDOWPOSCHANGED: ", *pos);
-
-                    GetClientRect(hwnd, &rect);
-                    int dx = rect.right - rect.left;
-                    int dy = rect.bottom - rect.top;
-                    WindowState state = WindowState.unspecified;
-                    if (IsZoomed(hwnd))
-                        state = WindowState.maximized;
-                    else if (IsIconic(hwnd))
-                        state = WindowState.minimized;
-                    else if (IsWindowVisible(hwnd))
-                        state = WindowState.normal;
-                    else
-                        state = WindowState.hidden;
-                    window.handleWindowStateChange(state, Box(pos.x, pos.y, dx, dy));
-                    if (window.width != dx || window.height != dy)
-                    {
-                        window.onResize(dx, dy);
-                        InvalidateRect(hwnd, null, FALSE);
-                    }
+                    window.onResize(dx, dy);
+                    InvalidateRect(hwnd, null, FALSE);
                 }
             }
         }
         return 0;
     case WM_ACTIVATE:
+        if (window)
         {
-            if (window)
-            {
-                if (wParam == WA_INACTIVE)
-                    window.handleWindowActivityChange(false);
-                else if (wParam == WA_ACTIVE || wParam == WA_CLICKACTIVE)
-                    window.handleWindowActivityChange(true);
-            }
+            if (wParam == WA_INACTIVE)
+                window.handleWindowActivityChange(false);
+            else if (wParam == WA_ACTIVE || wParam == WA_CLICKACTIVE)
+                window.handleWindowActivityChange(true);
         }
         return 0;
-    case CUSTOM_MESSAGE_ID:
-        if (window !is null)
-        {
-            window.handlePostedEvent(cast(uint)lParam);
-        }
-        return 1;
     case WM_ERASEBKGND:
         // processed
         return 1;
     case WM_PAINT:
-        {
-            if (window !is null)
-                window.onPaint();
-        }
+        if (window)
+            window.onPaint();
         return 0; // processed
     case WM_SETCURSOR:
+        if (window)
         {
-            if (window !is null)
+            if (LOWORD(lParam) == HTCLIENT)
             {
-                if (LOWORD(lParam) == HTCLIENT)
-                {
-                    window.onSetCursorType();
-                    return 1;
-                }
+                window.onSetCursorType();
+                return 1;
             }
         }
         break;
@@ -1526,7 +1484,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
     case WM_MOUSEWHEEL:
-        if (window !is null)
+        if (window)
         {
             if (window.processMouseEvent(message, cast(uint)wParam, cast(short)(lParam & 0xFFFF),
                     cast(short)((lParam >> 16) & 0xFFFF)))
@@ -1538,7 +1496,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP:
-        if (window !is null)
+        if (window)
         {
             int repeatCount = lParam & 0xFFFF;
             WPARAM vk = wParam;
@@ -1570,7 +1528,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         break;
     case WM_UNICHAR:
-        if (window !is null)
+        if (window)
         {
             int repeatCount = lParam & 0xFFFF;
             dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(uint)wParam;
@@ -1582,7 +1540,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         break;
     case WM_CHAR:
-        if (window !is null)
+        if (window)
         {
             int repeatCount = lParam & 0xFFFF;
             dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(uint)wParam;
@@ -1593,15 +1551,16 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             return 1;
         }
         break;
-    case WM_TIMER:
-        if (window !is null)
-        {
-            window.handleTimer(wParam);
-            return 0;
-        }
-        break;
+    case CUSTOM_MESSAGE:
+        if (window)
+            window.handlePostedEvent(cast(uint)lParam);
+        return 1;
+    case TIMER_MESSAGE:
+        if (window)
+            window.onTimer();
+        return 1;
     case WM_DROPFILES:
-        if (window !is null)
+        if (window)
         {
             HDROP hdrop = cast(HDROP)wParam;
             string[] files;
@@ -1620,7 +1579,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         return 0;
     case WM_CLOSE:
-        if (window !is null)
+        if (window)
         {
             bool canClose = window.handleCanClose();
             if (!canClose)

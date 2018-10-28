@@ -8,8 +8,6 @@ Authors:   Vadim Lopatin
 module beamui.platforms.common.timer;
 
 import core.thread;
-import core.sync.mutex;
-import core.sync.condition;
 import beamui.core.functions;
 import beamui.core.logger : currentTimeMillis;
 
@@ -40,12 +38,12 @@ class TimerQueue
         }
     }
 
-    /// Returns interval if milliseconds of next scheduled event or -1 if no events queued
-    long nextIntervalMillis()
+    /// Returns timestamp in milliseconds of the next scheduled event or 0 if no events queued
+    long nextTimestamp()
     {
         if (!queue.length || !queue[0].valid)
-            return -1;
-        return max(queue[0].nextTimestamp - currentTimeMillis, 1);
+            return 0;
+        return queue[0].nextTimestamp;
     }
 
     /// Returns true if at least one widget was notified
@@ -86,6 +84,7 @@ struct TimerInfo
     {
         ulong _id;
         long _interval;
+        long _initialTimestamp;
         long _nextTimestamp;
         bool delegate() _handler;
     }
@@ -99,7 +98,8 @@ struct TimerInfo
         assert(intervalMillis >= 0 && intervalMillis < 7 * 24 * 60 * 60 * 1000L);
         _id = ++nextID;
         _interval = intervalMillis;
-        _nextTimestamp = currentTimeMillis + _interval;
+        _initialTimestamp = currentTimeMillis;
+        _nextTimestamp = _initialTimestamp + _interval;
         _handler = handler;
     }
 
@@ -115,7 +115,7 @@ struct TimerInfo
         {
             return _interval;
         }
-        /// Next timestamp to invoke timer at, as per currentTimeMillis()
+        /// Next timestamp to invoke timer at, milliseconds
         long nextTimestamp() const
         {
             return _nextTimestamp;
@@ -132,10 +132,15 @@ struct TimerInfo
     {
         if (_handler)
         {
-            _nextTimestamp = currentTimeMillis + _interval;
             if (!_handler())
             {
                 _handler = null;
+            }
+            else
+            {
+                // find next timestamp to tick
+                long ticksElapsed = (currentTimeMillis - _initialTimestamp) / _interval;
+                _nextTimestamp = _initialTimestamp + (ticksElapsed + 1) * _interval;
             }
         }
     }
@@ -167,23 +172,28 @@ struct TimerInfo
     }
 }
 
-class TimerThread : Thread
+final class TimerThread : Thread
 {
-    protected
+    import core.atomic;
+    import core.sync.condition;
+    import core.sync.mutex;
+
+    private
     {
         Mutex mutex;
         Condition condition;
-        bool stopped;
-        long nextEventTs;
+        long timestamp = long.max;
         void delegate() callback;
+
+        shared bool stopped;
     }
 
     this(void delegate() timerCallback)
     {
+        super(&run);
         callback = timerCallback;
         mutex = new Mutex;
         condition = new Condition(mutex);
-        super(&run);
         start();
     }
 
@@ -194,46 +204,36 @@ class TimerThread : Thread
         destroy(mutex);
     }
 
-    void set(long nextTs)
+    void notifyOn(long timestamp)
     {
         mutex.lock();
-        if (nextEventTs == 0 || nextEventTs > nextTs)
+        if (this.timestamp > timestamp)
         {
-            nextEventTs = nextTs;
+            this.timestamp = timestamp;
             condition.notify();
         }
         mutex.unlock();
     }
 
-    void run()
+    private void run()
     {
-        while (!stopped)
+        while (!atomicLoad(stopped))
         {
-            bool expired = false;
-
             mutex.lock();
 
-            long ts = currentTimeMillis;
-            long timeToWait = nextEventTs == 0 ? 1000000 : nextEventTs - ts;
-            if (timeToWait < 10)
-                timeToWait = 10;
-
-            if (nextEventTs == 0)
-                condition.wait();
+            bool expired;
+            if (timestamp != long.max)
+            {
+                long timeToWait = timestamp - currentTimeMillis;
+                if (timeToWait > 0)
+                    expired = !condition.wait(dur!"msecs"(timeToWait));
+                else
+                    expired = true;
+                if (expired)
+                    timestamp = long.max;
+            }
             else
-                condition.wait(dur!"msecs"(timeToWait));
-
-            if (stopped)
-            {
-                mutex.unlock();
-                break;
-            }
-            ts = currentTimeMillis;
-            if (nextEventTs && nextEventTs < ts && !stopped)
-            {
-                expired = true;
-                nextEventTs = 0;
-            }
+                condition.wait();
 
             mutex.unlock();
 
@@ -244,9 +244,10 @@ class TimerThread : Thread
 
     void stop()
     {
-        if (stopped)
+        if (atomicLoad(stopped))
             return;
-        stopped = true;
+
+        atomicStore(stopped, true);
         mutex.lock();
         condition.notify();
         mutex.unlock();

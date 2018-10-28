@@ -40,20 +40,19 @@ private derelict.util.exception.ShouldThrow missingSymFunc(string symName)
     import std.algorithm : equal;
     static import derelict.util.exception;
 
-    foreach (s; ["SDL_DestroyRenderer", "SDL_GL_DeleteContext", "SDL_DestroyWindow", "SDL_PushEvent",
-            "SDL_GL_SetAttribute", "SDL_GL_CreateContext", "SDL_GL_SetSwapInterval",
-            "SDL_GetError", "SDL_CreateWindow", "SDL_CreateRenderer",
-            "SDL_GetWindowSize", "SDL_GL_GetDrawableSize", "SDL_GetWindowID",
-            "SDL_SetWindowSize", "SDL_ShowWindow", "SDL_SetWindowTitle",
-            "SDL_CreateRGBSurfaceFrom", "SDL_SetWindowIcon",
-            "SDL_FreeSurface", "SDL_ShowCursor", "SDL_SetCursor", "SDL_CreateSystemCursor",
-            "SDL_CreateTexture", "SDL_DestroyTexture",
-            "SDL_UpdateTexture", "SDL_RenderCopy", "SDL_GL_SwapWindow",
-            "SDL_GL_MakeCurrent", "SDL_SetRenderDrawColor", "SDL_RenderClear", "SDL_RenderPresent",
-            "SDL_GetModState", "SDL_RemoveTimer", "SDL_RemoveTimer", "SDL_PushEvent", "SDL_RegisterEvents",
-            "SDL_WaitEvent", "SDL_StartTextInput", "SDL_Quit", "SDL_HasClipboardText",
-            "SDL_GetClipboardText", "SDL_free", "SDL_SetClipboardText", "SDL_Init", "SDL_GetNumVideoDisplays"])
-    { //"SDL_GetDisplayDPI", "SDL_SetWindowMinimumSize", "SDL_SetWindowMaximumSize"
+    foreach (s; ["SDL_CreateRenderer", "SDL_CreateRGBSurfaceFrom", "SDL_CreateSystemCursor",
+            "SDL_CreateTexture", "SDL_CreateWindow", "SDL_DestroyRenderer", "SDL_DestroyTexture",
+            "SDL_DestroyWindow", "SDL_free", "SDL_FreeSurface", "SDL_GetClipboardText",
+            "SDL_GetError", "SDL_GetModState", "SDL_GetNumVideoDisplays", "SDL_GetWindowID",
+            "SDL_GetWindowSize", "SDL_GL_CreateContext", "SDL_GL_DeleteContext",
+            "SDL_GL_GetDrawableSize", "SDL_GL_MakeCurrent", "SDL_GL_SetAttribute",
+            "SDL_GL_SetSwapInterval", "SDL_GL_SwapWindow", "SDL_HasClipboardText", "SDL_Init",
+            "SDL_PushEvent", "SDL_Quit", "SDL_RegisterEvents", "SDL_RenderClear",
+            "SDL_RenderCopy", "SDL_RenderPresent", "SDL_SetClipboardText", "SDL_SetCursor",
+            "SDL_SetRenderDrawColor", "SDL_SetWindowIcon", "SDL_SetWindowMinimumSize",
+            "SDL_SetWindowMaximumSize", "SDL_SetWindowSize", "SDL_SetWindowTitle", "SDL_ShowCursor",
+            "SDL_ShowWindow", "SDL_StartTextInput", "SDL_UpdateTexture", "SDL_WaitEvent"])
+    { //"SDL_GetDisplayDPI"
         if (symName.equal(s)) // Symbol is used
             return derelict.util.exception.ShouldThrow.Yes;
     }
@@ -1026,51 +1025,19 @@ final class SDLWindow : Window
         SDL_PushEvent(&sdlevent);
     }
 
-    override void scheduleAnimation()
+    override protected void postTimerEvent()
     {
-        invalidate();
+        SDL_Event sdlevent;
+        sdlevent.user.type = TIMER_EVENT_ID;
+        sdlevent.user.code = 0;
+        sdlevent.user.windowID = windowID;
+        SDL_PushEvent(&sdlevent);
     }
 
-    private long _nextExpectedTimerTs;
-    private SDL_TimerID _timerID = 0;
-
-    override protected void scheduleSystemTimer(long intervalMillis)
+    override protected void onTimer()
     {
-        if (intervalMillis < 10)
-            intervalMillis = 10;
-        long nextts = currentTimeMillis + intervalMillis;
-        if (_timerID && _nextExpectedTimerTs && _nextExpectedTimerTs < nextts + 10)
-            return; // don't reschedule timer, timer event will be received soon
-        if (_win)
-        {
-            if (_timerID)
-            {
-                SDL_RemoveTimer(_timerID);
-                _timerID = 0;
-            }
-            _timerID = SDL_AddTimer(cast(uint)intervalMillis, &myTimerCallbackFunc, cast(void*)windowID);
-            _nextExpectedTimerTs = nextts;
-        }
+        super.onTimer();
     }
-
-    void handleTimer(SDL_TimerID timerID)
-    {
-        SDL_RemoveTimer(_timerID);
-        _timerID = 0;
-        _nextExpectedTimerTs = 0;
-        onTimer();
-    }
-}
-
-private extern (C) uint myTimerCallbackFunc(uint interval, void* param) nothrow
-{
-    uint windowID = cast(uint)param;
-    SDL_Event sdlevent;
-    sdlevent.user.type = TIMER_EVENT_ID;
-    sdlevent.user.code = 0;
-    sdlevent.user.windowID = windowID;
-    SDL_PushEvent(&sdlevent);
-    return (interval);
 }
 
 final class SDLPlatform : Platform
@@ -1418,7 +1385,7 @@ final class SDLPlatform : Platform
                 SDLWindow w = getWindow(event.user.windowID);
                 if (w)
                 {
-                    w.handleTimer(cast(uint)event.user.code);
+                    w.onTimer();
                 }
             }
             else if (event.type == WINDOW_CLOSE_EVENT_ID)
@@ -1598,7 +1565,7 @@ int sdlmain(string[] args)
     }
 
     SDL_DisplayMode displayMode;
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS | SDL_INIT_NOPARACHUTE) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_NOPARACHUTE) != 0)
     {
         Log.e("Cannot init SDL2: ", fromStringz(SDL_GetError()));
         return 2;
