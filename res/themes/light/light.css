@@ -172,23 +172,19 @@ MenuItem::label:focused, MenuItem::label:selected, MenuItem::shortcut:focused, M
 MenuItem::label:not(enabled), MenuItem::shortcut:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 /* ========================================================================== tree.d */
-TreeItemWidget { min-width: 100px; min-height: 14px; }
+TreeItemWidget { min-width: 100px; min-height: 14px; spacing: 0; }
 
-TreeItemWidget::expander { align: left vcenter; text-flags: parent; }
-
-TreeItemWidget::body { align: left vcenter; padding: 2px 4px; text-flags: parent; }
+TreeItemWidget::body { padding: 2px 4px; spacing: 0; text-flags: parent; }
 
 TreeItemWidget::body:hovered { background-color: #c7d9ec; }
 
-TreeItemWidget::body:pressed { background-color: #417fbf; }
-
-TreeItemWidget::body:focused, TreeItemWidget::body:selected { background-color: #4e93da; }
-
-TreeItemWidget::icon, TreeItemWidget::label { align: left vcenter; text-flags: parent; }
+TreeItemWidget::body:pressed, TreeItemWidget::body:selected { background-color: #4e93da; }
 
 TreeItemWidget::icon { padding-right: 3px; }
 
-TreeItemWidget::label:focused, TreeItemWidget::label:selected { color: #f0f0f0; }
+TreeItemWidget::label { text-flags: parent; }
+
+TreeItemWidget::label:pressed, TreeItemWidget::label:selected { color: #f0f0f0; }
 
 TreeItemWidget::label:default { fontWeight: bold; }
 

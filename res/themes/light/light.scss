@@ -446,40 +446,34 @@ MenuItem {
 TreeItemWidget {
     min-width: 100px;
     min-height: 14px;
+    spacing: 0;
 
     &::expander {
-        align: left vcenter;
-        text-flags: parent;
     }
 
     &::body {
-        align: left vcenter;
         padding: 2px 4px;
+        spacing: 0;
         text-flags: parent;
 
         &:hovered {
             background-color: $secondary-hovered-color;
         }
 
-        &:pressed {
-            background-color: $secondary-color;
-        }
-
-        &:focused, &:selected {
+        &:pressed, &:selected {
             background-color: $main-color;
         }
-    }
-
-    &::icon, &::label {
-        align: left vcenter;
-        text-flags: parent;
     }
 
     &::icon {
         padding-right: 3px;
     }
 
-    &::label:focused, &::label:selected {
+    &::label {
+        text-flags: parent;
+    }
+
+    &::label:pressed, &::label:selected {
         color: $inverse-text-color;
     }
 

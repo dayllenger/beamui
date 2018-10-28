@@ -589,7 +589,7 @@ class SettingsDialog : Dialog
             _tree.selectItem(_layout.child(0).id);
     }
 
-    void onTreeItemSelected(TreeItems source, TreeItem selectedItem, bool activated)
+    void onTreeItemSelected(TreeItem selectedItem, bool activated)
     {
         if (!selectedItem)
             return;
