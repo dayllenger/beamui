@@ -254,6 +254,7 @@ class Window : CustomEventTarget
         CursorType _overrideCursorType = CursorType.notSet;
 
         Animation[] animations;
+        ulong animationUpdateTimerID;
     }
 
     this()
@@ -1028,6 +1029,9 @@ class Window : CustomEventTarget
                 animate(ts - lastDrawTs);
                 // layout required flag could be changed during animate - check again
                 checkUpdateNeeded(needDraw, needLayout, animationActive);
+                // do update every 16 milliseconds
+                if (animationUpdateTimerID == 0)
+                    animationUpdateTimerID = setTimer(16, { invalidate(); return true; });
             }
             lastDrawTs = ts;
 
@@ -1071,13 +1075,11 @@ class Window : CustomEventTarget
                 if (drawEnd - drawStart > PERFORMANCE_LOGGING_THRESHOLD_MS)
                     Log.d("draw took ", drawEnd - drawStart, " ms");
             }
-            if (animationActive)
+            // cancel animations' update if they are expired
+            if (!animationActive && animationUpdateTimerID)
             {
-                import core.thread;
-
-                // stupid solution, will be reworked soon
-                Thread.sleep(12.msecs);
-                invalidate();
+                cancelTimer(animationUpdateTimerID);
+                animationUpdateTimerID = 0;
             }
         }
         catch (Exception e)
@@ -1092,10 +1094,7 @@ class Window : CustomEventTarget
     private WeakRef!Widget _focusedWidget;
     private State _focusStateToApply = State.focused;
     /// Returns current focused widget
-    @property WeakRef!Widget focusedWidget()
-    {
-        return _focusedWidget;
-    }
+    @property WeakRef!Widget focusedWidget() { return _focusedWidget; }
 
     /// Change focus to widget
     Widget setFocus(WeakRef!Widget newFocus, FocusReason reason = FocusReason.unspecified)
