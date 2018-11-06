@@ -236,7 +236,8 @@ auto bunch(TS...)(TS vars) if (TS.length > 0) // TODO: type checks, more testing
         {
             foreach (var; vars)
             {
-                static if (!__traits(compiles, mixin("var." ~ m ~ "(args)")))
+                enum expr = "var." ~ m ~ "(args)";
+                static if (!__traits(compiles, mixin(expr)))
                 {
                     import std.format : format;
                     enum tname = typeof(var).stringof;
@@ -304,7 +305,8 @@ auto maybe(T)(T var) if (is(T == class) || is(T == interface) || is(T == U*, U))
         pragma(inline, true)
         void opDispatch(string m, Args...)(auto ref Args args)
         {
-            static if (!__traits(compiles, mixin("var." ~ m ~ "(args)")))
+            enum expr = "var." ~ m ~ "(args)";
+            static if (!__traits(compiles, mixin(expr)))
             {
                 import std.format : format;
                 enum tname = T.stringof;
@@ -343,4 +345,26 @@ unittest
     // you may do it also this way
     bunch(a.maybe, b.maybe).render(true);
     assert(C.count == 2);
+}
+
+/// Get first name of class
+string getShortClassName(TypeInfo_Class type) pure nothrow @nogc
+{
+    string name = type.name;
+    for (size_t i = name.length - 1; i >= 0; i--)
+    {
+        if (name[i] == '.')
+        {
+            name = name[i + 1 .. $];
+            break;
+        }
+    }
+    return name;
+}
+
+///
+unittest
+{
+    TypeInfo_Class t = typeid(Exception);
+    assert(getShortClassName(t) == "Exception");
 }

@@ -129,8 +129,7 @@ private:
 
     struct StyleSubItemInfo
     {
-        TypeInfo_Class parentType;
-        string parentID;
+        Object parent;
         string subName;
     }
     /// Structure needed when this widget is subitem of another
@@ -390,6 +389,14 @@ public:
 
     mixin SupportCSS;
 
+    /// Set this widget to be a subitem in stylesheet
+    void bindSubItem(Object parent, string subName)
+    {
+        assert(parent && subName);
+        subInfo = new StyleSubItemInfo(parent, subName);
+        _needToRecomputeStyle = true;
+    }
+
     /// Signals when styles are being recomputed. Used for mixing properties in the widget.
     Listener!(void delegate(Style[] chain)) stylesRecomputed;
 
@@ -400,35 +407,71 @@ public:
         {
             Widget wt = cast(Widget)this;
             wt._needToRecomputeStyle = false;
-            Style[] chain = wt.recomputeStyle(getStyleSelector());
+            Style[] chain = selectStyleChain();
+            wt.recomputeStyle(chain);
             if (wt.stylesRecomputed.assigned)
                 wt.stylesRecomputed(chain);
         }
     }
 
-    /// Get stylesheet selector of this widget
-    protected Selector getStyleSelector() const
+    /// Get a style chain for this widget from current theme, least specific styles first
+    Style[] selectStyleChain() const
     {
-        if (subInfo)
-            return Selector(cast(TypeInfo_Class)subInfo.parentType, subInfo.parentID, subInfo.subName, state);
-        else
-            return Selector(cast(TypeInfo_Class)typeid(this), _id, null, state);
+        Style[] chain;
+        foreach (style; currentTheme.styles)
+        {
+            if (matchSelector(style.selector))
+                chain ~= style;
+        }
+        sort(chain);
+        return chain;
     }
 
-    /// Set this widget to be a subitem in stylesheet
-    void bindSubItem(Object parent, string subName)
+    /// Match this widget with selector
+    bool matchSelector(ref const(Selector) sel) const
     {
-        assert(parent && subName);
-        auto t = typeid(parent);
-        if (auto wt = cast(Widget)parent)
+        if (sel.universal)
+            return true;
+        // subitemness
+        if (!subInfo && sel.subitem)
+            return false;
+        if (subInfo)
         {
-            subInfo = new StyleSubItemInfo(t, wt.id, subName);
+            if (!sel.subitem || subInfo.subName != sel.subitem)
+                return false;
+            // match parent
+            if (auto wt = cast(Widget)subInfo.parent)
+            {
+                Selector ps = cast(Selector)sel;
+                ps.subitem = null;
+                return wt.matchSelector(ps);
+            }
+            else // not a widget
+            {
+                // check only type and state
+                TypeInfo_Class type = typeid(subInfo.parent);
+                if (sel.type != getShortClassName(type))
+                    return false;
+                if ((sel.specifiedState & state) != sel.enabledState)
+                    return false;
+                return true;
+            }
         }
-        else
+        // state
+        if ((sel.specifiedState & state) != sel.enabledState)
+            return false;
+        // id
+        if (sel.id && (!_id || _id != sel.id))
+            return false;
+        // type
+        TypeInfo_Class type = typeid(this);
+        while (sel.type != getShortClassName(type))
         {
-            subInfo = new StyleSubItemInfo(t, null, subName);
+            type = type.base; // support inheritance
+            if (type is typeid(Object))
+                return false;
         }
-        _needToRecomputeStyle = true;
+        return true;
     }
 
     private void needToRecomputeStateStyle()
@@ -2551,12 +2594,9 @@ mixin template SupportCSS(BaseClass = Widget)
     static if (is(typeof(this) == BaseClass))
     {
         /// Resolve style cascading and update all properties
-        /// Returns: style chain for convenience - to not request it from theme again.
-        protected Style[] recomputeStyle(Selector selector)
+        protected void recomputeStyle(Style[] chain)
         {
-            Style[] chain = currentTheme.selectChain(selector);
             recomputeStyleImpl(chain);
-            return chain;
         }
 
         /// This is a bitmap that indicates which properties are overriden by the user
@@ -2574,11 +2614,10 @@ mixin template SupportCSS(BaseClass = Widget)
     }
     else
     {
-        override protected Style[] recomputeStyle(Selector selector)
+        override protected void recomputeStyle(Style[] chain)
         {
-            Style[] chain = super.recomputeStyle(selector);
+            super.recomputeStyle(chain);
             recomputeStyleImpl(chain);
-            return chain;
         }
     }
 
@@ -2663,7 +2702,8 @@ mixin template SupportCSS(BaseClass = Widget)
 
         static if (__traits(hasMember, typeof(this), sideEffectName))
         {
-            static if (__traits(compiles, mixin(sideEffectName ~ "(value)")))
+            enum expr = sideEffectName ~ "(value)";
+            static if (__traits(compiles, mixin(expr)))
             {
                 enum callSideEffects = sideEffectName ~ "(val);";
             }

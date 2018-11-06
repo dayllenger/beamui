@@ -20,22 +20,14 @@ final class Theme
 {
     /// Unique name of theme
     @property string name() const { return _name; }
-
-    /// The root of style hierarchy. Same as `theme.get(Selector())`
-    @property Style root() { return defaultStyle; }
+    /// List of all styles this theme contains
+    @property Style[] styles() { return styleList; }
 
     private
     {
-        struct StyleID
-        {
-            string name; // name of a widget or custom name
-            string widgetID; // id, #id from css
-            string sub; // subitem, ::pseudo-element from css
-        }
-
         string _name;
-        Style defaultStyle;
-        Style[StyleID] styles;
+        Style[] styleList;
+        Style[Selector] styleMap;
         DrawableRef[string] drawables;
         Color[string] colors;
     }
@@ -44,130 +36,30 @@ final class Theme
     this(string name)
     {
         _name = name;
-        defaultStyle = new Style;
     }
 
     ~this()
     {
         Log.d("Destroying theme");
-        eliminate(defaultStyle);
-        eliminate(styles);
+        eliminate(styleList);
+        eliminate(styleMap);
         foreach (ref dr; drawables)
             dr.clear();
         destroy(drawables);
     }
 
-    /// Returns an inheritance chain for the selector, least specific first
-    Style[] selectChain(Selector selector)
-    {
-        Style[] result = selectChainImpl(selector);
-        if (selector.state != State.normal)
-        {
-            // add nearest state style to the chain
-            foreach_reverse (last; result)
-            {
-                Style st = last.forState(selector.state);
-                if (st !is last)
-                {
-                    result ~= st;
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-    private Style[] selectChainImpl(Selector selector)
-    {
-        // TODO: review carefully
-        TypeInfo_Class wtype = selector.widgetType;
-        if (!wtype)
-            return [defaultStyle];
-
-        // get short type name
-        string name = wtype.name;
-        for (size_t i = name.length - 1; i >= 0; i--)
-        {
-            if (name[i] == '.')
-            {
-                name = name[i + 1 .. $];
-                break;
-            }
-        }
-        // try to find exact style
-        auto p = StyleID(name, selector.id, selector.pseudoElement) in styles;
-
-        Style[] chain;
-        if (selector.id)
-        {
-            // SomeWidget#id::subelement -> SomeWidget::subelement
-            selector.id = null;
-            chain = selectChainImpl(selector);
-        }
-        else
-        {
-            // if this class is not on top of hierarhy and has no subwidgets
-            if (wtype.base !is typeid(Object) && !selector.pseudoElement)
-            {
-                // SomeWidget -> BaseWidget
-                selector.widgetType = wtype.base;
-                chain = selectChainImpl(selector);
-            }
-            else
-            {
-                // SomeWidget or SomeWidget::subelement
-                chain = [defaultStyle];
-            }
-        }
-        return p ? chain ~ *p : chain;
-    }
-
     /// Get a style OR create it if it's not exist
     Style get(Selector selector)
     {
-        TypeInfo_Class wtype = selector.widgetType;
-        string widgetID = selector.id;
-        string sub = selector.pseudoElement;
-        if (!wtype)
-            return defaultStyle;
-
-        // get short type name
-        string name = wtype.name;
-        for (size_t i = name.length - 1; i >= 0; i--)
-        {
-            if (name[i] == '.')
-            {
-                name = name[i + 1 .. $];
-                break;
-            }
-        }
-        // try to find exact style
-        auto p = StyleID(name, widgetID, sub) in styles;
-        if (!p && widgetID)
-        {
-            // try to find a style without widget id
-            p = StyleID(name, null, sub) in styles;
-        }
-        if (p)
-        {
-            return *p;
-        }
-        else
-        {
-            // create a style
-            return styles[StyleID(name, widgetID, sub)] = new Style;
-        }
-    }
-    /// ditto
-    private Style get(string widgetTypeName, string widgetID = null, string sub = null)
-    {
-        if (!widgetTypeName)
-            return defaultStyle;
-
-        auto id = StyleID(widgetTypeName, widgetID, sub);
-        if (auto p = id in styles)
+        if (auto p = selector in styleMap)
             return *p;
         else
-            return styles[id] = new Style;
+        {
+            auto st = new Style(selector);
+            styleList ~= st;
+            styleMap[selector] = st;
+            return st;
+        }
     }
 
     /// Get custom drawable
@@ -241,7 +133,6 @@ Theme createDefaultTheme()
     {
 //         theme.root.fontSize = Dimension.pt(12);
 
-        auto label = theme.get("Label");
         // TODO
     }
     else // console
@@ -357,7 +248,7 @@ private Style selectStyle(Theme theme, CSS.Selector selector)
     assert(es.length > 0);
 
     if (es.length == 1 && es[0].type == CSS.SelectorEntryType.universal)
-        return theme.defaultStyle;
+        return theme.get(Selector(true));
 
     import std.algorithm : find;
     // find first element entry
@@ -371,8 +262,6 @@ private Style selectStyle(Theme theme, CSS.Selector selector)
     auto pseudoElement = es.find!(a => a.type == CSS.SelectorEntryType.pseudoElement);
     string id = hash.length > 0 ? hash[0].identifier : null;
     string sub = pseudoElement.length > 0 ? pseudoElement[0].identifier : null;
-    // find base style
-    auto style = theme.get(es[0].identifier, id, sub);
     // extract state
     State specified;
     State enabled;
@@ -403,5 +292,9 @@ private Style selectStyle(Theme theme, CSS.Selector selector)
             applyStateFlag(e.identifier, "window-focused", State.windowFocused);
         }
     }
-    return style.getOrCreateState(specified, enabled);
+    // construct selector
+    auto sel = Selector(false, es[0].identifier, id, null, specified, enabled, sub);
+    sel.calculateSpecificity();
+    // find style
+    return theme.get(sel);
 }

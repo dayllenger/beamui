@@ -25,28 +25,24 @@ import beamui.style.types;
 /// Style - holds properties for a single selector
 final class Style
 {
+    /// Style rule selector
+    @property ref const(Selector) selector() const { return _selector; }
+
     private
     {
+        Selector _selector;
         /// Decoded properties, stored as variants
         Variant[string] properties;
         /// Raw properties right from CSS parser
         CSS.Token[][string] rawProperties;
 
-        /// State descriptor
-        struct StateStyle
-        {
-            Style s;
-            State specified;
-            State enabled;
-        }
-        /// State styles like :pressed or :not(enabled)
-        StateStyle[] stateStyles;
-
         debug static __gshared int _instanceCount;
     }
 
-    this() pure
+    /// Create style with some selector
+    this(Selector selector)
     {
+        _selector = selector;
         debug _instanceCount++;
         debug (resalloc)
             Log.d("Created style, count: ", _instanceCount);
@@ -56,11 +52,6 @@ final class Style
 
     ~this()
     {
-        foreach (s; stateStyles)
-            eliminate(s.s);
-        destroy(stateStyles);
-        stateStyles = null;
-
         if (properties !is null)
         {
             foreach (ref v; properties)
@@ -193,39 +184,13 @@ final class Style
         rawProperties[name] = tokens;
     }
 
-    /// Find substyle based on widget state (e.g. focused, pressed, ...)
-    inout(Style) forState(State state) inout
+    override int opCmp(Object o) const
     {
-        if (state == State.normal)
-            return this;
-        foreach (s; stateStyles)
-        {
-            if ((s.specified & state) == s.enabled)
-                return s.s;
-        }
-        // not found - fallback to normal
-        return this;
-    }
+        assert(cast(Style)o);
+        import std.algorithm.comparison : cmp;
 
-    /// Find exact existing state style or create new if no matched styles found
-    Style getOrCreateState(State specified, State enabled)
-    {
-        import core.bitop : popcnt;
-
-        if (specified == State.unspecified)
-            return this;
-        foreach (s; stateStyles)
-            if (s.specified == specified && s.enabled == enabled)
-                return s.s;
-        // not found
-        debug (styles)
-            Log.d("Creating substate: ", specified);
-
-        auto s = new Style;
-        stateStyles ~= StateStyle(s, specified, enabled);
-        // sort state styles by state value and its bit count
-        stateStyles.sort!((a, b) => a.specified * a.specified * popcnt(a.specified) >
-                                    b.specified * b.specified * popcnt(b.specified));
-        return s;
+        const(uint[]) a = selector.specificity;
+        const(uint[]) b = (cast(Style)o).selector.specificity;
+        return cmp(a, b);
     }
 }

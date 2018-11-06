@@ -50,13 +50,78 @@ enum TextFlag : uint
     parent = 32
 }
 
+/// CSS element selector
 struct Selector
 {
-    TypeInfo_Class widgetType;
+    /// True if this is a universal selector without id, state, etc.
+    bool universal;
+    /// Name of a widget or custom name
+    string type;
+    /// ID, #id from CSS
     string id;
-    string pseudoElement;
-    State state = State.normal;
+    /// List of style classes, .class from CSS
+    string[] classes;
+    /// State that is specified as :pseudo-class
+    State specifiedState;
+    /// State that is enabled, e.g. `pressed|focused` in `:pressed:focused:not(checked)`
+    State enabledState;
+    /// Subitem, ::pseudo-element from CSS
+    string subitem;
+
+    /// Combinator in complex selectors
+    enum Combinator
+    {
+        descendant,
+        child,
+        next,
+        subsequent
+    }
+    /// ditto
+    Combinator combinator;
+    /// Points to previous selector in the complex
+    Selector* previous;
+
+    /**
+    Selector specificity.
+
+    0 - the number of ID selectors,
+    1 - the number of class selectors,
+    2 - special rating of state selectors,
+    3 - the number of type selectors and pseudo-elements
+    */
+    uint[4] specificity;
+
+    /// Calculate specificity of this selector
+    void calculateSpecificity()
+    {
+        import core.bitop : popcnt; // bit count
+
+        Selector* s = &this;
+        while (s)
+        {
+            if (s.universal)
+            {
+                s = s.previous;
+                continue;
+            }
+            if (s.id)
+                specificity[0]++;
+            if (s.classes)
+                specificity[1] += cast(uint)classes.length;
+            State st = s.specifiedState;
+            if (st != State.init)
+                specificity[2] += st * st * popcnt(st);
+            if (s.type)
+                specificity[3]++;
+            if (s.subitem)
+                specificity[3]++;
+            s = s.previous;
+        }
+    }
 }
+
+//===============================================================
+// Annotations
 
 enum SpecialCSSType
 {
