@@ -301,7 +301,7 @@ public:
         if (_id != id)
         {
             _id = id;
-            _needToRecomputeStyle = true;
+            invalidateStyles();
         }
         return this;
     }
@@ -333,7 +333,7 @@ public:
             State oldState = _state;
             _state = newState;
             // need to recompute the style
-            needToRecomputeStateStyle();
+            invalidateStyles();
             // notify focus changes
             if ((oldState & State.focused) && !(newState & State.focused))
             {
@@ -396,7 +396,7 @@ public:
             assert(name.length);
             styleClasses[name] = false;
         }
-        _needToRecomputeStyle = true;
+        invalidateStyles();
         return this;
     }
     /// Remove style classes from the widget
@@ -407,7 +407,7 @@ public:
             assert(name.length);
             styleClasses.remove(name);
         }
-        _needToRecomputeStyle = true;
+        invalidateStyles();
         return this;
     }
     /// Toggle style class on the widget - remove if present, add if not
@@ -417,7 +417,7 @@ public:
         bool present = styleClasses.remove(name);
         if (!present)
             styleClasses[name] = false;
-        _needToRecomputeStyle = true;
+        invalidateStyles();
         return this;
     }
     /// Shorthand to set one style class to the widget
@@ -426,6 +426,7 @@ public:
         assert(name.length);
         styleClasses.clear();
         styleClasses[name] = false;
+        invalidateStyles();
         return this;
     }
 
@@ -568,6 +569,29 @@ public:
         }
         else
             return true;
+    }
+
+    private void invalidateStyles()
+    {
+        if (_parent)
+        {
+            int start = _parent.childIndex(this);
+            if (start == -1)
+                start = 0;
+            foreach (i; start .. _parent.childCount)
+                _parent.child(i).invalidateStylesRecursively();
+        }
+        else
+            invalidateStylesRecursively();
+    }
+
+    private void invalidateStylesRecursively()
+    {
+        _needToRecomputeStyle = true;
+        foreach (i; 0 .. childCount)
+        {
+            child(i).invalidateStylesRecursively();
+        }
     }
 
     private void needToRecomputeStateStyle()
