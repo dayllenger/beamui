@@ -369,10 +369,10 @@ private Style selectStyle(Theme theme, CSS.Selector selector)
     }
     auto hash = es.find!(a => a.type == CSS.SelectorEntryType.id);
     auto pseudoElement = es.find!(a => a.type == CSS.SelectorEntryType.pseudoElement);
-    string id = hash.length > 0 ? hash[0].text : null;
-    string sub = pseudoElement.length > 0 ? pseudoElement[0].text : null;
+    string id = hash.length > 0 ? hash[0].identifier : null;
+    string sub = pseudoElement.length > 0 ? pseudoElement[0].identifier : null;
     // find base style
-    auto style = theme.get(es[0].text, id, sub);
+    auto style = theme.get(es[0].identifier, id, sub);
     // extract state
     State specified;
     State enabled;
@@ -391,16 +391,16 @@ private Style selectStyle(Theme theme, CSS.Selector selector)
     {
         if (e.type == CSS.SelectorEntryType.pseudoClass)
         {
-            applyStateFlag(e.text, "pressed", State.pressed);
-            applyStateFlag(e.text, "focused", State.focused);
-            applyStateFlag(e.text, "default", State.default_);
-            applyStateFlag(e.text, "hovered", State.hovered);
-            applyStateFlag(e.text, "selected", State.selected);
-            applyStateFlag(e.text, "checkable", State.checkable);
-            applyStateFlag(e.text, "checked", State.checked);
-            applyStateFlag(e.text, "enabled", State.enabled);
-            applyStateFlag(e.text, "activated", State.activated);
-            applyStateFlag(e.text, "window-focused", State.windowFocused);
+            applyStateFlag(e.identifier, "pressed", State.pressed);
+            applyStateFlag(e.identifier, "focused", State.focused);
+            applyStateFlag(e.identifier, "default", State.default_);
+            applyStateFlag(e.identifier, "hovered", State.hovered);
+            applyStateFlag(e.identifier, "selected", State.selected);
+            applyStateFlag(e.identifier, "checkable", State.checkable);
+            applyStateFlag(e.identifier, "checked", State.checked);
+            applyStateFlag(e.identifier, "enabled", State.enabled);
+            applyStateFlag(e.identifier, "activated", State.activated);
+            applyStateFlag(e.identifier, "window-focused", State.windowFocused);
         }
     }
     return style.getOrCreateState(specified, enabled);

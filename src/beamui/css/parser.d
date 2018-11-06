@@ -12,6 +12,7 @@ module beamui.css.parser;
 import beamui.core.logger;
 import beamui.css.tokenizer;
 
+/// Transform a token range into a style sheet
 StyleSheet parseCSS(TokenRange tokens)
 {
     return Parser(tokens).parseStyleSheet();
@@ -45,13 +46,14 @@ struct Selector
 struct SelectorEntry
 {
     SelectorEntryType type;
-    string text;
+    string identifier;
     string str;
 }
 
 enum SelectorEntryType
 {
     none,
+    // simple selectors
     universal,
     element,
     class_,
@@ -64,7 +66,12 @@ enum SelectorEntryType
     attrDash,
     attrPrefix,
     attrSuffix,
-    attrSubstring
+    attrSubstring,
+    // combinators
+    descendant, // whitespace
+    child, // >
+    next, // +
+    subsequent // ~
 }
 
 struct Property
@@ -77,10 +84,8 @@ struct Parser
 {
     import std.typecons : Nullable, nullable;
 
-    alias T = Token;
-
     /// Range of tokens
-    TokenRange r;
+    private TokenRange r;
 
     this(TokenRange tokens)
     {
@@ -105,6 +110,11 @@ struct Parser
         {
             if (r.empty)
                 break;
+            if (r.front.type == whitespace)
+            {
+                r.popFront();
+                continue;
+            }
             if (r.front.type == atKeyword)
             {
                 auto atRule = consumeAtRule();
@@ -123,18 +133,23 @@ struct Parser
 
     Nullable!AtRule consumeAtRule()
     {
+        assert(r.front.type == TokenType.atKeyword);
+        enum Null = Nullable!AtRule.init;
+
         auto rule = AtRule(r.front.text);
         r.popFront();
         if (r.empty)
-            return Nullable!AtRule.init;
+            return Null;
 
         Token[] list;
         while (true) with (TokenType)
         {
-            if (r.empty || r.front.type == closeCurly)
+            if (r.empty)
                 break;
-            T t = r.front;
+            Token t = r.front;
             r.popFront();
+            if (t.type == whitespace)
+                continue;
             if (t.type == openCurly)
             {
                 // consume block
@@ -152,93 +167,176 @@ struct Parser
         if (rule.content.length > 0 || rule.properties.length > 0)
             return nullable(rule);
         else
-            return Nullable!AtRule.init;
+            return Null;
     }
 
     Nullable!RuleSet consumeQualifiedRule()
     {
+        enum Null = Nullable!RuleSet.init;
+
         RuleSet rule;
         while (true) with (TokenType)
         {
             if (r.empty)
-                return Nullable!RuleSet.init;
-            if (r.front.type == openCurly)
+                return Null;
+            if (r.front.type != openCurly)
+            {
+                rule.selectors = consumeSelectorList();
+            }
+            else
             {
                 r.popFront();
                 rule.properties = consumeDeclarationList();
                 return nullable(rule);
             }
-            rule.selectors ~= consumeSelector();
         }
     }
 
-    Nullable!Selector consumeSelector()
+    Selector[] consumeSelectorList()
     {
-        Selector sel;
+        Selector[] list;
         while (true) with (TokenType)
         {
             if (r.empty || r.front.type == openCurly)
                 break;
-            T t = r.front;
+            auto selector = consumeSelector();
+            if (!selector.isNull)
+                list ~= selector.get;
+            if (r.front.type == comma)
+            {
+                do
+                    r.popFront();
+                while (r.front.type == whitespace);
+            }
+        }
+        return list;
+    }
+
+    Nullable!Selector consumeSelector()
+    {
+        enum Null = Nullable!Selector.init;
+
+        Selector sel;
+        while (true) with (TokenType)
+        {
+            if (r.empty || r.front.type == comma || r.front.type == openCurly)
+                break;
             // just assign line of the first token
             if (sel.line == 0)
-                sel.line = t.line;
-            r.popFront();
-            if (t.type == delim) // * . ~ > +
+                sel.line = r.front.line;
+
+            sel.entries ~= consumeCompoundSelector();
+            if (r.front.type == whitespace || r.front.type == delim)
+            {
+                auto comb = consumeCombinator();
+                if (!comb.isNull)
+                    sel.entries ~= comb;
+            }
+        }
+        if (sel.entries.length > 0)
+            return nullable(sel);
+        else
+            return Null;
+    }
+
+    SelectorEntry[] consumeCompoundSelector()
+    {
+        SelectorEntry[] entries;
+        while (true) with (TokenType)
+        {
+            if (r.empty || r.front.type == whitespace || r.front.type == comma || r.front.type == openCurly)
+                break;
+            Token t = r.front;
+            if (t.type == delim) // * .
             {
                 if (t.text == "*")
-                    sel.entries ~= SelectorEntry(SelectorEntryType.universal);
-                else if (t.text == "." && r.front.type == ident)
                 {
-                    sel.entries ~= SelectorEntry(SelectorEntryType.class_, r.front.text);
+                    entries ~= SelectorEntry(SelectorEntryType.universal);
                     r.popFront();
                 }
+                else if (t.text == ".")
+                {
+                    r.popFront();
+                    if (r.front.type == ident)
+                    {
+                        entries ~= SelectorEntry(SelectorEntryType.class_, r.front.text);
+                        r.popFront();
+                    }
+                    else
+                        emitUnexpected(t, "class");
+                }
+                else // combinator or something
+                    break;
             }
             else if (t.type == colon) // pseudo classes and pseudo elements
             {
+                r.popFront();
                 if (r.front.type == colon)
                 {
                     r.popFront();
-                    sel.entries ~= SelectorEntry(SelectorEntryType.pseudoElement, r.front.text);
+                    if (r.front.type == ident)
+                    {
+                        entries ~= SelectorEntry(SelectorEntryType.pseudoElement, r.front.text);
+                        r.popFront();
+                    }
+                    else
+                        emitUnexpected(t, "pseudo element");
                 }
                 else if (r.front.type == func && r.front.text == "not")
                 {
                     r.popFront();
-                    sel.entries ~= SelectorEntry(SelectorEntryType.pseudoClass, "!" ~ r.front.text);
+                    entries ~= SelectorEntry(SelectorEntryType.pseudoClass, "!" ~ r.front.text);
                     r.popFront();
-                    if (r.front.type != closeParen)
-                        emitUnexpected(t, "selector");
+                    if (r.front.type == closeParen)
+                        r.popFront();
+                    else
+                        emitUnexpected(t, "pseudo class");
+                }
+                else if (r.front.type == ident)
+                {
+                    entries ~= SelectorEntry(SelectorEntryType.pseudoClass, r.front.text);
+                    r.popFront();
                 }
                 else
-                    sel.entries ~= SelectorEntry(SelectorEntryType.pseudoClass, r.front.text);
+                    emitUnexpected(t, "selector");
+            }
+            else if (t.type == ident) // tag
+            {
+                entries ~= SelectorEntry(SelectorEntryType.element, t.text);
                 r.popFront();
             }
-            else if (t.type == ident)
-                sel.entries ~= SelectorEntry(SelectorEntryType.element, t.text);
-            else if (t.type == hash && t.typeFlagID)
-                sel.entries ~= SelectorEntry(SelectorEntryType.id, t.text);
-            else if (t.type == openSquare)
+            else if (t.type == hash && t.typeFlagID) // id
             {
+                entries ~= SelectorEntry(SelectorEntryType.id, t.text);
+                r.popFront();
+            }
+            else if (t.type == openSquare) // attribute
+            {
+                r.popFront();
                 auto entry = consumeAttributeSelector();
                 if (!entry.isNull)
-                    sel.entries ~= entry.get;
+                    entries ~= entry.get;
             }
-            else if (t.type == comma)
-                break;
             else
+            {
                 emitUnexpected(t, "selector");
+                r.popFront();
+                break;
+            }
         }
-        return nullable(sel);
+        return entries;
     }
 
     Nullable!SelectorEntry consumeAttributeSelector()
     {
+        enum Null = Nullable!SelectorEntry.init;
+
         auto entry = SelectorEntry(SelectorEntryType.attr);
         while (true) with (TokenType)
         {
             if (r.empty)
                 break;
-            T t = r.front;
+            Token t = r.front;
             if (t.type == closeSquare)
             {
                 r.popFront();
@@ -246,8 +344,8 @@ struct Parser
             }
             if (t.type == ident || t.type == str)
             {
-                if (!entry.text)
-                    entry.text = t.text;
+                if (!entry.identifier)
+                    entry.identifier = t.text;
                 else
                     entry.str = t.text;
             }
@@ -266,14 +364,57 @@ struct Parser
             else
             {
                 emitUnexpected(t, "attribute selector");
-                return Nullable!SelectorEntry.init;
+                return Null;
             }
             r.popFront();
         }
-        if (entry.text.length == 0)
+        if (entry.identifier.length == 0)
         {
             emitError("attribute selector is empty", r.line);
-            return Nullable!SelectorEntry.init;
+            return Null;
+        }
+        return nullable(entry);
+    }
+
+    Nullable!SelectorEntry consumeCombinator()
+    {
+        enum Null = Nullable!SelectorEntry.init;
+
+        auto entry = SelectorEntry(SelectorEntryType.descendant);
+        while (true) with (TokenType)
+        {
+            if (r.empty)
+                break;
+            Token t = r.front;
+            if (t.type == delim) // > + ~
+            {
+                if (t.text == ">")
+                {
+                    entry.type = SelectorEntryType.child;
+                }
+                else if (t.text == "+")
+                {
+                    entry.type = SelectorEntryType.next;
+                }
+                else if (t.text == "~")
+                {
+                    entry.type = SelectorEntryType.subsequent;
+                }
+                else if (t.text == "*" || t.text == ".")
+                    break;
+                else
+                {
+                    emitError("unknown combinator", t.line);
+                    return Null;
+                }
+                r.popFront();
+            }
+            else if (t.type == whitespace)
+                r.popFront();
+            else if (t.type == comma || t.type == openCurly)
+                return Null;
+            else
+                break;
         }
         return nullable(entry);
     }
@@ -285,13 +426,18 @@ struct Parser
         {
             if (r.empty)
                 break;
-            T t = r.front;
+            Token t = r.front;
+            if (t.type == whitespace)
+            {
+                r.popFront();
+                continue;
+            }
             if (t.type == closeCurly)
             {
                 r.popFront();
                 break;
             }
-            else if (t.type == ident)
+            if (t.type == ident)
             {
                 auto prop = consumeDeclaration();
                 if (!prop.isNull)
@@ -308,13 +454,17 @@ struct Parser
 
     Nullable!Property consumeDeclaration()
     {
+        enum Null = Nullable!Property.init;
+
         auto prop = Property(r.front.text);
         with (TokenType)
         {
             r.popFront();
             if (r.empty || r.front.type == closeCurly)
-                return Nullable!Property.init;
-            T t = r.front;
+                return Null;
+            while (r.front.type == whitespace)
+                r.popFront();
+            Token t = r.front;
             if (t.type == colon)
             {
                 size_t line = r.line;
@@ -325,14 +475,14 @@ struct Parser
                 else
                 {
                     emitError("declaration is empty", line);
-                    return Nullable!Property.init;
+                    return Null;
                 }
             }
             else
             {
                 emitUnexpected(t, "declaration");
                 r.popFront();
-                return Nullable!Property.init;
+                return Null;
             }
         }
     }
@@ -344,16 +494,18 @@ struct Parser
         {
             if (r.empty || r.front.type == closeCurly)
                 break;
-            T t = r.front;
+            Token t = r.front;
             r.popFront();
+            if (t.type == whitespace)
+                continue;
             if (t.type == semicolon)
                 break;
-            else
-                list ~= t;
+            list ~= t;
         }
         return list;
     }
 }
+
 unittest
 {
     auto tr = tokenizeCSS(
@@ -369,7 +521,7 @@ unittest
             font-size: 120%;
         }
 
-        third#id::sub:not(hovered) {
+        third#id::sub:not(hovered) >fourth .fifth {
             'malformed': block ;
 
 
@@ -399,21 +551,23 @@ unittest
         auto rs = css.rulesets[0];
         assert(rs.selectors.length == 2);
         auto ss = rs.selectors;
-        assert(ss[0].entries.length == 4);
         auto se = ss[0].entries;
+        assert(se.length == 4);
         assert(se[0].type == SelectorEntryType.element);
-        assert(se[0].text == "tag");
+        assert(se[0].identifier == "tag");
         assert(se[1].type == SelectorEntryType.class_);
-        assert(se[1].text == "class");
+        assert(se[1].identifier == "class");
         assert(se[2].type == SelectorEntryType.id);
-        assert(se[2].text == "id");
+        assert(se[2].identifier == "id");
         assert(se[3].type == SelectorEntryType.attrSubstring);
-        assert(se[3].text == "attr");
+        assert(se[3].identifier == "attr");
         assert(se[3].str == "text");
         se = ss[1].entries;
+        assert(se.length == 3);
         assert(se[0].type == SelectorEntryType.element);
-        assert(se[0].text == "second");
-        assert(se[1].type == SelectorEntryType.universal);
+        assert(se[0].identifier == "second");
+        assert(se[1].type == SelectorEntryType.descendant);
+        assert(se[2].type == SelectorEntryType.universal);
 
         auto ps = rs.properties;
         assert(ps.length == 4);
@@ -429,15 +583,21 @@ unittest
         rs = css.rulesets[1];
         assert(rs.selectors.length == 1);
         se = rs.selectors[0].entries;
-        assert(se.length == 4);
+        assert(se.length == 8);
         assert(se[0].type == SelectorEntryType.element);
-        assert(se[0].text == "third");
+        assert(se[0].identifier == "third");
         assert(se[1].type == SelectorEntryType.id);
-        assert(se[1].text == "id");
+        assert(se[1].identifier == "id");
         assert(se[2].type == SelectorEntryType.pseudoElement);
-        assert(se[2].text == "sub");
+        assert(se[2].identifier == "sub");
         assert(se[3].type == SelectorEntryType.pseudoClass);
-        assert(se[3].text == "!hovered");
+        assert(se[3].identifier == "!hovered");
+        assert(se[4].type == SelectorEntryType.child);
+        assert(se[5].type == SelectorEntryType.element);
+        assert(se[5].identifier == "fourth");
+        assert(se[6].type == SelectorEntryType.descendant);
+        assert(se[7].type == SelectorEntryType.class_);
+        assert(se[7].identifier == "fifth");
 
         ps = rs.properties;
         assert(ps.length == 1);

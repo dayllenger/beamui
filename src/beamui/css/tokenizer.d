@@ -4,7 +4,7 @@ CSS tokenizer.
 The tokenizer follows this document: https://www.w3.org/TR/css-syntax-3
 
 Tokenizer does not parse numbers.
-Whitespace, cdo and cdc tokens are not included into result.
+cdo and cdc tokens are not included into result.
 
 Copyright: dayllenger 2018
 License:   Boost License 1.0
@@ -48,17 +48,17 @@ pure nothrow:
         {
             _front = tokenizer.consumeToken();
         }
-        while (_front.type == TokenType.whitespace || _front.type == TokenType.cdo || _front.type == TokenType.cdc);
+        while (_front.type == TokenType.cdo || _front.type == TokenType.cdc);
         _front.line = tokenizer.line;
     }
 
     /// Is EOF reached?
-    @property bool empty()
+    @property bool empty() const
     {
         return _front.type == TokenType.eof;
     }
 
-    /// Line in a source file where current token is
+    /// Line in the source file where current token is
     @property size_t line()
     {
         return tokenizer.line;
