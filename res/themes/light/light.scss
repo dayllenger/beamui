@@ -605,25 +605,25 @@ TabHost {
     background-color: #f2f4f5;
 }
 
-TabItemWidget {
+TabItem {
     padding: 6px 1px 0 0;
     spacing: 0;
     border-color: transparent;
 }
 
-TabControl.top TabItemWidget {
+TabControl.top TabItem {
     border-bottom-width: 2px;
 }
 
-TabControl.bottom TabItemWidget {
+TabControl.bottom TabItem {
     border-top-width: 2px;
 }
 
-TabItemWidget:selected {
+TabItem:selected {
     border-color: $main-color;
 }
 
-TabItemWidget::label {
+TabItem::label {
     align: hcenter bottom;
     padding: 0 3px 3px;
     transition: color 100ms ease;

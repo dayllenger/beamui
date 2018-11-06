@@ -1,5 +1,5 @@
 /**
-This module contains declaration of tabbed view controls.
+Declaration of tabbed view controls.
 
 Mostly you will use only TabWidget class. Other classes are ancillary.
 
@@ -34,141 +34,86 @@ alias tabChangedHandler = void delegate(string newActiveTabID, string previousTa
 /// Tab close button pressed handler
 alias tabClosedHandler = void delegate(string tabID);
 
-/// Tab item metadata
-class TabItem
+/// Tab item widget - to show tab header
+class TabItem : Row
 {
     @property
     {
+        /// Parent tab control
+        TabControl tabControl()
+        {
+            return cast(TabControl)parent;
+        }
+
+        /// Tab title
+        override dstring text() const
+        {
+             return _label.text;
+        }
+        /// ditto
+        override TabItem text(dstring s)
+        {
+            _label.text = s;
+            return this;
+        }
+
+        /// Tab icon
         string iconID() const
         {
-            return _iconRes;
+             return _icon.imageID;
         }
-
-        string id() const
+        /// ditto
+        TabItem iconID(string s)
         {
-            return _id;
-        }
-
-        dstring text() const
-        {
-            return _label;
-        }
-
-        void text(dstring s)
-        {
-            _label = s;
-        }
-
-        TabItem iconID(string id)
-        {
-            _iconRes = id;
+            _icon.imageID = s;
+            _icon.visibility = s ? Visibility.visible : Visibility.gone;
             return this;
         }
 
-        TabItem id(string id)
+        /// True if tab close button is visible
+        bool enableCloseButton() const
         {
-            _id = id;
+            return _closeButton.visibility == Visibility.visible;
+        }
+        /// ditto
+        TabItem enableCloseButton(bool flag)
+        {
+            _closeButton.visibility = flag ? Visibility.visible : Visibility.gone;
             return this;
         }
 
-        long lastAccessTs() const
+        override dstring tooltipText()
         {
-            return _lastAccessTs;
+            return _label.tooltipText;
+        }
+        override TabItem tooltipText(dstring text)
+        {
+            bunch(_icon, _label, _closeButton).tooltipText(text);
+            return this;
         }
 
-        void lastAccessTs(long ts)
+        /// Optional integer, associated with this tab
+        int intParam() const { return _intParam; }
+        /// ditto
+        TabItem intParam(int value)
         {
-            _lastAccessTs = ts;
+            _intParam = value;
+            return this;
         }
-
-        /// Tooltip text
-        dstring tooltipText() const
-        {
-            return _tooltipText;
-        }
-        /// Tooltip text
-        void tooltipText(dstring text)
-        {
-            _tooltipText = text;
-        }
-
-        Object objectParam()
-        {
-            return _objectParam;
-        }
-
+        /// Optional object, associated with this tab
+        Object objectParam() { return _objectParam; }
+        /// ditto
         TabItem objectParam(Object value)
         {
             _objectParam = value;
             return this;
         }
 
-        int intParam() const
-        {
-            return _intParam;
-        }
-
-        TabItem intParam(int value)
-        {
-            _intParam = value;
-            return this;
-        }
+        /// Tab last access time
+        long lastAccessTime() const { return _lastAccessTime; }
     }
 
-    private
-    {
-        static __gshared long _lastAccessCounter;
-        string _iconRes;
-        string _id;
-        dstring _label;
-        dstring _tooltipText;
-        long _lastAccessTs;
-
-        Object _objectParam;
-        int _intParam;
-    }
-
-    this(string id, dstring labelText, string iconRes = null, dstring tooltipText = null)
-    {
-        _id = id;
-        _label = labelText;
-        _iconRes = iconRes;
-        _lastAccessTs = _lastAccessCounter++;
-        _tooltipText = tooltipText;
-    }
-
-    void updateAccessTs()
-    {
-        _lastAccessTs = _lastAccessCounter++;
-    }
-}
-
-/// Tab item widget - to show tab header
-class TabItemWidget : Row
-{
-    @property
-    {
-        TabItem tabItem() { return _item; }
-
-        TabControl tabControl()
-        {
-            return cast(TabControl)parent;
-        }
-
-        override dstring tooltipText()
-        {
-            return _item.tooltipText;
-        }
-
-        override Widget tooltipText(dstring text)
-        {
-            bunch(_icon, _label, _closeButton, _item).tooltipText(text);
-            return this;
-        }
-
-        TabItem item() { return _item; }
-    }
-
+    /// Signals tab close button click
     Signal!tabClosedHandler tabClosed;
 
     private
@@ -176,51 +121,48 @@ class TabItemWidget : Row
         ImageWidget _icon;
         Label _label;
         Button _closeButton;
-        TabItem _item;
-        bool _enableCloseButton;
+
+        Object _objectParam;
+        int _intParam;
+
+        static long _lastAccessCounter;
+        long _lastAccessTime;
     }
 
-    this(TabItem item, bool enableCloseButton = true)
+    this(string id, dstring label, string iconID = null, bool enableCloseButton = false,
+         dstring tooltipText = null)
     {
-        _enableCloseButton = enableCloseButton;
-        _icon = new ImageWidget;
-        _label = new Label;
+        this.id = id;
+        _icon = new ImageWidget(iconID);
+        _icon.bindSubItem(this, "icon");
+        _icon.state = State.parent;
+        _icon.visibility = iconID ? Visibility.visible : Visibility.gone;
+        _label = new Label(label);
         _label.bindSubItem(this, "label");
         _label.state = State.parent;
         _closeButton = new Button(null, "close");
         _closeButton.id = "CLOSE";
-        _closeButton.bindSubItem(this, "close"); // FIXME: was Button.transparent
-        _closeButton.clicked = (Widget w) { tabClosed(_item.id); };
-        _closeButton.visibility = _enableCloseButton ? Visibility.visible : Visibility.gone;
+        _closeButton.bindSubItem(this, "close");
+        _closeButton.clicked = (Widget w) { tabClosed(id); };
+        this.enableCloseButton = enableCloseButton;
+        this.tooltipText = tooltipText;
         addChild(_icon);
         addChild(_label);
         addChild(_closeButton);
-        setItem(item);
         clickable = true;
         trackHover = true;
         _label.trackHover = true;
-        bunch(_icon, _label, _closeButton).tooltipText(_item.tooltipText); // FIXME: needed?
+        _lastAccessTime = _lastAccessCounter++;
     }
 
-    void setItem(TabItem item)
+    void updateAccessTime()
     {
-        _item = item;
-        if (item.iconID !is null)
-        {
-            _icon.visibility = Visibility.visible;
-            _icon.imageID = item.iconID;
-        }
-        else
-        {
-            _icon.visibility = Visibility.gone;
-        }
-        _label.text = item.text;
-        id = item.id;
+        _lastAccessTime = _lastAccessCounter++;
     }
 }
 
 /// Tab header - tab labels, with optional More button
-class TabControl : WidgetGroupDefaultDrawing
+class TabControl : WidgetGroup
 {
     @property
     {
@@ -230,142 +172,137 @@ class TabControl : WidgetGroupDefaultDrawing
             return _moreButton.iconID;
         }
         /// ditto
-        void moreButtonIcon(string resourceID)
+        TabControl moreButtonIcon(string resourceID)
         {
             _moreButton.iconID = resourceID;
+            return this;
         }
 
         string selectedTabID() const { return _selectedTabID; }
+
+        /// Tab alignment - top or bottom
+        Align tabAlignment() const { return _tabAlignment; }
+        /// ditto
+        TabControl tabAlignment(Align a)
+        {
+            _tabAlignment = a;
+            style = a == Align.top ? "top" : "bottom";
+            return this;
+        }
     }
 
     /// Signal of tab change (e.g. by clicking on tab header)
     Signal!tabChangedHandler tabChanged;
-    /// Signal on tab close button
+    /// Signals tab close button click
     Signal!tabClosedHandler tabClosed;
-    /// On more button click
+    /// Signals more button click
     Signal!(void delegate(Widget)) moreButtonClicked;
     /// Handler for more button popup menu
     Signal!(Menu delegate(Widget)) moreButtonPopupMenuBuilder;
 
-    /// When true, shows close buttons in tabs
-    bool enableCloseButton;
     /// When true, more button is visible
     bool enableMoreButton = true;
-
-    Align tabAlignment;
 
     import std.typecons : Tuple, tuple;
 
     private
     {
-        TabItem[] _items;
         Button _moreButton;
-        Tuple!(TabItem, size_t)[] _sortedItems;
-
-        string _tabStyle;
-        string _tabButtonStyle;
-        string _tabButtonTextStyle;
+        Tuple!(int, long)[] _sortedItems;
 
         string _selectedTabID;
+
+        Align _tabAlignment;
     }
 
     this(Align tabAlign = Align.top)
     {
         tabAlignment = tabAlign;
-        style = tabAlign == Align.top ? "top" : "bottom";
         _moreButton = new Button(null, "tab_more");
         _moreButton.id = "MORE";
         _moreButton.bindSubItem(this, "more");
         _moreButton.mouseEvent = &onMouseMoreBtn;
-        enableCloseButton = true;
         addChild(_moreButton); // first child is always MORE button, the rest corresponds to tab list
     }
 
     /// Returns tab count
     @property int tabCount() const
     {
-        return cast(int)_items.length;
+        return childCount - 1;
     }
     /// Returns tab item by index (null if index is out of range)
     TabItem tab(int index)
     {
-        if (index < tabCount)
-            return _items[index];
+        if (0 <= index && index < childCount - 1)
+            return cast(TabItem)child(index + 1);
         else
             return null;
     }
     /// Returns tab item by id (null if not found)
     inout(TabItem) tab(string id) inout
     {
-        foreach (item; _items)
-            if (item.id == id)
-                return item;
+        foreach (i; 1 .. childCount)
+        {
+            if (auto wt = cast(inout(TabItem))child(i))
+                if (wt.id == id)
+                    return wt;
+        }
         return null;
     }
     /// Get tab index by tab id (-1 if not found)
     int tabIndex(string id)
     {
-        foreach (i, item; _items)
-            if (item.id == id)
-                return cast(int)i;
+        foreach (i; 1 .. childCount)
+            if (child(i).id == id)
+                return i - 1;
         return -1;
     }
 
-    protected void updateTabs()
+    protected Tuple!(int, long)[] sortedItems()
     {
-        // TODO:
-    }
-
-    protected Tuple!(TabItem, size_t)[] sortedItems()
-    {
-        _sortedItems.length = _items.length;
-        foreach (i, it; _items)
+        _sortedItems.length = tabCount;
+        foreach (i, ref item; _sortedItems)
         {
-            _sortedItems[i][0] = it;
-            _sortedItems[i][1] = i;
+            item[0] = cast(int)i + 1;
+            if (auto wt = cast(TabItem)child(item[0]))
+                item[1] = wt.lastAccessTime;
+            else
+                item[1] = -1;
         }
-        _sortedItems.sort!((a, b) => a[0].lastAccessTs > b[0].lastAccessTs);
+        _sortedItems.sort!((a, b) => a[1] > b[1]);
         return _sortedItems;
     }
 
     /// Find next or previous tab index, based on access time
     int getNextItemIndex(int direction)
     {
-        if (_items.length == 0)
+        if (tabCount == 0)
             return -1;
-        if (_items.length == 1)
+        if (tabCount == 1)
             return 0;
         auto items = sortedItems();
         foreach (i; 0 .. items.length)
         {
-            if (items[i][0].id == _selectedTabID)
+            if (child(items[i][0]).id == _selectedTabID)
             {
                 size_t next = i + direction;
                 if (next < 0)
                     next = items.length - 1;
                 if (next >= items.length)
                     next = 0;
-                return tabIndex(items[next][0].id);
+                return items[next][0] - 1;
             }
         }
         return -1;
     }
 
     /// Add new tab
-    TabControl addTab(TabItem item, int index = -1, bool enableCloseButton = false)
+    TabControl addTab(TabItem item, int index = -1)
     {
-        import std.array : insertInPlace;
-
-        if (index != -1)
-            _items.insertInPlace(index, item);
-        else
-            _items ~= item;
-        auto widget = new TabItemWidget(item, enableCloseButton);
-        widget.parent = this;
-        widget.mouseEvent = &onMouseTabBtn;
-        widget.tabClosed = &onTabClose;
-        insertChild(widget, index);
-        updateTabs();
+        item.parent = this;
+        item.mouseEvent = &onMouseTabBtn;
+        item.tabClosed = &tabClosed.emit;
+        insertChild(item, index);
         requestLayout();
         return this;
     }
@@ -373,8 +310,8 @@ class TabControl : WidgetGroupDefaultDrawing
     TabControl addTab(string id, dstring label, string iconID = null, bool enableCloseButton = false,
             dstring tooltipText = null)
     {
-        TabItem item = new TabItem(id, label, iconID, tooltipText);
-        return addTab(item, -1, enableCloseButton);
+        auto item = new TabItem(id, label, iconID, enableCloseButton, tooltipText);
+        return addTab(item);
     }
 
     /// Remove tab
@@ -383,12 +320,13 @@ class TabControl : WidgetGroupDefaultDrawing
         string nextID;
         if (id == _selectedTabID)
         {
+            _selectedTabID = null;
             // current tab is being closed: remember next tab id
             int nextIndex = getNextItemIndex(1);
             if (nextIndex < 0)
                 nextIndex = getNextItemIndex(-1);
             if (nextIndex >= 0)
-                nextID = _items[nextIndex].id;
+                nextID = child(nextIndex + 1).id;
         }
         int index = tabIndex(id);
         if (index >= 0)
@@ -396,9 +334,6 @@ class TabControl : WidgetGroupDefaultDrawing
             Widget w = removeChild(index + 1);
             if (w)
                 destroy(w);
-            _items = _items.remove(index);
-            if (id == _selectedTabID)
-                _selectedTabID = null;
             requestLayout();
         }
         if (nextID)
@@ -412,70 +347,47 @@ class TabControl : WidgetGroupDefaultDrawing
         return this;
     }
 
-    /// Change name of tab
+    /// Change name of tab by ID
     void renameTab(string ID, dstring name)
     {
-        int index = tabIndex(id);
+        int index = tabIndex(ID);
         if (index >= 0)
         {
             renameTab(index, name);
         }
     }
-
-    /// Change name of tab
+    /// Change name of tab by index
     void renameTab(int index, dstring name)
     {
-        _items[index].text = name;
-        foreach (i; 0 .. childCount)
-        {
-            auto widget = cast(TabItemWidget)child(i);
-            if (widget && widget.item is _items[index])
-            {
-                widget.setItem(_items[index]);
-                requestLayout();
-                break;
-            }
-        }
+        if (auto wt = cast(TabItem)child(index + 1))
+            wt.text = name;
     }
-
     /// Change name and id of tab
     void renameTab(int index, string id, dstring name)
     {
-        _items[index].text = name;
-        _items[index].id = id;
-        foreach (i; 0 .. childCount)
+        if (auto wt = cast(TabItem)child(index + 1))
         {
-            auto widget = cast(TabItemWidget)child(i);
-            if (widget && widget.item is _items[index])
-            {
-                widget.setItem(_items[index]);
-                requestLayout();
-                break;
-            }
+            wt.text = name;
+            wt.id = id;
         }
     }
 
-    protected void onTabClose(string tabID)
+    void updateAccessTime()
     {
-        tabClosed(tabID);
-    }
-
-    void updateAccessTs()
-    {
-        tab(_selectedTabID).maybe.updateAccessTs();
+        tab(_selectedTabID).maybe.updateAccessTime();
     }
 
     void selectTab(int index, bool updateAccess)
     {
-        if (index < 0 || index + 1 >= childCount)
+        if (index < 0 || index >= tabCount)
         {
-            Log.e("Tried to access tab out of bounds (index = %d, count = %d)", index, childCount - 1);
+            Log.e("Tried to access tab out of bounds (index = %d, count = %d)", index, tabCount);
             return;
         }
         if (child(index + 1).compareID(_selectedTabID))
         {
             if (updateAccess)
-                updateAccessTs();
+                updateAccessTime();
             return; // already selected
         }
         string previousSelectedTab = _selectedTabID;
@@ -486,7 +398,7 @@ class TabControl : WidgetGroupDefaultDrawing
                 child(i).state = State.selected;
                 _selectedTabID = child(i).id;
                 if (updateAccess)
-                    updateAccessTs();
+                    updateAccessTime();
             }
             else
             {
@@ -520,7 +432,7 @@ class TabControl : WidgetGroupDefaultDrawing
         return true;
     }
 
-    protected bool onMouseMoreBtn(Widget source, MouseEvent event)
+    protected bool onMouseMoreBtn(Widget, MouseEvent event)
     {
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
@@ -536,7 +448,7 @@ class TabControl : WidgetGroupDefaultDrawing
     {
         if (auto menu = getMoreButtonPopupMenu())
         {
-            auto popup = window.showPopup(menu, WeakRef!Widget(_moreButton),
+            window.showPopup(menu, WeakRef!Widget(_moreButton),
                     tabAlignment == Align.top ? PopupAlign.below : PopupAlign.above);
             menu.selectItem(tabIndex(selectedTabID));
             return true;
@@ -566,8 +478,8 @@ class TabControl : WidgetGroupDefaultDrawing
 
             (int idx) // separate function because of the loop
             {
-                res.addAction(_items[idx].text).bind(this, { selectTab(idx, true); });
-            }(i - 1);
+                res.addAction(child(idx).text).bind(this, { selectTab(idx - 1, true); });
+            }(i);
         }
         return res;
     }
@@ -616,11 +528,11 @@ class TabControl : WidgetGroupDefaultDrawing
         // tabs
         // update visibility
         bool needMoreButton;
-        int w = 0;
+        int w;
         foreach (item; sortedItems())
         {
-            size_t idx = item[1] + 1;
-            auto widget = child(cast(int)idx);
+            int idx = item[0];
+            auto widget = child(idx);
             if (w + itemSizes[idx].w <= geom.w)
             {
                 w += itemSizes[idx].w;
@@ -663,30 +575,27 @@ class TabControl : WidgetGroupDefaultDrawing
         if (visibility != Visibility.visible)
             return;
 
-        super.Widget.onDraw(buf);
+        super.onDraw(buf);
         Box b = box;
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b);
         // draw all items except selected
+        int selected = -1;
         for (int i = childCount - 1; i >= 0; i--)
         {
             Widget item = child(i);
             if (item.visibility != Visibility.visible)
                 continue;
             if (item.id == _selectedTabID) // skip selected
+            {
+                selected = i;
                 continue;
+            }
             item.onDraw(buf);
         }
         // draw selected item
-        for (int i = 0; i < childCount; i++)
-        {
-            Widget item = child(i);
-            if (item.visibility != Visibility.visible)
-                continue;
-            if (item.id != _selectedTabID) // skip all except selected
-                continue;
-            item.onDraw(buf);
-        }
+        if (selected >= 0)
+            child(selected).onDraw(buf);
     }
 }
 
@@ -707,7 +616,7 @@ class TabHost : FrameLayout
         }
 
         Visibility hiddenTabsVisibility() { return _hiddenTabsVisibility; }
-
+        /// ditto
         void hiddenTabsVisibility(Visibility v)
         {
             _hiddenTabsVisibility = v;
@@ -766,7 +675,7 @@ class TabHost : FrameLayout
         assert(widget.id !is null, "ID for tab host page is mandatory");
         assert(childIndex(widget.id) == -1, "duplicate ID for tab host page");
         _tabControl.addTab(widget.id, label, iconID, enableCloseButton, tooltipText);
-        tabInitialization(widget);
+        initializateTab(widget);
         //widget.focusGroup = true; // doesn't allow move focus outside of tab content
         addChild(widget);
         return this;
@@ -774,7 +683,7 @@ class TabHost : FrameLayout
 
     // handles initial tab selection & hides subsequently added tabs so
     // they don't appear in the same frame
-    private void tabInitialization(Widget widget)
+    private void initializateTab(Widget widget)
     {
         if (_tabControl.selectedTabID is null)
         {
@@ -810,7 +719,7 @@ class TabWidget : Column
         {
             return _tabHost.hiddenTabsVisibility;
         }
-
+        /// ditto
         void hiddenTabsVisibility(Visibility v)
         {
             _tabHost.hiddenTabsVisibility = v;
@@ -839,8 +748,8 @@ class TabWidget : Column
     this(Align tabAlignment = Align.top)
     {
         _tabControl = new TabControl(tabAlignment);
-        _tabControl.tabChanged ~= &onTabChanged;
-        _tabControl.tabClosed ~= &onTabClose;
+        _tabControl.tabChanged ~= &tabChanged.emit;
+        _tabControl.tabClosed ~= &tabClosed.emit;
         _tabHost = new TabHost(_tabControl);
         if (tabAlignment == Align.top)
         {
@@ -853,17 +762,6 @@ class TabWidget : Column
             add(_tabControl);
         }
         focusGroup = true;
-    }
-
-    protected void onTabChanged(string newActiveTabID, string previousTabID)
-    {
-        // forward to listener
-        tabChanged(newActiveTabID, previousTabID);
-    }
-
-    protected void onTabClose(string tabID)
-    {
-        tabClosed(tabID);
     }
 
     /// Add new tab by id and label (raw value)
@@ -953,7 +851,7 @@ class TabWidget : Column
                 if (!(event.flags & KeyFlag.control))
                 {
                     _tabNavigationInProgress = false;
-                    _tabControl.updateAccessTs();
+                    _tabControl.updateAccessTime();
                 }
             }
         }

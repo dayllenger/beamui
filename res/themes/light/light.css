@@ -240,17 +240,17 @@ TabControl::more:hovered { opacity: 1; }
 
 TabHost { padding: 6px; background-color: #f2f4f5; }
 
-TabItemWidget { padding: 6px 1px 0 0; spacing: 0; border-color: transparent; }
+TabItem { padding: 6px 1px 0 0; spacing: 0; border-color: transparent; }
 
-TabControl.top TabItemWidget { border-bottom-width: 2px; }
+TabControl.top TabItem { border-bottom-width: 2px; }
 
-TabControl.bottom TabItemWidget { border-top-width: 2px; }
+TabControl.bottom TabItem { border-top-width: 2px; }
 
-TabItemWidget:selected { border-color: #4e93da; }
+TabItem:selected { border-color: #4e93da; }
 
-TabItemWidget::label { align: hcenter bottom; padding: 0 3px 3px; transition: color 100ms ease; }
+TabItem::label { align: hcenter bottom; padding: 0 3px 3px; transition: color 100ms ease; }
 
-TabItemWidget::label:hovered, TabItemWidget::label:selected, TabItemWidget::label:focused, TabItemWidget::label:selected:focused { color: #4e93da; }
+TabItem::label:hovered, TabItem::label:selected, TabItem::label:focused, TabItem::label:selected:focused { color: #4e93da; }
 
 /* ========================================================================== editors.d */
 EditLine { padding: 4px; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }

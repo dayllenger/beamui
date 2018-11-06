@@ -576,10 +576,13 @@ public:
         if (_parent)
         {
             int start = _parent.childIndex(this);
-            if (start == -1)
-                start = 0;
-            foreach (i; start .. _parent.childCount)
-                _parent.child(i).invalidateStylesRecursively();
+            if (start >= 0)
+            {
+                foreach (i; start .. _parent.childCount)
+                    _parent.child(i).invalidateStylesRecursively();
+            }
+            else
+                invalidateStylesRecursively();
         }
         else
             invalidateStylesRecursively();
