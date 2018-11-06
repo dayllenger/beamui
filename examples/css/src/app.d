@@ -79,7 +79,7 @@ Widget createControlsPanel()
 
         Row r2 = new Row;
         r2.add(new Button("Button")).fillWidth(true);
-        r2.add(new Button("Button", "folder"));
+        r2.add(new Button("Button", "folder").addStyleClasses("folder"));
         r2.add(new Button(null, "dialog-cancel"));
 
     col.add(gb);
@@ -108,4 +108,8 @@ Row#split-view {
 }
 
 /* write your own and press the button below */
+
+Button.folder::label {
+    color: orange;
+}
 `;

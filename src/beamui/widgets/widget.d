@@ -127,6 +127,8 @@ private:
     /// Widget id
     string _id;
 
+    /// Style class list
+    bool[string] styleClasses; // value means nothing
     struct StyleSubItemInfo
     {
         Object parent;
@@ -389,12 +391,44 @@ public:
 
     mixin SupportCSS;
 
+    /// Check whether widget has certain style class
+    bool hasStyleClass(string name) const
+    {
+        return (name in styleClasses) !is null;
+    }
+    /// Add style classes to the widget
+    Widget addStyleClasses(string[] names...)
+    {
+        foreach (name; names)
+            styleClasses[name] = false;
+        _needToRecomputeStyle = true;
+        return this;
+    }
+    /// Remove style classes from the widget
+    Widget removeStyleClasses(string[] names...)
+    {
+        foreach (name; names)
+            styleClasses.remove(name);
+        _needToRecomputeStyle = true;
+        return this;
+    }
+    /// Toggle style class on the widget - remove if present, add if not
+    Widget toggleStyleClass(string name)
+    {
+        bool present = styleClasses.remove(name);
+        if (!present)
+            styleClasses[name] = false;
+        _needToRecomputeStyle = true;
+        return this;
+    }
+
     /// Set this widget to be a subitem in stylesheet
-    void bindSubItem(Object parent, string subName)
+    Widget bindSubItem(Object parent, string subName)
     {
         assert(parent && subName);
         subInfo = new StyleSubItemInfo(parent, subName);
         _needToRecomputeStyle = true;
+        return this;
     }
 
     /// Signals when styles are being recomputed. Used for mixing properties in the widget.
@@ -469,6 +503,12 @@ public:
         {
             type = type.base; // support inheritance
             if (type is typeid(Object))
+                return false;
+        }
+        // class
+        foreach (name; sel.classes)
+        {
+            if ((name in styleClasses) is null)
                 return false;
         }
         return true;

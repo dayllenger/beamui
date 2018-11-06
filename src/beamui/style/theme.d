@@ -259,8 +259,10 @@ private Style selectStyle(Theme theme, CSS.Selector selector)
         return null;
     }
     auto hash = es.find!(a => a.type == CSS.SelectorEntryType.id);
+    auto clss = es.find!(a => a.type == CSS.SelectorEntryType.class_);
     auto pseudoElement = es.find!(a => a.type == CSS.SelectorEntryType.pseudoElement);
     string id = hash.length > 0 ? hash[0].identifier : null;
+    string[] classes = clss.length > 0 ? [clss[0].identifier] : null;
     string sub = pseudoElement.length > 0 ? pseudoElement[0].identifier : null;
     // extract state
     State specified;
@@ -293,7 +295,7 @@ private Style selectStyle(Theme theme, CSS.Selector selector)
         }
     }
     // construct selector
-    auto sel = Selector(false, es[0].identifier, id, null, specified, enabled, sub);
+    auto sel = Selector(false, es[0].identifier, id, classes, specified, enabled, sub);
     sel.calculateSpecificity();
     // find style
     return theme.get(sel);
