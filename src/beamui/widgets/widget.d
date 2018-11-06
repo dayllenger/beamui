@@ -465,7 +465,7 @@ public:
     bool matchSelector(ref const(Selector) sel) const
     {
         if (sel.universal)
-            return true;
+            return matchContextSelector(sel);
         // subitemness
         if (!subInfo && sel.subitem)
             return false;
@@ -498,12 +498,15 @@ public:
         if (sel.id && (!_id || _id != sel.id))
             return false;
         // type
-        TypeInfo_Class type = typeid(this);
-        while (sel.type != getShortClassName(type))
+        if (sel.type)
         {
-            type = type.base; // support inheritance
-            if (type is typeid(Object))
-                return false;
+            TypeInfo_Class type = typeid(this);
+            while (sel.type != getShortClassName(type))
+            {
+                type = type.base; // support inheritance
+                if (type is typeid(Object))
+                    return false;
+            }
         }
         // class
         foreach (name; sel.classes)
@@ -511,7 +514,47 @@ public:
             if ((name in styleClasses) is null)
                 return false;
         }
-        return true;
+        return matchContextSelector(sel);
+    }
+
+    private bool matchContextSelector(ref const(Selector) sel) const
+    {
+        if (sel.previous)
+        {
+            if (!_parent)
+                return false;
+            final switch (sel.combinator) with (Selector.Combinator)
+            {
+            case descendant:
+                Widget p = cast(Widget)_parent;
+                while (p)
+                {
+                    if (p.matchSelector(*sel.previous))
+                        return true;
+                    p = p._parent;
+                }
+                return false;
+            case child:
+                return _parent.matchSelector(*sel.previous);
+            case next:
+                int n = (cast(Widget)_parent).childIndex(cast(Widget)this) - 1; // FIXME
+                if (n >= 0)
+                    return _parent.child(n).matchSelector(*sel.previous);
+                else
+                    return false;
+            case subsequent:
+                int n = (cast(Widget)_parent).childIndex(cast(Widget)this); // FIXME
+                if (n >= 0)
+                {
+                    foreach (i; 0 .. n)
+                        if (_parent.child(i).matchSelector(*sel.previous))
+                            return true;
+                }
+                return false;
+            }
+        }
+        else
+            return true;
     }
 
     private void needToRecomputeStateStyle()

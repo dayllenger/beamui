@@ -53,8 +53,6 @@ enum TextFlag : uint
 /// CSS element selector
 struct Selector
 {
-    /// True if this is a universal selector without id, state, etc.
-    bool universal;
     /// Name of a widget or custom name
     string type;
     /// ID, #id from CSS
@@ -80,6 +78,15 @@ struct Selector
     Combinator combinator;
     /// Points to previous selector in the complex
     Selector* previous;
+
+    /// True if this is a universal selector without id, state, etc.
+    bool universal;
+
+    /// Compute `universal` property
+    void calculateUniversality()
+    {
+        universal = !type && !id && !classes && specifiedState == State.init && !subitem;
+    }
 
     /**
     Selector specificity.

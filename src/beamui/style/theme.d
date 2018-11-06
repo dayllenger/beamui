@@ -233,8 +233,6 @@ private void applyAtRule(Theme theme, CSS.AtRule rule)
 private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] properties)
 {
     auto style = selectStyle(theme, selector);
-    if (!style)
-        return;
     foreach (p; properties)
     {
         assert(p.value.length > 0);
@@ -244,29 +242,36 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
 
 private Style selectStyle(Theme theme, CSS.Selector selector)
 {
-    auto es = selector.entries;
+    CSS.SelectorEntry[] es = selector.entries;
     assert(es.length > 0);
-
-    if (es.length == 1 && es[0].type == CSS.SelectorEntryType.universal)
-        return theme.get(Selector(true));
-
-    import std.algorithm : find;
-    // find first element entry
-    es = es.find!(a => a.type == CSS.SelectorEntryType.element);
-    if (es.length == 0)
+    // construct selector chain
+    auto sel = new Selector;
+    while (true)
     {
-        Log.fe("CSS(%s): there must be an element entry in selector", selector.line);
-        return null;
+        const combinator = constructSelector(sel, es, selector.line);
+        if (!combinator.isNull)
+        {
+            Selector* previous = sel;
+            sel = new Selector;
+            sel.combinator = combinator.get;
+            sel.previous = previous;
+        }
+        else
+            break;
     }
-    auto hash = es.find!(a => a.type == CSS.SelectorEntryType.id);
-    auto clss = es.find!(a => a.type == CSS.SelectorEntryType.class_);
-    auto pseudoElement = es.find!(a => a.type == CSS.SelectorEntryType.pseudoElement);
-    string id = hash.length > 0 ? hash[0].identifier : null;
-    string[] classes = clss.length > 0 ? [clss[0].identifier] : null;
-    string sub = pseudoElement.length > 0 ? pseudoElement[0].identifier : null;
-    // extract state
+    // find style
+    return theme.get(*sel);
+}
+
+import std.typecons : Nullable, nullable;
+// mutates entries
+private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref CSS.SelectorEntry[] entries, size_t line)
+{
+    Nullable!(Selector.Combinator) result;
+
     State specified;
     State enabled;
+    // state extraction
     void applyStateFlag(string flag, string stateName, State state)
     {
         bool yes = flag[0] != '!';
@@ -278,25 +283,74 @@ private Style selectStyle(Theme theme, CSS.Selector selector)
                 enabled |= state;
         }
     }
-    foreach (e; es)
+
+    bool firstEntry = true;
+    Loop: foreach (i, e; entries)
     {
-        if (e.type == CSS.SelectorEntryType.pseudoClass)
+        string s = e.identifier;
+        switch (e.type) with (CSS.SelectorEntryType)
         {
-            applyStateFlag(e.identifier, "pressed", State.pressed);
-            applyStateFlag(e.identifier, "focused", State.focused);
-            applyStateFlag(e.identifier, "default", State.default_);
-            applyStateFlag(e.identifier, "hovered", State.hovered);
-            applyStateFlag(e.identifier, "selected", State.selected);
-            applyStateFlag(e.identifier, "checkable", State.checkable);
-            applyStateFlag(e.identifier, "checked", State.checked);
-            applyStateFlag(e.identifier, "enabled", State.enabled);
-            applyStateFlag(e.identifier, "activated", State.activated);
-            applyStateFlag(e.identifier, "window-focused", State.windowFocused);
+        case universal:
+            if (!firstEntry)
+                Log.fw("CSS(%s): * in selector must be first", line);
+            break;
+        case element:
+            if (firstEntry)
+                sel.type = s;
+            else
+                Log.fw("CSS(%s): element entry in selector must be first", line);
+            break;
+        case id:
+            if (!sel.id)
+                sel.id = s;
+            else
+                Log.fw("CSS(%s): there can be only one id in selector", line);
+            break;
+        case class_:
+            sel.classes ~= s;
+            break;
+        case pseudoElement:
+            if (!sel.subitem)
+                sel.subitem = s;
+            else
+                Log.fw("CSS(%s): there can be only one pseudo element in selector", line);
+            break;
+        case pseudoClass:
+            applyStateFlag(s, "pressed", State.pressed);
+            applyStateFlag(s, "focused", State.focused);
+            applyStateFlag(s, "default", State.default_);
+            applyStateFlag(s, "hovered", State.hovered);
+            applyStateFlag(s, "selected", State.selected);
+            applyStateFlag(s, "checkable", State.checkable);
+            applyStateFlag(s, "checked", State.checked);
+            applyStateFlag(s, "enabled", State.enabled);
+            applyStateFlag(s, "activated", State.activated);
+            applyStateFlag(s, "window-focused", State.windowFocused);
+            break;
+        case descendant:
+            result = nullable(Selector.Combinator.descendant);
+            entries = entries[i + 1 .. $];
+            break Loop;
+        case child:
+            result = nullable(Selector.Combinator.child);
+            entries = entries[i + 1 .. $];
+            break Loop;
+        case next:
+            result = nullable(Selector.Combinator.next);
+            entries = entries[i + 1 .. $];
+            break Loop;
+        case subsequent:
+            result = nullable(Selector.Combinator.subsequent);
+            entries = entries[i + 1 .. $];
+            break Loop;
+        default:
+            break;
         }
+        firstEntry = false;
     }
-    // construct selector
-    auto sel = Selector(false, es[0].identifier, id, classes, specified, enabled, sub);
+    sel.specifiedState = specified;
+    sel.enabledState = enabled;
+    sel.calculateUniversality();
     sel.calculateSpecificity();
-    // find style
-    return theme.get(sel);
+    return result;
 }
