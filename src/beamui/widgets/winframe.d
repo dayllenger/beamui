@@ -57,7 +57,7 @@ class WindowFrame : Column
         _title.bindSubItem(this, "label");
 
         _closeButton = new Button(null, "close");
-        _closeButton.styleID = "Button.transparent"; // TODO
+        _closeButton.style = "flat";
         _closeButton.clicked = &closeButtonClick.emit;
         if (!_showCloseButton)
             _closeButton.visibility = Visibility.gone;

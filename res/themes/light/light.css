@@ -28,6 +28,8 @@ Button::label:pressed { color: #417fbf; }
 
 Button::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
+Button.flat { background: none; focus-rect-color: none; }
+
 LinkButton { padding: 3px; border: none; background: none; }
 
 LinkButton::label { color: #4169e1; }
@@ -228,6 +230,8 @@ PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
   scrollbar_indicator_horizontal: none; }
 
 /* ========================================================================== tabs.d */
+TabWidget { spacing: 0; }
+
 TabControl { padding-left: 3px; }
 
 TabControl::more { padding: 0 2px 4px 0; opacity: 0.6; transition: opacity 100ms ease; }
@@ -236,29 +240,17 @@ TabControl::more:hovered { opacity: 1; }
 
 TabHost { padding: 6px; background-color: #f2f4f5; }
 
-TabUp { background-color: transparent; }
+TabItemWidget { padding: 6px 1px 0 0; spacing: 0; border-color: transparent; }
 
-TabUp:selected { background: url(tab_up_backgrond_selected); }
+TabControl.top TabItemWidget { border-bottom-width: 2px; }
 
-TabItemWidget { padding: 6px 1px 0 0; border-color: transparent; border-bottom-width: 2px; }
+TabControl.bottom TabItemWidget { border-top-width: 2px; }
 
 TabItemWidget:selected { border-color: #4e93da; }
 
 TabItemWidget::label { align: hcenter bottom; padding: 0 3px 3px; transition: color 100ms ease; }
 
 TabItemWidget::label:hovered, TabItemWidget::label:selected, TabItemWidget::label:focused, TabItemWidget::label:selected:focused { color: #4e93da; }
-
-TabDownDark { background: url(dock_window_caption_background_down); }
-
-TabDownButtonDark { padding: 1px 1px 1px 5px; background: url(tab_btn_dark_down); }
-
-TabUpDark { background: url(dock_window_caption_background); }
-
-TabUpButtonDark { padding: 1px 1px 1px 5px; background: url(tab_btn_dark_up); }
-
-TabUpButtonDarkText { align: center; color: black; }
-
-TabUpButtonDarkText:not(selected):not(focused):hovered { color: #9c9c9c; }
 
 /* ========================================================================== editors.d */
 EditLine { padding: 4px; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }

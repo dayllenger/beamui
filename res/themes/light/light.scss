@@ -90,6 +90,11 @@ Button {
     }
 }
 
+Button.flat {
+    background: none;
+    focus-rect-color: none;
+}
+
 LinkButton {
     padding: 3px;
     border: none;
@@ -578,6 +583,7 @@ PageScrollButton {
 */
 
 TabWidget {
+    spacing: 0;
 }
 
 TabControl {
@@ -599,18 +605,18 @@ TabHost {
     background-color: #f2f4f5;
 }
 
-TabUp {
-    background-color: transparent;
-}
-
-TabUp:selected {
-    background: url(tab_up_backgrond_selected);
-}
-
 TabItemWidget {
     padding: 6px 1px 0 0;
+    spacing: 0;
     border-color: transparent;
+}
+
+TabControl.top TabItemWidget {
     border-bottom-width: 2px;
+}
+
+TabControl.bottom TabItemWidget {
+    border-top-width: 2px;
 }
 
 TabItemWidget:selected {
@@ -626,33 +632,6 @@ TabItemWidget::label {
     &:focused, &:selected:focused {
         color: $main-color;
     }
-}
-
-TabDownDark {
-    background: url(dock_window_caption_background_down);
-}
-
-TabDownButtonDark {
-    padding: 1px 1px 1px 5px;
-    background: url(tab_btn_dark_down);
-}
-
-TabUpDark {
-    background: url(dock_window_caption_background);
-}
-
-TabUpButtonDark {
-    padding: 1px 1px 1px 5px;
-    background: url(tab_btn_dark_up);
-}
-
-TabUpButtonDarkText {
-    align: center;
-    color: black;
-}
-
-TabUpButtonDarkText:not(selected):not(focused):hovered {
-    color: #9c9c9c;
 }
 
 /* ==========================================================================

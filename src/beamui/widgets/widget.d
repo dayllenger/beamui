@@ -1,13 +1,5 @@
 /**
-This module contains declaration of Widget class - base class for all widgets.
-
-Widgets are styleable. Use styleID property to set style to use from current Theme.
-
-When any of styleable attributes is being overriden, widget's own copy of style is being created to hold modified attributes (defaults to parent style).
-
-Two phase layout model (like in Android UI) is used - measure() call is followed by layout() is used to measure and layout widget and its children.abstract
-
-Method onDraw will be called to draw widget on some surface. Widget.onDraw() draws widget background (if any).
+Contains declaration of Widget class - base for all widgets.
 
 Synopsis:
 ---
@@ -400,7 +392,10 @@ public:
     Widget addStyleClasses(string[] names...)
     {
         foreach (name; names)
+        {
+            assert(name.length);
             styleClasses[name] = false;
+        }
         _needToRecomputeStyle = true;
         return this;
     }
@@ -408,17 +403,29 @@ public:
     Widget removeStyleClasses(string[] names...)
     {
         foreach (name; names)
+        {
+            assert(name.length);
             styleClasses.remove(name);
+        }
         _needToRecomputeStyle = true;
         return this;
     }
     /// Toggle style class on the widget - remove if present, add if not
     Widget toggleStyleClass(string name)
     {
+        assert(name.length);
         bool present = styleClasses.remove(name);
         if (!present)
             styleClasses[name] = false;
         _needToRecomputeStyle = true;
+        return this;
+    }
+    /// Shorthand to set one style class to the widget
+    @property Widget style(string name)
+    {
+        assert(name.length);
+        styleClasses.clear();
+        styleClasses[name] = false;
         return this;
     }
 
@@ -451,14 +458,20 @@ public:
     /// Get a style chain for this widget from current theme, least specific styles first
     Style[] selectStyleChain() const
     {
-        Style[] chain;
+        static Style[] chain;
+        size_t count;
         foreach (style; currentTheme.styles)
         {
             if (matchSelector(style.selector))
-                chain ~= style;
+            {
+                if (chain.length <= count)
+                    chain.length += 4;
+                chain[count] = style;
+                count++;
+            }
         }
-        sort(chain);
-        return chain;
+        sort(chain[0 .. count]);
+        return chain[0 .. count];
     }
 
     /// Match this widget with selector
@@ -578,11 +591,6 @@ public:
             child(i).onThemeChanged();
 
         _needToRecomputeStyle = true;
-    }
-
-    @property void styleID(string id)
-    {
-//         Log.w("Style id: ", id);
     }
 
     //===============================================================

@@ -182,8 +182,6 @@ class TabItemWidget : Row
 
     this(TabItem item, bool enableCloseButton = true)
     {
-        styleID = "TabUpButton";
-        spacing = 0;
         _enableCloseButton = enableCloseButton;
         _icon = new ImageWidget;
         _label = new Label;
@@ -218,12 +216,6 @@ class TabItemWidget : Row
         }
         _label.text = item.text;
         id = item.id;
-    }
-
-    void setStyles(string tabButtonStyle, string tabButtonTextStyle)
-    {
-        styleID = tabButtonStyle;
-        _label.styleID = tabButtonTextStyle;
     }
 }
 
@@ -279,32 +271,14 @@ class TabControl : WidgetGroupDefaultDrawing
 
     this(Align tabAlign = Align.top)
     {
-        super(null);
         tabAlignment = tabAlign;
-        setStyles("TabUp", "TabUpButton", "TabUpButtonText");
+        style = tabAlign == Align.top ? "top" : "bottom";
         _moreButton = new Button(null, "tab_more");
         _moreButton.id = "MORE";
         _moreButton.bindSubItem(this, "more");
         _moreButton.mouseEvent = &onMouseMoreBtn;
         enableCloseButton = true;
-        styleID = _tabStyle;
         addChild(_moreButton); // first child is always MORE button, the rest corresponds to tab list
-    }
-
-    void setStyles(string tabStyle, string tabButtonStyle, string tabButtonTextStyle)
-    {
-        _tabStyle = tabStyle;
-        _tabButtonStyle = tabButtonStyle;
-        _tabButtonTextStyle = tabButtonTextStyle;
-        styleID = _tabStyle;
-        foreach (i; 1 .. childCount)
-        {
-            TabItemWidget w = cast(TabItemWidget)child(i);
-            if (w)
-            {
-                w.setStyles(_tabButtonStyle, _tabButtonTextStyle);
-            }
-        }
     }
 
     /// Returns tab count
@@ -389,7 +363,6 @@ class TabControl : WidgetGroupDefaultDrawing
         auto widget = new TabItemWidget(item, enableCloseButton);
         widget.parent = this;
         widget.mouseEvent = &onMouseTabBtn;
-        widget.setStyles(_tabButtonStyle, _tabButtonTextStyle);
         widget.tabClosed = &onTabClose;
         insertChild(widget, index);
         updateTabs();
@@ -865,7 +838,6 @@ class TabWidget : Column
     /// Construct a new tab widget with top or bottom tab control placement
     this(Align tabAlignment = Align.top)
     {
-        spacing = 0;
         _tabControl = new TabControl(tabAlignment);
         _tabControl.tabChanged ~= &onTabChanged;
         _tabControl.tabClosed ~= &onTabClose;
@@ -968,15 +940,6 @@ class TabWidget : Column
     int tabIndex(string id)
     {
         return _tabControl.tabIndex(id);
-    }
-
-    /// Change style ids
-    void setStyles(string tabWidgetStyle, string tabStyle, string tabButtonStyle,
-            string tabButtonTextStyle, string tabHostStyle = null)
-    {
-        styleID = tabWidgetStyle;
-        _tabControl.setStyles(tabStyle, tabButtonStyle, tabButtonTextStyle);
-        _tabHost.styleID = tabHostStyle;
     }
 
     private bool _tabNavigationInProgress;

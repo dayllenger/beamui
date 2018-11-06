@@ -612,7 +612,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         {
             auto btn = new Button(root.label, root.icon);
             btn.orientation = Orientation.vertical;
-            btn.styleID = "TransparentButtonBackground"; // FIXME
+            btn.style = "flat";
             btn.focusable = false;
             btn.tooltipText = root.path.toUTF32;
             adapter.add(btn);
