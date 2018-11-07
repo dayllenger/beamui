@@ -297,19 +297,19 @@ SourceEdit:not(enabled) { background-color: #f0f0f0; }
 StatusLine { weight: 0; padding: 1px; background-color: #eceffa; }
 
 /* ========================================================================== toolbars.d */
-ToolBarHost { padding: 1px; background: url(toolbar_host_background); }
+ToolBarHost { padding: 6px; spacing: 8; }
 
-ToolBar { margin: 1px 2px; background: url(toolbar_background); }
+ToolBar { padding-left: 6px; spacing: 4; border-color: #bbb; border-left-width: 2px; }
 
-ToolBarButton, ToolBar::button { align: center; margin: 1px; padding: 2px; background: url(toolbar_button_background); }
+ToolBar::separator { margin-top: 3px; margin-bottom: 3px; border-color: #999; border-left-width: 1px; }
 
-ToolBarButton:not(enabled), ToolBar::button:not(enabled) { background: url(toolbar_button_null); opacity: 0.4; }
+ToolBar * { background: none; }
 
-ToolBarComboBox { align: center; margin: 1px; padding: 2px; background: url(toolbar_control_background); }
+ToolBar *:not(hovered):not(pressed) { border: none; }
 
-ToolBarComboBox:not(enabled) { background: none; opacity: 0.4; }
+ToolBar *:not(enabled) { border: none; opacity: 0.4; }
 
-ToolBarSeparator { align: center; }
+ToolBarButton { padding: 4px; focus-rect-color: none; }
 
 /* ========================================================================== docks.d */
 DockHost { padding: 2px; background-color: #eceffa; }

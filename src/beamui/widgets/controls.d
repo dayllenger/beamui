@@ -463,16 +463,6 @@ class Button : LinearLayout, ActionHolder
         super.handleClick();
     }
 
-    override @property bool hasTooltip()
-    {
-        return action && action.label;
-    }
-
-    override Widget createTooltip(int mouseX, int mouseY, ref PopupAlign alignment, ref int x, ref int y)
-    {
-        return new Label(action.tooltipText).id("tooltip");
-    }
-
     /// Set string property value, for ML loaders
     mixin(generatePropertySettersMethodOverride("setStringProperty", "string", "iconID"));
 }

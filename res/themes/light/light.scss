@@ -733,41 +733,40 @@ StatusLine {
 */
 
 ToolBarHost {
-    padding: 1px;
-    background: url(toolbar_host_background);
+    padding: 6px;
+    spacing: 8;
 }
 
 ToolBar {
-    margin: 1px 2px;
-    background: url(toolbar_background);
+    padding-left: 6px;
+    spacing: 4;
+    border-color: #bbb;
+    border-left-width: 2px;
 }
 
-ToolBarButton, ToolBar::button {
-    align: center;
-    margin: 1px;
-    padding: 2px;
-    background: url(toolbar_button_background);
+ToolBar::separator {
+    margin-top: 3px;
+    margin-bottom: 3px;
+    border-color: #999;
+    border-left-width: 1px;
+}
+
+ToolBar * {
+    background: none;
+
+    &:not(hovered):not(pressed) {
+        border: none;
+    }
 
     &:not(enabled) {
-        background: url(toolbar_button_null);
+        border: none;
         opacity: 0.4;
     }
 }
 
-ToolBarComboBox {
-    align: center;
-    margin: 1px;
-    padding: 2px;
-    background: url(toolbar_control_background);
-
-    &:not(enabled) {
-        background: none;
-        opacity: 0.4;
-    }
-}
-
-ToolBarSeparator {
-    align: center;
+ToolBarButton {
+    padding: 4px;
+    focus-rect-color: none;
 }
 
 /* ==========================================================================

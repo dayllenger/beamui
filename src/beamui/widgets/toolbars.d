@@ -1,5 +1,5 @@
 /**
-This module implements support of tool bars.
+Support of tool bars.
 
 ToolBarHost is layout to hold one or more toolbars.
 
@@ -21,45 +21,31 @@ import beamui.widgets.controls;
 import beamui.widgets.layouts;
 import beamui.widgets.widget;
 
-/// Layout with several toolbars
-class ToolBarHost : Row
-{
-    /// Create and add new toolbar (returns existing one if already exists)
-    ToolBar getOrAddToolbar(string ID)
-    {
-        ToolBar res = getToolbar(ID);
-        if (!res)
-        {
-            res = new ToolBar(ID);
-            addChild(res);
-        }
-        return res;
-    }
-
-    /// Get toolbar by id; null if not found
-    ToolBar getToolbar(string ID)
-    {
-        return cast(ToolBar)childByID(ID);
-    }
-}
-
 /// Button for toolbar
 class ToolBarButton : Button
 {
+    /// Construct with action firing on click
     this(Action a)
     {
         super(a);
         focusable = false;
     }
-}
 
-/// Separator for toolbars
-class ToolBarSeparator : ImageWidget
-{
-    this()
+    override protected void updateContent()
     {
-        super("toolbar_separator");
-        id = "separator";
+         // TODO: image only / image + text / text only
+        iconID = action.iconID;
+        checkable = action.checkable;
+    }
+
+    override @property bool hasTooltip()
+    {
+        return action && action.label;
+    }
+
+    override Widget createTooltip(int mouseX, int mouseY, ref PopupAlign alignment, ref int x, ref int y)
+    {
+        return new Label(action.tooltipText).id("tooltip");
     }
 }
 
@@ -79,39 +65,57 @@ class ToolBarComboBox : ComboBox
 /// Layout with buttons
 class ToolBar : Row
 {
-    this()
-    {
-        id = "TOOLBAR";
-    }
-
-    this(string ID)
+    /// Construct a tool bar with ID
+    this(string ID = "TOOLBAR")
     {
         id = ID;
     }
 
-    void addCustomControl(Widget widget)
-    {
-        addChild(widget);
-    }
-
-    /// Adds image button to toolbar
-    void addButtons(Action[] actions...)
+    /// Add image button to the tool bar
+    ToolBar addButtons(Action[] actions...)
     {
         foreach (a; actions)
         {
-            auto btn = new ToolBarButton(a); // TODO: image only / image + text / text only
-            btn.bindSubItem(this, "button");
-            addChild(btn);
+            addChild(new ToolBarButton(a));
         }
+        return this;
     }
 
-    void addControl(Widget widget)
+    /// Add custom control to the tool bar
+    ToolBar addControl(Widget w)
     {
-        addChild(widget);
+        addChild(w);
+        return this;
     }
 
-    void addSeparator()
+    /// Add separator to the tool bar
+    ToolBar addSeparator()
     {
-        addChild(new ToolBarSeparator);
+        auto sep = new Widget;
+        sep.bindSubItem(this, "separator");
+        addChild(sep);
+        return this;
+    }
+}
+
+/// Layout with several toolbars
+class ToolBarHost : Row
+{
+    /// Create and add new toolbar (returns existing one if already exists)
+    ToolBar getOrAddToolbar(string ID)
+    {
+        ToolBar res = getToolbar(ID);
+        if (!res)
+        {
+            res = new ToolBar(ID);
+            addChild(res);
+        }
+        return res;
+    }
+
+    /// Get toolbar by id; null if not found
+    ToolBar getToolbar(string ID)
+    {
+        return cast(ToolBar)childByID(ID);
     }
 }
