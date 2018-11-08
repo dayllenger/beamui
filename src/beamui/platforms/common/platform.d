@@ -2087,66 +2087,27 @@ void disableOpenGL()
     }
 }
 
-static if (BACKEND_CONSOLE)
-{
-    // to remove import
-    extern (C) int beamuimain(string[] args);
-}
-else
+static if (BACKEND_GUI)
 {
     version (Windows)
     {
-        // to remove import
-        extern (Windows) int beamuiWinMain(void* hInstance, void* hPrevInstance, char* lpCmdLine, int nCmdShow);
-        extern (Windows) int beamuiWinMainProfile(string[] args);
-
-        /// Split command line arg list; prepend with executable file name
-        string[] splitCmdLine(string line)
+        package (beamui) void setAppDPIAwareOnWindows()
         {
-            import beamui.core.files : exeFilename;
-
-            string[] res;
-            res ~= exeFilename();
-            int start = 0;
-            bool insideQuotes = false;
-            for (int i = 0; i <= line.length; i++)
-            {
-                char ch = i < line.length ? line[i] : 0;
-                if (ch == '\"')
-                {
-                    if (insideQuotes)
-                    {
-                        if (i > start)
-                            res ~= line[start .. i];
-                        start = i + 1;
-                        insideQuotes = false;
-                    }
-                    else
-                    {
-                        insideQuotes = true;
-                        start = i + 1;
-                    }
-                }
-                else if (!insideQuotes && (ch == ' ' || ch == '\t' || ch == 0))
-                {
-                    if (i > start)
-                    {
-                        res ~= line[start .. i];
-                    }
-                    start = i + 1;
-                }
-            }
-            return res;
+            import core.sys.windows.windows;
+            // call SetProcessDPIAware to support HI DPI - fix by Kapps
+            auto ulib = LoadLibraryA("user32.dll");
+            alias SetProcessDPIAwareFunc = int function();
+            auto setDpiFunc = cast(SetProcessDPIAwareFunc)GetProcAddress(ulib, "SetProcessDPIAware");
+            if (setDpiFunc) // should never fail, but just in case...
+                setDpiFunc();
         }
-    }
-    else
-    {
-        // to remove import
-        extern (C) int beamuimain(string[] args);
     }
 }
 
-/// Put "mixin APP_ENTRY_POINT;" to main module of your beamui-based app
+// to remove import
+extern (C) int beamuimain(string[] args);
+
+/// Put "mixin APP_ENTRY_POINT;" to main module of your beamui based app
 mixin template APP_ENTRY_POINT()
 {
     version (unittest)
@@ -2155,54 +2116,14 @@ mixin template APP_ENTRY_POINT()
     }
     else
     {
-        static if (BACKEND_CONSOLE)
+        version (Android)
+        {
+        }
+        else
         {
             int main(string[] args)
             {
                 return beamuimain(args);
-            }
-        }
-        else
-        {
-            /// Workaround for link issue when WinMain is located in library
-            version (Windows)
-            {
-                version (ENABLE_PROFILING)
-                {
-                    int main(string[] args)
-                    {
-                        return beamuiWinMainProfile(args);
-                    }
-                }
-                else
-                {
-                    extern (Windows) int WinMain(void* hInstance, void* hPrevInstance, char* lpCmdLine, int nCmdShow)
-                    {
-                        try
-                        {
-                            int res = beamuiWinMain(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-                            return res;
-                        }
-                        catch (Exception e)
-                        {
-                            Log.e("Exception: ", e);
-                            return 1;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                version (Android)
-                {
-                }
-                else
-                {
-                    int main(string[] args)
-                    {
-                        return beamuimain(args);
-                    }
-                }
             }
         }
     }

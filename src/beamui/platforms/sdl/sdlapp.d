@@ -34,7 +34,13 @@ static if (USE_OPENGL)
 {
     import beamui.graphics.glsupport;
 }
+version (Windows)
+{
+    import core.sys.windows.windows;
 
+    pragma(lib, "gdi32.lib");
+    pragma(lib, "user32.lib");
+}
 private derelict.util.exception.ShouldThrow missingSymFunc(string symName)
 {
     import std.algorithm : equal;
@@ -1420,68 +1426,6 @@ final class SDLPlatform : Platform
     }
 }
 
-version (Windows)
-{
-    import core.sys.windows.windows;
-    import beamui.platforms.windows.win32fonts;
-
-    pragma(lib, "gdi32.lib");
-    pragma(lib, "user32.lib");
-    extern (Windows) int beamuiWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-    {
-        int result;
-
-        try
-        {
-            Runtime.initialize();
-
-            // call SetProcessDPIAware to support HI DPI - fix by Kapps
-            auto ulib = LoadLibraryA("user32.dll");
-            alias SetProcessDPIAwareFunc = int function();
-            auto setDpiFunc = cast(SetProcessDPIAwareFunc)GetProcAddress(ulib, "SetProcessDPIAware");
-            if (setDpiFunc) // Should never fail, but just in case...
-                setDpiFunc();
-
-            // Get screen DPI
-            HDC dc = CreateCompatibleDC(NULL);
-            SCREEN_DPI = GetDeviceCaps(dc, LOGPIXELSY);
-            DeleteObject(dc);
-
-            Log.i("Win32 API SCREEN_DPI detected as ", SCREEN_DPI);
-
-            //SCREEN_DPI = 96 * 3 / 2;
-
-            result = myWinMain(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-            Log.i("calling Runtime.terminate()");
-            // commented out to fix hanging runtime.terminate when there are background threads
-            Runtime.terminate();
-        }
-        catch (Throwable e) // catch any uncaught exceptions
-        {
-            MessageBoxW(null, toUTF16z(e.toString ~ "\nStack trace:\n" ~ defaultTraceHandler.toString),
-                    "Error", MB_OK | MB_ICONEXCLAMATION);
-            result = 0; // failed
-        }
-
-        return result;
-    }
-
-    int myWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int iCmdShow)
-    {
-        string cmdline = fromStringz(lpCmdLine).idup;
-        string[] args = splitCmdLine(cmdline);
-
-        return sdlmain(args);
-    }
-}
-else
-{
-    extern (C) int beamuimain(string[] args)
-    {
-        return sdlmain(args);
-    }
-}
-
 /// Try to get screen resolution and update SCREEN_DPI; returns true if SCREEN_DPI is changed (when custom override DPI value is not set)
 bool sdlUpdateScreenDpi(int displayIndex = 0)
 {
@@ -1511,7 +1455,7 @@ bool sdlUpdateScreenDpi(int displayIndex = 0)
     return false;
 }
 
-int sdlmain(string[] args)
+extern (C) int beamuimain(string[] args)
 {
     import beamui.platforms.common.startup;
 
@@ -1531,6 +1475,13 @@ int sdlmain(string[] args)
     version (Windows)
     {
         DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
+
+        setAppDPIAwareOnWindows();
+
+        // get screen DPI
+        HDC dc = CreateCompatibleDC(NULL);
+        SCREEN_DPI = GetDeviceCaps(dc, LOGPIXELSY);
+        DeleteObject(dc);
     }
 
     try
@@ -1550,8 +1501,7 @@ int sdlmain(string[] args)
             disableOpenGL();
     }
 
-    SDL_DisplayMode displayMode;
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_NOPARACHUTE) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
     {
         Log.e("Cannot init SDL2: ", fromStringz(SDL_GetError()));
         return 2;
@@ -1562,8 +1512,6 @@ int sdlmain(string[] args)
     USER_EVENT_ID = SDL_RegisterEvents(1);
     TIMER_EVENT_ID = SDL_RegisterEvents(1);
     WINDOW_CLOSE_EVENT_ID = SDL_RegisterEvents(1);
-
-    int request = SDL_GetDesktopDisplayMode(0, &displayMode);
 
     static if (USE_OPENGL)
     {

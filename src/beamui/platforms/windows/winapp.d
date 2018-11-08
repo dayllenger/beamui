@@ -43,13 +43,7 @@ static if (USE_OPENGL)
 pragma(lib, "gdi32.lib");
 pragma(lib, "user32.lib");
 
-/// This function should be defined in user application!
-extern (C) int UIAppMain(string[] args);
-
 immutable WIN_CLASS_NAME = "BEAMUI_APP";
-
-private __gshared HINSTANCE _hInstance;
-private __gshared int _cmdShow;
 
 static if (USE_OPENGL)
 {
@@ -319,7 +313,7 @@ final class Win32Window : Window
                 height, // initial y size
                 parenthwnd, // parent window handle
                 null, // window menu handle
-                _hInstance, // program instance handle
+                GetModuleHandle(null), // program instance handle
                 cast(void*)this); // creation parameters
 
         static if (USE_OPENGL)
@@ -1079,7 +1073,7 @@ final class Win32Platform : Platform
         wndclass.lpfnWndProc = cast(WNDPROC)&WndProc;
         wndclass.cbClsExtra = 0;
         wndclass.cbWndExtra = 0;
-        wndclass.hInstance = _hInstance;
+        wndclass.hInstance = GetModuleHandle(null);
         wndclass.hIcon = LoadIcon(null, IDI_APPLICATION);
         wndclass.hCursor = LoadCursor(null, IDC_ARROW);
         wndclass.hbrBackground = cast(HBRUSH)GetStockObject(WHITE_BRUSH);
@@ -1252,80 +1246,9 @@ final class Win32Platform : Platform
     }
 }
 
-extern (Windows) int beamuiWinMain(void* hInstance, void* hPrevInstance, char* lpCmdLine, int nCmdShow)
-{
-    int result;
-
-    try
-    {
-        Runtime.initialize();
-
-        // call SetProcessDPIAware to support HI DPI - fix by Kapps
-        auto ulib = LoadLibraryA("user32.dll");
-        alias SetProcessDPIAwareFunc = int function();
-        auto setDpiFunc = cast(SetProcessDPIAwareFunc)GetProcAddress(ulib, "SetProcessDPIAware");
-        if (setDpiFunc) // Should never fail, but just in case...
-            setDpiFunc();
-
-        result = myWinMain(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-        // TODO: fix hanging on multithreading app
-        Runtime.terminate();
-    }
-    catch (Throwable e) // catch any uncaught exceptions
-    {
-        MessageBoxW(null, toUTF16z(e.toString()), "Error", MB_OK | MB_ICONEXCLAMATION);
-        result = 0; // failed
-    }
-
-    return result;
-}
-
-extern (Windows) int beamuiWinMainProfile(string[] args)
-{
-    int result;
-
-    try
-    {
-        // call SetProcessDPIAware to support HI DPI - fix by Kapps
-        auto ulib = LoadLibraryA("user32.dll");
-        alias SetProcessDPIAwareFunc = int function();
-        auto setDpiFunc = cast(SetProcessDPIAwareFunc)GetProcAddress(ulib, "SetProcessDPIAware");
-        if (setDpiFunc) // Should never fail, but just in case...
-            setDpiFunc();
-
-        result = myWinMainProfile(args);
-    }
-    catch (Throwable e) // catch any uncaught exceptions
-    {
-        MessageBoxW(null, toUTF16z(e.toString()), "Error", MB_OK | MB_ICONEXCLAMATION);
-        result = 0; // failed
-    }
-
-    return result;
-}
-
 private __gshared Win32Platform w32platform;
 
-int myWinMain(void* hInstance, void* hPrevInstance, char* lpCmdLine, int iCmdShow)
-{
-    string cmdline = fromStringz(lpCmdLine).idup;
-    string[] args = splitCmdLine(cmdline);
-
-    _cmdShow = iCmdShow;
-    _hInstance = hInstance;
-
-    return myWinMainCommon(args);
-}
-
-int myWinMainProfile(string[] args)
-{
-    _cmdShow = SW_SHOW;
-    _hInstance = GetModuleHandle(NULL);
-
-    return myWinMainCommon(args);
-}
-
-private int myWinMainCommon(string[] args)
+extern (C) int beamuimain(string[] args)
 {
     import beamui.platforms.common.startup;
 
@@ -1343,6 +1266,8 @@ private int myWinMainCommon(string[] args)
     initResourceManagers();
 
     DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
+
+    setAppDPIAwareOnWindows();
 
     w32platform = new Win32Platform;
     Log.v("Registering window class");
