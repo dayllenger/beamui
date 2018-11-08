@@ -1,72 +1,17 @@
 /**
-This module contains resource management.
-
-When your application uses custom resources, you can embed resources into executable and/or specify external resource directory(s).
-
-To embed resources, put them into views/res directory, and create file views/resources.list with list of all files to embed.
-
-Use following code to embed resources:
-
----
-/// Entry point for beamui-based application
-extern (C) int UIAppMain(string[] args)
-{
-    // embed non-standard resources listed in views/resources.list into executable
-    resourceList.embed!"resources.list";
-    ...
-}
----
-
-Resource list resources.list file may look similar to following:
-
----
-res/i18n/en.ini
-res/i18n/ru.ini
-res/mdpi/cr3_logo.png
-res/mdpi/document-open.png
-res/mdpi/document-properties.png
-res/mdpi/document-save.png
-res/mdpi/edit-copy.png
-res/mdpi/edit-paste.png
-res/mdpi/edit-undo.png
-res/mdpi/tx_fabric.jpg
-res/theme_custom1.xml
----
-
-As well you can specify list of external directories to get resources from.
-
----
-/// Entry point for beamui-based application
-extern (C) int UIAppMain(string[] args)
-{
-    // resource directory search paths
-    string[] resourceDirs = [
-        appendPath(exePath, "../../../res/"),   // for Visual D and DUB builds
-        appendPath(exePath, "../../../res/mdpi/"),   // for Visual D and DUB builds
-        appendPath(exePath, "../../../../res/"),// for Mono-D builds
-        appendPath(exePath, "../../../../res/mdpi/"),// for Mono-D builds
-        appendPath(exePath, "res/"), // when res dir is located at the same directory as executable
-        appendPath(exePath, "../res/"), // when res dir is located at project directory
-        appendPath(exePath, "../../res/"), // when res dir is located at the same directory as executable
-        appendPath(exePath, "res/mdpi/"), // when res dir is located at the same directory as executable
-        appendPath(exePath, "../res/mdpi/"), // when res dir is located at project directory
-        appendPath(exePath, "../../res/mdpi/") // when res dir is located at the same directory as executable
-    ];
-    // setup resource directories - will use only existing directories
-    platform.resourceDirs = resourceDirs;
-    ...
-}
----
-
-When same file exists in both embedded and external resources, one from external resource directory will be used -
-it is useful for developing and testing of resources.
+Resource management.
 
 Synopsis:
 ---
 import beamui.graphics.resources;
 
-// embed non-standard resources listed in views/resources.list into executable
+// embed non-standard resources listed in resources.list into executable
 resourceList.embed!"resources.list";
+...
+// get the file path by resource ID
+string filename = resourceList.getPathByID("file");
+// load file
+immutable(ubyte[]) data = loadResourceBytes(filename);
 ---
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
@@ -84,6 +29,7 @@ import beamui.core.types;
 
 // TODO: platform-specific dir separator or UNIX slash?
 
+/// Global resource list object
 __gshared ResourceList resourceList;
 
 /// Filename prefix for embedded resources
@@ -145,17 +91,22 @@ struct ResourceList
     }
 
     /**
-    Get resource full pathname:
-        * if provided path - by path relative to embedded files location or resource dirs
-        * if provided extension - with extension
-        * if nothing of those two - by base name
-    Note: if there are two files with the same name, last path of the last file is returned.
+    Get resource full path.
+
+    $(UL
+        $(LI if provided path - by path relative to embedded files location or resource dirs)
+        $(LI if path is provided partially - match the tail)
+        $(LI if provided extension - with extension)
+        $(LI if nothing of those - by base name)
+    )
     Null if not found.
+
+    Note: If ID matches several files, path of the last file is returned.
     */
     string getPathByID(string id)
     {
         if (id.startsWith("#") || id.startsWith("{"))
-            return id; // it's not a file name
+            return null; // it's not a file name
         if (auto p = id in idToPath)
             return *p;
 
@@ -177,7 +128,8 @@ struct ResourceList
                 tmp = baseName(tmp);
             if (!searchWithExt)
                 tmp = stripExtension(stripExtension(tmp));
-            if (tmp == normID)
+            if (tmp.endsWith(normID) &&
+                (tmp.length == normID.length || isDirSeparator(tmp[$ - normID.length - 1])))
             {
                 // found
                 string fn = EMBEDDED_RESOURCE_PREFIX ~ r.filename;
@@ -195,7 +147,8 @@ struct ResourceList
                     tmp = baseName(tmp);
                 if (!searchWithExt)
                     tmp = stripExtension(stripExtension(tmp));
-                if (tmp == normID)
+                if (tmp.endsWith(normID) &&
+                    (tmp.length == normID.length || isDirSeparator(tmp[$ - normID.length - 1])))
                 {
                     // found
                     idToPath[id] = fn;
