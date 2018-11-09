@@ -1,12 +1,12 @@
 /**
-This module contains FileDialog implementation.
+File dialog implementation.
 
 Can show dialog for open / save.
 
 
 Synopsis:
 ---
-import beamui.dialogs.filedlg;
+import beamui.dialogs.filedialog;
 
 auto dlg = new FileDialog(tr("Open File"), window, FileDialogFlag.open);
 dlg.show();
@@ -16,7 +16,7 @@ Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
-module beamui.dialogs.filedlg;
+module beamui.dialogs.filedialog;
 
 import std.array : empty;
 import std.file;
@@ -502,7 +502,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         catch (Exception e)
         {
             Log.e("Cannot list directory " ~ dir, e);
-            //import beamui.dialogs.msgbox;
+            //import beamui.dialogs.messagebox;
             //auto msgBox = new MessageBox(tr("Error"), e.msg.toUTF32, window());
             //msgBox.show();
             //return false;

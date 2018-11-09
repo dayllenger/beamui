@@ -805,7 +805,7 @@ class Window : CustomEventTarget
     void showMessageBox(dstring title, dstring message, Action[] actions = [ACTION_OK],
             int defaultActionIndex = 0, void delegate(const Action result) handler = null)
     {
-        import beamui.dialogs.msgbox;
+        import beamui.dialogs.messagebox;
 
         auto dlg = new MessageBox(title, message, this, actions, defaultActionIndex, handler);
         dlg.show();

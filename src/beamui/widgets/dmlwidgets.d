@@ -85,7 +85,7 @@ extern (C) void registerStandardWidgets()
 
     mixin(registerWidgetMetadataClass!TabWidget);
 
-    import beamui.dialogs.filedlg;
+    import beamui.dialogs.filedialog;
 
     mixin(registerWidgetMetadataClass!FileNameEditLine);
     mixin(registerWidgetMetadataClass!DirEditLine);

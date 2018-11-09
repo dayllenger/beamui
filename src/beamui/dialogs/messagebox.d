@@ -1,10 +1,10 @@
 /**
-This module contains message box implementation.
+Message box implementation.
 
 
 Synopsis:
 ---
-import beamui.dialogs.msgbox;
+import beamui.dialogs.messagebox;
 
 // show message box with single Ok button
 window.showMessageBox("Dialog title"d, "Some message"d);
@@ -23,7 +23,7 @@ Copyright: Vadim Lopatin 2014-2017
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
-module beamui.dialogs.msgbox;
+module beamui.dialogs.messagebox;
 
 import beamui.core.i18n;
 import beamui.core.signals;

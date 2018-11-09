@@ -346,7 +346,7 @@ DialogFrame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px #555; }
 
 @define-colors { dialog_background: #eee; }
 
-/* ========================================================================== filedlg.d */
+/* ========================================================================== filedialog.d */
 FileDialog { padding: 4px; }
 
 FilePathPanelButtons { padding-left: 3px; padding-right: 6px; }

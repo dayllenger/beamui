@@ -286,7 +286,7 @@ class FileNameEditItem : SettingsItem
 
     override Widget[] createWidgets(Setting settings)
     {
-        import beamui.dialogs.filedlg;
+        import beamui.dialogs.filedialog;
 
         auto lbl = new Label(_label);
         lbl.id = _id ~ "-label";
@@ -316,7 +316,7 @@ class ExecutableFileNameEditItem : SettingsItem
 
     override Widget[] createWidgets(Setting settings)
     {
-        import beamui.dialogs.filedlg;
+        import beamui.dialogs.filedialog;
 
         auto lbl = new Label(_label);
         lbl.id = _id ~ "-label";
@@ -347,7 +347,7 @@ class PathNameEditItem : SettingsItem
 
     override Widget[] createWidgets(Setting settings)
     {
-        import beamui.dialogs.filedlg;
+        import beamui.dialogs.filedialog;
 
         auto lbl = new Label(_label);
         lbl.id = _id ~ "-label";

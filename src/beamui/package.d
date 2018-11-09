@@ -40,8 +40,8 @@ public
     import beamui.core.stdaction;
     import beamui.core.types;
     import beamui.dialogs.dialog;
-    import beamui.dialogs.filedlg;
-    import beamui.dialogs.msgbox;
+    import beamui.dialogs.filedialog;
+    import beamui.dialogs.messagebox;
     import beamui.dialogs.settingsdialog;
     import beamui.dml.parser;
     import beamui.graphics.colors;
