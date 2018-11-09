@@ -1802,6 +1802,115 @@ class Window : CustomEventTarget
     }
 }
 
+/// Convenient window storage to use in specific platforms
+struct WindowMap(W : Window, ID)
+{
+    private W[] list;
+    private W[ID] map;
+    private ID[W] reverseMap;
+    private W[] toDestroy;
+
+    ~this()
+    {
+        foreach (w; list)
+            destroy(w);
+        destroy(list);
+        destroy(map);
+        destroy(reverseMap);
+        destroy(toDestroy);
+    }
+
+    /// Add window to the map
+    void add(W w, ID id)
+    {
+        list ~= w;
+        map[id] = w;
+        reverseMap[w] = id;
+    }
+
+    /// Remove window from the map and defer its destruction until `purge` call
+    void remove(W w)
+    {
+        if (auto id = w in reverseMap)
+        {
+            reverseMap.remove(w);
+            map.remove(*id);
+            list = list.remove!(a => a is w);
+            toDestroy ~= w;
+        }
+    }
+
+    /// Destroy removed window objects planned for destroy
+    void purge()
+    {
+        if (toDestroy.length > 0)
+        {
+            foreach (w; toDestroy)
+                destroy(w);
+            toDestroy.length = 0;
+        }
+    }
+
+    /// Returns number of currently existing windows
+    @property size_t count()
+    {
+        return list.length;
+    }
+
+    /// The first added existing window, null if no windows
+    @property W first()
+    {
+        return list.length > 0 ? list[0] : null;
+    }
+    /// The last added existing window, null if no windows
+    @property W last()
+    {
+        return list.length > 0 ? list[$ - 1] : null;
+    }
+
+    /// Returns window instance by ID
+    W opIndex(ID id)
+    {
+        return map.get(id, null);
+    }
+    /// Returns ID of the window
+    ID opIndex(W w)
+    {
+        return reverseMap.get(w, ID.init);
+    }
+
+    /// Check window existence by ID with `in` operator
+    bool opBinaryRight(string op : "in")(ID id)
+    {
+        return (id in map) !is null;
+    }
+
+    /// `foreach` support
+    int opApply(scope int delegate(ref int i, ref W w) dg)
+    {
+        int result;
+        for (int i; i < list.length; i++)
+        {
+            result = dg(i, list[i]);
+            if (result)
+                break;
+        }
+        return result;
+    }
+    /// ditto
+    int opApply(scope int delegate(ref W w) dg)
+    {
+        int result;
+        for (int i; i < list.length; i++)
+        {
+            result = dg(list[i]);
+            if (result)
+                break;
+        }
+        return result;
+    }
+}
+
 /**
     Platform abstraction layer.
 
@@ -1821,20 +1930,6 @@ class Platform
         _instance = instance;
     }
 
-    /**
-    Create a window
-    Args:
-        title = window title text
-        parent = parent Window, or null if no parent
-        flags = WindowFlag bit set, combination of Resizable, Modal, Fullscreen
-        width = window width
-        height = window height
-
-    Window w/o `resizable` nor `fullscreen` will be created with a size based on measurement of its content widget
-    */
-    abstract Window createWindow(dstring title, Window parent,
-            WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0);
-
     static if (USE_OPENGL)
     {
         /**
@@ -1850,27 +1945,6 @@ class Platform
         */
         int GLVersionMinor = 2;
     }
-    /**
-    Close a window.
-
-    Closes window earlier created with createWindow()
-     */
-    abstract void closeWindow(Window w);
-    /**
-    Starts application message loop.
-
-    When returned from this method, application is shutting down.
-     */
-    abstract int enterMessageLoop();
-    /// Check has clipboard text
-    abstract bool hasClipboardText(bool mouseBuffer = false);
-    /// Retrieve text from clipboard (when mouseBuffer == true, use mouse selection clipboard - under linux)
-    abstract dstring getClipboardText(bool mouseBuffer = false);
-    /// Set text to clipboard (when mouseBuffer == true, use mouse selection clipboard - under linux)
-    abstract void setClipboardText(dstring text, bool mouseBuffer = false);
-
-    /// Call request layout for all windows
-    abstract void requestLayout();
 
     private
     {
@@ -1888,6 +1962,59 @@ class Platform
     {
         eliminate(_iconProvider);
     }
+
+    /**
+    Starts application message loop.
+
+    When returned from this method, application is shutting down.
+     */
+    abstract int enterMessageLoop();
+
+    //===============================================================
+    // Window routines
+
+    /**
+    Create a window.
+    Params:
+        title  = window title text
+        parent = parent Window, or null if no parent
+        flags  = WindowFlag bit set, combination of Resizable, Modal, Fullscreen
+        width  = window width
+        height = window height
+
+    Note: Window w/o `resizable` nor `fullscreen` will be created with a size based on measurement of its content widget.
+    */
+    abstract Window createWindow(dstring title, Window parent,
+            WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0);
+    /**
+    Close a window.
+
+    Closes window earlier created with createWindow()
+     */
+    abstract void closeWindow(Window w);
+
+    /**
+    Returns true if there is some modal window opened above this window.
+
+    This window should not process mouse/key input and should not allow closing.
+    */
+    bool hasModalWindowsAbove(Window w)
+    {
+        // may override in platform specific class
+        return w ? w.hasVisibleModalChild : false;
+    }
+
+    /// Call request layout for all windows
+    abstract void requestLayout();
+
+    //===============================================================
+
+    /// Check has clipboard text
+    abstract bool hasClipboardText(bool mouseBuffer = false);
+    /// Retrieve text from clipboard (when mouseBuffer == true, use mouse selection clipboard - under linux)
+    abstract dstring getClipboardText(bool mouseBuffer = false);
+    /// Set text to clipboard (when mouseBuffer == true, use mouse selection clipboard - under linux)
+    abstract void setClipboardText(dstring text, bool mouseBuffer = false);
 
     @property
     {
@@ -1983,7 +2110,7 @@ class Platform
             }
             return _iconProvider;
         }
-
+        /// ditto
         IconProviderBase iconProvider(IconProviderBase provider)
         {
             _iconProvider = provider;
@@ -2019,14 +2146,6 @@ class Platform
             Log.v("setDefaultLanguageAndThemeIfNecessary : setting UI theme");
             uiTheme = "default";
         }
-    }
-
-    /// Returns true if there is some modal window opened above this window,
-    /// And this window should not process mouse/key input and should not allow closing
-    bool hasModalWindowsAbove(Window w)
-    {
-        // may override in platform specific class
-        return w ? w.hasVisibleModalChild : false;
     }
 
     /// Open url in external browser

@@ -1,5 +1,11 @@
 /**
+Implementation of Xlib based backend for the UI.
 
+
+Synopsis:
+---
+import beamui.platforms.x11.x11app;
+---
 
 Copyright: Vadim Lopatin 2014-2017, Roman Chistokhodov 2017, Andrzej Kilijański 2017-2018, dayllenger 2018
 License:   Boost License 1.0
@@ -284,7 +290,6 @@ final class X11Window : DWindow
 
     ~this()
     {
-        debug Log.d("Destroying X11 window");
         static if (USE_OPENGL)
         {
             if (_glc)
@@ -1148,6 +1153,9 @@ final class X11Window : DWindow
 
 final class X11Platform : Platform
 {
+    private WindowMap!(X11Window, XWindow) windows;
+    private char* _classname;
+
     this()
     {
         import std.file : thisExePath;
@@ -1156,22 +1164,17 @@ final class X11Platform : Platform
         _classname = (baseName(thisExePath()) ~ "\0").dup.ptr;
     }
 
-    private X11Window[XWindow] _windowMap;
-    private char* _classname;
+    ~this()
+    {
+        destroy(windows);
+    }
 
     override DWindow createWindow(dstring windowCaption, DWindow parent,
             WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0)
     {
-        int newwidth = width;
-        int newheight = height;
-        auto window = new X11Window(this, windowCaption, parent, flags, newwidth, newheight);
-        _windowMap[window._win] = window;
+        auto window = new X11Window(this, windowCaption, parent, flags, width, height);
+        windows.add(window, window._win);
         return window;
-    }
-
-    X11Window getWindow(XWindow windowID)
-    {
-        return _windowMap.get(windowID, null);
     }
 
     override void closeWindow(DWindow w)
@@ -1188,11 +1191,6 @@ final class X11Platform : Platform
         XSendEvent(x11display2, window._win, false, StructureNotifyMask, &ev);
         XFlush(x11display2);
         XUnlockDisplay(x11display2);
-    }
-
-    bool allWindowsClosed()
-    {
-        return _windowMap.length == 0;
     }
 
     private int numberOfPendingEvents(int msecs = 10)
@@ -1236,9 +1234,10 @@ final class X11Platform : Platform
     {
         Log.d("entering message loop");
 
-        while (!allWindowsClosed())
+        while (windows.count > 0)
         {
             pumpEvents();
+            windows.purge();
         }
         return 0;
     }
@@ -1249,7 +1248,7 @@ final class X11Platform : Platform
         // Note: only events we set the mask for are detected!
         while (numberOfPendingEvents())
         {
-            if (allWindowsClosed())
+            if (windows.count == 0)
                 break;
             XEvent event;
             XNextEvent(x11display, &event);
@@ -1263,7 +1262,7 @@ final class X11Platform : Platform
         switch (event.type)
         {
         case ConfigureNotify:
-            if (auto w = getWindow(event.xconfigure.window))
+            if (auto w = windows[event.xconfigure.window])
             {
                 w._cachedWidth = event.xconfigure.width;
                 w._cachedHeight = event.xconfigure.height;
@@ -1276,7 +1275,7 @@ final class X11Platform : Platform
         case PropertyNotify:
             if (event.xproperty.atom == atom_NET_WM_STATE && event.xproperty.state == PropertyNewValue)
             {
-                if (auto w = getWindow(event.xproperty.window))
+                if (auto w = windows[event.xproperty.window])
                 {
                     Atom type;
                     int format;
@@ -1320,13 +1319,13 @@ final class X11Platform : Platform
             }
             break;
         case MapNotify:
-            if (auto w = getWindow(event.xmap.window))
+            if (auto w = windows[event.xmap.window])
             {
                 w.handleWindowStateChange(WindowState.normal);
             }
             break;
         case UnmapNotify:
-            if (auto w = getWindow(event.xunmap.window))
+            if (auto w = windows[event.xunmap.window])
             {
                 w.handleWindowStateChange(WindowState.hidden);
             }
@@ -1334,7 +1333,7 @@ final class X11Platform : Platform
         case Expose:
             if (event.xexpose.count == 0) // the last expose event
             {
-                if (auto w = getWindow(event.xexpose.window))
+                if (auto w = windows[event.xexpose.window])
                 {
                     w.invalidate();
                 }
@@ -1345,7 +1344,7 @@ final class X11Platform : Platform
         case KeyPress:
             debug (x11)
                 Log.d("X11: KeyPress event");
-            if (auto w = getWindow(event.xkey.window))
+            if (auto w = windows[event.xkey.window])
             {
                 char[100] buf;
                 KeySym ks;
@@ -1404,7 +1403,7 @@ final class X11Platform : Platform
         case KeyRelease:
             debug (x11)
                 Log.d("X11: KeyRelease event");
-            if (auto w = getWindow(event.xkey.window))
+            if (auto w = windows[event.xkey.window])
             {
                 char[100] buf;
                 KeySym ks;
@@ -1418,7 +1417,7 @@ final class X11Platform : Platform
         case ButtonPress:
             debug (x11)
                 Log.d("X11: ButtonPress event");
-            if (auto w = getWindow(event.xbutton.window))
+            if (auto w = windows[event.xbutton.window])
             {
                 if (event.xbutton.button == 4 || event.xbutton.button == 5)
                 {
@@ -1436,7 +1435,7 @@ final class X11Platform : Platform
         case ButtonRelease:
             debug (x11)
                 Log.d("X11: ButtonRelease event");
-            if (auto w = getWindow(event.xbutton.window))
+            if (auto w = windows[event.xbutton.window])
             {
                 w.processMouseEvent(MouseAction.buttonUp, event.xbutton.button,
                         event.xbutton.state, event.xbutton.x, event.xbutton.y);
@@ -1447,7 +1446,7 @@ final class X11Platform : Platform
         case MotionNotify:
             debug (x11)
                 Log.d("X11: MotionNotify event");
-            if (auto w = getWindow(event.xmotion.window))
+            if (auto w = windows[event.xmotion.window])
             {
                 w.processMouseEvent(MouseAction.move, 0, event.xmotion.state, event.xmotion.x, event.xmotion.y);
             }
@@ -1457,7 +1456,7 @@ final class X11Platform : Platform
         case EnterNotify:
             debug (x11)
                 Log.d("X11: EnterNotify event");
-            if (auto w = getWindow(event.xcrossing.window))
+            if (auto w = windows[event.xcrossing.window])
             {
                 w.processMouseEvent(MouseAction.move, 0, event.xmotion.state, event.xcrossing.x, event.xcrossing.y);
             }
@@ -1469,7 +1468,7 @@ final class X11Platform : Platform
         case LeaveNotify:
             debug (x11)
                 Log.d("X11: LeaveNotify event");
-            if (auto w = getWindow(event.xcrossing.window))
+            if (auto w = windows[event.xcrossing.window])
             {
                 w.processMouseEvent(MouseAction.leave, 0, event.xcrossing.state, event.xcrossing.x, event.xcrossing.y);
             }
@@ -1479,7 +1478,7 @@ final class X11Platform : Platform
         case CreateNotify:
             debug (x11)
                 Log.d("X11: CreateNotify event");
-            X11Window w = getWindow(event.xcreatewindow.window);
+            X11Window w = windows[event.xcreatewindow.window];
             if (!w)
                 Log.e("CreateNotify: Window not found");
             break;
@@ -1490,14 +1489,14 @@ final class X11Platform : Platform
         case ResizeRequest:
             debug (x11)
                 Log.d("X11: ResizeRequest event");
-            X11Window w = getWindow(event.xresizerequest.window);
+            X11Window w = windows[event.xresizerequest.window];
             if (!w)
                 Log.e("ResizeRequest: Window not found");
             break;
         case FocusIn:
             debug (x11)
                 Log.d("X11: FocusIn event");
-            if (auto w = getWindow(event.xfocus.window))
+            if (auto w = windows[event.xfocus.window])
                 w.handleWindowActivityChange(true);
             else
                 Log.e("FocusIn: Window not found");
@@ -1505,7 +1504,7 @@ final class X11Platform : Platform
         case FocusOut:
             debug (x11)
                 Log.d("X11: FocusOut event");
-            if (auto w = getWindow(event.xfocus.window))
+            if (auto w = windows[event.xfocus.window])
                 w.handleWindowActivityChange(false);
             else
                 Log.e("FocusOut: Window not found");
@@ -1513,7 +1512,7 @@ final class X11Platform : Platform
         case KeymapNotify:
             debug (x11)
                 Log.d("X11: KeymapNotify event");
-            X11Window w = getWindow(event.xkeymap.window);
+            X11Window w = windows[event.xkeymap.window];
             break;
         case SelectionClear:
             debug (x11)
@@ -1522,7 +1521,7 @@ final class X11Platform : Platform
         case SelectionRequest:
             debug (x11)
                 Log.d("X11: SelectionRequest event");
-            if (event.xselectionrequest.owner in _windowMap)
+            if (event.xselectionrequest.owner in windows)
             {
                 XSelectionRequestEvent* selectionRequest = &event.xselectionrequest;
 
@@ -1567,7 +1566,7 @@ final class X11Platform : Platform
         case SelectionNotify:
             debug (x11)
                 Log.d("X11: SelectionNotify event");
-            if (auto w = getWindow(event.xselection.requestor))
+            if (auto w = windows[event.xselection.requestor])
             {
                 waitingForSelection = false;
             }
@@ -1575,7 +1574,7 @@ final class X11Platform : Platform
         case ClientMessage:
             debug (x11)
                 Log.d("X11: ClientMessage event");
-            if (auto w = getWindow(event.xclient.window))
+            if (auto w = windows[event.xclient.window])
             {
                 if (event.xclient.message_type == atom_beamui_TASK_EVENT)
                 {
@@ -1599,19 +1598,13 @@ final class X11Platform : Platform
                         debug (x11)
                             Log.d("Handling WM_DELETE_WINDOW");
                         if (w.canClose)
-                        {
-                            _windowMap.remove(w._win);
-                            destroy(w);
-                        }
+                            windows.remove(w);
                     }
                 }
                 else if (event.xclient.message_type == atom_beamui_CLOSE_WINDOW_EVENT)
                 {
                     if (w.canClose)
-                    {
-                        _windowMap.remove(w._win);
-                        destroy(w);
-                    }
+                        windows.remove(w);
                 }
             }
             else
@@ -1642,7 +1635,7 @@ final class X11Platform : Platform
         {
             // Find any top-level window
             XWindow xwindow;
-            foreach (w; _windowMap)
+            foreach (w; windows)
             {
                 if (w.parentWindow is null && w._win != None)
                 {
@@ -1708,7 +1701,7 @@ final class X11Platform : Platform
         auto selection = mouseBuffer ? XA_PRIMARY : atom_CLIPBOARD;
         XWindow xwindow = None;
         // Find any top-level window
-        foreach (w; _windowMap)
+        foreach (w; windows)
         {
             if (w.parentWindow is null && w._win != None)
             {
@@ -1733,7 +1726,7 @@ final class X11Platform : Platform
 
     override void requestLayout()
     {
-        foreach (w; _windowMap)
+        foreach (w; windows)
         {
             w.requestLayout();
         }
@@ -1742,7 +1735,7 @@ final class X11Platform : Platform
     override void onThemeChanged()
     {
         super.onThemeChanged();
-        foreach (w; _windowMap)
+        foreach (w; windows)
             w.dispatchThemeChanged();
     }
 }

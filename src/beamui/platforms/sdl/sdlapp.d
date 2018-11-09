@@ -1,5 +1,5 @@
 /**
-This module contains implementation of SDL2 based backend for dlang library.
+Implementation of SDL2 based backend for the UI.
 
 
 Synopsis:
@@ -114,8 +114,6 @@ final class SDLWindow : Window
 
     ~this()
     {
-        debug Log.d("Destroying SDL window");
-
         if (_renderer)
             SDL_DestroyRenderer(_renderer);
         static if (USE_OPENGL)
@@ -1050,25 +1048,16 @@ final class SDLWindow : Window
 
 final class SDLPlatform : Platform
 {
-    this()
-    {
-    }
-
-    private SDLWindow[uint] _windowMap;
+    private WindowMap!(SDLWindow, uint) windows;
 
     ~this()
     {
-        eliminate(_windowMap);
-    }
-
-    SDLWindow getWindow(uint id)
-    {
-        return _windowMap.get(id, null);
+        destroy(windows);
     }
 
     override void closeWindow(Window w)
     {
-        // send a close event to SDLWindow
+        // send a close event for SDLWindow
         SDLWindow window = cast(SDLWindow)w;
         SDL_Event sdlevent;
         sdlevent.user.type = WINDOW_CLOSE_EVENT_ID;
@@ -1079,7 +1068,7 @@ final class SDLPlatform : Platform
 
     override void requestLayout()
     {
-        foreach (w; _windowMap)
+        foreach (w; windows)
         {
             w.requestLayout();
             w.invalidate();
@@ -1089,7 +1078,7 @@ final class SDLPlatform : Platform
     override void onThemeChanged()
     {
         super.onThemeChanged();
-        foreach (w; _windowMap)
+        foreach (w; windows)
             w.dispatchThemeChanged();
     }
 
@@ -1119,7 +1108,7 @@ final class SDLPlatform : Platform
             newheight = pt(height);
         }
         auto res = new SDLWindow(this, title, parent, flags, newwidth, newheight);
-        _windowMap[res.windowID] = res;
+        windows.add(res, res.windowID);
         if (sdlUpdateScreenDpi() || oldDPI != SCREEN_DPI)
         {
             version (Windows)
@@ -1144,6 +1133,7 @@ final class SDLPlatform : Platform
         while (SDL_WaitEvent(&event))
         {
             bool quit = processSDLEvent(event, skipNextQuit);
+            windows.purge();
             if (quit)
                 break;
         }
@@ -1167,9 +1157,7 @@ final class SDLPlatform : Platform
             if (event.window.timestamp - timestampResizing <= 1) // TODO: refactor everything
                 return false;
             // user defined redraw event
-            uint windowID = event.user.windowID;
-            SDLWindow w = getWindow(windowID);
-            if (w)
+            if (auto w = windows[event.user.windowID])
             {
                 w.processRedrawEvent(event.user.code);
             }
@@ -1179,11 +1167,10 @@ final class SDLPlatform : Platform
         {
         case SDL_WINDOWEVENT:
             // window events
-            uint windowID = event.window.windowID;
-            SDLWindow w = getWindow(windowID);
+            SDLWindow w = windows[event.window.windowID];
             if (!w)
             {
-                Log.w("SDL_WINDOWEVENT ", event.window.event, " received with unknown id ", windowID);
+                Log.w("SDL_WINDOWEVENT ", event.window.event, " received with unknown id ", event.window.windowID);
                 break;
             }
             // found window
@@ -1210,8 +1197,7 @@ final class SDLPlatform : Platform
                 {
                     debug (sdl)
                         Log.d("SDL_WINDOWEVENT_CLOSE win: ", event.window.windowID);
-                    _windowMap.remove(windowID);
-                    destroy(w);
+                    windows.remove(w);
                 }
                 else
                 {
@@ -1310,7 +1296,7 @@ final class SDLPlatform : Platform
             }
             break;
         case SDL_KEYDOWN:
-            SDLWindow w = getWindow(event.key.windowID);
+            SDLWindow w = windows[event.key.windowID];
             if (w && !w.hasVisibleModalChild)
             {
                 w.processKeyEvent(KeyAction.keyDown, event.key.keysym.sym, event.key.keysym.mod);
@@ -1318,7 +1304,7 @@ final class SDLPlatform : Platform
             }
             break;
         case SDL_KEYUP:
-            SDLWindow w = getWindow(event.key.windowID);
+            SDLWindow w = windows[event.key.windowID];
             if (w)
             {
                 if (w.hasVisibleModalChild)
@@ -1334,21 +1320,21 @@ final class SDLPlatform : Platform
         case SDL_TEXTINPUT:
             debug (sdl)
                 Log.d("SDL_TEXTINPUT");
-            SDLWindow w = getWindow(event.text.windowID);
+            SDLWindow w = windows[event.text.windowID];
             if (w && !w.hasVisibleModalChild)
             {
                 w.processTextInput(event.text.text.ptr);
             }
             break;
         case SDL_MOUSEMOTION:
-            SDLWindow w = getWindow(event.motion.windowID);
+            SDLWindow w = windows[event.motion.windowID];
             if (w && !w.hasVisibleModalChild)
             {
                 w.processMouseEvent(MouseAction.move, 0, event.motion.state, event.motion.x, event.motion.y);
             }
             break;
         case SDL_MOUSEBUTTONDOWN:
-            SDLWindow w = getWindow(event.button.windowID);
+            SDLWindow w = windows[event.button.windowID];
             if (w && !w.hasVisibleModalChild)
             {
                 w.processMouseEvent(MouseAction.buttonDown, event.button.button,
@@ -1356,7 +1342,7 @@ final class SDLPlatform : Platform
             }
             break;
         case SDL_MOUSEBUTTONUP:
-            SDLWindow w = getWindow(event.button.windowID);
+            SDLWindow w = windows[event.button.windowID];
             if (w)
             {
                 if (w.hasVisibleModalChild)
@@ -1367,7 +1353,7 @@ final class SDLPlatform : Platform
             }
             break;
         case SDL_MOUSEWHEEL:
-            SDLWindow w = getWindow(event.wheel.windowID);
+            SDLWindow w = windows[event.wheel.windowID];
             if (w && !w.hasVisibleModalChild)
             {
                 debug (sdl)
@@ -1377,7 +1363,7 @@ final class SDLPlatform : Platform
             break;
         default:
             // custom or not supported event
-            if (auto w = getWindow(event.user.windowID))
+            if (auto w = windows[event.user.windowID])
             {
                 if (event.type == USER_EVENT_ID)
                 {
@@ -1390,15 +1376,12 @@ final class SDLPlatform : Platform
                 else if (event.type == WINDOW_CLOSE_EVENT_ID)
                 {
                     if (w.canClose)
-                    {
-                        _windowMap.remove(event.user.windowID);
-                        destroy(w);
-                    }
+                        windows.remove(w);
                 }
             }
             break;
         }
-        if (_windowMap.length == 0)
+        if (windows.count == 0)
         {
             SDL_Quit();
             return true;

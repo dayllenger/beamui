@@ -1,5 +1,5 @@
 /**
-This module contains implementation of Win32 platform support
+Implementation of Win32 platform support
 
 Provides Win32Window and Win32Platform classes.
 
@@ -338,7 +338,6 @@ final class Win32Window : Window
 
     ~this()
     {
-        debug Log.d("Window destructor");
         _destroying = true;
         eliminate(_drawbuf);
 
@@ -527,18 +526,6 @@ final class Win32Window : Window
     override protected void handleWindowActivityChange(bool isWindowActive)
     {
         super.handleWindowActivityChange(isWindowActive);
-    }
-
-    private void onCreate()
-    {
-        Log.d("Window onCreate");
-        _platform.onWindowCreated(_hwnd, this);
-    }
-
-    private void onDestroy()
-    {
-        Log.d("Window onDestroy");
-        _platform.onWindowDestroyed(_hwnd, this);
     }
 
     //===============================================================
@@ -1065,6 +1052,13 @@ final class Win32Window : Window
 
 final class Win32Platform : Platform
 {
+    private WindowMap!(Win32Window, HWND) windows;
+
+    ~this()
+    {
+        destroy(windows);
+    }
+
     bool registerWndClass()
     {
         //MSG  msg;
@@ -1099,58 +1093,27 @@ final class Win32Platform : Platform
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
-            destroyClosedWindows();
+            windows.purge();
         }
         return cast(int)msg.wParam;
-    }
-
-    private Win32Window[ulong] _windowMap;
-    private Win32Window[] _windowList;
-
-    /// Add window to window map
-    void onWindowCreated(HWND hwnd, Win32Window window)
-    {
-        Log.v("created window, adding to map");
-        _windowMap[cast(ulong)hwnd] = window;
-        _windowList ~= window;
-    }
-    /// Remove window from window map, returns true if there are some more windows left in map
-    bool onWindowDestroyed(HWND hwnd, Win32Window window)
-    {
-        Log.v("destroyed window, removing from map");
-        Win32Window wnd = getWindow(hwnd);
-        if (wnd)
-        {
-            _windowMap.remove(cast(ulong)hwnd);
-            _windowsToDestroy ~= window;
-            //destroy(window);
-        }
-        _windowList = _windowList.efilter!(w => w !is window);
-        return _windowMap.length > 0;
-    }
-    /// Returns number of currently active windows
-    @property int windowCount()
-    {
-        return cast(int)_windowMap.length;
-    }
-    /// Returns window instance by HWND
-    Win32Window getWindow(HWND hwnd)
-    {
-        return _windowMap.get(cast(ulong)hwnd, null);
     }
 
     override Window createWindow(dstring windowCaption, Window parent,
             WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0)
     {
-        width = pt(width);
-        height = pt(height);
         setDefaultLanguageAndThemeIfNecessary();
-        return new Win32Window(this, windowCaption, parent, flags, width, height);
+        return new Win32Window(this, windowCaption, parent, flags, pt(width), pt(height));
+    }
+
+    override void closeWindow(Window w)
+    {
+        Win32Window window = cast(Win32Window)w;
+        SendMessage(window._hwnd, WM_CLOSE, 0, 0);
     }
 
     override void requestLayout()
     {
-        foreach (w; _windowMap)
+        foreach (w; windows)
         {
             w.requestLayout();
             w.invalidate();
@@ -1160,28 +1123,8 @@ final class Win32Platform : Platform
     override void onThemeChanged()
     {
         super.onThemeChanged();
-        foreach (w; _windowMap)
+        foreach (w; windows)
             w.dispatchThemeChanged();
-    }
-
-    /// List of windows for deferred destroy in message loop
-    Win32Window[] _windowsToDestroy;
-
-    override void closeWindow(Window w)
-    {
-        Win32Window window = cast(Win32Window)w;
-        _windowsToDestroy ~= window;
-        SendMessage(window._hwnd, WM_CLOSE, 0, 0);
-    }
-
-    /// Destroy window objects planned for destroy
-    void destroyClosedWindows()
-    {
-        foreach (Window w; _windowsToDestroy)
-        {
-            destroy(w);
-        }
-        _windowsToDestroy.length = 0;
     }
 
     override bool hasClipboardText(bool mouseBuffer = false)
@@ -1193,14 +1136,14 @@ final class Win32Platform : Platform
 
     override dstring getClipboardText(bool mouseBuffer = false)
     {
-        dstring res = null;
         if (mouseBuffer)
-            return res; // not supporetd under win32
+            return null; // not supported under win32
         if (!IsClipboardFormatAvailable(CF_UNICODETEXT))
-            return res;
+            return null;
         if (!OpenClipboard(NULL))
-            return res;
+            return null;
 
+        dstring result;
         HGLOBAL hglb = GetClipboardData(CF_UNICODETEXT);
         if (hglb != NULL)
         {
@@ -1208,24 +1151,23 @@ final class Win32Platform : Platform
             if (lptstr != NULL)
             {
                 wstring w = fromWStringz(lptstr);
-                res = normalizeEOLs(toUTF32(w));
+                result = normalizeEOLs(toUTF32(w));
 
                 GlobalUnlock(hglb);
             }
         }
 
         CloseClipboard();
-        //Log.d("getClipboardText(", res, ")");
-        return res;
+        return result;
     }
 
     override void setClipboardText(dstring text, bool mouseBuffer = false)
     {
-        //Log.d("setClipboardText(", text, ")");
         if (text.length < 1 || mouseBuffer)
             return;
         if (!OpenClipboard(NULL))
             return;
+
         EmptyClipboard();
         wstring w = toUTF16(text);
         HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, cast(uint)((w.length + 1) * TCHAR.sizeof));
@@ -1304,7 +1246,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
     void* p = cast(void*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     Win32Window windowParam = p ? cast(Win32Window)(p) : null;
-    Win32Window window = w32platform.getWindow(hwnd);
+    Win32Window window = w32platform.windows[hwnd];
     if (windowParam && window)
         assert(window is windowParam);
     if (!window && windowParam)
@@ -1321,13 +1263,17 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             void* ptr = cast(void*)window;
             SetWindowLongPtr(hwnd, GWLP_USERDATA, cast(LONG_PTR)ptr);
             window._hwnd = hwnd;
-            window.onCreate();
+            Log.v("created window, adding to map");
+            w32platform.windows.add(window, hwnd);
         }
         return 0;
     case WM_DESTROY:
         if (window)
-            window.onDestroy();
-        if (w32platform.windowCount == 0)
+        {
+            Log.v("destroyed window, removing from map");
+            w32platform.windows.remove(window);
+        }
+        if (w32platform.windows.count == 0)
             PostQuitMessage(0);
         return 0;
     case WM_WINDOWPOSCHANGED:

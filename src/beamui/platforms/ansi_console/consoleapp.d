@@ -99,7 +99,7 @@ class ConsolePlatform : Platform
     private
     {
         Console _console;
-        ConsoleWindow[] _windowList;
+        WindowMap!(ConsoleWindow, size_t) windows;
         ANSIConsoleDrawBuf _drawBuf;
     }
 
@@ -119,6 +119,7 @@ class ConsolePlatform : Platform
 
     ~this()
     {
+        destroy(windows);
         //Log.d("Destroying console");
         //destroy(_console);
         Log.d("Destroying drawbuf");
@@ -129,15 +130,18 @@ class ConsolePlatform : Platform
             WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0)
     {
         auto res = new ConsoleWindow(this, title, parent, flags);
-        _windowList ~= res;
+        windows.add(res, windows.count);
         return res;
     }
 
-    ConsoleWindow activeWindow()
+    override void closeWindow(Window w)
     {
-        if (!_windowList.length)
-            return null;
-        return _windowList[$ - 1];
+        windows.remove(cast(ConsoleWindow)w);
+    }
+
+    @property ConsoleWindow activeWindow()
+    {
+        return windows.last;
     }
 
     protected bool onConsoleKey(KeyEvent event)
@@ -169,7 +173,7 @@ class ConsolePlatform : Platform
     protected bool onConsoleResize(int width, int height)
     {
         drawBuf.resize(width, height);
-        foreach (w; _windowList)
+        foreach (w; windows)
         {
             w.onResize(width, height);
         }
@@ -187,14 +191,14 @@ class ConsolePlatform : Platform
     {
         if (!_needRedraw)
             return;
-        foreach (w; _windowList)
+        foreach (w; windows)
         {
             if (w.visible)
             {
                 _drawBuf.fillRect(Rect(0, 0, w.width, w.height), w.backgroundColor);
                 w.onDraw(_drawBuf);
                 auto caretRect = w.caretRect;
-                if ((w is activeWindow))
+                if (w is activeWindow)
                 {
                     if (!caretRect.empty)
                     {
@@ -215,47 +219,15 @@ class ConsolePlatform : Platform
 
     protected bool onInputIdle()
     {
-        checkClosedWindows();
-        foreach (w; _windowList)
+        foreach (w; windows)
         {
             w.pollTimers();
             w.handlePostedEvents();
         }
-        checkClosedWindows();
         redraw();
         _console.flush();
+        windows.purge();
         return false;
-    }
-
-    private Window[] _windowsToClose;
-    protected void handleCloseWindow(Window w)
-    {
-        for (int i = 0; i < _windowList.length; i++)
-        {
-            if (_windowList[i] is w)
-            {
-                for (int j = i; j + 1 < _windowList.length; j++)
-                    _windowList[j] = _windowList[j + 1];
-                _windowList[$ - 1] = null;
-                _windowList.length--;
-                destroy(w);
-                return;
-            }
-        }
-    }
-
-    protected void checkClosedWindows()
-    {
-        for (int i = 0; i < _windowsToClose.length; i++)
-        {
-            handleCloseWindow(_windowsToClose[i]);
-        }
-        _windowsToClose.length = 0;
-    }
-
-    override void closeWindow(Window w)
-    {
-        _windowsToClose ~= w;
     }
 
     override int enterMessageLoop()
@@ -263,16 +235,13 @@ class ConsolePlatform : Platform
         Log.i("Entered message loop");
         while (_console.pollInput())
         {
-            if (_windowList.length == 0)
+            if (windows.count == 0)
             {
-                Log.d("Window count is 0 - exiting message loop");
-
+                Log.d("No windows - exiting message loop");
                 break;
             }
         }
-        Log.i("Message loop finished - closing windows");
-        _windowsToClose ~= _windowList;
-        checkClosedWindows();
+        windows.purge();
         Log.i("Exiting from message loop");
         return 0;
     }
