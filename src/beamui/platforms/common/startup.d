@@ -667,25 +667,3 @@ void releaseResourcesOnAppExit()
         APP_IS_SHUTTING_DOWN = true;
     }
 }
-
-version (unittest)
-{
-    version (Windows)
-    {
-        /// Entry point for application
-        extern (C) int UIAppMain(string[] args)
-        {
-            // just to enable running unit tests
-            import core.runtime;
-            import std.stdio;
-
-            if (!runModuleUnitTests())
-            {
-                writeln("Error occured in unit tests. Press enter.");
-                readln();
-                return 1;
-            }
-            return 0;
-        }
-    }
-}

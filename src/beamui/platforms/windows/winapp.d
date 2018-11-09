@@ -32,6 +32,7 @@ import beamui.graphics.drawbuf;
 import beamui.graphics.fonts;
 import beamui.graphics.images;
 import beamui.platforms.common.platform;
+import beamui.platforms.common.startup;
 import beamui.platforms.windows.win32drawbuf;
 import beamui.platforms.windows.win32fonts;
 import beamui.widgets.widget;
@@ -1248,10 +1249,8 @@ final class Win32Platform : Platform
 
 private __gshared Win32Platform w32platform;
 
-extern (C) int beamuimain(string[] args)
+extern (C) int initializeGUI()
 {
-    import beamui.platforms.common.startup;
-
     initLogs();
 
     if (!initFontManager())
@@ -1274,7 +1273,7 @@ extern (C) int beamuimain(string[] args)
     if (!w32platform.registerWndClass())
     {
         MessageBoxA(null, "This program requires Windows NT!", "beamui app".toStringz, MB_ICONERROR);
-        return 0;
+        return 1;
     }
     Platform.instance = w32platform;
     Platform.instance.uiTheme = "default";
@@ -1285,23 +1284,17 @@ extern (C) int beamuimain(string[] args)
             disableOpenGL();
     }
 
-    Log.i("Entering UIAppMain: ", args);
-    int result = -1;
-    try
-    {
-        result = UIAppMain(args);
-    }
-    catch (Exception e)
-    {
-        Log.e("Abnormal UIAppMain termination");
-        Log.e("UIAppMain exception: ", e);
-    }
+    return 0;
+}
 
+extern (C) void deinitializeGUI()
+{
     Platform.instance = null;
-    releaseResourcesOnAppExit();
 
-    Log.d("Exiting main");
-    return result;
+    static if (USE_OPENGL)
+        glNoContext = true;
+
+    releaseResourcesOnAppExit();
 }
 
 extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)

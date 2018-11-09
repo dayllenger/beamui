@@ -16,6 +16,7 @@ import beamui.graphics.fonts;
 import beamui.platforms.ansi_console.consolefont;
 import beamui.platforms.ansi_console.dconsole;
 import beamui.platforms.common.platform;
+import beamui.platforms.common.startup;
 import beamui.widgets.widget;
 
 class ConsoleWindow : Window
@@ -533,11 +534,8 @@ extern (C) void mySignalHandler(int value)
     }
 }
 
-/// Entry point for console app
-extern (C) int beamuimain(string[] args)
+extern (C) int initializeGUI()
 {
-    import beamui.platforms.common.startup;
-
     initLogs();
 
     FontManager.instance = new ConsoleFontManager;
@@ -562,28 +560,11 @@ extern (C) int beamuimain(string[] args)
     Platform.instance = new ConsolePlatform;
     Platform.instance.uiTheme = "default";
 
-    Log.i("Entering UIAppMain: ", args);
-    version (unittest)
-    {
-        int result = 0;
-    }
-    else
-    {
-        int result = -1;
-        try
-        {
-            result = UIAppMain(args);
-        }
-        catch (Exception e)
-        {
-            Log.e("Abnormal UIAppMain termination");
-            Log.e("UIAppMain exception: ", e);
-        }
-    }
+    return 0;
+}
 
+extern (C) void deinitializeGUI()
+{
     Platform.instance = null;
     releaseResourcesOnAppExit();
-
-    Log.d("Exiting main");
-    return result;
 }

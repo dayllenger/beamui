@@ -29,6 +29,7 @@ import beamui.graphics.fonts;
 import beamui.graphics.ftfonts;
 import beamui.graphics.resources;
 import beamui.platforms.common.platform;
+import beamui.platforms.common.startup;
 import beamui.widgets.widget;
 static if (USE_OPENGL)
 {
@@ -41,6 +42,7 @@ version (Windows)
     pragma(lib, "gdi32.lib");
     pragma(lib, "user32.lib");
 }
+
 private derelict.util.exception.ShouldThrow missingSymFunc(string symName)
 {
     import std.algorithm : equal;
@@ -1455,10 +1457,8 @@ bool sdlUpdateScreenDpi(int displayIndex = 0)
     return false;
 }
 
-extern (C) int beamuimain(string[] args)
+extern (C) int initializeGUI()
 {
-    import beamui.platforms.common.startup;
-
     initLogs();
 
     if (!initFontManager())
@@ -1506,8 +1506,6 @@ extern (C) int beamuimain(string[] args)
         Log.e("Cannot init SDL2: ", fromStringz(SDL_GetError()));
         return 2;
     }
-    scope (exit)
-        SDL_Quit();
 
     USER_EVENT_ID = SDL_RegisterEvents(1);
     TIMER_EVENT_ID = SDL_RegisterEvents(1);
@@ -1527,24 +1525,11 @@ extern (C) int beamuimain(string[] args)
     Platform.instance = new SDLPlatform;
     Platform.instance.uiTheme = "default";
 
-    version (unittest)
-    {
-        int result = 0;
-    }
-    else
-    {
-        int result = -1;
-        try
-        {
-            result = UIAppMain(args);
-        }
-        catch (Exception e)
-        {
-            Log.e("Abnormal UIAppMain termination");
-            Log.e("UIAppMain exception: ", e);
-        }
-    }
+    return 0;
+}
 
+extern (C) void deinitializeGUI()
+{
     Platform.instance = null;
 
     static if (USE_OPENGL)
@@ -1552,6 +1537,5 @@ extern (C) int beamuimain(string[] args)
 
     releaseResourcesOnAppExit();
 
-    Log.d("Exiting main");
-    return result;
+    SDL_Quit();
 }

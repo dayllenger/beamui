@@ -25,9 +25,6 @@ import beamui.style.theme;
 import beamui.widgets.popup;
 import beamui.widgets.widget;
 
-/// Entry point - declare such function to use as main for beamui app
-extern (C) int UIAppMain(string[] args);
-
 /// Window creation flags
 enum WindowFlag : uint
 {
@@ -2105,7 +2102,8 @@ static if (BACKEND_GUI)
 }
 
 // to remove import
-extern (C) int beamuimain(string[] args);
+extern (C) int initializeGUI();
+extern (C) void deinitializeGUI();
 
 /// Put "mixin APP_ENTRY_POINT;" to main module of your beamui based app
 mixin template APP_ENTRY_POINT()
@@ -2123,7 +2121,27 @@ mixin template APP_ENTRY_POINT()
         {
             int main(string[] args)
             {
-                return beamuimain(args);
+                int result = initializeGUI();
+                scope (exit)
+                {
+                    deinitializeGUI();
+                    Log.d("Exiting main");
+                }
+                if (result == 0)
+                {
+                    try
+                    {
+                        Log.i("Entering UIAppMain: ", args);
+                        result = UIAppMain(args);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.e("Abnormal UIAppMain termination");
+                        Log.e("UIAppMain exception: ", e);
+                        result = -1;
+                    }
+                }
+                return result;
             }
         }
     }

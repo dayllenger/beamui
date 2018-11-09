@@ -27,6 +27,7 @@ import beamui.core.logger;
 import beamui.graphics.drawbuf;
 import beamui.widgets.widget;
 import beamui.platforms.common.platform;
+import beamui.platforms.common.startup;
 static if (USE_OPENGL)
 {
     import derelict.opengl3.gl;
@@ -1746,10 +1747,8 @@ final class X11Platform : Platform
     }
 }
 
-extern (C) int beamuimain(string[] args)
+extern (C) int initializeGUI()
 {
-    import beamui.platforms.common.startup;
-
     initLogs();
 
     if (!initFontManager())
@@ -1832,24 +1831,11 @@ extern (C) int beamuimain(string[] args)
     Platform.instance = new X11Platform;
     Platform.instance.uiTheme = "default";
 
-    version (unittest)
-    {
-        int result = 0;
-    }
-    else
-    {
-        int result = -1;
-        try
-        {
-            result = UIAppMain(args);
-        }
-        catch (Exception e)
-        {
-            Log.e("Abnormal UIAppMain termination");
-            Log.e("UIAppMain exception: ", e);
-        }
-    }
+    return 0;
+}
 
+extern (C) void deinitializeGUI()
+{
     Platform.instance = null;
 
     static if (USE_OPENGL)
@@ -1863,7 +1849,4 @@ extern (C) int beamuimain(string[] args)
 
     XCloseDisplay(x11display);
     XCloseDisplay(x11display2);
-
-    Log.d("Exiting main");
-    return result;
 }
