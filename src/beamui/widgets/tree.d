@@ -179,7 +179,7 @@ class TreeItem
         dstring _text;
         string _iconID;
         int _level;
-        ObjectList!TreeItem _children;
+        Collection!(TreeItem, true) _children;
         bool _expanded;
 
         int _intParam;
@@ -267,28 +267,32 @@ class TreeItem
     /// Returns number of children of this widget
     @property int childCount() const
     {
-        return _children.count;
+        return cast(int)_children.count;
     }
     /// Returns child by index
     TreeItem child(int index)
     {
-        return _children.get(index);
+        return _children[index];
     }
     /// Adds child, returns added item
     TreeItem addChild(TreeItem item, int index = -1)
     {
-        TreeItem res = _children.insert(item, index).parent(this).level(_level + 1);
+        if (index >= 0)
+            _children.insert(index, item);
+        else
+            _children.append(item);
+        TreeItem res = item.parent(this).level(_level + 1);
         root.onUpdate();
         return res;
     }
     /// Removes child, returns removed item
     TreeItem removeChild(int index)
     {
-        if (index < 0 || index >= _children.count)
+        if (index < 0 || _children.count <= index)
             return null;
         TreeItem res = _children.remove(index);
-        TreeItem newSelection = null;
-        if (res !is null)
+        TreeItem newSelection;
+        if (res)
         {
             res.parent = null;
             if (root && root.selectedItem is res)
@@ -308,21 +312,19 @@ class TreeItem
     /// Removes child by reference, returns removed item
     TreeItem removeChild(TreeItem child)
     {
-        TreeItem res = null;
-        int index = _children.indexOf(child);
+        int index = cast(int)_children.indexOf(child);
         return removeChild(index);
     }
     /// Removes child by ID, returns removed item
     TreeItem removeChild(string ID)
     {
-        TreeItem res = null;
-        int index = _children.indexOf(ID);
+        int index = cast(int)_children.indexOf(ID);
         return removeChild(index);
     }
     /// Returns index of widget in child list, -1 if passed widget is not a child of this widget
     int childIndex(TreeItem item)
     {
-        return _children.indexOf(item);
+        return cast(int)_children.indexOf(item);
     }
 
     /// Notify listeners

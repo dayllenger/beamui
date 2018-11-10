@@ -151,40 +151,42 @@ class WidgetListAdapter : ListAdapterBase
     /// Returns number of widgets in list
     override @property int itemCount() const
     {
-        return _widgets.count;
+        return cast(int)_widgets.count;
     }
 
     override Widget itemWidget(int index)
     {
-        return _widgets.get(index);
+        return _widgets[index];
     }
 
     override State itemState(int index) const
     {
-        return _widgets.get(index).state;
+        return _widgets[index].state;
     }
 
     override State setItemState(int index, State flags)
     {
-        return _widgets.get(index).setState(flags).state;
+        return _widgets[index].setState(flags).state;
     }
 
     override State resetItemState(int index, State flags)
     {
-        return _widgets.get(index).resetState(flags).state;
+        return _widgets[index].resetState(flags).state;
     }
     /// Add or insert item
     WidgetListAdapter add(Widget item, int index = -1)
     {
-        _widgets.insert(item, index);
+        if (index >= 0)
+            _widgets.insert(index, item);
+        else
+            _widgets.append(item);
         updateViews();
         return this;
     }
     /// Remove item and destroy it
     WidgetListAdapter remove(int index)
     {
-        auto item = _widgets.remove(index);
-        eliminate(item);
+        destroy(_widgets.remove(index));
         updateViews();
         return this;
     }

@@ -202,9 +202,9 @@ class LinearLayout : WidgetGroupDefaultDrawing
         return item;
     }
 
-    override Widget insertChild(Widget item, int index)
+    override Widget insertChild(int index, Widget item)
     {
-        super.insertChild(item, index);
+        super.insertChild(index, item);
         _cells.insertBefore(_cells[index .. $], defaultCell);
         item.stylesRecomputed = (Style[] chain) { updateCell(chain, index); };
         return item;
@@ -229,9 +229,9 @@ class LinearLayout : WidgetGroupDefaultDrawing
         return super.removeChild(child);
     }
 
-    override void removeAllChildren(bool destroyObj = true)
+    override void removeAllChildren(bool destroyThem = true)
     {
-        super.removeAllChildren(destroyObj);
+        super.removeAllChildren(destroyThem);
         _cells.clear();
     }
 

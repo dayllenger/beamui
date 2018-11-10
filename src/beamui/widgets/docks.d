@@ -185,17 +185,17 @@ class DockHost : WidgetGroupDefaultDrawing
         void bodyWidget(Widget widget)
         {
             if (_bodyWidget)
-                replaceChild(widget, _bodyWidget);
+            {
+                replaceChild(_bodyWidget, widget);
+                destroy(_bodyWidget);
+            }
             else
                 addChild(widget);
             _bodyWidget = widget;
-            _bodyWidget.parent = this;
         }
 
-        DockAlignment[4] layoutPriority() const
-        {
-            return _layoutPriority;
-        }
+        DockAlignment[4] layoutPriority() const { return _layoutPriority; }
+        /// ditto
         void layoutPriority(DockAlignment[4] p)
         {
             _layoutPriority = p;

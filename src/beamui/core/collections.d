@@ -1,10 +1,7 @@
 /**
-This module implements object collection.
+Simple object collection.
 
 Wrapper around array of objects, providing a set of useful operations, and handling of object ownership.
-
-Optionally can be owner of its items if instanciated with ownItems=true - will destroy removed items.
-
 
 Synopsis:
 ---
@@ -20,7 +17,7 @@ widgets ~= w3;
 // remove by index
 widgets.remove(1);
 
-// foreach
+// iterate
 foreach (w; widgets)
     writeln("widget: ", w.id);
 
@@ -29,391 +26,275 @@ widgets -= w3;
 writeln(widgets[0].id);
 ---
 
-Copyright: Vadim Lopatin 2014-2017
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.core.collections;
 
-import std.algorithm;
-
 /**
     Array based collection of items.
 
-    Retains item order when during add/remove operations.
-
-    Optionally destroys removed objects when instanciated with ownItems = true.
+    Retains item order during add/remove operations.
+    When instantiated with ownItems = true, container will destroy items on its destruction and on shrinking.
 */
 struct Collection(T, bool ownItems = false)
 {
-    private T[] _items;
-    private size_t _len;
+    import std.traits : hasElaborateDestructor;
+    import beamui.core.ownership : isReferenceType;
 
-    /// Returns true if there are no items in collection
-    @property bool empty()
-    {
-        return _len == 0;
-    }
-    /// Returns number of items in collection
-    @property size_t length()
-    {
-        return _len;
-    }
-    /// Returns currently allocated capacity (may be more than length)
-    @property size_t size()
-    {
-        return _items.length;
-    }
-    /// Change capacity (e.g. to reserve big space to avoid multiple reallocations)
-    @property void size(size_t newSize)
-    {
-        if (_len > newSize)
-            length = newSize; // shrink
-        _items.length = newSize;
-    }
-    /// Returns number of items in collection
-    @property void length(size_t newSize)
-    {
-        if (newSize < _len)
-        {
-            // shrink
-            static if (is(T == class) || is(T == struct))
-            {
-                // clear items
-                for (size_t i = newSize; i < _len; i++)
-                {
-                    static if (ownItems)
-                        destroy(_items[i]);
-                    _items[i] = T.init;
-                }
-            }
-        }
-        else if (newSize > _len)
-        {
-            // expand
-            if (_items.length < newSize)
-                _items.length = newSize;
-        }
-        _len = newSize;
-    }
-    /// Access item by index
-    ref T opIndex(size_t index)
-    {
-        assert(index < _len);
-        return _items[index];
-    }
-    /// Insert new item in specified position
-    void add(T item, size_t index = size_t.max)
-    {
-        if (index > _len)
-            index = _len;
-        if (_items.length <= _len)
-        {
-            if (_items.length < 4)
-                _items.length = 4;
-            else
-                _items.length = _items.length * 2;
-        }
-        if (index < _len)
-        {
-            for (size_t i = _len; i > index; i--)
-                _items[i] = _items[i - 1];
-        }
-        _items[index] = item;
-        _len++;
-    }
-    /// Add all items from other collection
-    void addAll(ref Collection!(T, ownItems) v)
-    {
-        for (int i = 0; i < v.length; i++)
-            add(v[i]);
-    }
-    /// Support for appending (~=, +=) and removing by value (-=)
-    ref Collection opOpAssign(string op)(T item)
-    {
-        static if (op.equal("~") || op.equal("+"))
-        {
-            // append item to end of collection
-            add(item);
-            return this;
-        }
-        else if (op.equal("-"))
-        {
-            // remove item from collection, if present
-            removeValue(item);
-            return this;
-        }
-        else
-        {
-            assert(false, "not supported opOpAssign " ~ op);
-        }
-    }
-    /// Returns index of first occurence of item, size_t.max if not found
-    size_t indexOf(T item)
-    {
-        for (size_t i = 0; i < _len; i++)
-            if (_items[i] == item)
-                return i;
-        return size_t.max;
-    }
-    /// Remove single item, returning removed item
-    T remove(size_t index)
-    {
-        assert(index < _len);
-        T result = _items[index];
-        for (size_t i = index; i + 1 < _len; i++)
-            _items[i] = _items[i + 1];
-        _len--;
-        _items[_len] = T.init;
-        return result;
-    }
-    /// Remove single item by value - if present in collection, returning true if item was found and removed
-    bool removeValue(T value)
-    {
-        size_t index = indexOf(value);
-        if (index == size_t.max)
-            return false;
-        T res = remove(index);
-        static if (ownItems)
-            destroy(res);
-        return true;
-    }
-    /// Support of foreach with reference
-    int opApply(int delegate(ref T param) op)
-    {
-        int result = 0;
-        for (size_t i = 0; i < _len; i++)
-        {
-            result = op(_items[i]);
-            if (result)
-                break;
-        }
-        return result;
-    }
-    /// Remove all items
-    void clear()
-    {
-        static if (is(T == class) || is(T == struct))
-        {
-            /// Clear references
-            for (size_t i = 0; i < _len; i++)
-            {
-                static if (ownItems)
-                    destroy(_items[i]);
-                _items[i] = T.init;
-            }
-        }
-        _len = 0;
-        _items = null;
-    }
+    private T[] list;
+    private size_t len;
 
-    //=================================
-    // stack/queue-like ops
+    private enum mayNeedToDestroy = isReferenceType!T || hasElaborateDestructor!T;
 
-    /// Remove first item
-    @property T popFront()
-    {
-        if (empty)
-            return T.init; // no items
-        return remove(0);
-    }
-
-    /// Peek first item
-    @property T peekFront()
-    {
-        if (empty)
-            return T.init; // no items
-        return _items[0];
-    }
-
-    /// Insert item at beginning of collection
-    void pushFront(T item)
-    {
-        add(item, 0);
-    }
-
-    /// Remove last item
-    @property T popBack()
-    {
-        if (empty)
-            return T.init; // no items
-        return remove(length - 1);
-    }
-
-    /// Peek last item
-    @property T peekBack()
-    {
-        if (empty)
-            return T.init; // no items
-        return _items[length - 1];
-    }
-
-    /// Insert item at end of collection
-    void pushBack(T item)
-    {
-        add(item);
-    }
-
-    /// Peek first item
-    @property T front()
-    {
-        if (empty)
-            return T.init; // no items
-        return _items[0];
-    }
-
-    /// Peek last item
-    @property T back()
-    {
-        if (empty)
-            return T.init; // no items
-        return _items[_len - 1];
-    }
-    /// Removes all items on destroy
     ~this()
     {
         clear();
     }
-}
 
-/// Object list holder, owning its objects - on destroy of holder, all own objects will be destroyed
-struct ObjectList(T)
-{
-    protected T[] _list;
-    protected int _count;
+    /// Number of items in collection
+    @property size_t count() const { return len; }
+    /// ditto
+    @property void count(size_t newCount)
+    {
+        if (newCount < len)
+        {
+            // shrink
+            static if (mayNeedToDestroy)
+            {
+                // clear list
+                static if (ownItems)
+                {
+                    foreach (i; newCount .. len)
+                        destroy(list[i]);
+                }
+                // clear references
+                static if (isReferenceType!T)
+                    list[newCount .. len] = null;
+            }
+        }
+        else if (newCount > len)
+        {
+            // expand
+            if (list.length < newCount)
+                list.length = newCount;
+        }
+        len = newCount;
+    }
+    /// ditto
+    size_t opDollar() const { return len; }
 
-    /// Returns count of items
-    @property int count() const
+    /// Returns true if there are no items in collection
+    @property bool empty() const
     {
-        return _count;
+        return len == 0;
     }
 
-    alias length = count;
-    /// Get item by index
-    inout(T) get(int index) inout
+    /// Returns currently allocated capacity (may be more than length)
+    @property size_t size() const
     {
-        assert(index >= 0 && index < _count, "child index out of range");
-        return _list[index];
+        return list.length;
     }
-    /// Get item by index
-    T opIndex(int index)
+    /// Change capacity (e.g. to reserve big space to avoid multiple reallocations)
+    @property void size(size_t newSize)
     {
-        return get(index);
+        if (len > newSize)
+            count = newSize; // shrink
+        list.length = newSize;
     }
-    /// Add item to list
-    T add(T item)
+
+    /// Access item by index
+    ref inout(T) opIndex(size_t index) inout
     {
-        if (_list.length <= _count) // resize
-            _list.length = _list.length < 4 ? 4 : _list.length * 2;
-        _list[_count++] = item;
-        return item;
+        assert(index < len, "Index is out of range");
+        return list[index];
     }
-    /// Add item to list
-    T insert(T item, int index = -1)
+
+    /// Returns index of the first occurrence of item, returns -1 if not found
+    ptrdiff_t indexOf(const(T) item) const
     {
-        if (index > _count || index < 0)
-            index = _count;
-        if (_list.length <= _count) // resize
-            _list.length = _list.length < 4 ? 4 : _list.length * 2;
-        for (int i = _count; i > index; i--)
-            _list[i] = _list[i - 1];
-        _list[index] = item;
-        _count++;
-        return item;
-    }
-    /// Find child index for item, return -1 if not found
-    int indexOf(T item)
-    {
-        if (item is null)
-            return -1;
-        for (int i = 0; i < _count; i++)
-            if (_list[i] is item)
+        foreach (i; 0 .. len)
+            if (list[i] is item)
                 return i;
         return -1;
     }
     static if (__traits(hasMember, T, "compareID"))
     {
-        /// Find child index for item by id, return -1 if not found
-        int indexOf(string id)
+        /// Find child index for item by id, returns -1 if not found
+        ptrdiff_t indexOf(string id) const
         {
-            for (int i = 0; i < _count; i++)
-                if (_list[i].compareID(id))
+            foreach (i; 0 .. len)
+                if (list[i].compareID(id))
                     return i;
             return -1;
         }
     }
-    /// Remove item from list, return removed item
-    T remove(int index)
+    /// True if collection contains such item
+    bool opBinaryRight(string op : "in")(const(T) item) const
     {
-        assert(index >= 0 && index < _count, "child index out of range");
-        T item = _list[index];
-        for (int i = index; i < _count - 1; i++)
-            _list[i] = _list[i + 1];
-        _count--;
-        return item;
+        foreach (i; 0 .. len)
+            if (list[i] is item)
+                return true;
+        return false;
     }
-    /// Replace item with another value, destroy old value
-    void replace(T item, int index)
+
+    /// Append item to the end of collection
+    void append(T item)
     {
-        T old = _list[index];
-        _list[index] = item;
-        destroy(old);
+        if (list.length <= len) // need to resize
+            list.length = list.length < 4 ? 4 : list.length * 2;
+        list[len++] = item;
     }
-    /// Replace item with another value, destroy old value
-    void replace(T newItem, T oldItem)
+    /// Insert item before specified position
+    void insert(size_t index, T item)
     {
-        int idx = indexOf(oldItem);
-        if (newItem is null)
+        assert(index <= len, "Index is out of range");
+        if (list.length <= len) // need to resize
+            list.length = list.length < 4 ? 4 : list.length * 2;
+        if (index < len)
         {
-            if (idx >= 0)
-            {
-                T item = remove(idx);
-                destroy(item);
-            }
+            foreach_reverse (i; index .. len + 1)
+                list[i] = list[i - 1];
+        }
+        list[index] = item;
+        len++;
+    }
+
+    /// Remove single item and return it
+    T remove(size_t index)
+    {
+        assert(index < len, "Index is out of range");
+        T result = list[index];
+        foreach (i; index .. len - 1)
+            list[i] = list[i + 1];
+        len--;
+        list[len] = T.init;
+        return result;
+    }
+    /// Remove single item by value. Returns true if item was found and removed
+    bool removeValue(T value)
+    {
+        ptrdiff_t index = indexOf(value);
+        if (index >= 0)
+        {
+            remove(index);
+            return true;
         }
         else
-        {
-            if (idx >= 0)
-                replace(newItem, idx);
-            else
-                add(newItem);
-        }
+            return false;
     }
-    /// Remove and destroy all items
-    void clear(bool destroyObj = true)
+
+    /// Replace one item with another by index. Returns removed item.
+    T replace(size_t index, T item)
     {
-        for (int i = 0; i < _count; i++)
+        assert(index < len, "Index is out of range");
+        T old = list[index];
+        list[index] = item;
+        return old;
+    }
+    /// Replace one item with another. Appends if not found
+    void replace(T oldItem, T newItem)
+    {
+        ptrdiff_t index = indexOf(oldItem);
+        if (index >= 0)
+            replace(index, newItem);
+        else
+            append(newItem);
+    }
+
+    /// Remove all items and optionally destroy them
+    void clear(bool destroyItems = ownItems)
+    {
+        static if (mayNeedToDestroy)
         {
-            if (destroyObj)
+            if (destroyItems)
             {
-                destroy(_list[i]);
+                foreach (i; 0 .. len)
+                    destroy(list[i]);
             }
-            _list[i] = null;
+            // clear references
+            static if (isReferenceType!T)
+                list[] = null;
         }
-        _count = 0;
+        len = 0;
+        list = null;
     }
-    /// Support foreach
-    int opApply(int delegate(ref T) callback)
+
+    /// Support for appending (~=) and removing by value (-=)
+    void opOpAssign(string op : "~")(T item)
     {
-        int res = 0;
-        for (int i = 0; i < _count; i++)
+        append(item);
+    }
+    /// ditto
+    void opOpAssign(string op : "-")(T item)
+    {
+        removeValue(item);
+    }
+
+    /// Support of foreach with reference
+    int opApply(scope int delegate(size_t i, ref T) callback)
+    {
+        int result;
+        foreach (i; 0 .. len)
         {
-            res = callback(_list[i]);
-            if (res)
+            result = callback(i, list[i]);
+            if (result)
                 break;
         }
-        return res;
+        return result;
     }
-    /// Get items array slice. Don't try to resize it!
-    T[] asArray()
+    /// ditto
+    int opApply(scope int delegate(ref T) callback)
     {
-        if (!_count)
-            return null;
-        return _list[0 .. _count];
+        int result;
+        foreach (i; 0 .. len)
+        {
+            result = callback(list[i]);
+            if (result)
+                break;
+        }
+        return result;
     }
-    /// Destructor destroys all items
-    ~this()
+
+    /// Get slice of items. Don't try to resize it!
+    T[] data()
     {
-        clear();
+        return len > 0 ? list[0 .. len] : null;
+    }
+
+    //=================================
+    // stack/queue-like ops
+
+    /// Pick the first item
+    @property T front()
+    {
+        return len > 0 ? list[0] : T.init;
+    }
+    /// Remove the first item and return it
+    @property T popFront()
+    {
+        return len > 0 ? remove(0) : T.init;
+    }
+    /// Insert item at the beginning of collection
+    void pushFront(T item)
+    {
+        insert(0, item);
+    }
+
+    /// Pick the last item
+    @property T back()
+    {
+        return len > 0 ? list[len - 1] : T.init;
+    }
+    /// Remove the last item and return it
+    @property T popBack()
+    {
+        return len > 0 ? remove(len - 1) : T.init;
+    }
+    /// Insert item at the end of collection
+    void pushBack(T item)
+    {
+        append(item);
     }
 }

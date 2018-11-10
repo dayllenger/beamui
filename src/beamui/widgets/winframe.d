@@ -22,9 +22,9 @@ class WindowFrame : Column
 
     @property void bodyWidget(Widget widget)
     {
-        _bodyLayout.replaceChild(widget, _bodyWidget);
+        _bodyLayout.replaceChild(_bodyWidget, widget);
+        destroy(_bodyWidget);
         _bodyWidget = widget;
-        _bodyWidget.parent = this;
         requestLayout();
     }
 

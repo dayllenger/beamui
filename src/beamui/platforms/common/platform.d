@@ -126,11 +126,12 @@ class EventList
         _mutex.lock();
         scope (exit)
             _mutex.unlock();
-        for (int i = 0; i < _events.length; i++)
+        foreach (i, e; _events)
         {
-            if (_events[i].uniqueID == uniqueID)
+            if (e.uniqueID == uniqueID)
             {
-                return _events.remove(i);
+                _events.remove(i);
+                return e;
             }
         }
         // not found
@@ -1886,24 +1887,24 @@ struct WindowMap(W : Window, ID)
     }
 
     /// `foreach` support
-    int opApply(scope int delegate(ref int i, ref W w) dg)
+    int opApply(scope int delegate(size_t i, W w) callback)
     {
         int result;
-        for (int i; i < list.length; i++)
+        foreach (i; 0 .. list.length)
         {
-            result = dg(i, list[i]);
+            result = callback(i, list[i]);
             if (result)
                 break;
         }
         return result;
     }
     /// ditto
-    int opApply(scope int delegate(ref W w) dg)
+    int opApply(scope int delegate(W w) callback)
     {
         int result;
-        for (int i; i < list.length; i++)
+        foreach (i; 0 .. list.length)
         {
-            result = dg(list[i]);
+            result = callback(list[i]);
             if (result)
                 break;
         }

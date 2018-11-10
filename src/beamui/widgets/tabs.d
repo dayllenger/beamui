@@ -302,7 +302,10 @@ class TabControl : WidgetGroup
         item.parent = this;
         item.mouseEvent = &onMouseTabBtn;
         item.tabClosed = &tabClosed.emit;
-        insertChild(item, index);
+        if (index >= 0)
+            insertChild(index, item);
+        else
+            addChild(item);
         requestLayout();
         return this;
     }

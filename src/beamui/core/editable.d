@@ -456,9 +456,9 @@ class UndoBuffer
     {
         if (!hasUndo)
             return null; // no undo operations
-        EditOperation res = _undoList.popBack();
-        _redoList.pushBack(res);
-        return res;
+        EditOperation result = _undoList.popBack();
+        _redoList.pushBack(result);
+        return result;
     }
 
     /// Returns operation to be redone (put it to undo), null if no undo ops available
@@ -466,9 +466,9 @@ class UndoBuffer
     {
         if (!hasRedo)
             return null; // no undo operations
-        EditOperation res = _redoList.popBack();
-        _undoList.pushBack(res);
-        return res;
+        EditOperation result = _redoList.popBack();
+        _undoList.pushBack(result);
+        return result;
     }
 
     /// Clear both undo and redo buffers
@@ -484,14 +484,14 @@ class UndoBuffer
     /// Current state is saved
     void saved()
     {
-        _savedState = _undoList.peekBack;
-        foreach (i; 0 .. _undoList.length)
+        _savedState = _undoList.back;
+        foreach (op; _undoList)
         {
-            _undoList[i].modified();
+            op.modified();
         }
-        foreach (i; 0 .. _redoList.length)
+        foreach (op; _redoList)
         {
-            _redoList[i].modified();
+            op.modified();
         }
     }
 
@@ -500,18 +500,13 @@ class UndoBuffer
     {
         if (!_savedState)
             return false;
-        foreach (i; 0 .. _redoList.length)
-        {
-            if (_savedState is _redoList[i])
-                return true;
-        }
-        return false;
+        return _savedState in _redoList;
     }
 
     /// Returns true if content has been changed since last saved() or clear() call
     @property bool modified()
     {
-        return _savedState !is _undoList.peekBack;
+        return _savedState !is _undoList.back;
     }
 }
 

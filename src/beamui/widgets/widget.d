@@ -2224,8 +2224,8 @@ public:
         }
         return this;
     }
-    /// Insert child at given index, returns inserted item
-    Widget insertChild(Widget item, int index)
+    /// Insert child before given index, returns inserted item
+    Widget insertChild(int index, Widget item)
     {
         assert(false, "insertChild: this widget does not support having children");
     }
@@ -2243,6 +2243,11 @@ public:
     Widget removeChild(Widget child)
     {
         assert(false, "removeChild: this widget does not support having children");
+    }
+    /// Remove all children and optionally destroy them
+    void removeAllChildren(bool destroyThem = true)
+    {
+        // override
     }
     /// Returns index of widget in child list, -1 if there is no child with this ID
     int childIndex(string id)
@@ -2352,11 +2357,6 @@ public:
         _window = window;
     }
 
-    void removeAllChildren(bool destroyObj = true)
-    {
-        // override
-    }
-
     //===============================================================
     // ML Loader support
 
@@ -2444,7 +2444,7 @@ public:
 }
 
 /// Widget list holder
-alias WidgetList = ObjectList!Widget;
+alias WidgetList = Collection!(Widget, true);
 
 /**
     Base class for widgets which have children.
@@ -2472,24 +2472,26 @@ class WidgetGroup : Widget
 
     override @property int childCount() const
     {
-        return _children.count;
+        return cast(int)_children.count;
     }
 
     override inout(Widget) child(int index) inout
     {
-        return _children.get(index);
+        return _children[index];
     }
 
     override Widget addChild(Widget item)
     {
         assert(item !is null, "Widget must exist");
-        return _children.add(item).parent(this);
+        _children.append(item);
+        return item.parent(this);
     }
 
-    override Widget insertChild(Widget item, int index)
+    override Widget insertChild(int index, Widget item)
     {
         assert(item !is null, "Widget must exist");
-        return _children.insert(item, index).parent(this);
+        _children.insert(index, item);
+        return item.parent(this);
     }
 
     override Widget removeChild(int index)
@@ -2502,8 +2504,7 @@ class WidgetGroup : Widget
 
     override Widget removeChild(string id)
     {
-        Widget res;
-        int index = _children.indexOf(id);
+        int index = cast(int)_children.indexOf(id);
         if (index < 0)
             return null;
         return removeChild(index);
@@ -2511,33 +2512,33 @@ class WidgetGroup : Widget
 
     override Widget removeChild(Widget child)
     {
-        Widget res;
-        int index = _children.indexOf(child);
+        int index = cast(int)_children.indexOf(child);
         if (index < 0)
             return null;
         return removeChild(index);
     }
 
+    override void removeAllChildren(bool destroyThem = true)
+    {
+        _children.clear(destroyThem);
+    }
+
     override int childIndex(string id)
     {
-        return _children.indexOf(id);
+        return cast(int)_children.indexOf(id);
     }
 
     override int childIndex(Widget item)
     {
-        return _children.indexOf(item);
+        return cast(int)_children.indexOf(item);
     }
 
-    override void removeAllChildren(bool destroyObj = true)
-    {
-        _children.clear(destroyObj);
-    }
-
-    /// Replace child with other child
-    void replaceChild(Widget newChild, Widget oldChild)
+    /// Replace one child with another. DOES NOT destroy the old item
+    void replaceChild(Widget oldChild, Widget newChild)
     {
         assert(newChild !is null && oldChild !is null, "Widgets must exist");
-        _children.replace(newChild, oldChild);
+        _children.replace(oldChild, newChild);
+        oldChild.parent = null;
         newChild.parent = this;
     }
 }
@@ -2565,10 +2566,9 @@ class WidgetGroupDefaultDrawing : WidgetGroup
         Box b = _box;
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
-        foreach (i; 0 .. _children.count)
+        foreach (widget; _children)
         {
-            Widget item = _children.get(i);
-            item.onDraw(buf);
+            widget.onDraw(buf);
         }
     }
 }

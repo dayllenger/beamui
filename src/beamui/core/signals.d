@@ -32,7 +32,6 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.core.signals;
 
 import std.traits;
-import beamui.core.collections;
 
 ///
 unittest
@@ -163,7 +162,7 @@ struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!s
 {
     alias return_t = ReturnType!slot_t;
     alias params_t = Parameters!slot_t;
-    private Collection!slot_t _listeners;
+    private slot_t[] _listeners;
 
     /// Returns true if listener is assigned
     bool assigned()
@@ -174,7 +173,7 @@ struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!s
     /// Replace all previously assigned listeners with new one (if null passed, remove all listeners)
     void opAssign(slot_t listener)
     {
-        _listeners.clear();
+        _listeners.length = 0;
         if (listener !is null)
             _listeners ~= listener;
     }
@@ -224,35 +223,37 @@ struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!s
     /// Add a listener
     void connect(slot_t listener)
     {
-        _listeners.add(listener);
+        _listeners ~= listener;
     }
     /// ditto
     void opOpAssign(string op : "~")(slot_t listener)
     {
-        _listeners.add(listener);
+        _listeners ~= listener;
     }
 
     /// Remove a listener
     void disconnect(slot_t listener)
     {
-        _listeners.removeValue(listener);
+        foreach (i, item; _listeners)
+        {
+            if (listener is item)
+            {
+                foreach (j; i .. _listeners.length - 1)
+                    _listeners[j] = _listeners[j + 1];
+                _listeners.length--;
+                break;
+            }
+        }
     }
     /// ditto
     void opOpAssign(string op : "-")(slot_t listener)
     {
-        _listeners.removeValue(listener);
-    }
-
-    /// Remove all methods of an object. Useful in destructors
-    void disconnectObject(void* obj)
-    {
-        // TODO
-//         _listeners = _listeners.remove!(dg => dg.ptr is obj);
+        disconnect(listener);
     }
 
     /// Disconnect all listeners
     void clear()
     {
-        _listeners.clear();
+        _listeners.length = 0;
     }
 }

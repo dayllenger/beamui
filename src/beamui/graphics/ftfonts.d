@@ -498,14 +498,14 @@ class FreeTypeFont : Font
             auto file = new FreeTypeFontFile(_fontItem.library, filename);
             if (file.open(_size, 0))
             {
-                _files.add(file);
+                _files.append(file);
             }
             else
             {
                 destroy(file);
             }
         }
-        return _files.length > 0;
+        return _files.count > 0;
     }
 
     override void checkpoint()
@@ -530,7 +530,7 @@ class FreeTypeFont : Font
 
     override @property int height()
     {
-        return _files.length > 0 ? _files[0].height : _size;
+        return _files.count > 0 ? _files[0].height : _size;
     }
 
     override @property int weight()
@@ -540,7 +540,7 @@ class FreeTypeFont : Font
 
     override @property int baseline()
     {
-        return _files.length > 0 ? _files[0].baseline : 0;
+        return _files.count > 0 ? _files[0].baseline : 0;
     }
 
     override @property bool italic()
@@ -560,7 +560,7 @@ class FreeTypeFont : Font
 
     override @property bool isNull()
     {
-        return _files.length == 0;
+        return _files.empty;
     }
 }
 
