@@ -1,7 +1,10 @@
 /**
-This module provides logging utilities.
+Logging utilities.
 
-Use Log class static methods.
+Log class provides several short static methods for writing logs.
+
+You can choose more or less verbose logging level.
+The levels have such importance order: fatal, error, warning, info, debug, trace.
 
 Synopsis:
 ---
@@ -9,10 +12,10 @@ import beamui.core.logger;
 
 // setup:
 
-// use stderror for logging
-setStderrLogger();
+// use stderr (standard error output stream) for logging
+Log.setStderrLogger();
 // set log level
-setLogLevel(LogLevel.debug_);
+Log.setLogLevel(LogLevel.debug_);
 
 // usage:
 
@@ -158,7 +161,7 @@ static:
     /// Log level to name helper function
     string logLevelName(LogLevel level)
     {
-        switch (level) with (LogLevel)
+        final switch (level) with (LogLevel)
         {
         case fatal:
             return "F";
@@ -172,8 +175,6 @@ static:
             return "D";
         case trace:
             return "V";
-        default:
-            return "?";
         }
     }
 
@@ -186,30 +187,24 @@ static:
 
         private android_LogPriority toAndroidLogPriority(LogLevel level)
         {
-            switch (level) with (LogLevel)
+            final switch (level) with (LogLevel)
             {
-                /// Fatal error, cannot resume
             case fatal:
                 return android_LogPriority.ANDROID_LOG_FATAL;
-                /// Error
             case error:
                 return android_LogPriority.ANDROID_LOG_ERROR;
-                /// Warning
             case warn:
                 return android_LogPriority.ANDROID_LOG_WARN;
-                /// Informational message
             case info:
                 return android_LogPriority.ANDROID_LOG_INFO;
-                /// Debug message
             case debug_:
                 return android_LogPriority.ANDROID_LOG_DEBUG;
-                /// Tracing message
             case trace:
-            default:
                 return android_LogPriority.ANDROID_LOG_VERBOSE;
             }
         }
     }
+
     /// Log message with arbitrary log level
     void log(S...)(LogLevel level, S args)
     {
