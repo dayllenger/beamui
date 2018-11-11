@@ -1,20 +1,21 @@
 /**
-This module contains base fonts access interface and common implementation.
+Base fonts access interface and common implementation.
 
 Font - base class for fonts.
 
 FontManager - base class for font managers - provides access to available fonts.
 
 
-Actual implementation is:
+Actual implementations are:
 
 beamui.graphics.ftfonts - FreeType based font manager.
 
-beamui.platforms.windows.w32fonts - Win32 API based font manager.
+beamui.platforms.ansi_console.consolefont - console font manager (with single font).
+
+beamui.platforms.windows.win32fonts - Win32 API based font manager.
 
 
-See_Also: beamui.graphics.drawbuf, DrawBuf, drawbuf, drawbuf.html
-
+See_Also: $(LINK2 $(DDOX_ROOT_DIR)beamui/graphics/drawbuf.html, DrawBuf)
 
 Synopsis:
 ---
@@ -149,6 +150,71 @@ enum int MAX_WIDTH_UNSPECIFIED = int.max;
 */
 class Font : RefCountedObject
 {
+    @property
+    {
+        /// Returns font size (as requested from font engine)
+        abstract int size() const;
+        /// Returns actual font height including interline space
+        abstract int height() const;
+        /// Returns font weight
+        abstract int weight() const;
+        /// Returns baseline offset
+        abstract int baseline() const;
+        /// Returns true if font is italic
+        abstract bool italic() const;
+        /// Returns font face name
+        abstract string face() const;
+        /// Returns font family
+        abstract FontFamily family() const;
+        /// Returns true if font object is not yet initialized / loaded
+        abstract bool isNull() const;
+
+        /// Returns true if antialiasing is enabled, false if not enabled
+        bool antialiased() const
+        {
+            return size >= FontManager.instance.minAntialiasedFontSize;
+        }
+
+        /// Returns true if font has fixed pitch (all characters have equal width)
+        bool isFixed()
+        {
+            if (_fixedFontDetection < 0)
+            {
+                if (charWidth('i') == charWidth(' ') && charWidth('M') == charWidth('i'))
+                    _fixedFontDetection = 1;
+                else
+                    _fixedFontDetection = 0;
+            }
+            return _fixedFontDetection == 1;
+        }
+
+        /// Returns width of the space character
+        int spaceWidth()
+        {
+            if (_spaceWidth < 0)
+            {
+                _spaceWidth = charWidth(' ');
+                if (_spaceWidth <= 0)
+                    _spaceWidth = charWidth('0');
+                if (_spaceWidth <= 0)
+                    _spaceWidth = size;
+            }
+            return _spaceWidth;
+        }
+
+        /// Does this font allow kerning?
+        bool allowKerning() const { return _allowKerning; }
+        /// ditto
+        protected void allowKerning(bool allow)
+        {
+            _allowKerning = allow;
+        }
+    }
+
+    private int _fixedFontDetection = -1;
+    private int _spaceWidth = -1;
+    private bool _allowKerning;
+
     this()
     {
         _textSizeBuffer.reserve(100);
@@ -160,77 +226,11 @@ class Font : RefCountedObject
         clear();
     }
 
-    /// Returns font size (as requested from font engine)
-    abstract @property int size();
-    /// Returns actual font height including interline space
-    abstract @property int height();
-    /// Returns font weight
-    abstract @property int weight();
-    /// Returns baseline offset
-    abstract @property int baseline();
-    /// Returns true if font is italic
-    abstract @property bool italic();
-    /// Returns font face name
-    abstract @property string face();
-    /// Returns font family
-    abstract @property FontFamily family();
-    /// Returns true if font object is not yet initialized / loaded
-    abstract @property bool isNull();
-
-    /// Returns true if antialiasing is enabled, false if not enabled
-    @property bool antialiased()
-    {
-        return size >= FontManager.instance.minAntialiasedFontSize;
-    }
-
-    private int _fixedFontDetection = -1;
-
-    /// Returns true if font has fixed pitch (all characters have equal width)
-    @property bool isFixed()
-    {
-        if (_fixedFontDetection < 0)
-        {
-            if (charWidth('i') == charWidth(' ') && charWidth('M') == charWidth('i'))
-                _fixedFontDetection = 1;
-            else
-                _fixedFontDetection = 0;
-        }
-        return _fixedFontDetection == 1;
-    }
-
-    protected int _spaceWidth = -1;
-
-    /// Returns true if font is fixed
-    @property int spaceWidth()
-    {
-        if (_spaceWidth < 0)
-        {
-            _spaceWidth = charWidth(' ');
-            if (_spaceWidth <= 0)
-                _spaceWidth = charWidth('0');
-            if (_spaceWidth <= 0)
-                _spaceWidth = size;
-        }
-        return _spaceWidth;
-    }
-
     /// Returns character width
     int charWidth(dchar ch)
     {
         Glyph* g = getCharGlyph(ch);
         return !g ? 0 : g.widthPixels;
-    }
-
-    private bool _allowKerning;
-    /// Does this font allow kerning?
-    @property bool allowKerning() const
-    {
-        return _allowKerning;
-    }
-    /// ditto
-    protected @property void allowKerning(bool allow)
-    {
-        _allowKerning = allow;
     }
 
     /// Override to implement kerning offset calculation
@@ -573,12 +573,15 @@ enum TextAlign : ubyte
 /// Helper to split text into several lines and draw it
 struct SimpleTextFormatter
 {
-    dstring[] _lines;
-    int[] _linesWidths;
-    int _maxLineWidth;
-    int _tabSize;
-    int _tabOffset;
-    TextFlag _textFlags;
+    private
+    {
+        dstring[] _lines;
+        int[] _linesWidths;
+        int _maxLineWidth;
+        int _tabSize;
+        int _tabOffset;
+        TextFlag _textFlags;
+    }
 
     /// Split text into lines and measure it; returns size in pixels
     Size format(const dchar[] text, FontRef fnt, int maxLines = 0, int maxWidth = 0, int tabSize = 4,
@@ -731,7 +734,7 @@ struct FontList
         clear();
     }
 
-    @property size_t length()
+    @property size_t length() const
     {
         return _list.length;
     }
@@ -745,12 +748,14 @@ struct FontList
         }
         _list = null;
     }
-    // returns item by index
+
+    /// Returns item by index
     ref FontRef get(size_t index)
     {
         return _list[index];
     }
-    // find by a set of parameters - returns index of found item, -1 if not found
+
+    /// Find by a set of parameters - returns index of found item, -1 if not found
     ptrdiff_t find(int size, int weight, bool italic, FontFamily family, string face)
     {
         foreach (i, ref item; _list)
@@ -768,7 +773,7 @@ struct FontList
         }
         return -1;
     }
-    // find by size only - returns index of found item, -1 if not found
+    /// Find by size only - returns index of found item, -1 if not found
     ptrdiff_t find(int size)
     {
         foreach (i, ref item; _list)
@@ -785,7 +790,8 @@ struct FontList
         _list ~= FontRef(item);
         return _list[$ - 1];
     }
-    // remove unused items - with reference == 1
+
+    /// Remove unused items - with reference count == 1
     void cleanup()
     {
         foreach (ref item; _list)
@@ -801,6 +807,7 @@ struct FontList
         foreach (ref item; _list)
             item.checkpoint();
     }
+
     /// Clears glyph cache
     void clearGlyphCache()
     {
@@ -837,28 +844,79 @@ struct FontFaceProps
 /// Access points to fonts.
 class FontManager
 {
+    static @property
+    {
+        /// Font manager singleton instance
+        FontManager instance() { return _instance; }
+        /// ditto
+        void instance(FontManager manager)
+        {
+            foreach (ref f; fontCache)
+                f.clear();
+            fontCache.clear();
+
+            eliminate(_instance);
+            _instance = manager;
+        }
+
+        /// Min font size for antialiased fonts (0 means antialiasing always on, some big value = always off)
+        int minAntialiasedFontSize() { return _minAntialiasedFontSize; }
+        /// ditto
+        void minAntialiasedFontSize(int size)
+        {
+            if (_minAntialiasedFontSize != size)
+            {
+                _minAntialiasedFontSize = size;
+                if (_instance)
+                    _instance.clearGlyphCaches();
+            }
+        }
+
+        /// Current hinting mode (Normal, AutoHint, Disabled)
+        HintingMode hintingMode() { return _hintingMode; }
+        /// ditto
+        void hintingMode(HintingMode mode)
+        {
+            if (_hintingMode != mode)
+            {
+                _hintingMode = mode;
+                if (_instance)
+                    _instance.clearGlyphCaches();
+            }
+        }
+
+        /// Current subpixel rendering mode for fonts (aka ClearType)
+        SubpixelRenderingMode subpixelRenderingMode() { return _subpixelRenderingMode; }
+        /// ditto
+        void subpixelRenderingMode(SubpixelRenderingMode mode)
+        {
+            _subpixelRenderingMode = mode;
+        }
+
+        /// Font gamma (1.0 is neutral, < 1.0 makes glyphs lighter, >1.0 makes glyphs bolder)
+        double fontGamma() { return _fontGamma; }
+        /// ditto
+        void fontGamma(double v)
+        {
+            double gamma = clamp(v, 0.1, 4);
+            if (_fontGamma != gamma)
+            {
+                _fontGamma = gamma;
+                _gamma65.gamma = gamma;
+                _gamma256.gamma = gamma;
+                if (_instance)
+                    _instance.clearGlyphCaches();
+            }
+        }
+    }
+
     private static __gshared
     {
         FontManager _instance;
         int _minAntialiasedFontSize = DEF_MIN_ANTIALIASED_FONT_SIZE;
         HintingMode _hintingMode = HintingMode.normal;
         SubpixelRenderingMode _subpixelRenderingMode = SubpixelRenderingMode.none;
-    }
-
-    /// Font manager singleton instance
-    static @property FontManager instance()
-    {
-        return _instance;
-    }
-    /// ditto
-    static @property void instance(FontManager manager)
-    {
-        foreach (ref f; fontCache)
-            f.clear();
-        fontCache.clear();
-
-        eliminate(_instance);
-        _instance = manager;
+        double _fontGamma = 1.0;
     }
 
     // Font cache for fast getFont()
@@ -894,69 +952,6 @@ class FontManager
 
     /// Removes entries not used after last call of checkpoint() or cleanup()
     abstract void cleanup();
-
-    /// Min font size for antialiased fonts (0 means antialiasing always on, some big value = always off)
-    static @property int minAntialiasedFontSize()
-    {
-        return _minAntialiasedFontSize;
-    }
-    /// ditto
-    static @property void minAntialiasedFontSize(int size)
-    {
-        if (_minAntialiasedFontSize != size)
-        {
-            _minAntialiasedFontSize = size;
-            if (_instance)
-                _instance.clearGlyphCaches();
-        }
-    }
-
-    /// Current hinting mode (Normal, AutoHint, Disabled)
-    static @property HintingMode hintingMode()
-    {
-        return _hintingMode;
-    }
-    /// ditto
-    static @property void hintingMode(HintingMode mode)
-    {
-        if (_hintingMode != mode)
-        {
-            _hintingMode = mode;
-            if (_instance)
-                _instance.clearGlyphCaches();
-        }
-    }
-
-    /// Current subpixel rendering mode for fonts (aka ClearType)
-    static @property SubpixelRenderingMode subpixelRenderingMode()
-    {
-        return _subpixelRenderingMode;
-    }
-    /// ditto
-    static @property void subpixelRenderingMode(SubpixelRenderingMode mode)
-    {
-        _subpixelRenderingMode = mode;
-    }
-
-    private static __gshared double _fontGamma = 1.0;
-    /// Font gamma (1.0 is neutral, < 1.0 makes glyphs lighter, >1.0 makes glyphs bolder)
-    static @property double fontGamma()
-    {
-        return _fontGamma;
-    }
-    /// ditto
-    static @property void fontGamma(double v)
-    {
-        double gamma = clamp(v, 0.1, 4);
-        if (_fontGamma != gamma)
-        {
-            _fontGamma = gamma;
-            _gamma65.gamma = gamma;
-            _gamma256.gamma = gamma;
-            if (_instance)
-                _instance.clearGlyphCaches();
-        }
-    }
 
     /// Clear glyph cache
     void clearGlyphCaches()
@@ -1098,10 +1093,7 @@ class glyph_gamma_table(int maxv = 65)
         gamma(gammaValue);
     }
 
-    @property double gamma()
-    {
-        return _gamma;
-    }
+    @property double gamma() { return _gamma; }
 
     @property void gamma(double g)
     {

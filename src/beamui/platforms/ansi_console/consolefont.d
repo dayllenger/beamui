@@ -17,11 +17,25 @@ import beamui.style.types : TextFlag;
 
 class ConsoleFont : Font
 {
+    override @property const
+    {
+        int size() { return 1; }
+        int height() { return 1; }
+        int weight() { return 400; }
+        int baseline() { return 0; }
+        bool italic() { return false; }
+        string face() { return "console"; }
+        FontFamily family() { return FontFamily.monospace; }
+        bool isNull() { return false; }
+        bool antialiased() { return false; }
+        bool isFixed() { return true; }
+        int spaceWidth() { return 1; }
+    }
+
     private Glyph _glyph;
 
     this()
     {
-        _spaceWidth = 1;
         _glyph.blackBoxX = 1;
         _glyph.blackBoxY = 1;
         _glyph.widthPixels = 1;
@@ -32,54 +46,7 @@ class ConsoleFont : Font
         _glyph.glyph = [0];
     }
 
-    override @property int size()
-    {
-        return 1;
-    }
-    override @property int height()
-    {
-        return 1;
-    }
-    override @property int weight()
-    {
-        return 400;
-    }
-    override @property int baseline()
-    {
-        return 0;
-    }
-    override @property bool italic()
-    {
-        return false;
-    }
-    override @property string face()
-    {
-        return "console";
-    }
-    override @property FontFamily family()
-    {
-        return FontFamily.monospace;
-    }
-    override @property bool isNull()
-    {
-        return false;
-    }
-    override @property bool antialiased()
-    {
-        return false;
-    }
-    override @property bool isFixed()
-    {
-        return true;
-    }
-    override @property int spaceWidth()
-    {
-        return 1;
-    }
-    override int charWidth(dchar ch)
-    {
-        return 1;
-    }
+    override int charWidth(dchar ch) const { return 1; }
 
     override int measureText(const dchar[] text, ref int[] widths, int maxWidth = MAX_WIDTH_UNSPECIFIED,
             int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
@@ -309,11 +276,6 @@ class ConsoleFont : Font
 
     override void clear()
     {
-    }
-
-    ~this()
-    {
-        clear();
     }
 }
 

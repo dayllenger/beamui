@@ -1,5 +1,5 @@
 /**
-This file contains FontManager implementation based on FreeType library.
+FontManager implementation based on FreeType library.
 
 Copyright: Vadim Lopatin 2014-2017
 License:   Boost License 1.0
@@ -66,7 +66,7 @@ private class FontFileItem
     private FontDef _def;
     string[] _filenames;
 
-    @property ref FontDef def() { return _def; }
+    @property ref inout(FontDef) def() inout { return _def; }
 
     @property string[] filenames() { return _filenames; }
 
@@ -166,15 +166,15 @@ class FreeTypeFontFile
     {
         FT_Library library() { return _library; }
 
-        string filename() { return _filename; }
+        string filename() const { return _filename; }
 
         // properties as detected after opening of file
-        string face() { return _faceName; }
-        int height() { return _height; }
-        int size() { return _size; }
-        int baseline() { return _baseline; }
-        int weight() { return _weight; }
-        bool italic() { return _italic; }
+        string face() const { return _faceName; }
+        int height() const { return _height; }
+        int size() const { return _size; }
+        int baseline() const { return _baseline; }
+        int weight() const { return _weight; }
+        bool italic() const { return _italic; }
     }
 
     private static string familyName(FT_Face face)
@@ -391,13 +391,55 @@ class FreeTypeFontFile
 */
 class FreeTypeFont : Font
 {
-    private FontFileItem _fontItem;
-    private Collection!(FreeTypeFontFile, true) _files;
+    override @property const
+    {
+        int size() { return _size; }
 
-    debug static __gshared int _instanceCount;
+        int height()
+        {
+            return _files.count > 0 ? _files[0].height : _size;
+        }
+        int weight()
+        {
+            return _fontItem.def.weight;
+        }
+        int baseline()
+        {
+            return _files.count > 0 ? _files[0].baseline : 0;
+        }
+        bool italic()
+        {
+            return _fontItem.def.italic;
+        }
+        string face()
+        {
+            return _fontItem.def.face;
+        }
+        FontFamily family()
+        {
+            return _fontItem.def.family;
+        }
+        bool isNull()
+        {
+            return _files.empty;
+        }
+    }
+
+    private
+    {
+        FontFileItem _fontItem;
+        Collection!(FreeTypeFontFile, true) _files;
+
+        int _size;
+        int _height;
+
+        GlyphCache _glyphCache;
+
+    }
+
+    debug private static __gshared int _instanceCount;
     debug @property static int instanceCount() { return _instanceCount; }
 
-    /// Need to call create() after construction to initialize font
     this(FontFileItem item, int size)
     {
         _fontItem = item;
@@ -409,7 +451,6 @@ class FreeTypeFont : Font
             Log.d("Created font, count: ", _instanceCount);
     }
 
-    /// Do cleanup
     ~this()
     {
         clear();
@@ -417,11 +458,6 @@ class FreeTypeFont : Font
         debug (resalloc)
             Log.d("Destroyed font, count: ", _instanceCount);
     }
-
-    private int _size;
-    private int _height;
-
-    private GlyphCache _glyphCache;
 
     override void clear()
     {
@@ -522,46 +558,6 @@ class FreeTypeFont : Font
     {
         _glyphCache.clear();
     }
-
-    override @property int size()
-    {
-        return _size;
-    }
-
-    override @property int height()
-    {
-        return _files.count > 0 ? _files[0].height : _size;
-    }
-
-    override @property int weight()
-    {
-        return _fontItem.def.weight;
-    }
-
-    override @property int baseline()
-    {
-        return _files.count > 0 ? _files[0].baseline : 0;
-    }
-
-    override @property bool italic()
-    {
-        return _fontItem.def.italic;
-    }
-
-    override @property string face()
-    {
-        return _fontItem.def.face;
-    }
-
-    override @property FontFamily family()
-    {
-        return _fontItem.def.family;
-    }
-
-    override @property bool isNull()
-    {
-        return _files.empty;
-    }
 }
 
 private derelict.util.exception.ShouldThrow missingSymFunc(string symName)
@@ -593,7 +589,7 @@ class FreeTypeFontManager : FontManager
         return null;
     }
 
-    /// Override to return list of font faces available
+    /// Return list of available font faces
     override FontFaceProps[] getFaces()
     {
         FontFaceProps[] list;

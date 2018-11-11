@@ -1,7 +1,7 @@
 /**
-This module contains implementation of Win32 fonts support
+Win32 fonts support.
 
-Part of Win32 platform support.
+Part of the Win32 platform.
 
 Usually you don't need to use this module directly.
 
@@ -28,36 +28,17 @@ import beamui.core.logger;
 import beamui.graphics.fonts;
 import beamui.platforms.windows.win32drawbuf;
 
-//auto toUTF16z(S)(S s)
-//{
-//return toUTFz!(const(wchar)*)(s);
-//}
-
 private struct FontDef
 {
-    immutable FontFamily _family;
-    immutable string _face;
-    immutable ubyte _pitchAndFamily;
-    @property FontFamily family()
-    {
-        return _family;
-    }
+    immutable FontFamily family;
+    immutable string face;
+    immutable ubyte pitchAndFamily;
 
-    @property string face()
+    this(FontFamily family, string face, ubyte pitchAndFamily)
     {
-        return _face;
-    }
-
-    @property ubyte pitchAndFamily()
-    {
-        return _pitchAndFamily;
-    }
-
-    this(FontFamily family, string face, ubyte putchAndFamily)
-    {
-        _family = family;
-        _face = face;
-        _pitchAndFamily = pitchAndFamily;
+        this.family = family;
+        this.face = face;
+        this.pitchAndFamily = pitchAndFamily;
     }
 }
 
@@ -214,31 +195,38 @@ ushort prepare_lcd_glyph(ubyte* gbuf1, ref GLYPHMETRICS gm, ref ubyte[] gbuf2, r
 */
 class Win32Font : Font
 {
-    protected HFONT _hfont;
-    protected int _dpi;
-    protected int _size;
-    protected int _height;
-    protected int _weight;
-    protected int _baseline;
-    protected bool _italic;
-    protected string _face;
-    protected FontFamily _family;
-    protected LOGFONTA _logfont;
-    protected Win32ColorDrawBuf _drawbuf;
-    protected GlyphCache _glyphCache;
-
-    /// Need to call create() after construction to initialize font
-    this()
+    override @property const
     {
+        int size() { return _size; }
+        int height() { return _height; }
+        int weight() { return _weight; }
+        int baseline() { return _baseline; }
+        bool italic() { return _italic; }
+        string face() { return _face; }
+        FontFamily family() { return _family; }
+
+        bool isNull()
+        {
+            return _hfont is null;
+        }
     }
 
-    /// Do cleanup
-    ~this()
+    private
     {
-        clear();
+        HFONT _hfont;
+        int _dpi;
+        int _size;
+        int _height;
+        int _weight;
+        int _baseline;
+        bool _italic;
+        string _face;
+        FontFamily _family;
+        LOGFONTA _logfont;
+        Win32ColorDrawBuf _drawbuf;
+        GlyphCache _glyphCache;
     }
 
-    /// Cleanup resources
     override void clear()
     {
         if (_hfont !is null)
@@ -491,62 +479,19 @@ class Win32Font : Font
         return true;
     }
 
-    /// Clear usage flags for all entries
     override void checkpoint()
     {
         _glyphCache.checkpoint();
     }
 
-    /// Removes entries not used after last call of checkpoint() or cleanup()
     override void cleanup()
     {
         _glyphCache.cleanup();
     }
 
-    /// Clears glyph cache
     override void clearGlyphCache()
     {
         _glyphCache.clear();
-    }
-
-    override @property int size()
-    {
-        return _size;
-    }
-
-    override @property int height()
-    {
-        return _height;
-    }
-
-    override @property int weight()
-    {
-        return _weight;
-    }
-
-    override @property int baseline()
-    {
-        return _baseline;
-    }
-
-    override @property bool italic()
-    {
-        return _italic;
-    }
-
-    override @property string face()
-    {
-        return _face;
-    }
-
-    override @property FontFamily family()
-    {
-        return _family;
-    }
-
-    override @property bool isNull()
-    {
-        return _hfont is null;
     }
 }
 
