@@ -263,6 +263,7 @@ class Font : RefCountedObject
         uint len = cast(uint)text.length;
         if (widths.length < len)
             widths.length = len;
+        bool hotkeys = (textFlags & TextFlag.hotkeys) != 0;
         bool fixed = isFixed;
         bool useKerning = allowKerning && !fixed;
         int fixedCharWidth = charWidth('M');
@@ -290,8 +291,7 @@ class Font : RefCountedObject
                 prevChar = 0;
                 continue;
             }
-            else if (ch == '&' &&
-                    (textFlags & (TextFlag.underlineHotkeys | TextFlag.hotkeys | TextFlag.underlineHotkeysOnAlt)))
+            else if (hotkeys && ch == '&')
             {
                 pwidths[i] = x;
                 prevChar = 0;
@@ -400,6 +400,7 @@ class Font : RefCountedObject
             return; // not visible - clipped out
         if (y + height < clip.top || y >= clip.bottom)
             return; // not visible - fully above or below clipping rectangle
+        bool hotkeys = (textFlags & TextFlag.hotkeys) != 0;
         int _baseline = baseline;
         bool underline = (textFlags & TextFlag.underline) != 0;
         int underlineHeight = 1;
@@ -407,10 +408,9 @@ class Font : RefCountedObject
         foreach (int i; 0 .. charsMeasured)
         {
             dchar ch = text[i];
-            if (ch == '&' &&
-                (textFlags & (TextFlag.underlineHotkeys | TextFlag.hotkeys | TextFlag.underlineHotkeysOnAlt)))
+            if (hotkeys && ch == '&')
             {
-                if (textFlags & (TextFlag.underlineHotkeys | TextFlag.underlineHotkeysOnAlt))
+                if ((textFlags & TextFlag.underlineHotkeys) == TextFlag.underlineHotkeys)
                     underline = true; // turn ON underline for hot key
                 continue; // skip '&' in hot key when measuring
             }

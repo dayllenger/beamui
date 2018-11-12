@@ -880,12 +880,10 @@ public:
             setProperty!"_textFlags" = value;
             return this;
         }
-        private void textFlags_effect(TextFlag value)
+        private void textFlags_effect(TextFlag newValue, TextFlag oldValue)
         {
-            bool oldHotkeys = (_textFlags & (TextFlag.hotkeys |
-                    TextFlag.underlineHotkeys | TextFlag.underlineHotkeysOnAlt)) != 0;
-            bool newHotkeys = (value & (TextFlag.hotkeys |
-                    TextFlag.underlineHotkeys | TextFlag.underlineHotkeysOnAlt)) != 0;
+            bool oldHotkeys = (oldValue & TextFlag.hotkeys) != 0;
+            bool newHotkeys = (newValue & TextFlag.hotkeys) != 0;
             handleFontChanged();
             if (oldHotkeys != newHotkeys)
                 requestLayout();
@@ -2817,19 +2815,14 @@ mixin template SupportCSS(BaseClass = Widget)
 
         enum name = var[0] == '_' ? var[1 .. $] : var;
         enum sideEffectName = name ~ "_effect";
-
-        static if (__traits(hasMember, typeof(this), sideEffectName))
+        enum bool hasSideEffects = __traits(hasMember, typeof(this), sideEffectName);
+        static if (hasSideEffects)
         {
-            enum expr = sideEffectName ~ "(value)";
-            static if (__traits(compiles, mixin(expr)))
-            {
-                enum callSideEffects = sideEffectName ~ "(val);";
-            }
-            else
-                enum callSideEffects = sideEffectName ~ "();";
+            enum s1 = sideEffectName ~ "(T.init)";
+            enum s2 = sideEffectName ~ "(T.init, T.init)";
+            enum bool effects1 = __traits(compiles, mixin(s1));
+            enum bool effects2 = __traits(compiles, mixin(s2));
         }
-        else
-            enum callSideEffects = "";
 
         if (fromOutside)
             ownProperty(var);
@@ -2857,9 +2850,18 @@ mixin template SupportCSS(BaseClass = Widget)
                                          transitionTimingFunction,
                                          transitionDelay);
                 addAnimation(var, tr.duration, delegate(double t) {
-                        auto val = tr.mix(current, value, t);
-                        mixin(callSideEffects);
-                        field = val;
+                        static if (hasSideEffects && effects2)
+                            T old = field;
+                        field = tr.mix(current, value, t);
+                        static if (hasSideEffects)
+                        {
+                            static if (effects2)
+                                mixin(sideEffectName ~ "(field, old);");
+                            else static if (effects1)
+                                mixin(sideEffectName ~ "(field);");
+                            else
+                                mixin(sideEffectName ~ "();");
+                        }
                 });
                 return;
             }
@@ -2867,9 +2869,16 @@ mixin template SupportCSS(BaseClass = Widget)
         if (current is value)
             return;
         // set it directly otherwise
-        alias val = value;
-        mixin(callSideEffects);
         field = value;
+        static if (hasSideEffects)
+        {
+            static if (effects2)
+                mixin(sideEffectName ~ "(value, current);");
+            else static if (effects1)
+                mixin(sideEffectName ~ "(value);");
+            else
+                mixin(sideEffectName ~ "();");
+        }
     }
 }
 

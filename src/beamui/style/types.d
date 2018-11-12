@@ -39,9 +39,9 @@ enum TextFlag : uint
     /// Text contains hot key prefixed with & char (e.g. "&File")
     hotkeys = 1,
     /// Underline hot key when drawing
-    underlineHotkeys = 2,
+    underlineHotkeys = hotkeys | 2,
     /// Underline hot key when Alt is pressed
-    underlineHotkeysOnAlt = 4,
+    underlineHotkeysOnAlt = hotkeys | 4,
     /// Underline text when drawing
     underline = 8,
     /// Strikethrough text when drawing
