@@ -2,7 +2,7 @@
     "name": "css",
     "description": "CSS sandbox example for beamui",
     "homepage": "https://github.com/dayllenger/beamui",
-    "license": "Boost",
+    "license": "BSL-1.0",
     "authors": ["dayllenger"],
 
     "targetName": "css",
@@ -15,7 +15,7 @@
 
     "configurations" : [
         {
-            "name" : "default",
+            "name" : "default"
         },
         {
             "name" : "sdl",

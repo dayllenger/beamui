@@ -2,7 +2,7 @@
     "name": "advanced",
     "description": "Advanced example for beamui",
     "homepage": "https://github.com/dayllenger/beamui",
-    "license": "Boost",
+    "license": "BSL-1.0",
     "authors": ["dayllenger", "Vadim Lopatin"],
 
     "targetName": "advanced",
@@ -19,7 +19,7 @@
 
     "configurations" : [
         {
-            "name" : "default",
+            "name" : "default"
         },
         {
             "name" : "console",

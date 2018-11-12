@@ -2,7 +2,7 @@
     "name": "opengl",
     "description": "OpenGL rendering example for beamui",
     "homepage": "https://github.com/dayllenger/beamui",
-    "license": "Boost",
+    "license": "BSL-1.0",
     "authors": ["dayllenger", "Vadim Lopatin"],
 
     "targetName": "opengl",
@@ -15,7 +15,7 @@
 
     "configurations" : [
         {
-            "name" : "default",
+            "name" : "default"
         },
         {
             "name" : "sdl",
