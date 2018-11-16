@@ -21,6 +21,7 @@ module beamui.widgets.menu;
 import beamui.widgets.controls;
 import beamui.widgets.lists;
 import beamui.widgets.popup;
+import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Widget that draws menu item

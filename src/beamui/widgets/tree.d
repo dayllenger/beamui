@@ -48,6 +48,7 @@ import beamui.widgets.layouts;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
 import beamui.widgets.scroll;
+import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Tree widget item data container

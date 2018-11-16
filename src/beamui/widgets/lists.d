@@ -18,6 +18,7 @@ import beamui.core.signals;
 import beamui.widgets.controls;
 import beamui.widgets.layouts;
 import beamui.widgets.scrollbar;
+import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Slot type for `adapterChanged`

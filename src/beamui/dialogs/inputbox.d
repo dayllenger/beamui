@@ -11,9 +11,9 @@ import beamui.core.i18n;
 import beamui.core.signals;
 import beamui.core.stdaction;
 import beamui.dialogs.dialog;
-import beamui.widgets.controls;
 import beamui.widgets.editors;
 import beamui.widgets.layouts;
+import beamui.widgets.text;
 import beamui.platforms.common.platform;
 
 /// Input box

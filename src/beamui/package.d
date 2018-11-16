@@ -68,6 +68,7 @@ public
     import beamui.widgets.srcedit;
     import beamui.widgets.statusline;
     import beamui.widgets.tabs;
+    import beamui.widgets.text;
     import beamui.widgets.toolbars;
     import beamui.widgets.tree;
     import beamui.widgets.widget;

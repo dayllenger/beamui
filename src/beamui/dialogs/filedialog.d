@@ -34,6 +34,7 @@ import beamui.widgets.layouts;
 import beamui.widgets.lists;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
+import beamui.widgets.text;
 import beamui.platforms.common.platform;
 
 /// Flags for file dialog options

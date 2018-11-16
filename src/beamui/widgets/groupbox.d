@@ -15,8 +15,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.groupbox;
 
-import beamui.widgets.controls;
 import beamui.widgets.layouts;
+import beamui.widgets.text;
 import beamui.widgets.widget;
 
 class GroupBox : LinearLayout

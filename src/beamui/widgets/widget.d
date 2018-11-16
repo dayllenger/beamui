@@ -1406,7 +1406,7 @@ public:
     Widget createTooltip(int mouseX, int mouseY, ref PopupAlign alignment, ref int x, ref int y)
     {
         // default implementation supports tooltips when tooltipText property is set
-        import beamui.widgets.controls;
+        import beamui.widgets.text;
 
         return _tooltipText ? new Label(_tooltipText).id("tooltip") : null;
     }

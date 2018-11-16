@@ -14,6 +14,7 @@ module beamui.widgets.winframe;
 
 import beamui.widgets.controls;
 import beamui.widgets.layouts;
+import beamui.widgets.text;
 
 /// Window frame with caption widget
 class WindowFrame : Column

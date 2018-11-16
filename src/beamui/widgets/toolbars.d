@@ -19,6 +19,7 @@ module beamui.widgets.toolbars;
 import beamui.widgets.combobox;
 import beamui.widgets.controls;
 import beamui.widgets.layouts;
+import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Button for toolbar

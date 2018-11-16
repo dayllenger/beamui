@@ -28,6 +28,7 @@ import beamui.widgets.editors;
 import beamui.widgets.layouts;
 import beamui.widgets.lists;
 import beamui.widgets.popup;
+import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Abstract ComboBox

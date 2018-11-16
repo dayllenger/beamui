@@ -31,8 +31,6 @@ extern (C) void registerStandardWidgets()
 
     import beamui.widgets.controls;
 
-    mixin(registerWidgetMetadataClass!Label);
-    mixin(registerWidgetMetadataClass!MultilineLabel);
     mixin(registerWidgetMetadataClass!Button);
     mixin(registerWidgetMetadataClass!SwitchButton);
     mixin(registerWidgetMetadataClass!RadioButton);
@@ -76,6 +74,12 @@ extern (C) void registerStandardWidgets()
 
     mixin(registerWidgetMetadataClass!Menu);
     mixin(registerWidgetMetadataClass!MenuBar);
+
+    import beamui.widgets.text;
+
+    mixin(registerWidgetMetadataClass!Label);
+    mixin(registerWidgetMetadataClass!MultilineLabel);
+    mixin(registerWidgetMetadataClass!MarkupLabel);
 
     import beamui.widgets.tree;
 

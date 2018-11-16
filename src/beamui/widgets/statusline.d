@@ -19,6 +19,7 @@ module beamui.widgets.statusline;
 import beamui.widgets.controls;
 import beamui.widgets.editors;
 import beamui.widgets.layouts;
+import beamui.widgets.text;
 
 class StatusLineTextPanel : Row
 {
