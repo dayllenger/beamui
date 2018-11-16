@@ -8,7 +8,9 @@ Label { align: left vcenter; padding: 2px 4px; }
 
 Label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
-MultilineLabel { padding: 1px; max-lines: 0; }
+MultilineLabel { align: left top; padding: 1px; }
+
+MultilineLabel:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 Button { align: center; padding: 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); text-flags: underline-hotkeys; focus-rect-color: #bbb; transition: border-color 75ms ease; }
 

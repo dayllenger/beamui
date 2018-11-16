@@ -274,8 +274,8 @@ extern (C) int UIAppMain(string[] args)
         line3.add(gbeditbox).fillWidth(true);
         GroupBox gbtabs = new GroupBox("TabWidget"d);
         auto tabs1 = new TabWidget;
-        tabs1.addTab(new Label("Label on tab page\nLabels can be\nMultiline"d).
-                maxLines(3).id("tab1"), "Tab 1"d);
+        tabs1.addTab(new MultilineLabel("Label on tab page\nLabels can be\nMultiline"d).id("tab1"),
+                "Tab 1"d);
         tabs1.addTab(new ImageWidget("beamui-logo").id("tab2"), "Tab 2"d);
         tabs1.tabHost.padding = 10;
         tabs1.tabHost.backgroundColor = 0xE0E0E0;

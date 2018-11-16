@@ -20,23 +20,6 @@ class Label : Widget
 {
     @property
     {
-        /// Max lines to show, 0 if no limit
-        int maxLines() const
-        {
-            updateStyles();
-            return _maxLines;
-        }
-        /// ditto
-        Label maxLines(int n)
-        {
-            setProperty!"_maxLines" = n;
-            return this;
-        }
-        private void maxLines_effect(int n)
-        {
-            heightDependsOnWidth = n != 1;
-        }
-
         /// Text alignment - start, center, end, or justify
         TextAlign textAlign() const
         {
@@ -66,56 +49,27 @@ class Label : Widget
     {
         dstring _text;
 
-        @forCSS("max-lines") int _maxLines = 1;
         @forCSS("text-align") TextAlign _textAlign = TextAlign.start;
 
-        immutable dstring minSizeTesterS = "aaaaa"; // TODO: test all this stuff
-        immutable dstring minSizeTesterM = "aaaaa\na";
-        immutable dstring natSizeTesterM =
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\na";
+        immutable dstring minSizeTester = "aaaaa"; // TODO: test all this stuff
     }
 
     this(dstring txt = null)
     {
         _text = txt;
-        heightDependsOnWidth = maxLines != 1;
     }
 
     mixin SupportCSS;
 
     override Size computeMinSize()
     {
-        FontRef f = font();
-        if (maxLines == 1)
-        {
-            dstring txt = text.length < minSizeTesterS.length * 2 ? text : minSizeTesterS;
-            return f.textSize(txt, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
-        }
-        else
-        {
-            dstring txt = text.length < minSizeTesterM.length ? text : minSizeTesterM;
-            return f.measureMultilineText(txt, maxLines, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
-        }
+        dstring txt = text.length < minSizeTester.length * 2 ? text : minSizeTester;
+        return font.textSize(txt, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
     }
 
     override Size computeNaturalSize()
     {
-        FontRef f = font();
-        if (maxLines == 1)
-            return f.textSize(text, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
-        else
-        {
-            dstring txt = text.length < natSizeTesterM.length ? text : natSizeTesterM;
-            return f.measureMultilineText(txt, maxLines, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
-        }
-    }
-
-    override int heightForWidth(int width)
-    {
-        Size p = padding.size;
-        int w = width - p.w;
-        FontRef f = font();
-        return f.measureMultilineText(text, maxLines, w, 4, 0, textFlags).h + p.h;
+        return font.textSize(text, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
     }
 
     override void onDraw(DrawBuf buf)
@@ -128,36 +82,103 @@ class Label : Widget
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
 
-        FontRef font = font();
-        if (maxLines == 1)
-        {
-            // until text align will be fully implemented
-            Align ha;
-            if (textAlign == TextAlign.center)
-                ha = Align.hcenter;
-            else if (textAlign == TextAlign.end)
-                ha = Align.right;
-            else
-                ha = Align.left;
-            Size sz = font.textSize(text);
-            applyAlign(b, sz, ha, Align.vcenter);
-            font.drawText(buf, b.x, b.y, text, textColor, 4, 0, textFlags);
-        }
+        FontRef f = font();
+        // until text align will be fully implemented
+        Align ha;
+        if (textAlign == TextAlign.center)
+            ha = Align.hcenter;
+        else if (textAlign == TextAlign.end)
+            ha = Align.right;
         else
-        {
-            SimpleTextFormatter fmt;
-            Size sz = fmt.format(text, font, maxLines, b.width, 4, 0, textFlags);
-            fmt.draw(buf, b.x, b.y, font, textColor, textAlign);
-        }
+            ha = Align.left;
+        Size sz = f.textSize(text);
+        applyAlign(b, sz, ha, Align.vcenter);
+        f.drawText(buf, b.x, b.y, text, textColor, 4, 0, textFlags);
     }
 }
 
 /// Multiline text widget
-class MultilineLabel : Label
+class MultilineLabel : Widget
 {
+    @property
+    {
+        /// Text alignment - start, center, end, or justify
+        TextAlign textAlign() const
+        {
+            updateStyles();
+            return _textAlign;
+        }
+        /// ditto
+        MultilineLabel textAlign(TextAlign a)
+        {
+            setProperty!"_textAlign" = a;
+            return this;
+        }
+        private alias textAlign_effect = invalidate;
+
+        /// Text to show
+        override dstring text() const { return _text; }
+        /// ditto
+        override MultilineLabel text(dstring s)
+        {
+            _text = s;
+            requestLayout();
+            return this;
+        }
+    }
+
+    private
+    {
+        dstring _text;
+
+        @forCSS("text-align") TextAlign _textAlign = TextAlign.start;
+
+        immutable dstring minSizeTester = "aaaaa\na";
+        immutable dstring natSizeTester =
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\na";
+    }
+
     this(dstring txt = null)
     {
-        super(txt);
+        _text = txt;
+        heightDependsOnWidth = true;
+    }
+
+    mixin SupportCSS;
+
+    override Size computeMinSize()
+    {
+        dstring txt = text.length < minSizeTester.length ? text : minSizeTester;
+        return font.measureMultilineText(txt, 0, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
+    }
+
+    override Size computeNaturalSize()
+    {
+        dstring txt = text.length < natSizeTester.length ? text : natSizeTester;
+        return font.measureMultilineText(txt, 0, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
+    }
+
+    override int heightForWidth(int width)
+    {
+        Size p = padding.size;
+        int w = width - p.w;
+        return font.measureMultilineText(text, 0, w, 4, 0, textFlags).h + p.h;
+    }
+
+    override void onDraw(DrawBuf buf)
+    {
+        if (visibility != Visibility.visible)
+            return;
+
+        super.onDraw(buf);
+        Box b = box;
+        applyPadding(b);
+        auto saver = ClipRectSaver(buf, b, alpha);
+
+        FontRef f = font();
+        SimpleTextFormatter fmt;
+        Size sz = fmt.format(text, f, 0, b.width, 4, 0, textFlags);
+        fmt.draw(buf, b.x, b.y, f, textColor, textAlign);
     }
 }
 

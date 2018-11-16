@@ -40,8 +40,12 @@ Label {
 }
 
 MultilineLabel {
+    align: left top;
     padding: 1px;
-    max-lines: 0;
+
+    &:not(enabled) {
+        color: $disabled-text-color;
+    }
 }
 
 Button {
