@@ -35,11 +35,11 @@ class Label : Widget
         private alias textAlign_effect = invalidate;
 
         /// Text to show
-        override dstring text() const { return _text; }
+        override dstring text() const { return textobj.text; }
         /// ditto
         override Label text(dstring s)
         {
-            _text = s;
+            textobj.text = s;
             requestLayout();
             return this;
         }
@@ -47,7 +47,7 @@ class Label : Widget
 
     private
     {
-        dstring _text;
+        SingleLineText textobj;
 
         @forCSS("text-align") TextAlign _textAlign = TextAlign.start;
 
@@ -56,10 +56,15 @@ class Label : Widget
 
     this(dstring txt = null)
     {
-        _text = txt;
+        textobj.text = txt;
     }
 
     mixin SupportCSS;
+
+    override protected void handleFontChanged()
+    {
+        textobj.font = font;
+    }
 
     override Size computeMinSize()
     {
@@ -69,7 +74,8 @@ class Label : Widget
 
     override Size computeNaturalSize()
     {
-        return font.textSize(text, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
+        textobj.measure(textFlags);
+        return textobj.size;
     }
 
     override void onDraw(DrawBuf buf)
@@ -82,18 +88,10 @@ class Label : Widget
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
 
-        FontRef f = font();
-        // until text align will be fully implemented
-        Align ha;
-        if (textAlign == TextAlign.center)
-            ha = Align.hcenter;
-        else if (textAlign == TextAlign.end)
-            ha = Align.right;
-        else
-            ha = Align.left;
-        Size sz = f.textSize(text);
-        applyAlign(b, sz, ha, Align.vcenter);
-        f.drawText(buf, b.x, b.y, text, textColor, 4, 0, textFlags);
+        // align vertically to center
+        Size sz = Size(b.w, textobj.size.h);
+        applyAlign(b, sz, Align.unspecified, Align.vcenter);
+        textobj.draw(buf, b.pos, b.w, textColor, textAlign, textFlags);
     }
 }
 
@@ -117,11 +115,11 @@ class MultilineLabel : Widget
         private alias textAlign_effect = invalidate;
 
         /// Text to show
-        override dstring text() const { return _text; }
+        override dstring text() const { return textobj.text; }
         /// ditto
         override MultilineLabel text(dstring s)
         {
-            _text = s;
+            textobj.text = s;
             requestLayout();
             return this;
         }
@@ -129,7 +127,7 @@ class MultilineLabel : Widget
 
     private
     {
-        dstring _text;
+        PlainText textobj;
 
         @forCSS("text-align") TextAlign _textAlign = TextAlign.start;
 
@@ -140,11 +138,16 @@ class MultilineLabel : Widget
 
     this(dstring txt = null)
     {
-        _text = txt;
+        textobj.text = txt;
         heightDependsOnWidth = true;
     }
 
     mixin SupportCSS;
+
+    override protected void handleFontChanged()
+    {
+        textobj.font = font;
+    }
 
     override Size computeMinSize()
     {
@@ -154,15 +157,19 @@ class MultilineLabel : Widget
 
     override Size computeNaturalSize()
     {
-        dstring txt = text.length < natSizeTester.length ? text : natSizeTester;
-        return font.measureMultilineText(txt, 0, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
+        textobj.measure(textFlags);
+        if (text.length < natSizeTester.length)
+            return textobj.size;
+        else
+            return font.measureMultilineText(natSizeTester, 0, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
     }
 
     override int heightForWidth(int width)
     {
         Size p = padding.size;
         int w = width - p.w;
-        return font.measureMultilineText(text, 0, w, 4, 0, textFlags).h + p.h;
+        textobj.wrapLines(w);
+        return textobj.size.h + p.h;
     }
 
     override void onDraw(DrawBuf buf)
@@ -175,10 +182,7 @@ class MultilineLabel : Widget
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
 
-        FontRef f = font();
-        SimpleTextFormatter fmt;
-        Size sz = fmt.format(text, f, 0, b.width, 4, 0, textFlags);
-        fmt.draw(buf, b.x, b.y, f, textColor, textAlign);
+        textobj.draw(buf, b.pos, b.w, textColor, textAlign, textFlags);
     }
 }
 
