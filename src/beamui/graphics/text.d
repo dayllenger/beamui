@@ -63,16 +63,16 @@ struct TextLine
         const bool hotkeys = (style.flags & TextFlag.hotkeys) != 0;
 
         const size_t len = data.length;
-        charWidths.length = len;
-        glyphs.length = len;
-        auto pstr = data.ptr;
+        if (charWidths.length < len || charWidths.length >= len * 5)
+            charWidths.length = len;
+        if (glyphs.length < len || glyphs.length >= len * 5)
+            glyphs.length = len;
         auto pwidths = charWidths.ptr;
         auto pglyphs = glyphs.ptr;
         int x;
         dchar prevChar = 0;
-        foreach (i; 0 .. len)
+        foreach (i, ch; data)
         {
-            const dchar ch = pstr[i];
             if (ch == '\t')
             {
                 // calculate tab stop
@@ -119,6 +119,87 @@ struct TextLine
         size.h = font.height;
     }
 
+    /// Split line by width
+    TextLine[] wrap(int width)
+    {
+        if (width <= 0)
+            return null;
+
+        import std.ascii : isWhite;
+
+        TextLine[] result;
+        const size_t len = data.length;
+        const pstr = data.ptr;
+        const pwidths = charWidths.ptr;
+        size_t lineStart;
+        size_t lastWordEnd;
+        int lastWordEndX;
+        int lineWidth;
+        bool whitespace;
+        for (size_t i; i < len; i++)
+        {
+            const dchar ch = pstr[i];
+            // split by whitespace characters
+            if (isWhite(ch))
+            {
+                // track last word end
+                if (!whitespace)
+                {
+                    lastWordEnd = i;
+                    lastWordEndX = lineWidth;
+                }
+                whitespace = true;
+                // skip this char
+                lineWidth += pwidths[i];
+                continue;
+            }
+            whitespace = false;
+            lineWidth += pwidths[i];
+            if (i > lineStart && lineWidth > width)
+            {
+                // need splitting
+                size_t lineEnd = i;
+                if (lastWordEnd > lineStart && lastWordEndX >= width / 3)
+                {
+                    // split on word bound
+                    lineEnd = lastWordEnd;
+                    lineWidth = lastWordEndX;
+                }
+                // add line
+                TextLine line;
+                line.data = data[lineStart .. lineEnd];
+                line.glyphs = glyphs[lineStart .. lineEnd];
+                line.charWidths = charWidths[lineStart .. lineEnd];
+                line.size = Size(lineWidth, size.h);
+                result ~= line;
+
+                // find next line start
+                lineStart = lineEnd;
+                while (lineStart < len && isWhite(pstr[lineStart]))
+                    lineStart++;
+                if (lineStart == len)
+                    break;
+
+                i = lineStart - 1;
+                lastWordEnd = 0;
+                lastWordEndX = 0;
+                lineWidth = 0;
+            }
+        }
+        if (lineStart == 0)
+            result = (&this)[0 .. 1];
+        else if (lineStart < len)
+        {
+            TextLine line;
+            line.data = data[lineStart .. $];
+            line.glyphs = glyphs[lineStart .. $];
+            line.charWidths = charWidths[lineStart .. $];
+            line.size = Size(lineWidth, size.h);
+            result ~= line;
+        }
+        return result;
+    }
+
     /// Draw measured line at the position
     void draw(DrawBuf buf, Point pos, const ref TextStyle style)
     {
@@ -137,13 +218,11 @@ struct TextLine
         const int underlineY = pos.y + baseline + underlineHeight * 2;
 
         const size_t len = data.length;
-        auto pstr = data.ptr;
-        auto pwidths = charWidths.ptr;
+        const pwidths = charWidths.ptr;
         auto pglyphs = glyphs.ptr;
         int pen = pos.x;
-        foreach (i; 0 .. len)
+        foreach (i, ch; data)
         {
-            const dchar ch = pstr[i];
             if (hotkeys && ch == '&')
             {
                 if ((style.flags & TextFlag.underlineHotkeys) == TextFlag.underlineHotkeys)
@@ -195,7 +274,10 @@ struct SingleLineText
     @property
     {
         /// Text line data
-        dstring text() const { return line.data; }
+        dstring text() const
+        {
+            return line.data;
+        }
         /// ditto
         void text(dstring s)
         {
@@ -204,7 +286,10 @@ struct SingleLineText
         }
 
         /// Text line font
-        Font font() { return style.font; }
+        Font font()
+        {
+            return style.font;
+        }
         /// ditto
         void font(Font f)
         {
@@ -213,7 +298,10 @@ struct SingleLineText
         }
 
         /// Size of the tab character in spaces
-        int tabSize() const { return style.tabSize; }
+        int tabSize() const
+        {
+            return style.tabSize;
+        }
         /// ditto
         void tabSize(int v)
         {
@@ -229,7 +317,10 @@ struct SingleLineText
         }
 
         /// Size of the text. Available only after `measure()` call
-        Size size() const { return line.size; }
+        Size size() const
+        {
+            return line.size;
+        }
     }
 
     private
@@ -282,17 +373,31 @@ struct PlainText
     @property
     {
         /// Text data
-        dstring text() const { return lines[0].data; }
+        dstring text() const { return original; }
         /// ditto
         void text(dstring s)
         {
-            lines.length = 1;
-            lines[0].data = s;
+            original = s;
+            lines.length = 0;
+            // split by EOL char
+            int lineStart;
+            foreach (int i, ch; s)
+            {
+                if (ch == '\n')
+                {
+                    lines ~= TextLine(s[lineStart .. i]);
+                    lineStart = i + 1;
+                }
+            }
+            lines ~= TextLine(s[lineStart .. $]);
             measured = false;
         }
 
         /// Text font
-        Font font() { return style.font; }
+        Font font()
+        {
+            return style.font;
+        }
         /// ditto
         void font(Font f)
         {
@@ -301,7 +406,10 @@ struct PlainText
         }
 
         /// Size of the tab character in spaces
-        int tabSize() const { return style.tabSize; }
+        int tabSize() const
+        {
+            return style.tabSize;
+        }
         /// ditto
         void tabSize(int v)
         {
@@ -317,14 +425,19 @@ struct PlainText
         }
 
         /// Size of the text. Available only after `measure()` call
-        Size size() const { return lines[0].size; }
+        Size size() const
+        {
+            return _size;
+        }
     }
 
     private
     {
+        dstring original;
         TextLine[] lines;
         TextLine[] wrappedLines;
         TextStyle style;
+        Size _size;
         bool measured;
     }
 
@@ -338,12 +451,31 @@ struct PlainText
         {
             line.measure(style);
         }
+        foreach (ref line; lines)
+        {
+            _size.w = max(_size.w, line.size.w);
+            _size.h += line.size.h;
+        }
         measured = true;
     }
 
     void wrapLines(int width)
     {
-        wrappedLines = lines;
+        if (!measured)
+        {
+            Log.e("not measured: ", text);
+            return;
+        }
+        wrappedLines.length = 0;
+        foreach (ref line; lines)
+        {
+            wrappedLines ~= line.wrap(width);
+        }
+        foreach (ref line; wrappedLines)
+        {
+            _size.w = max(_size.w, line.size.w);
+            _size.h += line.size.h;
+        }
     }
 
     /// Draw text into buffer, applying alignment
