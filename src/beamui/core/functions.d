@@ -1,9 +1,7 @@
 /**
 This module declares and imports various utility and sugar functions.
 
-Sugar templates are very efficient, don't worry about perfomance.
-
-You can propose better names for these entities.
+Sugar templates are very efficient, don't worry about performance.
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
@@ -367,4 +365,24 @@ unittest
 {
     TypeInfo_Class t = typeid(Exception);
     assert(getShortClassName(t) == "Exception");
+}
+
+/// Move index into [first, last] range in a cyclic manner
+int wrapAround(int index, int first, int last) pure nothrow @nogc
+{
+    assert(first <= last, "First must be less or equal than last");
+    const diff = last - first + 1;
+    return first + (index % diff + diff) % diff;
+}
+
+///
+unittest
+{
+    assert(wrapAround(10, 0, 9) == 0);
+    assert(wrapAround(12, 0, 9) == 2);
+    assert(wrapAround(25, 0, 9) == 5);
+    assert(wrapAround(-2, 0, 9) == 8);
+    assert(wrapAround(-15, 0, 9) == 5);
+    assert(wrapAround(0, 0, 9) == 0);
+    assert(wrapAround(9, 0, 9) == 9);
 }

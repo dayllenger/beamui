@@ -806,26 +806,17 @@ class ListWidget : WidgetGroup
             return false;
         int maxAttempts = itemCount - 1;
         int index = _selectedItemIndex;
+        if (index < 0)
+        {
+            // no previous selection
+            if (direction > 0)
+                index = -1;
+            else
+                index = wrapAround ? 0 : itemCount - 1;
+        }
         foreach (i; 0 .. maxAttempts)
         {
-            int newIndex = 0;
-            if (index < 0)
-            {
-                // no previous selection
-                if (direction > 0)
-                    newIndex = wrapAround ? 0 : itemCount - 1;
-                else
-                    newIndex = wrapAround ? itemCount - 1 : 0;
-            }
-            else
-            {
-                // step
-                newIndex = index + direction;
-            }
-            if (newIndex < 0)
-                newIndex = wrapAround ? itemCount - 1 : 0;
-            else if (newIndex >= itemCount)
-                newIndex = wrapAround ? 0 : itemCount - 1;
+            int newIndex = .wrapAround(index + direction, 0, itemCount - 1);
             if (newIndex != index)
             {
                 if (selectItem(newIndex))
@@ -850,11 +841,8 @@ class ListWidget : WidgetGroup
         {
             if (selectItem(index))
                 return true;
-            index += disabledItemsSkipDirection > 0 ? 1 : -1;
-            if (index < 0)
-                index = itemCount - 1;
-            if (index >= itemCount)
-                index = 0;
+            int movement = disabledItemsSkipDirection > 0 ? 1 : -1;
+            index = wrapAround(index + movement, 0, itemCount - 1);
         }
         return false;
     }

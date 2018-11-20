@@ -282,16 +282,13 @@ class TabControl : WidgetGroup
         if (tabCount == 1)
             return 0;
         auto items = sortedItems();
-        foreach (i; 0 .. items.length)
+        int len = cast(int)items.length;
+        foreach (i; 0 .. len)
         {
             if (child(items[i][0]).id == _selectedTabID)
             {
-                size_t next = i + direction;
-                if (next < 0)
-                    next = items.length - 1;
-                if (next >= items.length)
-                    next = 0;
-                return items[next][0] - 1;
+                int index = wrapAround(i + direction, 0, len - 1);
+                return items[index][0] - 1;
             }
         }
         return -1;
@@ -426,11 +423,7 @@ class TabControl : WidgetGroup
         if (event.action == MouseAction.wheel)
         {
             // select next or previous tab
-            int next = tabIndex(_selectedTabID) - event.wheelDelta;
-            if (next < 0)
-                next = tabCount - 1;
-            if (next >= tabCount)
-                next = 0;
+            int next = wrapAround(tabIndex(_selectedTabID) - event.wheelDelta, 0, tabCount - 1);
             selectTab(next, true);
         }
         return true;
