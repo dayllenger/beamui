@@ -7,7 +7,8 @@ Authors:   dayllenger
 */
 module beamui.graphics.text;
 
-import beamui.core.functions : max;
+import std.array : Appender;
+import beamui.core.functions : clamp, max;
 import beamui.core.logger;
 import beamui.core.types : Point, Size;
 import beamui.graphics.colors : Color;
@@ -18,16 +19,77 @@ import beamui.style.types : TextFlag;
 /// Holds text properties - font style, colors, and so on
 struct TextStyle
 {
-    /// Contains size, style, weight properties
-    Font font;
-    /// Text color
-    Color color;
-    /// Text background color
-    Color backgroundColor;
-    /// Flags like underline
-    TextFlag flags;
-    /// Size of the tab character in number of spaces
-    int tabSize = 4;
+    @property
+    {
+        /// Font that also contains size, style, weight properties
+        Font font() { return _font; }
+        /// ditto
+        void font(Font value)
+        {
+            if (_font !is value)
+            {
+                _font = value;
+                _needToMeasure = true;
+            }
+        }
+        /// Text color
+        Color color() const { return _color; }
+        /// ditto
+        void color(Color value)
+        {
+            _color = value;
+        }
+        /// Text background color
+        Color backgroundColor() const { return _backgroundColor; }
+        /// ditto
+        void backgroundColor(Color value)
+        {
+            _backgroundColor = value;
+        }
+        /// Flags like underline
+        TextFlag flags() const { return _flags; }
+        /// ditto
+        void flags(TextFlag value)
+        {
+            if (_flags != value)
+            {
+                _needToMeasure = !!(_flags & TextFlag.hotkeys) != !!(value & TextFlag.hotkeys);
+                _flags = value;
+            }
+        }
+        /// Size of the tab character in number of spaces
+        int tabSize() const { return _tabSize; }
+        /// ditto
+        void tabSize(int value)
+        {
+            value = clamp(value, 1, 16);
+            if (_tabSize != value)
+            {
+                _tabSize = value;
+                _needToMeasure = true;
+            }
+        }
+
+        /// Returns true whether properties which affect measurement were modified
+        bool needToMeasure() const { return _needToMeasure; }
+    }
+
+    private
+    {
+        Font _font;
+        Color _color;
+        Color _backgroundColor;
+        TextFlag _flags;
+        int _tabSize = 4;
+
+        bool _needToMeasure = true;
+    }
+
+    /// Tell style that text measurement is done
+    void measured()
+    {
+        _needToMeasure = false;
+    }
 }
 
 /// Text style applied to a part of text line
@@ -42,11 +104,54 @@ struct MarkupUnit
 /// Text string line
 struct TextLine
 {
-    dstring data;
-    // measure data
-    Glyph*[] glyphs;
-    ushort[] charWidths;
-    Size size;
+    @property
+    {
+        /// Text data
+        dstring str() const { return _str; }
+        /// ditto
+        void str(dstring s)
+        {
+            _str = s;
+            _needToMeasure = true;
+        }
+
+        /// Number of characters in the line
+        size_t length() const
+        {
+            return _str.length;
+        }
+
+        /// Glyphs array, available after measuring
+        const(Glyph*[]) glyphs() const
+        {
+            return !_needToMeasure ? _glyphs[0 .. _str.length] : null;
+        }
+        /// Measured character widths
+        const(ushort[]) charWidths() const
+        {
+            return !_needToMeasure ? _charWidths[0 .. _str.length] : null;
+        }
+        /// Measured text line size
+        Size size() const { return _size; }
+
+        /// Returns true whether text is modified and needs to be measured again
+        bool needToMeasure() const { return _needToMeasure; }
+    }
+
+    private
+    {
+        dstring _str;
+        Glyph*[] _glyphs;
+        ushort[] _charWidths;
+        Size _size;
+
+        bool _needToMeasure = true;
+    }
+
+    this(dstring text)
+    {
+        _str = text;
+    }
 
     /**
     Measure text string to calculate char sizes and total text size.
@@ -55,23 +160,23 @@ struct TextLine
     */
     void measure(const ref TextStyle style)
     {
-        Font font = cast(Font)style.font;
+        Font font = (cast(TextStyle)style).font;
         const bool fixed = font.isFixed;
         const ushort fixedCharWidth = cast(ushort)font.charWidth('M');
         const int spaceWidth = fixed ? fixedCharWidth : font.spaceWidth;
         const bool useKerning = !fixed && font.allowKerning;
         const bool hotkeys = (style.flags & TextFlag.hotkeys) != 0;
 
-        const size_t len = data.length;
-        if (charWidths.length < len || charWidths.length >= len * 5)
-            charWidths.length = len;
-        if (glyphs.length < len || glyphs.length >= len * 5)
-            glyphs.length = len;
-        auto pwidths = charWidths.ptr;
-        auto pglyphs = glyphs.ptr;
+        const size_t len = _str.length;
+        if (_charWidths.length < len || _charWidths.length >= len * 5)
+            _charWidths.length = len;
+        if (_glyphs.length < len || _glyphs.length >= len * 5)
+            _glyphs.length = len;
+        auto pwidths = _charWidths.ptr;
+        auto pglyphs = _glyphs.ptr;
         int x;
         dchar prevChar = 0;
-        foreach (i, ch; data)
+        foreach (i, ch; _str)
         {
             if (ch == '\t')
             {
@@ -115,8 +220,9 @@ struct TextLine
             }
             prevChar = ch;
         }
-        size.w = x;
-        size.h = font.height;
+        _size.w = x;
+        _size.h = font.height;
+        _needToMeasure = false;
     }
 
     /// Split line by width
@@ -128,9 +234,9 @@ struct TextLine
         import std.ascii : isWhite;
 
         TextLine[] result;
-        const size_t len = data.length;
-        const pstr = data.ptr;
-        const pwidths = charWidths.ptr;
+        const size_t len = _str.length;
+        const pstr = _str.ptr;
+        const pwidths = _charWidths.ptr;
         size_t lineStart;
         size_t lastWordEnd;
         int lastWordEndX;
@@ -167,10 +273,10 @@ struct TextLine
                 }
                 // add line
                 TextLine line;
-                line.data = data[lineStart .. lineEnd];
-                line.glyphs = glyphs[lineStart .. lineEnd];
-                line.charWidths = charWidths[lineStart .. lineEnd];
-                line.size = Size(lineWidth, size.h);
+                line._str = _str[lineStart .. lineEnd];
+                line._glyphs = _glyphs[lineStart .. lineEnd];
+                line._charWidths = _charWidths[lineStart .. lineEnd];
+                line._size = Size(lineWidth, _size.h);
                 result ~= line;
 
                 // find next line start
@@ -187,14 +293,18 @@ struct TextLine
             }
         }
         if (lineStart == 0)
+        {
+            // line is completely within bounds
             result = (&this)[0 .. 1];
+        }
         else if (lineStart < len)
         {
+            // append the last line
             TextLine line;
-            line.data = data[lineStart .. $];
-            line.glyphs = glyphs[lineStart .. $];
-            line.charWidths = charWidths[lineStart .. $];
-            line.size = Size(lineWidth, size.h);
+            line._str = _str[lineStart .. $];
+            line._glyphs = _glyphs[lineStart .. $];
+            line._charWidths = _charWidths[lineStart .. $];
+            line._size = Size(lineWidth, _size.h);
             result ~= line;
         }
         return result;
@@ -203,7 +313,7 @@ struct TextLine
     /// Draw measured line at the position
     void draw(DrawBuf buf, Point pos, const ref TextStyle style)
     {
-        Font font = cast(Font)style.font;
+        Font font = (cast(TextStyle)style).font;
         // check visibility
         const Rect clip = buf.clipRect;
         if (clip.empty)
@@ -217,11 +327,11 @@ struct TextLine
         const int underlineHeight = 1;
         const int underlineY = pos.y + baseline + underlineHeight * 2;
 
-        const size_t len = data.length;
-        const pwidths = charWidths.ptr;
-        auto pglyphs = glyphs.ptr;
+        const size_t len = _str.length;
+        const pwidths = _charWidths.ptr;
+        auto pglyphs = _glyphs.ptr;
         int pen = pos.x;
-        foreach (i, ch; data)
+        foreach (i, ch; _str)
         {
             if (hotkeys && ch == '&')
             {
@@ -273,86 +383,60 @@ struct SingleLineText
 {
     @property
     {
-        /// Text line data
-        dstring text() const
+        /// Original text data
+        dstring str() const
         {
-            return line.data;
+            return _line.str;
         }
         /// ditto
-        void text(dstring s)
+        void str(dstring s)
         {
-            line.data = s;
-            measured = false;
+            _line.str = s;
         }
 
-        /// Text line font
-        Font font()
-        {
-            return style.font;
-        }
-        /// ditto
-        void font(Font f)
-        {
-            style.font = f;
-            measured = false;
-        }
-
-        /// Size of the tab character in spaces
-        int tabSize() const
-        {
-            return style.tabSize;
-        }
-        /// ditto
-        void tabSize(int v)
-        {
-            assert(1 <= v && v <= 16);
-            style.tabSize = v;
-            measured = false;
-        }
+        /// Get text style to adjust properties
+        ref TextStyle style() { return _style; }
 
         /// True whether there is no text
         bool empty() const
         {
-            return line.data.length == 0;
+            return _line.length == 0;
         }
 
-        /// Size of the text. Available only after `measure()` call
-        Size size() const
+        /// Size of the text. Measures again, if needed
+        Size size()
         {
-            return line.size;
+            if (needToMeasure)
+                measure();
+            return _line.size;
+        }
+
+        private bool needToMeasure() const
+        {
+            return _line.needToMeasure || _style.needToMeasure;
         }
     }
 
     private
     {
-        TextLine line;
-        TextStyle style;
-        bool measured;
+        TextLine _line;
+        TextStyle _style;
     }
 
     /// Measure single-line text on layout
-    void measure(TextFlag textFlags = TextFlag.unspecified)
+    void measure()
     {
-        if (empty)
-            return;
-        style.flags = textFlags;
-        line.measure(style);
-        measured = true;
+        _line.measure(_style);
+        _style.measured();
     }
 
-    /// Draw text into buffer, applying alignment
-    void draw(DrawBuf buf, Point pos, int boxWidth, Color color, TextAlign alignment = TextAlign.start,
-            TextFlag textFlags = TextFlag.unspecified)
+    /// Draw text into buffer, applying alignment. Measures, if needed
+    void draw(DrawBuf buf, Point pos, int boxWidth, TextAlign alignment = TextAlign.start)
     {
-        if (!measured)
-        {
-            Log.e("not measured: ", text);
-            return;
-        }
-        style.color = color;
-        style.flags = textFlags;
+        if (needToMeasure)
+            measure();
         // align
-        const int lineWidth = line.size.w;
+        const int lineWidth = _line.size.w;
         if (alignment == TextAlign.center)
         {
             pos.x += (boxWidth - lineWidth) / 2;
@@ -362,7 +446,7 @@ struct SingleLineText
             pos.x += boxWidth - lineWidth;
         }
         // draw
-        line.draw(buf, pos, style);
+        _line.draw(buf, pos, _style);
     }
 }
 
@@ -372,126 +456,126 @@ struct PlainText
 {
     @property
     {
-        /// Text data
-        dstring text() const { return original; }
+        /// Original text data
+        dstring str() const { return original; }
         /// ditto
-        void text(dstring s)
+        void str(dstring s)
         {
             original = s;
-            lines.length = 0;
+            _lines.clear();
+            _wrappedLines.clear();
             // split by EOL char
             int lineStart;
             foreach (int i, ch; s)
             {
                 if (ch == '\n')
                 {
-                    lines ~= TextLine(s[lineStart .. i]);
+                    _lines.put(TextLine(s[lineStart .. i]));
                     lineStart = i + 1;
                 }
             }
-            lines ~= TextLine(s[lineStart .. $]);
-            measured = false;
+            _lines.put(TextLine(s[lineStart .. $]));
         }
 
-        /// Text font
-        Font font()
-        {
-            return style.font;
-        }
-        /// ditto
-        void font(Font f)
-        {
-            style.font = f;
-            measured = false;
-        }
+        const(TextLine[]) lines() const { return _lines.data; }
 
-        /// Size of the tab character in spaces
-        int tabSize() const
-        {
-            return style.tabSize;
-        }
-        /// ditto
-        void tabSize(int v)
-        {
-            assert(1 <= v && v <= 16);
-            style.tabSize = v;
-            measured = false;
-        }
+        /// Get text style to adjust properties
+        ref TextStyle style() { return _style; }
 
         /// True whether there is no text
         bool empty() const
         {
-            return lines.length == 0;
+            return _lines.data.length == 0;
         }
 
-        /// Size of the text. Available only after `measure()` call
-        Size size() const
+        /// Size of the text. Measures again, if needed
+        Size size()
         {
+            if (needToMeasure)
+                measure();
             return _size;
+        }
+
+        private bool needToMeasure() const
+        {
+            if (_style.needToMeasure)
+                return true;
+            else
+            {
+                foreach (ref line; _lines.data)
+                    if (line.needToMeasure)
+                        return true;
+                return false;
+            }
+        }
+
+        private bool needRewrap(int width) const
+        {
+            return width != previousWrapWidth || _wrappedLines.data.length == 0;
         }
     }
 
     private
     {
         dstring original;
-        TextLine[] lines;
-        TextLine[] wrappedLines;
-        TextStyle style;
+        Appender!(TextLine[]) _lines;
+        Appender!(TextLine[]) _wrappedLines;
+        TextStyle _style;
         Size _size;
-        bool measured;
+
+        int previousWrapWidth = -1;
     }
 
     /// Measure multiline text on layout
-    void measure(TextFlag textFlags = TextFlag.unspecified)
+    void measure()
     {
-        if (empty)
-            return;
-        style.flags = textFlags;
-        foreach (ref line; lines)
+        bool force = _style.needToMeasure;
+        Size sz;
+        foreach (ref line; _lines.data)
         {
-            line.measure(style);
+            if (force || line.needToMeasure)
+                line.measure(_style);
+            sz.w = max(sz.w, line.size.w);
+            sz.h += line.size.h;
         }
-        foreach (ref line; lines)
-        {
-            _size.w = max(_size.w, line.size.w);
-            _size.h += line.size.h;
-        }
-        measured = true;
+        _size = sz;
+        _style.measured();
+        _wrappedLines.clear();
     }
 
+    /// Wrap lines within a width. Measures, if needed
     void wrapLines(int width)
     {
-        if (!measured)
-        {
-            Log.e("not measured: ", text);
+        if (needToMeasure)
+            measure();
+        if (!needRewrap(width))
             return;
-        }
-        wrappedLines.length = 0;
-        foreach (ref line; lines)
+
+        Size sz;
+        _wrappedLines.clear();
+        foreach (ref line; _lines.data)
         {
-            wrappedLines ~= line.wrap(width);
+            TextLine[] ls = line.wrap(width);
+            foreach (ref l; ls)
+            {
+                sz.w = max(sz.w, l.size.w);
+                sz.h += l.size.h;
+            }
+            _wrappedLines.put(ls);
         }
-        foreach (ref line; wrappedLines)
-        {
-            _size.w = max(_size.w, line.size.w);
-            _size.h += line.size.h;
-        }
+        _size = sz;
+        previousWrapWidth = width;
     }
 
-    /// Draw text into buffer, applying alignment
-    void draw(DrawBuf buf, Point pos, int boxWidth, Color color, TextAlign alignment = TextAlign.start,
-            TextFlag textFlags = TextFlag.unspecified)
+    /// Draw text into buffer, applying alignment. Measures, if needed
+    void draw(DrawBuf buf, Point pos, int boxWidth, TextAlign alignment = TextAlign.start)
     {
-        if (!measured)
-        {
-            Log.e("not measured: ", text);
-            return;
-        }
-        style.color = color;
-        style.flags = textFlags;
-        const int lineHeight = style.font.height;
+        if (needToMeasure)
+            measure();
+
+        const int lineHeight = _style.font.height;
         int y = pos.y;
-        auto lns = wrappedLines.length >= lines.length ? wrappedLines : lines;
+        auto lns = _wrappedLines.data.length > _lines.data.length ? _wrappedLines.data : _lines.data;
         foreach (ref line; lns)
         {
             int x = pos.x;
@@ -506,7 +590,7 @@ struct PlainText
                 x += boxWidth - lineWidth;
             }
             // draw
-            line.draw(buf, Point(x, y), style);
+            line.draw(buf, Point(x, y), _style);
             y += lineHeight;
         }
     }

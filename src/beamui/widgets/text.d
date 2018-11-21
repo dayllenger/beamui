@@ -35,11 +35,11 @@ class Label : Widget
         private alias textAlign_effect = invalidate;
 
         /// Text to show
-        override dstring text() const { return textobj.text; }
+        override dstring text() const { return textobj.str; }
         /// ditto
         override Label text(dstring s)
         {
-            textobj.text = s;
+            textobj.str = s;
             requestLayout();
             return this;
         }
@@ -48,33 +48,39 @@ class Label : Widget
     private
     {
         SingleLineText textobj;
+        SingleLineText minSizeTester;
 
         @forCSS("text-align") TextAlign _textAlign = TextAlign.start;
-
-        immutable dstring minSizeTester = "aaaaa"; // TODO: test all this stuff
     }
 
     this(dstring txt = null)
     {
-        textobj.text = txt;
+        textobj.str = txt;
+        minSizeTester.str = "aaaaa"; // TODO: test all this stuff
+        handleFontChanged();
     }
 
     mixin SupportCSS;
 
     override protected void handleFontChanged()
     {
-        textobj.font = font;
+        Font fnt = font.get;
+        textobj.style.font = fnt;
+        minSizeTester.style.font = fnt;
     }
 
     override Size computeMinSize()
     {
-        dstring txt = text.length < minSizeTester.length * 2 ? text : minSizeTester;
-        return font.textSize(txt, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
+        textobj.style.flags = textFlags;
+        minSizeTester.style.flags = textFlags;
+        if (textobj.str.length < minSizeTester.str.length * 2)
+            return textobj.size;
+        else
+            return minSizeTester.size;
     }
 
     override Size computeNaturalSize()
     {
-        textobj.measure(textFlags);
         return textobj.size;
     }
 
@@ -88,10 +94,12 @@ class Label : Widget
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
 
+        textobj.style.color = textColor;
+        textobj.style.flags = textFlags;
         // align vertically to center
         Size sz = Size(b.w, textobj.size.h);
         applyAlign(b, sz, Align.unspecified, Align.vcenter);
-        textobj.draw(buf, b.pos, b.w, textColor, textAlign, textFlags);
+        textobj.draw(buf, b.pos, b.w, textAlign);
     }
 }
 
@@ -115,11 +123,11 @@ class MultilineLabel : Widget
         private alias textAlign_effect = invalidate;
 
         /// Text to show
-        override dstring text() const { return textobj.text; }
+        override dstring text() const { return textobj.str; }
         /// ditto
         override MultilineLabel text(dstring s)
         {
-            textobj.text = s;
+            textobj.str = s;
             requestLayout();
             return this;
         }
@@ -128,40 +136,49 @@ class MultilineLabel : Widget
     private
     {
         PlainText textobj;
+        PlainText minSizeTester;
+        PlainText natSizeTester;
 
         @forCSS("text-align") TextAlign _textAlign = TextAlign.start;
-
-        immutable dstring minSizeTester = "aaaaa\na";
-        immutable dstring natSizeTester =
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\na";
     }
 
     this(dstring txt = null)
     {
-        textobj.text = txt;
+        textobj.str = txt;
+        minSizeTester.str = "aaaaa\na";
+        natSizeTester.str =
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\na";
         heightDependsOnWidth = true;
+        handleFontChanged();
     }
 
     mixin SupportCSS;
 
     override protected void handleFontChanged()
     {
-        textobj.font = font;
+        Font fnt = font.get;
+        textobj.style.font = fnt;
+        minSizeTester.style.font = fnt;
+        natSizeTester.style.font = fnt;
     }
 
     override Size computeMinSize()
     {
-        dstring txt = text.length < minSizeTester.length ? text : minSizeTester;
-        return font.measureMultilineText(txt, 0, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
+        textobj.style.flags = textFlags;
+        minSizeTester.style.flags = textFlags;
+        if (textobj.lines[0].length < minSizeTester.lines[0].length)
+            return textobj.size;
+        else
+            return minSizeTester.size;
     }
 
     override Size computeNaturalSize()
     {
-        textobj.measure(textFlags);
-        if (text.length < natSizeTester.length)
+        natSizeTester.style.flags = textFlags;
+        if (textobj.lines[0].length < natSizeTester.lines[0].length)
             return textobj.size;
         else
-            return font.measureMultilineText(natSizeTester, 0, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
+            return natSizeTester.size;
     }
 
     override int heightForWidth(int width)
@@ -170,6 +187,18 @@ class MultilineLabel : Widget
         int w = width - p.w;
         textobj.wrapLines(w);
         return textobj.size.h + p.h;
+    }
+
+    override void layout(Box geom)
+    {
+        if (visibility == Visibility.gone)
+            return;
+
+        super.layout(geom);
+        // wrap again in case the parent widget had not called heightForWidth
+        // must be cached when width is the same
+        int w = geom.w - padding.width;
+        textobj.wrapLines(w);
     }
 
     override void onDraw(DrawBuf buf)
@@ -182,7 +211,9 @@ class MultilineLabel : Widget
         applyPadding(b);
         auto saver = ClipRectSaver(buf, b, alpha);
 
-        textobj.draw(buf, b.pos, b.w, textColor, textAlign, textFlags);
+        textobj.style.color = textColor;
+        textobj.style.flags = textFlags;
+        textobj.draw(buf, b.pos, b.w, textAlign);
     }
 }
 
