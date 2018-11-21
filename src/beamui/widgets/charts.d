@@ -34,6 +34,7 @@ Authors:   Andrzej Kilijański
 module beamui.widgets.charts;
 
 import std.math;
+import beamui.graphics.text;
 import beamui.widgets.widget;
 
 class SimpleBarChart : Widget
@@ -45,21 +46,21 @@ class SimpleBarChart : Widget
         trackHover = false;
         _axisX.arrowSize = 1;
         this.title = title ? title : tr("New chart");
-        measureMinDescSize();
+        _minDescSizeTester.str = "aaaaaaaaaa";
+        handleFontChanged();
     }
 
     struct BarData
     {
         double y;
-        dstring title;
-        private Size _titleSize;
+        PlainText title;
         Color color;
 
         this(double y, Color color, dstring title)
         {
             this.y = y;
             this.color = color;
-            this.title = title;
+            this.title.str = title;
         }
     }
 
@@ -107,7 +108,7 @@ class SimpleBarChart : Widget
             return; // current limitation only positive values
         _bars[index].y = y;
         _bars[index].color = color;
-        _bars[index].title = barTitle;
+        _bars[index].title.str = barTitle;
 
         // update _maxY
         _maxY = 0;
@@ -137,21 +138,19 @@ class SimpleBarChart : Widget
 
     private
     {
-        dstring _title;
+        PlainText _title;
         bool _showTitle = true;
-        Size _titleSize;
         int _marginAfterTitle = 2;
     }
 
     @property
     {
         /// Title to show
-        dstring title() const { return _title; }
+        dstring title() const { return _title.str; }
         /// ditto
         SimpleBarChart title(dstring s)
         {
-            _title = s;
-            measureTitleSize();
+            _title.str = s;
             if (_showTitle)
                 requestLayout();
             return this;
@@ -219,8 +218,10 @@ class SimpleBarChart : Widget
 
     private
     {
-        int _axisYMaxValueDescWidth = 30;
-        int _axisYAvgValueDescWidth = 30;
+        SingleLineText _axisYMaxValueDesc;
+        SingleLineText _axisYAvgValueDesc;
+        double cachedMaxYValue;
+        double cachedAvgYValue;
 
         double _axisRatio = 0.6;
 
@@ -231,8 +232,7 @@ class SimpleBarChart : Widget
         int _axisXMinWfromZero = 150;
         int _axisYMinDescWidth = 30;
 
-        dstring _minDescSizeTester = "aaaaaaaaaa";
-        Size _measuredDescMinSize;
+        SingleLineText _minDescSizeTester;
     }
 
     @property
@@ -245,62 +245,60 @@ class SimpleBarChart : Widget
             requestLayout();
         }
 
-        dstring minDescSizeTester() const { return _minDescSizeTester; }
+        dstring minDescSizeTester() const { return _minDescSizeTester.str; }
 
         void minDescSizeTester(dstring txt)
         {
-            _minDescSizeTester = txt;
-            measureMinDescSize();
+            _minDescSizeTester.str = txt;
             requestLayout();
         }
     }
 
     override protected void handleFontChanged()
     {
-        measureTitleSize();
-        measureMinDescSize();
-    }
-
-    protected void measureTitleSize()
-    {
-        FontRef f = font();
-        _titleSize = f.textSize(_title, MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags); // TODO: more than one line title support
-    }
-
-    protected void measureMinDescSize()
-    {
-        FontRef f = font();
-        _measuredDescMinSize = f.textSize(_minDescSizeTester, MAX_WIDTH_UNSPECIFIED, 4);
+        Font fnt = font.get;
+        _title.style.font = fnt;
+        _axisYMaxValueDesc.style.font = fnt;
+        _axisYAvgValueDesc.style.font = fnt;
+        _minDescSizeTester.style.font = fnt;
     }
 
     protected Size measureAxisXDesc()
     {
-        FontRef f = font();
+        Font fnt = font.get;
         Size sz;
         foreach (ref bar; _bars)
         {
-            bar._titleSize = f.measureMultilineText(bar.title, 0, _barWidth, 4, 0, textFlags);
-            sz.w = max(sz.w, bar._titleSize.w);
-            sz.h = max(sz.h, bar._titleSize.h);
+            bar.title.style.font = fnt;
+            bar.title.wrapLines(_barWidth);
+            Size ts = bar.title.size;
+            sz.w = max(sz.w, ts.w);
+            sz.h = max(sz.h, ts.h);
         }
         return sz;
     }
 
     protected Size measureAxisYDesc()
     {
-        int maxDescWidth = _axisYMinDescWidth;
         double currentMaxValue = _maxY;
         if (approxEqual(_maxY, 0, 0.0000001, 0.0000001))
             currentMaxValue = 100;
 
-        FontRef f = font();
-        Size sz = f.textSize(to!dstring(currentMaxValue), MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
-        maxDescWidth = max(maxDescWidth, sz.w);
-        _axisYMaxValueDescWidth = sz.w;
-        sz = f.textSize(to!dstring(currentMaxValue / 2), MAX_WIDTH_UNSPECIFIED, 4, 0, textFlags);
-        maxDescWidth = max(maxDescWidth, sz.w);
-        _axisYAvgValueDescWidth = sz.w;
-        return Size(maxDescWidth, sz.h);
+        if (cachedMaxYValue != currentMaxValue)
+        {
+            cachedMaxYValue = currentMaxValue;
+            _axisYMaxValueDesc.str = to!dstring(currentMaxValue);
+        }
+        double avgValue = currentMaxValue / 2;
+        if (cachedAvgYValue != avgValue)
+        {
+            cachedAvgYValue = avgValue;
+            _axisYAvgValueDesc.str = to!dstring(avgValue);
+        }
+        Size maxSize = _axisYMaxValueDesc.size;
+        Size avgSize = _axisYAvgValueDesc.size;
+        return Size(max(maxSize.w, avgSize.w, _axisYMinDescWidth),
+                    max(maxSize.h, avgSize.h));
     }
 
     override Boundaries computeBoundaries()
@@ -310,7 +308,7 @@ class SimpleBarChart : Widget
 
         _axisY.maxDescriptionSize = measureAxisYDesc();
 
-        int currentMinBarWidth = max(_minBarWidth, _measuredDescMinSize.w);
+        int currentMinBarWidth = max(_minBarWidth, _minDescSizeTester.size.w);
 
         int minAxisXLength = max(cast(int)barCount * (currentMinBarWidth + _barSpacing), _axisXMinWfromZero);
         int minAxixYLength = cast(int)round(_axisRatio * minAxisXLength);
@@ -320,8 +318,9 @@ class SimpleBarChart : Widget
         bs.min.h = minAxixYLength + extraSizeY;
         if (_showTitle)
         {
-            bs.min.h += _titleSize.h + _marginAfterTitle;
-            bs.nat.w = max(bs.min.w, _titleSize.w);
+            Size ts = _title.size;
+            bs.nat.w = max(bs.min.w, ts.w);
+            bs.min.h += ts.h + _marginAfterTitle;
         }
 
         applyStyle(bs);
@@ -351,7 +350,7 @@ class SimpleBarChart : Widget
 
         // Y axis length
         _axisY.lengthFromZeroToArrow = geom.h - _axisX.maxDescriptionSize.h - extraSizeY -
-            (_showTitle ? _titleSize.h + _marginAfterTitle : 0);
+            (_showTitle ? _title.size.h + _marginAfterTitle : 0);
     }
 
     override void onDraw(DrawBuf buf)
@@ -365,13 +364,6 @@ class SimpleBarChart : Widget
 
         auto saver = ClipRectSaver(buf, b, alpha);
 
-        FontRef font = font();
-        if (_showTitle)
-            // align to center
-            font.drawText(buf, b.x + (b.w - _titleSize.w) / 2, b.y, _title,
-                    textColor, 4, 0, textFlags);
-
-        // draw axes
         int x1 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength;
         int x2 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength + _axisY.thickness +
             _axisX.zeroValueDist + _axisX.lengthFromZeroToArrow + _axisX.arrowSize;
@@ -379,6 +371,15 @@ class SimpleBarChart : Widget
             _axisY.zeroValueDist - _axisY.lengthFromZeroToArrow - _axisY.arrowSize;
         int y2 = b.y + b.h - _axisX.maxDescriptionSize.h - _axisX.segmentTagLength;
 
+        // draw title first
+        if (_showTitle)
+        {
+            // align to the center of chart view
+            _title.style.color = textColor;
+            _title.draw(buf, Point(x1, b.y), x2 - x1, TextAlign.center);
+        }
+
+        // draw axes
         buf.fillRect(Rect(x1, y1, x2, y2), chartBackgroundColor);
 
         // y axis
@@ -398,7 +399,6 @@ class SimpleBarChart : Widget
         int firstBarX = x1 + _axisY.thickness + _axisX.zeroValueDist;
         int firstBarY = y2 - _axisX.thickness - _axisY.zeroValueDist;
 
-        SimpleTextFormatter fmt;
         foreach (ref bar; _bars)
         {
             // draw bar
@@ -410,34 +410,31 @@ class SimpleBarChart : Widget
                     y2 + _axisX.segmentTagLength), chartSegmentTagColor);
 
             // draw x axis description
-            fmt.format(bar.title, font, 0, _barWidth, 4, 0, textFlags);
-            fmt.draw(buf, firstBarX + (_barWidth - bar._titleSize.w) / 2,
-                    b.y + b.h - _axisX.maxDescriptionSize.h + (_axisX.maxDescriptionSize.h - bar._titleSize.h) / 2,
-                    font, textColor, TextAlign.center);
+            bar.title.style.color = textColor;
+            int yoffset = (_axisX.maxDescriptionSize.h + bar.title.size.h) / 2;
+            bar.title.draw(buf, Point(firstBarX, b.y + b.h - yoffset), _barWidth, TextAlign.center);
 
             firstBarX += _barWidth + _barSpacing;
         }
 
-        // segments on y axis and values (now only max and max/2)
-        double currentMaxValue = _maxY;
-        if (approxEqual(_maxY, 0, 0.0000001, 0.0000001))
-            currentMaxValue = 100;
+        // draw segments on y axis and values (now only max and max/2)
 
         int yZero = b.y + b.h - _axisX.maxDescriptionSize.h - _axisX.segmentTagLength -
             _axisX.thickness - _axisY.zeroValueDist;
         int yMax = yZero - _axisY.lengthFromZeroToArrow;
         int yAvg = (yZero + yMax) / 2;
+        int axisYWidth = _axisY.maxDescriptionSize.w;
+        int horTagStart = b.x + axisYWidth;
 
-        int horTagStart = b.x + _axisY.maxDescriptionSize.w;
         buf.drawLine(Point(horTagStart, yMax), Point(horTagStart + _axisY.segmentTagLength, yMax),
                      chartSegmentTagColor);
         buf.drawLine(Point(horTagStart, yAvg), Point(horTagStart + _axisY.segmentTagLength, yAvg),
                      chartSegmentTagColor);
 
-        font.drawText(buf, b.x + (_axisY.maxDescriptionSize.w - _axisYMaxValueDescWidth),
-                yMax - _axisY.maxDescriptionSize.h / 2, to!dstring(currentMaxValue), textColor, 4, 0, textFlags);
-        font.drawText(buf, b.x + (_axisY.maxDescriptionSize.w - _axisYAvgValueDescWidth),
-                yAvg - _axisY.maxDescriptionSize.h / 2, to!dstring(currentMaxValue / 2), textColor, 4, 0, textFlags);
+        _axisYMaxValueDesc.style.color = textColor;
+        _axisYAvgValueDesc.style.color = textColor;
+        _axisYMaxValueDesc.draw(buf, Point(b.x, yMax - _axisY.maxDescriptionSize.h / 2), axisYWidth, TextAlign.end);
+        _axisYAvgValueDesc.draw(buf, Point(b.x, yAvg - _axisY.maxDescriptionSize.h / 2), axisYWidth, TextAlign.end);
     }
 
     protected int barYValueToPixels(int axisInPixels, double barYValue)
