@@ -3,6 +3,29 @@ sudo: false
 language: d
 d:
 - dmd
+- ldc
+
+os:
+- linux
+- osx
+
+env:
+- ARCH=x86_64 CONFIG=default
+- ARCH=x86_64 CONFIG=minimal
+- ARCH=x86_64 CONFIG=console
+- ARCH=x86 CONFIG=default
+- ARCH=x86 CONFIG=minimal
+- ARCH=x86 CONFIG=console
+
+# No one cares about OS X x86
+matrix:
+  exclude:
+  - os: osx
+    env: ARCH=x86 CONFIG=default
+  - os: osx
+    env: ARCH=x86 CONFIG=minimal
+  - os: osx
+    env: ARCH=x86 CONFIG=console
 
 branches:
   only:
@@ -18,17 +41,18 @@ addons:
     - zlib1g-dev:i386
     - libevent-dev
 
-script:
-- dub test
-- dub build -b ddox
-
-deploy:
-  local_dir: docs
-  provider: pages
-  skip_cleanup: true
-  github_token: $GH_TOKEN
-  on:
-    branch: master
+jobs:
+  include:
+  - script: dub test --compiler=${DC} --arch=${ARCH} --config=${CONFIG}
+  - stage: deploy
+    script: dub build -b ddox
+    deploy:
+      local_dir: docs
+      provider: pages
+      skip_cleanup: true
+      github_token: $GH_TOKEN
+      on:
+        branch: master
 
 cache:
   directories:
