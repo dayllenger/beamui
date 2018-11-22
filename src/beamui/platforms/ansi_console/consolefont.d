@@ -238,24 +238,6 @@ class ConsoleFont : Font
         }
     }
 
-    override Size measureMultilineText(const dchar[] text, int maxLines = 0, int maxWidth = 0,
-            int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
-    {
-        SimpleTextFormatter fmt;
-        FontRef fnt = FontRef(this);
-        return fmt.format(text, fnt, maxLines, maxWidth, tabSize, tabOffset, textFlags);
-    }
-
-    override void drawMultilineText(DrawBuf buf, int x, int y, const dchar[] text, Color color,
-            int maxLines = 0, int maxWidth = 0, int tabSize = 4, int tabOffset = 0,
-            TextFlag textFlags = TextFlag.unspecified)
-    {
-        SimpleTextFormatter fmt;
-        FontRef fnt = FontRef(this);
-        fmt.format(text, fnt, maxLines, maxWidth, tabSize, tabOffset, textFlags);
-        fmt.draw(buf, x, y, fnt, color);
-    }
-
     override Glyph* getCharGlyph(dchar ch, bool withImage = true)
     {
         return &_glyph;

@@ -14,7 +14,8 @@ import beamui.core.units;
 import beamui.css.css;
 import beamui.graphics.colors;
 import beamui.graphics.drawables;
-import beamui.graphics.fonts;
+import beamui.graphics.fonts : FontFamily, FontStyle, FontWeight;
+import beamui.graphics.text : TextAlign;
 import beamui.style.types;
 
 bool decode(Token[] tokens, out int result)

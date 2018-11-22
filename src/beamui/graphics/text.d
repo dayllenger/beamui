@@ -16,6 +16,15 @@ import beamui.graphics.drawbuf;
 import beamui.graphics.fonts;
 import beamui.style.types : TextFlag;
 
+/// Specifies text alignment
+enum TextAlign : ubyte
+{
+    start,
+    center,
+    end,
+    justify
+}
+
 /// Holds text properties - font style, colors, and so on
 struct TextStyle
 {
@@ -162,13 +171,22 @@ struct TextLine
     {
         Font font = (cast(TextStyle)style).font;
         assert(font !is null, "Font is mandatory");
+
+        const size_t len = _str.length;
+        if (len == 0)
+        {
+            // trivial case; do not resize buffers
+            _size = Size(0, font.height);
+            _needToMeasure = false;
+            return;
+        }
+
         const bool fixed = font.isFixed;
         const ushort fixedCharWidth = cast(ushort)font.charWidth('M');
         const int spaceWidth = fixed ? fixedCharWidth : font.spaceWidth;
         const bool useKerning = !fixed && font.allowKerning;
         const bool hotkeys = (style.flags & TextFlag.hotkeys) != 0;
 
-        const size_t len = _str.length;
         if (_charWidths.length < len || _charWidths.length >= len * 5)
             _charWidths.length = len;
         if (_glyphs.length < len || _glyphs.length >= len * 5)
@@ -221,8 +239,7 @@ struct TextLine
             }
             prevChar = ch;
         }
-        _size.w = x;
-        _size.h = font.height;
+        _size = Size(x, font.height);
         _needToMeasure = false;
     }
 
@@ -314,6 +331,9 @@ struct TextLine
     /// Draw measured line at the position
     void draw(DrawBuf buf, Point pos, const ref TextStyle style)
     {
+        if (_str.length == 0)
+            return; // nothing to draw - empty text
+
         Font font = (cast(TextStyle)style).font;
         // check visibility
         const Rect clip = buf.clipRect;
@@ -328,7 +348,6 @@ struct TextLine
         const int underlineHeight = 1;
         const int underlineY = pos.y + baseline + underlineHeight * 2;
 
-        const size_t len = _str.length;
         const pwidths = _charWidths.ptr;
         auto pglyphs = _glyphs.ptr;
         int pen = pos.x;
