@@ -27,6 +27,7 @@ import beamui.core.signals;
 import beamui.core.stdaction;
 import beamui.core.streams;
 import beamui.graphics.colors;
+import beamui.graphics.text;
 import beamui.widgets.controls;
 import beamui.widgets.layouts;
 import beamui.widgets.menu;
@@ -798,23 +799,16 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         long _lastBlinkStartTs;
         bool _caretBlinks = true;
 
-        dstring _minSizeTester;
-        Size _measuredMinSize;
     }
 
     @property
     {
+        abstract dstring minSizeTester() const;
+        /// ditto
+        abstract EditWidgetBase minSizeTester(dstring txt);
+
         /// Returns caret position
         TextPosition caretPos() { return _caretPos; }
-
-        dstring minSizeTester() { return _minSizeTester; }
-
-        EditWidgetBase minSizeTester(dstring txt)
-        {
-            _minSizeTester = txt;
-            requestLayout();
-            return this;
-        }
 
         /// Current selection range
         TextRange selectionRange() { return _selectionRange; }
@@ -2043,6 +2037,17 @@ class EditLine : EditWidgetBase
             }
             return this;
         }
+
+        override dstring minSizeTester() const
+        {
+            return _minSizeTester.str;
+        }
+        override EditLine minSizeTester(dstring txt)
+        {
+            _minSizeTester.str = txt;
+            requestLayout();
+            return this;
+        }
     }
 
     /// Handle Enter key press inside line editor
@@ -2053,6 +2058,7 @@ class EditLine : EditWidgetBase
         dstring _measuredText;
         int[] _measuredTextWidths;
         Size _measuredTextSize;
+        SingleLineText _minSizeTester;
 
         dchar _passwordChar = 0;
     }
@@ -2066,7 +2072,7 @@ class EditLine : EditWidgetBase
         _deselectAllWhenUnfocused = true;
         wantTabs = false;
         text = initialContent;
-        _minSizeTester = "aaaaa"d;
+        _minSizeTester.str = "aaaaa"d;
         onThemeChanged();
     }
 
@@ -2161,20 +2167,15 @@ class EditLine : EditWidgetBase
         return super.onKeyEvent(event);
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override Size computeMinSize()
     {
-        return super.onMouseEvent(event);
-    }
-
-    override Size computeMinSize() // TODO: compute once when changed
-    {
-        FontRef f = font();
-        _measuredMinSize = f.textSize(_minSizeTester, MAX_WIDTH_UNSPECIFIED, tabSize);
-        return Size(_measuredMinSize.w + _leftPaneWidth, _measuredMinSize.h);
+        return _minSizeTester.size + Size(_leftPaneWidth, 0);
     }
 
     override Boundaries computeBoundaries()
     {
+        _minSizeTester.style.font = font;
+        _minSizeTester.style.tabSize = tabSize;
         updateFontProps();
         measureVisibleText();
         return super.computeBoundaries();
@@ -2197,8 +2198,6 @@ class EditLine : EditWidgetBase
         if (visibility == Visibility.gone)
             return;
 
-//         Size sz = Size(rc.width, computedHeight);
-//         applyAlign(rc, sz);
         super.layout(geom);
 
         applyPadding(geom);
@@ -2266,7 +2265,6 @@ class EditBox : EditWidgetBase
         {
             return super.fontSize();
         }
-
         override Widget fontSize(int size)
         {
             // Need to rewrap if fontSize changed
@@ -2275,7 +2273,7 @@ class EditBox : EditWidgetBase
         }
 
         int minFontSize() { return _minFontSize; }
-
+        /// ditto
         EditBox minFontSize(int size)
         {
             _minFontSize = size;
@@ -2283,7 +2281,7 @@ class EditBox : EditWidgetBase
         }
 
         int maxFontSize() { return _maxFontSize; }
-
+        /// ditto
         EditBox maxFontSize(int size)
         {
             _maxFontSize = size;
@@ -2303,6 +2301,17 @@ class EditBox : EditWidgetBase
             return this;
         }
 
+        override dstring minSizeTester() const
+        {
+            return _minSizeTester.str;
+        }
+        override EditBox minSizeTester(dstring txt)
+        {
+            _minSizeTester.str = txt;
+            requestLayout();
+            return this;
+        }
+
         protected int firstVisibleLine() { return _firstVisibleLine; }
     }
 
@@ -2318,6 +2327,8 @@ class EditBox : EditWidgetBase
         CustomCharProps[][] _visibleLinesHighlights;
         CustomCharProps[][] _visibleLinesHighlightsBuf;
 
+        PlainText _minSizeTester;
+
         bool _showWhiteSpaceMarks;
     }
 
@@ -2329,7 +2340,7 @@ class EditBox : EditWidgetBase
         _content = new EditableContent(true); // multiline
         _content.contentChanged = &onContentChange;
         text = initialContent;
-        _minSizeTester = "aaaaa\naaaaa"d;
+        _minSizeTester.str = "aaaaa\naaaaa"d;
         onThemeChanged();
     }
 
@@ -3251,13 +3262,13 @@ class EditBox : EditWidgetBase
 
     override Size computeMinSize()
     {
-        FontRef f = font();
-        f.measureMultilineText(_minSizeTester, 0, MAX_WIDTH_UNSPECIFIED);
-        return _measuredMinSize;
+        return _minSizeTester.size + Size(_leftPaneWidth, 0);
     }
 
     override Boundaries computeBoundaries()
     {
+        _minSizeTester.style.font = font;
+        _minSizeTester.style.tabSize = tabSize;
         updateFontProps();
         updateMaxLineWidth();
         return super.computeBoundaries();

@@ -161,6 +161,7 @@ struct TextLine
     void measure(const ref TextStyle style)
     {
         Font font = (cast(TextStyle)style).font;
+        assert(font !is null, "Font is mandatory");
         const bool fixed = font.isFixed;
         const ushort fixedCharWidth = cast(ushort)font.charWidth('M');
         const int spaceWidth = fixed ? fixedCharWidth : font.spaceWidth;
