@@ -18,12 +18,14 @@ StyleSheet parseCSS(TokenRange tokens)
     return Parser(tokens).parseStyleSheet();
 }
 
+/// Style sheet contains two lists - at-rules and qualified rules (aka rulesets)
 struct StyleSheet
 {
     AtRule[] atRules;
     RuleSet[] rulesets;
 }
 
+/// At-rule, looking as @keyword values { properties }
 struct AtRule
 {
     string keyword;
@@ -31,18 +33,21 @@ struct AtRule
     Property[] properties;
 }
 
+/// Qualified rule - selector list (comma-separated) and set of style properties
 struct RuleSet
 {
     Selector[] selectors;
     Property[] properties;
 }
 
+/// Complex selector - one selector from the selector list
 struct Selector
 {
     SelectorEntry[] entries;
     size_t line;
 }
 
+/// Simple selector or some combinator
 struct SelectorEntry
 {
     SelectorEntryType type;
@@ -50,30 +55,32 @@ struct SelectorEntry
     string str;
 }
 
+/// Type of simple selector or combinator
 enum SelectorEntryType
 {
     none,
-    // simple selectors
-    universal,
-    element,
-    class_,
-    id,
-    pseudoClass,
-    pseudoElement,
-    attr,
-    attrExact,
-    attrInclude,
-    attrDash,
-    attrPrefix,
-    attrSuffix,
-    attrSubstring,
-    // combinators
-    descendant, // whitespace
-    child, // >
-    next, // +
-    subsequent // ~
+
+    universal, /// *
+    element, /// tag
+    class_, /// .class
+    id, /// #id
+    pseudoClass, /// :pseudo-class
+    pseudoElement, /// :pseudo-element
+    attr, /// [attr]
+    attrExact, /// [attr=value]
+    attrInclude, /// [attr~=value]
+    attrDash, /// [attr|=value]
+    attrPrefix, /// [attr^=value]
+    attrSuffix, /// [attr$=value]
+    attrSubstring, /// [attr*=value]
+
+    descendant, /// whitespace
+    child, /// >
+    next, /// +
+    subsequent /// ~
 }
 
+/// Style property with a name and list of tokens, containing its value
 struct Property
 {
     string name;
@@ -263,7 +270,7 @@ struct Parser
                         r.popFront();
                     }
                     else
-                        emitUnexpected(t, "class");
+                        emitUnexpected(r.front, "class");
                 }
                 else // combinator or something
                     break;
@@ -280,17 +287,30 @@ struct Parser
                         r.popFront();
                     }
                     else
-                        emitUnexpected(t, "pseudo element");
+                        emitUnexpected(r.front, "pseudo element");
                 }
                 else if (r.front.type == func && r.front.text == "not")
                 {
                     r.popFront();
-                    entries ~= SelectorEntry(SelectorEntryType.pseudoClass, "!" ~ r.front.text);
-                    r.popFront();
-                    if (r.front.type == closeParen)
-                        r.popFront();
+                    if (!r.empty)
+                    {
+                        if (r.front.type == closeParen)
+                            emitError("not() is empty", r.line);
+                        else
+                        {
+                            if (r.front.type == ident)
+                                entries ~= SelectorEntry(SelectorEntryType.pseudoClass, "!" ~ r.front.text);
+                            else
+                                emitUnexpected(r.front, "pseudo class");
+                            r.popFront();
+                        }
+                        if (r.front.type == closeParen)
+                            r.popFront();
+                        else
+                            emitUnexpected(r.front, "pseudo class");
+                    }
                     else
-                        emitUnexpected(t, "pseudo class");
+                        emitUnexpected(r.front, "pseudo class");
                 }
                 else if (r.front.type == ident)
                 {
@@ -405,6 +425,7 @@ struct Parser
                 else
                 {
                     emitError("unknown combinator", t.line);
+                    r.popFront();
                     return Null;
                 }
                 r.popFront();

@@ -33,12 +33,8 @@ pure nothrow:
         popFront();
     }
 
-    /// Current token. Check for empty before get it
-    @property Token front()
-    {
-        assert(!empty);
-        return _front;
-    }
+    /// Current token
+    @property ref const(Token) front() const { return _front; }
 
     /// Go for the next token. Check for empty before this
     void popFront()
@@ -59,7 +55,7 @@ pure nothrow:
     }
 
     /// Line in the source file where current token is
-    @property size_t line()
+    @property size_t line() const
     {
         return tokenizer.line;
     }
