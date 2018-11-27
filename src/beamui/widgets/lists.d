@@ -718,6 +718,7 @@ class ListWidget : WidgetGroup
     /// Item list has changed
     protected void onAdapterChange(ListAdapter source)
     {
+        needToRecalculateSize = true;
         needToRecalculateItemSizes = true;
         requestLayout();
     }
@@ -1108,12 +1109,13 @@ class ListWidget : WidgetGroup
 
     // TODO: fully test this optimization
     // this and other little hacks allow to use millions of items in list
+    private bool needToRecalculateSize;
     private bool needToRecalculateItemSizes;
     private Boundaries cachedBoundaries;
 
     override Boundaries computeBoundaries()
     {
-        if (!needToRecalculateItemSizes && !sumItemSizes)
+        if (!needToRecalculateSize)
         {
             Boundaries bs = cachedBoundaries;
             applyStyle(bs);
@@ -1147,6 +1149,7 @@ class ListWidget : WidgetGroup
         }
         _totalSize = p;
         cachedBoundaries = bs;
+        needToRecalculateSize = false;
         applyStyle(bs);
         return bs;
     }
