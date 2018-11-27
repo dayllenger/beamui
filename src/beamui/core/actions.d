@@ -1,4 +1,5 @@
 /**
+Shortcuts and actions.
 
 Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017, dayllenger 2018
 License:   Boost License 1.0
@@ -9,7 +10,9 @@ module beamui.core.actions;
 public import beamui.core.events;
 import beamui.core.collections;
 import beamui.core.functions;
+import beamui.core.ownership;
 import beamui.core.signals;
+import beamui.widgets.widget : Widget;
 
 /// Keyboard shortcut (key + modifiers)
 struct Shortcut
@@ -131,6 +134,7 @@ struct Shortcut
         buf ~= keyName(keyCode);
         return cast(string)buf;
     }
+
     /// Parse accelerator from string
     bool parse(string s)
     {
@@ -141,7 +145,7 @@ struct Shortcut
         s = s.strip;
         while (true)
         {
-            bool flagFound = false;
+            bool flagFound;
             if (s.startsWith("Ctrl+"))
             {
                 keyFlags |= KeyFlag.control;
@@ -273,16 +277,12 @@ enum ActionState
 }
 
 /**
-    UI action.
-
-    For using in menus, toolbars, etc.
+    UI action, used in menus, toolbars, etc.
 
     Actions are stored globally, and you can fetch them with `findBy*` functions.
- */
-class Action
+*/
+final class Action
 {
-    import beamui.widgets.widget;
-
     @property
     {
         string id() const
@@ -315,7 +315,9 @@ class Action
         /// ditto
         Action shortcuts(Shortcut[] ss)
         {
+            shortcutMap.remove(_shortcuts);
             _shortcuts = ss;
+            shortcutMap.add(this);
             changed();
             return this;
         }
@@ -436,9 +438,9 @@ class Action
     /// Signals when action state is changed
     Signal!(void delegate()) stateChanged;
 
-    protected
+    private
     {
-        void delegate()[Widget] receivers;
+        void delegate()[WeakRef!Widget] receivers;
 
         dstring _label;
         string _iconID;
@@ -476,6 +478,7 @@ class Action
         static ActionShortcutMap shortcutMap;
     }
 
+    /// Create an action with label and, optionally, shortcut
     this(dstring label, uint keyCode = 0, uint keyFlags = 0)
     {
         _label = label;
@@ -485,6 +488,7 @@ class Action
             nameMap[id] = this;
     }
 
+    /// Create an action with label, icon ID and, optionally, shortcut
     this(dstring label, string iconID, uint keyCode = 0, uint keyFlags = 0)
     {
         _label = label;
@@ -524,6 +528,7 @@ class Action
         }
         _shortcuts ~= Shortcut(keyCode, keyFlags);
         shortcutMap.add(this);
+        changed();
         return this;
     }
 
@@ -543,16 +548,22 @@ class Action
     {
         if (func)
         {
-            receivers[parent] = func;
-            if (!parent)
+            if (parent)
+            {
+                receivers[weakRef(parent)] = func;
+            }
+            else
+            {
+                receivers[WeakRef!Widget.init] = func;
                 context = ActionContext.application;
+            }
         }
     }
 
     /// Unbind action from the widget, if action is associated with it
     void unbind(Widget parent)
     {
-        receivers.remove(parent);
+        receivers.remove(weakRef(parent));
     }
 
     /// Process the action
@@ -565,6 +576,12 @@ class Action
 
         foreach (wt, slot; receivers)
         {
+            if (wt.isNull)
+            {
+                // clean up destroyed widgets
+                receivers.remove(wt);
+                continue;
+            }
             if (chooser(wt))
             {
                 // check/uncheck
@@ -589,14 +606,16 @@ class Action
         return "Action `" ~ to!string(_label) ~ "`";
     }
 
+    /// Find action globally by its id
     static Action findByName(string name)
     {
         return nameMap.get(name, null);
     }
 
+    /// Find action globally by a shortcut
     static Action findByShortcut(uint keyCode, uint keyFlags)
     {
-        return shortcutMap.findByKey(keyCode, keyFlags);
+        return shortcutMap.find(keyCode, keyFlags);
     }
 }
 
@@ -613,6 +632,13 @@ struct ActionShortcutMap
             foreach (sc; a.shortcuts)
                 _map[sc] = a;
         }
+    }
+
+    /// Remove actions by shortcut list
+    void remove(Shortcut[] shortcuts...)
+    {
+        foreach (sc; shortcuts)
+            _map.remove(sc);
     }
 
     private static __gshared immutable uint[] flagMasks = [
@@ -638,8 +664,8 @@ struct ActionShortcutMap
         KeyFlag.control | KeyFlag.alt | KeyFlag.shift | KeyFlag.menu
     ];
 
-    /// Find action by key, returns null if not found
-    Action findByKey(uint keyCode, uint flags)
+    /// Find action by shortcut, returns null if not found
+    Action find(uint keyCode, uint flags)
     {
         Shortcut sc;
         sc.keyCode = keyCode;
@@ -648,8 +674,8 @@ struct ActionShortcutMap
             sc.keyFlags = flags & mask;
             if (auto p = sc in _map)
             {
-                if (p.hasShortcut(keyCode, flags))
-                    return *p;
+                assert(p.hasShortcut(keyCode, flags));
+                return *p;
             }
         }
         return null;
