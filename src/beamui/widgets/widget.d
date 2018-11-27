@@ -2494,10 +2494,10 @@ class WidgetGroup : Widget
 
     override Widget removeChild(int index)
     {
-        Widget res = _children.remove(index);
-        if (res !is null)
-            res.parent = null;
-        return res;
+        Widget result = _children.remove(index);
+        assert(result !is null);
+        result.parent = null;
+        return result;
     }
 
     override Widget removeChild(string id)

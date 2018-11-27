@@ -156,7 +156,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         @forCSS("spacing") @animatable int _spacing = 6;
 
         /// Array of cells, synchronized with the list of children
-        Array!Cell _cells;
+        Array!(Cell*) _cells;
         /// Temporary layout item list
         Array!LayoutItem items;
     }
@@ -169,20 +169,23 @@ class LinearLayout : WidgetGroupDefaultDrawing
 
     mixin SupportCSS;
 
+    /// Add a widget to the layout next to the last item.
+    /// Returns: Cell reference, that allows to adjust layout properties for this widget.
     ref Cell add(Widget item)
     {
         super.addChild(item);
-        _cells ~= defaultCell;
-        size_t index = _cells.length - 1;
-        item.stylesRecomputed = (Style[] chain) { updateCell(chain, index); };
-        return _cells.back;
+        Cell* cell = createDefaultCell();
+        _cells ~= cell;
+        item.stylesRecomputed = &cell.recomputeStyleImpl;
+        requestLayout();
+        return *cell;
     }
 
     /// Add a spacer
     LinearLayout addSpacer()
     {
         super.addChild(new Spacer);
-        _cells ~= Cell(true, true);
+        _cells ~= new Cell(true, true);
         return this;
     }
 
@@ -196,27 +199,30 @@ class LinearLayout : WidgetGroupDefaultDrawing
     override Widget addChild(Widget item)
     {
         super.addChild(item);
-        _cells ~= defaultCell;
-        size_t index = _cells.length - 1;
-        item.stylesRecomputed = (Style[] chain) { updateCell(chain, index); };
+        Cell* cell = createDefaultCell();
+        _cells ~= cell;
+        item.stylesRecomputed = &cell.recomputeStyleImpl;
+        requestLayout();
         return item;
     }
 
     override Widget insertChild(int index, Widget item)
     {
         super.insertChild(index, item);
-        _cells.insertBefore(_cells[index .. $], defaultCell);
-        item.stylesRecomputed = (Style[] chain) { updateCell(chain, index); };
+        Cell* cell = createDefaultCell();
+        _cells.insertBefore(_cells[index .. $], cell);
+        item.stylesRecomputed = &cell.recomputeStyleImpl;
+        requestLayout();
         return item;
     }
 
     override Widget removeChild(int index)
     {
-        Widget res = super.removeChild(index);
-        res.stylesRecomputed.clear();
-        if (res)
-            _cells.linearRemove(_cells[index .. index + 1]);
-        return res;
+        Widget result = super.removeChild(index);
+        _cells.linearRemove(_cells[index .. index + 1]);
+        result.stylesRecomputed.clear();
+        requestLayout();
+        return result;
     }
 
     override Widget removeChild(string id)
@@ -233,19 +239,15 @@ class LinearLayout : WidgetGroupDefaultDrawing
     {
         super.removeAllChildren(destroyThem);
         _cells.clear();
+        requestLayout();
     }
 
-    private Cell defaultCell() const
+    private Cell* createDefaultCell() const
     {
         if (_orientation == Orientation.vertical)
-            return Cell(true, false);
+            return new Cell(true, false);
         else
-            return Cell(false, true);
-    }
-
-    private void updateCell(Style[] chain, size_t index)
-    {
-        _cells[index].recomputeStyleImpl(chain);
+            return new Cell(false, true);
     }
 
     //===============================================================
@@ -331,7 +333,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         // setup fill
         foreach (ref item; items)
         {
-            Cell* c = &_cells[item.index];
+            Cell* c = _cells[item.index];
             Insets m = c.margins;
             static if (horiz)
             {
@@ -373,7 +375,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         int pen;
         foreach (ref item; items)
         {
-            Cell* c = &_cells[item.index];
+            Cell* c = _cells[item.index];
             Insets m = c.margins;
             Size sz = item.result;
             Box res = Box(geom.x + m.left, geom.y + m.top, geom.w, geom.h);
