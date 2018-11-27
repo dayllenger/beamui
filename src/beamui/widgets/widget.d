@@ -924,8 +924,7 @@ public:
         /// ditto
         Widget fontItalic(bool italic)
         {
-            _fontStyle = italic ? FontStyle.italic : FontStyle.normal;
-            fontFace_effect();
+            setProperty!"_fontStyle" = italic ? FontStyle.italic : FontStyle.normal;
             return this;
         }
         /// Font size in pixels
