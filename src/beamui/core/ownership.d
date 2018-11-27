@@ -22,6 +22,9 @@ For example, class A owns object B, and class C needs to temporarily save B.
 So C accepts WeakRef of B. If object A decides to destroy B, C will stay with null reference.
 
 Object B must satisfy some requirements, because of intrusive nature of WeakRef. See example below.
+
+Limitations: WeakRef cannot forward custom `opEquals` and `toHash` calls,
+because their results need to be consistent before and after object destruction.
 */
 struct WeakRef(T) if (isReferenceType!T && hasMemberLike!(T, "isDestroyed", bool*))
 {
@@ -57,6 +60,18 @@ struct WeakRef(T) if (isReferenceType!T && hasMemberLike!(T, "isDestroyed", bool
         data = null;
         isDestroyed = null;
     }
+
+    /// Allows to use WeakRef with destroyed item as key in associative arrays
+    size_t toHash() const @trusted
+    {
+        const void* p = &this;
+        return hashOf(p[0 .. this.sizeof]);
+    }
+    /// ditto
+    bool opEquals(ref const typeof(this) s) const
+    {
+        return data is s.data && isDestroyed is s.isDestroyed;
+    }
 }
 
 ///
@@ -87,8 +102,50 @@ unittest
     assert(b == reference.get);
     assert(!reference.isNull);
 
+    WeakRef!B ref2 = reference;
+    ref2.nullify();
+    assert(ref2.isNull);
+
     destroy(b);
     assert(reference.isNull);
+}
+
+unittest
+{
+    // toHash testing
+    class B
+    {
+        bool* isDestroyed;
+        this()
+        {
+            isDestroyed = new bool;
+        }
+        ~this()
+        {
+            if (isDestroyed !is null)
+                *isDestroyed = true;
+        }
+    }
+
+    int[WeakRef!B] map;
+    foreach (i; 0 .. 100)
+    {
+        B b = new B;
+        map[weakRef(b)] = i;
+        if (i % 2 == 0)
+            destroy(b);
+    }
+    int count;
+    foreach (r, i; map)
+    {
+        if (r.isNull)
+        {
+            map.remove(r); // must not crash
+            count++;
+        }
+    }
+    assert(count == 50);
+    assert(map.length == 50);
 }
 
 /// Shortcut for WeakRef!T(object)
