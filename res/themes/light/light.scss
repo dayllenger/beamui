@@ -134,7 +134,7 @@ CheckBox::label, RadioButton::label {
     }
 }
 
-CheckBox::icon {
+CheckBox::icon, MenuItem::check {
     align: center;
     min-width: 16px;
     max-height: 16px;
@@ -170,7 +170,7 @@ CheckBox::icon {
     }
 }
 
-RadioButton::icon {
+RadioButton::icon, MenuItem::radio {
     min-width: 16px;
     max-height: 16px;
     background: url(btn_radio_off);

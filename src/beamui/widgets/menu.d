@@ -1,5 +1,5 @@
 /**
-This module contains menu widgets implementation.
+Menu widgets.
 
 MenuItem - menu item container with icon, label, etc.
 
@@ -64,6 +64,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
             else if (!menu && _arrow)
             {
                 removeChild(_arrow);
+                eliminate(_arrow);
             }
             return this;
         }
@@ -77,7 +78,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         Action _action;
 
         Widget _separator;
-        CheckBox _checkbox;
+        Widget _checkbox;
         ImageWidget _icon;
         Label _label;
         Label _shortcut;
@@ -136,24 +137,18 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
             checkable = _action.checkable;
             if (checkable && !_checkbox)
             {
-                if (_action.isRadio)
-                {
-                    _checkbox = new RadioButton;
-                }
-                else
-                {
-                    _checkbox = new CheckBox;
-                }
-                _checkbox.id = "menu-checkbox";
-                _checkbox.bindSubItem(this, "checkbox");
+                _checkbox = new Widget("menu-checkbox");
                 _checkbox.state = State.parent;
                 addChild(_checkbox);
             }
             else if (!checkable && _checkbox)
             {
                 removeChild(_checkbox);
+                eliminate(_checkbox);
             }
         }
+        if (_checkbox)
+            _checkbox.bindSubItem(this, _action.isRadio ? "radio" : "check");
         // icon
         if (auto iconID = _action.iconID)
         {
@@ -167,6 +162,11 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
             }
             else
                 _icon.imageID = iconID;
+        }
+        else if (_icon)
+        {
+            removeChild(_icon);
+            eliminate(_icon);
         }
         // label
         if (!_label)
@@ -192,6 +192,11 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
             }
             else
                 _shortcut.text = sc;
+        }
+        else if (_shortcut)
+        {
+            removeChild(_shortcut);
+            eliminate(_shortcut);
         }
     }
 
@@ -559,6 +564,24 @@ class Menu : ListWidget
             handleClose();
     }
 
+    override @property Widget parent() const
+    {
+        return super.parent;
+    }
+    override @property Widget parent(Widget p)
+    {
+        // ok, this menu needs to know whether popup is closed
+        // so, when popup sets itself as menu's parent, we add our slot to popupClosed
+        // and remove it on menu close
+        if (auto popup = cast(Popup)p)
+        {
+            if (auto prev = thisPopup)
+                prev.popupClosed -= &onThisPopupClosed;
+            popup.popupClosed ~= &onThisPopupClosed;
+        }
+        return super.parent(p);
+    }
+
     protected void onThisPopupClosed(Popup p, bool byEvent)
     {
         assert(p);
@@ -591,10 +614,7 @@ class Menu : ListWidget
         visualParentMenu = null;
 
         p.popupClosed -= &onThisPopupClosed;
-        needToSetPopupClosedHandler = true;
     }
-
-    private bool needToSetPopupClosedHandler = true;
 
     protected void handleClose()
     {
@@ -709,7 +729,6 @@ class Menu : ListWidget
     /// Menu navigation using keys
     override bool onKeyEvent(KeyEvent event)
     {
-         // FIXME: keyDown escape event is lost
         navigatingUsingKeys = true;
         if (event.action == KeyAction.keyDown && event.keyCode == KeyCode.escape && event.flags == 0)
         {
@@ -832,27 +851,6 @@ class Menu : ListWidget
             }
         }
         return super.computeBoundaries();
-    }
-
-    override void onDraw(DrawBuf buf)
-    {
-        if (visibility != Visibility.visible)
-            return;
-
-        // ok, this menu needs to know whether popup is closed
-        // but popup doesn't care about the menu
-        // so, when menu appears, we add our slot to popupClosed
-        // and remove it on menu close
-        if (needToSetPopupClosedHandler)
-        {
-            if (auto p = thisPopup)
-            {
-                p.popupClosed ~= &onThisPopupClosed;
-            }
-            needToSetPopupClosedHandler = false;
-        }
-
-        super.onDraw(buf);
     }
 }
 

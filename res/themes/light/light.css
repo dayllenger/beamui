@@ -48,37 +48,37 @@ CheckBox::label:hovered, RadioButton::label:hovered { color: #46617e; }
 
 CheckBox::label:not(enabled), RadioButton::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
-CheckBox::icon { align: center; min-width: 16px; max-height: 16px; background: url(btn_check_off); }
+CheckBox::icon, MenuItem::check { align: center; min-width: 16px; max-height: 16px; background: url(btn_check_off); }
 
-CheckBox::icon:hovered { background: url(btn_check_off_focused); }
+CheckBox::icon:hovered, MenuItem::check:hovered { background: url(btn_check_off_focused); }
 
-CheckBox::icon:pressed { background: url(btn_check_off_pressed); }
+CheckBox::icon:pressed, MenuItem::check:pressed { background: url(btn_check_off_pressed); }
 
-CheckBox::icon:not(enabled) { opacity: 0.4; }
+CheckBox::icon:not(enabled), MenuItem::check:not(enabled) { opacity: 0.4; }
 
-CheckBox::icon:checked { background: url(btn_check_on); }
+CheckBox::icon:checked, MenuItem::check:checked { background: url(btn_check_on); }
 
-CheckBox::icon:checked:hovered { background: url(btn_check_on_focused); }
+CheckBox::icon:checked:hovered, MenuItem::check:checked:hovered { background: url(btn_check_on_focused); }
 
-CheckBox::icon:checked:pressed { background: url(btn_check_on_pressed); }
+CheckBox::icon:checked:pressed, MenuItem::check:checked:pressed { background: url(btn_check_on_pressed); }
 
-CheckBox::icon:checked:not(enabled) { background: url(btn_check_on); opacity: 0.4; }
+CheckBox::icon:checked:not(enabled), MenuItem::check:checked:not(enabled) { background: url(btn_check_on); opacity: 0.4; }
 
-RadioButton::icon { min-width: 16px; max-height: 16px; background: url(btn_radio_off); }
+RadioButton::icon, MenuItem::radio { min-width: 16px; max-height: 16px; background: url(btn_radio_off); }
 
-RadioButton::icon:hovered { background: url(btn_radio_off_focused); }
+RadioButton::icon:hovered, MenuItem::radio:hovered { background: url(btn_radio_off_focused); }
 
-RadioButton::icon:pressed { background: url(btn_radio_off_pressed); }
+RadioButton::icon:pressed, MenuItem::radio:pressed { background: url(btn_radio_off_pressed); }
 
-RadioButton::icon:not(enabled) { opacity: 0.4; }
+RadioButton::icon:not(enabled), MenuItem::radio:not(enabled) { opacity: 0.4; }
 
-RadioButton::icon:checked { background: url(btn_radio_on); }
+RadioButton::icon:checked, MenuItem::radio:checked { background: url(btn_radio_on); }
 
-RadioButton::icon:checked:hovered { background: url(btn_radio_on_focused); }
+RadioButton::icon:checked:hovered, MenuItem::radio:checked:hovered { background: url(btn_radio_on_focused); }
 
-RadioButton::icon:checked:pressed { background: url(btn_radio_on_pressed); }
+RadioButton::icon:checked:pressed, MenuItem::radio:checked:pressed { background: url(btn_radio_on_pressed); }
 
-RadioButton::icon:checked:not(enabled) { background: url(btn_radio_on); opacity: 0.4; }
+RadioButton::icon:checked:not(enabled), MenuItem::radio:checked:not(enabled) { background: url(btn_radio_on); opacity: 0.4; }
 
 SwitchButton { align: center; background: url(switch_off); }
 
