@@ -112,7 +112,7 @@ class ComboBoxBase : Row
 
     protected void onClick(Widget source)
     {
-        if (enabled && !_popup && _lastPopupCloseTimestamp + 200 < currentTimeMillis) // TODO: fix properly
+        if (enabled && !_popup)
         {
             showPopup();
         }
@@ -140,7 +140,6 @@ class ComboBoxBase : Row
 
     private Popup _popup;
     private ListWidget _popupList;
-    private long _lastPopupCloseTimestamp;
 
     protected void popupClosed()
     {
@@ -153,7 +152,6 @@ class ComboBoxBase : Row
         _popupList = createPopup();
         _popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
         _popup.popupClosed = delegate(Popup source, bool b) {
-            _lastPopupCloseTimestamp = currentTimeMillis;
             _popup = null;
             _popupList = null;
         };

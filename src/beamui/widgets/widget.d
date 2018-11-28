@@ -1858,20 +1858,20 @@ public:
         if (canClick)
         {
             // support onClick event initiated by Space or Return keys
-            if (event.action == KeyAction.keyDown)
+            if (event.keyCode == KeyCode.space || event.keyCode == KeyCode.enter)
             {
-                if (event.keyCode == KeyCode.space || event.keyCode == KeyCode.enter)
+                if (event.action == KeyAction.keyDown)
                 {
                     setState(State.pressed);
                     return true;
                 }
-            }
-            if (event.action == KeyAction.keyUp)
-            {
-                if (event.keyCode == KeyCode.space || event.keyCode == KeyCode.enter)
+                if (event.action == KeyAction.keyUp)
                 {
-                    resetState(State.pressed);
-                    handleClick();
+                    if (state & State.pressed)
+                    {
+                        resetState(State.pressed);
+                        handleClick();
+                    }
                     return true;
                 }
             }
@@ -1889,17 +1889,28 @@ public:
         // support click
         if (canClick)
         {
-            if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
+            if (event.button == MouseButton.left)
+            {
+                if (event.action == MouseAction.buttonDown)
+                {
+                    setState(State.pressed);
+                    if (canFocus)
+                        setFocus();
+                    return true;
+                }
+                if (event.action == MouseAction.buttonUp)
+                {
+                    if (state & State.pressed)
+                    {
+                        resetState(State.pressed);
+                        handleClick();
+                    }
+                    return true;
+                }
+            }
+            if (event.action == MouseAction.focusIn)
             {
                 setState(State.pressed);
-                if (canFocus)
-                    setFocus();
-                return true;
-            }
-            if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
-            {
-                resetState(State.pressed);
-                handleClick();
                 return true;
             }
             if (event.action == MouseAction.focusOut)
@@ -1911,11 +1922,6 @@ public:
             {
                 resetState(State.pressed);
                 resetState(State.hovered);
-                return true;
-            }
-            if (event.action == MouseAction.focusIn)
-            {
-                setState(State.pressed);
                 return true;
             }
         }
