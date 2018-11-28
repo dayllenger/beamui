@@ -3974,50 +3974,67 @@ class FindPanel : Row
         _replaceMode = replace;
 
         auto main = new Column;
+            Row rowFind = new Row;
+                _edFind = new EditLine(initialText);
+                _btnFindNext = new Button("Find next");
+                _btnFindPrev = new Button("Find previous");
+                Row findSettings = new Row;
+                    _cbCaseSensitive = new Button(null, "find_case_sensitive");
+                    _cbWholeWords = new Button(null, "find_whole_words");
+                    _cbSelection = new CheckBox("Sel");
+            Row rowReplace = new Row;
+                _edReplace = new EditLine(initialText);
+                auto btnReplace = new Button("Replace");
+                auto btnReplaceAndFind = new Button("Replace and find");
+                auto btnReplaceAll = new Button("Replace all");
+        auto closeBtn = new Button(null, "close");
 
-        Row rowFind = new Row;
+        with (main) {
+            add(rowFind);
+            add(rowReplace);
+            with (rowFind) {
+                add(_edFind).fillWidth(true);
+                add(_btnFindNext);
+                add(_btnFindPrev);
+                add(findSettings);
+                with (findSettings) {
+                    add(_cbCaseSensitive);
+                    add(_cbWholeWords);
+                    add(_cbSelection);
+                    with (_cbCaseSensitive) {
+                        checkable = true;
+                        tooltipText = "Case sensitive";
+                    }
+                    with (_cbWholeWords) {
+                        checkable = true;
+                        tooltipText = "Whole words";
+                    }
+                }
+            }
+            with (rowReplace) {
+                id = "rowReplace";
+                add(_edReplace).fillWidth(true);
+                add(btnReplace);
+                add(btnReplaceAndFind);
+                add(btnReplaceAll);
+            }
+        }
+        add(main).fillWidth(true);
+        add(closeBtn).fillHeight(false);
 
-        _edFind = new EditLine(initialText);
         _edFind.enterKeyPressed = (EditWidgetBase e) { findNext(_backDirection); return true; };
         _edFind.contentChanged ~= &onFindTextChange;
 
-        _btnFindNext = new Button("Find next");
-        _btnFindPrev = new Button("Find previous");
         _btnFindNext.clicked = (Widget wt) { findNext(false); };
         _btnFindPrev.clicked = (Widget wt) { findNext(true); };
 
-        Row findSettings = new Row;
-
-        _cbCaseSensitive = new Button(null, "find_case_sensitive");
-        _cbWholeWords = new Button(null, "find_whole_words");
-        _cbCaseSensitive.checkable = true;
-        _cbWholeWords.checkable = true;
-        _cbCaseSensitive.tooltipText = "Case sensitive";
-        _cbWholeWords.tooltipText = "Whole words";
-        _cbSelection = new CheckBox("Sel");
         _cbCaseSensitive.checkChanged = &onCaseSensitiveCheckChange;
         _cbWholeWords.checkChanged = &onCaseSensitiveCheckChange;
         _cbSelection.checkChanged = &onCaseSensitiveCheckChange;
 
-        findSettings.add(_cbCaseSensitive);
-        findSettings.add(_cbWholeWords);
-        findSettings.add(_cbSelection);
-
-        rowFind.add(_edFind).fillWidth(true);
-        rowFind.add(_btnFindNext);
-        rowFind.add(_btnFindPrev);
-        rowFind.add(findSettings);
-
-        Row rowReplace = new Row;
-        rowReplace.id = "rowReplace";
         if (!replace)
             rowReplace.visibility = Visibility.gone;
 
-        _edReplace = new EditLine(initialText);
-
-        auto btnReplace = new Button("Replace");
-        auto btnReplaceAndFind = new Button("Replace and find");
-        auto btnReplaceAll = new Button("Replace all");
         btnReplace.clicked = (Widget wt) { replaceOne(); };
         btnReplaceAndFind.clicked = (Widget wt) {
             replaceOne();
@@ -4025,19 +4042,7 @@ class FindPanel : Row
         };
         btnReplaceAll.clicked = (Widget wt) { replaceAll(); };
 
-        rowReplace.add(_edReplace).fillWidth(true);
-        rowReplace.add(btnReplace);
-        rowReplace.add(btnReplaceAndFind);
-        rowReplace.add(btnReplaceAll);
-
-        main.add(rowFind);
-        main.add(rowReplace);
-
-        auto closeBtn = new Button(null, "close");
         closeBtn.clicked = (Widget wt) { close(); };
-
-        add(main).fillWidth(true);
-        add(closeBtn).fillHeight(false);
 
         focusGroup = true;
 

@@ -28,26 +28,34 @@ extern (C) int UIAppMain(string[] args)
 
     // create some widgets to show
     // Column arranges items vertically
-    Column pane = new Column;
-    pane.minWidth = 200;
-    pane.padding = Insets(15);
-        Label header = new Label("Header");
-        header.fontSize = 18;
-        EditLine ed1 = new EditLine("Hello");
-        EditLine ed2 = new EditLine("world");
-        CheckBox check = new CheckBox("Check me");
-    pane.add(header);
-    pane.add(ed1);
-    pane.add(ed2);
-    pane.add(check);
+    auto pane = new Column;
+        auto header = new Label("Header");
+        auto ed1 = new EditLine("Hello");
+        auto ed2 = new EditLine("world");
+        auto check = new CheckBox("Check me");
         // Row organizes items horizontally
-        Row line = new Row;
-            Button ok = new Button("OK");
-            Button exit = new Button("Exit");
-        // let the buttons fill horizontal space
-        line.add(ok).fillWidth(true);
-        line.add(exit).fillWidth(true);
-    pane.add(line);
+        auto line = new Row;
+            auto ok = new Button("OK");
+            auto exit = new Button("Exit");
+
+    // using "with" statement for readability
+    with (pane) {
+        minWidth = 200;
+        padding = Insets(15);
+        add(header);
+        add(ed1);
+        add(ed2);
+        add(check);
+        add(line);
+        with (header) {
+            fontSize = 18;
+        }
+        with (line) {
+            // let the buttons fill horizontal space
+            add(ok).fillWidth(true);
+            add(exit).fillWidth(true);
+        }
+    }
 
     // disable OK button
     ok.enabled = false;

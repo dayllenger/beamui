@@ -188,112 +188,171 @@ extern (C) int UIAppMain(string[] args)
     // most of controls example
     {
         auto controls = new Column;
-        controls.padding = 12;
+            auto line1 = new Row;
+                auto gb = new GroupBox("CheckBox"d);
+                auto gb2 = new GroupBox("RadioButton"d);
+                auto col1 = new Column;
+                    auto gb3 = new GroupBox("Button"d, Orientation.horizontal);
+                    auto gb4 = new GroupBox("Button with icon and text"d, Orientation.horizontal);
+                    auto gbtext = new GroupBox("Label"d, Orientation.horizontal);
+                auto col2 = new Column;
+                    auto gb21 = new GroupBox("Button with Action"d);
+                        auto btnToggle = new Button("Toggle action above"d, null, true);
+                    auto gb22 = new GroupBox("ImageWidget"d);
+                auto col3 = new Column;
+                    auto gb31 = new GroupBox("SwitchButton"d);
+            auto line2 = new Row;
+                auto gb5 = new GroupBox("Slider and Scrollbar"d, Orientation.horizontal);
+                    auto sl = new Slider(Orientation.horizontal);
+                    auto sb = new ScrollBar(Orientation.horizontal);
+                auto gb6 = new GroupBox("EditLine"d, Orientation.horizontal);
+            auto line3 = new Row;
+                auto gbeditbox = new GroupBox("EditBox"d);
+                    auto ed1 = new EditBox("Some text in EditBox\nOne more line\nYet another text line");
+                auto gbtabs = new GroupBox("TabWidget"d);
+                    auto tabs1 = new TabWidget;
+            auto line4 = new Row;
+                auto gbgrid = new GroupBox("StringGridWidget"d);
+                    auto grid = new StringGridWidget;
+                auto gbtree = new GroupBox("TreeWidget"d, Orientation.vertical);
+                    auto tree = new TreeWidget;
+                    auto newTreeItemForm = new Column;
+                        auto newTreeItemEd = new EditLine("new item"d);
+                        auto newTreeItemFormRow = new Row;
+                            auto btnAddItem = new Button("Add"d);
+                            auto btnRemoveItem = new Button("Remove"d);
 
-        auto line1 = new Row;
-        controls.add(line1);
+        with (controls) {
+            padding = 12;
+            add(line1);
+            add(line2);
+            add(line3);
+            add(line4);
+            with (line1) {
+                add(gb);
+                add(gb2);
+                add(col1);
+                add(col2);
+                add(col3);
+                with (gb) {
+                    add(new CheckBox("CheckBox 1"d));
+                    add(new CheckBox("CheckBox 2"d).checked(true));
+                    add(new CheckBox("CheckBox disabled"d).enabled(false));
+                    add(new CheckBox("CheckBox disabled"d).checked(true).enabled(false));
+                }
+                with (gb2) {
+                    add(new RadioButton("RadioButton 1"d).checked(true));
+                    add(new RadioButton("RadioButton 2"d));
+                    add(new RadioButton("RadioButton disabled"d).enabled(false));
+                }
+                with (col1) {
+                    add(gb3);
+                    add(gb4);
+                    add(gbtext);
+                    with (gb3) {
+                        add(new Button("Button"d));
+                        add(new Button("Button disabled"d).enabled(false));
+                    }
+                    with (gb4) {
+                        add(new Button("Enabled"d, "document-open"));
+                        add(new Button("Disabled"d, "document-save").enabled(false));
+                    }
+                    with (gbtext) {
+                        add(new Label("Red text"d).fontSize(12.pt).textColor(0xFF0000));
+                        add(new Label("Italic text"d).fontSize(12.pt).fontItalic(true));
+                    }
+                }
+                with (col2) {
+                    add(gb21);
+                    add(gb22);
+                    with (gb21) {
+                        add(new Button(fileOpenAction).orientation(Orientation.vertical));
+                        add(btnToggle);
+                    }
+                    with (gb22) {
+                        add(new ImageWidget("cr3_logo"));
+                    }
+                }
+                with (col3) {
+                    add(gb31);
+                    with (gb31) {
+                        add(new SwitchButton);
+                        add(new SwitchButton().checked(true));
+                        add(new SwitchButton().enabled(false));
+                        add(new SwitchButton().enabled(false).checked(true));
+                    }
+                }
+            }
+            with (line2) {
+                add(gb5).fillWidth(true);
+                add(gb6);
+                with (gb5) {
+                    add(sb).fillWidth(true);
+                    add(sl).fillWidth(true);
+                }
+                with (gb6) {
+                    add(new EditLine("Some text"d).minWidth(150));
+                    add(new EditLine("Some text"d).enabled(false).minWidth(150));
+                }
+            }
+            with (line3) {
+                add(gbeditbox).fillWidth(true);
+                add(gbtabs);
+                with (gbeditbox) {
+                    add(ed1).fillHeight(true);
+                }
+                with (gbtabs) {
+                    add(tabs1);
+                    with (tabs1) {
+                        tabHost.padding = 10;
+                        tabHost.backgroundColor = 0xE0E0E0;
+                        addTab(new MultilineLabel("Label on tab page\nLabels can be\nMultiline"d)
+                            .id("tab1"), "Tab 1"d);
+                        addTab(new ImageWidget("beamui-logo").id("tab2"), "Tab 2"d);
+                    }
+                }
+            }
+            with (line4) {
+                add(gbgrid).fillWidth(true);
+                add(gbtree);
+                with (gbgrid) {
+                    add(grid).fillHeight(true);
+                }
+                with (gbtree) {
+                    add(tree);
+                    add(newTreeItemForm);
+                    with (newTreeItemForm) {
+                        add(newTreeItemEd);
+                        add(newTreeItemFormRow).fillWidth(false).alignment(Align.right);
+                        with (newTreeItemFormRow) {
+                            add(btnAddItem);
+                            add(btnRemoveItem);
+                        }
+                    }
+                }
+            }
+        }
 
-        auto gb = new GroupBox("CheckBox"d);
-        gb.add(new CheckBox("CheckBox 1"d));
-        gb.add(new CheckBox("CheckBox 2"d).checked(true));
-        gb.add(new CheckBox("CheckBox disabled"d).enabled(false));
-        gb.add(new CheckBox("CheckBox disabled"d).checked(true).enabled(false));
-        line1.add(gb);
-
-        auto gb2 = new GroupBox("RadioButton"d);
-        gb2.add(new RadioButton("RadioButton 1"d).checked(true));
-        gb2.add(new RadioButton("RadioButton 2"d));
-        gb2.add(new RadioButton("RadioButton disabled"d).enabled(false));
-        line1.add(gb2);
-
-        auto col1 = new Column;
-        auto gb3 = new GroupBox("Button"d, Orientation.horizontal);
-        gb3.add(new Button("Button"d));
-        gb3.add(new Button("Button disabled"d).enabled(false));
-        col1.add(gb3);
-        auto gb4 = new GroupBox("Button with icon and text"d, Orientation.horizontal);
-        gb4.add(new Button("Enabled"d, "document-open"));
-        gb4.add(new Button("Disabled"d, "document-save").enabled(false));
-        col1.add(gb4);
-        auto gbtext = new GroupBox("Label"d, Orientation.horizontal);
-        gbtext.add(new Label("Red text"d).fontSize(12.pt).textColor(0xFF0000));
-        gbtext.add(new Label("Italic text"d).fontSize(12.pt).fontItalic(true));
-        col1.add(gbtext);
-        line1.add(col1);
-
-        auto col2 = new Column;
-        auto gb32 = new GroupBox("Button with Action"d);
-        gb32.add(new Button(fileOpenAction).orientation(Orientation.vertical));
-        auto btnToggle = new Button("Toggle action above"d, null, true);
         btnToggle.checked(fileOpenAction.enabled);
         btnToggle.clicked = delegate(Widget w) {
             fileOpenAction.enabled = !fileOpenAction.enabled;
         };
-        gb32.add(btnToggle);
-        col2.add(gb32);
-        auto gb33 = new GroupBox("ImageWidget"d);
-        gb33.add(new ImageWidget("cr3_logo"));
-        col2.add(gb33);
-        line1.add(col2);
 
-        auto col3 = new Column;
-        auto gb31 = new GroupBox("SwitchButton"d);
-        gb31.add(new SwitchButton);
-        gb31.add(new SwitchButton().checked(true));
-        gb31.add(new SwitchButton().enabled(false));
-        gb31.add(new SwitchButton().enabled(false).checked(true));
-        col3.add(gb31);
-        line1.add(col3);
-
-        auto line2 = new Row;
-        controls.add(line2);
-
-        auto sb = new ScrollBar(Orientation.horizontal);
         sb.scrolled = delegate(AbstractSlider src, ScrollEvent event) { Log.d("scrollbar: ", event.action); };
-        auto gb5 = new GroupBox("horizontal ScrollBar"d);
-        gb5.add(sb);
-        line2.add(gb5);
-        auto sl = new Slider(Orientation.horizontal);
         sl.scrolled = delegate(AbstractSlider src, ScrollEvent event) { Log.d("slider: ", event.action); };
-        auto gb6 = new GroupBox("horizontal Slider"d);
-        gb6.add(sl);
-        line2.add(gb6);
-        auto gb7 = new GroupBox("EditLine"d);
-        gb7.add(new EditLine("Some text"d).minWidth(120.pt));
-        line2.add(gb7);
-        auto gb8 = new GroupBox("EditLine disabled"d);
-        gb8.add(new EditLine("Some text"d).enabled(false).minWidth(120.pt));
-        line2.add(gb8);
 
-        auto line3 = new Row;
-        controls.add(line3);
+        import std.random : uniform;
 
-        auto gbeditbox = new GroupBox("EditBox"d);
-        auto ed1 = new EditBox("Some text in EditBox\nOne more line\nYet another text line");
-        gbeditbox.add(ed1).fillHeight(true);
-        line3.add(gbeditbox).fillWidth(true);
-        GroupBox gbtabs = new GroupBox("TabWidget"d);
-        auto tabs1 = new TabWidget;
-        tabs1.addTab(new MultilineLabel("Label on tab page\nLabels can be\nMultiline"d).id("tab1"),
-                "Tab 1"d);
-        tabs1.addTab(new ImageWidget("beamui-logo").id("tab2"), "Tab 2"d);
-        tabs1.tabHost.padding = 10;
-        tabs1.tabHost.backgroundColor = 0xE0E0E0;
-        gbtabs.add(tabs1);
-        line3.add(gbtabs);
-
-        auto line4 = new Row;
-        auto gbgrid = new GroupBox("StringGridWidget"d);
-        auto grid = new StringGridWidget;
         grid.resize(12, 10);
         foreach (index, month; ["January"d, "February"d, "March"d, "April"d, "May"d, "June"d,
                 "July"d, "August"d, "September"d, "October"d, "November"d, "December"d])
+        {
             grid.setColTitle(cast(int)index, month);
+        }
         foreach (y; 0 .. grid.rows)
+        {
             grid.setRowTitle(y, to!dstring(y + 1));
-
-        import std.random;
-
+        }
         foreach (x; 0 .. grid.cols)
         {
             foreach (y; 0 .. grid.rows)
@@ -303,13 +362,9 @@ extern (C) int UIAppMain(string[] args)
             }
         }
         //grid.alignment = Align.right;
-        grid.setColWidth(0, 30.pt);
+        grid.setColWidth(0, 30);
         grid.autoFit();
-        gbgrid.add(grid).fillHeight(true);
-        line4.add(gbgrid).fillWidth(true);
 
-        auto gbtree = new GroupBox("TreeWidget"d, Orientation.vertical);
-        auto tree = new TreeWidget;
         TreeItem tree1 = tree.items.newChild("group1", "Group 1"d, "document-open");
         tree1.newChild("g1_1", "Group 1 item 1"d);
         tree1.newChild("g1_2", "Group 1 item 2"d);
@@ -331,28 +386,15 @@ extern (C) int UIAppMain(string[] args)
         tree32.newChild("group3_2_5", "Group 3 item 2 subitem 5"d);
         tree3.newChild("g3_5", "Group 3 item 5"d);
         tree3.newChild("g3_6", "Group 3 item 6"d);
-        gbtree.add(tree);
         tree.items.selectItem(tree1);
         // test adding new tree items
-        auto newTreeItemForm = new Column;
-        auto newTreeItemEd = new EditLine("new item"d);
-        auto newTreeItemFormRow = new Row;
-        auto btnAddItem = new Button("Add"d);
-        auto btnRemoveItem = new Button("Remove"d);
-        newTreeItemFormRow.addSpacer();
-        newTreeItemFormRow.add(btnAddItem);
-        newTreeItemFormRow.add(btnRemoveItem);
-        newTreeItemForm.add(newTreeItemEd);
-        newTreeItemForm.add(newTreeItemFormRow);
         btnAddItem.clicked = delegate(Widget source) {
-            import std.random;
-
             dstring label = newTreeItemEd.text;
-            string id = "item%d".format(uniform(1000000, 9999999, rndGen));
+            string id = format("item%d", uniform(1000000, 9999999));
             TreeItem item = tree.items.selectedItem;
             if (item)
             {
-                Log.d("Creating new tree item ", id, " ", label);
+                Log.d("Creating new tree item `", label, "` with id: ", id);
                 TreeItem newItem = new TreeItem(id, label);
                 item.addChild(newItem);
             }
@@ -361,13 +403,10 @@ extern (C) int UIAppMain(string[] args)
             TreeItem item = tree.items.selectedItem;
             if (item)
             {
-                Log.d("Removing tree item ", item.id, " ", item.text);
+                Log.d("Removing tree item `", item.text, "` with id: ", item.id);
                 item.parent.removeChild(item);
             }
         };
-        gbtree.add(newTreeItemForm);
-        line4.add(gbtree);
-        controls.add(line4);
 
         tabs.addTab(controls.id("CONTROLS"), tr("Controls"));
     }
@@ -389,15 +428,29 @@ extern (C) int UIAppMain(string[] args)
     // right one is list with string list adapter
     {
         auto longLists = new Row;
+            auto list = new ListWidget(Orientation.vertical);
+            auto list2 = new StringListWidget;
+            auto itemedit = new Column;
+                auto itemtext = new EditLine("Text for new item"d);
+                auto addbtn = new Button("Add item"d);
 
-        auto list = new ListWidget(Orientation.vertical);
+        with (longLists) {
+            add(list).fillWidth(true);
+            add(list2).fillWidth(true);
+            with (itemedit) {
+                padding = Insets(0, 6);
+                add(new Label("New item text:"d));
+                add(itemtext);
+                add(addbtn);
+            }
+            add(itemedit);
+        }
+
         auto listAdapter = new WidgetListAdapter;
         listAdapter.add(new Label("This is a list of widgets"d));
         list.ownAdapter = listAdapter;
         list.selectItem(0);
-        longLists.add(list).fillWidth(true);
 
-        auto list2 = new StringListWidget;
         auto stringList = new StringListAdapter;
         stringList.add("This is a list of strings from StringListAdapter"d);
         stringList.add("If you type with your keyboard,"d);
@@ -406,7 +459,6 @@ extern (C) int UIAppMain(string[] args)
         stringList.add("neat!"d);
         list2.ownAdapter = stringList;
         list2.selectItem(0);
-        longLists.add(list2).fillWidth(true);
 
         for (int i = 1; i < 1000; i++)
         {
@@ -421,17 +473,10 @@ extern (C) int UIAppMain(string[] args)
         assert(list.itemEnabled(5) == false);
         assert(list.itemEnabled(6) == true);
 
-        auto itemedit = new Column;
-        itemedit.add(new Label("New item text:"d));
-        auto itemtext = new EditLine("Text for new item"d);
-        itemedit.add(itemtext);
-        auto btn = new Button("Add item"d);
-        btn.clicked = delegate(Widget src) {
+        addbtn.clicked = delegate(Widget src) {
             stringList.add(itemtext.text);
             listAdapter.add(new Label(itemtext.text));
         };
-        itemedit.add(btn);
-        longLists.add(itemedit);
 
         tabs.addTab(longLists.id("LISTS"), tr("Long list"));
     }
@@ -467,17 +512,7 @@ extern (C) int UIAppMain(string[] args)
 
     // editors
     {
-        auto editors = new Column;
-
-        editors.add(new Label("EditLine: Single line editor"d));
-        auto editLine = new EditLine("Single line editor sample text");
-        editLine.popupMenu = editorPopupMenu;
-        editors.add(createBaseEditorSettingsControl(editLine)); // see after UIAppMain
-        editors.add(editLine);
-
-        editors.add(new Label("SourceEdit: multiline editor, for source code editing"d));
-        auto srcEditBox = new SourceEdit;
-        srcEditBox.text = q{#!/usr/bin/env rdmd
+        dstring sourceCode = q{#!/usr/bin/env rdmd
 void main()
 {
     import std.stdio : writefln;
@@ -495,16 +530,39 @@ void main()
     writefln("%s\n%s\n%s\n", arr1, arr2, arr3);
 }
 }d;
-        srcEditBox.popupMenu = editorPopupMenu;
-        srcEditBox.showIcons = true;
-        auto editorControl = createBaseEditorSettingsControl(srcEditBox);
-        editors.add(addSourceEditorControls(editorControl, srcEditBox));
-        editors.add(srcEditBox).fillHeight(true);
+        auto editors = new Column;
+            auto editLineLabel = new Label("EditLine: Single line editor"d);
+            auto editLine = new EditLine("Single line editor sample text");
+            auto editorLabel1 = new Label("SourceEdit: multiline editor, for source code editing"d);
+            auto sourceEditor1 = new SourceEdit;
+            auto editorLabel2 = new Label("SourceEdit: additional view for the same content"d);
+            auto sourceEditor2 = new SourceEdit;
 
-        editors.add(new Label("EditBox: additional view for the same content (split view testing)"d));
-        auto srcEditBox2 = new SourceEdit;
-        srcEditBox2.content = srcEditBox.content; // view the same content as first editbox
-        editors.add(srcEditBox2).fillHeight(true);
+            auto editLineControl = createBaseEditorSettingsControl(editLine); // see after UIAppMain
+            auto editorControl = createBaseEditorSettingsControl(sourceEditor1)
+                .addSourceEditorControls(sourceEditor1);
+
+        with (editors) {
+            add(editLineLabel);
+            add(editLineControl);
+            add(editLine);
+            add(editorLabel1);
+            add(editorControl);
+            add(sourceEditor1).fillHeight(true);
+            add(editorLabel2);
+            add(sourceEditor2).fillHeight(true);
+            with (editLine) {
+                popupMenu = editorPopupMenu;
+            }
+            with (sourceEditor1) {
+                text = sourceCode;
+                popupMenu = editorPopupMenu;
+                showIcons = true;
+            }
+            with (sourceEditor2) {
+                content = sourceEditor1.content; // view the same content as first editbox
+            }
+        }
 
         tabs.addTab(editors.id("EDITORS"), tr("Editors"));
     }
@@ -512,21 +570,31 @@ void main()
     // string grid
     {
         auto gridTab = new Column;
-        auto gridSettings = new Row;
-        auto grid = new StringGridWidget;
+            auto gridSettings = new Row;
+                auto cb1 = new CheckBox("Full column on left"d);
+                auto cb2 = new CheckBox("Full row on top"d);
+            auto grid = new StringGridWidget;
 
-        auto cb1 = new CheckBox("Full column on left"d).checked(grid.fullColumnOnLeft)
-            .tooltipText("Extends scroll area to show full column at left when scrolled to rightmost column"d);
-        auto cb2 = new CheckBox("Full row on top"d).checked(grid.fullRowOnTop)
-            .tooltipText("Extends scroll area to show full row at top when scrolled to end row"d);
+        with (gridTab) {
+            add(gridSettings);
+            add(grid).fillHeight(true);
+            with (gridSettings) {
+                add(cb1);
+                add(cb2);
+                cb1.tooltipText = "Extends scroll area to show full column at left when scrolled to rightmost column"d;
+                cb2.tooltipText = "Extends scroll area to show full row at top when scrolled to end row"d;
+            }
+            with (grid) {
+                showColHeaders = true;
+                showRowHeaders = true;
+            }
+        }
+
+        cb1.checked = grid.fullColumnOnLeft;
+        cb2.checked = grid.fullRowOnTop;
         cb1.checkChanged ~= (w, checked) { grid.fullColumnOnLeft = checked; };
         cb2.checkChanged ~= (w, checked) { grid.fullRowOnTop = checked; };
-        gridSettings.add(cb1);
-        gridSettings.add(cb2);
-        gridTab.add(gridSettings);
 
-        grid.showColHeaders = true;
-        grid.showRowHeaders = true;
         grid.resize(30, 50);
         grid.fixedCols = 3;
         grid.fixedRows = 2;
@@ -556,8 +624,6 @@ void main()
         }
         grid.autoFit();
 
-        gridTab.add(grid).fillHeight(true);
-
         tabs.addTab(gridTab.id("GRID"), tr("Grid"));
     }
 
@@ -568,7 +634,6 @@ void main()
         barChart1.addBar(24.0, Color(0, 255, 0), "Green bar"d);
         barChart1.addBar(5.0, Color(0, 0, 255), "Blue bar"d);
         barChart1.addBar(12.0, Color(230, 126, 34), "Orange bar"d);
-        //barChart1.fillWH();
 
         auto barChart2 = new SimpleBarChart("SimpleBarChart Example - long descriptions"d);
         barChart2.addBar(12.0, Color(255, 0, 0), "Red bar\n(12.0)"d);
@@ -591,16 +656,20 @@ void main()
         barChart4.axisRatio = 1.3;
 
         auto chartsLayout = new Row;
-
-        auto chartColumn1 = new Column;
-        auto chartColumn2 = new Column;
-
-        chartColumn1.add(barChart1);
-        chartColumn1.add(barChart2);
-        chartsLayout.add(chartColumn1);
-        chartColumn2.add(barChart3);
-        chartColumn2.add(barChart4);
-        chartsLayout.add(chartColumn2);
+        with (chartsLayout) {
+            auto col1 = new Column;
+            auto col2 = new Column;
+            with (col1) {
+                add(barChart1);
+                add(barChart2);
+            }
+            with (col2) {
+                add(barChart3);
+                add(barChart4);
+            }
+            add(col1);
+            add(col2);
+        }
 
         tabs.addTab(chartsLayout.id("CHARTS"), tr("Charts"));
     }
@@ -612,30 +681,32 @@ void main()
         canvas.drawCalled = delegate(DrawBuf buf, Box area) {
             buf.fill(Color(0xFFFFFF));
 
-            int lh = canvas.font.height;
+            FontRef font = canvas.font;
+
+            int lh = font.height;
             int x = area.x + 5;
             int y = area.y + 5;
-            canvas.font.drawText(buf, x + 20, y, "solid rectangles"d, Color(0xC080C0));
+            font.drawText(buf, x + 20, y, "solid rectangles"d, Color(0xC080C0));
             buf.fillRect(Rect(x + 20, y + lh + 1, x + 150, y + 200), Color(0x80FF80));
             buf.fillRect(Rect(x + 90, y + 80, x + 250, y + 250), Color(0x80FF80FF));
 
-            canvas.font.drawText(buf, x + 400, y, "frame"d, Color(0x208020));
+            font.drawText(buf, x + 400, y, "frame"d, Color(0x208020));
             buf.drawFrame(Rect(x + 400, y + lh + 1, x + 550, y + 150),
                           Color(0x2090A0), Insets(6, 6, 18, 6), Color(0x0));
 
-            canvas.font.drawText(buf, x + 20, y + 300, "points"d, Color(0x000080));
+            font.drawText(buf, x + 20, y + 300, "points"d, Color(0x000080));
             for (int i = 0; i < 100; i += 2)
                 buf.drawPixel(x + 20 + i, y + lh + 305, Color(0xFF0000 + i * 2));
 
-            canvas.font.drawText(buf, x + 450, y + 300, "lines"d, Color(0x800020));
+            font.drawText(buf, x + 450, y + 300, "lines"d, Color(0x800020));
             for (int i = 0; i < 40; i += 3)
                 buf.drawLine(Point(x + 400 + i * 4, y + 250), Point(x + 350 + i * 7, y + 320 + i * 2),
                              Color(0x008000 + i * 5));
 
-            canvas.font.drawText(buf, x + 20, y + 500, "ellipse"d, Color(0x208050));
+            font.drawText(buf, x + 20, y + 500, "ellipse"d, Color(0x208050));
             buf.drawEllipseF(x + 100, y + 600, 100, 80, 3, Color(0x80008000), Color(0x804040FF));
 
-            canvas.font.drawText(buf, x + 320, y + 500, "ellipse arc"d, Color(0x208050));
+            font.drawText(buf, x + 320, y + 500, "ellipse arc"d, Color(0x208050));
             buf.drawEllipseArcF(x + 350, y + lh + 505, 150, 180, 45, 130, 3, Color(0x40008000), Color(0x804040FF));
         };
 
@@ -663,11 +734,22 @@ void main()
 Widget createBaseEditorSettingsControl(EditWidgetBase editor)
 {
     auto row = new Row;
-    auto cb1 = new CheckBox(tr("Catch tabs")).checked(editor.wantTabs);
-    auto cb2 = new CheckBox(tr("Use spaces for indentation")).checked(editor.useSpacesForTabs);
-    auto cb3 = new CheckBox(tr("Read only")).checked(editor.readOnly);
-    auto cb4 = new CheckBox(tr("Fixed font")).checked(editor.fontFamily == FontFamily.monospace);
-    auto cb5 = new CheckBox(tr("Tab size 8")).checked(editor.tabSize == 8);
+    auto cb1 = new CheckBox(tr("Catch tabs"));
+    auto cb2 = new CheckBox(tr("Use spaces for indentation"));
+    auto cb3 = new CheckBox(tr("Read only"));
+    auto cb4 = new CheckBox(tr("Fixed font"));
+    auto cb5 = new CheckBox(tr("Tab size 8"));
+    row.add(cb1);
+    row.add(cb2);
+    row.add(cb3);
+    row.add(cb4);
+    row.add(cb5);
+
+    cb1.checked = editor.wantTabs;
+    cb2.checked = editor.useSpacesForTabs;
+    cb3.checked = editor.readOnly;
+    cb4.checked = editor.fontFamily == FontFamily.monospace;
+    cb5.checked = editor.tabSize == 8;
     cb1.checkChanged ~= (w, checked) { editor.wantTabs = checked; };
     cb2.checkChanged ~= (w, checked) { editor.useSpacesForTabs = checked; };
     cb3.checkChanged ~= (w, checked) { editor.readOnly = checked; };
@@ -678,18 +760,15 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
             editor.fontFace("Arial").fontFamily(FontFamily.sans_serif);
     };
     cb5.checkChanged ~= (w, checked) { editor.tabSize(checked ? 8 : 4); };
-    row.add(cb1);
-    row.add(cb2);
-    row.add(cb3);
-    row.add(cb4);
-    row.add(cb5);
+
     return row;
 }
 
 Widget addSourceEditorControls(Widget base, SourceEdit editor)
 {
-    auto cb1 = new CheckBox(tr("Show line numbers")).checked(editor.showLineNumbers);
-    cb1.checkChanged ~= (w, checked) { editor.showLineNumbers = checked; };
+    auto cb1 = new CheckBox(tr("Show line numbers"));
     base.addChild(cb1);
+    cb1.checked = editor.showLineNumbers;
+    cb1.checkChanged ~= (w, checked) { editor.showLineNumbers = checked; };
     return base;
 }
