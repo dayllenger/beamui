@@ -1,5 +1,5 @@
 /**
-This module implements window frame widget.
+Window frame widget.
 
 Synopsis:
 ---
@@ -20,7 +20,7 @@ import beamui.widgets.text;
 class WindowFrame : Column
 {
     @property Widget bodyWidget() { return _bodyWidget; }
-
+    /// ditto
     @property void bodyWidget(Widget widget)
     {
         _bodyLayout.replaceChild(_bodyWidget, widget);
@@ -70,7 +70,7 @@ class WindowFrame : Column
         _bodyLayout.bindSubItem(this, "body");
 
         _bodyWidget = createBodyWidget();
-        _bodyLayout.add(_bodyWidget).fillWidth();
+        _bodyLayout.add(_bodyWidget).setFillWidth(true);
         //_bodyWidget.bindSubItem(this, "body");
 
         add(_titleLayout);

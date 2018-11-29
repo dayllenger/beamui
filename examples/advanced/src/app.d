@@ -292,11 +292,11 @@ extern (C) int UIAppMain(string[] args)
                 }
             }
             with (line2) {
-                add(gb5).fillWidth(true);
+                add(gb5).setFillWidth(true);
                 add(gb6);
                 with (gb5) {
-                    add(sb).fillWidth(true);
-                    add(sl).fillWidth(true);
+                    add(sb).setFillWidth(true);
+                    add(sl).setFillWidth(true);
                 }
                 with (gb6) {
                     auto ed1 = new EditLine("Some text"d);
@@ -309,10 +309,10 @@ extern (C) int UIAppMain(string[] args)
                 }
             }
             with (line3) {
-                add(gbeditbox).fillWidth(true);
+                add(gbeditbox).setFillWidth(true);
                 add(gbtabs);
                 with (gbeditbox) {
-                    add(edbox).fillHeight(true);
+                    add(edbox).setFillHeight(true);
                 }
                 with (gbtabs) {
                     add(tabs1);
@@ -327,17 +327,17 @@ extern (C) int UIAppMain(string[] args)
                 }
             }
             with (line4) {
-                add(gbgrid).fillWidth(true);
+                add(gbgrid).setFillWidth(true);
                 add(gbtree);
                 with (gbgrid) {
-                    add(grid).fillHeight(true);
+                    add(grid).setFillHeight(true);
                 }
                 with (gbtree) {
                     add(tree);
                     add(newTreeItemForm);
                     with (newTreeItemForm) {
                         add(newTreeItemEd);
-                        add(newTreeItemFormRow).fillWidth(false).alignment(Align.right);
+                        add(newTreeItemFormRow).setFillWidth(false).setAlignment(Align.right);
                         with (newTreeItemFormRow) {
                             add(btnAddItem);
                             add(btnRemoveItem);
@@ -449,8 +449,8 @@ extern (C) int UIAppMain(string[] args)
                 auto addbtn = new Button("Add item"d);
 
         with (longLists) {
-            add(list).fillWidth(true);
-            add(list2).fillWidth(true);
+            add(list).setFillWidth(true);
+            add(list2).setFillWidth(true);
             with (itemedit) {
                 padding = Insets(0, 6);
                 add(new Label("New item text:"d));
@@ -562,9 +562,9 @@ void main()
             add(editLine);
             add(editorLabel1);
             add(editorControl);
-            add(sourceEditor1).fillHeight(true);
+            add(sourceEditor1).setFillHeight(true);
             add(editorLabel2);
-            add(sourceEditor2).fillHeight(true);
+            add(sourceEditor2).setFillHeight(true);
             with (editLine) {
                 popupMenu = editorPopupMenu;
             }
@@ -591,7 +591,7 @@ void main()
 
         with (gridTab) {
             add(gridSettings);
-            add(grid).fillHeight(true);
+            add(grid).setFillHeight(true);
             with (gridSettings) {
                 add(cb1);
                 add(cb2);
@@ -735,7 +735,7 @@ void main()
     //==========================================================================
 
     tabs.selectTab("CONTROLS");
-    frame.add(tabs).fillHeight(true);
+    frame.add(tabs).setFillHeight(true);
 
     window.mainWidget = frame;
     static if (BACKEND_GUI)

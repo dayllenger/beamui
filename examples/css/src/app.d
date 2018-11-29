@@ -32,13 +32,13 @@ extern (C) int UIAppMain(string[] args)
 
     with (splitView) {
         id = "split-view";
-        add(editorPane).fillWidth(true);
+        add(editorPane).setFillWidth(true);
         addResizer();
         add(controls);
         with (editorPane) {
             id = "editor-pane";
-            add(editor).fillHeight(true);
-            add(btnUpdate).fillWidth(false);
+            add(editor).setFillHeight(true);
+            add(btnUpdate).setFillWidth(false);
             btnUpdate.id = "update";
         }
         with (controls) {
@@ -77,12 +77,12 @@ Widget createControlsPanel()
             auto ed = new EditLine("Edit line");
             auto comb = new ComboBox(["Item 1", "Item 2", "Item 3"]);
             comb.selectedItemIndex = 0;
-            add(ed).fillWidth(true);
+            add(ed).setFillWidth(true);
             add(comb);
         }
         Row r2 = new Row;
         with (r2) {
-            add(new Button("Button")).fillWidth(true);
+            add(new Button("Button")).setFillWidth(true);
             add(new Button("Button", "folder").addStyleClasses("folder"));
             add(new Button(null, "dialog-cancel"));
         }

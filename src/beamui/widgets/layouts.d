@@ -64,27 +64,24 @@ class LinearLayout : WidgetGroupDefaultDrawing
             /// Widget occupies all available width in layout
             bool fillWidth() const { return _fillWidth; }
             /// ditto
-            ref Cell fillWidth(bool b)
+            void fillWidth(bool flag)
             {
-                _fillWidth = b;
-                return this;
+                _fillWidth = flag;
             }
             /// Widget occupies all available height in layout
             bool fillHeight() const { return _fillHeight; }
             /// ditto
-            ref Cell fillHeight(bool b)
+            void fillHeight(bool flag)
             {
-                _fillHeight = b;
-                return this;
+                _fillHeight = flag;
             }
 
             /// Alignment (combined vertical and horizontal)
             Align alignment() const { return _alignment; }
             /// ditto
-            ref Cell alignment(Align value)
+            void alignment(Align value)
             {
                 setProperty!"_alignment" = value;
-                return this;
             }
             /// Returns horizontal alignment
             Align halign() const
@@ -104,19 +101,92 @@ class LinearLayout : WidgetGroupDefaultDrawing
                               _marginBottom.toDevice, _marginLeft.toDevice);
             }
             /// ditto
-            ref Cell margins(Insets value)
+            void margins(Insets value)
             {
                 setProperty!"_marginTop" = Dimension(value.top);
                 setProperty!"_marginRight" = Dimension(value.right);
                 setProperty!"_marginBottom" = Dimension(value.bottom);
                 setProperty!"_marginLeft" = Dimension(value.left);
-                return this;
             }
             /// ditto
-            ref Cell margins(int v)
+            void margins(int v)
             {
-                return margins = Insets(v);
+                margins = Insets(v);
             }
+            /// Top margin value
+            int marginTop() const
+            {
+                return _marginTop.toDevice;
+            }
+            /// ditto
+            void marginTop(int value)
+            {
+                setProperty!"_marginTop" = Dimension(value);
+            }
+            /// Right margin value
+            int marginRight() const
+            {
+                return _marginRight.toDevice;
+            }
+            /// ditto
+            void marginRight(int value)
+            {
+                setProperty!"_marginRight" = Dimension(value);
+            }
+            /// Bottom margin value
+            int marginBottom() const
+            {
+                return _marginBottom.toDevice;
+            }
+            /// ditto
+            void marginBottom(int value)
+            {
+                setProperty!"_marginBottom" = Dimension(value);
+            }
+            /// Left margin value
+            int marginLeft() const
+            {
+                return _marginLeft.toDevice;
+            }
+            /// ditto
+            void marginLeft(int value)
+            {
+                setProperty!"_marginLeft" = Dimension(value);
+            }
+        }
+
+        /// Chained version of `fillWidth`
+        Cell* setFillWidth(bool flag)
+        {
+            _fillWidth = flag;
+            return &this;
+        }
+        /// Chained version of `fillHeight`
+        Cell* setFillHeight(bool flag)
+        {
+            _fillHeight = flag;
+            return &this;
+        }
+        /// Chained version of `alignment`
+        Cell* setAlignment(Align value)
+        {
+            setProperty!"_alignment" = value;
+            return &this;
+        }
+        /// Chained version of `margins`
+        Cell* setMargins(Insets value)
+        {
+            setProperty!"_marginTop" = Dimension(value.top);
+            setProperty!"_marginRight" = Dimension(value.right);
+            setProperty!"_marginBottom" = Dimension(value.bottom);
+            setProperty!"_marginLeft" = Dimension(value.left);
+            return &this;
+        }
+        /// ditto
+        Cell* setMargins(int v)
+        {
+            margins = Insets(v);
+            return &this;
         }
 
         private // TODO: effects
@@ -156,15 +226,15 @@ class LinearLayout : WidgetGroupDefaultDrawing
     mixin SupportCSS;
 
     /// Add a widget to the layout next to the last item.
-    /// Returns: Cell reference, that allows to adjust layout properties for this widget.
-    ref Cell add(Widget item)
+    /// Returns: Cell pointer (not null), that allows to adjust layout properties for this widget.
+    Cell* add(Widget item)
     {
         super.addChild(item);
         Cell* cell = createDefaultCell();
         _cells ~= cell;
         item.stylesRecomputed = &cell.recomputeStyleImpl;
         requestLayout();
-        return *cell;
+        return cell;
     }
 
     /// Add a spacer

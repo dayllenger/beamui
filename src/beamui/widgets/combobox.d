@@ -87,7 +87,7 @@ class ComboBoxBase : Row
         _button.focusable = false;
         _body.focusable = false;
         focusable = true;
-        add(_body).fillWidth(true);
+        add(_body).setFillWidth(true);
         add(_button);
     }
 

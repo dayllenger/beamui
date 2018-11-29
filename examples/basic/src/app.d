@@ -52,8 +52,8 @@ extern (C) int UIAppMain(string[] args)
         }
         with (line) {
             // let the buttons fill horizontal space
-            add(ok).fillWidth(true);
-            add(exit).fillWidth(true);
+            add(ok).setFillWidth(true);
+            add(exit).setFillWidth(true);
         }
     }
 

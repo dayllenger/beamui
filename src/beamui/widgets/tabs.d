@@ -738,11 +738,11 @@ class TabWidget : Column
         if (tabAlignment == Align.top)
         {
             add(_tabControl);
-            add(_tabHost).fillHeight(true);
+            add(_tabHost).setFillHeight(true);
         }
         else
         {
-            add(_tabHost).fillHeight(true);
+            add(_tabHost).setFillHeight(true);
             add(_tabControl);
         }
         focusGroup = true;

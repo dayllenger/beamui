@@ -669,18 +669,62 @@ public:
         {
             padding = Insets(v);
         }
+        /// Top padding value
+        int paddingTop() const
+        {
+            updateStyles();
+            return _paddingTop.toDevice;
+        }
+        /// ditto
+        void paddingTop(int value)
+        {
+            setProperty!"_paddingTop" = Dimension(value);
+        }
+        /// Right padding value
+        int paddingRight() const
+        {
+            updateStyles();
+            return _paddingRight.toDevice;
+        }
+        /// ditto
+        void paddingRight(int value)
+        {
+            setProperty!"_paddingRight" = Dimension(value);
+        }
+        /// Bottom padding value
+        int paddingBottom() const
+        {
+            updateStyles();
+            return _paddingBottom.toDevice;
+        }
+        /// ditto
+        void paddingBottom(int value)
+        {
+            setProperty!"_paddingBottom" = Dimension(value);
+        }
+        /// Left padding value
+        int paddingLeft() const
+        {
+            updateStyles();
+            return _paddingLeft.toDevice;
+        }
+        /// ditto
+        void paddingLeft(int value)
+        {
+            setProperty!"_paddingLeft" = Dimension(value);
+        }
         private alias paddingTop_effect = requestLayout;
         private alias paddingRight_effect = requestLayout;
         private alias paddingBottom_effect = requestLayout;
         private alias paddingLeft_effect = requestLayout;
 
-        ///
         Insets borderWidth() const
         {
             updateStyles();
             return Insets(_borderWidthTop.toDevice, _borderWidthRight.toDevice,
                           _borderWidthBottom.toDevice, _borderWidthLeft.toDevice);
         }
+        /// ditto
         void borderWidth(Insets value)
         {
             setProperty!"_borderWidthTop" = Dimension(value.top);

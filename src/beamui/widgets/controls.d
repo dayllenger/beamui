@@ -176,7 +176,7 @@ class Button : LinearLayout, ActionHolder
                 _label.id = "label";
                 _label.bindSubItem(this, "label");
                 _label.state = State.parent;
-                add(_label).fillWidth(true).fillHeight(false);
+                add(_label).setFillWidth(true).setFillHeight(false);
             }
             else
                 _label.text = s;
@@ -393,7 +393,7 @@ class CheckBox : LinearLayout
         _label.bindSubItem(this, "label");
         _label.state = State.parent;
         add(_icon);
-        add(_label).fillHeight(false);
+        add(_label).setFillHeight(false);
         if (!labelText)
             spacing = 0;
         clickable = true;

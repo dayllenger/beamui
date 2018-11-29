@@ -3966,7 +3966,7 @@ class FindPanel : Row
             add(rowFind);
             add(rowReplace);
             with (rowFind) {
-                add(_edFind).fillWidth(true);
+                add(_edFind).setFillWidth(true);
                 add(_btnFindNext);
                 add(_btnFindPrev);
                 add(findSettings);
@@ -3986,14 +3986,14 @@ class FindPanel : Row
             }
             with (rowReplace) {
                 id = "rowReplace";
-                add(_edReplace).fillWidth(true);
+                add(_edReplace).setFillWidth(true);
                 add(btnReplace);
                 add(btnReplaceAndFind);
                 add(btnReplaceAll);
             }
         }
-        add(main).fillWidth(true);
-        add(closeBtn).fillHeight(false);
+        add(main).setFillWidth(true);
+        add(closeBtn).setFillHeight(false);
 
         _edFind.enterKeyPressed = (EditWidgetBase e) { findNext(_backDirection); return true; };
         _edFind.contentChanged ~= &onFindTextChange;

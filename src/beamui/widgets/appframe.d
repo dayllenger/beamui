@@ -251,7 +251,7 @@ class AppFrame : Column
         }
         if (_toolbarHost)
             add(_toolbarHost);
-        add(_body).fillHeight(true);
+        add(_body).setFillHeight(true);
         if (_statusLine)
             add(_statusLine);
         updateShortcuts();

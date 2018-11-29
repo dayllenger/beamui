@@ -27,7 +27,7 @@ auto treePane = new Column;
 auto treeItemLabel = new Label;
 treeItemLabel.textAlign = TextAlign.center;
 treePane.add(treeItemLabel);
-treePane.add(tree).fillHeight(true);
+treePane.add(tree).setFillHeight(true);
 
 tree.itemSelected = delegate(TreeItem selectedItem, bool activated) {
     dstring label = "Selected item: "d ~ toUTF32(selectedItem.id) ~ (activated ? " selected + activated"d : " selected"d);
