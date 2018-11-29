@@ -1,8 +1,5 @@
 /**
-This module contains common Dialog implementation.
-
-
-Use to create custom dialogs.
+Common Dialog implementation, used to create custom dialogs.
 
 Synopsis:
 ---
@@ -42,7 +39,7 @@ class Dialog : Column
     /// Dialog icon resource id
     @property string windowIcon() { return _icon; }
     /// ditto
-    @property Dialog windowIcon(string iconResourceID)
+    @property void windowIcon(string iconResourceID)
     {
         _icon = iconResourceID;
         static if (BACKEND_GUI)
@@ -55,18 +52,16 @@ class Dialog : Column
                     _window.icon = imageCache.get(_icon);
             }
         }
-        return this;
     }
 
     /// Dialog title (caption)
     @property dstring windowTitle() { return _title; }
     /// ditto
-    @property Dialog windowTitle(dstring caption)
+    @property void windowTitle(dstring caption)
     {
         _title = caption;
         if (_window)
             _window.title = caption;
-        return this;
     }
 
     /// Signal to pass dialog result

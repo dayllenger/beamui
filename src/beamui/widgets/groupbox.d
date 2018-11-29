@@ -1,8 +1,7 @@
 /**
-This module contains Group Box widget implementation.
+Group Box widget.
 
 Group box is linear layout with frame and caption for grouping controls.
-
 
 Synopsis:
 ---
@@ -44,11 +43,10 @@ class GroupBox : LinearLayout
             return _caption.text;
         }
         /// Set caption to show
-        GroupBox text(dstring s)
+        void text(dstring s)
         {
             _caption.text = s;
             requestLayout();
-            return this;
         }
 
         Insets padding() const
@@ -63,10 +61,9 @@ class GroupBox : LinearLayout
             p.bottom = max(p.bottom, _frameBottom);
             return p;
         }
-
-        Widget padding(Insets p)
+        void padding(Insets p)
         {
-            return super.padding(p);
+            super.padding(p);
         }
     }
 

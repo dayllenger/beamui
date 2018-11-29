@@ -1,8 +1,5 @@
 /**
-This module contains progress bar controls implementation.
-
-ProgressBar - progress bar control
-
+Progress bar control.
 
 Synopsis:
 ---
@@ -39,7 +36,7 @@ class AbstractProgressBar : Widget
         /// Current progress value, 0 .. 1000; -1 == indeterminate, -2 == hidden
         int progress() const { return _progress; }
         /// ditto
-        AbstractProgressBar progress(int progress)
+        void progress(int progress)
         {
             progress = clamp(progress, -2, 1000);
             if (_progress != progress)
@@ -48,7 +45,6 @@ class AbstractProgressBar : Widget
                 invalidate();
             }
             requestLayout();
-            return this;
         }
         /// Returns true if progress bar is in indeterminate state
         bool indeterminate() const
@@ -59,7 +55,7 @@ class AbstractProgressBar : Widget
         /// Animation interval in milliseconds, if 0 - no animation
         int animationInterval() const { return _animationInterval; }
         /// ditto
-        AbstractProgressBar animationInterval(int interval)
+        void animationInterval(int interval)
         {
             interval = clamp(interval, 0, 5000);
             if (_animationInterval != interval)
@@ -70,7 +66,6 @@ class AbstractProgressBar : Widget
                 else
                     stopAnimation();
             }
-            return this;
         }
     }
 

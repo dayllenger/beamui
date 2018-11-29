@@ -293,33 +293,30 @@ final class Action
         /// Label unicode string to show in UI
         dstring label() const { return _label; }
         /// ditto
-        Action label(dstring text)
+        void label(dstring text)
         {
             _label = text;
             changed();
-            return this;
         }
 
         /// Icon resource id
         string iconID() const { return _iconID; }
         /// ditto
-        Action iconID(string id)
+        void iconID(string id)
         {
             _iconID = id;
             changed();
-            return this;
         }
 
         /// Array of shortcuts
         inout(Shortcut)[] shortcuts() inout { return _shortcuts; }
         /// ditto
-        Action shortcuts(Shortcut[] ss)
+        void shortcuts(Shortcut[] ss)
         {
             shortcutMap.remove(_shortcuts);
             _shortcuts = ss;
             shortcutMap.add(this);
             changed();
-            return this;
         }
         /// Returns text description for the first shortcut of action; null if no shortcuts
         dstring shortcutText() const
@@ -353,11 +350,10 @@ final class Action
         /// Action context; default is `ActionContext.window`
         ActionContext context() const { return _context; }
         /// ditto
-        Action context(ActionContext ac)
+        void context(ActionContext ac)
         {
             _context = ac;
             changed();
-            return this;
         }
 
         /// When false, action cannot be called and control showing this action should be disabled
@@ -366,15 +362,14 @@ final class Action
             return (_state & ActionState.enabled) != 0;
         }
         /// ditto
-        Action enabled(bool f)
+        void enabled(bool flag)
         {
-            auto newstate = f ? (_state | ActionState.enabled) : (_state & ~ActionState.enabled);
+            auto newstate = flag ? (_state | ActionState.enabled) : (_state & ~ActionState.enabled);
             if (_state != newstate)
             {
                 _state = newstate;
                 stateChanged();
             }
-            return this;
         }
 
         /// When false, control showing this action should be hidden
@@ -383,28 +378,26 @@ final class Action
             return (_state & ActionState.visible) != 0;
         }
         /// ditto
-        Action visible(bool f)
+        void visible(bool flag)
         {
-            auto newstate = f ? (_state | ActionState.visible) : (_state & ~ActionState.visible);
+            auto newstate = flag ? (_state | ActionState.visible) : (_state & ~ActionState.visible);
             if (_state != newstate)
             {
                 _state = newstate;
                 stateChanged();
             }
-            return this;
         }
 
         /// When true, action is intended to use with checkbox/radiobutton-like controls
         bool checkable() const { return _checkable; }
         /// ditto
-        Action checkable(bool f)
+        void checkable(bool flag)
         {
-            if (_checkable != f)
+            if (_checkable != flag)
             {
-                _checkable = f;
+                _checkable = flag;
                 changed();
             }
-            return this;
         }
 
         /// When true, this action is included to a group of radio actions
@@ -419,16 +412,40 @@ final class Action
             return (_state & ActionState.checked) != 0;
         }
         /// ditto
-        Action checked(bool f)
+        void checked(bool flag)
         {
-            auto newstate = f ? (_state | ActionState.checked) : (_state & ~ActionState.checked);
+            auto newstate = flag ? (_state | ActionState.checked) : (_state & ~ActionState.checked);
             if (_state != newstate)
             {
                 _state = newstate;
                 stateChanged();
             }
-            return this;
         }
+    }
+
+    /// Chained version of `enabled`
+    Action setEnabled(bool flag)
+    {
+        enabled = flag;
+        return this;
+    }
+    /// Chained version of `visible`
+    Action setVisible(bool flag)
+    {
+        visible = flag;
+        return this;
+    }
+    /// Chained version of `checkable`
+    Action setCheckable(bool flag)
+    {
+        checkable = flag;
+        return this;
+    }
+    /// Chained version of `checked`
+    Action setChecked(bool flag)
+    {
+        checked = flag;
+        return this;
     }
 
     /// Signals when action is called

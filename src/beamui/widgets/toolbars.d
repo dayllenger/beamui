@@ -46,7 +46,7 @@ class ToolBarButton : Button
 
     override Widget createTooltip(int mouseX, int mouseY, ref PopupAlign alignment, ref int x, ref int y)
     {
-        return new Label(action.tooltipText).id("tooltip");
+        return new Label(action.tooltipText).setID("tooltip");
     }
 }
 

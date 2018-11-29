@@ -1,7 +1,5 @@
 /**
-This module contains implementation of source code editor widget.
-
-SourceEdit - base class for source code editors, with line numbering, syntax highlight, etc.
+Source code editor widget.
 
 Synopsis:
 ---
@@ -22,6 +20,7 @@ import beamui.widgets.menu;
 import beamui.widgets.popup;
 import beamui.widgets.widget;
 
+/// Base class for source code editors, with line numbering, syntax highlight, etc.
 class SourceEdit : EditBox
 {
     @property
@@ -29,7 +28,7 @@ class SourceEdit : EditBox
         /// When true, line numbers are shown
         bool showLineNumbers() const { return _showLineNumbers; }
         /// ditto
-        SourceEdit showLineNumbers(bool flag)
+        void showLineNumbers(bool flag)
         {
             if (_showLineNumbers != flag)
             {
@@ -37,13 +36,12 @@ class SourceEdit : EditBox
                 updateLeftPaneWidth();
                 requestLayout();
             }
-            return this;
         }
 
         /// When true, show modification marks for lines (whether line is unchanged/modified/modified_saved)
         bool showModificationMarks() const { return _showModificationMarks; }
         /// ditto
-        SourceEdit showModificationMarks(bool flag)
+        void showModificationMarks(bool flag)
         {
             if (_showModificationMarks != flag)
             {
@@ -51,13 +49,12 @@ class SourceEdit : EditBox
                 updateLeftPaneWidth();
                 requestLayout();
             }
-            return this;
         }
 
         /// When true, show icons like bookmarks or breakpoints at the left
         bool showIcons() const { return _showIcons; }
         /// ditto
-        SourceEdit showIcons(bool flag)
+        void showIcons(bool flag)
         {
             if (_showIcons != flag)
             {
@@ -65,13 +62,12 @@ class SourceEdit : EditBox
                 updateLeftPaneWidth();
                 requestLayout();
             }
-            return this;
         }
 
         /// When true, show folding controls at the left
         bool showFolding() const { return _showFolding; }
         /// ditto
-        SourceEdit showFolding(bool flag)
+        void showFolding(bool flag)
         {
             if (_showFolding != flag)
             {
@@ -79,7 +75,6 @@ class SourceEdit : EditBox
                 updateLeftPaneWidth();
                 requestLayout();
             }
-            return this;
         }
 
         string filename() { return _filename; }
@@ -124,7 +119,9 @@ class SourceEdit : EditBox
     this()
     {
         _extendRightScrollBound = true;
-        minFontSize(9).maxFontSize(75); // allow font zoom with Ctrl + MouseWheel
+        // allow font zoom with Ctrl + MouseWheel
+        minFontSize = 9;
+        maxFontSize = 75;
     }
 
     /// Load from file

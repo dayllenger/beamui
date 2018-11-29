@@ -1,5 +1,5 @@
 /**
-This module contains simple scrollbar-like controls implementation.
+Simple scrollbar-like controls.
 
 Synopsis:
 ---
@@ -33,51 +33,47 @@ class AbstractSlider : WidgetGroup
         /// Slider range min value
         int minValue() const { return _minValue; }
         /// ditto
-        AbstractSlider minValue(int v)
+        void minValue(int v)
         {
             _minValue = v;
-            return this;
         }
 
         /// Slider range max value
         int maxValue() const { return _maxValue; }
         /// ditto
-        AbstractSlider maxValue(int v)
+        void maxValue(int v)
         {
             _maxValue = v;
-            return this;
         }
 
         /// Page size (visible area size)
         int pageSize() const { return _pageSize; }
         /// ditto
-        AbstractSlider pageSize(int size)
+        void pageSize(int size)
         {
             if (_pageSize != size)
             {
                 _pageSize = size;
                 requestLayout();
             }
-            return this;
         }
 
         /// Slider position
         int position() const { return _position; }
         /// ditto
-        AbstractSlider position(int newPosition)
+        void position(int newPosition)
         {
             if (_position != newPosition)
             {
                 _position = newPosition;
                 onPositionChanged();
             }
-            return this;
         }
 
         /// Slider orientation (vertical, horizontal)
         Orientation orientation() const { return _orient; }
         /// ditto
-        AbstractSlider orientation(Orientation value)
+        void orientation(Orientation value)
         {
             if (_orient != value)
             {
@@ -85,7 +81,6 @@ class AbstractSlider : WidgetGroup
                 updateDrawables();
                 requestLayout();
             }
-            return this;
         }
     }
 
@@ -111,7 +106,7 @@ class AbstractSlider : WidgetGroup
     }
 
     /// Set new range (min and max values for slider)
-    AbstractSlider setRange(int min, int max)
+    void setRange(int min, int max)
     {
         if (_minValue != min || _maxValue != max)
         {
@@ -119,7 +114,6 @@ class AbstractSlider : WidgetGroup
             _maxValue = max;
             requestLayout();
         }
-        return this;
     }
 
     /// Set int property value, for ML loaders

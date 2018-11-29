@@ -63,13 +63,13 @@ Widget createControlsPanel()
 {
     auto tabs = new TabWidget;
 
-    auto col = new Column;
-    with (col) {
+    auto tab1 = new Column;
+    with (tab1) {
         spacing = 15;
         auto gb = new GroupBox("Group Box");
         with (gb) {
-            add(new CheckBox("Check Box").checked(true));
-            add(new RadioButton("Radio button").checked(true));
+            add(new CheckBox("Check Box").setChecked(true));
+            add(new RadioButton("Radio button").setChecked(true));
             add(new RadioButton("Radio button"));
         }
         Row r1 = new Row;
@@ -92,9 +92,10 @@ Widget createControlsPanel()
         add(r1);
         add(r2);
     }
+    auto tab2 = new Widget;
 
-    tabs.addTab(col.id("tab1"), "Tab 1");
-    tabs.addTab(new Widget().id("tab2"), "Tab 2");
+    tabs.addTab(tab1.setID("tab1"), "Tab 1");
+    tabs.addTab(tab2.setID("tab2"), "Tab 2");
     return tabs;
 }
 

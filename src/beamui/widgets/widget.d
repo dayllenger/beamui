@@ -296,13 +296,18 @@ public:
     /// Widget id, null if not set
     @property string id() const { return _id; }
     /// ditto
-    @property Widget id(string id)
+    @property void id(string id)
     {
         if (_id != id)
         {
             _id = id;
             invalidateStyles();
         }
+    }
+    /// Chained version of `id`
+    final Widget setID(string id)
+    {
+        this.id = id;
         return this;
     }
     /// Compare widget id with specified value, returns true if matches
@@ -324,7 +329,7 @@ public:
         return _state;
     }
     /// ditto
-    @property Widget state(State newState)
+    @property void state(State newState)
     {
         if ((_state & State.parent) != 0 && _parent !is null)
             return _parent.state(newState);
@@ -357,17 +362,20 @@ public:
                 checkChanged(this, true);
             }
         }
-        return this;
     }
-    /// Add state flags (set of flags from State enum)
-    @property Widget setState(State stateFlagsToSet)
+    /// Add state flags (set of flags from State enum). Returns new state
+    State setState(State stateFlagsToSet)
     {
-        return state(state | stateFlagsToSet);
+        State st = state | stateFlagsToSet;
+        state = st;
+        return st;
     }
-    /// Remove state flags (set of flags from State enum)
-    @property Widget resetState(State stateFlagsToUnset)
+    /// Remove state flags (set of flags from State enum). Returns new state
+    State resetState(State stateFlagsToUnset)
     {
-        return state(state & ~stateFlagsToUnset);
+        State st = state & ~stateFlagsToUnset;
+        state = st;
+        return st;
     }
     /// Override to handle focus changes
     protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
@@ -411,32 +419,29 @@ public:
         return this;
     }
     /// Toggle style class on the widget - remove if present, add if not
-    Widget toggleStyleClass(string name)
+    void toggleStyleClass(string name)
     {
         assert(name.length);
         bool present = styleClasses.remove(name);
         if (!present)
             styleClasses[name] = false;
         invalidateStyles();
-        return this;
     }
     /// Shorthand to set one style class to the widget
-    @property Widget style(string name)
+    @property void style(string name)
     {
         assert(name.length);
         styleClasses.clear();
         styleClasses[name] = false;
         invalidateStyles();
-        return this;
     }
 
     /// Set this widget to be a subitem in stylesheet
-    Widget bindSubItem(Object parent, string subName)
+    void bindSubItem(Object parent, string subName)
     {
         assert(parent && subName);
         subInfo = new StyleSubItemInfo(parent, subName);
         _needToRecomputeStyle = true;
-        return this;
     }
 
     /// Signals when styles are being recomputed. Used for mixing properties in the widget.
@@ -652,18 +657,17 @@ public:
             return p;
         }
         /// ditto
-        Widget padding(Insets value)
+        void padding(Insets value)
         {
             setProperty!"_paddingTop" = Dimension(value.top);
             setProperty!"_paddingRight" = Dimension(value.right);
             setProperty!"_paddingBottom" = Dimension(value.bottom);
             setProperty!"_paddingLeft" = Dimension(value.left);
-            return this;
         }
         /// ditto
-        Widget padding(int v)
+        void padding(int v)
         {
-            return padding = Insets(v);
+            padding = Insets(v);
         }
         private alias paddingTop_effect = requestLayout;
         private alias paddingRight_effect = requestLayout;
@@ -677,13 +681,12 @@ public:
             return Insets(_borderWidthTop.toDevice, _borderWidthRight.toDevice,
                           _borderWidthBottom.toDevice, _borderWidthLeft.toDevice);
         }
-        Widget borderWidth(Insets value)
+        void borderWidth(Insets value)
         {
             setProperty!"_borderWidthTop" = Dimension(value.top);
             setProperty!"_borderWidthRight" = Dimension(value.right);
             setProperty!"_borderWidthBottom" = Dimension(value.bottom);
             setProperty!"_borderWidthLeft" = Dimension(value.left);
-            return this;
         }
         private void borderWidthTop_effect(Dimension value)
         {
@@ -712,10 +715,9 @@ public:
             return _borderColor;
         }
         /// ditto
-        Widget borderColor(Color value)
+        void borderColor(Color value)
         {
             setProperty!"_borderColor" = value;
-            return this;
         }
         private void borderColor_effect(Color value)
         {
@@ -730,23 +732,22 @@ public:
             return _backgroundColor;
         }
         /// ditto
-        Widget backgroundColor(Color value)
+        void backgroundColor(Color value)
         {
             setProperty!"_backgroundColor" = value;
-            return this;
         }
         /// Set background color as ARGB 32 bit value
-        Widget backgroundColor(uint value)
+        void backgroundColor(uint value)
         {
-            return backgroundColor = Color(value);
+            backgroundColor = Color(value);
         }
         /// Set background color from string like "#5599CC" or "white"
-        Widget backgroundColor(string colorString)
+        void backgroundColor(string colorString)
         {
             Color value = decodeHexColor(colorString, Color.none);
             if (value == Color.none)
                 value = decodeTextColor(colorString, Color.transparent);
-            return backgroundColor = value;
+            backgroundColor = value;
         }
         private void backgroundColor_effect(Color value)
         {
@@ -761,10 +762,9 @@ public:
             return _backgroundImage;
         }
         /// ditto
-        Widget backgroundImage(Drawable image)
+        void backgroundImage(Drawable image)
         {
             setProperty!"_backgroundImage" = image;
-            return this;
         }
         private void backgroundImage_effect(Drawable image)
         {
@@ -779,10 +779,9 @@ public:
             return _boxShadow;
         }
         /// ditto
-        Widget boxShadow(BoxShadowDrawable shadow)
+        void boxShadow(BoxShadowDrawable shadow)
         {
             setProperty!"_boxShadow" = shadow;
-            return this;
         }
         private void boxShadow_effect(BoxShadowDrawable shadow)
         {
@@ -804,10 +803,9 @@ public:
             return _alpha;
         }
         /// ditto
-        Widget alpha(ubyte value)
+        void alpha(ubyte value)
         {
             setProperty!"_alpha" = value;
-            return this;
         }
         private alias alpha_effect = invalidate;
 
@@ -818,23 +816,22 @@ public:
             return _textColor;
         }
         /// ditto
-        Widget textColor(Color value)
+        void textColor(Color value)
         {
             setProperty!"_textColor" = value;
-            return this;
         }
         /// Se text color as ARGB 32 bit value
-        Widget textColor(uint value)
+        void textColor(uint value)
         {
-            return textColor = Color(value);
+            textColor = Color(value);
         }
         /// Set text color from string like "#5599CC" or "white"
-        Widget textColor(string colorString)
+        void textColor(string colorString)
         {
             Color value = decodeHexColor(colorString, Color.none);
             if (value == Color.none)
                 value = decodeTextColor(colorString, Color(0x0));
-            return textColor = value;
+            textColor = value;
         }
         private alias textColor_effect = invalidate;
 
@@ -875,10 +872,9 @@ public:
             return res;
         }
         /// ditto
-        Widget textFlags(TextFlag value)
+        void textFlags(TextFlag value)
         {
             setProperty!"_textFlags" = value;
-            return this;
         }
         private void textFlags_effect(TextFlag newValue, TextFlag oldValue)
         {
@@ -898,10 +894,9 @@ public:
             return _fontFace;
         }
         /// ditto
-        Widget fontFace(string value)
+        void fontFace(string value)
         {
             setProperty!"_fontFace" = value;
-            return this;
         }
         /// Font family for widget
         FontFamily fontFamily() const
@@ -910,10 +905,9 @@ public:
             return _fontFamily;
         }
         /// ditto
-        Widget fontFamily(FontFamily value)
+        void fontFamily(FontFamily value)
         {
             setProperty!"_fontFamily" = value;
-            return this;
         }
         /// Font style (italic/normal) for widget
         bool fontItalic() const
@@ -922,10 +916,9 @@ public:
             return _fontStyle == FontStyle.italic;
         }
         /// ditto
-        Widget fontItalic(bool italic)
+        void fontItalic(bool italic)
         {
             setProperty!"_fontStyle" = italic ? FontStyle.italic : FontStyle.normal;
-            return this;
         }
         /// Font size in pixels
         int fontSize() const
@@ -941,18 +934,16 @@ public:
             return res;
         }
         /// ditto
-        Widget fontSize(Dimension value)
+        void fontSize(Dimension value)
         {
             if (value == Dimension.none)
                 value = Dimension.pt(9);
             setProperty!"_fontSize" = value;
-            return this;
         }
         /// ditto
-        Widget fontSize(int size)
+        void fontSize(int size)
         {
             fontSize = Dimension(size);
-            return this;
         }
         /// Font weight for widget
         ushort fontWeight() const
@@ -961,11 +952,10 @@ public:
             return _fontWeight;
         }
         /// ditto
-        Widget fontWeight(ushort value)
+        void fontWeight(ushort value)
         {
             value = cast(ushort)clamp(value, 100, 900);
             setProperty!"_fontWeight" = value;
-            return this;
         }
         private void fontFace_effect()
         {
@@ -995,9 +985,8 @@ public:
             return "";
         }
         /// ditto
-        Widget text(dstring s)
+        void text(dstring s)
         {
-            return this;
         }
     }
 
@@ -1080,15 +1069,14 @@ public:
             return _width.toDevice;
         }
         /// ditto
-        Widget width(Dimension value)
+        void width(Dimension value)
         {
             setProperty!"_width" = value;
-            return this;
         }
         /// ditto
-        Widget width(int value)
+        void width(int value)
         {
-            return width = Dimension(value);
+            width = Dimension(value);
         }
         /// Widget hard height (SIZE_UNSPECIFIED if not set)
         int height() const
@@ -1097,15 +1085,14 @@ public:
             return _height.toDevice;
         }
         /// ditto
-        Widget height(Dimension value)
+        void height(Dimension value)
         {
             setProperty!"_height" = value;
-            return this;
         }
         /// ditto
-        Widget height(int value)
+        void height(int value)
         {
-            return height = Dimension(value);
+            height = Dimension(value);
         }
         /// Min width style constraint (0, Dimension.zero or Dimension.none for no constraint)
         int minWidth() const
@@ -1114,17 +1101,16 @@ public:
             return _minWidth.toDevice;
         }
         /// ditto
-        Widget minWidth(Dimension value)
+        void minWidth(Dimension value)
         {
             if (value == Dimension.none)
                 value = Dimension.zero;
             setProperty!"_minWidth" = value;
-            return this;
         }
         /// ditto
-        Widget minWidth(int value) // TODO: clamp
+        void minWidth(int value) // TODO: clamp
         {
-            return minWidth = Dimension(value);
+            minWidth = Dimension(value);
         }
         /// Max width style constraint (SIZE_UNSPECIFIED or Dimension.none if no constraint)
         int maxWidth() const
@@ -1133,15 +1119,14 @@ public:
             return _maxWidth.toDevice;
         }
         /// ditto
-        Widget maxWidth(Dimension value)
+        void maxWidth(Dimension value)
         {
             setProperty!"_maxWidth" = value;
-            return this;
         }
         /// ditto
-        Widget maxWidth(int value)
+        void maxWidth(int value)
         {
-            return maxWidth = Dimension(value);
+            maxWidth = Dimension(value);
         }
         /// Min height style constraint (0, Dimension.zero or Dimension.none for no constraint)
         int minHeight() const
@@ -1150,17 +1135,16 @@ public:
             return _minHeight.toDevice;
         }
         /// ditto
-        Widget minHeight(Dimension value)
+        void minHeight(Dimension value)
         {
             if (value == Dimension.none)
                 value = Dimension.zero;
             setProperty!"_minHeight" = value;
-            return this;
         }
         /// ditto
-        Widget minHeight(int value)
+        void minHeight(int value)
         {
-            return minHeight = Dimension(value);
+            minHeight = Dimension(value);
         }
         /// Max height style constraint (SIZE_UNSPECIFIED or Dimension.none if no constraint)
         int maxHeight() const
@@ -1169,15 +1153,14 @@ public:
             return _maxHeight.toDevice;
         }
         /// ditto
-        Widget maxHeight(Dimension value)
+        void maxHeight(Dimension value)
         {
             setProperty!"_maxHeight" = value;
-            return this;
         }
         /// ditto
-        Widget maxHeight(int value)
+        void maxHeight(int value)
         {
-            return maxHeight = Dimension(value);
+            maxHeight = Dimension(value);
         }
         /// Layout weight (while resizing to fill parent, widget will be resized proportionally to this value)
         int layoutWeight() const
@@ -1185,15 +1168,14 @@ public:
             return 0;
         }
         /// ditto
-        Widget layoutWeight(int value)
+        void layoutWeight(int value)
         {
-            return this;
         }
 
         /// Widget visibility (visible, invisible, gone)
         Visibility visibility() const { return _visibility; }
         /// ditto
-        Widget visibility(Visibility newVisibility)
+        void visibility(Visibility newVisibility)
         {
             if (_visibility != newVisibility)
             {
@@ -1208,7 +1190,6 @@ public:
                     invalidate();
                 _visibility = newVisibility;
             }
-            return this;
         }
     }
 
@@ -1282,19 +1263,17 @@ public:
             return (state & State.enabled) != 0;
         }
         /// ditto
-        Widget enabled(bool flag)
+        void enabled(bool flag)
         {
             flag ? setState(State.enabled) : resetState(State.enabled);
-            return this;
         }
 
         /// When true, user can click this control, and signals `clicked`
         bool clickable() const { return _clickable; }
         /// ditto
-        Widget clickable(bool flag)
+        void clickable(bool flag)
         {
             _clickable = flag;
-            return this;
         }
 
         bool canClick() const
@@ -1305,10 +1284,9 @@ public:
         /// When true, control supports `checked` state
         bool checkable() const { return _checkable; }
         /// ditto
-        Widget checkable(bool flag)
+        void checkable(bool flag)
         {
             _checkable = flag;
-            return this;
         }
 
         bool canCheck() const
@@ -1322,7 +1300,7 @@ public:
             return (state & State.checked) != 0;
         }
         /// ditto
-        Widget checked(bool flag)
+        void checked(bool flag)
         {
             if (flag != checked)
             {
@@ -1332,16 +1310,14 @@ public:
                     resetState(State.checked);
                 invalidate();
             }
-            return this;
         }
 
         /// Whether widget can be focused
         bool focusable() const { return _focusable; }
         /// ditto
-        Widget focusable(bool flag)
+        void focusable(bool flag)
         {
             _focusable = flag;
-            return this;
         }
 
         bool focused() const
@@ -1355,10 +1331,9 @@ public:
             return _trackHover && !TOUCH_MODE;
         }
         /// ditto
-        Widget trackHover(bool v)
+        void trackHover(bool v)
         {
             _trackHover = v;
-            return this;
         }
 
         /// Override and return true to track key events even when not focused
@@ -1366,6 +1341,19 @@ public:
         {
             return false;
         }
+    }
+
+    /// Chained version of `enabled`
+    final Widget setEnabled(bool flag)
+    {
+        enabled = flag;
+        return this;
+    }
+    /// Chained version of `checked`
+    final Widget setChecked(bool flag)
+    {
+        checked = flag;
+        return this;
     }
 
     void requestActionsUpdate() // TODO
@@ -1386,10 +1374,9 @@ public:
     /// For advanced tooltips - override hasTooltip and createTooltip methods.
     @property dstring tooltipText() { return _tooltipText; }
     /// ditto
-    @property Widget tooltipText(dstring text)
+    @property void tooltipText(dstring text)
     {
         _tooltipText = text;
-        return this;
     }
     /// Returns true if widget has tooltip to show
     @property bool hasTooltip()
@@ -1407,7 +1394,7 @@ public:
         // default implementation supports tooltips when tooltipText property is set
         import beamui.widgets.text;
 
-        return _tooltipText ? new Label(_tooltipText).id("tooltip") : null;
+        return _tooltipText ? new Label(_tooltipText).setID("tooltip") : null;
     }
 
     /// Schedule tooltip
@@ -1432,10 +1419,9 @@ public:
     */
     @property bool focusGroup() { return _focusGroup; }
     /// ditto
-    @property Widget focusGroup(bool flag)
+    @property void focusGroup(bool flag)
     {
         _focusGroup = flag;
-        return this;
     }
 
     @property bool focusGroupFocused() const
@@ -1467,7 +1453,7 @@ public:
         return false;
     }
 
-    @property Widget focusGroupFocused(bool flag)
+    @property void focusGroupFocused(bool flag)
     {
         Widget w = focusGroupWidget();
         w.setWindowFocusedFlag(flag);
@@ -1479,7 +1465,6 @@ public:
                 w.setWindowFocusedFlag(flag);
             }
         }
-        return this;
     }
 
     /// Find nearest parent of this widget with focusGroup flag, returns topmost parent if no focusGroup flag set to any of parents.
@@ -1609,10 +1594,9 @@ public:
     /// Tab order - hint for focus movement using Tab/Shift+Tab
     @property ushort tabOrder() { return _tabOrder; }
     /// ditto
-    @property Widget tabOrder(ushort tabOrder)
+    @property void tabOrder(ushort tabOrder)
     {
         _tabOrder = tabOrder;
-        return this;
     }
 
     private int thisOrParentTabOrder()
@@ -2170,10 +2154,9 @@ public:
     /// Popup (contextual menu), associated with this widget
     @property Menu popupMenu() { return _popupMenu; }
     /// ditto
-    @property Widget popupMenu(Menu popupMenu)
+    @property void popupMenu(Menu popupMenu)
     {
         _popupMenu = popupMenu;
-        return this;
     }
 
     /// Returns true if widget can show popup menu (e.g. by mouse right click at point x,y)
@@ -2218,14 +2201,13 @@ public:
     {
         assert(false, "addChild: this widget does not support having children");
     }
-    /// Add child, returns added item
-    Widget addChildren(Widget[] items)
+    /// Add several children
+    void addChildren(Widget[] items...)
     {
         foreach (item; items)
         {
             addChild(item);
         }
-        return this;
     }
     /// Insert child before given index, returns inserted item
     Widget insertChild(int index, Widget item)
@@ -2337,10 +2319,9 @@ public:
         return _parent ? cast(Widget)_parent : null;
     }
     /// ditto
-    @property Widget parent(Widget parent)
+    @property void parent(Widget parent)
     {
         _parent = parent;
-        return this;
     }
     /// Returns window (if widget or its parent is attached to window)
     @property Window window() const
@@ -2487,14 +2468,16 @@ class WidgetGroup : Widget
     {
         assert(item !is null, "Widget must exist");
         _children.append(item);
-        return item.parent(this);
+        item.parent = this;
+        return item;
     }
 
     override Widget insertChild(int index, Widget item)
     {
         assert(item !is null, "Widget must exist");
         _children.insert(index, item);
-        return item.parent(this);
+        item.parent = this;
+        return item;
     }
 
     override Widget removeChild(int index)

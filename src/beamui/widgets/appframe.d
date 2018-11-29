@@ -1,5 +1,5 @@
 /**
-This module contains definition for main widget for usual application - with menu and status bar.
+Main widget for usual application - with menu and status bar.
 
 When you need MenuBar, StatusBar, Toolbars in your app, reuse this class.
 
@@ -102,11 +102,10 @@ class AppFrame : Column
 
         /// Override to return some identifier for app, e.g. to use as settings directory name
         string appCodeName() const { return _appName; }
-        /// Override to return some identifier for app, e.g. to use as settings directory name
-        AppFrame appCodeName(string name)
+        /// ditto
+        void appCodeName(string name)
         {
             _appName = name;
-            return this;
         }
 
         /// Application settings directory; by default, returns .appcodename directory in user's home directory (e.g. /home/user/.appcodename, C:\Users\User\AppData\Roaming\.appcodename); override to change it

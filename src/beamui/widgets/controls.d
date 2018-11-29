@@ -25,7 +25,7 @@ class ImageWidget : Widget
         /// Resource id for this image
         string imageID() const { return _imageID; }
         /// ditto
-        ImageWidget imageID(string id)
+        void imageID(string id)
         {
             _imageID = id;
             _drawable.clear();
@@ -36,15 +36,13 @@ class ImageWidget : Widget
                     _drawable = new ImageDrawable(img);
             }
             requestLayout();
-            return this;
         }
 
         /// Set custom drawable to show (not one from resources) instead of image
-        ImageWidget drawable(DrawableRef img)
+        void drawable(DrawableRef img)
         {
             imageID = null;
             _drawable = img;
-            return this;
         }
     }
 
@@ -112,7 +110,7 @@ class Button : LinearLayout, ActionHolder
             return _icon ? _icon.imageID : null;
         }
         /// ditto
-        Button iconID(string id)
+        void iconID(string id)
         {
             if (!id)
             {
@@ -129,11 +127,10 @@ class Button : LinearLayout, ActionHolder
             else
                 _icon.imageID = id;
             requestLayout();
-            return this;
         }
 
         /// Set custom drawable for icon
-        Button drawable(DrawableRef img)
+        void drawable(DrawableRef img)
         {
             if (!_icon)
             {
@@ -144,7 +141,6 @@ class Button : LinearLayout, ActionHolder
                 add(_icon);
             }
             _icon.drawable = img;
-            return this;
         }
 
         /// Action to emit on click
@@ -168,7 +164,7 @@ class Button : LinearLayout, ActionHolder
             return _label ? _label.text : null;
         }
         /// Set label plain unicode string
-        Button text(dstring s)
+        void text(dstring s)
         {
             if (!s)
             {
@@ -185,72 +181,64 @@ class Button : LinearLayout, ActionHolder
             else
                 _label.text = s;
             requestLayout();
-            return this;
         }
 
         Color textColor() const
         {
             return _label ? _label.textColor : Color(0x0);
         }
-        Button textColor(string colorString)
+        void textColor(string colorString)
         {
             _label.maybe.textColor(colorString);
-            return this;
         }
-        Button textColor(Color value)
+        void textColor(Color value)
         {
             _label.maybe.textColor(value);
-            return this;
         }
 
         string fontFace() const
         {
             return _label ? _label.fontFace : null;
         }
-        Button fontFace(string face)
+        void fontFace(string face)
         {
             _label.maybe.fontFace(face);
-            return this;
         }
 
         FontFamily fontFamily() const
         {
             return _label ? _label.fontFamily : FontFamily.unspecified;
         }
-        Button fontFamily(FontFamily family)
+        void fontFamily(FontFamily family)
         {
             _label.maybe.fontFamily(family);
-            return this;
         }
 
         bool fontItalic() const
         {
             return _label ? _label.fontItalic : false;
         }
-        Button fontItalic(bool italic)
+        void fontItalic(bool italic)
         {
             _label.maybe.fontItalic(italic);
-            return this;
         }
 
         int fontSize() const
         {
             return _label ? _label.fontSize : 0;
         }
-        Button fontSize(int size)
+        void fontSize(int size)
         {
             _label.maybe.fontSize(size);
-            return this;
         }
 
         ushort fontWeight() const
         {
             return _label ? _label.fontWeight : 0;
         }
-        Button fontWeight(ushort weight)
+        void fontWeight(ushort weight)
         {
             _label.maybe.fontWeight(weight);
-            return this;
         }
 
         FontRef font() const

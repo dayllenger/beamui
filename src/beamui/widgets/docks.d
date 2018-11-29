@@ -1,5 +1,5 @@
 /**
-This module implements dockable windows UI support.
+Dockable windows.
 
 DockHost is main layout for docking support - contains body widget and optional docked windows.
 
@@ -181,7 +181,7 @@ class DockHost : WidgetGroupDefaultDrawing
     @property
     {
         Widget bodyWidget() { return _bodyWidget; }
-
+        /// ditto
         void bodyWidget(Widget widget)
         {
             if (_bodyWidget)
@@ -328,15 +328,14 @@ class DockHost : WidgetGroupDefaultDrawing
 class DockWindow : WindowFrame
 {
     @property DockAlignment dockAlignment() { return _dockAlignment; }
-
-    @property DockWindow dockAlignment(DockAlignment a)
+    /// ditto
+    @property void dockAlignment(DockAlignment a)
     {
         if (_dockAlignment != a)
         {
             _dockAlignment = a;
             requestLayout();
         }
-        return this;
     }
 
     private DockAlignment _dockAlignment;

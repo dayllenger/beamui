@@ -824,10 +824,9 @@ class Window : CustomEventTarget
 
     private Listener!(void delegate(string[])) _filesDropped;
     /// Set handler for files dropped to app window
-    @property Window onFilesDropped(void delegate(string[]) handler)
+    @property void onFilesDropped(void delegate(string[]) handler)
     {
         _filesDropped = handler;
-        return this;
     }
 
     /// Called when user dragged file(s) to application window
@@ -2022,10 +2021,10 @@ class Platform
         /// Returns currently selected UI language code
         string uiLanguage() { return _uiLanguage; }
         /// Set UI language (e.g. "en", "fr", "ru") - will relayout content of all windows if language has been changed
-        Platform uiLanguage(string langCode)
+        void uiLanguage(string langCode)
         {
             if (_uiLanguage == langCode)
-                return this;
+                return;
             _uiLanguage = langCode;
 
             Log.v("Loading language file");
@@ -2034,7 +2033,6 @@ class Platform
             Log.v("Calling onThemeChanged");
             onThemeChanged();
             requestLayout();
-            return this;
         }
 
         /// Get name of currently active theme

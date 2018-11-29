@@ -1,12 +1,12 @@
 /**
-Definition of standard actions commonly used in dialogs and controls.
+Standard actions commonly used in dialogs and controls.
 
 Synopsis:
 ---
 import beamui.core.stdaction;
 ---
 
-Copyright: Vadim Lopatin 2014-2017
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -144,11 +144,15 @@ void initStandardActions()
     ACTION_ZOOM_IN = new Action(tr("Zoom In"), KeyCode.numAdd, KeyFlag.control); // BUG: such combinations do not work
     ACTION_ZOOM_OUT = new Action(tr("Zoom Out"), KeyCode.numSub, KeyFlag.control);
 
-    ACTION_UNDO = new Action(tr("&Undo"), KeyCode.Z, KeyFlag.control).enabled(false);
-    ACTION_REDO = new Action(tr("&Redo"), KeyCode.Y, KeyFlag.control).addShortcut(KeyCode.Z, KeyFlag.control | KeyFlag.shift).enabled(false);
-    ACTION_CUT = new Action(tr("Cu&t"), KeyCode.X, KeyFlag.control).addShortcut(KeyCode.del, KeyFlag.shift).enabled(false);
-    ACTION_COPY = new Action(tr("&Copy"), KeyCode.C, KeyFlag.control).addShortcut(KeyCode.ins, KeyFlag.control).enabled(false);
-    ACTION_PASTE = new Action(tr("&Paste"), KeyCode.V, KeyFlag.control).addShortcut(KeyCode.ins, KeyFlag.shift)/+.enabled(false)+/;
+    ACTION_UNDO = new Action(tr("&Undo"), KeyCode.Z, KeyFlag.control).setEnabled(false);
+    ACTION_REDO = new Action(tr("&Redo"), KeyCode.Y, KeyFlag.control).setEnabled(false)
+        .addShortcut(KeyCode.Z, KeyFlag.control | KeyFlag.shift);
+    ACTION_CUT = new Action(tr("Cu&t"), KeyCode.X, KeyFlag.control).setEnabled(false)
+        .addShortcut(KeyCode.del, KeyFlag.shift);
+    ACTION_COPY = new Action(tr("&Copy"), KeyCode.C, KeyFlag.control).setEnabled(false)
+        .addShortcut(KeyCode.ins, KeyFlag.control);
+    ACTION_PASTE = new Action(tr("&Paste"), KeyCode.V, KeyFlag.control)
+        .addShortcut(KeyCode.ins, KeyFlag.shift);
 
     import beamui.core.functions : bunch;
 

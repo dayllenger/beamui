@@ -1,5 +1,5 @@
 /**
-This module contains definition for status line control.
+Status line control.
 
 Status line is usually shown in the bottom of window, and shows status of app.
 
@@ -36,10 +36,9 @@ class StatusLineTextPanel : Row
         return _text.text;
     }
 
-    override @property Widget text(dstring s)
+    override @property void text(dstring s)
     {
         _text.text = s;
-        return this;
     }
 }
 

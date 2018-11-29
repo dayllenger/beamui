@@ -1,19 +1,11 @@
 /**
-
-This module contains implementation of grid widgets
-
-
-GridWidgetBase - abstract grid widget
-
-StringGridWidget - grid of strings
-
+Grid views on data.
 
 Synopsis:
 ---
 import beamui.widgets.grid;
 
 auto grid = new StringGridWidget("GRID1");
-grid.fillWH();
 grid.showColHeaders = true;
 grid.showRowHeaders = true;
 grid.resize(30, 50);
@@ -44,7 +36,7 @@ foreach (x; 0 .. grid.cols)
 grid.autoFit();
 ---
 
-Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017-2018
+Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017-2018, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -208,10 +200,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             return _cols - _headerCols;
         }
         /// ditto
-        GridWidgetBase cols(int c)
+        void cols(int c)
         {
             resize(c, rows);
-            return this;
         }
         /// Row count
         int rows()
@@ -219,38 +210,34 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             return _rows - _headerRows;
         }
         /// ditto
-        GridWidgetBase rows(int r)
+        void rows(int r)
         {
             resize(cols, r);
-            return this;
         }
 
         /// Column resizing flag; when true, allow resizing of column with mouse
         bool allowColResizing() { return _allowColResizing; }
         /// ditto
-        GridWidgetBase allowColResizing(bool flagAllowColResizing)
+        void allowColResizing(bool flagAllowColResizing)
         {
             _allowColResizing = flagAllowColResizing;
-            return this;
         }
 
         /// Row header column count
         int headerCols() { return _headerCols; }
         /// ditto
-        GridWidgetBase headerCols(int c)
+        void headerCols(int c)
         {
             _headerCols = c;
             invalidate();
-            return this;
         }
         /// Col header row count
         int headerRows() { return _headerRows; }
         /// ditto
-        GridWidgetBase headerRows(int r)
+        void headerRows(int r)
         {
             _headerRows = r;
             invalidate();
-            return this;
         }
 
         /// Fixed (non-scrollable) data column count
@@ -296,26 +283,24 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         /// Default column width - for newly added columns
         int defColumnWidth() { return _defColumnWidth; }
         /// ditto
-        GridWidgetBase defColumnWidth(int v)
+        void defColumnWidth(int v)
         {
             _defColumnWidth = v;
             _changedSize = true;
-            return this;
         }
         /// Default row height - for newly added rows
         int defRowHeight() { return _defRowHeight; }
         /// ditto
-        GridWidgetBase defRowHeight(int v)
+        void defRowHeight(int v)
         {
             _defRowHeight = v;
             _changedSize = true;
-            return this;
         }
 
         /// When true, allows multi cell selection
         bool multiSelect() { return _multiSelect; }
         /// ditto
-        GridWidgetBase multiSelect(bool flag)
+        void multiSelect(bool flag)
         {
             _multiSelect = flag;
             if (!_multiSelect)
@@ -323,13 +308,12 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 _selection.clear();
                 _selection.insert(Point(_col - _headerCols, _row - _headerRows));
             }
-            return this;
         }
 
         /// When true, allows only select the whole row
         bool rowSelect() { return _rowSelect; }
         /// ditto
-        GridWidgetBase rowSelect(bool flag)
+        void rowSelect(bool flag)
         {
             _rowSelect = flag;
             if (_rowSelect)
@@ -338,13 +322,12 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 _selection.insert(Point(_col - _headerCols, _row - _headerRows));
             }
             invalidate();
-            return this;
         }
 
         /// Flag to enable column headers
         bool showColHeaders() { return _showColHeaders; }
         /// ditto
-        GridWidgetBase showColHeaders(bool show)
+        void showColHeaders(bool show)
         {
             if (_showColHeaders != show)
             {
@@ -354,13 +337,12 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 _changedSize = true;
                 invalidate();
             }
-            return this;
         }
 
         /// Flag to enable row headers
         bool showRowHeaders() { return _showRowHeaders; }
         /// ditto
-        GridWidgetBase showRowHeaders(bool show)
+        void showRowHeaders(bool show)
         {
             if (_showRowHeaders != show)
             {
@@ -370,7 +352,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 _changedSize = true;
                 invalidate();
             }
-            return this;
         }
 
         /// Returns all (fixed + scrollable) cells size in pixels
@@ -398,25 +379,23 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         /// Adapter to override drawing of some particular cells
         CustomGridCellAdapter customCellAdapter() { return _customCellAdapter; }
         /// ditto
-        GridWidgetBase customCellAdapter(CustomGridCellAdapter adapter)
+        void customCellAdapter(CustomGridCellAdapter adapter)
         {
             _customCellAdapter = adapter;
-            return this;
         }
 
         /// Adapter to hold grid model data
         GridModelAdapter gridModelAdapter() { return _gridModelAdapter; }
         /// ditto
-        GridWidgetBase gridModelAdapter(GridModelAdapter adapter)
+        void gridModelAdapter(GridModelAdapter adapter)
         {
             _gridModelAdapter = adapter;
-            return this;
         }
 
         /// Smooth horizontal scroll flag - when true - scrolling by pixels, when false - by cells
         bool smoothHScroll() const { return _smoothHScroll; }
         /// ditto
-        GridWidgetBase smoothHScroll(bool flagSmoothScroll)
+        void smoothHScroll(bool flagSmoothScroll)
         {
             if (_smoothHScroll != flagSmoothScroll)
             {
@@ -424,12 +403,11 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 // TODO: snap to grid if necessary
                 updateScrollBars();
             }
-            return this;
         }
         /// Smooth vertical scroll flag - when true - scrolling by pixels, when false - by cells
         bool smoothVScroll() const { return _smoothVScroll; }
         /// ditto
-        GridWidgetBase smoothVScroll(bool flagSmoothScroll)
+        void smoothVScroll(bool flagSmoothScroll)
         {
             if (_smoothVScroll != flagSmoothScroll)
             {
@@ -437,32 +415,29 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 // TODO: snap to grid if necessary
                 updateScrollBars();
             }
-            return this;
         }
 
         /// Extends scroll area to show full column at left when scrolled to rightmost column
         bool fullColumnOnLeft() { return _fullColumnOnLeft; }
         /// ditto
-        GridWidgetBase fullColumnOnLeft(bool newFullColumnOnLeft)
+        void fullColumnOnLeft(bool newFullColumnOnLeft)
         {
             if (_fullColumnOnLeft != newFullColumnOnLeft)
             {
                 _fullColumnOnLeft = newFullColumnOnLeft;
                 updateScrollBars();
             }
-            return this;
         }
         /// Extends scroll area to show full row at top when scrolled to end row
         bool fullRowOnTop() { return _fullColumnOnLeft; }
         /// ditto
-        GridWidgetBase fullRowOnTop(bool newFullRowOnTop)
+        void fullRowOnTop(bool newFullRowOnTop)
         {
             if (_fullRowOnTop != newFullRowOnTop)
             {
                 _fullRowOnTop = newFullRowOnTop;
                 updateScrollBars();
             }
-            return this;
         }
     }
 

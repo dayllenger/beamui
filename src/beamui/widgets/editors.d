@@ -1,12 +1,5 @@
 /**
-This module contains implementation of editors.
-
-
-EditLine - single line editor.
-
-EditBox - multiline editor
-
-LogWidget - readonly text box for showing logs
+Single-line and multiline simple text editors.
 
 Synopsis:
 ---
@@ -156,10 +149,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         /// Editor content object
         EditableContent content() { return _content; }
         /// ditto
-        EditWidgetBase content(EditableContent content)
+        void content(EditableContent content)
         {
             if (_content is content)
-                return this; // not changed
+                return; // not changed
             if (_content !is null)
             {
                 // disconnect old content
@@ -174,16 +167,14 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             _content.contentChanged.connect(&onContentChange);
             if (_content.readOnly)
                 enabled = false;
-            return this;
         }
 
         /// When true, Tab / Shift+Tab presses are processed internally in widget (e.g. insert tab character) instead of focus change navigation.
         bool wantTabs() const { return _wantTabs; }
         /// ditto
-        EditWidgetBase wantTabs(bool wantTabs)
+        void wantTabs(bool wantTabs)
         {
             _wantTabs = wantTabs;
-            return this;
         }
 
         /// Readonly flag (when true, user cannot change content of editor)
@@ -192,22 +183,20 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return !enabled || _content.readOnly;
         }
         /// ditto
-        EditWidgetBase readOnly(bool readOnly)
+        void readOnly(bool readOnly)
         {
             enabled = !readOnly;
             invalidate();
-            return this;
         }
 
         /// Replace mode flag (when true, entered character replaces character under cursor)
         bool replaceMode() const { return _replaceMode; }
         /// ditto
-        EditWidgetBase replaceMode(bool replaceMode)
+        void replaceMode(bool replaceMode)
         {
             _replaceMode = replaceMode;
             handleEditorStateChange();
             invalidate();
-            return this;
         }
 
         /// When true, spaces will be inserted instead of tabs on Tab key
@@ -216,10 +205,9 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return _content.useSpacesForTabs;
         }
         /// ditto
-        EditWidgetBase useSpacesForTabs(bool useSpacesForTabs)
+        void useSpacesForTabs(bool useSpacesForTabs)
         {
             _content.useSpacesForTabs = useSpacesForTabs;
-            return this;
         }
 
         /// Tab size (in number of spaces)
@@ -228,7 +216,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return _content.tabSize;
         }
         /// ditto
-        EditWidgetBase tabSize(int newTabSize)
+        void tabSize(int newTabSize)
         {
             newTabSize = clamp(newTabSize, 0, 16);
             if (newTabSize != tabSize)
@@ -236,7 +224,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 _content.tabSize = newTabSize;
                 requestLayout();
             }
-            return this;
         }
 
         /// True if smart indents are supported
@@ -250,10 +237,9 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return _content.smartIndents;
         }
         /// ditto
-        EditWidgetBase smartIndents(bool enabled)
+        void smartIndents(bool enabled)
         {
             _content.smartIndents = enabled;
-            return this;
         }
 
         /// True if smart indents are enabled
@@ -262,10 +248,9 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return _content.smartIndentsAfterPaste;
         }
         /// ditto
-        EditWidgetBase smartIndentsAfterPaste(bool enabled)
+        void smartIndentsAfterPaste(bool enabled)
         {
             _content.smartIndentsAfterPaste = enabled;
-            return this;
         }
 
         /// When true allows copy / cut whole current line if there is no selection
@@ -274,23 +259,21 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return _copyCurrentLineWhenNoSelection;
         }
         /// ditto
-        EditWidgetBase copyCurrentLineWhenNoSelection(bool flag)
+        void copyCurrentLineWhenNoSelection(bool flag)
         {
             _copyCurrentLineWhenNoSelection = flag;
-            return this;
         }
 
         /// When true shows mark on tab positions in beginning of line
         bool showTabPositionMarks() { return _showTabPositionMarks; }
         /// ditto
-        EditWidgetBase showTabPositionMarks(bool flag)
+        void showTabPositionMarks(bool flag)
         {
             if (flag != _showTabPositionMarks)
             {
                 _showTabPositionMarks = flag;
                 invalidate();
             }
-            return this;
         }
 
         /// To hold _scrollpos.x toggling between normal and word wrap mode
@@ -298,7 +281,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         /// True if word wrap mode is set
         bool wordWrap() { return _wordWrap; }
         /// Enable or disable word wrap mode
-        EditWidgetBase wordWrap(bool v)
+        void wordWrap(bool v)
         {
             _wordWrap = v;
             // horizontal scrollbar should not be visible in word wrap mode
@@ -315,7 +298,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 _scrollPos.x = previousXScrollPos;
             }
             invalidate();
-            return this;
         }
 
         /// Text in the editor
@@ -324,11 +306,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return _content.text;
         }
         /// ditto
-        override Widget text(dstring s)
+        override void text(dstring s)
         {
             _content.text = s;
             requestLayout();
-            return this;
         }
 
         protected int lineHeight() { return _lineHeight; }
@@ -805,7 +786,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     {
         abstract dstring minSizeTester() const;
         /// ditto
-        abstract EditWidgetBase minSizeTester(dstring txt);
+        abstract void minSizeTester(dstring txt);
 
         /// Returns caret position
         TextPosition caretPos() { return _caretPos; }
@@ -2028,25 +2009,23 @@ class EditLine : EditWidgetBase
         /// e.g. '*' to hide text by replacing all characters with this char
         dchar passwordChar() { return _passwordChar; }
         /// ditto
-        EditLine passwordChar(dchar ch)
+        void passwordChar(dchar ch)
         {
             if (_passwordChar != ch)
             {
                 _passwordChar = ch;
                 requestLayout();
             }
-            return this;
         }
 
         override dstring minSizeTester() const
         {
             return _minSizeTester.str;
         }
-        override EditLine minSizeTester(dstring txt)
+        override void minSizeTester(dstring txt)
         {
             _minSizeTester.str = txt;
             requestLayout();
-            return this;
         }
     }
 
@@ -2265,51 +2244,47 @@ class EditBox : EditWidgetBase
         {
             return super.fontSize();
         }
-        override Widget fontSize(int size)
+        override void fontSize(int size)
         {
             // Need to rewrap if fontSize changed
             _needRewrap = true;
-            return super.fontSize(size);
+            super.fontSize = size;
         }
 
         int minFontSize() { return _minFontSize; }
         /// ditto
-        EditBox minFontSize(int size)
+        void minFontSize(int size)
         {
             _minFontSize = size;
-            return this;
         }
 
         int maxFontSize() { return _maxFontSize; }
         /// ditto
-        EditBox maxFontSize(int size)
+        void maxFontSize(int size)
         {
             _maxFontSize = size;
-            return this;
         }
 
         /// When true, show marks for tabs and spaces at beginning and end of line, and tabs inside line
         bool showWhiteSpaceMarks() const { return _showWhiteSpaceMarks; }
         /// ditto
-        EditBox showWhiteSpaceMarks(bool show)
+        void showWhiteSpaceMarks(bool show)
         {
             if (_showWhiteSpaceMarks != show)
             {
                 _showWhiteSpaceMarks = show;
                 invalidate();
             }
-            return this;
         }
 
         override dstring minSizeTester() const
         {
             return _minSizeTester.str;
         }
-        override EditBox minSizeTester(dstring txt)
+        override void minSizeTester(dstring txt)
         {
             _minSizeTester.str = txt;
             requestLayout();
-            return this;
         }
 
         protected int firstVisibleLine() { return _firstVisibleLine; }
@@ -3845,19 +3820,17 @@ class LogWidget : EditBox
         /// Max lines to show (when appended more than max lines, older lines will be truncated), 0 means no limit
         int maxLines() const { return _maxLines; }
         /// ditto
-        LogWidget maxLines(int n)
+        void maxLines(int n)
         {
             _maxLines = n;
-            return this;
         }
 
         /// When true, automatically scrolls down when new lines are appended (usually being reset by scrollbar interaction)
         bool scrollLock() const { return _scrollLock; }
         /// ditto
-        LogWidget scrollLock(bool flag)
+        void scrollLock(bool flag)
         {
             _scrollLock = flag;
-            return this;
         }
     }
 
@@ -3869,7 +3842,9 @@ class LogWidget : EditBox
         _scrollLock = true;
         _enableScrollAfterText = false;
         enabled = false;
-        minFontSize(6.pt).maxFontSize(32.pt); // allow font zoom with Ctrl + MouseWheel
+        // allow font zoom with Ctrl + MouseWheel
+        minFontSize = 6.pt;
+        maxFontSize = 32.pt;
         onThemeChanged();
     }
 
@@ -3933,14 +3908,13 @@ class FindPanel : Row
         /// Returns true if panel is working in replace mode
         bool replaceMode() { return _replaceMode; }
         /// ditto
-        FindPanel replaceMode(bool newMode)
+        void replaceMode(bool newMode)
         {
             if (newMode != _replaceMode)
             {
                 _replaceMode = newMode;
                 childByID("rowReplace").visibility = newMode ? Visibility.visible : Visibility.gone;
             }
-            return this;
         }
 
         dstring searchText()
@@ -3948,10 +3922,9 @@ class FindPanel : Row
             return _edFind.text;
         }
         /// ditto
-        FindPanel searchText(dstring newText)
+        void searchText(dstring newText)
         {
             _edFind.text = newText;
-            return this;
         }
     }
 

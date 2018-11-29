@@ -21,10 +21,9 @@ class InputBox : Dialog
 {
     override @property dstring text() const { return _text; }
 
-    override @property Widget text(dstring txt)
+    override @property void text(dstring txt)
     {
         _text = txt;
-        return this;
     }
 
     private

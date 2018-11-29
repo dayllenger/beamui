@@ -1,6 +1,5 @@
 /**
-This module contains Combo Box widgets implementation.
-
+Combo Box controls, simple and editable.
 
 Synopsis:
 ---
@@ -37,29 +36,26 @@ class ComboBoxBase : Row
     /// Selected item index
     @property int selectedItemIndex() { return _selectedItemIndex; }
     /// ditto
-    @property ComboBoxBase selectedItemIndex(int index)
+    @property void selectedItemIndex(int index)
     {
         if (_selectedItemIndex == index)
-            return this;
+            return;
         if (_selectedItemIndex != -1 && _adapter.itemCount > _selectedItemIndex)
         {
             _adapter.resetItemState(_selectedItemIndex, State.selected | State.focused | State.hovered);
         }
         _selectedItemIndex = index;
         itemSelected(this, index);
-        return this;
     }
 
     override @property bool enabled() const
     {
         return super.enabled;
     }
-
-    override @property Widget enabled(bool flag)
+    override @property void enabled(bool flag)
     {
-        super.enabled(flag);
+        super.enabled = flag;
         _button.enabled = flag;
-        return this;
     }
 
     /// Handle item click
@@ -264,7 +260,7 @@ class ComboBox : ComboBoxBase
         return _body.text;
     }
 
-    override @property Widget text(dstring txt)
+    override @property void text(dstring txt)
     {
         int idx = adapter.find(txt);
         if (idx >= 0)
@@ -277,18 +273,16 @@ class ComboBox : ComboBoxBase
             _selectedItemIndex = -1;
             _body.text = txt;
         }
-        return this;
-    }
-
-    override @property ComboBoxBase selectedItemIndex(int index)
-    {
-        _body.text = adapter.item(index);
-        return super.selectedItemIndex(index);
     }
 
     override @property int selectedItemIndex()
     {
         return super.selectedItemIndex;
+    }
+    override @property void selectedItemIndex(int index)
+    {
+        _body.text = adapter.item(index);
+        super.selectedItemIndex = index;
     }
 
     override void initialize()
@@ -364,7 +358,7 @@ class IconTextComboBox : ComboBoxBase
         return _body.text;
     }
 
-    override @property Widget text(dstring txt)
+    override @property void text(dstring txt)
     {
         int idx = adapter.find(txt);
         if (idx >= 0)
@@ -377,18 +371,16 @@ class IconTextComboBox : ComboBoxBase
             _selectedItemIndex = -1;
             _body.text = txt;
         }
-        return this;
-    }
-
-    override @property ComboBoxBase selectedItemIndex(int index)
-    {
-        _body.text = adapter.item(index);
-        return super.selectedItemIndex(index);
     }
 
     override @property int selectedItemIndex()
     {
         return super.selectedItemIndex;
+    }
+    override @property void selectedItemIndex(int index)
+    {
+        _body.text = adapter.item(index);
+        super.selectedItemIndex = index;
     }
 
     override void initialize()
@@ -426,11 +418,10 @@ class ComboEdit : ComboBox
     {
         return _edit.readOnly;
     }
-
-    @property ComboBox readOnly(bool ro)
+    /// ditto
+    @property void readOnly(bool ro)
     {
         _edit.readOnly = ro;
-        return this;
     }
 
     /// Set bool property value, for ML loaders

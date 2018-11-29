@@ -1,7 +1,5 @@
 /**
-This module contains list widgets implementation.
-
-Similar to lists implementation in Android UI API.
+List views on data.
 
 Synopsis:
 ---
@@ -167,29 +165,27 @@ class WidgetListAdapter : ListAdapterBase
 
     override State setItemState(int index, State flags)
     {
-        return _widgets[index].setState(flags).state;
+        return _widgets[index].setState(flags);
     }
 
     override State resetItemState(int index, State flags)
     {
-        return _widgets[index].resetState(flags).state;
+        return _widgets[index].resetState(flags);
     }
     /// Add or insert item
-    WidgetListAdapter add(Widget item, int index = -1)
+    void add(Widget item, int index = -1)
     {
         if (index >= 0)
             _widgets.insert(index, item);
         else
             _widgets.append(item);
         updateViews();
-        return this;
     }
     /// Remove item and destroy it
-    WidgetListAdapter remove(int index)
+    void remove(int index)
     {
         destroy(_widgets.remove(index));
         updateViews();
-        return this;
     }
 
     override void clear()
@@ -264,7 +260,7 @@ class StringListAdapterBase : ListAdapterBase
     }
 
     /// Add new item
-    StringListAdapterBase add(dstring str, int index = -1)
+    void add(dstring str, int index = -1)
     {
         Item item;
         item.str = str;
@@ -277,17 +273,15 @@ class StringListAdapterBase : ListAdapterBase
             _items.insertBefore(_items[index .. $], item);
         }
         updateViews();
-        return this;
     }
 
     /// Remove item by index
-    StringListAdapterBase remove(int index)
+    void remove(int index)
     {
         if (index < 0 || index >= _items.length)
-            return this;
+            return;
         _items.linearRemove(_items[index .. index + 1]);
         updateViews();
-        return this;
     }
 
     /// Find item, returns its index or -1 if not found
@@ -305,23 +299,21 @@ class StringListAdapterBase : ListAdapterBase
     }
 
     /// Replace items collection
-    @property StringListAdapterBase items(dstring[] values)
+    @property void items(dstring[] values)
     {
         _items.length = values.length;
         foreach (i; 0 .. _items.length)
             _items[i] = Item(values[i]);
         updateViews();
-        return this;
     }
 
     /// Replace items collection
-    @property StringListAdapterBase items(StringListValue[] values)
+    @property void items(StringListValue[] values)
     {
         _items.length = values.length;
         foreach (i; 0 .. _items.length)
             _items[i] = Item(values[i].label, values[i].intID, values[i].stringID, values[i].iconID);
         updateViews();
-        return this;
     }
 
     /// Returns number of widgets in list
@@ -533,30 +525,28 @@ class ListWidget : WidgetGroup
         /// List orientation (vertical, horizontal)
         Orientation orientation() { return _orientation; }
         /// ditto
-        ListWidget orientation(Orientation value)
+        void orientation(Orientation value)
         {
             _orientation = value;
             _scrollbar.orientation = value;
             requestLayout();
-            return this;
         }
 
         /// When true, mouse hover selects underlying item
         bool selectOnHover() { return _selectOnHover; }
         /// ditto
-        ListWidget selectOnHover(bool select)
+        void selectOnHover(bool select)
         {
             _selectOnHover = select;
-            return this;
         }
 
         /// List adapter
         ListAdapter adapter() { return _adapter; }
         /// ditto
-        ListWidget adapter(ListAdapter adapter)
+        void adapter(ListAdapter adapter)
         {
             if (_adapter is adapter)
-                return this; // no changes
+                return; // no changes
             _adapter.maybe.disconnect(&onAdapterChange);
             if (_adapter !is null && _ownAdapter)
                 destroy(_adapter);
@@ -564,13 +554,12 @@ class ListWidget : WidgetGroup
             _adapter.maybe.connect(&onAdapterChange);
             _ownAdapter = false;
             onAdapterChange(_adapter);
-            return this;
         }
         /// Set adapter, which will be owned by list (destroy will be called for adapter on widget destroy)
-        ListWidget ownAdapter(ListAdapter adapter)
+        void ownAdapter(ListAdapter adapter)
         {
             if (_adapter is adapter)
-                return this; // no changes
+                return; // no changes
             _adapter.maybe.disconnect(&onAdapterChange);
             if (_adapter !is null && _ownAdapter)
                 destroy(_adapter);
@@ -578,7 +567,6 @@ class ListWidget : WidgetGroup
             _adapter.maybe.connect(&onAdapterChange);
             _ownAdapter = true;
             onAdapterChange(_adapter);
-            return this;
         }
 
         /// Returns number of widgets in list

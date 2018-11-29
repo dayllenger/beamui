@@ -1,7 +1,5 @@
 /**
-This module contains charts widgets implementation.
-Currently only SimpleBarChart.
-
+Chart widgets. Currently only SimpleBarChart.
 
 Synopsis:
 ---
@@ -148,58 +146,53 @@ class SimpleBarChart : Widget
         /// Title to show
         dstring title() const { return _title.str; }
         /// ditto
-        SimpleBarChart title(dstring s)
+        void title(dstring s)
         {
             _title.str = s;
             if (_showTitle)
                 requestLayout();
-            return this;
         }
 
         /// Show title?
         bool showTitle() const { return _showTitle; }
         /// ditto
-        SimpleBarChart showTitle(bool show)
+        void showTitle(bool show)
         {
             if (_showTitle != show)
             {
                 _showTitle = show;
                 requestLayout();
             }
-            return this;
         }
 
         Color chartBackgroundColor() const
         {
             return currentTheme.getColor("chart_background");
         }
-        SimpleBarChart chartBackgroundColor(Color newColor)
+        void chartBackgroundColor(Color newColor)
         {
             //ownStyle.setCustomColor("chart_background", newColor); // TODO
             invalidate();
-            return this;
         }
 
         Color chartAxisColor() const
         {
             return currentTheme.getColor("chart_axis");
         }
-        SimpleBarChart chartAxisColor(Color newColor)
+        void chartAxisColor(Color newColor)
         {
             //ownStyle.setCustomColor("chart_axis", newColor); // TODO
             invalidate();
-            return this;
         }
 
         Color chartSegmentTagColor() const
         {
             return currentTheme.getColor("chart_segment_tag");
         }
-        SimpleBarChart chartSegmentTagColor(Color newColor)
+        void chartSegmentTagColor(Color newColor)
         {
             //ownStyle.setCustomColor("chart_segment_tag", newColor); // TODO
             invalidate();
-            return this;
         }
     }
 

@@ -779,7 +779,8 @@ class FileDialog : Dialog, CustomGridCellAdapter
 
         _roots = getRootPaths() ~ getBookmarkPaths();
 
-        minWidth(BACKEND_CONSOLE ? 50 : 600).minHeight(400); // TODO: move in styles
+        minWidth = BACKEND_CONSOLE ? 50 : 600;
+        minHeight = 400; // TODO: move in styles
 
         auto content = new Row(1.pt);
         content.id = "dlgcontent";
@@ -1207,10 +1208,9 @@ class FileNameEditLine : Row
             return _edFileName.text;
         }
 
-        override Widget text(dstring s)
+        override void text(dstring s)
         {
             _edFileName.text = s;
-            return this;
         }
 
         /// Mapping of file extension to icon resource name, e.g. ".txt": "text-plain"

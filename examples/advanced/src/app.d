@@ -143,9 +143,9 @@ extern (C) int UIAppMain(string[] args)
     auto viewMenu = mainMenu.addSubmenu(tr("&View"));
     auto themeMenu = viewMenu.addSubmenu(tr("&Theme"));
     {
-        Action def = new Action(tr("Default")).checkable(true);
-        Action light = new Action(tr("Light")).checkable(true).checked(true);
-        Action dark = new Action(tr("Dark")).checkable(true);
+        Action def = new Action(tr("Default")).setCheckable(true);
+        Action light = new Action(tr("Light")).setCheckable(true).setChecked(true);
+        Action dark = new Action(tr("Dark")).setCheckable(true);
         def.bind(frame, { platform.uiTheme = "default"; });
         light.bind(frame, { platform.uiTheme = "light"; });
         dark.bind(frame, { platform.uiTheme = "dark"; });
@@ -208,7 +208,7 @@ extern (C) int UIAppMain(string[] args)
                 auto gb6 = new GroupBox("EditLine"d, Orientation.horizontal);
             auto line3 = new Row;
                 auto gbeditbox = new GroupBox("EditBox"d);
-                    auto ed1 = new EditBox("Some text in EditBox\nOne more line\nYet another text line");
+                    auto edbox = new EditBox("Some text in EditBox\nOne more line\nYet another text line");
                 auto gbtabs = new GroupBox("TabWidget"d);
                     auto tabs1 = new TabWidget;
             auto line4 = new Row;
@@ -236,14 +236,14 @@ extern (C) int UIAppMain(string[] args)
                 add(col3);
                 with (gb) {
                     add(new CheckBox("CheckBox 1"d));
-                    add(new CheckBox("CheckBox 2"d).checked(true));
-                    add(new CheckBox("CheckBox disabled"d).enabled(false));
-                    add(new CheckBox("CheckBox disabled"d).checked(true).enabled(false));
+                    add(new CheckBox("CheckBox 2"d).setChecked(true));
+                    add(new CheckBox("CheckBox disabled"d).setEnabled(false));
+                    add(new CheckBox("CheckBox disabled"d).setEnabled(false).setChecked(true));
                 }
                 with (gb2) {
-                    add(new RadioButton("RadioButton 1"d).checked(true));
+                    add(new RadioButton("RadioButton 1"d).setChecked(true));
                     add(new RadioButton("RadioButton 2"d));
-                    add(new RadioButton("RadioButton disabled"d).enabled(false));
+                    add(new RadioButton("RadioButton disabled"d).setEnabled(false));
                 }
                 with (col1) {
                     add(gb3);
@@ -251,22 +251,30 @@ extern (C) int UIAppMain(string[] args)
                     add(gbtext);
                     with (gb3) {
                         add(new Button("Button"d));
-                        add(new Button("Button disabled"d).enabled(false));
+                        add(new Button("Button disabled"d).setEnabled(false));
                     }
                     with (gb4) {
                         add(new Button("Enabled"d, "document-open"));
-                        add(new Button("Disabled"d, "document-save").enabled(false));
+                        add(new Button("Disabled"d, "document-save").setEnabled(false));
                     }
                     with (gbtext) {
-                        add(new Label("Red text"d).fontSize(12.pt).textColor(0xFF0000));
-                        add(new Label("Italic text"d).fontSize(12.pt).fontItalic(true));
+                        auto l1 = new Label("Red text"d);
+                        auto l2 = new Label("Italic text"d);
+                        l1.fontSize = 12.pt;
+                        l1.textColor = 0xFF0000;
+                        l2.fontSize = 12.pt;
+                        l2.fontItalic = true;
+                        add(l1);
+                        add(l2);
                     }
                 }
                 with (col2) {
                     add(gb21);
                     add(gb22);
                     with (gb21) {
-                        add(new Button(fileOpenAction).orientation(Orientation.vertical));
+                        auto btn = new Button(fileOpenAction);
+                        btn.orientation = Orientation.vertical;
+                        add(btn);
                         add(btnToggle);
                     }
                     with (gb22) {
@@ -276,10 +284,10 @@ extern (C) int UIAppMain(string[] args)
                 with (col3) {
                     add(gb31);
                     with (gb31) {
-                        add(new SwitchButton);
-                        add(new SwitchButton().checked(true));
-                        add(new SwitchButton().enabled(false));
-                        add(new SwitchButton().enabled(false).checked(true));
+                        add(new SwitchButton());
+                        add(new SwitchButton().setChecked(true));
+                        add(new SwitchButton().setEnabled(false));
+                        add(new SwitchButton().setEnabled(false).setChecked(true));
                     }
                 }
             }
@@ -291,24 +299,30 @@ extern (C) int UIAppMain(string[] args)
                     add(sl).fillWidth(true);
                 }
                 with (gb6) {
-                    add(new EditLine("Some text"d).minWidth(150));
-                    add(new EditLine("Some text"d).enabled(false).minWidth(150));
+                    auto ed1 = new EditLine("Some text"d);
+                    auto ed2 = new EditLine("Some text"d);
+                    ed1.minWidth = 150;
+                    ed2.minWidth = 150;
+                    ed2.enabled = false;
+                    add(ed1);
+                    add(ed2);
                 }
             }
             with (line3) {
                 add(gbeditbox).fillWidth(true);
                 add(gbtabs);
                 with (gbeditbox) {
-                    add(ed1).fillHeight(true);
+                    add(edbox).fillHeight(true);
                 }
                 with (gbtabs) {
                     add(tabs1);
                     with (tabs1) {
                         tabHost.padding = 10;
                         tabHost.backgroundColor = 0xE0E0E0;
-                        addTab(new MultilineLabel("Label on tab page\nLabels can be\nMultiline"d)
-                            .id("tab1"), "Tab 1"d);
-                        addTab(new ImageWidget("beamui-logo").id("tab2"), "Tab 2"d);
+                        auto tab1 = new MultilineLabel("Label on tab page\nLabels can be\nMultiline"d);
+                        auto tab2 = new ImageWidget("beamui-logo");
+                        addTab(tab1.setID("tab1"), "Tab 1"d);
+                        addTab(tab2.setID("tab2"), "Tab 2"d);
                     }
                 }
             }
@@ -333,7 +347,7 @@ extern (C) int UIAppMain(string[] args)
             }
         }
 
-        btnToggle.checked(fileOpenAction.enabled);
+        btnToggle.checked = fileOpenAction.enabled;
         btnToggle.clicked = delegate(Widget w) {
             fileOpenAction.enabled = !fileOpenAction.enabled;
         };
@@ -408,7 +422,7 @@ extern (C) int UIAppMain(string[] args)
             }
         };
 
-        tabs.addTab(controls.id("CONTROLS"), tr("Controls"));
+        tabs.addTab(controls.setID("CONTROLS"), tr("Controls"));
     }
 
     // indicators
@@ -420,7 +434,7 @@ extern (C) int UIAppMain(string[] args)
         pb.animationInterval = 50;
         indicators.add(pb);
 
-        tabs.addTab(indicators.id("INDICATORS"), tr("Indicators"));
+        tabs.addTab(indicators.setID("INDICATORS"), tr("Indicators"));
     }
 
     // two long lists
@@ -478,7 +492,7 @@ extern (C) int UIAppMain(string[] args)
             listAdapter.add(new Label(itemtext.text));
         };
 
-        tabs.addTab(longLists.id("LISTS"), tr("Long list"));
+        tabs.addTab(longLists.setID("LISTS"), tr("Long list"));
     }
 
     // form as a table layout
@@ -486,28 +500,28 @@ extern (C) int UIAppMain(string[] args)
         auto table = new TableLayout;
         table.colCount = 2;
         // headers
-        table.addChild(new Label("Parameter"d)/+.alignment(Align.right | Align.vcenter)+/);
-        table.addChild(new Label("Field"d)/+.alignment(Align.left | Align.vcenter)+/);
+        table.addChild(new Label("Parameter"d));
+        table.addChild(new Label("Field"d));
         // row 1
-        table.addChild(new Label("First Name"d)/+.alignment(Align.right | Align.vcenter)+/);
+        table.addChild(new Label("First Name"d));
         table.addChild(new EditLine("John"d));
         // row 2, disabled
-        table.addChild(new Label("Last Name"d)/+.alignment(Align.right | Align.vcenter)+/.enabled(false));
-        table.addChild(new EditLine("Doe"d).enabled(false));
+        table.addChild(new Label("Last Name"d).setEnabled(false));
+        table.addChild(new EditLine("Doe"d).setEnabled(false));
         // row 3, normal readonly combo box
-        table.addChild(new Label("Country"d)/+.alignment(Align.right | Align.vcenter)+/);
+        table.addChild(new Label("Country"d));
         auto combo1 = new ComboBox(["Australia"d, "Canada"d, "France"d, "Germany"d,
                 "Italy"d, "Poland"d, "Russia"d, "Spain"d, "UK"d, "USA"d]);
         combo1.selectedItemIndex = 3;
         table.addChild(combo1);
         // row 4, disabled readonly combo box
-        table.addChild(new Label("City"d)/+.alignment(Align.right | Align.vcenter)+/);
+        table.addChild(new Label("City"d));
         auto combo2 = new ComboBox(["none"d]);
         combo2.enabled = false;
         combo2.selectedItemIndex = 0;
-        table.addChild(combo2)/+.fillW()+/;
+        table.addChild(combo2);
 
-        tabs.addTab(table.id("TABLE"), tr("Table layout"));
+        tabs.addTab(table.setID("TABLE"), tr("Table layout"));
     }
 
     // editors
@@ -564,7 +578,7 @@ void main()
             }
         }
 
-        tabs.addTab(editors.id("EDITORS"), tr("Editors"));
+        tabs.addTab(editors.setID("EDITORS"), tr("Editors"));
     }
 
     // string grid
@@ -624,7 +638,7 @@ void main()
         }
         grid.autoFit();
 
-        tabs.addTab(gridTab.id("GRID"), tr("Grid"));
+        tabs.addTab(gridTab.setID("GRID"), tr("Grid"));
     }
 
     // charts
@@ -671,7 +685,7 @@ void main()
             add(col2);
         }
 
-        tabs.addTab(chartsLayout.id("CHARTS"), tr("Charts"));
+        tabs.addTab(chartsLayout.setID("CHARTS"), tr("Charts"));
     }
 
     // canvas
@@ -710,7 +724,7 @@ void main()
             buf.drawEllipseArcF(x + 350, y + lh + 505, 150, 180, 45, 130, 3, Color(0x40008000), Color(0x804040FF));
         };
 
-        tabs.addTab(canvas.id("CANVAS"), tr("Canvas"));
+        tabs.addTab(canvas.setID("CANVAS"), tr("Canvas"));
     }
 
     // animation
@@ -755,9 +769,15 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
     cb3.checkChanged ~= (w, checked) { editor.readOnly = checked; };
     cb4.checkChanged ~= (w, checked) {
         if (checked)
-            editor.fontFace("Courier New").fontFamily(FontFamily.monospace);
+        {
+            editor.fontFace = "Courier New";
+            editor.fontFamily = FontFamily.monospace;
+        }
         else
-            editor.fontFace("Arial").fontFamily(FontFamily.sans_serif);
+        {
+            editor.fontFace = "Arial";
+            editor.fontFamily = FontFamily.sans_serif;
+        }
     };
     cb5.checkChanged ~= (w, checked) { editor.tabSize(checked ? 8 : 4); };
 

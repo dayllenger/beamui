@@ -1,6 +1,5 @@
 /**
-This module contains implementation of editable text content.
-
+Editable text content and related data structures.
 
 Synopsis:
 ---
@@ -661,8 +660,8 @@ class EditableContent
         }
 
         SyntaxSupport syntaxSupport() { return _syntaxSupport; }
-
-        EditableContent syntaxSupport(SyntaxSupport syntaxSupport)
+        /// ditto
+        void syntaxSupport(SyntaxSupport syntaxSupport)
         {
             _syntaxSupport = syntaxSupport;
             if (_syntaxSupport)
@@ -670,7 +669,6 @@ class EditableContent
                 _syntaxSupport.content = this;
                 updateTokenProps(0, cast(int)_lines.length);
             }
-            return this;
         }
 
         const(dstring[]) lines() { return _lines; }
@@ -682,7 +680,7 @@ class EditableContent
         }
 
         bool readOnly() const { return _readOnly; }
-
+        /// ditto
         void readOnly(bool readOnly)
         {
             _readOnly = readOnly;
@@ -693,23 +691,21 @@ class EditableContent
         /// Tab size (in number of spaces)
         int tabSize() const { return _tabSize; }
         /// ditto
-        EditableContent tabSize(int newTabSize)
+        void tabSize(int newTabSize)
         {
             if (newTabSize < 1)
                 newTabSize = 1;
             else if (newTabSize > 16)
                 newTabSize = 16;
             _tabSize = newTabSize;
-            return this;
         }
 
         /// Tab key behavior flag: when true, spaces will be inserted instead of tabs
         bool useSpacesForTabs() const { return _useSpacesForTabs; }
         /// ditto
-        EditableContent useSpacesForTabs(bool useSpacesForTabs)
+        void useSpacesForTabs(bool useSpacesForTabs)
         {
             _useSpacesForTabs = useSpacesForTabs;
-            return this;
         }
 
         /// True if smart indents are supported
@@ -721,19 +717,17 @@ class EditableContent
         /// True if smart indents are enabled
         bool smartIndents() const { return _smartIndents; }
         /// ditto
-        EditableContent smartIndents(bool enabled)
+        void smartIndents(bool enabled)
         {
             _smartIndents = enabled;
-            return this;
         }
 
         /// True if smart indents are enabled
         bool smartIndentsAfterPaste() const { return _smartIndentsAfterPaste; }
         /// ditto
-        EditableContent smartIndentsAfterPaste(bool enabled)
+        void smartIndentsAfterPaste(bool enabled)
         {
             _smartIndentsAfterPaste = enabled;
-            return this;
         }
 
         /// Returns true if miltyline content is supported
@@ -908,7 +902,7 @@ class EditableContent
     }
 
     /// Replace whole text with another content
-    @property EditableContent text(dstring newContent)
+    @property void text(dstring newContent)
     {
         clearUndo();
         _lines.length = 0;
@@ -927,7 +921,6 @@ class EditableContent
         }
         clearEditMarks();
         notifyContentReplaced();
-        return this;
     }
 
     /// Clear content

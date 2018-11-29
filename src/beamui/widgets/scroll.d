@@ -1,11 +1,5 @@
 /**
-This module contains base implementation of scrolling capabilities for widgets
-
-
-ScrollAreaBase - abstract scrollable widget (used as a base for other widgets with scrolling)
-
-ScrollArea - widget which can scroll its content (directly usable class)
-
+Base implementation for widgets with scrolling capabilities.
 
 Synopsis:
 ---
@@ -14,18 +8,18 @@ import beamui.widgets.scroll;
 // Scroll view example
 
 auto scrollContent = new Column;
-scrollContent.padding = 10;
-
-scrollContent.addChild(new Label("Some buttons"d));
-scrollContent.addChild(new Button("Close"d, "fileclose"));
-scrollContent.addChild(new Button("Open"d, "fileopen"));
-scrollContent.addChild(new Label("And checkboxes"d));
-scrollContent.addChild(new CheckBox("CheckBox 1"d));
-scrollContent.addChild(new CheckBox("CheckBox 2"d));
-scrollContent.addChild(new CheckBox("CheckBox 3"d));
-scrollContent.addChild(new CheckBox("CheckBox 4"d).checked(true));
-scrollContent.addChild(new CheckBox("CheckBox 5"d).checked(true));
-
+with (scrollContent) {
+    padding = 10;
+    add(new Label("Some buttons"d));
+    add(new Button("Close"d, "fileclose"));
+    add(new Button("Open"d, "fileopen"));
+    add(new Label("And checkboxes"d));
+    add(new CheckBox("CheckBox 1"d));
+    add(new CheckBox("CheckBox 2"d));
+    add(new CheckBox("CheckBox 3"d));
+    add(new CheckBox("CheckBox 4"d).setChecked(true));
+    add(new CheckBox("CheckBox 5"d).setChecked(true));
+}
 // create a scroll view with invisible horizontal and automatic vertical scrollbars
 auto scroll = new ScrollArea(ScrollBarMode.invisible, ScrollBarMode.automatic);
 // assign
@@ -55,7 +49,7 @@ enum ScrollBarMode
 }
 
 /**
-    Abstract scrollable widget
+    Abstract scrollable widget (used as a base for other widgets with scrolling)
 
     Provides scroll bars and basic scrolling functionality.
  */
@@ -456,14 +450,15 @@ class ScrollAreaBase : WidgetGroup
 }
 
 /**
-    Widget which can show content of widget group with optional scrolling
+    Shows content of a widget with optional scrolling (directly usable class)
 
     If size of content widget exceeds available space, allows to scroll it.
  */
 class ScrollArea : ScrollAreaBase
 {
     @property Widget contentWidget() { return _contentWidget; }
-    @property ScrollArea contentWidget(Widget newContent)
+    /// ditto
+    @property void contentWidget(Widget newContent)
     {
         if (_contentWidget)
         {
@@ -473,7 +468,6 @@ class ScrollArea : ScrollAreaBase
         _contentWidget = newContent;
         addChild(_contentWidget);
         requestLayout();
-        return this;
     }
 
     override @property Size fullContentSize() { return _fullContentSize; }

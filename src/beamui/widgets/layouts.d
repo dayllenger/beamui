@@ -1,17 +1,5 @@
 /**
-This module contains common layouts implementations.
-
-LinearLayout - either horizontal or vertical layout.
-
-Row - shortcut for LinearLayout with horizontal orientation.
-
-Column - shortcut for LinearLayout with vertical orientation.
-
-FrameLayout - children occupy the same place, usually one one is visible at a time.
-
-TableLayout - children aligned into rows and columns.
-
-Resizer - widget to resize sibling widgets in a layout.
+Common layouts implementation.
 
 Synopsis:
 ---
@@ -46,14 +34,13 @@ class LinearLayout : WidgetGroupDefaultDrawing
         /// Linear layout orientation (vertical, horizontal)
         Orientation orientation() const { return _orientation; }
         /// ditto
-        LinearLayout orientation(Orientation value)
+        void orientation(Orientation value)
         {
             if (_orientation != value)
             {
                 _orientation = value;
                 requestLayout();
             }
-            return this;
         }
 
         /// Space between items
@@ -63,10 +50,9 @@ class LinearLayout : WidgetGroupDefaultDrawing
             return _spacing;
         }
         /// ditto
-        LinearLayout spacing(int value)
+        void spacing(int value)
         {
             setProperty!"_spacing" = value;
-            return this;
         }
         private alias spacing_effect = requestLayout;
     }
@@ -513,7 +499,7 @@ void expand(string dim)(ref Array!LayoutItem items, int extraSize)
     }
 }
 
-/// Arranges children horizontally
+/// Shortcut for LinearLayout with horizontal orientation
 class Row : LinearLayout
 {
     this()
@@ -528,7 +514,7 @@ class Row : LinearLayout
     }
 }
 
-/// Arranges children vertically
+/// Shortcut for LinearLayout with vertical orientation
 class Column : LinearLayout
 {
     this()
@@ -614,14 +600,13 @@ class TableLayout : WidgetGroupDefaultDrawing
         /// Number of columns
         int colCount() const { return _colCount; }
         /// ditto
-        TableLayout colCount(int count)
+        void colCount(int count)
         {
             if (_colCount != count)
             {
                 _colCount = count;
                 requestLayout();
             }
-            return this;
         }
         /// Number of rows
         int rowCount() const
@@ -636,10 +621,9 @@ class TableLayout : WidgetGroupDefaultDrawing
             return _rowSpacing;
         }
         /// ditto
-        TableLayout rowSpacing(int value)
+        void rowSpacing(int value)
         {
             setProperty!"_rowSpacing" = value;
-            return this;
         }
 
         /// Space between columns (horizontal)
@@ -649,10 +633,9 @@ class TableLayout : WidgetGroupDefaultDrawing
             return _colSpacing;
         }
         /// ditto
-        TableLayout columnSpacing(int value)
+        void columnSpacing(int value)
         {
             setProperty!"_colSpacing" = value;
-            return this;
         }
         private alias rowSpacing_effect = requestLayout;
         private alias colSpacing_effect = requestLayout;

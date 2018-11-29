@@ -47,11 +47,11 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         /// Submenu, opening by hover or click on this item
         Menu submenu() { return _submenu; }
         /// ditto
-        MenuItem submenu(Menu menu)
+        void submenu(Menu menu)
         {
             _submenu = menu;
             if (_fromMenuBar)
-                return this;
+                return;
             // arrow
             if (menu && !_arrow)
             {
@@ -66,7 +66,6 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
                 removeChild(_arrow);
                 eliminate(_arrow);
             }
-            return this;
         }
     }
 
@@ -568,7 +567,7 @@ class Menu : ListWidget
     {
         return super.parent;
     }
-    override @property Widget parent(Widget p)
+    override @property void parent(Widget p)
     {
         // ok, this menu needs to know whether popup is closed
         // so, when popup sets itself as menu's parent, we add our slot to popupClosed
@@ -579,7 +578,7 @@ class Menu : ListWidget
                 prev.popupClosed -= &onThisPopupClosed;
             popup.popupClosed ~= &onThisPopupClosed;
         }
-        return super.parent(p);
+        super.parent = p;
     }
 
     protected void onThisPopupClosed(Popup p, bool byEvent)

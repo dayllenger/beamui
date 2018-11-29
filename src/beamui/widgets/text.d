@@ -27,21 +27,19 @@ class Label : Widget
             return _textAlign;
         }
         /// ditto
-        Label textAlign(TextAlign a)
+        void textAlign(TextAlign a)
         {
             setProperty!"_textAlign" = a;
-            return this;
         }
         private alias textAlign_effect = invalidate;
 
         /// Text to show
         override dstring text() const { return textobj.str; }
         /// ditto
-        override Label text(dstring s)
+        override void text(dstring s)
         {
             textobj.str = s;
             requestLayout();
-            return this;
         }
     }
 
@@ -115,21 +113,19 @@ class MultilineLabel : Widget
             return _textAlign;
         }
         /// ditto
-        MultilineLabel textAlign(TextAlign a)
+        void textAlign(TextAlign a)
         {
             setProperty!"_textAlign" = a;
-            return this;
         }
         private alias textAlign_effect = invalidate;
 
         /// Text to show
         override dstring text() const { return textobj.str; }
         /// ditto
-        override MultilineLabel text(dstring s)
+        override void text(dstring s)
         {
             textobj.str = s;
             requestLayout();
-            return this;
         }
     }
 

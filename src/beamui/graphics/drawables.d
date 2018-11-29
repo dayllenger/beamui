@@ -1,5 +1,5 @@
 /**
-This module contains drawables implementation.
+Drawables and widget background.
 
 imageCache is RAM cache of decoded images (as DrawBuf).
 
@@ -616,31 +616,18 @@ static if (USE_OPENGL)
     /// Custom OpenGL drawing inside a drawable
     class OpenGLDrawable : Drawable
     {
-        private OpenGLDrawableDelegate _drawHandler;
-
-        @property OpenGLDrawableDelegate drawHandler()
-        {
-            return _drawHandler;
-        }
-
-        @property OpenGLDrawable drawHandler(OpenGLDrawableDelegate handler)
-        {
-            _drawHandler = handler;
-            return this;
-        }
+        OpenGLDrawableDelegate drawHandler;
 
         this(OpenGLDrawableDelegate drawHandler = null)
         {
-            _drawHandler = drawHandler;
+            this.drawHandler = drawHandler;
         }
 
         void onDraw(Rect windowRect, Rect rc)
         {
             // either override this method or assign draw handler
-            if (_drawHandler)
-            {
-                _drawHandler(windowRect, rc);
-            }
+            if (drawHandler)
+                drawHandler(windowRect, rc);
         }
 
         override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)

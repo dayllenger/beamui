@@ -1,5 +1,5 @@
 /**
-Declaration of tabbed view controls.
+Tabbed controls.
 
 Mostly you will use only TabWidget class. Other classes are ancillary.
 
@@ -11,8 +11,8 @@ import beamui.widgets.tabs;
 auto tabs = new TabWidget;
 // and add tabs
 // content widgets must have different non-null ids
-tabs.addTab(new Label("1st tab content"d).id("tab1"), "Tab 1");
-tabs.addTab(new Label("2st tab content"d).id("tab2"), "Tab 2");
+tabs.addTab(new Label("1st tab content"d).setID("tab1"), "Tab 1");
+tabs.addTab(new Label("2st tab content"d).setID("tab2"), "Tab 2");
 // tab widget consists of two parts: tabControl and tabHost
 tabs.tabHost.padding = 12;
 tabs.tabHost.backgroundColor = 0xbbbbbb;
@@ -52,10 +52,9 @@ class TabItem : Row
              return _label.text;
         }
         /// ditto
-        override TabItem text(dstring s)
+        override void text(dstring s)
         {
             _label.text = s;
-            return this;
         }
 
         /// Tab icon
@@ -64,11 +63,10 @@ class TabItem : Row
              return _icon.imageID;
         }
         /// ditto
-        TabItem iconID(string s)
+        void iconID(string s)
         {
             _icon.imageID = s;
             _icon.visibility = s ? Visibility.visible : Visibility.gone;
-            return this;
         }
 
         /// True if tab close button is visible
@@ -77,37 +75,33 @@ class TabItem : Row
             return _closeButton.visibility == Visibility.visible;
         }
         /// ditto
-        TabItem enableCloseButton(bool flag)
+        void enableCloseButton(bool flag)
         {
             _closeButton.visibility = flag ? Visibility.visible : Visibility.gone;
-            return this;
         }
 
         override dstring tooltipText()
         {
             return _label.tooltipText;
         }
-        override TabItem tooltipText(dstring text)
+        override void tooltipText(dstring text)
         {
             bunch(_icon, _label, _closeButton).tooltipText(text);
-            return this;
         }
 
         /// Optional integer, associated with this tab
         int intParam() const { return _intParam; }
         /// ditto
-        TabItem intParam(int value)
+        void intParam(int value)
         {
             _intParam = value;
-            return this;
         }
         /// Optional object, associated with this tab
         Object objectParam() { return _objectParam; }
         /// ditto
-        TabItem objectParam(Object value)
+        void objectParam(Object value)
         {
             _objectParam = value;
-            return this;
         }
 
         /// Tab last access time
@@ -173,10 +167,9 @@ class TabControl : WidgetGroup
             return _moreButton.iconID;
         }
         /// ditto
-        TabControl moreButtonIcon(string resourceID)
+        void moreButtonIcon(string resourceID)
         {
             _moreButton.iconID = resourceID;
-            return this;
         }
 
         string selectedTabID() const { return _selectedTabID; }
@@ -184,11 +177,10 @@ class TabControl : WidgetGroup
         /// Tab alignment - top or bottom
         Align tabAlignment() const { return _tabAlignment; }
         /// ditto
-        TabControl tabAlignment(Align a)
+        void tabAlignment(Align a)
         {
             _tabAlignment = a;
             style = a == Align.top ? "top" : "bottom";
-            return this;
         }
     }
 
@@ -295,7 +287,7 @@ class TabControl : WidgetGroup
     }
 
     /// Add new tab
-    TabControl addTab(TabItem item, int index = -1)
+    void addTab(TabItem item, int index = -1)
     {
         item.parent = this;
         item.mouseEvent = &onMouseTabBtn;
@@ -305,18 +297,17 @@ class TabControl : WidgetGroup
         else
             addChild(item);
         requestLayout();
-        return this;
     }
     /// Add new tab by id and label string
-    TabControl addTab(string id, dstring label, string iconID = null, bool enableCloseButton = false,
+    void addTab(string id, dstring label, string iconID = null, bool enableCloseButton = false,
             dstring tooltipText = null)
     {
         auto item = new TabItem(id, label, iconID, enableCloseButton, tooltipText);
-        return addTab(item);
+        addTab(item);
     }
 
     /// Remove tab
-    TabControl removeTab(string id)
+    void removeTab(string id)
     {
         string nextID;
         if (id == _selectedTabID)
@@ -345,7 +336,6 @@ class TabControl : WidgetGroup
                 selectTab(index, true);
             }
         }
-        return this;
     }
 
     /// Change name of tab by ID
@@ -604,12 +594,11 @@ class TabHost : FrameLayout
         /// Currently set control widget
         TabControl tabControl() { return _tabControl; }
         /// ditto
-        TabHost tabControl(TabControl newWidget)
+        void tabControl(TabControl newWidget)
         {
             _tabControl = newWidget;
             if (_tabControl !is null)
                 _tabControl.tabChanged ~= &onTabChanged;
-            return this;
         }
 
         Visibility hiddenTabsVisibility() { return _hiddenTabsVisibility; }
@@ -654,18 +643,17 @@ class TabHost : FrameLayout
     }
 
     /// Remove tab
-    TabHost removeTab(string id)
+    void removeTab(string id)
     {
         assert(_tabControl !is null, "No TabControl set for TabHost");
         Widget child = removeChild(id);
         eliminate(child);
         _tabControl.removeTab(id);
         requestLayout();
-        return this;
     }
 
     /// Add new tab by id and label string
-    TabHost addTab(Widget widget, dstring label, string iconID = null, bool enableCloseButton = false,
+    void addTab(Widget widget, dstring label, string iconID = null, bool enableCloseButton = false,
             dstring tooltipText = null)
     {
         assert(_tabControl !is null, "No TabControl set for TabHost");
@@ -675,7 +663,6 @@ class TabHost : FrameLayout
         initializateTab(widget);
         //widget.focusGroup = true; // doesn't allow move focus outside of tab content
         addChild(widget);
-        return this;
     }
 
     // handles initial tab selection & hides subsequently added tabs so
@@ -762,19 +749,17 @@ class TabWidget : Column
     }
 
     /// Add new tab by id and label (raw value)
-    TabWidget addTab(Widget widget, dstring label, string iconID = null, bool enableCloseButton = false,
+    void addTab(Widget widget, dstring label, string iconID = null, bool enableCloseButton = false,
             dstring tooltipText = null)
     {
         _tabHost.addTab(widget, label, iconID, enableCloseButton, tooltipText);
-        return this;
     }
 
     /// Remove tab by id
-    TabWidget removeTab(string id)
+    void removeTab(string id)
     {
         _tabHost.removeTab(id);
         requestLayout();
-        return this;
     }
 
     /// Change name of the tab

@@ -1,7 +1,5 @@
 /**
-This module contains event types declarations.
-
-Event types: MouseEvent, KeyEvent, ScrollEvent.
+Input events, actions, codes and flags; custom events.
 
 Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017, dayllenger 2018
 License:   Boost License 1.0
@@ -939,19 +937,17 @@ class CustomEvent
         WeakRef!Widget destinationWidget() { return _destinationWidget; }
 
         Object objectParam() { return _objectParam; }
-
-        CustomEvent objectParam(Object value)
+        /// ditto
+        void objectParam(Object value)
         {
             _objectParam = value;
-            return this;
         }
 
         int intParam() const { return _intParam; }
-
-        CustomEvent intParam(int value)
+        /// ditto
+        void intParam(int value)
         {
             _intParam = value;
-            return this;
         }
     }
 }

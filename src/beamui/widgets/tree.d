@@ -1,5 +1,5 @@
 /**
-Tree widgets implementation.
+Tree widgets.
 
 Synopsis:
 ---
@@ -74,46 +74,41 @@ class TreeItem
         /// Tree item parent, null if it is the root
         inout(TreeItem) parent() inout { return _parent; }
         /// ditto
-        protected TreeItem parent(TreeItem p)
+        protected void parent(TreeItem p)
         {
             _parent = p;
-            return this;
         }
 
         /// Tree item ID, must be unique if you search or select items by ID
         string id() const { return _id; }
         /// ditto
-        TreeItem id(string id)
+        void id(string id)
         {
             _id = id;
-            return this;
         }
         /// Tree item text
         dstring text() const { return _text; }
         /// ditto
-        TreeItem text(dstring s)
+        void text(dstring s)
         {
             _text = s;
-            return this;
         }
         /// Tree item icon
         string iconID() const { return _iconID; }
         /// ditto
-        TreeItem iconID(string res)
+        void iconID(string res)
         {
             _iconID = res;
-            return this;
         }
 
         /// Nesting level of this item
         int level() const { return _level; }
         /// ditto
-        protected TreeItem level(int level)
+        protected void level(int level)
         {
             _level = level;
             foreach (i; 0 .. childCount)
                 child(i).level = _level + 1;
-            return this;
         }
 
         /// Returns true if item has subitems and can collapse or expand itself
@@ -125,10 +120,9 @@ class TreeItem
         /// True if this item is expanded
         bool expanded() const { return _expanded; }
         /// ditto
-        protected TreeItem expanded(bool expanded)
+        protected void expanded(bool expanded)
         {
             _expanded = expanded;
-            return this;
         }
         /// Returns true if this item and all parents are expanded
         bool isFullyExpanded() const
@@ -158,18 +152,16 @@ class TreeItem
         /// Optional int value, associated with this item
         int intParam() const { return _intParam; }
         /// ditto
-        TreeItem intParam(int value)
+        void intParam(int value)
         {
             _intParam = value;
-            return this;
         }
         /// Optional object, associated with this item
         inout(Object) objectParam() inout { return _objectParam; }
         /// ditto
-        TreeItem objectParam(Object value)
+        void objectParam(Object value)
         {
             _objectParam = value;
-            return this;
         }
     }
 
@@ -282,9 +274,10 @@ class TreeItem
             _children.insert(index, item);
         else
             _children.append(item);
-        TreeItem res = item.parent(this).level(_level + 1);
-        root.onUpdate();
-        return res;
+        item.parent = this;
+        item.level = _level + 1;
+        item.onUpdate();
+        return item;
     }
     /// Removes child, returns removed item
     TreeItem removeChild(int index)
