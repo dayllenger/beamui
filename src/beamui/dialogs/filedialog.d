@@ -182,8 +182,6 @@ class FileDialog : Dialog, CustomGridCellAdapter
         ComboBox _cbFilters;
         StringGridWidget _fileList;
         FileListSortOrder _sortOrder = FileListSortOrder.name;
-        Widget leftPanel;
-        Column rightPanel;
 
         Action _action;
 
@@ -782,74 +780,55 @@ class FileDialog : Dialog, CustomGridCellAdapter
         minWidth = BACKEND_CONSOLE ? 50 : 600;
         minHeight = 400; // TODO: move in styles
 
-        auto content = new Row(1.pt);
-        content.id = "dlgcontent";
+        auto content = new Row(1);
+            Widget leftPanel = createRootsList();
+            Column rightPanel = new Column;
+                _edPath = new FilePathPanel;
+                _fileList = new StringGridWidget;
+                _edFilename = new EditLine;
 
-        leftPanel = createRootsList();
-        leftPanel.id = "leftPanel";
-        leftPanel.minWidth = BACKEND_CONSOLE ? 7 : 40.pt;
+        with (content) {
+            id = "dlgcontent";
+            add(leftPanel);
+            addResizer();
+            add(rightPanel).setFillWidth(true);
 
-        rightPanel = new Column;
-        rightPanel.id = "rightPanel";
-        rightPanel.addChild(new Label(tr("Path") ~ ":"));
-
-        content.add(leftPanel);
-        content.addResizer();
-        content.add(rightPanel).fillWidth(true);
-
-        _edPath = new FilePathPanel;
-        _edPath.id = "path";
-        _edPath.pathSelected = &onPathSelected;
-        _edFilename = new EditLine;
-        _edFilename.id = "filename";
-        _edFilename.setDefaultPopupMenu();
-        if (_flags & FileDialogFlag.selectDirectory)
-        {
-            _edFilename.visibility = Visibility.gone;
+            with (leftPanel) {
+                id = "leftPanel";
+                minWidth = BACKEND_CONSOLE ? 7 : 40;
+            }
+            with (rightPanel) {
+                id = "rightPanel";
+                add(new Label(tr("Path") ~ ":"));
+                add(_edPath);
+                add(_fileList).setFillHeight(true);
+                add(_edFilename);
+                if (_filters.length)
+                {
+                    _cbFilters = new ComboBox;
+                    _cbFilters.id = "filter";
+                    add(_cbFilters);
+                }
+                with (_edPath) {
+                    id = "path";
+                }
+                with (_fileList) {
+                    id = "files";
+                    bindSubItem(this, "grid");
+                    fullColumnOnLeft = false;
+                    fullRowOnTop = false;
+                    showRowHeaders = false;
+                    minVisibleRows = 10;
+                    minVisibleCols = 4;
+                }
+                with (_edFilename) {
+                    id = "filename";
+                    setDefaultPopupMenu();
+                }
+            }
         }
+        add(content).setFillHeight(true);
 
-        _fileList = new StringGridWidget;
-        _fileList.id = "files";
-        _fileList.bindSubItem(this, "grid");
-        _fileList.fullColumnOnLeft(false);
-        _fileList.fullRowOnTop(false);
-        _fileList.resize(4, 3);
-        _fileList.setColTitle(0, " "d);
-        updateColumnHeaders();
-        _fileList.showRowHeaders = false;
-        _fileList.rowSelect = true;
-        _fileList.multiSelect = _allowMultipleFiles;
-        _fileList.cellPopupMenuBuilder = &getCellPopupMenu;
-        _fileList.minVisibleRows = 10;
-        _fileList.minVisibleCols = 4;
-        _fileList.headerCellClicked = &onHeaderCellClicked;
-
-        _fileList.keyEvent = delegate(Widget source, KeyEvent event) {
-            if (_shortcutHelper.onKeyEvent(event))
-                locateFileInList(_shortcutHelper.text);
-            return false;
-        };
-
-        rightPanel.add(_edPath);
-        rightPanel.add(_fileList).fillHeight(true);
-        rightPanel.add(_edFilename);
-
-        if (_filters.length)
-        {
-            dstring[] filterLabels;
-            foreach (f; _filters)
-                filterLabels ~= f.label;
-            _cbFilters = new ComboBox(filterLabels);
-            _cbFilters.id = "filter";
-            _cbFilters.selectedItemIndex = _filterIndex;
-            _cbFilters.itemSelected = delegate(Widget source, int itemIndex) {
-                _filterIndex = itemIndex;
-                reopenDirectory();
-            };
-            rightPanel.add(_cbFilters);
-        }
-
-        add(content).fillHeight(true);
         if (_flags & FileDialogFlag.enableCreateDirectory)
         {
             add(createButtonsPanel([ACTION_CREATE_DIRECTORY, _action, ACTION_CANCEL], 1, 1));
@@ -859,6 +838,26 @@ class FileDialog : Dialog, CustomGridCellAdapter
             add(createButtonsPanel([_action, ACTION_CANCEL], 0, 0));
         }
 
+        _edPath.pathSelected = &onPathSelected;
+        if (_flags & FileDialogFlag.selectDirectory)
+        {
+            _edFilename.visibility = Visibility.gone;
+        }
+
+        _fileList.resize(4, 3);
+        _fileList.setColTitle(0, " "d);
+        updateColumnHeaders();
+        _fileList.rowSelect = true;
+        _fileList.multiSelect = _allowMultipleFiles;
+        _fileList.cellPopupMenuBuilder = &getCellPopupMenu;
+        _fileList.headerCellClicked = &onHeaderCellClicked;
+
+        _fileList.keyEvent = delegate(Widget source, KeyEvent event) {
+            if (_shortcutHelper.onKeyEvent(event))
+                locateFileInList(_shortcutHelper.text);
+            return false;
+        };
+
         _fileList.customCellAdapter = this;
         _fileList.cellActivated = delegate(GridWidgetBase source, int col, int row) {
             onItemActivated(row);
@@ -866,6 +865,19 @@ class FileDialog : Dialog, CustomGridCellAdapter
         _fileList.cellSelected = delegate(GridWidgetBase source, int col, int row) {
             onItemSelected(row);
         };
+
+        if (_filters.length)
+        {
+            dstring[] filterLabels;
+            foreach (f; _filters)
+                filterLabels ~= f.label;
+            _cbFilters.items = filterLabels;
+            _cbFilters.selectedItemIndex = _filterIndex;
+            _cbFilters.itemSelected = delegate(Widget source, int itemIndex) {
+                _filterIndex = itemIndex;
+                reopenDirectory();
+            };
+        }
 
         if (_path.empty || !_path.exists || !_path.isDir)
         {
@@ -1302,7 +1314,7 @@ class FileNameEditLine : Row
             if (modifiedStateChanged.assigned)
                 modifiedStateChanged(src, modified);
         };
-        add(_edFileName).fillWidth(true);
+        add(_edFileName).setFillWidth(true);
         add(_btn);
     }
 
