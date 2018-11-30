@@ -10,7 +10,6 @@ module beamui.dml.dmlhighlight;
 import beamui.core.editable;
 import beamui.core.linestream;
 import beamui.core.logger;
-import beamui.core.textsource;
 import beamui.dml.parser;
 import beamui.dml.tokenizer;
 import beamui.widgets.metadata;
@@ -18,11 +17,11 @@ import beamui.widgets.metadata;
 class DMLSyntaxSupport : SyntaxSupport
 {
     EditableContent _content;
-    SourceFile _file;
+    string _file;
 
     this(string filename)
     {
-        _file = new SourceFile(filename);
+        _file = filename;
     }
 
     TokenPropString[] _props;
