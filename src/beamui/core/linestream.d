@@ -1,5 +1,5 @@
 /**
-This module contains text stream reader implementation
+Line stream reader and writer.
 
 Implements class LineStream for reading of unicode text from stream and returning it by lines.
 
@@ -13,29 +13,32 @@ Tracks line number.
 Synopsis:
 ---
 import beamui.core.linestream;
+import std.stdio : writeln, writefln;
 
-import std.conv;
-import std.stdio;
-import std.utf;
-
-string fname = "somefile.d";
+string filename = "somefile.d";
 writeln("opening file");
-auto f = new std.stream.File(fname);
-scope(exit) { f.close(); }
+auto fstream = new FileInputStream(filename);
+scope (exit)
+    fstream.close();
+
 try
 {
-    auto lines = LineStream.create(f, fname);
+    auto lines = LineStream.create(fstream, filename);
     while (true)
     {
         dchar[] s = lines.readLine();
         if (s is null)
             break;
-        writeln("line " ~ to!string(lines.line()) ~ ":" ~ toUTF8(s));
+        writefln("line %s: %s", lines.line, s);
     }
     if (lines.errorCode != 0)
-        writeln("Error ", lines.errorCode, " ", lines.errorMessage, " -- at line ", lines.errorLine, " position ", lines.errorPos);
+    {
+        writefln("Error(%s,%s) %s: %s", lines.errorLine, lines.errorPos, lines.errorCode, lines.errorMessage);
+    }
     else
+    {
         writeln("EOF reached");
+    }
 }
 catch (Exception e)
 {
@@ -49,10 +52,9 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.linestream;
 
-import std.conv;
-import std.stdio;
-import std.utf;
-import beamui.core.streams;
+public import beamui.core.streams;
+import std.conv : to;
+import std.utf : encode;
 
 /// File encoding
 enum EncodingType
@@ -96,6 +98,7 @@ struct TextFileFormat
     LineEnding lineEnding;
     /// Byte order mark character flag
     bool bom;
+
     string toString() const
     {
         return to!string(encoding) ~ " " ~ to!string(lineEnding) ~ (bom ? " bom" : "");
@@ -105,13 +108,18 @@ struct TextFileFormat
 /// Text file writer which supports different text file formats
 class OutputLineStream
 {
-    protected OutputStream _stream;
-    protected string _filename;
-    protected TextFileFormat _format;
-    protected bool _firstLine;
-    protected char[] _buf;
-    protected int _len;
-    protected static immutable int MAX_BUFFER_SIZE = 0x10000; // 64K
+    private
+    {
+        OutputStream _stream;
+        string _filename;
+        TextFileFormat _format;
+        bool _firstLine;
+        char[] _buf;
+        int _len;
+
+        static immutable int MAX_BUFFER_SIZE = 0x10000; // 64K
+    }
+
     /// Create
     this(OutputStream stream, string filename, TextFileFormat format)
     {
@@ -157,7 +165,7 @@ class OutputLineStream
             char[4] d;
             foreach (i; 0 .. s.length)
             {
-                int bytes = cast(int)encode(d, s[i]);
+                size_t bytes = encode(d, s[i]);
                 foreach (j; 0 .. bytes)
                     _buf[_len++] = d[j];
             }
@@ -166,7 +174,7 @@ class OutputLineStream
             wchar[2] d;
             foreach (i; 0 .. s.length)
             {
-                int n = cast(int)encode(d, s[i]);
+                size_t n = encode(d, s[i]);
                 foreach (j; 0 .. n)
                 {
                     _buf[_len++] = cast(char)(d[j] >> 8);
@@ -178,7 +186,7 @@ class OutputLineStream
             wchar[2] d;
             foreach (i; 0 .. s.length)
             {
-                int n = cast(int)encode(d, s[i]);
+                size_t n = encode(d, s[i]);
                 foreach (j; 0 .. n)
                 {
                     _buf[_len++] = cast(char)(d[j] & 0xFF);
@@ -210,6 +218,7 @@ class OutputLineStream
         if (_len > MAX_BUFFER_SIZE)
             flush();
     }
+
     /// Write single line
     void writeLine(dstring line)
     {
@@ -234,6 +243,7 @@ class OutputLineStream
             break;
         }
     }
+
     /// Close stream
     void close()
     {
@@ -254,6 +264,50 @@ class OutputLineStream
 */
 class LineStream
 {
+    @property
+    {
+        /// Returns file name
+        string filename() const { return _filename; }
+        /// Returns current line number
+        uint line() const { return _line; }
+        /// Returns file encoding EncodingType
+        EncodingType encoding() const { return _encoding; }
+
+        TextFileFormat textFormat() const
+        {
+            LineEnding le = LineEnding.CRLF;
+            if (_crlfCount)
+            {
+                if (_crCount == _lfCount)
+                    le = LineEnding.CRLF;
+                else
+                    le = LineEnding.MIXED;
+            }
+            else if (_crCount > _lfCount)
+            {
+                le = LineEnding.CR;
+            }
+            else if (_lfCount > _crCount)
+            {
+                le = LineEnding.LF;
+            }
+            else
+            {
+                le = LineEnding.MIXED;
+            }
+            return TextFileFormat(_encoding, le, _bomDetected);
+        }
+
+        /// Returns error code
+        int errorCode() const { return _errorCode; }
+        /// Returns error message
+        string errorMessage() const { return _errorMessage; }
+        /// Returns line where error is found
+        int errorLine() const { return _errorLine; }
+        /// Returns line position (number of character in line) where error is found
+        int errorPos() const { return _errorPos; }
+    }
+
     /// Error codes
     enum ErrorCodes
     {
@@ -261,92 +315,33 @@ class LineStream
         INVALID_CHARACTER
     }
 
-    private InputStream _stream;
-    private string _filename;
-    private ubyte[] _buf; // stream reading buffer
-    private uint _pos; // reading position of stream buffer
-    private uint _len; // number of bytes in stream buffer
-    private bool _streamEof; // true if input stream is in EOF state
-    private uint _line; // current line number
+    private
+    {
+        InputStream _stream;
+        string _filename;
+        ubyte[] _buf; /// Stream reading buffer
+        uint _pos; /// Reading position of stream buffer
+        uint _len; /// Number of bytes in stream buffer
+        bool _streamEof; // True if input stream is in EOF state
+        uint _line; /// Current line number
 
-    private uint _textPos; // start of text line in text buffer
-    private uint _textLen; // position of last filled char in text buffer + 1
-    private dchar[] _textBuf; // text buffer
-    private bool _eof; // end of file, no more lines
-    protected bool _bomDetected;
-    protected int _crCount;
-    protected int _lfCount;
-    protected int _crlfCount;
+        uint _textPos; /// Start of text line in text buffer
+        uint _textLen; /// Position of last filled char in text buffer + 1
+        dchar[] _textBuf; /// Text buffer
+        bool _eof; /// End of file, no more lines
 
-    /// Returns file name
-    @property string filename()
-    {
-        return _filename;
-    }
-    /// Returns current line number
-    @property uint line()
-    {
-        return _line;
-    }
-    /// Returns file encoding EncodingType
-    @property EncodingType encoding()
-    {
-        return _encoding;
-    }
+        immutable EncodingType _encoding;
 
-    @property TextFileFormat textFormat()
-    {
-        LineEnding le = LineEnding.CRLF;
-        if (_crlfCount)
-        {
-            if (_crCount == _lfCount)
-                le = LineEnding.CRLF;
-            else
-                le = LineEnding.MIXED;
-        }
-        else if (_crCount > _lfCount)
-        {
-            le = LineEnding.CR;
-        }
-        else if (_lfCount > _crCount)
-        {
-            le = LineEnding.LF;
-        }
-        else
-        {
-            le = LineEnding.MIXED;
-        }
-        TextFileFormat res = TextFileFormat(_encoding, le, _bomDetected);
-        return res;
-    }
+        int _errorCode;
+        string _errorMessage;
+        uint _errorLine;
+        uint _errorPos;
 
-    /// Returns error code
-    @property int errorCode()
-    {
-        return _errorCode;
+        bool _bomDetected;
+        int _crCount;
+        int _lfCount;
+        int _crlfCount;
     }
-    /// Returns error message
-    @property string errorMessage()
-    {
-        return _errorMessage;
-    }
-    /// Returns line where error is found
-    @property int errorLine()
-    {
-        return _errorLine;
-    }
-    /// Returns line position (number of character in line) where error is found
-    @property int errorPos()
-    {
-        return _errorPos;
-    }
-
-    private immutable EncodingType _encoding;
-
-    private int _errorCode;
-    private string _errorMessage;
-    private uint _errorLine;
-    private uint _errorPos;
 
     /// Open file with known encoding
     protected this(InputStream stream, string filename, EncodingType encoding, ubyte[] buf, uint offset, uint len)
@@ -385,13 +380,13 @@ class LineStream
         return _len - _pos; //_buf[_pos .. _len];
     }
 
-    // when bytes consumed from byte buffer, call this method to update position
+    /// When bytes consumed from byte buffer, call this method to update position
     protected void consumedBytes(uint count)
     {
         _pos += count;
     }
 
-    // reserve text buffer for specified number of characters, and return pointer to first free character in buffer
+    /// Reserve text buffer for specified number of characters, and return pointer to first free character in buffer
     protected dchar* reserveTextBuf(uint len)
     {
         // create new text buffer if necessary
@@ -429,7 +424,6 @@ class LineStream
 
     protected void appendedText(uint len)
     {
-        //writeln("appended ", len, " chars of text"); //:", _textBuf[_textLen .. _textLen + len]);
         _textLen += len;
     }
 
@@ -447,19 +441,14 @@ class LineStream
     /// Unknown line position
     immutable static uint LINE_POSITION_UNDEFINED = uint.max;
 
-    /// Read line from stream
-    public dchar[] readLine()
+    /// Read line from stream. Returns null on end of file or read error
+    dchar[] readLine()
     {
         if (_errorCode != 0)
-        {
-            //writeln("error ", _errorCode, ": ", _errorMessage, " in line ", _errorLine);
             return null; // error detected
-        }
         if (_eof)
-        {
-            //writeln("EOF found");
             return null;
-        }
+
         _line++;
         uint p = 0;
         uint eol = LINE_POSITION_UNDEFINED;
@@ -469,7 +458,6 @@ class LineStream
         {
             if (_errorCode != 0)
             {
-                //writeln("error ", _errorCode, ": ", _errorMessage, " in line ", _errorLine);
                 return null; // error detected
             }
             uint charsLeft = _textLen - _textPos;
@@ -548,10 +536,8 @@ class LineStream
         if (eof != LINE_POSITION_UNDEFINED)
         {
             _eof = true;
-            //writeln("Setting eof flag. lastchar=", lastchar, ", p=", p, ", lineStart=", lineStart);
             if (lineStart >= lineEnd)
             {
-                //writeln("lineStart >= lineEnd -- treat as eof");
                 return null; // eof
             }
         }
@@ -564,7 +550,7 @@ class LineStream
     protected immutable static int QUARTER_BYTE_BUFFER_SIZE = BYTE_BUFFER_SIZE / 4;
 
     /// Factory method for string parser
-    public static LineStream create(string code, string filename = "")
+    static LineStream create(string code, string filename = "")
     {
         uint len = cast(uint)code.length;
         ubyte[] data = new ubyte[len + 3];
@@ -574,12 +560,12 @@ class LineStream
         data[0] = 0xEF;
         data[1] = 0xBB;
         data[2] = 0xBF;
-        InputStream stream = new MemoryInputStream(data); //new MemoryStream(data);
+        InputStream stream = new MemoryInputStream(data);
         return create(stream, filename);
     }
 
     /// Factory for InputStream parser
-    public static LineStream create(InputStream stream, string filename, bool autodetectUTFIfNoBOM = true)
+    static LineStream create(InputStream stream, string filename, bool autodetectUTFIfNoBOM = true)
     {
         ubyte[] buf = new ubyte[BYTE_BUFFER_SIZE];
         buf[0] = buf[1] = buf[2] = buf[3] = 0;
@@ -649,16 +635,15 @@ private class AsciiLineStream : LineStream
             return 0;
         }
         uint bytesAvailable = readBytes();
-        ubyte* bytes = _buf.ptr + _pos;
         if (bytesAvailable == 0)
             return 0; // nothing to decode
         uint len = bytesAvailable;
-        ubyte* b = bytes;
+        ubyte* bytes = _buf.ptr + _pos;
         dchar* text = reserveTextBuf(len);
-        uint i = 0;
+        uint i;
         for (; i < len; i++)
         {
-            ubyte ch = b[i];
+            ubyte ch = bytes[i];
             if (ch & 0x80)
             {
                 // invalid character
@@ -671,7 +656,6 @@ private class AsciiLineStream : LineStream
         appendedText(i);
         return len;
     }
-
 }
 
 private class Utf8LineStream : LineStream
@@ -864,13 +848,11 @@ private class Utf8LineStream : LineStream
             invalidCharError();
             return 0;
         }
-        ubyte* bytes = _buf.ptr + _pos;
-        ubyte* b = bytes;
-        uint chars = 0;
+        ubyte* b = _buf.ptr + _pos;
+        uint chars;
         uint maxResultingBytes = len * 2; //len*2 because worst case is if all input chars are singelbyte and resulting in two bytes
         dchar* text = reserveTextBuf(maxResultingBytes);
-        uint i = 0;
-
+        uint i;
         bool needMoreFlag = false;
         for (; i < len; i++)
         {
@@ -928,14 +910,13 @@ private class Utf16beLineStream : LineStream
             return 0;
         }
         uint bytesAvailable = readBytes();
-        ubyte* bytes = _buf.ptr + _pos;
         if (bytesAvailable == 0)
             return 0; // nothing to decode
         uint len = bytesAvailable;
-        uint chars = 0;
-        ubyte* b = bytes;
+        uint chars;
+        ubyte* b = _buf.ptr + _pos;
         dchar* text = reserveTextBuf(len / 2 + 1);
-        uint i = 0;
+        uint i;
         for (; i < len - 1; i += 2)
         {
             uint ch0 = b[i];
@@ -968,14 +949,13 @@ private class Utf16leLineStream : LineStream
             return 0;
         }
         uint bytesAvailable = readBytes();
-        ubyte* bytes = _buf.ptr + _pos;
         if (bytesAvailable == 0)
             return 0; // nothing to decode
         uint len = bytesAvailable;
-        uint chars = 0;
-        ubyte* b = bytes;
+        uint chars;
+        ubyte* b = _buf.ptr + _pos;
         dchar* text = reserveTextBuf(len / 2 + 1);
-        uint i = 0;
+        uint i;
         for (; i < len - 1; i += 2)
         {
             uint ch0 = b[i];
@@ -1008,14 +988,13 @@ private class Utf32beLineStream : LineStream
             return 0;
         }
         uint bytesAvailable = readBytes();
-        ubyte* bytes = _buf.ptr + _pos;
         if (bytesAvailable == 0)
             return 0; // nothing to decode
         uint len = bytesAvailable;
-        uint chars = 0;
-        ubyte* b = bytes;
+        uint chars;
+        ubyte* b = _buf.ptr + _pos;
         dchar* text = reserveTextBuf(len / 2 + 1);
-        uint i = 0;
+        uint i;
         for (; i < len - 3; i += 4)
         {
             uint ch0 = b[i];
@@ -1054,14 +1033,13 @@ private class Utf32leLineStream : LineStream
             return 0;
         }
         uint bytesAvailable = readBytes();
-        ubyte* bytes = _buf.ptr + _pos;
         if (bytesAvailable == 0)
             return 0; // nothing to decode
         uint len = bytesAvailable;
-        uint chars = 0;
-        ubyte* b = bytes;
+        uint chars;
+        ubyte* b = _buf.ptr + _pos;
         dchar* text = reserveTextBuf(len / 2 + 1);
-        uint i = 0;
+        uint i;
         for (; i < len - 3; i += 4)
         {
             uint ch3 = b[i];
@@ -1084,52 +1062,3 @@ private class Utf32leLineStream : LineStream
         return chars;
     }
 }
-
-unittest
-{
-    static if (false)
-    {
-        import std.stdio;
-        import std.conv;
-        import std.utf;
-
-        //string fname = "C:\\projects\\d\\ddc\\ddclexer\\src\\ddc\\lexer\\LineStream.d";
-        //string fname = "/home/lve/src/d/ddc/ddclexer/" ~ __FILE__; //"/home/lve/src/d/ddc/ddclexer/src/ddc/lexer/Lexer.d";
-        //string fname = "/home/lve/src/d/ddc/ddclexer/tests/LineStream_utf8.d";
-        //string fname = "/home/lve/src/d/ddc/ddclexer/tests/LineStream_utf16be.d";
-        //string fname = "/home/lve/src/d/ddc/ddclexer/tests/LineStream_utf16le.d";
-        //string fname = "/home/lve/src/d/ddc/ddclexer/tests/LineStream_utf32be.d";
-        string fname = "/home/lve/src/d/ddc/ddclexer/tests/LineStream_utf32le.d";
-        writeln("opening file");
-        std.stream.File f = new std.stream.File(fname);
-        scope (exit)
-        {
-            f.close();
-        }
-        try
-        {
-            LineStream lines = LineStream.create(f, fname);
-            while (true)
-            {
-                dchar[] s = lines.readLine();
-                if (s is null)
-                    break;
-                writeln("line " ~ to!string(lines.line()) ~ ":" ~ toUTF8(s));
-            }
-            if (lines.errorCode != 0)
-            {
-                writeln("Error ", lines.errorCode, " ", lines.errorMessage, " -- at line ",
-                        lines.errorLine, " position ", lines.errorPos);
-            }
-            else
-            {
-                writeln("EOF reached");
-            }
-        }
-        catch (Exception e)
-        {
-            writeln("Exception " ~ e.toString);
-        }
-    }
-}
-// LAST LINE
