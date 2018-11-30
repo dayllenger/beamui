@@ -5,11 +5,8 @@
     "license": "BSL-1.0",
     "authors": ["dayllenger"],
 
-    "targetName": "basic",
     "targetPath": "bin",
     "targetType": "executable",
-
-    "sourceFiles-windows": ["$PACKAGE_DIR/src/win_app.def"],
 
     "dependencies": {
         "beamui": {"path": "../../"}

@@ -5,13 +5,10 @@
     "license": "BSL-1.0",
     "authors": ["dayllenger", "Vadim Lopatin"],
 
-    "targetName": "advanced",
     "targetPath": "bin",
     "targetType": "executable",
 
     "stringImportPaths": ["res"],
-
-    "sourceFiles-windows": ["$PACKAGE_DIR/src/win_app.def"],
 
     "dependencies": {
         "beamui": {"path": "../../"}
