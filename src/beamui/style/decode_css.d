@@ -1,4 +1,8 @@
 /**
+CSS decoding functions: take token array, convert it to some type.
+
+Each function takes a token array as the first parameter and returns result in other `out`
+parameters and success flag in the return value.
 
 Copyright: dayllenger 2018
 License:   Boost License 1.0
@@ -11,26 +15,45 @@ import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types;
 import beamui.core.units;
-import beamui.css.css;
+import beamui.css.tokenizer : Token, TokenType;
 import beamui.graphics.colors;
 import beamui.graphics.drawables;
 import beamui.graphics.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.graphics.text : TextAlign;
 import beamui.style.types;
 
+/// Decode integer property
 bool decode(Token[] tokens, out int result)
 {
-    result = to!int(tokens[0].text);
-    return true;
+    Token t = tokens[0];
+    if (t.type == TokenType.number)
+    {
+        if (t.typeFlagInteger)
+        {
+            result = to!int(t.text);
+            return true;
+        }
+        else
+        {
+            Log.fe("CSS(%s): expected integer, got floating", t.line);
+            return false;
+        }
+    }
+    else
+    {
+        Log.fe("CSS(%s): expected number, not '%s'", t.line, t.type);
+        return false;
+    }
 }
 
+/// Decode raw string property
 bool decode(Token[] tokens, out string result)
 {
     result = tokens[0].text;
     return true;
 }
 
-/// Parses CSS token sequence like "left vcenter" to Align bit set
+/// Decode CSS token sequence like "left vcenter" to `Align` bit set
 bool decode(Token[] tokens, out Align result)
 {
     foreach (t; tokens)
@@ -58,7 +81,7 @@ bool decode(Token[] tokens, out Align result)
     return true;
 }
 
-/// Parses CSS rectangle declaration to Dimension[]
+/// Decode CSS rectangle declaration to `Dimension[]`
 bool decodeInsets(Token[] tokens, out Dimension[] result)
 {
     result.reserve(4);
@@ -90,7 +113,7 @@ bool decodeInsets(Token[] tokens, out Dimension[] result)
     }
 }
 
-/// Decode dimension, e.g. 1px, 20%, 1.2em or `none`
+/// Decode dimension, e.g. 1px, 20%, 1.2em, or "none"
 bool decode(Token[] tokens, out Dimension result)
 {
     Token t = tokens[0];
@@ -157,8 +180,8 @@ bool decodeBackground(Token[] tokens, out Color color, out Drawable image)
 /// Decode background image. This function mutates the range - skips found values
 bool decode(SpecialCSSType t : SpecialCSSType.image)(ref Token[] tokens, out Drawable result)
 {
-    import beamui.core.config;
-    import beamui.graphics.drawbuf;
+    import beamui.core.config : BACKEND_GUI;
+    import beamui.graphics.drawbuf : DrawBufRef;
 
     Token t0 = tokens[0];
     // #0: none
@@ -263,7 +286,7 @@ bool decodeBorder(Token[] tokens, out Color color, out Dimension width)
     return decode(rest, color);
 }
 
-/// Create a drawable from box-shadow property
+/// Create a drawable from `box-shadow` property
 bool decode(Token[] tokens, out BoxShadowDrawable result)
 {
     Token t0 = tokens[0];
@@ -303,6 +326,7 @@ bool decode(Token[] tokens, out BoxShadowDrawable result)
     return true;
 }
 
+/// Decode font family
 bool decode(Token[] tokens, out FontFamily result)
 {
     Token t = tokens[0];
@@ -326,6 +350,7 @@ bool decode(Token[] tokens, out FontFamily result)
     return true;
 }
 
+/// Decode font style
 bool decode(Token[] tokens, out FontStyle result)
 {
     Token t = tokens[0];
@@ -346,6 +371,7 @@ bool decode(Token[] tokens, out FontStyle result)
     return true;
 }
 
+/// Decode font weight
 bool decode(SpecialCSSType t : SpecialCSSType.fontWeight)(Token[] tokens, out ushort result)
 {
     Token t = tokens[0];
@@ -376,7 +402,7 @@ bool decode(SpecialCSSType t : SpecialCSSType.fontWeight)(Token[] tokens, out us
     return true;
 }
 
-/// Parses CSS token sequence like "hotkeys underline-hotkeys-alt" to TextFlag bit set
+/// Decode CSS token sequence like "hotkeys underline-hotkeys-alt" to `TextFlag` bit set
 bool decode(Token[] tokens, out TextFlag result)
 {
     foreach (t; tokens)
@@ -401,7 +427,7 @@ bool decode(Token[] tokens, out TextFlag result)
     return true;
 }
 
-/// Decode text-align property
+/// Decode text alignment
 bool decode(Token[] tokens, out TextAlign result)
 {
     Token t = tokens[0];
@@ -423,6 +449,7 @@ bool decode(Token[] tokens, out TextAlign result)
     return true;
 }
 
+/// Returns true whether token sequence starts with color property
 bool startsWithColor(Token[] tokens)
 {
     Token t = tokens[0];
@@ -493,6 +520,7 @@ bool decode(ref Token[] tokens, out Color result)
     return true;
 }
 
+/// Decode opacity
 bool decode(SpecialCSSType t : SpecialCSSType.opacity)(Token[] tokens, out ubyte result)
 {
     result = opacityToAlpha(to!float(tokens[0].text));
@@ -577,7 +605,8 @@ bool decode(Token[] tokens, out TimingFunction result)
 }
 
 /// Decode shorthand transition property
-bool decodeTransition(Token[] tokens, out string property, out TimingFunction func, out uint duration, out uint delay)
+bool decodeTransition(Token[] tokens, out string property, out TimingFunction func,
+    out uint duration, out uint delay)
 {
     if (tokens.length > 0)
         if (!decode!(SpecialCSSType.transitionProperty)(tokens[0 .. 1], property))
@@ -596,6 +625,7 @@ bool decodeTransition(Token[] tokens, out string property, out TimingFunction fu
     return true;
 }
 
+/// Unsupported type
 bool decode(T)(Token[] tokens, T result) if (is(T))
 {
     static assert(0, "CSS does not support this type: " ~ T.stringof);

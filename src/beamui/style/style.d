@@ -1,4 +1,5 @@
 /**
+Widget style, that contains named properties and is associated with selector.
 
 Synopsis:
 ---
@@ -104,6 +105,7 @@ final class Style
         }
     }
 
+    /// Find a shorthand border property, split it into components and decode
     void explode(shorthandBorder sh)()
     {
         if (auto p = sh.name in rawProperties)
@@ -121,7 +123,7 @@ final class Style
             rawProperties.remove(sh.name);
         }
     }
-
+    /// Find a shorthand drawable (background, usually) property, split it into components and decode
     void explode(shorthandDrawable sh)()
     {
         if (auto p = sh.name in rawProperties)
@@ -136,7 +138,7 @@ final class Style
             rawProperties.remove(sh.name);
         }
     }
-
+    /// Find a shorthand insets (margin, padding, border-width) property, split it into components and decode
     void explode(shorthandInsets sh)()
     {
         if (auto p = sh.name in rawProperties)
@@ -153,7 +155,7 @@ final class Style
             rawProperties.remove(sh.name);
         }
     }
-
+    /// Find a shorthand transition property, split it into components and decode
     void explode(shorthandTransition sh)()
     {
         if (auto p = sh.name in rawProperties)
@@ -179,11 +181,12 @@ final class Style
             properties[name] = v;
     }
 
-    void setRawProperty(string name, CSS.Token[] tokens)
+    package void setRawProperty(string name, CSS.Token[] tokens)
     {
         rawProperties[name] = tokens;
     }
 
+    /// Ability to compare styles by their selector specificity
     override int opCmp(Object o) const
     {
         assert(cast(Style)o);
