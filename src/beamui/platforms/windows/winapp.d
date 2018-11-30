@@ -364,10 +364,10 @@ final class Win32Window : Window
         return Box(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top);
     }
 
-    override @property Window onFilesDropped(void delegate(string[]) handler)
+    override @property void onFilesDropped(void delegate(string[]) handler)
     {
         DragAcceptFiles(_hwnd, handler ? TRUE : FALSE);
-        return super.onFilesDropped(handler);
+        super.onFilesDropped(handler);
     }
 
     /// Custom window message handler
