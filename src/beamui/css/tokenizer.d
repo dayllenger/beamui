@@ -39,7 +39,7 @@ pure nothrow:
     /// Go for the next token. Check for empty before this
     void popFront()
     {
-        assert(!empty);
+        assert(!empty, "Token range is empty");
         do
         {
             _front = tokenizer.consumeToken();
@@ -54,7 +54,7 @@ pure nothrow:
         return _front.type == TokenType.eof;
     }
 
-    /// Line in the source file where current token is
+    /// Line in the source code where current token is, 1-based
     @property size_t line() const
     {
         return tokenizer.line;
@@ -175,14 +175,14 @@ private struct Tokenizer
     import std.utf : toUTF8;
     import beamui.core.parseutils : parseHexDigit;
 
-    /// Range of characters
-    dstring r;
-    /// Current cursor position in the source range
-    size_t i;
-    /// Current line in source file
+    /// Current line in the source range
     size_t line = 1;
+    /// Range of characters
+    private dstring r;
+    /// Current cursor position in the source range
+    private size_t i;
     /// Just a buffer for names and numbers
-    Appender!(dchar[]) appender;
+    private Appender!(dchar[]) appender;
 
 pure nothrow:
 
@@ -479,15 +479,17 @@ pure nothrow:
         }
     }
 
-    Token consumeString(dchar ending)
+    Token consumeString(dchar quote)
     {
-        auto t = Token(TokenType.str, "");
+        appender.clear();
         while (true)
         {
             dchar c = r[i];
             i++;
-            if (isEOF(c) || c == ending)
-                return t;
+            if (isEOF(c) || c == quote)
+            {
+                return Token(TokenType.str, appender.data.toUTF8);
+            }
             if (c == '\n')
             {
                 i--;
@@ -503,10 +505,10 @@ pure nothrow:
                     i++;
                 }
                 else if (startsValidEscape(c, r[i]))
-                    t.text ~= consumeEscaped();
+                    appender ~= consumeEscaped();
             }
             else
-                t.text ~= c;
+                appender ~= c;
         }
     }
 

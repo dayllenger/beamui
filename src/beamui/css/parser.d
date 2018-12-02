@@ -99,6 +99,11 @@ struct Parser
         r = tokens;
     }
 
+    void emitExpected(string what, string where, size_t line)
+    {
+        Log.fw("CSS(%s): expected %s in %s", line, what, where);
+    }
+
     void emitUnexpected(Token what, string where)
     {
         Log.fw("CSS(%s): unexpected '%s' token in %s", what.line, what.type, where);
@@ -270,7 +275,7 @@ struct Parser
                         r.popFront();
                     }
                     else
-                        emitUnexpected(r.front, "class");
+                        emitExpected("identifier", "class", r.front.line);
                 }
                 else // combinator or something
                     break;
@@ -287,7 +292,7 @@ struct Parser
                         r.popFront();
                     }
                     else
-                        emitUnexpected(r.front, "pseudo element");
+                        emitExpected("identifier", "pseudo element", r.front.line);
                 }
                 else if (r.front.type == func && r.front.text == "not")
                 {
@@ -301,13 +306,13 @@ struct Parser
                             if (r.front.type == ident)
                                 entries ~= SelectorEntry(SelectorEntryType.pseudoClass, "!" ~ r.front.text);
                             else
-                                emitUnexpected(r.front, "pseudo class");
+                                emitExpected("identifier", "pseudo class", r.front.line);
                             r.popFront();
                         }
                         if (r.front.type == closeParen)
                             r.popFront();
                         else
-                            emitUnexpected(r.front, "pseudo class");
+                            emitExpected("closing parenthesis", "pseudo class", r.front.line);
                     }
                     else
                         emitUnexpected(r.front, "pseudo class");
@@ -318,7 +323,7 @@ struct Parser
                     r.popFront();
                 }
                 else
-                    emitUnexpected(t, "selector");
+                    emitExpected("valid pseudo-class or pseudo-element", "selector", r.front.line);
             }
             else if (t.type == ident) // tag
             {
@@ -466,7 +471,7 @@ struct Parser
             }
             else
             {
-                emitUnexpected(t, "block");
+                emitExpected("property identifier", "block", t.line);
                 r.popFront();
             }
         }
@@ -501,7 +506,7 @@ struct Parser
             }
             else
             {
-                emitUnexpected(t, "declaration");
+                emitExpected("colon", "declaration", t.line);
                 r.popFront();
                 return Null;
             }
