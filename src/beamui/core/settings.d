@@ -1206,28 +1206,28 @@ final class Setting
     {
         switch (value.type)
         {
-        case JSONType.null_:
+        case JSON_TYPE.NULL:
             // do nothing - we already have null value
             break;
-        case JSONType.string:
+        case JSON_TYPE.STRING:
             this.str = value.str;
             break;
-        case JSONType.integer:
+        case JSON_TYPE.INTEGER:
             this.integer = value.integer;
             break;
-        case JSONType.uinteger:
+        case JSON_TYPE.UINTEGER:
             this.integer = value.uinteger;
             break;
-        case JSONType.float_:
+        case JSON_TYPE.FLOAT:
             this.floating = value.floating;
             break;
-        case JSONType.true_:
+        case JSON_TYPE.TRUE:
             this.boolean = true;
             break;
-        case JSONType.false_:
+        case JSON_TYPE.FALSE:
             this.boolean = false;
             break;
-        case JSONType.array:
+        case JSON_TYPE.ARRAY:
             clear(SettingType.array);
             foreach (size_t i, val; value)
             {
@@ -1236,7 +1236,7 @@ final class Setting
                 this[store.array.length] = s;
             }
             break;
-        case JSONType.object:
+        case JSON_TYPE.OBJECT:
             clear(SettingType.object);
             foreach (string key, val; value)
             {
