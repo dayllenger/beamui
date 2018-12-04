@@ -1,12 +1,11 @@
 /**
-This module contains implementation of settings container.
+Settings container, loader and saver.
 
-Similar to JSON, can be written/read to/from JSON.
+Uses JSON by default, can be written/read to/from this format.
 
-Difference from usual JSON implementations: map (object) is ordered - will be written in the same order as read (or created).
+Map here is ordered, and can be indexed by number.
 
 Has a lot of methods for convenient storing/accessing of settings.
-
 
 Synopsis:
 ---
@@ -21,13 +20,9 @@ module beamui.core.settings;
 
 import std.datetime : SysTime;
 import std.file;
-import std.math : pow;
+import std.json;
 import std.path;
-import std.range;
-import std.utf : encode;
-import beamui.core.functions;
 import beamui.core.logger;
-import beamui.core.parseutils;
 
 ///
 unittest
@@ -252,7 +247,7 @@ class SettingsFile
         try
         {
             Setting setting = new Setting;
-            setting.parseJSON(json);
+            setting.fromJSON(json);
             _setting.apply(setting);
         }
         catch (Exception e)
@@ -1167,687 +1162,22 @@ final class Setting
     }
 
     //===============================================================
-    // JSON
+    // File save/load
 
-    /// Serialize to json
-    string toJSON(bool pretty = false)
+    /// Load JSON from file; returns true if loaded successfully
+    bool load(string filename)
     {
-        Buf buf;
-        toJSON(buf, 0, pretty);
-        return buf.get();
-    }
-
-    private static struct Buf
-    {
-        char[] buffer;
-        int pos;
-        string get()
+        try
         {
-            return buffer[0 .. pos].dup;
-        }
-
-        void reserve(size_t size)
-        {
-            if (pos + size >= buffer.length)
-                buffer.length = buffer.length ? 4096 : (pos + size + 4096) * 2;
-        }
-
-        void append(char ch)
-        {
-            buffer[pos++] = ch;
-        }
-
-        void append(string s)
-        {
-            foreach (ch; s)
-                buffer[pos++] = ch;
-        }
-
-        void appendEOL()
-        {
-            append('\n');
-        }
-
-        void appendTabs(int level)
-        {
-            reserve(level * 4 + 1024);
-            foreach (i; 0 .. level)
-            {
-                buffer[pos++] = ' ';
-                buffer[pos++] = ' ';
-                buffer[pos++] = ' ';
-                buffer[pos++] = ' ';
-            }
-        }
-
-        void appendHex(uint ch)
-        {
-            buffer[pos++] = '\\';
-            buffer[pos++] = 'u';
-            for (int i = 3; i >= 0; i--)
-            {
-                uint d = (ch >> (4 * i)) & 0x0F;
-                buffer[pos++] = "0123456789abcdef"[d];
-            }
-        }
-
-        void appendJSONString(string s)
-        {
-            reserve(s.length * 3 + 8);
-            if (s is null)
-            {
-                append("null");
-            }
-            else
-            {
-                append('\"');
-                foreach (ch; s)
-                {
-                    switch (ch)
-                    {
-                    case '\\':
-                        buffer[pos++] = '\\';
-                        buffer[pos++] = '\\';
-                        break;
-                    case '\"':
-                        buffer[pos++] = '\\';
-                        buffer[pos++] = '\"';
-                        break;
-                    case '\r':
-                        buffer[pos++] = '\\';
-                        buffer[pos++] = 'r';
-                        break;
-                    case '\n':
-                        buffer[pos++] = '\\';
-                        buffer[pos++] = 'n';
-                        break;
-                    case '\b':
-                        buffer[pos++] = '\\';
-                        buffer[pos++] = 'b';
-                        break;
-                    case '\t':
-                        buffer[pos++] = '\\';
-                        buffer[pos++] = 't';
-                        break;
-                    case '\f':
-                        buffer[pos++] = '\\';
-                        buffer[pos++] = 'f';
-                        break;
-                    default:
-                        if (ch < ' ')
-                        {
-                            appendHex(ch);
-                        }
-                        else
-                        {
-                            buffer[pos++] = ch;
-                        }
-                        break;
-                    }
-                }
-                append('\"');
-            }
-        }
-    }
-
-    void toJSON(ref Buf buf, int level, bool pretty)
-    {
-        buf.reserve(1024);
-        final switch (type) with (SettingType)
-        {
-        case str:
-            buf.appendJSONString(store.str);
-            break;
-        case integer:
-            buf.append(to!string(store.integer));
-            break;
-        case floating:
-            buf.append(to!string(store.floating));
-            break;
-        case boolean:
-            buf.append(store.boolean ? "true" : "false");
-            break;
-        case nothing:
-            buf.append("null");
-            break;
-        case array:
-            buf.append('[');
-            if (pretty && store.array.length > 0)
-                buf.appendEOL();
-            foreach (i; 0 .. store.array.length)
-            {
-                if (pretty)
-                    buf.appendTabs(level + 1);
-                store.array.get(i).toJSON(buf, level + 1, pretty);
-                if (i >= store.array.length - 1)
-                    break;
-                buf.append(',');
-                if (pretty)
-                    buf.appendEOL();
-            }
-            if (pretty)
-            {
-                buf.appendEOL();
-                buf.appendTabs(level);
-            }
-            buf.append(']');
-            break;
-        case object:
-            buf.append('{');
-            if (store.map.length)
-            {
-                if (pretty)
-                    buf.appendEOL();
-                for (int i = 0;; i++)
-                {
-                    string key = store.map.keyByIndex(i);
-                    if (pretty)
-                        buf.appendTabs(level + 1);
-                    buf.appendJSONString(key);
-                    buf.append(':');
-                    if (pretty)
-                        buf.append(' ');
-                    store.map.get(i).toJSON(buf, level + 1, pretty);
-                    if (i >= store.map.length - 1)
-                        break;
-                    buf.append(',');
-                    if (pretty)
-                        buf.appendEOL();
-                }
-            }
-            if (pretty)
-            {
-                buf.appendEOL();
-                buf.appendTabs(level);
-            }
-            buf.append('}');
-            break;
-        }
-    }
-
-    private static struct JsonParser
-    {
-        string json;
-        int pos;
-
-        void initialize(string s)
-        {
-            json = s;
-            pos = 0;
-        }
-        /// Returns current char
-        @property char peek()
-        {
-            return pos < json.length ? json[pos] : 0;
-        }
-        /// Returns fragment of text in current position
-        @property string currentContext()
-        {
-            if (pos >= json.length)
-                return "end of file";
-            string res = json[pos .. $];
-            if (res.length > 100)
-                res.length = 100;
-            return res;
-        }
-        /// Skips current char, returns next one (or null if eof)
-        @property char nextChar()
-        {
-            if (pos + 1 < json.length)
-            {
-                return json[++pos];
-            }
-            else
-            {
-                if (pos < json.length)
-                    pos++;
-            }
-            return 0;
-        }
-
-        void error(string msg)
-        {
-            string context;
-            // calculate error position line and column
-            int line = 1;
-            int col = 1;
-            int lineStart = 0;
-            foreach (int i; 0 .. pos)
-            {
-                char ch = json[i];
-                if (ch == '\r')
-                {
-                    if (i < json.length - 1 && json[i + 1] == '\n')
-                        i++;
-                    line++;
-                    col = 1;
-                    lineStart = i + 1;
-                }
-                else if (ch == '\n')
-                {
-                    if (i < json.length - 1 && json[i + 1] == '\r')
-                        i++;
-                    line++;
-                    col = 1;
-                    lineStart = i + 1;
-                }
-            }
-            int contextStart = pos;
-            int contextEnd = pos;
-            for (; contextEnd < json.length; contextEnd++)
-            {
-                if (json[contextEnd] == '\r' || json[contextEnd] == '\n')
-                    break;
-            }
-            if (contextEnd - contextStart < 3)
-            {
-                for (int i = 0; i < 3 && contextStart > 0; contextStart--, i++)
-                {
-                    if (json[contextStart - 1] == '\r' || json[contextStart - 1] == '\n')
-                        break;
-                }
-            }
-            else if (contextEnd > contextStart + 10)
-                contextEnd = contextStart + 10;
-            if (contextEnd > contextStart && contextEnd < json.length)
-                context = "near `" ~ json[contextStart .. contextEnd] ~ "` ";
-            else if (pos >= json.length)
-                context = "at end of file";
-            throw new Exception("JSON parsing error in (" ~ to!string(line) ~ ":" ~ to!string(
-                    col) ~ ") " ~ context ~ ": " ~ msg);
-        }
-
-        static bool isAlpha(char ch)
-        {
-            static import std.ascii;
-
-            return std.ascii.isAlpha(ch) || ch == '_';
-        }
-
-        static bool isAlNum(char ch)
-        {
-            static import std.ascii;
-
-            return std.ascii.isAlphaNum(ch) || ch == '_';
-        }
-        /// Skip spaces and comments, return next available character
-        @property char skipSpaces()
-        {
-            static import std.ascii;
-
-            for (; pos < json.length; pos++)
-            {
-                char ch = json[pos];
-                char nextch = pos + 1 < json.length ? json[pos + 1] : 0;
-
-                if (ch == '#' || (ch == '/' && nextch == '/') || (ch == '-' && nextch == '-'))
-                {
-                    // skip one line comment // or # or --
-                    pos++;
-                    for (; pos < json.length; pos++)
-                    {
-                        ch = json[pos];
-                        if (ch == '\n')
-                            break;
-                    }
-                    continue;
-                }
-                else if (ch == '/' && nextch == '*')
-                {
-                    // skip multiline /* */ comment
-                    pos += 2;
-                    for (; pos < json.length; pos++)
-                    {
-                        ch = json[pos];
-                        nextch = pos + 1 < json.length ? json[pos + 1] : 0;
-                        if (ch == '*' && nextch == '/')
-                        {
-                            pos += 2;
-                            break;
-                        }
-                    }
-                    continue;
-                }
-                else if (ch == '\\' && nextch == '\n')
-                {
-                    // continue to next line
-                    pos += 2;
-                    continue;
-                }
-                if (!std.ascii.isWhite(ch))
-                    break;
-            }
-            return peek;
-        }
-
-        string parseUnicodeChar()
-        {
-            if (pos >= json.length - 3)
-                error("unexpected end of file while parsing unicode character entity inside string");
-            dchar ch = 0;
-            foreach (i; 0 .. 4)
-            {
-                uint d = parseHexDigit(nextChar);
-                if (d == uint.max)
-                    error("error while parsing unicode character entity inside string");
-                ch = (ch << 4) | d;
-            }
-            char[4] buf;
-            size_t sz = encode(buf, ch);
-            return buf[0 .. sz].dup;
-        }
-
-        @property string parseString()
-        {
-            char[] res;
-            char ch = peek;
-            char quoteChar = ch;
-            if (ch != '\"' && ch != '`')
-                error("cannot parse string");
-            while (true)
-            {
-                ch = nextChar;
-                if (!ch)
-                    error("unexpected end of file while parsing string");
-                if (ch == quoteChar)
-                {
-                    nextChar;
-                    return cast(string)res;
-                }
-                if (ch == '\\' && quoteChar != '`')
-                {
-                    // escape sequence
-                    ch = nextChar;
-                    switch (ch)
-                    {
-                    case 'n':
-                        res ~= '\n';
-                        break;
-                    case 'r':
-                        res ~= '\r';
-                        break;
-                    case 'b':
-                        res ~= '\b';
-                        break;
-                    case 'f':
-                        res ~= '\f';
-                        break;
-                    case '\\':
-                        res ~= '\\';
-                        break;
-                    case '/':
-                        res ~= '/';
-                        break;
-                    case '\"':
-                        res ~= '\"';
-                        break;
-                    case 'u':
-                        res ~= parseUnicodeChar();
-                        break;
-                    default:
-                        error("unexpected escape sequence in string");
-                        break;
-                    }
-                }
-                else
-                {
-                    res ~= ch;
-                }
-            }
-        }
-
-        @property string parseIdent()
-        {
-            char ch = peek;
-            if (ch == '\"' || ch == '`')
-            {
-                return parseString;
-            }
-            char[] res;
-            if (isAlpha(ch))
-            {
-                res ~= ch;
-                while (true)
-                {
-                    ch = nextChar;
-                    if (isAlNum(ch))
-                    {
-                        res ~= ch;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-            }
-            else
-                error("cannot parse ident");
-            return cast(string)res;
-        }
-
-        bool parseKeyword(string ident)
-        {
-            // returns true if parsed ok
-            if (pos + ident.length > json.length)
-                return false;
-            foreach (i; 0 .. ident.length)
-            {
-                if (ident[i] != json[pos + i])
-                    return false;
-            }
-            if (pos + ident.length < json.length)
-            {
-                char ch = json[pos + ident.length];
-                if (isAlNum(ch))
-                    return false;
-            }
-            pos += ident.length;
+            fromJSON(readText(filename));
             return true;
         }
-
-        // parse long, ulong or double
-        void parseNumber(Setting res)
+        catch (Exception e)
         {
-            import std.ascii : isDigit;
-
-            char ch = peek;
-            int sign = 1;
-            if (ch == '-')
-            {
-                sign = -1;
-                ch = nextChar;
-            }
-            if (!isDigit(ch))
-                error("cannot parse number");
-            long n = 0;
-            while (isDigit(ch))
-            {
-                n = n * 10 + (ch - '0');
-                ch = nextChar;
-            }
-            if (ch == '.' || ch == 'e' || ch == 'E')
-            {
-                // floating
-                ulong n2 = 0;
-                ulong n2_div = 1;
-                if (ch == '.')
-                {
-                    ch = nextChar;
-                    while (isDigit(ch))
-                    {
-                        n2 = n2 * 10 + (ch - '0');
-                        n2_div *= 10;
-                        ch = nextChar;
-                    }
-                    if (isAlpha(ch) && ch != 'e' && ch != 'E')
-                        error("error while parsing number");
-                }
-                int shift = 0;
-                int shiftSign = 1;
-                if (ch == 'e' || ch == 'E')
-                {
-                    ch = nextChar;
-                    if (ch == '-')
-                    {
-                        shiftSign = -1;
-                        ch = nextChar;
-                    }
-                    if (!isDigit(ch))
-                        error("error while parsing number");
-                    while (isDigit(ch))
-                    {
-                        shift = shift * 10 + (ch - '0');
-                        ch = nextChar;
-                    }
-                }
-                if (isAlpha(ch))
-                    error("error while parsing number");
-                double v = cast(double)n;
-                if (n2) // part after period
-                    v += cast(double)n2 / n2_div;
-                if (sign < 0)
-                    v = -v;
-                if (shift)
-                { // E part - pow10
-                    double p = pow(10.0, shift);
-                    if (shiftSign > 0)
-                        v *= p;
-                    else
-                        v /= p;
-                }
-                res.floating = v;
-            }
-            else
-            {
-                // integer
-                if (isAlpha(ch))
-                    error("cannot parse number");
-
-                res.integer = n * sign;
-            }
+            Log.e("exception while loading settings file: ", e);
+            return false;
         }
     }
-
-    private void parseMap(ref JsonParser parser)
-    {
-        clear(SettingType.object);
-        int startPos = parser.pos;
-        //Log.v("parseMap at context ", parser.currentContext);
-        char ch = parser.peek;
-        parser.nextChar; // skip initial {
-        if (ch != '{')
-        {
-            Log.e("expected { at ", parser.currentContext);
-        }
-        while (true)
-        {
-            ch = parser.skipSpaces;
-            if (ch == '}')
-            {
-                parser.nextChar;
-                break;
-            }
-            string key = parser.parseIdent;
-            ch = parser.skipSpaces;
-            if (ch != ':')
-                parser.error("no : char after object field name");
-            parser.nextChar;
-            this[key] = (new Setting).parseJSON(parser);
-            //Log.v("context before skipSpaces: ", parser.currentContext);
-            ch = parser.skipSpaces;
-            //Log.v("context after skipSpaces: ", parser.currentContext);
-            if (ch == ',')
-            {
-                parser.nextChar;
-                parser.skipSpaces;
-            }
-            else if (ch != '}')
-            {
-                parser.error(
-                        "unexpected character when waiting for , or } while parsing object; { position is " ~ to!string(
-                        startPos));
-            }
-        }
-    }
-
-    private void parseArray(ref JsonParser parser)
-    {
-        clear(SettingType.array);
-        parser.nextChar; // skip initial [
-        while (true)
-        {
-            char ch = parser.skipSpaces;
-            if (ch == ']')
-            {
-                parser.nextChar;
-                break;
-            }
-            auto value = new Setting;
-            value.parseJSON(parser);
-            this[store.array.length] = value;
-            ch = parser.skipSpaces;
-            if (ch == ',')
-            {
-                parser.nextChar;
-                parser.skipSpaces;
-            }
-            else if (ch != ']')
-            {
-                parser.error("unexpected character when waiting for , or ] while parsing array");
-            }
-        }
-    }
-
-    private Setting parseJSON(ref JsonParser parser)
-    {
-        static import std.ascii;
-
-        char ch = parser.skipSpaces;
-        if (ch == '\"')
-        {
-            this.str = parser.parseString();
-        }
-        else if (ch == '[')
-        {
-            parseArray(parser);
-        }
-        else if (ch == '{')
-        {
-            parseMap(parser);
-        }
-        else if (parser.parseKeyword("null"))
-        {
-            // do nothing - we already have null value
-        }
-        else if (parser.parseKeyword("true"))
-        {
-            this.boolean = true;
-        }
-        else if (parser.parseKeyword("false"))
-        {
-            this.boolean = false;
-        }
-        else if (ch == '-' || std.ascii.isDigit(ch))
-        {
-            parser.parseNumber(this);
-        }
-        else
-        {
-            parser.error("cannot parse JSON value");
-        }
-        return this;
-    }
-
-    void parseJSON(string s)
-    {
-        clear(SettingType.nothing);
-        JsonParser parser;
-        parser.initialize(normalizeEOLs(s));
-        parseJSON(parser);
-    }
-
-    //===============================================================
-    // File save/load
 
     /// Save to file
     bool save(string filename, bool pretty = true)
@@ -1864,20 +1194,98 @@ final class Setting
         }
     }
 
-    /// Load JSON from file; returns true if loaded successfully
-    bool load(string filename)
+    /// Deserialize from JSON
+    void fromJSON(string source)
     {
-        try
+        clear(SettingType.nothing);
+        JSONValue value = parseJSON(source, JSONOptions.specialFloatLiterals);
+        applyJSON(value);
+    }
+
+    private void applyJSON(ref JSONValue value)
+    {
+        switch (value.type)
         {
-            string s = readText(filename);
-            parseJSON(s);
-            return true;
+        case JSONType.null_:
+            // do nothing - we already have null value
+            break;
+        case JSONType.string:
+            this.str = value.str;
+            break;
+        case JSONType.integer:
+            this.integer = value.integer;
+            break;
+        case JSONType.uinteger:
+            this.integer = value.uinteger;
+            break;
+        case JSONType.float_:
+            this.floating = value.floating;
+            break;
+        case JSONType.true_:
+            this.boolean = true;
+            break;
+        case JSONType.false_:
+            this.boolean = false;
+            break;
+        case JSONType.array:
+            clear(SettingType.array);
+            foreach (size_t i, val; value)
+            {
+                auto s = new Setting;
+                s.applyJSON(val);
+                this[store.array.length] = s;
+            }
+            break;
+        case JSONType.object:
+            clear(SettingType.object);
+            foreach (string key, val; value)
+            {
+                auto s = new Setting;
+                s.applyJSON(val);
+                this[key] = s;
+            }
+            break;
+        default:
+            break;
         }
-        catch (Exception e)
+    }
+
+    /// Serialize to JSON
+    string toJSON(bool pretty = false)
+    {
+        JSONValue root = makeJSON();
+        return std.json.toJSON(root, pretty, JSONOptions.specialFloatLiterals);
+    }
+
+    private JSONValue makeJSON()
+    {
+        final switch (type) with (SettingType)
         {
-            // Failed
-            Log.e("exception while parsing json: ", e);
-            return false;
+        case str:
+            return JSONValue(store.str);
+        case integer:
+            return JSONValue(store.integer);
+        case floating:
+            return JSONValue(store.floating);
+        case boolean:
+            return JSONValue(store.boolean);
+        case nothing:
+            return JSONValue(null);
+        case array:
+            JSONValue value;
+            foreach (i; 0 .. store.array.length)
+            {
+                value ~= store.array.get(i).makeJSON();
+            }
+            return value;
+        case object:
+            JSONValue[string] obj;
+            foreach (i; 0 .. store.map.length)
+            {
+                string key = store.map.keyByIndex(i);
+                obj[key] = store.map.get(i).makeJSON();
+            }
+            return JSONValue(obj);
         }
     }
 }
