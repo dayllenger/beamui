@@ -474,7 +474,6 @@ class FileDialog : Dialog, CustomGridCellAdapter
         if (_fileList.box.height > 0)
             _fileList.scrollTo(0, 0);
 
-        autofitGrid();
         if (selectionIndex >= 0)
             _fileList.selectCell(1, selectionIndex + 1, true);
         else if (_entries.length > 0)
@@ -513,12 +512,6 @@ class FileDialog : Dialog, CustomGridCellAdapter
         _edPath.path = _path; //toUTF32(_path);
         int selectionIndex = entriesToCells(selectedItemPath);
         return true;
-    }
-
-    void autofitGrid()
-    {
-        _fileList.autoFitColumnWidths();
-        _fileList.fillColumnWidth(1);
     }
 
     override bool onKeyEvent(KeyEvent event)
@@ -929,8 +922,9 @@ class FileDialog : Dialog, CustomGridCellAdapter
 
     override void layout(Box geom)
     {
+        _fileList.autoFitColumnWidths();
         super.layout(geom);
-        autofitGrid();
+        _fileList.fillColumnWidth(1);
     }
 }
 
@@ -1093,6 +1087,8 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
                 item.visibility = Visibility.gone;
             }
         }
+        // changing child visibility to `gone` forces parent layout
+        cancelLayout();
         // lay out visible items
         // backward order
         Box ibox = geom;

@@ -359,7 +359,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             if (_changedSize)
                 updateCumulativeSizes();
-            return Size(_cols ? _colCumulativeWidths[_cols - 1] : 0, _rows ? _rowCumulativeHeights[_rows - 1] : 0);
+            int w = _cols ? _colCumulativeWidths[_cols - 1] : 0;
+            int h = _rows ? _rowCumulativeHeights[_rows - 1] : 0;
+            return Size(w, h);
         }
         /// Non-scrollable area size in pixels
         Size nonScrollAreaPixels()
@@ -368,7 +370,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 updateCumulativeSizes();
             int nscols = nonScrollCols;
             int nsrows = nonScrollRows;
-            return Size(nscols ? _colCumulativeWidths[nscols - 1] : 0, nsrows ? _rowCumulativeHeights[nsrows - 1] : 0);
+            int w = nscols ? _colCumulativeWidths[nscols - 1] : 0;
+            int h = nsrows ? _rowCumulativeHeights[nsrows - 1] : 0;
+            return Size(w, h);
         }
         /// Scrollable area size in pixels
         Size scrollAreaPixels()
@@ -464,14 +468,20 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         int _cols;
         /// Row count (including header rows and fixed rows)
         int _rows;
+
+        /// Column widths before expanding and resizing
+        int[] _colUntouchedWidths;
         /// Column widths
         int[] _colWidths;
-        /// Total width from first column to right of this
+        /// Total width from the left of the first column to the right of specified column
         int[] _colCumulativeWidths;
+        /// Row heights before expanding and resizing
+        int[] _rowUntouchedHeights;
         /// Row heights
         int[] _rowHeights;
-        /// Total height from first row to bottom of this
+        /// Total height from the top of the first row to the bottom of specified row
         int[] _rowCumulativeHeights;
+
         /// When true, shows col headers row
         bool _showColHeaders;
         /// When true, shows row headers column
@@ -561,19 +571,17 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         _changedSize = false;
         _colCumulativeWidths.length = _colWidths.length;
         _rowCumulativeHeights.length = _rowHeights.length;
-        for (int i = 0; i < _colCumulativeWidths.length; i++)
+        int accum;
+        foreach (i; 0 .. _colCumulativeWidths.length)
         {
-            if (i == 0)
-                _colCumulativeWidths[i] = _colWidths[i];
-            else
-                _colCumulativeWidths[i] = _colWidths[i] + _colCumulativeWidths[i - 1];
+            accum += _colWidths[i];
+            _colCumulativeWidths[i] = accum;
         }
-        for (int i = 0; i < _rowCumulativeHeights.length; i++)
+        accum = 0;
+        foreach (i; 0 .. _rowCumulativeHeights.length)
         {
-            if (i == 0)
-                _rowCumulativeHeights[i] = _rowHeights[i];
-            else
-                _rowCumulativeHeights[i] = _rowHeights[i] + _rowCumulativeHeights[i - 1];
+            accum += _rowHeights[i];
+            _rowCumulativeHeights[i] = accum;
         }
     }
 
@@ -584,14 +592,18 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             return;
         _changedSize = true;
         _colWidths.length = c + _headerCols;
+        _colUntouchedWidths.length = c + _headerCols;
         for (int i = _cols; i < c + _headerCols; i++)
         {
             _colWidths[i] = _defColumnWidth;
+            _colUntouchedWidths[i] = _defColumnWidth;
         }
         _rowHeights.length = r + _headerRows;
+        _rowUntouchedHeights.length = r + _headerRows;
         for (int i = _rows; i < r + _headerRows; i++)
         {
             _rowHeights[i] = _defRowHeight;
+            _rowUntouchedHeights[i] = _defRowHeight;
         }
         _cols = c + _headerCols;
         _rows = r + _headerRows;
@@ -599,25 +611,25 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Returns true if column is inside client area and not overlapped outside scroll area
-    bool colVisible(int x)
+    bool colVisible(int i)
     {
+        if (i < 0 || _cols <= i)
+            return false;
         if (_changedSize)
             updateCumulativeSizes();
-        if (x < 0 || x >= _cols)
-            return false;
-        if (x == 0)
+        if (i == 0)
             return true;
         int nscols = nonScrollCols;
-        if (x < nscols)
+        if (i < nscols)
         {
             // non-scrollable
-            return _colCumulativeWidths[x - 1] < clientBox.width;
+            return _colCumulativeWidths[i - 1] < clientBox.width;
         }
         else
         {
             // scrollable
-            int start = _colCumulativeWidths[x - 1] - scrollPos.x;
-            int end = _colCumulativeWidths[x] - scrollPos.x;
+            int start = _colCumulativeWidths[i - 1] - scrollPos.x;
+            int end = _colCumulativeWidths[i] - scrollPos.x;
             if (start >= clientBox.width)
                 return false; // at right
             if (end <= (nscols ? _colCumulativeWidths[nscols - 1] : 0))
@@ -626,25 +638,25 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
     }
     /// Returns true if row is inside client area and not overlapped outside scroll area
-    bool rowVisible(int y)
+    bool rowVisible(int j)
     {
-        if (y < 0 || y >= _rows)
+        if (j < 0 || _rows <= j)
             return false;
         if (_changedSize)
             updateCumulativeSizes();
-        if (y == 0)
+        if (j == 0)
             return true; // first row always visible
         int nsrows = nonScrollRows;
-        if (y < nsrows)
+        if (j < nsrows)
         {
             // non-scrollable
-            return _rowCumulativeHeights[y - 1] < clientBox.height;
+            return _rowCumulativeHeights[j - 1] < clientBox.height;
         }
         else
         {
             // scrollable
-            int start = _rowCumulativeHeights[y - 1] - scrollPos.y;
-            int end = _rowCumulativeHeights[y] - scrollPos.y;
+            int start = _rowCumulativeHeights[j - 1] - scrollPos.y;
+            int end = _rowCumulativeHeights[j] - scrollPos.y;
             if (start >= clientBox.height)
                 return false; // at right
             if (end <= (nsrows ? _rowCumulativeHeights[nsrows - 1] : 0))
@@ -654,54 +666,54 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Get cell rectangle (relative to client area) not counting scroll position
-    Box cellBoxNoScroll(int x, int y)
+    Box cellBoxNoScroll(int i, int j)
     {
         if (_changedSize)
             updateCumulativeSizes();
-        if (x < 0 || y < 0 || x >= _cols || y >= _rows)
+        if (i < 0 || _cols <= i || j < 0 || _rows <= j)
             return Box(0, 0, 0, 0);
-        return Box(x ? _colCumulativeWidths[x - 1] : 0, y ? _rowCumulativeHeights[y - 1] : 0,
-                _colWidths[x], _rowHeights[y]);
+        return Box(i ? _colCumulativeWidths[i - 1] : 0, j ? _rowCumulativeHeights[j - 1] : 0,
+                _colWidths[i], _rowHeights[j]);
     }
     /// Get cell rectangle relative to client area; row 0 is col headers row; col 0 is row headers column
-    Box cellBox(int x, int y)
+    Box cellBox(int i, int j)
     {
-        Box b = cellBoxNoScroll(x, y);
+        Box b = cellBoxNoScroll(i, j);
         int nscols = nonScrollCols;
         int nsrows = nonScrollRows;
-        if (x >= nscols)
+        if (i >= nscols)
             b.x -= scrollPos.x;
-        if (y >= nsrows)
+        if (j >= nsrows)
             b.y -= scrollPos.y;
         return b;
     }
 
-    void setColWidth(int x, int w)
+    void setColWidth(int i, int w)
     {
-        _colWidths[x] = w;
+        _colWidths[i] = w;
         _changedSize = true;
     }
 
-    void setRowHeight(int y, int w)
+    void setRowHeight(int j, int h)
     {
-        _rowHeights[y] = w;
+        _rowHeights[j] = h;
         _changedSize = true;
     }
 
     /// Get column width, 0 is header column
-    int colWidth(int col)
+    int colWidth(int i)
     {
-        if (col < 0 || col >= _colWidths.length)
+        if (i < 0 || _colWidths.length <= i)
             return 0;
-        return _colWidths[col];
+        return _colWidths[i];
     }
 
     /// Get row height, 0 is header row
-    int rowHeight(int row)
+    int rowHeight(int j)
     {
-        if (row < 0 || row >= _rowHeights.length)
+        if (j < 0 || _rowHeights.length <= j)
             return 0;
-        return _rowHeights[row];
+        return _rowHeights[j];
     }
 
     /// Converts client rect relative coordinates to cell coordinates
@@ -879,21 +891,25 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         scrollPos.y = min(scrollPos.y, max(0, csz.h + extra.h - clientBox.h));
     }
 
-    /// Set scroll position to show specified cell as top left in scrollable area; col or row -1 value means no change
+    /// Set scroll position to show specified cell as top left in scrollable area. Returns true if scrolled
     bool scrollTo(int x, int y, GridWidgetBase source = null, bool doNotify = true)
     {
         if (_changedSize)
             updateCumulativeSizes();
         Point oldpos = scrollPos;
-        scrollPos = Point(x, y);
-        updateScrollBars();
-        invalidate();
-        bool changed = oldpos != scrollPos;
-        if (doNotify && changed && viewScrolled.assigned)
+        Point newpos = Point(x, y);
+        bool changed = oldpos != newpos;
+        if (changed)
         {
-            if (source is null)
-                source = this;
-            viewScrolled(source, x, y);
+            scrollPos = newpos;
+            updateScrollBars();
+            invalidate();
+            if (doNotify && viewScrolled.assigned)
+            {
+                if (source is null)
+                    source = this;
+                viewScrolled(source, x, y);
+            }
         }
         return changed;
     }
@@ -974,42 +990,44 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Ensure that cell is visible (scroll if necessary)
-    void makeCellVisible(int col, int row)
+    void makeCellVisible(int i, int j)
     {
         if (_changedSize)
             updateCumulativeSizes();
-        bool scrolled = false;
+        bool scrolled;
         Point newpos = scrollPos;
-        Rect rc = Rect(cellBoxNoScroll(col, row));
+        Rect rc = Rect(cellBoxNoScroll(i, j));
         Size skip = nonScrollAreaPixels;
         Rect visibleRc = Rect(scrollPos.x + skip.w, scrollPos.y + skip.h,
                               scrollPos.x + clientBox.w, scrollPos.y + clientBox.h);
-        if (col >= nonScrollCols)
+
+        if (i >= nonScrollCols) // can scroll X
         {
-            // can scroll X
-            if (rc.left < visibleRc.left)
+            int ldiff = visibleRc.left - rc.left; // TODO: consider text direction?
+            if (ldiff > 0)
             {
                 // scroll left
-                newpos.x += rc.left - visibleRc.left;
+                newpos.x -= ldiff;
             }
             else if (rc.right > visibleRc.right)
             {
                 // scroll right
-                newpos.x += rc.right - visibleRc.right;
+                // if cell bigger than viewport, scroll to cell left border
+                newpos.x += min(-ldiff, rc.right - visibleRc.right);
             }
         }
-        if (row >= nonScrollRows)
+        if (j >= nonScrollRows) // can scroll Y
         {
-            // can scroll Y
-            if (rc.top < visibleRc.top)
+            int tdiff = visibleRc.top - rc.top;
+            if (tdiff > 0)
             {
-                // scroll left
-                newpos.y += rc.top - visibleRc.top;
+                // scroll up
+                newpos.y -= tdiff;
             }
             else if (rc.bottom > visibleRc.bottom)
             {
-                // scroll right
-                newpos.y += rc.bottom - visibleRc.bottom;
+                // scroll down
+                newpos.y += min(-tdiff, rc.bottom - visibleRc.bottom);
             }
         }
         newpos.x = max(newpos.x, 0);
@@ -1022,25 +1040,25 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
     private Point _lastSelectedCell;
 
-    bool multiSelectCell(int col, int row, bool expandExisting = false)
+    bool multiSelectCell(int i, int j, bool expandExisting = false)
     {
-        if (_col == col && _row == row && !expandExisting)
+        if (_col == i && _row == j && !expandExisting)
             return false; // same position
-        if (col < _headerCols || row < _headerRows || col >= _cols || row >= _rows)
+        if (i < _headerCols || _cols <= i || j < _headerRows || _rows <= j)
             return false; // out of range
         if (_changedSize)
             updateCumulativeSizes();
-        _lastSelectedCell.x = col;
-        _lastSelectedCell.y = row;
+        _lastSelectedCell.x = i;
+        _lastSelectedCell.y = j;
         if (_rowSelect)
-            col = _headerCols;
+            i = _headerCols;
         if (expandExisting)
         {
             _selection.clear();
             int startX = _col - _headerCols;
             int startY = _row - headerRows;
-            int endX = col - _headerCols;
-            int endY = row - headerRows;
+            int endX = i - _headerCols;
+            int endY = j - headerRows;
             if (_rowSelect)
                 startX = 0;
             if (startX > endX)
@@ -1073,27 +1091,27 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Move selection to specified cell
-    bool selectCell(int col, int row, bool makeVisible = true, GridWidgetBase source = null, bool needNotification = true)
+    bool selectCell(int i, int j, bool makeVisible = true, GridWidgetBase source = null, bool needNotification = true)
     {
         if (source is null)
             source = this;
         _selection.clear();
-        if (_col == col && _row == row)
+        if (_col == i && _row == j)
             return false; // same position
-        if (col < _headerCols || row < _headerRows || col >= _cols || row >= _rows)
+        if (i < _headerCols || _cols <= i || j < _headerRows || _rows <= j)
             return false; // out of range
         if (_changedSize)
             updateCumulativeSizes();
-        _col = col;
-        _row = row;
-        _lastSelectedCell = Point(col, row);
+        _col = i;
+        _row = j;
+        _lastSelectedCell = Point(i, j);
         if (_rowSelect)
         {
-            _selection.insert(Point(0, row - _headerRows));
+            _selection.insert(Point(0, j - _headerRows));
         }
         else
         {
-            _selection.insert(Point(col - _headerCols, row - _headerRows));
+            _selection.insert(Point(i - _headerCols, j - _headerRows));
         }
         invalidate();
         if (makeVisible)
@@ -1104,13 +1122,13 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Select cell and call onCellActivated handler
-    bool activateCell(int col, int row)
+    bool activateCell(int i, int j)
     {
         if (_changedSize)
             updateCumulativeSizes();
-        if (_col != col || _row != row)
+        if (_col != i || _row != j)
         {
-            selectCell(col, row, true);
+            selectCell(i, j, true);
         }
         cellActivated(this, this.col, this.row);
         return true;
@@ -1138,19 +1156,18 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return result;
     }
 
-    /// Shows popup menu at (x,y)
-    override void showPopupMenu(int xx, int yy)
+    override void showPopupMenu(int x, int y)
     {
         int col, row;
         Box b;
-        int x = xx - clientBox.x;
-        int y = yy - clientBox.y;
-        pointToCell(x, y, col, row, b);
+        int xx = x - clientBox.x;
+        int yy = y - clientBox.y;
+        pointToCell(xx, yy, col, row, b);
         if (auto menu = getCellPopupMenu(col - _headerCols, row - _headerRows))
         {
             import beamui.widgets.popup;
 
-            auto popup = window.showPopup(menu, WeakRef!Widget(this), PopupAlign.point | PopupAlign.right, xx, yy);
+            auto popup = window.showPopup(menu, WeakRef!Widget(this), PopupAlign.point | PopupAlign.right, x, y);
             popup.ownContent = false;
         }
     }
@@ -1172,16 +1189,16 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     private int _colResizingStartX = -1;
     private int _colResizingStartWidth = -1;
 
-    protected void startColResize(int col, int x)
+    protected void startColResize(int i, int x)
     {
-        _colResizingIndex = col;
+        _colResizingIndex = i;
         _colResizingStartX = x;
-        _colResizingStartWidth = _colWidths[col];
+        _colResizingStartWidth = _colWidths[i];
     }
 
     protected void processColResize(int x)
     {
-        if (_colResizingIndex < 0 || _colResizingIndex >= _cols)
+        if (_colResizingIndex < 0 || _cols <= _colResizingIndex)
             return;
         int newWidth = max(_colResizingStartWidth + x - _colResizingStartX, 0);
         _colWidths[_colResizingIndex] = newWidth;
@@ -1213,7 +1230,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         int col = colByAbsoluteX(x);
         int start = col > 0 ? _colCumulativeWidths[col - 1] : 0;
         int end = (col < _cols ? _colCumulativeWidths[col] : _colCumulativeWidths[$ - 1]) - 1;
-        //Log.d("column range ", start, "..", end, " x=", x);
         if (x >= end - resizeRange / 2)
             return col; // resize this column
         if (x <= start + resizeRange / 2)
@@ -1771,12 +1787,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
     override Size fullContentSize()
     {
-        Size sz;
-        foreach (i; 0 .. _cols)
-            sz.w += _colWidths[i];
-        foreach (i; 0 .. _rows)
-            sz.h += _rowHeights[i];
-        return sz;
+        return fullAreaPixels;
     }
 
     private int _minVisibleCols = 2;
@@ -1809,17 +1820,17 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
         Size sz;
         // width
-        int firstVisibleCol = showRowHeaders ? 0 : _headerCols;
-        for (int i = firstVisibleCol; i < min(_cols, _minVisibleCols + firstVisibleCol); i++)
-            sz.w += _colWidths[i];
+        int firstVisibleCol = _showRowHeaders ? 0 : _headerCols;
+        foreach (i; firstVisibleCol .. min(_cols, _minVisibleCols + firstVisibleCol))
+            sz.w += min(_colUntouchedWidths[i], 100);
 
         // height
-        int firstVisibleRow = showColHeaders ? 0 : _headerRows;
-        for (int i = firstVisibleRow; i < min(_rows, _minVisibleRows + firstVisibleRow); i++)
-            sz.h += _rowHeights[i];
+        int firstVisibleRow = _showColHeaders ? 0 : _headerRows;
+        foreach (j; firstVisibleRow .. min(_rows, _minVisibleRows + firstVisibleRow))
+            sz.h += _rowUntouchedHeights[j];
 
         if (_rows < _minVisibleRows)
-            sz.h += (_minVisibleRows - _rows) * _rowHeights[_rows - 1];
+            sz.h += (_minVisibleRows - _rows) * _rowUntouchedHeights[_rows - 1];
 
         return sz;
     }
@@ -1832,7 +1843,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
     protected int measureColWidth(int x)
     {
-        if (!showRowHeaders && x < _headerCols)
+        if (!_showRowHeaders && x < _headerCols)
             return 0;
         int w;
         foreach (i; 0 .. _rows)
@@ -1860,19 +1871,15 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return h;
     }
 
-    /// Extend specified column width to fit client area if grid width
-    void fillColumnWidth(int colIndex)
+    /// Resize columns and rows to their content
+    void autoFit()
     {
-        int w = clientBox.width;
-        int totalw = 0;
-        foreach (i; 0 .. _cols)
-            totalw += _colWidths[i];
-        if (w > totalw)
-            _colWidths[colIndex + _headerCols] += w - totalw;
-        _changedSize = true;
-        invalidate();
+        autoFitColumnWidths();
+        autoFitRowHeights();
+        updateCumulativeSizes();
     }
 
+    /// Resize columns to their content
     void autoFitColumnWidths()
     {
         foreach (i; 0 .. _cols)
@@ -1881,30 +1888,44 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         invalidate();
     }
 
+    /// Resize specified column to its content
     void autoFitColumnWidth(int i)
     {
-        _colWidths[i] = (i < _headerCols && !_showRowHeaders) ? 0 :
-                measureColWidth(i) + (BACKEND_CONSOLE ? 1 : 3.pt);
+        if (!_showRowHeaders && i < _headerCols)
+            _colWidths[i] = _colUntouchedWidths[i] = 0;
+        else
+            _colWidths[i] = _colUntouchedWidths[i] = measureColWidth(i) + (BACKEND_CONSOLE ? 1 : 3);
         _changedSize = true;
     }
 
+    /// Resize rows to their content
     void autoFitRowHeights()
     {
         foreach (i; 0 .. _rows)
             autoFitRowHeight(i);
     }
 
-    void autoFitRowHeight(int i)
+    /// Resize specified row to its content
+    void autoFitRowHeight(int j)
     {
-        _rowHeights[i] = (i < _headerRows && !_showColHeaders) ? 0 : measureRowHeight(i) + (BACKEND_CONSOLE ? 0 : 2);
+        if (!_showColHeaders && j < _headerRows)
+            _rowHeights[j] = _rowUntouchedHeights[j] = 0;
+        else
+            _rowHeights[j] = _rowUntouchedHeights[j] = measureRowHeight(j) + (BACKEND_CONSOLE ? 0 : 2);
         _changedSize = true;
     }
 
-    void autoFit()
+    /// Extend specified column width to fit client area. Should be used after autofit and layout
+    void fillColumnWidth(int i)
     {
-        autoFitColumnWidths();
-        autoFitRowHeights();
-        updateCumulativeSizes();
+        int w = clientBox.width;
+        int totalw;
+        foreach (k; 0 .. _cols)
+            totalw += _colWidths[k];
+        if (w > totalw)
+            _colWidths[i + _headerCols] += w - totalw;
+        _changedSize = true;
+        invalidate();
     }
 
     override protected void drawClient(DrawBuf buf)
