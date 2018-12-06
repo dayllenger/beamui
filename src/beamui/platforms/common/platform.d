@@ -1159,24 +1159,29 @@ class Window : CustomEventTarget
     {
         if (action)
         {
-            Widget focus = focusedWidget;
-            auto context = action.context;
-            return action.call((Widget wt) {
-                if (context == ActionContext.application)
+            const context = action.context;
+            if (context == ActionContext.application)
+            {
+                return action.call(wt => true);
+            }
+            else if (context == ActionContext.window)
+            {
+                return action.call(wt => wt && wt.window is this);
+            }
+            else // widget or widget tree
+            {
+                Widget focus = focusedWidget;
+                if (action.call(wt => wt is focus)) // try focused first
                 {
                     return true;
                 }
-                else if (wt)
+                else if (context == ActionContext.widgetTree)
                 {
-                    if (context == ActionContext.window && wt.window is this ||
-                        context == ActionContext.widgetTree && wt.isChild(focus) ||
-                        context == ActionContext.widget && wt is focus)
-                    {
-                        return true;
-                    }
+                   return action.call(wt => wt && wt.isChild(focus));
                 }
-                return false;
-            });
+                else
+                    return false;
+            }
         }
         return false;
     }
