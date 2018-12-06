@@ -230,10 +230,13 @@ struct TextLine
                     prevChar = 0;
                     continue;
                 }
-                // apply kerning
                 int kerningDelta = useKerning && prevChar ? font.getKerningOffset(prevChar, ch) : 0;
-                int w = max((glyph.widthScaled + kerningDelta + 63) >> 6,
-                            glyph.originX + glyph.correctedBlackBoxX);
+                if (kerningDelta != 0)
+                {
+                    // shrink previous glyph (or expand, maybe)
+                    pwidths[i - 1] += cast(short)(kerningDelta / 64);
+                }
+                int w = max(glyph.widthScaled >> 6, glyph.originX + glyph.correctedBlackBoxX);
                 pwidths[i] = cast(ushort)w;
                 x += w;
             }
