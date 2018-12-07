@@ -492,22 +492,23 @@ public:
         {
             if (!sel.subitem || subInfo.subName != sel.subitem)
                 return false;
+            // match state
+            if ((sel.specifiedState & state) != sel.enabledState)
+                return false;
             // match parent
             if (auto wt = cast(Widget)subInfo.parent)
             {
                 Selector ps = cast(Selector)sel;
                 ps.subitem = null;
+                ps.specifiedState = State.init;
+                ps.enabledState = State.init;
                 return wt.matchSelector(ps);
             }
             else // not a widget
             {
-                // check only type and state
+                // check only type
                 TypeInfo_Class type = typeid(subInfo.parent);
-                if (sel.type != getShortClassName(type))
-                    return false;
-                if ((sel.specifiedState & state) != sel.enabledState)
-                    return false;
-                return true;
+                return sel.type == getShortClassName(type);
             }
         }
         // state
