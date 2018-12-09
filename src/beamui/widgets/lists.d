@@ -147,7 +147,6 @@ class WidgetListAdapter : ListAdapterBase
     /// List of widgets to display
     @property ref const(WidgetList) widgets() { return _widgets; }
 
-    /// Returns number of widgets in list
     override @property int itemCount() const
     {
         return cast(int)_widgets.count;
@@ -172,6 +171,7 @@ class WidgetListAdapter : ListAdapterBase
     {
         return _widgets[index].resetState(flags);
     }
+
     /// Add or insert item
     void add(Widget item, int index = -1)
     {
@@ -196,7 +196,6 @@ class WidgetListAdapter : ListAdapterBase
 
     override void onThemeChanged()
     {
-        super.onThemeChanged();
         foreach (w; _widgets)
             w.onThemeChanged();
     }
@@ -316,19 +315,16 @@ class StringListAdapterBase : ListAdapterBase
         updateViews();
     }
 
-    /// Returns number of widgets in list
     override @property int itemCount() const
     {
         return cast(int)_items.length;
     }
 
-    /// Returns integer item id by index (if supported)
     override int itemID(int index) const
     {
         return index >= 0 && index < _items.length ? _items[index].intID : 0;
     }
 
-    /// Returns string item id by index (if supported)
     override string itemStringID(int index) const
     {
         return index >= 0 && index < _items.length ? _items[index].stringID : null;
@@ -404,9 +400,7 @@ class StringListAdapter : StringListAdapterBase
 
     override void onThemeChanged()
     {
-        super.onThemeChanged();
-        if (_widget)
-            _widget.onThemeChanged();
+        _widget.maybe.onThemeChanged();
     }
 
     override State setItemState(int index, State flags)
@@ -432,8 +426,8 @@ class IconStringListAdapter : StringListAdapterBase
     private
     {
         Row _widget;
-        Label _textWidget;
-        ImageWidget _iconWidget;
+        Label _label;
+        ImageWidget _icon;
     }
 
     /// Create empty string list adapter
@@ -459,12 +453,12 @@ class IconStringListAdapter : StringListAdapterBase
         {
             _widget = new Row;
             _widget.bindSubItem(this, "item");
-            _textWidget = new Label;
-            _textWidget.id = "label";
-            _iconWidget = new ImageWidget;
-            _iconWidget.id = "icon";
-            _widget.addChild(_iconWidget);
-            _widget.addChild(_textWidget);
+            _label = new Label;
+            _label.id = "label";
+            _icon = new ImageWidget;
+            _icon.id = "icon";
+            _widget.add(_icon);
+            _widget.add(_label).setFillWidth(true);
         }
         else
         {
@@ -472,16 +466,16 @@ class IconStringListAdapter : StringListAdapterBase
                 return _widget;
         }
         // update widget
-        _widget.text = _items[index].str;
         _widget.state = _items[index].state;
+        _label.text = _items[index].str;
         if (_items[index].iconID)
         {
-            _iconWidget.visibility = Visibility.visible;
-            _iconWidget.imageID = _items[index].iconID;
+            _icon.visibility = Visibility.visible;
+            _icon.imageID = _items[index].iconID;
         }
         else
         {
-            _iconWidget.visibility = Visibility.gone;
+            _icon.visibility = Visibility.gone;
         }
         _lastItemIndex = index;
         return _widget;
@@ -489,9 +483,7 @@ class IconStringListAdapter : StringListAdapterBase
 
     override void onThemeChanged()
     {
-        super.onThemeChanged();
-        if (_widget)
-            _widget.onThemeChanged();
+        _widget.maybe.onThemeChanged();
     }
 
     override State setItemState(int index, State flags)
@@ -500,7 +492,7 @@ class IconStringListAdapter : StringListAdapterBase
         if (_widget !is null && _lastItemIndex == index)
         {
             _widget.state = res;
-            _textWidget.state = res;
+            _label.state = res;
         }
         return res;
     }
@@ -511,7 +503,7 @@ class IconStringListAdapter : StringListAdapterBase
         if (_widget !is null && _lastItemIndex == index)
         {
             _widget.state = res;
-            _textWidget.state = res;
+            _label.state = res;
         }
         return res;
     }
@@ -979,7 +971,7 @@ class ListWidget : WidgetGroup
             }
             else
             {
-                _scrollbar.maybe.sendScrollEvent(event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
+                _scrollbar.sendScrollEvent(event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
                 return true;
             }
         }
@@ -993,55 +985,16 @@ class ListWidget : WidgetGroup
 
         Box b = box;
         applyPadding(b);
-        // ----- same as in onDraw -----
-        Point scrollOffset;
-        if (_orientation == Orientation.vertical)
-        {
-            scrollOffset.y = _scrollPosition;
-        }
-        else
-        {
-            scrollOffset.x = _scrollPosition;
-        }
-        // fast bisect to find where is the viewport
-        int start = 0;
-        int end = itemCount - 1;
-        bool vert = _orientation == Orientation.vertical;
-        while (true)
-        {
-            Box ib1 = _itemBoxes[start];
-            Box ib2 = _itemBoxes[end];
-            if (vert)
-            {
-                if (scrollOffset.y - ib1.y < ib2.y + ib2.h - scrollOffset.y)
-                {
-                    end -= (end - start) / 2;
-                }
-                else
-                {
-                    start += (end - start) / 2;
-                }
-            }
-            else
-            {
-                if (scrollOffset.x - ib1.x < ib2.x + ib2.w - scrollOffset.x)
-                {
-                    end -= (end - start) / 2;
-                }
-                else
-                {
-                    start += (end - start) / 2;
-                }
-            }
-            if (end - start < 5)
-                break;
-        }
-        // ----------
+        // same as in onDraw
+        const bool vert = _orientation == Orientation.vertical;
+        const int scrollOffset = _scrollPosition;
+        const int start = findViewportIndex();
         foreach (i; start .. itemCount)
         {
             Box ib = _itemBoxes[i];
-            ib.x += b.x - scrollOffset.x;
-            ib.y += b.y - scrollOffset.y;
+            ib.x += b.x;
+            ib.y += b.y;
+            (vert ? ib.y : ib.x) -= scrollOffset;
             if (ib.isPointInside(event.x, event.y))
             {
                 if (_adapter && _adapter.wantMouseEvents)
@@ -1324,7 +1277,8 @@ class ListWidget : WidgetGroup
         super.onDraw(buf);
         Box b = box;
         applyPadding(b);
-        auto saver = ClipRectSaver(buf, b, alpha);
+        const saver = ClipRectSaver(buf, b, alpha);
+
         // draw scrollbar
         if (_needScrollbar)
             _scrollbar.onDraw(buf);
@@ -1332,55 +1286,17 @@ class ListWidget : WidgetGroup
         if (itemCount == 0)
             return;
 
-        Point scrollOffset;
-        if (_orientation == Orientation.vertical)
-        {
-            scrollOffset.y = _scrollPosition;
-        }
-        else
-        {
-            scrollOffset.x = _scrollPosition;
-        }
-        // fast bisect to find where is the viewport
-        int start = 0;
-        int end = itemCount - 1;
-        bool vert = _orientation == Orientation.vertical;
-        while (true)
-        {
-            Box ib1 = _itemBoxes[start];
-            Box ib2 = _itemBoxes[end];
-            if (vert)
-            {
-                if (scrollOffset.y - ib1.y < ib2.y + ib2.h - scrollOffset.y)
-                {
-                    end -= (end - start) / 2;
-                }
-                else
-                {
-                    start += (end - start) / 2;
-                }
-            }
-            else
-            {
-                if (scrollOffset.x - ib1.x < ib2.x + ib2.w - scrollOffset.x)
-                {
-                    end -= (end - start) / 2;
-                }
-                else
-                {
-                    start += (end - start) / 2;
-                }
-            }
-            if (end - start < 5)
-                break;
-        }
         // draw items
+        const bool vert = _orientation == Orientation.vertical;
+        const int scrollOffset = _scrollPosition;
+        const int start = findViewportIndex();
         bool started;
         foreach (i; start .. itemCount)
         {
             Box ib = _itemBoxes[i];
-            ib.x += b.x - scrollOffset.x;
-            ib.y += b.y - scrollOffset.y;
+            ib.x += b.x;
+            ib.y += b.y;
+            (vert ? ib.y : ib.x) -= scrollOffset;
             if (Rect(ib).intersects(Rect(b)))
             {
                 Widget w = itemWidget(i);
@@ -1407,6 +1323,45 @@ class ListWidget : WidgetGroup
             }
         }
         return super.isChild(item, deepSearch);
+    }
+
+    /// Fast bisect to find where is the viewport
+    private int findViewportIndex()
+    {
+        int start = 0;
+        int end = itemCount - 1;
+        const bool vert = _orientation == Orientation.vertical;
+        const int offset = _scrollPosition;
+        while (true)
+        {
+            const Box ib1 = _itemBoxes[start];
+            const Box ib2 = _itemBoxes[end];
+            if (vert)
+            {
+                if (offset - ib1.y < ib2.y + ib2.h - offset)
+                {
+                    end -= (end - start) / 2;
+                }
+                else
+                {
+                    start += (end - start) / 2;
+                }
+            }
+            else
+            {
+                if (offset - ib1.x < ib2.x + ib2.w - offset)
+                {
+                    end -= (end - start) / 2;
+                }
+                else
+                {
+                    start += (end - start) / 2;
+                }
+            }
+            if (end - start < 5)
+                break;
+        }
+        return start;
     }
 }
 
