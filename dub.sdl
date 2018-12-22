@@ -1,0 +1,72 @@
+name "beamui"
+description "Web-inspired retained-mode UI framework"
+homepage "https://github.com/dayllenger/beamui"
+license "BSL-1.0"
+authors "dayllenger" "Vadim Lopatin"
+
+targetName "beamui"
+targetPath "lib"
+targetType "staticLibrary"
+
+sourcePaths "3rdparty" "src"
+importPaths "3rdparty" "src"
+stringImportPaths "res"
+
+sourceFiles "$PACKAGE_DIR/src/win_app.def" platform="windows-x86-dmd"
+excludedSourceFiles "3rdparty/fontconfig/*" platform="windows"
+
+libs "z" platform="linux"
+
+x:ddoxFilterArgs "--min-protection=Protected" \
+    "--ex" "dimage" \
+    "--ex" "fontconfig" \
+    "--ex" "isfreedesktop"
+
+subPackage "./examples/advanced/"
+subPackage "./examples/basic/"
+subPackage "./examples/css/"
+subPackage "./examples/opengl/"
+
+dependency "mofile" version="~>0.2.1"
+// platform here is not supported, but should
+dependency "icontheme" version="~>1.2.2" platform="posix"
+dependency "inilike" version="~>1.1.0" platform="posix"
+dependency "xdgpaths" version="~>0.2.5" platform="posix"
+
+configuration "library" {
+    versions "EmbedStandardResources"
+    dependency "derelict-gl3" version="~>1.0.18"
+    dependency "derelict-ft" version="~>1.1.2" platform="posix"
+    dependency "derelict-sdl2" version="~>2.0.0" platform="posix"
+    copyFiles "libs/windows-x86_64/libfreetype-6.dll" platform="windows-x86_64"
+    copyFiles "libs/windows-x86/libfreetype-6.dll" platform="windows-x86"
+}
+configuration "console" {
+    versions "CONSOLE" "EmbedStandardResources"
+    excludedSourceFiles "3rdparty/dimage/*" "3rdparty/fontconfig/*"
+}
+configuration "external" {
+    versions "EXTERNAL"
+    dependency "derelict-ft" version="~>1.1.2" platform="posix"
+    dependency "derelict-sdl2" version="~>2.0.0" platform="posix"
+}
+configuration "minimal" {
+    versions "NO_OPENGL" "EmbedStandardResources"
+    dependency "derelict-ft" version="~>1.1.2" platform="posix"
+    dependency "derelict-sdl2" version="~>2.0.0" platform="posix"
+}
+configuration "sdl" {
+    versions "SDL" "FREETYPE" "EmbedStandardResources"
+    dependency "derelict-ft" version="~>1.1.2"
+    dependency "derelict-gl3" version="~>1.0.18"
+    dependency "derelict-sdl2" version="~>2.0.0"
+    copyFiles "libs/windows-x86_64/libfreetype-6.dll" "libs/windows-x86_64/SDL2.dll" platform="windows-x86_64"
+    copyFiles "libs/windows-x86/libfreetype-6.dll" "libs/windows-x86/SDL2.dll" platform="windows-x86"
+}
+configuration "x11" {
+    platforms "posix"
+    versions "X11" "EmbedStandardResources"
+    dependency "derelict-ft" version="~>1.1.2"
+    dependency "derelict-gl3" version="~>1.0.18"
+    dependency "x11" version="~>1.0.17"
+}
