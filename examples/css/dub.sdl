@@ -1,0 +1,11 @@
+name "css"
+description "CSS sandbox example for beamui"
+homepage "https://github.com/dayllenger/beamui"
+license "BSL-1.0"
+authors "dayllenger"
+
+targetName "css"
+targetPath "bin"
+targetType "executable"
+
+dependency "beamui" path="../../"

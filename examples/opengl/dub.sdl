@@ -1,0 +1,21 @@
+name "opengl"
+description "OpenGL rendering example for beamui"
+homepage "https://github.com/dayllenger/beamui"
+license "BSL-1.0"
+authors "dayllenger" "Vadim Lopatin"
+
+targetName "opengl"
+targetPath "bin"
+targetType "executable"
+
+dependency "beamui" path="../../"
+
+configuration "application" {
+    subConfiguration "beamui" "library"
+}
+configuration "sdl" {
+    subConfiguration "beamui" "sdl"
+}
+configuration "x11" {
+    subConfiguration "beamui" "x11"
+}
