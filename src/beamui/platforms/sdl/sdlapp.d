@@ -21,7 +21,7 @@ import std.file;
 import std.stdio;
 import std.string;
 import std.utf : toUTF32, toUTF16z;
-import derelict.sdl2.sdl;
+import bindbc.sdl;
 import beamui.core.events;
 import beamui.core.logger;
 import beamui.graphics.drawbuf;
@@ -43,34 +43,9 @@ version (Windows)
     pragma(lib, "user32.lib");
 }
 
-private derelict.util.exception.ShouldThrow missingSymFunc(string symName)
-{
-    import std.algorithm : equal;
-    static import derelict.util.exception;
-
-    foreach (s; ["SDL_CreateRenderer", "SDL_CreateRGBSurfaceFrom", "SDL_CreateSystemCursor",
-            "SDL_CreateTexture", "SDL_CreateWindow", "SDL_DestroyRenderer", "SDL_DestroyTexture",
-            "SDL_DestroyWindow", "SDL_free", "SDL_FreeSurface", "SDL_GetClipboardText",
-            "SDL_GetError", "SDL_GetModState", "SDL_GetNumVideoDisplays", "SDL_GetWindowID",
-            "SDL_GetWindowSize", "SDL_GL_CreateContext", "SDL_GL_DeleteContext",
-            "SDL_GL_GetDrawableSize", "SDL_GL_MakeCurrent", "SDL_GL_SetAttribute",
-            "SDL_GL_SetSwapInterval", "SDL_GL_SwapWindow", "SDL_HasClipboardText", "SDL_Init",
-            "SDL_PushEvent", "SDL_Quit", "SDL_RegisterEvents", "SDL_RenderClear",
-            "SDL_RenderCopy", "SDL_RenderPresent", "SDL_SetClipboardText", "SDL_SetCursor",
-            "SDL_SetRenderDrawColor", "SDL_SetWindowIcon", "SDL_SetWindowMinimumSize",
-            "SDL_SetWindowMaximumSize", "SDL_SetWindowSize", "SDL_SetWindowTitle", "SDL_ShowCursor",
-            "SDL_ShowWindow", "SDL_StartTextInput", "SDL_UpdateTexture", "SDL_WaitEvent"])
-    { //"SDL_GetDisplayDPI"
-        if (symName.equal(s)) // Symbol is used
-            return derelict.util.exception.ShouldThrow.Yes;
-    }
-    // Don't throw for unused symbol
-    return derelict.util.exception.ShouldThrow.No;
-}
-
-private __gshared uint USER_EVENT_ID;
-private __gshared uint TIMER_EVENT_ID;
-private __gshared uint WINDOW_CLOSE_EVENT_ID;
+private __gshared SDL_EventType USER_EVENT_ID;
+private __gshared SDL_EventType TIMER_EVENT_ID;
+private __gshared SDL_EventType WINDOW_CLOSE_EVENT_ID;
 
 final class SDLWindow : Window
 {
@@ -161,7 +136,7 @@ final class SDLWindow : Window
     {
         debug Log.d("Creating SDL window of size ", width, "x", height);
 
-        uint sdlWindowFlags = SDL_WINDOW_HIDDEN;
+        SDL_WindowFlags sdlWindowFlags = SDL_WINDOW_HIDDEN;
         if (flags & WindowFlag.resizable)
             sdlWindowFlags |= SDL_WINDOW_RESIZABLE;
         if (flags & WindowFlag.fullscreen)
@@ -1082,12 +1057,12 @@ final class SDLPlatform : Platform
             w.dispatchThemeChanged();
     }
 
-    private uint _redrawEventID;
+    private SDL_EventType _redrawEventID;
 
     void sendRedrawEvent(uint windowID, uint code)
     {
         if (!_redrawEventID)
-            _redrawEventID = SDL_RegisterEvents(1);
+            _redrawEventID = cast(SDL_EventType)SDL_RegisterEvents(1);
         SDL_Event event;
         event.type = _redrawEventID;
         event.user.windowID = windowID;
@@ -1467,14 +1442,13 @@ extern (C) int initializeGUI()
         DeleteObject(dc);
     }
 
-    try
+    SDLSupport ret = loadSDL();
+    if (ret != sdlSupport)
     {
-        DerelictSDL2.missingSymbolCallback = &missingSymFunc;
-        DerelictSDL2.load();
-    }
-    catch (Exception e)
-    {
-        Log.e("Cannot load SDL2 library: ", e);
+        if(ret == SDLSupport.noLibrary)
+            Log.e("This application requires the SDL library");
+        else
+            Log.e("The version of the SDL library is too low, must be at least 2.0.4");
         return 1;
     }
 
@@ -1490,9 +1464,9 @@ extern (C) int initializeGUI()
         return 2;
     }
 
-    USER_EVENT_ID = SDL_RegisterEvents(1);
-    TIMER_EVENT_ID = SDL_RegisterEvents(1);
-    WINDOW_CLOSE_EVENT_ID = SDL_RegisterEvents(1);
+    USER_EVENT_ID = cast(SDL_EventType)SDL_RegisterEvents(1);
+    TIMER_EVENT_ID = cast(SDL_EventType)SDL_RegisterEvents(1);
+    WINDOW_CLOSE_EVENT_ID = cast(SDL_EventType)SDL_RegisterEvents(1);
 
     static if (USE_OPENGL)
     {

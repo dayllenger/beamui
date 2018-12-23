@@ -27,6 +27,8 @@ subPackage "./examples/basic/"
 subPackage "./examples/css/"
 subPackage "./examples/opengl/"
 
+versions "SDL_205"
+
 dependency "mofile" version="~>0.2.1"
 // platform here is not supported, but should
 dependency "icontheme" version="~>1.2.2" platform="posix"
@@ -36,8 +38,8 @@ dependency "xdgpaths" version="~>0.2.5" platform="posix"
 configuration "library" {
     versions "EmbedStandardResources"
     dependency "derelict-gl3" version="~>1.0.18"
-    dependency "derelict-ft" version="~>1.1.2" platform="posix"
-    dependency "derelict-sdl2" version="~>2.0.0" platform="posix"
+    dependency "bindbc-sdl" version="~>0.6.0" platform="posix"
+    dependency "derelict-ft" version="==1.1.2" platform="posix"
     copyFiles "libs/windows-x86_64/libfreetype-6.dll" platform="windows-x86_64"
     copyFiles "libs/windows-x86/libfreetype-6.dll" platform="windows-x86"
 }
@@ -47,26 +49,26 @@ configuration "console" {
 }
 configuration "external" {
     versions "EXTERNAL"
-    dependency "derelict-ft" version="~>1.1.2" platform="posix"
-    dependency "derelict-sdl2" version="~>2.0.0" platform="posix"
+    dependency "bindbc-sdl" version="~>0.6.0" platform="posix"
+    dependency "derelict-ft" version="==1.1.2" platform="posix"
 }
 configuration "minimal" {
     versions "NO_OPENGL" "EmbedStandardResources"
-    dependency "derelict-ft" version="~>1.1.2" platform="posix"
-    dependency "derelict-sdl2" version="~>2.0.0" platform="posix"
+    dependency "bindbc-sdl" version="~>0.6.0" platform="posix"
+    dependency "derelict-ft" version="==1.1.2" platform="posix"
 }
 configuration "sdl" {
     versions "SDL" "FREETYPE" "EmbedStandardResources"
-    dependency "derelict-ft" version="~>1.1.2"
+    dependency "bindbc-sdl" version="~>0.6.0"
+    dependency "derelict-ft" version="==1.1.2"
     dependency "derelict-gl3" version="~>1.0.18"
-    dependency "derelict-sdl2" version="~>2.0.0"
     copyFiles "libs/windows-x86_64/libfreetype-6.dll" "libs/windows-x86_64/SDL2.dll" platform="windows-x86_64"
     copyFiles "libs/windows-x86/libfreetype-6.dll" "libs/windows-x86/SDL2.dll" platform="windows-x86"
 }
 configuration "x11" {
     platforms "posix"
     versions "X11" "EmbedStandardResources"
-    dependency "derelict-ft" version="~>1.1.2"
+    dependency "derelict-ft" version="==1.1.2"
     dependency "derelict-gl3" version="~>1.0.18"
     dependency "x11" version="~>1.0.17"
 }
