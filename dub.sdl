@@ -22,10 +22,10 @@ x:ddoxFilterArgs "--min-protection=Protected" \
     "--ex" "fontconfig" \
     "--ex" "isfreedesktop"
 
-subPackage "./examples/advanced/"
 subPackage "./examples/basic/"
 subPackage "./examples/css/"
 subPackage "./examples/opengl/"
+subPackage "./examples/overview/"
 
 versions "SDL_205"
 

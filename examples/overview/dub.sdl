@@ -1,0 +1,29 @@
+name "overview"
+description "Overview of beamui controls"
+homepage "https://github.com/dayllenger/beamui"
+license "BSL-1.0"
+authors "dayllenger" "Vadim Lopatin"
+
+targetName "overview"
+targetPath "bin"
+targetType "executable"
+
+stringImportPaths "resources"
+
+dependency "beamui" path="../../"
+
+configuration "application" {
+    subConfiguration "beamui" "library"
+}
+configuration "console" {
+    subConfiguration "beamui" "console"
+}
+configuration "minimal" {
+    subConfiguration "beamui" "minimal"
+}
+configuration "sdl" {
+    subConfiguration "beamui" "sdl"
+}
+configuration "x11" {
+    subConfiguration "beamui" "x11"
+}
