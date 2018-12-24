@@ -1,14 +1,3 @@
-/**
-
-Synopsis:
----
-dub run :advanced
----
-
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
-License:   Boost License 1.0
-Authors:   Vadim Lopatin, dayllenger
-*/
 module app;
 
 import beamui;
@@ -36,10 +25,6 @@ extern (C) int UIAppMain(string[] args)
     platform.resourceDirs = resourceDirs;
     */
 
-    // select application language, English is default
-    //platform.uiLanguage = "ru";
-    // add domain-specific translation file
-    //loadTranslator("advanced-ru");
     // load theme from file "light.css"
     platform.uiTheme = "light";
 
@@ -66,14 +51,14 @@ extern (C) int UIAppMain(string[] args)
     //=========================================================================
     // create main menu
 
-    auto fileOpenAction = new Action(tr("&Open"), "document-open", KeyCode.O, KeyFlag.control);
+    auto fileOpenAction = new Action("&Open", "document-open", KeyCode.O, KeyFlag.control);
     fileOpenAction.bind(frame, {
         auto dlg = new FileDialog("Open Text File"d, window);
         dlg.allowMultipleFiles = true;
-        dlg.addFilter(FileFilterEntry(tr("All files"), "*"));
-        dlg.addFilter(FileFilterEntry(tr("Text files"), "*.txt;*.log"));
-        dlg.addFilter(FileFilterEntry(tr("Source files"), "*.d;*.dd;*.c;*.cpp;*.h;*.hpp"));
-        dlg.addFilter(FileFilterEntry(tr("Executable files"), "*", true));
+        dlg.addFilter(FileFilterEntry("All files", "*"));
+        dlg.addFilter(FileFilterEntry("Text files", "*.txt;*.log"));
+        dlg.addFilter(FileFilterEntry("Source files", "*.d;*.dd;*.c;*.cpp;*.h;*.hpp"));
+        dlg.addFilter(FileFilterEntry("Executable files", "*", true));
         dlg.dialogClosed = delegate(Dialog dlg, const Action result) {
             import std.path : baseName;
 
@@ -119,15 +104,15 @@ extern (C) int UIAppMain(string[] args)
         };
         dlg.show();
     });
-    auto fileSaveAction = new Action(tr("&Save"), "document-save", KeyCode.S, KeyFlag.control);
-    auto fileExitAction = new Action(tr("E&xit"), "document-close", KeyCode.X, KeyFlag.alt);
+    auto fileSaveAction = new Action("&Save", "document-save", KeyCode.S, KeyFlag.control);
+    auto fileExitAction = new Action("E&xit", "document-close", KeyCode.X, KeyFlag.alt);
     fileExitAction.bind(frame, &window.close);
 
 
     auto mainMenu = new MenuBar;
-    auto fileMenu = mainMenu.addSubmenu(tr("&File"));
+    auto fileMenu = mainMenu.addSubmenu("&File");
     fileMenu.add(fileOpenAction, fileSaveAction);
-    auto openRecentMenu = fileMenu.addSubmenu(tr("Open recent"), "document-open-recent");
+    auto openRecentMenu = fileMenu.addSubmenu("Open recent", "document-open-recent");
     openRecentMenu.addAction("&1: File 1"d);
     openRecentMenu.addAction("&2: File 2"d);
     openRecentMenu.addAction("&3: File 3"d);
@@ -135,36 +120,36 @@ extern (C) int UIAppMain(string[] args)
     openRecentMenu.addAction("&5: File 5"d);
     fileMenu.add(fileExitAction);
 
-    auto editMenu = mainMenu.addSubmenu(tr("&Edit"));
+    auto editMenu = mainMenu.addSubmenu("&Edit");
     editMenu.add(ACTION_UNDO, ACTION_REDO, ACTION_CUT, ACTION_COPY, ACTION_PASTE);
     editMenu.addSeparator();
-    editMenu.addAction(tr("&Preferences"));
+    editMenu.addAction("&Preferences");
 
-    auto viewMenu = mainMenu.addSubmenu(tr("&View"));
-    auto themeMenu = viewMenu.addSubmenu(tr("&Theme"));
+    auto viewMenu = mainMenu.addSubmenu("&View");
+    auto themeMenu = viewMenu.addSubmenu("&Theme");
     {
-        Action def = new Action(tr("Default")).setCheckable(true);
-        Action light = new Action(tr("Light")).setCheckable(true).setChecked(true);
-        Action dark = new Action(tr("Dark")).setCheckable(true);
+        Action def = new Action("Default").setCheckable(true);
+        Action light = new Action("Light").setCheckable(true).setChecked(true);
+        Action dark = new Action("Dark").setCheckable(true);
         def.bind(frame, { platform.uiTheme = "default"; });
         light.bind(frame, { platform.uiTheme = "light"; });
         dark.bind(frame, { platform.uiTheme = "dark"; });
         themeMenu.addActionGroup(def, light, dark);
     }
 
-    auto windowMenu = mainMenu.addSubmenu(tr("&Window"));
-    windowMenu.addAction(tr("&Preferences"));
+    auto windowMenu = mainMenu.addSubmenu("&Window");
+    windowMenu.addAction("&Preferences");
     windowMenu.addSeparator();
-    windowMenu.addAction(tr("Minimize")).bind(frame, { window.minimize(); });
-    windowMenu.addAction(tr("Maximize")).bind(frame, { window.maximize(); });
-    windowMenu.addAction(tr("Restore")).bind(frame, { window.restore(); });
+    windowMenu.addAction("Minimize").bind(frame, { window.minimize(); });
+    windowMenu.addAction("Maximize").bind(frame, { window.maximize(); });
+    windowMenu.addAction("Restore").bind(frame, { window.restore(); });
 
-    auto helpMenu = mainMenu.addSubmenu(tr("&Help"));
-    helpMenu.addAction(tr("&View help"))
+    auto helpMenu = mainMenu.addSubmenu("&Help");
+    helpMenu.addAction("&View help")
         .bind(frame, {
             platform.openURL("https://github.com/dayllenger/beamui");
         });
-    helpMenu.addAction(tr("&About"))
+    helpMenu.addAction("&About")
         .bind(frame, {
             window.showMessageBox("About"d,
                 "beamui demo app\n(c) dayllenger, 2018\nhttp://github.com/dayllenger/beamui"d);
@@ -422,7 +407,7 @@ extern (C) int UIAppMain(string[] args)
             }
         };
 
-        tabs.addTab(controls.setID("CONTROLS"), tr("Controls"));
+        tabs.addTab(controls.setID("CONTROLS"), "Controls");
     }
 
     // indicators
@@ -434,7 +419,7 @@ extern (C) int UIAppMain(string[] args)
         pb.animationInterval = 50;
         indicators.add(pb);
 
-        tabs.addTab(indicators.setID("INDICATORS"), tr("Indicators"));
+        tabs.addTab(indicators.setID("INDICATORS"), "Indicators");
     }
 
     // two long lists
@@ -492,7 +477,7 @@ extern (C) int UIAppMain(string[] args)
             listAdapter.add(new Label(itemtext.text));
         };
 
-        tabs.addTab(longLists.setID("LISTS"), tr("Long list"));
+        tabs.addTab(longLists.setID("LISTS"), "Long list");
     }
 
     // form as a table layout
@@ -521,7 +506,7 @@ extern (C) int UIAppMain(string[] args)
         combo2.selectedItemIndex = 0;
         table.addChild(combo2);
 
-        tabs.addTab(table.setID("TABLE"), tr("Table layout"));
+        tabs.addTab(table.setID("TABLE"), "Table layout");
     }
 
     // editors
@@ -578,7 +563,7 @@ void main()
             }
         }
 
-        tabs.addTab(editors.setID("EDITORS"), tr("Editors"));
+        tabs.addTab(editors.setID("EDITORS"), "Editors");
     }
 
     // string grid
@@ -638,7 +623,7 @@ void main()
         }
         grid.autoFit();
 
-        tabs.addTab(gridTab.setID("GRID"), tr("Grid"));
+        tabs.addTab(gridTab.setID("GRID"), "Grid");
     }
 
     // charts
@@ -685,7 +670,7 @@ void main()
             add(col2);
         }
 
-        tabs.addTab(chartsLayout.setID("CHARTS"), tr("Charts"));
+        tabs.addTab(chartsLayout.setID("CHARTS"), "Charts");
     }
 
     // canvas
@@ -724,7 +709,7 @@ void main()
             buf.drawEllipseArcF(x + 350, y + lh + 505, 150, 180, 45, 130, 3, Color(0x40008000), Color(0x804040FF));
         };
 
-        tabs.addTab(canvas.setID("CANVAS"), tr("Canvas"));
+        tabs.addTab(canvas.setID("CANVAS"), "Canvas");
     }
 
     // animation
@@ -748,11 +733,11 @@ void main()
 Widget createBaseEditorSettingsControl(EditWidgetBase editor)
 {
     auto row = new Row;
-    auto cb1 = new CheckBox(tr("Catch tabs"));
-    auto cb2 = new CheckBox(tr("Use spaces for indentation"));
-    auto cb3 = new CheckBox(tr("Read only"));
-    auto cb4 = new CheckBox(tr("Fixed font"));
-    auto cb5 = new CheckBox(tr("Tab size 8"));
+    auto cb1 = new CheckBox("Catch tabs");
+    auto cb2 = new CheckBox("Use spaces for indentation");
+    auto cb3 = new CheckBox("Read only");
+    auto cb4 = new CheckBox("Fixed font");
+    auto cb5 = new CheckBox("Tab size 8");
     row.add(cb1);
     row.add(cb2);
     row.add(cb3);
@@ -786,7 +771,7 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
 
 Widget addSourceEditorControls(Widget base, SourceEdit editor)
 {
-    auto cb1 = new CheckBox(tr("Show line numbers"));
+    auto cb1 = new CheckBox("Show line numbers");
     base.addChild(cb1);
     cb1.checked = editor.showLineNumbers;
     cb1.checkChanged ~= (w, checked) { editor.showLineNumbers = checked; };
