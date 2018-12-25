@@ -41,10 +41,11 @@ addons:
     - zlib1g-dev:i386
     - libevent-dev
 
+script:
+- dub test --compiler=${DC} --arch=${ARCH} --config=${CONFIG}
+
 jobs:
   include:
-  - stage: test
-    script: dub test --compiler=${DC} --arch=${ARCH} --config=${CONFIG}
   - stage: deploy
     script: dub build -b ddox
     deploy:
