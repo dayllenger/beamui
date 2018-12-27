@@ -419,9 +419,7 @@ struct vec4
 
     ref vec4 opAssign(vec3 v)
     {
-        vec[0] = v.vec[0];
-        vec[1] = v.vec[1];
-        vec[2] = v.vec[2];
+        vec[0 .. 3] = v.vec[];
         vec[3] = 1.0f;
         return this;
     }
@@ -429,7 +427,7 @@ struct vec4
     /// Fill all components of vector with specified value
     ref vec4 clear(float v)
     {
-        vec[0] = vec[1] = vec[2] = vec[3] = v;
+        vec[] = v;
         return this;
     }
 
@@ -756,32 +754,19 @@ struct mat4
         return this;
     }
 
-    /// Add scalar to all items of matrix
-    mat4 opBinary(string op : "+")(float v) const
+    /// Perform operation with a scalar to all items of matrix
+    void opOpAssign(string op)(float v)
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        foreach (ref item; m)
-            item += v;
+        mixin("m[] "~op~"= v;");
     }
-
-    /// Multiply this matrix by scalar
-    mat4 opBinary(string op : "-")(float v) const
+    /// ditto
+    mat4 opBinary(string op)(float v) const
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        foreach (ref item; m)
-            item -= v;
-    }
-
-    /// Multiply this matrix by scalar
-    mat4 opBinary(string op : "*")(float v) const
-    {
-        foreach (ref item; m)
-            item *= v;
-    }
-
-    /// Multiply this matrix by scalar
-    mat4 opBinary(string op : "/")(float v) const
-    {
-        foreach (ref item; m)
-            item /= v;
+        mat4 ret = this;
+        mixin("ret.m[] "~op~"= v;");
+        return ret;
     }
 
     /// Multiply this matrix by another matrix
@@ -789,8 +774,7 @@ struct mat4
     {
         return mul(this, m2);
     }
-
-    /// Multiply this matrix by another matrix
+    /// ditto
     void opOpAssign(string op : "*")(const ref mat4 m2)
     {
         this = mul(this, m2);
@@ -836,13 +820,12 @@ struct mat4
     }
 
     /// Multiply matrix by vec3
-    vec3 opBinary(string op : "*")(const vec3 vector) const
+    vec3 opBinary(string op : "*")(const vec3 v) const
     {
-        float x, y, z, w;
-        x = vector.x * m[0 * 4 + 0] + vector.y * m[1 * 4 + 0] + vector.z * m[2 * 4 + 0] + m[3 * 4 + 0];
-        y = vector.x * m[0 * 4 + 1] + vector.y * m[1 * 4 + 1] + vector.z * m[2 * 4 + 1] + m[3 * 4 + 1];
-        z = vector.x * m[0 * 4 + 2] + vector.y * m[1 * 4 + 2] + vector.z * m[2 * 4 + 2] + m[3 * 4 + 2];
-        w = vector.x * m[0 * 4 + 3] + vector.y * m[1 * 4 + 3] + vector.z * m[2 * 4 + 3] + m[3 * 4 + 3];
+        float x = v.x * m[0 * 4 + 0] + v.y * m[1 * 4 + 0] + v.z * m[2 * 4 + 0] + m[3 * 4 + 0];
+        float y = v.x * m[0 * 4 + 1] + v.y * m[1 * 4 + 1] + v.z * m[2 * 4 + 1] + m[3 * 4 + 1];
+        float z = v.x * m[0 * 4 + 2] + v.y * m[1 * 4 + 2] + v.z * m[2 * 4 + 2] + m[3 * 4 + 2];
+        float w = v.x * m[0 * 4 + 3] + v.y * m[1 * 4 + 3] + v.z * m[2 * 4 + 3] + m[3 * 4 + 3];
         if (w == 1.0f)
             return vec3(x, y, z);
         else
@@ -850,13 +833,12 @@ struct mat4
     }
 
     /// Multiply matrix by vec4
-    vec4 opBinary(string op : "*")(const vec4 vector) const
+    vec4 opBinary(string op : "*")(const vec4 v) const
     {
-        float x, y, z, w;
-        x = vector.x * m[0 * 4 + 0] + vector.y * m[1 * 4 + 0] + vector.z * m[2 * 4 + 0] + vector.w * m[3 * 4 + 0];
-        y = vector.x * m[0 * 4 + 1] + vector.y * m[1 * 4 + 1] + vector.z * m[2 * 4 + 1] + vector.w * m[3 * 4 + 1];
-        z = vector.x * m[0 * 4 + 2] + vector.y * m[1 * 4 + 2] + vector.z * m[2 * 4 + 2] + vector.w * m[3 * 4 + 2];
-        w = vector.x * m[0 * 4 + 3] + vector.y * m[1 * 4 + 3] + vector.z * m[2 * 4 + 3] + vector.w * m[3 * 4 + 3];
+        float x = v.x * m[0 * 4 + 0] + v.y * m[1 * 4 + 0] + v.z * m[2 * 4 + 0] + v.w * m[3 * 4 + 0];
+        float y = v.x * m[0 * 4 + 1] + v.y * m[1 * 4 + 1] + v.z * m[2 * 4 + 1] + v.w * m[3 * 4 + 1];
+        float z = v.x * m[0 * 4 + 2] + v.y * m[1 * 4 + 2] + v.z * m[2 * 4 + 2] + v.w * m[3 * 4 + 2];
+        float w = v.x * m[0 * 4 + 3] + v.y * m[1 * 4 + 3] + v.z * m[2 * 4 + 3] + v.w * m[3 * 4 + 3];
         return vec4(x, y, z, w);
     }
 
@@ -887,73 +869,40 @@ struct mat4
     /// Set to identity: fill all items of matrix with zero except main diagonal items which will be assigned to 1.0f
     ref mat4 setIdentity()
     {
-        return setDiagonal(1.0f);
+        this = mat4.init;
+        return this;
     }
     /// Set to diagonal: fill all items of matrix with zero except main diagonal items which will be assigned to v
     ref mat4 setDiagonal(float v)
     {
-        for (int x = 0; x < 4; x++)
-        {
-            for (int y = 0; y < 4; y++)
-            {
-                if (x == y)
-                    m[y * 4 + x] = v;
-                else
-                    m[y * 4 + x] = 0.0f;
-            }
-        }
+        foreach (x; 0 .. 4)
+            foreach (y; 0 .. 4)
+                m[y * 4 + x] = (x == y) ? v : 0;
         return this;
     }
     /// Fill all items of matrix with specified value
     ref mat4 fill(float v)
     {
-        foreach (ref f; m)
-            f = v;
+        m[] = v;
         return this;
     }
     /// Fill all items of matrix with zero
     ref mat4 setZero()
     {
-        foreach (ref f; m)
-            f = 0.0f;
+        m[] = 0;
         return this;
     }
     /// Creates identity matrix
     static mat4 identity()
     {
-        mat4 res;
-        return res.setIdentity();
+        return mat4.init;
     }
     /// Creates zero matrix
     static mat4 zero()
     {
-        mat4 res;
-        return res.setZero();
-    }
-
-    /// Add value to all components of matrix
-    void opOpAssign(string op : "+")(float v)
-    {
-        foreach (ref item; m)
-            item += v;
-    }
-    /// Multiply all components of matrix by value
-    void opOpAssign(string op : "*")(float v)
-    {
-        foreach (ref item; m)
-            item *= v;
-    }
-    /// Subtract value from all components of matrix
-    void opOpAssign(string op : "-")(float v)
-    {
-        foreach (ref item; m)
-            item -= v;
-    }
-    /// Divide all components of vector by matrix
-    void opOpAssign(string op : "/")(float v)
-    {
-        foreach (ref item; m)
-            item /= v;
+        mat4 ret = void;
+        ret.m[] = 0;
+        return ret;
     }
 
     /// Inplace rotate around Z axis
@@ -1145,10 +1094,6 @@ struct mat4
         m[2 * 4 + 1] *= v;
         m[2 * 4 + 2] *= v;
         m[2 * 4 + 3] *= v;
-        //m[3*4 + 0] *= v;
-        //m[3*4 + 1] *= v;
-        //m[3*4 + 2] *= v;
-        //m[3*4 + 3] *= v;
         return this;
     }
 
@@ -1176,13 +1121,7 @@ struct mat4
         return res;
     }
 
-    /**
-    * Decomposes the scale, rotation and translation components of this matrix.
-    *
-    * @param scale The scale.
-    * @param rotation The rotation.
-    * @param translation The translation.
-    */
+    /// Decomposes the scale, rotation and translation components of this matrix
     bool decompose(vec3* scale, vec4* rotation, vec3* translation) const
     {
         if (translation)
@@ -1200,13 +1139,13 @@ struct mat4
         // Extract the scale.
         // This is simply the length of each axis (row/column) in the matrix.
         vec3 xaxis = vec3(m[0], m[1], m[2]);
-        float scaleX = xaxis.length();
+        float scaleX = xaxis.length;
 
         vec3 yaxis = vec3(m[4], m[5], m[6]);
-        float scaleY = yaxis.length();
+        float scaleY = yaxis.length;
 
         vec3 zaxis = vec3(m[8], m[9], m[10]);
-        float scaleZ = zaxis.length();
+        float scaleZ = zaxis.length;
 
         // Determine if we have a negative scale (true if determinant is less than zero).
         // In this case, we simply negate a single axis of the scale.
@@ -1232,16 +1171,6 @@ struct mat4
         return false;
     }
 
-    /**
-    * Gets the translational component of this matrix in the specified vector.
-    *
-    * @param translation A vector to receive the translation.
-    */
-    void getTranslation(ref vec3 translation) const
-    {
-        decompose(null, null, &translation);
-    }
-
     @property float determinant() const
     {
         float a0 = m[0] * m[5] - m[1] * m[4];
@@ -1256,8 +1185,8 @@ struct mat4
         float b3 = m[9] * m[14] - m[10] * m[13];
         float b4 = m[9] * m[15] - m[11] * m[13];
         float b5 = m[10] * m[15] - m[11] * m[14];
-        // Calculate the determinant.
-        return (a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0);
+        // calculate the determinant
+        return a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0;
     }
 
     @property vec3 forwardVector() const
@@ -1286,8 +1215,6 @@ struct mat4
         dst.y = x * m[1] + y * m[5] + z * m[9] + w * m[13];
         dst.z = x * m[2] + y * m[6] + z * m[10] + w * m[14];
     }
-
-    static __gshared const mat4 IDENTITY;
 }
 
 unittest
