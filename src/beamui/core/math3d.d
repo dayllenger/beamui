@@ -192,7 +192,7 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     }
 
     /// Sum of squares of all vector components
-    @property T magnitudeSquared()
+    T magnitudeSquared() const
     {
         T ret = 0;
         static foreach (i; 0 .. N)
@@ -201,11 +201,11 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     }
 
     /// Length of vector
-    @property T magnitude()
+    T magnitude() const
     {
         return cast(T)sqrt(cast(real)magnitudeSquared);
     }
-
+    /// ditto
     alias length = magnitude;
 
     /// Normalize vector: make its length == 1
@@ -215,12 +215,12 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     }
 
     /// Returns normalized copy of this vector
-    @property Vector normalized()
+    Vector normalized() const
     {
         return this / length;
     }
 
-    @property string toString()
+    string toString() const
     {
         static if (N == 2)
             return "(%f, %f)".format(x, y);
@@ -243,7 +243,7 @@ alias vec2i = Vector!(int, 2);
 alias vec3i = Vector!(int, 3);
 alias vec4i = Vector!(int, 4);
 
-bool fuzzyNull(float v)
+bool fuzzyNull(float v) pure nothrow @nogc
 {
     return v < 0.0000001f && v > -0.0000001f;
 }
@@ -253,14 +253,7 @@ struct mat4
 {
     float[16] m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 
-    @property string dump() const
-    {
-        import std.conv : to;
-
-        return to!string(m[0 .. 4]) ~ to!string(m[4 .. 8]) ~ to!string(m[8 .. 12]) ~ to!string(m[12 .. 16]);
-    }
-
-    //alias m this;
+pure nothrow:
 
     this(float v)
     {
@@ -269,29 +262,29 @@ struct mat4
 
     this(const ref mat4 v)
     {
-        m[0 .. 16] = v.m[0 .. 16];
+        m[] = v.m[];
     }
 
     this(const float[16] v)
     {
-        m[0 .. 16] = v[0 .. 16];
+        m[] = v[];
     }
 
     ref mat4 opAssign(const ref mat4 v)
     {
-        m[0 .. 16] = v.m[0 .. 16];
+        m[] = v.m[];
         return this;
     }
 
     ref mat4 opAssign(const mat4 v)
     {
-        m[0 .. 16] = v.m[0 .. 16];
+        m[] = v.m[];
         return this;
     }
 
     ref mat4 opAssign(const float[16] v)
     {
-        m[0 .. 16] = v[0 .. 16];
+        m[] = v[];
         return this;
     }
 
@@ -905,7 +898,7 @@ struct mat4
         return false;
     }
 
-    @property float determinant() const
+    float determinant() const
     {
         float a0 = m[0] * m[5] - m[1] * m[4];
         float a1 = m[0] * m[6] - m[2] * m[4];
@@ -923,12 +916,12 @@ struct mat4
         return a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0;
     }
 
-    @property vec3 forwardVector() const
+    vec3 forwardVector() const
     {
         return vec3(-m[8], -m[9], -m[10]);
     }
 
-    @property vec3 backVector() const
+    vec3 backVector() const
     {
         return vec3(m[8], m[9], m[10]);
     }
@@ -1042,13 +1035,13 @@ unittest
 }
 
 /// Calculate normal for triangle
-vec3 triangleNormal(vec3 p1, vec3 p2, vec3 p3)
+vec3 triangleNormal(vec3 p1, vec3 p2, vec3 p3) pure
 {
     return vec3.crossProduct(p2 - p1, p3 - p2).normalized();
 }
 
 /// Calculate normal for triangle
-vec3 triangleNormal(float[3] p1, float[3] p2, float[3] p3)
+vec3 triangleNormal(ref float[3] p1, ref float[3] p2, ref float[3] p3) pure @nogc
 {
     return vec3.crossProduct(vec3(p2) - vec3(p1), vec3(p3) - vec3(p2)).normalized();
 }
@@ -1146,9 +1139,8 @@ do
     return d;
 }
 
-// can't be pure due to normalize & vec2 ctor
 /// Evaluates cubic bezier direction(tangent) at point t
-PointF bezierCubicDirection(const PointF[] cp, float t)
+PointF bezierCubicDirection(const PointF[] cp, float t) pure
 {
     auto d = bezierCubicDerivative(cp, t);
     d.normalize();
@@ -1156,7 +1148,7 @@ PointF bezierCubicDirection(const PointF[] cp, float t)
 }
 
 /// Evaluates quadratic bezier direction(tangent) at point t
-PointF bezierQuadraticDirection(const PointF[] cp, float t)
+PointF bezierQuadraticDirection(const PointF[] cp, float t) pure
 {
     auto d = bezierQuadraticDerivative(cp, t);
     d.normalize();
@@ -1190,26 +1182,26 @@ void flattenBezier(alias BezierFunc)(const PointF[] cp, int segmentCountInclusiv
 }
 
 /// Flattens cubic bezier curve, returns PointF[segmentCount+1] array or empty array if <1 segments
-PointF[] flattenBezierCubic(const PointF[] cp, int segmentCount)
+PointF[] flattenBezierCubic(const PointF[] cp, int segmentCount) pure
 {
     return flattenBezier!bezierCubic(cp, segmentCount);
 }
 
 /// Flattens quadratic bezier curve, returns PointF[segmentCount+1] array or empty array if <1 segments
-PointF[] flattenBezierQuadratic(const PointF[] cp, int segmentCount)
+PointF[] flattenBezierQuadratic(const PointF[] cp, int segmentCount) pure
 {
     return flattenBezier!bezierQuadratic(cp, segmentCount);
 }
 
 /// Calculates normal vector at point t using direction
-PointF bezierCubicNormal(const PointF[] cp, float t)
+PointF bezierCubicNormal(const PointF[] cp, float t) pure
 {
     auto d = bezierCubicDirection(cp, t);
     return d.rotated90ccw;
 }
 
 /// Calculates normal vector at point t using direction
-PointF bezierQuadraticNormal(const PointF[] cp, float t)
+PointF bezierQuadraticNormal(const PointF[] cp, float t) pure
 {
     auto d = bezierQuadraticDerivative(cp, t);
     return d.rotated90ccw;
