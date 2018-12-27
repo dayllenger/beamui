@@ -1,5 +1,5 @@
 /**
-This module contains declaration of useful color related operations.
+Color type and useful color related operations.
 
 In beamui, colors are represented as 32 bit uint AARRGGBB values.
 
@@ -8,7 +8,7 @@ Synopsis:
 import beamui.graphics.colors;
 ---
 
-Copyright: Vadim Lopatin 2015
+Copyright: Vadim Lopatin 2015, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -99,14 +99,14 @@ pure nothrow @nogc:
         return data;
     }
 
-    /// Fills 3-vector with the values of red, green and blue channel in [0 .. 1] range
+    /// Fill 3-vector with the values of red, green and blue channel in [0, 1] range
     void rgbf(ref float r, ref float g, ref float b) const
     {
         r = ((data >> 16) & 255) / 255.0;
         g = ((data >> 8) & 255) / 255.0;
         b = ((data >> 0) & 255) / 255.0;
     }
-    /// Fills 4-vector with the values of red, green, blue and alpha channel in [0 .. 1] range
+    /// Fill 4-vector with the values of red, green, blue and alpha channel in [0, 1] range
     void rgbaf(ref float r, ref float g, ref float b, ref float a) const
     {
         r = ((data >> 16) & 255) / 255.0;
@@ -131,7 +131,7 @@ pure nothrow @nogc:
 
     //===============================================================
 
-    /// Applies additional alpha to the color
+    /// Apply additional alpha to the color
     void addAlpha(uint a)
     {
         a = blendAlpha(this.alpha, a);
@@ -152,9 +152,10 @@ pure nothrow @nogc:
     }
 }
 
-/// Color constants enum, contributed by zhaopuming
-/// Refer to http://rapidtables.com/web/color/RGB_Color.htm#color%20table
-/// #275
+/** Standard colors.
+
+    Contributed by zhaopuming, refer to $(LINK http://rapidtables.com/web/color/RGB_Color.htm#color%20table)
+*/
 enum NamedColor : Color
 {
     maroon = Color(0x800000),
@@ -326,7 +327,7 @@ Color decodeHexColor(string s, Color defValue = Color(0x0)) pure
     return Color(value);
 }
 
-/// Decode named color either from `Color` enum, `@null`, `none`, or `transparent`
+/// Decode named color either from `NamedColor` enum, `@null`, `none`, or `transparent`
 Color decodeTextColor(string s, Color defValue = Color(0x0)) pure
 {
     s = strip(s);
@@ -418,68 +419,4 @@ ubyte blendGray(ubyte dst, ubyte src, uint alpha) pure nothrow @nogc
 {
     uint ialpha = 256 - alpha;
     return cast(ubyte)(((src * ialpha + dst * alpha) >> 8) & 0xFF);
-}
-
-/// NOT USED
-struct ColorTransformHandler
-{
-    void initialize(ref ColorTransform transform)
-    {
-
-    }
-
-    uint transform(uint color)
-    {
-        return color;
-    }
-}
-
-/// NOT USED
-uint transformComponent(int src, int addBefore, int multiply, int addAfter) pure nothrow @nogc
-{
-    int add1 = (cast(int)(addBefore << 1)) - 0x100;
-    int add2 = (cast(int)(addAfter << 1)) - 0x100;
-    int mul = cast(int)(multiply << 2);
-    int res = (((src + add1) * mul) >> 8) + add2;
-    if (res < 0)
-        res = 0;
-    else if (res > 255)
-        res = 255;
-    return cast(uint)res;
-}
-
-/// NOT USED
-uint transformRGBA(uint src, uint addBefore, uint multiply, uint addAfter) pure nothrow @nogc
-{
-    uint a = transformComponent(src >> 24, addBefore >> 24, multiply >> 24, addAfter >> 24);
-    uint r = transformComponent((src >> 16) & 0xFF, (addBefore >> 16) & 0xFF, (multiply >> 16) & 0xFF,
-            (addAfter >> 16) & 0xFF);
-    uint g = transformComponent((src >> 8) & 0xFF, (addBefore >> 8) & 0xFF, (multiply >> 8) & 0xFF,
-            (addAfter >> 8) & 0xFF);
-    uint b = transformComponent(src & 0xFF, addBefore & 0xFF, multiply & 0xFF, addAfter & 0xFF);
-    return (a << 24) | (r << 16) | (g << 8) | b;
-}
-
-/// NOT USED
-immutable uint COLOR_TRANSFORM_OFFSET_NONE = 0x80808080;
-/// NOT USED
-immutable uint COLOR_TRANSFORM_MULTIPLY_NONE = 0x40404040;
-
-/// NOT USED
-struct ColorTransform
-{
-    uint addBefore = COLOR_TRANSFORM_OFFSET_NONE;
-    uint multiply = COLOR_TRANSFORM_MULTIPLY_NONE;
-    uint addAfter = COLOR_TRANSFORM_OFFSET_NONE;
-
-    @property bool empty() const
-    {
-        return addBefore == COLOR_TRANSFORM_OFFSET_NONE &&
-            multiply == COLOR_TRANSFORM_MULTIPLY_NONE && addAfter == COLOR_TRANSFORM_OFFSET_NONE;
-    }
-
-    uint transform(uint color)
-    {
-        return transformRGBA(color, addBefore, multiply, addAfter);
-    }
 }

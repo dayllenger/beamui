@@ -1239,13 +1239,6 @@ class DrawBuf : RefCountedObject
         }
     }
 
-    /// Create drawbuf with copy of current buffer with changed colors (returns this if not supported)
-    /// NOT USED
-    DrawBuf transformColors(ref ColorTransform transform)
-    {
-        return this;
-    }
-
     /// Draw custom OpenGL scene
     void drawCustomOpenGLScene(Rect rc, OpenGLDrawableDelegate handler)
     {
@@ -2080,36 +2073,6 @@ class ColorDrawBuf : ColorDrawBufBase
         uint* p = _buf.ptr;
         foreach (i; 0 .. len)
             p[i] = color.hex;
-    }
-
-    /// NOT USED
-    override DrawBuf transformColors(ref ColorTransform transform)
-    {
-        if (transform.empty)
-            return this;
-        bool skipFrame = hasNinePatch;
-        ColorDrawBuf res = new ColorDrawBuf(_w, _h);
-        if (hasNinePatch)
-        {
-            NinePatch* p = new NinePatch;
-            *p = *_ninePatch;
-            res.ninePatch = p;
-        }
-        foreach (int y; 0 .. _h)
-        {
-            uint* srcline = scanLine(y);
-            uint* dstline = res.scanLine(y);
-            bool allowTransformY = !skipFrame || (y != 0 && y != _h - 1);
-            foreach (int x; 0 .. _w)
-            {
-                bool allowTransformX = !skipFrame || (x != 0 && x != _w - 1);
-                if (!allowTransformX || !allowTransformY)
-                    dstline[x] = srcline[x];
-                else
-                    dstline[x] = transform.transform(srcline[x]);
-            }
-        }
-        return res;
     }
 
     /// Apply Gaussian blur to the image
