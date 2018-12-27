@@ -11,27 +11,33 @@ import std.math;
 import std.string : format;
 
 /// 2-4-dimensional vector
-struct Vector(int N) if (2 <= N && N <= 4)
+struct Vector(T, int N) if (2 <= N && N <= 4)
 {
     union
     {
-        float[N] vec;
+        T[N] vec;
         struct
         {
-            float x;
-            float y;
+            T x;
+            T y;
             static if (N >= 3)
-                float z;
+                T z;
             static if (N == 4)
-                float w;
+                T w;
         }
     }
 
     alias u = x;
     alias v = y;
 
+    /// Vector dimension number
+    enum int dimension = N;
+
+    /// Returns a pointer to the first vector element
+    const(T*) ptr() const { return vec.ptr; }
+
     /// Create with all components filled with specified value
-    this(float v)
+    this(T v)
     {
         vec[] = v;
     }
@@ -39,22 +45,22 @@ struct Vector(int N) if (2 <= N && N <= 4)
     this(Args...)(Args values) if (2 <= Args.length && Args.length <= N)
     {
         static foreach (Arg; Args)
-            static assert(is(Arg : float), "Arguments must be convertible to the base vector type");
+            static assert(is(Arg : T), "Arguments must be convertible to the base vector type");
         static foreach (i; 0 .. Args.length)
             vec[i] = values[i];
     }
 
-    this(const ref float[N] v)
+    this(const ref T[N] v)
     {
         vec = v;
     }
 
-    this(const float[] v)
+    this(const T[] v)
     {
         vec = v[0 .. N];
     }
 
-    this(const float* v)
+    this(const T* v)
     {
         vec = v[0 .. N];
     }
@@ -66,21 +72,21 @@ struct Vector(int N) if (2 <= N && N <= 4)
 
     static if (N == 4)
     {
-        this(Vector!3 v)
+        this(Vector!(T, 3) v)
         {
             vec[0 .. 3] = v.vec[];
-            vec[3] = 1.0f;
+            vec[3] = 1;
         }
 
-        ref Vector opAssign(Vector!3 v)
+        ref Vector opAssign(Vector!(T, 3) v)
         {
             vec[0 .. 3] = v.vec[];
-            vec[3] = 1.0f;
+            vec[3] = 1;
             return this;
         }
     }
 
-    ref Vector opAssign(float[N] v)
+    ref Vector opAssign(T[N] v)
     {
         vec = v;
         return this;
@@ -93,7 +99,7 @@ struct Vector(int N) if (2 <= N && N <= 4)
     }
 
     /// Fill all components of vector with specified value
-    ref Vector clear(float v)
+    ref Vector clear(T v)
     {
         vec[] = v;
         return this;
@@ -123,14 +129,14 @@ struct Vector(int N) if (2 <= N && N <= 4)
     }
 
     /// Perform operation with value to all components of vector
-    ref Vector opOpAssign(string op)(float v)
+    ref Vector opOpAssign(string op)(T v)
         if (op == "+" || op == "-" || op == "*" || op == "/")
     {
         mixin("vec[] "~op~"= v;");
         return this;
     }
     /// ditto
-    Vector opBinary(string op)(float v) const
+    Vector opBinary(string op)(T v) const
         if (op == "+" || op == "-" || op == "*" || op == "/")
     {
         Vector ret = this;
@@ -155,14 +161,14 @@ struct Vector(int N) if (2 <= N && N <= 4)
     }
 
     /// Dot product (sum of by-component products of vector components)
-    float opBinary(string op : "*")(const Vector v) const
+    T opBinary(string op : "*")(const Vector v) const
     {
         return dot(v);
     }
     /// ditto
-    float dot(const Vector v) const
+    T dot(const Vector v) const
     {
-        float ret = 0;
+        T ret = 0;
         static foreach (i; 0 .. N)
             ret += vec[i] * v.vec[i];
         return ret;
@@ -171,7 +177,7 @@ struct Vector(int N) if (2 <= N && N <= 4)
     static if (N == 2)
     {
         /// Cross product of two Vec2 is scalar in Z axis
-        float crossProduct(const Vector v2) const
+        T crossProduct(const Vector v2) const
         {
             return x * v2.y - y * v2.x;
         }
@@ -185,47 +191,19 @@ struct Vector(int N) if (2 <= N && N <= 4)
         }
     }
 
-    static if (N == 3)
-    {
-        /// Multiply vector by matrix
-        Vector opBinary(string op : "*")(const ref mat4 m) const
-        {
-            float xx = x * m.m[0 * 4 + 0] + y * m.m[0 * 4 + 1] + z * m.m[0 * 4 + 2] + m.m[0 * 4 + 3];
-            float yy = x * m.m[1 * 4 + 0] + y * m.m[1 * 4 + 1] + z * m.m[1 * 4 + 2] + m.m[1 * 4 + 3];
-            float zz = x * m.m[2 * 4 + 0] + y * m.m[2 * 4 + 1] + z * m.m[2 * 4 + 2] + m.m[2 * 4 + 3];
-            float ww = x * m.m[3 * 4 + 0] + y * m.m[3 * 4 + 1] + z * m.m[3 * 4 + 2] + m.m[3 * 4 + 3];
-            if (ww == 1.0f)
-                return Vector(xx, yy, zz);
-            else
-                return Vector(xx / ww, yy / ww, zz / ww);
-        }
-    }
-    static if (N == 4)
-    {
-        /// Multiply vector by matrix
-        Vector opBinary(string op : "*")(const ref mat4 m) const
-        {
-            float xx = x * m.m[0 * 4 + 0] + y * m.m[0 * 4 + 1] + z * m.m[0 * 4 + 2] + w * m.m[0 * 4 + 3];
-            float yy = x * m.m[1 * 4 + 0] + y * m.m[1 * 4 + 1] + z * m.m[1 * 4 + 2] + w * m.m[1 * 4 + 3];
-            float zz = x * m.m[2 * 4 + 0] + y * m.m[2 * 4 + 1] + z * m.m[2 * 4 + 2] + w * m.m[2 * 4 + 3];
-            float ww = x * m.m[3 * 4 + 0] + y * m.m[3 * 4 + 1] + z * m.m[3 * 4 + 2] + w * m.m[3 * 4 + 3];
-            return Vector(xx, yy, zz, ww);
-        }
-    }
-
     /// Sum of squares of all vector components
-    @property float magnitudeSquared()
+    @property T magnitudeSquared()
     {
-        float ret = 0;
+        T ret = 0;
         static foreach (i; 0 .. N)
             ret += vec[i] * vec[i];
         return ret;
     }
 
     /// Length of vector
-    @property float magnitude()
+    @property T magnitude()
     {
-        return sqrt(magnitudeSquared);
+        return cast(T)sqrt(cast(real)magnitudeSquared);
     }
 
     alias length = magnitude;
@@ -253,9 +231,17 @@ struct Vector(int N) if (2 <= N && N <= 4)
     }
 }
 
-alias vec2 = Vector!2;
-alias vec3 = Vector!3;
-alias vec4 = Vector!4;
+alias vec2 = Vector!(float, 2);
+alias vec3 = Vector!(float, 3);
+alias vec4 = Vector!(float, 4);
+
+alias vec2d = Vector!(double, 2);
+alias vec3d = Vector!(double, 3);
+alias vec4d = Vector!(double, 4);
+
+alias vec2i = Vector!(int, 2);
+alias vec3i = Vector!(int, 3);
+alias vec4i = Vector!(int, 4);
 
 bool fuzzyNull(float v)
 {
@@ -558,6 +544,18 @@ struct mat4
         else
             return vec3(x / w, y / w, z / w);
     }
+    /// ditto
+    vec3 opBinaryRight(string op : "*")(const vec3 v) const
+    {
+        float x = v.x * m[0 * 4 + 0] + v.y * m[0 * 4 + 1] + v.z * m[0 * 4 + 2] + m[0 * 4 + 3];
+        float y = v.x * m[1 * 4 + 0] + v.y * m[1 * 4 + 1] + v.z * m[1 * 4 + 2] + m[1 * 4 + 3];
+        float z = v.x * m[2 * 4 + 0] + v.y * m[2 * 4 + 1] + v.z * m[2 * 4 + 2] + m[2 * 4 + 3];
+        float w = v.x * m[3 * 4 + 0] + v.y * m[3 * 4 + 1] + v.z * m[3 * 4 + 2] + m[3 * 4 + 3];
+        if (w == 1.0f)
+            return vec3(x, y, z);
+        else
+            return vec3(x / w, y / w, z / w);
+    }
 
     /// Multiply matrix by vec4
     vec4 opBinary(string op : "*")(const vec4 v) const
@@ -566,6 +564,15 @@ struct mat4
         float y = v.x * m[0 * 4 + 1] + v.y * m[1 * 4 + 1] + v.z * m[2 * 4 + 1] + v.w * m[3 * 4 + 1];
         float z = v.x * m[0 * 4 + 2] + v.y * m[1 * 4 + 2] + v.z * m[2 * 4 + 2] + v.w * m[3 * 4 + 2];
         float w = v.x * m[0 * 4 + 3] + v.y * m[1 * 4 + 3] + v.z * m[2 * 4 + 3] + v.w * m[3 * 4 + 3];
+        return vec4(x, y, z, w);
+    }
+    /// ditto
+    vec4 opBinaryRight(string op : "*")(const vec4 v) const
+    {
+        float x = v.x * m[0 * 4 + 0] + v.y * m[0 * 4 + 1] + v.z * m[0 * 4 + 2] + v.w * m[0 * 4 + 3];
+        float y = v.x * m[1 * 4 + 0] + v.y * m[1 * 4 + 1] + v.z * m[1 * 4 + 2] + v.w * m[1 * 4 + 3];
+        float z = v.x * m[2 * 4 + 0] + v.y * m[2 * 4 + 1] + v.z * m[2 * 4 + 2] + v.w * m[2 * 4 + 3];
+        float w = v.x * m[3 * 4 + 0] + v.y * m[3 * 4 + 1] + v.z * m[3 * 4 + 2] + v.w * m[3 * 4 + 3];
         return vec4(x, y, z, w);
     }
 
