@@ -25,6 +25,7 @@ import beamui.core.logger;
 import beamui.core.math3d;
 import beamui.core.types;
 import beamui.graphics.colors : Color;
+import beamui.graphics.gl.errors;
 
 version (Android)
 {
@@ -66,62 +67,6 @@ else
         }
         // Don't throw for unused symbol
         return derelict.util.exception.ShouldThrow.No;
-    }
-}
-
-/**
-    Convenient wrapper around glGetError()
-
-    Using: checkgl!glFunction(funcParams);
-*/
-template checkgl(alias func)
-{
-    debug auto checkgl(string functionName = __FUNCTION__, int line = __LINE__, Args...)(Args args)
-    {
-        scope (success)
-            checkError(__traits(identifier, func), functionName, line);
-        return func(args);
-    }
-    else
-        alias checkgl = func;
-}
-
-bool checkError(string context = "", string functionName = __FUNCTION__, int line = __LINE__)
-{
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR)
-    {
-        Log.e("OpenGL error ", glerrorToString(err), " at ", functionName, ":", line, " -- ", context);
-        return true;
-    }
-    return false;
-}
-
-/**
-    For reporting OpenGL errors, it's nicer to get a human-readable symbolic name for the
-    error instead of the numeric form. Derelict's GLenum is just an alias for uint, so we
-    can't depend on D's nice toString() for enums.
-*/
-string glerrorToString(in GLenum err) pure nothrow
-{
-    switch (err)
-    {
-    case 0x0500:
-        return "GL_INVALID_ENUM";
-    case 0x0501:
-        return "GL_INVALID_VALUE";
-    case 0x0502:
-        return "GL_INVALID_OPERATION";
-    case 0x0505:
-        return "GL_OUT_OF_MEMORY";
-    case 0x0506:
-        return "GL_INVALID_FRAMEBUFFER_OPERATION";
-    case 0x0507:
-        return "GL_CONTEXT_LOST";
-    case GL_NO_ERROR:
-        return "No GL error";
-    default:
-        return "Unknown GL error: " ~ to!string(err);
     }
 }
 
