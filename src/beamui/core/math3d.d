@@ -69,66 +69,11 @@ struct vec2
         vec = v.vec;
         return this;
     }
+
     /// Fill all components of vector with specified value
     ref vec2 clear(float v)
     {
         vec[0] = vec[1] = v;
-        return this;
-    }
-    /// Add value to all components of vector
-    ref vec2 add(float v)
-    {
-        vec[0] += v;
-        vec[1] += v;
-        return this;
-    }
-    /// Multiply all components of vector by value
-    ref vec2 mul(float v)
-    {
-        vec[0] *= v;
-        vec[1] *= v;
-        return this;
-    }
-    /// Subtract value from all components of vector
-    ref vec2 sub(float v)
-    {
-        vec[0] -= v;
-        vec[1] -= v;
-        return this;
-    }
-    /// Divide all components of vector by value
-    ref vec2 div(float v)
-    {
-        vec[0] /= v;
-        vec[1] /= v;
-        return this;
-    }
-    /// Add components of another vector to corresponding components of this vector
-    ref vec2 add(vec2 v)
-    {
-        vec[0] += v.vec[0];
-        vec[1] += v.vec[1];
-        return this;
-    }
-    /// Multiply components of this vector  by corresponding components of another vector
-    ref vec2 mul(vec2 v)
-    {
-        vec[0] *= v.vec[0];
-        vec[1] *= v.vec[1];
-        return this;
-    }
-    /// Subtract components of another vector from corresponding components of this vector
-    ref vec2 sub(vec2 v)
-    {
-        vec[0] -= v.vec[0];
-        vec[1] -= v.vec[1];
-        return this;
-    }
-    /// Divide components of this vector  by corresponding components of another vector
-    ref vec2 div(vec2 v)
-    {
-        vec[0] /= v.vec[0];
-        vec[1] /= v.vec[1];
         return this;
     }
 
@@ -144,127 +89,50 @@ struct vec2
         return vec2(y, -x);
     }
 
-    /// Add value to all components of vector
-    vec2 opBinary(string op : "+")(float v) const
+    /// Perform operation with value to all components of vector
+    ref vec2 opOpAssign(string op)(float v)
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        vec2 res = this;
-        res.vec[0] += v;
-        res.vec[1] += v;
-        return res;
+        mixin("vec[] "~op~"= v;");
+        return this;
     }
-    /// Multiply all components of vector by value
-    vec2 opBinary(string op : "*")(float v) const
+    /// ditto
+    vec2 opBinary(string op)(float v) const
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        vec2 res = this;
-        res.vec[0] *= v;
-        res.vec[1] *= v;
-        return res;
-    }
-    /// Subtract value from all components of vector
-    vec2 opBinary(string op : "-")(float v) const
-    {
-        vec2 res = this;
-        res.vec[0] -= v;
-        res.vec[1] -= v;
-        return res;
-    }
-    /// Divide all components of vector by value
-    vec2 opBinary(string op : "/")(float v) const
-    {
-        vec2 res = this;
-        res.vec[0] /= v;
-        res.vec[1] /= v;
-        return res;
+        vec2 ret = this;
+        mixin("ret.vec[] "~op~"= v;");
+        return ret;
     }
 
-    /// Add value to all components of vector
-    ref vec2 opOpAssign(string op : "+")(float v)
+    /// Perform operation with another vector by component
+    ref vec2 opOpAssign(string op)(const vec2 v)
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        vec[0] += v;
-        vec[1] += v;
+        mixin("vec[] "~op~"= v.vec[];");
         return this;
     }
-    /// Multiply all components of vector by value
-    ref vec2 opOpAssign(string op : "*")(float v)
+    /// ditto
+    vec2 opBinary(string op)(const vec2 v) const
+        if (op == "+" || op == "-")
     {
-        vec[0] *= v;
-        vec[1] *= v;
-        return this;
-    }
-    /// Subtract value from all components of vector
-    ref vec2 opOpAssign(string op : "-")(float v)
-    {
-        vec[0] -= v;
-        vec[1] -= v;
-        vec[2] -= v;
-        return this;
-    }
-    /// Divide all components of vector by value
-    ref vec2 opOpAssign(string op : "/")(float v)
-    {
-        vec[0] /= v;
-        vec[1] /= v;
-        vec[2] /= v;
-        return this;
+        vec2 ret = this;
+        mixin("ret.vec[] "~op~"= v.vec[];");
+        return ret;
     }
 
-    /// By component add values of corresponding components of other vector
-    ref vec2 opOpAssign(string op : "+")(const vec2 v)
-    {
-        vec[0] += v.vec[0];
-        vec[1] += v.vec[1];
-        return this;
-    }
-    /// By component multiply values of corresponding components of other vector
-    ref vec2 opOpAssign(string op : "*")(const vec2 v)
-    {
-        vec[0] *= v.vec[0];
-        vec[1] *= v.vec[1];
-        return this;
-    }
-    /// By component subtract values of corresponding components of other vector
-    ref vec2 opOpAssign(string op : "-")(const vec2 v)
-    {
-        vec[0] -= v.vec[0];
-        vec[1] -= v.vec[1];
-        return this;
-    }
-    /// By component divide values of corresponding components of other vector
-    ref vec2 opOpAssign(string op : "/")(const vec2 v)
-    {
-        vec[0] /= v.vec[0];
-        vec[1] /= v.vec[1];
-        return this;
-    }
-
-    /// Add value to all components of vector
-    vec2 opBinary(string op : "+")(const vec2 v) const
-    {
-        vec2 res = this;
-        res.vec[0] += v.vec[0];
-        res.vec[1] += v.vec[1];
-        return res;
-    }
-    /// Subtract value from all components of vector
-    vec2 opBinary(string op : "-")(const vec2 v) const
-    {
-        vec2 res = this;
-        res.vec[0] -= v.vec[0];
-        res.vec[1] -= v.vec[1];
-        return res;
-    }
-    /// Subtract value from all components of vector
+    /// Dot product (sum of by-component products of vector components)
     float opBinary(string op : "*")(const vec3 v) const
     {
         return dot(v);
     }
-    /// Dot product (sum of by-component products of vector components)
+    /// ditto
     float dot(const vec2 v) const
     {
-        float res = 0.0f;
-        res += vec[0] * v.vec[0];
-        res += vec[1] * v.vec[1];
-        return res;
+        float ret = 0;
+        ret += vec[0] * v.vec[0];
+        ret += vec[1] * v.vec[1];
+        return ret;
     }
 
     /// Cross product of 2 vec2 is scalar in Z axis
@@ -277,8 +145,7 @@ struct vec2
     vec2 opUnary(string op : "-")() const
     {
         vec2 ret = this;
-        ret.vec[0] = -vec[0];
-        ret.vec[1] = -vec[1];
+        ret.vec[] *= -1;
         return ret;
     }
 
@@ -299,15 +166,13 @@ struct vec2
     /// Normalize vector: make its length == 1
     void normalize()
     {
-        div(length);
+        this /= length;
     }
 
     /// Returns normalized copy of this vector
     @property vec2 normalized()
     {
-        vec2 res = this;
-        res.normalize();
-        return res;
+        return this / length;
     }
 }
 
@@ -324,12 +189,11 @@ struct vec3
             float z;
         }
     }
-    //@property ref float x() { return vec[0]; }
-    //@property ref float y() { return vec[1]; }
-    //@property ref float z() { return vec[2]; }
+
     alias r = x;
     alias g = y;
     alias b = z;
+
     /// Create with all components filled with specified value
     this(float v)
     {
@@ -375,214 +239,54 @@ struct vec3
         return this;
     }
 
-    ref vec3 opAssign(float x, float y, float z)
-    {
-        vec[0] = x;
-        vec[1] = y;
-        vec[2] = z;
-        return this;
-    }
     /// Fill all components of vector with specified value
     ref vec3 clear(float v)
     {
         vec[0] = vec[1] = vec[2] = v;
         return this;
     }
-    /// Add value to all components of vector
-    ref vec3 add(float v)
+
+    /// Perform operation with value to all components of vector
+    ref vec3 opOpAssign(string op)(float v)
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        vec[0] += v;
-        vec[1] += v;
-        vec[2] += v;
+        mixin("vec[] "~op~"= v;");
         return this;
     }
-    /// Multiply all components of vector by value
-    ref vec3 mul(float v)
+    /// ditto
+    vec3 opBinary(string op)(float v) const
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        vec[0] *= v;
-        vec[1] *= v;
-        vec[2] *= v;
-        return this;
-    }
-    /// Subtract value from all components of vector
-    ref vec3 sub(float v)
-    {
-        vec[0] -= v;
-        vec[1] -= v;
-        vec[2] -= v;
-        return this;
-    }
-    /// Divide all components of vector by value
-    ref vec3 div(float v)
-    {
-        vec[0] /= v;
-        vec[1] /= v;
-        vec[2] /= v;
-        return this;
-    }
-    /// Add components of another vector to corresponding components of this vector
-    ref vec3 add(vec3 v)
-    {
-        vec[0] += v.vec[0];
-        vec[1] += v.vec[1];
-        vec[2] += v.vec[2];
-        return this;
-    }
-    /// Multiply components of this vector  by corresponding components of another vector
-    ref vec3 mul(vec3 v)
-    {
-        vec[0] *= v.vec[0];
-        vec[1] *= v.vec[1];
-        vec[2] *= v.vec[2];
-        return this;
-    }
-    /// Subtract components of another vector from corresponding components of this vector
-    ref vec3 sub(vec3 v)
-    {
-        vec[0] -= v.vec[0];
-        vec[1] -= v.vec[1];
-        vec[2] -= v.vec[2];
-        return this;
-    }
-    /// Divide components of this vector  by corresponding components of another vector
-    ref vec3 div(vec3 v)
-    {
-        vec[0] /= v.vec[0];
-        vec[1] /= v.vec[1];
-        vec[2] /= v.vec[2];
-        return this;
+        vec3 ret = this;
+        mixin("ret.vec[] "~op~"= v;");
+        return ret;
     }
 
-    /// Add value to all components of vector
-    vec3 opBinary(string op : "+")(float v) const
+    /// Perform operation with another vector by component
+    ref vec3 opOpAssign(string op)(const vec3 v)
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        vec3 res = this;
-        res.vec[0] += v;
-        res.vec[1] += v;
-        res.vec[2] += v;
-        return res;
+        mixin("vec[] "~op~"= v.vec[];");
+        return this;
     }
-    /// Multiply all components of vector by value
-    vec3 opBinary(string op : "*")(float v) const
+    /// ditto
+    vec3 opBinary(string op)(const vec3 v) const
+        if (op == "+" || op == "-")
     {
-        vec3 res = this;
-        res.vec[0] *= v;
-        res.vec[1] *= v;
-        res.vec[2] *= v;
-        return res;
-    }
-    /// Subtract value from all components of vector
-    vec3 opBinary(string op : "-")(float v) const
-    {
-        vec3 res = this;
-        res.vec[0] -= v;
-        res.vec[1] -= v;
-        res.vec[2] -= v;
-        return res;
-    }
-    /// Divide all components of vector by value
-    vec3 opBinary(string op : "/")(float v) const
-    {
-        vec3 res = this;
-        res.vec[0] /= v;
-        res.vec[1] /= v;
-        res.vec[2] /= v;
-        return res;
+        vec3 ret = this;
+        mixin("ret.vec[] "~op~"= v.vec[];");
+        return ret;
     }
 
-    /// Add value to all components of vector
-    ref vec3 opOpAssign(string op : "+")(float v)
-    {
-        vec[0] += v;
-        vec[1] += v;
-        vec[2] += v;
-        return this;
-    }
-    /// Multiply all components of vector by value
-    ref vec3 opOpAssign(string op : "*")(float v)
-    {
-        vec[0] *= v;
-        vec[1] *= v;
-        vec[2] *= v;
-        return this;
-    }
-    /// Subtract value from all components of vector
-    ref vec3 opOpAssign(string op : "-")(float v)
-    {
-        vec[0] -= v;
-        vec[1] -= v;
-        vec[2] -= v;
-        return this;
-    }
-    /// Divide all components of vector by value
-    ref vec3 opOpAssign(string op : "/")(float v)
-    {
-        vec[0] /= v;
-        vec[1] /= v;
-        vec[2] /= v;
-        return this;
-    }
-
-    /// By component add values of corresponding components of other vector
-    ref vec3 opOpAssign(string op : "+")(const vec3 v)
-    {
-        vec[0] += v.vec[0];
-        vec[1] += v.vec[1];
-        vec[2] += v.vec[2];
-        return this;
-    }
-    /// By component multiply values of corresponding components of other vector
-    ref vec3 opOpAssign(string op : "*")(const vec3 v)
-    {
-        vec[0] *= v.vec[0];
-        vec[1] *= v.vec[1];
-        vec[2] *= v.vec[2];
-        return this;
-    }
-    /// By component subtract values of corresponding components of other vector
-    ref vec3 opOpAssign(string op : "-")(const vec3 v)
-    {
-        vec[0] -= v.vec[0];
-        vec[1] -= v.vec[1];
-        vec[2] -= v.vec[2];
-        return this;
-    }
-    /// By component divide values of corresponding components of other vector
-    ref vec3 opOpAssign(string op : "/")(const vec3 v)
-    {
-        vec[0] /= v.vec[0];
-        vec[1] /= v.vec[1];
-        vec[2] /= v.vec[2];
-        return this;
-    }
-
-    /// Add value to all components of vector
-    vec3 opBinary(string op : "+")(const vec3 v) const
-    {
-        vec3 res = this;
-        res.vec[0] += v.vec[0];
-        res.vec[1] += v.vec[1];
-        res.vec[2] += v.vec[2];
-        return res;
-    }
-    /// Subtract value from all components of vector
-    vec3 opBinary(string op : "-")(const vec3 v) const
-    {
-        vec3 res = this;
-        res.vec[0] -= v.vec[0];
-        res.vec[1] -= v.vec[1];
-        res.vec[2] -= v.vec[2];
-        return res;
-    }
-    /// Subtract value from all components of vector
+    /// Dot product (sum of by-component products of vector components)
     float opBinary(string op : "*")(const vec3 v) const
     {
         return dot(v);
     }
-    /// Dot product (sum of by-component products of vector components)
+    /// ditto
     float dot(const vec3 v) const
     {
-        float res = 0.0f;
+        float res = 0;
         res += vec[0] * v.vec[0];
         res += vec[1] * v.vec[1];
         res += vec[2] * v.vec[2];
@@ -593,9 +297,7 @@ struct vec3
     vec3 opUnary(string op : "-")() const
     {
         vec3 ret = this;
-        ret.vec[0] = -vec[0];
-        ret.vec[1] = -vec[1];
-        ret.vec[2] = -vec[2];
+        ret.vec[] *= -1;
         return ret;
     }
 
@@ -616,15 +318,13 @@ struct vec3
     /// Normalize vector: make its length == 1
     void normalize()
     {
-        div(length);
+        this /= length;
     }
 
     /// Returns normalized copy of this vector
     @property vec3 normalized()
     {
-        vec3 res = this;
-        res.normalize();
-        return res;
+        return this / length;
     }
 
     /// Cross product
@@ -672,6 +372,7 @@ struct vec4
     alias g = y;
     alias b = z;
     alias a = w;
+
     /// Create with all components filled with specified value
     this(float v)
     {
@@ -704,28 +405,19 @@ struct vec4
         vec[3] = 1.0f;
     }
 
-    ref vec4 opAssign(const float[4] v)
+    ref vec4 opAssign(float[4] v)
     {
         vec = v;
         return this;
     }
 
-    ref vec4 opAssign(const vec4 v)
+    ref vec4 opAssign(vec4 v)
     {
         vec = v.vec;
         return this;
     }
 
-    ref vec4 opAssign(float x, float y, float z, float w)
-    {
-        vec[0] = x;
-        vec[1] = y;
-        vec[2] = z;
-        vec[3] = w;
-        return this;
-    }
-
-    ref vec4 opAssign(const vec3 v)
+    ref vec4 opAssign(vec3 v)
     {
         vec[0] = v.vec[0];
         vec[1] = v.vec[1];
@@ -740,223 +432,48 @@ struct vec4
         vec[0] = vec[1] = vec[2] = vec[3] = v;
         return this;
     }
-    /// Add value to all components of vector
-    ref vec4 add(float v)
+
+    /// Perform operation with value to all components of vector
+    ref vec4 opOpAssign(string op)(float v)
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        vec[0] += v;
-        vec[1] += v;
-        vec[2] += v;
-        vec[3] += v;
+        mixin("vec[] "~op~"= v;");
         return this;
     }
-    /// Multiply all components of vector by value
-    ref vec4 mul(float v)
+    /// ditto
+    vec4 opBinary(string op)(float v) const
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        vec[0] *= v;
-        vec[1] *= v;
-        vec[2] *= v;
-        vec[3] *= v;
-        return this;
-    }
-    /// Subtract value from all components of vector
-    ref vec4 sub(float v)
-    {
-        vec[0] -= v;
-        vec[1] -= v;
-        vec[2] -= v;
-        vec[3] -= v;
-        return this;
-    }
-    /// Divide all components of vector by value
-    ref vec4 div(float v)
-    {
-        vec[0] /= v;
-        vec[1] /= v;
-        vec[2] /= v;
-        vec[3] /= v;
-        return this;
-    }
-    /// Add components of another vector to corresponding components of this vector
-    ref vec4 add(const vec4 v)
-    {
-        vec[0] += v.vec[0];
-        vec[1] += v.vec[1];
-        vec[2] += v.vec[2];
-        vec[3] += v.vec[3];
-        return this;
-    }
-    /// Multiply components of this vector  by corresponding components of another vector
-    ref vec4 mul(vec4 v)
-    {
-        vec[0] *= v.vec[0];
-        vec[1] *= v.vec[1];
-        vec[2] *= v.vec[2];
-        vec[3] *= v.vec[3];
-        return this;
-    }
-    /// Subtract components of another vector from corresponding components of this vector
-    ref vec4 sub(vec4 v)
-    {
-        vec[0] -= v.vec[0];
-        vec[1] -= v.vec[1];
-        vec[2] -= v.vec[2];
-        vec[3] -= v.vec[3];
-        return this;
-    }
-    /// Divide components of this vector  by corresponding components of another vector
-    ref vec4 div(vec4 v)
-    {
-        vec[0] /= v.vec[0];
-        vec[1] /= v.vec[1];
-        vec[2] /= v.vec[2];
-        vec[3] /= v.vec[3];
-        return this;
+        vec4 ret = this;
+        mixin("ret.vec[] "~op~"= v;");
+        return ret;
     }
 
-    /// Add value to all components of vector
-    vec4 opBinary(string op : "+")(float v) const
+    /// Perform operation with another vector by component
+    ref vec4 opOpAssign(string op)(const vec4 v)
+        if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        vec4 res = this;
-        res.vec[0] += v;
-        res.vec[1] += v;
-        res.vec[2] += v;
-        res.vec[3] += v;
-        return res;
+        mixin("vec[] "~op~"= v.vec[];");
+        return this;
     }
-    /// Multiply all components of vector by value
-    vec4 opBinary(string op : "*")(float v) const
+    /// ditto
+    vec4 opBinary(string op)(const vec4 v) const
+        if (op == "+" || op == "-")
     {
-        vec4 res = this;
-        res.vec[0] *= v;
-        res.vec[1] *= v;
-        res.vec[2] *= v;
-        res.vec[3] *= v;
-        return res;
-    }
-    /// Subtract value from all components of vector
-    vec4 opBinary(string op : "-")(float v) const
-    {
-        vec4 res = this;
-        res.vec[0] -= v;
-        res.vec[1] -= v;
-        res.vec[2] -= v;
-        res.vec[3] -= v;
-        return res;
-    }
-    /// Divide all components of vector by value
-    vec4 opBinary(string op : "/")(float v) const
-    {
-        vec4 res = this;
-        res.vec[0] /= v;
-        res.vec[1] /= v;
-        res.vec[2] /= v;
-        res.vec[3] /= v;
-        return res;
+        vec4 ret = this;
+        mixin("ret.vec[] "~op~"= v.vec[];");
+        return ret;
     }
 
-    /// Add value to all components of vector
-    ref vec4 opOpAssign(string op : "+")(float v)
-    {
-        vec[0] += v;
-        vec[1] += v;
-        vec[2] += v;
-        vec[3] += v;
-        return this;
-    }
-    /// Multiply all components of vector by value
-    ref vec4 opOpAssign(string op : "*")(float v)
-    {
-        vec[0] *= v;
-        vec[1] *= v;
-        vec[2] *= v;
-        vec[3] *= v;
-        return this;
-    }
-    /// Subtract value from all components of vector
-    ref vec4 opOpAssign(string op : "-")(float v)
-    {
-        vec[0] -= v;
-        vec[1] -= v;
-        vec[2] -= v;
-        vec[3] -= v;
-        return this;
-    }
-    /// Divide all components of vector by value
-    ref vec4 opOpAssign(string op : "/")(float v)
-    {
-        vec[0] /= v;
-        vec[1] /= v;
-        vec[2] /= v;
-        vec[3] /= v;
-        return this;
-    }
-
-    /// By component add values of corresponding components of other vector
-    ref vec4 opOpAssign(string op : "+")(const vec4 v)
-    {
-        vec[0] += v.vec[0];
-        vec[1] += v.vec[1];
-        vec[2] += v.vec[2];
-        vec[3] += v.vec[3];
-        return this;
-    }
-    /// By component multiply values of corresponding components of other vector
-    ref vec4 opOpAssign(string op : "*")(const vec4 v)
-    {
-        vec[0] *= v.vec[0];
-        vec[1] *= v.vec[1];
-        vec[2] *= v.vec[2];
-        vec[3] *= v.vec[3];
-        return this;
-    }
-    /// By component subtract values of corresponding components of other vector
-    ref vec4 opOpAssign(string op : "-")(const vec4 v)
-    {
-        vec[0] -= v.vec[0];
-        vec[1] -= v.vec[1];
-        vec[2] -= v.vec[2];
-        vec[3] -= v.vec[3];
-        return this;
-    }
-    /// By component divide values of corresponding components of other vector
-    ref vec4 opOpAssign(string op : "/")(const vec4 v)
-    {
-        vec[0] /= v.vec[0];
-        vec[1] /= v.vec[1];
-        vec[2] /= v.vec[2];
-        vec[3] /= v.vec[3];
-        return this;
-    }
-
-    /// Add value to all components of vector
-    vec4 opBinary(string op : "+")(const vec4 v) const
-    {
-        vec4 res = this;
-        res.vec[0] += v.vec[0];
-        res.vec[1] += v.vec[1];
-        res.vec[2] += v.vec[2];
-        res.vec[3] += v.vec[3];
-        return res;
-    }
-    /// Subtract value from all components of vector
-    vec4 opBinary(string op : "-")(const vec4 v) const
-    {
-        vec4 res = this;
-        res.vec[0] -= v.vec[0];
-        res.vec[1] -= v.vec[1];
-        res.vec[2] -= v.vec[2];
-        res.vec[3] -= v.vec[3];
-        return res;
-    }
-    /// Subtract value from all components of vector
+    /// Dot product (sum of by-component products of vector components)
     float opBinary(string op : "*")(const vec4 v) const
     {
         return dot(v);
     }
-    /// Dot product (sum of by-component products of vector components)
+    /// ditto
     float dot(vec4 v) const
     {
-        float res = 0.0f;
+        float res = 0;
         res += vec[0] * v.vec[0];
         res += vec[1] * v.vec[1];
         res += vec[2] * v.vec[2];
@@ -968,10 +485,7 @@ struct vec4
     vec4 opUnary(string op : "-")() const
     {
         vec4 ret = this;
-        ret[0] = -vec[0];
-        ret[1] = -vec[1];
-        ret[2] = -vec[2];
-        ret[3] = -vec[3];
+        ret.vec[] *= -1;
         return ret;
     }
 
@@ -992,15 +506,13 @@ struct vec4
     /// Normalize vector: make its length == 1
     void normalize()
     {
-        div(length);
+        this /= length;
     }
 
     /// Returns normalized copy of this vector
     @property vec4 normalized()
     {
-        vec4 res = this;
-        res.normalize();
-        return res;
+        return this / length;
     }
 
     /// Multiply vector by matrix
