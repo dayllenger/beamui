@@ -231,24 +231,23 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     }
 }
 
-alias vec2 = Vector!(float, 2);
-alias vec3 = Vector!(float, 3);
-alias vec4 = Vector!(float, 4);
+alias Vec2 = Vector!(float, 2);
+alias Vec3 = Vector!(float, 3);
+alias Vec4 = Vector!(float, 4);
 
-alias vec2d = Vector!(double, 2);
-alias vec3d = Vector!(double, 3);
-alias vec4d = Vector!(double, 4);
+alias Vec2d = Vector!(double, 2);
+alias Vec3d = Vector!(double, 3);
+alias Vec4d = Vector!(double, 4);
 
-alias vec2i = Vector!(int, 2);
-alias vec3i = Vector!(int, 3);
-alias vec4i = Vector!(int, 4);
+alias Vec2i = Vector!(int, 2);
+alias Vec3i = Vector!(int, 3);
+alias Vec4i = Vector!(int, 4);
 
 bool fuzzyNull(float v) pure nothrow @nogc
 {
     return v < 0.0000001f && v > -0.0000001f;
 }
 
-/// Float matrix 4 x 4
 struct mat4
 {
     float[16] m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
@@ -347,11 +346,11 @@ pure nothrow:
         m[3 * 4 + 3] = 0.0f;
     }
 
-    ref mat4 lookAt(const vec3 eye, const vec3 center, const vec3 up)
+    ref mat4 lookAt(const Vec3 eye, const Vec3 center, const Vec3 up)
     {
-        vec3 forward = (center - eye).normalized();
-        vec3 side = vec3.crossProduct(forward, up).normalized();
-        vec3 upVector = vec3.crossProduct(side, forward);
+        Vec3 forward = (center - eye).normalized();
+        Vec3 side = Vec3.crossProduct(forward, up).normalized();
+        Vec3 upVector = Vec3.crossProduct(side, forward);
 
         mat4 m;
         m.setIdentity();
@@ -435,14 +434,14 @@ pure nothrow:
         return inverse;
     }
 
-    ref mat4 setLookAt(const vec3 eye, const vec3 center, const vec3 up)
+    ref mat4 setLookAt(const Vec3 eye, const Vec3 center, const Vec3 up)
     {
         setIdentity();
         lookAt(eye, center, up);
         return this;
     }
 
-    ref mat4 translate(const vec3 v)
+    ref mat4 translate(const Vec3 v)
     {
         m[3 * 4 + 0] += m[0 * 4 + 0] * v.x + m[1 * 4 + 0] * v.y + m[2 * 4 + 0] * v.z;
         m[3 * 4 + 1] += m[0 * 4 + 1] * v.x + m[1 * 4 + 1] * v.y + m[2 * 4 + 1] * v.z;
@@ -525,48 +524,48 @@ pure nothrow:
         return m;
     }
 
-    /// Multiply matrix by vec3
-    vec3 opBinary(string op : "*")(const vec3 v) const
+    /// Multiply matrix by Vec3
+    Vec3 opBinary(string op : "*")(const Vec3 v) const
     {
         float x = v.x * m[0 * 4 + 0] + v.y * m[1 * 4 + 0] + v.z * m[2 * 4 + 0] + m[3 * 4 + 0];
         float y = v.x * m[0 * 4 + 1] + v.y * m[1 * 4 + 1] + v.z * m[2 * 4 + 1] + m[3 * 4 + 1];
         float z = v.x * m[0 * 4 + 2] + v.y * m[1 * 4 + 2] + v.z * m[2 * 4 + 2] + m[3 * 4 + 2];
         float w = v.x * m[0 * 4 + 3] + v.y * m[1 * 4 + 3] + v.z * m[2 * 4 + 3] + m[3 * 4 + 3];
         if (w == 1.0f)
-            return vec3(x, y, z);
+            return Vec3(x, y, z);
         else
-            return vec3(x / w, y / w, z / w);
+            return Vec3(x / w, y / w, z / w);
     }
     /// ditto
-    vec3 opBinaryRight(string op : "*")(const vec3 v) const
+    Vec3 opBinaryRight(string op : "*")(const Vec3 v) const
     {
         float x = v.x * m[0 * 4 + 0] + v.y * m[0 * 4 + 1] + v.z * m[0 * 4 + 2] + m[0 * 4 + 3];
         float y = v.x * m[1 * 4 + 0] + v.y * m[1 * 4 + 1] + v.z * m[1 * 4 + 2] + m[1 * 4 + 3];
         float z = v.x * m[2 * 4 + 0] + v.y * m[2 * 4 + 1] + v.z * m[2 * 4 + 2] + m[2 * 4 + 3];
         float w = v.x * m[3 * 4 + 0] + v.y * m[3 * 4 + 1] + v.z * m[3 * 4 + 2] + m[3 * 4 + 3];
         if (w == 1.0f)
-            return vec3(x, y, z);
+            return Vec3(x, y, z);
         else
-            return vec3(x / w, y / w, z / w);
+            return Vec3(x / w, y / w, z / w);
     }
 
-    /// Multiply matrix by vec4
-    vec4 opBinary(string op : "*")(const vec4 v) const
+    /// Multiply matrix by Vec4
+    Vec4 opBinary(string op : "*")(const Vec4 v) const
     {
         float x = v.x * m[0 * 4 + 0] + v.y * m[1 * 4 + 0] + v.z * m[2 * 4 + 0] + v.w * m[3 * 4 + 0];
         float y = v.x * m[0 * 4 + 1] + v.y * m[1 * 4 + 1] + v.z * m[2 * 4 + 1] + v.w * m[3 * 4 + 1];
         float z = v.x * m[0 * 4 + 2] + v.y * m[1 * 4 + 2] + v.z * m[2 * 4 + 2] + v.w * m[3 * 4 + 2];
         float w = v.x * m[0 * 4 + 3] + v.y * m[1 * 4 + 3] + v.z * m[2 * 4 + 3] + v.w * m[3 * 4 + 3];
-        return vec4(x, y, z, w);
+        return Vec4(x, y, z, w);
     }
     /// ditto
-    vec4 opBinaryRight(string op : "*")(const vec4 v) const
+    Vec4 opBinaryRight(string op : "*")(const Vec4 v) const
     {
         float x = v.x * m[0 * 4 + 0] + v.y * m[0 * 4 + 1] + v.z * m[0 * 4 + 2] + v.w * m[0 * 4 + 3];
         float y = v.x * m[1 * 4 + 0] + v.y * m[1 * 4 + 1] + v.z * m[1 * 4 + 2] + v.w * m[1 * 4 + 3];
         float z = v.x * m[2 * 4 + 0] + v.y * m[2 * 4 + 1] + v.z * m[2 * 4 + 2] + v.w * m[2 * 4 + 3];
         float w = v.x * m[3 * 4 + 0] + v.y * m[3 * 4 + 1] + v.z * m[3 * 4 + 2] + v.w * m[3 * 4 + 3];
-        return vec4(x, y, z, w);
+        return Vec4(x, y, z, w);
     }
 
     /// 2d index by row, col
@@ -650,7 +649,7 @@ pure nothrow:
         return rotate(angle, 0, 1, 0);
     }
 
-    ref mat4 rotate(float angle, const vec3 axis)
+    ref mat4 rotate(float angle, const Vec3 axis)
     {
         return rotate(angle, axis.x, axis.y, axis.z);
     }
@@ -824,7 +823,7 @@ pure nothrow:
         return this;
     }
 
-    ref mat4 scale(const vec3 v)
+    ref mat4 scale(const Vec3 v)
     {
         m[0 * 4 + 0] *= v.x;
         m[0 * 4 + 1] *= v.x;
@@ -849,7 +848,7 @@ pure nothrow:
     }
 
     /// Decomposes the scale, rotation and translation components of this matrix
-    bool decompose(vec3* scale, vec4* rotation, vec3* translation) const
+    bool decompose(Vec3* scale, Vec4* rotation, Vec3* translation) const
     {
         if (translation)
         {
@@ -865,13 +864,13 @@ pure nothrow:
 
         // Extract the scale.
         // This is simply the length of each axis (row/column) in the matrix.
-        vec3 xaxis = vec3(m[0], m[1], m[2]);
+        Vec3 xaxis = Vec3(m[0], m[1], m[2]);
         float scaleX = xaxis.length;
 
-        vec3 yaxis = vec3(m[4], m[5], m[6]);
+        Vec3 yaxis = Vec3(m[4], m[5], m[6]);
         float scaleY = yaxis.length;
 
-        vec3 zaxis = vec3(m[8], m[9], m[10]);
+        Vec3 zaxis = Vec3(m[8], m[9], m[10]);
         float scaleZ = zaxis.length;
 
         // Determine if we have a negative scale (true if determinant is less than zero).
@@ -916,27 +915,27 @@ pure nothrow:
         return a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0;
     }
 
-    vec3 forwardVector() const
+    Vec3 forwardVector() const
     {
-        return vec3(-m[8], -m[9], -m[10]);
+        return Vec3(-m[8], -m[9], -m[10]);
     }
 
-    vec3 backVector() const
+    Vec3 backVector() const
     {
-        return vec3(m[8], m[9], m[10]);
+        return Vec3(m[8], m[9], m[10]);
     }
 
-    void transformVector(ref vec3 v) const
+    void transformVector(ref Vec3 v) const
     {
         transformVector(v.x, v.y, v.z, 0, v);
     }
 
-    void transformPoint(ref vec3 v) const
+    void transformPoint(ref Vec3 v) const
     {
         transformVector(v.x, v.y, v.z, 1, v);
     }
 
-    void transformVector(float x, float y, float z, float w, ref vec3 dst) const
+    void transformVector(float x, float y, float z, float w, ref Vec3 dst) const
     {
         dst.x = x * m[0] + y * m[4] + z * m[8] + w * m[12];
         dst.y = x * m[1] + y * m[5] + z * m[9] + w * m[13];
@@ -946,7 +945,7 @@ pure nothrow:
 
 unittest
 {
-    vec3 a, b, c;
+    Vec3 a, b, c;
     a.clear(5);
     b.clear(2);
     float d = a * b;
@@ -975,7 +974,7 @@ unittest
 
 unittest
 {
-    vec4 a, b, c;
+    Vec4 a, b, c;
     a.clear(5);
     b.clear(2);
     float d = a * b;
@@ -1014,19 +1013,19 @@ unittest
     m -= 2;
     m *= 3;
     m /= 3;
-    m.translate(vec3(2, 3, 4));
+    m.translate(Vec3(2, 3, 4));
     m.translate(5, 6, 7);
-    m.lookAt(vec3(5, 5, 5), vec3(0, 0, 0), vec3(-1, 1, 1));
-    m.setLookAt(vec3(5, 5, 5), vec3(0, 0, 0), vec3(-1, 1, 1));
+    m.lookAt(Vec3(5, 5, 5), Vec3(0, 0, 0), Vec3(-1, 1, 1));
+    m.setLookAt(Vec3(5, 5, 5), Vec3(0, 0, 0), Vec3(-1, 1, 1));
     m.scale(2, 3, 4);
-    m.scale(vec3(2, 3, 4));
+    m.scale(Vec3(2, 3, 4));
 
-    vec3 vv1 = vec3(1, 2, 3);
+    Vec3 vv1 = Vec3(1, 2, 3);
     auto p1 = m * vv1;
-    vec3 vv2 = vec3(3, 4, 5);
+    Vec3 vv2 = Vec3(3, 4, 5);
     auto p2 = vv2 * m;
-    auto p3 = vec4(1, 2, 3, 4) * m;
-    auto p4 = m * vec4(1, 2, 3, 4);
+    auto p3 = Vec4(1, 2, 3, 4) * m;
+    auto p4 = m * Vec4(1, 2, 3, 4);
 
     m.rotate(30, 1, 1, 1);
     m.rotateX(10);
@@ -1035,19 +1034,19 @@ unittest
 }
 
 /// Calculate normal for triangle
-vec3 triangleNormal(vec3 p1, vec3 p2, vec3 p3) pure
+Vec3 triangleNormal(Vec3 p1, Vec3 p2, Vec3 p3) pure
 {
-    return vec3.crossProduct(p2 - p1, p3 - p2).normalized();
+    return Vec3.crossProduct(p2 - p1, p3 - p2).normalized();
 }
 
 /// Calculate normal for triangle
-vec3 triangleNormal(ref float[3] p1, ref float[3] p2, ref float[3] p3) pure @nogc
+Vec3 triangleNormal(ref float[3] p1, ref float[3] p2, ref float[3] p3) pure @nogc
 {
-    return vec3.crossProduct(vec3(p2) - vec3(p1), vec3(p3) - vec3(p2)).normalized();
+    return Vec3.crossProduct(Vec3(p2) - Vec3(p1), Vec3(p3) - Vec3(p2)).normalized();
 }
 
 /// Alias for 2d float point
-alias PointF = vec2;
+alias PointF = Vec2;
 
 // this form can be used within shaders
 /// Cubic bezier curve

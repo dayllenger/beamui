@@ -1164,7 +1164,7 @@ class DrawBuf : RefCountedObject
     }
 
     // calculates inwards XY offsets from rect corners
-    static PointF[4] calcRectRoundedCornerRadius(vec4 corners, float w, float h, bool keepSquareXY)
+    static PointF[4] calcRectRoundedCornerRadius(Vec4 corners, float w, float h, bool keepSquareXY)
     {
         import std.algorithm.comparison : min;
 
@@ -1191,7 +1191,7 @@ class DrawBuf : RefCountedObject
 
     /// Builds outer rounded rect path
     /// The last parameter optionally writes out indices of first segment of corners excluding top-left
-    static PointF[] makeRoundedRectPath(Rect rect, vec4 corners, bool keepSquareXY,
+    static PointF[] makeRoundedRectPath(Rect rect, Vec4 corners, bool keepSquareXY,
             size_t[] outCornerSegmentsStart = null)
     {
         import std.range : chain;
@@ -1217,7 +1217,7 @@ class DrawBuf : RefCountedObject
     }
 
     /// Draws rect with rounded corners
-    void drawRoundedRectF(Rect rect, vec4 corners, bool keepSquareXY, float frameWidth,
+    void drawRoundedRectF(Rect rect, Vec4 corners, bool keepSquareXY, float frameWidth,
                           Color frameColor, Color fillColor = Color.transparent)
     {
         auto fullPath = makeRoundedRectPath(rect, corners, keepSquareXY);
