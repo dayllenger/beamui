@@ -1,7 +1,7 @@
 /**
 
 
-Copyright: Vadim Lopatin 2015-2016
+Copyright: Vadim Lopatin 2015-2016, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -10,487 +10,216 @@ module beamui.core.math3d;
 import std.math;
 import std.string : format;
 
-/// 2 dimensional vector
-struct vec2
+/// 2-4-dimensional vector
+struct Vector(int N) if (2 <= N && N <= 4)
 {
     union
     {
-        float[2] vec;
+        float[N] vec;
         struct
         {
             float x;
             float y;
+            static if (N >= 3)
+                float z;
+            static if (N == 4)
+                float w;
         }
     }
 
     alias u = x;
     alias v = y;
+
     /// Create with all components filled with specified value
     this(float v)
     {
-        x = v;
-        y = v;
+        vec[] = v;
     }
 
-    this(float[2] v)
+    this(Args...)(Args values) if (2 <= Args.length && Args.length <= N)
+    {
+        static foreach (Arg; Args)
+            static assert(is(Arg : float), "Arguments must be convertible to the base vector type");
+        static foreach (i; 0 .. Args.length)
+            vec[i] = values[i];
+    }
+
+    this(const ref float[N] v)
     {
         vec = v;
     }
 
-    this(float[] v)
+    this(const float[] v)
     {
-        vec = v[0 .. 2];
+        vec = v[0 .. N];
     }
 
-    this(float* v)
+    this(const float* v)
     {
-        vec = v[0 .. 2];
+        vec = v[0 .. N];
     }
 
-    this(const vec2 v)
+    this(const Vector v)
     {
         vec = v.vec;
     }
 
-    this(float x, float y)
+    static if (N == 4)
     {
-        vec[0] = x;
-        vec[1] = y;
-    }
-
-    ref vec2 opAssign(float[2] v)
-    {
-        vec = v;
-        return this;
-    }
-
-    ref vec2 opAssign(vec2 v)
-    {
-        vec = v.vec;
-        return this;
-    }
-
-    /// Fill all components of vector with specified value
-    ref vec2 clear(float v)
-    {
-        vec[0] = vec[1] = v;
-        return this;
-    }
-
-    /// Returns vector rotated 90 degrees counter clockwise
-    vec2 rotated90ccw() const
-    {
-        return vec2(-y, x);
-    }
-
-    /// Returns vector rotated 90 degrees clockwise
-    vec2 rotated90cw() const
-    {
-        return vec2(y, -x);
-    }
-
-    /// Perform operation with value to all components of vector
-    ref vec2 opOpAssign(string op)(float v)
-        if (op == "+" || op == "-" || op == "*" || op == "/")
-    {
-        mixin("vec[] "~op~"= v;");
-        return this;
-    }
-    /// ditto
-    vec2 opBinary(string op)(float v) const
-        if (op == "+" || op == "-" || op == "*" || op == "/")
-    {
-        vec2 ret = this;
-        mixin("ret.vec[] "~op~"= v;");
-        return ret;
-    }
-
-    /// Perform operation with another vector by component
-    ref vec2 opOpAssign(string op)(const vec2 v)
-        if (op == "+" || op == "-" || op == "*" || op == "/")
-    {
-        mixin("vec[] "~op~"= v.vec[];");
-        return this;
-    }
-    /// ditto
-    vec2 opBinary(string op)(const vec2 v) const
-        if (op == "+" || op == "-")
-    {
-        vec2 ret = this;
-        mixin("ret.vec[] "~op~"= v.vec[];");
-        return ret;
-    }
-
-    /// Dot product (sum of by-component products of vector components)
-    float opBinary(string op : "*")(const vec3 v) const
-    {
-        return dot(v);
-    }
-    /// ditto
-    float dot(const vec2 v) const
-    {
-        float ret = 0;
-        ret += vec[0] * v.vec[0];
-        ret += vec[1] * v.vec[1];
-        return ret;
-    }
-
-    /// Cross product of 2 vec2 is scalar in Z axis
-    float crossProduct(const vec2 v2) const
-    {
-        return x * v2.y - y * v2.x;
-    }
-
-    /// Returns vector with all components which are negative of components for this vector
-    vec2 opUnary(string op : "-")() const
-    {
-        vec2 ret = this;
-        ret.vec[] *= -1;
-        return ret;
-    }
-
-    /// Sum of squares of all vector components
-    @property float magnitudeSquared()
-    {
-        return vec[0] * vec[0] + vec[1] * vec[1];
-    }
-
-    /// Length of vector
-    @property float magnitude()
-    {
-        return sqrt(magnitudeSquared);
-    }
-
-    alias length = magnitude;
-
-    /// Normalize vector: make its length == 1
-    void normalize()
-    {
-        this /= length;
-    }
-
-    /// Returns normalized copy of this vector
-    @property vec2 normalized()
-    {
-        return this / length;
-    }
-}
-
-/// 3 dimensional vector
-struct vec3
-{
-    union
-    {
-        float[3] vec;
-        struct
+        this(Vector!3 v)
         {
-            float x;
-            float y;
-            float z;
+            vec[0 .. 3] = v.vec[];
+            vec[3] = 1.0f;
+        }
+
+        ref Vector opAssign(Vector!3 v)
+        {
+            vec[0 .. 3] = v.vec[];
+            vec[3] = 1.0f;
+            return this;
         }
     }
 
-    alias r = x;
-    alias g = y;
-    alias b = z;
-
-    /// Create with all components filled with specified value
-    this(float v)
-    {
-        x = y = z = v;
-    }
-
-    this(float[3] v)
-    {
-        vec = v;
-    }
-
-    this(float[] v)
-    {
-        vec = v[0 .. 3];
-    }
-
-    this(float* v)
-    {
-        vec = v[0 .. 3];
-    }
-
-    this(const vec3 v)
-    {
-        vec = v.vec;
-    }
-
-    this(float x, float y, float z)
-    {
-        vec[0] = x;
-        vec[1] = y;
-        vec[2] = z;
-    }
-
-    ref vec3 opAssign(float[3] v)
+    ref Vector opAssign(float[N] v)
     {
         vec = v;
         return this;
     }
 
-    ref vec3 opAssign(vec3 v)
+    ref Vector opAssign(Vector v)
     {
         vec = v.vec;
         return this;
     }
 
     /// Fill all components of vector with specified value
-    ref vec3 clear(float v)
-    {
-        vec[0] = vec[1] = vec[2] = v;
-        return this;
-    }
-
-    /// Perform operation with value to all components of vector
-    ref vec3 opOpAssign(string op)(float v)
-        if (op == "+" || op == "-" || op == "*" || op == "/")
-    {
-        mixin("vec[] "~op~"= v;");
-        return this;
-    }
-    /// ditto
-    vec3 opBinary(string op)(float v) const
-        if (op == "+" || op == "-" || op == "*" || op == "/")
-    {
-        vec3 ret = this;
-        mixin("ret.vec[] "~op~"= v;");
-        return ret;
-    }
-
-    /// Perform operation with another vector by component
-    ref vec3 opOpAssign(string op)(const vec3 v)
-        if (op == "+" || op == "-" || op == "*" || op == "/")
-    {
-        mixin("vec[] "~op~"= v.vec[];");
-        return this;
-    }
-    /// ditto
-    vec3 opBinary(string op)(const vec3 v) const
-        if (op == "+" || op == "-")
-    {
-        vec3 ret = this;
-        mixin("ret.vec[] "~op~"= v.vec[];");
-        return ret;
-    }
-
-    /// Dot product (sum of by-component products of vector components)
-    float opBinary(string op : "*")(const vec3 v) const
-    {
-        return dot(v);
-    }
-    /// ditto
-    float dot(const vec3 v) const
-    {
-        float res = 0;
-        res += vec[0] * v.vec[0];
-        res += vec[1] * v.vec[1];
-        res += vec[2] * v.vec[2];
-        return res;
-    }
-
-    /// Returns vector with all components which are negative of components for this vector
-    vec3 opUnary(string op : "-")() const
-    {
-        vec3 ret = this;
-        ret.vec[] *= -1;
-        return ret;
-    }
-
-    /// Sum of squares of all vector components
-    @property float magnitudeSquared()
-    {
-        return vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
-    }
-
-    /// Length of vector
-    @property float magnitude()
-    {
-        return sqrt(magnitudeSquared);
-    }
-
-    alias length = magnitude;
-
-    /// Normalize vector: make its length == 1
-    void normalize()
-    {
-        this /= length;
-    }
-
-    /// Returns normalized copy of this vector
-    @property vec3 normalized()
-    {
-        return this / length;
-    }
-
-    /// Cross product
-    static vec3 crossProduct(const vec3 v1, const vec3 v2)
-    {
-        return vec3(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x);
-    }
-
-    /// Multiply vector by matrix
-    vec3 opBinary(string op : "*")(const ref mat4 matrix) const
-    {
-        float xx, yy, zz, ww;
-        xx = x * matrix.m[0 * 4 + 0] + y * matrix.m[0 * 4 + 1] + z * matrix.m[0 * 4 + 2] + matrix.m[0 * 4 + 3];
-        yy = x * matrix.m[1 * 4 + 0] + y * matrix.m[1 * 4 + 1] + z * matrix.m[1 * 4 + 2] + matrix.m[1 * 4 + 3];
-        zz = x * matrix.m[2 * 4 + 0] + y * matrix.m[2 * 4 + 1] + z * matrix.m[2 * 4 + 2] + matrix.m[2 * 4 + 3];
-        ww = x * matrix.m[3 * 4 + 0] + y * matrix.m[3 * 4 + 1] + z * matrix.m[3 * 4 + 2] + matrix.m[3 * 4 + 3];
-        if (ww == 1.0f)
-            return vec3(xx, yy, zz);
-        else
-            return vec3(xx / ww, yy / ww, zz / ww);
-    }
-
-    @property string toString()
-    {
-        return "(%f,%f,%f)".format(x, y, z);
-    }
-}
-
-/// 4 component vector
-struct vec4
-{
-    union
-    {
-        float[4] vec;
-        struct
-        {
-            float x;
-            float y;
-            float z;
-            float w;
-        }
-    }
-
-    alias r = x;
-    alias g = y;
-    alias b = z;
-    alias a = w;
-
-    /// Create with all components filled with specified value
-    this(float v)
-    {
-        x = y = z = w = v;
-    }
-
-    this(float[4] v)
-    {
-        vec = v;
-    }
-
-    this(vec4 v)
-    {
-        vec = v.vec;
-    }
-
-    this(float x, float y, float z, float w)
-    {
-        vec[0] = x;
-        vec[1] = y;
-        vec[2] = z;
-        vec[3] = w;
-    }
-
-    this(vec3 v)
-    {
-        vec[0] = v.vec[0];
-        vec[1] = v.vec[1];
-        vec[2] = v.vec[2];
-        vec[3] = 1.0f;
-    }
-
-    ref vec4 opAssign(float[4] v)
-    {
-        vec = v;
-        return this;
-    }
-
-    ref vec4 opAssign(vec4 v)
-    {
-        vec = v.vec;
-        return this;
-    }
-
-    ref vec4 opAssign(vec3 v)
-    {
-        vec[0 .. 3] = v.vec[];
-        vec[3] = 1.0f;
-        return this;
-    }
-
-    /// Fill all components of vector with specified value
-    ref vec4 clear(float v)
+    ref Vector clear(float v)
     {
         vec[] = v;
         return this;
     }
 
+    static if (N == 2)
+    {
+        /// Returns vector rotated 90 degrees counter clockwise
+        Vector rotated90ccw() const
+        {
+            return Vector(-y, x);
+        }
+
+        /// Returns vector rotated 90 degrees clockwise
+        Vector rotated90cw() const
+        {
+            return Vector(y, -x);
+        }
+    }
+
+    /// Returns vector with all components which are negative of components for this vector
+    Vector opUnary(string op : "-")() const
+    {
+        Vector ret = this;
+        ret.vec[] *= -1;
+        return ret;
+    }
+
     /// Perform operation with value to all components of vector
-    ref vec4 opOpAssign(string op)(float v)
+    ref Vector opOpAssign(string op)(float v)
         if (op == "+" || op == "-" || op == "*" || op == "/")
     {
         mixin("vec[] "~op~"= v;");
         return this;
     }
     /// ditto
-    vec4 opBinary(string op)(float v) const
+    Vector opBinary(string op)(float v) const
         if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        vec4 ret = this;
+        Vector ret = this;
         mixin("ret.vec[] "~op~"= v;");
         return ret;
     }
 
     /// Perform operation with another vector by component
-    ref vec4 opOpAssign(string op)(const vec4 v)
+    ref Vector opOpAssign(string op)(const Vector v)
         if (op == "+" || op == "-" || op == "*" || op == "/")
     {
         mixin("vec[] "~op~"= v.vec[];");
         return this;
     }
     /// ditto
-    vec4 opBinary(string op)(const vec4 v) const
+    Vector opBinary(string op)(const Vector v) const
         if (op == "+" || op == "-")
     {
-        vec4 ret = this;
+        Vector ret = this;
         mixin("ret.vec[] "~op~"= v.vec[];");
         return ret;
     }
 
     /// Dot product (sum of by-component products of vector components)
-    float opBinary(string op : "*")(const vec4 v) const
+    float opBinary(string op : "*")(const Vector v) const
     {
         return dot(v);
     }
     /// ditto
-    float dot(vec4 v) const
+    float dot(const Vector v) const
     {
-        float res = 0;
-        res += vec[0] * v.vec[0];
-        res += vec[1] * v.vec[1];
-        res += vec[2] * v.vec[2];
-        res += vec[3] * v.vec[3];
-        return res;
+        float ret = 0;
+        static foreach (i; 0 .. N)
+            ret += vec[i] * v.vec[i];
+        return ret;
     }
 
-    /// Returns vector with all components which are negative of components for this vector
-    vec4 opUnary(string op : "-")() const
+    static if (N == 2)
     {
-        vec4 ret = this;
-        ret.vec[] *= -1;
-        return ret;
+        /// Cross product of two Vec2 is scalar in Z axis
+        float crossProduct(const Vector v2) const
+        {
+            return x * v2.y - y * v2.x;
+        }
+    }
+    static if (N == 3)
+    {
+        /// 3D cross product
+        static Vector crossProduct(const Vector v1, const Vector v2)
+        {
+            return Vector(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x);
+        }
+    }
+
+    static if (N == 3)
+    {
+        /// Multiply vector by matrix
+        Vector opBinary(string op : "*")(const ref mat4 m) const
+        {
+            float xx = x * m.m[0 * 4 + 0] + y * m.m[0 * 4 + 1] + z * m.m[0 * 4 + 2] + m.m[0 * 4 + 3];
+            float yy = x * m.m[1 * 4 + 0] + y * m.m[1 * 4 + 1] + z * m.m[1 * 4 + 2] + m.m[1 * 4 + 3];
+            float zz = x * m.m[2 * 4 + 0] + y * m.m[2 * 4 + 1] + z * m.m[2 * 4 + 2] + m.m[2 * 4 + 3];
+            float ww = x * m.m[3 * 4 + 0] + y * m.m[3 * 4 + 1] + z * m.m[3 * 4 + 2] + m.m[3 * 4 + 3];
+            if (ww == 1.0f)
+                return Vector(xx, yy, zz);
+            else
+                return Vector(xx / ww, yy / ww, zz / ww);
+        }
+    }
+    static if (N == 4)
+    {
+        /// Multiply vector by matrix
+        Vector opBinary(string op : "*")(const ref mat4 m) const
+        {
+            float xx = x * m.m[0 * 4 + 0] + y * m.m[0 * 4 + 1] + z * m.m[0 * 4 + 2] + w * m.m[0 * 4 + 3];
+            float yy = x * m.m[1 * 4 + 0] + y * m.m[1 * 4 + 1] + z * m.m[1 * 4 + 2] + w * m.m[1 * 4 + 3];
+            float zz = x * m.m[2 * 4 + 0] + y * m.m[2 * 4 + 1] + z * m.m[2 * 4 + 2] + w * m.m[2 * 4 + 3];
+            float ww = x * m.m[3 * 4 + 0] + y * m.m[3 * 4 + 1] + z * m.m[3 * 4 + 2] + w * m.m[3 * 4 + 3];
+            return Vector(xx, yy, zz, ww);
+        }
     }
 
     /// Sum of squares of all vector components
     @property float magnitudeSquared()
     {
-        return vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2] + vec[3] * vec[3];
+        float ret = 0;
+        static foreach (i; 0 .. N)
+            ret += vec[i] * vec[i];
+        return ret;
     }
 
     /// Length of vector
@@ -508,27 +237,25 @@ struct vec4
     }
 
     /// Returns normalized copy of this vector
-    @property vec4 normalized()
+    @property Vector normalized()
     {
         return this / length;
     }
 
-    /// Multiply vector by matrix
-    vec4 opBinary(string op : "*")(const ref mat4 matrix) const
-    {
-        float xx, yy, zz, ww;
-        xx = x * matrix.m[0 * 4 + 0] + y * matrix.m[0 * 4 + 1] + z * matrix.m[0 * 4 + 2] + w * matrix.m[0 * 4 + 3];
-        yy = x * matrix.m[1 * 4 + 0] + y * matrix.m[1 * 4 + 1] + z * matrix.m[1 * 4 + 2] + w * matrix.m[1 * 4 + 3];
-        zz = x * matrix.m[2 * 4 + 0] + y * matrix.m[2 * 4 + 1] + z * matrix.m[2 * 4 + 2] + w * matrix.m[2 * 4 + 3];
-        ww = x * matrix.m[3 * 4 + 0] + y * matrix.m[3 * 4 + 1] + z * matrix.m[3 * 4 + 2] + w * matrix.m[3 * 4 + 3];
-        return vec4(xx, yy, zz, ww);
-    }
-
     @property string toString()
     {
-        return "(%f,%f,%f,%f)".format(x, y, z, w);
+        static if (N == 2)
+            return "(%f, %f)".format(x, y);
+        static if (N == 3)
+            return "(%f, %f, %f)".format(x, y, z);
+        static if (N == 4)
+            return "(%f, %f, %f, %f)".format(x, y, z, w);
     }
 }
+
+alias vec2 = Vector!2;
+alias vec3 = Vector!3;
+alias vec4 = Vector!4;
 
 bool fuzzyNull(float v)
 {
