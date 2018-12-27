@@ -26,6 +26,8 @@ import beamui.core.math3d;
 import beamui.core.types;
 import beamui.graphics.colors : Color;
 import beamui.graphics.gl.errors;
+import beamui.graphics.gl.objects;
+package(beamui) import beamui.graphics.gl.objects : glNoContext;
 
 version (Android)
 {
@@ -429,8 +431,6 @@ private __gshared GLSupport _glSupport;
     }
     return _glSupport;
 }
-
-__gshared bool glNoContext;
 
 /// Load OpenGL 1.0 and 1.1 functions
 bool initBasicOpenGL()
@@ -900,112 +900,6 @@ final class GLSupport
     }
 }
 
-enum GLObjectTypes
-{
-    Buffer,
-    VertexArray,
-    Texture,
-    Framebuffer
-}
-/**
-    RAII OpenGL object template.
-    Note: on construction it binds itself to the target, and it binds 0 to target on destruction.
-    All methods (except ctor, dtor, bind(), unbind() and setup()) does not perform binding.
-*/
-class GLObject(GLObjectTypes type, GLuint target = 0)
-{
-    immutable GLuint ID;
-    //alias ID this; // good, but it confuses destroy()
-
-    this()
-    {
-        GLuint handle;
-        mixin("checkgl!glGen" ~ to!string(type) ~ "s(1, &handle);");
-        ID = handle;
-        bind();
-    }
-
-    ~this()
-    {
-        if (!glNoContext)
-        {
-            unbind();
-            mixin("checkgl!glDelete" ~ to!string(type) ~ "s(1, &ID);");
-        }
-    }
-
-    void bind()
-    {
-        static if (target != 0)
-            mixin("glBind" ~ to!string(type) ~ "(" ~ to!string(target) ~ ", ID);");
-        else
-            mixin("glBind" ~ to!string(type) ~ "(ID);");
-    }
-
-    static void unbind()
-    {
-        static if (target != 0)
-            mixin("checkgl!glBind" ~ to!string(type) ~ "(" ~ to!string(target) ~ ", 0);");
-        else
-            mixin("checkgl!glBind" ~ to!string(type) ~ "(0);");
-    }
-
-    static if (type == GLObjectTypes.Buffer)
-    {
-        void fill(float[][] buffs)
-        {
-            int length;
-            foreach (b; buffs)
-                length += b.length;
-            checkgl!glBufferData(target, length * float.sizeof, null, GL_STATIC_DRAW);
-            int offset;
-            foreach (b; buffs)
-            {
-                checkgl!glBufferSubData(target, offset, b.length * float.sizeof, b.ptr);
-                offset += b.length * float.sizeof;
-            }
-        }
-
-        static if (target == GL_ELEMENT_ARRAY_BUFFER)
-        {
-            void fill(int[] indexes)
-            {
-                checkgl!glBufferData(target, cast(int)(indexes.length * int.sizeof), indexes.ptr, GL_STATIC_DRAW);
-            }
-        }
-    }
-
-    static if (type == GLObjectTypes.Texture)
-    {
-        void setSamplerParams(bool linear, bool clamp = false, bool mipmap = false)
-        {
-            glTexParameteri(target, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-            glTexParameteri(target, GL_TEXTURE_MIN_FILTER, linear ? (!mipmap ? GL_LINEAR
-                    : GL_LINEAR_MIPMAP_LINEAR) : (!mipmap ? GL_NEAREST : GL_NEAREST_MIPMAP_NEAREST));
-            checkError("filtering - glTexParameteri");
-            if (clamp)
-            {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                checkError("clamp - glTexParameteri");
-            }
-        }
-
-        void setup(GLuint binding = 0)
-        {
-            glActiveTexture(GL_TEXTURE0 + binding);
-            glBindTexture(target, ID);
-            checkError("setup texture");
-        }
-    }
-}
-
-alias VAO = GLObject!(GLObjectTypes.VertexArray);
-alias VBO = GLObject!(GLObjectTypes.Buffer, GL_ARRAY_BUFFER);
-alias EBO = GLObject!(GLObjectTypes.Buffer, GL_ELEMENT_ARRAY_BUFFER);
-alias Tex2D = GLObject!(GLObjectTypes.Texture, GL_TEXTURE_2D);
-alias FBO = GLObject!(GLObjectTypes.Framebuffer, GL_FRAMEBUFFER);
-
 /// OpenGL GUI rendering queue. It collects gui draw calls, fills a big buffer for vertex data and draws everything
 private final class OpenGLQueue
 {
@@ -1079,7 +973,7 @@ private final class OpenGLQueue
             Color color3, Color color4, Rect srcrc, Rect dstrc, bool linear)
     {
         if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.texturedRect ||
-                batches.data[$ - 1].texture.ID != texture.ID || batches.data[$ - 1].textureLinear != linear)
+                batches.data[$ - 1].texture.id != texture.id || batches.data[$ - 1].textureLinear != linear)
         {
             batches ~= OpenGLBatch(OpenGLBatch.BatchType.texturedRect, texture, textureDx, textureDy, linear);
             if (batches.data.length > 1)

@@ -23,6 +23,7 @@ import beamui.core.math3d;
 import beamui.graphics.colors;
 import beamui.graphics.drawbuf;
 import beamui.graphics.glsupport;
+import beamui.graphics.gl.objects : Tex2D;
 
 /// Drawing buffer - image container which allows to perform some drawing operations
 class GLDrawBuf : DrawBuf
@@ -280,17 +281,17 @@ private abstract class GLCache
         {
             if (_drawbuf is null)
                 return; // no draw buffer!!!
-            if (_texture is null || _texture.ID == 0)
+            if (_texture is null || _texture.id == 0)
             {
                 _texture = new Tex2D;
-                Log.d("updateTexture - new texture id=", _texture.ID);
-                if (!_texture.ID)
+                Log.d("updateTexture - new texture id=", _texture.id);
+                if (!_texture.id)
                     return;
             }
             // FIXME
             //             Log.d("updateTexture for cache page - setting image ",
             //                 _drawbuf.width, "x", _drawbuf.height,
-            //                 " tex id = ", _texture ? _texture.ID : 0);
+            //                 " tex id = ", _texture ? _texture.id : 0);
             uint* pixels = _drawbuf.scanLine(0);
             if (!glSupport.setTextureImage(_texture, _drawbuf.width, _drawbuf.height, cast(ubyte*)pixels))
             {
@@ -492,7 +493,7 @@ private class GLImageCache : GLCache
         {
             if (_needUpdateTexture)
                 updateTexture();
-            if (_texture && _texture.ID != 0)
+            if (_texture && _texture.id != 0)
             {
                 int rx = dstrc.middlex;
                 int ry = dstrc.middley;
@@ -595,7 +596,7 @@ private class GLGlyphCache : GLCache
         {
             if (_needUpdateTexture)
                 updateTexture();
-            if (_texture && _texture.ID != 0)
+            if (_texture && _texture.id != 0)
             {
                 // convert coordinates to cached texture
                 srcrc.offset(item._rc.left, item._rc.top);
