@@ -7,6 +7,9 @@ Authors:   dayllenger
 */
 module beamui.graphics.gl.errors;
 
+import beamui.core.config;
+
+static if (USE_OPENGL):
 import std.conv : to;
 import derelict.opengl3.gl3 : glGetError, GL_NO_ERROR;
 import derelict.opengl3.types : GLenum;
