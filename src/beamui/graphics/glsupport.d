@@ -417,20 +417,9 @@ class TextureProgram : SolidFillProgram
     }
 }
 
-private __gshared GLSupport _glSupport;
-@property GLSupport glSupport()
-{
-    if (!_glSupport)
-    {
-        Log.f("GLSupport is not initialized");
-        assert(false, "GLSupport is not initialized");
-    }
-    if (!_glSupport.valid)
-    {
-        Log.e("GLSupport programs are not initialized");
-    }
-    return _glSupport;
-}
+private __gshared GLBackend _glSupport;
+/// Returns GL backend instance. Null if GL is not loaded.
+@property GLBackend glSupport() { return _glSupport; }
 
 /// Load OpenGL 1.0 and 1.1 functions
 bool initBasicOpenGL()
@@ -450,10 +439,10 @@ bool initBasicOpenGL()
     }
 }
 
-/// Initialize OpenGL support helper (call only when current OpenGL context is initialized)
+/// Initialize OpenGL backend (call only when current OpenGL context is initialized)
 bool initGLSupport(bool legacy)
 {
-    if (_glSupport && _glSupport.valid)
+    if (_glSupport)
         return true;
     version (Android)
     {
@@ -498,125 +487,69 @@ bool initGLSupport(bool legacy)
         }
         legacy = glReloaded && !gl3Reloaded;
     }
-    if (!_glSupport)
+
+    char major = glGetString(GL_VERSION)[0];
+    legacy = legacy || major < '3';
+    if (!legacy)
     {
-        int major = *cast(int*)(glGetString(GL_VERSION)[0 .. 1].ptr);
-        legacy = legacy || major < 3;
-        _glSupport = new GLSupport(legacy);
-        if (!_glSupport.valid)
+        auto normal = new NormalGLBackend;
+        if (normal.valid)
         {
-            Log.e("Failed to compile shaders");
-            version (Android)
-            {
-                // do not recreate legacy mode
-                return false;
-            }
-            else
-            {
-                // try opposite legacy flag
-                if (_glSupport.legacyMode == legacy)
-                {
-                    Log.i("Trying to reinit GLSupport with legacy flag ", !legacy);
-                    _glSupport = new GLSupport(!legacy);
-                }
-                // situation when opposite legacy flag is true and GL version is 3+ with no old functions
-                if (_glSupport.legacyMode)
-                {
-                    if (major >= 3)
-                    {
-                        Log.e("Try to create OpenGL context with <= 3.1 version");
-                        return false;
-                    }
-                }
-            }
+            _glSupport = normal;
+            Log.v("OpenGL initialized successfully");
+            return true;
         }
+        else
+            destroy(normal);
     }
-    if (_glSupport.valid)
+    // trying legacy
+    static if (SUPPORT_LEGACY_OPENGL)
     {
-        Log.v("OpenGL is initialized ok");
+        // situation when GL version is 3+ with no old functions
+        if (!glLightfv)
+        {
+            Log.w("Legacy GL API is not supported");
+            if (major >= '3')
+                Log.w("Try to create OpenGL context with <= 3.1 version");
+            return false;
+        }
+        _glSupport = new LegacyGLBackend;
+        Log.v("OpenGL initialized successfully");
         return true;
     }
     else
     {
-        Log.e("Failed to compile shaders");
+        // do not recreate legacy mode
         return false;
     }
 }
 
-/// OpenGL support helper
-final class GLSupport
+/// Open GL drawing backend
+abstract class GLBackend
 {
-    private bool _legacyMode;
-    @property bool legacyMode()
+    @property OpenGLQueue queue() { return _queue; }
+    /// Projection matrix
+    @property ref mat4 projectionMatrix() { return _projectionMatrix; }
+
+    private
     {
-        return _legacyMode;
+        OpenGLQueue _queue;
+        /// Current gl buffer width
+        int bufferDx;
+        /// Current gl buffer height
+        int bufferDy;
+        mat4 _projectionMatrix;
     }
 
-    @property queue()
+    this()
     {
-        return _queue;
-    }
-
-    @property bool valid()
-    {
-        return _legacyMode || _shadersAreInitialized;
-    }
-
-    this(bool legacy)
-    {
-        Log.d("Creating GLSupport");
+        Log.d("Creating GL backend");
         _queue = new OpenGLQueue;
-        version (Android)
-        {
-        }
-        else
-        {
-            if (legacy && !glLightfv)
-            {
-                Log.w("GLSupport legacy API is not supported");
-                legacy = false;
-            }
-        }
-        _legacyMode = legacy;
-        if (!_legacyMode)
-            _shadersAreInitialized = initShaders();
     }
 
     ~this()
     {
-        Log.d("Uniniting shaders");
-        eliminate(_solidFillProgram);
-        eliminate(_textureProgram);
-
         eliminate(_queue);
-    }
-
-    private OpenGLQueue _queue;
-
-    private SolidFillProgram _solidFillProgram;
-    private TextureProgram _textureProgram;
-
-    private bool _shadersAreInitialized;
-    private bool initShaders()
-    {
-        if (_solidFillProgram is null)
-        {
-            Log.v("Compiling solid fill program");
-            _solidFillProgram = new SolidFillProgram;
-            _solidFillProgram.compile();
-            if (!_solidFillProgram.check())
-                return false;
-        }
-        if (_textureProgram is null)
-        {
-            Log.v("Compiling texture program");
-            _textureProgram = new TextureProgram;
-            _textureProgram.compile();
-            if (!_textureProgram.check())
-                return false;
-        }
-        Log.d("Shaders compiled successfully");
-        return true;
     }
 
     void beforeRenderGUI()
@@ -626,153 +559,23 @@ final class GLSupport
         checkgl!glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
-    private VBO vbo;
-    private EBO ebo;
+    protected void fillBuffers(float[] vertices, float[] colors, float[] texcoords, int[] indices) {}
 
-    private void fillBuffers(float[] vertices, float[] colors, float[] texcoords, int[] indices)
-    {
-        resetBindings();
+    protected void destroyBuffers() {}
 
-        if (_legacyMode)
-            return;
+    protected void drawLines(int length, int start);
 
-        vbo = new VBO;
-        ebo = new EBO;
+    protected void drawSolidFillTriangles(int length, int start);
 
-        vbo.bind();
-        vbo.fill([vertices, colors, texcoords]);
-
-        ebo.bind();
-        ebo.fill(indices);
-
-        // create vertex array objects and bind vertex buffers to them
-        _solidFillProgram.createVAO(vertices.length);
-        vbo.bind();
-        ebo.bind();
-        _textureProgram.createVAO(vertices.length, colors.length);
-        vbo.bind();
-        ebo.bind();
-    }
-
-    /// This function is needed to draw custom OpenGL scene correctly (especially on legacy API)
-    private void resetBindings()
-    {
-        import std.traits : isFunction;
-
-        if (isFunction!glUseProgram)
-            GLProgram.unbind();
-        if (isFunction!glBindVertexArray)
-            VAO.unbind();
-        if (isFunction!glBindBuffer)
-            VBO.unbind();
-    }
-
-    private void destroyBuffers()
-    {
-        resetBindings();
-
-        if (_legacyMode)
-            return;
-
-        if (_solidFillProgram)
-            _solidFillProgram.destroyBuffers();
-        if (_textureProgram)
-            _textureProgram.destroyBuffers();
-
-        eliminate(vbo);
-        eliminate(ebo);
-    }
-
-    private void drawLines(int length, int start)
-    {
-        if (_legacyMode)
-        {
-            static if (SUPPORT_LEGACY_OPENGL)
-            {
-                glEnableClientState(GL_VERTEX_ARRAY);
-                glEnableClientState(GL_COLOR_ARRAY);
-                glVertexPointer(3, GL_FLOAT, 0, cast(void*)_queue._vertices.data.ptr);
-                glColorPointer(4, GL_FLOAT, 0, cast(void*)_queue._colors.data.ptr);
-
-                checkgl!glDrawElements(GL_LINES, cast(int)length, GL_UNSIGNED_INT,
-                        cast(void*)(_queue._indices.data[start .. start + length].ptr));
-
-                glDisableClientState(GL_COLOR_ARRAY);
-                glDisableClientState(GL_VERTEX_ARRAY);
-            }
-        }
-        else
-        {
-            assert(_solidFillProgram !is null);
-            _solidFillProgram.drawBatch(length, start, true);
-        }
-    }
-
-    private void drawSolidFillTriangles(int length, int start)
-    {
-        if (_legacyMode)
-        {
-            static if (SUPPORT_LEGACY_OPENGL)
-            {
-                glEnableClientState(GL_VERTEX_ARRAY);
-                glEnableClientState(GL_COLOR_ARRAY);
-                glVertexPointer(3, GL_FLOAT, 0, cast(void*)_queue._vertices.data.ptr);
-                glColorPointer(4, GL_FLOAT, 0, cast(void*)_queue._colors.data.ptr);
-
-                checkgl!glDrawElements(GL_TRIANGLES, cast(int)length, GL_UNSIGNED_INT,
-                        cast(void*)(_queue._indices.data[start .. start + length].ptr));
-
-                glDisableClientState(GL_COLOR_ARRAY);
-                glDisableClientState(GL_VERTEX_ARRAY);
-            }
-        }
-        else
-        {
-            assert(_solidFillProgram !is null);
-            _solidFillProgram.drawBatch(length, start);
-        }
-    }
-
-    private void drawColorAndTextureTriangles(Tex2D texture, bool linear, int length, int start)
-    {
-        if (_legacyMode)
-        {
-            static if (SUPPORT_LEGACY_OPENGL)
-            {
-                glEnable(GL_TEXTURE_2D);
-                texture.setup();
-                texture.setSamplerParams(linear);
-
-                glEnableClientState(GL_COLOR_ARRAY);
-                glEnableClientState(GL_VERTEX_ARRAY);
-                glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-                glVertexPointer(3, GL_FLOAT, 0, cast(void*)_queue._vertices.data.ptr);
-                glTexCoordPointer(2, GL_FLOAT, 0, cast(void*)_queue._texCoords.data.ptr);
-                glColorPointer(4, GL_FLOAT, 0, cast(void*)_queue._colors.data.ptr);
-
-                checkgl!glDrawElements(GL_TRIANGLES, cast(int)length, GL_UNSIGNED_INT,
-                        cast(void*)(_queue._indices.data[start .. start + length].ptr));
-
-                glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-                glDisableClientState(GL_VERTEX_ARRAY);
-                glDisableClientState(GL_COLOR_ARRAY);
-                glDisable(GL_TEXTURE_2D);
-            }
-        }
-        else
-        {
-            assert(_textureProgram !is null);
-            _textureProgram.drawBatch(texture, linear, length, start);
-        }
-    }
+    protected void drawColorAndTextureTriangles(Tex2D texture, bool linear, int length, int start);
 
     /// Call glFlush
-    void flushGL()
+    final void flushGL()
     {
         checkgl!glFlush();
     }
 
-    bool generateMipmap(int dx, int dy, ubyte* pixels, int level, ref ubyte[] dst)
+    final bool generateMipmap(int dx, int dy, ubyte* pixels, int level, ref ubyte[] dst)
     {
         if ((dx & 1) || (dy & 1) || dx < 2 || dy < 2)
             return false; // size is not even
@@ -784,18 +587,18 @@ final class GLSupport
         ubyte* dstptr = dst.ptr;
         ubyte* srcptr = pixels;
         int srcstride = dx * 4;
-        for (int y = 0; y < newdy; y++)
+        foreach (y; 0 .. newdy)
         {
-            for (int x = 0; x < newdx; x++)
+            foreach (x; 0 .. newdx)
             {
-                dstptr[0] = cast(ubyte)((srcptr[0 + 0] + srcptr[0 + 4] + srcptr[0 + srcstride] + srcptr[0 + srcstride +
-                        4]) >> 2);
-                dstptr[1] = cast(ubyte)((srcptr[1 + 0] + srcptr[1 + 4] + srcptr[1 + srcstride] + srcptr[1 + srcstride +
-                        4]) >> 2);
-                dstptr[2] = cast(ubyte)((srcptr[2 + 0] + srcptr[2 + 4] + srcptr[2 + srcstride] + srcptr[2 + srcstride +
-                        4]) >> 2);
-                dstptr[3] = cast(ubyte)((srcptr[3 + 0] + srcptr[3 + 4] + srcptr[3 + srcstride] + srcptr[3 + srcstride +
-                        4]) >> 2);
+                dstptr[0] = cast(ubyte)((srcptr[0 + 0] + srcptr[0 + 4] +srcptr[0 + srcstride] +
+                    srcptr[0 + srcstride + 4]) >> 2);
+                dstptr[1] = cast(ubyte)((srcptr[1 + 0] + srcptr[1 + 4] +srcptr[1 + srcstride] +
+                    srcptr[1 + srcstride + 4]) >> 2);
+                dstptr[2] = cast(ubyte)((srcptr[2 + 0] + srcptr[2 + 4] +srcptr[2 + srcstride] +
+                    srcptr[2 + srcstride + 4]) >> 2);
+                dstptr[3] = cast(ubyte)((srcptr[3 + 0] + srcptr[3 + 4] +srcptr[3 + srcstride] +
+                    srcptr[3 + srcstride + 4]) >> 2);
                 dstptr += 4;
                 srcptr += 8;
             }
@@ -805,7 +608,7 @@ final class GLSupport
         return true;
     }
 
-    bool setTextureImage(Tex2D texture, int dx, int dy, ubyte* pixels, int mipmapLevels = 0)
+    final bool setTextureImage(Tex2D texture, int dx, int dy, ubyte* pixels, int mipmapLevels = 0)
     {
         checkError("before setTextureImage");
         texture.bind();
@@ -840,7 +643,7 @@ final class GLSupport
         return true;
     }
 
-    bool setTextureImageAlpha(Tex2D texture, int dx, int dy, ubyte* pixels)
+    final bool setTextureImageAlpha(Tex2D texture, int dx, int dy, ubyte* pixels)
     {
         checkError("before setTextureImageAlpha");
         texture.bind();
@@ -857,45 +660,215 @@ final class GLSupport
         return true;
     }
 
-    void clearDepthBuffer()
+    final void clearDepthBuffer()
     {
         glClear(GL_DEPTH_BUFFER_BIT);
         //glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
 
-    /// Projection matrix
-    /// Current gl buffer width
-    private int bufferDx;
-    /// Current gl buffer height
-    private int bufferDy;
-    private mat4 _projectionMatrix;
+    void setOrthoProjection(Rect windowRect, Rect view);
+}
 
-    @property ref mat4 projectionMatrix()
+/// Backend for OpenGL 3.0+
+private final class NormalGLBackend : GLBackend
+{
+    @property bool valid()
     {
-        return _projectionMatrix;
+        return _shadersAreInitialized;
     }
 
-    void setOrthoProjection(Rect windowRect, Rect view)
+    private
     {
-        flushGL(); // FIXME: needed?
+        SolidFillProgram _solidFillProgram;
+        TextureProgram _textureProgram;
+        bool _shadersAreInitialized;
+
+        VBO vbo;
+        EBO ebo;
+    }
+
+    this()
+    {
+        _shadersAreInitialized = initShaders();
+        if (_shadersAreInitialized)
+            Log.d("Shaders compiled successfully");
+        else
+            Log.e("Failed to compile shaders");
+    }
+
+    ~this()
+    {
+        Log.d("Uniniting shaders");
+        eliminate(_solidFillProgram);
+        eliminate(_textureProgram);
+    }
+
+    private bool initShaders()
+    {
+        Log.v("Compiling solid fill program");
+        _solidFillProgram = new SolidFillProgram;
+        _solidFillProgram.compile();
+        if (!_solidFillProgram.check())
+            return false;
+        Log.v("Compiling texture program");
+        _textureProgram = new TextureProgram;
+        _textureProgram.compile();
+        if (!_textureProgram.check())
+            return false;
+        return true;
+    }
+
+    override protected void fillBuffers(float[] vertices, float[] colors, float[] texcoords, int[] indices)
+    {
+        assert(_solidFillProgram && _textureProgram);
+
+        resetBindings();
+
+        vbo = new VBO;
+        ebo = new EBO;
+
+        vbo.bind();
+        vbo.fill([vertices, colors, texcoords]);
+
+        ebo.bind();
+        ebo.fill(indices);
+
+        // create vertex array objects and bind vertex buffers to them
+        _solidFillProgram.createVAO(vertices.length);
+        vbo.bind();
+        ebo.bind();
+        _textureProgram.createVAO(vertices.length, colors.length);
+        vbo.bind();
+        ebo.bind();
+    }
+
+    override protected void destroyBuffers()
+    {
+        assert(_solidFillProgram && _textureProgram);
+
+        resetBindings();
+
+        _solidFillProgram.destroyBuffers();
+        _textureProgram.destroyBuffers();
+
+        eliminate(vbo);
+        eliminate(ebo);
+    }
+
+    /// This function is needed to draw custom OpenGL scene correctly (especially on legacy API)
+    private static void resetBindings()
+    {
+        if (defined!glUseProgram)
+            GLProgram.unbind();
+        if (defined!glBindVertexArray)
+            VAO.unbind();
+        if (defined!glBindBuffer)
+            VBO.unbind();
+    }
+
+    private static bool defined(alias func)()
+    {
+        import std.traits : isFunction;
+
+        static if (isFunction!func)
+            return true;
+        else
+            return func !is null;
+    }
+
+    override protected void drawLines(int length, int start)
+    {
+        _solidFillProgram.drawBatch(length, start, true);
+    }
+
+    override protected void drawSolidFillTriangles(int length, int start)
+    {
+        _solidFillProgram.drawBatch(length, start);
+    }
+
+    override protected void drawColorAndTextureTriangles(Tex2D texture, bool linear, int length, int start)
+    {
+        _textureProgram.drawBatch(texture, linear, length, start);
+    }
+
+    override void setOrthoProjection(Rect windowRect, Rect view)
+    {
         bufferDx = windowRect.width;
         bufferDy = windowRect.height;
         _projectionMatrix.setOrtho(view.left, view.right, view.top, view.bottom, 0.5f, 50.0f);
 
-        if (_legacyMode)
-        {
-            static if (SUPPORT_LEGACY_OPENGL)
-            {
-                glMatrixMode(GL_PROJECTION);
-                //checkgl!glPushMatrix();
-                //glLoadIdentity();
-                glLoadMatrixf(_projectionMatrix.m.ptr);
-                //glOrthof(0, _dx, 0, _dy, -1.0f, 1.0f);
-                glMatrixMode(GL_MODELVIEW);
-                //checkgl!glPushMatrix();
-                glLoadIdentity();
-            }
-        }
+        checkgl!glViewport(view.left, windowRect.height - view.bottom, view.width, view.height);
+    }
+}
+
+static if (SUPPORT_LEGACY_OPENGL)
+/// Backend for old fixed pipeline OpenGL
+private final class LegacyGLBackend : GLBackend
+{
+    override protected void drawLines(int length, int start)
+    {
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
+        glVertexPointer(3, GL_FLOAT, 0, cast(void*)_queue._vertices.data.ptr);
+        glColorPointer(4, GL_FLOAT, 0, cast(void*)_queue._colors.data.ptr);
+
+        checkgl!glDrawElements(GL_LINES, cast(int)length, GL_UNSIGNED_INT,
+                cast(void*)(_queue._indices.data[start .. start + length].ptr));
+
+        glDisableClientState(GL_COLOR_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+    }
+
+    override protected void drawSolidFillTriangles(int length, int start)
+    {
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
+        glVertexPointer(3, GL_FLOAT, 0, cast(void*)_queue._vertices.data.ptr);
+        glColorPointer(4, GL_FLOAT, 0, cast(void*)_queue._colors.data.ptr);
+
+        checkgl!glDrawElements(GL_TRIANGLES, cast(int)length, GL_UNSIGNED_INT,
+                cast(void*)(_queue._indices.data[start .. start + length].ptr));
+
+        glDisableClientState(GL_COLOR_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+    }
+
+    override protected void drawColorAndTextureTriangles(Tex2D texture, bool linear, int length, int start)
+    {
+        glEnable(GL_TEXTURE_2D);
+        texture.setup();
+        texture.setSamplerParams(linear);
+
+        glEnableClientState(GL_COLOR_ARRAY);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glVertexPointer(3, GL_FLOAT, 0, cast(void*)_queue._vertices.data.ptr);
+        glTexCoordPointer(2, GL_FLOAT, 0, cast(void*)_queue._texCoords.data.ptr);
+        glColorPointer(4, GL_FLOAT, 0, cast(void*)_queue._colors.data.ptr);
+
+        checkgl!glDrawElements(GL_TRIANGLES, cast(int)length, GL_UNSIGNED_INT,
+                cast(void*)(_queue._indices.data[start .. start + length].ptr));
+
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_COLOR_ARRAY);
+        glDisable(GL_TEXTURE_2D);
+    }
+
+    override void setOrthoProjection(Rect windowRect, Rect view)
+    {
+        bufferDx = windowRect.width;
+        bufferDy = windowRect.height;
+        _projectionMatrix.setOrtho(view.left, view.right, view.top, view.bottom, 0.5f, 50.0f);
+
+        glMatrixMode(GL_PROJECTION);
+        //checkgl!glPushMatrix();
+        //glLoadIdentity();
+        glLoadMatrixf(_projectionMatrix.m.ptr);
+        //glOrthof(0, _dx, 0, _dy, -1.0f, 1.0f);
+        glMatrixMode(GL_MODELVIEW);
+        //checkgl!glPushMatrix();
+        glLoadIdentity();
         checkgl!glViewport(view.left, windowRect.height - view.bottom, view.width, view.height);
     }
 }
