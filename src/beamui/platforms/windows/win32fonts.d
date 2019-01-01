@@ -199,7 +199,7 @@ class Win32Font : Font
     {
         int size() { return _size; }
         int height() { return _height; }
-        int weight() { return _weight; }
+        ushort weight() { return _weight; }
         int baseline() { return _baseline; }
         bool italic() { return _italic; }
         string face() { return _face; }
@@ -217,7 +217,7 @@ class Win32Font : Font
         int _dpi;
         int _size;
         int _height;
-        int _weight;
+        ushort _weight;
         int _baseline;
         bool _italic;
         string _face;
@@ -441,7 +441,7 @@ class Win32Font : Font
     }
 
     /// Init from font definition
-    bool create(FontDef* def, int size, int weight, bool italic)
+    bool create(FontDef* def, int size, ushort weight, bool italic)
     {
         if (!isNull())
             clear();
@@ -562,7 +562,7 @@ class Win32FontManager : FontManager
     /// For returning of not found font
     FontRef _emptyFontRef;
 
-    override protected ref FontRef getFontImpl(int size, int weight, bool italic, FontFamily family, string face)
+    override protected ref FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)
     {
         //Log.i("getFont()");
         FontDef* def = findFace(family, face);

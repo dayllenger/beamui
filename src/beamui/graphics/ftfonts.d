@@ -33,9 +33,9 @@ private struct FontDef
     immutable FontFamily family;
     immutable string face;
     immutable bool italic;
-    immutable int weight;
+    immutable ushort weight;
 
-    this(FontFamily family, string face, bool italic, int weight)
+    this(FontFamily family, string face, bool italic, ushort weight)
     {
         this.family = family;
         this.face = face;
@@ -132,7 +132,7 @@ class FreeTypeFontFile
         int _height;
         int _size;
         int _baseline;
-        int _weight;
+        ushort _weight;
         bool _italic;
 
         bool _allowKerning = true;
@@ -173,7 +173,7 @@ class FreeTypeFontFile
         int height() const { return _height; }
         int size() const { return _size; }
         int baseline() const { return _baseline; }
-        int weight() const { return _weight; }
+        ushort weight() const { return _weight; }
         bool italic() const { return _italic; }
     }
 
@@ -399,7 +399,7 @@ class FreeTypeFont : Font
         {
             return _files.count > 0 ? _files[0].height : _size;
         }
-        int weight()
+        ushort weight()
         {
             return _fontItem.def.weight;
         }
@@ -637,7 +637,7 @@ class FreeTypeFontManager : FontManager
         return stdFontFacePriority(existing) * 10;
     }
 
-    private FontFileItem findBestMatch(int weight, bool italic, FontFamily family, string face)
+    private FontFileItem findBestMatch(ushort weight, bool italic, FontFamily family, string face)
     {
         FontFileItem best = null;
         int bestScore = 0;
@@ -734,7 +734,7 @@ class FreeTypeFontManager : FontManager
             FT_Done_FreeType(_library);
     }
 
-    override protected ref FontRef getFontImpl(int size, int weight, bool italic, FontFamily family, string face)
+    override protected ref FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)
     {
         FontFileItem f = findBestMatch(weight, italic, family, face);
         if (f is null)
@@ -773,7 +773,7 @@ class FreeTypeFontManager : FontManager
         FontFamily family = FontFamily.sans_serif;
         string face;
         bool italic;
-        int weight;
+        ushort weight;
         string name = filename.baseName;
         switch (name)
         {
@@ -817,7 +817,7 @@ class FreeTypeFontManager : FontManager
 
     /// Register freetype font by filename - optinally font properties can be passed if known (e.g. from libfontconfig).
     bool registerFont(string filename, FontFamily family, string face = null, bool italic = false,
-            int weight = 0, bool dontLoadFile = false)
+            ushort weight = 0, bool dontLoadFile = false)
     {
         if (_library is null)
             return false;
@@ -964,7 +964,7 @@ version (Posix)
 
             bool italic = fcslant != FC_SLANT_ROMAN;
 
-            int weight = 400;
+            ushort weight = 400;
             switch (fcweight)
             {
             case FC_WEIGHT_THIN:

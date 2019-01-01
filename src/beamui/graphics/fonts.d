@@ -158,7 +158,7 @@ class Font : RefCountedObject
         /// Returns actual font height including interline space
         abstract int height() const;
         /// Returns font weight
-        abstract int weight() const;
+        abstract ushort weight() const;
         /// Returns baseline offset
         abstract int baseline() const;
         /// Returns true if font is italic
@@ -575,7 +575,7 @@ struct FontList
     }
 
     /// Find by a set of parameters - returns index of found item, -1 if not found
-    ptrdiff_t find(int size, int weight, bool italic, FontFamily family, string face)
+    ptrdiff_t find(int size, ushort weight, bool italic, FontFamily family, string face)
     {
         foreach (i, ref item; _list)
         {
@@ -743,12 +743,12 @@ class FontManager
     {
         import std.typecons : Tuple;
 
-        alias FontArgsTuple = Tuple!(int, int, bool, FontFamily, string);
+        alias FontArgsTuple = Tuple!(int, ushort, bool, FontFamily, string);
         static FontRef[FontArgsTuple] fontCache;
     }
 
     /// Get font instance best matched specified parameters
-    final FontRef getFont(int size, int weight, bool italic, FontFamily family, string face)
+    final FontRef getFont(int size, ushort weight, bool italic, FontFamily family, string face)
     {
         auto t = FontArgsTuple(size, weight, italic, family, face);
         if (auto p = t in fontCache)
@@ -758,7 +758,7 @@ class FontManager
         return res;
     }
     /// Non-caching implementation of getFont()
-    abstract protected ref FontRef getFontImpl(int size, int weight, bool italic, FontFamily family, string face);
+    abstract protected ref FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face);
 
     /// Override to return list of font faces available
     FontFaceProps[] getFaces()

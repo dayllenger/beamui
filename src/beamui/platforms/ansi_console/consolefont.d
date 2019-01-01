@@ -21,7 +21,7 @@ class ConsoleFont : Font
     {
         int size() { return 1; }
         int height() { return 1; }
-        int weight() { return 400; }
+        ushort weight() { return 400; }
         int baseline() { return 0; }
         bool italic() { return false; }
         string face() { return "console"; }
@@ -270,7 +270,7 @@ class ConsoleFontManager : FontManager
 
     private FontRef _font;
 
-    override protected ref FontRef getFontImpl(int size, int weight, bool italic, FontFamily family, string face)
+    override protected ref FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)
     {
         return _font;
     }
