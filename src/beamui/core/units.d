@@ -31,16 +31,18 @@ enum LengthUnit
     percent
 }
 
+alias Dimension = Length;
+
 /// Represents length with specified measurement unit
-struct Dimension
+struct Length
 {
     private float value;
     private LengthUnit type;
 
     /// Zero value
-    enum Dimension zero = Dimension(0);
+    enum Length zero = Length(0);
     /// Unspecified value
-    enum Dimension none = Dimension(SIZE_UNSPECIFIED);
+    enum Length none = Length(SIZE_UNSPECIFIED);
 
     /// Construct with raw device pixels
     this(int devicePixels) pure
@@ -55,10 +57,10 @@ struct Dimension
         this.type = type;
     }
 
-    /// Dimension.unit(value) syntax
-    static Dimension opDispatch(string op)(float value)
+    /// Length.unit(value) syntax
+    static Length opDispatch(string op)(float value)
     {
-        return mixin("Dimension(value, LengthUnit." ~ op ~ ")");
+        return mixin("Length(value, LengthUnit." ~ op ~ ")");
     }
 
     bool is_em() const pure
@@ -102,33 +104,33 @@ struct Dimension
         return 0;
     }
 
-    bool opEquals(Dimension u) const pure
+    bool opEquals(Length u) const pure
     {
         // workaround for NaN != NaN
         return this is u;
     }
 
-    Dimension opBinary(string op : "+")(Dimension u) const
+    Length opBinary(string op : "+")(Length u) const
     {
         if (type != u.type) // FIXME: different types
             return this;
         else
-            return Dimension(value + u.value, type);
+            return Length(value + u.value, type);
     }
 
-    Dimension opBinary(string op : "*")(double factor) const
+    Length opBinary(string op : "*")(double factor) const
     {
-        return Dimension(value * factor, type);
+        return Length(value * factor, type);
     }
 
     /// Parse pair (value, unit), where value is a real number, unit is: cm, mm, in, pt, px, em, %.
-    /// Returns Dimension.none if cannot parse.
-    static Dimension parse(string value, string unit) pure
+    /// Returns Length.none if cannot parse.
+    static Length parse(string value, string unit) pure
     {
         import std.conv : to;
 
         if (!value.length || !unit.length)
-            return Dimension.none;
+            return Length.none;
 
         LengthUnit type;
         if (unit == "cm")
@@ -146,16 +148,16 @@ struct Dimension
         else if (unit == "%")
             type = LengthUnit.percent;
         else
-            return Dimension.none;
+            return Length.none;
 
         try
         {
             float v = to!float(value);
-            return Dimension(v, type);
+            return Length(v, type);
         }
         catch (Exception e)
         {
-            return Dimension.none;
+            return Length.none;
         }
     }
 }
