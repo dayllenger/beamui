@@ -2149,47 +2149,12 @@ DrawBuf makeTemporaryImage(uint width, uint height)
     return new ColorDrawBuf(width, height);
 }
 
-// line clipping algorithm from https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
-private alias OutCode = int;
-
-private enum
-{
-    INSIDE = 0, // 0000
-    LEFT = 1, // 0001
-    RIGHT = 2, // 0010
-    BOTTOM = 4, // 0100
-    TOP = 8, // 1000
-}
-
-// Compute the bit code for a point (x, y) using the clip rectangle
-// bounded diagonally by (xmin, ymin), and (xmax, ymax)
-
-// ASSUME THAT xmax, xmin, ymax and ymin are global constants.
-
-private OutCode ComputeOutCode(Rect clipRect, double x, double y)
-{
-    OutCode code;
-
-    code = INSIDE; // initialised as being inside of clip window
-
-    if (x < clipRect.left) // to the left of clip window
-        code |= LEFT;
-    else if (x > clipRect.right) // to the right of clip window
-        code |= RIGHT;
-    if (y < clipRect.top) // below the clip window
-        code |= BOTTOM;
-    else if (y > clipRect.bottom) // above the clip window
-        code |= TOP;
-
-    return code;
-}
-
 package bool clipLine(ref Rect clipRect, ref Point p1, ref Point p2)
 {
-    double x0 = p1.x;
-    double y0 = p1.y;
-    double x1 = p2.x;
-    double y1 = p2.y;
+    float x0 = p1.x;
+    float y0 = p1.y;
+    float x1 = p2.x;
+    float y1 = p2.y;
     bool res = CohenSutherlandLineClipAndDraw(clipRect, x0, y0, x1, y1);
     if (res)
     {
@@ -2204,12 +2169,40 @@ package bool clipLine(ref Rect clipRect, ref Point p1, ref Point p2)
 // Cohen–Sutherland clipping algorithm clips a line from
 // P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with
 // diagonal from (xmin, ymin) to (xmax, ymax).
-private bool CohenSutherlandLineClipAndDraw(ref Rect clipRect, ref double x0, ref double y0, ref double x1, ref double y1)
+// https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
+private bool CohenSutherlandLineClipAndDraw(ref Rect clipRect, ref float x0, ref float y0, ref float x1, ref float y1)
 {
+    enum OutCode : ubyte
+    {
+        inside = 0, // 0000
+        left = 1, // 0001
+        right = 2, // 0010
+        bottom = 4, // 0100
+        top = 8, // 1000
+    }
+
+    // Compute the bit code for a point (x, y) using the clip rectangle
+    // bounded diagonally by (xmin, ymin), and (xmax, ymax)
+    static OutCode computeOutCode(Rect clipRect, float x, float y)
+    {
+        OutCode code; // initialised as being inside of clip window
+
+        if (x < clipRect.left) // to the left of clip window
+            code |= OutCode.left;
+        else if (x > clipRect.right) // to the right of clip window
+            code |= OutCode.right;
+        if (y < clipRect.top) // below the clip window
+            code |= OutCode.bottom;
+        else if (y > clipRect.bottom) // above the clip window
+            code |= OutCode.top;
+
+        return code;
+    }
+
     // compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
-    OutCode outcode0 = ComputeOutCode(clipRect, x0, y0);
-    OutCode outcode1 = ComputeOutCode(clipRect, x1, y1);
-    bool accept = false;
+    OutCode outcode0 = computeOutCode(clipRect, x0, y0);
+    OutCode outcode1 = computeOutCode(clipRect, x1, y1);
+    bool accept;
 
     while (true)
     {
@@ -2226,29 +2219,29 @@ private bool CohenSutherlandLineClipAndDraw(ref Rect clipRect, ref double x0, re
         {
             // failed both tests, so calculate the line segment to clip
             // from an outside point to an intersection with clip edge
-            double x, y;
+            float x, y;
 
             // At least one endpoint is outside the clip rectangle; pick it.
-            OutCode outcodeOut = outcode0 ? outcode0 : outcode1;
+            const outcodeOut = outcode0 ? outcode0 : outcode1;
 
             // Now find the intersection point;
             // use formulas y = y0 + slope * (x - x0), x = x0 + (1 / slope) * (y - y0)
-            if (outcodeOut & TOP)
+            if (outcodeOut & OutCode.top)
             { // point is above the clip rectangle
                 x = x0 + (x1 - x0) * (clipRect.bottom - y0) / (y1 - y0);
                 y = clipRect.bottom;
             }
-            else if (outcodeOut & BOTTOM)
+            else if (outcodeOut & OutCode.bottom)
             { // point is below the clip rectangle
                 x = x0 + (x1 - x0) * (clipRect.top - y0) / (y1 - y0);
                 y = clipRect.top;
             }
-            else if (outcodeOut & RIGHT)
+            else if (outcodeOut & OutCode.right)
             { // point is to the right of clip rectangle
                 y = y0 + (y1 - y0) * (clipRect.right - x0) / (x1 - x0);
                 x = clipRect.right;
             }
-            else if (outcodeOut & LEFT)
+            else if (outcodeOut & OutCode.left)
             { // point is to the left of clip rectangle
                 y = y0 + (y1 - y0) * (clipRect.left - x0) / (x1 - x0);
                 x = clipRect.left;
@@ -2260,13 +2253,13 @@ private bool CohenSutherlandLineClipAndDraw(ref Rect clipRect, ref double x0, re
             {
                 x0 = x;
                 y0 = y;
-                outcode0 = ComputeOutCode(clipRect, x0, y0);
+                outcode0 = computeOutCode(clipRect, x0, y0);
             }
             else
             {
                 x1 = x;
                 y1 = y;
-                outcode1 = ComputeOutCode(clipRect, x1, y1);
+                outcode1 = computeOutCode(clipRect, x1, y1);
             }
         }
     }
