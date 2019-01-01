@@ -8,7 +8,7 @@ Authors:   Vadim Lopatin
 module beamui.core.units;
 
 import beamui.core.config;
-import beamui.core.types;
+import beamui.core.geometry;
 
 /// Use in styles to specify size in points (1/72 inch)
 enum int SIZE_IN_POINTS_FLAG = 1 << 28;

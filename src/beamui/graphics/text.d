@@ -9,8 +9,8 @@ module beamui.graphics.text;
 
 import std.array : Appender;
 import beamui.core.functions : clamp, max;
+import beamui.core.geometry : Point, Size;
 import beamui.core.logger;
-import beamui.core.types : Point, Size;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
 import beamui.graphics.fonts;

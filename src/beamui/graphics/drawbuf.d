@@ -13,6 +13,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.graphics.drawbuf;
 
+public import beamui.core.geometry;
 public import beamui.core.types;
 import beamui.core.config;
 import beamui.core.functions;

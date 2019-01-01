@@ -37,7 +37,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.graphics.fonts;
 
-public import beamui.core.types : Glyph, Size, SubpixelRenderingMode;
+public import beamui.core.types : Glyph, SubpixelRenderingMode;
+public import beamui.core.geometry : Size;
 import beamui.core.config;
 import beamui.core.functions;
 import beamui.core.logger;
