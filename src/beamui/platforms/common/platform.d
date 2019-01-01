@@ -201,22 +201,6 @@ class Window : CustomEventTarget
         /// Get current key modifiers
         uint keyboardModifiers() const { return _keyboardModifiers; }
 
-        /// Blinking caret position (empty rect if no blinking caret)
-        Rect caretRect() const { return _caretRect; }
-        /// ditto
-        void caretRect(Rect rc)
-        {
-            _caretRect = rc;
-        }
-
-        /// Blinking caret is in replace mode if true, insert mode if false
-        bool caretReplace() const { return _caretReplace; }
-        /// ditto
-        void caretReplace(bool flag)
-        {
-            _caretReplace = flag;
-        }
-
         /// Returns current window state
         WindowState windowState() const { return _windowState; }
 
@@ -229,6 +213,11 @@ class Window : CustomEventTarget
             return Box(0, 0, _w, _h);
         }
     }
+
+    /// Blinking caret position (empty rect if no blinking caret)
+    Rect caretRect;
+    /// Blinking caret is in replace mode if true, insert mode if false
+    bool caretReplace;
 
     protected
     {
@@ -253,9 +242,6 @@ class Window : CustomEventTarget
         Window _parent;
 
         uint _keyboardModifiers;
-
-        Rect _caretRect;
-        bool _caretReplace;
 
         /// Keep overrided cursor type to `notSet` to get cursor from widget
         CursorType _overrideCursorType = CursorType.notSet;
