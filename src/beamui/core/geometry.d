@@ -7,19 +7,20 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.core.geometry;
 
-import beamui.core.math3d : Vec2, Vec2i;
+import beamui.core.math3d : Vector;
 
 /// Size is undefined constant
 enum int SIZE_UNSPECIFIED = 1 << 29; // not too much to safely sum two such values
 
-alias Point = Vec2i;
-alias PointInt = Vec2i;
+alias PointOf(T) = Vector!(T, 2);
+alias Point = PointOf!int;
+alias PointI = PointOf!int;
 
 /// 2D size
-struct Size
+struct SizeOf(T)
 {
-    int width;
-    int height;
+    T width = 0;
+    T height = 0;
     alias w = width;
     alias h = height;
 
@@ -27,44 +28,47 @@ struct Size
 
 pure nothrow @nogc:
 
-    Size opBinary(string op : "+")(Size v) const
+    SizeOf opBinary(string op : "+")(SizeOf v) const
     {
-        return Size(w + v.w, h + v.h);
+        return SizeOf(w + v.w, h + v.h);
     }
-    Size opBinary(string op : "-")(Size v) const
+    SizeOf opBinary(string op : "-")(SizeOf v) const
     {
-        return Size(w - v.w, h - v.h);
+        return SizeOf(w - v.w, h - v.h);
     }
-    Size opBinary(string op : "*")(int n) const
+    SizeOf opBinary(string op : "*")(T n) const
     {
-        return Size(w * n, h * n);
+        return SizeOf(w * n, h * n);
     }
-    Size opBinary(string op : "/")(int n) const
+    SizeOf opBinary(string op : "/")(T n) const
     {
-        return Size(w / n, h / n);
+        return SizeOf(w / n, h / n);
     }
 
-    void opOpAssign(string op : "+")(Size v)
+    void opOpAssign(string op : "+")(SizeOf v)
     {
         w += v.w;
         h += v.h;
     }
-    void opOpAssign(string op : "-")(Size v)
+    void opOpAssign(string op : "-")(SizeOf v)
     {
         w -= v.w;
         h -= v.h;
     }
-    void opOpAssign(string op : "*")(int n)
+    void opOpAssign(string op : "*")(T n)
     {
         w *= n;
         h *= n;
     }
-    void opOpAssign(string op : "/")(int n)
+    void opOpAssign(string op : "/")(T n)
     {
         w /= n;
         h /= n;
     }
 }
+
+alias Size = SizeOf!int;
+alias SizeI = SizeOf!int;
 
 /// Holds minimum, maximum and natural (preferred) size for widget
 struct Boundaries
@@ -119,16 +123,16 @@ pure nothrow @nogc:
 }
 
 /// 2D box
-struct Box
+struct BoxOf(T)
 {
     /// x coordinate of the top left corner
-    int x;
+    T x = 0;
     /// y coordinate of the top left corner
-    int y;
+    T y = 0;
     /// Rectangle width
-    int width;
+    T width = 0;
     /// Rectangle height
-    int height;
+    T height = 0;
     alias w = width;
     alias h = height;
 
@@ -138,7 +142,7 @@ struct Box
 pure nothrow @nogc:
 
     /// Construct a box using x, y, width and height
-    this(int x, int y, int width, int height)
+    this(T x, T y, T width, T height)
     {
         this.x = x;
         this.y = y;
@@ -146,7 +150,7 @@ pure nothrow @nogc:
         this.h = height;
     }
     /// Construct a box using position and size
-    this(Point p, Size sz)
+    this(PointOf!T p, SizeOf!T sz)
     {
         x = p.x;
         y = p.y;
@@ -154,7 +158,7 @@ pure nothrow @nogc:
         h = sz.h;
     }
     /// Construct a box using `Rect`
-    this(Rect rc)
+    this(RectOf!T rc)
     {
         x = rc.left;
         y = rc.top;
@@ -163,23 +167,23 @@ pure nothrow @nogc:
     }
 
     /// Get box position
-    @property Point pos() const
+    @property PointOf!T pos() const
     {
-        return Point(x, y);
+        return PointOf!T(x, y);
     }
     /// Get box size
-    @property Size size() const
+    @property SizeOf!T size() const
     {
-        return Size(w, h);
+        return SizeOf!T(w, h);
     }
     /// Set box position
-    @property void pos(Point p)
+    @property void pos(PointOf!T p)
     {
         x = p.x;
         y = p.y;
     }
     /// Set box size
-    @property void size(Size s)
+    @property void size(SizeOf!T s)
     {
         w = s.w;
         h = s.h;
@@ -192,34 +196,34 @@ pure nothrow @nogc:
     }
 
     /// Returns center of the box
-    @property Point middle() const
+    @property PointOf!T middle() const
     {
-        return Point(x + w / 2, y + h / 2);
+        return PointOf!T(x + w / 2, y + h / 2);
     }
     /// Returns x coordinate of the center
-    @property int middlex() const
+    @property T middlex() const
     {
         return x + w / 2;
     }
     /// Returns y coordinate of the center
-    @property int middley() const
+    @property T middley() const
     {
         return y + h / 2;
     }
 
     /// Returns true if point is inside of this rectangle
-    bool isPointInside(int px, int py) const
+    bool isPointInside(T px, T py) const
     {
         return x <= px && px < x + w && y <= py && py < y + h;
     }
     /// Returns true if this box is completely inside of `b`
-    bool isInsideOf(Box b) const
+    bool isInsideOf(BoxOf b) const
     {
         return b.x <= x && x + w <= b.x + b.w && b.y <= y && y + h <= b.y + b.h;
     }
 
     /// Expand box dimensions by a margin
-    void expand(Insets ins)
+    void expand(InsetsOf!T ins)
     {
         x -= ins.left;
         y -= ins.top;
@@ -227,7 +231,7 @@ pure nothrow @nogc:
         h += ins.top + ins.bottom;
     }
     /// Shrink box dimensions by a margin
-    void shrink(Insets ins)
+    void shrink(InsetsOf!T ins)
     {
         x += ins.left;
         y += ins.top;
@@ -236,7 +240,7 @@ pure nothrow @nogc:
     }
 
     /// Move this box to fit `b` bounds, retaining the same size
-    void moveToFit(const ref Box b)
+    void moveToFit(const ref BoxOf b)
     {
         if (x + w > b.x + b.w)
             x = b.x + b.w - w;
@@ -249,6 +253,9 @@ pure nothrow @nogc:
     }
 }
 
+alias Box = BoxOf!int;
+alias BoxI = BoxOf!int;
+
 /**
     2D rectangle
 
@@ -258,21 +265,21 @@ pure nothrow @nogc:
     Note: Rect(0,0,20,10) has size 20x10, but right and bottom sides are non-inclusive.
     If you draw such rect, rightmost drawn pixel will be x=19 and bottom pixel y=9
 */
-struct Rect
+struct RectOf(T)
 {
     /// x coordinate of top left corner
-    int left;
+    T left = 0;
     /// y coordinate of top left corner
-    int top;
+    T top = 0;
     /// x coordinate of bottom right corner (non-inclusive)
-    int right;
+    T right = 0;
     /// y coordinate of bottom right corner (non-inclusive)
-    int bottom;
+    T bottom = 0;
 
 pure nothrow @nogc:
 
     /// Construct a rectangle using left, top, right, bottom coordinates
-    this(int x0, int y0, int x1, int y1)
+    this(T x0, T y0, T x1, T y1)
     {
         left = x0;
         top = y0;
@@ -280,7 +287,7 @@ pure nothrow @nogc:
         bottom = y1;
     }
     /// Construct a rectangle using two points - (left, top), (right, bottom) coordinates
-    this(Point pt0, Point pt1)
+    this(PointOf!T pt0, PointOf!T pt1)
     {
         left = pt0.x;
         top = pt0.y;
@@ -288,7 +295,7 @@ pure nothrow @nogc:
         bottom = pt1.y;
     }
     /// Construct a rectangle from a box
-    this(Box b)
+    this(BoxOf!T b)
     {
         left = b.x;
         top = b.y;
@@ -299,44 +306,44 @@ pure nothrow @nogc:
     @property const
     {
         /// Returns average of left, right
-        int middlex()
+        T middlex()
         {
             return (left + right) / 2;
         }
         /// Returns average of top, bottom
-        int middley()
+        T middley()
         {
             return (top + bottom) / 2;
         }
         /// Returns middle point
-        Point middle()
+        PointOf!T middle()
         {
-            return Point(middlex, middley);
+            return PointOf!T(middlex, middley);
         }
 
         /// Returns top left point of rectangle
-        Point topLeft()
+        PointOf!T topLeft()
         {
-            return Point(left, top);
+            return PointOf!T(left, top);
         }
         /// Returns bottom right point of rectangle
-        Point bottomRight()
+        PointOf!T bottomRight()
         {
-            return Point(right, bottom);
+            return PointOf!T(right, bottom);
         }
 
         /// Returns size (right - left, bottom - top)
-        Size size()
+        SizeOf!T size()
         {
-            return Size(right - left, bottom - top);
+            return SizeOf!T(right - left, bottom - top);
         }
         /// Get width of rectangle (right - left)
-        int width()
+        T width()
         {
             return right - left;
         }
         /// Get height of rectangle (bottom - top)
-        int height()
+        T height()
         {
             return bottom - top;
         }
@@ -348,7 +355,7 @@ pure nothrow @nogc:
     }
 
     /// Add offset to horizontal and vertical coordinates
-    void offset(int dx, int dy)
+    void offset(T dx, T dy)
     {
         left += dx;
         right += dx;
@@ -356,7 +363,7 @@ pure nothrow @nogc:
         bottom += dy;
     }
     /// Expand rectangle dimensions
-    void expand(int dx, int dy)
+    void expand(T dx, T dy)
     {
         left -= dx;
         right += dx;
@@ -364,7 +371,7 @@ pure nothrow @nogc:
         bottom += dy;
     }
     /// Shrink rectangle dimensions
-    void shrink(int dx, int dy)
+    void shrink(T dx, T dy)
     {
         left += dx;
         right -= dx;
@@ -372,7 +379,7 @@ pure nothrow @nogc:
         bottom -= dy;
     }
     /// For all fields, sets this.field to rc.field if rc.field > this.field
-    void setMax(Rect rc)
+    void setMax(RectOf rc)
     {
         if (left < rc.left)
             left = rc.left;
@@ -386,7 +393,7 @@ pure nothrow @nogc:
     /// Translate rectangle coordinates by (x,y) - add deltax to x coordinates, and deltay to y coordinates
     alias moveBy = offset;
     /// Moves this rect to fit rc bounds, retaining the same size
-    void moveToFit(ref Rect rc)
+    void moveToFit(ref RectOf rc)
     {
         if (right > rc.right)
             moveBy(rc.right - right, 0);
@@ -398,7 +405,7 @@ pure nothrow @nogc:
             moveBy(0, rc.top - top);
     }
     /// Update this rect to intersection with rc, returns true if result is non empty
-    bool intersect(Rect rc)
+    bool intersect(RectOf rc)
     {
         if (left < rc.left)
             left = rc.left;
@@ -411,52 +418,55 @@ pure nothrow @nogc:
         return right > left && bottom > top;
     }
     /// Returns true if this rect has nonempty intersection with rc
-    bool intersects(Rect rc) const
+    bool intersects(RectOf rc) const
     {
         return rc.left < right && rc.top < bottom && rc.right > left && rc.bottom > top;
     }
     /// Returns true if point is inside of this rectangle
-    bool isPointInside(Point pt) const
+    bool isPointInside(PointOf!T pt) const
     {
         return left <= pt.x && pt.x < right && top <= pt.y && pt.y < bottom;
     }
     /// Returns true if point is inside of this rectangle
-    bool isPointInside(int x, int y) const
+    bool isPointInside(T x, T y) const
     {
         return left <= x && x < right && top <= y && y < bottom;
     }
     /// This rectangle is completely inside rc
-    bool isInsideOf(Rect rc) const
+    bool isInsideOf(RectOf rc) const
     {
         return left >= rc.left && right <= rc.right && top >= rc.top && bottom <= rc.bottom;
     }
 
-    bool opEquals(Rect rc) const
+    bool opEquals(RectOf rc) const
     {
         return left == rc.left && right == rc.right && top == rc.top && bottom == rc.bottom;
     }
 }
 
+alias Rect = RectOf!int;
+alias RectI = RectOf!int;
+
 /// Represents area around rectangle. Used for margin, border and padding
-struct Insets
+struct InsetsOf(T)
 {
-    int top, right, bottom, left;
+    T top = 0, right = 0, bottom = 0, left = 0;
 
 pure nothrow @nogc:
 
     /// Create equal offset on all sides
-    this(int all)
+    this(T all)
     {
         top = right = bottom = left = all;
     }
     /// Create separate horizontal and vertical offsets
-    this(int v, int h)
+    this(T v, T h)
     {
         top = bottom = v;
         right = left = h;
     }
     /// Create offsets one by one
-    this(int top, int right, int bottom, int left)
+    this(T top, T right, T bottom, T left)
     {
         this.top = top;
         this.right = right;
@@ -465,43 +475,46 @@ pure nothrow @nogc:
     }
 
     /// Get total offset
-    @property Size size() const
+    @property SizeOf!T size() const
     {
-        return Size(left + right, top + bottom);
+        return SizeOf!T(left + right, top + bottom);
     }
     /// Get total horizontal offset
-    @property int width() const
+    @property T width() const
     {
         return left + right;
     }
     /// Get total vertical offset
-    @property int height() const
+    @property T height() const
     {
         return top + bottom;
     }
 
-    Insets opBinary(string op : "+")(Insets ins) const
+    InsetsOf opBinary(string op : "+")(InsetsOf ins) const
     {
-        return Insets(top + ins.top, right + ins.right, bottom + ins.bottom, left + ins.left);
+        return InsetsOf(top + ins.top, right + ins.right, bottom + ins.bottom, left + ins.left);
     }
 
-    Insets opBinary(string op : "-")(Insets ins) const
+    InsetsOf opBinary(string op : "-")(InsetsOf ins) const
     {
-        return Insets(top - ins.top, right - ins.right, bottom - ins.bottom, left - ins.left);
+        return InsetsOf(top - ins.top, right - ins.right, bottom - ins.bottom, left - ins.left);
     }
 
-    Insets opBinary(string op : "*")(float factor) const
+    InsetsOf opBinary(string op : "*")(float factor) const
     {
-        return Insets(cast(int)(top * factor), cast(int)(right * factor),
-                      cast(int)(bottom * factor), cast(int)(left * factor));
+        return InsetsOf(cast(T)(top * factor), cast(T)(right * factor),
+                        cast(T)(bottom * factor), cast(T)(left * factor));
     }
 
     /// Sum two areas
-    void add(Insets ins)
+    void add(InsetsOf ins)
     {
         top += ins.top;
         right += ins.right;
         bottom += ins.bottom;
         left += ins.left;
-     }
+    }
 }
+
+alias Insets = InsetsOf!int;
+alias InsetsI = InsetsOf!int;
