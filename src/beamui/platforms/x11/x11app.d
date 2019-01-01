@@ -446,10 +446,10 @@ final class X11Window : DWindow
         }
         Log.i(openglEnabled ? "OpenGL is enabled" : "OpenGL is disabled");
 
-        handleWindowStateChange(WindowState.unspecified, Box(0, 0, width, height));
+        handleWindowStateChange(WindowState.unspecified, BoxI(0, 0, width, height));
     }
 
-    override protected void handleWindowStateChange(WindowState newState, Box newWindowRect = Box.none)
+    override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
     {
         super.handleWindowStateChange(newState, newWindowRect);
     }
@@ -478,7 +478,7 @@ final class X11Window : DWindow
         _NET_WM_STATE_TOGGLE
     }
 
-    override bool setWindowState(WindowState newState, bool activate = false, Box newWindowRect = Box.none)
+    override bool setWindowState(WindowState newState, bool activate = false, BoxI newWindowRect = BoxI.none)
     {
         if (_win == None)
             return false;
@@ -527,7 +527,7 @@ final class X11Window : DWindow
 
         // change size and/or position
         bool rectChanged;
-        if (newWindowRect != Box.none && (newState == WindowState.normal ||
+        if (newWindowRect != BoxI.none && (newState == WindowState.normal ||
                 newState == WindowState.unspecified))
         {
             // change position
@@ -568,14 +568,14 @@ final class X11Window : DWindow
         //example: change size by resizeWindow() and make some calculations using windowRect
         if (rectChanged)
         {
-            handleWindowStateChange(newState, Box(
+            handleWindowStateChange(newState, BoxI(
                 newWindowRect.x == int.min ? _windowRect.x : newWindowRect.x,
                 newWindowRect.y == int.min ? _windowRect.y : newWindowRect.y,
                 newWindowRect.w == int.min ? _windowRect.w : newWindowRect.w,
                 newWindowRect.h == int.min ? _windowRect.h : newWindowRect.h));
         }
         else
-            handleWindowStateChange(newState, Box.none);
+            handleWindowStateChange(newState, BoxI.none);
 
         return result;
     }
@@ -1266,7 +1266,7 @@ final class X11Platform : Platform
             {
                 w._cachedWidth = event.xconfigure.width;
                 w._cachedHeight = event.xconfigure.height;
-                w.handleWindowStateChange(WindowState.unspecified, Box(event.xconfigure.x,
+                w.handleWindowStateChange(WindowState.unspecified, BoxI(event.xconfigure.x,
                         event.xconfigure.y, event.xconfigure.width, event.xconfigure.height));
             }
             else

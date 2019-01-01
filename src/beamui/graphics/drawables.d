@@ -201,7 +201,7 @@ class BoxShadowDrawable : Drawable
         texture.blur(blurSize);
         // set 9-patch frame
         uint sz = _blurSize * 2;
-        texture.ninePatch = new NinePatch(Insets(sz), Insets(sz));
+        texture.ninePatch = new NinePatch(InsetsI(sz), InsetsI(sz));
     }
 
     ~this()
@@ -582,7 +582,7 @@ class ImageDrawable : Drawable
     override @property Insets padding() const
     {
         if (!_image.isNull && _image.hasNinePatch)
-            return _image.ninePatch.padding;
+            return Insets(_image.ninePatch.padding);
         else
             return Insets(0);
     }

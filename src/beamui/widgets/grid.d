@@ -183,7 +183,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     @property
     {
         /// Selected cells when multiselect is enabled
-        RedBlackTree!Point selection() { return _selection; }
+        RedBlackTree!PointI selection() { return _selection; }
         /// Selected column
         int col()
         {
@@ -306,7 +306,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             if (!_multiSelect)
             {
                 _selection.clear();
-                _selection.insert(Point(_col - _headerCols, _row - _headerRows));
+                _selection.insert(PointI(_col - _headerCols, _row - _headerRows));
             }
         }
 
@@ -319,7 +319,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             if (_rowSelect)
             {
                 _selection.clear();
-                _selection.insert(Point(_col - _headerCols, _row - _headerRows));
+                _selection.insert(PointI(_col - _headerCols, _row - _headerRows));
             }
             invalidate();
         }
@@ -496,7 +496,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         int _fixedRows;
 
         /// Selected cells when multiselect is enabled
-        RedBlackTree!Point _selection;
+        RedBlackTree!PointI _selection;
         /// Selected cell column
         int _col;
         /// Selected cell row
@@ -541,7 +541,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         super(hscrollbarMode, vscrollbarMode);
         _headerCols = 1;
         _headerRows = 1;
-        _selection = new RedBlackTree!Point;
+        _selection = new RedBlackTree!PointI;
         _defRowHeight = BACKEND_CONSOLE ? 1 : 16.pt;
         _defColumnWidth = BACKEND_CONSOLE ? 7 : 100;
 
@@ -1038,7 +1038,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
     }
 
-    private Point _lastSelectedCell;
+    private PointI _lastSelectedCell;
 
     bool multiSelectCell(int i, int j, bool expandExisting = false)
     {
@@ -1075,13 +1075,13 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             {
                 for (int y = startY; y <= endY; ++y)
                 {
-                    _selection.insert(Point(x, y));
+                    _selection.insert(PointI(x, y));
                 }
             }
         }
         else
         {
-            _selection.insert(Point(col - _headerCols, row - _headerRows));
+            _selection.insert(PointI(col - _headerCols, row - _headerRows));
             _col = col;
             _row = row;
         }
@@ -1104,14 +1104,14 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             updateCumulativeSizes();
         _col = i;
         _row = j;
-        _lastSelectedCell = Point(i, j);
+        _lastSelectedCell = PointI(i, j);
         if (_rowSelect)
         {
-            _selection.insert(Point(0, j - _headerRows));
+            _selection.insert(PointI(0, j - _headerRows));
         }
         else
         {
-            _selection.insert(Point(i - _headerCols, j - _headerRows));
+            _selection.insert(PointI(i - _headerCols, j - _headerRows));
         }
         invalidate();
         if (makeVisible)
@@ -1587,7 +1587,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             for (int y = 0; y < rows; ++y)
             {
-                _selection.insert(Point(x, y));
+                _selection.insert(PointI(x, y));
             }
         }
         invalidate();
@@ -2169,7 +2169,7 @@ class StringGridWidget : StringGridWidgetBase
             selectedCell = true;
         if (!selectedCell && _multiSelect)
         {
-            selectedCell = Point(c, r) in _selection || (_rowSelect && Point(0, r) in _selection);
+            selectedCell = PointI(c, r) in _selection || (_rowSelect && PointI(0, r) in _selection);
         }
         // draw header cell background
         DrawableRef dw = c < 0 ? _cellRowHeaderBackgroundDrawable : _cellHeaderBackgroundDrawable;
@@ -2211,7 +2211,7 @@ class StringGridWidget : StringGridWidgetBase
             selectedCell = true;
         if (!selectedCell && _multiSelect)
         {
-            selectedCell = Point(c, r) in _selection || (_rowSelect && Point(0, r) in _selection);
+            selectedCell = PointI(c, r) in _selection || (_rowSelect && PointI(0, r) in _selection);
         }
 
         Rect rc = b;

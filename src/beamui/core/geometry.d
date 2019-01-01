@@ -27,7 +27,7 @@ struct SizeOf(T) if (is(T == float) || is(T == int))
     alias w = width;
     alias h = height;
 
-    enum none = Size(SIZE_UNSPECIFIED!T, SIZE_UNSPECIFIED!T);
+    enum none = SizeOf(SIZE_UNSPECIFIED!T, SIZE_UNSPECIFIED!T);
 
 pure nothrow @nogc:
 
@@ -142,7 +142,7 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
     static if (is(T == int))
     {
         /// 'rectangle is not set' value
-        enum none = Box(int.min, int.min, int.min, int.min);
+        enum none = BoxOf(int.min, int.min, int.min, int.min);
     }
 
 pure nothrow @nogc:
@@ -170,6 +170,14 @@ pure nothrow @nogc:
         y = rc.top;
         w = rc.width;
         h = rc.height;
+    }
+    /// Construct a box from another BoxOf through casting
+    this(U)(BoxOf!U source)
+    {
+        x = cast(U)source.x;
+        y = cast(U)source.y;
+        w = cast(U)source.w;
+        h = cast(U)source.h;
     }
 
     /// Get box position
@@ -307,6 +315,14 @@ pure nothrow @nogc:
         top = b.y;
         right = b.x + b.w;
         bottom = b.y + b.h;
+    }
+    /// Construct a rectangle from another RectOf through casting
+    this(U)(RectOf!U source)
+    {
+        left = cast(U)source.left;
+        top = cast(U)source.top;
+        right = cast(U)source.right;
+        bottom = cast(U)source.bottom;
     }
 
     @property const
@@ -478,6 +494,14 @@ pure nothrow @nogc:
         this.right = right;
         this.bottom = bottom;
         this.left = left;
+    }
+    /// Create offsets from another InsetsOf through casting
+    this(U)(InsetsOf!U source)
+    {
+        top = cast(U)source.top;
+        right = cast(U)source.right;
+        bottom = cast(U)source.bottom;
+        left = cast(U)source.left;
     }
 
     /// Get total offset

@@ -218,7 +218,7 @@ final class SDLWindow : Window
         int x = 0;
         int y = 0;
         SDL_GetWindowPosition(_win, &x, &y);
-        handleWindowStateChange(WindowState.unspecified, Box(x, y, width, height));
+        handleWindowStateChange(WindowState.unspecified, BoxI(x, y, width, height));
         return true;
     }
 
@@ -243,12 +243,12 @@ final class SDLWindow : Window
         onResize(max(pxw, w), max(pxh, h));
     }
 
-    override protected void handleWindowStateChange(WindowState newState, Box newWindowRect = Box.none)
+    override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
     {
         super.handleWindowStateChange(newState, newWindowRect);
     }
 
-    override bool setWindowState(WindowState newState, bool activate = false, Box newWindowRect = Box.none)
+    override bool setWindowState(WindowState newState, bool activate = false, BoxI newWindowRect = BoxI.none)
     {
         if (_win is null)
             return false;
@@ -307,7 +307,7 @@ final class SDLWindow : Window
 
         // change size and/or position
         bool rectChanged = false;
-        if (newWindowRect != Box.none && (newState == WindowState.normal ||
+        if (newWindowRect != BoxI.none && (newState == WindowState.normal ||
                 newState == WindowState.unspecified))
         {
             // change position
@@ -337,26 +337,26 @@ final class SDLWindow : Window
         //example: change size by resizeWindow() and make some calculations using windowRect
         if (rectChanged)
         {
-            handleWindowStateChange(newState, Box(
+            handleWindowStateChange(newState, BoxI(
                 newWindowRect.x == int.min ? _windowRect.x : newWindowRect.x,
                 newWindowRect.y == int.min ? _windowRect.y : newWindowRect.y,
                 newWindowRect.w == int.min ? _windowRect.w : newWindowRect.w,
                 newWindowRect.h == int.min ? _windowRect.h : newWindowRect.h));
         }
         else
-            handleWindowStateChange(newState, Box.none);
+            handleWindowStateChange(newState, BoxI.none);
 
         return res;
     }
 
-    override void setMinimumSize(Size minSize)
+    override void setMinimumSize(int w, int h)
     {
-        SDL_SetWindowMinimumSize(_win, max(minSize.w, 0), max(minSize.h, 0));
+        SDL_SetWindowMinimumSize(_win, max(w, 0), max(h, 0));
     }
 
-    override void setMaximumSize(Size maxSize)
+    override void setMaximumSize(int w, int h)
     {
-        SDL_SetWindowMaximumSize(_win, max(maxSize.w, 0), max(maxSize.h, 0));
+        SDL_SetWindowMaximumSize(_win, max(w, 0), max(h, 0));
     }
 
     override @property bool isActive() const
@@ -1162,7 +1162,7 @@ final class SDLPlatform : Platform
                 debug (sdl)
                     Log.d("SDL_WINDOWEVENT_SIZE_CHANGED - ", w.title,
                             ", size: ", event.window.data1, ",", event.window.data2);
-                w.handleWindowStateChange(WindowState.unspecified, Box(w.windowRect.x,
+                w.handleWindowStateChange(WindowState.unspecified, BoxI(w.windowRect.x,
                         w.windowRect.y, event.window.data1, event.window.data2));
                 w.redraw();
                 timestampResizing = event.window.timestamp;
@@ -1203,7 +1203,7 @@ final class SDLPlatform : Platform
             case SDL_WINDOWEVENT_MOVED:
                 debug (sdl)
                     Log.d("SDL_WINDOWEVENT_MOVED - ", w.title);
-                w.handleWindowStateChange(WindowState.unspecified, Box(event.window.data1,
+                w.handleWindowStateChange(WindowState.unspecified, BoxI(event.window.data1,
                         event.window.data2, w.windowRect.w, w.windowRect.h));
                 if (!_windowsMinimized && w.hasVisibleModalChild)
                     w.restoreModalChilds();

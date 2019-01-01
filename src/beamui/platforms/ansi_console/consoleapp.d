@@ -34,7 +34,7 @@ class ConsoleWindow : Window
         parentWindow = parent;
         width = _platform.console.width;
         height = _platform.console.height;
-        _windowRect = Box(0, 0, width, height);
+        _windowRect = BoxI(0, 0, width, height);
     }
 
     override @property dstring title() const { return _title; }
@@ -57,7 +57,7 @@ class ConsoleWindow : Window
             mainWidget = new Widget;
         }
         _visible = true;
-        handleWindowStateChange(WindowState.normal, Box(0, 0, _platform.console.width, _platform.console.height));
+        handleWindowStateChange(WindowState.normal, BoxI(0, 0, _platform.console.width, _platform.console.height));
         invalidate();
     }
 

@@ -219,21 +219,21 @@ int toPixels(int sz)
 }
 
 /// Convert custom size Point to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
-Point toPixels(const Point p)
+PointI toPixels(const PointI p)
 {
-    return Point(toPixels(p.x), toPixels(p.y));
+    return PointI(toPixels(p.x), toPixels(p.y));
 }
 
 /// Convert custom size Rect to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
-Rect toPixels(const Rect r)
+RectI toPixels(const RectI r)
 {
-    return Rect(toPixels(r.left), toPixels(r.top), toPixels(r.right), toPixels(r.bottom));
+    return RectI(toPixels(r.left), toPixels(r.top), toPixels(r.right), toPixels(r.bottom));
 }
 
 /// Convert custom size Insets to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
-Insets toPixels(const Insets ins)
+InsetsI toPixels(const InsetsI ins)
 {
-    return Insets(toPixels(ins.top), toPixels(ins.right), toPixels(ins.bottom), toPixels(ins.left));
+    return InsetsI(toPixels(ins.top), toPixels(ins.right), toPixels(ins.bottom), toPixels(ins.left));
 }
 
 /// Make size value with SIZE_IN_POINTS_FLAG set
@@ -340,9 +340,9 @@ int pt(int p)
 }
 
 /// Convert rectangle coordinates in points (1/72in units) to pixels according to SCREEN_DPI
-Rect pt(Rect rc)
+RectI pt(RectI rc)
 {
-    return Rect(rc.left.pt, rc.top.pt, rc.right.pt, rc.bottom.pt);
+    return RectI(rc.left.pt, rc.top.pt, rc.right.pt, rc.bottom.pt);
 }
 
 /// Convert points (1/72in units) to pixels according to SCREEN_DPI

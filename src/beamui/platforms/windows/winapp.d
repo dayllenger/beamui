@@ -285,7 +285,7 @@ final class Win32Window : Window
         else
             ws |= WS_OVERLAPPED | WS_CAPTION | WS_CAPTION | WS_BORDER | WS_SYSMENU;
 
-        Box screenRc = getScreenDimensions();
+        BoxI screenRc = getScreenDimensions();
         Log.d("Screen dimensions: ", screenRc);
 
         int x = CW_USEDEFAULT;
@@ -330,7 +330,7 @@ final class Win32Window : Window
 
         RECT rect;
         GetWindowRect(_hwnd, &rect);
-        handleWindowStateChange(WindowState.unspecified, Box(rect.left, rect.top, width, height));
+        handleWindowStateChange(WindowState.unspecified, BoxI(rect.left, rect.top, width, height));
 
         if (platform.defaultWindowIcon.length != 0)
             this.icon = imageCache.get(platform.defaultWindowIcon);
@@ -346,7 +346,7 @@ final class Win32Window : Window
         _hwnd = null;
     }
 
-    private Box getScreenDimensions()
+    private BoxI getScreenDimensions()
     {
         MONITORINFO monitor_info;
         monitor_info.cbSize = monitor_info.sizeof;
@@ -361,7 +361,7 @@ final class Win32Window : Window
         }
         GetMonitorInfo(hMonitor, &monitor_info);
         RECT rc = monitor_info.rcMonitor;
-        return Box(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top);
+        return BoxI(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top);
     }
 
     override @property void onFilesDropped(void delegate(string[]) handler)
@@ -383,14 +383,14 @@ final class Win32Window : Window
         return DefWindowProc(_hwnd, message, wParam, lParam);
     }
 
-    override protected void handleWindowStateChange(WindowState newState, Box newWindowRect = Box.none)
+    override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
     {
         if (_destroying)
             return;
         super.handleWindowStateChange(newState, newWindowRect);
     }
 
-    override bool setWindowState(WindowState newState, bool activate = false, Box newWindowRect = Box.none)
+    override bool setWindowState(WindowState newState, bool activate = false, BoxI newWindowRect = BoxI.none)
     {
         if (!_hwnd)
             return false;
@@ -463,7 +463,7 @@ final class Win32Window : Window
         }
         // change size and/or position
         bool rectChanged = false;
-        if (newWindowRect != Box.none && (newState == WindowState.normal ||
+        if (newWindowRect != BoxI.none && (newState == WindowState.normal ||
                 newState == WindowState.unspecified))
         {
             UINT flags = SWP_NOOWNERZORDER | SWP_NOZORDER;
@@ -506,14 +506,14 @@ final class Win32Window : Window
 
         if (rectChanged)
         {
-            handleWindowStateChange(newState, Box(
+            handleWindowStateChange(newState, BoxI(
                 newWindowRect.x == int.min ? _windowRect.x : newWindowRect.x,
                 newWindowRect.y == int.min ? _windowRect.y : newWindowRect.y,
                 newWindowRect.w == int.min ? _windowRect.w : newWindowRect.w,
                 newWindowRect.h == int.min ? _windowRect.h : newWindowRect.h));
         }
         else
-            handleWindowStateChange(newState, Box.none);
+            handleWindowStateChange(newState, BoxI.none);
 
         return res;
     }
@@ -596,7 +596,7 @@ final class Win32Window : Window
 
         if (flags & WindowFlag.fullscreen)
         {
-            Box rc = getScreenDimensions();
+            BoxI rc = getScreenDimensions();
             SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, rc.width, rc.height, SWP_SHOWWINDOW);
             _windowState = WindowState.fullscreen;
         }
@@ -1301,7 +1301,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                     state = WindowState.normal;
                 else
                     state = WindowState.hidden;
-                window.handleWindowStateChange(state, Box(pos.x, pos.y, dx, dy));
+                window.handleWindowStateChange(state, BoxI(pos.x, pos.y, dx, dy));
                 if (window.width != dx || window.height != dy)
                 {
                     window.onResize(dx, dy);

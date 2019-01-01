@@ -205,12 +205,12 @@ class Window : CustomEventTarget
         WindowState windowState() const { return _windowState; }
 
         /// Returns window rectangle on screen (includes window frame and title)
-        Box windowRect() const
+        BoxI windowRect() const
         {
-            if (_windowRect != Box.none)
+            if (_windowRect != BoxI.none)
                 return _windowRect;
             // fake window rectangle -- at position 0,0
-            return Box(0, 0, _w, _h);
+            return BoxI(0, 0, _w, _h);
         }
     }
 
@@ -222,7 +222,7 @@ class Window : CustomEventTarget
     protected
     {
         WindowState _windowState = WindowState.normal;
-        Box _windowRect = Box.none;
+        BoxI _windowRect = BoxI.none;
     }
 
     private
@@ -234,9 +234,9 @@ class Window : CustomEventTarget
         EventList _eventList;
         WindowFlag _flags;
         /// Minimal content size
-        Size _minContentSize;
+        SizeI _minContentSize;
         /// Minimal good looking content size
-        Size _goodContentSize;
+        SizeI _goodContentSize;
 
         Window[] _children;
         Window _parent;
@@ -288,7 +288,7 @@ class Window : CustomEventTarget
         if (!setting)
             return;
         WindowState state = windowState;
-        Box rect = windowRect;
+        BoxI rect = windowRect;
         if (state == WindowState.fullscreen || state == WindowState.minimized ||
                 state == WindowState.maximized || state == WindowState.normal)
         {
@@ -309,7 +309,7 @@ class Window : CustomEventTarget
         if (!setting)
             return false;
         WindowState state = cast(WindowState)setting["windowState"].integerDef(WindowState.unspecified);
-        Box rect;
+        BoxI rect;
         rect.x = cast(int)setting["windowPositionX"].integer;
         rect.y = cast(int)setting["windowPositionY"].integer;
         int w = cast(int)setting["windowWidth"].integer;
@@ -328,7 +328,7 @@ class Window : CustomEventTarget
     }
 
     /// Check if window position is inside screen bounds, try to correct if needed. Returns true if position is ok
-    bool correctWindowPositionOnScreen(ref Box rect)
+    bool correctWindowPositionOnScreen(ref BoxI rect)
     {
         // override to apply screen size bounds
         return true;
@@ -354,10 +354,10 @@ class Window : CustomEventTarget
     //===============================================================
 
     /// Window state change signal
-    Signal!(void delegate(Window, WindowState state, Box rect)) windowStateChanged;
+    Signal!(void delegate(Window, WindowState state, BoxI rect)) windowStateChanged;
 
     /// Update and signal window state and/or size/positon changes - for using in platform inplementations
-    protected void handleWindowStateChange(WindowState newState, Box newWindowRect = Box.none)
+    protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
     {
         bool signalWindow = false;
         if (newState != WindowState.unspecified && newState != _windowState)
@@ -367,7 +367,7 @@ class Window : CustomEventTarget
                 Log.d("Window ", windowCaption, " has new state - ", newState);
             signalWindow = true;
         }
-        if (newWindowRect != Box.none && newWindowRect != _windowRect)
+        if (newWindowRect != BoxI.none && newWindowRect != _windowRect)
         {
             _windowRect = newWindowRect;
             debug (state)
@@ -380,7 +380,7 @@ class Window : CustomEventTarget
     }
 
     /// Change window state, position, or size; returns true if successful, false if not supported by platform
-    bool setWindowState(WindowState newState, bool activate = false, Box newWindowRect = Box.none)
+    bool setWindowState(WindowState newState, bool activate = false, BoxI newWindowRect = BoxI.none)
     {
         // override for particular platforms
         return false;
@@ -411,17 +411,17 @@ class Window : CustomEventTarget
         return setWindowState(WindowState.unspecified, true);
     }
     /// Change window position only
-    bool move(Point topLeft, bool activate = false)
+    bool move(int x, int y, bool activate = false)
     {
-        return setWindowState(WindowState.unspecified, activate, Box(topLeft.x, topLeft.y, int.min, int.min));
+        return setWindowState(WindowState.unspecified, activate, BoxI(x, y, int.min, int.min));
     }
     /// Change window size only
-    bool resize(Size sz, bool activate = false)
+    bool resize(int w, int h, bool activate = false)
     {
-        return setWindowState(WindowState.unspecified, activate, Box(int.min, int.min, sz.w, sz.h));
+        return setWindowState(WindowState.unspecified, activate, BoxI(int.min, int.min, w, h));
     }
     /// Set window rectangle
-    bool moveAndResize(Box rc, bool activate = false)
+    bool moveAndResize(BoxI rc, bool activate = false)
     {
         return setWindowState(WindowState.unspecified, activate, rc);
     }
@@ -508,13 +508,13 @@ class Window : CustomEventTarget
     }
 
     /// Set or override the window minimum size
-    void setMinimumSize(Size minSize) // TODO x11 win32
+    void setMinimumSize(int w, int h) // TODO x11 win32
     {
         // override to support
     }
 
     /// Set or override the window maximum size
-    void setMaximumSize(Size maxSize) // TODO x11 win32
+    void setMaximumSize(int w, int h) // TODO x11 win32
     {
         // override to support
     }
@@ -524,26 +524,26 @@ class Window : CustomEventTarget
     {
         assert(_mainWidget !is null);
         Boundaries bs = _mainWidget.computeBoundaries();
-        _minContentSize = bs.min;
-        _goodContentSize = bs.nat;
         // some sane constraints
-        _minContentSize = Size(clamp(_minContentSize.w, 0, 10000), clamp(_minContentSize.h, 0, 10000));
-        _goodContentSize = Size(clamp(_goodContentSize.w, 0, 10000), clamp(_goodContentSize.h, 0, 10000));
-        setMaximumSize(Size(10000, 10000));
+        SizeI min = SizeI(clamp(cast(int)bs.min.w, 0, 10_000), clamp(cast(int)bs.min.h, 0, 10_000));
+        SizeI nat = SizeI(clamp(cast(int)bs.nat.w, 0, 10_000), clamp(cast(int)bs.nat.h, 0, 10_000));
+        _minContentSize = min;
+        _goodContentSize = nat;
+        setMaximumSize(10_000, 10_000);
         // set minimum and then resize
-        setMinimumSize(_minContentSize);
-        Size sz;
+        setMinimumSize(min.w, min.h);
+        int w, h;
         if (flags & WindowFlag.expanded)
         {
-            sz.w = max(_windowRect.w, _goodContentSize.w);
-            sz.h = max(_windowRect.h, _goodContentSize.h);
+            w = max(_windowRect.w, nat.w);
+            h = max(_windowRect.h, nat.h);
         }
         else
         {
-            sz.w = max(_windowRect.w, _minContentSize.w);
-            sz.h = max(_windowRect.h, _minContentSize.h);
+            w = max(_windowRect.w, min.w);
+            h = max(_windowRect.h, min.h);
         }
-        resize(sz);
+        resize(w, h);
     }
 
     /// Adjust window position during show()
@@ -558,11 +558,10 @@ class Window : CustomEventTarget
     {
         if (parentWindow)
         {
-            Box parentRect = parentWindow.windowRect;
-            Point newPos;
-            newPos.x = parentRect.x + (parentRect.width - _windowRect.width) / 2;
-            newPos.y = parentRect.y + (parentRect.height - _windowRect.height) / 2;
-            move(newPos);
+            BoxI parentRect = parentWindow.windowRect;
+            int newx = parentRect.x + (parentRect.width - _windowRect.width) / 2;
+            int newy = parentRect.y + (parentRect.height - _windowRect.height) / 2;
+            move(newx, newy);
         }
     }
 

@@ -25,9 +25,9 @@ import beamui.graphics.colors;
 struct NinePatch
 {
     /// Frame (non-scalable) part size for left, top, right, bottom edges.
-    Insets frame;
+    InsetsI frame;
     /// Padding (distance to content area) for left, top, right, bottom edges.
-    Insets padding;
+    InsetsI padding;
 }
 
 enum PatternType : uint
