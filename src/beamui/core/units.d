@@ -42,12 +42,12 @@ struct Length
     /// Zero value
     enum Length zero = Length(0);
     /// Unspecified value
-    enum Length none = Length(SIZE_UNSPECIFIED);
+    enum Length none = Length(SIZE_UNSPECIFIED!int);
 
     /// Construct with raw device pixels
     this(int devicePixels) pure
     {
-        if (devicePixels != SIZE_UNSPECIFIED)
+        if (devicePixels != SIZE_UNSPECIFIED!int)
             value = cast(float)devicePixels;
     }
     /// Construct with some value and type
@@ -79,7 +79,7 @@ struct Length
         import std.math : isNaN;
 
         if (value.isNaN)
-            return SIZE_UNSPECIFIED;
+            return SIZE_UNSPECIFIED!int;
 
         if (type == LengthUnit.device)
             return cast(int)value;
@@ -259,7 +259,7 @@ alias percent = makePercentSize;
 bool isSpecialSize(int sz) pure
 {
     // don't forget to update if more special constants added
-    return (sz & SIZE_UNSPECIFIED) != 0;
+    return (sz & SIZE_UNSPECIFIED!int) != 0;
 }
 
 /// Returns true if size has SIZE_IN_PERCENTS_FLAG bit set

@@ -7,24 +7,27 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.core.geometry;
 
+import std.traits;
 import beamui.core.math3d : Vector;
 
 /// Size is undefined constant
-enum int SIZE_UNSPECIFIED = 1 << 29; // not too much to safely sum two such values
+enum float SIZE_UNSPECIFIED(T : float) = float.infinity;
+/// ditto
+enum int SIZE_UNSPECIFIED(T : int) = 1 << 29; // not too much to safely sum two such values
 
 alias PointOf(T) = Vector!(T, 2);
 alias Point = PointOf!int;
 alias PointI = PointOf!int;
 
 /// 2D size
-struct SizeOf(T)
+struct SizeOf(T) if (is(T == float) || is(T == int))
 {
     T width = 0;
     T height = 0;
     alias w = width;
     alias h = height;
 
-    enum none = Size(SIZE_UNSPECIFIED, SIZE_UNSPECIFIED);
+    enum none = Size(SIZE_UNSPECIFIED!T, SIZE_UNSPECIFIED!T);
 
 pure nothrow @nogc:
 
@@ -84,13 +87,13 @@ pure nothrow @nogc:
     /// Special add operator: it clamps result between 0 and SIZE_UNSPECIFIED
     static int clampingAdd(int a, int b)
     {
-        return std.algorithm.clamp(a + b, 0, SIZE_UNSPECIFIED);
+        return std.algorithm.clamp(a + b, 0, SIZE_UNSPECIFIED!int);
     }
 
     /// Special subtract operator: it clamps result between 0 and SIZE_UNSPECIFIED
     static int clampingSub(int a, int b)
     {
-        return std.algorithm.clamp(a - b, 0, SIZE_UNSPECIFIED);
+        return std.algorithm.clamp(a - b, 0, SIZE_UNSPECIFIED!int);
     }
 
     void addWidth(const ref Boundaries from)
@@ -123,7 +126,7 @@ pure nothrow @nogc:
 }
 
 /// 2D box
-struct BoxOf(T)
+struct BoxOf(T) if (is(T == float) || is(T == int))
 {
     /// x coordinate of the top left corner
     T x = 0;
@@ -136,8 +139,11 @@ struct BoxOf(T)
     alias w = width;
     alias h = height;
 
-    /// 'rectangle is not set' value
-    enum none = Box(int.min, int.min, int.min, int.min);
+    static if (is(T == int))
+    {
+        /// 'rectangle is not set' value
+        enum none = Box(int.min, int.min, int.min, int.min);
+    }
 
 pure nothrow @nogc:
 
@@ -265,7 +271,7 @@ alias BoxI = BoxOf!int;
     Note: Rect(0,0,20,10) has size 20x10, but right and bottom sides are non-inclusive.
     If you draw such rect, rightmost drawn pixel will be x=19 and bottom pixel y=9
 */
-struct RectOf(T)
+struct RectOf(T) if (is(T == float) || is(T == int))
 {
     /// x coordinate of top left corner
     T left = 0;
@@ -448,7 +454,7 @@ alias Rect = RectOf!int;
 alias RectI = RectOf!int;
 
 /// Represents area around rectangle. Used for margin, border and padding
-struct InsetsOf(T)
+struct InsetsOf(T) if (is(T == float) || is(T == int))
 {
     T top = 0, right = 0, bottom = 0, left = 0;
 
