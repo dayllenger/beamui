@@ -7,57 +7,13 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.core.geometry;
 
+import beamui.core.math3d : Vec2, Vec2i;
+
 /// Size is undefined constant
 enum int SIZE_UNSPECIFIED = 1 << 29; // not too much to safely sum two such values
 
-/// 2D point
-struct Point
-{
-    int x;
-    int y;
-
-pure nothrow @nogc:
-
-    Point opBinary(string op : "+")(Point v) const
-    {
-        return Point(x + v.x, y + v.y);
-    }
-    Point opBinary(string op : "-")(Point v) const
-    {
-        return Point(x - v.x, y - v.y);
-    }
-    Point opBinary(string op : "*")(int n) const
-    {
-        return Point(x * n, y * n);
-    }
-    Point opUnary(string op : "-")() const
-    {
-        return Point(-x, -y);
-    }
-
-    void opOpAssign(string op : "+")(Point v)
-    {
-        x += v.x;
-        y += v.y;
-    }
-    void opOpAssign(string op : "-")(Point v)
-    {
-        x -= v.x;
-        y -= v.y;
-    }
-    void opOpAssign(string op : "*")(int n)
-    {
-        x *= n;
-        y *= n;
-    }
-
-    int opCmp(ref const Point b) const
-    {
-        if (x == b.x)
-            return y - b.y;
-        return x - b.x;
-    }
-}
+alias Point = Vec2i;
+alias PointInt = Vec2i;
 
 /// 2D size
 struct Size

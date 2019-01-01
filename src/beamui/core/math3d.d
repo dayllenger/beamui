@@ -220,6 +220,18 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
         return this / length;
     }
 
+    int opCmp(const ref Vector b) const
+    {
+        static foreach (i; 0 .. N)
+        {
+            if (vec[i] < b.vec[i])
+                return -1;
+            else if (vec[i] > b.vec[i])
+                return 1;
+        }
+        return 0; // equal
+    }
+
     string toString() const
     {
         static if (N == 2)
