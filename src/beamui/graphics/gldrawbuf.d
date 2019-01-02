@@ -124,7 +124,7 @@ class GLDrawBuf : DrawBuf
         {
             if (!glGlyphCache.isInCache(glyph.id))
                 glGlyphCache.put(glyph);
-            glGlyphCache.drawItem(glyph.id, dstrect, srcrect, color, null);
+            glGlyphCache.drawItem(glyph.id, dstrect, srcrect, color);
         }
     }
 
@@ -137,7 +137,7 @@ class GLDrawBuf : DrawBuf
                 glImageCache.put(src);
             Color color = Color(0xFFFFFF);
             applyAlpha(color);
-            glImageCache.drawItem(src.id, dstrect, srcrect, color, 0, null);
+            glImageCache.drawItem(src.id, dstrect, srcrect, color);
         }
     }
 
@@ -149,7 +149,7 @@ class GLDrawBuf : DrawBuf
                 glImageCache.put(src);
             Color color = Color(0xFFFFFF);
             applyAlpha(color);
-            glImageCache.drawItem(src.id, dstrect, srcrect, color, 0, null);
+            glImageCache.drawItem(src.id, dstrect, srcrect, color);
         }
     }
 
@@ -225,12 +225,9 @@ void destroyGLCaches()
 
 private abstract class GLCache
 {
-    static class GLCacheItem
+    static final class GLCacheItem
     {
-        @property GLCachePage page()
-        {
-            return _page;
-        }
+        @property GLCachePage page() { return _page; }
 
         uint _objectID;
         // image size
@@ -288,10 +285,6 @@ private abstract class GLCache
                 if (!_texture.id)
                     return;
             }
-            // FIXME
-            //             Log.d("updateTexture for cache page - setting image ",
-            //                 _drawbuf.width, "x", _drawbuf.height,
-            //                 " tex id = ", _texture ? _texture.id : 0);
             uint* pixels = _drawbuf.scanLine(0);
             if (!glSupport.setTextureImage(_texture, _drawbuf.width, _drawbuf.height, cast(ubyte*)pixels))
             {
@@ -355,6 +348,20 @@ private abstract class GLCache
             if (_needUpdateTexture)
                 updateTexture();
         }
+
+        final void drawItem(GLCacheItem item, Rect dstrc, Rect srcrc, Color color, bool smooth)
+        {
+            if (_needUpdateTexture)
+                updateTexture();
+            if (_texture && _texture.id != 0)
+            {
+                // convert coordinates to cached texture
+                srcrc.offset(item._rc.left, item._rc.top);
+                if (!dstrc.empty)
+                    glSupport.queue.addTexturedRect(_texture, _tdx, _tdy, color, color, color, color,
+                            srcrc, dstrc, smooth);
+            }
+        }
     }
 
     GLCacheItem[uint] _map;
@@ -365,10 +372,10 @@ private abstract class GLCache
 
     final void removePage(GLCachePage page)
     {
-        if (_activePage == page)
+        if (_activePage is page)
             _activePage = null;
         foreach (i; 0 .. _pages.length)
-            if (_pages[i] == page)
+            if (_pages[i] is page)
             {
                 _pages = _pages.remove(i);
                 break;
@@ -387,20 +394,15 @@ private abstract class GLCache
         }
     }
 
-    this()
-    {
-    }
-
     ~this()
     {
         clear();
     }
+
     /// Check if item is in cache
     final bool isInCache(uint obj)
     {
-        if (obj in _map)
-            return true;
-        return false;
+        return (obj in _map) !is null;
     }
     /// Clears cache
     final void clear()
@@ -411,9 +413,9 @@ private abstract class GLCache
     /// Handle cached object deletion, mark as deleted
     final void onCachedObjectDeleted(uint objectID)
     {
-        if (objectID in _map)
+        if (auto p = objectID in _map)
         {
-            GLCacheItem item = _map[objectID];
+            GLCacheItem item = *p;
             int itemsLeft = item.page.deleteItem(item);
             if (itemsLeft <= 0)
             {
@@ -432,9 +434,9 @@ private abstract class GLCache
             if (item._deleted)
                 list ~= item._objectID;
         }
-        foreach (i; 0 .. list.length)
+        foreach (id; list)
         {
-            onCachedObjectDeleted(list[i]);
+            onCachedObjectDeleted(id);
         }
     }
 }
@@ -488,50 +490,13 @@ private class GLImageCache : GLCache
             _needUpdateTexture = true;
             return cacheItem;
         }
-
-        void drawItem(GLCacheItem item, Rect dstrc, Rect srcrc, Color color, uint options, Rect* clip)
-        {
-            if (_needUpdateTexture)
-                updateTexture();
-            if (_texture && _texture.id != 0)
-            {
-                int rx = dstrc.middlex;
-                int ry = dstrc.middley;
-                // convert coordinates to cached texture
-                srcrc.offset(item._rc.left, item._rc.top);
-                if (clip)
-                {
-                    int srcw = srcrc.width();
-                    int srch = srcrc.height();
-                    int dstw = dstrc.width();
-                    int dsth = dstrc.height();
-                    if (dstw)
-                    {
-                        srcrc.left += clip.left * srcw / dstw;
-                        srcrc.right -= clip.right * srcw / dstw;
-                    }
-                    if (dsth)
-                    {
-                        srcrc.top += clip.top * srch / dsth;
-                        srcrc.bottom -= clip.bottom * srch / dsth;
-                    }
-                    dstrc.left += clip.left;
-                    dstrc.right -= clip.right;
-                    dstrc.top += clip.top;
-                    dstrc.bottom -= clip.bottom;
-                }
-                if (!dstrc.empty)
-                    glSupport.queue.addTexturedRect(_texture, _tdx, _tdy, color, color, color,
-                            color, srcrc, dstrc, true);
-            }
-        }
     }
 
     /// Put new object to cache
     void put(DrawBuf img)
     {
         updateTextureSize();
-        GLCacheItem res = null;
+        GLCacheItem res;
         if (img.width <= tdx / 3 && img.height < tdy / 3)
         {
             // trying to reuse common page for small images
@@ -560,14 +525,10 @@ private class GLImageCache : GLCache
         _map[img.id] = res;
     }
     /// Draw cached item
-    void drawItem(uint objectID, Rect dstrc, Rect srcrc, Color color, int options, Rect* clip)
+    void drawItem(uint objectID, Rect dstrc, Rect srcrc, Color color)
     {
-        GLCacheItem* item = objectID in _map;
-        if (item)
-        {
-            auto page = (cast(GLImageCachePage)item.page);
-            page.drawItem(*item, dstrc, srcrc, color, options, clip);
-        }
+        if (auto item = objectID in _map)
+            item.page.drawItem(*item, dstrc, srcrc, color, true);
     }
 }
 
@@ -586,48 +547,9 @@ private class GLGlyphCache : GLCache
             GLCacheItem cacheItem = reserveSpace(glyph.id, glyph.correctedBlackBoxX, glyph.blackBoxY);
             if (cacheItem is null)
                 return null;
-            //_drawbuf.drawGlyph(cacheItem._rc.left, cacheItem._rc.top, glyph, 0xFFFFFF);
             _drawbuf.drawGlyphToTexture(cacheItem._rc.left, cacheItem._rc.top, glyph);
             _needUpdateTexture = true;
             return cacheItem;
-        }
-
-        void drawItem(GLCacheItem item, Rect dstrc, Rect srcrc, Color color, Rect* clip)
-        {
-            if (_needUpdateTexture)
-                updateTexture();
-            if (_texture && _texture.id != 0)
-            {
-                // convert coordinates to cached texture
-                srcrc.offset(item._rc.left, item._rc.top);
-                if (clip)
-                {
-                    int srcw = srcrc.width();
-                    int srch = srcrc.height();
-                    int dstw = dstrc.width();
-                    int dsth = dstrc.height();
-                    if (dstw)
-                    {
-                        srcrc.left += clip.left * srcw / dstw;
-                        srcrc.right -= clip.right * srcw / dstw;
-                    }
-                    if (dsth)
-                    {
-                        srcrc.top += clip.top * srch / dsth;
-                        srcrc.bottom -= clip.bottom * srch / dsth;
-                    }
-                    dstrc.left += clip.left;
-                    dstrc.right -= clip.right;
-                    dstrc.top += clip.top;
-                    dstrc.bottom -= clip.bottom;
-                }
-                if (!dstrc.empty)
-                {
-                    //Log.d("drawing glyph with color ", color);
-                    glSupport.queue.addTexturedRect(_texture, _tdx, _tdy, color, color, color,
-                            color, srcrc, dstrc, false);
-                }
-            }
         }
     }
 
@@ -635,13 +557,12 @@ private class GLGlyphCache : GLCache
     void put(Glyph* glyph)
     {
         updateTextureSize();
-        GLCacheItem res = null;
         if (_activePage is null)
         {
             _activePage = new GLGlyphCachePage(this, tdx, tdy);
             _pages ~= _activePage;
         }
-        res = (cast(GLGlyphCachePage)_activePage).addItem(glyph);
+        GLCacheItem res = (cast(GLGlyphCachePage)_activePage).addItem(glyph);
         if (!res)
         {
             auto page = new GLGlyphCachePage(this, tdx, tdy);
@@ -652,10 +573,9 @@ private class GLGlyphCache : GLCache
         _map[glyph.id] = res;
     }
     /// Draw cached item
-    void drawItem(uint objectID, Rect dstrc, Rect srcrc, Color color, Rect* clip)
+    void drawItem(uint objectID, Rect dstrc, Rect srcrc, Color color)
     {
-        GLCacheItem* item = objectID in _map;
-        if (item)
-            (cast(GLGlyphCachePage)item.page).drawItem(*item, dstrc, srcrc, color, clip);
+        if (auto item = objectID in _map)
+            item.page.drawItem(*item, dstrc, srcrc, color, false);
     }
 }
