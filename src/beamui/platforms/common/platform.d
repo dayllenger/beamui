@@ -1948,6 +1948,12 @@ class Platform
         IconProviderBase _iconProvider;
     }
 
+    this()
+    {
+        uiLanguage = "en";
+        uiTheme = "default";
+    }
+
     ~this()
     {
         eliminate(_iconProvider);
@@ -2033,21 +2039,20 @@ class Platform
             if (_themeName == name)
                 return;
 
-            Log.v("uiTheme setting new theme ", name);
-            Theme theme;
+            Theme theme = loadTheme(name);
             if (name != "default")
-                theme = loadTheme(name);
-            else
-                theme = createDefaultTheme();
-            if (!theme)
             {
-                Log.e("Cannot load theme `", name, "` - will use default theme");
-                theme = createDefaultTheme();
+                if (!theme)
+                {
+                    Log.e("Cannot load theme `", name, "` - will use default theme");
+                    theme = loadTheme("default");
+                }
+                else
+                {
+                    Log.i("Applying loaded theme ", name);
+                }
             }
-            else
-            {
-                Log.i("Applying loaded theme ", name);
-            }
+            assert(theme);
             _themeName = theme.name;
             currentTheme = theme;
             onThemeChanged();
@@ -2120,21 +2125,6 @@ class Platform
         currentTheme = theme;
         onThemeChanged();
         requestLayout();
-    }
-
-    /// Set uiLanguage and themeID to default (en, theme_default) if not set yet
-    protected void setDefaultLanguageAndThemeIfNecessary()
-    {
-        if (!_uiLanguage)
-        {
-            Log.v("setDefaultLanguageAndThemeIfNecessary : setting UI language");
-            uiLanguage = "en";
-        }
-        if (!_themeName)
-        {
-            Log.v("setDefaultLanguageAndThemeIfNecessary : setting UI theme");
-            uiTheme = "default";
-        }
     }
 
     /// Open url in external browser

@@ -118,30 +118,6 @@ shared static ~this()
     currentTheme = null;
 }
 
-Theme createDefaultTheme()
-{
-    import beamui.core.config;
-
-    Log.d("Creating default theme");
-    auto theme = new Theme("default");
-
-    version (Windows)
-    {
-//         theme.root.fontFace = "Verdana";
-    }
-    static if (BACKEND_GUI)
-    {
-//         theme.root.fontSize = Dimension.pt(12);
-
-        // TODO
-    }
-    else // console
-    {
-//         theme.root.fontSize = Dimension(1);
-    }
-    return theme;
-}
-
 /// Load theme from file, null if failed
 Theme loadTheme(string name)
 {

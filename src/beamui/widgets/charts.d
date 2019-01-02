@@ -167,7 +167,7 @@ class SimpleBarChart : Widget
 
         Color chartBackgroundColor() const
         {
-            return currentTheme.getColor("chart_background");
+            return currentTheme.getColor("chart_background", Color(0xffffff));
         }
         void chartBackgroundColor(Color newColor)
         {
@@ -177,7 +177,7 @@ class SimpleBarChart : Widget
 
         Color chartAxisColor() const
         {
-            return currentTheme.getColor("chart_axis");
+            return currentTheme.getColor("chart_axis", Color(0xc0c0c0));
         }
         void chartAxisColor(Color newColor)
         {
@@ -187,7 +187,7 @@ class SimpleBarChart : Widget
 
         Color chartSegmentTagColor() const
         {
-            return currentTheme.getColor("chart_segment_tag");
+            return currentTheme.getColor("chart_segment_tag", Color(0xc0c0c0));
         }
         void chartSegmentTagColor(Color newColor)
         {

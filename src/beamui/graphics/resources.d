@@ -54,6 +54,11 @@ struct ResourceList
             embedded ~= embedResources!(splitLines(import(listFilename)))();
         }
     }
+    /// Embed one particular file by its filename
+    void embedOne(string filename)()
+    {
+        embedded ~= embedResource!(filename)();
+    }
 
     /// Get resource directory paths
     @property string[] resourceDirs()

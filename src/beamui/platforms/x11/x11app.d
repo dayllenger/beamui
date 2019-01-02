@@ -1822,7 +1822,6 @@ extern (C) int initializeGUI()
     Log.d("X11 display: ", x11display, ", screen: ", x11screen);
 
     Platform.instance = new X11Platform;
-    Platform.instance.uiTheme = "default";
 
     return 0;
 }

@@ -527,7 +527,6 @@ extern (C) int initializeGUI()
     }
 
     Platform.instance = new ConsolePlatform;
-    Platform.instance.uiTheme = "default";
 
     return 0;
 }

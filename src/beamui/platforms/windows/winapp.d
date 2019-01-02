@@ -1101,7 +1101,6 @@ final class Win32Platform : Platform
     override Window createWindow(dstring windowCaption, Window parent,
             WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0)
     {
-        setDefaultLanguageAndThemeIfNecessary();
         return new Win32Window(this, windowCaption, parent, flags, pt(width), pt(height));
     }
 
@@ -1218,7 +1217,6 @@ extern (C) int initializeGUI()
         return 1;
     }
     Platform.instance = w32platform;
-    Platform.instance.uiTheme = "default";
 
     static if (USE_OPENGL)
     {

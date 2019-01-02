@@ -1073,7 +1073,6 @@ final class SDLPlatform : Platform
     override Window createWindow(dstring title, Window parent,
             WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0)
     {
-        setDefaultLanguageAndThemeIfNecessary();
         int oldDPI = SCREEN_DPI;
         int newwidth = width;
         int newheight = height;
@@ -1480,7 +1479,6 @@ extern (C) int initializeGUI()
     sdlUpdateScreenDpi(0);
 
     Platform.instance = new SDLPlatform;
-    Platform.instance.uiTheme = "default";
 
     return 0;
 }

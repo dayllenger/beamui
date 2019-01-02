@@ -556,6 +556,7 @@ void initResourceManagers()
             "FreeSans" : 8, "FreeSerif" : 8,];
     }
 
+    resourceList.embedOne!"themes/default.css";
     version (EmbedStandardResources)
         resourceList.embed!"standard_resources.list";
 
