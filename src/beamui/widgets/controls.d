@@ -424,7 +424,7 @@ class RadioButton : CheckBox
             clicked(this);
     }
 
-    override protected void handleCheckChange(bool checked)
+    override protected void handleToggling(bool checked)
     {
         if (!blockUnchecking)
             uncheckSiblings();

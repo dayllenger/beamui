@@ -4001,9 +4001,9 @@ class FindPanel : Row
         _btnFindNext.clicked = (Widget wt) { findNext(false); };
         _btnFindPrev.clicked = (Widget wt) { findNext(true); };
 
-        _cbCaseSensitive.checkChanged = &onCaseSensitiveCheckChange;
-        _cbWholeWords.checkChanged = &onCaseSensitiveCheckChange;
-        _cbSelection.checkChanged = &onCaseSensitiveCheckChange;
+        _cbCaseSensitive.toggled = &onCaseSensitiveToggling;
+        _cbWholeWords.toggled = &onCaseSensitiveToggling;
+        _cbSelection.toggled = &onCaseSensitiveToggling;
 
         if (!replace)
             rowReplace.visibility = Visibility.gone;
@@ -4164,7 +4164,7 @@ class FindPanel : Row
         updateHighlight();
     }
 
-    void onCaseSensitiveCheckChange(Widget source, bool checkValue)
+    void onCaseSensitiveToggling(Widget source, bool checkValue)
     {
         updateHighlight();
     }

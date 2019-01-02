@@ -73,7 +73,7 @@ class CheckboxItem : SettingsItem
         cb.minWidth = 60;
         Setting setting = settings.settingByPath(_id);
         cb.checked = setting.boolean = setting.boolean ^ _inverse;
-        cb.checkChanged = (Widget source, bool checked) { setting.boolean = checked ^ _inverse; };
+        cb.toggled = (Widget source, bool checked) { setting.boolean = checked ^ _inverse; };
         return [cb];
     }
 }

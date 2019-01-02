@@ -353,13 +353,13 @@ public:
             // notify checked changes
             if ((oldState & State.checked) && !(newState & State.checked))
             {
-                handleCheckChange(false);
-                checkChanged(this, false);
+                handleToggling(false);
+                toggled(this, false);
             }
             else if (!(oldState & State.checked) && (newState & State.checked))
             {
-                handleCheckChange(true);
-                checkChanged(this, true);
+                handleToggling(true);
+                toggled(this, true);
             }
         }
     }
@@ -382,7 +382,7 @@ public:
     {
     }
     /// Override to handle check changes
-    protected void handleCheckChange(bool checked)
+    protected void handleToggling(bool checked)
     {
     }
 
@@ -1833,7 +1833,7 @@ public:
     Signal!(void delegate(Widget)) clicked;
 
     /// Checked state change event listener
-    Signal!(void delegate(Widget, bool)) checkChanged;
+    Signal!(void delegate(Widget, bool)) toggled;
 
     /// Focus state change event listener
     Signal!(void delegate(Widget, bool)) focusChanged;

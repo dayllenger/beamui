@@ -591,8 +591,8 @@ void main()
 
         cb1.checked = grid.fullColumnOnLeft;
         cb2.checked = grid.fullRowOnTop;
-        cb1.checkChanged ~= (w, checked) { grid.fullColumnOnLeft = checked; };
-        cb2.checkChanged ~= (w, checked) { grid.fullRowOnTop = checked; };
+        cb1.toggled ~= (w, checked) { grid.fullColumnOnLeft = checked; };
+        cb2.toggled ~= (w, checked) { grid.fullRowOnTop = checked; };
 
         grid.resize(30, 50);
         grid.fixedCols = 3;
@@ -710,10 +710,10 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
     cb3.checked = editor.readOnly;
     cb4.checked = editor.fontFamily == FontFamily.monospace;
     cb5.checked = editor.tabSize == 8;
-    cb1.checkChanged ~= (w, checked) { editor.wantTabs = checked; };
-    cb2.checkChanged ~= (w, checked) { editor.useSpacesForTabs = checked; };
-    cb3.checkChanged ~= (w, checked) { editor.readOnly = checked; };
-    cb4.checkChanged ~= (w, checked) {
+    cb1.toggled ~= (w, checked) { editor.wantTabs = checked; };
+    cb2.toggled ~= (w, checked) { editor.useSpacesForTabs = checked; };
+    cb3.toggled ~= (w, checked) { editor.readOnly = checked; };
+    cb4.toggled ~= (w, checked) {
         if (checked)
         {
             editor.fontFace = "Courier New";
@@ -725,7 +725,7 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
             editor.fontFamily = FontFamily.sans_serif;
         }
     };
-    cb5.checkChanged ~= (w, checked) { editor.tabSize(checked ? 8 : 4); };
+    cb5.toggled ~= (w, checked) { editor.tabSize(checked ? 8 : 4); };
 
     return row;
 }
@@ -735,6 +735,6 @@ Widget addSourceEditorControls(Widget base, SourceEdit editor)
     auto cb1 = new CheckBox("Show line numbers");
     base.addChild(cb1);
     cb1.checked = editor.showLineNumbers;
-    cb1.checkChanged ~= (w, checked) { editor.showLineNumbers = checked; };
+    cb1.toggled ~= (w, checked) { editor.showLineNumbers = checked; };
     return base;
 }

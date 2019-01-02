@@ -60,7 +60,7 @@ extern (C) int UIAppMain(string[] args)
     // disable OK button
     ok.enabled = false;
     // and enable it when the check box has been pressed
-    check.checkChanged = delegate(Widget src, bool checked) {
+    check.toggled = delegate(Widget src, bool checked) {
         ok.enabled = checked;
     };
     // show message box on OK button click
