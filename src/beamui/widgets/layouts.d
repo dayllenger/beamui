@@ -683,6 +683,125 @@ class FrameLayout : WidgetGroupDefaultDrawing
     }
 }
 
+/// Place children at specified coordinates
+class FreeLayout : WidgetGroupDefaultDrawing
+{
+    static struct Cell
+    {
+        int x, y;
+
+        private Size size;
+    }
+    private Array!(Cell*) _cells;
+
+    /// Returns cell pointer by specified index. Index must be in range
+    Cell* cell(size_t i)
+    {
+        return _cells[i];
+    }
+    /// Returns cell pointer by specified widget. Widget must be in the layout
+    Cell* cell(Widget item)
+    {
+        return _cells[childIndex(item)];
+    }
+
+    /// Add a widget at specific position upper the added last item
+    /// Returns: Last cell pointer (not null), that allows to adjust layout properties for this widget.
+    Cell* add(Widget item, int x, int y)
+    {
+        addChild(item);
+        Cell* c = _cells.back;
+        c.x = x;
+        c.y = y;
+        return c;
+    }
+
+    override Widget addChild(Widget item)
+    {
+        super.addChild(item);
+        _cells ~= new Cell;
+        requestLayout();
+        return item;
+    }
+
+    override Widget insertChild(int index, Widget item)
+    {
+        super.insertChild(index, item);
+        _cells.insertBefore(_cells[index .. $], new Cell);
+        requestLayout();
+        return item;
+    }
+
+    override Widget removeChild(int index)
+    {
+        Widget result = super.removeChild(index);
+        _cells.linearRemove(_cells[index .. index + 1]);
+        requestLayout();
+        return result;
+    }
+
+    override Widget removeChild(string id)
+    {
+        return super.removeChild(id);
+    }
+
+    override Widget removeChild(Widget child)
+    {
+        return super.removeChild(child);
+    }
+
+    override void removeAllChildren(bool destroyThem = true)
+    {
+        super.removeAllChildren(destroyThem);
+        _cells.clear();
+        requestLayout();
+    }
+
+    //===============================================================
+
+    override Boundaries computeBoundaries()
+    {
+        Boundaries bs;
+        foreach (i; 0 .. childCount)
+        {
+            Widget item = child(i);
+            if (item.visibility == Visibility.gone)
+                continue;
+            Cell* c = _cells[i];
+            Boundaries wbs = item.computeBoundaries();
+            c.size = wbs.nat;
+            wbs.min.w += c.x;
+            wbs.min.h += c.y;
+            wbs.nat.w += c.x;
+            wbs.nat.h += c.y;
+            wbs.max.w += c.x;
+            wbs.max.h += c.y;
+            bs.maximizeWidth(wbs);
+            bs.maximizeHeight(wbs);
+        }
+        applyStyle(bs);
+        return bs;
+    }
+
+    override void layout(Box geom)
+    {
+        if (visibility == Visibility.gone)
+            return;
+
+        box = geom;
+        applyPadding(geom);
+        foreach (i; 0 .. childCount)
+        {
+            Widget item = child(i);
+            if (item.visibility == Visibility.visible)
+            {
+                Cell* c = _cells[i];
+                item.layout(Box(geom.x + c.x, geom.y + c.y, c.size.w, c.size.h));
+            }
+        }
+    }
+}
+
 /// Layout children as table with rows and columns
 class TableLayout : WidgetGroupDefaultDrawing
 {
