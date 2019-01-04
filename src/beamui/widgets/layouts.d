@@ -225,6 +225,17 @@ class LinearLayout : WidgetGroupDefaultDrawing
 
     mixin SupportCSS;
 
+    /// Returns cell pointer by specified index. Index must be in range
+    Cell* cell(size_t i)
+    {
+        return _cells[i];
+    }
+    /// Returns cell pointer by specified widget. Widget must be in the layout
+    Cell* cell(Widget item)
+    {
+        return _cells[childIndex(item)];
+    }
+
     /// Add widgets to the layout next to the last item.
     /// Returns: Last cell pointer (not null), that allows to adjust layout properties for this widget.
     Cell* add(Widget first, Widget[] next...)
@@ -233,6 +244,18 @@ class LinearLayout : WidgetGroupDefaultDrawing
         foreach (item; next)
             addChild(item);
         return _cells.back;
+    }
+
+    /// Same as `add`, but skips null widgets. May return null cell
+    Cell* addSome(Widget first, Widget[] next...)
+    {
+        size_t prevLength = _cells.length;
+        if (first)
+            addChild(first);
+        foreach (item; next)
+            if (item)
+                addChild(item);
+        return _cells.length > prevLength ? _cells.back : null;
     }
 
     /// Add a spacer

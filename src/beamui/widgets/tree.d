@@ -564,11 +564,7 @@ class TreeItemWidget : Row
         _label.setState(State.parent);
         _body.add(_label);
         // append children
-        if (_indent)
-            add(_indent);
-        if (_expander)
-            add(_expander);
-        add(_body);
+        addSome(_indent, _expander, _body);
 
         updateWidgetState();
     }
