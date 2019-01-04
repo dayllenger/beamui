@@ -209,38 +209,29 @@ int UIAppMain(string[] args)
 
         with (controls) {
             padding = 12;
-            add(line1);
-            add(line2);
-            add(line3);
-            add(line4);
+            add(line1, line2, line3, line4);
             with (line1) {
-                add(gb);
-                add(gb2);
-                add(col1);
-                add(col2);
-                add(col3);
+                add(gb, gb2, col1, col2, col3);
                 with (gb) {
-                    add(new CheckBox("CheckBox 1"d));
-                    add(new CheckBox("CheckBox 2"d).setChecked(true));
-                    add(new CheckBox("CheckBox disabled"d).setEnabled(false));
-                    add(new CheckBox("CheckBox disabled"d).setEnabled(false).setChecked(true));
+                    add(new CheckBox("CheckBox 1"d),
+                        new CheckBox("CheckBox 2"d).setChecked(true),
+                        new CheckBox("CheckBox disabled"d).setEnabled(false),
+                        new CheckBox("CheckBox disabled"d).setEnabled(false).setChecked(true));
                 }
                 with (gb2) {
-                    add(new RadioButton("RadioButton 1"d).setChecked(true));
-                    add(new RadioButton("RadioButton 2"d));
-                    add(new RadioButton("RadioButton disabled"d).setEnabled(false));
+                    add(new RadioButton("RadioButton 1"d).setChecked(true),
+                        new RadioButton("RadioButton 2"d),
+                        new RadioButton("RadioButton disabled"d).setEnabled(false));
                 }
                 with (col1) {
-                    add(gb3);
-                    add(gb4);
-                    add(gbtext);
+                    add(gb3, gb4, gbtext);
                     with (gb3) {
-                        add(new Button("Button"d));
-                        add(new Button("Button disabled"d).setEnabled(false));
+                        add(new Button("Button"d),
+                            new Button("Button disabled"d).setEnabled(false));
                     }
                     with (gb4) {
-                        add(new Button("Enabled"d, "document-open"));
-                        add(new Button("Disabled"d, "document-save").setEnabled(false));
+                        add(new Button("Enabled"d, "document-open"),
+                            new Button("Disabled"d, "document-save").setEnabled(false));
                     }
                     with (gbtext) {
                         auto l1 = new Label("Red text"d);
@@ -249,18 +240,15 @@ int UIAppMain(string[] args)
                         l1.textColor = 0xFF0000;
                         l2.fontSize = 12.pt;
                         l2.fontItalic = true;
-                        add(l1);
-                        add(l2);
+                        add(l1, l2);
                     }
                 }
                 with (col2) {
-                    add(gb21);
-                    add(gb22);
+                    add(gb21, gb22);
                     with (gb21) {
                         auto btn = new Button(fileOpenAction);
                         btn.orientation = Orientation.vertical;
-                        add(btn);
-                        add(btnToggle);
+                        add(btn, btnToggle);
                     }
                     with (gb22) {
                         add(new ImageWidget("cr3_logo"));
@@ -269,10 +257,10 @@ int UIAppMain(string[] args)
                 with (col3) {
                     add(gb31);
                     with (gb31) {
-                        add(new SwitchButton());
-                        add(new SwitchButton().setChecked(true));
-                        add(new SwitchButton().setEnabled(false));
-                        add(new SwitchButton().setEnabled(false).setChecked(true));
+                        add(new SwitchButton(),
+                            new SwitchButton().setChecked(true),
+                            new SwitchButton().setEnabled(false),
+                            new SwitchButton().setEnabled(false).setChecked(true));
                     }
                 }
             }
@@ -289,8 +277,7 @@ int UIAppMain(string[] args)
                     ed1.minWidth = 150;
                     ed2.minWidth = 150;
                     ed2.enabled = false;
-                    add(ed1);
-                    add(ed2);
+                    add(ed1, ed2);
                 }
             }
             with (line3) {
@@ -318,14 +305,12 @@ int UIAppMain(string[] args)
                     add(grid).setFillHeight(true);
                 }
                 with (gbtree) {
-                    add(tree);
-                    add(newTreeItemForm);
+                    add(tree, newTreeItemForm);
                     with (newTreeItemForm) {
                         add(newTreeItemEd);
                         add(newTreeItemFormRow).setFillWidth(false).setAlignment(Align.right);
                         with (newTreeItemFormRow) {
-                            add(btnAddItem);
-                            add(btnRemoveItem);
+                            add(btnAddItem, btnRemoveItem);
                         }
                     }
                 }
@@ -436,13 +421,11 @@ int UIAppMain(string[] args)
         with (longLists) {
             add(list).setFillWidth(true);
             add(list2).setFillWidth(true);
+            add(itemedit);
             with (itemedit) {
                 padding = Insets(0, 6);
-                add(new Label("New item text:"d));
-                add(itemtext);
-                add(addbtn);
+                add(new Label("New item text:"d), itemtext, addbtn);
             }
-            add(itemedit);
         }
 
         auto listAdapter = new WidgetListAdapter;
@@ -542,11 +525,8 @@ void main()
                 .addSourceEditorControls(sourceEditor1);
 
         with (editors) {
-            add(editLineLabel);
-            add(editLineControl);
-            add(editLine);
-            add(editorLabel1);
-            add(editorControl);
+            add(editLineLabel, editLineControl, editLine);
+            add(editorLabel1, editorControl);
             add(sourceEditor1).setFillHeight(true);
             add(editorLabel2);
             add(sourceEditor2).setFillHeight(true);
@@ -578,8 +558,7 @@ void main()
             add(gridSettings);
             add(grid).setFillHeight(true);
             with (gridSettings) {
-                add(cb1);
-                add(cb2);
+                add(cb1, cb2);
                 cb1.tooltipText = "Extends scroll area to show full column at left when scrolled to rightmost column"d;
                 cb2.tooltipText = "Extends scroll area to show full row at top when scrolled to end row"d;
             }
@@ -659,15 +638,12 @@ void main()
             auto col1 = new Column;
             auto col2 = new Column;
             with (col1) {
-                add(barChart1);
-                add(barChart2);
+                add(barChart1, barChart2);
             }
             with (col2) {
-                add(barChart3);
-                add(barChart4);
+                add(barChart3, barChart4);
             }
-            add(col1);
-            add(col2);
+            add(col1, col2);
         }
 
         tabs.addTab(chartsLayout.setID("CHARTS"), "Charts");
@@ -699,11 +675,7 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
     auto cb3 = new CheckBox("Read only");
     auto cb4 = new CheckBox("Fixed font");
     auto cb5 = new CheckBox("Tab size 8");
-    row.add(cb1);
-    row.add(cb2);
-    row.add(cb3);
-    row.add(cb4);
-    row.add(cb5);
+    row.add(cb1, cb2, cb3, cb4, cb5);
 
     cb1.checked = editor.wantTabs;
     cb2.checked = editor.useSpacesForTabs;

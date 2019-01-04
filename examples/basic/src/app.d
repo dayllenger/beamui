@@ -42,11 +42,7 @@ extern (C) int UIAppMain(string[] args)
     with (pane) {
         minWidth = 200;
         padding = Insets(15);
-        add(header);
-        add(ed1);
-        add(ed2);
-        add(check);
-        add(line);
+        add(header, ed1, ed2, check, line);
         with (header) {
             fontSize = 18;
         }

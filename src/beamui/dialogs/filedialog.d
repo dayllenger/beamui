@@ -792,8 +792,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             }
             with (rightPanel) {
                 id = "rightPanel";
-                add(new Label(tr("Path") ~ ":"));
-                add(_edPath);
+                add(new Label(tr("Path") ~ ":"), _edPath);
                 add(_fileList).setFillHeight(true);
                 add(_edFilename);
                 if (_filters.length)

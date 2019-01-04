@@ -68,9 +68,9 @@ Widget createControlsPanel()
         spacing = 15;
         auto gb = new GroupBox("Group Box");
         with (gb) {
-            add(new CheckBox("Check Box").setChecked(true));
-            add(new RadioButton("Radio button").setChecked(true));
-            add(new RadioButton("Radio button"));
+            add(new CheckBox("Check Box").setChecked(true),
+                new RadioButton("Radio button").setChecked(true),
+                new RadioButton("Radio button"));
         }
         Row r1 = new Row;
         with (r1) {
@@ -83,14 +83,12 @@ Widget createControlsPanel()
         Row r2 = new Row;
         with (r2) {
             add(new Button("Button")).setFillWidth(true);
-            add(new Button("Button", "folder").addStyleClasses("folder"));
-            add(new Button(null, "dialog-cancel"));
+            add(new Button("Button", "folder").addStyleClasses("folder"),
+                new Button(null, "dialog-cancel"));
         }
         add(gb);
-        add(new ScrollBar(Orientation.horizontal));
-        add(new Slider(Orientation.horizontal));
-        add(r1);
-        add(r2);
+        add(new ScrollBar(Orientation.horizontal), new Slider(Orientation.horizontal));
+        add(r1, r2);
     }
     auto tab2 = new Widget;
 

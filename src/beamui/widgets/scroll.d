@@ -10,15 +10,15 @@ import beamui.widgets.scroll;
 auto scrollContent = new Column;
 with (scrollContent) {
     padding = 10;
-    add(new Label("Some buttons"d));
-    add(new Button("Close"d, "fileclose"));
-    add(new Button("Open"d, "fileopen"));
-    add(new Label("And checkboxes"d));
-    add(new CheckBox("CheckBox 1"d));
-    add(new CheckBox("CheckBox 2"d));
-    add(new CheckBox("CheckBox 3"d));
-    add(new CheckBox("CheckBox 4"d).setChecked(true));
-    add(new CheckBox("CheckBox 5"d).setChecked(true));
+    add(new Label("Some buttons"d),
+        new Button("Close"d, "fileclose"),
+        new Button("Open"d, "fileopen"),
+        new Label("And checkboxes"d),
+        new CheckBox("CheckBox 1"d),
+        new CheckBox("CheckBox 2"d),
+        new CheckBox("CheckBox 3"d),
+        new CheckBox("CheckBox 4"d).setChecked(true),
+        new CheckBox("CheckBox 5"d).setChecked(true));
 }
 // create a scroll view with invisible horizontal and automatic vertical scrollbars
 auto scroll = new ScrollArea(ScrollBarMode.invisible, ScrollBarMode.automatic);

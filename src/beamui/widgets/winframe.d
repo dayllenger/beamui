@@ -52,29 +52,26 @@ class WindowFrame : Column
     protected void initialize()
     {
         _titleLayout = new Row;
-        _titleLayout.bindSubItem(this, "caption");
+            _title = new Label;
+            _closeButton = new Button(null, "close");
+        _bodyLayout = new Row;
+            _bodyWidget = createBodyWidget();
 
-        _title = new Label;
-        _title.bindSubItem(this, "label");
+        with (_titleLayout) {
+            bindSubItem(this, "caption");
+            add(_title, _closeButton);
+            _title.bindSubItem(this, "label");
+            _closeButton.style = "flat";
+        }
+        with (_bodyLayout) {
+            bindSubItem(this, "body");
+            add(_bodyWidget).setFillWidth(true);
+        }
+        add(_titleLayout, _bodyLayout);
 
-        _closeButton = new Button(null, "close");
-        _closeButton.style = "flat";
         _closeButton.clicked = &closeButtonClick.emit;
         if (!_showCloseButton)
             _closeButton.visibility = Visibility.gone;
-
-        _titleLayout.add(_title);
-        _titleLayout.add(_closeButton);
-
-        _bodyLayout = new Row;
-        _bodyLayout.bindSubItem(this, "body");
-
-        _bodyWidget = createBodyWidget();
-        _bodyLayout.add(_bodyWidget).setFillWidth(true);
-        //_bodyWidget.bindSubItem(this, "body");
-
-        add(_titleLayout);
-        add(_bodyLayout);
     }
 
     protected Widget createBodyWidget()

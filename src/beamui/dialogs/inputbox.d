@@ -68,9 +68,7 @@ class InputBox : Dialog
         };
         _editor.contentChanged = delegate(EditableContent content) { _text = content.text; };
         _editor.setDefaultPopupMenu();
-        add(msg);
-        add(_editor);
-        add(createButtonsPanel(_actions, _defaultButtonIndex, 0));
+        add(msg, _editor, createButtonsPanel(_actions, _defaultButtonIndex, 0));
     }
 
     override protected void onShow()

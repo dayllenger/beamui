@@ -225,16 +225,14 @@ class LinearLayout : WidgetGroupDefaultDrawing
 
     mixin SupportCSS;
 
-    /// Add a widget to the layout next to the last item.
-    /// Returns: Cell pointer (not null), that allows to adjust layout properties for this widget.
-    Cell* add(Widget item)
+    /// Add widgets to the layout next to the last item.
+    /// Returns: Last cell pointer (not null), that allows to adjust layout properties for this widget.
+    Cell* add(Widget first, Widget[] next...)
     {
-        super.addChild(item);
-        Cell* cell = createDefaultCell();
-        _cells ~= cell;
-        item.stylesRecomputed = &cell.recomputeStyleImpl;
-        requestLayout();
-        return cell;
+        addChild(first);
+        foreach (item; next)
+            addChild(item);
+        return _cells.back;
     }
 
     /// Add a spacer

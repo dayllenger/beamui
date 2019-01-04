@@ -3963,17 +3963,12 @@ class FindPanel : Row
         auto closeBtn = new Button(null, "close");
 
         with (main) {
-            add(rowFind);
-            add(rowReplace);
+            add(rowFind, rowReplace);
             with (rowFind) {
                 add(_edFind).setFillWidth(true);
-                add(_btnFindNext);
-                add(_btnFindPrev);
-                add(findSettings);
+                add(_btnFindNext, _btnFindPrev, findSettings);
                 with (findSettings) {
-                    add(_cbCaseSensitive);
-                    add(_cbWholeWords);
-                    add(_cbSelection);
+                    add(_cbCaseSensitive, _cbWholeWords, _cbSelection);
                     with (_cbCaseSensitive) {
                         checkable = true;
                         tooltipText = "Case sensitive";
@@ -3987,9 +3982,7 @@ class FindPanel : Row
             with (rowReplace) {
                 id = "rowReplace";
                 add(_edReplace).setFillWidth(true);
-                add(btnReplace);
-                add(btnReplaceAndFind);
-                add(btnReplaceAll);
+                add(btnReplace, btnReplaceAndFind, btnReplaceAll);
             }
         }
         add(main).setFillWidth(true);
