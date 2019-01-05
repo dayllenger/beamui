@@ -315,14 +315,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         protected int lineHeight() { return _lineHeight; }
     }
 
-    /// Set bool property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setBoolProperty", "bool", "wantTabs",
-            "showTabPositionMarks", "readOnly", "replaceMode",
-            "useSpacesForTabs", "copyCurrentLineWhenNoSelection"));
-
-    /// Set int property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setIntProperty", "int", "tabSize"));
-
     /// Modified state change listener (e.g. content has been saved, or first time modified after save)
     Signal!(void delegate(Widget source, bool modified)) modifiedStateChanged;
 

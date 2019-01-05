@@ -43,7 +43,6 @@ public
     import beamui.dialogs.filedialog;
     import beamui.dialogs.messagebox;
     import beamui.dialogs.settingsdialog;
-    import beamui.dml.parser;
     import beamui.graphics.colors;
     import beamui.graphics.drawbuf;
     import beamui.graphics.fonts;

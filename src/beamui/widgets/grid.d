@@ -445,14 +445,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
     }
 
-    /// Set bool property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setBoolProperty", "bool", "showColHeaders",
-            "showColHeaders", "rowSelect", "smoothHScroll", "smoothVScroll", "allowColResizing"));
-
-    /// Set int property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setIntProperty", "int", "headerCols",
-            "headerRows", "fixedCols", "fixedRows", "cols", "rows", "defColumnWidth", "defRowHeight"));
-
     /// Callback to handle selection change
     Listener!(void delegate(GridWidgetBase, int col, int row)) cellSelected;
     /// Callback to handle cell double click or Enter key press

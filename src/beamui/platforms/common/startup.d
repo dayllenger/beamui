@@ -582,13 +582,9 @@ void initResourceManagers()
 
     initStandardActions();
     initStandardEditorActions();
-    registerStandardWidgets();
 
     Log.d("initResourceManagers() -- finished");
 }
-
-/// Register standard widgets to use in DML
-extern (C) void registerStandardWidgets();
 
 /// Call this when all resources are supposed to be freed to report counts of non-freed resources by type
 void releaseResourcesOnAppExit()

@@ -44,7 +44,6 @@ public
 }
 import std.string : capitalize;
 import beamui.core.animations;
-import beamui.dml.annotations;
 import beamui.platforms.common.platform;
 import beamui.style.style;
 import beamui.widgets.menu;
@@ -113,7 +112,7 @@ enum CursorType
 }
 
 /// Base class for all widgets.
-@dmlwidget class Widget
+class Widget
 {
 private:
     /// Widget id
@@ -2385,91 +2384,6 @@ public:
     {
         _window = window;
     }
-
-    //===============================================================
-    // ML Loader support
-
-    /// Set string property value, for ML loaders
-    bool setStringProperty(string name, string value)
-    {
-        mixin(generatePropertySetters("id", "backgroundColor", "textColor", "fontFace"));
-        if (name == "text")
-        {
-            text = tr(value);
-            return true;
-        }
-        if (name == "tooltipText")
-        {
-            tooltipText = tr(value);
-            return true;
-        }
-        return false;
-    }
-
-    /// Set dstring property value, for ML loaders
-    bool setDstringProperty(string name, dstring value)
-    {
-        if (name == "text")
-        {
-            text = value;
-            return true;
-        }
-        if (name == "tooltipText")
-        {
-            tooltipText = value;
-            return true;
-        }
-        return false;
-    }
-
-    /// StringListValue list values
-    bool setStringListValueListProperty(string propName, StringListValue[] values)
-    {
-        return false;
-    }
-
-    /// Set bool property value, for ML loaders
-    bool setBoolProperty(string name, bool value)
-    {
-        mixin(generatePropertySetters("enabled", "clickable", "checkable", "focusable", "checked", "fontItalic"));
-        return false;
-    }
-
-    /// Set double property value, for ML loaders
-    bool setDoubleProperty(string name, double value)
-    {
-        if (name == "alpha")
-        {
-            int n = cast(int)(value * 255);
-            return setIntProperty(name, n);
-        }
-        return false;
-    }
-
-    /// Set int property value, for ML loaders
-    bool setIntProperty(string name, int value)
-    {
-        mixin(generatePropertySetters("width", "height", "minWidth", "maxWidth", "minHeight", "maxHeight",
-                "layoutWeight", "textColor", "backgroundColor", "fontSize"));
-        if (name == "alpha")
-        {
-            alpha = cast(ubyte)clamp(value, 0, 255);
-            return true;
-        }
-        if (name == "padding")
-        { // use same value for all sides
-            padding = Insets(value);
-            return true;
-        }
-        return false;
-    }
-
-    /// Set Insets property value, for ML loaders
-    bool setInsetsProperty(string name, Insets value)
-    {
-        mixin(generatePropertySetters("padding"));
-        return false;
-    }
 }
 
 /// Widget list holder
@@ -2913,38 +2827,6 @@ mixin template SupportCSS(BaseClass = Widget)
                 mixin(sideEffectName ~ "();");
         }
     }
-}
-
-/// Use in mixin to set this object property with name propName with value of variable value if variable name matches propName
-string generatePropertySetter(string propName)
-{
-    return format(`
-        if (name == "%s") { %s = value; return true; }
-    `, propName, propName);
-}
-
-/// Use in mixin to set this object properties with names from parameter list with value of variable value if variable name matches propName
-string generatePropertySetters(string[] propNames...)
-{
-    string res;
-    foreach (propName; propNames)
-        res ~= generatePropertySetter(propName);
-    return res;
-}
-
-/// Use in mixin for method override to set this object properties with names from parameter list with value of variable value if variable name matches propName
-string generatePropertySettersMethodOverride(string methodName, string typeName, string[] propNames...)
-{
-    string res = format(`
-    override bool %s(string name, %s value)
-    {
-    `, methodName, typeName);
-    foreach (propName; propNames)
-        res ~= generatePropertySetter(propName);
-    res ~= format(`
-        return super.%s(name, value);
-    }`, methodName);
-    return res;
 }
 
 __gshared bool TOUCH_MODE = false;

@@ -851,9 +851,6 @@ class TableLayout : WidgetGroupDefaultDrawing
         private alias colSpacing_effect = requestLayout;
     }
 
-    /// Set int property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setIntProperty", "int", "colCount"));
-
     private
     {
         Array!LayoutItem _cells;

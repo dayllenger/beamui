@@ -1420,16 +1420,6 @@ class StringListWidget : ListWidget
         ownAdapter = new StringListAdapter(items);
     }
 
-    override bool setStringListValueListProperty(string propName, StringListValue[] values)
-    {
-        if (propName == "items")
-        {
-            items = values;
-            return true;
-        }
-        return false;
-    }
-
     override bool onKeyEvent(KeyEvent event)
     {
         if (itemCount == 0)

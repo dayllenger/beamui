@@ -46,9 +46,6 @@ class ImageWidget : Widget
         }
     }
 
-    /// Set string property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setStringProperty", "string", "imageID"));
-
     private string _imageID;
     private DrawableRef _drawable;
 
@@ -305,9 +302,6 @@ class Button : LinearLayout, ActionHolder
             checked = !checked;
         super.handleClick();
     }
-
-    /// Set string property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setStringProperty", "string", "iconID"));
 }
 
 /// Hyperlink button. Like Button, may execute arbitrary actions.

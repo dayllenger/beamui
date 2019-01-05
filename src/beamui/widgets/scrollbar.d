@@ -116,31 +116,6 @@ class AbstractSlider : WidgetGroup
         }
     }
 
-    /// Set int property value, for ML loaders
-    override bool setIntProperty(string name, int value)
-    {
-        if (name == "orientation")
-        {
-            orientation = cast(Orientation)value;
-            return true;
-        }
-        mixin(generatePropertySetters("minValue", "maxValue", "pageSize", "position"));
-        return super.setIntProperty(name, value);
-    }
-
-    override bool setStringProperty(string name, string value)
-    {
-        if (name == "orientation")
-        {
-            if (value == "Vertical" || value == "vertical")
-                orientation = Orientation.vertical;
-            else
-                orientation = Orientation.horizontal;
-            return true;
-        }
-        return super.setStringProperty(name, value);
-    }
-
     override void onThemeChanged()
     {
         super.onThemeChanged();

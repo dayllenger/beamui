@@ -232,16 +232,6 @@ class ComboBox : ComboBoxBase
         requestLayout();
     }
 
-    override bool setStringListValueListProperty(string propName, StringListValue[] values)
-    {
-        if (propName == "items")
-        {
-            items = values;
-            return true;
-        }
-        return false;
-    }
-
     /// Get selected item as text
     @property dstring selectedItem()
     {
@@ -423,9 +413,6 @@ class ComboEdit : ComboBox
     {
         _edit.readOnly = ro;
     }
-
-    /// Set bool property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setBoolProperty", "bool", "readOnly"));
 
     private EditLine _edit;
 

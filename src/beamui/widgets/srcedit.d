@@ -80,10 +80,6 @@ class SourceEdit : EditBox
         string filename() { return _filename; }
     }
 
-    /// Set bool property value, for ML loaders
-    mixin(generatePropertySettersMethodOverride("setBoolProperty", "bool",
-            "showIcons", "showFolding", "showModificationMarks", "showLineNumbers"));
-
     private
     {
         bool _showLineNumbers = true; /// show line numbers in left pane
