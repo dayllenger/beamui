@@ -6,7 +6,7 @@ Synopsis:
 import beamui.widgets.layouts;
 ---
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
@@ -404,7 +404,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
 
     private void doLayout(string dim)(Box geom)
     {
-        // TODO: layout weight, percent
+        // TODO: percent
         enum horiz = dim == `w`;
 
         // setup fill
@@ -428,7 +428,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
             }
         }
         int gaps = spacing * (cast(int)items.length - 1);
-        allocateSpace!dim(items, mixin("geom." ~ dim) - gaps);
+        allocateSpace!dim(items, geom.pick!dim - gaps);
         // apply resizers
         foreach (i; 1 .. items.length - 1)
         {
@@ -438,14 +438,14 @@ class LinearLayout : WidgetGroupDefaultDrawing
                 LayoutItem* left  = &items[i - 1];
                 LayoutItem* right = &items[i + 1];
 
-                int lmin = mixin("left.bs.min." ~ dim);
-                int rmin = mixin("right.bs.min." ~ dim);
-                int lresult = mixin("left.result." ~ dim);
-                int rresult = mixin("right.result." ~ dim);
+                int lmin = left.bs.min.pick!dim;
+                int rmin = right.bs.min.pick!dim;
+                int lresult = left.result.pick!dim;
+                int rresult = right.result.pick!dim;
                 int delta = clamp(resizer.delta, -(lresult - lmin), rresult - rmin);
                 resizer._delta = delta;
-                mixin("left.result." ~ dim)  = lresult + delta;
-                mixin("right.result." ~ dim) = rresult - delta;
+                left.result.pick!dim  = lresult + delta;
+                right.result.pick!dim = rresult - delta;
             }
         }
         // lay out items
@@ -469,124 +469,207 @@ class LinearLayout : WidgetGroupDefaultDrawing
             res.w -= m.width;
             res.h -= m.height;
             item.wt.layout(res);
-            pen += mixin("sz." ~ dim) + _spacing;
+            pen += sz.pick!dim + _spacing;
         }
     }
 }
 
-void allocateSpace(string dim)(ref Array!LayoutItem items, int parentSize)
+private ref auto pick(string dim, T)(ref T s)
 {
-    int extraSize = distribute!dim(items, parentSize);
-    if (extraSize > 0)
-        expand!dim(items, extraSize);
+    return __traits(getMember, s, dim);
 }
 
-int distribute(string dim)(ref Array!LayoutItem items, int bounds)
+void allocateSpace(string dim)(ref Array!LayoutItem items, int totalSize)
 {
     int min;
     int nat;
     foreach (const ref item; items)
     {
-        min += mixin("item.bs.min." ~ dim);
-        nat += mixin("item.bs.nat." ~ dim);
+        min += item.bs.min.pick!dim;
+        nat += item.bs.nat.pick!dim;
     }
 
-    if (bounds >= nat)
+    if (totalSize == nat)
     {
         foreach (ref item; items)
-        {
-            mixin("item.result." ~ dim) = mixin("item.bs.nat." ~ dim);
-        }
-        return bounds - nat;
+            item.result.pick!dim = item.bs.nat.pick!dim;
     }
-    else
+    else if (totalSize <= min)
     {
-        static int[2][] indices;
-        static size_t len;
-
-        len = items.length;
-        if (indices.length < len)
-            indices.length = len;
-        foreach (i; 0 .. len)
-        {
-            Boundaries* bs = &items[i].bs;
-            indices[i][0] = cast(int)i;
-            indices[i][1] = mixin("bs.nat." ~ dim) - mixin("bs.min." ~ dim);
-        }
-        // sort indices by difference between min and nat sizes
-        sort!((a, b) => a[1] < b[1])(indices[0 .. len]);
-
-        // iterate
-        int available = bounds - min;
-        foreach (i; 0 .. len)
-        {
-            size_t j = indices[i][0];
-            auto item = &items[j];
-            int diff = indices[i][1];
-            if (diff < available)
-            {
-                mixin("item.result." ~ dim) = mixin("item.bs.nat." ~ dim);
-                available -= diff;
-            }
-            else
-            {
-                mixin("item.result." ~ dim) = mixin("item.bs.min." ~ dim) + available;
-                available = 0;
-            }
-        }
-        return 0;
+        foreach (ref item; items)
+            item.result.pick!dim = item.bs.min.pick!dim;
     }
+    else if (totalSize > nat)
+        expand!dim(items, totalSize - nat);
+    else
+        shrink!dim(items, totalSize - min);
 }
 
-void expand(string dim)(ref Array!LayoutItem items, int extraSize)
+private struct Item
+{
+    size_t index;
+    int bound, base;
+}
+private Item[] storage;
+
+private void expand(string dim)(ref Array!LayoutItem items, const int extraSize)
 {
     assert(extraSize > 0);
 
+    const len = items.length;
+    if (storage.length < len)
+        storage.length = len;
+
+    // gather all filling items into the array, set sizes for fixed ones
     int fillCount;
-    foreach (const ref item; items)
+    foreach (i; 0 .. len)
     {
+        auto item = &items[i];
+        const nat = item.bs.nat.pick!dim;
+        const max = item.bs.max.pick!dim;
         if (item.fill)
-            fillCount++;
+            storage[fillCount++] = Item(i, max, nat);
+        else
+            item.result.pick!dim = nat;
     }
+
     if (fillCount > 0)
     {
-        int perWidgetSize = extraSize / fillCount;
-        foreach (ref item; items)
+        Item[] filling = storage[0 .. fillCount];
+        // do fill
+        expandImpl(filling, extraSize);
+        // set final values
+        foreach (const ref item; filling)
         {
-            if (item.fill)
-            {
-                int diff = mixin("item.bs.max." ~ dim) - mixin("item.result." ~ dim);
-                // widget is bounded by max, treat as a fixed widget
-                if (perWidgetSize > diff)
-                {
-                    mixin("item.result." ~ dim) = mixin("item.bs.max." ~ dim);
-                    extraSize -= diff;
-                    item.fill = false;
-                    fillCount--;
-                }
-            }
+            items[item.index].result.pick!dim = item.base;
         }
-        if (fillCount > 0)
+    }
+}
+
+private void expandImpl(Item[] filling, int extraSize)
+{
+    // check the simplest case
+    if (filling.length == 1)
+    {
+        filling[0].base = min(filling[0].base + extraSize, filling[0].bound);
+        return;
+    }
+
+    // sort items by their natural size
+    sort!((a, b) => a.base < b.base)(filling);
+    // we add space to the smallest first, so last items may get nothing
+    int volume;
+    int end;
+    for (end = 1; end < filling.length; end++)
+    {
+        int v;
+        foreach (j; 0 .. end)
         {
-            perWidgetSize = max(extraSize, 0) / fillCount; // FIXME: max needed?
-            // correction for perfect results
-            int error = extraSize - perWidgetSize * fillCount;
-            int front = error / 2;
-            int rear = fillCount - error + front;
-            int i;
-            foreach (ref item; items)
-            {
-                if (item.fill)
-                {
-                    int sz = perWidgetSize;
-                    // apply correction
-                    if (i < front || i >= rear)
-                        sz++;
-                    i++;
-                    mixin("item.result." ~ dim) += sz;
-                }
-            }
+            v += min(filling[end].base, filling[j].bound) - filling[j].base;
         }
+        if (v <= extraSize)
+            volume = v;
+        else
+            break;
+    }
+    const upto = filling[end - 1].base;
+    int skip;
+    foreach (ref item; filling[0 .. end - 1])
+    {
+        item.base = min(upto, item.bound);
+        // skip already bounded by max
+        if (item.base == item.bound)
+            skip++;
+    }
+    extraSize -= volume;
+    if (extraSize > 0)
+    {
+        // after sorting all items in filling[skip .. end] will have the same size
+        // we need to add equal amounts of space to them
+        addSpaceToItems(filling[0 .. end], skip, extraSize);
+    }
+}
+
+private void addSpaceToItems(Item[] items, const int skip, int extraSize)
+{
+    assert(extraSize > 0);
+    assert(items.length > 0);
+
+    // sort by available space to add
+    sort!((a, b) => a.bound - a.base < b.bound - b.base)(items);
+
+    int start = skip;
+    const end = cast(int)items.length;
+    foreach (i; start .. end)
+    {
+        const perItemSize = extraSize / (end - start);
+        const bound = items[i].bound;
+        const diff = bound - items[i].base;
+        // item is bounded, treat as a fixed one
+        if (diff <= perItemSize)
+        {
+            items[i].base = bound;
+            extraSize -= diff;
+            start++;
+        }
+        else
+            break;
+    }
+    addSpaceEvenly(items[start .. end], extraSize);
+}
+
+private void addSpaceEvenly(Item[] items, const int extraSize)
+{
+    assert(extraSize > 0);
+
+    const divisor = cast(int)items.length;
+    if (divisor == 0)
+        return;
+
+    const perItemSize = extraSize / divisor;
+    // correction for perfect results
+    const error = extraSize - perItemSize * divisor;
+    const front = error / 2;
+    const rear = divisor - error + front;
+    int i;
+    foreach (ref item; items)
+    {
+        // apply correction
+        int sz = perItemSize;
+        if (i < front || i >= rear)
+            sz++;
+        i++;
+        item.base += sz;
+    }
+}
+
+private void shrink(string dim)(ref Array!LayoutItem items, int available)
+{
+    assert(available > 0);
+
+    const len = items.length;
+    if (storage.length < len)
+        storage.length = len;
+    foreach (i; 0 .. len)
+    {
+        const bs = &items[i].bs;
+        storage[i] = Item(i, bs.nat.pick!dim, bs.min.pick!dim);
+    }
+
+    Item[] shrinking = storage[0 .. len];
+    // check the simplest case
+    if (len == 1)
+    {
+        shrinking[0].base += available;
+    }
+    else
+    {
+        addSpaceToItems(shrinking, 0, available);
+    }
+    // write values
+    foreach (const ref item; shrinking)
+    {
+        items[item.index].result.pick!dim = item.base;
     }
 }
 
