@@ -1106,7 +1106,7 @@ public:
             _needLayout = false;
         }
 
-        /// Widget hard width (SIZE_UNSPECIFIED if not set)
+        /// Widget natural (preferred) width (SIZE_UNSPECIFIED if not set)
         int width() const
         {
             updateStyles();
@@ -1122,7 +1122,7 @@ public:
         {
             width = Dimension(value);
         }
-        /// Widget hard height (SIZE_UNSPECIFIED if not set)
+        /// Widget natural (preferred) height (SIZE_UNSPECIFIED if not set)
         int height() const
         {
             updateStyles();
@@ -1205,15 +1205,6 @@ public:
         void maxHeight(int value)
         {
             maxHeight = Dimension(value);
-        }
-        /// Layout weight (while resizing to fill parent, widget will be resized proportionally to this value)
-        int layoutWeight() const
-        {
-            return 0;
-        }
-        /// ditto
-        void layoutWeight(int value)
-        {
         }
 
         /// Widget visibility (visible, invisible, gone)
@@ -2087,13 +2078,23 @@ public:
     /// Helper function: apply padding and min-max style properties to boundaries
     protected void applyStyle(ref Boundaries bs)
     {
-        Size p = padding.size;
+        const Size p = padding.size;
         bs.min.w = max(bs.min.w, minWidth);
         bs.min.h = max(bs.min.h, minHeight);
         bs.max.w = max(min(bs.max.w + p.w, maxWidth), bs.min.w);
         bs.max.h = max(min(bs.max.h + p.h, maxHeight), bs.min.h);
-        bs.nat.w = clamp(bs.nat.w + p.w, bs.min.w, bs.max.w);
-        bs.nat.h = clamp(bs.nat.h + p.h, bs.min.h, bs.max.h);
+        const w = width;
+        const h = height;
+        if (w != SIZE_UNSPECIFIED!int)
+            bs.nat.w = w;
+        else
+            bs.nat.w += p.w;
+        if (h != SIZE_UNSPECIFIED!int)
+            bs.nat.h = h;
+        else
+            bs.nat.h += p.h;
+        bs.nat.w = clamp(bs.nat.w, bs.min.w, bs.max.w);
+        bs.nat.h = clamp(bs.nat.h, bs.min.h, bs.max.h);
     }
 
     bool widthDependsOnHeight;
