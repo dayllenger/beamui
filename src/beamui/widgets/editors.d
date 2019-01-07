@@ -2170,9 +2170,7 @@ class EditLine : EditWidgetBase
             return;
 
         super.layout(geom);
-
-        applyPadding(geom);
-        clientBox = geom;
+        clientBox = innerBox;
 
         if (_contentChanged)
         {
@@ -2213,9 +2211,8 @@ class EditLine : EditWidgetBase
             return;
 
         super.onDraw(buf);
-        Box b = box;
-        applyPadding(b);
-        auto saver = ClipRectSaver(buf, b, alpha);
+        const b = innerBox;
+        const saver = ClipRectSaver(buf, b, alpha);
 
         FontRef font = font();
         dstring txt = applyPasswordChar(text);

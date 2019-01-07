@@ -277,50 +277,48 @@ class DockHost : WidgetGroupDefaultDrawing
             return;
 
         box = geom;
-        applyPadding(geom);
+        const inner = innerBox;
 
         foreach (a; _layoutPriority)
         {
             if (a == DockAlignment.top)
-                _topSpace.beforeLayout(geom, getDockedWindowList(DockAlignment.top));
+                _topSpace.beforeLayout(inner, getDockedWindowList(DockAlignment.top));
             if (a == DockAlignment.left)
-                _leftSpace.beforeLayout(geom, getDockedWindowList(DockAlignment.left));
+                _leftSpace.beforeLayout(inner, getDockedWindowList(DockAlignment.left));
             if (a == DockAlignment.right)
-                _rightSpace.beforeLayout(geom, getDockedWindowList(DockAlignment.right));
+                _rightSpace.beforeLayout(inner, getDockedWindowList(DockAlignment.right));
             if (a == DockAlignment.bottom)
-                _bottomSpace.beforeLayout(geom, getDockedWindowList(DockAlignment.bottom));
+                _bottomSpace.beforeLayout(inner, getDockedWindowList(DockAlignment.bottom));
         }
         Insets sp;
         foreach (a; _layoutPriority)
         {
-            Box b = geom;
             if (a == DockAlignment.top)
             {
                 sp.top = _topSpace.space;
-                _topSpace.layout(Box(geom.x + sp.left, geom.y,
-                                     geom.w - sp.left - sp.right, sp.top));
+                _topSpace.layout(Box(inner.x + sp.left, inner.y,
+                                     inner.w - sp.left - sp.right, sp.top));
             }
             if (a == DockAlignment.bottom)
             {
                 sp.bottom = _bottomSpace.space;
-                _bottomSpace.layout(Box(geom.x + sp.left, geom.y + geom.h - sp.bottom,
-                                        geom.w - sp.left - sp.right, sp.bottom));
+                _bottomSpace.layout(Box(inner.x + sp.left, inner.y + inner.h - sp.bottom,
+                                        inner.w - sp.left - sp.right, sp.bottom));
             }
             if (a == DockAlignment.left)
             {
                 sp.left = _leftSpace.space;
-                _leftSpace.layout(Box(geom.x, geom.y + sp.top,
-                                      sp.left, geom.h - sp.top - sp.bottom));
+                _leftSpace.layout(Box(inner.x, inner.y + sp.top,
+                                      sp.left, inner.h - sp.top - sp.bottom));
             }
             if (a == DockAlignment.right)
             {
                 sp.right = _rightSpace.space;
-                _rightSpace.layout(Box(geom.x + geom.w - sp.right, geom.y + sp.top,
-                                       sp.right, geom.h - sp.top - sp.bottom));
+                _rightSpace.layout(Box(inner.x + inner.w - sp.right, inner.y + sp.top,
+                                       sp.right, inner.h - sp.top - sp.bottom));
             }
         }
-        geom.shrink(sp);
-        _bodyWidget.maybe.layout(geom);
+        _bodyWidget.maybe.layout(inner.shrinked(sp));
     }
 }
 

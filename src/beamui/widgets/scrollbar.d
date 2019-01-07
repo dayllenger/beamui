@@ -527,7 +527,7 @@ class ScrollBar : AbstractSlider
             return;
 
         box = geom;
-        applyPadding(geom);
+        geom = innerBox;
 
         if (_orient == Orientation.vertical)
         {
@@ -559,9 +559,7 @@ class ScrollBar : AbstractSlider
             return;
 
         super.onDraw(buf);
-        Box b = box;
-        applyPadding(b);
-        auto saver = ClipRectSaver(buf, b, alpha);
+        const saver = ClipRectSaver(buf, innerBox, alpha);
         bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).onDraw(buf);
     }
 }
@@ -630,7 +628,7 @@ class Slider : AbstractSlider
             return;
 
         box = geom;
-        applyPadding(geom);
+        geom = innerBox;
 
         _scrollArea = geom;
         _indicator.scrollArea = geom;

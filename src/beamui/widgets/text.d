@@ -88,8 +88,7 @@ class Label : Widget
             return;
 
         super.onDraw(buf);
-        Box b = box;
-        applyPadding(b);
+        Box b = innerBox;
         auto saver = ClipRectSaver(buf, b, alpha);
 
         textobj.style.color = textColor;
@@ -203,8 +202,7 @@ class MultilineLabel : Widget
             return;
 
         super.onDraw(buf);
-        Box b = box;
-        applyPadding(b);
+        Box b = innerBox;
         auto saver = ClipRectSaver(buf, b, alpha);
 
         textobj.style.color = textColor;

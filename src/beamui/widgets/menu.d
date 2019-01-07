@@ -315,7 +315,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
             return;
 
         box = b;
-        applyPadding(b);
+        b = innerBox;
 
         if (isSeparator)
         {

@@ -326,13 +326,13 @@ class SimpleBarChart : Widget
             return;
 
         box = geom;
-        applyPadding(geom);
+        const inner = innerBox;
 
         int extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
         int extraSizeY = _axisX.thickness + _axisX.segmentTagLength + _axisY.zeroValueDist + _axisY.arrowSize;
 
         // X axis length
-        _axisX.lengthFromZeroToArrow = geom.w - _axisY.maxDescriptionSize.w - extraSizeX;
+        _axisX.lengthFromZeroToArrow = inner.w - _axisY.maxDescriptionSize.w - extraSizeX;
 
         // update bars width
         if (barCount > 0)
@@ -342,7 +342,7 @@ class SimpleBarChart : Widget
         _axisX.maxDescriptionSize = measureAxisXDesc();
 
         // Y axis length
-        _axisY.lengthFromZeroToArrow = geom.h - _axisX.maxDescriptionSize.h - extraSizeY -
+        _axisY.lengthFromZeroToArrow = inner.h - _axisX.maxDescriptionSize.h - extraSizeY -
             (_showTitle ? _title.size.h + _marginAfterTitle : 0);
     }
 
@@ -352,8 +352,7 @@ class SimpleBarChart : Widget
             return;
         super.onDraw(buf);
 
-        Box b = box;
-        applyPadding(b);
+        const b = innerBox;
 
         auto saver = ClipRectSaver(buf, b, alpha);
 

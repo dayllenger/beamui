@@ -83,9 +83,8 @@ class ImageWidget : Widget
             return;
 
         super.onDraw(buf);
-        Box b = box;
-        auto saver = ClipRectSaver(buf, b, alpha);
-        applyPadding(b);
+        const saver = ClipRectSaver(buf, box, alpha);
+        Box b = innerBox;
         DrawableRef img = _drawable;
         if (!img.isNull)
         {
@@ -466,9 +465,7 @@ class CanvasWidget : Widget
             return;
 
         super.onDraw(buf);
-        Box b = box;
-        auto saver = ClipRectSaver(buf, b, alpha);
-        applyPadding(b);
-        doDraw(buf, b);
+        const saver = ClipRectSaver(buf, box, alpha);
+        doDraw(buf, innerBox);
     }
 }

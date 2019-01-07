@@ -983,8 +983,7 @@ class ListWidget : WidgetGroup
         if (itemCount > _itemBoxes.length)
             return true; // layout not yet called
 
-        Box b = box;
-        applyPadding(b);
+        const b = innerBox;
         // same as in onDraw
         const bool vert = _orientation == Orientation.vertical;
         const int scrollOffset = _scrollPosition;
@@ -1101,7 +1100,7 @@ class ListWidget : WidgetGroup
             return;
 
         box = geom;
-        applyPadding(geom);
+        Box inner = innerBox;
 
         // measure children
         // calc item rectangles
@@ -1126,10 +1125,10 @@ class ListWidget : WidgetGroup
             {
                 _itemBoxes[i].x = 0;
                 _itemBoxes[i].y = p;
-                _itemBoxes[i].w = geom.w;
+                _itemBoxes[i].w = inner.w;
                 _itemBoxes[i].h = wbs.nat.h;
                 p += wbs.nat.h;
-                if (p > geom.h)
+                if (p > inner.h)
                 {
                     _needScrollbar = true;
                     break;
@@ -1140,9 +1139,9 @@ class ListWidget : WidgetGroup
                 _itemBoxes[i].x = p;
                 _itemBoxes[i].y = 0;
                 _itemBoxes[i].w = wbs.nat.w;
-                _itemBoxes[i].h = geom.h;
+                _itemBoxes[i].h = inner.h;
                 p += wbs.nat.w;
-                if (p > geom.w)
+                if (p > inner.w)
                 {
                     _needScrollbar = true;
                     break;
@@ -1158,12 +1157,12 @@ class ListWidget : WidgetGroup
             if (_orientation == Orientation.vertical)
             {
                 sbsz = sbbs.nat.w;
-                geom.w -= sbsz;
+                inner.w -= sbsz;
             }
             else
             {
                 sbsz = sbbs.nat.h;
-                geom.h -= sbsz;
+                inner.h -= sbsz;
             }
 
             // recalculate with scrollbar
@@ -1184,7 +1183,7 @@ class ListWidget : WidgetGroup
                     {
                         _itemBoxes[i].x = 0;
                         _itemBoxes[i].y = p;
-                        _itemBoxes[i].w = geom.w;
+                        _itemBoxes[i].w = inner.w;
                         _itemBoxes[i].h = wbs.nat.h;
                         p += wbs.nat.h;
                     }
@@ -1193,7 +1192,7 @@ class ListWidget : WidgetGroup
                         _itemBoxes[i].x = p;
                         _itemBoxes[i].y = 0;
                         _itemBoxes[i].w = wbs.nat.w;
-                        _itemBoxes[i].h = geom.h;
+                        _itemBoxes[i].h = inner.h;
                         p += wbs.nat.w;
                     }
                 }
@@ -1205,11 +1204,11 @@ class ListWidget : WidgetGroup
                 {
                     if (_orientation == Orientation.vertical)
                     {
-                        _itemBoxes[i].w = geom.w;
+                        _itemBoxes[i].w = inner.w;
                     }
                     else
                     {
-                        _itemBoxes[i].h = geom.h;
+                        _itemBoxes[i].h = inner.h;
                     }
                 }
             }
@@ -1218,7 +1217,7 @@ class ListWidget : WidgetGroup
         {   // hide scrollbar
             _scrollbar.visibility = Visibility.gone;
         }
-        _clientBox = geom;
+        _clientBox = inner;
 
         // maximum scroll position
         if (_orientation == Orientation.vertical)
@@ -1246,7 +1245,7 @@ class ListWidget : WidgetGroup
         // lay out scrollbar
         if (_needScrollbar)
         {
-            Box sbb = geom;
+            Box sbb = inner;
             if (_orientation == Orientation.vertical)
             {
                 sbb.x += sbb.w;
@@ -1275,8 +1274,7 @@ class ListWidget : WidgetGroup
             return;
 
         super.onDraw(buf);
-        Box b = box;
-        applyPadding(b);
+        const b = innerBox;
         const saver = ClipRectSaver(buf, b, alpha);
 
         // draw scrollbar

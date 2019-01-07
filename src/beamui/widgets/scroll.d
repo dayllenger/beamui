@@ -254,16 +254,16 @@ class ScrollAreaBase : WidgetGroup
             return;
 
         box = geom;
-        applyPadding(geom);
 
-        Size sz = geom.size;
+        const inner = innerBox;
+        const sz = inner.size;
         updateScrollBarsVisibility(sz);
         bool needHScroll;
         bool needVScroll;
         needToShowScrollbars(needHScroll, needVScroll);
 
         // client area
-        _clientBox = geom;
+        _clientBox = inner;
         if (needHScroll)
             _clientBox.h -= _sbsz.h;
         if (needVScroll)
@@ -275,18 +275,18 @@ class ScrollAreaBase : WidgetGroup
         updateScrollBars();
 
         // lay out scrollbars
-        int vsbw = needVScroll ? _sbsz.w : 0;
-        int hsbh = needHScroll ? _sbsz.h : 0;
+        const vsbw = needVScroll ? _sbsz.w : 0;
+        const hsbh = needHScroll ? _sbsz.h : 0;
         if (needHScroll)
         {
-            Box b = Box(geom.x, geom.y + geom.h - _sbsz.h, sz.w - vsbw, _sbsz.h);
+            Box b = Box(inner.x, inner.y + inner.h - _sbsz.h, sz.w - vsbw, _sbsz.h);
             _hscrollbar.layout(b);
         }
         else
             _hscrollbar.cancelLayout();
         if (needVScroll)
         {
-            Box b = Box(geom.x + geom.w - _sbsz.w, geom.y, _sbsz.w, sz.h - hsbh);
+            Box b = Box(inner.x + inner.w - _sbsz.w, inner.y, _sbsz.w, sz.h - hsbh);
             _vscrollbar.layout(b);
         }
         else
@@ -294,7 +294,7 @@ class ScrollAreaBase : WidgetGroup
     }
 
     /// Show or hide scrollbars
-    protected void updateScrollBarsVisibility(in Size clientSize)
+    protected void updateScrollBarsVisibility(const Size clientSize)
     {
         // do not touch external scrollbars
         bool hupdate = _hscrollbar && _hscrollbarMode != ScrollBarMode.external;
@@ -430,7 +430,6 @@ class ScrollAreaBase : WidgetGroup
         auto bg = background;
         bg.drawTo(buf, b);
 
-        applyPadding(b);
         // draw scrollbars
         _hscrollbar.maybe.onDraw(buf);
         _vscrollbar.maybe.onDraw(buf);
@@ -441,7 +440,7 @@ class ScrollAreaBase : WidgetGroup
         }
         {
             // no clipping for drawing of extended area
-            Box clipb = b;
+            Box clipb = innerBox;
             clipb.h = _clientBox.h;
             auto saver3 = ClipRectSaver(buf, clipb, 0);
             drawExtendedArea(buf);

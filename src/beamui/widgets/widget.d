@@ -137,6 +137,8 @@ private:
 
     /// Current widget box set by layout()
     Box _box;
+    /// Current box without padding and border
+    Box _innerBox;
     /// True to force layout
     bool _needLayout = true;
     /// True to force redraw
@@ -1097,14 +1099,17 @@ public:
         /// Experimental API
         protected auto transitionDelay() const { return _transitionDelay; }
 
-        /// Get current widget box in pixels (computed and set in layout())
+        /// Get current widget full box in pixels (computed and set in `layout`)
         ref const(Box) box() const { return _box; }
-        /// Set widget box value and indicate that layout process is done (for usage in subclass layout())
+        /// Set widget box value and indicate that layout process is done (for usage in subclass' `layout`)
         final protected void box(ref Box b)
         {
             _box = b;
+            _innerBox = b.shrinked(padding);
             _needLayout = false;
         }
+        /// Get current widget box without padding and borders (computed and set in `layout`)
+        ref const(Box) innerBox() const { return _innerBox; }
 
         /// Widget natural (preferred) width (SIZE_UNSPECIFIED if not set)
         int width() const
@@ -1595,9 +1600,8 @@ public:
     {
         if (visibility != Visibility.visible)
             return;
-        Box b = _box;
-        applyPadding(b);
-        Rect rc = b;
+
+        Rect rc = _innerBox;
         if (!rc.intersects(clipRect))
             return; // out of clip rectangle
         if (canFocus || this is currentWidget)
@@ -2118,6 +2122,7 @@ public:
             return;
 
         _box = geometry;
+        _innerBox = geometry.shrinked(padding);
     }
 
     /// Draw widget at its position to a buffer
@@ -2149,12 +2154,6 @@ public:
             b.shrink(Insets(FOCUS_RECT_PADDING));
             buf.drawFocusRect(Rect(b), cs);
         }
-    }
-
-    /// Helper function: applies padding to a box
-    void applyPadding(ref Box b)
-    {
-        b.shrink(padding);
     }
 
     /// Applies alignment to a box for content of size `sz`
@@ -2509,8 +2508,7 @@ class WidgetGroupDefaultDrawing : WidgetGroup
             return;
 
         super.onDraw(buf);
-        Box b = _box;
-        applyPadding(b);
+        Box b = _innerBox;
         auto saver = ClipRectSaver(buf, b, alpha);
         foreach (widget; _children)
         {

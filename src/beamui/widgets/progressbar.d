@@ -164,8 +164,7 @@ class ProgressBar : AbstractProgressBar
             return;
 
         super.onDraw(buf);
-        Box b = box;
-        applyPadding(b);
+        const b = innerBox;
         DrawableRef animDrawable;
         if (_progress >= 0)
         {

@@ -394,11 +394,10 @@ class LinearLayout : WidgetGroupDefaultDrawing
         box = geom;
         if (items.length > 0)
         {
-            applyPadding(geom);
             if (_orientation == Orientation.horizontal)
-                doLayout!`w`(geom);
+                doLayout!`w`(innerBox);
             else
-                doLayout!`h`(geom);
+                doLayout!`h`(innerBox);
         }
     }
 
@@ -729,13 +728,13 @@ class FrameLayout : WidgetGroupDefaultDrawing
             return;
 
         box = geom;
-        applyPadding(geom);
+        const inner = innerBox;
         foreach (i; 0 .. childCount)
         {
             Widget item = child(i);
             if (item.visibility == Visibility.visible)
             {
-                item.layout(geom);
+                item.layout(inner);
             }
         }
     }
@@ -872,14 +871,14 @@ class FreeLayout : WidgetGroupDefaultDrawing
             return;
 
         box = geom;
-        applyPadding(geom);
+        const inner = innerBox;
         foreach (i; 0 .. childCount)
         {
             Widget item = child(i);
             if (item.visibility == Visibility.visible)
             {
                 Cell* c = _cells[i];
-                item.layout(Box(geom.x + c.x, geom.y + c.y, c.size.w, c.size.h));
+                item.layout(Box(inner.x + c.x, inner.y + c.y, c.size.w, c.size.h));
             }
         }
     }
@@ -1055,10 +1054,10 @@ class TableLayout : WidgetGroupDefaultDrawing
             return;
 
         box = geom;
-        applyPadding(geom);
+        const inner = innerBox;
 
-        allocateSpace!`h`(_rows, geom.h - rowSpace);
-        allocateSpace!`w`(_cols, geom.w - colSpace);
+        allocateSpace!`h`(_rows, inner.h - rowSpace);
+        allocateSpace!`w`(_cols, inner.w - colSpace);
         int ypen = 0;
         foreach (y; 0 .. rowCount)
         {
@@ -1067,7 +1066,7 @@ class TableLayout : WidgetGroupDefaultDrawing
             foreach (x; 0 .. colCount)
             {
                 int w = col(x).result.w;
-                Box wb = Box(geom.x + xpen, geom.y + ypen, w, h);
+                Box wb = Box(inner.x + xpen, inner.y + ypen, w, h);
 
                 cell(x, y).wt.maybe.layout(wb);
                 xpen += w + _colSpacing;

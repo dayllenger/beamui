@@ -506,7 +506,7 @@ class TabControl : WidgetGroup
             return;
 
         box = geom;
-        applyPadding(geom);
+        geom = innerBox;
 
         // consider more button space if it is enabled
         if (enableMoreButton)
@@ -563,9 +563,7 @@ class TabControl : WidgetGroup
             return;
 
         super.onDraw(buf);
-        Box b = box;
-        applyPadding(b);
-        auto saver = ClipRectSaver(buf, b);
+        const saver = ClipRectSaver(buf, innerBox);
         // draw all items except selected
         int selected = -1;
         for (int i = childCount - 1; i >= 0; i--)

@@ -1061,10 +1061,9 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
             return;
 
         box = geom;
-        applyPadding(geom);
 
-        int maxw = geom.w;
-
+        const inner = innerBox;
+        const maxw = inner.w;
         int totalw;
         int visibleItems;
         bool exceeded;
@@ -1090,7 +1089,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
         cancelLayout();
         // lay out visible items
         // backward order
-        Box ibox = geom;
+        Box ibox = inner;
         for (int i = visibleItems - 1; i >= 0; i--)
         {
             Widget item = child(i);

@@ -236,6 +236,17 @@ pure nothrow @nogc:
         return b.x <= x && x + w <= b.x + b.w && b.y <= y && y + h <= b.y + b.h;
     }
 
+    /// Return a box expanded by a margin
+    BoxOf expanded(InsetsOf!T ins) const
+    {
+        return Box(x - ins.left, y - ins.top, w + ins.left + ins.right, h + ins.top + ins.bottom);
+    }
+    /// Return a box shrinked by a margin
+    BoxOf shrinked(InsetsOf!T ins) const
+    {
+        return Box(x + ins.left, y + ins.top, w - ins.left - ins.right, h - ins.top - ins.bottom);
+    }
+
     /// Expand box dimensions by a margin
     void expand(InsetsOf!T ins)
     {
