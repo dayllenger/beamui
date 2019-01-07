@@ -15,6 +15,7 @@ public import std.conv : to;
 public import std.format : format;
 public import std.utf : toUTF8, toUTF32;
 import std.traits;
+import beamui.core.ownership : isReferenceType;
 
 /// Conversion from wchar z-string
 wstring fromWStringz(T)(const(T) s) if (is(T == wchar[]) || is(T == wchar*))
@@ -224,7 +225,7 @@ unittest
 
 /// Call some method for several objects.
 /// Limitations: return values are not supported currently; `super` cannot be passed as a parameter.
-auto bunch(TS...)(TS vars) if (TS.length > 0) // TODO: type checks, more testing
+auto bunch(TS...)(TS vars) if (TS.length > 0)
 {
     static struct Result
     {
@@ -232,19 +233,20 @@ auto bunch(TS...)(TS vars) if (TS.length > 0) // TODO: type checks, more testing
 
         void opDispatch(string m, Args...)(auto ref Args args)
         {
-            foreach (var; vars)
+            enum string expr = "vars[i]." ~ m ~ "(args)";
+            static foreach (i, T; TS)
             {
-                enum expr = "var." ~ m ~ "(args)";
                 static if (!__traits(compiles, mixin(expr)))
                 {
                     import std.format : format;
-                    enum tname = typeof(var).stringof;
-                    static if (!__traits(hasMember, var, m))
-                        pragma(msg, "'bunch' template: no property '%s' for type '%s'".format(m, tname));
+
+                    enum string t = T.stringof;
+                    static if (!__traits(hasMember, T, m))
+                        pragma(msg, "'bunch' template: no method '%s' for type '%s'".format(m, t));
                     else
-                        pragma(msg, "'bunch' template: incorrect parameters in '%s.%s(...)'".format(tname, m));
+                        pragma(msg, "'bunch' template: incorrect parameters in '%s.%s(...)'".format(t, m));
                 }
-                mixin("var." ~ m ~ "(args);");
+                mixin(expr ~ ";");
             }
         }
     }
@@ -293,28 +295,43 @@ unittest
     assert(C.count == 10);
 }
 
-/// Do not evaluate a method if object is null. Only void methods are supported currently
-auto maybe(T)(T var) if (is(T == class) || is(T == interface) || is(T == U*, U)) // TODO: non-void methods
+/// Do not evaluate a method if object is null, return .init value in this case
+auto maybe(T)(T var) if (isReferenceType!T)
 {
     static struct Result
     {
         T var;
 
-        pragma(inline, true)
-        void opDispatch(string m, Args...)(auto ref Args args)
+        auto opDispatch(string m, Args...)(auto ref Args args)
         {
-            enum expr = "var." ~ m ~ "(args)";
+            static if (Args.length > 0)
+                enum string expr = "var." ~ m ~ "(args)";
+            else
+                enum string expr = "var." ~ m;
             static if (!__traits(compiles, mixin(expr)))
             {
                 import std.format : format;
-                enum tname = T.stringof;
-                static if (!__traits(hasMember, var, m))
-                    pragma(msg, "'maybe' template: no property '%s' for type '%s'".format(m, tname));
+
+                enum string t = T.stringof;
+                static if (!__traits(hasMember, T, m))
+                    pragma(msg, "'maybe' template: no method '%s' for type '%s'".format(m, t));
                 else
-                    pragma(msg, "'maybe' template: incorrect parameters in '%s.%s(...)'".format(tname, m));
+                    pragma(msg, "'maybe' template: incorrect parameters in '%s.%s(...)'".format(t, m));
             }
-            if (var !is null)
-                mixin("var." ~ m ~ "(args);");
+
+            alias return_t = ReturnType!((T var, Args args) => mixin(expr));
+            static if (is(return_t == void))
+            {
+                if (var !is null)
+                    mixin(expr ~ ";");
+            }
+            else
+            {
+                if (var !is null)
+                    return mixin(expr);
+                else
+                    return return_t.init;
+            }
         }
     }
     return Result(var);
@@ -325,8 +342,8 @@ unittest
 {
     class C
     {
-        static int count = 0;
-        int i;
+        static int count;
+        int i = 5;
 
         void render(bool dummy)
         {
@@ -343,6 +360,9 @@ unittest
     // you may do it also this way
     bunch(a.maybe, b.maybe).render(true);
     assert(C.count == 2);
+
+    assert(a.maybe.i == 0);
+    assert(b.maybe.i == 5);
 }
 
 /// Get first name of class
