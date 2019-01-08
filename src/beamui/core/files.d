@@ -434,7 +434,7 @@ private:
     }
 
     /// Returns array of user bookmarked directories
-    RootEntry[] getBookmarkPaths() nothrow
+    RootEntry[] getBookmarkPaths()
     {
         RootEntry[] res;
         version (OSX)
@@ -598,7 +598,7 @@ private:
     }
 
     /// Returns true if directory is root directory (e.g. / or C:\)
-    bool isRoot(in string path) pure nothrow
+    bool isRoot(in string path)
     {
         string root = rootName(path);
         if (path.equal(root))
@@ -609,7 +609,7 @@ private:
     /**
         Check if path is hidden.
     */
-    bool isHidden(in string path) nothrow
+    bool isHidden(in string path)
     {
         version (Windows)
         {
@@ -647,7 +647,7 @@ private:
         }
     }
 
-    private bool isReadable(in string filePath) nothrow
+    private bool isReadable(in string filePath)
     {
         version (Posix)
         {
@@ -663,7 +663,7 @@ private:
         }
     }
 
-    private bool isWritable(in string filePath) nothrow
+    private bool isWritable(in string filePath)
     {
         version (Posix)
         {
@@ -679,7 +679,7 @@ private:
         }
     }
 
-    private bool isExecutable(in string filePath) nothrow
+    private bool isExecutable(in string filePath)
     {
         version (Windows)
         {
@@ -706,18 +706,18 @@ private:
     }
 
     /// Returns parent directory for specified path
-    string parentDir(in string path) pure nothrow
+    string parentDir(in string path)
     {
         return buildNormalizedPath(path, "..");
     }
 
     /// Check filename with pattern
-    bool filterFilename(in string filename, in string pattern) pure nothrow
+    bool filterFilename(in string filename, in string pattern)
     {
         return globMatch(filename.baseName, pattern);
     }
     /// Filters file name by pattern list
-    bool filterFilename(in string filename, in string[] filters) pure nothrow
+    bool filterFilename(in string filename, in string[] filters)
     {
         if (filters.length == 0)
             return true; // no filters - show all
@@ -800,7 +800,7 @@ private:
     }
 
     /// Returns true if char ch is / or \ slash
-    bool isPathDelimiter(in char ch) pure nothrow
+    bool isPathDelimiter(in char ch)
     {
         return ch == '/' || ch == '\\';
     }

@@ -13,7 +13,7 @@ Authors:   dayllenger
 module beamui.css.tokenizer;
 
 /// Transform a CSS source code into a token range
-TokenRange tokenizeCSS(string source) pure nothrow
+TokenRange tokenizeCSS(string source)
 {
     return TokenRange(source);
 }
@@ -23,8 +23,6 @@ struct TokenRange
 {
     private Tokenizer* tokenizer;
     private Token _front;
-
-pure nothrow:
 
     /// Construct a new token range from a source code
     this(string source)
@@ -71,8 +69,6 @@ struct Token
     bool typeFlagInteger;
     dchar[2] unicodeRange;
     size_t line;
-
-pure nothrow @nogc:
 
     this(TokenType type)
     {
@@ -143,7 +139,7 @@ Before sending the input stream to the tokenizer, implementations must make the 
         by a single U+000A LINE FEED (LF) code point.
     * Replace any U+0000 NULL code point with U+FFFD REPLACEMENT CHARACTER.
 */
-private dstring preprocessInput(string src) pure nothrow
+private dstring preprocessInput(string src)
 {
     import std.array : appender;
     import std.utf : byDchar;
@@ -183,8 +179,6 @@ private struct Tokenizer
     private size_t i;
     /// Just a buffer for names and numbers
     private Appender!(dchar[]) appender;
-
-pure nothrow:
 
     this(dstring str)
     {

@@ -10,37 +10,37 @@ module beamui.core.parseutils;
 import std.uni : isAlpha, isLower, isNumber, isUpper;
 
 /// Returns true whether `ch` is an alphabetic unicode char or `_`
-bool isWordChar(dchar ch) pure nothrow @nogc
+bool isWordChar(dchar ch)
 {
     return ch == '_' || isAlpha(ch);
 }
 /// Returns true whether char is an upper alphabetic unicode char
 alias isUpperWordChar = isUpper;
 /// Returns true whether `ch` is a lower alphabetic unicode char or `_`
-bool isLowerWordChar(dchar ch) pure nothrow @nogc
+bool isLowerWordChar(dchar ch)
 {
     return ch == '_' || isLower(ch);
 }
 /// Returns true whether char is a digit
 alias isDigit = isNumber;
 
-bool isAlNum(dchar ch) pure nothrow @nogc
+bool isAlNum(dchar ch)
 {
     return isDigit(ch) || isWordChar(ch);
 }
 
-bool isPunct(dchar ch) pure nothrow @nogc
+bool isPunct(dchar ch)
 {
     return ch == '.' || ch == ',' || ch == ';' || ch == '?' || ch == '!';
 }
 /// Returns true whether char is some bracket
-bool isBracket(dchar ch) pure nothrow @nogc
+bool isBracket(dchar ch)
 {
     return ch == '(' || ch == ')' || ch == '[' || ch == ']' || ch == '{' || ch == '}';
 }
 
 /// Decodes hex digit (0..9, a..f, A..F), returns uint.max if invalid
-uint parseHexDigit(T)(T ch) pure nothrow @nogc
+uint parseHexDigit(T)(T ch)
 {
     if (ch >= '0' && ch <= '9')
         return ch - '0';
@@ -51,7 +51,7 @@ uint parseHexDigit(T)(T ch) pure nothrow @nogc
     return uint.max;
 }
 
-long parseLong(inout string v, long defValue = 0) pure nothrow @nogc
+long parseLong(inout string v, long defValue = 0)
 {
     int len = cast(int)v.length;
     if (len == 0)
@@ -81,7 +81,7 @@ long parseLong(inout string v, long defValue = 0) pure nothrow @nogc
     return digits > 0 ? (sign > 0 ? value : -value) : defValue;
 }
 
-ulong parseULong(inout string v, ulong defValue = 0) pure nothrow @nogc
+ulong parseULong(inout string v, ulong defValue = 0)
 {
     int len = cast(int)v.length;
     if (len == 0)
@@ -106,7 +106,7 @@ ulong parseULong(inout string v, ulong defValue = 0) pure nothrow @nogc
 
 /// Parse 4 comma delimited integers
 /// NOT USED
-bool parseList4(T)(string value, ref T[4] items) pure nothrow @nogc
+bool parseList4(T)(string value, ref T[4] items)
 {
     int index = 0;
     int p = 0;

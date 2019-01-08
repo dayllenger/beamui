@@ -313,7 +313,7 @@ static if (BACKEND_GUI)
             }
 
         private:
-            SHSTOCKICONID standardIconToStockID(StandardIcon icon) pure nothrow
+            SHSTOCKICONID standardIconToStockID(StandardIcon icon)
             {
                 with (SHSTOCKICONID) final switch (icon) with (StandardIcon)
                 {
@@ -551,7 +551,7 @@ static if (BACKEND_GUI)
             }
 
         private:
-            auto standardIconToNameAndContext(StandardIcon icon) pure nothrow
+            auto standardIconToNameAndContext(StandardIcon icon)
             {
                 final switch (icon) with (StandardIcon)
                 {

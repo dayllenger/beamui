@@ -98,8 +98,6 @@ class CubicBezierTimingFunction : TimingFunction
         double ay, by, cy;
     }
 
-pure nothrow @nogc:
-
     /// Initialize with cubic bezier control points
     this(double x1, double y1, double x2, double y2)
     {

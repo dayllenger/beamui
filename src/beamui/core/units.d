@@ -45,13 +45,13 @@ struct Length
     enum Length none = Length(SIZE_UNSPECIFIED!int);
 
     /// Construct with raw device pixels
-    this(int devicePixels) pure
+    this(int devicePixels)
     {
         if (devicePixels != SIZE_UNSPECIFIED!int)
             value = cast(float)devicePixels;
     }
     /// Construct with some value and type
-    this(float value, LengthUnit type) pure
+    this(float value, LengthUnit type)
     {
         this.value = value;
         this.type = type;
@@ -63,12 +63,12 @@ struct Length
         return mixin("Length(value, LengthUnit." ~ op ~ ")");
     }
 
-    bool is_em() const pure
+    bool is_em() const
     {
         return type == LengthUnit.em;
     }
 
-    bool is_percent() const pure
+    bool is_percent() const
     {
         return type == LengthUnit.percent;
     }
@@ -104,7 +104,7 @@ struct Length
         return 0;
     }
 
-    bool opEquals(Length u) const pure
+    bool opEquals(Length u) const
     {
         // workaround for NaN != NaN
         return this is u;
@@ -125,7 +125,7 @@ struct Length
 
     /// Parse pair (value, unit), where value is a real number, unit is: cm, mm, in, pt, px, em, %.
     /// Returns Length.none if cannot parse.
-    static Length parse(string value, string unit) pure
+    static Length parse(string value, string unit)
     {
         import std.conv : to;
 
@@ -163,7 +163,7 @@ struct Length
 }
 
 /// Parse angle with deg, grad, rad or turn unit. Returns an angle in radians, or NaN if cannot parse.
-float parseAngle(string value, string unit) pure
+float parseAngle(string value, string unit)
 {
     import std.conv : to;
     import std.math : PI;
@@ -206,8 +206,6 @@ unittest
 /// Number of hnsecs (those we use in animations, for example) in one second
 enum long ONE_SECOND = 10_000_000L;
 
-nothrow @nogc:
-
 /// Convert custom size to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
 int toPixels(int sz)
 {
@@ -237,39 +235,39 @@ InsetsI toPixels(const InsetsI ins)
 }
 
 /// Make size value with SIZE_IN_POINTS_FLAG set
-int makePointSize(int pt) pure
+int makePointSize(int pt)
 {
     return pt | SIZE_IN_POINTS_FLAG;
 }
 
 /// Make size value with SIZE_IN_PERCENTS_FLAG set
-int makePercentSize(int percent) pure
+int makePercentSize(int percent)
 {
     return (percent * 100) | SIZE_IN_PERCENTS_FLAG;
 }
 
 /// Make size value with SIZE_IN_PERCENTS_FLAG set
-int makePercentSize(double percent) pure
+int makePercentSize(double percent)
 {
     return cast(int)(percent * 100) | SIZE_IN_PERCENTS_FLAG;
 }
 alias percent = makePercentSize;
 
 /// Returns true for SIZE_UNSPECIFIED
-bool isSpecialSize(int sz) pure
+bool isSpecialSize(int sz)
 {
     // don't forget to update if more special constants added
     return (sz & SIZE_UNSPECIFIED!int) != 0;
 }
 
 /// Returns true if size has SIZE_IN_PERCENTS_FLAG bit set
-bool isPercentSize(int size) pure
+bool isPercentSize(int size)
 {
     return (size & SIZE_IN_PERCENTS_FLAG) != 0;
 }
 
 /// Apply percent to `base` or return `p` unchanged if it is not a percent size
-int applyPercent(int p, int base) pure
+int applyPercent(int p, int base)
 {
     if (isPercentSize(p))
         return cast(int)(cast(long)(p & ~SIZE_IN_PERCENTS_FLAG) * base / 10000);

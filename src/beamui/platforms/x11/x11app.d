@@ -454,7 +454,7 @@ final class X11Window : DWindow
         super.handleWindowStateChange(newState, newWindowRect);
     }
 
-    private void changeWindowState(int action, Atom firstProperty, Atom secondProperty = None) nothrow
+    private void changeWindowState(int action, Atom firstProperty, Atom secondProperty = None)
     {
         XEvent ev;
         ev.xclient = XClientMessageEvent.init;

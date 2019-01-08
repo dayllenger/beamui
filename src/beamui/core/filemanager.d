@@ -21,7 +21,7 @@ import isfreedesktop;
  *  If found file manager is known to this function, it uses file manager specific way to select file.
  *  Otherwise it fallbacks to opening $(D pathName) if it's directory or parent directory of $(D pathName) if it's file.
  */
-@trusted bool showInFileManager(string pathName)
+bool showInFileManager(string pathName)
 {
     import std.process;
     import std.path;
@@ -102,7 +102,7 @@ import isfreedesktop;
 
             string toOpen = pathName;
 
-            static string unescapeQuotedArgument(string value) pure nothrow
+            static string unescapeQuotedArgument(string value)
             {
                 static immutable Tuple!(char, char)[] pairs = [
                     tuple('`', '`'), tuple('$', '$'), tuple('"', '"'), tuple('\\', '\\')
@@ -110,7 +110,7 @@ import isfreedesktop;
                 return doUnescape(value, pairs);
             }
 
-            static auto unquoteExec(string unescapedValue) pure
+            static auto unquoteExec(string unescapedValue)
             {
                 auto value = unescapedValue;
                 string[] result;
@@ -184,7 +184,7 @@ import isfreedesktop;
                 return result;
             }
 
-            static string urlToFilePath(string url) pure nothrow
+            static string urlToFilePath(string url)
             {
                 enum protocol = "file://";
                 if (url.length > protocol.length && url[0 .. protocol.length] == protocol)
@@ -198,7 +198,7 @@ import isfreedesktop;
             }
 
             static string[] expandExecArgs(in string[] unquotedArgs, in string[] urls = null,
-                    string iconName = null, string displayName = null, string fileName = null) pure
+                    string iconName = null, string displayName = null, string fileName = null)
             {
                 string[] toReturn;
                 foreach (token; unquotedArgs)
@@ -307,14 +307,14 @@ import isfreedesktop;
                 return toReturn;
             }
 
-            static bool isExecutable(string program) nothrow
+            static bool isExecutable(string program)
             {
                 import core.sys.posix.unistd;
 
                 return access(program.toStringz, X_OK) == 0;
             }
 
-            static string findExecutable(string program, const(string)[] binPaths) nothrow
+            static string findExecutable(string program, const(string)[] binPaths)
             {
                 if (program.isAbsolute && isExecutable(program))
                 {
@@ -361,7 +361,7 @@ import isfreedesktop;
                 }
             }
 
-            static string[] findFileManagerCommand(string app, const(string)[] appDirs, const(string)[] binPaths) nothrow
+            static string[] findFileManagerCommand(string app, const(string)[] appDirs, const(string)[] binPaths)
             {
                 foreach (appDir; appDirs)
                 {

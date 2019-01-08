@@ -41,7 +41,7 @@ bool checkError(string context = "", string functionName = __FUNCTION__, int lin
 }
 
 /// Convert numeric GL error code to a human-readable symbolic name
-string glErrorToString(GLenum err) pure nothrow
+string glErrorToString(GLenum err)
 {
     /*  For reporting OpenGL errors, it's nicer to get a human-readable symbolic name for the
         error instead of the numeric form. Derelict's GLenum is just an alias for uint, so we

@@ -366,7 +366,7 @@ unittest
 }
 
 /// Get first name of class
-string getShortClassName(TypeInfo_Class type) pure nothrow @nogc
+string getShortClassName(TypeInfo_Class type)
 {
     string name = type.name;
     for (size_t i = name.length - 1; i >= 0; i--)
@@ -388,7 +388,7 @@ unittest
 }
 
 /// Move index into [first, last] range in a cyclic manner
-int wrapAround(int index, int first, int last) pure nothrow @nogc
+int wrapAround(int index, int first, int last)
 {
     assert(first <= last, "First must be less or equal than last");
     const diff = last - first + 1;

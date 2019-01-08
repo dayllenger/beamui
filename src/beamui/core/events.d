@@ -699,7 +699,7 @@ final class ScrollEvent
 
     For unknown key code, returns 0.
 */
-uint parseKeyName(string name) pure nothrow @nogc
+uint parseKeyName(string name)
 {
     switch (name)
     {
@@ -805,7 +805,7 @@ uint parseKeyName(string name) pure nothrow @nogc
 
     For unknown key code, prints its hex value.
 */
-string keyName(uint keyCode) pure
+string keyName(uint keyCode)
 {
     switch (keyCode)
     {

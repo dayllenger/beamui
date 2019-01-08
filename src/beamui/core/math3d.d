@@ -255,7 +255,7 @@ alias Vec2i = Vector!(int, 2);
 alias Vec3i = Vector!(int, 3);
 alias Vec4i = Vector!(int, 4);
 
-bool fuzzyNull(float v) pure nothrow @nogc
+bool fuzzyNull(float v)
 {
     return v < 0.0000001f && v > -0.0000001f;
 }
@@ -263,8 +263,6 @@ bool fuzzyNull(float v) pure nothrow @nogc
 struct mat4
 {
     float[16] m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-
-pure nothrow:
 
     this(float v)
     {
@@ -1046,13 +1044,13 @@ unittest
 }
 
 /// Calculate normal for triangle
-Vec3 triangleNormal(Vec3 p1, Vec3 p2, Vec3 p3) pure
+Vec3 triangleNormal(Vec3 p1, Vec3 p2, Vec3 p3)
 {
     return Vec3.crossProduct(p2 - p1, p3 - p2).normalized();
 }
 
 /// Calculate normal for triangle
-Vec3 triangleNormal(ref float[3] p1, ref float[3] p2, ref float[3] p3) pure @nogc
+Vec3 triangleNormal(ref float[3] p1, ref float[3] p2, ref float[3] p3)
 {
     return Vec3.crossProduct(Vec3(p2) - Vec3(p1), Vec3(p3) - Vec3(p2)).normalized();
 }
@@ -1062,7 +1060,7 @@ alias PointF = Vec2;
 
 // this form can be used within shaders
 /// Cubic bezier curve
-PointF bezierCubic(const PointF[] cp, float t) pure @nogc @safe
+PointF bezierCubic(const PointF[] cp, float t)
 in
 {
     assert(cp.length > 3);
@@ -1088,7 +1086,7 @@ do
 }
 
 /// Quadratic bezier curve (not tested)
-PointF bezierQuadratic(const PointF[] cp, float t) pure @nogc @safe
+PointF bezierQuadratic(const PointF[] cp, float t)
 in
 {
     assert(cp.length > 2);
@@ -1111,7 +1109,7 @@ do
 }
 
 /// Cubic bezier (first) derivative
-PointF bezierCubicDerivative(const PointF[] cp, float t) pure @nogc @safe
+PointF bezierCubicDerivative(const PointF[] cp, float t)
 in
 {
     assert(cp.length > 3);
@@ -1133,7 +1131,7 @@ do
 }
 
 /// Quadratic bezier (first) derivative
-PointF bezierQuadraticDerivative(const PointF[] cp, float t) pure @nogc @safe
+PointF bezierQuadraticDerivative(const PointF[] cp, float t)
 in
 {
     assert(cp.length > 2);
@@ -1151,7 +1149,7 @@ do
 }
 
 /// Evaluates cubic bezier direction(tangent) at point t
-PointF bezierCubicDirection(const PointF[] cp, float t) pure
+PointF bezierCubicDirection(const PointF[] cp, float t)
 {
     auto d = bezierCubicDerivative(cp, t);
     d.normalize();
@@ -1159,7 +1157,7 @@ PointF bezierCubicDirection(const PointF[] cp, float t) pure
 }
 
 /// Evaluates quadratic bezier direction(tangent) at point t
-PointF bezierQuadraticDirection(const PointF[] cp, float t) pure
+PointF bezierQuadraticDirection(const PointF[] cp, float t)
 {
     auto d = bezierQuadraticDerivative(cp, t);
     d.normalize();
@@ -1193,26 +1191,26 @@ void flattenBezier(alias BezierFunc)(const PointF[] cp, int segmentCountInclusiv
 }
 
 /// Flattens cubic bezier curve, returns PointF[segmentCount+1] array or empty array if <1 segments
-PointF[] flattenBezierCubic(const PointF[] cp, int segmentCount) pure
+PointF[] flattenBezierCubic(const PointF[] cp, int segmentCount)
 {
     return flattenBezier!bezierCubic(cp, segmentCount);
 }
 
 /// Flattens quadratic bezier curve, returns PointF[segmentCount+1] array or empty array if <1 segments
-PointF[] flattenBezierQuadratic(const PointF[] cp, int segmentCount) pure
+PointF[] flattenBezierQuadratic(const PointF[] cp, int segmentCount)
 {
     return flattenBezier!bezierQuadratic(cp, segmentCount);
 }
 
 /// Calculates normal vector at point t using direction
-PointF bezierCubicNormal(const PointF[] cp, float t) pure
+PointF bezierCubicNormal(const PointF[] cp, float t)
 {
     auto d = bezierCubicDirection(cp, t);
     return d.rotated90ccw;
 }
 
 /// Calculates normal vector at point t using direction
-PointF bezierQuadraticNormal(const PointF[] cp, float t) pure
+PointF bezierQuadraticNormal(const PointF[] cp, float t)
 {
     auto d = bezierQuadraticDerivative(cp, t);
     return d.rotated90ccw;

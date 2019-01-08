@@ -29,8 +29,6 @@ struct SizeOf(T) if (is(T == float) || is(T == int))
 
     enum none = SizeOf(SIZE_UNSPECIFIED!T, SIZE_UNSPECIFIED!T);
 
-pure nothrow @nogc:
-
     SizeOf opBinary(string op : "+")(SizeOf v) const
     {
         return SizeOf(w + v.w, h + v.h);
@@ -81,8 +79,6 @@ struct Boundaries
     Size min;
     Size nat;
     Size max = Size.none;
-
-pure nothrow @nogc:
 
     /// Special add operator: it clamps result between 0 and SIZE_UNSPECIFIED
     static int clampingAdd(int a, int b)
@@ -144,8 +140,6 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
         /// 'rectangle is not set' value
         enum none = BoxOf(int.min, int.min, int.min, int.min);
     }
-
-pure nothrow @nogc:
 
     /// Construct a box using x, y, width and height
     this(T x, T y, T width, T height)
@@ -300,8 +294,6 @@ struct RectOf(T) if (is(T == float) || is(T == int))
     T right = 0;
     /// y coordinate of bottom right corner (non-inclusive)
     T bottom = 0;
-
-pure nothrow @nogc:
 
     /// Construct a rectangle using left, top, right, bottom coordinates
     this(T x0, T y0, T x1, T y1)
@@ -484,8 +476,6 @@ alias RectI = RectOf!int;
 struct InsetsOf(T) if (is(T == float) || is(T == int))
 {
     T top = 0, right = 0, bottom = 0, left = 0;
-
-pure nothrow @nogc:
 
     /// Create equal offset on all sides
     this(T all)

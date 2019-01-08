@@ -62,7 +62,7 @@ struct WeakRef(T) if (isReferenceType!T && hasMemberLike!(T, "isDestroyed", bool
     }
 
     /// Allows to use WeakRef with destroyed item as key in associative arrays
-    size_t toHash() const @trusted
+    size_t toHash() const nothrow @trusted
     {
         const void* p = &this;
         return hashOf(p[0 .. this.sizeof]);

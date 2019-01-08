@@ -1170,7 +1170,7 @@ class DrawBuf : RefCountedObject
         import std.algorithm.comparison : min;
 
         // clamps radius to corner
-        static float clampRadius(float r, float len) pure @nogc @safe
+        static float clampRadius(float r, float len)
         {
             if (len - 2 * r < 0)
                 return len / 2;
@@ -2102,7 +2102,7 @@ class ColorDrawBuf : ColorDrawBufBase
         import std.math;
 
         // Gaussian function
-        static float weight(in float x, in float sigma) pure nothrow
+        static float weight(in float x, in float sigma)
         {
             enum inv_sqrt_2pi = 1 / sqrt(2 * PI);
             return exp(-x ^^ 2 / (2 * sigma ^^ 2)) * inv_sqrt_2pi / sigma;

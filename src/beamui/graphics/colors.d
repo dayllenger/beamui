@@ -34,8 +34,6 @@ struct Color
     /// Transparent color constant
     enum transparent = Color(0xFFFFFFFF);
 
-pure nothrow @nogc:
-
     /// Make a color from hex value
     this(uint argb8)
     {
@@ -301,13 +299,13 @@ enum NamedColor : Color
 }
 
 /// Make hex color from 4 components
-uint makeRGBA(T)(T r, T g, T b, T a) pure nothrow
+uint makeRGBA(T)(T r, T g, T b, T a)
 {
     return (cast(uint)a << 24) | (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
 }
 
 /// Decode color string in one of formats: #RGB #ARGB #RRGGBB #AARRGGBB
-Color decodeHexColor(string s, Color defValue = Color(0x0)) pure
+Color decodeHexColor(string s, Color defValue = Color(0x0))
 {
     s = strip(s);
     if (s.length != 4 && s.length != 5 && s.length != 7 && s.length != 9)
@@ -328,7 +326,7 @@ Color decodeHexColor(string s, Color defValue = Color(0x0)) pure
 }
 
 /// Decode named color either from `NamedColor` enum, `@null`, `none`, or `transparent`
-Color decodeTextColor(string s, Color defValue = Color(0x0)) pure
+Color decodeTextColor(string s, Color defValue = Color(0x0))
 {
     s = strip(s);
     if (s == "@null" || s == "none" || s == "transparent")
@@ -347,13 +345,13 @@ Color decodeTextColor(string s, Color defValue = Color(0x0)) pure
 }
 
 /// Convert opacity [0.0, 1.0] color to [0, 255] alpha color (0 - opaque, 255 - transparent)
-ubyte opacityToAlpha(float a) pure nothrow @nogc
+ubyte opacityToAlpha(float a)
 {
     return 255 - cast(ubyte)(clamp(a, 0.0, 1.0) * 255);
 }
 
 /// Blend two RGB pixels using alpha
-uint blendARGB(uint dst, uint src, uint alpha) pure nothrow @nogc
+uint blendARGB(uint dst, uint src, uint alpha)
 {
     uint dstalpha = dst >> 24;
     if (dstalpha > 0x80)
@@ -374,7 +372,7 @@ uint blendARGB(uint dst, uint src, uint alpha) pure nothrow @nogc
 immutable int[3] COMPONENT_OFFSET_BGR = [2, 1, 0];
 immutable int[3] COMPONENT_OFFSET_RGB = [0, 1, 2];
 immutable int COMPONENT_OFFSET_ALPHA = 3;
-int subpixelComponentIndex(int x0, SubpixelRenderingMode mode) pure nothrow @nogc
+int subpixelComponentIndex(int x0, SubpixelRenderingMode mode)
 {
     switch (mode) with (SubpixelRenderingMode)
     {
@@ -387,7 +385,7 @@ int subpixelComponentIndex(int x0, SubpixelRenderingMode mode) pure nothrow @nog
 }
 
 /// Blend subpixel using alpha
-void blendSubpixel(ubyte* dst, ubyte* src, uint alpha, int x0, SubpixelRenderingMode mode) pure nothrow @nogc
+void blendSubpixel(ubyte* dst, ubyte* src, uint alpha, int x0, SubpixelRenderingMode mode)
 {
     uint dstalpha = dst[COMPONENT_OFFSET_ALPHA];
     int offset = subpixelComponentIndex(x0, mode);
@@ -405,7 +403,7 @@ void blendSubpixel(ubyte* dst, ubyte* src, uint alpha, int x0, SubpixelRendering
 }
 
 /// Blend two alpha values 0..255 (255 is fully transparent, 0 is opaque)
-uint blendAlpha(uint a1, uint a2) pure nothrow @nogc
+uint blendAlpha(uint a1, uint a2)
 {
     if (!a1)
         return a2;
@@ -415,7 +413,7 @@ uint blendAlpha(uint a1, uint a2) pure nothrow @nogc
 }
 
 /// Blend two RGB pixels using alpha
-ubyte blendGray(ubyte dst, ubyte src, uint alpha) pure nothrow @nogc
+ubyte blendGray(ubyte dst, ubyte src, uint alpha)
 {
     uint ialpha = 256 - alpha;
     return cast(ubyte)(((src * ialpha + dst * alpha) >> 8) & 0xFF);
