@@ -1,5 +1,3 @@
-# Contribution guidelines
-
 ## Coding style
 
 Basically, coding style inherits the [Phobos style](https://dlang.org/dstyle.html).
@@ -68,12 +66,10 @@ The lefthand attributes and qualifiers should have such order:
 ```D
 abstract/final/override public/protected/package/private static @property
 ```
-The righthand:
-```D
-const/inout pure nothrow @nogc @trusted/@safe
-```
 
-If you want to add some attributes, don't spam with them. Try to use a colon mark e.g. `@nogc:`
+I don't use `pure nothrow @nogc @system/@trusted/@safe` attributes in the library. I decided to not bother with them until they'll be properly implemented.
+
+`@property` is needed only to split properties from other methods in documentation.
 
 ### Documentation
 
@@ -91,7 +87,7 @@ They add more logging in certain places of code.
 
 You can enable them in two ways:
 
-* into `dub.json` file in `debugVersions` property.
+* into `dub.sdl` file in `debugVersions` property.
 This will force to rebuild the whole library, including dependencies.
 * on top of the module you debug with `debug = ...;` statement.
 This will activate debug constant only in that module and won't rebuild everything.
@@ -103,8 +99,6 @@ This will activate debug constant only in that module and won't rebuild everythi
 resalloc
 FileFormats
 FontResources
-drawables
-actions
 focus
 ```
 
@@ -127,6 +121,5 @@ editors
 lists
 menus
 scrollbars
-styles
 trees
 ```
