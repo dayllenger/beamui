@@ -650,7 +650,7 @@ public:
             if (p.bottom < bp.bottom)
                 p.bottom = bp.bottom;
 
-            if ((focusable || ((state & State.parent) && parent.focusable)) && focusRectColor != Color.transparent)
+            if (focusRectColor != Color.transparent && (focusable || ((state & State.parent) && parent.focusable)))
             {
                 // add two pixels to padding when focus rect is required
                 // one pixel for focus rect, one for additional space
@@ -1069,10 +1069,6 @@ public:
                 return false;
             if (_transitionProperty == "all" || _transitionProperty == property)
                 return true;
-
-            if (_transitionProperty == "margin")
-                return property == "margin-top" || property == "margin-right" ||
-                       property == "margin-bottom" || property == "margin-left";
 
             if (_transitionProperty == "padding")
                 return property == "padding-top" || property == "padding-right" ||
@@ -2718,7 +2714,7 @@ mixin template SupportCSS(BaseClass = Widget)
             alias udas = getUDAs!(field, forCSS);
             static if (udas.length > 0) // filter out
             {
-                enum var = split(field.stringof, '.')[$ - 1]; // this._smth -> _smth
+                enum string var = __traits(identifier, field); // _smth
                 // do nothing if property is overriden
                 if (!isOwned(var))
                 {
@@ -2749,7 +2745,7 @@ mixin template SupportCSS(BaseClass = Widget)
     }
 
     /// Set a property value, taking transitions into account
-    private void setProperty(string var, T)(T value, bool fromOutside = true)
+    private void setProperty(string var, T)(T newValue, bool fromOutside = true)
     {
         import std.meta : Alias;
         import std.traits : getUDAs, hasUDA, isMutable, isSomeFunction;
@@ -2760,71 +2756,59 @@ mixin template SupportCSS(BaseClass = Widget)
         static assert(hasUDA!(field, forCSS), "The field " ~ var ~ " is not for CSS");
 
         enum name = var[0] == '_' ? var[1 .. $] : var;
-        enum sideEffectName = name ~ "_effect";
-        enum bool hasSideEffects = __traits(hasMember, typeof(this), sideEffectName);
-        static if (hasSideEffects)
-        {
-            enum s1 = sideEffectName ~ "(T.init)";
-            enum s2 = sideEffectName ~ "(T.init, T.init)";
-            enum bool effects1 = __traits(compiles, mixin(s1));
-            enum bool effects2 = __traits(compiles, mixin(s2));
-        }
+        enum s0 = name ~ "_effect();";
+        enum s1 = name ~ "_effect(newValue);";
+        enum s2 = name ~ "_effect(newValue, oldValue);";
+        enum sideEffects =
+            __traits(compiles, { mixin(s2); }) ? s2 :
+            __traits(compiles, { mixin(s1); }) ? s1 :
+            __traits(compiles, { mixin(s0); }) ? s0 :
+            "";
+
+        enum bool isAnimatable = hasUDA!(field, animatable);
 
         if (fromOutside)
             ownProperty(var);
 
-        T current = field;
-
-        // check animation
-        static if (hasUDA!(field, animatable))
+        T oldValue = field;
+        // do nothing if changed nothing
+        if (oldValue is newValue)
         {
-            import beamui.core.animations : Animation, Transition;
-
-            // do nothing if changed nothing
-            if (current is value)
+            static if (isAnimatable)
             {
                 // cancel possible animation
                 if (hasAnimation(var))
                     cancelAnimation(var);
-                return;
             }
-
+            return;
+        }
+        // check animation
+        static if (isAnimatable)
+        {
             string cssName = getUDAs!(field, forCSS)[0].name;
             if (hasTransitionFor(cssName))
             {
-                auto tr = new Transition(transitionDuration,
-                                         transitionTimingFunction,
-                                         transitionDelay);
-                addAnimation(var, tr.duration, delegate(double t) {
-                        static if (hasSideEffects && effects2)
-                            T old = field;
-                        field = tr.mix(current, value, t);
-                        static if (hasSideEffects)
-                        {
-                            static if (effects2)
-                                mixin(sideEffectName ~ "(field, old);");
-                            else static if (effects1)
-                                mixin(sideEffectName ~ "(field);");
-                            else
-                                mixin(sideEffectName ~ "();");
-                        }
-                });
+                animateProperty!(var, sideEffects)(newValue);
                 return;
             }
         }
-        if (current is value)
-            return;
         // set it directly otherwise
-        field = value;
-        static if (hasSideEffects)
-        {
-            static if (effects2)
-                mixin(sideEffectName ~ "(value, current);");
-            else static if (effects1)
-                mixin(sideEffectName ~ "(value);");
-            else
-                mixin(sideEffectName ~ "();");
-        }
+        field = newValue;
+        mixin(sideEffects);
+    }
+
+    private void animateProperty(string var, string sideEffects, T)(T ending)
+    {
+        import beamui.core.animations : Transition;
+
+        T starting = mixin(var);
+        auto tr = new Transition(transitionDuration, transitionTimingFunction, transitionDelay);
+        addAnimation(var, tr.duration, (double t) {
+            T oldValue = mixin(var);
+            T newValue = tr.mix(starting, ending, t);
+            mixin(var) = newValue;
+            mixin(sideEffects);
+        });
     }
 }
 
