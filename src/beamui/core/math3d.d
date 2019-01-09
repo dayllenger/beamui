@@ -235,11 +235,11 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     string toString() const
     {
         static if (N == 2)
-            return "(%f, %f)".format(x, y);
+            return "(%s, %s)".format(x, y);
         static if (N == 3)
-            return "(%f, %f, %f)".format(x, y, z);
+            return "(%s, %s, %s)".format(x, y, z);
         static if (N == 4)
-            return "(%f, %f, %f, %f)".format(x, y, z, w);
+            return "(%s, %s, %s, %s)".format(x, y, z, w);
     }
 }
 

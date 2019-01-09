@@ -362,40 +362,39 @@ struct TextLine
                     underline = true; // turn ON underline for hotkey
                 continue; // skip '&' in hotkey
             }
+            const ushort w = pwidths[i];
+            if (w == 0)
+                continue;
+
             // check glyph visibility
             if (clip.right < pen)
                 break;
+            const int current = pen;
+            pen += w;
             if (pen + 255 < clip.left)
                 continue; // far at left of clipping region
 
-            ushort w = pwidths[i];
-            if (w == 0)
-                continue;
             if (underline)
             {
                 // draw underline
-                buf.fillRect(Rect(pen, underlineY, pen + w, underlineY + underlineHeight), style.color);
+                buf.fillRect(Rect(current, underlineY, pen, underlineY + underlineHeight), style.color);
                 // turn off underline after hotkey
                 if (!(style.flags & TextFlag.underline))
                     underline = false;
             }
 
             if (ch == ' ' || ch == '\t')
-            {
-                pen += w;
                 continue;
-            }
 
             Glyph* glyph = pglyphs[i];
             assert(glyph !is null);
             if (glyph.blackBoxX && glyph.blackBoxY)
             {
-                int gx = pen + glyph.originX;
+                int gx = current + glyph.originX;
                 if (gx + glyph.correctedBlackBoxX < clip.left)
                     continue;
                 buf.drawGlyph(gx, pos.y + baseline - glyph.originY, glyph, style.color);
             }
-            pen += w;
         }
     }
 }
