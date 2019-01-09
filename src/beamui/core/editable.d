@@ -1431,12 +1431,11 @@ class EditableContent
     TextPosition moveByWord(TextPosition p, int direction, bool camelCasePartsAsWords)
     {
         correctPosition(p);
-        TextPosition firstns = firstNonSpace(p.line); // before first non space
-        TextPosition lastns = lastNonSpace(p.line); // after last non space
-        int linelen = lineLength(p.line); // line length
-        if (direction < 0)
+        const TextPosition firstns = firstNonSpace(p.line);
+        const TextPosition lastns = lastNonSpace(p.line);
+        const int linelen = lineLength(p.line);
+        if (direction < 0) // back
         {
-            // back
             if (p.pos <= 0)
             {
                 // beginning of line - move to prev line
@@ -1451,7 +1450,7 @@ class EditableContent
             else
             {
                 dstring txt = line(p.line);
-                int found = -1;
+                int found;
                 for (int i = p.pos - 1; i > 0; i--)
                 {
                     // check if position i + 1 is after word end
@@ -1462,21 +1461,17 @@ class EditableContent
                     if (nextchar == '\t')
                         nextchar = ' ';
                     if (isWordBound(thischar, nextchar) || (camelCasePartsAsWords &&
-                            isLowerWordChar(thischar) && isUpperWordChar(nextchar)))
+                            isUpperWordChar(thischar) && isLowerWordChar(nextchar)))
                     {
                         found = i;
                         break;
                     }
                 }
-                if (found >= 0)
-                    p.pos = found;
-                else
-                    p.pos = 0;
+                p.pos = found;
             }
         }
-        else if (direction > 0)
+        else if (direction > 0) // forward
         {
-            // forward
             if (p.pos >= linelen)
             {
                 // last position of line
@@ -1491,7 +1486,7 @@ class EditableContent
             else
             {
                 dstring txt = line(p.line);
-                int found = -1;
+                int found = linelen;
                 for (int i = p.pos; i < linelen; i++)
                 {
                     // check if position i + 1 is after word end
@@ -1508,10 +1503,7 @@ class EditableContent
                         break;
                     }
                 }
-                if (found >= 0)
-                    p.pos = found;
-                else
-                    p.pos = linelen;
+                p.pos = found;
             }
         }
         return p;
