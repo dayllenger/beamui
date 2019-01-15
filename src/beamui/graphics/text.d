@@ -487,8 +487,8 @@ struct PlainText
             _lines.clear();
             _wrappedLines.clear();
             // split by EOL char
-            int lineStart;
-            foreach (int i, ch; s)
+            size_t lineStart;
+            foreach (i, ch; s)
             {
                 if (ch == '\n')
                 {

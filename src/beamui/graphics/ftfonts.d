@@ -643,7 +643,7 @@ class FreeTypeFontManager : FontManager
         FontFileItem best = null;
         int bestScore = 0;
         string[] faces = face ? split(face, ",") : null;
-        foreach (int index, FontFileItem item; _fontFiles)
+        foreach (FontFileItem item; _fontFiles)
         {
             int score = 0;
             int bestFaceMatch = 0;
