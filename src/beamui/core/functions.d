@@ -17,6 +17,11 @@ public import std.utf : toUTF8, toUTF32;
 import std.traits;
 import beamui.core.ownership : isReferenceType;
 
+auto caching(T)(T obj) if (is(T == class))
+{
+    return cast()obj;
+}
+
 /// Conversion from wchar z-string
 wstring fromWStringz(T)(const(T) s) if (is(T == wchar[]) || is(T == wchar*))
 {

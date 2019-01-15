@@ -177,28 +177,34 @@ class Font : RefCountedObject
         }
 
         /// Returns true if font has fixed pitch (all characters have equal width)
-        bool isFixed()
+        bool isFixed() const
         {
             if (_fixedFontDetection < 0)
             {
-                if (charWidth('i') == charWidth(' ') && charWidth('M') == charWidth('i'))
-                    _fixedFontDetection = 1;
-                else
-                    _fixedFontDetection = 0;
+                with (caching(this))
+                {
+                    if (charWidth('i') == charWidth(' ') && charWidth('M') == charWidth('i'))
+                        _fixedFontDetection = 1;
+                    else
+                        _fixedFontDetection = 0;
+                }
             }
             return _fixedFontDetection == 1;
         }
 
         /// Returns width of the space character
-        int spaceWidth()
+        int spaceWidth() const
         {
             if (_spaceWidth < 0)
             {
-                _spaceWidth = charWidth(' ');
-                if (_spaceWidth <= 0)
-                    _spaceWidth = charWidth('0');
-                if (_spaceWidth <= 0)
-                    _spaceWidth = size;
+                with (caching(this))
+                {
+                    _spaceWidth = charWidth(' ');
+                    if (_spaceWidth <= 0)
+                        _spaceWidth = charWidth('0');
+                    if (_spaceWidth <= 0)
+                        _spaceWidth = size;
+                }
             }
             return _spaceWidth;
         }

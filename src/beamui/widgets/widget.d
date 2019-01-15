@@ -453,12 +453,14 @@ public:
     {
         if (_needToRecomputeStyle)
         {
-            Widget wt = cast(Widget)this;
-            wt._needToRecomputeStyle = false;
-            Style[] chain = selectStyleChain();
-            wt.recomputeStyle(chain);
-            if (wt.stylesRecomputed.assigned)
-                wt.stylesRecomputed(chain);
+            with (caching(this))
+            {
+                _needToRecomputeStyle = false;
+                Style[] chain = selectStyleChain();
+                recomputeStyle(chain);
+                if (stylesRecomputed.assigned)
+                    stylesRecomputed(chain);
+            }
         }
     }
 
