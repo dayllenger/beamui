@@ -37,7 +37,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.graphics.fonts;
 
-public import beamui.core.types : Glyph, SubpixelRenderingMode;
+public import beamui.core.types : Glyph, GlyphRef, SubpixelRenderingMode;
 public import beamui.core.geometry : Size;
 import beamui.core.config;
 import beamui.core.functions;
@@ -230,7 +230,7 @@ class Font : RefCountedObject
     /// Returns character width
     int charWidth(dchar ch)
     {
-        Glyph* g = getCharGlyph(ch);
+        GlyphRef g = getCharGlyph(ch);
         return !g ? 0 : g.widthPixels;
     }
 
@@ -307,7 +307,7 @@ class Font : RefCountedObject
             }
             else
             {
-                Glyph* glyph = getCharGlyph(pstr[i], true); // TODO: what is better
+                GlyphRef glyph = getCharGlyph(pstr[i], true); // TODO: what is better
                 if (glyph is null)
                 {
                     // if no glyph, use previous width - treat as zero width
@@ -434,7 +434,7 @@ class Font : RefCountedObject
 
             if (ch == ' ' || ch == '\t')
                 continue;
-            Glyph* glyph = getCharGlyph(ch);
+            GlyphRef glyph = getCharGlyph(ch);
             if (glyph is null)
                 continue;
             if (glyph.blackBoxX && glyph.blackBoxY)
@@ -512,7 +512,7 @@ class Font : RefCountedObject
 
             if (ch == ' ' || ch == '\t')
                 continue;
-            Glyph* glyph = getCharGlyph(ch);
+            GlyphRef glyph = getCharGlyph(ch);
             if (glyph is null)
                 continue;
             if (glyph.blackBoxX && glyph.blackBoxY)
@@ -526,7 +526,7 @@ class Font : RefCountedObject
     }
 
     /// Get character glyph information
-    abstract Glyph* getCharGlyph(dchar ch, bool withImage = true);
+    abstract GlyphRef getCharGlyph(dchar ch, bool withImage = true);
 
     /// Clear usage flags for all entries
     abstract void checkpoint();
@@ -794,13 +794,13 @@ struct GlyphCache
 {
     private struct Item
     {
-        Glyph* glyph;
+        GlyphRef glyph;
         bool inUse;
     }
     private Item[][1024] _glyphs;
 
     /// Try to find glyph for character in cache, returns null if not found
-    Glyph* find(dchar ch)
+    GlyphRef find(dchar ch)
     {
         ch = ch & 0xF_FFFF;
         const p = ch >> 8;
@@ -816,7 +816,7 @@ struct GlyphCache
     }
 
     /// Put character glyph to cache
-    Glyph* put(dchar ch, Glyph* glyph)
+    GlyphRef put(dchar ch, GlyphRef glyph)
     {
         assert(glyph);
         ch = ch & 0xF_FFFF;

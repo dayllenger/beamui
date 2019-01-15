@@ -115,7 +115,7 @@ class GLDrawBuf : DrawBuf
             glSupport.queue.addSolidRect(Rect(x, y, x + 1, y + 1), color);
     }
 
-    override void drawGlyph(int x, int y, Glyph* glyph, Color color)
+    override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
     {
         Rect dstrect = Rect(x, y, x + glyph.correctedBlackBoxX, y + glyph.blackBoxY);
         Rect srcrect = Rect(0, 0, glyph.correctedBlackBoxX, glyph.blackBoxY);
@@ -542,7 +542,7 @@ private class GLGlyphCache : GLCache
             Log.v("created glyph cache page ", dx, "x", dy);
         }
 
-        GLCacheItem addItem(Glyph* glyph)
+        GLCacheItem addItem(GlyphRef glyph)
         {
             GLCacheItem cacheItem = reserveSpace(glyph.id, glyph.correctedBlackBoxX, glyph.blackBoxY);
             if (cacheItem is null)
@@ -554,7 +554,7 @@ private class GLGlyphCache : GLCache
     }
 
     /// Put new item to cache
-    void put(Glyph* glyph)
+    void put(GlyphRef glyph)
     {
         updateTextureSize();
         if (_activePage is null)

@@ -379,7 +379,7 @@ class DrawBuf : RefCountedObject
     /// Draw pixel at (x, y) with specified color (clipping is applied)
     abstract void drawPixel(int x, int y, Color color);
     /// Draw 8bit alpha image - usually font glyph using specified color (clipping is applied)
-    abstract void drawGlyph(int x, int y, Glyph* glyph, Color color);
+    abstract void drawGlyph(int x, int y, GlyphRef glyph, Color color);
     /// Draw source buffer rectangle contents to destination buffer (clipping is applied)
     abstract void drawFragment(int x, int y, DrawBuf src, Rect srcrect);
     /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
@@ -1528,9 +1528,9 @@ class ColorDrawBufBase : DrawBuf
         return true;
     }
 
-    override void drawGlyph(int x, int y, Glyph* glyph, Color color)
+    override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
     {
-        ubyte[] src = glyph.glyph;
+        immutable(ubyte[]) src = glyph.glyph;
         int srcdx = glyph.blackBoxX;
         int srcdy = glyph.blackBoxY;
         bool clipping = true; //!_clipRect.empty();
@@ -1544,7 +1544,7 @@ class ColorDrawBufBase : DrawBuf
             if (liney < 0 || liney >= _h)
                 continue;
             uint* row = scanLine(liney);
-            ubyte* srcrow = src.ptr + yy * srcdx;
+            immutable(ubyte*) srcrow = src.ptr + yy * srcdx;
             foreach (int xx; 0 .. srcdx)
             {
                 int colx = x + (subpixel ? xx / 3 : xx);
@@ -1580,9 +1580,9 @@ class ColorDrawBufBase : DrawBuf
         }
     }
 
-    void drawGlyphToTexture(int x, int y, Glyph* glyph)
+    void drawGlyphToTexture(int x, int y, GlyphRef glyph)
     {
-        ubyte[] src = glyph.glyph;
+        immutable(ubyte[]) src = glyph.glyph;
         int srcdx = glyph.blackBoxX;
         int srcdy = glyph.blackBoxY;
         bool subpixel = glyph.subpixelMode != SubpixelRenderingMode.none;
@@ -1590,7 +1590,7 @@ class ColorDrawBufBase : DrawBuf
         {
             int liney = y + yy;
             uint* row = scanLine(liney);
-            ubyte* srcrow = src.ptr + yy * srcdx;
+            immutable(ubyte*) srcrow = src.ptr + yy * srcdx;
             int increment = subpixel ? 3 : 1;
             for (int xx = 0; xx <= srcdx - increment; xx += increment)
             {
@@ -1873,9 +1873,9 @@ class GrayDrawBuf : DrawBuf
         return true;
     }
 
-    override void drawGlyph(int x, int y, Glyph* glyph, Color color)
+    override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
     {
-        ubyte[] src = glyph.glyph;
+        immutable(ubyte[]) src = glyph.glyph;
         int srcdx = glyph.blackBoxX;
         int srcdy = glyph.blackBoxY;
         bool clipping = true; //!_clipRect.empty();
@@ -1887,7 +1887,7 @@ class GrayDrawBuf : DrawBuf
             if (liney < 0 || liney >= _h)
                 continue;
             ubyte* row = scanLine(liney);
-            ubyte* srcrow = src.ptr + yy * srcdx;
+            immutable(ubyte*) srcrow = src.ptr + yy * srcdx;
             foreach (int xx; 0 .. srcdx)
             {
                 int colx = xx + x;

@@ -32,7 +32,7 @@ class ConsoleFont : Font
         int spaceWidth() { return 1; }
     }
 
-    private Glyph _glyph;
+    private immutable(Glyph) _glyph;
 
     this()
     {
@@ -238,7 +238,7 @@ class ConsoleFont : Font
         }
     }
 
-    override Glyph* getCharGlyph(dchar ch, bool withImage = true)
+    override GlyphRef getCharGlyph(dchar ch, bool withImage = true)
     {
         return &_glyph;
     }

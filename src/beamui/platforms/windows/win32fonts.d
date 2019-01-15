@@ -270,9 +270,9 @@ class Win32Font : Font
         return g[0];
     }
 
-    override Glyph* getCharGlyph(dchar ch, bool withImage = true)
+    override GlyphRef getCharGlyph(dchar ch, bool withImage = true)
     {
-        Glyph* found = _glyphCache.find(ch);
+        GlyphRef found = _glyphCache.find(ch);
         if (found !is null)
             return found;
         uint glyphIndex = getGlyphIndex(ch);
@@ -304,7 +304,7 @@ class Win32Font : Font
         if (res == GDI_ERROR)
             return null;
 
-        Glyph* g = new Glyph;
+        auto g = new Glyph;
         static if (USE_OPENGL)
         {
             g.id = nextGlyphID();
@@ -437,7 +437,7 @@ class Win32Font : Font
             }
         }
         // found!
-        return _glyphCache.put(ch, g);
+        return _glyphCache.put(ch, cast(GlyphRef)g);
     }
 
     /// Init from font definition

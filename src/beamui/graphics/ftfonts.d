@@ -269,7 +269,7 @@ class FreeTypeFontFile
     }
 
     /// Retrieve glyph information, filling glyph struct; returns false if glyph not found
-    bool getGlyphInfo(dchar code, ref Glyph glyph, dchar def_char, bool withImage = true)
+    bool getGlyphInfo(dchar code, out GlyphRef glyphRef, dchar def_char, bool withImage = true)
     {
         //FONT_GUARD
         int glyph_index = getCharIndex(code, def_char);
@@ -292,6 +292,7 @@ class FreeTypeFontFile
                 flags); /* load flags, see below */
         if (error)
             return false;
+        auto glyph = new Glyph;
         glyph.blackBoxX = cast(ushort)((_slot.metrics.width + 32) >> 6);
         glyph.blackBoxY = cast(ubyte)((_slot.metrics.height + 32) >> 6);
         glyph.originX = cast(byte)((_slot.metrics.horiBearingX + 32) >> 6);
@@ -354,6 +355,7 @@ class FreeTypeFontFile
                 glyph.id = nextGlyphID();
             }
         }
+        glyphRef = cast(GlyphRef)glyph;
         return true;
     }
 
@@ -501,11 +503,11 @@ class FreeTypeFont : Font
         return file1.getKerningOffset(index1, index2);
     }
 
-    override Glyph* getCharGlyph(dchar ch, bool withImage = true)
+    override GlyphRef getCharGlyph(dchar ch, bool withImage = true)
     {
         if (ch > 0xFFFF) // do not support unicode chars above 0xFFFF - due to cache limitations
             return null;
-        Glyph* found = _glyphCache.find(cast(ushort)ch);
+        GlyphRef found = _glyphCache.find(cast(ushort)ch);
         if (found !is null)
             return found;
         FT_UInt index;
@@ -515,8 +517,8 @@ class FreeTypeFont : Font
             if (!findGlyph(ch, '?', index, file))
                 return null;
         }
-        Glyph* glyph = new Glyph;
-        if (!file.getGlyphInfo(ch, *glyph, 0, withImage))
+        GlyphRef glyph;
+        if (!file.getGlyphInfo(ch, glyph, 0, withImage))
             return null;
         if (withImage)
             return _glyphCache.put(ch, glyph);

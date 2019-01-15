@@ -77,7 +77,7 @@ align(1) struct Glyph
     /// 0: width of glyph black box
     ushort blackBoxX;
 
-    @property ushort correctedBlackBoxX()
+    @property ushort correctedBlackBoxX() const
     {
         return subpixelMode ? (blackBoxX + 2) / 3 : blackBoxX;
     }
@@ -99,6 +99,8 @@ align(1) struct Glyph
     /// 9: glyph data, arbitrary size (blackBoxX * blackBoxY)
     ubyte[] glyph;
 }
+/// Pointer to immutable Glyph
+alias GlyphRef = immutable(Glyph)*;
 
 /**
     Base class for reference counted objects, maintains reference counter inplace.

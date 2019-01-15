@@ -472,7 +472,7 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         _console.writeText(cast(dstring)text);
     }
 
-    override void drawGlyph(int x, int y, Glyph* glyph, Color color)
+    override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
     {
         // TODO
     }

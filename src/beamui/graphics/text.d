@@ -131,7 +131,7 @@ struct TextLine
         }
 
         /// Glyphs array, available after measuring
-        const(Glyph*[]) glyphs() const
+        const(GlyphRef[]) glyphs() const
         {
             return !_needToMeasure ? _glyphs[0 .. _str.length] : null;
         }
@@ -150,7 +150,7 @@ struct TextLine
     private
     {
         dstring _str;
-        Glyph*[] _glyphs;
+        GlyphRef[] _glyphs;
         ushort[] _charWidths;
         Size _size;
 
@@ -213,7 +213,7 @@ struct TextLine
                 prevChar = 0;
                 continue; // skip '&' in hotkey when measuring
             }
-            Glyph* glyph = font.getCharGlyph(ch);
+            GlyphRef glyph = font.getCharGlyph(ch);
             pglyphs[i] = glyph;
             if (fixed)
             {
@@ -386,7 +386,7 @@ struct TextLine
             if (ch == ' ' || ch == '\t')
                 continue;
 
-            Glyph* glyph = pglyphs[i];
+            GlyphRef glyph = pglyphs[i];
             assert(glyph !is null);
             if (glyph.blackBoxX && glyph.blackBoxY)
             {
