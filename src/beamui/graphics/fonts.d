@@ -787,43 +787,44 @@ class FontManager
 /**
     Glyph image cache
 
-    Recently used glyphs are marked with glyph.lastUsage = 1
-
-    checkpoint() clears usage marks
-
-    cleanup() removes all items not accessed since last checkpoint()
+    Recently used glyphs are marked. `checkpoint` clears usage marks.
+    `cleanup` removes all items not accessed since last `checkpoint`.
 */
 struct GlyphCache
 {
-    alias glyph_ptr = Glyph*;
-    private glyph_ptr[][1024] _glyphs;
+    private struct Item
+    {
+        Glyph* glyph;
+        bool inUse;
+    }
+    private Item[][1024] _glyphs;
 
     /// Try to find glyph for character in cache, returns null if not found
-    glyph_ptr find(dchar ch)
+    Glyph* find(dchar ch)
     {
         ch = ch & 0xF_FFFF;
-        uint p = ch >> 8;
-        glyph_ptr[] row = _glyphs[p];
-        if (row is null)
+        const p = ch >> 8;
+        Item[] row = _glyphs[p];
+        if (!row)
             return null;
-        uint i = ch & 0xFF;
-        glyph_ptr res = row[i];
-        if (!res)
+        const i = ch & 0xFF;
+        Item* item = &row[i];
+        if (!item.glyph)
             return null;
-        res.lastUsage = 1;
-        return res;
+        item.inUse = true;
+        return item.glyph;
     }
 
     /// Put character glyph to cache
-    glyph_ptr put(dchar ch, glyph_ptr glyph)
+    Glyph* put(dchar ch, Glyph* glyph)
     {
+        assert(glyph);
         ch = ch & 0xF_FFFF;
-        uint p = ch >> 8;
-        uint i = ch & 0xFF;
+        const p = ch >> 8;
+        const i = ch & 0xFF;
         if (_glyphs[p] is null)
-            _glyphs[p] = new glyph_ptr[256];
-        _glyphs[p][i] = glyph;
-        glyph.lastUsage = 1;
+            _glyphs[p] = new Item[256];
+        _glyphs[p][i] = Item(glyph, true);
         return glyph;
     }
 
@@ -832,23 +833,20 @@ struct GlyphCache
     {
         foreach (part; _glyphs)
         {
-            if (part !is null)
-                foreach (ref item; part)
+            if (!part)
+                continue;
+            foreach (item; part)
+            {
+                if (!item.glyph || item.inUse)
+                    continue;
+                static if (USE_OPENGL)
                 {
-                    if (item && !item.lastUsage)
-                    {
-                        static if (USE_OPENGL)
-                        {
-                            // notify about destroyed glyphs
-                            if (_glyphDestroyCallback !is null)
-                            {
-                                _glyphDestroyCallback(item.id);
-                            }
-                        }
-                        destroy(item);
-                        item = null;
-                    }
+                    // notify about destroyed glyphs
+                    if (_glyphDestroyCallback)
+                        _glyphDestroyCallback(item.glyph.id);
                 }
+                eliminate(item.glyph);
+            }
         }
     }
 
@@ -857,12 +855,10 @@ struct GlyphCache
     {
         foreach (part; _glyphs)
         {
-            if (part !is null)
-                foreach (item; part)
-                {
-                    if (item)
-                        item.lastUsage = 0;
-                }
+            if (!part)
+                continue;
+            foreach (ref item; part)
+                item.inUse = false;
         }
     }
 
@@ -871,23 +867,20 @@ struct GlyphCache
     {
         foreach (part; _glyphs)
         {
-            if (part !is null)
-                foreach (ref item; part)
+            if (!part)
+                continue;
+            foreach (item; part)
+            {
+                if (!item.glyph)
+                    continue;
+                static if (USE_OPENGL)
                 {
-                    if (item)
-                    {
-                        static if (USE_OPENGL)
-                        {
-                            // notify about destroyed glyphs
-                            if (_glyphDestroyCallback !is null)
-                            {
-                                _glyphDestroyCallback(item.id);
-                            }
-                        }
-                        destroy(item);
-                        item = null;
-                    }
+                    // notify about destroyed glyphs
+                    if (_glyphDestroyCallback)
+                        _glyphDestroyCallback(item.glyph.id);
                 }
+                eliminate(item.glyph);
+            }
         }
     }
     /// On destroy, destroy all items (when built with USE_OPENGL version, notify OpenGL cache about removed glyphs)

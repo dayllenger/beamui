@@ -1,5 +1,5 @@
 /**
-This module declares basic data types for usage in the library.
+Basic data types to use in the library.
 
 Contains reference counting support, character glyph struct, etc.
 
@@ -95,10 +95,8 @@ align(1) struct Glyph
     ushort widthScaled;
     /// 8: subpixel rendering mode - if !=SubpixelRenderingMode.none, glyph data contains 3 bytes per pixel instead of 1
     SubpixelRenderingMode subpixelMode;
-    /// 9: usage flag, to handle cleanup of unused glyphs
-    ubyte lastUsage;
 
-    ///< 10: glyph data, arbitrary size (blackBoxX * blackBoxY)
+    /// 9: glyph data, arbitrary size (blackBoxX * blackBoxY)
     ubyte[] glyph;
 }
 

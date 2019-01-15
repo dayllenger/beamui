@@ -292,7 +292,6 @@ class FreeTypeFontFile
                 flags); /* load flags, see below */
         if (error)
             return false;
-        glyph.lastUsage = 1;
         glyph.blackBoxX = cast(ushort)((_slot.metrics.width + 32) >> 6);
         glyph.blackBoxY = cast(ubyte)((_slot.metrics.height + 32) >> 6);
         glyph.originX = cast(byte)((_slot.metrics.horiBearingX + 32) >> 6);
