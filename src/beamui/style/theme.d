@@ -80,7 +80,7 @@ final class Theme
     }
 
     /// Get custom color - transparent by default
-    Color getColor(string name, Color defaultColor = Color.transparent)
+    Color getColor(string name, Color defaultColor = Color.transparent) const
     {
         return colors.get(name, defaultColor);
     }
@@ -93,9 +93,9 @@ final class Theme
     }
 
     /// Print out theme stats
-    void printStats()
+    void printStats() const
     {
-        Log.fd("Theme: %s, styles: %s, drawables: %s, colors: %s", _name, styles.length,
+        Log.fd("Theme: %s, styles: %s, drawables: %s, colors: %s", _name, styleList.length,
             drawables.length, colors.length);
     }
 }

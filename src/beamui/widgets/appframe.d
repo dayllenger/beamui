@@ -26,6 +26,35 @@ import beamui.widgets.widget;
 /// To update status for background operation in AppFrame
 class BackgroundOperationWatcher
 {
+    @property
+    {
+        /// Returns cancel status
+        bool cancelRequested() const
+        {
+            return _cancelRequested;
+        }
+        /// Returns description of background operation to show in status line
+        dstring description() const
+        {
+            return null;
+        }
+        /// Returns icon of background operation to show in status line
+        string icon() const
+        {
+            return null;
+        }
+        /// Returns desired update interval
+        long updateInterval() const
+        {
+            return 100;
+        }
+        /// Returns true when task is done - to remove it from AppFrame
+        bool finished() const
+        {
+            return _finished;
+        }
+    }
+
     private
     {
         AppFrame _frame;
@@ -38,26 +67,6 @@ class BackgroundOperationWatcher
         _frame = frame;
     }
 
-    /// Returns cancel status
-    @property bool cancelRequested()
-    {
-        return _cancelRequested;
-    }
-    /// Returns description of background operation to show in status line
-    @property dstring description()
-    {
-        return null;
-    }
-    /// Returns icon of background operation to show in status line
-    @property string icon()
-    {
-        return null;
-    }
-    /// Returns desired update interval
-    @property long updateInterval()
-    {
-        return 100;
-    }
     /// Update background operation status
     void update()
     {
@@ -71,11 +80,6 @@ class BackgroundOperationWatcher
     void cancel()
     {
         _cancelRequested = true;
-    }
-    /// Returns true when task is done - to remove it from AppFrame
-    @property bool finished()
-    {
-        return _finished;
     }
     /// Will be called by app frame when BackgroundOperationWatcher is to be removed
     void removing()

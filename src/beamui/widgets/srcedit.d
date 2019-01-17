@@ -77,7 +77,7 @@ class SourceEdit : EditBox
             }
         }
 
-        string filename() { return _filename; }
+        string filename() const { return _filename; }
     }
 
     private

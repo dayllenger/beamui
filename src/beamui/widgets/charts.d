@@ -65,7 +65,7 @@ class SimpleBarChart : Widget
     private BarData[] _bars;
     private double _maxY = 0;
 
-    @property size_t barCount()
+    @property size_t barCount() const
     {
         return _bars.length;
     }

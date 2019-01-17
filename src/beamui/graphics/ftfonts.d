@@ -61,16 +61,20 @@ private struct FontDef
 
 private class FontFileItem
 {
+    @property ref inout(FontDef) def() inout { return _def; }
+    @property string[] filenames() { return _filenames; }
+    @property FT_Library library() { return _library; }
+
     private FontList _activeFonts;
     private FT_Library _library;
     private FontDef _def;
-    string[] _filenames;
+    private string[] _filenames;
 
-    @property ref inout(FontDef) def() inout { return _def; }
-
-    @property string[] filenames() { return _filenames; }
-
-    @property FT_Library library() { return _library; }
+    this(FT_Library library, ref FontDef def)
+    {
+        _library = library;
+        _def = def;
+    }
 
     void addFile(string fn)
     {
@@ -79,12 +83,6 @@ private class FontFileItem
             if (fn == existing)
                 return;
         _filenames ~= fn;
-    }
-
-    this(FT_Library library, ref FontDef def)
-    {
-        _library = library;
-        _def = def;
     }
 
     private FontRef _nullFontRef;
@@ -359,7 +357,7 @@ class FreeTypeFontFile
         return true;
     }
 
-    @property bool isNull()
+    @property bool isNull() const
     {
         return (_face is null);
     }
@@ -435,7 +433,6 @@ class FreeTypeFont : Font
         int _height;
 
         GlyphCache _glyphCache;
-
     }
 
     debug private static __gshared int _instanceCount;
@@ -463,11 +460,6 @@ class FreeTypeFont : Font
     override void clear()
     {
         _files.clear();
-    }
-
-    uint getGlyphIndex(dchar code)
-    {
-        return 0;
     }
 
     /// Find glyph index for character
@@ -868,7 +860,7 @@ class FreeTypeFontManager : FontManager
     }
 
     /// Returns number of registered fonts
-    @property int registeredFontCount()
+    @property int registeredFontCount() const
     {
         return cast(int)_fontFiles.length;
     }

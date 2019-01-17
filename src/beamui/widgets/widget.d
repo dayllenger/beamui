@@ -122,7 +122,7 @@ private:
     bool[string] styleClasses; // value means nothing
     struct StyleSubItemInfo
     {
-        Object parent;
+        const(Object) parent;
         string subName;
     }
     /// Structure needed when this widget is subitem of another
@@ -438,7 +438,7 @@ public:
     }
 
     /// Set this widget to be a subitem in stylesheet
-    void bindSubItem(Object parent, string subName)
+    void bindSubItem(const(Object) parent, string subName)
     {
         assert(parent && subName);
         subInfo = new StyleSubItemInfo(parent, subName);
@@ -1399,7 +1399,7 @@ public:
     }
 
     /// Returns mouse cursor type for widget
-    CursorType getCursorType(int x, int y)
+    CursorType getCursorType(int x, int y) const
     {
         return CursorType.arrow;
     }
@@ -1455,7 +1455,7 @@ public:
     If focused widget doesn't have any parent with focusGroup == true,
     focus may be moved to any focusable within window.
     */
-    @property bool focusGroup() { return _focusGroup; }
+    @property bool focusGroup() const { return _focusGroup; }
     /// ditto
     @property void focusGroup(bool flag)
     {
@@ -1464,7 +1464,7 @@ public:
 
     @property bool focusGroupFocused() const
     {
-        Widget w = focusGroupWidget();
+        const w = focusGroupWidget();
         return (w._state & State.windowFocused) != 0;
     }
 
@@ -1506,16 +1506,16 @@ public:
     }
 
     /// Find nearest parent of this widget with focusGroup flag, returns topmost parent if no focusGroup flag set to any of parents.
-    Widget focusGroupWidget() inout
+    inout(Widget) focusGroupWidget() inout
     {
-        Widget p = cast(Widget)this;
+        Widget p = cast()this;
         while (p)
         {
             if (!p.parent || p.focusGroup)
                 break;
             p = p.parent;
         }
-        return p;
+        return cast(inout)p;
     }
 
     private static class TabOrderInfo
@@ -1629,14 +1629,14 @@ public:
 
     private ushort _tabOrder;
     /// Tab order - hint for focus movement using Tab/Shift+Tab
-    @property ushort tabOrder() { return _tabOrder; }
+    @property ushort tabOrder() const { return _tabOrder; }
     /// ditto
     @property void tabOrder(ushort tabOrder)
     {
         _tabOrder = tabOrder;
     }
 
-    private int thisOrParentTabOrder()
+    private int thisOrParentTabOrder() const
     {
         if (_tabOrder)
             return _tabOrder;
@@ -2530,7 +2530,7 @@ struct TextTypingShortcutHelper
         _lastUpdateTimeStamp = 0;
     }
     /// Returns collected text string - use it for lookup
-    @property dstring text()
+    @property dstring text() const
     {
         return _text.dup;
     }
@@ -2610,12 +2610,12 @@ struct AnimationHelper
         _timeElapsed = 0;
     }
     /// Returns time elapsed since start
-    @property long elapsed()
+    @property long elapsed() const
     {
         return _timeElapsed;
     }
     /// Get current time interval
-    @property long interval()
+    @property long interval() const
     {
         return _maxInterval;
     }
@@ -2627,12 +2627,12 @@ struct AnimationHelper
         _timeElapsed = p * newInterval / 10000;
     }
     /// Returns animation progress in interval 0..maxProgress while timeElapsed is between 0 and maxInterval; when interval exceeded, progress is maxProgress
-    @property int progress()
+    @property int progress() const
     {
         return getProgress(_maxProgress);
     }
     /// Returns animation progress in interval 0..maxProgress while timeElapsed is between 0 and maxInterval; when interval exceeded, progress is maxProgress
-    int getProgress(int maxProgress)
+    int getProgress(int maxProgress) const
     {
         if (finished)
             return maxProgress;
@@ -2641,7 +2641,7 @@ struct AnimationHelper
         return cast(int)(_timeElapsed * maxProgress / _maxInterval);
     }
     /// Returns true if animation is finished
-    @property bool finished()
+    @property bool finished() const
     {
         return _timeElapsed >= _maxInterval;
     }

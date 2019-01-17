@@ -39,7 +39,7 @@ class TimerQueue
     }
 
     /// Returns timestamp in milliseconds of the next scheduled event or 0 if no events queued
-    long nextTimestamp()
+    long nextTimestamp() const
     {
         if (!queue.length || !queue[0].valid)
             return 0;

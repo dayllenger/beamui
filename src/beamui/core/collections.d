@@ -267,7 +267,7 @@ struct Collection(T, bool ownItems = false)
     // stack/queue-like ops
 
     /// Pick the first item
-    @property T front()
+    @property inout(T) front() inout
     {
         return len > 0 ? list[0] : T.init;
     }
@@ -283,7 +283,7 @@ struct Collection(T, bool ownItems = false)
     }
 
     /// Pick the last item
-    @property T back()
+    @property inout(T) back() inout
     {
         return len > 0 ? list[len - 1] : T.init;
     }

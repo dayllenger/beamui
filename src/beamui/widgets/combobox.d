@@ -34,7 +34,7 @@ import beamui.widgets.widget;
 class ComboBoxBase : Row
 {
     /// Selected item index
-    @property int selectedItemIndex() { return _selectedItemIndex; }
+    @property int selectedItemIndex() const { return _selectedItemIndex; }
     /// ditto
     @property void selectedItemIndex(int index)
     {
@@ -240,9 +240,9 @@ class ComboBox : ComboBoxBase
         return adapter.item(_selectedItemIndex);
     }
 
-    @property StringListAdapter adapter()
+    @property inout(StringListAdapter) adapter() inout
     {
-        return cast(StringListAdapter)_adapter;
+        return cast(inout(StringListAdapter))_adapter;
     }
 
     override @property dstring text() const
@@ -265,7 +265,7 @@ class ComboBox : ComboBoxBase
         }
     }
 
-    override @property int selectedItemIndex()
+    override @property int selectedItemIndex() const
     {
         return super.selectedItemIndex;
     }
@@ -331,16 +331,16 @@ class IconTextComboBox : ComboBoxBase
     }
 
     /// Get selected item as text
-    @property dstring selectedItem()
+    @property dstring selectedItem() const
     {
         if (_selectedItemIndex < 0 || _selectedItemIndex >= _adapter.itemCount)
             return "";
         return adapter.item(_selectedItemIndex);
     }
 
-    @property StringListAdapter adapter()
+    @property inout(IconStringListAdapter) adapter() inout
     {
-        return cast(StringListAdapter)_adapter;
+        return cast(inout(IconStringListAdapter))_adapter;
     }
 
     override @property dstring text() const
@@ -363,7 +363,7 @@ class IconTextComboBox : ComboBoxBase
         }
     }
 
-    override @property int selectedItemIndex()
+    override @property int selectedItemIndex() const
     {
         return super.selectedItemIndex;
     }

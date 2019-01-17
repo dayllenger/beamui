@@ -57,12 +57,12 @@ class TreeItem
     @property
     {
         /// Returns topmost item
-        RootTreeItem root()
+        inout(RootTreeItem) root() inout
         {
-            TreeItem p = this;
+            TreeItem p = cast()this;
             while (p._parent)
                 p = p._parent;
-            return cast(RootTreeItem)p;
+            return cast(inout(RootTreeItem))p;
         }
 
         /// Returns true if this is the root item
@@ -112,7 +112,7 @@ class TreeItem
         }
 
         /// Returns true if item has subitems and can collapse or expand itself
-        bool canCollapse()
+        bool canCollapse() const
         {
             return root.canCollapseItem(this);
         }
@@ -413,7 +413,7 @@ class RootTreeItem : TreeItem
         super("root");
     }
 
-    bool canCollapseItem(TreeItem item)
+    bool canCollapseItem(const(TreeItem) item) const
     {
         if (item.level == 1)
             return canCollapseTopLevel && item.hasChildren;

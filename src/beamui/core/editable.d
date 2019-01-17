@@ -278,7 +278,7 @@ enum EditStateMark : ubyte
 /// Edit operation details for EditableContent
 class EditOperation
 {
-    protected
+    private
     {
         EditAction _action;
         TextRange _range;
@@ -319,7 +319,7 @@ class EditOperation
     @property
     {
         /// Action performed
-        EditAction action() { return _action; }
+        EditAction action() const { return _action; }
 
         /// Source range to replace with new content
         ref TextRange range() { return _range; }
@@ -420,17 +420,17 @@ class EditOperation
 /// Undo/Redo buffer
 class UndoBuffer
 {
-    protected Collection!EditOperation _undoList;
-    protected Collection!EditOperation _redoList;
+    private Collection!EditOperation _undoList;
+    private Collection!EditOperation _redoList;
 
     /// Returns true if buffer contains any undo items
-    @property bool hasUndo()
+    @property bool hasUndo() const
     {
         return !_undoList.empty;
     }
 
     /// Returns true if buffer contains any redo items
-    @property bool hasRedo()
+    @property bool hasRedo() const
     {
         return !_redoList.empty;
     }
@@ -478,7 +478,7 @@ class UndoBuffer
         _savedState = null;
     }
 
-    protected EditOperation _savedState;
+    private EditOperation _savedState;
 
     /// Current state is saved
     void saved()
@@ -503,7 +503,7 @@ class UndoBuffer
     }
 
     /// Returns true if content has been changed since last saved() or clear() call
-    @property bool modified()
+    @property bool modified() const
     {
         return _savedState !is _undoList.back;
     }
@@ -621,7 +621,7 @@ struct TextLineMeasure
 /// Editable plain text (single/multiline)
 class EditableContent
 {
-    protected
+    private
     {
         UndoBuffer _undoBuffer;
         SyntaxSupport _syntaxSupport;
@@ -654,7 +654,7 @@ class EditableContent
 
     @property
     {
-        bool modified()
+        bool modified() const
         {
             return _undoBuffer.modified;
         }
@@ -671,10 +671,10 @@ class EditableContent
             }
         }
 
-        const(dstring[]) lines() { return _lines; }
+        const(dstring[]) lines() const { return _lines; }
 
         /// Returns true if content has syntax highlight handler set
-        bool hasSyntaxHighlight()
+        bool hasSyntaxHighlight() const
         {
             return _syntaxSupport !is null;
         }
@@ -932,18 +932,18 @@ class EditableContent
     }
 
     /// Returns line count
-    @property int length()
+    @property int length() const
     {
         return cast(int)_lines.length;
     }
 
-    dstring opIndex(int index)
+    dstring opIndex(int index) const
     {
         return line(index);
     }
 
     /// Returns line text by index, "" if index is out of bounds
-    dstring line(int index)
+    dstring line(int index) const
     {
         return index >= 0 && index < _lines.length ? _lines[index] : ""d;
     }
@@ -979,7 +979,7 @@ class EditableContent
     }
 
     /// Returns position for end of last line
-    @property TextPosition endOfFile()
+    @property TextPosition endOfFile() const
     {
         return TextPosition(cast(int)_lines.length - 1, cast(int)_lines[$ - 1].length);
     }
@@ -992,13 +992,13 @@ class EditableContent
     }
 
     /// Returns text position for end of line lineIndex
-    TextPosition lineEnd(int lineIndex)
+    TextPosition lineEnd(int lineIndex) const
     {
         return TextPosition(lineIndex, lineLength(lineIndex));
     }
 
     /// Returns text position for begin of line lineIndex (if lineIndex > number of lines, returns end of last line)
-    TextPosition lineBegin(int lineIndex)
+    TextPosition lineBegin(int lineIndex) const
     {
         if (lineIndex >= _lines.length)
             return lineEnd(lineIndex - 1);
@@ -1006,7 +1006,7 @@ class EditableContent
     }
 
     /// Returns previous character position
-    TextPosition prevCharPos(TextPosition p)
+    TextPosition prevCharPos(TextPosition p) const
     {
         if (p.line < 0)
             return TextPosition(0, 0);
@@ -1023,7 +1023,7 @@ class EditableContent
     }
 
     /// Returns previous character position
-    TextPosition nextCharPos(TextPosition p)
+    TextPosition nextCharPos(TextPosition p) const
     {
         TextPosition eof = endOfFile();
         if (p >= eof)
@@ -1041,14 +1041,14 @@ class EditableContent
     }
 
     /// Returns text range for whole line lineIndex
-    TextRange lineRange(int lineIndex)
+    TextRange lineRange(int lineIndex) const
     {
         return TextRange(TextPosition(lineIndex, 0), lineIndex < cast(int)_lines.length - 1 ?
                 lineBegin(lineIndex + 1) : lineEnd(lineIndex));
     }
 
     /// Find nearest next tab position
-    int nextTab(int pos)
+    int nextTab(int pos) const
     {
         return (pos + tabSize) / tabSize * tabSize;
     }
@@ -1061,13 +1061,13 @@ class EditableContent
         int lastNonSpaceIndex = -1;
         int lastNonSpaceColumn = -1;
 
-        @property bool empty()
+        @property bool empty() const
         {
             return firstNonSpaceColumn < 0;
         }
     }
 
-    LineWhiteSpace getLineWhiteSpace(int lineIndex)
+    LineWhiteSpace getLineWhiteSpace(int lineIndex) const
     {
         LineWhiteSpace res;
         if (lineIndex < 0 || lineIndex >= _lines.length)
@@ -1101,7 +1101,7 @@ class EditableContent
     }
 
     /// Returns spaces/tabs for filling from the beginning of line to specified position
-    dstring fillSpace(int pos)
+    dstring fillSpace(int pos) const
     {
         dchar[] buf;
         int x = 0;
@@ -1127,7 +1127,7 @@ class EditableContent
     }
 
     /// Measures line non-space start and end positions
-    TextLineMeasure measureLine(int lineIndex)
+    TextLineMeasure measureLine(int lineIndex) const
     {
         TextLineMeasure res;
         dstring s = _lines[lineIndex];
@@ -1162,7 +1162,7 @@ class EditableContent
     }
 
     /// Returns true if line with index lineIndex is empty (has length 0 or consists only of spaces and tabs)
-    bool lineIsEmpty(int lineIndex)
+    bool lineIsEmpty(int lineIndex) const
     {
         if (lineIndex < 0 || lineIndex >= _lines.length)
             return true;
@@ -1174,7 +1174,7 @@ class EditableContent
     }
 
     /// Corrent range to cover full lines
-    TextRange fullLinesRange(TextRange r)
+    TextRange fullLinesRange(TextRange r) const
     {
         r.start.pos = 0;
         if (r.end.pos > 0 || r.start.line == r.end.line)
@@ -1183,7 +1183,7 @@ class EditableContent
     }
 
     /// Returns position before first non-space character of line, returns 0 position if no non-space chars
-    TextPosition firstNonSpace(int lineIndex)
+    TextPosition firstNonSpace(int lineIndex) const
     {
         dstring s = line(lineIndex);
         for (int i = 0; i < s.length; i++)
@@ -1193,7 +1193,7 @@ class EditableContent
     }
 
     /// Returns position after last non-space character of line, returns 0 position if no non-space chars on line
-    TextPosition lastNonSpace(int lineIndex)
+    TextPosition lastNonSpace(int lineIndex) const
     {
         dstring s = line(lineIndex);
         for (int i = cast(int)s.length - 1; i >= 0; i--)
@@ -1203,13 +1203,13 @@ class EditableContent
     }
 
     /// Returns text position for end of line lineIndex
-    int lineLength(int lineIndex)
+    int lineLength(int lineIndex) const
     {
         return lineIndex >= 0 && lineIndex < _lines.length ? cast(int)_lines[lineIndex].length : 0;
     }
 
     /// Returns maximum length of line
-    int maxLineLength()
+    int maxLineLength() const
     {
         int m = 0;
         foreach (s; _lines)
@@ -1235,7 +1235,7 @@ class EditableContent
     }
 
     /// Returns edit marks for specified range
-    EditStateMark[] rangeMarks(TextRange range)
+    EditStateMark[] rangeMarks(TextRange range) const
     {
         EditStateMark[] res;
         if (range.empty)
@@ -1251,7 +1251,7 @@ class EditableContent
     }
 
     /// Returns text for specified range
-    dstring[] rangeText(TextRange range)
+    dstring[] rangeText(TextRange range) const
     {
         dstring[] res;
         if (range.empty)
@@ -1553,12 +1553,12 @@ class EditableContent
     // Undo/redo
 
     /// Returns true if there is at least one operation in undo buffer
-    @property bool hasUndo()
+    @property bool hasUndo() const
     {
         return _undoBuffer.hasUndo;
     }
     /// Returns true if there is at least one operation in redo buffer
-    @property bool hasRedo()
+    @property bool hasRedo() const
     {
         return _undoBuffer.hasRedo;
     }
@@ -1607,11 +1607,11 @@ class EditableContent
     //===============================================================
     // Load/save
 
-    protected string _filename;
-    protected TextFileFormat _format;
+    private string _filename;
+    private TextFileFormat _format;
 
     /// File used to load editor content
-    @property string filename() { return _filename; }
+    @property string filename() const { return _filename; }
 
     /// Load content form input stream
     bool load(InputStream f, string fname = null)
@@ -1798,7 +1798,7 @@ struct LineIcons
     private int _len;
 
     /// Returns count of items
-    @property int length() { return _len; }
+    @property int length() const { return _len; }
 
     /// Returns item by index, or null if index out of bounds
     LineIcon opIndex(int index)
@@ -1995,7 +1995,7 @@ struct LineIcons
         return firstBefore;
     }
 
-    @property bool hasBookmarks()
+    @property bool hasBookmarks() const
     {
         foreach (i; 0 .. _len)
         {

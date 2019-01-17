@@ -325,7 +325,7 @@ class DockHost : WidgetGroupDefaultDrawing
 /// Docked window
 class DockWindow : WindowFrame
 {
-    @property DockAlignment dockAlignment() { return _dockAlignment; }
+    @property DockAlignment dockAlignment() const { return _dockAlignment; }
     /// ditto
     @property void dockAlignment(DockAlignment a)
     {

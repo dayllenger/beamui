@@ -1100,9 +1100,9 @@ enum ResizerEventType
 class Resizer : Widget
 {
     /// Orientation: vertical to resize vertically, horizontal to resize horizontally
-    @property Orientation orientation() { return _orientation; }
+    @property Orientation orientation() const { return _orientation; }
 
-    @property bool validProps()
+    @property bool validProps() const
     {
         return _previousWidget && _nextWidget;
     }
@@ -1122,7 +1122,7 @@ class Resizer : Widget
         trackHover = true;
     }
 
-    override CursorType getCursorType(int x, int y)
+    override CursorType getCursorType(int x, int y) const
     {
         if (_orientation == Orientation.vertical)
             return CursorType.sizeNS;
@@ -1159,7 +1159,7 @@ class Resizer : Widget
     }
 
     /// Resizer offset from initial position
-    @property int delta() { return _delta; } // TODO: make setter?
+    @property int delta() const { return _delta; } // TODO: make setter?
 
     private
     {

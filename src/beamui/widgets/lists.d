@@ -28,7 +28,7 @@ interface ListAdapter
     /// Returns number of widgets in list
     @property int itemCount() const;
     /// Returns list item widget by item index
-    Widget itemWidget(int index);
+    inout(Widget) itemWidget(int index) inout;
     /// Returns list item's state flags
     State itemState(int index) const;
     /// Set one or more list item's state flags, returns updated state
@@ -91,7 +91,7 @@ class ListAdapterBase : ListAdapter
         return 0;
     }
 
-    Widget itemWidget(int index)
+    inout(Widget) itemWidget(int index) inout
     {
         // override it
         return null;
@@ -152,7 +152,7 @@ class WidgetListAdapter : ListAdapterBase
         return cast(int)_widgets.count;
     }
 
-    override Widget itemWidget(int index)
+    override inout(Widget) itemWidget(int index) inout
     {
         return _widgets[index];
     }
@@ -378,23 +378,23 @@ class StringListAdapter : StringListAdapterBase
         eliminate(_widget);
     }
 
-    override Widget itemWidget(int index)
+    override inout(Widget) itemWidget(int index) inout
     {
-        if (_widget is null)
+        if (_widget && index == _lastItemIndex)
+            return _widget;
+        with (caching(this))
         {
-            _widget = new Label;
-            _widget.bindSubItem(this, "item");
+            if (_widget is null)
+            {
+                _widget = new Label;
+                _widget.bindSubItem(this, "item");
+            }
+            // update widget
+            _widget.text = _items[index].str;
+            _widget.state = _items[index].state;
+            _widget.cancelLayout();
+            _lastItemIndex = index;
         }
-        else
-        {
-            if (index == _lastItemIndex)
-                return _widget;
-        }
-        // update widget
-        _widget.text = _items[index].str;
-        _widget.state = _items[index].state;
-        _widget.cancelLayout();
-        _lastItemIndex = index;
         return _widget;
     }
 
@@ -447,37 +447,37 @@ class IconStringListAdapter : StringListAdapterBase
         eliminate(_widget);
     }
 
-    override Widget itemWidget(int index)
+    override inout(Widget) itemWidget(int index) inout
     {
-        if (_widget is null)
+        if (_widget && index == _lastItemIndex)
+            return _widget;
+        with (caching(this))
         {
-            _widget = new Row;
-            _widget.bindSubItem(this, "item");
-            _label = new Label;
-            _label.id = "label";
-            _icon = new ImageWidget;
-            _icon.id = "icon";
-            _widget.add(_icon);
-            _widget.add(_label).setFillWidth(true);
+            if (_widget is null)
+            {
+                _widget = new Row;
+                _widget.bindSubItem(this, "item");
+                _label = new Label;
+                _label.id = "label";
+                _icon = new ImageWidget;
+                _icon.id = "icon";
+                _widget.add(_icon);
+                _widget.add(_label).setFillWidth(true);
+            }
+            // update widget
+            _widget.state = _items[index].state;
+            _label.text = _items[index].str;
+            if (_items[index].iconID)
+            {
+                _icon.visibility = Visibility.visible;
+                _icon.imageID = _items[index].iconID;
+            }
+            else
+            {
+                _icon.visibility = Visibility.gone;
+            }
+            _lastItemIndex = index;
         }
-        else
-        {
-            if (index == _lastItemIndex)
-                return _widget;
-        }
-        // update widget
-        _widget.state = _items[index].state;
-        _label.text = _items[index].str;
-        if (_items[index].iconID)
-        {
-            _icon.visibility = Visibility.visible;
-            _icon.imageID = _items[index].iconID;
-        }
-        else
-        {
-            _icon.visibility = Visibility.gone;
-        }
-        _lastItemIndex = index;
         return _widget;
     }
 
@@ -515,7 +515,7 @@ class ListWidget : WidgetGroup
     @property
     {
         /// List orientation (vertical, horizontal)
-        Orientation orientation() { return _orientation; }
+        Orientation orientation() const { return _orientation; }
         /// ditto
         void orientation(Orientation value)
         {
@@ -525,7 +525,7 @@ class ListWidget : WidgetGroup
         }
 
         /// When true, mouse hover selects underlying item
-        bool selectOnHover() { return _selectOnHover; }
+        bool selectOnHover() const { return _selectOnHover; }
         /// ditto
         void selectOnHover(bool select)
         {
@@ -533,7 +533,7 @@ class ListWidget : WidgetGroup
         }
 
         /// List adapter
-        ListAdapter adapter() { return _adapter; }
+        inout(ListAdapter) adapter() inout { return _adapter; }
         /// ditto
         void adapter(ListAdapter adapter)
         {
@@ -562,13 +562,13 @@ class ListWidget : WidgetGroup
         }
 
         /// Returns number of widgets in list
-        int itemCount()
+        int itemCount() const
         {
             return _adapter ? _adapter.itemCount : 0;
         }
 
         /// Selected item index
-        int selectedItemIndex() { return _selectedItemIndex; }
+        int selectedItemIndex() const { return _selectedItemIndex; }
         /// ditto
         void selectedItemIndex(int index)
         {
@@ -638,7 +638,7 @@ class ListWidget : WidgetGroup
     }
 
     /// Returns box for item (not scrolled, first item starts at 0,0)
-    Box itemBoxNoScroll(int index)
+    Box itemBoxNoScroll(int index) const
     {
         if (index < 0 || index >= _itemBoxes.length)
             return Box.init;
@@ -646,7 +646,7 @@ class ListWidget : WidgetGroup
     }
 
     /// Returns box for item (scrolled)
-    Box itemBox(int index)
+    Box itemBox(int index) const
     {
         if (index < 0 || index >= _itemBoxes.length)
             return Box.init;
@@ -659,7 +659,7 @@ class ListWidget : WidgetGroup
     }
 
     /// Returns item index by 0-based offset from top/left of list content
-    int itemByPosition(int pos)
+    int itemByPosition(int pos) const
     {
         return 0;
     }
@@ -1391,7 +1391,7 @@ class StringListWidget : ListWidget
     }
 
     /// Get selected item as text
-    @property dstring selectedItem()
+    @property dstring selectedItem() const
     {
         if (_selectedItemIndex < 0 || _selectedItemIndex >= _adapter.itemCount)
             return "";

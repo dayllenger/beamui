@@ -199,12 +199,12 @@ class DrawBuf : RefCountedObject
         _clipRect.intersect(rect);
     }
     /// Returns true if rectangle is completely clipped out and cannot be drawn.
-    @property bool isClippedOut(const ref Rect rect)
+    @property bool isClippedOut(const ref Rect rect) const
     {
         return !_clipRect.intersects(rect);
     }
     /// Apply clipRect and buffer bounds clipping to rectangle
-    bool applyClipping(ref Rect rc)
+    bool applyClipping(ref Rect rc) const
     {
         rc.intersect(_clipRect);
         if (rc.left < 0)
@@ -219,7 +219,7 @@ class DrawBuf : RefCountedObject
     }
     /// Apply clipRect and buffer bounds clipping to rectangle
     /// If clipping applied to first rectangle, reduce second rectangle bounds proportionally
-    bool applyClipping(ref Rect rc, ref Rect rc2)
+    bool applyClipping(ref Rect rc, ref Rect rc2) const
     {
         if (rc.empty || rc2.empty)
             return false;

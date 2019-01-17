@@ -30,7 +30,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
     @property
     {
         /// Returns item action
-        Action action() { return _action; }
+        inout(Action) action() inout { return _action; }
 
         /// Returns true if item is a separator
         bool isSeparator() const
@@ -45,7 +45,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         }
 
         /// Submenu, opening by hover or click on this item
-        Menu submenu() { return _submenu; }
+        inout(Menu) submenu() inout { return _submenu; }
         /// ditto
         void submenu(Menu menu)
         {
@@ -207,7 +207,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
     }
 
     /// Get hotkey character from label (e.g. 'F' for item labeled "&File"), 0 if no hotkey
-    dchar getHotkey()
+    dchar getHotkey() const
     {
         if (_action is null)
             return 0;
@@ -369,16 +369,16 @@ class Menu : ListWidget
         ownAdapter = new WidgetListAdapter;
     }
 
-    protected @property bool isMenuBar()
+    protected @property bool isMenuBar() const
     {
         return orientation == Orientation.horizontal;
     }
 
     /// Get menu item by index
-    MenuItem menuItem(int index)
+    inout(MenuItem) menuItem(int index) inout
     {
         if (adapter && index >= 0)
-            return cast(MenuItem)adapter.itemWidget(index);
+            return cast(inout(MenuItem))adapter.itemWidget(index);
         else
             return null;
     }
@@ -439,7 +439,7 @@ class Menu : ListWidget
     }
 
     /// Find subitem by hotkey character, returns subitem index, -1 if not found
-    ptrdiff_t findSubitemByHotkey(dchar ch)
+    ptrdiff_t findSubitemByHotkey(dchar ch) const
     {
         import std.uni : toUpper;
 
@@ -456,7 +456,7 @@ class Menu : ListWidget
     }
 
     /// Find subitem by hotkey character, returns an item, null if not found
-    MenuItem findSubitemByHotkeyRecursive(dchar ch)
+    inout(MenuItem) findSubitemByHotkeyRecursive(dchar ch) inout
     {
         import std.uni : toUpper;
 

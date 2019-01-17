@@ -11,14 +11,14 @@ import std.stdio;
 
 interface Closeable
 {
+    @property bool isOpen() const;
     void close();
-    @property bool isOpen();
 }
 
 interface InputStream : Closeable
 {
+    @property bool eof() const;
     size_t read(ubyte[] buffer);
-    @property bool eof();
 }
 
 interface OutputStream : Closeable
@@ -28,10 +28,21 @@ interface OutputStream : Closeable
 
 class FileInputStream : InputStream
 {
-    std.stdio.File _file;
+    private File _file;
+
     this(string filename)
     {
-        _file = std.stdio.File(filename, "rb");
+        _file = File(filename, "rb");
+    }
+
+    @property bool isOpen() const
+    {
+        return _file.isOpen;
+    }
+
+    @property bool eof() const
+    {
+        return _file.eof;
     }
 
     void close()
@@ -45,24 +56,20 @@ class FileInputStream : InputStream
         ubyte[] res = _file.rawRead(buffer);
         return res.length;
     }
-
-    @property bool isOpen()
-    {
-        return _file.isOpen;
-    }
-
-    @property bool eof()
-    {
-        return _file.eof;
-    }
 }
 
 class FileOutputStream : OutputStream
 {
-    std.stdio.File _file;
+    private File _file;
+
     this(string filename)
     {
-        _file = std.stdio.File(filename, "wb");
+        _file = File(filename, "wb");
+    }
+
+    @property bool isOpen() const
+    {
+        return _file.isOpen;
     }
 
     void close()
@@ -74,11 +81,6 @@ class FileOutputStream : OutputStream
     {
         _file.rawWrite(data);
     }
-
-    @property bool isOpen()
-    {
-        return _file.isOpen;
-    }
 }
 
 class MemoryInputStream : InputStream
@@ -86,6 +88,7 @@ class MemoryInputStream : InputStream
     private ubyte[] _data;
     private size_t _pos;
     private bool _closed;
+
     this(ubyte[] data)
     {
         _data = data;
@@ -93,14 +96,19 @@ class MemoryInputStream : InputStream
         _pos = 0;
     }
 
+    @property bool isOpen() const
+    {
+        return !_closed;
+    }
+
+    @property bool eof() const
+    {
+        return _closed || (_pos >= _data.length);
+    }
+
     void close()
     {
         _closed = true;
-    }
-
-    @property bool isOpen()
-    {
-        return !_closed;
     }
 
     size_t read(ubyte[] buffer)
@@ -111,10 +119,5 @@ class MemoryInputStream : InputStream
             buffer[i++] = _data[_pos++];
         }
         return bytesRead;
-    }
-
-    @property bool eof()
-    {
-        return _closed || (_pos >= _data.length);
     }
 }

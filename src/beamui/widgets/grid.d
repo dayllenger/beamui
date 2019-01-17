@@ -162,17 +162,17 @@ class StringGridAdapter : GridAdapter
 interface CustomGridCellAdapter
 {
     /// Returns true for custom drawn cell
-    bool isCustomCell(int col, int row);
+    bool isCustomCell(int col, int row) const;
     /// Returns cell size
-    Size measureCell(int col, int row);
+    Size measureCell(int col, int row) const;
     /// Draw data cell content
     void drawCell(DrawBuf buf, Box b, int col, int row);
 }
 
 interface GridModelAdapter
 {
-    @property int fixedCols();
-    @property int fixedRows();
+    @property int fixedCols() const;
+    @property int fixedRows() const;
     @property void fixedCols(int value);
     @property void fixedRows(int value);
 }
@@ -185,17 +185,17 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         /// Selected cells when multiselect is enabled
         RedBlackTree!PointI selection() { return _selection; }
         /// Selected column
-        int col()
+        int col() const
         {
             return _col - _headerCols;
         }
         /// Selected row
-        int row()
+        int row() const
         {
             return _row - _headerRows;
         }
         /// Column count
-        int cols()
+        int cols() const
         {
             return _cols - _headerCols;
         }
@@ -205,7 +205,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             resize(c, rows);
         }
         /// Row count
-        int rows()
+        int rows() const
         {
             return _rows - _headerRows;
         }
@@ -216,7 +216,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Column resizing flag; when true, allow resizing of column with mouse
-        bool allowColResizing() { return _allowColResizing; }
+        bool allowColResizing() const { return _allowColResizing; }
         /// ditto
         void allowColResizing(bool flagAllowColResizing)
         {
@@ -224,7 +224,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Row header column count
-        int headerCols() { return _headerCols; }
+        int headerCols() const { return _headerCols; }
         /// ditto
         void headerCols(int c)
         {
@@ -232,7 +232,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             invalidate();
         }
         /// Col header row count
-        int headerRows() { return _headerRows; }
+        int headerRows() const { return _headerRows; }
         /// ditto
         void headerRows(int r)
         {
@@ -241,7 +241,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Fixed (non-scrollable) data column count
-        int fixedCols()
+        int fixedCols() const
         {
             return _gridModelAdapter is null ? _fixedCols : _gridModelAdapter.fixedCols;
         }
@@ -255,7 +255,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             invalidate();
         }
         /// Fixed (non-scrollable) data row count
-        int fixedRows()
+        int fixedRows() const
         {
             return _gridModelAdapter is null ? _fixedRows : _gridModelAdapter.fixedCols;
         }
@@ -270,18 +270,18 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Count of non-scrollable columns (header + fixed)
-        int nonScrollCols()
+        int nonScrollCols() const
         {
             return _headerCols + fixedCols;
         }
         /// Count of non-scrollable rows (header + fixed)
-        int nonScrollRows()
+        int nonScrollRows() const
         {
             return _headerRows + fixedRows;
         }
 
         /// Default column width - for newly added columns
-        int defColumnWidth() { return _defColumnWidth; }
+        int defColumnWidth() const { return _defColumnWidth; }
         /// ditto
         void defColumnWidth(int v)
         {
@@ -289,7 +289,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             _changedSize = true;
         }
         /// Default row height - for newly added rows
-        int defRowHeight() { return _defRowHeight; }
+        int defRowHeight() const { return _defRowHeight; }
         /// ditto
         void defRowHeight(int v)
         {
@@ -298,7 +298,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// When true, allows multi cell selection
-        bool multiSelect() { return _multiSelect; }
+        bool multiSelect() const { return _multiSelect; }
         /// ditto
         void multiSelect(bool flag)
         {
@@ -311,7 +311,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// When true, allows only select the whole row
-        bool rowSelect() { return _rowSelect; }
+        bool rowSelect() const { return _rowSelect; }
         /// ditto
         void rowSelect(bool flag)
         {
@@ -325,7 +325,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Flag to enable column headers
-        bool showColHeaders() { return _showColHeaders; }
+        bool showColHeaders() const { return _showColHeaders; }
         /// ditto
         void showColHeaders(bool show)
         {
@@ -340,7 +340,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Flag to enable row headers
-        bool showRowHeaders() { return _showRowHeaders; }
+        bool showRowHeaders() const { return _showRowHeaders; }
         /// ditto
         void showRowHeaders(bool show)
         {
@@ -355,19 +355,19 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Returns all (fixed + scrollable) cells size in pixels
-        Size fullAreaPixels()
+        Size fullAreaPixels() const
         {
             if (_changedSize)
-                updateCumulativeSizes();
+                caching(this).updateCumulativeSizes();
             int w = _cols ? _colCumulativeWidths[_cols - 1] : 0;
             int h = _rows ? _rowCumulativeHeights[_rows - 1] : 0;
             return Size(w, h);
         }
         /// Non-scrollable area size in pixels
-        Size nonScrollAreaPixels()
+        Size nonScrollAreaPixels() const
         {
             if (_changedSize)
-                updateCumulativeSizes();
+                caching(this).updateCumulativeSizes();
             int nscols = nonScrollCols;
             int nsrows = nonScrollRows;
             int w = nscols ? _colCumulativeWidths[nscols - 1] : 0;
@@ -375,7 +375,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             return Size(w, h);
         }
         /// Scrollable area size in pixels
-        Size scrollAreaPixels()
+        Size scrollAreaPixels() const
         {
             return fullAreaPixels - nonScrollAreaPixels;
         }
@@ -422,7 +422,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
 
         /// Extends scroll area to show full column at left when scrolled to rightmost column
-        bool fullColumnOnLeft() { return _fullColumnOnLeft; }
+        bool fullColumnOnLeft() const { return _fullColumnOnLeft; }
         /// ditto
         void fullColumnOnLeft(bool newFullColumnOnLeft)
         {
@@ -433,7 +433,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             }
         }
         /// Extends scroll area to show full row at top when scrolled to end row
-        bool fullRowOnTop() { return _fullColumnOnLeft; }
+        bool fullRowOnTop() const { return _fullColumnOnLeft; }
         /// ditto
         void fullRowOnTop(bool newFullRowOnTop)
         {
@@ -603,12 +603,12 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Returns true if column is inside client area and not overlapped outside scroll area
-    bool colVisible(int i)
+    bool colVisible(int i) const
     {
         if (i < 0 || _cols <= i)
             return false;
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         if (i == 0)
             return true;
         int nscols = nonScrollCols;
@@ -630,12 +630,12 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
     }
     /// Returns true if row is inside client area and not overlapped outside scroll area
-    bool rowVisible(int j)
+    bool rowVisible(int j) const
     {
         if (j < 0 || _rows <= j)
             return false;
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         if (j == 0)
             return true; // first row always visible
         int nsrows = nonScrollRows;
@@ -658,17 +658,17 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Get cell rectangle (relative to client area) not counting scroll position
-    Box cellBoxNoScroll(int i, int j)
+    Box cellBoxNoScroll(int i, int j) const
     {
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         if (i < 0 || _cols <= i || j < 0 || _rows <= j)
             return Box(0, 0, 0, 0);
         return Box(i ? _colCumulativeWidths[i - 1] : 0, j ? _rowCumulativeHeights[j - 1] : 0,
                 _colWidths[i], _rowHeights[j]);
     }
     /// Get cell rectangle relative to client area; row 0 is col headers row; col 0 is row headers column
-    Box cellBox(int i, int j)
+    Box cellBox(int i, int j) const
     {
         Box b = cellBoxNoScroll(i, j);
         int nscols = nonScrollCols;
@@ -693,7 +693,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Get column width, 0 is header column
-    int colWidth(int i)
+    int colWidth(int i) const
     {
         if (i < 0 || _colWidths.length <= i)
             return 0;
@@ -701,7 +701,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Get row height, 0 is header row
-    int rowHeight(int j)
+    int rowHeight(int j) const
     {
         if (j < 0 || _rowHeights.length <= j)
             return 0;
@@ -709,10 +709,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Converts client rect relative coordinates to cell coordinates
-    bool pointToCell(int x, int y, ref int col, ref int row, ref Box cellb)
+    bool pointToCell(int x, int y, ref int col, ref int row, ref Box cellb) const
     {
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         int nscols = nonScrollCols;
         int nsrows = nonScrollRows;
         Size ns = nonScrollAreaPixels;
@@ -731,7 +731,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Search for index of position inside cumulative sizes array
-    protected static int findPosIndex(int[] cumulativeSizes, int pos)
+    protected static int findPosIndex(const(int[]) cumulativeSizes, int pos)
     {
         // binary search
         if (pos < 0 || !cumulativeSizes.length)
@@ -740,7 +740,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         int b = cast(int)cumulativeSizes.length; // exclusive upper bound
         if (pos >= cumulativeSizes[$ - 1])
             return b - 1;
-        int* w = cumulativeSizes.ptr;
+        const w = cumulativeSizes.ptr;
         while (true)
         {
             if (a + 1 >= b)
@@ -769,26 +769,26 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Column by X, ignoring scroll position
-    protected int colByAbsoluteX(int x)
+    protected int colByAbsoluteX(int x) const
     {
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         return findPosIndex(_colCumulativeWidths, x);
     }
 
     /// Row by Y, ignoring scroll position
-    protected int rowByAbsoluteY(int y)
+    protected int rowByAbsoluteY(int y) const
     {
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         return findPosIndex(_rowCumulativeHeights, y);
     }
 
     /// Returns first fully visible column in scroll area
-    protected int scrollCol()
+    protected int scrollCol() const
     {
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         int x = nonScrollAreaPixels.w + scrollPos.x;
         int col = colByAbsoluteX(x);
         int start = col ? _colCumulativeWidths[col - 1] : 0;
@@ -800,10 +800,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Returns last fully visible column in scroll area
-    protected int lastScrollCol()
+    protected int lastScrollCol() const
     {
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         int x = scrollPos.x + clientBox.w - 1;
         int col = colByAbsoluteX(x);
         int start = col ? _colCumulativeWidths[col - 1] : 0;
@@ -815,10 +815,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Returns first fully visible row in scroll area
-    protected int scrollRow()
+    protected int scrollRow() const
     {
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         int y = nonScrollAreaPixels.h + scrollPos.y;
         int row = rowByAbsoluteY(y);
         int start = row ? _rowCumulativeHeights[row - 1] : 0;
@@ -830,10 +830,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Returns last fully visible row in scroll area
-    protected int lastScrollRow()
+    protected int lastScrollRow() const
     {
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         int y = scrollPos.y + clientBox.h - 1;
         int row = rowByAbsoluteY(y);
         int start = row ? _rowCumulativeHeights[row - 1] : 0;
@@ -1164,7 +1164,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
     }
 
-    override CursorType getCursorType(int x, int y)
+    override CursorType getCursorType(int x, int y) const
     {
         if (_allowColResizing)
         {
@@ -1205,10 +1205,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Returns column index to resize if point is in column resize area in header row, -1 if outside resize area
-    int isColumnResizingPoint(int x, int y)
+    int isColumnResizingPoint(int x, int y) const
     {
         if (_changedSize)
-            updateCumulativeSizes();
+            caching(this).updateCumulativeSizes();
         x -= clientBox.x;
         y -= clientBox.y;
         if (!_headerRows)
@@ -1777,7 +1777,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
     //===============================================================
 
-    override Size fullContentSize()
+    override Size fullContentSize() const
     {
         return fullAreaPixels;
     }
@@ -1786,7 +1786,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     private int _minVisibleRows = 2;
 
     /// Number of columns from 0 that are taken to measure minimum visible width
-    @property int minVisibleCols() { return _minVisibleCols; }
+    @property int minVisibleCols() const { return _minVisibleCols; }
     /// ditto
     @property void minVisibleCols(int newMinVisibleCols)
     {
@@ -1795,7 +1795,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Number of rows from 0 that are taken to measure minimum visible height; if there are too little rows last row height is multiplied
-    @property int minVisibleRows() { return _minVisibleRows; }
+    @property int minVisibleRows() const { return _minVisibleRows; }
     /// ditto
     @property void minVisibleRows(int newMinVisibleRows)
     {
@@ -1827,13 +1827,13 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return sz;
     }
 
-    protected Size measureCell(int x, int y)
+    protected Size measureCell(int x, int y) const
     {
         // override it!
         return Size(BACKEND_CONSOLE ? 5 : 80, BACKEND_CONSOLE ? 1 : 20);
     }
 
-    protected int measureColWidth(int x)
+    protected int measureColWidth(int x) const
     {
         if (!_showRowHeaders && x < _headerCols)
             return 0;
@@ -1850,7 +1850,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return w;
     }
 
-    protected int measureRowHeight(int y)
+    protected int measureRowHeight(int y) const
     {
         int h;
         foreach (i; 0 .. _cols)
@@ -2007,15 +2007,15 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 class StringGridWidgetBase : GridWidgetBase
 {
     /// Get cell text
-    abstract dstring cellText(int col, int row);
+    abstract dstring cellText(int col, int row) const;
     /// Set cell text
     abstract StringGridWidgetBase setCellText(int col, int row, dstring text);
     /// Returns row header title
-    abstract dstring rowTitle(int row);
+    abstract dstring rowTitle(int row) const;
     /// Set row header title
     abstract StringGridWidgetBase setRowTitle(int row, dstring title);
     /// Returns row header title
-    abstract dstring colTitle(int col);
+    abstract dstring colTitle(int col) const;
     /// Set col header title
     abstract StringGridWidgetBase setColTitle(int col, dstring title);
 }
@@ -2038,7 +2038,7 @@ class StringGridWidget : StringGridWidgetBase
     }
 
     /// Get cell text
-    override dstring cellText(int col, int row)
+    override dstring cellText(int col, int row) const
     {
         if (col >= 0 && col < cols && row >= 0 && row < rows)
             return _data[row][col];
@@ -2066,7 +2066,7 @@ class StringGridWidget : StringGridWidgetBase
         _rowTitles.length = r;
     }
 
-    override dstring rowTitle(int row)
+    override dstring rowTitle(int row) const
     {
         return _rowTitles[row];
     }
@@ -2076,7 +2076,7 @@ class StringGridWidget : StringGridWidgetBase
         return this;
     }
 
-    override dstring colTitle(int col)
+    override dstring colTitle(int col) const
     {
         return _colTitles[col];
     }
@@ -2086,7 +2086,7 @@ class StringGridWidget : StringGridWidgetBase
         return this;
     }
 
-    override protected Size measureCell(int x, int y)
+    override protected Size measureCell(int x, int y) const
     {
         if (_customCellAdapter && _customCellAdapter.isCustomCell(x, y))
         {

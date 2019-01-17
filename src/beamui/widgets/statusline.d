@@ -52,7 +52,7 @@ class StatusLineIconPanel : Row
         addChild(_icon);
     }
 
-    @property string iconID()
+    @property string iconID() const
     {
         return _icon.imageID;
     }
@@ -75,7 +75,7 @@ class StatusLineTextAndIconPanel : StatusLineTextPanel
         add(_icon).alignment(Align.center);
     }
 
-    @property string iconID()
+    @property string iconID() const
     {
         return _icon.imageID;
     }
@@ -128,7 +128,7 @@ class StatusLineEditorStatePanel : StatusLineTextPanel
         visibility = Visibility.gone;
     }
 
-    dstring makeStateString()
+    dstring makeStateString() const
     {
         if (!_editorState.active)
             return null;

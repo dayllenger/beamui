@@ -120,14 +120,14 @@ class ScrollAreaBase : WidgetGroup
         protected ref Point scrollPos() { return _scrollPos; }
 
         /// Get full content size in pixels
-        Size fullContentSize()
+        Size fullContentSize() const
         {
             // override it
             return Size(0, 0);
         }
 
         /// Get full content size in pixels including widget borders / padding
-        Size fullContentSizeWithBorders()
+        Size fullContentSizeWithBorders() const
         {
             return fullContentSize + padding.size;
         }
@@ -469,7 +469,7 @@ class ScrollArea : ScrollAreaBase
         requestLayout();
     }
 
-    override @property Size fullContentSize() { return _fullContentSize; }
+    override @property Size fullContentSize() const { return _fullContentSize; }
 
     private Widget _contentWidget;
     /// Size of content widget

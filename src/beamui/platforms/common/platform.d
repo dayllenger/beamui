@@ -1842,7 +1842,7 @@ struct WindowMap(W : Window, ID)
     }
 
     /// Returns number of currently existing windows
-    @property size_t count()
+    @property size_t count() const
     {
         return list.length;
     }
@@ -2015,7 +2015,7 @@ class Platform
     @property
     {
         /// Returns currently selected UI language code
-        string uiLanguage() { return _uiLanguage; }
+        string uiLanguage() const { return _uiLanguage; }
         /// Set UI language (e.g. "en", "fr", "ru") - will relayout content of all windows if language has been changed
         void uiLanguage(string langCode)
         {
@@ -2032,7 +2032,7 @@ class Platform
         }
 
         /// Get name of currently active theme
-        string uiTheme() { return _themeName; }
+        string uiTheme() const { return _themeName; }
         /// Set application UI theme - will relayout content of all windows if theme has been changed
         void uiTheme(string name)
         {
@@ -2060,27 +2060,15 @@ class Platform
         }
 
         /// How dialogs should be displayed - as popup or window
-        DialogDisplayMode uiDialogDisplayMode() { return _uiDialogDisplayMode; }
+        DialogDisplayMode uiDialogDisplayMode() const { return _uiDialogDisplayMode; }
         /// ditto
         void uiDialogDisplayMode(DialogDisplayMode value)
         {
             _uiDialogDisplayMode = value;
         }
 
-        /// Returns list of resource directories
-        string[] resourceDirs()
-        {
-            return resourceList.resourceDirs;
-        }
-        /// ditto
-        void resourceDirs(string[] dirs)
-        {
-            // TODO: this function is reserved
-            resourceList.resourceDirs = dirs;
-        }
-
         /// Default icon for newly created windows
-        string defaultWindowIcon() { return _defaultWindowIcon; }
+        string defaultWindowIcon() const { return _defaultWindowIcon; }
         /// ditto
         void defaultWindowIcon(string newIcon)
         {

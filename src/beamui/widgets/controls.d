@@ -140,7 +140,7 @@ class Button : LinearLayout, ActionHolder
         }
 
         /// Action to emit on click
-        Action action() { return _action; }
+        inout(Action) action() inout { return _action; }
         /// ditto
         void action(Action a)
         {
@@ -316,7 +316,7 @@ class LinkButton : Button // FIXME: in horizontal layout this button expands hor
         action = a;
     }
 
-    override CursorType getCursorType(int x, int y) // doesn't work for actual text, FIXME!
+    override CursorType getCursorType(int x, int y) const // doesn't work for actual text, FIXME!
     {
         return CursorType.hand;
     }

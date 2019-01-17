@@ -61,7 +61,7 @@ struct ResourceList
     }
 
     /// Get resource directory paths
-    @property string[] resourceDirs()
+    @property const(string[]) resourceDirs() const
     {
         return _resourceDirs;
     }

@@ -39,7 +39,7 @@ class ToolBarButton : Button
         checkable = action.checkable;
     }
 
-    override @property bool hasTooltip()
+    override @property bool hasTooltip() const
     {
         return action && action.label;
     }

@@ -41,7 +41,7 @@ struct EditorStateInfo
     /// Character under cursor
     dchar character;
     /// Returns true if editor is in active state
-    @property bool active()
+    @property bool active() const
     {
         return col > 0 && line > 0;
     }
@@ -147,7 +147,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     @property
     {
         /// Editor content object
-        EditableContent content() { return _content; }
+        inout(EditableContent) content() inout { return _content; }
         /// ditto
         void content(EditableContent content)
         {
@@ -254,10 +254,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
 
         /// When true allows copy / cut whole current line if there is no selection
-        bool copyCurrentLineWhenNoSelection()
-        {
-            return _copyCurrentLineWhenNoSelection;
-        }
+        bool copyCurrentLineWhenNoSelection() const { return _copyCurrentLineWhenNoSelection; }
         /// ditto
         void copyCurrentLineWhenNoSelection(bool flag)
         {
@@ -265,7 +262,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
 
         /// When true shows mark on tab positions in beginning of line
-        bool showTabPositionMarks() { return _showTabPositionMarks; }
+        bool showTabPositionMarks() const { return _showTabPositionMarks; }
         /// ditto
         void showTabPositionMarks(bool flag)
         {
@@ -279,7 +276,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         /// To hold _scrollpos.x toggling between normal and word wrap mode
         private int previousXScrollPos;
         /// True if word wrap mode is set
-        bool wordWrap() { return _wordWrap; }
+        bool wordWrap() const { return _wordWrap; }
         /// Enable or disable word wrap mode
         void wordWrap(bool v)
         {
@@ -312,7 +309,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             requestLayout();
         }
 
-        protected int lineHeight() { return _lineHeight; }
+        protected int lineHeight() const { return _lineHeight; }
     }
 
     /// Modified state change listener (e.g. content has been saved, or first time modified after save)
@@ -458,7 +455,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     }
 
     /// Override for multiline editors
-    protected int lineCount()
+    protected int lineCount() const
     {
         return 1;
     }
@@ -671,7 +668,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         return true;
     }
 
-    override CursorType getCursorType(int x, int y)
+    override CursorType getCursorType(int x, int y) const
     {
         return x < box.x + _leftPaneWidth ? CursorType.arrow : CursorType.ibeam;
     }
@@ -751,9 +748,9 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         return;
     }
 
-    abstract protected Box textPosToClient(TextPosition p);
+    abstract protected Box textPosToClient(TextPosition p) const;
 
-    abstract protected TextPosition clientToTextPos(Point pt);
+    abstract protected TextPosition clientToTextPos(Point pt) const;
 
     abstract protected void ensureCaretVisible(bool center = false);
 
@@ -781,10 +778,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         abstract void minSizeTester(dstring txt);
 
         /// Returns caret position
-        TextPosition caretPos() { return _caretPos; }
+        TextPosition caretPos() const { return _caretPos; }
 
         /// Current selection range
-        TextRange selectionRange() { return _selectionRange; }
+        TextRange selectionRange() const { return _selectionRange; }
         /// ditto
         void selectionRange(TextRange range)
         {
@@ -796,7 +793,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
 
         /// When true, enables caret blinking, otherwise it's always visible
-        bool showCaretBlinking() { return _caretBlinks; }
+        bool showCaretBlinking() const { return _caretBlinks; }
         /// ditto
         void showCaretBlinking(bool blinks)
         {
@@ -1060,7 +1057,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     private uint _textToHighlightOptions;
 
     /// Text pattern to highlight - e.g. for search
-    @property dstring textToHighlight() { return _textToHighlight; }
+    @property dstring textToHighlight() const { return _textToHighlight; }
     /// Set text to highlight -- e.g. for search
     void setTextToHighlight(dstring pattern, uint textToHighlightOptions)
     {
@@ -1201,20 +1198,20 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     }
 
     /// Returns current selection text (joined with LF when span over multiple lines)
-    dstring getSelectedText()
+    dstring getSelectedText() const
     {
         return getRangeText(_selectionRange);
     }
 
     /// Returns text for specified range (joined with LF when span over multiple lines)
-    dstring getRangeText(TextRange range)
+    dstring getRangeText(TextRange range) const
     {
         dstring selectionText = concatDStrings(_content.rangeText(range));
         return selectionText;
     }
 
     /// Returns range for line with cursor
-    @property public TextRange currentLineRange()
+    @property TextRange currentLineRange() const
     {
         return _content.lineRange(_caretPos.line);
     }
@@ -1613,7 +1610,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         updateActions();
     }
 
-    protected TextRange spaceBefore(TextPosition pos)
+    protected TextRange spaceBefore(TextPosition pos) const
     {
         TextRange res = TextRange(pos, pos);
         dstring s = _content[pos.line];
@@ -1999,7 +1996,7 @@ class EditLine : EditWidgetBase
     {
         /// Password character - 0 for normal editor, some character
         /// e.g. '*' to hide text by replacing all characters with this char
-        dchar passwordChar() { return _passwordChar; }
+        dchar passwordChar() const { return _passwordChar; }
         /// ditto
         void passwordChar(dchar ch)
         {
@@ -2055,7 +2052,7 @@ class EditLine : EditWidgetBase
         return this;
     }
 
-    override protected Box textPosToClient(TextPosition p)
+    override protected Box textPosToClient(TextPosition p) const
     {
         Box res;
         res.h = clientBox.height;
@@ -2070,7 +2067,7 @@ class EditLine : EditWidgetBase
         return res;
     }
 
-    override protected TextPosition clientToTextPos(Point pt)
+    override protected TextPosition clientToTextPos(Point pt) const
     {
         pt.x += _scrollPos.x;
         TextPosition res;
@@ -2240,14 +2237,14 @@ class EditBox : EditWidgetBase
             super.fontSize = size;
         }
 
-        int minFontSize() { return _minFontSize; }
+        int minFontSize() const { return _minFontSize; }
         /// ditto
         void minFontSize(int size)
         {
             _minFontSize = size;
         }
 
-        int maxFontSize() { return _maxFontSize; }
+        int maxFontSize() const { return _maxFontSize; }
         /// ditto
         void maxFontSize(int size)
         {
@@ -2276,7 +2273,7 @@ class EditBox : EditWidgetBase
             requestLayout();
         }
 
-        protected int firstVisibleLine() { return _firstVisibleLine; }
+        protected int firstVisibleLine() const { return _firstVisibleLine; }
     }
 
     private
@@ -2318,7 +2315,7 @@ class EditBox : EditWidgetBase
         _needRewrap = true;
     }
 
-    override protected int lineCount()
+    override protected int lineCount() const
     {
         return _content.length;
     }
@@ -2639,7 +2636,7 @@ class EditBox : EditWidgetBase
         handleEditorStateChange();
     }
 
-    override protected Box textPosToClient(TextPosition p)
+    override protected Box textPosToClient(TextPosition p) const
     {
         Box res;
         int lineIndex = p.line - _firstVisibleLine;
@@ -2660,7 +2657,7 @@ class EditBox : EditWidgetBase
         return res;
     }
 
-    override protected TextPosition clientToTextPos(Point pt)
+    override protected TextPosition clientToTextPos(Point pt) const
     {
         TextPosition res;
         pt.x += _scrollPos.x;
@@ -3092,7 +3089,7 @@ class EditBox : EditWidgetBase
     }
 
     /// Find all occurences of text pattern in content; options = bitset of TextSearchFlag
-    TextRange[] findAll(dstring pattern, uint options)
+    TextRange[] findAll(dstring pattern, uint options) const
     {
         TextRange[] res;
         res.assumeSafeAppend();
@@ -3220,7 +3217,7 @@ class EditBox : EditWidgetBase
         }
     }
 
-    override Size fullContentSize()
+    override Size fullContentSize() const
     {
         return Size(_maxLineWidth, _lineHeight * _content.length);
     }
@@ -3457,7 +3454,7 @@ class EditBox : EditWidgetBase
     private TextRange _matchingBraces;
 
     /// Find max tab mark column position for line
-    protected int findMaxTabMarkColumn(int lineIndex)
+    protected int findMaxTabMarkColumn(int lineIndex) const
     {
         if (lineIndex < 0 || lineIndex >= content.length)
             return -1;
@@ -3702,7 +3699,7 @@ class EditBox : EditWidgetBase
 
     private FindPanel _findPanel;
 
-    dstring selectionText(bool singleLineOnly = false)
+    dstring selectionText(bool singleLineOnly = false) const
     {
         TextRange range = _selectionRange;
         if (range.empty)
@@ -3864,7 +3861,7 @@ class LogWidget : EditBox
         }
     }
 
-    TextPosition lastLineBegin()
+    TextPosition lastLineBegin() const
     {
         TextPosition res;
         if (_content.length == 0)
@@ -3896,7 +3893,7 @@ class FindPanel : Row
     @property
     {
         /// Returns true if panel is working in replace mode
-        bool replaceMode() { return _replaceMode; }
+        bool replaceMode() const { return _replaceMode; }
         /// ditto
         void replaceMode(bool newMode)
         {
@@ -3907,7 +3904,7 @@ class FindPanel : Row
             }
         }
 
-        dstring searchText()
+        dstring searchText() const
         {
             return _edFind.text;
         }
@@ -4049,7 +4046,7 @@ class FindPanel : Row
         }
     }
 
-    uint makeSearchFlags()
+    uint makeSearchFlags() const
     {
         uint res = 0;
         if (_cbCaseSensitive.checked)

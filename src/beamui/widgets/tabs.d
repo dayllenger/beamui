@@ -599,7 +599,7 @@ class TabHost : FrameLayout
                 _tabControl.tabChanged ~= &onTabChanged;
         }
 
-        Visibility hiddenTabsVisibility() { return _hiddenTabsVisibility; }
+        Visibility hiddenTabsVisibility() const { return _hiddenTabsVisibility; }
         /// ditto
         void hiddenTabsVisibility(Visibility v)
         {
@@ -697,7 +697,7 @@ class TabWidget : Column
 
         TabHost tabHost() { return _tabHost; }
 
-        Visibility hiddenTabsVisibility()
+        Visibility hiddenTabsVisibility() const
         {
             return _tabHost.hiddenTabsVisibility;
         }

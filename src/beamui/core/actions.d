@@ -716,7 +716,7 @@ struct ActionShortcutMap
 // TODO: comments, better names!
 interface ActionHolder
 {
-    @property Action action();
+    @property inout(Action) action() inout;
 
     protected void updateContent();
     protected void updateState();

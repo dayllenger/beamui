@@ -527,12 +527,12 @@ class FileDialog : Dialog, CustomGridCellAdapter
         return super.onKeyEvent(event);
     }
 
-    override bool isCustomCell(int col, int row)
+    override bool isCustomCell(int col, int row) const
     {
         return (col == 0 || col == 1) && row >= 0;
     }
 
-    protected DrawableRef rowIcon(int row)
+    protected inout(DrawableRef) rowIcon(int row) inout
     {
         string iconID = toUTF8(_fileList.cellText(0, row));
         DrawableRef res;
@@ -542,10 +542,10 @@ class FileDialog : Dialog, CustomGridCellAdapter
             if (!img.isNull)
                 res = new ImageDrawable(img); // TODO: reduce allocations
         }
-        return res;
+        return cast(inout)res;
     }
 
-    override Size measureCell(int col, int row)
+    override Size measureCell(int col, int row) const
     {
         if (col == 1)
         {
@@ -559,7 +559,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             return Size(0, 0);
         else
         {
-            DrawableRef icon = rowIcon(row);
+            const icon = rowIcon(row);
             if (icon.isNull)
                 return Size(0, 0);
             return Size(icon.width + 2.pt, icon.height + 2.pt);
@@ -1223,7 +1223,7 @@ class FileNameEditLine : Row
         ref string[string] filetypeIcons() { return _filetypeIcons; }
 
         /// Filter list for file type filter combo box
-        FileFilterEntry[] filters() { return _filters; }
+        const(FileFilterEntry[]) filters() const { return _filters; }
         /// ditto
         void filters(FileFilterEntry[] values)
         {
