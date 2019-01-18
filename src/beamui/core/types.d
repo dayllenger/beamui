@@ -16,6 +16,17 @@ module beamui.core.types;
 
 import beamui.core.config;
 
+struct Tup(T...)
+{
+    T expand;
+    alias expand this;
+}
+
+Tup!T tup(T...)(T args)
+{
+    return Tup!T(args);
+}
+
 /// Widget state bit flags
 enum State : uint
 {
@@ -228,9 +239,7 @@ struct Ref(T) if (is(T : RefCountedObject))
 */
 struct CalcSaver(Params...)
 {
-    import std.typecons : Tuple;
-
-    Tuple!Params values;
+    Tup!Params values;
 
     bool check(Params args)
     {

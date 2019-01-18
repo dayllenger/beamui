@@ -196,12 +196,10 @@ class TabControl : WidgetGroup
     /// When true, more button is visible
     bool enableMoreButton = true;
 
-    import std.typecons : Tuple, tuple;
-
     private
     {
         Button _moreButton;
-        Tuple!(int, long)[] _sortedItems;
+        Tup!(int, long)[] _sortedItems;
 
         string _selectedTabID;
 
@@ -251,7 +249,7 @@ class TabControl : WidgetGroup
         return -1;
     }
 
-    protected Tuple!(int, long)[] sortedItems()
+    protected Tup!(int, long)[] sortedItems()
     {
         _sortedItems.length = tabCount;
         foreach (i, ref item; _sortedItems)

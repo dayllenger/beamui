@@ -476,7 +476,7 @@ static if (BACKEND_GUI)
     else static if (isFreedesktop)
     {
         import icontheme;
-        import std.typecons : tuple;
+        import beamui.core.types : tup;
         import beamui.graphics.images;
 
         class FreedesktopIconProvider : IconProviderBase
@@ -556,81 +556,81 @@ static if (BACKEND_GUI)
                 final switch (icon) with (StandardIcon)
                 {
                 case document:
-                    return tuple("x-office-document", "MimeTypes");
+                    return tup("x-office-document", "MimeTypes");
                 case application:
-                    return tuple("application-x-executable", "MimeTypes");
+                    return tup("application-x-executable", "MimeTypes");
                 case folder:
-                    return tuple("folder", "Places");
+                    return tup("folder", "Places");
                 case folderOpen:
-                    return tuple("folder-open", "Status");
+                    return tup("folder-open", "Status");
                 case driveFloppy:
-                    return tuple("media-floppy", "Devices");
+                    return tup("media-floppy", "Devices");
                 case driveRemovable:
-                    return tuple("drive-removable-media", "Devices");
+                    return tup("drive-removable-media", "Devices");
                 case driveFixed:
-                    return tuple("drive-harddisk", "Devices");
+                    return tup("drive-harddisk", "Devices");
                 case driveCD:
-                    return tuple("drive-optical", "Devices");
+                    return tup("drive-optical", "Devices");
                 case driveDVD:
-                    return tuple("drive-optical", "Devices");
+                    return tup("drive-optical", "Devices");
                 case server:
-                    return tuple("network-server", "Places");
+                    return tup("network-server", "Places");
                 case printer:
-                    return tuple("printer", "Devices");
+                    return tup("printer", "Devices");
                 case find:
-                    return tuple("edit-find", "Actions");
+                    return tup("edit-find", "Actions");
                 case help:
-                    return tuple("help-contents", "Actions");
+                    return tup("help-contents", "Actions");
                 case sharedItem:
-                    return tuple("emblem-shared", "Emblems");
+                    return tup("emblem-shared", "Emblems");
                 case link:
-                    return tuple("emblem-symbolic-link", "Emblems");
+                    return tup("emblem-symbolic-link", "Emblems");
                 case trashcanEmpty:
-                    return tuple("user-trash", "Places");
+                    return tup("user-trash", "Places");
                 case trashcanFull:
-                    return tuple("user-trash-full", "Status");
+                    return tup("user-trash-full", "Status");
                 case mediaCDAudio:
-                    return tuple("media-optical-audio", "Devices");
+                    return tup("media-optical-audio", "Devices");
                 case mediaDVDAudio:
-                    return tuple("media-optical-audio", "Devices");
+                    return tup("media-optical-audio", "Devices");
                 case mediaDVD:
-                    return tuple("media-optical", "Devices");
+                    return tup("media-optical", "Devices");
                 case mediaCD:
-                    return tuple("media-optical", "Devices");
+                    return tup("media-optical", "Devices");
                 case fileAudio:
-                    return tuple("audio-x-generic", "MimeTypes");
+                    return tup("audio-x-generic", "MimeTypes");
                 case fileImage:
-                    return tuple("image-x-generic", "MimeTypes");
+                    return tup("image-x-generic", "MimeTypes");
                 case fileVideo:
-                    return tuple("video-x-generic", "MimeTypes");
+                    return tup("video-x-generic", "MimeTypes");
                 case fileZip:
-                    return tuple("application-zip", "MimeTypes");
+                    return tup("application-zip", "MimeTypes");
                 case fileUnknown:
-                    return tuple("unknown", "MimeTypes");
+                    return tup("unknown", "MimeTypes");
                 case warning:
-                    return tuple("dialog-warning", "Status");
+                    return tup("dialog-warning", "Status");
                 case information:
-                    return tuple("dialog-information", "Status");
+                    return tup("dialog-information", "Status");
                 case error:
-                    return tuple("dialog-error", "Status");
+                    return tup("dialog-error", "Status");
                 case password:
-                    return tuple("dialog-password", "Status");
+                    return tup("dialog-password", "Status");
                 case rename:
-                    return tuple("edit-rename", "Actions");
+                    return tup("edit-rename", "Actions");
                 case deleteItem:
-                    return tuple("edit-delete", "Actions");
+                    return tup("edit-delete", "Actions");
                 case computer:
-                    return tuple("computer", "Devices");
+                    return tup("computer", "Devices");
                 case laptop:
-                    return tuple("computer-laptop", "Devices");
+                    return tup("computer-laptop", "Devices");
                 case users:
-                    return tuple("system-users", "Applications");
+                    return tup("system-users", "Applications");
                 case deviceCellphone:
-                    return tuple("phone", "Devices");
+                    return tup("phone", "Devices");
                 case deviceCamera:
-                    return tuple("camera-photo", "Devices");
+                    return tup("camera-photo", "Devices");
                 case deviceCameraVideo:
-                    return tuple("camera-video", "Devices");
+                    return tup("camera-video", "Devices");
                 }
             }
 

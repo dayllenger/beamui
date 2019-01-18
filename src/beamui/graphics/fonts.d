@@ -747,9 +747,7 @@ class FontManager
     // Font cache for fast getFont()
     private
     {
-        import std.typecons : Tuple;
-
-        alias FontArgsTuple = Tuple!(int, ushort, bool, FontFamily, string);
+        alias FontArgsTuple = Tup!(int, ushort, bool, FontFamily, string);
         static FontRef[FontArgsTuple] fontCache;
     }
 
