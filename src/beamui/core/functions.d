@@ -10,7 +10,7 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.core.functions;
 
 // some useful imports from Phobos
-public import std.algorithm : clamp, max, min, remove, sort, startsWith, endsWith;
+public import std.algorithm : clamp, max, min, move, remove, sort, startsWith, endsWith;
 public import std.conv : to;
 public import std.format : format;
 public import std.utf : toUTF8, toUTF32;

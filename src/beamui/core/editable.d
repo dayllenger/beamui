@@ -618,6 +618,18 @@ struct TextLineMeasure
     }
 }
 
+/// Represents size of tab character in spaces, in range from 1 to 16
+struct TabSize
+{
+    immutable int value = 4;
+    alias value this;
+
+    this(int size)
+    {
+        value = clamp(size, 1, 16);
+    }
+}
+
 /// Editable plain text (single/multiline)
 class EditableContent
 {
@@ -628,7 +640,7 @@ class EditableContent
         bool _readOnly;
         LineIcons _lineIcons;
 
-        int _tabSize = 4;
+        TabSize _tabSize;
         bool _useSpacesForTabs = true;
 
         bool _smartIndents;
@@ -689,15 +701,11 @@ class EditableContent
         ref LineIcons lineIcons() { return _lineIcons; }
 
         /// Tab size (in number of spaces)
-        int tabSize() const { return _tabSize; }
+        TabSize tabSize() const { return _tabSize; }
         /// ditto
-        void tabSize(int newTabSize)
+        void tabSize(TabSize value)
         {
-            if (newTabSize < 1)
-                newTabSize = 1;
-            else if (newTabSize > 16)
-                newTabSize = 16;
-            _tabSize = newTabSize;
+            move(value, _tabSize);
         }
 
         /// Tab key behavior flag: when true, spaces will be inserted instead of tabs
@@ -1050,7 +1058,7 @@ class EditableContent
     /// Find nearest next tab position
     int nextTab(int pos) const
     {
-        return (pos + tabSize) / tabSize * tabSize;
+        return (pos + _tabSize) / _tabSize * _tabSize;
     }
 
     /// To return information about line space positions
@@ -1105,18 +1113,18 @@ class EditableContent
     {
         dchar[] buf;
         int x = 0;
-        while (x + tabSize <= pos)
+        while (x + _tabSize.value <= pos)
         {
             if (useSpacesForTabs)
             {
-                foreach (i; 0 .. tabSize)
+                foreach (i; 0 .. _tabSize.value)
                     buf ~= ' ';
             }
             else
             {
                 buf ~= '\t';
             }
-            x += tabSize;
+            x += _tabSize.value;
         }
         while (x < pos)
         {

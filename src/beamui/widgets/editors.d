@@ -216,12 +216,12 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return _content.tabSize;
         }
         /// ditto
-        void tabSize(int newTabSize)
+        void tabSize(int value)
         {
-            newTabSize = clamp(newTabSize, 0, 16);
-            if (newTabSize != tabSize)
+            const ts = TabSize(value);
+            if (ts != _content.tabSize)
             {
-                _content.tabSize = newTabSize;
+                _content.tabSize = ts;
                 requestLayout();
             }
         }
@@ -2143,7 +2143,7 @@ class EditLine : EditWidgetBase
     override Boundaries computeBoundaries()
     {
         _minSizeTester.style.font = font;
-        _minSizeTester.style.tabSize = tabSize;
+        _minSizeTester.style.tabSize = _content.tabSize;
         updateFontProps();
         measureVisibleText();
         return super.computeBoundaries();
@@ -3230,7 +3230,7 @@ class EditBox : EditWidgetBase
     override Boundaries computeBoundaries()
     {
         _minSizeTester.style.font = font;
-        _minSizeTester.style.tabSize = tabSize;
+        _minSizeTester.style.tabSize = _content.tabSize;
         updateFontProps();
         updateMaxLineWidth();
         return super.computeBoundaries();
@@ -3503,7 +3503,7 @@ class EditBox : EditWidgetBase
         }
     }
 
-    void drawWhiteSpaceMarks(DrawBuf buf, ref FontRef font, dstring txt, int tabSize, Rect lineRect, Rect visibleRect)
+    void drawWhiteSpaceMarks(DrawBuf buf, ref FontRef font, dstring txt, TabSize tabSize, Rect lineRect, Rect visibleRect)
     {
         // _showTabPositionMarks
         // _showWhiteSpaceMarks
@@ -3530,7 +3530,6 @@ class EditBox : EditWidgetBase
         color.addAlpha(0xC0);
         static int[] textSizeBuffer;
         int charsMeasured = font.measureText(txt, textSizeBuffer, MAX_WIDTH_UNSPECIFIED, tabSize);
-        int ts = clamp(tabSize, 1, 8);
         int spaceIndex = 0;
         for (int i = 0; i < txt.length && i < charsMeasured; i++)
         {
@@ -3645,7 +3644,7 @@ class EditBox : EditWidgetBase
                     whiteSpaceRc.offset(0, _lineHeight);
                     whiteSpaceRcVisible.offset(0, _lineHeight);
                 }
-                drawWhiteSpaceMarks(buf, font, txt, tabSize, whiteSpaceRc, whiteSpaceRcVisible);
+                drawWhiteSpaceMarks(buf, font, txt, _content.tabSize, whiteSpaceRc, whiteSpaceRcVisible);
             }
             if (_leftPaneWidth > 0)
             {

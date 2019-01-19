@@ -8,7 +8,8 @@ Authors:   dayllenger
 module beamui.graphics.text;
 
 import std.array : Appender;
-import beamui.core.functions : clamp, max;
+import beamui.core.editable : TabSize;
+import beamui.core.functions : clamp, max, move;
 import beamui.core.geometry : Point, Size;
 import beamui.core.logger;
 import beamui.graphics.colors : Color;
@@ -67,14 +68,13 @@ struct TextStyle
             }
         }
         /// Size of the tab character in number of spaces
-        int tabSize() const { return _tabSize; }
+        TabSize tabSize() const { return _tabSize; }
         /// ditto
-        void tabSize(int value)
+        void tabSize(TabSize value)
         {
-            value = clamp(value, 1, 16);
             if (_tabSize != value)
             {
-                _tabSize = value;
+                move(value, _tabSize);
                 _needToMeasure = true;
             }
         }
@@ -89,7 +89,7 @@ struct TextStyle
         Color _color;
         Color _backgroundColor;
         TextFlag _flags;
-        int _tabSize = 4;
+        TabSize _tabSize;
 
         bool _needToMeasure = true;
     }
