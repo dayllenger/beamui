@@ -116,8 +116,7 @@ final class SDLWindow : Window
             {
                 Log.i("Created successfully");
                 // adjust GL version in platform
-                _platform.GLVersionMajor = versionMajor;
-                _platform.GLVersionMinor = versionMinor;
+                _platform.setGLVersions(versionMajor, versionMinor);
                 bindContext();
                 // trying to activate adaptive vsync
                 int res = SDL_GL_SetSwapInterval(-1);
@@ -184,8 +183,7 @@ final class SDLWindow : Window
                     if (!success)
                     {
                         disableOpenGL();
-                        _platform.GLVersionMajor = 0;
-                        _platform.GLVersionMinor = 0;
+                        _platform.setGLVersions(0, 0);
                     }
                 }
                 if (success)
@@ -1022,10 +1020,18 @@ final class SDLPlatform : Platform
 {
     private WindowMap!(SDLWindow, uint) windows;
 
+    this(ref AppConf conf)
+    {
+        super(conf);
+    }
+
     ~this()
     {
         destroy(windows);
+        SDL_Quit();
     }
+
+    protected alias setGLVersions = typeof(super).setGLVersions;
 
     override void closeWindow(Window w)
     {
@@ -1412,21 +1418,8 @@ bool sdlUpdateScreenDpi(int displayIndex = 0)
     return false;
 }
 
-extern (C) int initializeGUI()
+extern (C) Platform initPlatform(AppConf conf)
 {
-    initLogs();
-
-    if (!initFontManager())
-    {
-        Log.e("******************************************************************");
-        Log.e("No font files found!!!");
-        Log.e("Currently, only hardcoded font paths implemented.");
-        Log.e("Probably you can modify startup.d to add some fonts for your system.");
-        Log.e("******************************************************************");
-        assert(false);
-    }
-    initResourceManagers();
-
     version (Windows)
     {
         DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
@@ -1446,7 +1439,7 @@ extern (C) int initializeGUI()
             Log.e("This application requires the SDL library");
         else
             Log.e("The version of the SDL library is too low, must be at least 2.0.4");
-        return 1;
+        return null;
     }
 
     static if (USE_OPENGL)
@@ -1458,7 +1451,7 @@ extern (C) int initializeGUI()
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
     {
         Log.e("Cannot init SDL2: ", fromStringz(SDL_GetError()));
-        return 2;
+        return null;
     }
 
     USER_EVENT_ID = cast(SDL_EventType)SDL_RegisterEvents(1);
@@ -1476,19 +1469,5 @@ extern (C) int initializeGUI()
 
     sdlUpdateScreenDpi(0);
 
-    Platform.instance = new SDLPlatform;
-
-    return 0;
-}
-
-extern (C) void deinitializeGUI()
-{
-    Platform.instance = null;
-
-    static if (USE_OPENGL)
-        glNoContext = true;
-
-    releaseResourcesOnAppExit();
-
-    SDL_Quit();
+    return new SDLPlatform(conf);
 }

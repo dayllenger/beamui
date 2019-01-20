@@ -1052,6 +1052,11 @@ final class Win32Platform : Platform
 {
     private WindowMap!(Win32Window, HWND) windows;
 
+    this(ref AppConf conf)
+    {
+        super(conf);
+    }
+
     ~this()
     {
         destroy(windows);
@@ -1186,21 +1191,8 @@ private bool registerWndClass()
     return true;
 }
 
-extern (C) int initializeGUI()
+extern (C) Platform initPlatform(AppConf conf)
 {
-    initLogs();
-
-    if (!initFontManager())
-    {
-        Log.e("******************************************************************");
-        Log.e("No font files found!!!");
-        Log.e("Currently, only hardcoded font paths implemented.");
-        Log.e("Probably you can modify startup.d to add some fonts for your system.");
-        Log.e("******************************************************************");
-        assert(false);
-    }
-    initResourceManagers();
-
     DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
 
     setAppDPIAwareOnWindows();
@@ -1209,7 +1201,7 @@ extern (C) int initializeGUI()
     if (!registerWndClass())
     {
         MessageBoxA(null, "This program requires Windows NT!", "beamui app".toStringz, MB_ICONERROR);
-        return 1;
+        return null;
     }
 
     static if (USE_OPENGL)
@@ -1218,19 +1210,7 @@ extern (C) int initializeGUI()
             disableOpenGL();
     }
 
-    Platform.instance = new Win32Platform;
-
-    return 0;
-}
-
-extern (C) void deinitializeGUI()
-{
-    Platform.instance = null;
-
-    static if (USE_OPENGL)
-        glNoContext = true;
-
-    releaseResourcesOnAppExit();
+    return new Win32Platform(conf);
 }
 
 extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)

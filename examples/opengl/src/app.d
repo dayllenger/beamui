@@ -13,14 +13,14 @@ module app;
 
 import beamui;
 
-mixin APP_ENTRY_POINT;
-
-/// Entry point for application
-extern (C) int UIAppMain(string[] args)
+int main()
 {
+    GuiApp app;
     // you can explicitly set OpenGL context version
-    platform.GLVersionMajor = 2;
-    platform.GLVersionMinor = 1;
+    app.conf.GLVersionMajor = 2;
+    app.conf.GLVersionMinor = 1;
+    if (!app.initialize())
+        return -1;
 
     Window window = platform.createWindow("OpenGL example", null);
 

@@ -463,6 +463,16 @@ static if (BACKEND_GUI)
         }
     }
 }
+else
+{
+    import beamui.platforms.ansi_console.consolefont;
+
+    bool initFontManager()
+    {
+        FontManager.instance = new ConsoleFontManager;
+        return true;
+    }
+}
 
 /**
     Initialize logging (for win32 and console - to file ui.log, for other platforms - stderr;
@@ -536,10 +546,8 @@ void initLogs()
 /// Call this on application initialization
 void initResourceManagers()
 {
-    import beamui.core.stdaction;
     import beamui.graphics.fonts;
     import beamui.graphics.resources;
-    import beamui.widgets.editors;
 
     Log.d("Initializing resource managers");
 
@@ -579,9 +587,6 @@ void initResourceManagers()
 
         initGLCaches();
     }
-
-    initStandardActions();
-    initStandardEditorActions();
 
     Log.d("initResourceManagers() -- finished");
 }

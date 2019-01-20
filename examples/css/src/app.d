@@ -13,12 +13,13 @@ module app;
 
 import beamui;
 
-mixin APP_ENTRY_POINT;
-
-/// Entry point for application
-extern (C) int UIAppMain(string[] args)
+int main()
 {
-    platform.uiTheme = "light";
+    GuiApp app;
+    app.conf.theme = "light";
+    if (!app.initialize())
+        return -1;
+
     currentTheme.setStyleSheet(stylesheet);
 
     Window window = platform.createWindow("CSS sandbox");
@@ -47,6 +48,7 @@ extern (C) int UIAppMain(string[] args)
             add(createControlsPanel());
         }
     }
+    window.mainWidget = splitView;
 
     editor.text = stylesheet.toUTF32;
     btnUpdate.clicked = delegate(Widget wt) {
@@ -54,7 +56,6 @@ extern (C) int UIAppMain(string[] args)
         currentTheme.setStyleSheet(editor.text.toUTF8);
     };
 
-    window.mainWidget = splitView;
     window.show();
 
     return platform.enterMessageLoop();

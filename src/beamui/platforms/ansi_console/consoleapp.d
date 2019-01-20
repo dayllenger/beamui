@@ -103,8 +103,10 @@ class ConsolePlatform : Platform
         ANSIConsoleDrawBuf _drawBuf;
     }
 
-    this()
+    this(ref AppConf conf)
     {
+        super(conf);
+
         _console = new Console;
         _console.batchMode = true;
         _console.keyEvent = &onConsoleKey;
@@ -113,7 +115,6 @@ class ConsolePlatform : Platform
         _console.inputIdleEvent = &onInputIdle;
         _console.init();
         _console.setCursorType(ConsoleCursorType.invisible);
-        uiDialogDisplayMode = DialogDisplayMode.allTypesOfDialogsInPopup;
         _drawBuf = new ANSIConsoleDrawBuf(_console);
     }
 
@@ -497,20 +498,12 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
 extern (C) void mySignalHandler(int value)
 {
     Log.i("Signal handler - signal = ", value);
-    auto platform = cast(ConsolePlatform)platform;
-    if (platform)
-    {
+    if (auto platform = cast(ConsolePlatform)platform)
         platform.onCtrlC();
-    }
 }
 
-extern (C) int initializeGUI()
+extern (C) Platform initPlatform(AppConf conf)
 {
-    initLogs();
-
-    FontManager.instance = new ConsoleFontManager;
-    initResourceManagers();
-
     SCREEN_DPI = 10;
 
     version (Windows)
@@ -527,13 +520,6 @@ extern (C) int initializeGUI()
         sigset(SIGINT, &mySignalHandler);
     }
 
-    Platform.instance = new ConsolePlatform;
-
-    return 0;
-}
-
-extern (C) void deinitializeGUI()
-{
-    Platform.instance = null;
-    releaseResourcesOnAppExit();
+    conf.dialogDisplayModes = DialogDisplayMode.allTypesOfDialogsInPopup;
+    return new ConsolePlatform(conf);
 }

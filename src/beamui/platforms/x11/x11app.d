@@ -1153,17 +1153,28 @@ final class X11Platform : Platform
     private WindowMap!(X11Window, XWindow) windows;
     private char* _classname;
 
-    this()
+    this(ref AppConf conf)
     {
-        import std.file : thisExePath;
-        import std.path : baseName;
+        super(conf);
 
-        _classname = (baseName(thisExePath()) ~ "\0").dup.ptr;
+        static import std.file;
+        static import std.path;
+
+        _classname = (std.path.baseName(std.file.thisExePath()) ~ "\0").dup.ptr;
     }
 
     ~this()
     {
         destroy(windows);
+
+        static if (USE_OPENGL)
+        {
+            if (x11cmap)
+                XFreeColormap(x11display, x11cmap);
+        }
+
+        XCloseDisplay(x11display);
+        XCloseDisplay(x11display2);
     }
 
     override DWindow createWindow(dstring windowCaption, DWindow parent,
@@ -1738,21 +1749,8 @@ final class X11Platform : Platform
     }
 }
 
-extern (C) int initializeGUI()
+extern (C) Platform initPlatform(AppConf conf)
 {
-    initLogs();
-
-    if (!initFontManager())
-    {
-        Log.e("******************************************************************");
-        Log.e("No font files found!!!");
-        Log.e("Currently, only hardcoded font paths implemented.");
-        Log.e("Probably you can modify startup.d to add some fonts for your system.");
-        Log.e("******************************************************************");
-        assert(false);
-    }
-    initResourceManagers();
-
     XInitThreads();
 
     /* use the information from the environment variable DISPLAY
@@ -1762,13 +1760,13 @@ extern (C) int initializeGUI()
     if (!x11display)
     {
         Log.e("Cannot open X11 display");
-        return 1;
+        return null;
     }
     x11display2 = XOpenDisplay(null);
     if (!x11display2)
     {
         Log.e("Cannot open secondary connection for X11 display");
-        return 1;
+        return null;
     }
 
     x11screen = DefaultScreen(x11display);
@@ -1819,24 +1817,5 @@ extern (C) int initializeGUI()
 
     Log.d("X11 display: ", x11display, ", screen: ", x11screen);
 
-    Platform.instance = new X11Platform;
-
-    return 0;
-}
-
-extern (C) void deinitializeGUI()
-{
-    Platform.instance = null;
-
-    static if (USE_OPENGL)
-    {
-        glNoContext = true;
-        if (x11cmap)
-            XFreeColormap(x11display, x11cmap);
-    }
-
-    releaseResourcesOnAppExit();
-
-    XCloseDisplay(x11display);
-    XCloseDisplay(x11display2);
+    return new X11Platform(conf);
 }

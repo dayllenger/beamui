@@ -14,14 +14,13 @@ module app;
 
 import beamui;
 
-// mandatory, it does some initialization and then runs UIAppMain
-mixin APP_ENTRY_POINT;
-
 /// Entry point for application
-extern (C) int UIAppMain(string[] args)
+int main()
 {
-    // load better theme
-    platform.uiTheme = "light";
+    GuiApp app;
+    app.conf.theme = "light"; // load better theme
+    if (!app.initialize())
+        return -1;
 
     // create a window with 1x1 size and expand it to the size of content
     Window window = platform.createWindow("Basic example - beamui", null, WindowOptions.expanded, 1, 1);

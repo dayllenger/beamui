@@ -1917,38 +1917,79 @@ class Platform
         _instance = instance;
     }
 
-    static if (USE_OPENGL)
+    @property
     {
-        /**
-        OpenGL context major version.
+        /// Returns application UI language code
+        string uiLanguage() const { return _conf.lang; }
 
-        Note: if the version is invalid or not supported, this value will be set to supported one.
-        */
-        int GLVersionMajor = 3;
-        /**
-        OpenGL context minor version.
+        /// Get name of currently active theme
+        string uiTheme() const { return _conf.theme; }
+        /// Set application UI theme - will relayout content of all windows if theme has been changed
+        void uiTheme(string name)
+        {
+            if (_conf.theme != name)
+            {
+                _conf.theme = setupTheme(name);
+                onThemeChanged();
+                requestLayout();
+            }
+        }
 
-        Note: if the version is invalid or not supported, this value will be set to supported one.
-        */
-        int GLVersionMinor = 2;
+        /// How dialogs should be displayed - as popup or window
+        DialogDisplayMode uiDialogDisplayMode() const { return _conf.dialogDisplayModes; }
+
+        /// Default icon for newly created windows
+        string defaultWindowIcon() const { return _conf.defaultWindowIcon; }
+
+        IconProviderBase iconProvider()
+        {
+            if (_iconProvider is null)
+            {
+                try
+                {
+                    _iconProvider = new NativeIconProvider;
+                }
+                catch (Exception e)
+                {
+                    Log.e("Error while creating icon provider\n", e);
+                    Log.d("Could not create native icon provider, fallbacking to the dummy one");
+                    _iconProvider = new DummyIconProvider;
+                }
+            }
+            return _iconProvider;
+        }
+        /// ditto
+        IconProviderBase iconProvider(IconProviderBase provider)
+        {
+            _iconProvider = provider;
+            return _iconProvider;
+        }
+
+        static if (USE_OPENGL)
+        {
+            /// OpenGL context major version (may be not equal to version set by user)
+            int GLVersionMajor() const { return _conf.GLVersionMajor; }
+            /// OpenGL context minor version (may be not equal to version set by user)
+            int GLVersionMinor() const { return _conf.GLVersionMinor; }
+        }
     }
 
     private
     {
-        string _uiLanguage;
-        string _themeName;
-        DialogDisplayMode _uiDialogDisplayMode =
-            DialogDisplayMode.messageBoxInPopup | DialogDisplayMode.inputBoxInPopup;
-
-        /// Default icon for new created windows
-        string _defaultWindowIcon = "beamui-logo";
+        AppConf _conf;
         IconProviderBase _iconProvider;
     }
 
-    this()
+    this(ref AppConf conf)
     {
-        uiLanguage = "en";
-        uiTheme = "default";
+        _conf = conf;
+
+        if (conf.lang != "en")
+        {
+            Log.v("Loading '", conf.lang, "' language file");
+            loadTranslator(conf.lang);
+        }
+        setupTheme(conf.theme);
     }
 
     ~this()
@@ -2010,102 +2051,14 @@ class Platform
     /// Set text to clipboard (when mouseBuffer == true, use mouse selection clipboard - under linux)
     abstract void setClipboardText(dstring text, bool mouseBuffer = false);
 
-    @property
-    {
-        /// Returns currently selected UI language code
-        string uiLanguage() const { return _uiLanguage; }
-        /// Set UI language (e.g. "en", "fr", "ru") - will relayout content of all windows if language has been changed
-        void uiLanguage(string langCode)
-        {
-            if (_uiLanguage == langCode)
-                return;
-            _uiLanguage = langCode;
-
-            Log.v("Loading language file");
-            loadTranslator(langCode);
-
-            Log.v("Calling onThemeChanged");
-            onThemeChanged();
-            requestLayout();
-        }
-
-        /// Get name of currently active theme
-        string uiTheme() const { return _themeName; }
-        /// Set application UI theme - will relayout content of all windows if theme has been changed
-        void uiTheme(string name)
-        {
-            if (_themeName == name)
-                return;
-
-            Theme theme = loadTheme(name);
-            if (name != "default")
-            {
-                if (!theme)
-                {
-                    Log.e("Cannot load theme `", name, "` - will use default theme");
-                    theme = loadTheme("default");
-                }
-                else
-                {
-                    Log.i("Applying loaded theme ", name);
-                }
-            }
-            assert(theme);
-            _themeName = theme.name;
-            currentTheme = theme;
-            onThemeChanged();
-            requestLayout();
-        }
-
-        /// How dialogs should be displayed - as popup or window
-        DialogDisplayMode uiDialogDisplayMode() const { return _uiDialogDisplayMode; }
-        /// ditto
-        void uiDialogDisplayMode(DialogDisplayMode value)
-        {
-            _uiDialogDisplayMode = value;
-        }
-
-        /// Default icon for newly created windows
-        string defaultWindowIcon() const { return _defaultWindowIcon; }
-        /// ditto
-        void defaultWindowIcon(string newIcon)
-        {
-            _defaultWindowIcon = newIcon;
-        }
-
-        IconProviderBase iconProvider()
-        {
-            if (_iconProvider is null)
-            {
-                try
-                {
-                    _iconProvider = new NativeIconProvider;
-                }
-                catch (Exception e)
-                {
-                    Log.e("Error while creating icon provider\n", e);
-                    Log.d("Could not create native icon provider, fallbacking to the dummy one");
-                    _iconProvider = new DummyIconProvider;
-                }
-            }
-            return _iconProvider;
-        }
-        /// ditto
-        IconProviderBase iconProvider(IconProviderBase provider)
-        {
-            _iconProvider = provider;
-            return _iconProvider;
-        }
-    }
-
     /// Reload current theme. Useful to quickly edit and test a theme
     void reloadTheme()
     {
-        Log.v("Reloading theme ", _themeName);
-        auto theme = loadTheme(_themeName);
+        Log.v("Reloading theme ", _conf.theme);
+        auto theme = loadTheme(_conf.theme);
         if (!theme)
         {
-            Log.e("Cannot reload theme ", _themeName);
+            Log.e("Cannot reload theme ", _conf.theme);
             return;
         }
         currentTheme = theme;
@@ -2137,6 +2090,32 @@ class Platform
         {
             imageCache.clear();
         }
+    }
+
+    protected void setGLVersions(int major, int minor)
+    {
+        _conf.GLVersionMajor = major;
+        _conf.GLVersionMinor = minor;
+    }
+
+    private string setupTheme(string name)
+    {
+        Theme theme = loadTheme(name);
+        if (name != "default")
+        {
+            if (!theme)
+            {
+                Log.e("Cannot load theme `", name, "` - will use default theme");
+                theme = loadTheme("default");
+            }
+            else
+            {
+                Log.i("Applying loaded theme ", name);
+            }
+        }
+        assert(theme);
+        currentTheme = theme;
+        return theme.name;
     }
 }
 
@@ -2185,48 +2164,83 @@ static if (BACKEND_GUI)
     }
 }
 
-// to remove import
-extern (C) int initializeGUI();
-extern (C) void deinitializeGUI();
-
-/// Put "mixin APP_ENTRY_POINT;" to main module of your beamui based app
-mixin template APP_ENTRY_POINT()
+/// Holds initial application settings
+struct AppConf
 {
-    version (unittest)
+    /// UI language, e.g. "en", "fr", "ru" (requires app restart to change)
+    string lang = "en";
+    /// Name of initial UI theme
+    string theme = "default";
+    /// Default icon for newly created windows (requires app restart to change)
+    string defaultWindowIcon = "beamui-logo";
+
+    /// How dialogs should be displayed - as popup or window (requires app restart to change)
+    DialogDisplayMode dialogDisplayModes =
+        DialogDisplayMode.messageBoxInPopup |
+        DialogDisplayMode.inputBoxInPopup;
+
+    /// OpenGL context major version (requires app restart to change)
+    int GLVersionMajor = 3;
+    /// OpenGL context minor version (requires app restart to change)
+    int GLVersionMinor = 2;
+}
+
+/// Manages UI library (de)initialization
+struct GuiApp
+{
+    import beamui.core.stdaction;
+    import beamui.platforms.common.startup;
+    import beamui.widgets.editors;
+
+    /// Holds initial application settings
+    AppConf conf;
+
+    /// Initialize the whole UI toolkit
+    bool initialize()
     {
-        // no main in unit tests
+        if (Platform.instance)
+        {
+            Log.e("Cannot initialize GUI twice");
+            return false;
+        }
+
+        initLogs();
+
+        if (!initFontManager())
+        {
+            Log.e("******************************************************************");
+            Log.e("No font files found!!!");
+            Log.e("Currently, only hardcoded font paths implemented.");
+            Log.e("Probably you can modify startup.d to add some fonts for your system.");
+            Log.e("******************************************************************");
+            return false;
+        }
+        initResourceManagers();
+
+        Platform.instance = initPlatform(conf);
+        if (!Platform.instance)
+            return false;
+
+        initStandardActions();
+        initStandardEditorActions();
+        return true;
     }
-    else
+
+    @disable this(this);
+
+    ~this()
     {
-        version (Android)
+        Platform.instance = null;
+
+        static if (USE_OPENGL)
         {
+            import beamui.graphics.gl.objects;
+            glNoContext = true;
         }
-        else
-        {
-            int main(string[] args)
-            {
-                int result = initializeGUI();
-                scope (exit)
-                {
-                    deinitializeGUI();
-                    Log.d("Exiting main");
-                }
-                if (result == 0)
-                {
-                    try
-                    {
-                        Log.i("Entering UIAppMain: ", args);
-                        result = UIAppMain(args);
-                    }
-                    catch (Exception e)
-                    {
-                        Log.e("Abnormal UIAppMain termination");
-                        Log.e("UIAppMain exception: ", e);
-                        result = -1;
-                    }
-                }
-                return result;
-            }
-        }
+
+        releaseResourcesOnAppExit();
     }
 }
+
+// to remove import
+extern (C) Platform initPlatform(AppConf);

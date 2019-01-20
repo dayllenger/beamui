@@ -2,31 +2,30 @@ module app;
 
 import beamui;
 
-mixin APP_ENTRY_POINT;
-
 /// Entry point for application
-int UIAppMain(string[] args)
+int main()
 {
-    // you may set different log level, e.g. always use trace, even for release builds
+    // you can embed resources into the executable
+    resourceList.embed!"resources.list";
+    // and you can setup resource paths; not required if only embedded resources are used
+    // beware the order: it must be before any resource loading, like theme
+    /+
+    string[] resourceDirs = [ // will use only existing directories
+        appendPath(exePath, "resources/"), // at the same directory as executable
+        appendPath(exePath, "../resources/"), // at the dub project directory
+    ];
+    resourceList.resourceDirs = resourceDirs;
+    +/
+    // initialize the library
+    GuiApp app;
+    app.conf.theme = "light";
+    if (!app.initialize())
+        return -1;
+
+    // you can change default log level, e.g. always use trace, even for release builds
     //Log.setLogLevel(LogLevel.trace);
     // direct logs to a file
     //Log.setFileLogger(new std.stdio.File("ui.log", "w"));
-
-    // you may embed resources into the executable
-    resourceList.embed!"resources.list";
-    // and you may setup resource paths
-    // not required if only embedded resources are used
-    /*
-    string[] resourceDirs = [
-        appendPath(exePath, "res/"), // at the same directory as executable
-        appendPath(exePath, "../res/"), // at the dub project directory
-    ];
-    // will use only existing directories
-    platform.resourceDirs = resourceDirs;
-    */
-
-    // load theme from file "light.css"
-    platform.uiTheme = "light";
 
     // you can override default hinting mode (normal, autohint, disabled)
     FontManager.hintingMode = HintingMode.normal;
