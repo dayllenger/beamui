@@ -1283,12 +1283,6 @@ class Window : CustomEventTarget
 
         Popup modal = modalPopup();
 
-        // check if _mouseCaptureWidget still exist
-        if (_mouseCaptureWidget.isNull)
-        {
-            clearMouseCapture();
-        }
-
         debug (mouse)
             Log.fd("dispatchMouseEvent %s (%s, %s)", event.action, event.x, event.y);
 
@@ -1518,6 +1512,7 @@ class Window : CustomEventTarget
     {
         _mouseCaptureWidget = w;
         _mouseCaptureButtons = event.flags & (MouseFlag.lbutton | MouseFlag.rbutton | MouseFlag.mbutton);
+        captureMouse(true);
     }
 
     protected void clearMouseCapture()
@@ -1526,6 +1521,12 @@ class Window : CustomEventTarget
         _mouseCaptureFocusedOut = false;
         _mouseCaptureFocusedOutTrackMovements = false;
         _mouseCaptureButtons = 0;
+        captureMouse(false);
+    }
+
+    /// Platform-dependent mouse capturing
+    protected void captureMouse(bool enabled)
+    {
     }
 
     protected bool dispatchCancel(MouseEvent event)

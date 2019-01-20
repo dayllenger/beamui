@@ -991,6 +991,13 @@ final class SDLWindow : Window
 
     //===============================================================
 
+    override protected void captureMouse(bool enabled)
+    {
+        debug (mouse)
+            Log.d(enabled ? "Setting capture" : "Releasing capture");
+        SDL_CaptureMouse(enabled ? SDL_TRUE : SDL_FALSE);
+    }
+
     override void postEvent(CustomEvent event)
     {
         super.postEvent(event);

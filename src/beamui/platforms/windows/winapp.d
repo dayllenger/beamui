@@ -780,7 +780,6 @@ final class Win32Window : Window
             _rbutton.reset();
     }
 
-    private bool _mouseTracking;
     private bool processMouseEvent(uint message, uint flags, short x, short y)
     {
         debug (mouse)
@@ -855,27 +854,6 @@ final class Win32Window : Window
         else if (action == MouseAction.buttonUp)
         {
             pbuttonDetails.up(x, y, cast(ushort)flags);
-        }
-        if ((message == WM_MOUSELEAVE || x < 0 || y < 0 || x >= width || y >= height) && _mouseTracking)
-        {
-            if (!isMouseCaptured || !_lbutton.isDown && !_rbutton.isDown && !_mbutton.isDown)
-            {
-                action = MouseAction.leave;
-                debug (mouse)
-                    Log.d("Releasing capture");
-                _mouseTracking = false;
-                ReleaseCapture();
-            }
-        }
-        if (message != WM_MOUSELEAVE && !_mouseTracking)
-        {
-            if (0 <= x && x < width && 0 <= y && y < height)
-            {
-                debug (mouse)
-                    Log.d("Setting capture");
-                _mouseTracking = true;
-                SetCapture(_hwnd);
-            }
         }
         auto event = new MouseEvent(action, button, cast(ushort)flags, x, y, wheelDelta);
         event.lbutton = _lbutton;
@@ -1030,6 +1008,16 @@ final class Win32Window : Window
     }
 
     //===============================================================
+
+    override protected void captureMouse(bool enabled)
+    {
+        debug (mouse)
+            Log.d(enabled ? "Setting capture" : "Releasing capture");
+        if (enabled)
+            SetCapture(_hwnd);
+        else
+            ReleaseCapture();
+    }
 
     override void postEvent(CustomEvent event)
     {
