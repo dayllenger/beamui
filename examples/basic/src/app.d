@@ -24,7 +24,7 @@ extern (C) int UIAppMain(string[] args)
     platform.uiTheme = "light";
 
     // create a window with 1x1 size and expand it to the size of content
-    Window window = platform.createWindow("Basic example", null, WindowFlag.expanded, 1, 1);
+    Window window = platform.createWindow("Basic example - beamui", null, WindowOptions.expanded, 1, 1);
 
     // create some widgets to show
     // Column arranges items vertically

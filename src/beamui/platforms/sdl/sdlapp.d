@@ -65,21 +65,18 @@ final class SDLWindow : Window
         DrawBuf _drawbuf;
     }
 
-    this(SDLPlatform platform, dstring caption, Window parent, WindowFlag flags, uint w = 0, uint h = 0)
+    this(SDLPlatform platform, dstring caption, Window parent, WindowOptions options, uint w = 0, uint h = 0)
     {
+        super(parent, options);
         _platform = platform;
         _title = caption;
         _windowState = WindowState.hidden;
 
         if (parent)
-        {
-            parentWindow = parent;
             parent.addModalChild(this);
-        }
 
         width = w > 0 ? w : 500;
         height = h > 0 ? h : 300;
-        this.flags = flags;
 
         create();
 
@@ -137,11 +134,11 @@ final class SDLWindow : Window
         debug Log.d("Creating SDL window of size ", width, "x", height);
 
         SDL_WindowFlags sdlWindowFlags = SDL_WINDOW_HIDDEN;
-        if (flags & WindowFlag.resizable)
+        if (options & WindowOptions.resizable)
             sdlWindowFlags |= SDL_WINDOW_RESIZABLE;
-        if (flags & WindowFlag.fullscreen)
+        if (options & WindowOptions.fullscreen)
             sdlWindowFlags |= SDL_WINDOW_FULLSCREEN;
-        if (flags & WindowFlag.borderless)
+        if (options & WindowOptions.borderless)
             sdlWindowFlags = SDL_WINDOW_BORDERLESS;
         sdlWindowFlags |= SDL_WINDOW_ALLOW_HIGHDPI;
         static if (USE_OPENGL)
@@ -1071,7 +1068,8 @@ final class SDLPlatform : Platform
     }
 
     override Window createWindow(dstring title, Window parent,
-            WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0)
+            WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
+            uint width = 0, uint height = 0)
     {
         int oldDPI = SCREEN_DPI;
         int newwidth = width;
@@ -1081,7 +1079,7 @@ final class SDLPlatform : Platform
             newwidth = pt(width);
             newheight = pt(height);
         }
-        auto res = new SDLWindow(this, title, parent, flags, newwidth, newheight);
+        auto res = new SDLWindow(this, title, parent, options, newwidth, newheight);
         windows.add(res, res.windowID);
         if (sdlUpdateScreenDpi() || oldDPI != SCREEN_DPI)
         {
@@ -1214,7 +1212,7 @@ final class SDLPlatform : Platform
                     w.handleWindowStateChange(WindowState.minimized);
                 if (!_windowsMinimized && w.hasVisibleModalChild)
                     w.minimizeModalChilds();
-                if (!_windowsMinimized && w.flags & WindowFlag.modal)
+                if (!_windowsMinimized && w.options & WindowOptions.modal)
                     w.minimizeParentWindows();
                 _windowsMinimized = true;
                 break;
@@ -1229,7 +1227,7 @@ final class SDLPlatform : Platform
                 debug (sdl)
                     Log.d("SDL_WINDOWEVENT_RESTORED - ", w.title);
                 _windowsMinimized = false;
-                if (w.flags & WindowFlag.modal)
+                if (w.options & WindowOptions.modal)
                 {
                     w.restoreParentWindows();
                     w.restore(true);

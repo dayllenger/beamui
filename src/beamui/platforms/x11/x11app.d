@@ -266,21 +266,18 @@ final class X11Window : DWindow
         int _cachedWidth, _cachedHeight;
     }
 
-    this(X11Platform platform, dstring caption, DWindow parent, WindowFlag flags, uint w = 0, uint h = 0)
+    this(X11Platform platform, dstring caption, DWindow parent, WindowOptions options, uint w = 0, uint h = 0)
     {
+        super(parent, options);
         _platform = platform;
         _title = caption;
         _windowState = WindowState.hidden;
 
         if (parent)
-        {
-            parentWindow = parent;
             parent.addModalChild(this);
-        }
 
         width = _cachedWidth = w > 0 ? w : 500;
         height = _cachedHeight = h > 0 ? h : 300;
-        this.flags = flags;
 
         create();
 
@@ -359,7 +356,7 @@ final class X11Window : DWindow
             XFree(classHint);
         }
 
-        if (!(flags & WindowFlag.resizable))
+        if (!(options & WindowOptions.resizable))
         {
             XSizeHints sizeHints;
             sizeHints.min_width = width;
@@ -369,7 +366,7 @@ final class X11Window : DWindow
             sizeHints.flags = PMaxSize | PMinSize;
             XSetWMNormalHints(x11display, _win, &sizeHints);
         }
-        if (flags & WindowFlag.fullscreen)
+        if (options & WindowOptions.fullscreen)
         {
             if (atom_NET_WM_STATE_FULLSCREEN != None)
             {
@@ -378,7 +375,7 @@ final class X11Window : DWindow
             else
                 Log.w("Missing _NET_WM_STATE_FULLSCREEN atom");
         }
-        if (flags & WindowFlag.borderless)
+        if (options & WindowOptions.borderless)
         {
             if (atom_MOTIF_WM_HINTS != None)
             {
@@ -388,7 +385,7 @@ final class X11Window : DWindow
                         PropModeReplace, cast(ubyte*)&hints, hints.sizeof / 4);
             }
         }
-        if (flags & WindowFlag.modal)
+        if (options & WindowOptions.modal)
         {
             if (auto p = cast(X11Window)parentWindow)
             {
@@ -541,7 +538,7 @@ final class X11Window : DWindow
             // change size
             if (newWindowRect.w != int.min && newWindowRect.h != int.min)
             {
-                if (!(flags & WindowFlag.resizable))
+                if (!(options & WindowOptions.resizable))
                 {
                     XSizeHints sizeHints;
                     sizeHints.min_width = newWindowRect.width;
@@ -1170,9 +1167,10 @@ final class X11Platform : Platform
     }
 
     override DWindow createWindow(dstring windowCaption, DWindow parent,
-            WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0)
+            WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
+            uint width = 0, uint height = 0)
     {
-        auto window = new X11Window(this, windowCaption, parent, flags, width, height);
+        auto window = new X11Window(this, windowCaption, parent, options, width, height);
         windows.add(window, window._win);
         return window;
     }

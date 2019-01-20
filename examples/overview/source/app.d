@@ -38,9 +38,8 @@ int UIAppMain(string[] args)
 
 
     // create a window
-    // expand window size if content is bigger than 800, 700
-    auto window = platform.createWindow("Controls overview - beamui", null,
-            WindowFlag.resizable | WindowFlag.expanded, 800, 700);
+    // expand window size if content is bigger than defaults
+    auto window = platform.createWindow("Controls overview - beamui");
 
     // create main content layout
     auto frame = new Column;

@@ -131,12 +131,12 @@ class Dialog : Column
     void show()
     {
         initialize();
-        WindowFlag wflags;
+        WindowOptions wopts;
         if (_flags & DialogFlag.modal)
-            wflags |= WindowFlag.modal;
+            wopts |= WindowOptions.modal;
         if (_flags & DialogFlag.resizable)
         {
-            wflags |= WindowFlag.resizable;
+            wopts |= WindowOptions.resizable;
         }
         if (_flags & DialogFlag.popup)
         {
@@ -153,8 +153,8 @@ class Dialog : Column
         else
         {
             if (_initialWidth == 0 && _initialHeight == 0)
-                wflags |= WindowFlag.expanded;
-            _window = platform.createWindow(_title, _parentWindow, wflags, _initialWidth, _initialHeight);
+                wopts |= WindowOptions.expanded;
+            _window = platform.createWindow(_title, _parentWindow, wopts, _initialWidth, _initialHeight);
             windowIcon = _icon;
             _window.backgroundColor = currentTheme.getColor("dialog_background");
             _window.mainWidget = this;

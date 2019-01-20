@@ -261,26 +261,24 @@ final class Win32Window : Window
         bool _destroying;
     }
 
-    this(Win32Platform platform, dstring title, Window parent, WindowFlag flags, uint w = 0, uint h = 0)
+    this(Win32Platform platform, dstring title, Window parent, WindowOptions options, uint w = 0, uint h = 0)
     {
+        super(parent, options);
         _platform = platform;
         _title = title;
         _windowState = WindowState.hidden;
 
         if (parent)
-        {
-            parentWindow = parent;
             parent.addModalChild(this);
-        }
+
         auto w32parent = cast(Win32Window)parent;
         HWND parenthwnd = w32parent ? w32parent._hwnd : null;
 
         width = w > 0 ? w : 500;
         height = h > 0 ? h : 300;
-        this.flags = flags;
 
         uint ws = WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
-        if (flags & WindowFlag.resizable)
+        if (options & WindowOptions.resizable)
             ws |= WS_OVERLAPPEDWINDOW;
         else
             ws |= WS_OVERLAPPED | WS_CAPTION | WS_CAPTION | WS_BORDER | WS_SYSMENU;
@@ -291,7 +289,7 @@ final class Win32Window : Window
         int x = CW_USEDEFAULT;
         int y = CW_USEDEFAULT;
 
-        if (flags & WindowFlag.fullscreen)
+        if (options & WindowOptions.fullscreen)
         {
             // fullscreen
             x = screenRc.x;
@@ -300,7 +298,7 @@ final class Win32Window : Window
             height = screenRc.height;
             ws = WS_POPUP;
         }
-        if (flags & WindowFlag.borderless)
+        if (options & WindowOptions.borderless)
         {
             ws = WS_POPUP | WS_SYSMENU;
         }
@@ -594,7 +592,7 @@ final class Win32Window : Window
 
         mainWidget.setFocus();
 
-        if (flags & WindowFlag.fullscreen)
+        if (options & WindowOptions.fullscreen)
         {
             BoxI rc = getScreenDimensions();
             SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, rc.width, rc.height, SWP_SHOWWINDOW);
@@ -1059,33 +1057,6 @@ final class Win32Platform : Platform
         destroy(windows);
     }
 
-    bool registerWndClass()
-    {
-        //MSG  msg;
-        WNDCLASSW wndclass;
-
-        wndclass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-        wndclass.lpfnWndProc = cast(WNDPROC)&WndProc;
-        wndclass.cbClsExtra = 0;
-        wndclass.cbWndExtra = 0;
-        wndclass.hInstance = GetModuleHandle(null);
-        wndclass.hIcon = LoadIcon(null, IDI_APPLICATION);
-        wndclass.hCursor = LoadCursor(null, IDC_ARROW);
-        wndclass.hbrBackground = cast(HBRUSH)GetStockObject(WHITE_BRUSH);
-        wndclass.lpszMenuName = null;
-        wndclass.lpszClassName = toUTF16z(WIN_CLASS_NAME);
-
-        if (!RegisterClassW(&wndclass))
-        {
-            return false;
-        }
-        HDC dc = CreateCompatibleDC(NULL);
-        SCREEN_DPI = GetDeviceCaps(dc, LOGPIXELSY);
-        DeleteObject(dc);
-
-        return true;
-    }
-
     override int enterMessageLoop()
     {
         MSG msg;
@@ -1099,9 +1070,10 @@ final class Win32Platform : Platform
     }
 
     override Window createWindow(dstring windowCaption, Window parent,
-            WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0)
+            WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
+            uint width = 0, uint height = 0)
     {
-        return new Win32Window(this, windowCaption, parent, flags, pt(width), pt(height));
+        return new Win32Window(this, windowCaption, parent, options, pt(width), pt(height));
     }
 
     override void closeWindow(Window w)
@@ -1188,7 +1160,31 @@ final class Win32Platform : Platform
     }
 }
 
-private __gshared Win32Platform w32platform;
+private bool registerWndClass()
+{
+    //MSG  msg;
+    WNDCLASSW wndclass;
+
+    wndclass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+    wndclass.lpfnWndProc = cast(WNDPROC)&WndProc;
+    wndclass.cbClsExtra = 0;
+    wndclass.cbWndExtra = 0;
+    wndclass.hInstance = GetModuleHandle(null);
+    wndclass.hIcon = LoadIcon(null, IDI_APPLICATION);
+    wndclass.hCursor = LoadCursor(null, IDC_ARROW);
+    wndclass.hbrBackground = cast(HBRUSH)GetStockObject(WHITE_BRUSH);
+    wndclass.lpszMenuName = null;
+    wndclass.lpszClassName = toUTF16z(WIN_CLASS_NAME);
+
+    if (!RegisterClassW(&wndclass))
+        return false;
+
+    HDC dc = CreateCompatibleDC(NULL);
+    SCREEN_DPI = GetDeviceCaps(dc, LOGPIXELSY);
+    DeleteObject(dc);
+
+    return true;
+}
 
 extern (C) int initializeGUI()
 {
@@ -1209,20 +1205,20 @@ extern (C) int initializeGUI()
 
     setAppDPIAwareOnWindows();
 
-    w32platform = new Win32Platform;
     Log.v("Registering window class");
-    if (!w32platform.registerWndClass())
+    if (!registerWndClass())
     {
         MessageBoxA(null, "This program requires Windows NT!", "beamui app".toStringz, MB_ICONERROR);
         return 1;
     }
-    Platform.instance = w32platform;
 
     static if (USE_OPENGL)
     {
         if (!initBasicOpenGL())
             disableOpenGL();
     }
+
+    Platform.instance = new Win32Platform;
 
     return 0;
 }
@@ -1239,8 +1235,7 @@ extern (C) void deinitializeGUI()
 
 extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    HDC hdc;
-    RECT rect;
+    auto w32platform = cast(Win32Platform)Platform.instance;
 
     void* p = cast(void*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     Win32Window windowParam = p ? cast(Win32Window)(p) : null;
@@ -1287,6 +1282,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 WINDOWPOS* pos = cast(WINDOWPOS*)lParam;
                 //Log.d("WM_WINDOWPOSCHANGED: ", *pos);
 
+                RECT rect;
                 GetClientRect(hwnd, &rect);
                 int dx = rect.right - rect.left;
                 int dy = rect.bottom - rect.top;

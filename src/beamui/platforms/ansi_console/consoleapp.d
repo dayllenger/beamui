@@ -28,10 +28,10 @@ class ConsoleWindow : Window
         dstring _title;
     }
 
-    this(ConsolePlatform platform, dstring caption, Window parent, WindowFlag flags)
+    this(ConsolePlatform platform, dstring caption, Window parent, WindowOptions options)
     {
+        super(parent, options);
         _platform = platform;
-        parentWindow = parent;
         width = _platform.console.width;
         height = _platform.console.height;
         _windowRect = BoxI(0, 0, width, height);
@@ -127,9 +127,10 @@ class ConsolePlatform : Platform
     }
 
     override Window createWindow(dstring title, Window parent,
-            WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0)
+            WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
+            uint width = 0, uint height = 0)
     {
-        auto res = new ConsoleWindow(this, title, parent, flags);
+        auto res = new ConsoleWindow(this, title, parent, options);
         windows.add(res, windows.count);
         return res;
     }

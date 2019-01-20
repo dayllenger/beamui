@@ -26,7 +26,7 @@ import beamui.widgets.popup;
 import beamui.widgets.widget;
 
 /// Window creation flags
-enum WindowFlag : uint
+enum WindowOptions : uint
 {
     /// Window can be resized
     resizable = 1,
@@ -146,10 +146,11 @@ class Window : CustomEventTarget
 {
     @property
     {
-        /// Get window behaviour flags
-        WindowFlag flags() const { return _flags; }
-        /// Assign window behaviour flags
-        protected void flags(WindowFlag value) { _flags = value; }
+        /// Returns parent window
+        inout(Window) parentWindow() inout { return _parent; }
+
+        /// Get window behaviour options
+        WindowOptions options() const { return _options; }
 
         /// Window background color
         Color backgroundColor() const { return _backgroundColor; }
@@ -183,11 +184,6 @@ class Window : CustomEventTarget
             _mainWidget = widget;
             widget.window = this;
         }
-
-        /// Returns parent window
-        Window parentWindow() { return _parent; }
-        /// Assign parent window
-        protected void parentWindow(Window w) { _parent = w; }
 
         /// Returns current window override cursor type or NotSet if not overriding.
         CursorType overrideCursorType() const { return _overrideCursorType; }
@@ -232,7 +228,7 @@ class Window : CustomEventTarget
         Color _backgroundColor = Color(0xFFFFFF);
         Widget _mainWidget;
         EventList _eventList;
-        WindowFlag _flags;
+        WindowOptions _options;
         /// Minimal content size
         SizeI _minContentSize;
         /// Minimal good looking content size
@@ -250,9 +246,10 @@ class Window : CustomEventTarget
         ulong animationUpdateTimerID;
     }
 
-
-    this()
+    this(Window parent, WindowOptions options)
     {
+        _parent = parent;
+        _options = options;
         _children.reserve(10);
         _eventList = new EventList;
         _timerQueue = new TimerQueue;
@@ -435,7 +432,7 @@ class Window : CustomEventTarget
     {
         foreach (w; _children)
         {
-            if (w.flags & WindowFlag.modal && w._windowState != WindowState.hidden)
+            if (w.options & WindowOptions.modal && w._windowState != WindowState.hidden)
                 return true;
 
             if (w.hasVisibleModalChild)
@@ -448,7 +445,7 @@ class Window : CustomEventTarget
     {
         foreach (w; _children)
         {
-            if (w.flags & WindowFlag.modal && w._windowState != WindowState.hidden)
+            if (w.options & WindowOptions.modal && w._windowState != WindowState.hidden)
             {
                 if (w._windowState == WindowState.maximized)
                     w.activate();
@@ -464,7 +461,7 @@ class Window : CustomEventTarget
     {
         foreach (w; _children)
         {
-            if (w.flags & WindowFlag.modal && w._windowState != WindowState.hidden)
+            if (w.options & WindowOptions.modal && w._windowState != WindowState.hidden)
             {
                 w.minimize();
             }
@@ -533,7 +530,7 @@ class Window : CustomEventTarget
         // set minimum and then resize
         setMinimumSize(min.w, min.h);
         int w, h;
-        if (flags & WindowFlag.expanded)
+        if (options & WindowOptions.expanded)
         {
             w = max(_windowRect.w, nat.w);
             h = max(_windowRect.h, nat.h);
@@ -549,7 +546,7 @@ class Window : CustomEventTarget
     /// Adjust window position during show()
     protected void adjustPosition()
     {
-        if (flags & WindowFlag.centered)
+        if (options & WindowOptions.centered)
             centerOnParentWindow();
     }
 
@@ -1974,14 +1971,15 @@ class Platform
     Params:
         title  = window title text
         parent = parent Window, or null if no parent
-        flags  = WindowFlag bit set, combination of Resizable, Modal, Fullscreen
+        options  = combination of `WindowOptions`
         width  = window width
         height = window height
 
     Note: Window w/o `resizable` nor `fullscreen` will be created with a size based on measurement of its content widget.
     */
-    abstract Window createWindow(dstring title, Window parent,
-            WindowFlag flags = WindowFlag.resizable, uint width = 0, uint height = 0);
+    abstract Window createWindow(dstring title, Window parent = null,
+            WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
+            uint width = 0, uint height = 0);
     /**
     Close a window.
 
@@ -2124,7 +2122,7 @@ class Platform
     }
 
     /// Show directory or file in OS file manager (explorer, finder, etc...)
-    bool showInFileManager(string pathName)
+    static bool showInFileManager(string pathName)
     {
         static import fm = beamui.core.filemanager;
 

@@ -21,8 +21,7 @@ extern (C) int UIAppMain(string[] args)
     platform.uiTheme = "light";
     currentTheme.setStyleSheet(stylesheet);
 
-    Window window = platform.createWindow("CSS sandbox", null,
-            WindowFlag.expanded | WindowFlag.resizable, 800, 600);
+    Window window = platform.createWindow("CSS sandbox");
 
     Row splitView = new Row;
         auto editorPane = new Column;
@@ -37,6 +36,8 @@ extern (C) int UIAppMain(string[] args)
         add(controls);
         with (editorPane) {
             id = "editor-pane";
+            width = 500;
+            height = 500;
             add(editor).setFillHeight(true);
             add(btnUpdate).setFillWidth(false);
             btnUpdate.id = "update";
