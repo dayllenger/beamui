@@ -25,7 +25,7 @@ import beamui.core.signals;
 /// Console cursor type
 enum ConsoleCursorType
 {
-    invisible, /// Hidden
+    hidden, /// Hidden
     insert, /// Insert (usually underscore)
     replace, /// Replace (usually square)
 }
@@ -758,7 +758,7 @@ class Console
                 ci.dwSize = 100;
                 ci.bVisible = TRUE;
                 break;
-            case invisible:
+            case hidden:
                 ci.dwSize = 10;
                 ci.bVisible = FALSE;
                 break;
@@ -775,7 +775,7 @@ class Console
             case replace:
                 rawWrite("\x1b[?25h");
                 break;
-            case invisible:
+            case hidden:
                 rawWrite("\x1b[?25l");
                 break;
             }

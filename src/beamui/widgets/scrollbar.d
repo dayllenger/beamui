@@ -251,7 +251,7 @@ class AbstractSlider : WidgetGroup
             }
             else
             {
-                _pageUp.visibility = Visibility.invisible;
+                _pageUp.visibility = Visibility.hidden;
             }
             if (bottom > 0)
             {
@@ -260,7 +260,7 @@ class AbstractSlider : WidgetGroup
             }
             else
             {
-                _pageDown.visibility = Visibility.invisible;
+                _pageDown.visibility = Visibility.hidden;
             }
         }
         else
@@ -274,7 +274,7 @@ class AbstractSlider : WidgetGroup
             }
             else
             {
-                _pageUp.visibility = Visibility.invisible;
+                _pageUp.visibility = Visibility.hidden;
             }
             if (right > 0)
             {
@@ -283,7 +283,7 @@ class AbstractSlider : WidgetGroup
             }
             else
             {
-                _pageDown.visibility = Visibility.invisible;
+                _pageDown.visibility = Visibility.hidden;
             }
         }
     }

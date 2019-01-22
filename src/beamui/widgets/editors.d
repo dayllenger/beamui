@@ -284,7 +284,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             // horizontal scrollbar should not be visible in word wrap mode
             if (v)
             {
-                hscrollbar.visibility = Visibility.invisible;
+                hscrollbar.visibility = Visibility.hidden;
                 previousXScrollPos = _scrollPos.x;
                 _scrollPos.x = 0;
                 wordWrapRefresh();
@@ -2033,7 +2033,7 @@ class EditLine : EditWidgetBase
 
     this(dstring initialContent = null)
     {
-        super(ScrollBarMode.invisible, ScrollBarMode.invisible);
+        super(ScrollBarMode.hidden, ScrollBarMode.hidden);
         _content = new EditableContent(false);
         _content.contentChanged = &onContentChange;
         _selectAllWhenFocusedWithTab = true;

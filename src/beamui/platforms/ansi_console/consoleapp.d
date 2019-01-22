@@ -114,7 +114,7 @@ class ConsolePlatform : Platform
         _console.resizeEvent = &onConsoleResize;
         _console.inputIdleEvent = &onInputIdle;
         _console.init();
-        _console.setCursorType(ConsoleCursorType.invisible);
+        _console.setCursorType(ConsoleCursorType.hidden);
         _drawBuf = new ANSIConsoleDrawBuf(_console);
     }
 
@@ -210,7 +210,7 @@ class ConsolePlatform : Platform
                     }
                     else
                     {
-                        _drawBuf.console.setCursorType(ConsoleCursorType.invisible);
+                        _drawBuf.console.setCursorType(ConsoleCursorType.hidden);
                     }
                     _drawBuf.console.setWindowCaption(w.title);
                 }

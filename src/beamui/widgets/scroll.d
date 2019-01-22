@@ -21,7 +21,7 @@ with (scrollContent) {
         new CheckBox("CheckBox 5"d).setChecked(true));
 }
 // create a scroll view with invisible horizontal and automatic vertical scrollbars
-auto scroll = new ScrollArea(ScrollBarMode.invisible, ScrollBarMode.automatic);
+auto scroll = new ScrollArea(ScrollBarMode.hidden, ScrollBarMode.automatic);
 // assign
 scroll.contentWidget = scrollContent;
 ---
@@ -38,8 +38,8 @@ import beamui.widgets.widget;
 /// Scroll bar visibility mode
 enum ScrollBarMode
 {
-    /// Always invisible
-    invisible,
+    /// Always hidden
+    hidden,
     /// Always visible
     visible,
     /// Automatically show/hide scrollbar depending on content size
@@ -82,7 +82,7 @@ class ScrollAreaBase : WidgetGroup
                 removeChild(_hscrollbar);
                 destroy(_hscrollbar);
                 _hscrollbar = null;
-                _hscrollbarMode = ScrollBarMode.invisible;
+                _hscrollbarMode = ScrollBarMode.hidden;
             }
             if (hbar)
             {
@@ -100,7 +100,7 @@ class ScrollAreaBase : WidgetGroup
                 removeChild(_vscrollbar);
                 destroy(_vscrollbar);
                 _vscrollbar = null;
-                _vscrollbarMode = ScrollBarMode.invisible;
+                _vscrollbarMode = ScrollBarMode.hidden;
             }
             if (vbar)
             {

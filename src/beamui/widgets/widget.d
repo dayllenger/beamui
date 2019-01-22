@@ -54,7 +54,7 @@ enum Visibility : ubyte
     /// Visible on screen (default)
     visible,
     /// Not visible, but occupies a space in layout. Does not receive mouse or key events.
-    invisible,
+    hidden,
     /// Completely hidden, as not has been added
     gone
 }
@@ -132,7 +132,7 @@ private:
 
     /// Widget state (set of flags from State enum)
     State _state = State.normal;
-    /// Widget visibility: either visible, invisible, gone
+    /// Widget visibility: either visible, hidden, gone
     Visibility _visibility = Visibility.visible; // visible by default
 
     /// Current widget box set by layout()
@@ -1210,7 +1210,7 @@ public:
             maxHeight = Dimension(value);
         }
 
-        /// Widget visibility (visible, invisible, gone)
+        /// Widget visibility (visible, hidden, gone)
         Visibility visibility() const { return _visibility; }
         /// ditto
         void visibility(Visibility newVisibility)

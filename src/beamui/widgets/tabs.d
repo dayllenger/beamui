@@ -609,7 +609,7 @@ class TabHost : FrameLayout
     Signal!tabChangedHandler tabChanged;
 
     private TabControl _tabControl;
-    private Visibility _hiddenTabsVisibility = Visibility.invisible;
+    private Visibility _hiddenTabsVisibility = Visibility.hidden;
 
     this(TabControl tabControl = null)
     {
@@ -671,7 +671,7 @@ class TabHost : FrameLayout
         }
         else
         {
-            widget.visibility = Visibility.invisible;
+            widget.visibility = Visibility.hidden;
         }
     }
 

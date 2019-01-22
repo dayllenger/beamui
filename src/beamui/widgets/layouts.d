@@ -740,7 +740,7 @@ class FrameLayout : WidgetGroupDefaultDrawing
     }
 
     /// Make one of children (with specified ID) visible, for the rest, set visibility to otherChildrenVisibility
-    bool showChild(string ID, Visibility otherChildrenVisibility = Visibility.invisible, bool updateFocus = false)
+    bool showChild(string ID, Visibility otherChildrenVisibility = Visibility.hidden, bool updateFocus = false)
     {
         bool found;
         Widget foundWidget;
