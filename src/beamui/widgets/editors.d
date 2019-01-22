@@ -2338,18 +2338,18 @@ class EditBox : EditWidgetBase
 
     override protected void updateHScrollBar() // TODO: bug as in ScrollArea.updateScrollBars when delete text
     {
-        hscrollbar.setRange(0, _maxLineWidth + (_extendRightScrollBound ? clientBox.width / 16 : 0));
-        hscrollbar.pageSize = clientBox.width;
-        hscrollbar.position = _scrollPos.x;
+        hscrollbar.data.setRange(0, _maxLineWidth + (_extendRightScrollBound ? clientBox.width / 16 : 0));
+        hscrollbar.data.pageSize = clientBox.width;
+        hscrollbar.data.position = _scrollPos.x;
     }
 
     override protected void updateVScrollBar()
     {
         // fully visible lines
         int visibleLines = _lineHeight ? max(clientBox.height / _lineHeight, 1) : 1;
-        vscrollbar.setRange(0, _content.length);
-        vscrollbar.pageSize = visibleLines;
-        vscrollbar.position = _firstVisibleLine;
+        vscrollbar.data.setRange(0, _content.length);
+        vscrollbar.data.pageSize = visibleLines;
+        vscrollbar.data.position = _firstVisibleLine;
     }
 
     override void onHScroll(ScrollEvent event)

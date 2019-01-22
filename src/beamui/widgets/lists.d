@@ -775,7 +775,7 @@ class ListWidget : WidgetGroup
                 delta = scrolledrc.right - viewrc.right;
         }
         int newPosition = _scrollPosition + delta;
-        _scrollbar.position = newPosition;
+        _scrollbar.data.position = newPosition;
         _scrollPosition = newPosition;
         invalidate();
     }
@@ -1230,15 +1230,15 @@ class ListWidget : WidgetGroup
         {
             if (_orientation == Orientation.vertical)
             {
-                _scrollbar.setRange(0, _totalSize);
-                _scrollbar.pageSize = _clientBox.height;
-                _scrollbar.position = _scrollPosition;
+                _scrollbar.data.setRange(0, _totalSize);
+                _scrollbar.data.pageSize = _clientBox.height;
+                _scrollbar.data.position = _scrollPosition;
             }
             else
             {
-                _scrollbar.setRange(0, _totalSize);
-                _scrollbar.pageSize = _clientBox.width;
-                _scrollbar.position = _scrollPosition;
+                _scrollbar.data.setRange(0, _totalSize);
+                _scrollbar.data.pageSize = _clientBox.width;
+                _scrollbar.data.position = _scrollPosition;
             }
         }
 

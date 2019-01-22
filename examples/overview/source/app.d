@@ -398,7 +398,7 @@ int main()
         auto indicators = new Column;
 
         auto pb = new ProgressBar;
-        pb.progress = 250;
+        pb.data.progress = 250;
         pb.animationInterval = 50;
         indicators.add(pb);
 

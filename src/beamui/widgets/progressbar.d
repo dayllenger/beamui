@@ -7,15 +7,15 @@ import beamui.widgets.progressbar;
 
 auto pb = new ProgressBar;
 // set progress
-pb.progress = 300; // 0 .. 1000
+pb.data.progress = 300; // 0 .. 1000
 // set animation interval
 pb.animationInterval = 50; // 50 milliseconds
 
 // for indeterminate state: set progress to PROGRESS_INDETERMINATE (-1)
-pb.progress = PROGRESS_INDETERMINATE;
+pb.data.progress = PROGRESS_INDETERMINATE;
 ---
 
-Copyright: Vadim Lopatin 2016
+Copyright: Vadim Lopatin 2016, dayllenger 2019
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -23,34 +23,51 @@ module beamui.widgets.progressbar;
 
 import beamui.widgets.widget;
 
-enum PROGRESS_INDETERMINATE = -1;
-enum PROGRESS_HIDDEN = -2;
-enum PROGRESS_ANIMATION_OFF = 0;
-enum PROGRESS_MAX = 1000;
+enum int PROGRESS_HIDDEN = -2;
+enum int PROGRESS_INDETERMINATE = -1;
+enum int PROGRESS_MAX = 1000;
 
-/// Base for different progress bar controls
-class AbstractProgressBar : Widget
+/// Basic component for different progress bar controls
+class ProgressData
 {
     @property
     {
         /// Current progress value, 0 .. 1000; -1 == indeterminate, -2 == hidden
         int progress() const { return _progress; }
         /// ditto
-        void progress(int progress)
+        void progress(int value)
         {
-            progress = clamp(progress, -2, 1000);
-            if (_progress != progress)
+            value = clamp(value, PROGRESS_HIDDEN, PROGRESS_MAX);
+            if (_progress != value)
             {
-                _progress = progress;
-                invalidate();
+                _progress = value;
+                changed();
             }
-            requestLayout();
         }
         /// Returns true if progress bar is in indeterminate state
         bool indeterminate() const
         {
             return _progress == PROGRESS_INDETERMINATE;
         }
+    }
+
+    Signal!(void delegate()) changed;
+
+    private int _progress = PROGRESS_INDETERMINATE;
+
+    this(int progress)
+    {
+        _progress = progress;
+    }
+}
+
+/// Progress bar widget
+class ProgressBar : Widget
+{
+    @property
+    {
+        /// Progress data
+        inout(ProgressData) data() inout { return _data; }
 
         /// Animation interval in milliseconds, if 0 - no animation
         int animationInterval() const { return _animationInterval; }
@@ -71,7 +88,7 @@ class AbstractProgressBar : Widget
 
     private
     {
-        int _progress = PROGRESS_INDETERMINATE;
+        ProgressData _data;
         int _animationInterval = 0; // no animation by default
 
         ulong _animationTimerID;
@@ -82,8 +99,8 @@ class AbstractProgressBar : Widget
 
     this(int progress = PROGRESS_INDETERMINATE)
     {
-        super(null);
-        _progress = progress;
+        _data = new ProgressData(progress);
+        _data.changed = &invalidate;
     }
 
     protected void scheduleAnimation()
@@ -97,7 +114,7 @@ class AbstractProgressBar : Widget
         stopAnimation();
         _animationTimerID = setTimer(_animationInterval,
             delegate() {
-                if (!visible || _progress == PROGRESS_HIDDEN)
+                if (!visible || _data.progress == PROGRESS_HIDDEN)
                 {
                     _lastAnimationTs = 0;
                     _animationTimerID = 0;
@@ -132,15 +149,6 @@ class AbstractProgressBar : Widget
         _animationPhase += millisElapsed;
         invalidate();
     }
-}
-
-/// Progress bar widget
-class ProgressBar : AbstractProgressBar
-{
-    this(int progress = PROGRESS_INDETERMINATE)
-    {
-        super(progress);
-    }
 
     override Size computeNaturalSize()
     {
@@ -166,11 +174,11 @@ class ProgressBar : AbstractProgressBar
         super.onDraw(buf);
         const b = innerBox;
         DrawableRef animDrawable;
-        if (_progress >= 0)
+        if (_data.progress >= 0)
         {
             DrawableRef gaugeDrawable = currentTheme.getDrawable("progress_bar_gauge");
             animDrawable = currentTheme.getDrawable("progress_bar_gauge_animation");
-            int w = _progress * b.width / PROGRESS_MAX;
+            int w = _data.progress * b.width / PROGRESS_MAX;
             if (!gaugeDrawable.isNull)
             {
                 gaugeDrawable.drawTo(buf, Box(b.x, b.y, w, b.h));
@@ -192,7 +200,6 @@ class ProgressBar : AbstractProgressBar
             int w = animDrawable.width;
             _animationPhase %= w * 1000;
             animDrawable.drawTo(buf, b, cast(int)(_animationPhase * _animationSpeedPixelsPerSecond / 1000), 0);
-            //Log.d("progress animation draw ", _animationPhase, " b=", b);
         }
     }
 }

@@ -396,18 +396,18 @@ class ScrollAreaBase : WidgetGroup
     protected void updateHScrollBar()
     {
         // default implementation: use fullContentSize, _clientBox, override it if necessary
-        _hscrollbar.setRange(0, fullContentSize.w);
-        _hscrollbar.pageSize = _clientBox.w;
-        _hscrollbar.position = _scrollPos.x;
+        _hscrollbar.data.setRange(0, fullContentSize.w);
+        _hscrollbar.data.pageSize = _clientBox.w;
+        _hscrollbar.data.position = _scrollPos.x;
     }
 
     /// Update verticat scrollbar widget position
     protected void updateVScrollBar()
     {
         // default implementation: use fullContentSize, _clientBox, override it if necessary
-        _vscrollbar.setRange(0, fullContentSize.h);
-        _vscrollbar.pageSize = _clientBox.h;
-        _vscrollbar.position = _scrollPos.y;
+        _vscrollbar.data.setRange(0, fullContentSize.h);
+        _vscrollbar.data.pageSize = _clientBox.h;
+        _vscrollbar.data.position = _scrollPos.y;
     }
 
     protected void drawClient(DrawBuf buf)
