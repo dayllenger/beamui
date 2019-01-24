@@ -81,7 +81,7 @@ class ComboBoxBase : Row
     protected void initialize()
     {
         _body = createSelectedItemWidget();
-        _body.clicked = &onClick;
+        _body.clicked ~= &onClick;
         _body.state = State.parent;
         _button = createButton();
         _button.focusable = false;
@@ -119,7 +119,7 @@ class ComboBoxBase : Row
         auto res = new Button(null, "scrollbar_btn_down");
         res.id = "COMBOBOX_BUTTON";
         res.bindSubItem(this, "button");
-        res.clicked = &onClick;
+        res.clicked ~= &onClick;
         return res;
     }
 
@@ -147,11 +147,11 @@ class ComboBoxBase : Row
             return; // don't show empty popup
         _popupList = createPopup();
         _popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
-        _popup.popupClosed = delegate(Popup source, bool b) {
+        _popup.popupClosed ~= (Popup source, bool b) {
             _popup = null;
             _popupList = null;
         };
-        _popupList.itemSelected = delegate(Widget source, int index) {
+        _popupList.itemSelected ~= (Widget source, int index) {
             selectedItemIndex = index;
             if (_popup !is null)
             {
@@ -282,7 +282,7 @@ class ComboBox : ComboBoxBase
         _body.clickable = true;
         focusable = true;
         clickable = true;
-        clicked = &onClick;
+        clicked ~= &onClick;
     }
 
     override protected Widget createSelectedItemWidget()
@@ -380,7 +380,7 @@ class IconTextComboBox : ComboBoxBase
         _body.clickable = true;
         focusable = true;
         clickable = true;
-        clicked = &onClick;
+        clicked ~= &onClick;
     }
 
     override protected Widget createSelectedItemWidget()

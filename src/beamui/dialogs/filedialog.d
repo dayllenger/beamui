@@ -610,7 +610,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             adapter.add(btn);
         }
         res.ownAdapter = adapter;
-        res.itemClicked = delegate(Widget source, int itemIndex) {
+        res.itemClicked ~= (Widget source, int itemIndex) {
             openDirectory(_roots[itemIndex].path, null);
             res.selectItem(-1);
         };
@@ -841,10 +841,10 @@ class FileDialog : Dialog, CustomGridCellAdapter
         updateColumnHeaders();
         _fileList.rowSelect = true;
         _fileList.multiSelect = _allowMultipleFiles;
-        _fileList.cellPopupMenuBuilder = &getCellPopupMenu;
+        _fileList.cellPopupMenuBuilder ~= &getCellPopupMenu;
         _fileList.headerCellClicked = &onHeaderCellClicked;
 
-        _fileList.keyEvent = delegate(Widget source, KeyEvent event) {
+        _fileList.keyEvent ~= (Widget source, KeyEvent event) {
             if (_shortcutHelper.onKeyEvent(event))
                 locateFileInList(_shortcutHelper.text);
             return false;
@@ -865,7 +865,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 filterLabels ~= f.label;
             _cbFilters.items = filterLabels;
             _cbFilters.selectedItemIndex = _filterIndex;
-            _cbFilters.itemSelected = delegate(Widget source, int itemIndex) {
+            _cbFilters.itemSelected ~= (Widget source, int itemIndex) {
                 _filterIndex = itemIndex;
                 reopenDirectory();
             };
@@ -949,14 +949,13 @@ class FilePathPanelItem : Row
         _text.bindSubItem(this, "label");
         _text.trackHover = true;
         _text.clickable = true;
-        _text.clicked = &onTextClick;
+        _text.clicked ~= &onTextClick;
         _button = new Button(null, "scrollbar_btn_right");
         _button.bindSubItem(this, "button");
         _button.focusable = false;
-        _button.clicked = &onButtonClick;
+        _button.clicked ~= &onButtonClick;
         trackHover = true;
-        addChild(_text);
-        addChild(_button);
+        add(_text, _button);
     }
 
     private void onTextClick(Widget src)
@@ -1136,9 +1135,9 @@ class FilePathPanel : FrameLayout
         _segments.id = ID_SEGMENTS;
         _edPath = new EditLine;
         _edPath.id = ID_EDITOR;
-        _edPath.enterKeyPressed = &onEnterKey;
-        _edPath.focusChanged = &onEditorFocusChanged;
-        _segments.clicked = &onSegmentsClickOutside;
+        _edPath.enterKeyPressed ~= &onEnterKey;
+        _edPath.focusChanged ~= &onEditorFocusChanged;
+        _segments.clicked ~= &onSegmentsClickOutside;
         _segments.pathSelected = &onPathSelected;
         addChild(_segments);
         addChild(_edPath);
@@ -1272,12 +1271,12 @@ class FileNameEditLine : Row
         _btn = new Button("..."d);
         _btn.id = "FileNameEditLine_btnFile";
         _btn.bindSubItem(this, "button");
-        _btn.clicked = delegate(Widget src) {
+        _btn.clicked ~= (Widget src) {
             auto dlg = new FileDialog(_caption, window, null, _fileDialogFlags);
             foreach (key, value; _filetypeIcons)
                 dlg.filetypeIcons[key] = value;
             dlg.filters = _filters;
-            dlg.dialogClosed = delegate(Dialog dlg, const Action result) {
+            dlg.dialogClosed ~= (Dialog dlg, const Action result) {
                 if (result is ACTION_OPEN || result is ACTION_OPEN_DIRECTORY)
                 {
                     _edFileName.text = toUTF32((cast(FileDialog)dlg).filename);
@@ -1300,14 +1299,8 @@ class FileNameEditLine : Row
             }
             dlg.show();
         };
-        _edFileName.contentChanged = delegate(EditableContent content) {
-            if (contentChanged.assigned)
-                contentChanged(content);
-        };
-        _edFileName.modifiedStateChanged = delegate(Widget src, bool modified) {
-            if (modifiedStateChanged.assigned)
-                modifiedStateChanged(src, modified);
-        };
+        _edFileName.contentChanged ~= &contentChanged.emit;
+        _edFileName.modifiedStateChanged ~= &modifiedStateChanged.emit;
         add(_edFileName).setFillWidth(true);
         add(_btn);
     }

@@ -138,7 +138,7 @@ class TabItem : Row
         _closeButton = new Button(null, "close");
         _closeButton.id = "CLOSE";
         _closeButton.bindSubItem(this, "close");
-        _closeButton.clicked = (Widget w) { tabClosed(id); };
+        _closeButton.clicked ~= (Widget w) { tabClosed(id); };
         this.enableCloseButton = enableCloseButton;
         this.tooltipText = tooltipText;
         addChild(_icon);
@@ -212,7 +212,7 @@ class TabControl : WidgetGroup
         _moreButton = new Button(null, "tab_more");
         _moreButton.id = "MORE";
         _moreButton.bindSubItem(this, "more");
-        _moreButton.mouseEvent = &onMouseMoreBtn;
+        _moreButton.mouseEvent ~= &onMouseMoreBtn;
         addChild(_moreButton); // first child is always MORE button, the rest corresponds to tab list
     }
 
@@ -288,8 +288,8 @@ class TabControl : WidgetGroup
     void addTab(TabItem item, int index = -1)
     {
         item.parent = this;
-        item.mouseEvent = &onMouseTabBtn;
-        item.tabClosed = &tabClosed.emit;
+        item.mouseEvent ~= &onMouseTabBtn;
+        item.tabClosed ~= &tabClosed.emit;
         if (index >= 0)
             insertChild(index, item);
         else

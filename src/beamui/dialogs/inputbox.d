@@ -45,7 +45,7 @@ class InputBox : Dialog
         _text = initialText;
         if (handler)
         {
-            dialogClosed = delegate(Dialog dlg, const Action action) {
+            dialogClosed ~= (Dialog dlg, const Action action) {
                 if (action is ACTION_OK)
                 {
                     handler(_text);
@@ -62,11 +62,11 @@ class InputBox : Dialog
         msg.padding(Insets(10));
         _editor = new EditLine(_text);
         _editor.id = "inputbox_editor";
-        _editor.enterKeyPressed = delegate(EditWidgetBase editor) {
+        _editor.enterKeyPressed ~= (EditWidgetBase editor) {
             closeWithDefaultAction();
             return true;
         };
-        _editor.contentChanged = delegate(EditableContent content) { _text = content.text; };
+        _editor.contentChanged ~= (EditableContent content) { _text = content.text; };
         _editor.setDefaultPopupMenu();
         add(msg, _editor, createButtonsPanel(_actions, _defaultButtonIndex, 0));
     }

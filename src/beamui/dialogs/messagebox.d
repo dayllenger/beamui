@@ -50,7 +50,7 @@ class MessageBox : Dialog
         _defaultButtonIndex = defaultButtonIndex;
         if (handler)
         {
-            dialogClosed = delegate(Dialog dlg, const Action action) { handler(action); };
+            dialogClosed ~= (Dialog dlg, const Action action) { handler(action); };
         }
     }
 

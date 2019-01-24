@@ -2035,7 +2035,7 @@ class EditLine : EditWidgetBase
     {
         super(ScrollBarMode.hidden, ScrollBarMode.hidden);
         _content = new EditableContent(false);
-        _content.contentChanged = &onContentChange;
+        _content.contentChanged ~= &onContentChange;
         _selectAllWhenFocusedWithTab = true;
         _deselectAllWhenUnfocused = true;
         wantTabs = false;
@@ -2299,7 +2299,7 @@ class EditBox : EditWidgetBase
     {
         super(hscrollbarMode, vscrollbarMode);
         _content = new EditableContent(true); // multiline
-        _content.contentChanged = &onContentChange;
+        _content.contentChanged ~= &onContentChange;
         text = initialContent;
         _minSizeTester.str = "aaaaa\naaaaa"d;
         onThemeChanged();
@@ -3974,27 +3974,27 @@ class FindPanel : Row
         add(main).setFillWidth(true);
         add(closeBtn).setFillHeight(false);
 
-        _edFind.enterKeyPressed = (EditWidgetBase e) { findNext(_backDirection); return true; };
+        _edFind.enterKeyPressed ~= (EditWidgetBase e) { findNext(_backDirection); return true; };
         _edFind.contentChanged ~= &onFindTextChange;
 
-        _btnFindNext.clicked = (Widget wt) { findNext(false); };
-        _btnFindPrev.clicked = (Widget wt) { findNext(true); };
+        _btnFindNext.clicked ~= (Widget wt) { findNext(false); };
+        _btnFindPrev.clicked ~= (Widget wt) { findNext(true); };
 
-        _cbCaseSensitive.toggled = &onCaseSensitiveToggling;
-        _cbWholeWords.toggled = &onCaseSensitiveToggling;
-        _cbSelection.toggled = &onCaseSensitiveToggling;
+        _cbCaseSensitive.toggled ~= &onCaseSensitiveToggling;
+        _cbWholeWords.toggled ~= &onCaseSensitiveToggling;
+        _cbSelection.toggled ~= &onCaseSensitiveToggling;
 
         if (!replace)
             rowReplace.visibility = Visibility.gone;
 
-        btnReplace.clicked = (Widget wt) { replaceOne(); };
-        btnReplaceAndFind.clicked = (Widget wt) {
+        btnReplace.clicked ~= (Widget wt) { replaceOne(); };
+        btnReplaceAndFind.clicked ~= (Widget wt) {
             replaceOne();
             findNext(_backDirection);
         };
-        btnReplaceAll.clicked = (Widget wt) { replaceAll(); };
+        btnReplaceAll.clicked ~= (Widget wt) { replaceAll(); };
 
-        closeBtn.clicked = (Widget wt) { close(); };
+        closeBtn.clicked ~= (Widget wt) { close(); };
 
         focusGroup = true;
 

@@ -1,5 +1,5 @@
 /**
-This module contains definition of signal and slot mechanism.
+Signal and slot mechanism.
 
 $(LINK2 https://en.wikipedia.org/wiki/Signals_and_slots, Signals and slots),
 $(LINK2 https://en.wikipedia.org/wiki/Observer_pattern, Observer pattern)
@@ -123,6 +123,7 @@ struct Listener(slot_t) if (isDelegate!slot_t)
         _listener = listener;
     }
 
+    /// Call the listener if assigned
     return_t opCall(params_t params)
     {
         static if (is(return_t == void))
@@ -143,7 +144,7 @@ struct Listener(slot_t) if (isDelegate!slot_t)
         return _listener;
     }
 
-    /// Disconnect all listeners
+    /// Disconnect listener
     void clear()
     {
         _listener = null;
@@ -170,28 +171,9 @@ struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!s
         return _listeners.length > 0;
     }
 
-    /// Replace all previously assigned listeners with new one (if null passed, remove all listeners)
-    void opAssign(slot_t listener)
-    {
-        _listeners.length = 0;
-        if (listener !is null)
-            _listeners ~= listener;
-    }
+    @disable void opAssign(Args...)(Args a);
 
     /// Call all listeners
-    return_t opCall(params_t params)
-    {
-        static if (is(return_t == void))
-        {
-            foreach (listener; _listeners)
-                listener(params);
-        }
-        else
-        {
-            return emit(params);
-        }
-    }
-    /// ditto
     return_t emit(params_t params)
     {
         static if (is(return_t == void))
@@ -199,8 +181,7 @@ struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!s
             foreach (listener; _listeners)
                 listener(params);
         }
-        else
-        static if (policy == ReturnPolicy.eager)
+        else static if (policy == ReturnPolicy.eager)
         {
             foreach (listener; _listeners)
             {
@@ -219,6 +200,8 @@ struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!s
             return _listeners[$ - 1](params);
         }
     }
+    /// ditto
+    alias opCall = emit;
 
     /// Add a listener
     void connect(slot_t listener)
@@ -226,10 +209,7 @@ struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!s
         _listeners ~= listener;
     }
     /// ditto
-    void opOpAssign(string op : "~")(slot_t listener)
-    {
-        _listeners ~= listener;
-    }
+    alias opOpAssign(string op : "~") = connect;
 
     /// Remove a listener
     void disconnect(slot_t listener)
@@ -246,10 +226,7 @@ struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!s
         }
     }
     /// ditto
-    void opOpAssign(string op : "-")(slot_t listener)
-    {
-        disconnect(listener);
-    }
+    alias opOpAssign(string op : "-") = disconnect;
 
     /// Disconnect all listeners
     void clear()

@@ -76,7 +76,7 @@ struct DockSpace
             break;
         }
         _resizer.visibility = Visibility.gone;
-        _resizer.resized = &onResize;
+        _resizer.resized ~= &onResize;
         return _resizer;
     }
 

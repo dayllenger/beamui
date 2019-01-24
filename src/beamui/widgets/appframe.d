@@ -251,7 +251,7 @@ class AppFrame : Column
         addSome(_mainMenu, _toolbarHost, _body, _statusLine);
         cell(_body).setFillHeight(true);
         if (_mainMenu)
-            _mainMenu.menuItemClicked = &onMenuItemClick;
+            _mainMenu.menuItemClicked ~= &onMenuItemClick;
         updateShortcuts();
     }
 

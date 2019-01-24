@@ -55,15 +55,15 @@ int main()
     // disable OK button
     ok.enabled = false;
     // and enable it when the check box has been pressed
-    check.toggled = delegate(Widget src, bool checked) {
+    check.toggled ~= (Widget src, bool checked) {
         ok.enabled = checked;
     };
     // show message box on OK button click
-    ok.clicked = delegate(Widget src) {
+    ok.clicked ~= (Widget src) {
         window.showMessageBox("Message box"d, format("%s, %s!"d, ed1.text, ed2.text));
     };
     // close the window by clicking Exit
-    exit.clicked = delegate(Widget src) {
+    exit.clicked ~= (Widget src) {
         window.close();
     };
 

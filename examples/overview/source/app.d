@@ -57,7 +57,7 @@ int main()
         dlg.addFilter(FileFilterEntry("Text files", "*.txt;*.log"));
         dlg.addFilter(FileFilterEntry("Source files", "*.d;*.dd;*.c;*.cpp;*.h;*.hpp"));
         dlg.addFilter(FileFilterEntry("Executable files", "*", true));
-        dlg.dialogClosed = delegate(Dialog dlg, const Action result) {
+        dlg.dialogClosed ~= (Dialog dlg, const Action result) {
             import std.path : baseName;
 
             if (result is ACTION_OPEN)
@@ -163,8 +163,8 @@ int main()
     // create tabs
 
     tabs = new TabWidget;
-    tabs.tabClosed = delegate(string tabID) { tabs.removeTab(tabID); };
-    tabs.tabChanged = delegate(string newTabID, string oldTabID) {
+    tabs.tabClosed ~= (string tabID) { tabs.removeTab(tabID); };
+    tabs.tabChanged ~= (string newTabID, string oldTabID) {
         window.title = tabs.tab(newTabID).text ~ " - controls overview - beamui"d;
     };
 
@@ -316,12 +316,12 @@ int main()
         }
 
         btnToggle.checked = fileOpenAction.enabled;
-        btnToggle.clicked = delegate(Widget w) {
+        btnToggle.clicked ~= (Widget w) {
             fileOpenAction.enabled = !fileOpenAction.enabled;
         };
 
-        sb.scrolled = delegate(AbstractSlider src, ScrollEvent event) { Log.d("scrollbar: ", event.action); };
-        sl.scrolled = delegate(AbstractSlider src, ScrollEvent event) { Log.d("slider: ", event.action); };
+        sb.scrolled ~= (AbstractSlider src, ScrollEvent event) { Log.d("scrollbar: ", event.action); };
+        sl.scrolled ~= (AbstractSlider src, ScrollEvent event) { Log.d("slider: ", event.action); };
 
         import std.random : uniform;
 
@@ -370,7 +370,7 @@ int main()
         tree3.newChild("g3_6", "Group 3 item 6"d);
         tree.items.selectItem(tree1);
         // test adding new tree items
-        btnAddItem.clicked = delegate(Widget source) {
+        btnAddItem.clicked ~= (Widget source) {
             dstring label = newTreeItemEd.text;
             string id = format("item%d", uniform(1000000, 9999999));
             TreeItem item = tree.items.selectedItem;
@@ -381,7 +381,7 @@ int main()
                 item.addChild(newItem);
             }
         };
-        btnRemoveItem.clicked = delegate(Widget source) {
+        btnRemoveItem.clicked ~= (Widget source) {
             TreeItem item = tree.items.selectedItem;
             if (item)
             {
@@ -453,7 +453,7 @@ int main()
         assert(list.itemEnabled(5) == false);
         assert(list.itemEnabled(6) == true);
 
-        addbtn.clicked = delegate(Widget src) {
+        addbtn.clicked ~= (Widget src) {
             stringList.add(itemtext.text);
             listAdapter.add(new Label(itemtext.text));
         };

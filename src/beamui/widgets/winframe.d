@@ -31,7 +31,7 @@ class WindowFrame : Column
 
     @property Label title() { return _title; }
 
-    Signal!(void delegate(Widget)) closeButtonClick;
+    Signal!(void delegate(Widget)) closeButtonClicked;
 
     private
     {
@@ -69,7 +69,7 @@ class WindowFrame : Column
         }
         add(_titleLayout, _bodyLayout);
 
-        _closeButton.clicked = &closeButtonClick.emit;
+        _closeButton.clicked ~= &closeButtonClicked.emit;
         if (!_showCloseButton)
             _closeButton.visibility = Visibility.gone;
     }

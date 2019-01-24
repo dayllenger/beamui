@@ -100,7 +100,7 @@ class ProgressBar : Widget
     this(int progress = PROGRESS_INDETERMINATE)
     {
         _data = new ProgressData(progress);
-        _data.changed = &invalidate;
+        _data.changed ~= &invalidate;
     }
 
     protected void scheduleAnimation()

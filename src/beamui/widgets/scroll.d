@@ -154,8 +154,8 @@ class ScrollAreaBase : WidgetGroup
         _vscrollbar = new ScrollBar(Orientation.vertical);
         _hscrollbar.id = "hscrollbar";
         _vscrollbar.id = "vscrollbar";
-        _hscrollbar.scrolled = &onScrollEvent;
-        _vscrollbar.scrolled = &onScrollEvent;
+        _hscrollbar.scrolled ~= &onScrollEvent;
+        _vscrollbar.scrolled ~= &onScrollEvent;
         addChild(_hscrollbar);
         addChild(_vscrollbar);
     }

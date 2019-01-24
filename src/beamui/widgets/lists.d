@@ -623,7 +623,7 @@ class ListWidget : WidgetGroup
         focusable = true;
         _scrollbar = new ScrollBar(orientation);
         _scrollbar.visibility = Visibility.gone;
-        _scrollbar.scrolled = &onScrollEvent;
+        _scrollbar.scrolled ~= &onScrollEvent;
         addChild(_scrollbar);
     }
 

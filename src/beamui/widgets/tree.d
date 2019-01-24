@@ -29,7 +29,7 @@ treeItemLabel.textAlign = TextAlign.center;
 treePane.add(treeItemLabel);
 treePane.add(tree).setFillHeight(true);
 
-tree.itemSelected = delegate(TreeItem selectedItem, bool activated) {
+tree.itemSelected ~= (TreeItem selectedItem, bool activated) {
     dstring label = "Selected item: "d ~ toUTF32(selectedItem.id) ~ (activated ? " selected + activated"d : " selected"d);
     treeItemLabel.text = label;
 };
@@ -541,7 +541,7 @@ class TreeItemWidget : Row
             _expander.clickable = true;
             _expander.trackHover = true;
 
-            _expander.clicked = delegate(Widget source) {
+            _expander.clicked ~= (Widget source) {
                 _item.selectItem(_item);
                 _item.toggleExpand(_item);
             };

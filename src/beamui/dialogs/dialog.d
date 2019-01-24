@@ -109,7 +109,7 @@ class Dialog : Column
             if (splitBeforeIndex == i)
                 res.addSpacer();
             auto btn = new Button(a);
-            btn.clicked = (Widget w) { handleAction((cast(Button)w).action); };
+            btn.clicked ~= (Widget w) { handleAction((cast(Button)w).action); };
             if (defaultActionIndex == i)
             {
                 btn.setState(State.default_);
@@ -143,7 +143,7 @@ class Dialog : Column
             auto _frame = new DialogFrame(this, _cancelButton !is null);
             if (_cancelButton)
             {
-                _frame.closeButtonClick = (Widget w) {
+                _frame.closeButtonClicked ~= (Widget w) {
                     handleAction(_cancelButton.action);
                 };
             }
