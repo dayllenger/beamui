@@ -297,7 +297,6 @@ private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref CSS.
             applyStateFlag(s, "default", State.default_);
             applyStateFlag(s, "hovered", State.hovered);
             applyStateFlag(s, "selected", State.selected);
-            applyStateFlag(s, "checkable", State.checkable);
             applyStateFlag(s, "checked", State.checked);
             applyStateFlag(s, "enabled", State.enabled);
             applyStateFlag(s, "activated", State.activated);

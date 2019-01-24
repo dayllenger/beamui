@@ -35,28 +35,26 @@ enum State : uint
     /// State not specified / normal
     normal = enabled | windowFocused,
 
-    /// Mouse pointer is over this widget
-    hovered = 1, // mouse pointer is over control, buttons not pressed
+    /// Mouse pointer is over this widget, buttons not pressed
+    hovered = 1 << 0,
     /// Widget is activated
     activated = 1 << 1,
     /// Widget is selected
     selected = 1 << 2,
-    /// Widget can be checked
-    checkable = 1 << 3,
     /// Widget is checked
-    checked = 1 << 4,
+    checked = 1 << 3,
     /// Widget has focus
-    focused = 1 << 5,
+    focused = 1 << 4,
     /// Pressed (e.g. clicked by mouse)
-    pressed = 1 << 6,
+    pressed = 1 << 5,
     /// Widget can process mouse and key events
-    enabled = 1 << 7,
+    enabled = 1 << 6,
     /// Window is focused
-    windowFocused = 1 << 8,
+    windowFocused = 1 << 7,
     /// Widget is default control for form (should be focused when window gains focus first time)
-    default_ = 1 << 9,
+    default_ = 1 << 8,
     /// Widget has been focused by keyboard navigation
-    keyboardFocused = 1 << 10,
+    keyboardFocused = 1 << 9,
     /// Returns state of parent instead of widget's state when requested
     parent = 1 << 20,
 }

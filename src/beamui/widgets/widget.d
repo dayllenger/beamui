@@ -148,9 +148,6 @@ private:
     /// Window (to be used for top level widgets only!)
     Window _window;
 
-    /// Does widget need to track mouse hover
-    bool _trackHover;
-
     bool* _isDestroyed;
 
     // computed style properties
@@ -1289,8 +1286,8 @@ public:
     {
         bool _clickable;
         bool _checkable;
-        bool _checked;
         bool _focusable;
+        bool _trackHover;
     }
 
     @property
@@ -1360,10 +1357,13 @@ public:
 
         bool focused() const
         {
-            return (window !is null && window.focusedWidget is this && (state & State.focused));
+            if (auto w = window)
+                return w.focusedWidget is this && (state & State.focused);
+            else
+                return false;
         }
 
-        /// Mouse movement processing flag (when true, widget will change `hover` state while mouse is moving)
+        /// When true, widget will change `hover` state while mouse is moving upon it
         bool trackHover() const
         {
             return _trackHover && !TOUCH_MODE;
