@@ -1,0 +1,11 @@
+name "basic"
+description "Basic example for beamui"
+homepage "https://github.com/dayllenger/beamui"
+license "BSL-1.0"
+authors "dayllenger"
+
+targetName "basic"
+targetPath "bin"
+targetType "executable"
+
+dependency "beamui" path="../../"

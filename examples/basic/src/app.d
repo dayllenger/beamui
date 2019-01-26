@@ -1,15 +1,3 @@
-/**
-This app is a demo of very basic beamui application.
-
-Synopsis:
----
-dub run :basic
----
-
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
-License:   Boost License 1.0
-Authors:   Vadim Lopatin, dayllenger
-*/
 module app;
 
 import beamui;
@@ -17,6 +5,7 @@ import beamui;
 /// Entry point for application
 int main()
 {
+    // initialize library
     GuiApp app;
     app.conf.theme = "light"; // load better theme
     if (!app.initialize())

@@ -5,24 +5,26 @@ Synopsis:
 ---
 // helloworld
 import beamui;
-// required in one of modules
-mixin APP_ENTRY_POINT;
 
-/// Entry point for application
-extern (C) int UIAppMain(string[] args)
+int main()
 {
+    // initialize library
+    GuiApp app;
+    if (!app.initialize())
+        return -1;
+
     // create a window
-    Window window = platform.createWindow("My Window", null);
+    Window window = platform.createWindow("My Window");
     // create some widget to show in the window
     window.mainWidget = new Button("Hello, world!"d);
     // show window
     window.show();
-    // run message loop
+    // run event loop
     return platform.enterMessageLoop();
 }
 ---
 
-Copyright: Vadim Lopatin 2014-2018, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2018, dayllenger 2018-2019
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
@@ -48,6 +50,7 @@ public
     import beamui.graphics.fonts;
     import beamui.graphics.images;
     import beamui.graphics.resources;
+    import beamui.graphics.text : TextAlign;
     import beamui.style.theme;
     import beamui.widgets.appframe;
     import beamui.widgets.charts;

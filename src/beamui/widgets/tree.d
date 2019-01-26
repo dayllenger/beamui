@@ -25,7 +25,7 @@ tree2.newChild("g2_4", "item 4"d);
 
 auto treePane = new Column;
 auto treeItemLabel = new Label;
-treeItemLabel.textAlign = TextAlign.center;
+treeItemLabel.style.textAlign = TextAlign.center;
 treePane.add(treeItemLabel);
 treePane.add(tree).setFillHeight(true);
 

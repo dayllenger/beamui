@@ -6,14 +6,12 @@ Synopsis:
 import beamui.widgets.widget;
 
 auto w = new Widget("id1");
-// access attributes as properties
-w.padding = 10;
-w.backgroundColor = 0xAAAA00;
-// same, but using chained method call
-auto w = new Widget("id1").padding(10).backgroundColor(0xFFFF00).
+// modify widget style
+w.style.padding = 10;
+w.style.backgroundColor = 0xAAAA00;
 ---
 
-Copyright: Vadim Lopatin 2014-2018, Andrzej Kilijański 2017-2018, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2018, Andrzej Kilijański 2017-2018, dayllenger 2018-2019
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -37,16 +35,15 @@ public
     import beamui.graphics.drawbuf;
     import beamui.graphics.fonts;
 
-    import beamui.style.computed_style : StyleProperty;
     import beamui.style.theme : currentTheme;
     import beamui.style.types;
 
     import beamui.widgets.popup : PopupAlign;
 }
+package import beamui.style.computed_style;
 import std.string : capitalize;
 import beamui.core.animations;
 import beamui.platforms.common.platform;
-import beamui.style.computed_style;
 import beamui.style.style;
 import beamui.widgets.menu;
 
