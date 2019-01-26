@@ -72,13 +72,20 @@ class Label : Widget
         textobj.style.flags = textFlags;
         minSizeTester.style.flags = textFlags;
         if (textobj.str.length < minSizeTester.str.length * 2)
+        {
+            textobj.measure();
             return textobj.size;
+        }
         else
+        {
+            minSizeTester.measure();
             return minSizeTester.size;
+        }
     }
 
     override Size computeNaturalSize()
     {
+        textobj.measure();
         return textobj.size;
     }
 
@@ -162,18 +169,30 @@ class MultilineLabel : Widget
         textobj.style.flags = textFlags;
         minSizeTester.style.flags = textFlags;
         if (textobj.lines[0].length < minSizeTester.lines[0].length)
+        {
+            textobj.measure();
             return textobj.size;
+        }
         else
+        {
+            minSizeTester.measure();
             return minSizeTester.size;
+        }
     }
 
     override Size computeNaturalSize()
     {
         natSizeTester.style.flags = textFlags;
         if (textobj.lines[0].length < natSizeTester.lines[0].length)
+        {
+            textobj.measure();
             return textobj.size;
+        }
         else
+        {
+            natSizeTester.measure();
             return natSizeTester.size;
+        }
     }
 
     override int heightForWidth(int width)

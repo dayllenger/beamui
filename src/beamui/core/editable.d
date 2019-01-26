@@ -621,12 +621,14 @@ struct TextLineMeasure
 /// Represents size of tab character in spaces, in range from 1 to 16
 struct TabSize
 {
-    immutable int value = 4;
+    int value() const { return sz; }
     alias value this;
+
+    private int sz = 4;
 
     this(int size)
     {
-        value = clamp(size, 1, 16);
+        sz = clamp(size, 1, 16);
     }
 }
 
@@ -705,7 +707,7 @@ class EditableContent
         /// ditto
         void tabSize(TabSize value)
         {
-            move(value, _tabSize);
+            _tabSize = value;
         }
 
         /// Tab key behavior flag: when true, spaces will be inserted instead of tabs

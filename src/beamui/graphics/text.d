@@ -29,76 +29,16 @@ enum TextAlign : ubyte
 /// Holds text properties - font style, colors, and so on
 struct TextStyle
 {
-    @property
-    {
-        /// Font that also contains size, style, weight properties
-        Font font() { return _font; }
-        /// ditto
-        void font(Font value)
-        {
-            if (_font !is value)
-            {
-                _font = value;
-                _needToMeasure = true;
-            }
-        }
-        /// Text color
-        Color color() const { return _color; }
-        /// ditto
-        void color(Color value)
-        {
-            _color = value;
-        }
-        /// Text background color
-        Color backgroundColor() const { return _backgroundColor; }
-        /// ditto
-        void backgroundColor(Color value)
-        {
-            _backgroundColor = value;
-        }
-        /// Flags like underline
-        TextFlag flags() const { return _flags; }
-        /// ditto
-        void flags(TextFlag value)
-        {
-            if (_flags != value)
-            {
-                _needToMeasure = !!(_flags & TextFlag.hotkeys) != !!(value & TextFlag.hotkeys);
-                _flags = value;
-            }
-        }
-        /// Size of the tab character in number of spaces
-        TabSize tabSize() const { return _tabSize; }
-        /// ditto
-        void tabSize(TabSize value)
-        {
-            if (_tabSize != value)
-            {
-                move(value, _tabSize);
-                _needToMeasure = true;
-            }
-        }
-
-        /// Returns true whether properties which affect measurement were modified
-        bool needToMeasure() const { return _needToMeasure; }
-    }
-
-    private
-    {
-        Font _font;
-        Color _color;
-        Color _backgroundColor;
-        TextFlag _flags;
-        TabSize _tabSize;
-
-        bool _needToMeasure = true;
-    }
-
-    /// Tell style that text measurement is done
-    void measured()
-    {
-        _needToMeasure = false;
-    }
+    /// Font that also contains size, style, weight properties
+    Font font;
+    /// Flags like underline
+    TextFlag flags;
+    /// Size of the tab character in number of spaces
+    TabSize tabSize;
+    /// Text color
+    Color color;
+    /// Text background color
+    Color backgroundColor;
 }
 
 /// Text style applied to a part of text line
@@ -408,57 +348,54 @@ struct SingleLineText
         /// Original text data
         dstring str() const
         {
-            return _line.str;
+            return line.str;
         }
         /// ditto
         void str(dstring s)
         {
-            _line.str = s;
+            line.str = s;
         }
-
-        /// Get text style to adjust properties
-        ref TextStyle style() { return _style; }
 
         /// True whether there is no text
         bool empty() const
         {
-            return _line.length == 0;
+            return line.length == 0;
         }
 
-        /// Size of the text. Measures again, if needed
-        Size size()
+        /// Size of the text after the last measure
+        Size size() const
         {
-            if (needToMeasure)
-                measure();
-            return _line.size;
-        }
-
-        private bool needToMeasure() const
-        {
-            return _line.needToMeasure || _style.needToMeasure;
+            return line.size;
         }
     }
 
-    private
+    /// Text style to adjust properties
+    TextStyle style;
+    private TextLine line;
+    private TextStyle oldStyle;
+
+    private bool needToMeasure() const
     {
-        TextLine _line;
-        TextStyle _style;
+        return line.needToMeasure || style.font !is oldStyle.font || style.tabSize != oldStyle.tabSize ||
+                !!(style.flags & TextFlag.hotkeys) != !!(oldStyle.flags & TextFlag.hotkeys);
     }
 
-    /// Measure single-line text on layout
+    /// Measure single-line text during layout
     void measure()
     {
-        _line.measure(_style);
-        _style.measured();
+        if (!needToMeasure)
+            return;
+
+        line.measure(style);
+        oldStyle = style;
     }
 
     /// Draw text into buffer, applying alignment. Measures, if needed
     void draw(DrawBuf buf, Point pos, int boxWidth, TextAlign alignment = TextAlign.start)
     {
-        if (needToMeasure)
-            measure();
+        measure();
         // align
-        const int lineWidth = _line.size.w;
+        const int lineWidth = line.size.w;
         if (alignment == TextAlign.center)
         {
             pos.x += (boxWidth - lineWidth) / 2;
@@ -468,7 +405,7 @@ struct SingleLineText
             pos.x += boxWidth - lineWidth;
         }
         // draw
-        _line.draw(buf, pos, _style);
+        line.draw(buf, pos, style);
     }
 }
 
@@ -501,75 +438,56 @@ struct PlainText
 
         const(TextLine[]) lines() const { return _lines.data; }
 
-        /// Get text style to adjust properties
-        ref TextStyle style() { return _style; }
-
         /// True whether there is no text
         bool empty() const
         {
             return _lines.data.length == 0;
         }
 
-        /// Size of the text. Measures again, if needed
-        Size size()
-        {
-            if (needToMeasure)
-                measure();
-            return _size;
-        }
-
-        private bool needToMeasure() const
-        {
-            if (_style.needToMeasure)
-                return true;
-            else
-            {
-                foreach (ref line; _lines.data)
-                    if (line.needToMeasure)
-                        return true;
-                return false;
-            }
-        }
-
-        private bool needRewrap(int width) const
-        {
-            return width != previousWrapWidth || _wrappedLines.data.length == 0;
-        }
+        /// Size of the text after the last measure
+        Size size() const { return _size; }
     }
+
+    /// Text style to adjust properties
+    TextStyle style;
 
     private
     {
         dstring original;
         Appender!(TextLine[]) _lines;
         Appender!(TextLine[]) _wrappedLines;
-        TextStyle _style;
+        TextStyle oldStyle;
         Size _size;
 
         int previousWrapWidth = -1;
     }
 
-    /// Measure multiline text on layout
+    /// Measure multiline text during layout
     void measure()
     {
-        bool force = _style.needToMeasure;
+        const bool force = style.font !is oldStyle.font || style.tabSize != oldStyle.tabSize ||
+            !!(style.flags & TextFlag.hotkeys) != !!(oldStyle.flags & TextFlag.hotkeys);
         Size sz;
         foreach (ref line; _lines.data)
         {
             if (force || line.needToMeasure)
-                line.measure(_style);
+                line.measure(style);
             sz.w = max(sz.w, line.size.w);
             sz.h += line.size.h;
         }
         _size = sz;
-        _style.measured();
+        oldStyle = style;
         _wrappedLines.clear();
     }
 
+    private bool needRewrap(int width) const
+    {
+        return width != previousWrapWidth || _wrappedLines.data.length == 0;
+    }
     /// Wrap lines within a width. Measures, if needed
     void wrapLines(int width)
     {
-        if (needToMeasure)
-            measure();
+        measure();
         if (!needRewrap(width))
             return;
 
@@ -592,10 +510,9 @@ struct PlainText
     /// Draw text into buffer, applying alignment. Measures, if needed
     void draw(DrawBuf buf, Point pos, int boxWidth, TextAlign alignment = TextAlign.start)
     {
-        if (needToMeasure)
-            measure();
+        measure();
 
-        const int lineHeight = _style.font.height;
+        const int lineHeight = style.font.height;
         int y = pos.y;
         auto lns = _wrappedLines.data.length > _lines.data.length ? _wrappedLines.data : _lines.data;
         foreach (ref line; lns)
@@ -612,7 +529,7 @@ struct PlainText
                 x += boxWidth - lineWidth;
             }
             // draw
-            line.draw(buf, Point(x, y), _style);
+            line.draw(buf, Point(x, y), style);
             y += lineHeight;
         }
     }

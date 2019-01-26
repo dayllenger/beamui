@@ -2137,6 +2137,7 @@ class EditLine : EditWidgetBase
 
     override Size computeMinSize()
     {
+        _minSizeTester.measure();
         return _minSizeTester.size + Size(_leftPaneWidth, 0);
     }
 
@@ -3224,6 +3225,7 @@ class EditBox : EditWidgetBase
 
     override Size computeMinSize()
     {
+        _minSizeTester.measure();
         return _minSizeTester.size + Size(_leftPaneWidth, 0);
     }
 

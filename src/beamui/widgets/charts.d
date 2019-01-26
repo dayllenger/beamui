@@ -288,6 +288,8 @@ class SimpleBarChart : Widget
             cachedAvgYValue = avgValue;
             _axisYAvgValueDesc.str = to!dstring(avgValue);
         }
+        _axisYMaxValueDesc.measure();
+        _axisYAvgValueDesc.measure();
         Size maxSize = _axisYMaxValueDesc.size;
         Size avgSize = _axisYAvgValueDesc.size;
         return Size(max(maxSize.w, avgSize.w, _axisYMinDescWidth),
@@ -301,6 +303,7 @@ class SimpleBarChart : Widget
 
         _axisY.maxDescriptionSize = measureAxisYDesc();
 
+        _minDescSizeTester.measure();
         int currentMinBarWidth = max(_minBarWidth, _minDescSizeTester.size.w);
 
         int minAxisXLength = max(cast(int)barCount * (currentMinBarWidth + _barSpacing), _axisXMinWfromZero);
@@ -311,6 +314,7 @@ class SimpleBarChart : Widget
         bs.min.h = minAxixYLength + extraSizeY;
         if (_showTitle)
         {
+            _title.measure();
             Size ts = _title.size;
             bs.nat.w = max(bs.min.w, ts.w);
             bs.min.h += ts.h + _marginAfterTitle;
