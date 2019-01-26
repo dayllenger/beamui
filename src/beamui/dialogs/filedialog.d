@@ -581,7 +581,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             //if (sz.h < b.h)
             //    applyAlign(b, sz, ha, Align.vcenter);
             int offset = BACKEND_CONSOLE ? 0 : 1;
-            Color cl = _fileList.textColor;
+            Color cl = _fileList.style.textColor;
             if (_entries[row].isDir)
                 cl = currentTheme.getColor("file_dialog_dir_name", cl);
             fnt.drawText(buf, b.x + offset, b.y + offset, txt, cl);
@@ -770,8 +770,8 @@ class FileDialog : Dialog, CustomGridCellAdapter
 
         _roots = getRootPaths() ~ getBookmarkPaths();
 
-        minWidth = BACKEND_CONSOLE ? 50 : 600;
-        minHeight = 400; // TODO: move in styles
+        style.minWidth = BACKEND_CONSOLE ? 50 : 600;
+        style.minHeight = 400; // TODO: move in styles
 
         auto content = new Row(1);
             Widget leftPanel = createRootsList();
@@ -788,7 +788,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
 
             with (leftPanel) {
                 id = "leftPanel";
-                minWidth = BACKEND_CONSOLE ? 7 : 40;
+                style.minWidth = BACKEND_CONSOLE ? 7 : 40;
             }
             with (rightPanel) {
                 id = "rightPanel";
@@ -942,8 +942,8 @@ class FilePathPanelItem : Row
 
     this(string path)
     {
+        super(0);
         _path = path;
-        spacing = 0;
         string fname = isRoot(path) ? path : baseName(path);
         _text = new Label(toUTF32(fname));
         _text.bindSubItem(this, "label");
@@ -1267,7 +1267,7 @@ class FileNameEditLine : Row
         _caption = tr("Open File");
         _edFileName = new EditLine;
         _edFileName.id = "FileNameEditLine_edFileName";
-        _edFileName.minWidth(BACKEND_CONSOLE ? 16 : 200);
+        _edFileName.style.minWidth = BACKEND_CONSOLE ? 16 : 200;
         _btn = new Button("..."d);
         _btn.id = "FileNameEditLine_btnFile";
         _btn.bindSubItem(this, "button");

@@ -70,7 +70,7 @@ class CheckboxItem : SettingsItem
     {
         auto cb = new CheckBox(_label);
         cb.id = _id;
-        cb.minWidth = 60;
+        cb.style.minWidth = 60;
         Setting setting = settings.settingByPath(_id);
         cb.checked = setting.boolean = setting.boolean ^ _inverse;
         cb.toggled ~= (Widget source, bool checked) { setting.boolean = checked ^ _inverse; };
@@ -95,7 +95,7 @@ class StringComboBoxItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto cb = new ComboBox(_items);
         cb.id = _id;
-        cb.minWidth = 60;
+        cb.style.minWidth = 60;
         Setting setting = settings.settingByPath(_id);
         string itemID = setting.str = setting.str;
         int index = -1;
@@ -134,7 +134,7 @@ class IntComboBoxItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto cb = new ComboBox(_items);
         cb.id = _id;
-        cb.minWidth = 60;
+        cb.style.minWidth = 60;
         auto setting = settings.settingByPath(_id);
         long itemID = setting.integer = setting.integer;
         int index = -1;
@@ -175,7 +175,7 @@ class FloatComboBoxItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto cb = new ComboBox(_items);
         cb.id = _id;
-        cb.minWidth = 60;
+        cb.style.minWidth = 60;
         auto setting = settings.settingByPath(_id);
         setting.floating = setting.floating;
         long itemID = cast(long)(setting.floating * _divider + 0.5f);
@@ -222,7 +222,7 @@ class NumberEditItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto ed = new EditLine(_label);
         ed.id = _id ~ "-edit";
-        ed.minWidth = 60;
+        ed.style.minWidth = 60;
         auto setting = settings.settingByPath(_id);
         int n = cast(int)setting.integerDef(_defaultValue);
         n = clamp(n, _minValue, _maxValue);
@@ -235,11 +235,11 @@ class NumberEditItem : SettingsItem
                 if (_minValue <= v && v <= _maxValue)
                 {
                     setting.integer = v;
-                    ed.textColor = 0x000000;
+                    ed.style.textColor = 0x000000;
                 }
                 else
                 {
-                    ed.textColor = 0xFF0000;
+                    ed.style.textColor = 0xFF0000;
                 }
             }
         };
@@ -263,7 +263,7 @@ class StringEditItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto ed = new EditLine;
         ed.id = _id ~ "-edit";
-        ed.minWidth = 60;
+        ed.style.minWidth = 60;
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
@@ -293,7 +293,7 @@ class FileNameEditItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto ed = new FileNameEditLine;
         ed.id = _id ~ "-filename-edit";
-        ed.minWidth = 60.pt;
+        ed.style.minWidth = 60.pt;
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
@@ -324,7 +324,7 @@ class ExecutableFileNameEditItem : SettingsItem
         auto ed = new FileNameEditLine;
         ed.id = _id ~ "-filename-edit";
         ed.addFilter(FileFilterEntry(tr("Executable files"), "*.exe", true));
-        ed.minWidth = 60;
+        ed.style.minWidth = 60;
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
@@ -355,7 +355,7 @@ class PathNameEditItem : SettingsItem
         auto ed = new DirEditLine;
         ed.id = _id ~ "-path-edit";
         ed.addFilter(FileFilterEntry(tr("All files"), "*.*"));
-        ed.minWidth = 60;
+        ed.style.minWidth = 60;
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);

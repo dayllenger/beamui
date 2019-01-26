@@ -56,10 +56,10 @@ class MessageBox : Dialog
 
     override void initialize()
     {
-        padding(Insets(10)); // FIXME: move to styles?
+        style.padding = Insets(10); // FIXME: move to styles?
         auto msg = new MultilineLabel(_message);
         msg.id = "msg";
-        msg.padding(Insets(10));
+        msg.style.padding = Insets(10);
         addChild(msg);
         addChild(createButtonsPanel(_actions, _defaultButtonIndex, 0));
     }

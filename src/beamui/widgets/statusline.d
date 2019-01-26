@@ -70,8 +70,8 @@ class StatusLineTextAndIconPanel : StatusLineTextPanel
     this()
     {
         _icon = new ImageWidget;
-        _icon.minWidth = BACKEND_CONSOLE ? 1 : 20;
-        _icon.minHeight = BACKEND_CONSOLE ? 1 : 20;
+        _icon.style.minWidth = BACKEND_CONSOLE ? 1 : 20;
+        _icon.style.minHeight = BACKEND_CONSOLE ? 1 : 20;
         add(_icon).alignment(Align.center);
     }
 
@@ -106,7 +106,7 @@ class StatusLineBackgroundOperationPanel : StatusLineTextAndIconPanel
             uint a = animationProgress;
             if (a >= 256)
                 a = 512 - a;
-            _icon.backgroundColor((a << 24) | (0x00FF00));
+            _icon.style.backgroundColor = (a << 24) | 0x00FF00;
         }
         else
         {
@@ -142,7 +142,7 @@ class StatusLineEditorStatePanel : StatusLineTextPanel
     {
         FontRef fnt = font;
         Size sz = fnt.textSize("  ch=0x00000    000000 : 000    INS  "d);
-        _text.minWidth = sz.w;
+        _text.style.minWidth = sz.w;
     }
 
     override void onThemeChanged()

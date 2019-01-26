@@ -20,19 +20,6 @@ class Label : Widget
 {
     @property
     {
-        /// Text alignment - start, center, end, or justify
-        TextAlign textAlign() const
-        {
-            updateStyles();
-            return _textAlign;
-        }
-        /// ditto
-        void textAlign(TextAlign a)
-        {
-            setProperty!"_textAlign" = a;
-        }
-        private alias textAlign_effect = invalidate;
-
         /// Text to show
         override dstring text() const { return textobj.str; }
         /// ditto
@@ -47,20 +34,16 @@ class Label : Widget
     {
         SingleLineText textobj;
         SingleLineText minSizeTester;
-
-        @forCSS("text-align") TextAlign _textAlign = TextAlign.start;
     }
 
     this(dstring txt = null)
     {
         textobj.str = txt;
         minSizeTester.str = "aaaaa"; // TODO: test all this stuff
-        handleFontChanged();
+        handleFontChange();
     }
 
-    mixin SupportCSS;
-
-    override protected void handleFontChanged()
+    override protected void handleFontChange()
     {
         Font fnt = font.get;
         textobj.style.font = fnt;
@@ -96,14 +79,14 @@ class Label : Widget
 
         super.onDraw(buf);
         Box b = innerBox;
-        auto saver = ClipRectSaver(buf, b, alpha);
+        auto saver = ClipRectSaver(buf, b, style.alpha);
 
-        textobj.style.color = textColor;
+        textobj.style.color = style.textColor;
         textobj.style.flags = textFlags;
         // align vertically to center
         Size sz = Size(b.w, textobj.size.h);
         applyAlign(b, sz, Align.unspecified, Align.vcenter);
-        textobj.draw(buf, b.pos, b.w, textAlign);
+        textobj.draw(buf, b.pos, b.w, style.textAlign);
     }
 }
 
@@ -112,19 +95,6 @@ class MultilineLabel : Widget
 {
     @property
     {
-        /// Text alignment - start, center, end, or justify
-        TextAlign textAlign() const
-        {
-            updateStyles();
-            return _textAlign;
-        }
-        /// ditto
-        void textAlign(TextAlign a)
-        {
-            setProperty!"_textAlign" = a;
-        }
-        private alias textAlign_effect = invalidate;
-
         /// Text to show
         override dstring text() const { return textobj.str; }
         /// ditto
@@ -140,8 +110,6 @@ class MultilineLabel : Widget
         PlainText textobj;
         PlainText minSizeTester;
         PlainText natSizeTester;
-
-        @forCSS("text-align") TextAlign _textAlign = TextAlign.start;
     }
 
     this(dstring txt = null)
@@ -151,12 +119,10 @@ class MultilineLabel : Widget
         natSizeTester.str =
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\na";
         heightDependsOnWidth = true;
-        handleFontChanged();
+        handleFontChange();
     }
 
-    mixin SupportCSS;
-
-    override protected void handleFontChanged()
+    override protected void handleFontChange()
     {
         Font fnt = font.get;
         textobj.style.font = fnt;
@@ -222,11 +188,11 @@ class MultilineLabel : Widget
 
         super.onDraw(buf);
         Box b = innerBox;
-        auto saver = ClipRectSaver(buf, b, alpha);
+        auto saver = ClipRectSaver(buf, b, style.alpha);
 
-        textobj.style.color = textColor;
+        textobj.style.color = style.textColor;
         textobj.style.flags = textFlags;
-        textobj.draw(buf, b.pos, b.w, textAlign);
+        textobj.draw(buf, b.pos, b.w, style.textAlign);
     }
 }
 

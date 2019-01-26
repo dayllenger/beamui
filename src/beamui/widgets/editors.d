@@ -2210,13 +2210,13 @@ class EditLine : EditWidgetBase
 
         super.onDraw(buf);
         const b = innerBox;
-        const saver = ClipRectSaver(buf, b, alpha);
+        const saver = ClipRectSaver(buf, b, style.alpha);
 
         FontRef font = font();
         dstring txt = applyPasswordChar(text);
 
         drawLineBackground(buf, Rect(clientBox), Rect(clientBox));
-        font.drawText(buf, b.x - _scrollPos.x, b.y, txt, textColor, tabSize);
+        font.drawText(buf, b.x - _scrollPos.x, b.y, txt, style.textColor, tabSize);
 
         drawCaret(buf);
     }
@@ -2227,17 +2227,6 @@ class EditBox : EditWidgetBase
 {
     @property
     {
-        override int fontSize() const
-        {
-            return super.fontSize();
-        }
-        override void fontSize(int size)
-        {
-            // Need to rewrap if fontSize changed
-            _needRewrap = true;
-            super.fontSize = size;
-        }
-
         int minFontSize() const { return _minFontSize; }
         /// ditto
         void minFontSize(int size)
@@ -2309,6 +2298,14 @@ class EditBox : EditWidgetBase
     ~this()
     {
         eliminate(_findPanel);
+    }
+
+    override void handleStyleChange(StyleProperty ptype)
+    {
+        super.handleStyleChange(ptype);
+
+        if (ptype == StyleProperty.fontSize)
+            _needRewrap = true;
     }
 
     override void wordWrapRefresh()
@@ -2811,7 +2808,7 @@ class EditBox : EditWidgetBase
             {
                 debug (editors)
                     Log.i("Font size in editor ", id, " zoomed to ", newFontSize);
-                fontSize = cast(ushort)newFontSize;
+                style.fontSize = cast(ushort)newFontSize;
                 updateFontProps();
                 _needRewrap = true;
                 measureVisibleText();
@@ -3444,9 +3441,9 @@ class EditBox : EditWidgetBase
                 else if ((p & TOKEN_CATEGORY_MASK) in _tokenHighlightColors)
                     colors[i] = _tokenHighlightColors[(p & TOKEN_CATEGORY_MASK)];
                 else
-                    colors[i].color = textColor;
+                    colors[i].color = style.textColor;
                 if (colors[i].color.isFullyTransparent)
-                    colors[i].color = textColor;
+                    colors[i].color = style.textColor;
             }
             return colors;
         }
@@ -3494,7 +3491,7 @@ class EditBox : EditWidgetBase
         {
             int spaceWidth = font.charWidth(' ');
             Rect rc = lineRect;
-            Color color = textColor;
+            Color color = style.textColor;
             color.addAlpha(0xC0);
             for (int i = 0; i < maxCol; i += tabSize)
             {
@@ -3528,7 +3525,7 @@ class EditBox : EditWidgetBase
         bool spacesOnly = txt.length > 0 && firstNonSpace < 0;
         if (firstNonSpace <= 0 && lastNonSpace >= txt.length && !hasTabs && !spacesOnly)
             return;
-        Color color = textColor;
+        Color color = style.textColor;
         color.addAlpha(0xC0);
         static int[] textSizeBuffer;
         int charsMeasured = font.measureText(txt, textSizeBuffer, MAX_WIDTH_UNSPECIFIED, tabSize);
@@ -3679,7 +3676,7 @@ class EditBox : EditWidgetBase
                         }
                         else
                             font.drawText(buf, b.x - _scrollPos.x,
-                                    b.y + lineOffset * _lineHeight, curWrap, textColor, tabSize);
+                                    b.y + lineOffset * _lineHeight, curWrap, style.textColor, tabSize);
 
                     }
                     previousWraps += to!int(wrappedLine.length - 1);
@@ -3690,7 +3687,7 @@ class EditBox : EditWidgetBase
                         font.drawColoredText(buf, b.x - _scrollPos.x, b.y + i * _lineHeight,
                                 txt, highlight, tabSize);
                     else
-                        font.drawText(buf, b.x - _scrollPos.x, b.y + i * _lineHeight, txt, textColor, tabSize);
+                        font.drawText(buf, b.x - _scrollPos.x, b.y + i * _lineHeight, txt, style.textColor, tabSize);
                 }
             }
         }

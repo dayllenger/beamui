@@ -42,174 +42,76 @@ class LinearLayout : WidgetGroupDefaultDrawing
                 requestLayout();
             }
         }
-
-        /// Space between items
-        int spacing() const
-        {
-            updateStyles();
-            return _spacing;
-        }
-        /// ditto
-        void spacing(int value)
-        {
-            setProperty!"_spacing" = value;
-        }
-        private alias spacing_effect = requestLayout;
     }
 
     static struct Cell
     {
-        @property
+        @property // at single line for compactness
         {
             /// Widget occupies all available width in layout
             bool fillWidth() const { return _fillWidth; }
             /// ditto
-            void fillWidth(bool flag)
-            {
-                _fillWidth = flag;
-            }
+            void fillWidth(bool flag) { _fillWidth = flag; }
             /// Widget occupies all available height in layout
             bool fillHeight() const { return _fillHeight; }
             /// ditto
-            void fillHeight(bool flag)
-            {
-                _fillHeight = flag;
-            }
+            void fillHeight(bool flag) { _fillHeight = flag; }
 
             /// Alignment (combined vertical and horizontal)
-            Align alignment() const { return _alignment; }
+            Align alignment() const { return widget.style.alignment; }
             /// ditto
-            void alignment(Align value)
-            {
-                setProperty!"_alignment" = value;
-            }
+            void alignment(Align value) { widget.style.alignment = value; }
             /// Returns horizontal alignment
-            Align halign() const
-            {
-                return _alignment & Align.hcenter;
-            }
+            Align halign() const { return widget.style.alignment & Align.hcenter; }
             /// Returns vertical alignment
-            Align valign() const
-            {
-                return _alignment & Align.vcenter;
-            }
+            Align valign() const { return widget.style.alignment & Align.vcenter; }
 
             /// Margins (between widget bounds and its background)
-            Insets margins() const
-            {
-                return Insets(_marginTop.toDevice, _marginRight.toDevice,
-                              _marginBottom.toDevice, _marginLeft.toDevice);
-            }
+            Insets margins() const { return widget.style.margins; }
             /// ditto
-            void margins(Insets value)
-            {
-                setProperty!"_marginTop" = Dimension(value.top);
-                setProperty!"_marginRight" = Dimension(value.right);
-                setProperty!"_marginBottom" = Dimension(value.bottom);
-                setProperty!"_marginLeft" = Dimension(value.left);
-            }
+            void margins(Insets value) { widget.style.margins = value; }
             /// ditto
-            void margins(int v)
-            {
-                margins = Insets(v);
-            }
+            void margins(int v) { widget.style.margins = v; }
             /// Top margin value
-            int marginTop() const
-            {
-                return _marginTop.toDevice;
-            }
+            int marginTop() const { return widget.style.marginTop; }
             /// ditto
-            void marginTop(int value)
-            {
-                setProperty!"_marginTop" = Dimension(value);
-            }
+            void marginTop(int value) { widget.style.marginTop = value; }
             /// Right margin value
-            int marginRight() const
-            {
-                return _marginRight.toDevice;
-            }
+            int marginRight() const { return widget.style.marginRight; }
             /// ditto
-            void marginRight(int value)
-            {
-                setProperty!"_marginRight" = Dimension(value);
-            }
+            void marginRight(int value) { widget.style.marginRight = value; }
             /// Bottom margin value
-            int marginBottom() const
-            {
-                return _marginBottom.toDevice;
-            }
+            int marginBottom() const { return widget.style.marginBottom; }
             /// ditto
-            void marginBottom(int value)
-            {
-                setProperty!"_marginBottom" = Dimension(value);
-            }
+            void marginBottom(int value) { widget.style.marginBottom = value; }
             /// Left margin value
-            int marginLeft() const
-            {
-                return _marginLeft.toDevice;
-            }
+            int marginLeft() const { return widget.style.marginLeft; }
             /// ditto
-            void marginLeft(int value)
-            {
-                setProperty!"_marginLeft" = Dimension(value);
-            }
+            void marginLeft(int value) { widget.style.marginLeft = value; }
         }
 
         /// Chained version of `fillWidth`
-        Cell* setFillWidth(bool flag)
-        {
-            _fillWidth = flag;
-            return &this;
-        }
+        Cell* setFillWidth(bool flag) { _fillWidth = flag; return &this; }
         /// Chained version of `fillHeight`
-        Cell* setFillHeight(bool flag)
-        {
-            _fillHeight = flag;
-            return &this;
-        }
+        Cell* setFillHeight(bool flag) { _fillHeight = flag; return &this; }
         /// Chained version of `alignment`
-        Cell* setAlignment(Align value)
-        {
-            setProperty!"_alignment" = value;
-            return &this;
-        }
+        Cell* setAlignment(Align value) { widget.style.alignment = value; return &this; }
         /// Chained version of `margins`
-        Cell* setMargins(Insets value)
-        {
-            setProperty!"_marginTop" = Dimension(value.top);
-            setProperty!"_marginRight" = Dimension(value.right);
-            setProperty!"_marginBottom" = Dimension(value.bottom);
-            setProperty!"_marginLeft" = Dimension(value.left);
-            return &this;
-        }
+        Cell* setMargins(Insets value) { widget.style.margins = value; return &this; }
         /// ditto
-        Cell* setMargins(int v)
-        {
-            margins = Insets(v);
-            return &this;
-        }
+        Cell* setMargins(int v) { widget.style.margins = v; return &this; }
 
-        private // TODO: effects
+        private
         {
+            Widget widget;
             bool _fillWidth;
             bool _fillHeight;
-            @forCSS("align") Align _alignment;
-            @forCSS("margin-top") Dimension _marginTop = Dimension.zero;
-            @forCSS("margin-right") Dimension _marginRight = Dimension.zero;
-            @forCSS("margin-bottom") Dimension _marginBottom = Dimension.zero;
-            @forCSS("margin-left") Dimension _marginLeft = Dimension.zero;
-
-            @shorthandInsets("margin", "margin-top", "margin-right", "margin-bottom", "margin-left")
-            static bool shorthandsForCSS;
         }
-
-        mixin SupportCSS!Cell;
     }
 
     private
     {
         Orientation _orientation = Orientation.vertical;
-        @forCSS("spacing") @animatable int _spacing = 6;
 
         /// Array of cells, synchronized with the list of children
         Array!(Cell*) _cells;
@@ -222,8 +124,6 @@ class LinearLayout : WidgetGroupDefaultDrawing
     {
         _orientation = orientation;
     }
-
-    mixin SupportCSS;
 
     /// Returns cell pointer by specified index. Index must be in range
     Cell* cell(size_t i)
@@ -261,8 +161,9 @@ class LinearLayout : WidgetGroupDefaultDrawing
     /// Add a spacer
     LinearLayout addSpacer()
     {
-        super.addChild(new Spacer);
-        _cells ~= new Cell(true, true);
+        auto item = new Spacer;
+        super.addChild(item);
+        _cells ~= new Cell(item, true, true);
         return this;
     }
 
@@ -276,9 +177,8 @@ class LinearLayout : WidgetGroupDefaultDrawing
     override Widget addChild(Widget item)
     {
         super.addChild(item);
-        Cell* cell = createDefaultCell();
+        Cell* cell = createDefaultCell(item);
         _cells ~= cell;
-        item.stylesRecomputed = &cell.recomputeStyleImpl;
         requestLayout();
         return item;
     }
@@ -286,9 +186,8 @@ class LinearLayout : WidgetGroupDefaultDrawing
     override Widget insertChild(int index, Widget item)
     {
         super.insertChild(index, item);
-        Cell* cell = createDefaultCell();
+        Cell* cell = createDefaultCell(item);
         _cells.insertBefore(_cells[index .. $], cell);
-        item.stylesRecomputed = &cell.recomputeStyleImpl;
         requestLayout();
         return item;
     }
@@ -297,7 +196,6 @@ class LinearLayout : WidgetGroupDefaultDrawing
     {
         Widget result = super.removeChild(index);
         _cells.linearRemove(_cells[index .. index + 1]);
-        result.stylesRecomputed.clear();
         requestLayout();
         return result;
     }
@@ -319,12 +217,33 @@ class LinearLayout : WidgetGroupDefaultDrawing
         requestLayout();
     }
 
-    private Cell* createDefaultCell() const
+    override void replaceChild(Widget oldChild, Widget newChild)
+    {
+        super.replaceChild(oldChild, newChild);
+        foreach (ref c; _cells)
+        {
+            if (c.widget is oldChild)
+            {
+                c.widget = newChild;
+                break;
+            }
+        }
+    }
+
+    private Cell* createDefaultCell(Widget item) const
     {
         if (_orientation == Orientation.vertical)
-            return new Cell(true, false);
+            return new Cell(item, true, false);
         else
-            return new Cell(false, true);
+            return new Cell(item, false, true);
+    }
+
+    override void handleStyleChange(StyleProperty ptype)
+    {
+        super.handleStyleChange(ptype);
+
+        if (ptype == StyleProperty.spacing)
+            requestLayout();
     }
 
     //===============================================================
@@ -369,7 +288,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
                 bs.addHeight(wbs);
             }
         }
-        int space = spacing * (cast(int)items.length - 1);
+        int space = style.spacing * (cast(int)items.length - 1);
         if (_orientation == Orientation.horizontal)
         {
             bs.max.w += space;
@@ -426,6 +345,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
                     item.bs.nat.h = item.wt.heightForWidth(item.result.w - m.width) + m.height;
             }
         }
+        const int spacing = style.spacing;
         int gaps = spacing * (cast(int)items.length - 1);
         allocateSpace!dim(items, geom.pick!dim - gaps);
         // apply resizers
@@ -468,7 +388,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
             res.w -= m.width;
             res.h -= m.height;
             item.wt.layout(res);
-            pen += sz.pick!dim + _spacing;
+            pen += sz.pick!dim + spacing;
         }
     }
 }
@@ -683,7 +603,7 @@ class Row : LinearLayout
     this(int spacing)
     {
         super(Orientation.horizontal);
-        this.spacing = spacing;
+        style.spacing = spacing;
     }
 }
 
@@ -698,7 +618,7 @@ class Column : LinearLayout
     this(int spacing)
     {
         super(Orientation.vertical);
-        this.spacing = spacing;
+        style.spacing = spacing;
     }
 }
 
@@ -905,32 +825,6 @@ class TableLayout : WidgetGroupDefaultDrawing
         {
             return (childCount + (_colCount - 1)) / _colCount * _colCount;
         }
-
-        /// Space between rows (vertical)
-        int rowSpacing() const
-        {
-            updateStyles();
-            return _rowSpacing;
-        }
-        /// ditto
-        void rowSpacing(int value)
-        {
-            setProperty!"_rowSpacing" = value;
-        }
-
-        /// Space between columns (horizontal)
-        int columnSpacing() const
-        {
-            updateStyles();
-            return _colSpacing;
-        }
-        /// ditto
-        void columnSpacing(int value)
-        {
-            setProperty!"_colSpacing" = value;
-        }
-        private alias rowSpacing_effect = requestLayout;
-        private alias colSpacing_effect = requestLayout;
     }
 
     private
@@ -940,23 +834,18 @@ class TableLayout : WidgetGroupDefaultDrawing
         Array!LayoutItem _cols;
 
         int _colCount = 1;
-
-        @forCSS("row-spacing") @animatable int _rowSpacing = 6;
-        @forCSS("column-spacing") @animatable int _colSpacing = 6;
     }
-
-    mixin SupportCSS;
 
     protected int rowSpace() const
     {
         int c = rowCount;
-        return c > 1 ? _rowSpacing * (c - 1) : 0;
+        return c > 1 ? style.rowSpacing * (c - 1) : 0;
     }
 
     protected int colSpace() const
     {
         int c = colCount;
-        return c > 1 ? _colSpacing * (c - 1) : 0;
+        return c > 1 ? style.columnSpacing * (c - 1) : 0;
     }
 
     protected ref LayoutItem cell(int col, int row)
@@ -982,6 +871,14 @@ class TableLayout : WidgetGroupDefaultDrawing
         _cells[] = LayoutItem();
         _rows[] = LayoutItem();
         _cols[] = LayoutItem();
+    }
+
+    override void handleStyleChange(StyleProperty ptype)
+    {
+        super.handleStyleChange(ptype);
+
+        if (ptype == StyleProperty.rowSpacing || ptype == StyleProperty.columnSpacing)
+            requestLayout();
     }
 
     override Boundaries computeBoundaries()
@@ -1058,6 +955,9 @@ class TableLayout : WidgetGroupDefaultDrawing
 
         allocateSpace!`h`(_rows, inner.h - rowSpace);
         allocateSpace!`w`(_cols, inner.w - colSpace);
+
+        const int rowSpacing = style.rowSpacing;
+        const int colSpacing = style.columnSpacing;
         int ypen = 0;
         foreach (y; 0 .. rowCount)
         {
@@ -1069,9 +969,9 @@ class TableLayout : WidgetGroupDefaultDrawing
                 Box wb = Box(inner.x + xpen, inner.y + ypen, w, h);
 
                 cell(x, y).wt.maybe.layout(wb);
-                xpen += w + _colSpacing;
+                xpen += w + colSpacing;
             }
-            ypen += h + _rowSpacing;
+            ypen += h + rowSpacing;
         }
     }
 }

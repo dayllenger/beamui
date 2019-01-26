@@ -1275,7 +1275,7 @@ class ListWidget : WidgetGroup
 
         super.onDraw(buf);
         const b = innerBox;
-        const saver = ClipRectSaver(buf, b, alpha);
+        const saver = ClipRectSaver(buf, b, style.alpha);
 
         // draw scrollbar
         if (_needScrollbar)

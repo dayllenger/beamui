@@ -106,7 +106,7 @@ final class Style
     }
 
     /// Find a shorthand border property, split it into components and decode
-    void explode(shorthandBorder sh)()
+    void explode(ShorthandBorder sh)
     {
         if (auto p = sh.name in rawProperties)
         {
@@ -124,7 +124,7 @@ final class Style
         }
     }
     /// Find a shorthand drawable (background, usually) property, split it into components and decode
-    void explode(shorthandDrawable sh)()
+    void explode(ShorthandDrawable sh)
     {
         if (auto p = sh.name in rawProperties)
         {
@@ -139,7 +139,7 @@ final class Style
         }
     }
     /// Find a shorthand insets (margin, padding, border-width) property, split it into components and decode
-    void explode(shorthandInsets sh)()
+    void explode(ShorthandInsets sh)
     {
         if (auto p = sh.name in rawProperties)
         {
@@ -156,7 +156,7 @@ final class Style
         }
     }
     /// Find a shorthand transition property, split it into components and decode
-    void explode(shorthandTransition sh)()
+    void explode(ShorthandTransition sh)
     {
         if (auto p = sh.name in rawProperties)
         {

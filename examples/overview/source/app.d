@@ -40,9 +40,8 @@ int main()
     // expand window size if content is bigger than defaults
     auto window = platform.createWindow("Controls overview - beamui");
 
-    // create main content layout
-    auto frame = new Column;
-    frame.spacing = 0;
+    // create main content layout (0 is for no spacing between parts)
+    auto frame = new Column(0);
 
     TabWidget tabs;
 
@@ -206,7 +205,7 @@ int main()
                             auto btnRemoveItem = new Button("Remove"d);
 
         with (controls) {
-            padding = 12;
+            style.padding = 12;
             add(line1, line2, line3, line4);
             with (line1) {
                 add(gb, gb2, col1, col2, col3);
@@ -234,10 +233,10 @@ int main()
                     with (gbtext) {
                         auto l1 = new Label("Red text"d);
                         auto l2 = new Label("Italic text"d);
-                        l1.fontSize = 12.pt;
-                        l1.textColor = 0xFF0000;
-                        l2.fontSize = 12.pt;
-                        l2.fontItalic = true;
+                        l1.style.fontSize = 12.pt;
+                        l1.style.textColor = 0xFF0000;
+                        l2.style.fontSize = 12.pt;
+                        l2.style.fontItalic = true;
                         add(l1, l2);
                     }
                 }
@@ -272,8 +271,8 @@ int main()
                 with (gb6) {
                     auto ed1 = new EditLine("Some text"d);
                     auto ed2 = new EditLine("Some text"d);
-                    ed1.minWidth = 150;
-                    ed2.minWidth = 150;
+                    ed1.style.minWidth = 150;
+                    ed2.style.minWidth = 150;
                     ed2.enabled = false;
                     add(ed1, ed2);
                 }
@@ -287,8 +286,8 @@ int main()
                 with (gbtabs) {
                     add(tabs1);
                     with (tabs1) {
-                        tabHost.padding = 10;
-                        tabHost.backgroundColor = 0xE0E0E0;
+                        tabHost.style.padding = 10;
+                        tabHost.style.backgroundColor = 0xE0E0E0;
                         auto tab1 = new MultilineLabel("Label on tab page\nLabels can be\nMultiline"d);
                         auto tab2 = new ImageWidget("beamui-logo");
                         addTab(tab1.setID("tab1"), "Tab 1"d);
@@ -421,7 +420,7 @@ int main()
             add(list2).setFillWidth(true);
             add(itemedit);
             with (itemedit) {
-                padding = Insets(0, 6);
+                style.padding = Insets(0, 6);
                 add(new Label("New item text:"d), itemtext, addbtn);
             }
         }
@@ -678,7 +677,7 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
     cb1.checked = editor.wantTabs;
     cb2.checked = editor.useSpacesForTabs;
     cb3.checked = editor.readOnly;
-    cb4.checked = editor.fontFamily == FontFamily.monospace;
+    cb4.checked = editor.style.fontFamily == FontFamily.monospace;
     cb5.checked = editor.tabSize == 8;
     cb1.toggled ~= (w, checked) { editor.wantTabs = checked; };
     cb2.toggled ~= (w, checked) { editor.useSpacesForTabs = checked; };
@@ -686,13 +685,13 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
     cb4.toggled ~= (w, checked) {
         if (checked)
         {
-            editor.fontFace = "Courier New";
-            editor.fontFamily = FontFamily.monospace;
+            editor.style.fontFace = "Courier New";
+            editor.style.fontFamily = FontFamily.monospace;
         }
         else
         {
-            editor.fontFace = "Arial";
-            editor.fontFamily = FontFamily.sans_serif;
+            editor.style.fontFace = "Arial";
+            editor.style.fontFamily = FontFamily.sans_serif;
         }
     };
     cb5.toggled ~= (w, checked) { editor.tabSize(checked ? 8 : 4); };

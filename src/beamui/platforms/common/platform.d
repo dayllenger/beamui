@@ -694,10 +694,10 @@ class Window : CustomEventTarget
             auto tr = Transition(100, TimingFunction.easeIn);
             // may be destroyed
             auto popup = weakRef(res);
-            popup.alpha = 255;
+            popup.style.alpha = 255;
             addAnimation(tr.duration, (double t) {
                 if (popup)
-                    popup.alpha = cast(ubyte)tr.mix(255, 0, t);
+                    popup.style.alpha = cast(ubyte)tr.mix(255, 0, t);
             });
         }
 
@@ -738,10 +738,10 @@ class Window : CustomEventTarget
         auto tr = Transition(150, TimingFunction.easeIn);
         // may be destroyed
         auto popup = weakRef(res);
-        popup.alpha = 255;
+        popup.style.alpha = 255;
         addAnimation(tr.duration, (double t) {
             if (popup)
-                popup.alpha = cast(ubyte)tr.mix(255, 0, t);
+                popup.style.alpha = cast(ubyte)tr.mix(255, 0, t);
         });
 
         _popups ~= res;

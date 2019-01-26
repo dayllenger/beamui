@@ -61,10 +61,6 @@ class GroupBox : LinearLayout
             p.bottom = max(p.bottom, _frameBottom);
             return p;
         }
-        void padding(Insets p)
-        {
-            super.padding(p);
-        }
     }
 
     private

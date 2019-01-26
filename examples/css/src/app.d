@@ -37,8 +37,8 @@ int main()
         add(controls);
         with (editorPane) {
             id = "editor-pane";
-            width = 500;
-            height = 500;
+            style.width = 500;
+            style.height = 500;
             add(editor).setFillHeight(true);
             add(btnUpdate).setFillWidth(false);
             btnUpdate.id = "update";
@@ -67,7 +67,7 @@ Widget createControlsPanel()
 
     auto tab1 = new Column;
     with (tab1) {
-        spacing = 15;
+        style.spacing = 15;
         auto gb = new GroupBox("Group Box");
         with (gb) {
             add(new CheckBox("Check Box").setChecked(true),

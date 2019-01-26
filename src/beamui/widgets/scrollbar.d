@@ -588,7 +588,7 @@ class ScrollBar : AbstractSlider
             return;
 
         super.onDraw(buf);
-        const saver = ClipRectSaver(buf, innerBox, alpha);
+        const saver = ClipRectSaver(buf, innerBox, style.alpha);
         bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).onDraw(buf);
     }
 }
@@ -670,7 +670,7 @@ class Slider : AbstractSlider
             return;
 
         Box b = box;
-        auto saver = ClipRectSaver(buf, b, alpha);
+        auto saver = ClipRectSaver(buf, b, style.alpha);
         auto bg = background;
         {
             if (_orient == Orientation.vertical)

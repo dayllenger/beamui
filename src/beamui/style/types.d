@@ -140,15 +140,7 @@ enum SpecialCSSType
     transitionProperty, /// string
 }
 
-/// Annotate widget property with @forCSS before using it in a style sheet
-struct forCSS
-{
-    /// Property name as it should look in CSS
-    string name;
-    SpecialCSSType specialType;
-}
-
-struct shorthandBorder
+struct ShorthandBorder
 {
     string name;
     string topWidth;
@@ -158,14 +150,14 @@ struct shorthandBorder
     string color;
 }
 
-struct shorthandDrawable
+struct ShorthandDrawable
 {
     string name;
     string color;
     string image;
 }
 
-struct shorthandInsets
+struct ShorthandInsets
 {
     string name;
     string top;
@@ -174,7 +166,7 @@ struct shorthandInsets
     string left;
 }
 
-struct shorthandTransition
+struct ShorthandTransition
 {
     string name;
     string property;

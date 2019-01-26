@@ -298,7 +298,7 @@ class ComboBox : ComboBoxBase
             Size sz = item.computeBoundaries().min;
             minItemWidth = max(minItemWidth, sz.w);
         }
-        res.minWidth = minItemWidth;
+        res.style.minWidth = minItemWidth;
         return res;
     }
 }
@@ -396,7 +396,7 @@ class IconTextComboBox : ComboBoxBase
             Size sz = item.computeBoundaries().min;
             minItemWidth = max(minItemWidth, sz.w);
         }
-        res.minWidth = minItemWidth;
+        res.style.minWidth = minItemWidth;
         return res;
     }
 }

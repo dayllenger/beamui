@@ -37,6 +37,7 @@ public
     import beamui.graphics.drawbuf;
     import beamui.graphics.fonts;
 
+    import beamui.style.computed_style : StyleProperty;
     import beamui.style.theme : currentTheme;
     import beamui.style.types;
 
@@ -45,6 +46,7 @@ public
 import std.string : capitalize;
 import beamui.core.animations;
 import beamui.platforms.common.platform;
+import beamui.style.computed_style;
 import beamui.style.style;
 import beamui.widgets.menu;
 
@@ -150,77 +152,7 @@ private:
 
     bool* _isDestroyed;
 
-    // computed style properties
-    // layout
-    @forCSS("width") @animatable
-        Dimension _width = Dimension.none;
-    @forCSS("height") @animatable
-        Dimension _height = Dimension.none;
-    @forCSS("min-width") @animatable
-        Dimension _minWidth = Dimension.zero;
-    @forCSS("max-width") @animatable
-        Dimension _maxWidth = Dimension.none;
-    @forCSS("min-height") @animatable
-        Dimension _minHeight = Dimension.zero;
-    @forCSS("max-height") @animatable
-        Dimension _maxHeight = Dimension.none;
-
-    static foreach (side; ["top", "right", "bottom", "left"])
-    {
-        @forCSS("padding-" ~ side) @animatable
-        mixin("Dimension  _padding" ~ side.capitalize ~ " = Dimension.zero;");
-
-        @forCSS("border-" ~ side ~ "-width") @animatable
-        mixin("Dimension  _borderWidth" ~ side.capitalize ~ " = Dimension.zero;");
-    }
-    // background
-    @forCSS("border-color") @animatable
-        Color _borderColor = Color.transparent;
-    @forCSS("background-color") @animatable
-        Color _backgroundColor = Color.transparent;
-    @forCSS("background-image", SpecialCSSType.image)
-        Drawable _backgroundImage;
-    @forCSS("box-shadow")
-        BoxShadowDrawable _boxShadow;
-    // text
-    @forCSS("font-face")
-        string _fontFace = "Arial";
-    @forCSS("font-family")
-        FontFamily _fontFamily = FontFamily.sans_serif;
-    @forCSS("font-size")
-        Dimension _fontSize = Dimension.pt(9);
-    @forCSS("font-style")
-        FontStyle _fontStyle = FontStyle.normal;
-    @forCSS("font-weight", SpecialCSSType.fontWeight)
-        ushort _fontWeight = 400;
-    @forCSS("text-flags")
-        TextFlag _textFlags = TextFlag.unspecified;
-    // colors
-    @forCSS("opacity", SpecialCSSType.opacity) @animatable
-        ubyte _alpha = 0;
-    @forCSS("color") @animatable
-        Color _textColor = Color(0x000000);
-    @forCSS("focus-rect-color") @animatable
-        Color _focusRectColor = Color.transparent;
-    // transitions and animations
-    @forCSS("transition-property", SpecialCSSType.transitionProperty)
-        string _transitionProperty;
-    @forCSS("transition-timing-function")
-        TimingFunction _transitionTimingFunction;
-    @forCSS("transition-duration", SpecialCSSType.time)
-        uint _transitionDuration;
-    @forCSS("transition-delay", SpecialCSSType.time)
-        uint _transitionDelay;
-
-    @shorthandInsets("padding", "padding-top", "padding-right", "padding-bottom", "padding-left")
-    @shorthandInsets("border-width", "border-top-width", "border-right-width",
-                     "border-bottom-width", "border-left-width")
-    @shorthandBorder("border", "border-top-width", "border-right-width",
-                     "border-bottom-width", "border-left-width", "border-color")
-    @shorthandDrawable("background", "background-color", "background-image")
-    @shorthandTransition("transition", "transition-property", "transition-duration",
-                         "transition-timing-function", "transition-delay")
-    static bool shorthandsForCSS;
+    ComputedStyle _style;
 
     Background _background;
     FontRef _font;
@@ -239,6 +171,7 @@ public:
     {
         _isDestroyed = new bool;
         _id = ID;
+        _style.widget = this;
         _background = new Background;
         debug _instanceCount++;
         debug (resalloc)
@@ -261,17 +194,6 @@ public:
             onResourceDestroyWhileShutdown(_id, this.classinfo.name);
 
         animations.clear();
-
-        if (ownProperties !is null)
-        {
-            if (isOwned("_boxShadow"))
-                eliminate(_boxShadow);
-            if (isOwned("_backgroundImage"))
-                eliminate(_backgroundImage);
-            if (isOwned("_transitionTimingFunction"))
-                eliminate(_transitionTimingFunction);
-            ownProperties.clear();
-        }
 
         _font.clear();
         eliminate(_background);
@@ -387,8 +309,6 @@ public:
     //===============================================================
     // Style
 
-    mixin SupportCSS;
-
     /// Check whether widget has certain style class
     bool hasStyleClass(string name) const
     {
@@ -445,6 +365,13 @@ public:
     /// Signals when styles are being recomputed. Used for mixing properties in the widget.
     Listener!(void delegate(Style[] chain)) stylesRecomputed;
 
+    /// Computed style of this widget. Allows to query and mutate its properties
+    final @property inout(ComputedStyle)* style() inout
+    {
+        updateStyles();
+        return &_style;
+    }
+
     /// Recompute styles, only if needed
     protected void updateStyles() inout
     {
@@ -454,7 +381,7 @@ public:
             {
                 _needToRecomputeStyle = false;
                 Style[] chain = selectStyleChain();
-                recomputeStyle(chain);
+                _style.recompute(chain);
                 if (stylesRecomputed.assigned)
                     stylesRecomputed(chain);
             }
@@ -637,8 +564,7 @@ public:
         {
             updateStyles();
             // get max padding from style padding and background drawable padding
-            Insets p = Insets(_paddingTop.toDevice, _paddingRight.toDevice,
-                              _paddingBottom.toDevice, _paddingLeft.toDevice);
+            Insets p = _style.padding;
             Insets bp = _background.padding;
             if (p.left < bp.left)
                 p.left = bp.left;
@@ -649,189 +575,14 @@ public:
             if (p.bottom < bp.bottom)
                 p.bottom = bp.bottom;
 
-            if (focusRectColor != Color.transparent && (focusable || ((state & State.parent) && parent.focusable)))
+            if (style.focusRectColor != Color.transparent &&
+                (focusable || ((state & State.parent) && parent.focusable)))
             {
                 // add two pixels to padding when focus rect is required
                 // one pixel for focus rect, one for additional space
                 p.add(Insets(FOCUS_RECT_PADDING));
             }
             return p;
-        }
-        /// ditto
-        void padding(Insets value)
-        {
-            setProperty!"_paddingTop" = Dimension(value.top);
-            setProperty!"_paddingRight" = Dimension(value.right);
-            setProperty!"_paddingBottom" = Dimension(value.bottom);
-            setProperty!"_paddingLeft" = Dimension(value.left);
-        }
-        /// ditto
-        void padding(int v)
-        {
-            padding = Insets(v);
-        }
-        /// Top padding value
-        int paddingTop() const
-        {
-            updateStyles();
-            return _paddingTop.toDevice;
-        }
-        /// ditto
-        void paddingTop(int value)
-        {
-            setProperty!"_paddingTop" = Dimension(value);
-        }
-        /// Right padding value
-        int paddingRight() const
-        {
-            updateStyles();
-            return _paddingRight.toDevice;
-        }
-        /// ditto
-        void paddingRight(int value)
-        {
-            setProperty!"_paddingRight" = Dimension(value);
-        }
-        /// Bottom padding value
-        int paddingBottom() const
-        {
-            updateStyles();
-            return _paddingBottom.toDevice;
-        }
-        /// ditto
-        void paddingBottom(int value)
-        {
-            setProperty!"_paddingBottom" = Dimension(value);
-        }
-        /// Left padding value
-        int paddingLeft() const
-        {
-            updateStyles();
-            return _paddingLeft.toDevice;
-        }
-        /// ditto
-        void paddingLeft(int value)
-        {
-            setProperty!"_paddingLeft" = Dimension(value);
-        }
-        private alias paddingTop_effect = requestLayout;
-        private alias paddingRight_effect = requestLayout;
-        private alias paddingBottom_effect = requestLayout;
-        private alias paddingLeft_effect = requestLayout;
-
-        Insets borderWidth() const
-        {
-            updateStyles();
-            return Insets(_borderWidthTop.toDevice, _borderWidthRight.toDevice,
-                          _borderWidthBottom.toDevice, _borderWidthLeft.toDevice);
-        }
-        /// ditto
-        void borderWidth(Insets value)
-        {
-            setProperty!"_borderWidthTop" = Dimension(value.top);
-            setProperty!"_borderWidthRight" = Dimension(value.right);
-            setProperty!"_borderWidthBottom" = Dimension(value.bottom);
-            setProperty!"_borderWidthLeft" = Dimension(value.left);
-        }
-        private void borderWidthTop_effect(Dimension value)
-        {
-            _background.border.size.top = value.toDevice;
-            requestLayout();
-        }
-        private void borderWidthRight_effect(Dimension value)
-        {
-            _background.border.size.right = value.toDevice;
-            requestLayout();
-        }
-        private void borderWidthBottom_effect(Dimension value)
-        {
-            _background.border.size.bottom = value.toDevice;
-            requestLayout();
-        }
-        private void borderWidthLeft_effect(Dimension value)
-        {
-            _background.border.size.left = value.toDevice;
-            requestLayout();
-        }
-        /// Color of widget border
-        Color borderColor() const
-        {
-            updateStyles();
-            return _borderColor;
-        }
-        /// ditto
-        void borderColor(Color value)
-        {
-            setProperty!"_borderColor" = value;
-        }
-        private void borderColor_effect(Color value)
-        {
-            _background.border.color = value;
-            invalidate();
-        }
-
-        /// Background color of the widget
-        Color backgroundColor() const
-        {
-            updateStyles();
-            return _backgroundColor;
-        }
-        /// ditto
-        void backgroundColor(Color value)
-        {
-            setProperty!"_backgroundColor" = value;
-        }
-        /// Set background color as ARGB 32 bit value
-        void backgroundColor(uint value)
-        {
-            backgroundColor = Color(value);
-        }
-        /// Set background color from string like "#5599CC" or "white"
-        void backgroundColor(string colorString)
-        {
-            Color value = decodeHexColor(colorString, Color.none);
-            if (value == Color.none)
-                value = decodeTextColor(colorString, Color.transparent);
-            backgroundColor = value;
-        }
-        private void backgroundColor_effect(Color value)
-        {
-            _background.color = value;
-            invalidate();
-        }
-
-        /// Background image drawable
-        const(Drawable) backgroundImage() const
-        {
-            updateStyles();
-            return _backgroundImage;
-        }
-        /// ditto
-        void backgroundImage(Drawable image)
-        {
-            setProperty!"_backgroundImage" = image;
-        }
-        private void backgroundImage_effect(Drawable image)
-        {
-            _background.image = image;
-            invalidate();
-        }
-
-        ///
-        inout(BoxShadowDrawable) boxShadow() inout
-        {
-            updateStyles();
-            return _boxShadow;
-        }
-        /// ditto
-        void boxShadow(BoxShadowDrawable shadow)
-        {
-            setProperty!"_boxShadow" = shadow;
-        }
-        private void boxShadow_effect(BoxShadowDrawable shadow)
-        {
-            _background.shadow = shadow;
-            invalidate();
         }
 
         /// Get widget standard background. The background object has the same lifetime as the widget.
@@ -841,57 +592,11 @@ public:
             return _background;
         }
 
-        /// Widget drawing alpha value (0 = opaque .. 255 = transparent)
-        ubyte alpha() const
-        {
-            updateStyles();
-            return _alpha;
-        }
-        /// ditto
-        void alpha(ubyte value)
-        {
-            setProperty!"_alpha" = value;
-        }
-        private alias alpha_effect = invalidate;
-
-        /// Text color
-        Color textColor() const
-        {
-            updateStyles();
-            return _textColor;
-        }
-        /// ditto
-        void textColor(Color value)
-        {
-            setProperty!"_textColor" = value;
-        }
-        /// Se text color as ARGB 32 bit value
-        void textColor(uint value)
-        {
-            textColor = Color(value);
-        }
-        /// Set text color from string like "#5599CC" or "white"
-        void textColor(string colorString)
-        {
-            Color value = decodeHexColor(colorString, Color.none);
-            if (value == Color.none)
-                value = decodeTextColor(colorString, Color(0x0));
-            textColor = value;
-        }
-        private alias textColor_effect = invalidate;
-
-        /// Get color to draw focus rectangle, Color.transparent if no focus rect should be drawn
-        Color focusRectColor() const
-        {
-            updateStyles();
-            return _focusRectColor;
-        }
-
         /// Text flags (bit set of TextFlag enum values)
         TextFlag textFlags() const
         {
             updateStyles();
-            TextFlag res = _textFlags;
+            TextFlag res = _style.textFlags;
             if (res == TextFlag.parent)
             {
                 if (parent)
@@ -901,7 +606,7 @@ public:
             }
             if (res & TextFlag.underlineHotkeysOnAlt)
             {
-                uint modifiers = 0;
+                uint modifiers;
                 if (window !is null)
                     modifiers = window.keyboardModifiers;
                 bool altPressed = (modifiers & (KeyFlag.alt | KeyFlag.lalt | KeyFlag.ralt)) != 0;
@@ -916,112 +621,33 @@ public:
             }
             return res;
         }
-        /// ditto
-        void textFlags(TextFlag value)
-        {
-            setProperty!"_textFlags" = value;
-        }
-        private void textFlags_effect(TextFlag newValue, TextFlag oldValue)
-        {
-            bool oldHotkeys = (oldValue & TextFlag.hotkeys) != 0;
-            bool newHotkeys = (newValue & TextFlag.hotkeys) != 0;
-            handleFontChanged();
-            if (oldHotkeys != newHotkeys)
-                requestLayout();
-            else
-                invalidate();
-        }
 
-        /// Font face for widget
-        string fontFace() const
-        {
-            updateStyles();
-            return _fontFace;
-        }
-        /// ditto
-        void fontFace(string value)
-        {
-            setProperty!"_fontFace" = value;
-        }
-        /// Font family for widget
-        FontFamily fontFamily() const
-        {
-            updateStyles();
-            return _fontFamily;
-        }
-        /// ditto
-        void fontFamily(FontFamily value)
-        {
-            setProperty!"_fontFamily" = value;
-        }
-        /// Font style (italic/normal) for widget
-        bool fontItalic() const
-        {
-            updateStyles();
-            return _fontStyle == FontStyle.italic;
-        }
-        /// ditto
-        void fontItalic(bool italic)
-        {
-            setProperty!"_fontStyle" = italic ? FontStyle.italic : FontStyle.normal;
-        }
         /// Font size in pixels
         int fontSize() const
         {
-            updateStyles();
-            if (!parent && (_fontSize.is_em || _fontSize.is_percent))
+            Length fs = style.fontSize;
+            if (!parent && (fs.is_em || fs.is_percent))
                 return 12;
-            int res = _fontSize.toDevice;
-            if (_fontSize.is_em)
+            int res = fs.toDevice;
+            if (fs.is_em)
                 return parent.fontSize * res / 100;
-            if (_fontSize.is_percent)
+            if (fs.is_percent)
                 return parent.fontSize * res / 10000;
             return res;
         }
-        /// ditto
-        void fontSize(Dimension value)
-        {
-            if (value == Dimension.none)
-                value = Dimension.pt(9);
-            setProperty!"_fontSize" = value;
-        }
-        /// ditto
-        void fontSize(int size)
-        {
-            fontSize = Dimension(size);
-        }
-        /// Font weight for widget
-        ushort fontWeight() const
-        {
-            updateStyles();
-            return _fontWeight;
-        }
-        /// ditto
-        void fontWeight(ushort value)
-        {
-            value = cast(ushort)clamp(value, 100, 900);
-            setProperty!"_fontWeight" = value;
-        }
-        private void fontFace_effect()
-        {
-            _font.clear();
-            handleFontChanged();
-            requestLayout();
-        }
-        private alias fontFamily_effect = fontFace_effect;
-        private alias fontStyle_effect = fontFace_effect;
-        private alias fontSize_effect = fontFace_effect;
-        private alias fontWeight_effect = fontFace_effect;
 
         /// Returns font set for widget using style or set manually
         FontRef font() const
         {
-            updateStyles();
-            Widget wt = cast(Widget)this;
-            if (!wt._font.isNull)
-                return wt._font;
-            wt._font = FontManager.instance.getFont(fontSize, fontWeight, fontItalic, fontFamily, fontFace);
-            return wt._font;
+            with (caching(this))
+            {
+                updateStyles();
+                if (!_font.isNull)
+                    return _font;
+                _font = FontManager.instance.getFont(fontSize, style.fontWeight,
+                        style.fontItalic, style.fontFamily, style.fontFace);
+                return _font;
+            }
         }
 
         /// Widget content text (override to support this)
@@ -1035,8 +661,66 @@ public:
         }
     }
 
+    /// Handle changes of style properties (e.g. invalidate)
+    void handleStyleChange(StyleProperty ptype)
+    {
+        switch (ptype) with (StyleProperty)
+        {
+        case borderTopWidth:
+            _background.border.size.top = _style.borderTopWidth;
+            break;
+        case borderRightWidth:
+            _background.border.size.right = _style.borderRightWidth;
+            break;
+        case borderBottomWidth:
+            _background.border.size.bottom = _style.borderBottomWidth;
+            break;
+        case borderLeftWidth:
+            _background.border.size.left = _style.borderLeftWidth;
+            break;
+        case borderColor:
+            _background.border.color = _style.borderColor;
+            break;
+        case backgroundColor:
+            _background.color = _style.backgroundColor;
+            break;
+        case backgroundImage:
+            _background.image = _style.backgroundImage;
+            break;
+        case boxShadow:
+            _background.shadow = _style.boxShadow;
+            break;
+        default:
+            break;
+        }
+
+        switch (ptype) with (StyleProperty)
+        {
+        case width: .. case alignment:
+        case textFlags:
+            requestLayout();
+            break;
+        case borderColor: .. case boxShadow:
+        case textAlign:
+        case alpha: .. case focusRectColor:
+            invalidate();
+            break;
+        case fontFace: .. case fontWeight:
+            _font.clear();
+            handleFontChange();
+            requestLayout();
+            break;
+        // transitionProperty
+        // transitionTimingFunction
+        // transitionDuration
+        // transitionDelay
+        default:
+            break;
+        }
+    }
+
     /// Override to handle font changes
-    protected void handleFontChanged()
+    protected void handleFontChange()
     {
     }
 
@@ -1061,39 +745,6 @@ public:
             return animations.length > 0;
         }
 
-        /// Check whether the widget can make transition for a property
-        bool hasTransitionFor(string property) const
-        {
-            if (_transitionTimingFunction is null || _transitionDuration <= 0)
-                return false;
-            if (_transitionProperty == "all" || _transitionProperty == property)
-                return true;
-
-            if (_transitionProperty == "padding")
-                return property == "padding-top" || property == "padding-right" ||
-                       property == "padding-bottom" || property == "padding-left";
-
-            if (_transitionProperty == "border-width")
-                return property == "border-top-width" || property == "border-right-width" ||
-                       property == "border-bottom-width" || property == "border-left-width";
-
-            if (_transitionProperty == "border")
-                return property == "border-top-width" || property == "border-right-width" ||
-                       property == "border-bottom-width" || property == "border-left-width" ||
-                       property == "border-color";
-
-            if (_transitionProperty == "background")
-                return property == "background-color";
-
-            return false;
-        }
-        /// Experimental API
-        protected auto transitionDuration() const { return _transitionDuration; }
-        /// Experimental API
-        protected auto transitionTimingFunction() const { return _transitionTimingFunction; }
-        /// Experimental API
-        protected auto transitionDelay() const { return _transitionDelay; }
-
         /// Get current widget full box in pixels (computed and set in `layout`)
         ref const(Box) box() const { return _box; }
         /// Set widget box value and indicate that layout process is done (for usage in subclass' `layout`)
@@ -1105,107 +756,6 @@ public:
         }
         /// Get current widget box without padding and borders (computed and set in `layout`)
         ref const(Box) innerBox() const { return _innerBox; }
-
-        /// Widget natural (preferred) width (SIZE_UNSPECIFIED if not set)
-        int width() const
-        {
-            updateStyles();
-            return _width.toDevice;
-        }
-        /// ditto
-        void width(Dimension value)
-        {
-            setProperty!"_width" = value;
-        }
-        /// ditto
-        void width(int value)
-        {
-            width = Dimension(value);
-        }
-        /// Widget natural (preferred) height (SIZE_UNSPECIFIED if not set)
-        int height() const
-        {
-            updateStyles();
-            return _height.toDevice;
-        }
-        /// ditto
-        void height(Dimension value)
-        {
-            setProperty!"_height" = value;
-        }
-        /// ditto
-        void height(int value)
-        {
-            height = Dimension(value);
-        }
-        /// Min width style constraint (0, Dimension.zero or Dimension.none for no constraint)
-        int minWidth() const
-        {
-            updateStyles();
-            return _minWidth.toDevice;
-        }
-        /// ditto
-        void minWidth(Dimension value)
-        {
-            if (value == Dimension.none)
-                value = Dimension.zero;
-            setProperty!"_minWidth" = value;
-        }
-        /// ditto
-        void minWidth(int value) // TODO: clamp
-        {
-            minWidth = Dimension(value);
-        }
-        /// Max width style constraint (SIZE_UNSPECIFIED or Dimension.none if no constraint)
-        int maxWidth() const
-        {
-            updateStyles();
-            return _maxWidth.toDevice;
-        }
-        /// ditto
-        void maxWidth(Dimension value)
-        {
-            setProperty!"_maxWidth" = value;
-        }
-        /// ditto
-        void maxWidth(int value)
-        {
-            maxWidth = Dimension(value);
-        }
-        /// Min height style constraint (0, Dimension.zero or Dimension.none for no constraint)
-        int minHeight() const
-        {
-            updateStyles();
-            return _minHeight.toDevice;
-        }
-        /// ditto
-        void minHeight(Dimension value)
-        {
-            if (value == Dimension.none)
-                value = Dimension.zero;
-            setProperty!"_minHeight" = value;
-        }
-        /// ditto
-        void minHeight(int value)
-        {
-            minHeight = Dimension(value);
-        }
-        /// Max height style constraint (SIZE_UNSPECIFIED or Dimension.none if no constraint)
-        int maxHeight() const
-        {
-            updateStyles();
-            return _maxHeight.toDevice;
-        }
-        /// ditto
-        void maxHeight(Dimension value)
-        {
-            setProperty!"_maxHeight" = value;
-        }
-        /// ditto
-        void maxHeight(int value)
-        {
-            maxHeight = Dimension(value);
-        }
 
         /// Widget visibility (visible, hidden, gone)
         Visibility visibility() const { return _visibility; }
@@ -1229,18 +779,18 @@ public:
     }
 
     /// Experimental API
-    protected bool hasAnimation(string name)
+    bool hasAnimation(string name)
     {
         return (name in animations) !is null;
     }
     /// Experimental API
-    protected void addAnimation(string name, long duration, void delegate(double) handler)
+    void addAnimation(string name, long duration, void delegate(double) handler)
     {
         assert(name && duration > 0 && handler);
         animations[name] = Animation(duration * ONE_SECOND / 1000, handler);
     }
     /// Experimental API
-    protected void cancelAnimation(string name)
+    void cancelAnimation(string name)
     {
         animations.remove(name);
     }
@@ -2080,13 +1630,13 @@ public:
     /// Helper function: apply padding and min-max style properties to boundaries
     protected void applyStyle(ref Boundaries bs)
     {
-        const Size p = padding.size;
-        bs.min.w = max(bs.min.w, minWidth);
-        bs.min.h = max(bs.min.h, minHeight);
-        bs.max.w = max(min(bs.max.w + p.w, maxWidth), bs.min.w);
-        bs.max.h = max(min(bs.max.h + p.h, maxHeight), bs.min.h);
-        const w = width;
-        const h = height;
+        const Size p = padding.size; // updates style
+        bs.min.w = max(bs.min.w, _style.minWidth);
+        bs.min.h = max(bs.min.h, _style.minHeight);
+        bs.max.w = max(min(bs.max.w + p.w, _style.maxWidth), bs.min.w);
+        bs.max.h = max(min(bs.max.h + p.h, _style.maxHeight), bs.min.h);
+        const w = _style.width;
+        const h = _style.height;
         if (w != SIZE_UNSPECIFIED!int)
             bs.nat.w = w;
         else
@@ -2130,7 +1680,7 @@ public:
             return;
 
         Box b = _box;
-        auto saver = ClipRectSaver(buf, b, alpha);
+        auto saver = ClipRectSaver(buf, b, style.alpha);
 
         auto bg = background;
         bg.drawTo(buf, b);
@@ -2145,7 +1695,7 @@ public:
     /// Draw focus rectangle, if enabled in styles
     void drawFocusRect(DrawBuf buf)
     {
-        Color[1] cs = [focusRectColor];
+        Color[1] cs = [style.focusRectColor];
         if (cs[0] != Color.transparent)
         {
             Box b = _box;
@@ -2507,7 +2057,7 @@ class WidgetGroupDefaultDrawing : WidgetGroup
 
         super.onDraw(buf);
         Box b = _innerBox;
-        auto saver = ClipRectSaver(buf, b, alpha);
+        auto saver = ClipRectSaver(buf, b, style.alpha);
         foreach (widget; _children)
         {
             widget.onDraw(buf);
@@ -2644,173 +2194,6 @@ struct AnimationHelper
     @property bool finished() const
     {
         return _timeElapsed >= _maxInterval;
-    }
-}
-
-mixin template SupportCSS(BaseClass = Widget)
-{
-    import beamui.style.style : Style;
-
-    static if (is(typeof(this) == BaseClass))
-    {
-        /// Resolve style cascading and update all properties
-        protected void recomputeStyle(Style[] chain)
-        {
-            recomputeStyleImpl(chain);
-        }
-
-        /// This is a bitmap that indicates which properties are overriden by the user
-        private bool[string] ownProperties;
-
-        protected void ownProperty(string name)
-        {
-            ownProperties[name] = true;
-        }
-
-        protected bool isOwned(string property)
-        {
-            return ownProperties.get(property, false);
-        }
-    }
-    else
-    {
-        override protected void recomputeStyle(Style[] chain)
-        {
-            super.recomputeStyle(chain);
-            recomputeStyleImpl(chain);
-        }
-    }
-
-    private void recomputeStyleImpl(Style[] chain)
-    {
-        import std.array : split;
-        import std.traits : getUDAs;
-
-        alias This = typeof(this);
-
-        // explode shorthands first
-        static if (__traits(hasMember, This, "shorthandsForCSS"))
-        {
-            import std.meta : AliasSeq;
-
-            alias shorthands = AliasSeq!(__traits(getAttributes, shorthandsForCSS));
-            static if (shorthands.length > 0)
-            {
-                foreach_reverse (st; chain)
-                {
-                    static foreach (uda; shorthands)
-                    {
-                        st.explode!uda();
-                    }
-                }
-            }
-        }
-
-        static if (is(This == struct))
-        {
-            static This def;
-        }
-        // iterate through all properties
-        static foreach (field; This.tupleof)
-        {{
-            alias udas = getUDAs!(field, forCSS);
-            static if (udas.length > 0) // filter out
-            {
-                enum string var = __traits(identifier, field); // _smth
-                // do nothing if property is overriden
-                if (!isOwned(var))
-                {
-                    // find nearest written property in style chain
-                    bool set;
-                    foreach_reverse (st; chain)
-                    {
-                        if (auto p = st.peek!(typeof(field), udas[0].specialType)(udas[0].name))
-                        {
-                            setProperty!var(*p, false);
-                            set = true;
-                            break;
-                        }
-                    }
-                    if (!set)
-                    {
-                        // if nothing there - return value to its default
-                        // there is segfault with struct initializers, so do it simpler with static struct
-                        static if (!is(This == struct))
-                        {
-                            This def = cast(This)typeid(This).initializer.ptr;
-                        }
-                        setProperty!var(mixin("def." ~ var), false);
-                    }
-                }
-            }
-        }}
-    }
-
-    /// Set a property value, taking transitions into account
-    private void setProperty(string var, T)(T newValue, bool fromOutside = true)
-    {
-        import std.meta : Alias;
-        import std.traits : getUDAs, hasUDA, isMutable, isSomeFunction;
-
-        alias field = Alias!(mixin(var));
-        static assert(isMutable!(typeof(field)), "Should be a mutable field: " ~ var);
-        static assert(!isSomeFunction!field, "Should be a field: " ~ var);
-        static assert(hasUDA!(field, forCSS), "The field " ~ var ~ " is not for CSS");
-
-        enum name = var[0] == '_' ? var[1 .. $] : var;
-        enum s0 = name ~ "_effect();";
-        enum s1 = name ~ "_effect(newValue);";
-        enum s2 = name ~ "_effect(newValue, oldValue);";
-        enum sideEffects =
-            __traits(compiles, { mixin(s2); }) ? s2 :
-            __traits(compiles, { mixin(s1); }) ? s1 :
-            __traits(compiles, { mixin(s0); }) ? s0 :
-            "";
-
-        enum bool isAnimatable = hasUDA!(field, animatable);
-
-        if (fromOutside)
-            ownProperty(var);
-
-        T oldValue = field;
-        // do nothing if changed nothing
-        if (oldValue is newValue)
-        {
-            static if (isAnimatable)
-            {
-                // cancel possible animation
-                if (hasAnimation(var))
-                    cancelAnimation(var);
-            }
-            return;
-        }
-        // check animation
-        static if (isAnimatable)
-        {
-            string cssName = getUDAs!(field, forCSS)[0].name;
-            if (hasTransitionFor(cssName))
-            {
-                animateProperty!(var, sideEffects)(newValue);
-                return;
-            }
-        }
-        // set it directly otherwise
-        field = newValue;
-        mixin(sideEffects);
-    }
-
-    private void animateProperty(string var, string sideEffects, T)(T ending)
-    {
-        import beamui.core.animations : Transition;
-
-        T starting = mixin(var);
-        auto tr = new Transition(transitionDuration, transitionTimingFunction, transitionDelay);
-        addAnimation(var, tr.duration, (double t) {
-            T oldValue = mixin(var);
-            T newValue = tr.mix(starting, ending, t);
-            mixin(var) = newValue;
-            mixin(sideEffects);
-        });
     }
 }
 

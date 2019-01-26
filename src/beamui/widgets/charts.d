@@ -45,7 +45,7 @@ class SimpleBarChart : Widget
         _axisX.arrowSize = 1;
         this.title = title ? title : tr("New chart");
         _minDescSizeTester.str = "aaaaaaaaaa";
-        handleFontChanged();
+        handleFontChange();
     }
 
     struct BarData
@@ -247,7 +247,7 @@ class SimpleBarChart : Widget
         }
     }
 
-    override protected void handleFontChanged()
+    override protected void handleFontChange()
     {
         Font fnt = font.get;
         _title.style.font = fnt;
@@ -358,7 +358,7 @@ class SimpleBarChart : Widget
 
         const b = innerBox;
 
-        auto saver = ClipRectSaver(buf, b, alpha);
+        auto saver = ClipRectSaver(buf, b, style.alpha);
 
         int x1 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength;
         int x2 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength + _axisY.thickness +
@@ -371,7 +371,7 @@ class SimpleBarChart : Widget
         if (_showTitle)
         {
             // align to the center of chart view
-            _title.style.color = textColor;
+            _title.style.color = style.textColor;
             _title.draw(buf, Point(x1, b.y), x2 - x1, TextAlign.center);
         }
 
@@ -406,7 +406,7 @@ class SimpleBarChart : Widget
                     y2 + _axisX.segmentTagLength), chartSegmentTagColor);
 
             // draw x axis description
-            bar.title.style.color = textColor;
+            bar.title.style.color = style.textColor;
             int yoffset = (_axisX.maxDescriptionSize.h + bar.title.size.h) / 2;
             bar.title.draw(buf, Point(firstBarX, b.y + b.h - yoffset), _barWidth, TextAlign.center);
 
@@ -427,8 +427,8 @@ class SimpleBarChart : Widget
         buf.drawLine(Point(horTagStart, yAvg), Point(horTagStart + _axisY.segmentTagLength, yAvg),
                      chartSegmentTagColor);
 
-        _axisYMaxValueDesc.style.color = textColor;
-        _axisYAvgValueDesc.style.color = textColor;
+        _axisYMaxValueDesc.style.color = style.textColor;
+        _axisYAvgValueDesc.style.color = style.textColor;
         _axisYMaxValueDesc.draw(buf, Point(b.x, yMax - _axisY.maxDescriptionSize.h / 2), axisYWidth, TextAlign.end);
         _axisYAvgValueDesc.draw(buf, Point(b.x, yAvg - _axisY.maxDescriptionSize.h / 2), axisYWidth, TextAlign.end);
     }
@@ -446,6 +446,6 @@ class SimpleBarChart : Widget
     override void onThemeChanged()
     {
         super.onThemeChanged();
-        handleFontChanged();
+        handleFontChange();
     }
 }

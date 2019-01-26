@@ -39,11 +39,11 @@ int main()
 
     // using "with" statement for readability
     with (pane) {
-        minWidth = 200;
-        padding = Insets(15);
+        style.minWidth = 200;
+        style.padding = Insets(15);
         add(header, ed1, ed2, check, line);
         with (header) {
-            fontSize = 18;
+            style.fontSize = 18;
         }
         with (line) {
             // let the buttons fill horizontal space

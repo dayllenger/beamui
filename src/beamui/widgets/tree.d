@@ -530,8 +530,8 @@ class TreeItemWidget : Row
         {
             _indent = new Widget("tree-item-indent");
             int w = icount * font.size * 2;
-            _indent.minWidth = w;
-            _indent.maxWidth = w;
+            _indent.style.minWidth = w;
+            _indent.style.maxWidth = w;
         }
         if (_item.canCollapse)
         {

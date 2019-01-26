@@ -83,7 +83,7 @@ class ImageWidget : Widget
             return;
 
         super.onDraw(buf);
-        const saver = ClipRectSaver(buf, box, alpha);
+        const saver = ClipRectSaver(buf, box, style.alpha);
         Box b = innerBox;
         DrawableRef img = _drawable;
         if (!img.isNull)
@@ -177,69 +177,6 @@ class Button : LinearLayout, ActionHolder
             else
                 _label.text = s;
             requestLayout();
-        }
-
-        Color textColor() const
-        {
-            return _label ? _label.textColor : Color(0x0);
-        }
-        void textColor(string colorString)
-        {
-            _label.maybe.textColor(colorString);
-        }
-        void textColor(Color value)
-        {
-            _label.maybe.textColor(value);
-        }
-
-        string fontFace() const
-        {
-            return _label ? _label.fontFace : null;
-        }
-        void fontFace(string face)
-        {
-            _label.maybe.fontFace(face);
-        }
-
-        FontFamily fontFamily() const
-        {
-            return _label ? _label.fontFamily : FontFamily.unspecified;
-        }
-        void fontFamily(FontFamily family)
-        {
-            _label.maybe.fontFamily(family);
-        }
-
-        bool fontItalic() const
-        {
-            return _label ? _label.fontItalic : false;
-        }
-        void fontItalic(bool italic)
-        {
-            _label.maybe.fontItalic(italic);
-        }
-
-        int fontSize() const
-        {
-            return _label ? _label.fontSize : 0;
-        }
-        void fontSize(int size)
-        {
-            _label.maybe.fontSize(size);
-        }
-
-        ushort fontWeight() const
-        {
-            return _label ? _label.fontWeight : 0;
-        }
-        void fontWeight(ushort weight)
-        {
-            _label.maybe.fontWeight(weight);
-        }
-
-        FontRef font() const
-        {
-            return _label ? _label.font : FontRef.init;
         }
     }
 
@@ -356,7 +293,7 @@ class SwitchButton : Widget
             return;
 
         Box b = box;
-        auto saver = ClipRectSaver(buf, b, alpha);
+        auto saver = ClipRectSaver(buf, b, style.alpha);
 
         auto bg = background;
         bg.drawTo(buf, b);
@@ -388,7 +325,7 @@ class CheckBox : LinearLayout
         add(_icon);
         add(_label).setFillHeight(false);
         if (!labelText)
-            spacing = 0;
+            _label.visibility = Visibility.gone;
         clickable = true;
         focusable = true;
         trackHover = true;
@@ -465,7 +402,7 @@ class CanvasWidget : Widget
             return;
 
         super.onDraw(buf);
-        const saver = ClipRectSaver(buf, box, alpha);
+        const saver = ClipRectSaver(buf, box, style.alpha);
         doDraw(buf, innerBox);
     }
 }

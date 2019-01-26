@@ -2122,7 +2122,7 @@ class StringGridWidget : StringGridWidgetBase
         //if (sz.h < b.h)
         //    applyAlign(b, sz, ha, Align.vcenter);
         int offset = BACKEND_CONSOLE ? 0 : 1;
-        fnt.drawText(buf, b.x + offset, b.y + offset, txt, textColor);
+        fnt.drawText(buf, b.x + offset, b.y + offset, txt, style.textColor);
     }
 
     override protected void drawHeaderCell(DrawBuf buf, Box b, int col, int row)
@@ -2147,7 +2147,7 @@ class StringGridWidget : StringGridWidgetBase
         //    ha = Align.hcenter;
         applyAlign(b, sz, ha, Align.vcenter);
         int offset = BACKEND_CONSOLE ? 0 : 1;
-        Color cl = textColor;
+        Color cl = style.textColor;
         cl = currentTheme.getColor("grid_cell_text_header", cl);
         fnt.drawText(buf, b.x + offset, b.y + offset, txt, cl);
     }
