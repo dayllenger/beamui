@@ -17,6 +17,7 @@ import beamui.graphics.text : TextAlign;
 import beamui.style.style;
 import beamui.style.types;
 import beamui.widgets.widget : Widget;
+debug (styles) import beamui.core.logger;
 
 enum StyleProperty
 {
@@ -450,6 +451,9 @@ struct ComputedStyle
     /// Resolve style cascading and inheritance, update all properties
     void recompute(Style[] chain)
     {
+        debug (styles)
+            Log.d("--- Recomputing style for ", typeid(widget), ", id: ", widget.id, " ---");
+
         // explode shorthands first
         foreach_reverse (st; chain)
         {
@@ -521,6 +525,9 @@ struct ComputedStyle
                     setProperty!name(mixin(`defaults._` ~ name), false);
             }
         }}
+
+        debug (styles)
+            Log.d("--- End style recomputing ---");
     }
 
     private bool isInherited(StyleProperty ptype, bool set)

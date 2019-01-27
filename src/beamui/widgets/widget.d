@@ -385,23 +385,23 @@ public:
         }
     }
 
+    private Style[] tmpchain;
     /// Get a style chain for this widget from current theme, least specific styles first
-    Style[] selectStyleChain() const
+    Style[] selectStyleChain()
     {
-        static Style[] chain;
         size_t count;
         foreach (style; currentTheme.styles)
         {
             if (matchSelector(style.selector))
             {
-                if (chain.length <= count)
-                    chain.length += 4;
-                chain[count] = style;
+                if (tmpchain.length <= count)
+                    tmpchain.length += 4;
+                tmpchain[count] = style;
                 count++;
             }
         }
-        sort(chain[0 .. count]);
-        return chain[0 .. count];
+        sort(tmpchain[0 .. count]);
+        return tmpchain[0 .. count];
     }
 
     /// Match this widget with selector
@@ -1911,6 +1911,7 @@ public:
     @property void parent(Widget parent)
     {
         _parent = parent;
+        invalidateStyles();
     }
     /// Returns window (if widget or its parent is attached to window)
     @property Window window() const

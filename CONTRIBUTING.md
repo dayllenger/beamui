@@ -97,9 +97,6 @@ This will activate debug constant only in that module and won't rebuild everythi
 ### Common
 ```
 resalloc
-FileFormats
-FontResources
-focus
 ```
 
 ### Platforms
@@ -122,4 +119,12 @@ lists
 menus
 scrollbars
 trees
+```
+
+### Misc
+```
+FileFormats
+FontResources
+focus
+styles
 ```

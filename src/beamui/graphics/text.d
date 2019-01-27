@@ -462,15 +462,27 @@ struct PlainText
         int previousWrapWidth = -1;
     }
 
+    private bool needToMeasure() const
+    {
+        if (style.font !is oldStyle.font || style.tabSize != oldStyle.tabSize ||
+            !!(style.flags & TextFlag.hotkeys) != !!(oldStyle.flags & TextFlag.hotkeys))
+                return true;
+        foreach (ref line; _lines.data)
+            if (line.needToMeasure)
+                return true;
+        return false;
+    }
+
     /// Measure multiline text during layout
     void measure()
     {
-        const bool force = style.font !is oldStyle.font || style.tabSize != oldStyle.tabSize ||
-            !!(style.flags & TextFlag.hotkeys) != !!(oldStyle.flags & TextFlag.hotkeys);
+        if (!needToMeasure)
+            return;
+
         Size sz;
         foreach (ref line; _lines.data)
         {
-            if (force || line.needToMeasure)
+            if (line.needToMeasure)
                 line.measure(style);
             sz.w = max(sz.w, line.size.w);
             sz.h += line.size.h;
@@ -487,12 +499,12 @@ struct PlainText
     /// Wrap lines within a width. Measures, if needed
     void wrapLines(int width)
     {
-        measure();
         if (!needRewrap(width))
             return;
 
-        Size sz;
+        measure();
         _wrappedLines.clear();
+        Size sz;
         foreach (ref line; _lines.data)
         {
             TextLine[] ls = line.wrap(width);
