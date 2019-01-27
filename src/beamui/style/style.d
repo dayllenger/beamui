@@ -37,6 +37,9 @@ final class Style
         /// Raw properties right from CSS parser
         CSS.Token[][string] rawProperties;
 
+        enum Meta { inherit, initial }
+        Meta[string] metaProperties;
+
         debug static __gshared int _instanceCount;
     }
 
@@ -67,6 +70,24 @@ final class Style
         debug _instanceCount--;
         debug (resalloc)
             Log.d("Destroyed style, count: ", _instanceCount);
+    }
+
+    /// Returns true whether CSS property is set to `inherit`
+    bool isInherited(string name)
+    {
+        if (auto p = name in metaProperties)
+            return *p == Meta.inherit;
+        else
+            return false;
+    }
+
+    /// Returns true whether CSS property is set to `initial`
+    bool isInitial(string name)
+    {
+        if (auto p = name in metaProperties)
+            return *p == Meta.initial;
+        else
+            return false;
     }
 
     /// Try to find a property in this style by exact type and CSS name
@@ -122,6 +143,15 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.topWidth] = *p;
+            metaProperties[sh.rightWidth] = *p;
+            metaProperties[sh.bottomWidth] = *p;
+            metaProperties[sh.leftWidth] = *p;
+            metaProperties[sh.color] = *p;
+            metaProperties.remove(sh.name);
+        }
     }
     /// Find a shorthand drawable (background, usually) property, split it into components and decode
     void explode(ShorthandDrawable sh)
@@ -136,6 +166,12 @@ final class Style
                 tryToSet(sh.image, Variant(image));
             }
             rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.color] = *p;
+            metaProperties[sh.image] = *p;
+            metaProperties.remove(sh.name);
         }
     }
     /// Find a shorthand insets (margin, padding, border-width) property, split it into components and decode
@@ -153,6 +189,14 @@ final class Style
                 tryToSet(sh.left, Variant(list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1]));
             }
             rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.top] = *p;
+            metaProperties[sh.right] = *p;
+            metaProperties[sh.bottom] = *p;
+            metaProperties[sh.left] = *p;
+            metaProperties.remove(sh.name);
         }
     }
     /// Find a shorthand transition property, split it into components and decode
@@ -173,6 +217,14 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.property] = *p;
+            metaProperties[sh.timingFunction] = *p;
+            metaProperties[sh.duration] = *p;
+            metaProperties[sh.delay] = *p;
+            metaProperties.remove(sh.name);
+        }
     }
 
     private void tryToSet(string name, lazy Variant v)
@@ -183,6 +235,18 @@ final class Style
 
     package void setRawProperty(string name, CSS.Token[] tokens)
     {
+        assert(tokens.length > 0);
+
+        if (tokens.length == 1 && tokens[0].type == CSS.TokenType.ident)
+        {
+            switch (tokens[0].text)
+            {
+                case "inherit": metaProperties[name] = Meta.inherit; return;
+                case "initial": metaProperties[name] = Meta.initial; return;
+                default: break;
+            }
+        }
+        // usual value
         rawProperties[name] = tokens;
     }
 

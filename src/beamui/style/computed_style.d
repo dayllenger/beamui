@@ -67,6 +67,9 @@ enum StyleProperty
     transitionDelay,
 }
 
+/// Provides default style values
+private static ComputedStyle defaults;
+
 struct ComputedStyle
 {
     @property // written mostly at single line for compactness
@@ -358,8 +361,12 @@ struct ComputedStyle
 
     private
     {
-        /// This is a bitmap that indicates which properties are overriden by the user
-        bool[StyleProperty] ownProperties;
+        struct Meta
+        {
+            bool inherit; /// Explicitly set to inherit value from parent widget
+            bool overriden; /// Overriden by user
+        }
+        Meta[StyleProperty] metadata;
 
         // layout
         Length _width = Length.none;
@@ -410,13 +417,33 @@ struct ComputedStyle
 
     ~this()
     {
-        if (ownProperties !is null)
+        if (metadata !is null)
         {
-            if (isOwned(StyleProperty.boxShadow))
+            if (isOverriden(StyleProperty.boxShadow))
                 eliminate(_boxShadow);
-            if (isOwned(StyleProperty.backgroundImage))
+            if (isOverriden(StyleProperty.backgroundImage))
                 eliminate(_backgroundImage);
-            ownProperties.clear();
+            metadata.clear();
+        }
+    }
+
+    /// Set the property to inherit its value from parent widget
+    void inherit(StyleProperty property)
+    {
+        metadata[property] = Meta(true, true); // set by user
+    }
+
+    /// Set the property to its initial value
+    void initialize(StyleProperty property)
+    {
+        final switch (property)
+        {
+            static foreach (name; __traits(allMembers, StyleProperty))
+            {
+                case mixin(`StyleProperty.` ~ name):
+                    setProperty!name = mixin(`defaults._` ~ name); // set by user
+                    return;
+            }
         }
     }
 
@@ -436,96 +463,85 @@ struct ComputedStyle
             st.explode(ShorthandTransition("transition", "transition-property", "transition-duration",
                     "transition-timing-function", "transition-delay"));
         }
+        /// iterate through all properties
+        static foreach (name; __traits(allMembers, StyleProperty))
+        {{
+            alias T = typeof(mixin(`_` ~ name));
+            enum ptype = mixin(`StyleProperty.` ~ name);
+            enum specialCSSType = getSpecialCSSType(ptype);
+            enum string cssname = getCSSName(ptype);
 
-        static ComputedStyle defaults;
-
-        static string setup(string name, string type, string specialCSSType = "SpecialCSSType.none")
-        {
-            return q{
+            bool set = isOverriden(ptype);
+            // skip if property is overriden
+            if (!set)
             {
-                enum ptype = StyleProperty.%s;
-                // do nothing if property is overriden
-                if (!isOwned(ptype))
+                bool inh;
+                // find nearest written property in style chain
+                foreach_reverse (st; chain)
                 {
-                    // find nearest written property in style chain
-                    bool set;
-                    foreach_reverse (st; chain)
+                    if (st.isInherited(cssname))
                     {
-                        enum string cssname = getCSSName(ptype);
-                        if (auto p = st.peek!(%s, %s)(cssname))
-                        {
-                            setProperty!"%s"(*p, false);
-                            set = true;
-                            break;
-                        }
+                        inh = true;
+                        set = true;
+                        break;
                     }
-                    // now it is "cascaded value" in CSS slang
-                    if (!set)
+                    if (st.isInitial(cssname))
                     {
-                        // if nothing there - return value to defaults
-                        // there is segfault with struct initializers, so it's simpler to go with static var
-                        setProperty!"%s"(defaults._%s, false);
+                        setProperty!name(mixin(`defaults._` ~ name), false);
+                        set = true;
+                        break;
                     }
-                    // now it is "specified value"
+                    if (auto p = st.peek!(T, specialCSSType)(cssname))
+                    {
+                        setProperty!name(*p, false);
+                        set = true;
+                        break;
+                    }
+                }
+                // if nothing there - return value to defaults
+                if (!set)
+                {
+                    setProperty!name(mixin(`defaults._` ~ name), false);
+                }
+                // set/reset 'inherit' flag
+                if (inh)
+                    metadata[ptype] = Meta(true, false);
+                else
+                {
+                    if (auto p = ptype in metadata)
+                        p.inherit = false;
                 }
             }
-            }.format(name, type, specialCSSType, name, name, name);
-        }
-
-        mixin(setup("width", "Length"));
-        mixin(setup("height", "Length"));
-        mixin(setup("minWidth", "Length"));
-        mixin(setup("maxWidth", "Length"));
-        mixin(setup("minHeight", "Length"));
-        mixin(setup("maxHeight", "Length"));
-        mixin(setup("paddingTop", "Length"));
-        mixin(setup("paddingRight", "Length"));
-        mixin(setup("paddingBottom", "Length"));
-        mixin(setup("paddingLeft", "Length"));
-        mixin(setup("borderTopWidth", "Length"));
-        mixin(setup("borderRightWidth", "Length"));
-        mixin(setup("borderBottomWidth", "Length"));
-        mixin(setup("borderLeftWidth", "Length"));
-        mixin(setup("marginTop", "Length"));
-        mixin(setup("marginRight", "Length"));
-        mixin(setup("marginBottom", "Length"));
-        mixin(setup("marginLeft", "Length"));
-        mixin(setup("alignment", "Align"));
-        mixin(setup("spacing", "int"));
-        mixin(setup("rowSpacing", "int"));
-        mixin(setup("columnSpacing", "int"));
-
-        mixin(setup("borderColor", "Color"));
-        mixin(setup("backgroundColor", "Color"));
-        mixin(setup("backgroundImage", "Drawable", "SpecialCSSType.image"));
-        mixin(setup("boxShadow", "BoxShadowDrawable"));
-
-        mixin(setup("fontFace", "string"));
-        mixin(setup("fontFamily", "FontFamily"));
-        mixin(setup("fontSize", "Length"));
-        mixin(setup("fontStyle", "FontStyle"));
-        mixin(setup("fontWeight", "ushort", "SpecialCSSType.fontWeight"));
-        mixin(setup("textFlags", "TextFlag"));
-        mixin(setup("textAlign", "TextAlign"));
-
-        mixin(setup("alpha", "ubyte", "SpecialCSSType.opacity"));
-        mixin(setup("textColor", "Color"));
-        mixin(setup("focusRectColor", "Color"));
-
-        mixin(setup("transitionProperty", "string", "SpecialCSSType.transitionProperty"));
-        mixin(setup("transitionTimingFunction", "TimingFunction"));
-        mixin(setup("transitionDuration", "uint", "SpecialCSSType.time"));
-        mixin(setup("transitionDelay", "uint", "SpecialCSSType.time"));
+            // resolve inherited properties
+            if (isInherited(ptype, set))
+            {
+                if (auto p = widget.parent)
+                    setProperty!name(mixin(`p.style._` ~ name), false);
+                else
+                    setProperty!name(mixin(`defaults._` ~ name), false);
+            }
+        }}
     }
 
-    private void ownProperty(StyleProperty ptype)
+    private bool isInherited(StyleProperty ptype, bool set)
     {
-        ownProperties[ptype] = true;
+        if (set) // then explicit
+            return metadata.get(ptype, Meta()).inherit;
+        else
+            return inherited(ptype);
     }
 
-    private bool isOwned(StyleProperty ptype)
+    private bool isOverriden(StyleProperty ptype)
     {
-        return (ptype in ownProperties) !is null;
+        return metadata.get(ptype, Meta()).overriden;
+    }
+
+    private void overrideProperty(StyleProperty ptype)
+    {
+        if (auto p = ptype in metadata)
+            p.overriden = true;
+        else
+            metadata[ptype] = Meta(false, true);
     }
 
     /// Check whether the style can make transition for a CSS property
@@ -561,10 +577,10 @@ struct ComputedStyle
         import std.meta : Alias;
 
         alias field = Alias!(mixin("_" ~ name));
-        enum ptype = __traits(getMember, StyleProperty, name);
+        enum ptype = mixin(`StyleProperty.` ~ name);
 
         if (byUser)
-            ownProperty(ptype);
+            overrideProperty(ptype);
 
         // do nothing if changed nothing
         if (field is newValue)
@@ -598,7 +614,7 @@ struct ComputedStyle
         import beamui.core.animations : Transition;
 
         alias field = Alias!(mixin("_" ~ name));
-        enum ptype = __traits(getMember, StyleProperty, name);
+        enum ptype = mixin(`StyleProperty.` ~ name);
 
         T starting = field;
         auto tr = new Transition(_transitionDuration, _transitionTimingFunction, _transitionDelay);
@@ -659,6 +675,20 @@ string getCSSName(StyleProperty ptype)
     }
 }
 
+private SpecialCSSType getSpecialCSSType(StyleProperty ptype)
+{
+    switch (ptype) with (StyleProperty)
+    {
+        case backgroundImage:    return SpecialCSSType.image;
+        case fontWeight:         return SpecialCSSType.fontWeight;
+        case alpha:              return SpecialCSSType.opacity;
+        case transitionProperty: return SpecialCSSType.transitionProperty;
+        case transitionDuration: return SpecialCSSType.time;
+        case transitionDelay:    return SpecialCSSType.time;
+        default: return SpecialCSSType.none;
+    }
+}
+
 /// Returns true whether the property can be animated
 bool isAnimatable(StyleProperty ptype)
 {
@@ -671,6 +701,20 @@ bool isAnimatable(StyleProperty ptype)
         case alpha:
         case textColor:
         case focusRectColor:
+            return true;
+        default:
+            return false;
+    }
+}
+
+/// Returns true whether the property value implicitly inherits from parent widget
+bool inherited(StyleProperty ptype)
+{
+    switch (ptype) with (StyleProperty)
+    {
+        case fontFace: .. case fontWeight:
+        case textAlign:
+        case textColor:
             return true;
         default:
             return false;
