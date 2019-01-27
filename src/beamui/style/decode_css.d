@@ -23,9 +23,9 @@ import beamui.graphics.text : TextAlign;
 import beamui.style.types;
 
 /// Decode integer property
-bool decode(Token[] tokens, out int result)
+bool decode(const Token[] tokens, out int result)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type == TokenType.number)
     {
         if (t.typeFlagInteger)
@@ -47,14 +47,14 @@ bool decode(Token[] tokens, out int result)
 }
 
 /// Decode raw string property
-bool decode(Token[] tokens, out string result)
+bool decode(const Token[] tokens, out string result)
 {
     result = tokens[0].text;
     return true;
 }
 
 /// Decode CSS token sequence like "left vcenter" to `Align` bit set
-bool decode(Token[] tokens, out Align result)
+bool decode(const Token[] tokens, out Align result)
 {
     foreach (t; tokens)
     {
@@ -82,7 +82,7 @@ bool decode(Token[] tokens, out Align result)
 }
 
 /// Decode CSS rectangle declaration to `Dimension[]`
-bool decodeInsets(Token[] tokens, out Dimension[] result)
+bool decodeInsets(const Token[] tokens, out Dimension[] result)
 {
     result.reserve(4);
     foreach (t; tokens)
@@ -114,9 +114,9 @@ bool decodeInsets(Token[] tokens, out Dimension[] result)
 }
 
 /// Decode dimension, e.g. 1px, 20%, 1.2em, or "none"
-bool decode(Token[] tokens, out Dimension result)
+bool decode(const Token[] tokens, out Dimension result)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type == TokenType.ident)
     {
         if (t.text == "none")
@@ -160,7 +160,7 @@ bool decode(Token[] tokens, out Dimension result)
 }
 
 /// Decode shortcut background property
-bool decodeBackground(Token[] tokens, out Color color, out Drawable image)
+bool decodeBackground(const(Token)[] tokens, out Color color, out Drawable image)
 {
     if (startsWithColor(tokens))
     {
@@ -178,12 +178,12 @@ bool decodeBackground(Token[] tokens, out Color color, out Drawable image)
 }
 
 /// Decode background image. This function mutates the range - skips found values
-bool decode(SpecialCSSType t : SpecialCSSType.image)(ref Token[] tokens, out Drawable result)
+bool decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)[] tokens, out Drawable result)
 {
     import beamui.core.config : BACKEND_GUI;
     import beamui.graphics.drawbuf : DrawBufRef;
 
-    Token t0 = tokens[0];
+    const t0 = tokens[0];
     // #0: none
     if (t0.type == TokenType.ident)
     {
@@ -259,9 +259,9 @@ bool decode(SpecialCSSType t : SpecialCSSType.image)(ref Token[] tokens, out Dra
 }
 
 /// Decode shortcut border property
-bool decodeBorder(Token[] tokens, out Color color, out Dimension width)
+bool decodeBorder(const Token[] tokens, out Color color, out Dimension width)
 {
-    Token t0 = tokens[0];
+    const t0 = tokens[0];
     if (t0.type == TokenType.ident && t0.text == "none")
     {
         color = Color.transparent;
@@ -282,14 +282,14 @@ bool decodeBorder(Token[] tokens, out Color color, out Dimension width)
     }
 
     // style is not implemented yet
-    Token[] rest = tokens[2 .. $];
+    const(Token)[] rest = tokens[2 .. $];
     return decode(rest, color);
 }
 
 /// Create a drawable from `box-shadow` property
-bool decode(Token[] tokens, out BoxShadowDrawable result)
+bool decode(const Token[] tokens, out BoxShadowDrawable result)
 {
-    Token t0 = tokens[0];
+    const t0 = tokens[0];
     if (t0.type == TokenType.ident && t0.text == "none")
         return true;
 
@@ -317,7 +317,7 @@ bool decode(Token[] tokens, out BoxShadowDrawable result)
         Log.fe("CSS(%s): invalid blur value", tokens[2].line);
         return false;
     }
-    Token[] rest = tokens[3 .. $];
+    const(Token)[] rest = tokens[3 .. $];
     Color color = void;
     if (!decode(rest, color))
         return false;
@@ -327,9 +327,9 @@ bool decode(Token[] tokens, out BoxShadowDrawable result)
 }
 
 /// Decode font family
-bool decode(Token[] tokens, out FontFamily result)
+bool decode(const Token[] tokens, out FontFamily result)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): font family should be an identifier, not '%s'", t.line, t.type);
@@ -351,9 +351,9 @@ bool decode(Token[] tokens, out FontFamily result)
 }
 
 /// Decode font style
-bool decode(Token[] tokens, out FontStyle result)
+bool decode(const Token[] tokens, out FontStyle result)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): font style should be an identifier, not '%s'", t.line, t.type);
@@ -372,9 +372,9 @@ bool decode(Token[] tokens, out FontStyle result)
 }
 
 /// Decode font weight
-bool decode(SpecialCSSType t : SpecialCSSType.fontWeight)(Token[] tokens, out ushort result)
+bool decode(SpecialCSSType t : SpecialCSSType.fontWeight)(const Token[] tokens, out ushort result)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type != TokenType.ident && t.type != TokenType.number)
     {
         Log.fe("CSS(%s): font weight should be an identifier or number, not '%s'", t.line, t.type);
@@ -403,7 +403,7 @@ bool decode(SpecialCSSType t : SpecialCSSType.fontWeight)(Token[] tokens, out us
 }
 
 /// Decode CSS token sequence like "hotkeys underline-hotkeys-alt" to `TextFlag` bit set
-bool decode(Token[] tokens, out TextFlag result)
+bool decode(const Token[] tokens, out TextFlag result)
 {
     foreach (t; tokens)
     {
@@ -428,9 +428,9 @@ bool decode(Token[] tokens, out TextFlag result)
 }
 
 /// Decode text alignment
-bool decode(Token[] tokens, out TextAlign result)
+bool decode(const Token[] tokens, out TextAlign result)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): text-align should be an identifier, '%s'", t.line, t.type);
@@ -450,9 +450,9 @@ bool decode(Token[] tokens, out TextAlign result)
 }
 
 /// Returns true whether token sequence starts with color property
-bool startsWithColor(Token[] tokens)
+bool startsWithColor(const Token[] tokens)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type == TokenType.hash || t.type == TokenType.ident)
         return true;
     if (t.type == TokenType.func)
@@ -465,9 +465,9 @@ bool startsWithColor(Token[] tokens)
 }
 
 /// Decode CSS color. This function mutates the range - skips found color value
-bool decode(ref Token[] tokens, out Color result)
+bool decode(ref const(Token)[] tokens, out Color result)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type == TokenType.hash)
     {
         tokens = tokens[1 .. $];
@@ -482,7 +482,7 @@ bool decode(ref Token[] tokens, out Color result)
     }
     if (t.type == TokenType.func)
     {
-        Token[] func;
+        const(Token)[] func;
         foreach (i, tok; tokens)
         {
             if (tok.type == TokenType.closeParen)
@@ -521,16 +521,16 @@ bool decode(ref Token[] tokens, out Color result)
 }
 
 /// Decode opacity
-bool decode(SpecialCSSType t : SpecialCSSType.opacity)(Token[] tokens, out ubyte result)
+bool decode(SpecialCSSType t : SpecialCSSType.opacity)(const Token[] tokens, out ubyte result)
 {
     result = opacityToAlpha(to!float(tokens[0].text));
     return true;
 }
 
 /// Decode seconds or milliseconds in CSS. Returns time in msecs.
-bool decode(SpecialCSSType t : SpecialCSSType.time)(Token[] tokens, out uint result)
+bool decode(SpecialCSSType t : SpecialCSSType.time)(const Token[] tokens, out uint result)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type == TokenType.dimension)
     {
         uint res = to!uint(t.text);
@@ -553,9 +553,9 @@ bool decode(SpecialCSSType t : SpecialCSSType.time)(Token[] tokens, out uint res
 }
 
 /// Decode name of property which is a subject of transition
-bool decode(SpecialCSSType t : SpecialCSSType.transitionProperty)(Token[] tokens, out string result)
+bool decode(SpecialCSSType t : SpecialCSSType.transitionProperty)(const Token[] tokens, out string result)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type == TokenType.ident)
     {
         result = t.text;
@@ -569,9 +569,9 @@ bool decode(SpecialCSSType t : SpecialCSSType.transitionProperty)(Token[] tokens
 }
 
 /// Decode transition timing function like linear or ease-in-out
-bool decode(Token[] tokens, out TimingFunction result)
+bool decode(const Token[] tokens, out TimingFunction result)
 {
-    Token t = tokens[0];
+    const t = tokens[0];
     if (t.type == TokenType.ident)
     {
         switch (t.text)
@@ -605,7 +605,7 @@ bool decode(Token[] tokens, out TimingFunction result)
 }
 
 /// Decode shorthand transition property
-bool decodeTransition(Token[] tokens, out string property, out TimingFunction func,
+bool decodeTransition(const Token[] tokens, out string property, out TimingFunction func,
     out uint duration, out uint delay)
 {
     if (tokens.length > 0)
@@ -623,10 +623,4 @@ bool decodeTransition(Token[] tokens, out string property, out TimingFunction fu
     if (tokens.length > 4)
         Log.fw("CSS(%s): too many values for transition", tokens[0].line);
     return true;
-}
-
-/// Unsupported type
-bool decode(T)(Token[] tokens, T result) if (is(T))
-{
-    static assert(0, "CSS does not support this type: " ~ T.stringof);
 }

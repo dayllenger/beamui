@@ -31,11 +31,11 @@ final class Style
 
     private
     {
-        Selector _selector;
+        const(Selector) _selector;
         /// Decoded properties, stored as variants
         Variant[string] properties;
         /// Raw properties right from CSS parser
-        CSS.Token[][string] rawProperties;
+        const(CSS.Token)[][string] rawProperties;
 
         enum Meta { inherit, initial }
         Meta[string] metaProperties;
@@ -44,7 +44,7 @@ final class Style
     }
 
     /// Create style with some selector
-    this(Selector selector)
+    this(const Selector selector)
     {
         _selector = selector;
         debug _instanceCount++;
@@ -96,7 +96,7 @@ final class Style
         if (auto p = name in properties)
         {
             // has property with this name, try to get with this type
-            return (*p).peek!T;
+            return p.peek!T;
         }
         else
         {
@@ -111,9 +111,8 @@ final class Style
                     bool success = decode(*p, value);
                 if (success)
                 {
-                    Variant v = Variant(value);
-                    properties[name] = v;
-                    return v.peek!T;
+                    properties[name] = Variant(value);
+                    return (name in properties).peek!T;
                 }
                 else // skip and forget
                 {
@@ -233,7 +232,7 @@ final class Style
             properties[name] = v;
     }
 
-    package void setRawProperty(string name, CSS.Token[] tokens)
+    package void setRawProperty(string name, const CSS.Token[] tokens)
     {
         assert(tokens.length > 0);
 

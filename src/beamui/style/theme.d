@@ -102,12 +102,9 @@ final class Theme
 
 private __gshared Theme _currentTheme;
 /// Current theme accessor
-@property Theme currentTheme()
-{
-    return _currentTheme;
-}
+Theme currentTheme() { return _currentTheme; }
 /// Set a new theme to be current
-@property void currentTheme(Theme theme)
+void currentTheme(Theme theme)
 {
     eliminate(_currentTheme);
     _currentTheme = theme;
@@ -135,7 +132,7 @@ Theme loadTheme(string name)
         return null;
 
     auto theme = new Theme(name);
-    auto stylesheet = CSS.createStyleSheet(src);
+    const stylesheet = CSS.createStyleSheet(src);
     loadThemeFromCSS(theme, stylesheet);
     return theme;
 }
@@ -143,11 +140,11 @@ Theme loadTheme(string name)
 /// Add style sheet rules from the CSS source to the theme
 void setStyleSheet(Theme theme, string source)
 {
-    auto stylesheet = CSS.createStyleSheet(source);
+    const stylesheet = CSS.createStyleSheet(source);
     loadThemeFromCSS(theme, stylesheet);
 }
 
-private void loadThemeFromCSS(Theme theme, CSS.StyleSheet stylesheet)
+private void loadThemeFromCSS(Theme theme, const CSS.StyleSheet stylesheet)
 {
     foreach (r; stylesheet.atRules)
     {
@@ -162,21 +159,22 @@ private void loadThemeFromCSS(Theme theme, CSS.StyleSheet stylesheet)
     }
 }
 
-private void applyAtRule(Theme theme, CSS.AtRule rule)
+private void applyAtRule(Theme theme, const CSS.AtRule rule)
 {
     import beamui.style.decode_css;
 
-    auto kw = rule.keyword;
-    auto ps = rule.properties;
+    const kw = rule.keyword;
+    const ps = rule.properties;
     assert(ps.length > 0);
 
     if (kw == "define-colors")
     {
         foreach (p; ps)
         {
+            const(CSS.Token)[] tokens = p.value;
             string id = p.name;
             Color color = void;
-            if (decode(p.value, color))
+            if (decode(tokens, color))
                 theme.setColor(id, color);
         }
     }
@@ -184,7 +182,7 @@ private void applyAtRule(Theme theme, CSS.AtRule rule)
     {
         foreach (p; ps)
         {
-            CSS.Token[] tokens = p.value;
+            const(CSS.Token)[] tokens = p.value;
             string id = p.name;
 
             // color, image, or none
@@ -206,7 +204,7 @@ private void applyAtRule(Theme theme, CSS.AtRule rule)
         Log.w("CSS: unknown at-rule keyword: ", kw);
 }
 
-private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] properties)
+private void applyRule(Theme theme, const CSS.Selector selector, const CSS.Property[] properties)
 {
     auto style = selectStyle(theme, selector);
     foreach (p; properties)
@@ -216,9 +214,9 @@ private void applyRule(Theme theme, CSS.Selector selector, CSS.Property[] proper
     }
 }
 
-private Style selectStyle(Theme theme, CSS.Selector selector)
+private Style selectStyle(Theme theme, const CSS.Selector selector)
 {
-    CSS.SelectorEntry[] es = selector.entries;
+    const(CSS.SelectorEntry)[] es = selector.entries;
     assert(es.length > 0);
     // construct selector chain
     auto sel = new Selector;
@@ -241,7 +239,7 @@ private Style selectStyle(Theme theme, CSS.Selector selector)
 
 import std.typecons : Nullable, nullable;
 // mutates entries
-private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref CSS.SelectorEntry[] entries, size_t line)
+private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref const(CSS.SelectorEntry)[] entries, size_t line)
 {
     Nullable!(Selector.Combinator) result;
 
