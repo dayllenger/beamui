@@ -833,14 +833,16 @@ WindowFrame {
     background: #f4f4f4;
 
     &::caption {
-        padding: 1px;
+        padding: 3px;
         background: #e4e4e4;
     }
 
     &::label {
         align: left vcenter;
-        padding: 3px;
-        color: #000;
+        padding: 2px;
+        color: #333;
+        font-size: 90%;
+        text-transform: uppercase;
     }
 
     &::body {

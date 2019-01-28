@@ -8,6 +8,7 @@ Authors:   dayllenger
 module beamui.graphics.text;
 
 import std.array : Appender;
+import std.uni : isAlphaNum, toLower, toUpper;
 import beamui.core.editable : TabSize;
 import beamui.core.functions : clamp, max, move;
 import beamui.core.geometry : Point, Size;
@@ -89,6 +90,7 @@ struct TextStyle
     TextDecoration decoration;
     TextHotkey hotkey;
     TextOverflow overflow;
+    TextTransform transform;
     /// Text color
     Color color;
     /// Text background color
@@ -209,7 +211,23 @@ struct TextLine
                 prevChar = 0;
                 continue; // skip '&' in hotkey when measuring
             }
-            GlyphRef glyph = font.getCharGlyph(ch);
+            // apply text transformation
+            dchar trch = ch;
+            if (style.transform == TextTransform.lowercase)
+            {
+                trch = toLower(ch);
+            }
+            else if (style.transform == TextTransform.uppercase)
+            {
+                trch = toUpper(ch);
+            }
+            else if (style.transform == TextTransform.capitalize)
+            {
+                if (!isAlphaNum(prevChar))
+                    trch = toUpper(ch);
+            }
+            // retrieve glyph
+            GlyphRef glyph = font.getCharGlyph(trch);
             pglyphs[i] = glyph;
             if (fixed)
             {
@@ -236,7 +254,7 @@ struct TextLine
                 pwidths[i] = cast(ushort)w;
                 x += w;
             }
-            prevChar = ch;
+            prevChar = trch;
         }
         _size = Size(x, font.height);
         _needToMeasure = false;
@@ -497,8 +515,9 @@ struct SingleLineText
     private bool needToMeasure() const
     {
         return line.needToMeasure || style.font !is oldStyle.font || style.tabSize != oldStyle.tabSize ||
-                style.hotkey == TextHotkey.hidden && oldStyle.hotkey == TextHotkey.ignore ||
-                style.hotkey == TextHotkey.ignore && oldStyle.hotkey == TextHotkey.hidden;
+               style.hotkey == TextHotkey.hidden && oldStyle.hotkey == TextHotkey.ignore ||
+               style.hotkey == TextHotkey.ignore && oldStyle.hotkey == TextHotkey.hidden ||
+               style.transform != oldStyle.transform;
     }
 
     /// Measure single-line text during layout
@@ -576,7 +595,8 @@ struct PlainText
     {
         if (style.font !is oldStyle.font || style.tabSize != oldStyle.tabSize ||
             style.hotkey == TextHotkey.hidden && oldStyle.hotkey == TextHotkey.ignore ||
-            style.hotkey == TextHotkey.ignore && oldStyle.hotkey == TextHotkey.hidden)
+            style.hotkey == TextHotkey.ignore && oldStyle.hotkey == TextHotkey.hidden ||
+            style.transform != oldStyle.transform)
                 return true;
         foreach (ref line; _lines.data)
             if (line.needToMeasure)

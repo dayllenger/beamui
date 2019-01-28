@@ -336,9 +336,9 @@ ProgressBar { min-width: 50px; min-height: 16px; max-height: 16px; padding: 2px;
 /* ========================================================================== winframe.d */
 WindowFrame { background: #f4f4f4; }
 
-WindowFrame::caption { padding: 1px; background: #e4e4e4; }
+WindowFrame::caption { padding: 3px; background: #e4e4e4; }
 
-WindowFrame::label { align: left vcenter; padding: 3px; color: #000; }
+WindowFrame::label { align: left vcenter; padding: 2px; color: #333; font-size: 90%; text-transform: uppercase; }
 
 WindowFrame::body { padding: 3px; }
 

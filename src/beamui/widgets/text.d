@@ -43,6 +43,39 @@ class Label : Widget
         handleFontChange();
     }
 
+    override void handleStyleChange(StyleProperty ptype)
+    {
+        super.handleStyleChange(ptype);
+
+        switch (ptype) with (StyleProperty)
+        {
+        case textAlign:
+            textobj.style.alignment = style.textAlign;
+            break;
+        case textColor:
+            textobj.style.color = style.textColor;
+            break;
+        case textDecorationColor:
+            textobj.style.decoration.color = style.textDecorationColor;
+            break;
+        case textDecorationLine:
+            textobj.style.decoration.line = style.textDecorationLine;
+            break;
+        case textDecorationStyle:
+            textobj.style.decoration.style = style.textDecorationStyle;
+            break;
+        case textOverflow:
+            textobj.style.overflow = style.textOverflow;
+            break;
+        case textTransform:
+            textobj.style.transform = style.textTransform;
+            minSizeTester.style.transform = style.textTransform;
+            break;
+        default:
+            break;
+        }
+    }
+
     override protected void handleFontChange()
     {
         Font fnt = font.get;
@@ -81,11 +114,7 @@ class Label : Widget
         Box b = innerBox;
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
-        textobj.style.color = style.textColor;
-        textobj.style.alignment = style.textAlign;
-        textobj.style.decoration = style.textDecoration;
         textobj.style.hotkey = textHotkey;
-        textobj.style.overflow = style.textOverflow;
         // align vertically to center
         Size sz = Size(b.w, textobj.size.h);
         applyAlign(b, sz, Align.unspecified, Align.vcenter);
@@ -125,6 +154,40 @@ class MultilineLabel : Widget
         handleFontChange();
     }
 
+    override void handleStyleChange(StyleProperty ptype)
+    {
+        super.handleStyleChange(ptype);
+
+        switch (ptype) with (StyleProperty)
+        {
+        case textAlign:
+            textobj.style.alignment = style.textAlign;
+            break;
+        case textColor:
+            textobj.style.color = style.textColor;
+            break;
+        case textDecorationColor:
+            textobj.style.decoration.color = style.textDecorationColor;
+            break;
+        case textDecorationLine:
+            textobj.style.decoration.line = style.textDecorationLine;
+            break;
+        case textDecorationStyle:
+            textobj.style.decoration.style = style.textDecorationStyle;
+            break;
+        case textOverflow:
+            textobj.style.overflow = style.textOverflow;
+            break;
+        case textTransform:
+            textobj.style.transform = style.textTransform;
+            minSizeTester.style.transform = style.textTransform;
+            natSizeTester.style.transform = style.textTransform;
+            break;
+        default:
+            break;
+        }
+    }
+
     override protected void handleFontChange()
     {
         Font fnt = font.get;
@@ -151,6 +214,7 @@ class MultilineLabel : Widget
 
     override Size computeNaturalSize()
     {
+        textobj.style.hotkey = textHotkey;
         natSizeTester.style.hotkey = textHotkey;
         if (textobj.lines[0].length < natSizeTester.lines[0].length)
         {
@@ -193,11 +257,7 @@ class MultilineLabel : Widget
         Box b = innerBox;
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
-        textobj.style.color = style.textColor;
-        textobj.style.alignment = style.textAlign;
-        textobj.style.decoration = style.textDecoration;
         textobj.style.hotkey = textHotkey;
-        textobj.style.overflow = style.textOverflow;
         textobj.draw(buf, b.pos, b.w);
     }
 }

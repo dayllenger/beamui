@@ -50,7 +50,7 @@ public
     import beamui.graphics.fonts;
     import beamui.graphics.images;
     import beamui.graphics.resources;
-    import beamui.graphics.text : TextAlign;
+    import beamui.graphics.text : TextAlign, TextDecoration, TextHotkey, TextOverflow, TextTransform;
     import beamui.style.theme;
     import beamui.widgets.appframe;
     import beamui.widgets.charts;
