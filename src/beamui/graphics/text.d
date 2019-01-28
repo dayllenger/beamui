@@ -44,6 +44,12 @@ struct TextDecoration
         dashed,
         wavy
     }
+    alias none = Line.none;
+    alias overline = Line.overline;
+    alias underline = Line.underline;
+    alias lineThrough = Line.lineThrough;
+    alias solid = Style.solid;
+
     Color color;
     Line line;
     Style style;
@@ -377,9 +383,14 @@ struct TextLine
         const bool hotkeys = style.hotkey != TextHotkey.ignore;
         bool hotkeyUnderline;
         const int baseline = font.baseline;
+        const bool overline = style.decoration.line == TextDecoration.Line.overline;
+        const bool lineThrough = style.decoration.line == TextDecoration.Line.lineThrough;
         const bool underline = style.decoration.line == TextDecoration.Line.underline;
-        const int underlineHeight = 1;
-        const int underlineY = pos.y + baseline + underlineHeight * 2;
+        const int decorationHeight = 1;
+        const int xheight = font.getCharGlyph('x').blackBoxY;
+        const int overlineY = pos.y;
+        const int lineThroughY = pos.y + baseline - xheight / 2 - decorationHeight;
+        const int underlineY = pos.y + baseline + decorationHeight;
 
         const bool drawEllipsis = boxWidth < lineWidth && style.overflow != TextOverflow.clip;
         GlyphRef ellipsis = font.getCharGlyph('…');
@@ -453,24 +464,28 @@ struct TextLine
                 }
             }
 
+            // draw text decoration, if exists
             if (underline || hotkeyUnderline)
             {
-                // draw underline
-                buf.fillRect(Rect(current, underlineY, pen, underlineY + underlineHeight), style.color);
+                buf.fillRect(Rect(current, underlineY, pen, underlineY + decorationHeight), style.color);
                 // turn off underline after hotkey
                 hotkeyUnderline = false;
             }
+            if (overline)
+                buf.fillRect(Rect(current, overlineY, pen, overlineY + decorationHeight), style.color);
 
             GlyphRef glyph = pglyphs[i];
-            if (!glyph) // space or tab
-                continue;
-            if (glyph.blackBoxX && glyph.blackBoxY)
+            if (glyph && glyph.blackBoxX && glyph.blackBoxY) // null if space or tab
             {
                 int gx = current + glyph.originX;
-                if (gx + glyph.correctedBlackBoxX < clip.left)
-                    continue;
-                buf.drawGlyph(gx, pos.y + baseline - glyph.originY, glyph, style.color);
+                if (gx + glyph.correctedBlackBoxX >= clip.left)
+                {
+                    buf.drawGlyph(gx, pos.y + baseline - glyph.originY, glyph, style.color);
+                }
             }
+            // line-through goes over text
+            if (lineThrough)
+                buf.fillRect(Rect(current, lineThroughY, pen, lineThroughY + decorationHeight), style.color);
         }
         if (drawEllipsis)
             buf.drawGlyph(ellipsisPos, ellipsisY, ellipsis, style.color);
