@@ -15,7 +15,6 @@ import beamui.core.logger;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
 import beamui.graphics.fonts;
-import beamui.style.types : TextFlag;
 
 /// Specifies text alignment
 enum TextAlign : ubyte
@@ -84,10 +83,11 @@ struct TextStyle
 {
     /// Font that also contains size, style, weight properties
     Font font;
-    /// Flags like underline
-    TextFlag flags;
     /// Size of the tab character in number of spaces
     TabSize tabSize;
+    TextDecoration decoration;
+    TextHotkey hotkey;
+
     /// Text color
     Color color;
     /// Text background color
@@ -178,7 +178,7 @@ struct TextLine
         const ushort fixedCharWidth = cast(ushort)font.charWidth('M');
         const int spaceWidth = fixed ? fixedCharWidth : font.spaceWidth;
         const bool useKerning = !fixed && font.allowKerning;
-        const bool hotkeys = (style.flags & TextFlag.hotkeys) != 0;
+        const bool hotkeys = style.hotkey != TextHotkey.ignore;
 
         if (_charWidths.length < len || _charWidths.length >= len * 5)
             _charWidths.length = len;
@@ -338,9 +338,10 @@ struct TextLine
         if (pos.y + font.height < clip.top || clip.bottom <= pos.y)
             return; // fully above or below clipping rectangle
 
-        const bool hotkeys = (style.flags & TextFlag.hotkeys) != 0;
+        const bool hotkeys = style.hotkey != TextHotkey.ignore;
+        bool hotkeyUnderline;
         const int baseline = font.baseline;
-        bool underline = (style.flags & TextFlag.underline) != 0;
+        const bool underline = style.decoration.line == TextDecoration.Line.underline;
         const int underlineHeight = 1;
         const int underlineY = pos.y + baseline + underlineHeight * 2;
 
@@ -351,8 +352,8 @@ struct TextLine
         {
             if (hotkeys && ch == '&')
             {
-                if ((style.flags & TextFlag.underlineHotkeys) == TextFlag.underlineHotkeys)
-                    underline = true; // turn ON underline for hotkey
+                if (style.hotkey == TextHotkey.underline)
+                    hotkeyUnderline = true; // turn ON underline for hotkey
                 continue; // skip '&' in hotkey
             }
             const ushort w = pwidths[i];
@@ -367,13 +368,12 @@ struct TextLine
             if (pen + 255 < clip.left)
                 continue; // far at left of clipping region
 
-            if (underline)
+            if (underline || hotkeyUnderline)
             {
                 // draw underline
                 buf.fillRect(Rect(current, underlineY, pen, underlineY + underlineHeight), style.color);
                 // turn off underline after hotkey
-                if (!(style.flags & TextFlag.underline))
-                    underline = false;
+                hotkeyUnderline = false;
             }
 
             if (ch == ' ' || ch == '\t')
@@ -430,7 +430,8 @@ struct SingleLineText
     private bool needToMeasure() const
     {
         return line.needToMeasure || style.font !is oldStyle.font || style.tabSize != oldStyle.tabSize ||
-                !!(style.flags & TextFlag.hotkeys) != !!(oldStyle.flags & TextFlag.hotkeys);
+                style.hotkey == TextHotkey.hidden && oldStyle.hotkey == TextHotkey.ignore ||
+                style.hotkey == TextHotkey.ignore && oldStyle.hotkey == TextHotkey.hidden;
     }
 
     /// Measure single-line text during layout
@@ -518,7 +519,8 @@ struct PlainText
     private bool needToMeasure() const
     {
         if (style.font !is oldStyle.font || style.tabSize != oldStyle.tabSize ||
-            !!(style.flags & TextFlag.hotkeys) != !!(oldStyle.flags & TextFlag.hotkeys))
+            style.hotkey == TextHotkey.hidden && oldStyle.hotkey == TextHotkey.ignore ||
+            style.hotkey == TextHotkey.ignore && oldStyle.hotkey == TextHotkey.hidden)
                 return true;
         foreach (ref line; _lines.data)
             if (line.needToMeasure)

@@ -43,6 +43,7 @@ public
 package import beamui.style.computed_style;
 import std.string : capitalize;
 import beamui.core.animations;
+import beamui.graphics.text : TextHotkey;
 import beamui.platforms.common.platform;
 import beamui.style.style;
 import beamui.widgets.menu;
@@ -592,31 +593,7 @@ public:
         /// Text flags (bit set of TextFlag enum values)
         TextFlag textFlags() const
         {
-            updateStyles();
-            TextFlag res = _style.textFlags;
-            if (res == TextFlag.parent)
-            {
-                if (parent)
-                    res = parent.textFlags;
-                else
-                    res = TextFlag.unspecified;
-            }
-            if (res & TextFlag.underlineHotkeysOnAlt)
-            {
-                uint modifiers;
-                if (window !is null)
-                    modifiers = window.keyboardModifiers;
-                bool altPressed = (modifiers & (KeyFlag.alt | KeyFlag.lalt | KeyFlag.ralt)) != 0;
-                if (!altPressed)
-                {
-                    res = (res & ~(TextFlag.underlineHotkeysOnAlt | TextFlag.underlineHotkeys)) | TextFlag.hotkeys;
-                }
-                else
-                {
-                    res |= TextFlag.underlineHotkeys;
-                }
-            }
-            return res;
+            return TextFlag.unspecified;
         }
 
         /// Font size in pixels
@@ -636,15 +613,34 @@ public:
         /// Returns font set for widget using style or set manually
         FontRef font() const
         {
+            updateStyles();
             with (caching(this))
             {
-                updateStyles();
                 if (!_font.isNull)
                     return _font;
-                _font = FontManager.instance.getFont(fontSize, style.fontWeight,
-                        style.fontItalic, style.fontFamily, style.fontFace);
+                _font = FontManager.instance.getFont(fontSize, _style.fontWeight,
+                        _style.fontItalic, _style.fontFamily, _style.fontFace);
                 return _font;
             }
+        }
+
+        /// Returns computed text hotkey flag: `underlineOnAlt` is resolved to `underline` or `hidden`
+        TextHotkey textHotkey() const
+        {
+            updateStyles();
+            TextHotkey result = _style.textHotkey;
+            if (result == TextHotkey.underlineOnAlt)
+            {
+                if (auto w = window)
+                {
+                    const uint modifiers = w.keyboardModifiers;
+                    if ((modifiers & (KeyFlag.alt | KeyFlag.lalt | KeyFlag.ralt)) != 0)
+                        // Alt pressed
+                        return TextHotkey.underline;
+                }
+                return TextHotkey.hidden;
+            }
+            return result;
         }
 
         /// Widget content text (override to support this)
@@ -694,11 +690,16 @@ public:
         switch (ptype) with (StyleProperty)
         {
         case width: .. case alignment:
-        case textFlags:
+        case textHotkey:
+        case textOverflow:
+        case textTransform:
             requestLayout();
             break;
         case borderColor: .. case boxShadow:
         case textAlign:
+        case textDecorationColor:
+        case textDecorationLine:
+        case textDecorationStyle:
         case alpha: .. case focusRectColor:
             invalidate();
             break;

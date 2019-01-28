@@ -423,33 +423,6 @@ bool decode(SpecialCSSType t : SpecialCSSType.fontWeight)(const Token[] tokens, 
     return true;
 }
 
-/// Decode CSS token sequence like "hotkeys underline-hotkeys-alt" to `TextFlag` bit set
-bool decode(const Token[] tokens, out TextFlag result)
-{
-    assert(tokens.length > 0);
-
-    foreach (t; tokens)
-    {
-        if (t.type != TokenType.ident)
-        {
-            Log.fe("CSS(%s): text flag should be an identifier, not '%s'", t.line, t.type);
-            return false;
-        }
-        switch (t.text)
-        {
-            case "hotkeys": result |= TextFlag.hotkeys; break;
-            case "underline": result |= TextFlag.underline; break;
-            case "underline-hotkeys": result |= TextFlag.underlineHotkeys; break;
-            case "underline-hotkeys-on-alt": result |= TextFlag.underlineHotkeysOnAlt; break;
-            case "parent": result |= TextFlag.parent; break;
-            default:
-                Log.fe("CSS(%s): unknown text flag: %s", t.line, t.text);
-                return false;
-        }
-    }
-    return true;
-}
-
 /// Decode text alignment
 bool decode(const Token[] tokens, out TextAlign result)
 {

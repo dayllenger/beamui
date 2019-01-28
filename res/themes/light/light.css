@@ -12,7 +12,7 @@ MultilineLabel { align: left top; padding: 1px; }
 
 MultilineLabel:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
-Button { align: center; padding: 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); text-flags: underline-hotkeys; focus-rect-color: #bbb; transition: border-color 75ms ease; }
+Button { align: center; padding: 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); text-hotkey: underline; focus-rect-color: #bbb; transition: border-color 75ms ease; }
 
 Button:hovered:not(checked) { border-color: #417fbf; }
 
@@ -22,7 +22,7 @@ Button:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
 Button::icon, Button::label { align: center; }
 
-Button::label { text-align: center; text-flags: parent; transition: color 75ms ease; }
+Button::label { text-align: center; text-hotkey: inherit; transition: color 75ms ease; }
 
 Button::label:hovered { color: #46617e; }
 
@@ -36,7 +36,7 @@ LinkButton { padding: 3px; border: none; background: none; }
 
 LinkButton::label { color: #4169e1; }
 
-LinkButton::label:hovered { text-flags: underline; }
+LinkButton::label:hovered { text-decoration: underline; }
 
 LinkButton::label:not(enabled) { color: rgba(192, 192, 255, 0.7); }
 
@@ -147,11 +147,11 @@ ComboBox::list:focused { border: 1px solid rgba(32, 64, 255, 0.75); }
 ComboBox::list:not(enabled) { background-color: #f0f0f0; }
 
 /* ========================================================================== menu.d */
-Menu { width: none; height: none; min-width: 0; min-height: 0; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; text-flags: underline-hotkeys-on-alt; }
+Menu { width: none; height: none; min-width: 0; min-height: 0; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; text-hotkey: underline-on-alt; }
 
 MenuBar { weight: 0; margin: 0; padding-left: 3px; box-shadow: 0 0 5px #888; background-color: #f3f4f5; }
 
-MenuItem { padding: 6px 4px; text-flags: parent; }
+MenuItem { padding: 6px 4px; text-hotkey: inherit; }
 
 MenuItem#menu-separator { padding: 4px; }
 
@@ -165,7 +165,7 @@ MenuItem::icon { align: left vcenter; padding: 0 2px; }
 
 MenuItem::icon:not(enabled) { opacity: 0.4; }
 
-MenuItem::label { align: left vcenter; padding: 0 4px; text-flags: parent; }
+MenuItem::label { align: left vcenter; padding: 0 4px; text-hotkey: inherit; }
 
 MenuItem::shortcut { align: right vcenter; padding-left: 8px; padding-right: 2px; }
 
@@ -178,7 +178,7 @@ MenuItem::label:not(enabled), MenuItem::shortcut:not(enabled) { color: rgba(64, 
 /* ========================================================================== tree.d */
 TreeItemWidget { min-width: 100px; min-height: 14px; spacing: 0; }
 
-TreeItemWidget::body { padding: 2px 4px; spacing: 0; text-flags: parent; }
+TreeItemWidget::body { padding: 2px 4px; spacing: 0; text-hotkey: inherit; }
 
 TreeItemWidget::body:hovered { background-color: #c7d9ec; }
 
@@ -186,7 +186,7 @@ TreeItemWidget::body:pressed, TreeItemWidget::body:selected { background-color: 
 
 TreeItemWidget::icon { padding-right: 3px; }
 
-TreeItemWidget::label { text-flags: parent; }
+TreeItemWidget::label { text-hotkey: inherit; }
 
 TreeItemWidget::label:pressed, TreeItemWidget::label:selected { color: #f0f0f0; }
 

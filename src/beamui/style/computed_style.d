@@ -55,7 +55,6 @@ enum StyleProperty
     fontSize,
     fontStyle,
     fontWeight,
-    textFlags,
     textAlign,
     textDecorationColor,
     textDecorationLine,
@@ -305,18 +304,8 @@ struct ComputedStyle
         bool fontItalic() const { return _fontStyle == FontStyle.italic; }
         /// ditto
         void fontItalic(bool italic) { setProperty!"fontStyle" = italic ? FontStyle.italic : FontStyle.normal; }
-        /// Font size in pixels
-        int fontSize() const
-        {
-            // if (!parent && (_fontSize.is_em || _fontSize.is_percent))
-            //     return 12;
-            int res = _fontSize.toDevice;
-            // if (_fontSize.is_em)
-            //     return parent.fontSize * res / 100;
-            // if (_fontSize.is_percent)
-            //     return parent.fontSize * res / 10000;
-            return res;
-        }
+        /// Font size
+        Length fontSize() const { return _fontSize; }
         /// ditto
         void fontSize(Length value)
         {
@@ -331,10 +320,6 @@ struct ComputedStyle
         /// ditto
         void fontWeight(ushort value) { setProperty!"fontWeight" = cast(ushort)clamp(value, 100, 900); }
 
-        /// Text flags (bit set of TextFlag enum values)
-        TextFlag textFlags() const { return _textFlags; }
-        /// ditto
-        void textFlags(TextFlag value) { setProperty!"textFlags" = value; }
         /// Text alignment - start, center, end, or justify
         TextAlign textAlign() const { return _textAlign; }
         /// ditto
@@ -445,7 +430,6 @@ struct ComputedStyle
         Length _fontSize = Length.px(12);
         FontStyle _fontStyle = FontStyle.normal;
         ushort _fontWeight = 400;
-        TextFlag _textFlags = TextFlag.unspecified;
         TextAlign _textAlign = TextAlign.start;
         Color _textDecorationColor = Color(0x000000);
         TextDecoration.Line _textDecorationLine = TextDecoration.Line.none;
@@ -720,7 +704,6 @@ string getCSSName(StyleProperty ptype)
         case fontSize:   return "font-size";
         case fontStyle:  return "font-style";
         case fontWeight: return "font-weight";
-        case textFlags:  return "text-flags";
         case textAlign:  return "text-align";
         case textDecorationColor: return "text-decoration-color";
         case textDecorationLine: return "text-decoration-line";

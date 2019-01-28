@@ -52,8 +52,8 @@ class Label : Widget
 
     override Size computeMinSize()
     {
-        textobj.style.flags = textFlags;
-        minSizeTester.style.flags = textFlags;
+        textobj.style.hotkey = textHotkey;
+        minSizeTester.style.hotkey = textHotkey;
         if (textobj.str.length < minSizeTester.str.length * 2)
         {
             textobj.measure();
@@ -82,7 +82,8 @@ class Label : Widget
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
         textobj.style.color = style.textColor;
-        textobj.style.flags = textFlags;
+        textobj.style.decoration = style.textDecoration;
+        textobj.style.hotkey = textHotkey;
         // align vertically to center
         Size sz = Size(b.w, textobj.size.h);
         applyAlign(b, sz, Align.unspecified, Align.vcenter);
@@ -132,8 +133,8 @@ class MultilineLabel : Widget
 
     override Size computeMinSize()
     {
-        textobj.style.flags = textFlags;
-        minSizeTester.style.flags = textFlags;
+        textobj.style.hotkey = textHotkey;
+        minSizeTester.style.hotkey = textHotkey;
         if (textobj.lines[0].length < minSizeTester.lines[0].length)
         {
             textobj.measure();
@@ -148,7 +149,7 @@ class MultilineLabel : Widget
 
     override Size computeNaturalSize()
     {
-        natSizeTester.style.flags = textFlags;
+        natSizeTester.style.hotkey = textHotkey;
         if (textobj.lines[0].length < natSizeTester.lines[0].length)
         {
             textobj.measure();
@@ -191,7 +192,8 @@ class MultilineLabel : Widget
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
         textobj.style.color = style.textColor;
-        textobj.style.flags = textFlags;
+        textobj.style.decoration = style.textDecoration;
+        textobj.style.hotkey = textHotkey;
         textobj.draw(buf, b.pos, b.w, style.textAlign);
     }
 }
