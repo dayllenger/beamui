@@ -82,13 +82,14 @@ class Label : Widget
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
         textobj.style.color = style.textColor;
+        textobj.style.alignment = style.textAlign;
         textobj.style.decoration = style.textDecoration;
         textobj.style.hotkey = textHotkey;
         textobj.style.overflow = style.textOverflow;
         // align vertically to center
         Size sz = Size(b.w, textobj.size.h);
         applyAlign(b, sz, Align.unspecified, Align.vcenter);
-        textobj.draw(buf, b.pos, b.w, style.textAlign);
+        textobj.draw(buf, b.pos, b.w);
     }
 }
 
@@ -193,10 +194,11 @@ class MultilineLabel : Widget
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
         textobj.style.color = style.textColor;
+        textobj.style.alignment = style.textAlign;
         textobj.style.decoration = style.textDecoration;
         textobj.style.hotkey = textHotkey;
         textobj.style.overflow = style.textOverflow;
-        textobj.draw(buf, b.pos, b.w, style.textAlign);
+        textobj.draw(buf, b.pos, b.w);
     }
 }
 

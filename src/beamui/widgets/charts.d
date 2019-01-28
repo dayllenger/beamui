@@ -372,7 +372,8 @@ class SimpleBarChart : Widget
         {
             // align to the center of chart view
             _title.style.color = style.textColor;
-            _title.draw(buf, Point(x1, b.y), x2 - x1, TextAlign.center);
+            _title.style.alignment = TextAlign.center;
+            _title.draw(buf, Point(x1, b.y), x2 - x1);
         }
 
         // draw axes
@@ -407,8 +408,9 @@ class SimpleBarChart : Widget
 
             // draw x axis description
             bar.title.style.color = style.textColor;
+            bar.title.style.alignment = TextAlign.center;
             int yoffset = (_axisX.maxDescriptionSize.h + bar.title.size.h) / 2;
-            bar.title.draw(buf, Point(firstBarX, b.y + b.h - yoffset), _barWidth, TextAlign.center);
+            bar.title.draw(buf, Point(firstBarX, b.y + b.h - yoffset), _barWidth);
 
             firstBarX += _barWidth + _barSpacing;
         }
@@ -429,8 +431,10 @@ class SimpleBarChart : Widget
 
         _axisYMaxValueDesc.style.color = style.textColor;
         _axisYAvgValueDesc.style.color = style.textColor;
-        _axisYMaxValueDesc.draw(buf, Point(b.x, yMax - _axisY.maxDescriptionSize.h / 2), axisYWidth, TextAlign.end);
-        _axisYAvgValueDesc.draw(buf, Point(b.x, yAvg - _axisY.maxDescriptionSize.h / 2), axisYWidth, TextAlign.end);
+        _axisYMaxValueDesc.style.alignment = TextAlign.end;
+        _axisYAvgValueDesc.style.alignment = TextAlign.end;
+        _axisYMaxValueDesc.draw(buf, Point(b.x, yMax - _axisY.maxDescriptionSize.h / 2), axisYWidth);
+        _axisYAvgValueDesc.draw(buf, Point(b.x, yAvg - _axisY.maxDescriptionSize.h / 2), axisYWidth);
     }
 
     protected int barYValueToPixels(int axisInPixels, double barYValue)

@@ -85,6 +85,7 @@ struct TextStyle
     Font font;
     /// Size of the tab character in number of spaces
     TabSize tabSize;
+    TextAlign alignment;
     TextDecoration decoration;
     TextHotkey hotkey;
     TextOverflow overflow;
@@ -196,6 +197,7 @@ struct TextLine
                 int n = x / (spaceWidth * style.tabSize) + 1;
                 int tabPosition = spaceWidth * style.tabSize * n;
                 pwidths[i] = cast(ushort)(tabPosition - x);
+                pglyphs[i] = null;
                 x = tabPosition;
                 prevChar = 0;
                 continue;
@@ -203,6 +205,7 @@ struct TextLine
             else if (hotkeys && ch == '&')
             {
                 pwidths[i] = 0;
+                pglyphs[i] = null;
                 prevChar = 0;
                 continue; // skip '&' in hotkey when measuring
             }
@@ -324,18 +327,33 @@ struct TextLine
         return result;
     }
 
-    /// Draw measured line at the position
-    void draw(DrawBuf buf, Point pos, const ref TextStyle style)
+    /// Draw measured line at the position, applying alignment
+    void draw(DrawBuf buf, Point pos, int boxWidth, const ref TextStyle style)
     {
         if (_str.length == 0)
             return; // nothing to draw - empty text
 
         Font font = (cast(TextStyle)style).font;
+        const int height = font.height;
+        const int rightCorner = pos.x + boxWidth;
+        const int lineWidth = _size.w;
+        if (lineWidth < boxWidth)
+        {
+            // align
+            if (style.alignment == TextAlign.center)
+            {
+                pos.x += (boxWidth - lineWidth) / 2;
+            }
+            else if (style.alignment == TextAlign.end)
+            {
+                pos.x += boxWidth - lineWidth;
+            }
+        }
         // check visibility
         const Rect clip = buf.clipRect;
         if (clip.empty)
             return; // clipped out
-        if (pos.y + font.height < clip.top || clip.bottom <= pos.y)
+        if (pos.y + height < clip.top || clip.bottom <= pos.y)
             return; // fully above or below clipping rectangle
 
         const bool hotkeys = style.hotkey != TextHotkey.ignore;
@@ -344,17 +362,23 @@ struct TextLine
         const bool underline = style.decoration.line == TextDecoration.Line.underline;
         const int underlineHeight = 1;
         const int underlineY = pos.y + baseline + underlineHeight * 2;
-        const bool drawEllipsis = style.overflow == TextOverflow.ellipsis;
+
+        const bool drawEllipsis = boxWidth < lineWidth && style.overflow != TextOverflow.clip;
         GlyphRef ellipsis = font.getCharGlyph('…');
         const ushort ellipsisW = ellipsis.widthScaled >> 6;
         const int ellipsisY = pos.y + baseline - ellipsis.originY;
 
+        const bool ellipsisMiddle = style.overflow == TextOverflow.ellipsisMiddle;
+        const int ellipsisMiddleCorner = pos.x + (boxWidth + ellipsisW) / 2;
+        bool tail;
+        int ellipsisPos;
+
         const pwidths = _charWidths.ptr;
         auto pglyphs = _glyphs.ptr;
         int pen = pos.x;
-        foreach (i, ch; _str)
+        for (size_t i; i < _str.length; i++) // `i` can mutate
         {
-            if (hotkeys && ch == '&')
+            if (hotkeys && _str[i] == '&')
             {
                 if (style.hotkey == TextHotkey.underline)
                     hotkeyUnderline = true; // turn ON underline for hotkey
@@ -365,25 +389,48 @@ struct TextLine
                 continue;
 
             // check glyph visibility
-            if (clip.right < pen)
-                return;
+            if (pen > clip.right)
+                break;
             const int current = pen;
             pen += w;
             if (pen + 255 < clip.left)
                 continue; // far at left of clipping region
 
             // check overflow
-            if (drawEllipsis && pen + ellipsisW > clip.right)
+            if (drawEllipsis && !tail)
             {
-                int lastpos = current;
-                foreach (j; i .. _charWidths.length)
+                if (ellipsisMiddle)
                 {
-                    lastpos += pwidths[j];
-                    if (lastpos > clip.right)
+                    // |text text te...xt text text|
+                    //         exceeds ^ here
+                    if (pen + ellipsisW > ellipsisMiddleCorner)
                     {
-                        // really overflowing, draw ellipsis and quit
-                        buf.drawGlyph(current, ellipsisY, ellipsis, style.color);
-                        return;
+                        // walk to find tail width
+                        int tailStart = rightCorner;
+                        foreach_reverse (j; i .. _str.length)
+                        {
+                            if (tailStart - pwidths[j] < current + ellipsisW)
+                            {
+                                // jump to the tail
+                                tail = true;
+                                i = j;
+                                pen = tailStart;
+                                break;
+                            }
+                            else
+                                tailStart -= pwidths[j];
+                        }
+                        ellipsisPos = (current + tailStart - ellipsisW) / 2;
+                        continue;
+                    }
+                }
+                else // at the end
+                {
+                    // next glyph doesn't fit, so we need the current to give a space for ellipsis
+                    if (pen + ellipsisW > rightCorner)
+                    {
+                        ellipsisPos = current;
+                        break;
                     }
                 }
             }
@@ -396,11 +443,9 @@ struct TextLine
                 hotkeyUnderline = false;
             }
 
-            if (ch == ' ' || ch == '\t')
-                continue;
-
             GlyphRef glyph = pglyphs[i];
-            assert(glyph !is null);
+            if (!glyph) // space or tab
+                continue;
             if (glyph.blackBoxX && glyph.blackBoxY)
             {
                 int gx = current + glyph.originX;
@@ -409,6 +454,8 @@ struct TextLine
                 buf.drawGlyph(gx, pos.y + baseline - glyph.originY, glyph, style.color);
             }
         }
+        if (drawEllipsis)
+            buf.drawGlyph(ellipsisPos, ellipsisY, ellipsis, style.color);
     }
 }
 
@@ -464,22 +511,11 @@ struct SingleLineText
         oldStyle = style;
     }
 
-    /// Draw text into buffer, applying alignment. Measures, if needed
-    void draw(DrawBuf buf, Point pos, int boxWidth, TextAlign alignment = TextAlign.start)
+    /// Draw text into buffer. Measures, if needed
+    void draw(DrawBuf buf, Point pos, int boxWidth)
     {
         measure();
-        // align
-        const int lineWidth = line.size.w;
-        if (alignment == TextAlign.center)
-        {
-            pos.x += (boxWidth - lineWidth) / 2;
-        }
-        else if (alignment == TextAlign.end)
-        {
-            pos.x += boxWidth - lineWidth;
-        }
-        // draw
-        line.draw(buf, pos, style);
+        line.draw(buf, pos, boxWidth, style);
     }
 }
 
@@ -594,8 +630,8 @@ struct PlainText
         previousWrapWidth = width;
     }
 
-    /// Draw text into buffer, applying alignment. Measures, if needed
-    void draw(DrawBuf buf, Point pos, int boxWidth, TextAlign alignment = TextAlign.start)
+    /// Draw text into buffer. Measures, if needed
+    void draw(DrawBuf buf, Point pos, int boxWidth)
     {
         measure();
 
@@ -604,19 +640,7 @@ struct PlainText
         auto lns = _wrappedLines.data.length > _lines.data.length ? _wrappedLines.data : _lines.data;
         foreach (ref line; lns)
         {
-            int x = pos.x;
-            // align
-            const int lineWidth = line.size.w;
-            if (alignment == TextAlign.center)
-            {
-                x += (boxWidth - lineWidth) / 2;
-            }
-            else if (alignment == TextAlign.end)
-            {
-                x += boxWidth - lineWidth;
-            }
-            // draw
-            line.draw(buf, Point(x, y), style);
+            line.draw(buf, Point(pos.x, y), boxWidth, style);
             y += lineHeight;
         }
     }
