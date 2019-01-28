@@ -84,6 +84,7 @@ class Label : Widget
         textobj.style.color = style.textColor;
         textobj.style.decoration = style.textDecoration;
         textobj.style.hotkey = textHotkey;
+        textobj.style.overflow = style.textOverflow;
         // align vertically to center
         Size sz = Size(b.w, textobj.size.h);
         applyAlign(b, sz, Align.unspecified, Align.vcenter);
@@ -194,6 +195,7 @@ class MultilineLabel : Widget
         textobj.style.color = style.textColor;
         textobj.style.decoration = style.textDecoration;
         textobj.style.hotkey = textHotkey;
+        textobj.style.overflow = style.textOverflow;
         textobj.draw(buf, b.pos, b.w, style.textAlign);
     }
 }

@@ -78,6 +78,7 @@ Button {
     &::label {
         text-align: center;
         text-hotkey: inherit;
+        text-overflow: ellipsis;
         transition: color 75ms ease;
 
         &:hovered {
@@ -106,6 +107,8 @@ LinkButton {
 
     &::label {
         color: #4169e1;
+        text-align: start;
+        text-overflow: ellipsis-middle;
 
         &:hovered {
             text-decoration: underline;
@@ -123,6 +126,7 @@ CheckBox {
 
 CheckBox::label, RadioButton::label {
     align: left vcenter;
+    text-overflow: ellipsis;
     transition: color 100ms ease;
 
     &:hovered {
@@ -261,6 +265,7 @@ GroupBox::caption {
     align: left vcenter;
     padding: 1px;
     color: #504840;
+    text-overflow: ellipsis;
 }
 
 @define-drawables {

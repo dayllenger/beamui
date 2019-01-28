@@ -22,7 +22,7 @@ Button:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
 Button::icon, Button::label { align: center; }
 
-Button::label { text-align: center; text-hotkey: inherit; transition: color 75ms ease; }
+Button::label { text-align: center; text-hotkey: inherit; text-overflow: ellipsis; transition: color 75ms ease; }
 
 Button::label:hovered { color: #46617e; }
 
@@ -34,7 +34,7 @@ Button.flat { background: none; focus-rect-color: none; }
 
 LinkButton { padding: 3px; border: none; background: none; }
 
-LinkButton::label { color: #4169e1; }
+LinkButton::label { color: #4169e1; text-align: start; text-overflow: ellipsis-middle; }
 
 LinkButton::label:hovered { text-decoration: underline; }
 
@@ -42,7 +42,7 @@ LinkButton::label:not(enabled) { color: rgba(192, 192, 255, 0.7); }
 
 CheckBox { padding: 2px; }
 
-CheckBox::label, RadioButton::label { align: left vcenter; transition: color 100ms ease; }
+CheckBox::label, RadioButton::label { align: left vcenter; text-overflow: ellipsis; transition: color 100ms ease; }
 
 CheckBox::label:hovered, RadioButton::label:hovered { color: #46617e; }
 
@@ -102,7 +102,7 @@ Resizer:pressed { background-color: rgba(78, 147, 218, 0.8); }
 /* ========================================================================== groupbox.d */
 GroupBox { padding: 20px 10px 16px; }
 
-GroupBox::caption { align: left vcenter; padding: 1px; color: #504840; }
+GroupBox::caption { align: left vcenter; padding: 1px; color: #504840; text-overflow: ellipsis; }
 
 @define-drawables { group_box_frame_up_left: url(group_box_frame_up_left);
   group_box_frame_up_right: url(group_box_frame_up_right);

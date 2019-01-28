@@ -87,7 +87,7 @@ struct TextStyle
     TabSize tabSize;
     TextDecoration decoration;
     TextHotkey hotkey;
-
+    TextOverflow overflow;
     /// Text color
     Color color;
     /// Text background color
@@ -344,6 +344,10 @@ struct TextLine
         const bool underline = style.decoration.line == TextDecoration.Line.underline;
         const int underlineHeight = 1;
         const int underlineY = pos.y + baseline + underlineHeight * 2;
+        const bool drawEllipsis = style.overflow == TextOverflow.ellipsis;
+        GlyphRef ellipsis = font.getCharGlyph('…');
+        const ushort ellipsisW = ellipsis.widthScaled >> 6;
+        const int ellipsisY = pos.y + baseline - ellipsis.originY;
 
         const pwidths = _charWidths.ptr;
         auto pglyphs = _glyphs.ptr;
@@ -362,11 +366,27 @@ struct TextLine
 
             // check glyph visibility
             if (clip.right < pen)
-                break;
+                return;
             const int current = pen;
             pen += w;
             if (pen + 255 < clip.left)
                 continue; // far at left of clipping region
+
+            // check overflow
+            if (drawEllipsis && pen + ellipsisW > clip.right)
+            {
+                int lastpos = current;
+                foreach (j; i .. _charWidths.length)
+                {
+                    lastpos += pwidths[j];
+                    if (lastpos > clip.right)
+                    {
+                        // really overflowing, draw ellipsis and quit
+                        buf.drawGlyph(current, ellipsisY, ellipsis, style.color);
+                        return;
+                    }
+                }
+            }
 
             if (underline || hotkeyUnderline)
             {
