@@ -26,6 +26,59 @@ enum TextAlign : ubyte
     justify
 }
 
+/// Decoration added to text (like underline)
+struct TextDecoration
+{
+    enum Line : ubyte
+    {
+        none,
+        overline,
+        underline,
+        lineThrough
+    }
+    enum Style : ubyte
+    {
+        solid,
+        doubled,
+        dotted,
+        dashed,
+        wavy
+    }
+    Color color;
+    Line line;
+    Style style;
+}
+
+/// Controls how text with `&` hotkey marks should be displayed
+enum TextHotkey : ubyte
+{
+    /// Treat as usual text
+    ignore,
+    /// Only hide `&` marks
+    hidden,
+    /// Underline hotkey letter that goes after `&`
+    underline,
+    /// Underline hotkey letter that goes after `&` only when Alt pressed
+    underlineOnAlt
+}
+
+/// Specifies how text that doesn't fit and is not displayed should behave
+enum TextOverflow : ubyte
+{
+    clip,
+    ellipsis,
+    ellipsisMiddle
+}
+
+/// Controls capitalization of text
+enum TextTransform : ubyte
+{
+    none,
+    capitalize,
+    uppercase,
+    lowercase
+}
+
 /// Holds text properties - font style, colors, and so on
 struct TextStyle
 {

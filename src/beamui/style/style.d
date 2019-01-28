@@ -20,6 +20,7 @@ import beamui.core.units : Dimension;
 import CSS = beamui.css.tokenizer;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawables : Drawable;
+import beamui.graphics.text : TextDecoration;
 import beamui.style.decode_css;
 import beamui.style.types;
 
@@ -195,6 +196,28 @@ final class Style
             metaProperties[sh.right] = *p;
             metaProperties[sh.bottom] = *p;
             metaProperties[sh.left] = *p;
+            metaProperties.remove(sh.name);
+        }
+    }
+    /// Find a shorthand text decoration property, split it into components and decode
+    void explode(ShorthandTextDecoration sh)
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            TextDecoration value = void;
+            if (decode(*p, value))
+            {
+                tryToSet(sh.color, Variant(value.color));
+                tryToSet(sh.line, Variant(value.line));
+                tryToSet(sh.style, Variant(value.style));
+            }
+            rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.color] = *p;
+            metaProperties[sh.line] = *p;
+            metaProperties[sh.style] = *p;
             metaProperties.remove(sh.name);
         }
     }

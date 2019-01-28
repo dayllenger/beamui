@@ -13,7 +13,7 @@ import beamui.core.units : Length;
 import beamui.graphics.colors : Color, decodeHexColor, decodeTextColor;
 import beamui.graphics.drawables : Drawable, BoxShadowDrawable;
 import beamui.graphics.fonts;
-import beamui.graphics.text : TextAlign;
+import beamui.graphics.text;
 import beamui.style.style;
 import beamui.style.types;
 import beamui.widgets.widget : Widget;
@@ -57,6 +57,12 @@ enum StyleProperty
     fontWeight,
     textFlags,
     textAlign,
+    textDecorationColor,
+    textDecorationLine,
+    textDecorationStyle,
+    textHotkey,
+    textOverflow,
+    textTransform,
     // colors
     alpha,
     textColor,
@@ -333,6 +339,42 @@ struct ComputedStyle
         TextAlign textAlign() const { return _textAlign; }
         /// ditto
         void textAlign(TextAlign a) { setProperty!"textAlign" = a; }
+        /// Text decoration - underline, overline, and so on
+        TextDecoration textDecoration() const
+        {
+            return TextDecoration(_textDecorationColor, _textDecorationLine, _textDecorationStyle);
+        }
+        /// ditto
+        void textDecoration(TextDecoration compound)
+        {
+            setProperty!"textDecorationColor" = compound.color;
+            setProperty!"textDecorationLine" = compound.line;
+            setProperty!"textDecorationStyle" = compound.style;
+        }
+        /// ditto
+        void textDecoration(Color color) { setProperty!"textDecorationColor" = color; }
+        /// ditto
+        void textDecoration(TextDecoration.Line line) { setProperty!"textDecorationLine" = line; }
+        /// ditto
+        void textDecoration(TextDecoration.Style style) { setProperty!"textDecorationStyle" = style; }
+        /// Color of text decoration lines
+        Color textDecorationColor() const { return _textDecorationColor; }
+        /// Place where text decoration line appears
+        TextDecoration.Line textDecorationLine() const { return _textDecorationLine; }
+        /// Style of text decoration line - solid, dashed, wavy, and so on
+        TextDecoration.Style textDecorationStyle() const { return _textDecorationStyle; }
+        /// Controls how text with `&` hotkey marks should be displayed
+        TextHotkey textHotkey() const { return _textHotkey; }
+        /// ditto
+        void textHotkey(TextHotkey value) { setProperty!"textHotkey" = value; }
+        /// Specifies how text that doesn't fit and is not displayed should behave
+        TextOverflow textOverflow() const { return _textOverflow; }
+        /// ditto
+        void textOverflow(TextOverflow value) { setProperty!"textOverflow" = value; }
+        /// Controls capitalization of text
+        TextTransform textTransform() const { return _textTransform; }
+        /// ditto
+        void textTransform(TextTransform value) { setProperty!"textTransform" = value; }
 
         /// Widget drawing opacity (0 = opaque .. 255 = transparent)
         ubyte alpha() const { return _alpha; }
@@ -405,6 +447,12 @@ struct ComputedStyle
         ushort _fontWeight = 400;
         TextFlag _textFlags = TextFlag.unspecified;
         TextAlign _textAlign = TextAlign.start;
+        Color _textDecorationColor = Color(0x000000);
+        TextDecoration.Line _textDecorationLine = TextDecoration.Line.none;
+        TextDecoration.Style _textDecorationStyle = TextDecoration.Style.solid;
+        TextHotkey _textHotkey = TextHotkey.ignore;
+        TextOverflow _textOverflow = TextOverflow.clip;
+        TextTransform _textTransform = TextTransform.none;
         // colors
         ubyte _alpha = 0;
         Color _textColor = Color(0x000000);
@@ -464,6 +512,8 @@ struct ComputedStyle
             st.explode(ShorthandBorder("border", "border-top-width", "border-right-width",
                     "border-bottom-width", "border-left-width", "border-color"));
             st.explode(ShorthandDrawable("background", "background-color", "background-image"));
+            st.explode(ShorthandTextDecoration("text-decoration", "text-decoration-color",
+                    "text-decoration-line", "text-decoration-style"));
             st.explode(ShorthandTransition("transition", "transition-property", "transition-duration",
                     "transition-timing-function", "transition-delay"));
         }
@@ -672,6 +722,12 @@ string getCSSName(StyleProperty ptype)
         case fontWeight: return "font-weight";
         case textFlags:  return "text-flags";
         case textAlign:  return "text-align";
+        case textDecorationColor: return "text-decoration-color";
+        case textDecorationLine: return "text-decoration-line";
+        case textDecorationStyle: return "text-decoration-style";
+        case textHotkey: return "text-hotkey";
+        case textOverflow: return "text-overflow";
+        case textTransform: return "text-transform";
         case alpha:      return "opacity";
         case textColor:  return "color";
         case focusRectColor: return "focus-rect-color";
@@ -705,6 +761,7 @@ bool isAnimatable(StyleProperty ptype)
         case spacing: .. case columnSpacing:
         case borderColor:
         case backgroundColor:
+        case textDecorationColor:
         case alpha:
         case textColor:
         case focusRectColor:
@@ -721,6 +778,7 @@ bool inherited(StyleProperty ptype)
     {
         case fontFace: .. case fontWeight:
         case textAlign:
+        case textTransform:
         case textColor:
             return true;
         default:

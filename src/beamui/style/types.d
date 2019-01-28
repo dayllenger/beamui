@@ -166,6 +166,14 @@ struct ShorthandInsets
     string left;
 }
 
+struct ShorthandTextDecoration
+{
+    string name;
+    string color;
+    string line;
+    string style;
+}
+
 struct ShorthandTransition
 {
     string name;
