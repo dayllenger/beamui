@@ -1,0 +1,65 @@
+/* Pretty printing styles. Used with prettify.js. */
+
+/* Tomorrow Theme */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* SPAN elements with the classes below are added by prettyprint. */
+.pln { color: #4d4d4c }  /* plain text */
+
+@media screen {
+  .spc { color: #606 }  /* special token sequence */
+  .str { color: #718c00 }  /* string content */
+  .kwd { color: #8959a8 }  /* a keyword */
+  .com { color: #8e908c }  /* a comment */
+  .typ { color: #4271ae }  /* a type name */
+  .lit { color: #f5871f }  /* a literal value */
+  /* punctuation, lisp open bracket, lisp close bracket */
+  .pun, .opn, .clo { color: #4d4d4c }
+  .tag { color: #c82829 }  /* a markup tag name */
+  .atn { color: #f5871f }  /* a markup attribute name */
+  .atv { color: #3e999f }  /* a markup attribute value */
+  .dec { color: #f5871f }  /* a declaration */
+  .var { color: #c82829 }  /* a variable name */
+  .fun { color: #4271ae }  /* a function name */
+}
+
+/* Use higher contrast and text-weight for printable form. */
+@media print, projection {
+  .spc { color: #606 }  /* special token sequence */
+  .str { color: #060 }
+  .kwd { color: #006; font-weight: bold }
+  .com { color: #600; font-style: italic }
+  .typ { color: #404; font-weight: bold }
+  .lit { color: #044 }
+  .pun, .opn, .clo { color: #440 }
+  .tag { color: #006; font-weight: bold }
+  .atn { color: #404 }
+  .atv { color: #060 }
+}
+
+/* Put a border around prettyprinted code snippets. */
+pre.prettyprint, pre.code, div.prototype {
+  padding: 1em 0.5em;
+  background-color: #eef2f3;
+  border: 2px solid rgba(0,0,0,.05);
+  border-radius: 5px;
+  max-width: 100em;
+  overflow: auto;
+}
+
+/* Specify class=linenums on a pre to get line numbering */
+ol.linenums { margin-top: 0; margin-bottom: 0 } /* IE indents via margin-left */
+li.L0,
+li.L1,
+li.L2,
+li.L3,
+li.L5,
+li.L6,
+li.L7,
+li.L8 { list-style-type: none }
+/* Alternate shading for lines */
+li.L1,
+li.L3,
+li.L5,
+li.L7,
+li.L9 { background: #222222 }

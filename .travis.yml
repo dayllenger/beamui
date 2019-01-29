@@ -47,7 +47,7 @@ script:
 jobs:
   include:
   - stage: deploy
-    script: dub build -b ddox
+    script: dub build -b ddox && cp ./ddox/ddox.css ./docs/styles/ddox.css && cp ./ddox/prettify.css ./docs/prettify/prettify.css
     deploy:
       local_dir: docs
       provider: pages
