@@ -284,8 +284,8 @@ class Window : CustomEventTarget
     {
         if (!setting)
             return;
-        WindowState state = windowState;
-        BoxI rect = windowRect;
+        const WindowState state = windowState;
+        const BoxI rect = windowRect;
         if (state == WindowState.fullscreen || state == WindowState.minimized ||
                 state == WindowState.maximized || state == WindowState.normal)
         {
@@ -305,12 +305,12 @@ class Window : CustomEventTarget
     {
         if (!setting)
             return false;
-        WindowState state = cast(WindowState)setting["windowState"].integerDef(WindowState.unspecified);
+        const state = cast(WindowState)setting["windowState"].integerDef(WindowState.unspecified);
         BoxI rect;
         rect.x = cast(int)setting["windowPositionX"].integer;
         rect.y = cast(int)setting["windowPositionY"].integer;
-        int w = cast(int)setting["windowWidth"].integer;
-        int h = cast(int)setting["windowHeight"].integer;
+        const w = cast(int)setting["windowWidth"].integer;
+        const h = cast(int)setting["windowHeight"].integer;
         if (w <= 0 || h <= 0)
             return false;
         rect.width = w;
@@ -356,7 +356,7 @@ class Window : CustomEventTarget
     /// Update and signal window state and/or size/positon changes - for using in platform inplementations
     protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
     {
-        bool signalWindow = false;
+        bool signalWindow;
         if (newState != WindowState.unspecified && newState != _windowState)
         {
             _windowState = newState;
@@ -520,10 +520,10 @@ class Window : CustomEventTarget
     protected void adjustSize()
     {
         assert(_mainWidget !is null);
-        Boundaries bs = _mainWidget.computeBoundaries();
+        const bs = _mainWidget.computeBoundaries();
         // some sane constraints
-        SizeI min = SizeI(clamp(cast(int)bs.min.w, 0, 10_000), clamp(cast(int)bs.min.h, 0, 10_000));
-        SizeI nat = SizeI(clamp(cast(int)bs.nat.w, 0, 10_000), clamp(cast(int)bs.nat.h, 0, 10_000));
+        const min = SizeI(clamp(cast(int)bs.min.w, 0, 10_000), clamp(cast(int)bs.min.h, 0, 10_000));
+        const nat = SizeI(clamp(cast(int)bs.nat.w, 0, 10_000), clamp(cast(int)bs.nat.h, 0, 10_000));
         _minContentSize = min;
         _goodContentSize = nat;
         setMaximumSize(10_000, 10_000);
@@ -555,9 +555,9 @@ class Window : CustomEventTarget
     {
         if (parentWindow)
         {
-            BoxI parentRect = parentWindow.windowRect;
-            int newx = parentRect.x + (parentRect.width - _windowRect.width) / 2;
-            int newy = parentRect.y + (parentRect.height - _windowRect.height) / 2;
+            const BoxI parentRect = parentWindow.windowRect;
+            const int newx = parentRect.x + (parentRect.width - _windowRect.width) / 2;
+            const int newy = parentRect.y + (parentRect.height - _windowRect.height) / 2;
             move(newx, newy);
         }
     }
@@ -575,18 +575,18 @@ class Window : CustomEventTarget
     void layout()
     {
         {
-            Boundaries bs = _mainWidget.computeBoundaries();
+            const bs = _mainWidget.computeBoundaries();
             // TODO: set minimum window size
             _mainWidget.layout(Box(0, 0, _w, _h));
         }
         foreach (p; _popups)
         {
-            Boundaries bs = p.computeBoundaries();
+            const bs = p.computeBoundaries();
             p.layout(Box(0, 0, bs.nat.w, bs.nat.h));
         }
         if (auto tp = _tooltip.popup)
         {
-            Boundaries bs = tp.computeBoundaries();
+            const bs = tp.computeBoundaries();
             tp.layout(Box(0, 0, bs.nat.w, bs.nat.h));
         }
     }
@@ -604,14 +604,14 @@ class Window : CustomEventTarget
         debug (resizing)
         {
             Log.d("onResize ", _w, "x", _h);
-            long layoutStart = currentTimeMillis;
+            const layoutStart = currentTimeMillis;
         }
 
         layout();
 
         debug (resizing)
         {
-            long layoutEnd = currentTimeMillis;
+            const layoutEnd = currentTimeMillis;
             Log.d("resize: layout took ", layoutEnd - layoutStart, " ms");
         }
         update(true);
@@ -793,7 +793,7 @@ class Window : CustomEventTarget
         auto dlg = new MessageBox(title, message, this, actions, defaultActionIndex, handler);
         dlg.show();
     }
-
+    /// Show input box with title, message, and initial text
     void showInputBox(dstring title, dstring message, dstring initialText, void delegate(dstring result) handler)
     {
         import beamui.dialogs.inputbox;
@@ -909,7 +909,7 @@ class Window : CustomEventTarget
             }
         }
         if (someAnimationsFinished)
-            animations = animations.efilter!(a => a.handler !is null);
+            animations = animations.remove!(a => a.handler is null);
 
         // process widget ones
         animate(_mainWidget, interval);
@@ -984,14 +984,14 @@ class Window : CustomEventTarget
 
         try
         {
-            bool needDraw = false;
-            bool needLayout = false;
-            bool animationActive = false;
+            bool needDraw;
+            bool needLayout;
+            bool animationActive;
             checkUpdateNeeded(needDraw, needLayout, animationActive);
             if (needLayout || animationActive)
                 needDraw = true;
 
-            long ts = std.datetime.Clock.currStdTime;
+            const long ts = std.datetime.Clock.currStdTime;
             if (animationActive && lastDrawTs != 0)
             {
                 animate(ts - lastDrawTs);
@@ -1006,24 +1006,24 @@ class Window : CustomEventTarget
             if (needLayout)
             {
                 debug (redraw)
-                    long layoutStart = currentTimeMillis;
+                    const layoutStart = currentTimeMillis;
                 layout();
                 debug (redraw)
                 {
-                    long layoutEnd = currentTimeMillis;
+                    const layoutEnd = currentTimeMillis;
                     if (layoutEnd - layoutStart > PERFORMANCE_LOGGING_THRESHOLD_MS)
                         Log.d("layout took ", layoutEnd - layoutStart, " ms");
                 }
             }
 
             debug (redraw)
-                long drawStart = currentTimeMillis;
+                const drawStart = currentTimeMillis;
 
             // draw main widget
             _mainWidget.onDraw(buf);
 
             // draw popups
-            Popup modal = modalPopup();
+            const modal = modalPopup();
             foreach (p; _popups)
             {
                 if (p is modal)
@@ -1039,7 +1039,7 @@ class Window : CustomEventTarget
 
             debug (redraw)
             {
-                long drawEnd = currentTimeMillis;
+                const drawEnd = currentTimeMillis;
                 if (drawEnd - drawStart > PERFORMANCE_LOGGING_THRESHOLD_MS)
                     Log.d("draw took ", drawEnd - drawStart, " ms");
             }
@@ -1065,33 +1065,33 @@ class Window : CustomEventTarget
     @property WeakRef!Widget focusedWidget() { return _focusedWidget; }
 
     /// Change focus to widget
-    Widget setFocus(WeakRef!Widget newFocus, FocusReason reason = FocusReason.unspecified)
+    Widget setFocus(WeakRef!Widget target, FocusReason reason = FocusReason.unspecified)
     {
-        Widget oldFocus = _focusedWidget;
-        auto targetState = State.focused;
+        State targetState = State.focused;
         if (reason == FocusReason.tabFocus)
-            targetState = State.focused | State.keyboardFocused;
+            targetState |= State.keyboardFocused;
         _focusStateToApply = targetState;
+
+        Widget oldFocus = _focusedWidget.get;
+        Widget newFocus = target.get;
         if (oldFocus is newFocus)
             return oldFocus;
-        if (oldFocus !is null)
+        if (oldFocus)
         {
             oldFocus.resetState(targetState);
-            if (oldFocus)
-                oldFocus.focusGroupFocused(false);
+            oldFocus.focusGroupFocused(false);
         }
-        if (newFocus is null || isChild(newFocus))
+        if (!newFocus || isChild(newFocus))
         {
-            if (newFocus !is null)
+            if (newFocus)
             {
-                // when calling, setState(focused), window.focusedWidget is still previously focused widget
+                // when calling setState(focused), window.focusedWidget is still previously focused widget
                 debug (focus)
                     Log.d("new focus: ", newFocus.id);
                 newFocus.setState(targetState);
             }
-            _focusedWidget = newFocus;
-            if (_focusedWidget)
-                _focusedWidget.focusGroupFocused(true);
+            _focusedWidget = weakRef(newFocus);
+            newFocus.maybe.focusGroupFocused(true);
             // after focus change, ask for actions update automatically
             //requestActionsUpdate();
         }
@@ -1209,24 +1209,17 @@ class Window : CustomEventTarget
             while (focus)
             {
                 if (focus.onKeyEvent(event))
-                    return true; // processed by focused widget
+                    return true; // processed by focused widget or its parent in focus group
                 if (focus.focusGroup)
                     break;
                 focus = focus.parent;
             }
         }
-        if (modal)
-        {
-            if (dispatchKeyEvent(modal, event))
-                return res;
-            return modal.onKeyEvent(event) || res;
-        }
+        Widget dest = modal ? modal : _mainWidget;
+        if (dispatchKeyEvent(dest, event))
+            return res;
         else
-        {
-            if (dispatchKeyEvent(_mainWidget, event))
-                return res;
-            return _mainWidget.onKeyEvent(event) || res;
-        }
+            return dest.onKeyEvent(event) || res;
     }
 
     /// Dispatch key event to widgets which have wantsKeyTracking == true
@@ -1267,7 +1260,7 @@ class Window : CustomEventTarget
                 // freely move mouse inside of tooltip
                 return true;
             }
-            int threshold = 3;
+            const threshold = 3;
             if (abs(_lastMouseX - event.x) > threshold || abs(_lastMouseY - event.y) > threshold)
                 hideTooltip();
             _lastMouseX = event.x;
@@ -1281,13 +1274,11 @@ class Window : CustomEventTarget
             }
         }
 
-        Popup modal = modalPopup();
-
         debug (mouse)
             Log.fd("dispatchMouseEvent %s (%s, %s)", event.action, event.x, event.y);
 
         bool res;
-        ushort currentButtons = event.flags & (MouseFlag.lbutton | MouseFlag.rbutton | MouseFlag.mbutton);
+        const ushort currentButtons = event.flags & (MouseFlag.lbutton | MouseFlag.rbutton | MouseFlag.mbutton);
         if (_mouseCaptureWidget)
         {
             // try to forward message directly to active widget
@@ -1383,20 +1374,17 @@ class Window : CustomEventTarget
             processed = checkRemoveTracking(event);
         }
 
+        Popup modal = modalPopup();
         bool cursorIsSet = overrideCursorType != CursorType.notSet;
-
         if (!res)
         {
             bool insideOneOfPopups;
             foreach_reverse (p; _popups)
             {
-                if (p.isPointInside(event.x, event.y))
-                {
-                    if (p !is modal)
-                        insideOneOfPopups = true;
-                }
                 if (p is modal)
                     break;
+                if (p.isPointInside(event.x, event.y))
+                    insideOneOfPopups = true;
             }
             foreach_reverse (p; _popups)
             {
@@ -1413,10 +1401,8 @@ class Window : CustomEventTarget
                         return true;
                 }
             }
-            if (!modal)
-                res = dispatchMouseEvent(weakRef(_mainWidget), event, cursorIsSet);
-            else
-                res = dispatchMouseEvent(WeakRef!Widget(modal), event, cursorIsSet);
+            auto dest = weakRef(modal ? modal : _mainWidget);
+            res = dispatchMouseEvent(dest, event, cursorIsSet);
         }
         return res || processed || _mainWidget.needDraw;
     }
@@ -1495,7 +1481,7 @@ class Window : CustomEventTarget
                 w.nullify();
             }
         }
-        _mouseTrackingWidgets = _mouseTrackingWidgets.efilter!(a => !a.isNull);
+        _mouseTrackingWidgets = _mouseTrackingWidgets.remove!(a => a.isNull);
         debug (mouse)
             Log.d("removeTracking, items after: ", _mouseTrackingWidgets.length);
         return res;
@@ -1550,7 +1536,7 @@ class Window : CustomEventTarget
     }
 
     /// Returns true if mouse is currently captured
-    bool isMouseCaptured()
+    bool isMouseCaptured() const
     {
         return !_mouseCaptureWidget.isNull;
     }
@@ -1624,20 +1610,14 @@ class Window : CustomEventTarget
     /// Dispatch custom event
     bool dispatchCustomEvent(CustomEvent event)
     {
-        if (event.destinationWidget)
+        if (auto dest = event.destinationWidget.get)
         {
-            if (!isChild(event.destinationWidget))
-            {
-                //Event is sent to widget which does not exist anymore
-                return false;
-            }
-            return event.destinationWidget.onEvent(event);
+            return dest.onEvent(event);
         }
         else
         {
-            // no destination widget
-            RunnableEvent runnable = cast(RunnableEvent)event;
-            if (runnable)
+            // no destination widget, can be runnable
+            if (auto runnable = cast(RunnableEvent)event)
             {
                 // handle runnable
                 runnable.run();
@@ -1663,8 +1643,7 @@ class Window : CustomEventTarget
         checkUpdateNeeded(_mainWidget, needDraw, needLayout, animationActive);
         foreach (p; _popups)
             checkUpdateNeeded(p, needDraw, needLayout, animationActive);
-        if (_tooltip.popup)
-            checkUpdateNeeded(_tooltip.popup, needDraw, needLayout, animationActive);
+        checkUpdateNeeded(_tooltip.popup, needDraw, needLayout, animationActive);
         return needDraw || needLayout || animationActive;
     }
     /// Check content widgets for necessary redraw and/or layout
@@ -1672,26 +1651,29 @@ class Window : CustomEventTarget
     {
         if (root is null)
             return;
-        if (root.visibility != Visibility.visible)
+        if (root.visibility == Visibility.gone)
             return;
-        needDraw = root.needDraw || needDraw;
-        if (!needLayout)
+        needLayout = needLayout || root.needLayout;
+        debug (redraw)
         {
-            needLayout = root.needLayout;
-            debug (redraw)
-                if (needLayout)
-                    Log.fd("Need layout: %s, id: %s, parent: %s",
-                        root.classinfo.name, root.id, root.parent ? root.parent.classinfo.name : "null");
+            if (root.needLayout)
+                Log.fd("Need layout: %s, id: %s, parent: %s", root.classinfo.name,
+                    root.id, root.parent ? root.parent.classinfo.name : "null");
         }
-        if (root.animating && root.visible)
-            animationActive = true; // check animation only for visible widgets
+        if (root.visibility == Visibility.hidden)
+            return;
+        needDraw = needDraw || root.needDraw;
+        animationActive = animationActive || root.animating;
+        if (needDraw && needLayout && animationActive)
+            return;
+        // check recursively
         foreach (i; 0 .. root.childCount)
             checkUpdateNeeded(root.child(i), needDraw, needLayout, animationActive);
     }
 
     private bool _animationActive;
 
-    @property bool isAnimationActive() { return _animationActive; }
+    bool isAnimationActive() const { return _animationActive; }
 
     /// Request update for window (unless force is true, update will be performed only if layout, redraw or animation is required).
     void update(bool force = false)
