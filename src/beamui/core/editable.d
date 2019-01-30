@@ -191,10 +191,11 @@ struct TextPosition
         return line == v.line && pos == v.pos;
     }
 
-    @property string toString() const
+    string toString() const
     {
         return to!string(line) ~ ":" ~ to!string(pos);
     }
+
     /// Adds deltaPos to position and returns result
     TextPosition offset(int deltaPos)
     {
@@ -242,7 +243,7 @@ struct TextRange
         return end.line - start.line + 1;
     }
 
-    @property string toString() const
+    string toString() const
     {
         return "[" ~ start.toString ~ ":" ~ end.toString ~ "]";
     }
@@ -313,7 +314,6 @@ class EditOperation
         _content.length = text.length;
         foreach (i; 0 .. text.length)
             _content[i] = text[i].dup;
-        //_content = text;
     }
 
     @property
@@ -326,30 +326,15 @@ class EditOperation
 
         /// New range after operation applied
         ref TextRange newRange() { return _newRange; }
-        /// ditto
-        void newRange(TextRange range)
-        {
-            _newRange = range;
-        }
 
         /// New content for range (if required for this action)
         ref dstring[] content() { return _content; }
 
         /// Line edit marks for old range
         ref EditStateMark[] oldEditMarks() { return _oldEditMarks; }
-        /// ditto
-        void oldEditMarks(EditStateMark[] marks)
-        {
-            _oldEditMarks = marks;
-        }
 
         /// Old content for range
         ref dstring[] oldContent() { return _oldContent; }
-        /// ditto
-        void oldContent(dstring[] content)
-        {
-            _oldContent = content;
-        }
     }
 
     /// Try to merge two operations (simple entering of characters in the same line), return true if succeded
@@ -369,7 +354,7 @@ class EditOperation
         // removing single character
         if (_newRange.empty && op._newRange.empty && op._oldContent[0].length == 1)
         {
-            if (_newRange.end.pos == op.range.end.pos)
+            if (_newRange.end.pos == op._range.end.pos)
             {
                 // removed char before
                 _range.start.pos--;
@@ -389,12 +374,6 @@ class EditOperation
         return false;
     }
 
-    //void saved() {
-    //    for (int i = 0; i < _oldEditMarks.length; i++) {
-    //        if (_oldEditMarks[i] == EditStateMark.changed)
-    //            _oldEditMarks[i] = EditStateMark.saved;
-    //    }
-    //}
     void modified(bool all = true)
     {
         foreach (i; 0 .. _oldEditMarks.length)
@@ -405,15 +384,15 @@ class EditOperation
     }
 
     /// Returns true if it's insert new line operation
-    @property bool isInsertNewLine()
+    @property bool isInsertNewLine() const
     {
-        return content.length == 2 && content[0].length == 0 && content[1].length == 0;
+        return _content.length == 2 && _content[0].length == 0 && _content[1].length == 0;
     }
 
     /// If new content is single char, return it, otherwise return 0
-    @property dchar singleChar()
+    @property dchar singleChar() const
     {
-        return content.length == 1 && content[0].length == 1 ? content[0][0] : 0;
+        return _content.length == 1 && _content[0].length == 1 ? _content[0][0] : 0;
     }
 }
 
@@ -539,7 +518,7 @@ struct LineSpan
     }
 
     ///Adds up either positions or widths to a wrapLine
-    int accumulation(int wrapLine, bool wrapPointInfo)
+    int accumulation(int wrapLine, bool wrapPointInfo) const
     {
         int total;
         for (int i; i < wrapLine; i++)
@@ -612,7 +591,7 @@ struct TextLineMeasure
     /// Last non-space position based on tab size
     int lastNonSpaceX;
     /// True if line has zero length or consists of spaces and tabs only
-    @property bool empty()
+    @property bool empty() const
     {
         return len == 0 || firstNonSpace < 0;
     }
@@ -635,37 +614,6 @@ struct TabSize
 /// Editable plain text (single/multiline)
 class EditableContent
 {
-    private
-    {
-        UndoBuffer _undoBuffer;
-        SyntaxSupport _syntaxSupport;
-        bool _readOnly;
-        LineIcons _lineIcons;
-
-        TabSize _tabSize;
-        bool _useSpacesForTabs = true;
-
-        bool _smartIndents;
-        bool _smartIndentsAfterPaste;
-        bool _multiline;
-
-        /// Text content by lines
-        dstring[] _lines;
-        /// Token properties by lines - for syntax highlight
-        TokenPropString[] _tokenProps;
-
-        /// Line edit marks
-        EditStateMark[] _editMarks;
-    }
-
-    this(bool multiline)
-    {
-        _multiline = multiline;
-        _lines.length = 1; // initial state: single empty line
-        _editMarks.length = 1;
-        _undoBuffer = new UndoBuffer;
-    }
-
     @property
     {
         bool modified() const
@@ -673,7 +621,7 @@ class EditableContent
             return _undoBuffer.modified;
         }
 
-        SyntaxSupport syntaxSupport() { return _syntaxSupport; }
+        inout(SyntaxSupport) syntaxSupport() inout { return _syntaxSupport; }
         /// ditto
         void syntaxSupport(SyntaxSupport syntaxSupport)
         {
@@ -693,30 +641,7 @@ class EditableContent
             return _syntaxSupport !is null;
         }
 
-        bool readOnly() const { return _readOnly; }
-        /// ditto
-        void readOnly(bool readOnly)
-        {
-            _readOnly = readOnly;
-        }
-
         ref LineIcons lineIcons() { return _lineIcons; }
-
-        /// Tab size (in number of spaces)
-        TabSize tabSize() const { return _tabSize; }
-        /// ditto
-        void tabSize(TabSize value)
-        {
-            _tabSize = value;
-        }
-
-        /// Tab key behavior flag: when true, spaces will be inserted instead of tabs
-        bool useSpacesForTabs() const { return _useSpacesForTabs; }
-        /// ditto
-        void useSpacesForTabs(bool useSpacesForTabs)
-        {
-            _useSpacesForTabs = useSpacesForTabs;
-        }
 
         /// True if smart indents are supported
         bool supportsSmartIndents() const
@@ -724,23 +649,7 @@ class EditableContent
             return _syntaxSupport && _syntaxSupport.supportsSmartIndents;
         }
 
-        /// True if smart indents are enabled
-        bool smartIndents() const { return _smartIndents; }
-        /// ditto
-        void smartIndents(bool enabled)
-        {
-            _smartIndents = enabled;
-        }
-
-        /// True if smart indents are enabled
-        bool smartIndentsAfterPaste() const { return _smartIndentsAfterPaste; }
-        /// ditto
-        void smartIndentsAfterPaste(bool enabled)
-        {
-            _smartIndentsAfterPaste = enabled;
-        }
-
-        /// Returns true if miltyline content is supported
+        /// Returns true if miltiline content is supported
         bool multiline() const { return _multiline; }
 
         EditStateMark[] editMarks() { return _editMarks; }
@@ -762,12 +671,53 @@ class EditableContent
             }
             return cast(dstring)buf;
         }
+
+        /// Returns line count
+        int length() const
+        {
+            return cast(int)_lines.length;
+        }
     }
+
+    bool readOnly;
+    /// Tab size (in number of spaces)
+    TabSize tabSize;
+    /// Tab key behavior flag: when true, spaces will be inserted instead of tabs
+    bool useSpacesForTabs = true;
+    /// True if smart indents are enabled
+    bool smartIndents;
+    /// True if smart indents are enabled
+    bool smartIndentsAfterPaste;
 
     /// Listeners for edit operations
     Signal!onContentChangeHandler contentChanged;
     /// Listeners for mark changes after edit operation
     Signal!onEditableContentMarksChangeHandler marksChanged;
+
+    private
+    {
+        UndoBuffer _undoBuffer;
+        SyntaxSupport _syntaxSupport;
+        LineIcons _lineIcons;
+
+        bool _multiline;
+
+        /// Text content by lines
+        dstring[] _lines;
+        /// Token properties by lines - for syntax highlight
+        TokenPropString[] _tokenProps;
+
+        /// Line edit marks
+        EditStateMark[] _editMarks;
+    }
+
+    this(bool multiline)
+    {
+        _multiline = multiline;
+        _lines.length = 1; // initial state: single empty line
+        _editMarks.length = 1;
+        _undoBuffer = new UndoBuffer;
+    }
 
     /// Append one or more lines at end
     void appendLines(dstring[] lines...)
@@ -792,9 +742,9 @@ class EditableContent
         int p = pos.pos;
         if (p < 0 || p > s.length || s.length == 0)
             return res;
-        dchar leftChar = p > 0 ? s[p - 1] : 0;
-        dchar rightChar = p < s.length - 1 ? s[p + 1] : 0;
-        dchar centerChar = p < s.length ? s[p] : 0;
+        const leftChar = p > 0 ? s[p - 1] : 0;
+        const rightChar = p < s.length - 1 ? s[p + 1] : 0;
+        const centerChar = p < s.length ? s[p] : 0;
         if (isAlphaForWordSelection(centerChar))
         {
             // ok
@@ -852,7 +802,7 @@ class EditableContent
     {
         if (!_syntaxSupport)
             return false;
-        TextPosition p2 = _syntaxSupport.findPairedBracket(p);
+        const TextPosition p2 = _syntaxSupport.findPairedBracket(p);
         if (p == p2)
             return false;
         if (p < p2)
@@ -892,7 +842,7 @@ class EditableContent
         {
             if (hasSyntaxHighlight)
             {
-                int len = cast(int)_lines[i].length;
+                const int len = cast(int)_lines[i].length;
                 _tokenProps[i].length = len;
                 foreach (j; 0 .. len)
                     _tokenProps[i][j] = TOKEN_UNKNOWN;
@@ -941,12 +891,6 @@ class EditableContent
         _lines.length = 0;
     }
 
-    /// Returns line count
-    @property int length() const
-    {
-        return cast(int)_lines.length;
-    }
-
     dstring opIndex(int index) const
     {
         return line(index);
@@ -961,7 +905,7 @@ class EditableContent
     /// Returns character at position lineIndex, pos
     dchar opIndex(int lineIndex, int pos)
     {
-        dstring s = line(lineIndex);
+        const s = line(lineIndex);
         if (pos >= 0 && pos < s.length)
             return s[pos];
         return 0;
@@ -969,7 +913,7 @@ class EditableContent
     /// Returns character at position lineIndex, pos
     dchar opIndex(TextPosition p)
     {
-        dstring s = line(p.line);
+        const s = line(p.line);
         if (p.pos >= 0 && p.pos < s.length)
             return s[p.pos];
         return 0;
@@ -1060,7 +1004,7 @@ class EditableContent
     /// Find nearest next tab position
     int nextTab(int pos) const
     {
-        return (pos + _tabSize) / _tabSize * _tabSize;
+        return (pos + tabSize) / tabSize * tabSize;
     }
 
     /// To return information about line space positions
@@ -1082,14 +1026,14 @@ class EditableContent
         LineWhiteSpace res;
         if (lineIndex < 0 || lineIndex >= _lines.length)
             return res;
-        dstring s = _lines[lineIndex];
+        const s = _lines[lineIndex];
         int x = 0;
         for (int i = 0; i < s.length; i++)
         {
-            dchar ch = s[i];
+            const ch = s[i];
             if (ch == '\t')
             {
-                x = (x + _tabSize) / _tabSize * _tabSize;
+                x = (x + tabSize) / tabSize * tabSize;
             }
             else if (ch == ' ')
             {
@@ -1115,18 +1059,18 @@ class EditableContent
     {
         dchar[] buf;
         int x = 0;
-        while (x + _tabSize.value <= pos)
+        while (x + tabSize <= pos)
         {
             if (useSpacesForTabs)
             {
-                foreach (i; 0 .. _tabSize.value)
+                foreach (i; 0 .. tabSize)
                     buf ~= ' ';
             }
             else
             {
                 buf ~= '\t';
             }
-            x += _tabSize.value;
+            x += tabSize;
         }
         while (x < pos)
         {
@@ -1140,21 +1084,21 @@ class EditableContent
     TextLineMeasure measureLine(int lineIndex) const
     {
         TextLineMeasure res;
-        dstring s = _lines[lineIndex];
+        const s = _lines[lineIndex];
         res.len = cast(int)s.length;
         if (lineIndex < 0 || lineIndex >= _lines.length)
             return res;
         int x = 0;
         for (int i = 0; i < s.length; i++)
         {
-            dchar ch = s[i];
+            const ch = s[i];
             if (ch == ' ')
             {
                 x++;
             }
             else if (ch == '\t')
             {
-                x = (x + _tabSize) / _tabSize * _tabSize;
+                x = (x + tabSize) / tabSize * tabSize;
             }
             else
             {
@@ -1176,8 +1120,7 @@ class EditableContent
     {
         if (lineIndex < 0 || lineIndex >= _lines.length)
             return true;
-        dstring s = _lines[lineIndex];
-        foreach (ch; s)
+        foreach (ch; _lines[lineIndex])
             if (ch != ' ' && ch != '\t')
                 return false;
         return true;
@@ -1271,9 +1214,9 @@ class EditableContent
         }
         for (int lineIndex = range.start.line; lineIndex <= range.end.line; lineIndex++)
         {
-            dstring lineText = line(lineIndex);
+            const lineText = line(lineIndex);
             dstring lineFragment = lineText;
-            int startchar = (lineIndex == range.start.line) ? range.start.pos : 0;
+            const int startchar = (lineIndex == range.start.line) ? range.start.pos : 0;
             int endchar = (lineIndex == range.end.line) ? range.end.pos : cast(int)lineText.length;
             if (endchar > lineText.length)
                 endchar = cast(int)lineText.length;
@@ -1299,11 +1242,8 @@ class EditableContent
             position.line = 0;
             position.pos = 0;
         }
-        int currentLineLength = lineLength(position.line);
-        if (position.pos > currentLineLength)
-            position.pos = currentLineLength;
-        if (position.pos < 0)
-            position.pos = 0;
+        const currentLineLength = lineLength(position.line);
+        position.pos = clamp(position.pos, 0, currentLineLength);
     }
 
     /// When range positions is out of content bounds, fix it to nearest valid position
@@ -1316,7 +1256,7 @@ class EditableContent
     /// Removes removedCount lines starting from start
     protected void removeLines(int start, int removedCount)
     {
-        int end = start + removedCount;
+        const int end = start + removedCount;
         assert(removedCount > 0 && start >= 0 && end > 0 && start < _lines.length && end <= _lines.length);
         for (int i = start; i < _lines.length - removedCount; i++)
         {
@@ -1359,15 +1299,15 @@ class EditableContent
     /// Inserts or removes lines, removes text in range
     protected void replaceRange(TextRange before, TextRange after, dstring[] newContent, EditStateMark[] marks = null)
     {
-        dstring firstLineBefore = line(before.start.line);
-        dstring lastLineBefore = before.singleLine ? firstLineBefore : line(before.end.line);
-        dstring firstLineHead = before.start.pos > 0 && before.start.pos <= firstLineBefore.length ?
+        const dstring firstLineBefore = line(before.start.line);
+        const dstring lastLineBefore = before.singleLine ? firstLineBefore : line(before.end.line);
+        const dstring firstLineHead = before.start.pos > 0 && before.start.pos <= firstLineBefore.length ?
             firstLineBefore[0 .. before.start.pos] : ""d;
-        dstring lastLineTail = before.end.pos >= 0 && before.end.pos < lastLineBefore.length ?
+        const dstring lastLineTail = before.end.pos >= 0 && before.end.pos < lastLineBefore.length ?
             lastLineBefore[before.end.pos .. $] : ""d;
 
-        int linesBefore = before.lines;
-        int linesAfter = after.lines;
+        const int linesBefore = before.lines;
+        const int linesAfter = after.lines;
         if (linesBefore < linesAfter)
         {
             // add more lines
@@ -1385,7 +1325,7 @@ class EditableContent
                 //if (i - after.start.line < marks.length)
                 _editMarks[i] = marks[i - after.start.line];
             }
-            dstring newline = newContent[i - after.start.line];
+            const dstring newline = newContent[i - after.start.line];
             if (i == after.start.line && i == after.end.line)
             {
                 dchar[] buf;
@@ -1432,9 +1372,9 @@ class EditableContent
     static bool isWordBound(dchar thischar, dchar nextchar)
     {
         return isAlNum(thischar) && !isAlNum(nextchar) ||
-            isPunct(thischar) && !isPunct(nextchar) ||
-            isBracket(thischar) && !isBracket(nextchar) ||
-            thischar != ' ' && nextchar == ' ';
+               isPunct(thischar) && !isPunct(nextchar) ||
+               isBracket(thischar) && !isBracket(nextchar) ||
+               thischar != ' ' && nextchar == ' ';
     }
 
     /// Change text position to nearest word bound (direction < 0 - back, > 0 - forward)
@@ -1459,7 +1399,7 @@ class EditableContent
             }
             else
             {
-                dstring txt = line(p.line);
+                const txt = line(p.line);
                 int found;
                 for (int i = p.pos - 1; i > 0; i--)
                 {
@@ -1495,7 +1435,7 @@ class EditableContent
             }
             else
             {
-                dstring txt = line(p.line);
+                const txt = line(p.line);
                 int found = linelen;
                 for (int i = p.pos; i < linelen; i++)
                 {
@@ -1522,7 +1462,7 @@ class EditableContent
     /// Edit content
     bool performOperation(EditOperation op, Object source)
     {
-        if (_readOnly)
+        if (readOnly)
             throw new Exception("content is readonly");
         if (op.action == EditAction.replace)
         {
@@ -1577,7 +1517,7 @@ class EditableContent
     {
         if (!hasUndo)
             return false;
-        if (_readOnly)
+        if (readOnly)
             throw new Exception("content is readonly");
         EditOperation op = _undoBuffer.undo();
         TextRange rangeBefore = op.newRange;
@@ -1596,7 +1536,7 @@ class EditableContent
     {
         if (!hasRedo)
             return false;
-        if (_readOnly)
+        if (readOnly)
             throw new Exception("content is readonly");
         EditOperation op = _undoBuffer.redo();
         TextRange rangeBefore = op.range;
@@ -1682,14 +1622,9 @@ class EditableContent
         }
         try
         {
-            InputStream f;
-            f = new FileInputStream(filename);
-            scope (exit)
-            {
-                f.close();
-            }
-            bool res = load(f, filename);
-            return res;
+            auto f = new FileInputStream(filename);
+            scope (exit) f.close();
+            return load(f, filename);
         }
         catch (ErrnoException e)
         {
@@ -1710,20 +1645,17 @@ class EditableContent
         if (!filename)
             filename = _filename;
         _format = format;
-        import beamui.core.linestream;
-
         try
         {
+            import beamui.core.linestream;
+
             debug (FileFormats)
                 Log.d("creating output stream, file=", filename, " format=", format);
-            OutputLineStream writer = new OutputLineStream(stream, filename, format);
-            scope (exit)
+            auto writer = new OutputLineStream(stream, filename, format);
+            scope (exit) writer.close();
+            foreach (line; _lines)
             {
-                writer.close();
-            }
-            for (int i = 0; i < _lines.length; i++)
-            {
-                writer.writeLine(_lines[i]);
+                writer.writeLine(line);
             }
             _undoBuffer.saved();
             notifyContentSaved();
@@ -1747,11 +1679,8 @@ class EditableContent
             filename = _filename;
         try
         {
-            OutputStream f = new FileOutputStream(filename);
-            scope (exit)
-            {
-                f.close();
-            }
+            auto f = new FileOutputStream(filename);
+            scope (exit) f.close();
             return save(f, filename, format);
         }
         catch (Exception e)
@@ -1820,10 +1749,7 @@ struct LineIcons
 
     private void insert(LineIcon icon, int index)
     {
-        if (index < 0)
-            index = 0;
-        if (index > _len)
-            index = _len;
+        index = clamp(index, 0, _len);
         if (_items.length <= index)
             _items.length = index + 16;
         if (index < _len)
@@ -1850,7 +1776,7 @@ struct LineIcons
     /// Add icon mark
     void add(LineIcon icon)
     {
-        int index = findSortedIndex(icon.line, icon.type);
+        const int index = findSortedIndex(icon.line, icon.type);
         insert(icon, index);
     }
     /// Add all icons from list
@@ -1900,8 +1826,8 @@ struct LineIcons
     /// Remove all icon marks of specified type, return true if any of items removed
     bool removeByType(LineIconType type)
     {
-        bool res = false;
-        for (int i = _len - 1; i >= 0; i--)
+        bool res;
+        foreach_reverse (i; 0 .. _len)
         {
             if (_items[i].type == type)
             {
@@ -1937,8 +1863,8 @@ struct LineIcons
     {
         moved = null;
         removed = null;
-        bool res = false;
-        for (int i = _len - 1; i >= 0; i--)
+        bool res;
+        foreach_reverse (i; 0 .. _len)
         {
             LineIcon item = _items[i];
             if (rangeBefore.start.line > item.line && rangeAfter.start.line > item.line)
@@ -1946,7 +1872,7 @@ struct LineIcons
             else if (rangeBefore.start.line < item.line || rangeAfter.start.line < item.line)
             {
                 // line is fully after change
-                int deltaLines = rangeAfter.end.line - rangeBefore.end.line;
+                const int deltaLines = rangeAfter.end.line - rangeBefore.end.line;
                 if (!deltaLines)
                     continue;
                 if (deltaLines < 0 && rangeBefore.end.line >= item.line && rangeAfter.end.line < item.line)
@@ -1975,7 +1901,7 @@ struct LineIcons
         if (direction < 0)
         {
             // backward
-            for (int i = _len - 1; i >= 0; i--)
+            foreach_reverse (i; 0 .. _len)
             {
                 LineIcon item = _items[i];
                 if (item.type != type)
