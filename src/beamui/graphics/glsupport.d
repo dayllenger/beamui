@@ -417,13 +417,16 @@ class TextureProgram : SolidFillProgram
     }
 }
 
-private __gshared GLBackend _glSupport;
+private __gshared GLBackend _glBackend;
 /// Returns GL backend instance. Null if GL is not loaded.
-@property GLBackend glSupport() { return _glSupport; }
+@property GLBackend glSupport() { return _glBackend; }
 
 /// Load OpenGL 1.0 and 1.1 functions
 bool initBasicOpenGL()
 {
+    if (_glBackend)
+        return true;
+    glNoContext = false;
     try
     {
         DerelictGL3.missingSymbolCallback = &gl3MissingSymFunc;
@@ -442,7 +445,7 @@ bool initBasicOpenGL()
 /// Initialize OpenGL backend (call only when current OpenGL context is initialized)
 bool initGLSupport(bool legacy)
 {
-    if (_glSupport)
+    if (_glBackend)
         return true;
     version (Android)
     {
@@ -485,17 +488,16 @@ bool initGLSupport(bool legacy)
             Log.e("Neither DerelictGL3 nor DerelictGL were reloaded successfully");
             return false;
         }
-        legacy = glReloaded && !gl3Reloaded;
+        legacy = legacy || glReloaded && !gl3Reloaded;
     }
-
-    char major = glGetString(GL_VERSION)[0];
+    const char major = glGetString(GL_VERSION)[0];
     legacy = legacy || major < '3';
     if (!legacy)
     {
         auto normal = new NormalGLBackend;
         if (normal.valid)
         {
-            _glSupport = normal;
+            _glBackend = normal;
             Log.v("OpenGL initialized successfully");
             return true;
         }
@@ -513,7 +515,7 @@ bool initGLSupport(bool legacy)
                 Log.w("Try to create OpenGL context with <= 3.1 version");
             return false;
         }
-        _glSupport = new LegacyGLBackend;
+        _glBackend = new LegacyGLBackend;
         Log.v("OpenGL initialized successfully");
         return true;
     }
@@ -522,6 +524,13 @@ bool initGLSupport(bool legacy)
         // do not recreate legacy mode
         return false;
     }
+}
+
+/// Deinitialize GLBackend, destroy all internal shaders, buffers, etc.
+void uninitGLSupport()
+{
+    eliminate(_glBackend);
+    glNoContext = true;
 }
 
 /// Open GL drawing backend

@@ -2217,8 +2217,9 @@ struct GuiApp
 
         static if (USE_OPENGL)
         {
-            import beamui.graphics.gl.objects;
-            glNoContext = true;
+            import beamui.graphics.glsupport;
+            if (openglEnabled)
+                uninitGLSupport();
         }
 
         releaseResourcesOnAppExit();

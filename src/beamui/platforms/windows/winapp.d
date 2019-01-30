@@ -1048,6 +1048,7 @@ final class Win32Platform : Platform
     ~this()
     {
         destroy(windows);
+        unregisterWndClass();
     }
 
     override int enterMessageLoop()
@@ -1155,9 +1156,7 @@ final class Win32Platform : Platform
 
 private bool registerWndClass()
 {
-    //MSG  msg;
     WNDCLASSW wndclass;
-
     wndclass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wndclass.lpfnWndProc = cast(WNDPROC)&WndProc;
     wndclass.cbClsExtra = 0;
@@ -1176,7 +1175,19 @@ private bool registerWndClass()
     SCREEN_DPI = GetDeviceCaps(dc, LOGPIXELSY);
     DeleteObject(dc);
 
+    windowClassRegistered = true;
     return true;
+}
+
+private __gshared bool windowClassRegistered;
+
+private void unregisterWndClass()
+{
+    if (windowClassRegistered)
+    {
+        UnregisterClassW(toUTF16z(WIN_CLASS_NAME), GetModuleHandle(null));
+        windowClassRegistered = false;
+    }
 }
 
 extern (C) Platform initPlatform(AppConf conf)

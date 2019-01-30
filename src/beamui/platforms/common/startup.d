@@ -551,6 +551,8 @@ void initResourceManagers()
 
     Log.d("Initializing resource managers");
 
+    debug APP_IS_SHUTTING_DOWN = false;
+
     _gamma65 = new glyph_gamma_table!65(1.0);
     _gamma256 = new glyph_gamma_table!256(1.0);
     static if (USE_FREETYPE)
@@ -611,6 +613,8 @@ void releaseResourcesOnAppExit()
         }
     }
 
+    destroy(resourceList);
+
     currentTheme = null;
 
     debug
@@ -668,4 +672,7 @@ void releaseResourcesOnAppExit()
 
         APP_IS_SHUTTING_DOWN = true;
     }
+
+    GC.collect();
+    GC.minimize();
 }
