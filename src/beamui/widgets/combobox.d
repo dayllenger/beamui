@@ -295,7 +295,8 @@ class ComboBox : ComboBoxBase
         foreach (i; 0 .. _adapter.itemCount)
         {
             Widget item = _adapter.itemWidget(i);
-            Size sz = item.computeBoundaries().min;
+            item.measure();
+            Size sz = item.minSize;
             minItemWidth = max(minItemWidth, sz.w);
         }
         res.style.minWidth = minItemWidth;
@@ -393,7 +394,8 @@ class IconTextComboBox : ComboBoxBase
         foreach (i; 0 .. _adapter.itemCount)
         {
             Widget item = _adapter.itemWidget(i);
-            Size sz = item.computeBoundaries().min;
+            item.measure();
+            Size sz = item.minSize;
             minItemWidth = max(minItemWidth, sz.w);
         }
         res.style.minWidth = minItemWidth;

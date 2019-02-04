@@ -248,7 +248,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
 
     //===============================================================
 
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         // fill items array
         items.length = 0;
@@ -262,15 +262,16 @@ class LinearLayout : WidgetGroupDefaultDrawing
 
         if (items.length == 0)
         {
-            auto bs = Boundaries();
-            applyStyle(bs);
-            return bs;
+            super.measure(); // do default computation
+            return;
         }
+
         // has items
         Boundaries bs;
         foreach (ref item; items)
         {
-            Boundaries wbs = item.wt.computeBoundaries();
+            item.wt.measure();
+            Boundaries wbs = item.wt.boundaries;
             // add margins
             Size m = _cells[item.index].margins.size;
             Boundaries ms = Boundaries(m, m, m);
@@ -301,8 +302,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
             bs.nat.h += space;
             bs.min.h += space;
         }
-        applyStyle(bs);
-        return bs;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)
@@ -334,14 +334,14 @@ class LinearLayout : WidgetGroupDefaultDrawing
             {
                 item.fill = c.fillWidth;
                 item.result.h = c.fillHeight ? min(geom.h, item.bs.max.h) : item.bs.nat.h;
-                if (item.wt.widthDependsOnHeight)
+                if (item.wt.dependentSize == DependentSize.width)
                     item.bs.nat.w = item.wt.widthForHeight(item.result.h - m.height) + m.width;
             }
             else
             {
                 item.fill = c.fillHeight;
                 item.result.w = c.fillWidth ? min(geom.w, item.bs.max.w) : item.bs.nat.w;
-                if (item.wt.heightDependsOnWidth)
+                if (item.wt.dependentSize == DependentSize.height)
                     item.bs.nat.h = item.wt.heightForWidth(item.result.w - m.width) + m.height;
             }
         }
@@ -625,7 +625,7 @@ class Column : LinearLayout
 /// Place all children into same place (usually, only one child should be visible at a time)
 class FrameLayout : WidgetGroupDefaultDrawing
 {
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         Boundaries bs;
         foreach (i; 0 .. childCount)
@@ -634,12 +634,12 @@ class FrameLayout : WidgetGroupDefaultDrawing
             if (item.visibility == Visibility.gone)
                 continue;
 
-            Boundaries wbs = item.computeBoundaries();
+            item.measure();
+            Boundaries wbs = item.boundaries;
             bs.maximizeWidth(wbs);
             bs.maximizeHeight(wbs);
         }
-        applyStyle(bs);
-        return bs;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)
@@ -761,7 +761,7 @@ class FreeLayout : WidgetGroupDefaultDrawing
 
     //===============================================================
 
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         Boundaries bs;
         foreach (i; 0 .. childCount)
@@ -770,7 +770,8 @@ class FreeLayout : WidgetGroupDefaultDrawing
             if (item.visibility == Visibility.gone)
                 continue;
             Cell* c = _cells[i];
-            Boundaries wbs = item.computeBoundaries();
+            item.measure();
+            Boundaries wbs = item.boundaries;
             c.size = wbs.nat;
             wbs.min.w += c.x;
             wbs.min.h += c.y;
@@ -781,8 +782,7 @@ class FreeLayout : WidgetGroupDefaultDrawing
             bs.maximizeWidth(wbs);
             bs.maximizeHeight(wbs);
         }
-        applyStyle(bs);
-        return bs;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)
@@ -881,7 +881,7 @@ class TableLayout : WidgetGroupDefaultDrawing
             requestLayout();
     }
 
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         int rc = rowCount;
         int cc = colCount;
@@ -893,7 +893,8 @@ class TableLayout : WidgetGroupDefaultDrawing
             if (i < childCount)
             {
                 Widget item = child(i);
-                Boundaries wbs = item.computeBoundaries();
+                item.measure();
+                Boundaries wbs = item.boundaries;
                 _cells[i].wt = item;
                 _cells[i].bs = wbs;
             }
@@ -941,8 +942,7 @@ class TableLayout : WidgetGroupDefaultDrawing
         bs.min += space;
         bs.nat += space;
         bs.max += space;
-        applyStyle(bs);
-        return bs;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)

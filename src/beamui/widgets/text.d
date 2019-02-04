@@ -83,26 +83,26 @@ class Label : Widget
         minSizeTester.style.font = fnt;
     }
 
-    override Size computeMinSize()
+    override void measure()
     {
         textobj.style.hotkey = textHotkey;
-        minSizeTester.style.hotkey = textHotkey;
+        textobj.measure();
+
+        Boundaries bs;
+        // min size
         if (textobj.str.length < minSizeTester.str.length * 2)
         {
-            textobj.measure();
-            return textobj.size;
+            bs.min = textobj.size;
         }
         else
         {
+            minSizeTester.style.hotkey = textHotkey;
             minSizeTester.measure();
-            return minSizeTester.size;
+            bs.min = minSizeTester.size;
         }
-    }
-
-    override Size computeNaturalSize()
-    {
-        textobj.measure();
-        return textobj.size;
+        // nat size
+        bs.nat = textobj.size;
+        setBoundaries(bs);
     }
 
     override void onDraw(DrawBuf buf)
@@ -150,7 +150,7 @@ class MultilineLabel : Widget
         minSizeTester.str = "aaaaa\na";
         natSizeTester.str =
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\na";
-        heightDependsOnWidth = true;
+        dependentSize = DependentSize.height;
         handleFontChange();
     }
 
@@ -196,36 +196,35 @@ class MultilineLabel : Widget
         natSizeTester.style.font = fnt;
     }
 
-    override Size computeMinSize()
+    override void measure()
     {
         textobj.style.hotkey = textHotkey;
-        minSizeTester.style.hotkey = textHotkey;
+        textobj.measure();
+
+        Boundaries bs;
+        // min size
         if (textobj.lines[0].length < minSizeTester.lines[0].length)
         {
-            textobj.measure();
-            return textobj.size;
+            bs.min = textobj.size;
         }
         else
         {
+            minSizeTester.style.hotkey = textHotkey;
             minSizeTester.measure();
-            return minSizeTester.size;
+            bs.min = minSizeTester.size;
         }
-    }
-
-    override Size computeNaturalSize()
-    {
-        textobj.style.hotkey = textHotkey;
-        natSizeTester.style.hotkey = textHotkey;
+        // nat size
         if (textobj.lines[0].length < natSizeTester.lines[0].length)
         {
-            textobj.measure();
-            return textobj.size;
+            bs.nat = textobj.size;
         }
         else
         {
+            natSizeTester.style.hotkey = textHotkey;
             natSizeTester.measure();
-            return natSizeTester.size;
+            bs.nat = natSizeTester.size;
         }
+        setBoundaries(bs);
     }
 
     override int heightForWidth(int width)

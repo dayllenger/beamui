@@ -150,7 +150,7 @@ class ProgressBar : Widget
         invalidate();
     }
 
-    override Size computeNaturalSize()
+    override void measure()
     {
         DrawableRef gaugeDrawable = currentTheme.getDrawable("progress_bar_gauge");
         DrawableRef indeterminateDrawable = currentTheme.getDrawable("progress_bar_indeterminate");
@@ -163,7 +163,9 @@ class ProgressBar : Widget
         {
             sz.h = max(sz.h, indeterminateDrawable.height);
         }
-        return sz;
+        Boundaries bs;
+        bs.nat = sz;
+        setBoundaries(bs);
     }
 
     override void onDraw(DrawBuf buf)

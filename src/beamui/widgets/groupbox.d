@@ -37,12 +37,12 @@ class GroupBox : LinearLayout
 
     override @property
     {
-        /// Get groupbox caption text
+        /// Groupbox caption text to show
         dstring text() const
         {
             return _caption.text;
         }
-        /// Set caption to show
+        /// ditto
         void text(dstring s)
         {
             _caption.text = s;
@@ -77,27 +77,26 @@ class GroupBox : LinearLayout
 
     protected void calcFrame()
     {
-        Insets cp = _caption.padding;
-        int captFontHeight = _caption.font.height;
+        const Insets cp = _caption.padding;
+        const int captFontHeight = _caption.font.height;
         _captionHeight = cp.top + cp.bottom + captFontHeight;
 
-        DrawableRef upLeftDrawable = currentTheme.getDrawable("group_box_frame_up_left");
-        DrawableRef upRightDrawable = currentTheme.getDrawable("group_box_frame_up_right");
-        _topFrameHeight = max(!upLeftDrawable.isNull ? upLeftDrawable.height : 0,
-                !upRightDrawable.isNull ? upRightDrawable.height : 0);
-        _topFrameLeft = !upLeftDrawable.isNull ? upLeftDrawable.width : 0;
-        _topFrameRight = !upRightDrawable.isNull ? upRightDrawable.width : 0;
-
-        _frameLeft = _frameRight = _frameBottom = 0;
-        DrawableRef bottomDrawable = currentTheme.getDrawable("group_box_frame_bottom");
-        if (!bottomDrawable.isNull)
-        {
-            Insets dp = bottomDrawable.padding;
-            _frameLeft = dp.left;
-            _frameRight = dp.right;
-            _frameBottom = dp.bottom;
-        }
+        const upLeftDrawable = currentTheme.getDrawable("group_box_frame_up_left");
+        const upRightDrawable = currentTheme.getDrawable("group_box_frame_up_right");
+        const int upLeftW = !upLeftDrawable.isNull ? upLeftDrawable.width : 0;
+        const int upLeftH = !upLeftDrawable.isNull ? upLeftDrawable.height : 0;
+        const int upRightW = !upRightDrawable.isNull ? upRightDrawable.width : 0;
+        const int upRightH = !upRightDrawable.isNull ? upRightDrawable.height : 0;
+        _topFrameHeight = max(upLeftH, upRightH);
+        _topFrameLeft = upLeftW;
+        _topFrameRight = upRightW;
         _topHeight = max(_captionHeight, _topFrameHeight);
+
+        const bottomDrawable = currentTheme.getDrawable("group_box_frame_bottom");
+        const Insets dp = !bottomDrawable.isNull ? bottomDrawable.padding : Insets(0);
+        _frameLeft = dp.left;
+        _frameRight = dp.right;
+        _frameBottom = dp.bottom;
     }
 
     override void onThemeChanged()
@@ -106,15 +105,14 @@ class GroupBox : LinearLayout
         _caption.onThemeChanged();
     }
 
-    override Boundaries computeBoundaries()
+    override protected void onMeasure(ref Boundaries bs)
     {
-        Boundaries bs = super.computeBoundaries();
-        int cw = _caption.computeBoundaries().nat.w;
+        _caption.measure();
         // expand if the caption is bigger than the content
         // frame is already calculated
-        int w = cw + _topFrameLeft + _topFrameRight;
-        bs.nat.w = min(max(bs.nat.w, w), bs.max.w);
-        return bs;
+        const int cw = _caption.natSize.w;
+        const int w = cw + _topFrameLeft + _topFrameRight - _frameLeft - _frameRight;
+        bs.nat.w = max(bs.nat.w, w);
     }
 
     override void layout(Box geom)
@@ -124,8 +122,8 @@ class GroupBox : LinearLayout
 
         super.layout(geom);
         // layout the caption
-        int cw = _caption.computeBoundaries().nat.w;
-        int cwinv = geom.w - _topFrameLeft - _topFrameRight;
+        const int cw = _caption.natSize.w;
+        const int cwinv = geom.w - _topFrameLeft - _topFrameRight;
         Box b = Box(geom.x + _topFrameLeft, geom.y, min(cw, cwinv), _captionHeight);
         _caption.layout(b);
     }

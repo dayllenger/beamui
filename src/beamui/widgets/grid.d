@@ -1803,28 +1803,29 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         requestLayout();
     }
 
-    override Size computeMinSize()
+    override protected void onMeasure(ref Boundaries bs)
     {
         if (_cols == 0 || _rows == 0)
         {
-            return Size(100, 100);
+            bs.min += Size(100, 100);
+            bs.nat += Size(100, 100);
+            return;
         }
 
         Size sz;
         // width
-        int firstVisibleCol = _showRowHeaders ? 0 : _headerCols;
+        const firstVisibleCol = _showRowHeaders ? 0 : _headerCols;
         foreach (i; firstVisibleCol .. min(_cols, _minVisibleCols + firstVisibleCol))
             sz.w += min(_colUntouchedWidths[i], 100);
-
         // height
-        int firstVisibleRow = _showColHeaders ? 0 : _headerRows;
+        const firstVisibleRow = _showColHeaders ? 0 : _headerRows;
         foreach (j; firstVisibleRow .. min(_rows, _minVisibleRows + firstVisibleRow))
             sz.h += _rowUntouchedHeights[j];
-
         if (_rows < _minVisibleRows)
             sz.h += (_minVisibleRows - _rows) * _rowUntouchedHeights[_rows - 1];
 
-        return sz;
+        bs.min += sz;
+        bs.nat += sz;
     }
 
     protected Size measureCell(int x, int y) const

@@ -235,30 +235,37 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         if (isSeparator)
             return;
 
-        Size sz = _label.computeBoundaries().nat;
-        maxHeight = max(maxHeight, sz.h);
-        maxLabelWidth = max(maxLabelWidth, sz.w);
+        {
+            _label.measure();
+            const sz = _label.natSize;
+            maxHeight = max(maxHeight, sz.h);
+            maxLabelWidth = max(maxLabelWidth, sz.w);
+        }
         if (_checkbox)
         {
-            sz = _checkbox.computeBoundaries().nat;
+            _checkbox.measure();
+            const sz = _checkbox.natSize;
             maxHeight = max(maxHeight, sz.h);
             maxCheckBoxWidth = max(maxCheckBoxWidth, sz.w);
         }
         if (_icon)
         {
-            sz = _icon.computeBoundaries().nat;
+            _icon.measure();
+            const sz = _icon.natSize;
             maxHeight = max(maxHeight, sz.h);
             maxIconWidth = max(maxIconWidth, sz.w);
         }
         if (_shortcut)
         {
-            sz = _shortcut.computeBoundaries().nat;
+            _shortcut.measure();
+            const sz = _shortcut.natSize;
             maxHeight = max(maxHeight, sz.h);
             maxShortcutWidth = max(maxShortcutWidth, sz.w);
         }
         if (_arrow)
         {
-            sz = _arrow.computeBoundaries().nat;
+            _arrow.measure();
+            const sz = _arrow.natSize;
             maxHeight = max(maxHeight, sz.h);
             maxMoreBtnWidth = max(maxMoreBtnWidth, sz.w);
         }
@@ -281,12 +288,13 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         _submenu.maybe.onThemeChanged();
     }
 
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         Size sz;
         if (isSeparator)
         {
-            sz = _separator.computeBoundaries().nat;
+            _separator.measure();
+            sz = _separator.natSize;
         }
         else
         {
@@ -299,14 +307,12 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
             else
             {
                 // for horizontal (main) menu
-                sz = _label.computeBoundaries().nat;
+                _label.measure();
+                sz = _label.natSize;
                 _labelWidth = sz.w;
             }
         }
-
-        auto bs = Boundaries(sz, sz, Size.none);
-        applyStyle(bs);
-        return bs;
+        setBoundaries(Boundaries(sz, sz, Size.none));
     }
 
     override void layout(Box b)
@@ -825,7 +831,7 @@ class Menu : ListWidget
         return super.onMouseEvent(event);
     }
 
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         // align items for vertical menu
         if (orientation == Orientation.vertical)
@@ -849,7 +855,7 @@ class Menu : ListWidget
                     maxCheckBoxWidth, maxLabelWidth, maxIconWidth, maxShortcutWidth, maxMoreBtnWidth);
             }
         }
-        return super.computeBoundaries();
+        super.measure();
     }
 }
 

@@ -223,29 +223,23 @@ class ScrollAreaBase : WidgetGroup
             requestLayout();
     }
 
-    override Size computeMinSize()
-    {
-        // override to set minimum scrollwidget size
-        return Size(200, 150);
-    }
-
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         Boundaries bs;
         // do first measure to get scrollbar widths
         if (_hscrollbar && _hscrollbarMode == ScrollBarMode.visible || _hscrollbarMode == ScrollBarMode.automatic)
         {
-            _sbsz.h = _hscrollbar.computeBoundaries().nat.h;
+            _hscrollbar.measure();
+            _sbsz.h = _hscrollbar.natSize.h;
         }
         if (_vscrollbar && _vscrollbarMode == ScrollBarMode.visible || _vscrollbarMode == ScrollBarMode.automatic)
         {
-            _sbsz.w = _vscrollbar.computeBoundaries().nat.w;
+            _vscrollbar.measure();
+            _sbsz.w = _vscrollbar.natSize.w;
         }
-        bs.min = computeMinSize() + _sbsz;
-        bs.nat = bs.min;
-
-        applyStyle(bs);
-        return bs;
+        bs.min = _sbsz;
+        bs.nat = _sbsz;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)
@@ -552,13 +546,14 @@ class ScrollArea : ScrollAreaBase
         makeBoxVisible(wbox, alignHorizontally, alignVertically);
     }
 
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         if (_contentWidget)
         {
-            _fullContentSize = _contentWidget.computeBoundaries().nat;
+            _contentWidget.measure();
+            _fullContentSize = _contentWidget.natSize;
         }
-        return super.computeBoundaries();
+        super.measure();
     }
 
     override void layout(Box geom)

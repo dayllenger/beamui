@@ -520,7 +520,8 @@ class Window : CustomEventTarget
     protected void adjustSize()
     {
         assert(_mainWidget !is null);
-        const bs = _mainWidget.computeBoundaries();
+        _mainWidget.measure();
+        const bs = _mainWidget.boundaries;
         // some sane constraints
         const min = SizeI(clamp(cast(int)bs.min.w, 0, 10_000), clamp(cast(int)bs.min.h, 0, 10_000));
         const nat = SizeI(clamp(cast(int)bs.nat.w, 0, 10_000), clamp(cast(int)bs.nat.h, 0, 10_000));
@@ -575,19 +576,21 @@ class Window : CustomEventTarget
     void layout()
     {
         {
-            const bs = _mainWidget.computeBoundaries();
+            _mainWidget.measure();
             // TODO: set minimum window size
             _mainWidget.layout(Box(0, 0, _w, _h));
         }
         foreach (p; _popups)
         {
-            const bs = p.computeBoundaries();
-            p.layout(Box(0, 0, bs.nat.w, bs.nat.h));
+            p.measure();
+            const sz = p.natSize;
+            p.layout(Box(0, 0, sz.w, sz.h));
         }
         if (auto tp = _tooltip.popup)
         {
-            const bs = tp.computeBoundaries();
-            tp.layout(Box(0, 0, bs.nat.w, bs.nat.h));
+            tp.measure();
+            const sz = tp.natSize;
+            tp.layout(Box(0, 0, sz.w, sz.h));
         }
     }
 

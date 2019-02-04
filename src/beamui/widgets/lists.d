@@ -581,7 +581,7 @@ class ListWidget : WidgetGroup
     /// Handle item click / activation (e.g. Space or Enter key pressed and mouse double clicked)
     Signal!(void delegate(Widget, int)) itemClicked;
 
-    /// Policy for `computeBoundaries`: when true, it considers items' overall size
+    /// Policy for `measure`: when true, it considers items' total size
     bool sumItemSizes;
 
     private
@@ -1053,13 +1053,12 @@ class ListWidget : WidgetGroup
     private bool needToRecalculateItemSizes;
     private Boundaries cachedBoundaries;
 
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         if (!needToRecalculateSize)
         {
-            Boundaries bs = cachedBoundaries;
-            applyStyle(bs);
-            return bs;
+            setBoundaries(cachedBoundaries);
+            return;
         }
 
         Boundaries bs;
@@ -1071,7 +1070,8 @@ class ListWidget : WidgetGroup
             if (wt is null || wt.visibility == Visibility.gone)
                 continue;
 
-            Boundaries wbs = wt.computeBoundaries();
+            wt.measure();
+            Boundaries wbs = wt.boundaries;
             if (_orientation == Orientation.vertical)
             {
                 bs.maximizeWidth(wbs);
@@ -1090,8 +1090,7 @@ class ListWidget : WidgetGroup
         _totalSize = p;
         cachedBoundaries = bs;
         needToRecalculateSize = false;
-        applyStyle(bs);
-        return bs;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)
@@ -1120,14 +1119,15 @@ class ListWidget : WidgetGroup
                 continue;
             }
 
-            Boundaries wbs = wt.computeBoundaries();
+            wt.measure();
+            const wnat = wt.natSize;
             if (_orientation == Orientation.vertical)
             {
                 _itemBoxes[i].x = 0;
                 _itemBoxes[i].y = p;
                 _itemBoxes[i].w = inner.w;
-                _itemBoxes[i].h = wbs.nat.h;
-                p += wbs.nat.h;
+                _itemBoxes[i].h = wnat.h;
+                p += wnat.h;
                 if (p > inner.h)
                 {
                     _needScrollbar = true;
@@ -1138,9 +1138,9 @@ class ListWidget : WidgetGroup
             {
                 _itemBoxes[i].x = p;
                 _itemBoxes[i].y = 0;
-                _itemBoxes[i].w = wbs.nat.w;
+                _itemBoxes[i].w = wnat.w;
                 _itemBoxes[i].h = inner.h;
-                p += wbs.nat.w;
+                p += wnat.w;
                 if (p > inner.w)
                 {
                     _needScrollbar = true;
@@ -1153,15 +1153,16 @@ class ListWidget : WidgetGroup
         {
             _scrollbar.visibility = Visibility.visible;
 
-            Boundaries sbbs = _scrollbar.computeBoundaries();
+            _scrollbar.measure();
+            const sbnat = _scrollbar.natSize;
             if (_orientation == Orientation.vertical)
             {
-                sbsz = sbbs.nat.w;
+                sbsz = sbnat.w;
                 inner.w -= sbsz;
             }
             else
             {
-                sbsz = sbbs.nat.h;
+                sbsz = sbnat.h;
                 inner.h -= sbsz;
             }
 
@@ -1178,22 +1179,23 @@ class ListWidget : WidgetGroup
                         continue;
                     }
 
-                    Boundaries wbs = wt.computeBoundaries();
+                    wt.measure();
+                    const wnat = wt.natSize;
                     if (_orientation == Orientation.vertical)
                     {
                         _itemBoxes[i].x = 0;
                         _itemBoxes[i].y = p;
                         _itemBoxes[i].w = inner.w;
-                        _itemBoxes[i].h = wbs.nat.h;
-                        p += wbs.nat.h;
+                        _itemBoxes[i].h = wnat.h;
+                        p += wnat.h;
                     }
                     else
                     {
                         _itemBoxes[i].x = p;
                         _itemBoxes[i].y = 0;
-                        _itemBoxes[i].w = wbs.nat.w;
+                        _itemBoxes[i].w = wnat.w;
                         _itemBoxes[i].h = inner.h;
-                        p += wbs.nat.w;
+                        p += wnat.w;
                     }
                 }
                 needToRecalculateItemSizes = false;

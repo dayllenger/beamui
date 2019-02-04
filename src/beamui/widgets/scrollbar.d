@@ -525,12 +525,15 @@ class ScrollBar : AbstractSlider
         super.cancelLayout();
     }
 
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         Boundaries bs;
-        Boundaries ibs = _indicator.computeBoundaries();
-        Boundaries bbs = _btnBack.computeBoundaries();
-        Boundaries fbs = _btnForward.computeBoundaries();
+        _indicator.measure();
+        _btnBack.measure();
+        _btnForward.measure();
+        const ibs = _indicator.boundaries;
+        const bbs = _btnBack.boundaries;
+        const fbs = _btnForward.boundaries;
         if (_orient == Orientation.vertical)
         {
             _minIndicatorSize = ibs.nat.h;
@@ -545,9 +548,7 @@ class ScrollBar : AbstractSlider
             bs.nat.w = bs.min.w = ibs.nat.w + _btnSize * 4;
             bs.max.h = bs.nat.h = bs.min.h = max(ibs.nat.h, bbs.nat.h, fbs.nat.h);
         }
-
-        applyStyle(bs);
-        return bs;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)
@@ -631,9 +632,10 @@ class Slider : AbstractSlider
         }
     }
 
-    override Boundaries computeBoundaries()
+    override void measure()
     {
-        Boundaries bs = _indicator.computeBoundaries();
+        _indicator.measure();
+        Boundaries bs = _indicator.boundaries;
         if (_orient == Orientation.vertical)
         {
             _minIndicatorSize = bs.nat.h;
@@ -646,9 +648,7 @@ class Slider : AbstractSlider
             bs.nat.w = bs.min.w = bs.nat.w * 5;
             bs.max.h = bs.nat.h = bs.min.h = bs.nat.h;
         }
-
-        applyStyle(bs);
-        return bs;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)

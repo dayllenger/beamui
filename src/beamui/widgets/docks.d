@@ -253,7 +253,7 @@ class DockHost : WidgetGroupDefaultDrawing
         return list;
     }
 
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         Boundaries bs;
         foreach (i; 0 .. childCount)
@@ -262,13 +262,13 @@ class DockHost : WidgetGroupDefaultDrawing
             // TODO: fix
             if (item.visibility != Visibility.gone)
             {
-                Boundaries wbs = item.computeBoundaries();
+                item.measure();
+                const wbs = item.boundaries;
                 bs.maximizeWidth(wbs);
                 bs.maximizeHeight(wbs);
             }
         }
-        applyStyle(bs);
-        return bs;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)

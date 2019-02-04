@@ -2112,17 +2112,14 @@ class EditLine : EditWidgetBase
         return super.onKeyEvent(event);
     }
 
-    override Size computeMinSize()
+    override protected void onMeasure(ref Boundaries bs)
     {
-        _minSizeTester.measure();
-        return _minSizeTester.size + Size(_leftPaneWidth, 0);
-    }
-
-    override Boundaries computeBoundaries()
-    {
-        _minSizeTester.style.tabSize = _content.tabSize;
         measureVisibleText();
-        return super.computeBoundaries();
+        _minSizeTester.style.tabSize = _content.tabSize;
+        _minSizeTester.measure();
+        const sz = _minSizeTester.size + Size(_leftPaneWidth, 0);
+        bs.min += sz;
+        bs.nat += sz;
     }
 
     override protected Size measureVisibleText()
@@ -3171,17 +3168,14 @@ class EditBox : EditWidgetBase
         return Size(_maxLineWidth, _lineHeight * _content.length);
     }
 
-    override Size computeMinSize()
+    override protected void onMeasure(ref Boundaries bs)
     {
-        _minSizeTester.measure();
-        return _minSizeTester.size + Size(_leftPaneWidth, 0);
-    }
-
-    override Boundaries computeBoundaries()
-    {
-        _minSizeTester.style.tabSize = _content.tabSize;
         updateMaxLineWidth();
-        return super.computeBoundaries();
+        _minSizeTester.style.tabSize = _content.tabSize;
+        _minSizeTester.measure();
+        const sz = _minSizeTester.size + Size(_leftPaneWidth, 0);
+        bs.min += sz;
+        bs.nat += sz;
     }
 
     override void layout(Box geom)
@@ -3195,7 +3189,8 @@ class EditBox : EditWidgetBase
         Box content = geom;
         if (_findPanel && _findPanel.visibility != Visibility.gone)
         {
-            Size sz = _findPanel.computeBoundaries().nat;
+            _findPanel.measure();
+            Size sz = _findPanel.natSize;
             _findPanel.layout(Box(geom.x, geom.y + geom.h - sz.h, geom.w, sz.h));
             content.h -= sz.h;
         }

@@ -111,6 +111,13 @@ enum CursorType
     hand
 }
 
+enum DependentSize
+{
+    none,
+    width,
+    height,
+}
+
 /// Base class for all widgets.
 class Widget
 {
@@ -135,7 +142,10 @@ private:
     /// Widget visibility: either visible, hidden, gone
     Visibility _visibility = Visibility.visible; // visible by default
 
-    /// Current widget box set by layout()
+    DependentSize _dependentSize;
+    /// Current widget boundaries set by `measure`
+    Boundaries _boundaries;
+    /// Current widget box set by `layout`
     Box _box;
     /// Current box without padding and border
     Box _innerBox;
@@ -723,57 +733,12 @@ public:
     }
 
     //===============================================================
-    // Layout and drawing related properties/methods
+    // Animation
 
-    @property
+    /// Returns true is widget is being animated - need to call animate() and redraw
+    @property bool animating() const
     {
-        /// Returns true if layout is required for widget and its children
-        bool needLayout() const { return _needLayout; }
-        /// Returns true if redraw is required for widget and its children
-        bool needDraw() const
-        {
-            // we need to be sure that the style is updated
-            // it might set _needDraw or _needLayout flag
-            updateStyles();
-            return _needDraw;
-        }
-        /// Returns true is widget is being animated - need to call animate() and redraw
-        bool animating() const
-        {
-            return animations.length > 0;
-        }
-
-        /// Get current widget full box in pixels (computed and set in `layout`)
-        ref const(Box) box() const { return _box; }
-        /// Set widget box value and indicate that layout process is done (for usage in subclass' `layout`)
-        final protected void box(ref Box b)
-        {
-            _box = b;
-            _innerBox = b.shrinked(padding);
-            _needLayout = false;
-        }
-        /// Get current widget box without padding and borders (computed and set in `layout`)
-        ref const(Box) innerBox() const { return _innerBox; }
-
-        /// Widget visibility (visible, hidden, gone)
-        Visibility visibility() const { return _visibility; }
-        /// ditto
-        void visibility(Visibility newVisibility)
-        {
-            if (_visibility != newVisibility)
-            {
-                if (_visibility == Visibility.gone || newVisibility == Visibility.gone)
-                {
-                    if (parent)
-                        parent.requestLayout();
-                    else
-                        requestLayout();
-                }
-                else
-                    invalidate();
-                _visibility = newVisibility;
-            }
-        }
+        return animations.length > 0;
     }
 
     /// Experimental API
@@ -819,12 +784,6 @@ public:
                 if (a.handler is null)
                     animations.remove(k);
         }
-    }
-
-    /// Returns true if point is inside of this widget
-    bool isPointInside(int x, int y)
-    {
-        return _box.isPointInside(x, y);
     }
 
     //===============================================================
@@ -1570,7 +1529,79 @@ public:
     }
 
     //===============================================================
-    // Layout, measurement, drawing methods
+    // Layout, measurement, drawing methods and properties
+
+    @property
+    {
+        /// Returns true if layout is required for widget and its children
+        bool needLayout() const
+        {
+            // we need to be sure that the style is updated
+            // it might set _needDraw or _needLayout flag
+            updateStyles();
+            return _needLayout;
+        }
+        /// Returns true if redraw is required for widget and its children
+        bool needDraw() const
+        {
+            updateStyles();
+            return _needDraw;
+        }
+
+        /// Defines whether widget width/height depends on its height/width
+        final DependentSize dependentSize() const { return _dependentSize; }
+        /// Indicate from subclass that widget width/height depends on its height/width
+        final protected void dependentSize(DependentSize value)
+        {
+            _dependentSize = value;
+        }
+        /// Get current widget boundaries (min, nat and max sizes, computed in `measure`)
+        final ref const(Boundaries) boundaries() const { return _boundaries; }
+        /// Get widget minimal size (computed in `measure`)
+        final Size minSize() const { return _boundaries.min; }
+        /// Get widget natural (preferred) size (computed in `measure`)
+        final Size natSize() const { return _boundaries.nat; }
+        /// Get widget maximal size (computed in `measure`)
+        final Size maxSize() const { return _boundaries.max; }
+
+        /// Get current widget full box in pixels (computed and set in `layout`)
+        ref const(Box) box() const { return _box; }
+        /// Set widget box value and indicate that layout process is done (for usage in subclass' `layout`)
+        final protected void box(ref Box b)
+        {
+            _box = b;
+            _innerBox = b.shrinked(padding);
+            _needLayout = false;
+        }
+        /// Get current widget box without padding and borders (computed and set in `layout`)
+        ref const(Box) innerBox() const { return _innerBox; }
+
+        /// Widget visibility (visible, hidden, gone)
+        Visibility visibility() const { return _visibility; }
+        /// ditto
+        void visibility(Visibility newVisibility)
+        {
+            if (_visibility != newVisibility)
+            {
+                if (_visibility == Visibility.gone || newVisibility == Visibility.gone)
+                {
+                    if (parent)
+                        parent.requestLayout();
+                    else
+                        requestLayout();
+                }
+                else
+                    invalidate();
+                _visibility = newVisibility;
+            }
+        }
+    }
+
+    /// Returns true if point is inside of this widget
+    bool isPointInside(int x, int y)
+    {
+        return _box.isPointInside(x, y);
+    }
 
     /// Request relayout of widget and its children
     void requestLayout()
@@ -1593,42 +1624,29 @@ public:
         _needDraw = false;
     }
 
-    /// Measure widget - compute minimal, natural and maximal sizes for the widget
-    Boundaries computeBoundaries()
-    out (result)
+    /** Measure widget - compute minimal, natural and maximal sizes for the widget
+
+        Override this method only when you make completely new algorithm
+        and don't intend to call `super.measure()`.
+        But if you only need to adjust widget boundaries, e.g. add some width,
+        then override `onMeasure` method.
+    */
+    void measure()
     {
-        assert(result.max.w >= result.nat.w && result.nat.w >= result.min.w);
-        assert(result.max.h >= result.nat.h && result.nat.h >= result.min.h);
-    }
-    body
-    {
-        auto bs = Boundaries(computeMinSize, computeNaturalSize, computeMaxSize);
-        applyStyle(bs);
-        return bs;
+        setBoundaries(Boundaries());
     }
 
-    /// Calculate minimum size of widget content
-    Size computeMinSize()
+    /// Callback to adjust widget boundaries; called after measure and before applying style to them
+    protected void onMeasure(ref Boundaries bs)
     {
-        return Size(0, 0);
     }
 
-    /// Calculate natural (preferred) size of widget content
-    Size computeNaturalSize()
-    {
-        return Size(0, 0);
-    }
-
-    /// Calculate maximum size of widget content
-    Size computeMaxSize()
-    {
-        return Size.none;
-    }
-
-    /// Helper function: apply padding and min-max style properties to boundaries
-    protected void applyStyle(ref Boundaries bs)
+    /// Set widget boundaries, checking their validity and applying
+    /// padding and min-max style properties
+    final protected void setBoundaries(Boundaries bs)
     {
         const Size p = padding.size; // updates style
+        onMeasure(bs);
         bs.min.w = max(bs.min.w, _style.minWidth);
         bs.min.h = max(bs.min.h, _style.minHeight);
         bs.max.w = max(min(bs.max.w + p.w, _style.maxWidth), bs.min.w);
@@ -1645,19 +1663,20 @@ public:
             bs.nat.h += p.h;
         bs.nat.w = clamp(bs.nat.w, bs.min.w, bs.max.w);
         bs.nat.h = clamp(bs.nat.h, bs.min.h, bs.max.h);
+        assert(bs.max.w >= bs.nat.w && bs.nat.w >= bs.min.w);
+        assert(bs.max.h >= bs.nat.h && bs.nat.h >= bs.min.h);
+        _boundaries = bs;
     }
 
-    bool widthDependsOnHeight;
-    bool heightDependsOnWidth;
-
-    int heightForWidth(int width) // TODO: add `in` contract with assert(heightDependsOnWidth) to all overriden methods?
+    /// Returns natural height for the given width
+    int heightForWidth(int width)
     {
-        return 0;
+        return _boundaries.nat.h;
     }
-
+    /// Returns natural width for the given height
     int widthForHeight(int height)
     {
-        return 0;
+        return _boundaries.nat.w;
     }
 
     /// Set widget box and lay out widget contents

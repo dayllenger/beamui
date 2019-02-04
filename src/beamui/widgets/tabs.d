@@ -470,7 +470,7 @@ class TabControl : WidgetGroup
     }
 
     private Size[] itemSizes;
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         if (itemSizes.length < childCount)
             itemSizes.length = childCount;
@@ -479,7 +479,8 @@ class TabControl : WidgetGroup
         // measure 'more' button
         if (enableMoreButton)
         {
-            bs = _moreButton.computeBoundaries();
+            _moreButton.measure();
+            bs = _moreButton.boundaries;
             itemSizes[0] = bs.nat;
         }
         // measure tab buttons
@@ -487,15 +488,14 @@ class TabControl : WidgetGroup
         {
             Widget tab = child(i);
             tab.visibility = Visibility.visible;
-            Boundaries wbs = tab.computeBoundaries();
+            tab.measure();
+            const wbs = tab.boundaries;
             itemSizes[i] = wbs.nat;
 
             bs.addWidth(wbs);
             bs.maximizeHeight(wbs);
         }
-
-        applyStyle(bs);
-        return bs;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)

@@ -1033,7 +1033,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
     }
 
     private int[] itemSizes;
-    override Boundaries computeBoundaries()
+    override void measure()
     {
         Boundaries bs;
         Size min;
@@ -1042,7 +1042,8 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
             Widget item = child(i);
             item.visibility = Visibility.visible;
 
-            Boundaries wbs = item.computeBoundaries();
+            item.measure();
+            const wbs = item.boundaries;
             itemSizes[i] = wbs.nat.w;
             if (i == 0)
                 min = wbs.min;
@@ -1050,8 +1051,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
             bs.maximizeHeight(wbs);
         }
         bs.min = min;
-        applyStyle(bs);
-        return bs;
+        setBoundaries(bs);
     }
 
     override void layout(Box geom)

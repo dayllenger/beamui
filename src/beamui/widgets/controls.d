@@ -59,22 +59,13 @@ class ImageWidget : Widget
         _drawable.clear();
     }
 
-    override Size computeMinSize()
+    override void measure()
     {
+        Size sz;
         DrawableRef img = _drawable;
         if (!img.isNull)
-            return Size(img.width, img.height);
-        else
-            return Size(0, 0);
-    }
-
-    override Size computeNaturalSize()
-    {
-        DrawableRef img = _drawable;
-        if (!img.isNull)
-            return Size(img.width, img.height);
-        else
-            return Size(0, 0);
+            sz = Size(img.width, img.height);
+        setBoundaries(Boundaries(sz, sz));
     }
 
     override void onDraw(DrawBuf buf)
@@ -275,16 +266,11 @@ class SwitchButton : Widget
         super.handleClick();
     }
 
-    override Size computeMinSize()
+    override void measure()
     {
-        auto bg = background;
-        return Size(bg.width, bg.height);
-    }
-
-    override Size computeNaturalSize()
-    {
-        auto bg = background;
-        return Size(bg.width, bg.height);
+        const bg = background;
+        const sz = Size(bg.width, bg.height);
+        setBoundaries(Boundaries(sz, sz, sz));
     }
 
     override void onDraw(DrawBuf buf)
