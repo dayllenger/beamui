@@ -56,10 +56,8 @@ class InputBox : Dialog
 
     override void initialize()
     {
-        style.padding = Insets(10); // TODO: move to styles?
         auto msg = new MultilineLabel(_message);
         msg.id = "msg";
-        msg.style.padding = Insets(10);
         _editor = new EditLine(_text);
         _editor.id = "inputbox_editor";
         _editor.enterKeyPressed ~= (EditWidgetBase editor) {

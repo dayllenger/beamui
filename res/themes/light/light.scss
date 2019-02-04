@@ -18,7 +18,7 @@ $focused-border-color: saturate($main-color, 30%);
 * {
     font-face: "Helvetica Neue, Liberation Sans, DejaVu Sans, Verdana, Arial, Helvetica, Roboto, Droid Sans";
     font-family: sans-serif;
-    font-size: 10pt;
+    font-size: 13px;
     color: $text-color;
 }
 
@@ -30,27 +30,9 @@ $focused-border-color: saturate($main-color, 30%);
    controls.d
 */
 
-Label {
-    align: left vcenter;
-    padding: 2px 4px;
-
-    &:not(enabled) {
-        color: $disabled-text-color;
-    }
-}
-
-MultilineLabel {
-    align: left top;
-    padding: 1px;
-
-    &:not(enabled) {
-        color: $disabled-text-color;
-    }
-}
-
 Button {
     align: center;
-    padding: 4px;
+    padding: 4px 8px;
     border: 1px solid #aaa;
     background: linear(0deg, #eeeeee, #dddddd);
     text-hotkey: underline;
@@ -230,6 +212,28 @@ SwitchButton {
 CanvasWidget {
     min-width: 50px;
     min-height: 50px;
+}
+
+/* ==========================================================================
+   text.d
+*/
+
+Label {
+    align: left vcenter;
+    padding: 2px 4px;
+
+    &:not(enabled) {
+        color: $disabled-text-color;
+    }
+}
+
+MultilineLabel {
+    align: left top;
+    padding: 1px;
+
+    &:not(enabled) {
+        color: $disabled-text-color;
+    }
 }
 
 /* ==========================================================================
@@ -492,7 +496,7 @@ TreeItemWidget {
     }
 
     &::label:default {
-        fontWeight: bold;
+        font-weight: bold;
     }
 }
 
@@ -525,6 +529,15 @@ StringGridWidget, FileDialog::grid {
     grid_cell_border_header: fade-out(#202020, 0.8);
     grid_cell_background_header: fade-out(#909090, 0.8);
     grid_cell_background_header_selected: fade-out(#ffc040, 0.5);
+}
+
+/* ==========================================================================
+   scroll.d
+*/
+
+ScrollArea {
+    min-width: 200px;
+    min-height: 150px;
 }
 
 /* ==========================================================================
@@ -681,7 +694,7 @@ EditBox, LogWidget {
 
 LogWidget {
     font-family: monospace;
-    font-size: 9pt;
+    font-size: 10px;
 }
 
 FindPanel {
@@ -705,7 +718,7 @@ FindPanel {
 SourceEdit {
     font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console";
     font-family: monospace;
-    font-size: 10pt;
+    font-size: 14px;
 
     &:focused {
         border: 1px solid $focused-border-color;
@@ -858,7 +871,7 @@ AppFrame {
 }
 
 /* ==========================================================================
-   dialog.d
+   dialog.d, filedialog.d, inputbox.d, messagebox.d, settingsdialog.d
 */
 
 DialogFrame {
@@ -870,10 +883,6 @@ DialogFrame {
 @define-colors {
     dialog_background: #eee;
 }
-
-/* ==========================================================================
-   filedialog.d
-*/
 
 FileDialog {
     padding: 4px;
@@ -907,9 +916,13 @@ FilePathPanelItem {
     file_dialog_dir_name: #000080;
 }
 
-/* ==========================================================================
-   settingsdialog.d
-*/
+InputBox, MessageBox {
+    padding: 10px;
+
+    MultilineLabel {
+        padding: 10px;
+    }
+}
 
 SettingsDialog {
     padding: 4px;
@@ -921,7 +934,7 @@ SettingsDialog {
         padding: 4px;
         border: 1px solid rgba(0, 0, 0, 0.1);
         background-color: #fff;
-        font-size: 14pt;
+        font-size: 16px;
     }
 
     &::page {
