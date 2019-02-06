@@ -51,7 +51,7 @@ int main()
     window.mainWidget = splitView;
 
     editor.text = stylesheet.toUTF32;
-    btnUpdate.clicked ~= (Widget wt) {
+    btnUpdate.clicked ~= {
         platform.reloadTheme();
         currentTheme.setStyleSheet(editor.text.toUTF8);
     };

@@ -65,7 +65,7 @@ class Dialog : Column
     }
 
     /// Signal to pass dialog result
-    Signal!(void delegate(Dialog, const Action result)) dialogClosed;
+    Signal!(void delegate(const Action result)) dialogClosed;
 
     protected
     {
@@ -109,7 +109,9 @@ class Dialog : Column
             if (splitBeforeIndex == i)
                 res.addSpacer();
             auto btn = new Button(a);
-            btn.clicked ~= (Widget w) { handleAction((cast(Button)w).action); };
+            (Action a) {
+                btn.clicked ~= { handleAction(a); };
+            }(a);
             if (defaultActionIndex == i)
             {
                 btn.setState(State.default_);
@@ -143,7 +145,7 @@ class Dialog : Column
             auto _frame = new DialogFrame(this, _cancelButton !is null);
             if (_cancelButton)
             {
-                _frame.closeButtonClicked ~= (Widget w) {
+                _frame.closeButtonClicked ~= {
                     handleAction(_cancelButton.action);
                 };
             }
@@ -175,7 +177,7 @@ class Dialog : Column
     {
         if (action && dialogClosed.assigned)
         {
-            dialogClosed(this, action);
+            dialogClosed(action);
         }
         if (_popup)
             _parentWindow.removePopup(_popup);

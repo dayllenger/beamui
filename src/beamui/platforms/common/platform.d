@@ -351,7 +351,7 @@ class Window : CustomEventTarget
     //===============================================================
 
     /// Window state change signal
-    Signal!(void delegate(Window, WindowState state, BoxI rect)) windowStateChanged;
+    Signal!(void delegate(WindowState state, BoxI rect)) windowStateChanged;
 
     /// Update and signal window state and/or size/positon changes - for using in platform inplementations
     protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
@@ -373,7 +373,7 @@ class Window : CustomEventTarget
         }
 
         if (signalWindow && windowStateChanged.assigned)
-            windowStateChanged(this, newState, newWindowRect);
+            windowStateChanged(newState, newWindowRect);
     }
 
     /// Change window state, position, or size; returns true if successful, false if not supported by platform
@@ -1125,7 +1125,7 @@ class Window : CustomEventTarget
     abstract @property bool isActive() const;
 
     /// Window activate/deactivate signal
-    Signal!(void delegate(Window, bool isWindowActive)) windowActivityChanged;
+    Signal!(void delegate(bool isWindowActive)) windowActivityChanged;
 
     protected void handleWindowActivityChange(bool isWindowActive)
     {
@@ -1133,7 +1133,7 @@ class Window : CustomEventTarget
             applyFocus();
         else
             removeFocus();
-        windowActivityChanged(this, isWindowActive);
+        windowActivityChanged(isWindowActive);
     }
 
     //===============================================================

@@ -31,7 +31,7 @@ class WindowFrame : Column
 
     @property Label title() { return _title; }
 
-    Signal!(void delegate(Widget)) closeButtonClicked;
+    Signal!(void delegate()) closeButtonClicked;
 
     private
     {

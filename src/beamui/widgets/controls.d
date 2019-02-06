@@ -320,8 +320,7 @@ class CheckBox : LinearLayout
     override protected void handleClick()
     {
         checked = !checked;
-        if (clicked.assigned)
-            clicked(this);
+        clicked();
     }
 }
 
@@ -336,8 +335,7 @@ class RadioButton : CheckBox
     override protected void handleClick()
     {
         checked = true;
-        if (clicked.assigned)
-            clicked(this);
+        clicked();
     }
 
     override protected void handleToggling(bool checked)

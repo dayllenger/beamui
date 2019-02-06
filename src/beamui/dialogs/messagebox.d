@@ -49,9 +49,7 @@ class MessageBox : Dialog
         _actions = buttons;
         _defaultButtonIndex = defaultButtonIndex;
         if (handler)
-        {
-            dialogClosed ~= (Dialog dlg, const Action action) { handler(action); };
-        }
+            dialogClosed ~= handler;
     }
 
     override void initialize()

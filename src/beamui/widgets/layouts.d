@@ -1007,7 +1007,7 @@ class Resizer : Widget
         return _previousWidget && _nextWidget;
     }
 
-    Signal!(void delegate(Resizer, ResizerEventType, int dragDelta)) resized;
+    Signal!(void delegate(ResizerEventType, int dragDelta)) resized;
 
     private
     {
@@ -1078,7 +1078,7 @@ class Resizer : Widget
             _dragStartPosition = _orientation == Orientation.vertical ? event.y : event.x;
             _dragStartDelta = _delta;
             if (resized.assigned)
-                resized(this, ResizerEventType.startDragging, 0);
+                resized(ResizerEventType.startDragging, 0);
             return true;
         }
         if (event.action == MouseAction.focusIn && _dragging)
@@ -1094,7 +1094,7 @@ class Resizer : Widget
             _delta = _dragStartDelta + (_orientation == Orientation.vertical ? event.y : event.x) - _dragStartPosition;
             requestLayout();
             if (resized.assigned)
-                resized(this, ResizerEventType.dragging, _delta - _dragStartDelta);
+                resized(ResizerEventType.dragging, _delta - _dragStartDelta);
             return true;
         }
         if (event.action == MouseAction.move && trackHover)
@@ -1113,7 +1113,7 @@ class Resizer : Widget
             {
                 _dragging = false;
                 if (resized.assigned)
-                    resized(this, ResizerEventType.endDragging, _delta - _dragStartDelta);
+                    resized(ResizerEventType.endDragging, _delta - _dragStartDelta);
             }
             return true;
         }
@@ -1130,7 +1130,7 @@ class Resizer : Widget
             {
                 _dragging = false;
                 if (resized.assigned)
-                    resized(this, ResizerEventType.endDragging, _delta - _dragStartDelta);
+                    resized(ResizerEventType.endDragging, _delta - _dragStartDelta);
             }
             return true;
         }
@@ -1141,7 +1141,7 @@ class Resizer : Widget
             {
                 _dragging = false;
                 if (resized.assigned)
-                    resized(this, ResizerEventType.endDragging, _delta - _dragStartDelta);
+                    resized(ResizerEventType.endDragging, _delta - _dragStartDelta);
             }
             return true;
         }

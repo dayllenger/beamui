@@ -45,7 +45,7 @@ class ComboBoxBase : Row
             _adapter.resetItemState(_selectedItemIndex, State.selected | State.focused | State.hovered);
         }
         _selectedItemIndex = index;
-        itemSelected(this, index);
+        itemSelected(index);
     }
 
     override @property bool enabled() const
@@ -59,7 +59,7 @@ class ComboBoxBase : Row
     }
 
     /// Handle item click
-    Signal!(void delegate(Widget, int)) itemSelected;
+    Signal!(void delegate(int)) itemSelected;
 
     private
     {
@@ -106,7 +106,7 @@ class ComboBoxBase : Row
         return res;
     }
 
-    protected void onClick(Widget source)
+    protected void onClick()
     {
         if (enabled && !_popup)
         {
@@ -147,11 +147,11 @@ class ComboBoxBase : Row
             return; // don't show empty popup
         _popupList = createPopup();
         _popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
-        _popup.popupClosed ~= (Popup source, bool b) {
+        _popup.popupClosed ~= (bool b) {
             _popup = null;
             _popupList = null;
         };
-        _popupList.itemSelected ~= (Widget source, int index) {
+        _popupList.itemSelected ~= (int index) {
             selectedItemIndex = index;
             if (_popup !is null)
             {

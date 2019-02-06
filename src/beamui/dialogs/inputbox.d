@@ -45,7 +45,7 @@ class InputBox : Dialog
         _text = initialText;
         if (handler)
         {
-            dialogClosed ~= (Dialog dlg, const Action action) {
+            dialogClosed ~= (const Action action) {
                 if (action is ACTION_OK)
                 {
                     handler(_text);
@@ -60,7 +60,7 @@ class InputBox : Dialog
         msg.id = "msg";
         _editor = new EditLine(_text);
         _editor.id = "inputbox_editor";
-        _editor.enterKeyPressed ~= (EditWidgetBase editor) {
+        _editor.enterKeyPressed ~= {
             closeWithDefaultAction();
             return true;
         };

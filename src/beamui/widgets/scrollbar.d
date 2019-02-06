@@ -10,9 +10,9 @@ auto slider = new Slider(Orientation.horizontal);
 slider.data.minValue = -50;
 slider.data.maxValue = 50;
 slider.data.position = 0;
-slider.scrolled ~= (AbstractSlider source, ScrollEvent event) {
+slider.scrolled ~= (ScrollEvent event) {
     if (event.action == ScrollAction.sliderMoved)
-        Log.d(source.data.position);
+        Log.d(slider.data.position);
 };
 ---
 
@@ -122,7 +122,7 @@ class AbstractSlider : WidgetGroup
     }
 
     /// Scroll event listeners
-    Signal!(void delegate(AbstractSlider source, ScrollEvent event)) scrolled;
+    Signal!(void delegate(ScrollEvent event)) scrolled;
 
     private
     {
@@ -182,7 +182,7 @@ class AbstractSlider : WidgetGroup
         if (!scrolled.assigned)
             return false;
         auto event = new ScrollEvent(action, _data.minValue, _data.maxValue, _data.pageSize, pos);
-        scrolled(this, event);
+        scrolled(event);
         if (event.positionChanged)
             _data.position = event.position;
         return true;
@@ -478,10 +478,10 @@ class ScrollBar : AbstractSlider
         addChild(_pageUp);
         addChild(_pageDown);
         bunch(_btnBack, _btnForward, _indicator, _pageUp, _pageDown).focusable(false);
-        _btnBack.clicked ~= (Widget w) { sendScrollEvent(ScrollAction.lineUp); };
-        _btnForward.clicked ~= (Widget w) { sendScrollEvent(ScrollAction.lineDown); };
-        _pageUp.clicked ~= (Widget w) { sendScrollEvent(ScrollAction.pageUp); };
-        _pageDown.clicked ~= (Widget w) { sendScrollEvent(ScrollAction.pageDown); };
+        _btnBack.clicked ~= { sendScrollEvent(ScrollAction.lineUp); };
+        _btnForward.clicked ~= { sendScrollEvent(ScrollAction.lineDown); };
+        _pageUp.clicked ~= { sendScrollEvent(ScrollAction.pageUp); };
+        _pageDown.clicked ~= { sendScrollEvent(ScrollAction.pageDown); };
     }
 
     /// True if full scroll range is visible, and no need of scrolling at all
@@ -609,8 +609,8 @@ class Slider : AbstractSlider
         addChild(_pageUp);
         addChild(_pageDown);
         bunch(_indicator, _pageUp, _pageDown).focusable(false);
-        _pageUp.clicked ~= (Widget w) { sendScrollEvent(ScrollAction.pageUp); };
-        _pageDown.clicked ~= (Widget w) { sendScrollEvent(ScrollAction.pageDown); };
+        _pageUp.clicked ~= { sendScrollEvent(ScrollAction.pageUp); };
+        _pageDown.clicked ~= { sendScrollEvent(ScrollAction.pageDown); };
     }
 
     override protected void updateDrawables()

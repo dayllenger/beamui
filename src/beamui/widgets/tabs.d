@@ -14,8 +14,8 @@ auto tabs = new TabWidget;
 tabs.addTab(new Label("1st tab content"d).setID("tab1"), "Tab 1");
 tabs.addTab(new Label("2st tab content"d).setID("tab2"), "Tab 2");
 // tab widget consists of two parts: tabControl and tabHost
-tabs.tabHost.padding = 12;
-tabs.tabHost.backgroundColor = 0xbbbbbb;
+tabs.tabHost.style.padding = 12;
+tabs.tabHost.style.backgroundColor = 0xbbbbbb;
 ---
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
@@ -138,7 +138,7 @@ class TabItem : Row
         _closeButton = new Button(null, "close");
         _closeButton.id = "CLOSE";
         _closeButton.bindSubItem(this, "close");
-        _closeButton.clicked ~= (Widget w) { tabClosed(id); };
+        _closeButton.clicked ~= { tabClosed(id); };
         this.enableCloseButton = enableCloseButton;
         this.tooltipText = tooltipText;
         addChild(_icon);
@@ -189,7 +189,7 @@ class TabControl : WidgetGroup
     /// Signals tab close button click
     Signal!tabClosedHandler tabClosed;
     /// Signals more button click
-    Signal!(void delegate(Widget)) moreButtonClicked;
+    Signal!(void delegate()) moreButtonClicked;
     /// Handler for more button popup menu
     Signal!(Menu delegate(Widget)) moreButtonPopupMenuBuilder;
 
@@ -288,7 +288,7 @@ class TabControl : WidgetGroup
     void addTab(TabItem item, int index = -1)
     {
         item.parent = this;
-        item.mouseEvent ~= &onMouseTabBtn;
+        item.mouseEvent ~= (MouseEvent e) { return onMouseTabBtn(item.id, e); };
         item.tabClosed ~= &tabClosed.emit;
         if (index >= 0)
             insertChild(index, item);
@@ -397,11 +397,10 @@ class TabControl : WidgetGroup
         tabChanged(_selectedTabID, previousSelectedTab);
     }
 
-    protected bool onMouseTabBtn(Widget source, MouseEvent event)
+    protected bool onMouseTabBtn(string id, MouseEvent event)
     {
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
-            string id = source.id;
             int index = tabIndex(id);
             if (index >= 0)
             {
@@ -417,13 +416,13 @@ class TabControl : WidgetGroup
         return true;
     }
 
-    protected bool onMouseMoreBtn(Widget, MouseEvent event)
+    protected bool onMouseMoreBtn(MouseEvent event)
     {
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
             if (handleMorePopupMenu())
                 return true;
-            moreButtonClicked(this); // FIXME: emit signal every time?
+            moreButtonClicked(); // FIXME: emit signal every time?
         }
         return false;
     }

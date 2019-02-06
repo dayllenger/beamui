@@ -19,9 +19,6 @@ import beamui.widgets.scrollbar;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-/// Slot type for `adapterChanged`
-alias onAdapterChangeHandler = void delegate(ListAdapter source);
-
 /// List widget adapter provides items for list widgets
 interface ListAdapter
 {
@@ -44,9 +41,9 @@ interface ListAdapter
     void clear();
 
     /// Connect adapter change handler
-    ListAdapter connect(onAdapterChangeHandler handler);
+    ListAdapter connect(void delegate() handler);
     /// Disconnect adapter change handler
-    ListAdapter disconnect(onAdapterChangeHandler handler);
+    ListAdapter disconnect(void delegate() handler);
 
     /// Called when theme is changed
     void onThemeChanged();
@@ -61,15 +58,15 @@ interface ListAdapter
 class ListAdapterBase : ListAdapter
 {
     /// Handle items change
-    private Signal!onAdapterChangeHandler adapterChanged;
+    private Signal!(void delegate()) adapterChanged;
 
-    override ListAdapter connect(onAdapterChangeHandler handler)
+    override ListAdapter connect(void delegate() handler)
     {
         adapterChanged.connect(handler);
         return this;
     }
 
-    override ListAdapter disconnect(onAdapterChangeHandler handler)
+    override ListAdapter disconnect(void delegate() handler)
     {
         adapterChanged.disconnect(handler);
         return this;
@@ -120,7 +117,7 @@ class ListAdapterBase : ListAdapter
     /// Notify listeners about list items changes
     void updateViews()
     {
-        adapterChanged(this);
+        adapterChanged();
     }
 
     /// Called when theme is changed
@@ -545,7 +542,7 @@ class ListWidget : WidgetGroup
             _adapter = adapter;
             _adapter.maybe.connect(&onAdapterChange);
             _ownAdapter = false;
-            onAdapterChange(_adapter);
+            onAdapterChange();
         }
         /// Set adapter, which will be owned by list (destroy will be called for adapter on widget destroy)
         void ownAdapter(ListAdapter adapter)
@@ -558,7 +555,7 @@ class ListWidget : WidgetGroup
             _adapter = adapter;
             _adapter.maybe.connect(&onAdapterChange);
             _ownAdapter = true;
-            onAdapterChange(_adapter);
+            onAdapterChange();
         }
 
         /// Returns number of widgets in list
@@ -577,9 +574,9 @@ class ListWidget : WidgetGroup
     }
 
     /// Handle selection change
-    Signal!(void delegate(Widget, int)) itemSelected;
+    Signal!(void delegate(int)) itemSelected;
     /// Handle item click / activation (e.g. Space or Enter key pressed and mouse double clicked)
-    Signal!(void delegate(Widget, int)) itemClicked;
+    Signal!(void delegate(int)) itemClicked;
 
     /// Policy for `measure`: when true, it considers items' total size
     bool sumItemSizes;
@@ -696,7 +693,7 @@ class ListWidget : WidgetGroup
     }
 
     /// Item list has changed
-    protected void onAdapterChange(ListAdapter source)
+    protected void onAdapterChange()
     {
         needToRecalculateSize = true;
         needToRecalculateItemSizes = true;
@@ -706,13 +703,13 @@ class ListWidget : WidgetGroup
     /// Override to handle change of selection
     protected void onSelectionChanged(int index, int previouslySelectedItem = -1)
     {
-        itemSelected(this, index);
+        itemSelected(index);
     }
 
     /// Override to handle mouse up on item
     protected void onItemClicked(int index)
     {
-        itemClicked(this, index);
+        itemClicked(index);
     }
 
     override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
@@ -868,7 +865,7 @@ class ListWidget : WidgetGroup
     }
 
     /// Handle scroll event
-    protected void onScrollEvent(AbstractSlider source, ScrollEvent event)
+    protected void onScrollEvent(ScrollEvent event)
     {
         int newPosition = _scrollPosition;
         if (event.action == ScrollAction.sliderMoved)
@@ -1498,7 +1495,7 @@ class StringListWidget : ListWidget
         if (indices.length > 0)
         {
             selectItem(indices[0]);
-            itemSelected(this, indices[0]);
+            itemSelected(indices[0]);
             return true;
         }
 

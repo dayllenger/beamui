@@ -446,13 +446,13 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Callback to handle selection change
-    Listener!(void delegate(GridWidgetBase, int col, int row)) cellSelected;
+    Listener!(void delegate(int col, int row)) cellSelected;
     /// Callback to handle cell double click or Enter key press
-    Listener!(void delegate(GridWidgetBase, int col, int row)) cellActivated;
+    Listener!(void delegate(int col, int row)) cellActivated;
     /// Callback for handling of view scroll (top left visible cell change)
-    Listener!(void delegate(GridWidgetBase, int col, int row)) viewScrolled;
+    Listener!(void delegate(int col, int row)) viewScrolled;
     /// Callback for handling header cell click
-    Listener!(void delegate(GridWidgetBase, int col, int row)) headerCellClicked;
+    Listener!(void delegate(int col, int row)) headerCellClicked;
 
     private
     {
@@ -884,7 +884,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Set scroll position to show specified cell as top left in scrollable area. Returns true if scrolled
-    bool scrollTo(int x, int y, GridWidgetBase source = null, bool doNotify = true)
+    bool scrollTo(int x, int y)
     {
         if (_changedSize)
             updateCumulativeSizes();
@@ -896,12 +896,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             scrollPos = newpos;
             updateScrollBars();
             invalidate();
-            if (doNotify && viewScrolled.assigned)
-            {
-                if (source is null)
-                    source = this;
-                viewScrolled(source, x, y);
-            }
+            if (viewScrolled.assigned)
+                viewScrolled(x, y);
         }
         return changed;
     }
@@ -1083,10 +1079,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Move selection to specified cell
-    bool selectCell(int i, int j, bool makeVisible = true, GridWidgetBase source = null, bool needNotification = true)
+    bool selectCell(int i, int j, bool makeVisible = true)
     {
-        if (source is null)
-            source = this;
         _selection.clear();
         if (_col == i && _row == j)
             return false; // same position
@@ -1108,8 +1102,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         invalidate();
         if (makeVisible)
             makeCellVisible(_col, _row);
-        if (needNotification && cellSelected.assigned)
-            cellSelected(source, _col - _headerCols, _row - _headerRows);
+        if (cellSelected.assigned)
+            cellSelected(_col - _headerCols, _row - _headerRows);
         return true;
     }
 
@@ -1122,16 +1116,16 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             selectCell(i, j, true);
         }
-        cellActivated(this, this.col, this.row);
+        cellActivated(this.col, this.row);
         return true;
     }
 
     /// Cell popup menu
-    Signal!(Menu delegate(GridWidgetBase, int col, int row)) cellPopupMenuBuilder;
+    Signal!(Menu delegate(int col, int row)) cellPopupMenuBuilder;
 
     protected Menu getCellPopupMenu(int col, int row)
     {
-        return cellPopupMenuBuilder.assigned ? cellPopupMenuBuilder(this, col, row) : null;
+        return cellPopupMenuBuilder.assigned ? cellPopupMenuBuilder(col, row) : null;
     }
 
     /// Returns true if widget can show popup menu (e.g. by mouse right click at point x,y)
@@ -1255,7 +1249,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         ACTION_SELECT_DOCUMENT_BEGIN.bind(this, &selectDocumentBegin);
         ACTION_SELECT_DOCUMENT_END.bind(this, &selectDocumentEnd);
 
-        ACTION_ENTER.bind(this, { cellActivated(this, col, row); });
+        ACTION_ENTER.bind(this, { cellActivated(col, row); });
         ACTION_SELECT_ALL.bind(this, &selectAll);
     }
 
@@ -1745,7 +1739,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             if (cellFound && !normalCell)
             {
-                headerCellClicked(this, c, r);
+                headerCellClicked(c, r);
             }
         }
         if (event.action == MouseAction.move && (event.flags & MouseFlag.lbutton))

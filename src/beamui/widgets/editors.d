@@ -304,13 +304,13 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     bool copyCurrentLineWhenNoSelection = true;
 
     /// Modified state change listener (e.g. content has been saved, or first time modified after save)
-    Signal!(void delegate(Widget source, bool modified)) modifiedStateChanged;
+    Signal!(void delegate(bool modified)) modifiedStateChanged;
 
     /// Signal to emit when editor content is changed
     Signal!(void delegate(EditableContent)) contentChanged;
 
     /// Signal to emit when editor cursor position or Insert/Replace mode is changed.
-    Signal!(void delegate(Widget, ref EditorStateInfo editorState)) stateChanged;
+    Signal!(void delegate(ref EditorStateInfo editorState)) stateChanged;
 
     // left pane - can be used to show line numbers, collapse controls, bookmarks, breakpoints, custom icons
     protected int _leftPaneWidth;
@@ -437,7 +437,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                     info.character = '\n';
             }
         }
-        stateChanged(this, info);
+        stateChanged(info);
     }
 
     override protected void handleClientBoxLayout(ref Box clb)
@@ -679,7 +679,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _content.syntaxSupport.applySmartIndent(operation, this);
     }
 
-    protected void onContentChange(EditableContent content, EditOperation operation,
+    protected void onContentChange(EditOperation operation,
             ref TextRange rangeBefore, ref TextRange rangeAfter, Object source)
     {
         debug (editors)
@@ -729,10 +729,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         invalidate();
         if (modifiedStateChanged.assigned)
         {
-            if (_lastReportedModifiedState != content.modified)
+            if (_lastReportedModifiedState != _content.modified)
             {
-                _lastReportedModifiedState = content.modified;
-                modifiedStateChanged(this, content.modified);
+                _lastReportedModifiedState = _content.modified;
+                modifiedStateChanged(_content.modified);
                 updateActions();
             }
         }
@@ -1992,7 +1992,7 @@ class EditLine : EditWidgetBase
     }
 
     /// Handle Enter key press inside line editor
-    Signal!(bool delegate(EditWidgetBase)) enterKeyPressed; // FIXME: better name
+    Signal!(bool delegate()) enterKeyPressed; // FIXME: better name
 
     private
     {
@@ -2104,7 +2104,7 @@ class EditLine : EditWidgetBase
             {
                 if (event.action == KeyAction.keyDown)
                 {
-                    if (enterKeyPressed(this))
+                    if (enterKeyPressed())
                         return true;
                 }
             }
@@ -3913,11 +3913,11 @@ class FindPanel : Row
         add(main).setFillWidth(true);
         add(closeBtn).setFillHeight(false);
 
-        _edFind.enterKeyPressed ~= (EditWidgetBase e) { findNext(_backDirection); return true; };
+        _edFind.enterKeyPressed ~= { findNext(_backDirection); return true; };
         _edFind.contentChanged ~= &onFindTextChange;
 
-        _btnFindNext.clicked ~= (Widget wt) { findNext(false); };
-        _btnFindPrev.clicked ~= (Widget wt) { findNext(true); };
+        _btnFindNext.clicked ~= { findNext(false); };
+        _btnFindPrev.clicked ~= { findNext(true); };
 
         _cbCaseSensitive.toggled ~= &onCaseSensitiveToggling;
         _cbWholeWords.toggled ~= &onCaseSensitiveToggling;
@@ -3926,14 +3926,14 @@ class FindPanel : Row
         if (!replace)
             rowReplace.visibility = Visibility.gone;
 
-        btnReplace.clicked ~= (Widget wt) { replaceOne(); };
-        btnReplaceAndFind.clicked ~= (Widget wt) {
+        btnReplace.clicked ~= { replaceOne(); };
+        btnReplaceAndFind.clicked ~= {
             replaceOne();
             findNext(_backDirection);
         };
-        btnReplaceAll.clicked ~= (Widget wt) { replaceAll(); };
+        btnReplaceAll.clicked ~= { replaceAll(); };
 
-        closeBtn.clicked ~= (Widget wt) { close(); };
+        closeBtn.clicked ~= &close;
 
         focusGroup = true;
 
@@ -4071,7 +4071,7 @@ class FindPanel : Row
     {
         const currentText = _edFind.text;
         debug (editors)
-            Log.d("onFindTextChange.currentText=", currentText);
+            Log.d("updateHighlight currentText: ", currentText);
         _editor.setTextToHighlight(currentText, makeSearchOptions());
     }
 
@@ -4082,7 +4082,7 @@ class FindPanel : Row
         updateHighlight();
     }
 
-    void onCaseSensitiveToggling(Widget source, bool checkValue)
+    void onCaseSensitiveToggling(bool checkValue)
     {
         updateHighlight();
     }

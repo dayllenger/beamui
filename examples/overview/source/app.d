@@ -56,12 +56,12 @@ int main()
         dlg.addFilter(FileFilterEntry("Text files", "*.txt;*.log"));
         dlg.addFilter(FileFilterEntry("Source files", "*.d;*.dd;*.c;*.cpp;*.h;*.hpp"));
         dlg.addFilter(FileFilterEntry("Executable files", "*", true));
-        dlg.dialogClosed ~= (Dialog dlg, const Action result) {
+        dlg.dialogClosed ~= (const Action result) {
             import std.path : baseName;
 
             if (result is ACTION_OPEN)
             {
-                string[] filenames = (cast(FileDialog)dlg).filenames;
+                string[] filenames = dlg.filenames;
                 foreach (fn; filenames)
                 {
                     if (fn.endsWith(".c") || fn.endsWith(".cpp") || fn.endsWith(".h") || fn.endsWith(".hpp") ||
@@ -315,12 +315,12 @@ int main()
         }
 
         btnToggle.checked = fileOpenAction.enabled;
-        btnToggle.clicked ~= (Widget w) {
+        btnToggle.clicked ~= {
             fileOpenAction.enabled = !fileOpenAction.enabled;
         };
 
-        sb.scrolled ~= (AbstractSlider src, ScrollEvent event) { Log.d("scrollbar: ", event.action); };
-        sl.scrolled ~= (AbstractSlider src, ScrollEvent event) { Log.d("slider: ", event.action); };
+        sb.scrolled ~= (ScrollEvent event) { Log.d("scrollbar: ", event.action); };
+        sl.scrolled ~= (ScrollEvent event) { Log.d("slider: ", event.action); };
 
         import std.random : uniform;
 
@@ -369,7 +369,7 @@ int main()
         tree3.newChild("g3_6", "Group 3 item 6"d);
         tree.items.selectItem(tree1);
         // test adding new tree items
-        btnAddItem.clicked ~= (Widget source) {
+        btnAddItem.clicked ~= {
             dstring label = newTreeItemEd.text;
             string id = format("item%d", uniform(1000000, 9999999));
             TreeItem item = tree.items.selectedItem;
@@ -380,7 +380,7 @@ int main()
                 item.addChild(newItem);
             }
         };
-        btnRemoveItem.clicked ~= (Widget source) {
+        btnRemoveItem.clicked ~= {
             TreeItem item = tree.items.selectedItem;
             if (item)
             {
@@ -452,7 +452,7 @@ int main()
         assert(list.itemEnabled(5) == false);
         assert(list.itemEnabled(6) == true);
 
-        addbtn.clicked ~= (Widget src) {
+        addbtn.clicked ~= {
             stringList.add(itemtext.text);
             listAdapter.add(new Label(itemtext.text));
         };
@@ -567,8 +567,8 @@ void main()
 
         cb1.checked = grid.fullColumnOnLeft;
         cb2.checked = grid.fullRowOnTop;
-        cb1.toggled ~= (w, checked) { grid.fullColumnOnLeft = checked; };
-        cb2.toggled ~= (w, checked) { grid.fullRowOnTop = checked; };
+        cb1.toggled ~= (checked) { grid.fullColumnOnLeft = checked; };
+        cb2.toggled ~= (checked) { grid.fullRowOnTop = checked; };
 
         grid.resize(30, 50);
         grid.fixedCols = 3;
@@ -679,10 +679,10 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
     cb3.checked = editor.readOnly;
     cb4.checked = editor.style.fontFamily == FontFamily.monospace;
     cb5.checked = editor.tabSize == 8;
-    cb1.toggled ~= (w, checked) { editor.wantTabs = checked; };
-    cb2.toggled ~= (w, checked) { editor.useSpacesForTabs = checked; };
-    cb3.toggled ~= (w, checked) { editor.readOnly = checked; };
-    cb4.toggled ~= (w, checked) {
+    cb1.toggled ~= (checked) { editor.wantTabs = checked; };
+    cb2.toggled ~= (checked) { editor.useSpacesForTabs = checked; };
+    cb3.toggled ~= (checked) { editor.readOnly = checked; };
+    cb4.toggled ~= (checked) {
         if (checked)
         {
             editor.style.fontFace = "Courier New";
@@ -694,7 +694,7 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
             editor.style.fontFamily = FontFamily.sans_serif;
         }
     };
-    cb5.toggled ~= (w, checked) { editor.tabSize(checked ? 8 : 4); };
+    cb5.toggled ~= (checked) { editor.tabSize(checked ? 8 : 4); };
 
     return row;
 }
@@ -704,6 +704,6 @@ Widget addSourceEditorControls(Widget base, SourceEdit editor)
     auto cb1 = new CheckBox("Show line numbers");
     base.addChild(cb1);
     cb1.checked = editor.showLineNumbers;
-    cb1.toggled ~= (w, checked) { editor.showLineNumbers = checked; };
+    cb1.toggled ~= (checked) { editor.showLineNumbers = checked; };
     return base;
 }

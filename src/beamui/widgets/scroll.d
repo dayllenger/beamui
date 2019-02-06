@@ -9,7 +9,7 @@ import beamui.widgets.scroll;
 
 auto scrollContent = new Column;
 with (scrollContent) {
-    padding = 10;
+    style.padding = 10;
     add(new Label("Some buttons"d),
         new Button("Close"d, "fileclose"),
         new Button("Open"d, "fileopen"),
@@ -154,8 +154,8 @@ class ScrollAreaBase : WidgetGroup
         _vscrollbar = new ScrollBar(Orientation.vertical);
         _hscrollbar.id = "hscrollbar";
         _vscrollbar.id = "vscrollbar";
-        _hscrollbar.scrolled ~= &onScrollEvent;
-        _vscrollbar.scrolled ~= &onScrollEvent;
+        _hscrollbar.scrolled ~= &onHScroll;
+        _vscrollbar.scrolled ~= &onVScroll;
         addChild(_hscrollbar);
         addChild(_vscrollbar);
     }
@@ -182,15 +182,6 @@ class ScrollAreaBase : WidgetGroup
             }
         }
         return super.onMouseEvent(event);
-    }
-
-    /// Handle scroll event
-    protected void onScrollEvent(AbstractSlider source, ScrollEvent event)
-    {
-        if (source.orientation == Orientation.horizontal)
-            onHScroll(event);
-        else
-            onVScroll(event);
     }
 
     /// Process horizontal scrollbar event

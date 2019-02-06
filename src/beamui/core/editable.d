@@ -489,11 +489,10 @@ class UndoBuffer
 }
 
 /// Editable Content change listener
-alias onContentChangeHandler = void delegate(EditableContent content, EditOperation operation,
+alias onContentChangeHandler = void delegate(EditOperation operation,
         ref TextRange rangeBefore, ref TextRange rangeAfter, Object source);
 
-alias onEditableContentMarksChangeHandler = void delegate(EditableContent content,
-        LineIcon[] movedMarks, LineIcon[] removedMarks);
+alias onEditableContentMarksChangeHandler = void delegate(LineIcon[] movedMarks, LineIcon[] removedMarks);
 
 /// TokenCategory holder
 alias TokenProp = ubyte;
@@ -1180,11 +1179,11 @@ class EditableContent
         if (_lineIcons.updateLinePositions(rangeBefore, rangeAfter, moved, removed))
         {
             if (marksChanged.assigned)
-                marksChanged(this, moved, removed);
+                marksChanged(moved, removed);
         }
         // call listeners
         if (contentChanged.assigned)
-            contentChanged(this, op, rangeBefore, rangeAfter, source);
+            contentChanged(op, rangeBefore, rangeAfter, source);
     }
 
     /// Returns edit marks for specified range

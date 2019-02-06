@@ -541,7 +541,7 @@ class TreeItemWidget : Row
             _expander.clickable = true;
             _expander.trackHover = true;
 
-            _expander.clicked ~= (Widget source) {
+            _expander.clicked ~= {
                 _item.selectItem(_item);
                 _item.toggleExpand(_item);
             };
@@ -589,13 +589,12 @@ class TreeItemWidget : Row
 
     override bool onKeyEvent(KeyEvent event)
     {
-        if (keyEvent.assigned && keyEvent(this, event))
+        if (keyEvent.assigned && keyEvent(event))
             return true; // processed by external handler
         if (!focused || !visible)
             return false;
         if (event.action != KeyAction.keyDown)
             return false;
-        int action = 0;
         if (event.keyCode == KeyCode.space || event.keyCode == KeyCode.enter)
         {
             if (_item.hasChildren)

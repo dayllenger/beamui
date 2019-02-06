@@ -271,23 +271,23 @@ public:
             if ((oldState & State.focused) && !(newState & State.focused))
             {
                 handleFocusChange(false);
-                focusChanged(this, false);
+                focusChanged(false);
             }
             else if (!(oldState & State.focused) && (newState & State.focused))
             {
                 handleFocusChange(true, cast(bool)(newState & State.keyboardFocused));
-                focusChanged(this, true);
+                focusChanged(true);
             }
             // notify checked changes
             if ((oldState & State.checked) && !(newState & State.checked))
             {
                 handleToggling(false);
-                toggled(this, false);
+                toggled(false);
             }
             else if (!(oldState & State.checked) && (newState & State.checked))
             {
                 handleToggling(true);
-                toggled(this, true);
+                toggled(true);
             }
         }
     }
@@ -1329,19 +1329,19 @@ public:
     // Signals
 
     /// On click event listener
-    Signal!(void delegate(Widget)) clicked;
+    Signal!(void delegate()) clicked;
 
     /// Checked state change event listener
-    Signal!(void delegate(Widget, bool)) toggled;
+    Signal!(void delegate(bool)) toggled;
 
     /// Focus state change event listener
-    Signal!(void delegate(Widget, bool)) focusChanged;
+    Signal!(void delegate(bool)) focusChanged;
 
     /// Key event listener, must return true if event is processed by handler
-    Signal!(bool delegate(Widget, KeyEvent)) keyEvent;
+    Signal!(bool delegate(KeyEvent)) keyEvent;
 
     /// Mouse event listener, must return true if event is processed by handler
-    Signal!(bool delegate(Widget, MouseEvent)) mouseEvent;
+    Signal!(bool delegate(MouseEvent)) mouseEvent;
 
     //===============================================================
     // Events
@@ -1349,8 +1349,7 @@ public:
     /// Called to process click and notify listeners
     protected void handleClick()
     {
-        if (clicked.assigned)
-            clicked(this);
+        clicked();
     }
 
     /// Set new timer to call a delegate after specified interval (for recurred notifications, return true from the handler)
@@ -1378,7 +1377,7 @@ public:
     /// Process key event, return true if event is processed
     bool onKeyEvent(KeyEvent event)
     {
-        if (keyEvent.assigned && keyEvent(this, event))
+        if (keyEvent.assigned && keyEvent(event))
             return true; // processed by external handler
         // handle focus navigation using keys
         if (focused && handleMoveFocusUsingKeys(event))
@@ -1410,7 +1409,7 @@ public:
     /// Process mouse event; return true if event is processed by widget.
     bool onMouseEvent(MouseEvent event)
     {
-        if (mouseEvent.assigned && mouseEvent(this, event))
+        if (mouseEvent.assigned && mouseEvent(event))
             return true; // processed by external handler
         debug (mouse)
             Log.fd("onMouseEvent '%s': %s  (%s, %s)", id, event.action, event.x, event.y);

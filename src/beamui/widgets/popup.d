@@ -69,7 +69,7 @@ class Popup : LinearLayout
     bool ownContent = true;
 
     /// Popup close signal
-    Signal!(void delegate(Popup, bool byEvent)) popupClosed;
+    Signal!(void delegate(bool byEvent)) popupClosed;
 
     this(Widget content, Window window)
     {
@@ -81,7 +81,7 @@ class Popup : LinearLayout
     /// Close and destroy popup
     void close()
     {
-        popupClosed(this, closedByEvent);
+        popupClosed(closedByEvent);
         if (!ownContent)
             removeChild(0);
         window.removePopup(this);

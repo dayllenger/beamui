@@ -73,7 +73,7 @@ class CheckboxItem : SettingsItem
         cb.style.minWidth = 60;
         Setting setting = settings.settingByPath(_id);
         cb.checked = setting.boolean = setting.boolean ^ _inverse;
-        cb.toggled ~= (Widget source, bool checked) { setting.boolean = checked ^ _inverse; };
+        cb.toggled ~= (bool checked) { setting.boolean = checked ^ _inverse; };
         return [cb];
     }
 }
@@ -109,7 +109,7 @@ class StringComboBoxItem : SettingsItem
         }
         if (index >= 0)
             cb.selectedItemIndex = index;
-        cb.itemSelected ~= (Widget source, int itemIndex) {
+        cb.itemSelected ~= (int itemIndex) {
             if (itemIndex >= 0 && itemIndex < _items.length)
                 setting.str = _items[itemIndex].stringID;
         };
@@ -148,7 +148,7 @@ class IntComboBoxItem : SettingsItem
         }
         if (index >= 0)
             cb.selectedItemIndex = index;
-        cb.itemSelected ~= (Widget source, int itemIndex) {
+        cb.itemSelected ~= (int itemIndex) {
             if (itemIndex >= 0 && itemIndex < _items.length)
                 setting.integer = _items[itemIndex].intID;
         };
@@ -194,7 +194,7 @@ class FloatComboBoxItem : SettingsItem
         {
             debug Log.d("FloatComboBoxItem : item ", itemID, " is not found for value ", setting.floating);
         }
-        cb.itemSelected ~= (Widget source, int itemIndex) {
+        cb.itemSelected ~= (int itemIndex) {
             if (itemIndex >= 0 && itemIndex < _items.length)
                 setting.floating = _items[itemIndex].intID / cast(double)_divider;
         };

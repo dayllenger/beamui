@@ -587,9 +587,9 @@ class Menu : ListWidget
         super.parent = p;
     }
 
-    protected void onThisPopupClosed(Popup p, bool byEvent)
+    protected void onThisPopupClosed(bool byEvent)
     {
-        assert(p);
+        assert(thisPopup);
         debug (menus)
             Log.d("Menu: closing popup");
 
@@ -618,7 +618,7 @@ class Menu : ListWidget
         }
         visualParentMenu = null;
 
-        p.popupClosed -= &onThisPopupClosed;
+        thisPopup.popupClosed -= &onThisPopupClosed;
     }
 
     protected void handleClose()

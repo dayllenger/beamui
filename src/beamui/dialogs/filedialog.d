@@ -610,7 +610,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             adapter.add(btn);
         }
         res.ownAdapter = adapter;
-        res.itemClicked ~= (Widget source, int itemIndex) {
+        res.itemClicked ~= (int itemIndex) {
             openDirectory(_roots[itemIndex].path, null);
             res.selectItem(-1);
         };
@@ -734,7 +734,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         return openDirectory(path, null);
     }
 
-    protected Menu getCellPopupMenu(GridWidgetBase source, int col, int row)
+    protected Menu getCellPopupMenu(int col, int row)
     {
         if (row >= 0 && row < _entries.length)
         {
@@ -844,17 +844,17 @@ class FileDialog : Dialog, CustomGridCellAdapter
         _fileList.cellPopupMenuBuilder ~= &getCellPopupMenu;
         _fileList.headerCellClicked = &onHeaderCellClicked;
 
-        _fileList.keyEvent ~= (Widget source, KeyEvent event) {
+        _fileList.keyEvent ~= (KeyEvent event) {
             if (_shortcutHelper.onKeyEvent(event))
                 locateFileInList(_shortcutHelper.text);
             return false;
         };
 
         _fileList.customCellAdapter = this;
-        _fileList.cellActivated = delegate(GridWidgetBase source, int col, int row) {
+        _fileList.cellActivated = delegate(int col, int row) {
             onItemActivated(row);
         };
-        _fileList.cellSelected = delegate(GridWidgetBase source, int col, int row) {
+        _fileList.cellSelected = delegate(int col, int row) {
             onItemSelected(row);
         };
 
@@ -865,7 +865,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 filterLabels ~= f.label;
             _cbFilters.items = filterLabels;
             _cbFilters.selectedItemIndex = _filterIndex;
-            _cbFilters.itemSelected ~= (Widget source, int itemIndex) {
+            _cbFilters.itemSelected ~= (int itemIndex) {
                 _filterIndex = itemIndex;
                 reopenDirectory();
             };
@@ -904,7 +904,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 FileListSortOrder.timestampDesc, FileListSortOrder.timestamp));
     }
 
-    protected void onHeaderCellClicked(GridWidgetBase source, int col, int row)
+    protected void onHeaderCellClicked(int col, int row)
     {
         debug Log.d("onHeaderCellClicked col=", col, " row=", row);
         if (row == 0 && col >= 2 && col <= 4)
@@ -958,13 +958,13 @@ class FilePathPanelItem : Row
         add(_text, _button);
     }
 
-    private void onTextClick(Widget src)
+    private void onTextClick()
     {
         if (pathSelected.assigned)
             pathSelected(_path);
     }
 
-    private void onButtonClick(Widget src)
+    private void onButtonClick()
     {
         // show popup menu with subdirs
         string[] filters;
@@ -1148,7 +1148,7 @@ class FilePathPanel : FrameLayout
         _edPath.setDefaultPopupMenu();
     }
 
-    protected void onEditorFocusChanged(Widget source, bool focused)
+    protected void onEditorFocusChanged(bool focused)
     {
         if (!focused)
         {
@@ -1167,7 +1167,7 @@ class FilePathPanel : FrameLayout
         return false;
     }
 
-    protected void onSegmentsClickOutside(Widget w)
+    protected void onSegmentsClickOutside()
     {
         // switch to editor
         _edPath.text = toUTF32(_path);
@@ -1175,7 +1175,7 @@ class FilePathPanel : FrameLayout
         _edPath.setFocus();
     }
 
-    protected bool onEnterKey(EditWidgetBase editor)
+    protected bool onEnterKey()
     {
         string fn = buildNormalizedPath(toUTF8(_edPath.text));
         if (exists(fn) && isDir(fn))
@@ -1189,7 +1189,7 @@ class FileNameEditLine : Row
     @property
     {
         /// Handle Enter key press inside line editor
-        ref Signal!(bool delegate(EditWidgetBase)) enterKeyPressed()
+        ref Signal!(bool delegate()) enterKeyPressed()
         {
             return _edFileName.enterKeyPressed;
         }
@@ -1246,7 +1246,7 @@ class FileNameEditLine : Row
     }
 
     /// Modified state change listener (e.g. content has been saved, or first time modified after save)
-    Signal!(void delegate(Widget source, bool modified)) modifiedStateChanged;
+    Signal!(void delegate(bool modified)) modifiedStateChanged;
     /// Editor content is changed
     Signal!(void delegate(EditableContent)) contentChanged;
 
@@ -1271,17 +1271,15 @@ class FileNameEditLine : Row
         _btn = new Button("..."d);
         _btn.id = "FileNameEditLine_btnFile";
         _btn.bindSubItem(this, "button");
-        _btn.clicked ~= (Widget src) {
+        _btn.clicked ~= {
             auto dlg = new FileDialog(_caption, window, null, _fileDialogFlags);
             foreach (key, value; _filetypeIcons)
                 dlg.filetypeIcons[key] = value;
             dlg.filters = _filters;
-            dlg.dialogClosed ~= (Dialog dlg, const Action result) {
+            dlg.dialogClosed ~= (const Action result) {
                 if (result is ACTION_OPEN || result is ACTION_OPEN_DIRECTORY)
                 {
                     _edFileName.text = toUTF32((cast(FileDialog)dlg).filename);
-                    if (contentChanged.assigned)
-                        contentChanged(_edFileName.content);
                 }
             };
             string path = toUTF8(_edFileName.text);

@@ -82,7 +82,7 @@ struct DockSpace
 
     private int _dragStartSpace;
 
-    protected void onResize(Resizer source, ResizerEventType event, int dragDelta)
+    protected void onResize(ResizerEventType event, int dragDelta)
     {
         if (!_space)
             return;
