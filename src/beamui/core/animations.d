@@ -27,12 +27,8 @@ struct Animation
     }
 
     void tick(long interval)
-    in
     {
         assert(isAnimating);
-    }
-    body
-    {
         t += cast(double)interval / cast(double)duration;
         if (t < 1.0)
         {
@@ -102,7 +98,7 @@ class CubicBezierTimingFunction : TimingFunction
     this(double x1, double y1, double x2, double y2)
     {
         // calculate the polynomial coefficients
-        // P0 is (0,0), P1 is (x1,y1), P2 is (x2,x3) and P3 is (1,1)
+        // implicit P0 = (0,0), P1 = (x1,y1), P2 = (x2,y2), P3 = (1,1)
         cx = 3.0 * x1;
         bx = 3.0 * (x2 - x1) - cx;
         ax = 1.0 - cx - bx;
@@ -112,40 +108,69 @@ class CubicBezierTimingFunction : TimingFunction
         ay = 1.0 - cy - by;
     }
 
+    /// Evaluate y for a given x. `x` must be in [0, 1] range.
+    double get(double x) const
+    {
+        assert(0.0 <= x && x <= 1.0);
+        return sampleCurveY(solveCurveX(x));
+    }
+
     /// Get x curve value by parameter
     double sampleCurveX(double t) const
     {
+        // ax * t^3 + bx * t^2 + cx * t
         return ((ax * t + bx) * t + cx) * t;
     }
-
     /// Get y curve value by parameter
     double sampleCurveY(double t) const
     {
         return ((ay * t + by) * t + cy) * t;
     }
-
-    /// Evaluate y for a given x. `x` must be in [0, 1] range.
-    double get(double x) const
-    in
+    double sampleCurveDerivativeX(double t) const
     {
-        assert(0.0 <= x && x <= 1.0);
+        return (3.0 * ax * t + 2.0 * bx) * t + cx;
     }
-    body
+    double sampleCurveDerivativeY(double t) const
     {
-        return sampleCurveY(solveCurveX(x));
+        return (3.0 * ay * t + 2.0 * by) * t + cy;
     }
 
     /// Find parametric value t for a given x. `x` must be in [0, 1] range.
-    double solveCurveX(double x) const
-    in
+    double solveCurveX(const double x) const
     {
         assert(0.0 <= x && x <= 1.0);
-    }
-    body
-    {
         enum epsilon = 1e-7;
 
-        // TODO
-        return x;
+        // try fast Newton's method
+        double t = x;
+        foreach (i; 0 .. 8)
+        {
+            const x2 = sampleCurveX(t) - x;
+            if (abs(x2) < epsilon)
+                return t;
+            const dx = sampleCurveDerivativeX(t);
+            if (abs(dx) < 1e-6)
+                break;
+            t -= x2 / dx;
+        }
+
+        // fall back to the slow bisection method
+        double lo = 0.0;
+        double hi = 1.0;
+        t = x;
+
+        while (lo < hi)
+        {
+            const x2 = sampleCurveX(t) - x;
+            if (abs(x2) < epsilon)
+                return t;
+            if (x2 < 0)
+                lo = t;
+            else
+                hi = t;
+            t = (hi - lo) / 2.0 + lo;
+        }
+
+        return t;
     }
 }
