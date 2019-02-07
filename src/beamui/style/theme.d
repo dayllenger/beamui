@@ -21,12 +21,15 @@ final class Theme
     /// Unique name of theme
     @property string name() const { return _name; }
     /// List of all styles this theme contains
-    @property Style[] styles() { return styleList; }
+    @property Style[] allStyles() { return styleList; }
+    /// List of styles this theme contains for `State.normal`
+    @property Style[] normalStyles() { return styleListNormal; }
 
     private
     {
         string _name;
         Style[] styleList;
+        Style[] styleListNormal;
         Style[Selector] styleMap;
         DrawableRef[string] drawables;
         Color[string] colors;
@@ -42,6 +45,7 @@ final class Theme
     {
         Log.d("Destroying theme");
         eliminate(styleList);
+        eliminate(styleListNormal);
         eliminate(styleMap);
         foreach (ref dr; drawables)
             dr.clear();
@@ -56,6 +60,8 @@ final class Theme
         else
         {
             auto st = new Style(selector);
+            if ((selector.specifiedState & State.normal) == selector.enabledState)
+                styleListNormal ~= st;
             styleList ~= st;
             styleMap[selector] = st;
             return st;

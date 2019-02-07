@@ -389,19 +389,35 @@ public:
             {
                 _needToRecomputeStyle = false;
                 Style[] chain = selectStyleChain();
-                _style.recompute(chain);
+                const len = cast(uint)chain.length;
+                // assume that style recomputation is purely depends on style chain
+                // it may not change from previous update
+                if (cast(size_t[])cachedChain[0 .. cachedChainLen] != cast(size_t[])chain)
+                {
+                    // copy
+                    if (cachedChain.length < len)
+                        cachedChain.length = len;
+                    cachedChainLen = len;
+                    cachedChain[0 .. len] = chain[];
+                    // important: we cannot use shared array from `selectStyleChain` func
+                    _style.recompute(cachedChain[0 .. len]);
+                }
                 if (stylesRecomputed.assigned)
-                    stylesRecomputed(chain);
+                    stylesRecomputed(cachedChain[0 .. len]);
             }
         }
     }
+    private Style[] cachedChain;
+    private uint cachedChainLen;
 
-    private Style[] tmpchain;
     /// Get a style chain for this widget from current theme, least specific styles first
     Style[] selectStyleChain()
     {
+        static Style[] tmpchain;
         size_t count;
-        foreach (style; currentTheme.styles)
+        // we can skip half of work if the state is normal
+        Style[] list = (state == State.normal) ? currentTheme.normalStyles : currentTheme.allStyles;
+        foreach (style; list)
         {
             if (matchSelector(style.selector))
             {
@@ -443,26 +459,26 @@ public:
             {
                 // check only type
                 TypeInfo_Class type = typeid(subInfo.parent);
-                return sel.type == getShortClassName(type);
+                return equalShortClassName(type, sel.type);
             }
         }
-        // state
-        if ((sel.specifiedState & state) != sel.enabledState)
-            return false;
-        // id
-        if (sel.id && (!_id || _id != sel.id))
-            return false;
         // type
         if (sel.type)
         {
             TypeInfo_Class type = typeid(this);
-            while (sel.type != getShortClassName(type))
+            while (!equalShortClassName(type, sel.type))
             {
                 type = type.base; // support inheritance
                 if (type is typeid(Object))
                     return false;
             }
         }
+        // id
+        if (sel.id && (!_id || _id != sel.id))
+            return false;
+        // state
+        if ((sel.specifiedState & state) != sel.enabledState)
+            return false;
         // class
         foreach (name; sel.classes)
         {

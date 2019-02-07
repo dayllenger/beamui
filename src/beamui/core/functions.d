@@ -70,7 +70,6 @@ T normalizeEOLs(T)(T s) if (isSomeString!T)
     }
     return cast(T)res;
 }
-
 ///
 unittest
 {
@@ -89,7 +88,6 @@ auto emap(alias func, S)(S[] s)
         arr[i] = func(elem);
     return arr;
 }
-
 ///
 unittest
 {
@@ -119,7 +117,6 @@ S[] efilter(alias pred, S)(S[] s)
             arr ~= elem;
     return arr;
 }
-
 ///
 unittest
 {
@@ -182,7 +179,6 @@ void eliminate(T, S)(ref T[S] values) if (__traits(compiles, eliminate(values[S.
         values = null;
     }
 }
-
 ///
 unittest
 {
@@ -257,7 +253,6 @@ auto bunch(TS...)(TS vars) if (TS.length > 0)
     }
     return Result(vars);
 }
-
 ///
 unittest
 {
@@ -341,7 +336,6 @@ auto maybe(T)(T var) if (isReferenceType!T)
     }
     return Result(var);
 }
-
 ///
 unittest
 {
@@ -370,26 +364,27 @@ unittest
     assert(b.maybe.i == 5);
 }
 
-/// Get first name of class
-string getShortClassName(TypeInfo_Class type)
+/// Check whether first name of class is equal to a string
+bool equalShortClassName(TypeInfo_Class type, string shortName)
 {
+    assert(type);
+    if (shortName.length == 0)
+        return false;
     string name = type.name;
-    for (size_t i = name.length - 1; i >= 0; i--)
-    {
-        if (name[i] == '.')
-        {
-            name = name[i + 1 .. $];
-            break;
-        }
-    }
-    return name;
+    if (shortName.length >= name.length)
+        return false;
+    if (shortName != name[$ - shortName.length .. $])
+        return false;
+    return name[$ - shortName.length - 1] == '.';
 }
-
 ///
 unittest
 {
     TypeInfo_Class t = typeid(Exception);
-    assert(getShortClassName(t) == "Exception");
+    assert(equalShortClassName(t, "Exception"));
+    assert(!equalShortClassName(t, "Exceptio"));
+    assert(!equalShortClassName(t, "xception"));
+    assert(!equalShortClassName(t, ".Exception"));
 }
 
 /// Move index into [first, last] range in a cyclic manner
@@ -399,7 +394,6 @@ int wrapAround(int index, int first, int last)
     const diff = last - first + 1;
     return first + (index % diff + diff) % diff;
 }
-
 ///
 unittest
 {

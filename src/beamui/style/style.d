@@ -24,6 +24,18 @@ import beamui.graphics.text : TextDecoration;
 import beamui.style.decode_css;
 import beamui.style.types;
 
+/// Holds string hash and can compute it at compile time for faster CSS name lookup
+struct StrHash
+{
+    immutable size_t value;
+    alias value this;
+
+    this(string str)
+    {
+        value = hashOf(str);
+    }
+}
+
 /// Style - holds properties for a single selector
 final class Style
 {
@@ -34,12 +46,12 @@ final class Style
     {
         const(Selector) _selector;
         /// Decoded properties, stored as variants
-        Variant[string] properties;
+        Variant[size_t] properties;
         /// Raw properties right from CSS parser
-        const(CSS.Token)[][string] rawProperties;
+        const(CSS.Token)[][size_t] rawProperties;
 
         enum Meta { inherit, initial }
-        Meta[string] metaProperties;
+        Meta[size_t] metaProperties;
 
         debug static __gshared int _instanceCount;
     }
@@ -74,7 +86,7 @@ final class Style
     }
 
     /// Returns true whether CSS property is set to `inherit`
-    bool isInherited(string name)
+    bool isInherited(StrHash name)
     {
         if (auto p = name in metaProperties)
             return *p == Meta.inherit;
@@ -83,7 +95,7 @@ final class Style
     }
 
     /// Returns true whether CSS property is set to `initial`
-    bool isInitial(string name)
+    bool isInitial(StrHash name)
     {
         if (auto p = name in metaProperties)
             return *p == Meta.initial;
@@ -91,8 +103,8 @@ final class Style
             return false;
     }
 
-    /// Try to find a property in this style by exact type and CSS name
-    T* peek(T, SpecialCSSType specialType = SpecialCSSType.none)(string name)
+    /// Try to find a property in this style by exact type and CSS name hash
+    T* peek(T, SpecialCSSType specialType = SpecialCSSType.none)(StrHash name)
     {
         if (auto p = name in properties)
         {
@@ -129,7 +141,8 @@ final class Style
     /// Find a shorthand border property, split it into components and decode
     void explode(ShorthandBorder sh)
     {
-        if (auto p = sh.name in rawProperties)
+        const name = StrHash(sh.name);
+        if (auto p = name in rawProperties)
         {
             Color color = void;
             Dimension width = void;
@@ -141,22 +154,23 @@ final class Style
                 tryToSet(sh.leftWidth, Variant(width));
                 tryToSet(sh.color, Variant(color));
             }
-            rawProperties.remove(sh.name);
+            rawProperties.remove(name);
         }
-        if (auto p = sh.name in metaProperties)
+        if (auto p = name in metaProperties)
         {
-            metaProperties[sh.topWidth] = *p;
-            metaProperties[sh.rightWidth] = *p;
-            metaProperties[sh.bottomWidth] = *p;
-            metaProperties[sh.leftWidth] = *p;
-            metaProperties[sh.color] = *p;
-            metaProperties.remove(sh.name);
+            metaProperties[StrHash(sh.topWidth)] = *p;
+            metaProperties[StrHash(sh.rightWidth)] = *p;
+            metaProperties[StrHash(sh.bottomWidth)] = *p;
+            metaProperties[StrHash(sh.leftWidth)] = *p;
+            metaProperties[StrHash(sh.color)] = *p;
+            metaProperties.remove(name);
         }
     }
     /// Find a shorthand drawable (background, usually) property, split it into components and decode
     void explode(ShorthandDrawable sh)
     {
-        if (auto p = sh.name in rawProperties)
+        const name = StrHash(sh.name);
+        if (auto p = name in rawProperties)
         {
             Color color = void;
             Drawable image = void;
@@ -165,19 +179,20 @@ final class Style
                 tryToSet(sh.color, Variant(color));
                 tryToSet(sh.image, Variant(image));
             }
-            rawProperties.remove(sh.name);
+            rawProperties.remove(name);
         }
-        if (auto p = sh.name in metaProperties)
+        if (auto p = name in metaProperties)
         {
-            metaProperties[sh.color] = *p;
-            metaProperties[sh.image] = *p;
-            metaProperties.remove(sh.name);
+            metaProperties[StrHash(sh.color)] = *p;
+            metaProperties[StrHash(sh.image)] = *p;
+            metaProperties.remove(name);
         }
     }
     /// Find a shorthand insets (margin, padding, border-width) property, split it into components and decode
     void explode(ShorthandInsets sh)
     {
-        if (auto p = sh.name in rawProperties)
+        const name = StrHash(sh.name);
+        if (auto p = name in rawProperties)
         {
             Dimension[] list = void;
             if (decodeInsets(*p, list))
@@ -188,21 +203,22 @@ final class Style
                 tryToSet(sh.bottom, Variant(list[list.length > 2 ? 2 : 0]));
                 tryToSet(sh.left, Variant(list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1]));
             }
-            rawProperties.remove(sh.name);
+            rawProperties.remove(name);
         }
-        if (auto p = sh.name in metaProperties)
+        if (auto p = name in metaProperties)
         {
-            metaProperties[sh.top] = *p;
-            metaProperties[sh.right] = *p;
-            metaProperties[sh.bottom] = *p;
-            metaProperties[sh.left] = *p;
-            metaProperties.remove(sh.name);
+            metaProperties[StrHash(sh.top)] = *p;
+            metaProperties[StrHash(sh.right)] = *p;
+            metaProperties[StrHash(sh.bottom)] = *p;
+            metaProperties[StrHash(sh.left)] = *p;
+            metaProperties.remove(name);
         }
     }
     /// Find a shorthand text decoration property, split it into components and decode
     void explode(ShorthandTextDecoration sh)
     {
-        if (auto p = sh.name in rawProperties)
+        const name = StrHash(sh.name);
+        if (auto p = name in rawProperties)
         {
             TextDecoration value = void;
             if (decode(*p, value))
@@ -211,20 +227,21 @@ final class Style
                 tryToSet(sh.line, Variant(value.line));
                 tryToSet(sh.style, Variant(value.style));
             }
-            rawProperties.remove(sh.name);
+            rawProperties.remove(name);
         }
-        if (auto p = sh.name in metaProperties)
+        if (auto p = name in metaProperties)
         {
-            metaProperties[sh.color] = *p;
-            metaProperties[sh.line] = *p;
-            metaProperties[sh.style] = *p;
-            metaProperties.remove(sh.name);
+            metaProperties[StrHash(sh.color)] = *p;
+            metaProperties[StrHash(sh.line)] = *p;
+            metaProperties[StrHash(sh.style)] = *p;
+            metaProperties.remove(name);
         }
     }
     /// Find a shorthand transition property, split it into components and decode
     void explode(ShorthandTransition sh)
     {
-        if (auto p = sh.name in rawProperties)
+        const name = StrHash(sh.name);
+        if (auto p = name in rawProperties)
         {
             string prop = void;
             TimingFunction func = void;
@@ -237,39 +254,41 @@ final class Style
                 tryToSet(sh.duration, Variant(dur));
                 tryToSet(sh.delay, Variant(del));
             }
-            rawProperties.remove(sh.name);
+            rawProperties.remove(name);
         }
-        if (auto p = sh.name in metaProperties)
+        if (auto p = name in metaProperties)
         {
-            metaProperties[sh.property] = *p;
-            metaProperties[sh.timingFunction] = *p;
-            metaProperties[sh.duration] = *p;
-            metaProperties[sh.delay] = *p;
-            metaProperties.remove(sh.name);
+            metaProperties[StrHash(sh.property)] = *p;
+            metaProperties[StrHash(sh.timingFunction)] = *p;
+            metaProperties[StrHash(sh.duration)] = *p;
+            metaProperties[StrHash(sh.delay)] = *p;
+            metaProperties.remove(name);
         }
     }
 
     private void tryToSet(string name, lazy Variant v)
     {
-        if (name !in rawProperties)
-            properties[name] = v;
+        const hash = StrHash(name);
+        if (hash !in rawProperties)
+            properties[hash] = v;
     }
 
     package void setRawProperty(string name, const CSS.Token[] tokens)
     {
         assert(tokens.length > 0);
 
+        const hash = StrHash(name);
         if (tokens.length == 1 && tokens[0].type == CSS.TokenType.ident)
         {
             switch (tokens[0].text)
             {
-                case "inherit": metaProperties[name] = Meta.inherit; return;
-                case "initial": metaProperties[name] = Meta.initial; return;
+                case "inherit": metaProperties[hash] = Meta.inherit; return;
+                case "initial": metaProperties[hash] = Meta.initial; return;
                 default: break;
             }
         }
         // usual value
-        rawProperties[name] = tokens;
+        rawProperties[hash] = tokens;
     }
 
     /// Ability to compare styles by their selector specificity

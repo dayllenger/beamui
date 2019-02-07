@@ -389,12 +389,13 @@ struct ComputedStyle
 
     private
     {
-        struct Meta
-        {
-            bool inherit; /// Explicitly set to inherit value from parent widget
-            bool overriden; /// Overriden by user
-        }
-        Meta[StyleProperty] metadata;
+        import core.bitop : bt, bts, btr;
+
+        enum bits = StyleProperty.max + 1;
+        /// Explicitly set to inherit value from parent widget
+        size_t[bits / (8 * size_t.sizeof) + 1] inheritBitArray;
+        /// Overriden by user
+        size_t[bits / (8 * size_t.sizeof) + 1] overridenBitArray;
 
         // layout
         Length _width = Length.none;
@@ -450,20 +451,17 @@ struct ComputedStyle
 
     ~this()
     {
-        if (metadata !is null)
-        {
-            if (isOverriden(StyleProperty.boxShadow))
-                eliminate(_boxShadow);
-            if (isOverriden(StyleProperty.backgroundImage))
-                eliminate(_backgroundImage);
-            metadata.clear();
-        }
+        if (isOverriden(StyleProperty.boxShadow))
+            eliminate(_boxShadow);
+        if (isOverriden(StyleProperty.backgroundImage))
+            eliminate(_backgroundImage);
     }
 
     /// Set the property to inherit its value from parent widget
     void inherit(StyleProperty property)
     {
-        metadata[property] = Meta(true, true); // set by user
+        bts(inheritBitArray.ptr, property);
+        bts(overridenBitArray.ptr, property);
     }
 
     /// Set the property to its initial value
@@ -507,56 +505,60 @@ struct ComputedStyle
             alias T = typeof(mixin(`_` ~ name));
             enum ptype = mixin(`StyleProperty.` ~ name);
             enum specialCSSType = getSpecialCSSType(ptype);
-            enum string cssname = getCSSName(ptype);
+            enum cssname = StrHash(getCSSName(ptype));
+            enum bool inheritsByDefault = inherited(ptype);
 
-            bool set = isOverriden(ptype);
-            // skip if property is overriden
-            if (!set)
+            const setByUser = isOverriden(ptype);
+            bool setInStyles;
+            // search in style chain if not overriden
+            if (!setByUser)
             {
                 bool inh;
-                // find nearest written property in style chain
+                // find nearest written property
                 foreach_reverse (st; chain)
                 {
-                    if (st.isInherited(cssname))
+                    static if (!inheritsByDefault)
                     {
-                        inh = true;
-                        set = true;
-                        break;
+                        if (st.isInherited(cssname))
+                        {
+                            inh = true;
+                            setInStyles = true;
+                            break;
+                        }
                     }
                     if (st.isInitial(cssname))
                     {
                         setProperty!name(mixin(`defaults._` ~ name), false);
-                        set = true;
+                        setInStyles = true;
                         break;
                     }
                     if (auto p = st.peek!(T, specialCSSType)(cssname))
                     {
                         setProperty!name(*p, false);
-                        set = true;
+                        setInStyles = true;
                         break;
                     }
                 }
-                // if nothing there - return value to defaults
-                if (!set)
-                {
-                    setProperty!name(mixin(`defaults._` ~ name), false);
-                }
                 // set/reset 'inherit' flag
                 if (inh)
-                    metadata[ptype] = Meta(true, false);
+                    bts(inheritBitArray.ptr, ptype);
                 else
-                {
-                    if (auto p = ptype in metadata)
-                        p.inherit = false;
-                }
+                    btr(inheritBitArray.ptr, ptype);
             }
+
+            const noValue = !setByUser && !setInStyles;
             // resolve inherited properties
-            if (isInherited(ptype, set))
+            if (inheritsByDefault && noValue || isInherited(ptype))
             {
                 if (auto p = widget.parent)
                     setProperty!name(mixin(`p.style._` ~ name), false);
                 else
                     setProperty!name(mixin(`defaults._` ~ name), false);
+            }
+            else if (noValue)
+            {
+                // if nothing there - return value to defaults
+                setProperty!name(mixin(`defaults._` ~ name), false);
             }
         }}
 
@@ -564,25 +566,19 @@ struct ComputedStyle
             Log.d("--- End style recomputing ---");
     }
 
-    private bool isInherited(StyleProperty ptype, bool set)
+    private bool isInherited(StyleProperty ptype)
     {
-        if (set) // then explicit
-            return metadata.get(ptype, Meta()).inherit;
-        else
-            return inherited(ptype);
+        return bt(inheritBitArray.ptr, ptype) != 0;
     }
 
     private bool isOverriden(StyleProperty ptype)
     {
-        return metadata.get(ptype, Meta()).overriden;
+        return bt(overridenBitArray.ptr, ptype) != 0;
     }
 
     private void overrideProperty(StyleProperty ptype)
     {
-        if (auto p = ptype in metadata)
-            p.overriden = true;
-        else
-            metadata[ptype] = Meta(false, true);
+        bts(overridenBitArray.ptr, ptype);
     }
 
     /// Check whether the style can make transition for a CSS property
