@@ -380,6 +380,20 @@ public:
         return &_style;
     }
 
+    /// Defines whether widget style is encapsulated, and cascading and inheritance
+    /// in this subtree is independent from outer world
+    final @property bool styleIsolated() const
+    {
+        return _style.isolated;
+    }
+    /// Enable style encapsulation, so cascading and inheritance
+    /// in this subtree will become independent from outer world
+    final void isolateStyle()
+    {
+        _style.isolated = true;
+        invalidateStyles();
+    }
+
     /// Recompute styles, only if needed
     protected void updateStyles() inout
     {
@@ -414,12 +428,14 @@ public:
     Style[] selectStyleChain()
     {
         static Style[] tmpchain;
-        size_t count;
+        // first find our scope
+        const Widget closure = findStyleScopeRoot();
         // we can skip half of work if the state is normal
         Style[] list = (state == State.normal) ? currentTheme.normalStyles : currentTheme.allStyles;
+        size_t count;
         foreach (style; list)
         {
-            if (matchSelector(style.selector))
+            if (matchSelector(style.selector, closure))
             {
                 if (tmpchain.length <= count)
                     tmpchain.length += 4;
@@ -434,8 +450,27 @@ public:
     /// Match this widget with selector
     bool matchSelector(ref const(Selector) sel) const
     {
+        return matchSelector(sel, findStyleScopeRoot());
+    }
+
+    private const(Widget) findStyleScopeRoot() const
+    {
+        Widget p = cast()_parent;
+        while (p)
+        {
+            if (p.styleIsolated)
+                return p;
+            p = p._parent;
+        }
+        return null;
+    }
+
+    private bool matchSelector(ref const(Selector) sel, const(Widget) closure) const
+    {
+        if (this is closure)
+            return matchSelector(sel, null);
         if (sel.universal)
-            return matchContextSelector(sel);
+            return matchContextSelector(sel, closure);
         // subitemness
         if (!subInfo && sel.subitem)
             return false;
@@ -453,7 +488,7 @@ public:
                 ps.subitem = null;
                 ps.specifiedState = State.init;
                 ps.enabledState = State.init;
-                return wt.matchSelector(ps);
+                return wt.matchSelector(ps, closure);
             }
             else // not a widget
             {
@@ -462,6 +497,9 @@ public:
                 return equalShortClassName(type, sel.type);
             }
         }
+        // enclosed elements cannot be styled via simple selectors
+        if (closure && !sel.previous)
+            return false;
         // type
         if (sel.type)
         {
@@ -485,64 +523,66 @@ public:
             if ((name in styleClasses) is null)
                 return false;
         }
-        return matchContextSelector(sel);
+        return matchContextSelector(sel, closure);
     }
 
-    private bool matchContextSelector(ref const(Selector) sel) const
+    private bool matchContextSelector(ref const(Selector) sel, const(Widget) closure) const
     {
-        if (sel.previous)
+        const Selector* subselector = sel.previous;
+        if (!subselector) // exhausted
+            return true;
+        if (!_parent) // doesn't match because top-level
+            return false;
+
+        final switch (sel.combinator) with (Selector.Combinator)
         {
-            if (!_parent)
-                return false;
-            final switch (sel.combinator) with (Selector.Combinator)
-            {
             case descendant:
-                Widget p = cast(Widget)_parent;
+                // match with any of parent widgets
+                Widget p = cast()_parent;
                 while (p)
                 {
-                    if (p.matchSelector(*sel.previous))
+                    if (p.matchSelector(*subselector, closure))
                         return true;
+                    if (p is closure)
+                        break;
                     p = p._parent;
                 }
                 return false;
             case child:
-                return _parent.matchSelector(*sel.previous);
+                // match with the only parent
+                return _parent.matchSelector(*subselector, closure);
             case next:
-                int n = (cast(Widget)_parent).childIndex(cast(Widget)this) - 1; // FIXME
+                // match with the previous sibling
+                const n = _parent.childIndex(this) - 1;
                 if (n >= 0)
-                    return _parent.child(n).matchSelector(*sel.previous);
+                    return _parent.child(n).matchSelector(*subselector, closure);
                 else
                     return false;
             case subsequent:
-                int n = (cast(Widget)_parent).childIndex(cast(Widget)this); // FIXME
+                // match with any of previous siblings
+                const n = _parent.childIndex(this);
                 if (n >= 0)
                 {
                     foreach (i; 0 .. n)
-                        if (_parent.child(i).matchSelector(*sel.previous))
+                        if (_parent.child(i).matchSelector(*subselector, closure))
                             return true;
                 }
                 return false;
-            }
         }
-        else
-            return true;
     }
 
     private void invalidateStyles()
     {
+        invalidateStylesRecursively();
         if (_parent)
         {
             int start = _parent.childIndex(this);
             if (start >= 0)
             {
-                foreach (i; start .. _parent.childCount)
+                foreach (i; start + 1 .. _parent.childCount)
                     _parent.child(i).invalidateStylesRecursively();
             }
-            else
-                invalidateStylesRecursively();
         }
-        else
-            invalidateStylesRecursively();
     }
 
     private void invalidateStylesRecursively()
@@ -551,19 +591,6 @@ public:
         foreach (i; 0 .. childCount)
         {
             child(i).invalidateStylesRecursively();
-        }
-    }
-
-    private void needToRecomputeStateStyle()
-    {
-        _needToRecomputeStyle = true;
-        foreach (i; 0 .. childCount)
-        {
-            Widget item = child(i);
-            if (item && item._state & State.parent)
-            {
-                item.needToRecomputeStateStyle();
-            }
         }
     }
 
@@ -625,10 +652,10 @@ public:
         /// Font size in pixels
         int fontSize() const
         {
-            Length fs = style.fontSize;
-            if (!parent && (fs.is_em || fs.is_percent))
+            const Length fs = style.fontSize;
+            if ((!parent || styleIsolated) && (fs.is_em || fs.is_percent))
                 return 12;
-            int res = fs.toDevice;
+            const int res = fs.toDevice;
             if (fs.is_em)
                 return parent.fontSize * res / 100;
             if (fs.is_percent)
@@ -1859,12 +1886,12 @@ public:
         // override
     }
     /// Returns index of widget in child list, -1 if there is no child with this ID
-    int childIndex(string id)
+    int childIndex(string id) const
     {
         return -1;
     }
     /// Returns index of widget in child list, -1 if passed widget is not a child of this widget
-    int childIndex(Widget item)
+    int childIndex(const Widget item) const
     {
         return -1;
     }
@@ -1951,11 +1978,11 @@ public:
     /// Returns window (if widget or its parent is attached to window)
     @property Window window() const
     {
-        Widget p = cast(Widget)this;
-        while (p !is null)
+        Widget p = cast()this;
+        while (p)
         {
-            if (p._window !is null)
-                return cast(Window)p._window;
+            if (p._window)
+                return cast()p._window;
             p = p.parent;
         }
         return null;
@@ -2049,12 +2076,12 @@ class WidgetGroup : Widget
         _children.clear(destroyThem);
     }
 
-    override int childIndex(string id)
+    override int childIndex(string id) const
     {
         return cast(int)_children.indexOf(id);
     }
 
-    override int childIndex(Widget item)
+    override int childIndex(const Widget item) const
     {
         return cast(int)_children.indexOf(item);
     }

@@ -561,11 +561,9 @@ Slider {
     background-color: #fff;
 }
 
-SliderButton {
+AbstractSlider SliderButton {
     padding: 3px;
     background-color: #c2c2c2;
-    background-image: none;
-    border: none;
 
     &:hovered {
         background-color: #d2d2d2;
@@ -576,12 +574,11 @@ SliderButton {
     }
 
     &:not(enabled) {
-        border: 1px solid #ccc;
         opacity: 0.4;
     }
 }
 
-PageScrollButton {
+AbstractSlider PageScrollButton {
     &:pressed {
         background-color: fade-out(#404080, 0.9);
     }

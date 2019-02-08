@@ -141,6 +141,7 @@ class AbstractSlider : WidgetGroup
 
     this()
     {
+        isolateStyle();
         _data = new SliderData;
         _data.changed ~= &onDataChanged;
     }

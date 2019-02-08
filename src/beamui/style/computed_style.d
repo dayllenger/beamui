@@ -386,6 +386,7 @@ struct ComputedStyle
     }
 
     package(beamui) Widget widget;
+    package(beamui) bool isolated;
 
     private
     {
@@ -499,6 +500,9 @@ struct ComputedStyle
             st.explode(ShorthandTransition("transition", "transition-property", "transition-duration",
                     "transition-timing-function", "transition-delay"));
         }
+        // find that we are not tied, being the root of style scope
+        Widget parent = widget.parent;
+        const bool canInherit = parent && !widget.styleIsolated;
         /// iterate through all properties
         static foreach (name; __traits(allMembers, StyleProperty))
         {{
@@ -550,8 +554,8 @@ struct ComputedStyle
             // resolve inherited properties
             if (inheritsByDefault && noValue || isInherited(ptype))
             {
-                if (auto p = widget.parent)
-                    setProperty!name(mixin(`p.style._` ~ name), false);
+                if (canInherit)
+                    setProperty!name(mixin(`parent.style._` ~ name), false);
                 else
                     setProperty!name(mixin(`defaults._` ~ name), false);
             }
