@@ -1,11 +1,6 @@
 /**
 Widgets to show plain or formatted single- and multiline text.
 
-Synopsis:
----
-import beamui.widgets.text;
----
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   dayllenger

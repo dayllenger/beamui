@@ -1,11 +1,6 @@
 /**
 Window frame widget.
 
-Synopsis:
----
-import beamui.widgets.docks;
----
-
 Copyright: Vadim Lopatin 2015
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

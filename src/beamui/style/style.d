@@ -1,11 +1,6 @@
 /**
 Widget style, that contains named properties and is associated with selector.
 
-Synopsis:
----
-import beamui.style.style;
----
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger

@@ -1,14 +1,9 @@
 /**
-This module contains popup widgets implementation.
+Popup container widget.
 
 Popups appear above other widgets inside window.
 
 Useful for popup menus, notification popups, etc.
-
-Synopsis:
----
-import beamui.widgets.popup;
----
 
 Copyright: Vadim Lopatin 2014-2016, dayllenger 2018
 License:   Boost License 1.0

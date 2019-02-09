@@ -5,8 +5,6 @@ Mostly you will use only TabWidget class. Other classes are ancillary.
 
 Synopsis:
 ---
-import beamui.widgets.tabs;
-
 // create tab widget
 auto tabs = new TabWidget;
 // and add tabs

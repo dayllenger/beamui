@@ -1,11 +1,6 @@
 /**
 Single-line and multiline simple text editors.
 
-Synopsis:
----
-import beamui.widgets.editors;
----
-
 Copyright: Vadim Lopatin 2014-2017, James Johnson 2017
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

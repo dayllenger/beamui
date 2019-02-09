@@ -12,7 +12,6 @@ Tracks line number.
 
 Synopsis:
 ---
-import beamui.core.linestream;
 import std.stdio : writeln, writefln;
 
 string filename = "somefile.d";

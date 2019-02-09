@@ -1,10 +1,8 @@
 /**
-Base implementation for widgets with scrolling capabilities.
+Base for widgets with scrolling capabilities.
 
 Synopsis:
 ---
-import beamui.widgets.scroll;
-
 // Scroll view example
 
 auto scrollContent = new Column;

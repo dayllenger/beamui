@@ -7,11 +7,6 @@ Map here is ordered, and can be indexed by number.
 
 Has a lot of methods for convenient storing/accessing of settings.
 
-Synopsis:
----
-import beamui.core.settings;
----
-
 Copyright: Vadim Lopatin 2015-2016, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

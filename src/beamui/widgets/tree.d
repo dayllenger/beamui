@@ -3,8 +3,6 @@ Tree widgets.
 
 Synopsis:
 ---
-import beamui.widgets.tree;
-
 // tree example
 auto tree = new TreeWidget;
 TreeItem tree1 = tree.items.newChild("group1", "Group 1"d, "folder");

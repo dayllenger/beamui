@@ -3,11 +3,6 @@ Main widget for usual application - with menu and status bar.
 
 When you need MenuBar, StatusBar, Toolbars in your app, reuse this class.
 
-Synopsis:
----
-import beamui.widgets.appframe;
----
-
 Copyright: Vadim Lopatin 2015
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

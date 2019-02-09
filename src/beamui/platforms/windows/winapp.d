@@ -5,12 +5,6 @@ Provides Win32Window and Win32Platform classes.
 
 Usually you don't need to use this module directly.
 
-
-Synopsis:
----
-import beamui.platforms.windows.winapp;
----
-
 Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017-2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

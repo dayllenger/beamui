@@ -1,11 +1,6 @@
 /**
 Standard actions commonly used in dialogs and controls.
 
-Synopsis:
----
-import beamui.core.stdaction;
----
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

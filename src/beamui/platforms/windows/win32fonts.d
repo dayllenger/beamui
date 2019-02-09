@@ -5,12 +5,6 @@ Part of the Win32 platform.
 
 Usually you don't need to use this module directly.
 
-
-Synopsis:
----
-import beamui.platforms.windows.win32fonts;
----
-
 Copyright: Vadim Lopatin 2014-2017
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

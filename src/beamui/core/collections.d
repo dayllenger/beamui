@@ -5,8 +5,6 @@ Wrapper around array of objects, providing a set of useful operations, and handl
 
 Synopsis:
 ---
-import beamui.core.collections;
-
 // add
 Collection!Widget widgets;
 widgets ~= new Widget("id1");

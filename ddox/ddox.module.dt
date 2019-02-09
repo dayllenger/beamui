@@ -1,0 +1,70 @@
+extends ddox.layout
+
+block ddox.defs
+  - import std.algorithm : canFind, map, joiner;
+  - import std.meta : AliasSeq;
+  - import ddox.api;
+  - import ddox.highlight;
+
+block ddox.title
+  - title = "Module " ~ info.mod.qualifiedName.to!string;
+
+block ddox.description
+  p!= info.formatDoc(info.mod.docGroup, 2, sec => sec == "$Short")
+
+  |!= info.formatDoc(info.mod.docGroup, 2, sec => sec == "$Long")
+
+block ddox.sections
+  section!= info.formatDoc(info.mod.docGroup, 2, sec => !canFind(["License", "Copyright", "Authors", "$Short", "$Long", "Source"], sec))
+
+block ddox.members
+
+  section
+    h2= "Import line"
+    pre.code
+      code.lang-d
+        | !{highlightDCode("import " ~ info.mod.qualifiedName.to!string ~ ";")}
+
+  - alias kinds = AliasSeq!(FunctionDeclaration, InterfaceDeclaration, ClassDeclaration, StructDeclaration, UnionDeclaration, EnumDeclaration, TemplateDeclaration);
+  - static const kindnames =      ["Functions", "Interfaces", "Classes", "Structs", "Unions", "Enums", "Templates"];
+  - static const kindnames_sing = ["Function",  "Interface",  "Class",   "Struct",  "Union",  "Enum",  "Template"];
+
+  - foreach (i, kind; kinds)
+    - if (hasChild!kind(info.mod))
+      section
+        h2= kindnames[i]
+        table.module
+          tr
+            th.name Name
+            th Description
+          - foreach (grp; getDocGroups!kind(info.mod))
+            tr
+              td.name
+                code
+                  a(id=grp.name[], class=declStyleClasses(grp), href=info.linkTo(grp))= grp.name
+                  - if (auto fd = cast(FunctionDeclaration)grp)
+                    span.tableEntryAnnotation (#{fd.parameters.map!(p => p.name[]).joiner(", ")})
+              td!= info.formatDoc(grp.docGroup, 3, sec => sec == "$Short")
+
+  - alias tkinds = AliasSeq!(EnumMemberDeclaration, VariableDeclaration, AliasDeclaration);
+  - static const tkindnames =      ["Manifest constants", "Global variables", "Aliases"];
+  - static const tkindnames_sing = ["Manifest constant",  "Variable",  "Alias"];
+
+  - foreach (i, kind; tkinds)
+    - if (hasChild!kind(info.mod))
+      section
+        h2 #{tkindnames[i]}
+        table.module
+          tr
+            th.name Name
+            th.type Type
+            th Description
+          - foreach (f; getDocGroups!kind(info.mod) )
+            tr
+              td.name
+                a(id=f.name[], class=declStyleClasses(f), href=info.linkTo(f))
+                  code= f.name
+              td.type
+                - if (f.type)
+                  |!= info.formatType(f.type)
+              td!= info.formatDoc(f.docGroup, 3, sec => sec == "$Short")

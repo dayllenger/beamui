@@ -4,8 +4,6 @@ Message box implementation.
 
 Synopsis:
 ---
-import beamui.dialogs.messagebox;
-
 // show message box with single Ok button
 window.showMessageBox("Dialog title"d, "Some message"d);
 

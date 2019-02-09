@@ -3,11 +3,6 @@ Color type and useful color related operations.
 
 In beamui, colors are represented as 32 bit uint AARRGGBB values.
 
-Synopsis:
----
-import beamui.graphics.colors;
----
-
 Copyright: Vadim Lopatin 2015, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

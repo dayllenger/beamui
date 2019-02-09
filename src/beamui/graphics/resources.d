@@ -3,8 +3,6 @@ Resource management.
 
 Synopsis:
 ---
-import beamui.graphics.resources;
-
 // embed non-standard resources listed in resources.list into executable
 resourceList.embed!"resources.list";
 ...

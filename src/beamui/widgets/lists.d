@@ -1,11 +1,6 @@
 /**
 List views on data.
 
-Synopsis:
----
-import beamui.widgets.lists;
----
-
 Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

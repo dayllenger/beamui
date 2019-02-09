@@ -3,11 +3,6 @@ This module contains OpenGL based drawing buffer implementation.
 
 OpenGL support is enabled by default, build with version = NO_OPENGL to disable it.
 
-Synopsis:
----
-import beamui.graphics.gldrawbuf;
----
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

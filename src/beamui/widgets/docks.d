@@ -5,11 +5,6 @@ DockHost is main layout for docking support - contains body widget and optional 
 
 DockWindow is window to use with DockHost - can be docked on top, left, right or bottom side of DockHost.
 
-Synopsis:
----
-import beamui.widgets.docks;
----
-
 Copyright: Vadim Lopatin 2015
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

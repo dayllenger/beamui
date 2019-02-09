@@ -1,0 +1,171 @@
+- import std.algorithm;
+- import std.meta : AliasSeq;
+- import std.string : toLower;
+- import ddox.api;
+- import ddox.highlight;
+
+- void outputCompositePrototype(CompositeTypeDeclaration item)
+  - auto cls_item = cast(ClassDeclaration)item;
+  - auto intf_item = cast(InterfaceDeclaration)item;
+
+  | <span class="kwd">#{item.kind.to!string.toLower()}</span> <span class="typ">#{item.name}</span>
+  - info.renderTemplateArgs(&_diet_output, item);
+
+  - bool first = true;
+  - void outputBase(CachedType tp)
+    - if (tp.typeName.among("Object", "object.Object"))
+      - return;
+    | !{first ? "<br>&nbsp;&nbsp;: " : "<br>&nbsp;&nbsp;, "}!{info.formatType(tp, false)}
+    - first = false;
+
+  - if (cls_item && (cls_item.baseClass || cls_item.derivedInterfaces.length > 0))
+    - if (cls_item.baseClass)
+      - outputBase(cls_item.baseClass);
+    - foreach (intf; cls_item.derivedInterfaces)
+      - outputBase(intf);
+
+  - if (intf_item && intf_item.derivedInterfaces.length > 0)
+    - foreach (intf; intf_item.derivedInterfaces)
+      - outputBase(intf);
+
+  - if (item.templateConstraint.length > 0)
+    | #[br]&nbsp;&nbsp;
+    - if (item.templateConstraint.length > 0)
+      br
+      | <span class="kwd">if</span> <span class="pun">(</span>!{highlightDCode(item.templateConstraint)}<span class="pun">);</span>
+
+- void outputCompositeMembers(CompositeTypeDeclaration item, int hlevel)
+  - alias kinds = AliasSeq!(InterfaceDeclaration, ClassDeclaration, StructDeclaration, UnionDeclaration, EnumDeclaration, AliasDeclaration, TemplateDeclaration);
+  - static const kindnames =      ["Inner interfaces", "Inner classes", "Inner structs", "Unions", "Enums", "Aliases", "Templates"];
+  - static const kindnames_sing = ["Inner interface",  "Inner class",   "Inner struct",  "Union",  "Enum",  "Alias",   "Template"];
+
+  - FunctionDeclaration[] properties, methods, constructors;
+  - foreach (itm; getDocGroups!FunctionDeclaration(item))
+    - if (itm.hasAttribute("@property"))
+      - properties ~= itm;
+    - else if (itm.name != "this")
+      - methods ~= itm;
+    - else
+      - constructors ~= itm;
+
+  - if (constructors.length > 0)
+    section
+      - heading(hlevel, "Constructors");
+      table
+        tr
+          th.name Name
+          th Description
+        - foreach (p; constructors)
+          tr
+            td.name
+              a(href="#{info.linkTo(p)}", class=declStyleClasses(p))
+                code= p.name
+              span.tableEntryAnnotation (#{p.parameters.map!(param => param.name[]).joiner(", ")})
+            td!= info.formatDoc(p.docGroup, 3, sec => sec == "$Short")
+
+  - if (hasChild!VariableDeclaration(item))
+    section
+      - heading(hlevel, "Fields");
+      - auto fields = getChildren!VariableDeclaration(item);
+      - uint inheritedCount;
+      - foreach (f; fields)
+        - if (f.inheritingDecl)
+          - inheritedCount++;
+      - if (fields.length - inheritedCount > 0)
+        table
+          tr
+            th.type Type
+            th.name Name
+            th Description
+          - foreach (f; fields)
+            - if (f.inheritingDecl)
+              - continue;
+            tr
+              td.type
+                - if (f.type.typeName[].endsWith("Signal"))
+                  code.prettyprint.lang-d
+                    != "<a href=\"" ~ info.linkTo(f.type.typeDecl) ~ "\"><span class=\"typ\">Signal</a>!(...)"
+                - else if (f.type.typeName[].endsWith("Listener"))
+                  code.prettyprint.lang-d
+                    != "<a href=\"" ~ info.linkTo(f.type.typeDecl) ~ "\"><span class=\"typ\">Listener</a>!(...)"
+                - else
+                  != info.formatType(f.type)
+              td.name
+                a(href="#{info.linkTo(f)}", class=declStyleClasses(f)) <code>#{f.name}</code>
+              td!= info.formatDoc(f.docGroup, 3, sec => sec == "$Short")
+      - if (inheritedCount > 0)
+        p.inherited= inheritedCount.to!string ~ " inherited fields"
+
+  - if (properties.length > 0)
+    section
+      - heading(hlevel, "Properties");
+      - uint inheritedCount;
+      - foreach (p; properties)
+        - if (p.inheritingDecl)
+          - inheritedCount++;
+      - if (properties.length - inheritedCount > 0)
+        table
+          tr
+            th.type Type
+            th.name Name
+            th Description
+          - foreach (p; properties)
+            - if (p.inheritingDecl)
+              - continue;
+            - auto mems = p.docGroup ? p.docGroup.members : [cast(Entity)p];
+            - auto type = getPropertyType(mems);
+            tr
+              td.type
+                - if (type.typeName[].endsWith("Signal"))
+                  code.prettyprint.lang-d
+                    != "<a href=\"" ~ info.linkTo(type.typeDecl) ~ "\"><span class=\"typ\">Signal</a>!(...)"
+                - else if (type.typeName[].endsWith("Listener"))
+                  code.prettyprint.lang-d
+                    != "<a href=\"" ~ info.linkTo(type.typeDecl) ~ "\"><span class=\"typ\">Listener</a>!(...)"
+                - else
+                  != info.formatType(type)
+              td.name
+                a(href="#{info.linkTo(p)}", class=declStyleClasses(p)) <code>#{p.name}</code>
+                span.tableEntryAnnotation= anyPropertyGetter(mems) ? anyPropertySetter(mems) ? "[get, set]" : "[get]" : "[set]"
+              td!= info.formatDoc(p.docGroup, 3, sec => sec == "$Short")
+      - if (inheritedCount > 0)
+        p.inherited= inheritedCount.to!string ~ " inherited properties"
+
+  - if (methods.length > 0)
+    section
+      - heading(hlevel, "Methods");
+      - uint inheritedCount;
+      - foreach (m; methods)
+        - if (m.inheritingDecl)
+          - inheritedCount++;
+      - if (methods.length - inheritedCount > 0)
+        table
+          tr
+            th.name Name
+            th Description
+          - foreach (m; methods)
+            - if (m.inheritingDecl)
+              - continue;
+            tr
+              td.name
+                a(href="#{info.linkTo(m)}", class=declStyleClasses(m))
+                  code= m.name
+                span.tableEntryAnnotation (#{m.parameters.map!(param => param.name[]).joiner(", ")})
+              td!= info.formatDoc(m.docGroup, 3, sec => sec == "$Short")
+      - if (inheritedCount > 0)
+        p.inherited= inheritedCount.to!string ~ " inherited methods"
+
+  - foreach (i, kind; kinds)
+    - if (hasChild!kind(item))
+      section
+        - heading(hlevel, kindnames[i]);
+        table
+          tr
+            th.name Name
+            th Description
+          - foreach (grp; getDocGroups!kind(item))
+            tr
+              td.name
+                a(href="#{info.linkTo(grp)}", class=declStyleClasses(grp))
+                  code= grp.name
+              td!= info.formatDoc(grp.docGroup, 3, sec => sec == "$Short")

@@ -3,8 +3,6 @@ Grid views on data.
 
 Synopsis:
 ---
-import beamui.widgets.grid;
-
 auto grid = new StringGridWidget("GRID1");
 grid.showColHeaders = true;
 grid.showRowHeaders = true;

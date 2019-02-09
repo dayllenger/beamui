@@ -1,11 +1,6 @@
 /**
 Common Dialog implementation, used to create custom dialogs.
 
-Synopsis:
----
-import beamui.dialogs.dialog;
----
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

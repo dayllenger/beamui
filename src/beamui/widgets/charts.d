@@ -3,8 +3,6 @@ Chart widgets. Currently only SimpleBarChart.
 
 Synopsis:
 ---
-import beamui.widgets.charts;
-
 // creation of simple bar chart
 auto chart = new SimpleBarChart("Chart");
 

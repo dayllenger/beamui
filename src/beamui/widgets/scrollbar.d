@@ -3,8 +3,6 @@ Simple scrollbar-like controls.
 
 Synopsis:
 ---
-import beamui.widgets.scrollbar;
-
 auto slider = new Slider(Orientation.horizontal);
 // slider values are stored inside of `.data`
 slider.data.minValue = -50;

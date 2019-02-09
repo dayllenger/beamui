@@ -3,8 +3,6 @@ Combo Box controls, simple and editable.
 
 Synopsis:
 ---
-import beamui.widgets.combobox;
-
 // creation of simple combo box
 auto cbox = new ComboBox("combo1", ["value 1"d, "value 2"d, "value 3"d]);
 

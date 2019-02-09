@@ -5,12 +5,6 @@ Part of Win32 platform support.
 
 Usually you don't need to use this module directly.
 
-
-Synopsis:
----
-import beamui.platforms.windows.win32drawbuf;
----
-
 Copyright: Vadim Lopatin 2014-2016
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

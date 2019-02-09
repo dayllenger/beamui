@@ -3,8 +3,6 @@ Progress bar control.
 
 Synopsis:
 ---
-import beamui.widgets.progressbar;
-
 auto pb = new ProgressBar;
 // set progress
 pb.data.progress = 300; // 0 .. 1000

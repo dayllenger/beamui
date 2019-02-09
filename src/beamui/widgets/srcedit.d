@@ -1,11 +1,6 @@
 /**
 Source code editor widget.
 
-Synopsis:
----
-import beamui.widgets.srcedit;
----
-
 Copyright: Vadim Lopatin 2014-2017
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

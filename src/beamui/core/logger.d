@@ -8,8 +8,6 @@ The levels have such importance order: fatal, error, warning, info, debug, trace
 
 Synopsis:
 ---
-import beamui.core.logger;
-
 // setup:
 
 // use stderr (standard error output stream) for logging

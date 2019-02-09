@@ -1,12 +1,6 @@
 /**
 Implementation of SDL2 based backend for the UI.
 
-
-Synopsis:
----
-import beamui.platforms.sdl.sdlapp;
----
-
 Copyright: Vadim Lopatin 2014-2017, Roman Chistokhodov 2016-2017, Andrzej Kilijański 2017-2018, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, Andrzej Kilijański

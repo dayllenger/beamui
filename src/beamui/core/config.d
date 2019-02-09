@@ -1,10 +1,8 @@
 /**
-This module defines convenient configuration constants.
+Convenient configuration constants.
 
 Synopsis:
 ---
-import beamui.core.config;
-
 static if (USE_OPENGL)
 {
     // application built with OpenGL support, we may use gl functions

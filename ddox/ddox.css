@@ -46,7 +46,7 @@ a:hover {
 }
 
 table a {
-    color: #086;
+    color: #075;
 }
 table a:hover {
     color: #7a1;
@@ -54,30 +54,42 @@ table a:hover {
 
 table {
     width: 100%;
+    border: 1px solid #eee;
     border-collapse: collapse;
 }
 th, td {
     padding: 4px 8px;
-    border: 1px solid #eee;
     vertical-align: middle;
 }
 th {
-    color: #888;
+    line-height: 1.6;
+    color: #666;
     font-style: italic;
     font-weight: normal;
     text-align: left;
 }
+th.type {
+    text-align: right;
+}
 tr:nth-of-type(even) {
     background-color: #f3f4f5;
 }
-col.caption {
-    width: 250px;
-}
-td.typecol {
+td.type {
     max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: right;
+}
+td.name {
+    max-width: 250px;
+}
+table.module td.name {
+    width: 250px;
+}
+table.module th.type,
+table.module td.type {
+    text-align: left;
 }
 
 .tableEntryAnnotation {
@@ -102,6 +114,11 @@ a.inherited::before {
     display: block;
     float: right;
     height: 1rem;
+}
+
+p.inherited {
+    padding-left: 0.5em;
+    color: #666;
 }
 
 /*************** Page navigation ***************/

@@ -3,8 +3,6 @@ Contains declaration of Widget class - base for all widgets.
 
 Synopsis:
 ---
-import beamui.widgets.widget;
-
 auto w = new Widget("id1");
 // modify widget style
 w.style.padding = 10;

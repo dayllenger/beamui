@@ -1,12 +1,7 @@
 /**
-This module contains image loading functions.
+Image loading functions.
 
 Support of PNG and JPEG loading is provided by a part of dlib (located in 3rdparty/dimage).
-
-Synopsis:
----
-import beamui.graphics.images;
----
 
 Copyright: Vadim Lopatin 2014-2016
 License:   Boost License 1.0

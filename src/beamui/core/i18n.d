@@ -8,11 +8,6 @@ Set interface language using platform.uiLanguage in UIAppMain during initializat
 platform.uiLanguage = "en";
 ---
 
-Synopsis:
----
-import beamui.core.i18n;
----
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   dayllenger

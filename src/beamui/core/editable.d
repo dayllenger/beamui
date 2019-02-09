@@ -1,11 +1,6 @@
 /**
 Editable text content and related data structures.
 
-Synopsis:
----
-import beamui.core.editable;
----
-
 Copyright: Vadim Lopatin 2014-2017, James Johnson 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

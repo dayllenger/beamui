@@ -3,11 +3,6 @@ Group Box widget.
 
 Group box is linear layout with frame and caption for grouping controls.
 
-Synopsis:
----
-import beamui.widgets.groupbox;
----
-
 Copyright: Vadim Lopatin 2016
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

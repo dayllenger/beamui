@@ -19,8 +19,6 @@ See_Also: $(LINK2 $(DDOX_ROOT_DIR)beamui/graphics/drawbuf.html, DrawBuf)
 
 Synopsis:
 ---
-import beamui.graphics.fonts;
-
 // find suitable font of size 25, normal, preferrable Arial, or, if not available, any SansSerif font
 FontRef font = FontManager.instance.getFont(25, FontWeight.normal, false, FontFamily.sans_serif, "Arial");
 

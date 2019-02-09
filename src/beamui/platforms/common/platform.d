@@ -3,12 +3,6 @@ Common Platform definitions.
 
 Platform is abstraction layer for application.
 
-
-Synopsis:
----
-import beamui.platforms.common.platform;
----
-
 Copyright: Vadim Lopatin 2014-2017, Roman Chistokhodov 2017, Andrzej Kilijański 2017-2018, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

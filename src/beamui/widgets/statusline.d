@@ -5,11 +5,6 @@ Status line is usually shown in the bottom of window, and shows status of app.
 
 Contains one or more text and/or icon items
 
-Synopsis:
----
-import beamui.widgets.statusline;
----
-
 Copyright: Vadim Lopatin 2015-2017
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

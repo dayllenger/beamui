@@ -6,8 +6,6 @@ Can show dialog for open / save.
 
 Synopsis:
 ---
-import beamui.dialogs.filedialog;
-
 auto dlg = new FileDialog(tr("Open File"), window, FileDialogFlag.open);
 dlg.show();
 ---

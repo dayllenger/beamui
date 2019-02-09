@@ -5,11 +5,6 @@ ToolBarHost is layout to hold one or more toolbars.
 
 ToolBar is bar with tool buttons and other controls arranged horizontally.
 
-Synopsis:
----
-import beamui.widgets.toolbars;
----
-
 Copyright: Vadim Lopatin 2015-2017
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

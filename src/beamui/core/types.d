@@ -3,11 +3,6 @@ Basic data types to use in the library.
 
 Contains reference counting support, character glyph struct, etc.
 
-Synopsis:
----
-import beamui.core.types;
----
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger

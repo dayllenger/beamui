@@ -1,10 +1,5 @@
 /**
-This module contains cross-platform file access utilities
-
-Synopsis:
----
-import beamui.core.files;
----
+Cross-platform file access utilities
 
 Copyright: Vadim Lopatin 2014-2017, Roman Chistokhodov 2016-2017
 License:   Boost License 1.0

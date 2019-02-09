@@ -20,11 +20,6 @@ Listener has smaller memory footprint.
 
 Caution: unlike std.signals, it does not disconnect signal from slots belonging to destroyed objects.
 
-Synopsis:
----
-import beamui.core.signals;
----
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
