@@ -320,6 +320,8 @@ final class Win32Window : Window
             }
         }
 
+        updateDPI();
+
         RECT rect;
         GetWindowRect(_hwnd, &rect);
         handleWindowStateChange(WindowState.unspecified, BoxI(rect.left, rect.top, width, height));
@@ -690,6 +692,13 @@ final class Win32Window : Window
         onSetCursorType();
     }
 
+    private void updateDPI()
+    {
+        HDC hdc = GetDC(_hwnd);
+        const dpi = GetDeviceCaps(hdc, LOGPIXELSY);
+        setDPI(dpi, 1); // TODO
+    }
+
     private void onPaint()
     {
         debug (redraw)
@@ -722,10 +731,12 @@ final class Win32Window : Window
         scope (exit)
             EndPaint(_hwnd, &ps);
 
+        const pw = physicalWidth;
+        const ph = physicalHeight;
         if (!_drawbuf)
-            _drawbuf = new Win32ColorDrawBuf(width, height);
+            _drawbuf = new Win32ColorDrawBuf(pw, ph);
         else
-            _drawbuf.resize(width, height);
+            _drawbuf.resize(pw, ph);
         _drawbuf.resetClipping();
 
         _drawbuf.fill(backgroundColor);
@@ -1061,7 +1072,7 @@ final class Win32Platform : Platform
             WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
             uint width = 0, uint height = 0)
     {
-        return new Win32Window(this, windowCaption, parent, options, pt(width), pt(height));
+        return new Win32Window(this, windowCaption, parent, options, width, height);
     }
 
     override void closeWindow(Window w)
@@ -1165,10 +1176,6 @@ private bool registerWndClass()
     if (!RegisterClassW(&wndclass))
         return false;
 
-    HDC dc = CreateCompatibleDC(NULL);
-    SCREEN_DPI = GetDeviceCaps(dc, LOGPIXELSY);
-    DeleteObject(dc);
-
     windowClassRegistered = true;
     return true;
 }
@@ -1245,7 +1252,6 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_WINDOWPOSCHANGED:
         if (window)
         {
-
             if (IsIconic(hwnd))
             {
                 window.handleWindowStateChange(WindowState.minimized);
@@ -1257,8 +1263,8 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
                 RECT rect;
                 GetClientRect(hwnd, &rect);
-                int dx = rect.right - rect.left;
-                int dy = rect.bottom - rect.top;
+                const int w = rect.right - rect.left;
+                const int h = rect.bottom - rect.top;
                 WindowState state = WindowState.unspecified;
                 if (IsZoomed(hwnd))
                     state = WindowState.maximized;
@@ -1268,10 +1274,11 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                     state = WindowState.normal;
                 else
                     state = WindowState.hidden;
-                window.handleWindowStateChange(state, BoxI(pos.x, pos.y, dx, dy));
-                if (window.width != dx || window.height != dy)
+                window.handleWindowStateChange(state, BoxI(pos.x, pos.y, w, h));
+                if (window.width != w || window.height != h)
                 {
-                    window.onResize(dx, dy);
+                    window.updateDPI(); // TODO: WM_DPICHANGED
+                    window.onResize(w, h);
                     InvalidateRect(hwnd, null, FALSE);
                 }
             }

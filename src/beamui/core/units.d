@@ -7,19 +7,14 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.units;
 
-import beamui.core.config;
+import std.math : isNaN;
 import beamui.core.geometry;
-
-/// Use in styles to specify size in points (1/72 inch)
-enum int SIZE_IN_POINTS_FLAG = 1 << 28;
-/// Use in styles to specify size in percents * 100 (e.g. 0 == 0%, 10000 == 100%, 100 = 1%)
-enum int SIZE_IN_PERCENTS_FLAG = 1 << 27;
 
 /// Supported types of distance measurement unit
 enum LengthUnit
 {
     // absolute
-    device = 0,
+    device,
     cm,
     mm,
     inch,
@@ -31,25 +26,17 @@ enum LengthUnit
     percent
 }
 
-alias Dimension = Length;
-
 /// Represents length with specified measurement unit
 struct Length
 {
     private float value;
     private LengthUnit type;
 
-    /// Zero value
-    enum Length zero = Length(0);
-    /// Unspecified value
-    enum Length none = Length(SIZE_UNSPECIFIED!int);
+    /// Zero length
+    enum Length zero = Length.device(0);
+    /// Unspecified length
+    enum Length none = Length.device(SIZE_UNSPECIFIED!int);
 
-    /// Construct with raw device pixels
-    this(int devicePixels)
-    {
-        if (devicePixels != SIZE_UNSPECIFIED!int)
-            value = cast(float)devicePixels;
-    }
     /// Construct with some value and type
     this(float value, LengthUnit type)
     {
@@ -57,10 +44,38 @@ struct Length
         this.type = type;
     }
 
-    /// Length.unit(value) syntax
-    static Length opDispatch(string op)(float value)
+    /// Construct with raw device pixels
+    static Length device(int value)
     {
-        return mixin("Length(value, LengthUnit." ~ op ~ ")");
+        return Length(value != SIZE_UNSPECIFIED!int ? value : float.nan, LengthUnit.device);
+    }
+    static Length cm(float value)
+    {
+        return Length(value, LengthUnit.cm);
+    }
+    static Length mm(float value)
+    {
+        return Length(value, LengthUnit.mm);
+    }
+    static Length inch(float value)
+    {
+        return Length(value, LengthUnit.inch);
+    }
+    static Length pt(float value)
+    {
+        return Length(value, LengthUnit.pt);
+    }
+    static Length px(float value)
+    {
+        return Length(value, LengthUnit.px);
+    }
+    static Length em(float value)
+    {
+        return Length(value, LengthUnit.em);
+    }
+    static Length percent(float value)
+    {
+        return Length(value, LengthUnit.percent);
     }
 
     bool is_em() const
@@ -76,8 +91,6 @@ struct Length
     /// For absolute units - converts them to device pixels, for relative - multiplies by 100
     int toDevice() const
     {
-        import std.math : isNaN;
-
         if (value.isNaN)
             return SIZE_UNSPECIFIED!int;
 
@@ -85,16 +98,16 @@ struct Length
             return cast(int)value;
 
         if (type == LengthUnit.cm)
-            return cast(int)(value * SCREEN_DPI / 2.54);
+            return cast(int)(value * screenDPI / 2.54);
         if (type == LengthUnit.mm)
-            return cast(int)(value * SCREEN_DPI / 25.4);
+            return cast(int)(value * screenDPI / 25.4);
         if (type == LengthUnit.inch)
-            return cast(int)(value * SCREEN_DPI);
+            return cast(int)(value * screenDPI);
         if (type == LengthUnit.pt)
-            return cast(int)(value * SCREEN_DPI / 72);
+            return cast(int)(value * screenDPI / 72);
 
         if (type == LengthUnit.px)
-            return cast(int)value; // TODO: low-dpi/hi-dpi
+            return cast(int)(value * devicePixelRatio);
 
         if (type == LengthUnit.em)
             return cast(int)(value * 100);
@@ -102,6 +115,39 @@ struct Length
             return cast(int)(value * 100);
 
         return 0;
+    }
+
+    /// Convert to device independent pixels. Relative units are returned as is
+    float toDIPs() const
+    {
+        if (value.isNaN)
+            return SIZE_UNSPECIFIED!float;
+
+        if (type == LengthUnit.device)
+            return value / devicePixelRatio;
+
+        if (type == LengthUnit.cm)
+            return value * dipsPerInch / 2.54;
+        if (type == LengthUnit.mm)
+            return value * dipsPerInch / 25.4;
+        if (type == LengthUnit.inch)
+            return value * dipsPerInch;
+        if (type == LengthUnit.pt)
+            return value * dipsPerInch / 72;
+
+        if (type == LengthUnit.px)
+            return value;
+
+        if (type == LengthUnit.em || type == LengthUnit.percent)
+            return value;
+
+        return 0;
+    }
+
+    /// Convert device-independent pixels to physical device pixels (of current window)
+    static int dipToDevice(float dips)
+    {
+        return cast(int)(dips * devicePixelRatio);
     }
 
     bool opEquals(Length u) const
@@ -124,7 +170,7 @@ struct Length
     }
 
     /// Parse pair (value, unit), where value is a real number, unit is: cm, mm, in, pt, px, em, %.
-    /// Returns Length.none if cannot parse.
+    /// Returns `Length.none` if cannot parse.
     static Length parse(string value, string unit)
     {
         import std.conv : to;
@@ -192,7 +238,7 @@ float parseAngle(string value, string unit)
     else
         return float.nan;
 }
-
+///
 unittest
 {
     import std.math : approxEqual;
@@ -206,145 +252,45 @@ unittest
 /// Number of hnsecs (those we use in animations, for example) in one second
 enum long ONE_SECOND = 10_000_000L;
 
-/// Convert custom size to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
-int toPixels(int sz)
+//===============================================================
+// DPI handling
+
+/// Called by window
+package(beamui) void setupDPI(float dpi, float dpr)
 {
-    if (sz > 0 && (sz & SIZE_IN_POINTS_FLAG) != 0)
+    assert(dpi > 0 && dpr > 0);
+
+    if (!overriden)
     {
-        return pt(sz ^ SIZE_IN_POINTS_FLAG);
-    }
-    return sz;
-}
-
-/// Convert custom size Point to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
-PointI toPixels(const PointI p)
-{
-    return PointI(toPixels(p.x), toPixels(p.y));
-}
-
-/// Convert custom size Rect to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
-RectI toPixels(const RectI r)
-{
-    return RectI(toPixels(r.left), toPixels(r.top), toPixels(r.right), toPixels(r.bottom));
-}
-
-/// Convert custom size Insets to pixels (sz can be either pixels, or points if SIZE_IN_POINTS_FLAG bit set)
-InsetsI toPixels(const InsetsI ins)
-{
-    return InsetsI(toPixels(ins.top), toPixels(ins.right), toPixels(ins.bottom), toPixels(ins.left));
-}
-
-/// Make size value with SIZE_IN_POINTS_FLAG set
-int makePointSize(int pt)
-{
-    return pt | SIZE_IN_POINTS_FLAG;
-}
-
-/// Make size value with SIZE_IN_PERCENTS_FLAG set
-int makePercentSize(int percent)
-{
-    return (percent * 100) | SIZE_IN_PERCENTS_FLAG;
-}
-
-/// Make size value with SIZE_IN_PERCENTS_FLAG set
-int makePercentSize(double percent)
-{
-    return cast(int)(percent * 100) | SIZE_IN_PERCENTS_FLAG;
-}
-alias percent = makePercentSize;
-
-/// Returns true for SIZE_UNSPECIFIED
-bool isSpecialSize(int sz)
-{
-    // don't forget to update if more special constants added
-    return (sz & SIZE_UNSPECIFIED!int) != 0;
-}
-
-/// Returns true if size has SIZE_IN_PERCENTS_FLAG bit set
-bool isPercentSize(int size)
-{
-    return (size & SIZE_IN_PERCENTS_FLAG) != 0;
-}
-
-/// Apply percent to `base` or return `p` unchanged if it is not a percent size
-int applyPercent(int p, int base)
-{
-    if (isPercentSize(p))
-        return cast(int)(cast(long)(p & ~SIZE_IN_PERCENTS_FLAG) * base / 10000);
-    else
-        return p;
-}
-
-/// Screen dots per inch
-private __gshared int PRIVATE_SCREEN_DPI = 96;
-/// Value to override detected system DPI, 0 to disable overriding
-private __gshared int PRIVATE_SCREEN_DPI_OVERRIDE = 0;
-
-/// Get current screen DPI used for scaling while drawing
-@property int SCREEN_DPI()
-{
-    return PRIVATE_SCREEN_DPI_OVERRIDE ? PRIVATE_SCREEN_DPI_OVERRIDE : PRIVATE_SCREEN_DPI;
-}
-
-/// Get screen DPI detection override value, if non 0 - this value is used instead of DPI detected by platform, if 0, value detected by platform will be used
-@property int overrideScreenDPI()
-{
-    return PRIVATE_SCREEN_DPI_OVERRIDE;
-}
-
-/// Call to disable automatic screen DPI detection, use provided one instead (pass 0 to disable override and use value detected by platform)
-@property void overrideScreenDPI(int dpi = 96)
-{
-    static if (!BACKEND_CONSOLE)
-    {
-        if ((dpi >= 72 && dpi <= 500) || dpi == 0)
-            PRIVATE_SCREEN_DPI_OVERRIDE = dpi;
+        screenDPI = dpi;
+        devicePixelRatio = dpr;
+        dipsPerInch = dpi / dpr;
     }
 }
 
-/// Set screen DPI detected by platform
-@property void SCREEN_DPI(int dpi)
+/// Call to disable automatic screen DPI detection, use provided one instead
+/// (pass 0 to disable override and use value detected by platform)
+void overrideDPI(float dpi, float dpr)
 {
-    static if (BACKEND_CONSOLE)
+    if (dpi <= 0 || dpr <= 0)
     {
-        PRIVATE_SCREEN_DPI = dpi;
+        overriden = false;
+        return;
     }
-    else
-    {
-        if (dpi >= 72 && dpi <= 500)
-        {
-            if (PRIVATE_SCREEN_DPI != dpi)
-            {
-                // changed DPI
-                PRIVATE_SCREEN_DPI = dpi;
-            }
-        }
-    }
+
+    import std.algorithm : clamp;
+    dpi = clamp(dpi, 10, 1000);
+    dpr = clamp(dpr, 0.1, 10);
+
+    screenDPI = dpi;
+    devicePixelRatio = dpr;
+    dipsPerInch = dpi / dpr;
+    overriden = true;
 }
 
-/// Returns DPI detected by platform w/o override
-@property int systemScreenDPI()
-{
-    return PRIVATE_SCREEN_DPI;
-}
+private bool overriden;
+private float screenDPI = 96;
+private float devicePixelRatio = 1;
+private float dipsPerInch = 96;
 
-/// One point is 1/72 of inch
-enum POINTS_PER_INCH = 72;
-
-/// Convert length in points (1/72in units) to pixels according to SCREEN_DPI
-int pt(int p)
-{
-    return p * SCREEN_DPI / POINTS_PER_INCH;
-}
-
-/// Convert rectangle coordinates in points (1/72in units) to pixels according to SCREEN_DPI
-RectI pt(RectI rc)
-{
-    return RectI(rc.left.pt, rc.top.pt, rc.right.pt, rc.bottom.pt);
-}
-
-/// Convert points (1/72in units) to pixels according to SCREEN_DPI
-int pixelsToPoints(int px)
-{
-    return px * POINTS_PER_INCH / SCREEN_DPI;
-}
+//===============================================================

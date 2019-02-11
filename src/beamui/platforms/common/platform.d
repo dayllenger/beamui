@@ -77,9 +77,11 @@ enum DialogDisplayMode : uint
         messageBoxInPopup | inputBoxInPopup | settingsDialogInPopup | userDialogInPopup
 }
 
-/// Protected event list
-/// References to posted messages can be stored here at least to keep live reference and avoid GC
-/// As well, on some platforms it's easy to send id to message queue, but not pointer
+/** Protected event list
+
+    References to posted messages can be stored here at least to keep live reference and avoid GC.
+    As well, on some platforms it's easy to send id to message queue, but not pointer.
+*/
 class EventList
 {
     import core.sync.mutex;
@@ -154,15 +156,29 @@ class Window : CustomEventTarget
             _backgroundColor = color;
         }
 
-        /// Get current window width
+        /// Get current window width (in device-independent pixels)
         int width() const { return _w; }
         /// Assign current window width
         protected void width(int value) { _w = value; }
 
-        /// Get current window height
+        /// Get current window height (in device-independent pixels)
         int height() const { return _h; }
         /// Assign current window height
         protected void height(int value) { _h = value; }
+
+        /// Current window DPI (dots per inch) value
+        float screenDPI() const { return _screenDPI; }
+        /// Current window ratio between physical and logical (device-independent) pixels
+        float devicePixelRatio() const { return _devicePixelRatio; }
+
+        protected int physicalWidth() const
+        {
+            return cast(int)(_w * _devicePixelRatio);
+        }
+        protected int physicalHeight() const
+        {
+            return cast(int)(_h * _devicePixelRatio);
+        }
 
         /// Get main widget of the window
         inout(Widget) mainWidget() inout { return _mainWidget; }
@@ -219,10 +235,14 @@ class Window : CustomEventTarget
     {
         int _w;
         int _h;
+        float _screenDPI = 96;
+        float _devicePixelRatio = 1;
+
         Color _backgroundColor = Color(0xFFFFFF);
         Widget _mainWidget;
         EventList _eventList;
         WindowOptions _options;
+
         /// Minimal content size
         SizeI _minContentSize;
         /// Minimal good looking content size
@@ -510,10 +530,31 @@ class Window : CustomEventTarget
         // override to support
     }
 
+    final protected void setDPI(float dpi, float dpr)
+    {
+        debug
+        {
+            if (_screenDPI != dpi)
+                Log.d("Window DPI changed from ", _screenDPI, " to ", dpi);
+            if (_devicePixelRatio != dpr)
+                Log.d("Window pixel ratio changed from ", _devicePixelRatio, " to ", dpr);
+        }
+        _screenDPI = dpi;
+        _devicePixelRatio = dpr;
+    }
+    /// Called before layout and redraw. Widgets and painter use global DPI and DPR values
+    /// to make proper scaling and unit conversion, but these values are per-window
+    private void setupGlobalDPI()
+    {
+        static import beamui.core.units;
+        beamui.core.units.setupDPI(_screenDPI, _devicePixelRatio);
+    }
+
     /// Set the minimal window size and resize the window if needed; called from show()
     protected void adjustSize()
     {
         assert(_mainWidget !is null);
+        setupGlobalDPI();
         _mainWidget.measure();
         const bs = _mainWidget.boundaries;
         // some sane constraints
@@ -569,6 +610,7 @@ class Window : CustomEventTarget
     /// Measure and layout main widget, popups and tooltip
     void layout()
     {
+        setupGlobalDPI();
         {
             _mainWidget.measure();
             // TODO: set minimum window size
@@ -930,17 +972,20 @@ class Window : CustomEventTarget
             import derelict.opengl3.gl3;
             import beamui.graphics.gldrawbuf;
 
+            const pw = physicalWidth;
+            const ph = physicalHeight;
+
             bindContext();
             glDisable(GL_DEPTH_TEST);
-            glViewport(0, 0, _w, _h);
+            glViewport(0, 0, pw, ph);
             float r, g, b;
             _backgroundColor.rgbf(r, g, b);
             glClearColor(r, g, b, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
             if (!buf)
-                buf = new GLDrawBuf(_w, _h);
+                buf = new GLDrawBuf(pw, ph);
             else
-                buf.resize(_w, _h);
+                buf.resize(pw, ph);
             buf.beforeDrawing();
             static if (false)
             {
@@ -981,6 +1026,8 @@ class Window : CustomEventTarget
 
         try
         {
+            setupGlobalDPI();
+
             bool needDraw;
             bool needLayout;
             bool animationActive;
@@ -2134,6 +2181,8 @@ static if (BACKEND_GUI)
         package (beamui) void setAppDPIAwareOnWindows()
         {
             import core.sys.windows.windows;
+
+            // TODO: SetProcessDpiAwareness + PROCESS_PER_MONITOR_DPI_AWARE
             // call SetProcessDPIAware to support HI DPI - fix by Kapps
             auto ulib = LoadLibraryA("user32.dll");
             alias SetProcessDPIAwareFunc = int function();

@@ -233,9 +233,9 @@ int main()
                     with (gbtext) {
                         auto l1 = new Label("Red text"d);
                         auto l2 = new Label("Italic text"d);
-                        l1.style.fontSize = 12.pt;
+                        l1.style.fontSize = 18;
                         l1.style.textColor = 0xFF0000;
-                        l2.style.fontSize = 12.pt;
+                        l2.style.fontSize = 18;
                         l2.style.fontItalic = true;
                         add(l1, l2);
                     }

@@ -11,7 +11,7 @@ import std.variant : Variant;
 import beamui.core.animations : TimingFunction;
 import beamui.core.functions;
 import beamui.core.types : State;
-import beamui.core.units : Dimension;
+import beamui.core.units : Length;
 import CSS = beamui.css.tokenizer;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawables : Drawable;
@@ -140,7 +140,7 @@ final class Style
         if (auto p = name in rawProperties)
         {
             Color color = void;
-            Dimension width = void;
+            Length width = void;
             if (decodeBorder(*p, color, width))
             {
                 tryToSet(sh.topWidth, Variant(width));
@@ -189,7 +189,7 @@ final class Style
         const name = StrHash(sh.name);
         if (auto p = name in rawProperties)
         {
-            Dimension[] list = void;
+            Length[] list = void;
             if (decodeInsets(*p, list))
             {
                 // [all], [vertical horizontal], [top horizontal bottom], [top right bottom left]

@@ -560,7 +560,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             const icon = rowIcon(row);
             if (icon.isNull)
                 return Size(0, 0);
-            return Size(icon.width + 2.pt, icon.height + 2.pt);
+            return Size(icon.width + 2, icon.height + 2);
         }
     }
 

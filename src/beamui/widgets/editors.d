@@ -3763,8 +3763,8 @@ class LogWidget : EditBox
         _enableScrollAfterText = false;
         enabled = false;
         // allow font zoom with Ctrl + MouseWheel
-        minFontSize = 6.pt;
-        maxFontSize = 32.pt;
+        minFontSize = 8;
+        maxFontSize = 36;
         onThemeChanged();
     }
 

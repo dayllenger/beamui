@@ -202,6 +202,7 @@ final class SDLWindow : Window
         }
         Log.i(openglEnabled ? "OpenGL is enabled" : "OpenGL is disabled");
 
+        updateDPI();
         fixSize();
         title = _title;
         int x = 0;
@@ -216,20 +217,7 @@ final class SDLWindow : Window
         int w = 0;
         int h = 0;
         SDL_GetWindowSize(_win, &w, &h);
-        int pxw = 0;
-        int pxh = 0;
-        SDL_GL_GetDrawableSize(_win, &pxw, &pxh);
-        version (Windows)
-        {
-            // DPI already calculated
-        }
-        else
-        {
-            // scale DPI
-            if (pxw > w && pxh > h && w > 0 && h > 0)
-                SCREEN_DPI = 96 * pxw / w;
-        }
-        onResize(max(pxw, w), max(pxh, h));
+        onResize(w, h);
     }
 
     override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
@@ -521,22 +509,46 @@ final class SDLWindow : Window
         }
     }
 
+    private void updateDPI()
+    {
+        const displayIndex = SDL_GetWindowDisplayIndex(_win);
+        if (displayIndex < 0)
+            return;
+
+        float vertdpi = 0;
+        if (SDL_GetDisplayDPI(displayIndex, null, null, &vertdpi) != 0)
+            return;
+        if (vertdpi < 32 || 2000 < vertdpi)
+            return;
+
+        int h;
+        SDL_GetWindowSize(_win, null, &h);
+        int deviceh;
+        SDL_GL_GetDrawableSize(_win, null, &deviceh);
+        if (h <= 0)
+            return;
+
+        setDPI(vertdpi, cast(float)deviceh / h);
+    }
+
     private SDL_Texture* _texture;
     private int _txw, _txh;
 
-    private void updateBufferSize()
+    private void updateTextureSize(int pw, int ph)
     {
-        if (_texture && (_txw != width || _txh != height))
+        if (_texture && (_txw != pw || _txh != ph))
         {
             SDL_DestroyTexture(_texture);
             _texture = null;
         }
         if (!_texture)
         {
-            _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, //SDL_TEXTUREACCESS_STREAMING,
-                    width, height);
-            _txw = width;
-            _txh = height;
+            _texture = SDL_CreateTexture(_renderer,
+                SDL_PIXELFORMAT_ARGB8888,
+                SDL_TEXTUREACCESS_STATIC,
+                pw, ph);
+            _txw = pw;
+            _txh = ph;
         }
     }
 
@@ -552,32 +564,30 @@ final class SDLWindow : Window
         }
         else
         {
-            // Select the color for drawing.
             Color c = backgroundColor;
             ubyte r = cast(ubyte)c.red;
             ubyte g = cast(ubyte)c.green;
             ubyte b = cast(ubyte)c.blue;
             SDL_SetRenderDrawColor(_renderer, r, g, b, 255);
-            // Clear the entire screen to our selected color.
             SDL_RenderClear(_renderer);
 
+            const pw = physicalWidth;
+            const ph = physicalHeight;
             if (!_drawbuf)
-                _drawbuf = new ColorDrawBuf(width, height);
+                _drawbuf = new ColorDrawBuf(pw, ph);
             else
-                _drawbuf.resize(width, height);
+                _drawbuf.resize(pw, ph);
             _drawbuf.fill(c);
+
             onDraw(_drawbuf);
 
-            updateBufferSize();
             SDL_Rect rect;
             rect.w = _drawbuf.width;
             rect.h = _drawbuf.height;
+            updateTextureSize(rect.w, rect.h);
             SDL_UpdateTexture(_texture, &rect, cast(const void*)(cast(ColorDrawBuf)_drawbuf).scanLine(0),
                 _drawbuf.width * cast(int)uint.sizeof);
             SDL_RenderCopy(_renderer, _texture, &rect, &rect);
-
-            // Up until now everything was drawn behind the scenes.
-            // This will show the new, red contents of the window.
             SDL_RenderPresent(_renderer);
         }
     }
@@ -630,22 +640,6 @@ final class SDLWindow : Window
 
     private void processMouseEvent(MouseAction action, uint sdlButton, uint sdlFlags, int x, int y)
     {
-        // correct mouse coordinates for HIGHDPI on mac
-        int drawableW = 0;
-        int drawableH = 0;
-        int winW = 0;
-        int winH = 0;
-        SDL_GL_GetDrawableSize(_win, &drawableW, &drawableH);
-        SDL_GetWindowSize(_win, &winW, &winH);
-        if (drawableW != winW || drawableH != winH)
-        {
-            if (drawableW > 0 && winW > 0 && drawableH > 0 && drawableW > 0)
-            {
-                x = x * drawableW / winW;
-                y = y * drawableH / winH;
-            }
-        }
-
         MouseEvent event;
         if (action == MouseAction.wheel)
         {
@@ -1078,28 +1072,9 @@ final class SDLPlatform : Platform
             WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
             uint width = 0, uint height = 0)
     {
-        int oldDPI = SCREEN_DPI;
-        int newwidth = width;
-        int newheight = height;
-        version (Windows)
-        {
-            newwidth = pt(width);
-            newheight = pt(height);
-        }
-        auto res = new SDLWindow(this, title, parent, options, newwidth, newheight);
-        windows.add(res, res.windowID);
-        if (sdlUpdateScreenDpi() || oldDPI != SCREEN_DPI)
-        {
-            version (Windows)
-            {
-                newwidth = pt(width);
-                newheight = pt(height);
-                if (newwidth != width || newheight != height)
-                    SDL_SetWindowSize(res._win, newwidth, newheight);
-            }
-            onThemeChanged();
-        }
-        return res;
+        auto w = new SDLWindow(this, title, parent, options, width, height);
+        windows.add(w, w.windowID);
+        return w;
     }
 
     private bool _windowsMinimized;
@@ -1166,6 +1141,7 @@ final class SDLPlatform : Platform
                 debug (sdl)
                     Log.d("SDL_WINDOWEVENT_SIZE_CHANGED - ", w.title,
                             ", size: ", event.window.data1, ",", event.window.data2);
+                w.updateDPI();
                 w.handleWindowStateChange(WindowState.unspecified, BoxI(w.windowRect.x,
                         w.windowRect.y, event.window.data1, event.window.data2));
                 w.redraw();
@@ -1390,35 +1366,6 @@ final class SDLPlatform : Platform
     }
 }
 
-/// Try to get screen resolution and update SCREEN_DPI; returns true if SCREEN_DPI is changed (when custom override DPI value is not set)
-bool sdlUpdateScreenDpi(int displayIndex = 0)
-{
-    if (SDL_GetDisplayDPI is null)
-    {
-        Log.w("SDL_GetDisplayDPI is not found: cannot detect screen DPI");
-        return false;
-    }
-    int numDisplays = SDL_GetNumVideoDisplays();
-    if (numDisplays < displayIndex + 1)
-        return false;
-    float hdpi = 0;
-    if (SDL_GetDisplayDPI(displayIndex, null, &hdpi, null))
-        return false;
-    int idpi = cast(int)hdpi;
-    if (idpi < 32 || idpi > 2000)
-        return false;
-    Log.i("sdlUpdateScreenDpi: systemScreenDPI=", idpi);
-    if (overrideScreenDPI != 0)
-        Log.i("sdlUpdateScreenDpi: systemScreenDPI is overrided = ", overrideScreenDPI);
-    if (systemScreenDPI != idpi)
-    {
-        Log.i("sdlUpdateScreenDpi: systemScreenDPI is changed from ", systemScreenDPI, " to ", idpi);
-        SCREEN_DPI = idpi;
-        return (overrideScreenDPI == 0);
-    }
-    return false;
-}
-
 extern (C) Platform initPlatform(AppConf conf)
 {
     version (Windows)
@@ -1426,11 +1373,6 @@ extern (C) Platform initPlatform(AppConf conf)
         DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
 
         setAppDPIAwareOnWindows();
-
-        // get screen DPI
-        HDC dc = CreateCompatibleDC(NULL);
-        SCREEN_DPI = GetDeviceCaps(dc, LOGPIXELSY);
-        DeleteObject(dc);
     }
 
     SDLSupport ret = loadSDL();
@@ -1467,8 +1409,6 @@ extern (C) Platform initPlatform(AppConf conf)
         // Share textures between contexts
         SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
     }
-
-    sdlUpdateScreenDpi(0);
 
     return new SDLPlatform(conf);
 }

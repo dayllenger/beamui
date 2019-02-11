@@ -293,7 +293,7 @@ class FileNameEditItem : SettingsItem
         lbl.id = _id ~ "-label";
         auto ed = new FileNameEditLine;
         ed.id = _id ~ "-filename-edit";
-        ed.style.minWidth = 60.pt;
+        ed.style.minWidth = 60;
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);

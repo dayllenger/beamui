@@ -647,12 +647,12 @@ public:
             return TextFlag.unspecified;
         }
 
-        /// Font size in pixels
+        /// Font size in device-independent pixels
         int fontSize() const
         {
             const Length fs = style.fontSize;
             if ((!parent || styleIsolated) && (fs.is_em || fs.is_percent))
-                return 12;
+                return Length.dipToDevice(12);
             const int res = fs.toDevice;
             if (fs.is_em)
                 return parent.fontSize * res / 100;
@@ -1604,7 +1604,7 @@ public:
         /// Get widget maximal size (computed in `measure`)
         final Size maxSize() const { return _boundaries.max; }
 
-        /// Get current widget full box in pixels (computed and set in `layout`)
+        /// Get current widget full box in device-independent pixels (computed and set in `layout`)
         ref const(Box) box() const { return _box; }
         /// Set widget box value and indicate that layout process is done (for usage in subclass' `layout`)
         final protected void box(ref Box b)

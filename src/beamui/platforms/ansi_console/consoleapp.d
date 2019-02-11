@@ -35,6 +35,7 @@ class ConsoleWindow : Window
         width = _platform.console.width;
         height = _platform.console.height;
         _windowRect = BoxI(0, 0, width, height);
+        setDPI(10, 1);
     }
 
     override @property dstring title() const { return _title; }
@@ -504,8 +505,6 @@ extern (C) void mySignalHandler(int value)
 
 extern (C) Platform initPlatform(AppConf conf)
 {
-    SCREEN_DPI = 10;
-
     version (Windows)
     {
         import core.sys.windows.winuser;

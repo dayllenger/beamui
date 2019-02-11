@@ -532,7 +532,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         _headerCols = 1;
         _headerRows = 1;
         _selection = new RedBlackTree!PointI;
-        _defRowHeight = BACKEND_CONSOLE ? 1 : 16.pt;
+        _defRowHeight = BACKEND_CONSOLE ? 1 : 20;
         _defColumnWidth = BACKEND_CONSOLE ? 7 : 100;
 
         _showColHeaders = true;
@@ -1208,7 +1208,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         if (y >= _rowCumulativeHeights[_headerRows - 1])
             return -1; // not in header row
         // point is somewhere in header row
-        int resizeRange = BACKEND_GUI ? 4.pt : 1;
+        int resizeRange = BACKEND_GUI ? 5 : 1;
         if (x >= nonScrollAreaPixels.w)
             x += scrollPos.x;
         int col = colByAbsoluteX(x);
