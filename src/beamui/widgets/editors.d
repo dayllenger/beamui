@@ -2768,7 +2768,7 @@ class EditBox : EditWidgetBase
         const int dir = zoomIn ? 1 : -1;
         if (_minFontSize < _maxFontSize && _minFontSize > 0 && _maxFontSize > 0)
         {
-            const int currentFontSize = fontSize;
+            const int currentFontSize = style.fontSize;
             const int increment = currentFontSize >= 30 ? 2 : 1;
             int newFontSize = currentFontSize + increment * dir; //* 110 / 100;
             if (newFontSize > 30)

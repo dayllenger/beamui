@@ -7,8 +7,32 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.core.geometry;
 
+import std.math : isFinite;
 import std.traits;
 import beamui.core.math3d : Vector;
+
+/// True if size is sane, e.g. not `-infinity`. Used primarly in contracts
+bool isValidSize(float floating)
+{
+    return (isFinite(floating) || floating == SIZE_UNSPECIFIED!float) && floating != SIZE_UNSPECIFIED!int;
+}
+/// ditto
+bool isValidSize(int integer)
+{
+    return integer != int.min;
+}
+/// True if size is finite, i.e. not `SIZE_UNSPECIFIED`
+bool isDefinedSize(float floating)
+{
+    assert(isValidSize(floating), "Invalid floating point size");
+    return floating != SIZE_UNSPECIFIED!float;
+}
+/// ditto
+bool isDefinedSize(int integer)
+{
+    assert(isValidSize(integer), "Invalid integer size, could be cast from NaN or infinity");
+    return integer < SIZE_UNSPECIFIED!int;
+}
 
 /// Size is undefined constant
 enum float SIZE_UNSPECIFIED(T : float) = float.infinity;

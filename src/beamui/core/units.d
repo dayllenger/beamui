@@ -7,8 +7,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.units;
 
-import std.math : isNaN;
-import beamui.core.geometry;
+import beamui.core.geometry : isDefinedSize, isValidSize, SIZE_UNSPECIFIED;
 
 /// Supported types of distance measurement unit
 enum LengthUnit
@@ -29,8 +28,8 @@ enum LengthUnit
 /// Represents length with specified measurement unit
 struct Length
 {
-    private float value;
-    private LengthUnit type;
+    private float value = SIZE_UNSPECIFIED!float;
+    private LengthUnit type = LengthUnit.device;
 
     /// Zero length
     enum Length zero = Length.device(0);
@@ -40,6 +39,7 @@ struct Length
     /// Construct with some value and type
     this(float value, LengthUnit type)
     {
+        assert(isValidSize(value));
         this.value = value;
         this.type = type;
     }
@@ -47,7 +47,8 @@ struct Length
     /// Construct with raw device pixels
     static Length device(int value)
     {
-        return Length(value != SIZE_UNSPECIFIED!int ? value : float.nan, LengthUnit.device);
+        float f = isDefinedSize(value) ? value : SIZE_UNSPECIFIED!float;
+        return Length(f, LengthUnit.device);
     }
     static Length cm(float value)
     {
@@ -91,62 +92,45 @@ struct Length
     /// For absolute units - converts them to device pixels, for relative - multiplies by 100
     int toDevice() const
     {
-        if (value.isNaN)
+        if (value == SIZE_UNSPECIFIED!float)
             return SIZE_UNSPECIFIED!int;
 
-        if (type == LengthUnit.device)
-            return cast(int)value;
-
-        if (type == LengthUnit.cm)
-            return cast(int)(value * screenDPI / 2.54);
-        if (type == LengthUnit.mm)
-            return cast(int)(value * screenDPI / 25.4);
-        if (type == LengthUnit.inch)
-            return cast(int)(value * screenDPI);
-        if (type == LengthUnit.pt)
-            return cast(int)(value * screenDPI / 72);
-
-        if (type == LengthUnit.px)
-            return cast(int)(value * devicePixelRatio);
-
-        if (type == LengthUnit.em)
-            return cast(int)(value * 100);
-        if (type == LengthUnit.percent)
-            return cast(int)(value * 100);
-
-        return 0;
+        final switch (type) with (LengthUnit)
+        {
+            case device:  return cast(int) value;
+            case px:      return cast(int)(value * devicePixelRatio);
+            case em:
+            case percent: return cast(int)(value * 100);
+            case cm:      return cast(int)(value * screenDPI / 2.54);
+            case mm:      return cast(int)(value * screenDPI / 25.4);
+            case inch:    return cast(int)(value * screenDPI);
+            case pt:      return cast(int)(value * screenDPI / 72);
+        }
     }
 
-    /// Convert to device independent pixels. Relative units are returned as is
-    float toDIPs() const
+    /// Convert to layout length, which represents device-independent pixels or percentage
+    LayoutLength toLayout() const
     {
-        if (value.isNaN)
-            return SIZE_UNSPECIFIED!float;
+        if (value == SIZE_UNSPECIFIED!float)
+            return LayoutLength(SIZE_UNSPECIFIED!float);
 
-        if (type == LengthUnit.device)
-            return value / devicePixelRatio;
-
-        if (type == LengthUnit.cm)
-            return value * dipsPerInch / 2.54;
-        if (type == LengthUnit.mm)
-            return value * dipsPerInch / 25.4;
-        if (type == LengthUnit.inch)
-            return value * dipsPerInch;
-        if (type == LengthUnit.pt)
-            return value * dipsPerInch / 72;
-
-        if (type == LengthUnit.px)
-            return value;
-
-        if (type == LengthUnit.em || type == LengthUnit.percent)
-            return value;
-
-        return 0;
+        final switch (type) with (LengthUnit)
+        {
+            case device:  return LayoutLength(value / devicePixelRatio);
+            case px:      return LayoutLength(value);
+            case em:      return LayoutLength.percent(value * 100);
+            case percent: return LayoutLength.percent(value);
+            case cm:      return LayoutLength(value * dipsPerInch / 2.54);
+            case mm:      return LayoutLength(value * dipsPerInch / 25.4);
+            case inch:    return LayoutLength(value * dipsPerInch);
+            case pt:      return LayoutLength(value * dipsPerInch / 72);
+        }
     }
 
     /// Convert device-independent pixels to physical device pixels (of current window)
     static int dipToDevice(float dips)
     {
+        assert(isDefinedSize(dips));
         return cast(int)(dips * devicePixelRatio);
     }
 
@@ -205,6 +189,90 @@ struct Length
         {
             return Length.none;
         }
+    }
+}
+
+/// Layout length can be either in device-independent pixels or in percents
+struct LayoutLength
+{
+    private float value = SIZE_UNSPECIFIED!float;
+    private bool percentage;
+
+    /// Zero length
+    enum LayoutLength zero = LayoutLength(0);
+    /// Unspecified length
+    enum LayoutLength none = LayoutLength(SIZE_UNSPECIFIED!float);
+
+    /// Construct from pixels
+    this(float px)
+    {
+        if (isDefinedSize(px))
+        {
+            assert(px < SIZE_UNSPECIFIED!int);
+            value = px;
+        }
+    }
+    /// Construct from percent
+    static LayoutLength percent(float p)
+    {
+        assert(isDefinedSize(p));
+        assert(p < SIZE_UNSPECIFIED!int);
+
+        LayoutLength ret;
+        ret.value = p;
+        ret.percentage = true;
+        return ret;
+    }
+
+    /// True if size is finite, i.e. not `SIZE_UNSPECIFIED`
+    bool isDefined() const
+    {
+        return value != SIZE_UNSPECIFIED!float;
+    }
+
+    /// True if contains percent value
+    bool isPercent() const
+    {
+        return percentage;
+    }
+
+    /// If this is percent, return % of `base`, otherwise return stored pixel value
+    int applyPercent(int base) const
+    {
+        assert(isDefinedSize(base));
+
+        if (value == SIZE_UNSPECIFIED!float)
+            return SIZE_UNSPECIFIED!int;
+        if (percentage)
+            return cast(int)(value * base / 100);
+        else
+            return cast(int)value;
+    }
+}
+
+unittest
+{
+    {
+        LayoutLength len;
+        assert(!len.isPercent);
+        assert(len.applyPercent(50) == SIZE_UNSPECIFIED!int);
+    }
+    {
+        LayoutLength len = SIZE_UNSPECIFIED!float;
+        assert(!len.isPercent);
+        assert(len.applyPercent(50) == SIZE_UNSPECIFIED!int);
+    }
+    for (float f = -10; f < 10; f += 0.3)
+    {
+        LayoutLength len = f;
+        assert(!len.isPercent);
+        assert(len.applyPercent(1234) == cast(int)f);
+    }
+    for (float f = -200; f < 200; f += 35)
+    {
+        auto len = LayoutLength.percent(f);
+        assert(len.isPercent);
+        assert(len.applyPercent(50) == cast(int)f / 2);
     }
 }
 

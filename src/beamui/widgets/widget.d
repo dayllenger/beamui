@@ -647,20 +647,6 @@ public:
             return TextFlag.unspecified;
         }
 
-        /// Font size in device-independent pixels
-        int fontSize() const
-        {
-            const Length fs = style.fontSize;
-            if ((!parent || styleIsolated) && (fs.is_em || fs.is_percent))
-                return Length.dipToDevice(12);
-            const int res = fs.toDevice;
-            if (fs.is_em)
-                return parent.fontSize * res / 100;
-            if (fs.is_percent)
-                return parent.fontSize * res / 10000;
-            return res;
-        }
-
         /// Returns font set for widget using style or set manually
         FontRef font() const
         {
@@ -669,7 +655,7 @@ public:
             {
                 if (!_font.isNull)
                     return _font;
-                _font = FontManager.instance.getFont(fontSize, _style.fontWeight,
+                _font = FontManager.instance.getFont(_style.fontSize, _style.fontWeight,
                         _style.fontItalic, _style.fontFamily, _style.fontFace);
                 return _font;
             }
@@ -1687,17 +1673,17 @@ public:
     {
         const Size p = padding.size; // updates style
         onMeasure(bs);
-        bs.min.w = max(bs.min.w, _style.minWidth);
-        bs.min.h = max(bs.min.h, _style.minHeight);
-        bs.max.w = max(min(bs.max.w + p.w, _style.maxWidth), bs.min.w);
-        bs.max.h = max(min(bs.max.h + p.h, _style.maxHeight), bs.min.h);
-        const w = _style.width;
-        const h = _style.height;
-        if (w != SIZE_UNSPECIFIED!int)
+        bs.min.w = max(bs.min.w, _style.minWidth.applyPercent(0));
+        bs.min.h = max(bs.min.h, _style.minHeight.applyPercent(0));
+        bs.max.w = max(min(bs.max.w + p.w, _style.maxWidth.applyPercent(0)), bs.min.w);
+        bs.max.h = max(min(bs.max.h + p.h, _style.maxHeight.applyPercent(0)), bs.min.h);
+        const w = _style.width.applyPercent(0);
+        const h = _style.height.applyPercent(0);
+        if (isDefinedSize(w))
             bs.nat.w = w;
         else
             bs.nat.w += p.w;
-        if (h != SIZE_UNSPECIFIED!int)
+        if (isDefinedSize(h))
             bs.nat.h = h;
         else
             bs.nat.h += p.h;
