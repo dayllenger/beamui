@@ -16,6 +16,7 @@ import derelict.freetype.ft;
 import beamui.core.collections;
 import beamui.core.functions;
 import beamui.core.logger;
+import beamui.core.types : Result, Ok, Err;
 import beamui.graphics.fonts;
 
 package(beamui) __gshared int[string] STD_FONT_FACES;
@@ -266,15 +267,13 @@ class FreeTypeFontFile
         return FT_HAS_KERNING(_face);
     }
 
-    /// Retrieve glyph information, filling glyph struct; returns false if glyph not found
-    bool getGlyphInfo(dchar code, out GlyphRef glyphRef, dchar def_char, bool withImage = true)
+    /// Retrieve glyph information, filling glyph struct; returns `Err` if glyph is not found
+    Result!GlyphRef getGlyphInfo(dchar code, dchar def_char, bool withImage = true)
     {
-        //FONT_GUARD
-        int glyph_index = getCharIndex(code, def_char);
+        const int glyph_index = getCharIndex(code, def_char);
         int flags = FT_LOAD_DEFAULT;
         const bool _drawMonochrome = _size < FontManager.minAntialiasedFontSize;
-        SubpixelRenderingMode subpixel = _drawMonochrome ? SubpixelRenderingMode.none
-            : FontManager.subpixelRenderingMode;
+        const subpixel = _drawMonochrome ? SubpixelRenderingMode.none : FontManager.subpixelRenderingMode;
         flags |= (!_drawMonochrome ? (subpixel ? FT_LOAD_TARGET_LCD
                 : (FontManager.instance.hintingMode == HintingMode.light ?
                 FT_LOAD_TARGET_LIGHT : FT_LOAD_TARGET_NORMAL)) : FT_LOAD_TARGET_MONO);
@@ -289,7 +288,7 @@ class FreeTypeFontFile
                 glyph_index, /* glyph index           */
                 flags); /* load flags, see below */
         if (error)
-            return false;
+            return Err!GlyphRef;
         auto glyph = new Glyph;
         glyph.blackBoxX = cast(ushort)((_slot.metrics.width + 32) >> 6);
         glyph.blackBoxY = cast(ubyte)((_slot.metrics.height + 32) >> 6);
@@ -353,8 +352,7 @@ class FreeTypeFontFile
                 glyph.id = nextGlyphID();
             }
         }
-        glyphRef = cast(GlyphRef)glyph;
-        return true;
+        return Ok(cast(GlyphRef)glyph);
     }
 
     @property bool isNull() const
@@ -509,12 +507,15 @@ class FreeTypeFont : Font
             if (!findGlyph(ch, '?', index, file))
                 return null;
         }
-        GlyphRef glyph;
-        if (!file.getGlyphInfo(ch, glyph, 0, withImage))
+        if (auto glyph = file.getGlyphInfo(ch, 0, withImage))
+        {
+            if (withImage)
+                return _glyphCache.put(ch, glyph.val);
+            else
+                return glyph.val;
+        }
+        else
             return null;
-        if (withImage)
-            return _glyphCache.put(ch, glyph);
-        return glyph;
     }
 
     /// Load font files

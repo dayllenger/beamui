@@ -1,8 +1,7 @@
 /**
 CSS decoding functions: take token array, convert it to some type.
 
-Each function takes a token array as the first parameter and returns result in other `out`
-parameters and success flag in the return value.
+Each decoding function returns `Result` with value and success flag.
 
 Copyright: dayllenger 2018
 License:   Boost License 1.0
@@ -10,10 +9,11 @@ Authors:   dayllenger
 */
 module beamui.style.decode_css;
 
+import std.exception : assertNotThrown;
 import beamui.core.animations : TimingFunction;
 import beamui.core.functions;
 import beamui.core.logger;
-import beamui.core.types;
+import beamui.core.types : Result, Ok, Err, Tup;
 import beamui.core.units;
 import beamui.css.tokenizer : Token, TokenType;
 import beamui.graphics.colors;
@@ -23,7 +23,7 @@ import beamui.graphics.text;
 import beamui.style.types;
 
 /// Decode integer property
-bool decode(const Token[] tokens, out int result)
+Result!int decode(T : int)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -32,42 +32,42 @@ bool decode(const Token[] tokens, out int result)
     {
         if (t.typeFlagInteger)
         {
-            result = to!int(t.text);
-            return true;
+            int v = assertNotThrown(to!int(t.text));
+            return Ok(v);
         }
         else
         {
             Log.fe("CSS(%s): expected integer, got floating", t.line);
-            return false;
+            return Err(0);
         }
     }
     else
     {
         Log.fe("CSS(%s): expected number, not '%s'", t.line, t.type);
-        return false;
+        return Err(0);
     }
 }
 
 /// Decode raw string property
-bool decode(const Token[] tokens, out string result)
+Result!string decode(T : string)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
-    result = tokens[0].text;
-    return true;
+    return Ok(tokens[0].text);
 }
 
 /// Decode CSS token sequence like "left vcenter" to `Align` bit set
-bool decode(const Token[] tokens, out Align result)
+Result!Align decode(T : Align)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    Align result;
     foreach (t; tokens)
     {
         if (t.type != TokenType.ident)
         {
             Log.fe("CSS(%s): alignment should be an identifier, not '%s'", t.line, t.type);
-            return false;
+            return Err!Align;
         }
         switch (t.text)
         {
@@ -81,48 +81,47 @@ bool decode(const Token[] tokens, out Align result)
             case "top-left": result |= Align.topleft; break;
             default:
                 Log.fe("CSS(%s): unknown alignment: %s", t.line, t.text);
-                return false;
+                return Err!Align;
         }
     }
-    return true;
+    return Ok(result);
 }
 
 /// Decode CSS rectangle declaration to `Length[]`
-bool decodeInsets(const Token[] tokens, out Length[] result)
+Length[] decodeInsets(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    Length[] result;
     result.reserve(4);
     foreach (t; tokens)
     {
         if (t.type == TokenType.number || t.type == TokenType.dimension)
         {
-            Length dm = void;
-            if (decode((&t)[0 .. 1], dm))
-                result ~= dm;
+            if (const dm = decode!Length((&t)[0 .. 1]))
+                result ~= dm.val;
         }
         else
         {
             Log.fe("CSS(%s): rectangle value should be numeric, not '%s'", t.line, t.type);
-            return false;
+            return null;
         }
         if (result.length > 4)
         {
             Log.fw("CSS(%s): too many values for rectangle", t.line);
-            return false;
+            return null;
         }
     }
     if (result.length > 0)
-        return true;
+        return result;
     else
     {
         Log.fe("CSS(%s): empty rectangle", tokens[0].line);
-        return false;
+        return null;
     }
 }
-
 /// Decode dimension, e.g. 1px, 20%, 1.2em, or "none"
-bool decode(const Token[] tokens, out Length result)
+Result!Length decode(T : Length)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -130,65 +129,79 @@ bool decode(const Token[] tokens, out Length result)
     if (t.type == TokenType.ident)
     {
         if (t.text == "none")
-        {
-            result = Length.none;
-            return true;
-        }
+            return Ok(Length.none);
         else
             Log.fe("CSS(%s): unknown length identifier: '%s'", t.line, t.text);
     }
     else if (t.type == TokenType.number)
     {
         if (t.text == "0")
-        {
-            result = Length.zero;
-            return true;
-        }
+            return Ok(Length.zero);
         else
             Log.fe("CSS(%s): length units are mandatory", t.line);
     }
     else if (t.type == TokenType.dimension)
     {
-        result = Length.parse(t.text, t.dimensionUnit);
+        auto result = Length.parse(t.text, t.dimensionUnit);
         if (result != Length.none)
-            return true;
+            return Ok(result);
         else
             Log.fe("CSS(%s): can't parse length", t.line);
     }
     else if (t.type == TokenType.percentage)
     {
-        result = Length.parse(t.text, "%");
+        auto result = Length.parse(t.text, "%");
         if (result != Length.none)
-            return true;
+            return Ok(result);
         else
             Log.fe("CSS(%s): can't parse percent", t.line);
     }
     else
         Log.fe("CSS(%s): invalid length: '%s'", t.line, t.type);
 
-    return false;
+    return Err!Length;
 }
 
+alias BackgroundHere = Tup!(Result!Color, Result!Drawable);
 /// Decode shortcut background property
-bool decodeBackground(const(Token)[] tokens, out Color color, out Drawable image)
+Result!BackgroundHere decodeBackground(const(Token)[] tokens)
 {
+    assert(tokens.length > 0);
+
+    const line = tokens[0].line;
+    alias E = Err!BackgroundHere;
+    BackgroundHere result;
+
     if (startsWithColor(tokens))
     {
-        if (!decode(tokens, color))
-            return false;
+        if (const res = decode!Color(tokens))
+            result[0] = res;
+        else
+            return E();
+    }
+    if (startsWithImage(tokens))
+    {
+        if (auto res = decode!(SpecialCSSType.image)(tokens))
+            result[1] = res;
+        else
+            return E();
+    }
+
+    if (result[0] || result[1])
+    {
+        if (tokens.length > 0)
+            Log.fw("CSS(%s): too many values for background", line);
+        return Ok(result);
     }
     else
-        color = Color.transparent;
-
-    if (tokens.length > 0)
-        if (!decode!(SpecialCSSType.image)(tokens, image))
-            return false;
-
-    return true;
+    {
+        Log.fe("CSS(%s): malformed background shorthand", line);
+        return E();
+    }
 }
 
 /// Decode background image. This function mutates the range - skips found values
-bool decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)[] tokens, out Drawable result)
+Result!Drawable decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -200,11 +213,11 @@ bool decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)[] tokens, 
     if (t0.type == TokenType.ident)
     {
         if (t0.text == "none")
-            return true;
+            return Ok!Drawable(null);
         else
         {
             Log.fe("CSS(%s): unknown image identifier: '%s'", t0.line, t0.text);
-            return false;
+            return Err!Drawable;
         }
     }
     // #1: image id
@@ -223,12 +236,9 @@ bool decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)[] tokens, 
             // PNG/JPEG image
             DrawBufRef image = imageCache.get(id);
             if (!image.isNull)
-            {
-                result = new ImageDrawable(image, tiled);
-                return true;
-            }
+                return Ok!Drawable(new ImageDrawable(image, tiled));
         }
-        return false;
+        return Err!Drawable;
     }
     // #2: gradient
     if (t0.type == TokenType.func && t0.text == "linear")
@@ -236,7 +246,6 @@ bool decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)[] tokens, 
         import std.math : isNaN;
 
         float angle;
-        Color color1, color2;
         if (tokens[1].type == TokenType.dimension)
         {
             angle = parseAngle(tokens[1].text, tokens[1].dimensionUnit);
@@ -244,7 +253,7 @@ bool decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)[] tokens, 
         if (angle.isNaN)
         {
             Log.fe("CSS(%s): 1st linear gradient parameter should be angle (deg, grad, rad or turn)", tokens[1].line);
-            return false;
+            return Err!Drawable;
         }
         else
             tokens = tokens[2 .. $];
@@ -252,98 +261,124 @@ bool decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)[] tokens, 
         if (tokens[0].type == TokenType.comma)
             tokens = tokens[1 .. $];
 
-        if (!decode(tokens, color1))
-            return false;
+        const color1 = decode!Color(tokens);
+        if (color1.err)
+            return Err!Drawable;
 
         if (tokens[0].type == TokenType.comma)
             tokens = tokens[1 .. $];
 
-        if (!decode(tokens, color2))
-            return false;
+        const color2 = decode!Color(tokens);
+        if (color2.err)
+            return Err!Drawable;
 
         if (tokens[0].type == TokenType.closeParen)
             tokens = tokens[1 .. $];
 
-        result = new GradientDrawable(angle, color1, color2);
-        return true;
+        return Ok!Drawable(new GradientDrawable(angle, color1.val, color2.val));
     }
-    return false;
+    return Err!Drawable;
 }
 
+alias BorderHere = Tup!(Result!Color, Result!Length);
 /// Decode shortcut border property
-bool decodeBorder(const Token[] tokens, out Color color, out Length width)
+Result!BorderHere decodeBorder(const(Token)[] tokens)
 {
     assert(tokens.length > 0);
 
-    const t0 = tokens[0];
-    if (t0.type == TokenType.ident && t0.text == "none")
-    {
-        color = Color.transparent;
-        width = Length.zero;
-        return true;
-    }
+    const line = tokens[0].line;
+    alias E = Err!BorderHere;
+    BorderHere result;
 
-    if (tokens.length < 3)
+    if (tokens[0].type == TokenType.ident && tokens[0].text == "none")
     {
-        Log.fe("CSS(%s): correct form for border is: 'width style color'", t0.line);
-        return false;
+        result[0] = Ok(Color.transparent);
+        result[1] = Ok(Length.zero);
+        return Ok(result);
     }
-
-    if (!decode(tokens[0 .. 1], width) || width == Length.none)
+    if (startsWithLength(tokens))
     {
-        Log.fe("CSS(%s): invalid border width", t0.line);
-        return false;
+        if (const res = decode!Length(tokens))
+        {
+            if (res.val == Length.none)
+            {
+                Log.fe("CSS(%s): invalid border width", line);
+                return E();
+            }
+            else
+                result[1] = res;
+        }
+        else
+            return E();
+        tokens = tokens[1 .. $];
     }
-
     // style is not implemented yet
-    const(Token)[] rest = tokens[2 .. $];
-    return decode(rest, color);
+    if (tokens.length > 0)
+        tokens = tokens[1 .. $];
+    if (startsWithColor(tokens))
+    {
+        if (const res = decode!Color(tokens))
+            result[0] = res;
+        else
+            return E();
+    }
+
+    if (result[0] || result[1])
+    {
+        if (tokens.length > 0)
+            Log.fw("CSS(%s): too many values for border", line);
+        return Ok(result);
+    }
+    else
+    {
+        Log.fe("CSS(%s): malformed border shorthand", line);
+        return E();
+    }
 }
 
 /// Create a drawable from `box-shadow` property
-bool decode(const Token[] tokens, out BoxShadowDrawable result)
+Result!BoxShadowDrawable decode(T : BoxShadowDrawable)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
     const t0 = tokens[0];
     if (t0.type == TokenType.ident && t0.text == "none")
-        return true;
+        return Ok!BoxShadowDrawable(null);
 
     if (tokens.length < 4)
     {
         Log.fe("CSS(%s): correct form for box-shadow is: 'h-offset v-offset blur color'", t0.line);
-        return false;
+        return Err!BoxShadowDrawable;
     }
 
-    Length xoffset = void;
-    if (!decode(tokens[0 .. 1], xoffset) || xoffset == Length.none)
+    const xoffset = decode!Length(tokens[0 .. 1]);
+    if (xoffset.err || xoffset.val == Length.none || xoffset.val.is_percent)
     {
         Log.fe("CSS(%s): invalid x-offset value", tokens[0].line);
-        return false;
+        return Err!BoxShadowDrawable;
     }
-    Length yoffset = void;
-    if (!decode(tokens[1 .. 2], yoffset) || yoffset == Length.none)
+    const yoffset = decode!Length(tokens[1 .. 2]);
+    if (yoffset.err || yoffset.val == Length.none || yoffset.val.is_percent)
     {
         Log.fe("CSS(%s): invalid y-offset value", tokens[1].line);
-        return false;
+        return Err!BoxShadowDrawable;
     }
-    Length blur = void;
-    if (!decode(tokens[2 .. 3], blur) || blur == Length.none)
+    const blur = decode!Length(tokens[2 .. 3]);
+    if (blur.err || blur.val == Length.none || blur.val.is_percent)
     {
         Log.fe("CSS(%s): invalid blur value", tokens[2].line);
-        return false;
+        return Err!BoxShadowDrawable;
     }
     const(Token)[] rest = tokens[3 .. $];
-    Color color = void;
-    if (!decode(rest, color))
-        return false;
+    const color = decode!Color(rest);
+    if (color.err)
+        return Err!BoxShadowDrawable;
 
-    result = new BoxShadowDrawable(xoffset.toDevice, yoffset.toDevice, blur.toDevice, color);
-    return true;
+    return Ok(new BoxShadowDrawable(xoffset.val.toDevice, yoffset.val.toDevice, blur.val.toDevice, color.val));
 }
 
 /// Decode font family
-bool decode(const Token[] tokens, out FontFamily result)
+Result!FontFamily decode(T : FontFamily)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -351,25 +386,23 @@ bool decode(const Token[] tokens, out FontFamily result)
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): font family should be an identifier, not '%s'", t.line, t.type);
-        return false;
+        return Err!FontFamily;
     }
     switch (t.text)
     {
-        case "sans-serif": result = FontFamily.sans_serif; break;
-        case "serif": result = FontFamily.serif; break;
-        case "cursive": result = FontFamily.cursive; break;
-        case "fantasy": result = FontFamily.fantasy; break;
-        case "monospace": result = FontFamily.monospace; break;
-        case "none": result = FontFamily.unspecified; break;
+        case "sans-serif": return Ok(FontFamily.sans_serif);
+        case "serif": return Ok(FontFamily.serif);
+        case "cursive": return Ok(FontFamily.cursive);
+        case "fantasy": return Ok(FontFamily.fantasy);
+        case "monospace": return Ok(FontFamily.monospace);
+        case "none": return Ok(FontFamily.unspecified);
         default:
             Log.fe("CSS(%s): unknown font family: %s", t.line, t.text);
-            return false;
+            return Err!FontFamily;
     }
-    return true;
 }
-
 /// Decode font style
-bool decode(const Token[] tokens, out FontStyle result)
+Result!FontStyle decode(T : FontStyle)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -377,21 +410,19 @@ bool decode(const Token[] tokens, out FontStyle result)
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): font style should be an identifier, not '%s'", t.line, t.type);
-        return false;
+        return Err!FontStyle;
     }
     switch (t.text)
     {
-        case "normal": result = FontStyle.normal; break;
-        case "italic": result = FontStyle.italic; break;
+        case "normal": return Ok(FontStyle.normal);
+        case "italic": return Ok(FontStyle.italic);
         default:
             Log.fe("CSS(%s): unknown font style: %s", t.line, t.text);
-            return false;
+            return Err!FontStyle;
     }
-    return true;
 }
-
 /// Decode font weight
-bool decode(SpecialCSSType t : SpecialCSSType.fontWeight)(const Token[] tokens, out ushort result)
+Result!ushort decode(SpecialCSSType t : SpecialCSSType.fontWeight)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -399,32 +430,31 @@ bool decode(SpecialCSSType t : SpecialCSSType.fontWeight)(const Token[] tokens, 
     if (t.type != TokenType.ident && t.type != TokenType.number)
     {
         Log.fe("CSS(%s): font weight should be an identifier or number, not '%s'", t.line, t.type);
-        return false;
+        return Err!ushort;
     }
     switch (t.text)
     {
         case "lighter":
-        case "100": result = 100; break;
+        case "100": return Ok!ushort(100);
         case "normal":
-        case "400": result = 400; break;
+        case "400": return Ok!ushort(400);
         case "bold":
-        case "700": result = 700; break;
+        case "700": return Ok!ushort(700);
         case "bolder":
-        case "900": result = 900; break;
-        case "200": result = 200; break;
-        case "300": result = 300; break;
-        case "500": result = 500; break;
-        case "600": result = 600; break;
-        case "800": result = 800; break;
+        case "900": return Ok!ushort(900);
+        case "200": return Ok!ushort(200);
+        case "300": return Ok!ushort(300);
+        case "500": return Ok!ushort(500);
+        case "600": return Ok!ushort(600);
+        case "800": return Ok!ushort(800);
         default:
             Log.fe("CSS(%s): unknown font weight: %s", t.line, t.text);
-            return false;
+            return Err!ushort;
     }
-    return true;
 }
 
 /// Decode text alignment
-bool decode(const Token[] tokens, out TextAlign result)
+Result!TextAlign decode(T : TextAlign)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -432,23 +462,22 @@ bool decode(const Token[] tokens, out TextAlign result)
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): text alignment should be an identifier, not '%s'", t.line, t.type);
-        return false;
+        return Err!TextAlign;
     }
     switch (t.text)
     {
-        case "start": result = TextAlign.start; break;
-        case "center": result = TextAlign.center; break;
-        case "end": result = TextAlign.end; break;
-        case "justify": result = TextAlign.justify; break;
+        case "start": return Ok(TextAlign.start);
+        case "center": return Ok(TextAlign.center);
+        case "end": return Ok(TextAlign.end);
+        case "justify": return Ok(TextAlign.justify);
         default:
             Log.fe("CSS(%s): unknown text alignment: %s", t.line, t.text);
-            return false;
+            return Err!TextAlign;
     }
-    return true;
 }
 
 /// Decode text decoration line
-bool decode(const Token[] tokens, out TextDecoration.Line result)
+Result!(TextDecoration.Line) decode(T : TextDecoration.Line)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -456,23 +485,21 @@ bool decode(const Token[] tokens, out TextDecoration.Line result)
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): text decoration line should be an identifier, not '%s'", t.line, t.type);
-        return false;
+        return Err!(TextDecoration.Line);
     }
     switch (t.text)
     {
-        case "none": result = TextDecoration.Line.none; break;
-        case "overline": result = TextDecoration.Line.overline; break;
-        case "underline": result = TextDecoration.Line.underline; break;
-        case "line-through": result = TextDecoration.Line.lineThrough; break;
+        case "none": return Ok(TextDecoration.Line.none);
+        case "overline": return Ok(TextDecoration.Line.overline);
+        case "underline": return Ok(TextDecoration.Line.underline);
+        case "line-through": return Ok(TextDecoration.Line.lineThrough);
         default:
             Log.fe("CSS(%s): unknown text decoration line: %s", t.line, t.text);
-            return false;
+            return Err!(TextDecoration.Line);
     }
-    return true;
 }
-
 /// Decode text decoration style
-bool decode(const Token[] tokens, out TextDecoration.Style result)
+Result!(TextDecoration.Style) decode(T : TextDecoration.Style)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -480,45 +507,60 @@ bool decode(const Token[] tokens, out TextDecoration.Style result)
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): text decoration style should be an identifier, not '%s'", t.line, t.type);
-        return false;
+        return Err!(TextDecoration.Style);
     }
     switch (t.text)
     {
-        case "solid": result = TextDecoration.Style.solid; break;
-        case "double": result = TextDecoration.Style.doubled; break;
-        case "dotted": result = TextDecoration.Style.dotted; break;
-        case "dashed": result = TextDecoration.Style.dashed; break;
-        case "wavy": result = TextDecoration.Style.wavy; break;
+        case "solid": return Ok(TextDecoration.Style.solid);
+        case "double": return Ok(TextDecoration.Style.doubled);
+        case "dotted": return Ok(TextDecoration.Style.dotted);
+        case "dashed": return Ok(TextDecoration.Style.dashed);
+        case "wavy": return Ok(TextDecoration.Style.wavy);
         default:
             Log.fe("CSS(%s): unknown text decoration style: %s", t.line, t.text);
-            return false;
+            return Err!(TextDecoration.Style);
     }
-    return true;
 }
-
+alias TextDecorationHere = Tup!(TextDecoration.Line, Result!Color, Result!(TextDecoration.Style));
 /// Decode whole shorthand text decoration property
-bool decode(const(Token)[] tokens, out TextDecoration result)
+Result!TextDecorationHere decodeTextDecoration(const(Token)[] tokens)
 {
     assert(tokens.length > 0);
 
-    if (!decode(tokens, result.line)) // required
-        return false;
-    tokens = tokens[1 .. $];
+    const line = tokens[0].line;
+    alias E = Err!TextDecorationHere;
+    TextDecorationHere result;
+    // required
+    {
+        if (const res = decode!(TextDecoration.Line)(tokens))
+            result[0] = res.val;
+        else
+            return E();
+        tokens = tokens[1 .. $];
+    }
+    // next can be color and style, but we will check style first, because color check is not precise
     if (startsWithColor(tokens))
     {
-        if (!decode(tokens, result.color))
-            return false;
+        if (const res = decode!Color(tokens))
+            result[1] = res;
+        else
+            return E();
+    }
+    if (startsWithTextDecorationStyle(tokens))
+    {
+        if (const res = decode!(TextDecoration.Style)(tokens))
+            result[2] = res;
+        else
+            return E();
+        tokens = tokens[1 .. $];
     }
     if (tokens.length > 0)
-    {
-        if (!decode(tokens, result.style))
-            return false;
-    }
-    return true;
+        Log.fw("CSS(%s): too many values for text-decoration", line);
+    return Ok(result);
 }
 
 /// Decode text hotkey option
-bool decode(const Token[] tokens, out TextHotkey result)
+Result!TextHotkey decode(T : TextHotkey)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -526,23 +568,22 @@ bool decode(const Token[] tokens, out TextHotkey result)
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): text hotkey option should be an identifier, not '%s'", t.line, t.type);
-        return false;
+        return Err!TextHotkey;
     }
     switch (t.text)
     {
-        case "ignore": result = TextHotkey.ignore; break;
-        case "hidden": result = TextHotkey.hidden; break;
-        case "underline": result = TextHotkey.underline; break;
-        case "underline-on-alt": result = TextHotkey.underlineOnAlt; break;
+        case "ignore": return Ok(TextHotkey.ignore);
+        case "hidden": return Ok(TextHotkey.hidden);
+        case "underline": return Ok(TextHotkey.underline);
+        case "underline-on-alt": return Ok(TextHotkey.underlineOnAlt);
         default:
             Log.fe("CSS(%s): unknown text hotkey option: %s", t.line, t.text);
-            return false;
+            return Err!TextHotkey;
     }
-    return true;
 }
 
 /// Decode text overflow
-bool decode(const Token[] tokens, out TextOverflow result)
+Result!TextOverflow decode(T : TextOverflow)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -550,22 +591,21 @@ bool decode(const Token[] tokens, out TextOverflow result)
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): text overflow should be an identifier, not '%s'", t.line, t.type);
-        return false;
+        return Err!TextOverflow;
     }
     switch (t.text)
     {
-        case "clip": result = TextOverflow.clip; break;
-        case "ellipsis": result = TextOverflow.ellipsis; break;
-        case "ellipsis-middle": result = TextOverflow.ellipsisMiddle; break;
+        case "clip": return Ok(TextOverflow.clip);
+        case "ellipsis": return Ok(TextOverflow.ellipsis);
+        case "ellipsis-middle": return Ok(TextOverflow.ellipsisMiddle);
         default:
             Log.fe("CSS(%s): unknown text overflow: %s", t.line, t.text);
-            return false;
+            return Err!TextOverflow;
     }
-    return true;
 }
 
 /// Decode text transform
-bool decode(const Token[] tokens, out TextTransform result)
+Result!TextTransform decode(T : TextTransform)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -573,22 +613,227 @@ bool decode(const Token[] tokens, out TextTransform result)
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): text transform should be an identifier, not '%s'", t.line, t.type);
-        return false;
+        return Err!TextTransform;
     }
     switch (t.text)
     {
-        case "none": result = TextTransform.none; break;
-        case "capitalize": result = TextTransform.capitalize; break;
-        case "uppercase": result = TextTransform.uppercase; break;
-        case "lowercase": result = TextTransform.lowercase; break;
+        case "none": return Ok(TextTransform.none);
+        case "capitalize": return Ok(TextTransform.capitalize);
+        case "uppercase": return Ok(TextTransform.uppercase);
+        case "lowercase": return Ok(TextTransform.lowercase);
         default:
             Log.fe("CSS(%s): unknown text transform: %s", t.line, t.text);
-            return false;
+            return Err!TextTransform;
     }
-    return true;
 }
 
-/// Returns true whether token sequence starts with color property
+/// Decode CSS color. This function mutates the range - skips found color value
+Result!Color decode(T : Color)(ref const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const t = tokens[0];
+    if (t.type == TokenType.hash)
+    {
+        tokens = tokens[1 .. $];
+        return decodeHexColor("#" ~ t.text);
+    }
+    if (t.type == TokenType.ident)
+    {
+        tokens = tokens[1 .. $];
+        return decodeTextColor(t.text);
+    }
+    if (t.type == TokenType.func)
+    {
+        const(Token)[] func;
+        foreach (i, tok; tokens)
+        {
+            if (tok.type == TokenType.closeParen)
+            {
+                func = tokens[0 .. i];
+                break;
+            }
+        }
+        if (func is null)
+        {
+            Log.fe("CSS(%s): expected closing parenthesis", t.line);
+            return Err!Color;
+        }
+        else
+            tokens = tokens[func.length + 1 .. $];
+
+        string fn = t.text;
+        if (fn == "rgb" || fn == "rgba")
+        {
+            func = func.efilter!(t => t.type == TokenType.number);
+            auto convert = (size_t idx) => func.length > idx ? clamp(to!uint(func[idx].text), 0, 255) : 0;
+            uint r = convert(0);
+            uint g = convert(1);
+            uint b = convert(2);
+            uint a = func.length > 3 ? opacityToAlpha(to!float(func[3].text)) : 0;
+            return Ok(Color(r, g, b, a));
+        }
+        // TODO: hsl, hsla
+        else
+        {
+            Log.fe("CSS(%s): unknown color function: %s", t.line, fn);
+            return Err!Color;
+        }
+    }
+    return Err!Color;
+}
+
+/// Decode opacity
+Result!ubyte decode(SpecialCSSType t : SpecialCSSType.opacity)(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    return Ok(opacityToAlpha(to!float(tokens[0].text)));
+}
+
+/// Decode seconds or milliseconds in CSS. Returns time in msecs.
+Result!uint decode(SpecialCSSType t : SpecialCSSType.time)(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const t = tokens[0];
+    if (t.type == TokenType.dimension)
+    {
+        uint res = to!uint(t.text);
+        if (t.dimensionUnit == "s")
+            return Ok(res * 1000);
+        else if (t.dimensionUnit == "ms")
+            return Ok(res);
+        else
+        {
+            Log.fe("CSS(%s): unknown time dimension: %s", t.line, t.dimensionUnit);
+            return Err!uint;
+        }
+    }
+    else
+    {
+        Log.fe("CSS(%s): time must have dimension units", t.line);
+        return Err!uint;
+    }
+}
+/// Decode name of property which is a subject of transition
+Result!string decode(SpecialCSSType t : SpecialCSSType.transitionProperty)(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const t = tokens[0];
+    if (t.type == TokenType.ident)
+        return Ok(t.text);
+    else
+    {
+        Log.fe("CSS(%s): transition property must be an identifier", t.line);
+        return Err!string;
+    }
+}
+/// Decode transition timing function like linear or ease-in-out
+Result!TimingFunction decode(T : TimingFunction)(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const t = tokens[0];
+    if (t.type == TokenType.ident)
+    {
+        switch (t.text)
+        {
+            case "linear": return Ok(cast(TimingFunction)TimingFunction.linear);
+            case "ease": return Ok(cast(TimingFunction)TimingFunction.ease);
+            case "ease-in": return Ok(cast(TimingFunction)TimingFunction.easeIn);
+            case "ease-out": return Ok(cast(TimingFunction)TimingFunction.easeOut);
+            case "ease-in-out": return Ok(cast(TimingFunction)TimingFunction.easeInOut);
+            default:
+                Log.fe("CSS(%s): unknown or unsupported transition timing function: %s", t.line, t.text);
+                return Err!TimingFunction;
+        }
+    }
+    else
+    {
+        Log.fe("CSS(%s): transition timing function must be an identifier", t.line);
+        return Err!TimingFunction;
+    }
+}
+alias TransitionHere = Tup!(Result!string, Result!uint, Result!TimingFunction, Result!uint);
+/// Decode shorthand transition property
+Result!TransitionHere decodeTransition(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const line = tokens[0].line;
+    alias E = Err!TransitionHere;
+    TransitionHere result;
+
+    if (startsWithIdent(tokens))
+    {
+        if (const res = decode!(SpecialCSSType.transitionProperty)(tokens))
+            result[0] = res;
+        else
+            return E();
+        tokens = tokens[1 .. $];
+    }
+    if (startsWithTime(tokens))
+    {
+        if (const res = decode!(SpecialCSSType.time)(tokens))
+            result[1] = res;
+        else
+            return E();
+        tokens = tokens[1 .. $];
+    }
+    if (startsWithTimingFunction(tokens))
+    {
+        if (auto res = decode!TimingFunction(tokens))
+            result[2] = res;
+        else
+            return E();
+        tokens = tokens[1 .. $];
+    }
+    if (startsWithTime(tokens))
+    {
+        if (const res = decode!(SpecialCSSType.time)(tokens))
+            result[3] = res;
+        else
+            return E();
+        tokens = tokens[1 .. $];
+    }
+
+    if (result[0] || result[1] || result[2] || result[3])
+    {
+        if (tokens.length > 0)
+            Log.fw("CSS(%s): too many values for transition", line);
+        return Ok(result);
+    }
+    else
+    {
+        Log.fe("CSS(%s): malformed transition shorthand", line);
+        return E();
+    }
+}
+
+//===============================================================
+// `startsWith` functions, needed to decode shorthands
+
+/// True if token sequence starts with `<length>` value
+bool startsWithLength(const Token[] tokens)
+{
+    if (tokens.length == 0)
+        return false;
+
+    const t = tokens[0];
+    if (t.type == TokenType.ident)
+        return t.text == "none";
+    if (t.type == TokenType.number)
+        return t.text == "0";
+    if (t.type == TokenType.dimension)
+        return true;
+    if (t.type == TokenType.percentage)
+        return true;
+    return false;
+}
+
+/// True if token sequence starts with `<color>` value
 bool startsWithColor(const Token[] tokens)
 {
     if (tokens.length == 0)
@@ -606,174 +851,148 @@ bool startsWithColor(const Token[] tokens)
     return false;
 }
 
-/// Decode CSS color. This function mutates the range - skips found color value
-bool decode(ref const(Token)[] tokens, out Color result)
+/// True if token sequence starts with image value
+bool startsWithImage(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const t = tokens[0];
-    if (t.type == TokenType.hash)
-    {
-        tokens = tokens[1 .. $];
-        result = decodeHexColor("#" ~ t.text, Color.none);
-        return result != Color.none;
-    }
-    if (t.type == TokenType.ident)
-    {
-        tokens = tokens[1 .. $];
-        result = decodeTextColor(t.text, Color.none);
-        return result != Color.none;
-    }
-    if (t.type == TokenType.func)
-    {
-        const(Token)[] func;
-        foreach (i, tok; tokens)
-        {
-            if (tok.type == TokenType.closeParen)
-            {
-                func = tokens[0 .. i];
-                break;
-            }
-        }
-        if (func is null)
-        {
-            Log.fe("CSS(%s): expected closing parenthesis", t.line);
-            return false;
-        }
-        else
-            tokens = tokens[func.length + 1 .. $];
-
-        string fn = t.text;
-        if (fn == "rgb" || fn == "rgba")
-        {
-            func = func.efilter!(t => t.type == TokenType.number);
-            auto convert = (size_t idx) => func.length > idx ? clamp(to!uint(func[idx].text), 0, 255) : 0;
-            uint r = convert(0);
-            uint g = convert(1);
-            uint b = convert(2);
-            uint a = func.length > 3 ? opacityToAlpha(to!float(func[3].text)) : 0;
-            result = Color(r, g, b, a);
-        }
-        // TODO: hsl, hsla
-        else
-        {
-            Log.fe("CSS(%s): unknown color function: %s", t.line, fn);
-            return false;
-        }
-    }
-    return true;
-}
-
-/// Decode opacity
-bool decode(SpecialCSSType t : SpecialCSSType.opacity)(const Token[] tokens, out ubyte result)
-{
-    assert(tokens.length > 0);
-
-    result = opacityToAlpha(to!float(tokens[0].text));
-    return true;
-}
-
-/// Decode seconds or milliseconds in CSS. Returns time in msecs.
-bool decode(SpecialCSSType t : SpecialCSSType.time)(const Token[] tokens, out uint result)
-{
-    assert(tokens.length > 0);
-
-    const t = tokens[0];
-    if (t.type == TokenType.dimension)
-    {
-        uint res = to!uint(t.text);
-        if (t.dimensionUnit == "s")
-            result = res * 1000;
-        else if (t.dimensionUnit == "ms")
-            result = res;
-        else
-        {
-            Log.fe("CSS(%s): unknown time dimension: %s", t.line, t.dimensionUnit);
-            return false;
-        }
-    }
-    else
-    {
-        Log.fe("CSS(%s): time must have dimension units", t.line);
+    if (tokens.length == 0)
         return false;
-    }
-    return true;
-}
-
-/// Decode name of property which is a subject of transition
-bool decode(SpecialCSSType t : SpecialCSSType.transitionProperty)(const Token[] tokens, out string result)
-{
-    assert(tokens.length > 0);
 
     const t = tokens[0];
     if (t.type == TokenType.ident)
-    {
-        result = t.text;
+        return t.text == "none";
+    if (t.type == TokenType.url)
         return true;
-    }
-    else
-    {
-        Log.fe("CSS(%s): transition property must be an identifier", t.line);
-        return false;
-    }
+    if (t.type == TokenType.func)
+        return t.text == "linear";
+    return false;
 }
 
-/// Decode transition timing function like linear or ease-in-out
-bool decode(const Token[] tokens, out TimingFunction result)
+/// True if token sequence starts with `<font-family>` value
+bool startsWithFontFamily(const Token[] tokens)
 {
-    assert(tokens.length > 0);
+    if (tokens.length == 0)
+        return false;
 
     const t = tokens[0];
     if (t.type == TokenType.ident)
     {
         switch (t.text)
         {
-        case "linear":
-            result = cast(TimingFunction)TimingFunction.linear;
-            break;
-        case "ease":
-            result = cast(TimingFunction)TimingFunction.ease;
-            break;
-        case "ease-in":
-            result = cast(TimingFunction)TimingFunction.easeIn;
-            break;
-        case "ease-out":
-            result = cast(TimingFunction)TimingFunction.easeOut;
-            break;
-        case "ease-in-out":
-            result = cast(TimingFunction)TimingFunction.easeInOut;
-            break;
-        default:
-            Log.fe("CSS(%s): unknown or unsupported transition timing function: %s", t.line, t.text);
-            return false;
+            case "sans-serif":
+            case "serif":
+            case "cursive":
+            case "fantasy":
+            case "monospace":
+            case "none":
+                return true;
+            default:
+                return false;
         }
     }
-    else
-    {
-        Log.fe("CSS(%s): transition timing function must be an identifier", t.line);
+    return false;
+}
+/// True if token sequence starts with `<font-style>` value
+bool startsWithFontStyle(const Token[] tokens)
+{
+    if (tokens.length == 0)
         return false;
+
+    const t = tokens[0];
+    if (t.type == TokenType.ident)
+        return t.text == "normal" || t.text == "italic";
+    return false;
+}
+/// True if token sequence starts with `<font-weight>` value
+bool startsWithFontWeight(const Token[] tokens)
+{
+    if (tokens.length == 0)
+        return false;
+
+    const t = tokens[0];
+    if (t.type == TokenType.ident)
+        return t.text == "lighter" || t.text == "normal" ||
+               t.text == "bold" || t.text == "bolder";
+    if (t.type == TokenType.number)
+    {
+        if (t.text.length == 3 && t.text[1 .. 3] == "00")
+        {
+            const ch = t.text[0];
+            return ch == '1' || ch == '2' || ch == '3' ||
+                   ch == '4' || ch == '5' || ch == '6' ||
+                   ch == '7' || ch == '8' || ch == '9';
+        }
     }
-    return true;
+    return false;
 }
 
-/// Decode shorthand transition property
-bool decodeTransition(const Token[] tokens, out string property, out TimingFunction func,
-    out uint duration, out uint delay)
+/// True if token sequence starts with `<text-decoration-style>` value
+bool startsWithTextDecorationStyle(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    if (!decode!(SpecialCSSType.transitionProperty)(tokens[0 .. 1], property))
+    if (tokens.length == 0)
         return false;
-    if (tokens.length > 1)
-        if (!decode!(SpecialCSSType.time)(tokens[1 .. 2], duration))
-            return false;
-    if (tokens.length > 2)
-        if (!decode(tokens[2 .. 3], func))
-            return false;
-    if (tokens.length > 3)
-        if (!decode!(SpecialCSSType.time)(tokens[3 .. 4], delay))
-            return false;
-    if (tokens.length > 4)
-        Log.fw("CSS(%s): too many values for transition", tokens[0].line);
-    return true;
+
+    const t = tokens[0];
+    if (t.type == TokenType.ident)
+    {
+        switch (t.text)
+        {
+            case "solid":
+            case "double":
+            case "dotted":
+            case "dashed":
+            case "wavy":
+                return true;
+            default:
+                return false;
+        }
+    }
+    return false;
+}
+
+/// True if token sequence starts with `<time>` value
+bool startsWithTime(const Token[] tokens)
+{
+    if (tokens.length == 0)
+        return false;
+
+    const t = tokens[0];
+    if (t.type == TokenType.dimension)
+    {
+        const u = t.dimensionUnit;
+        return u == "s" || u == "ms";
+    }
+    return false;
+}
+
+/// True if token sequence starts with identifier value
+bool startsWithIdent(const Token[] tokens)
+{
+    if (tokens.length == 0)
+        return false;
+
+    return tokens[0].type == TokenType.ident;
+}
+
+/// True if token sequence starts with `<timing-function>` value
+bool startsWithTimingFunction(const Token[] tokens)
+{
+    if (tokens.length == 0)
+        return false;
+
+    const t = tokens[0];
+    if (t.type == TokenType.ident)
+    {
+        switch (t.text)
+        {
+            case "linear":
+            case "ease":
+            case "ease-in":
+            case "ease-out":
+            case "ease-in-out":
+                return true;
+            default:
+                return false;
+        }
+    }
+    return false;
 }

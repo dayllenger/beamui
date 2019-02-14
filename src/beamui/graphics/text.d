@@ -383,6 +383,7 @@ struct TextLine
         const bool hotkeys = style.hotkey != TextHotkey.ignore;
         bool hotkeyUnderline;
         const int baseline = font.baseline;
+        const decorColor = style.decoration.color;
         const bool overline = style.decoration.line == TextDecoration.Line.overline;
         const bool lineThrough = style.decoration.line == TextDecoration.Line.lineThrough;
         const bool underline = style.decoration.line == TextDecoration.Line.underline;
@@ -467,12 +468,12 @@ struct TextLine
             // draw text decoration, if exists
             if (underline || hotkeyUnderline)
             {
-                buf.fillRect(Rect(current, underlineY, pen, underlineY + decorationHeight), style.color);
+                buf.fillRect(Rect(current, underlineY, pen, underlineY + decorationHeight), decorColor);
                 // turn off underline after hotkey
                 hotkeyUnderline = false;
             }
             if (overline)
-                buf.fillRect(Rect(current, overlineY, pen, overlineY + decorationHeight), style.color);
+                buf.fillRect(Rect(current, overlineY, pen, overlineY + decorationHeight), decorColor);
 
             GlyphRef glyph = pglyphs[i];
             if (glyph && glyph.blackBoxX && glyph.blackBoxY) // null if space or tab
@@ -485,7 +486,7 @@ struct TextLine
             }
             // line-through goes over text
             if (lineThrough)
-                buf.fillRect(Rect(current, lineThroughY, pen, lineThroughY + decorationHeight), style.color);
+                buf.fillRect(Rect(current, lineThroughY, pen, lineThroughY + decorationHeight), decorColor);
         }
         if (drawEllipsis)
             buf.drawGlyph(ellipsisPos, ellipsisY, ellipsis, style.color);

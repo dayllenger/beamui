@@ -9,6 +9,7 @@ module beamui.style.computed_style;
 import beamui.core.animations;
 import beamui.core.functions : clamp, eliminate, format;
 import beamui.core.geometry : Insets;
+import beamui.core.types : Result, Ok;
 import beamui.core.units : Length, LayoutLength;
 import beamui.graphics.colors : Color, decodeHexColor, decodeTextColor;
 import beamui.graphics.drawables : Drawable, BoxShadowDrawable;
@@ -281,10 +282,11 @@ struct ComputedStyle
         /// Set background color from string like "#5599CC" or "white"
         void backgroundColor(string colorString)
         {
-            Color value = decodeHexColor(colorString, Color.none);
-            if (value == Color.none)
-                value = decodeTextColor(colorString, Color.transparent);
-            setProperty!"backgroundColor" = value;
+            setProperty!"backgroundColor" =
+                decodeHexColor(colorString)
+                    .failed(decodeTextColor(colorString))
+                    .failed(Ok(Color.transparent))
+                    .val;
         }
         /// Background image drawable
         inout(Drawable) backgroundImage() inout { return _backgroundImage; }
@@ -389,10 +391,11 @@ struct ComputedStyle
         /// Set text color from string like "#5599CC" or "white"
         void textColor(string colorString)
         {
-            Color value = decodeHexColor(colorString, Color.none);
-            if (value == Color.none)
-                value = decodeTextColor(colorString, Color(0x0));
-            setProperty!"textColor" = value;
+            setProperty!"textColor" =
+                decodeHexColor(colorString)
+                    .failed(decodeTextColor(colorString))
+                    .failed(Ok(Color.transparent))
+                    .val;
         }
 
         /// Get color to draw focus rectangle, Color.transparent if no focus rect

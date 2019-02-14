@@ -10,7 +10,7 @@ module beamui.style.style;
 import std.variant : Variant;
 import beamui.core.animations : TimingFunction;
 import beamui.core.functions;
-import beamui.core.types : State;
+import beamui.core.types : Result, State;
 import beamui.core.units : Length;
 import CSS = beamui.css.tokenizer;
 import beamui.graphics.colors : Color;
@@ -111,15 +111,14 @@ final class Style
             // not computed yet - search in sources
             if (auto p = name in rawProperties)
             {
-                T value = void;
                 // decode and put
                 static if (specialType != SpecialCSSType.none)
-                    bool success = decode!specialType(*p, value);
+                    Result!T result = decode!specialType(*p);
                 else
-                    bool success = decode(*p, value);
-                if (success)
+                    Result!T result = decode!T(*p);
+                if (!result.err)
                 {
-                    properties[name] = Variant(value);
+                    properties[name] = Variant(result.val);
                     return (name in properties).peek!T;
                 }
                 else // skip and forget
@@ -139,15 +138,15 @@ final class Style
         const name = StrHash(sh.name);
         if (auto p = name in rawProperties)
         {
-            Color color = void;
-            Length width = void;
-            if (decodeBorder(*p, color, width))
+            if (auto res = decodeBorder(*p))
             {
-                tryToSet(sh.topWidth, Variant(width));
-                tryToSet(sh.rightWidth, Variant(width));
-                tryToSet(sh.bottomWidth, Variant(width));
-                tryToSet(sh.leftWidth, Variant(width));
-                tryToSet(sh.color, Variant(color));
+                auto color = res.val[0];
+                auto width = res.val[1];
+                tryToSetShorthandPart(sh.topWidth, width.err, Variant(width.val));
+                tryToSetShorthandPart(sh.rightWidth, width.err, Variant(width.val));
+                tryToSetShorthandPart(sh.bottomWidth, width.err, Variant(width.val));
+                tryToSetShorthandPart(sh.leftWidth, width.err, Variant(width.val));
+                tryToSetShorthandPart(sh.color, color.err, Variant(color.val));
             }
             rawProperties.remove(name);
         }
@@ -167,12 +166,12 @@ final class Style
         const name = StrHash(sh.name);
         if (auto p = name in rawProperties)
         {
-            Color color = void;
-            Drawable image = void;
-            if (decodeBackground(*p, color, image))
+            if (auto res = decodeBackground(*p))
             {
-                tryToSet(sh.color, Variant(color));
-                tryToSet(sh.image, Variant(image));
+                Result!Color color = res.val[0];
+                Result!Drawable image = res.val[1];
+                tryToSetShorthandPart(sh.color, color.err, Variant(color.val));
+                tryToSetShorthandPart(sh.image, image.err, Variant(image.val));
             }
             rawProperties.remove(name);
         }
@@ -189,14 +188,14 @@ final class Style
         const name = StrHash(sh.name);
         if (auto p = name in rawProperties)
         {
-            Length[] list = void;
-            if (decodeInsets(*p, list))
+            Length[] list = decodeInsets(*p);
+            if (list.length > 0)
             {
                 // [all], [vertical horizontal], [top horizontal bottom], [top right bottom left]
-                tryToSet(sh.top, Variant(list[0]));
-                tryToSet(sh.right, Variant(list[list.length > 1 ? 1 : 0]));
-                tryToSet(sh.bottom, Variant(list[list.length > 2 ? 2 : 0]));
-                tryToSet(sh.left, Variant(list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1]));
+                tryToSetShorthandPart(sh.top, false, Variant(list[0]));
+                tryToSetShorthandPart(sh.right, false, Variant(list[list.length > 1 ? 1 : 0]));
+                tryToSetShorthandPart(sh.bottom, false, Variant(list[list.length > 2 ? 2 : 0]));
+                tryToSetShorthandPart(sh.left, false, Variant(list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1]));
             }
             rawProperties.remove(name);
         }
@@ -215,12 +214,14 @@ final class Style
         const name = StrHash(sh.name);
         if (auto p = name in rawProperties)
         {
-            TextDecoration value = void;
-            if (decode(*p, value))
+            if (auto res = decodeTextDecoration(*p))
             {
-                tryToSet(sh.color, Variant(value.color));
-                tryToSet(sh.line, Variant(value.line));
-                tryToSet(sh.style, Variant(value.style));
+                auto line = res.val[0];
+                auto color = res.val[1];
+                auto style = res.val[2];
+                tryToSetShorthandPart(sh.line, false, Variant(line));
+                tryToSetShorthandPart(sh.color, color.err, Variant(color.val));
+                tryToSetShorthandPart(sh.style, style.err, Variant(style.val));
             }
             rawProperties.remove(name);
         }
@@ -238,16 +239,16 @@ final class Style
         const name = StrHash(sh.name);
         if (auto p = name in rawProperties)
         {
-            string prop = void;
-            TimingFunction func = void;
-            uint dur = void;
-            uint del = void;
-            if (decodeTransition(*p, prop, func, dur, del))
+            if (auto res = decodeTransition(*p))
             {
-                tryToSet(sh.property, Variant(prop));
-                tryToSet(sh.timingFunction, Variant(func));
-                tryToSet(sh.duration, Variant(dur));
-                tryToSet(sh.delay, Variant(del));
+                auto prop = res.val[0];
+                auto dur = res.val[1];
+                auto tfunc = res.val[2];
+                auto delay = res.val[3];
+                tryToSetShorthandPart(sh.property, prop.err, Variant(prop.val));
+                tryToSetShorthandPart(sh.duration, dur.err, Variant(dur.val));
+                tryToSetShorthandPart(sh.timingFunction, tfunc.err, Variant(tfunc.val));
+                tryToSetShorthandPart(sh.delay, delay.err, Variant(delay.val));
             }
             rawProperties.remove(name);
         }
@@ -261,10 +262,15 @@ final class Style
         }
     }
 
-    private void tryToSet(string name, lazy Variant v)
+    private void tryToSetShorthandPart(string name, bool initial, lazy Variant v)
     {
         const hash = StrHash(name);
-        if (hash !in rawProperties)
+        if (initial)
+        {
+            if (hash !in metaProperties)
+                metaProperties[hash] = Meta.initial;
+        }
+        else if (hash !in rawProperties)
             properties[hash] = v;
     }
 

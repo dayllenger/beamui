@@ -300,42 +300,43 @@ uint makeRGBA(T)(T r, T g, T b, T a)
 }
 
 /// Decode color string in one of formats: #RGB #ARGB #RRGGBB #AARRGGBB
-Color decodeHexColor(string s, Color defValue = Color(0x0))
+Result!Color decodeHexColor(string s)
 {
     s = strip(s);
     if (s.length != 4 && s.length != 5 && s.length != 7 && s.length != 9)
-        return defValue;
+        return Err!Color;
     if (s[0] != '#')
-        return defValue;
+        return Err!Color;
+
     uint value = 0;
     foreach (i; 1 .. s.length)
     {
-        uint digit = parseHexDigit(s[i]);
+        const digit = parseHexDigit(s[i]);
         if (digit == uint.max)
-            return defValue;
+            return Err!Color;
         value = (value << 4) | digit;
         if (s.length < 7) // double the same digit for short forms
             value = (value << 4) | digit;
     }
-    return Color(value);
+    return Ok(Color(value));
 }
 
 /// Decode named color either from `NamedColor` enum, `@null`, `none`, or `transparent`
-Color decodeTextColor(string s, Color defValue = Color(0x0))
+Result!Color decodeTextColor(string s)
 {
     s = strip(s);
     if (s == "@null" || s == "none" || s == "transparent")
-        return Color.transparent;
+        return Ok(Color.transparent);
 
     try
     {
         Color c = to!NamedColor(s);
-        return c;
+        return Ok(c);
     }
     catch (Exception e) // not a named color
     {
         debug Log.e("Unknown color value: ", s);
-        return defValue;
+        return Err!Color;
     }
 }
 

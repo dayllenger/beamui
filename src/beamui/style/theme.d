@@ -179,9 +179,8 @@ private void applyAtRule(Theme theme, const CSS.AtRule rule)
         {
             const(CSS.Token)[] tokens = p.value;
             string id = p.name;
-            Color color = void;
-            if (decode(tokens, color))
-                theme.setColor(id, color);
+            if (const res = decode!Color(tokens))
+                theme.setColor(id, res.val);
         }
     }
     else if (kw == "define-drawables")
@@ -194,15 +193,13 @@ private void applyAtRule(Theme theme, const CSS.AtRule rule)
             // color, image, or none
             if (startsWithColor(tokens))
             {
-                Color color = void;
-                if (decode(tokens, color))
-                    theme.setDrawable(id, new SolidFillDrawable(color));
+                if (const res = decode!Color(tokens))
+                    theme.setDrawable(id, new SolidFillDrawable(res.val));
             }
             else if (tokens.length > 0)
             {
-                Drawable dr = void;
-                if (decode!(SpecialCSSType.image)(tokens, dr))
-                    theme.setDrawable(id, dr);
+                if (auto res = decode!(SpecialCSSType.image)(tokens))
+                    theme.setDrawable(id, res.val);
             }
         }
     }

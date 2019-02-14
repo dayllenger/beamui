@@ -22,6 +22,32 @@ Tup!T tup(T...)(T args)
     return Tup!T(args);
 }
 
+struct Result(T)
+{
+    T val;
+    bool err = true;
+
+    bool opCast(To : bool)() const
+    {
+        return !err;
+    }
+
+    inout(Result!T) failed(T)(lazy scope Result!T fallback) inout
+    {
+        return err ? fallback : this;
+    }
+}
+
+Result!T Ok(T)(T val)
+{
+    return Result!T(val, false);
+}
+
+Result!T Err(T)(T val = T.init)
+{
+    return Result!T(val, true);
+}
+
 /// Widget state bit flags
 enum State : uint
 {
