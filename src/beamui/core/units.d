@@ -22,6 +22,7 @@ enum LengthUnit
     px,
     // relative
     em,
+    rem,
     percent
 }
 
@@ -74,6 +75,10 @@ struct Length
     {
         return Length(value, LengthUnit.em);
     }
+    static Length rem(float value)
+    {
+        return Length(value, LengthUnit.rem);
+    }
     static Length percent(float value)
     {
         return Length(value, LengthUnit.percent);
@@ -82,6 +87,11 @@ struct Length
     bool is_em() const
     {
         return type == LengthUnit.em;
+    }
+
+    bool is_rem() const
+    {
+        return type == LengthUnit.rem;
     }
 
     bool is_percent() const
@@ -100,6 +110,7 @@ struct Length
             case device:  return cast(int) value;
             case px:      return cast(int)(value * devicePixelRatio);
             case em:
+            case rem:
             case percent: return cast(int)(value * 100);
             case cm:      return cast(int)(value * screenDPI / 2.54);
             case mm:      return cast(int)(value * screenDPI / 25.4);
@@ -118,7 +129,8 @@ struct Length
         {
             case device:  return LayoutLength(value / devicePixelRatio);
             case px:      return LayoutLength(value);
-            case em:      return LayoutLength.percent(value * 100);
+            case em:
+            case rem:     return LayoutLength.percent(value * 100);
             case percent: return LayoutLength.percent(value);
             case cm:      return LayoutLength(value * dipsPerInch / 2.54);
             case mm:      return LayoutLength(value * dipsPerInch / 25.4);
@@ -175,6 +187,8 @@ struct Length
             type = LengthUnit.px;
         else if (unit == "em")
             type = LengthUnit.em;
+        else if (unit == "rem")
+            type = LengthUnit.rem;
         else if (unit == "%")
             type = LengthUnit.percent;
         else

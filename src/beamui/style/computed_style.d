@@ -19,6 +19,8 @@ import beamui.style.types;
 import beamui.widgets.widget : Widget;
 debug (styles) import beamui.core.logger;
 
+/// Enumeration of all supported style properties. NOTE: DON'T use `case .. case` slices on them,
+/// because order may be changed in the future.
 enum StyleProperty
 {
     // layout
@@ -45,7 +47,6 @@ enum StyleProperty
     rowSpacing,
     columnSpacing,
     // background
-    borderColor,
     backgroundColor,
     backgroundImage,
     boxShadow,
@@ -56,7 +57,6 @@ enum StyleProperty
     fontStyle,
     fontWeight,
     textAlign,
-    textDecorationColor,
     textDecorationLine,
     textDecorationStyle,
     textHotkey,
@@ -66,6 +66,9 @@ enum StyleProperty
     alpha,
     textColor,
     focusRectColor,
+    // depend on text color
+    borderColor,
+    textDecorationColor,
     // transitions and animations
     transitionProperty,
     transitionTimingFunction,
@@ -73,7 +76,7 @@ enum StyleProperty
     transitionDelay,
 }
 
-/// Provides default style values
+/// Provides default style values for most of properties
 private static ComputedStyle defaults;
 
 struct ComputedStyle
@@ -309,17 +312,20 @@ struct ComputedStyle
         {
             const Length fs = _fontSize;
             const Widget p = widget.parent;
-            if ((!p || isolated) && (fs.is_em || fs.is_percent))
-                return 12;
+            const int def = FontManager.defaultFontSize;
+            if (!fs.is_rem && (!p || isolated) && (fs.is_em || fs.is_percent))
+                return def;
             const LayoutLength ll = fs.toLayout;
-            return ll.applyPercent(p ? p.style.fontSize : 12);
+            const int base = p && !fs.is_rem ? p.style.fontSize : def;
+            return ll.applyPercent(base);
         }
         /// ditto
         void fontSize(Length value)
         {
-            if (value == Length.none)
-                value = Length.px(12);
-            setProperty!"fontSize" = value;
+            if (value != Length.none)
+                setProperty!"fontSize" = value;
+            else
+                setDefault!"fontSize"(true);
         }
         /// ditto
         void fontSize(int size) { fontSize = Length.px(size); }
@@ -430,18 +436,16 @@ struct ComputedStyle
         int _rowSpacing = 6;
         int _columnSpacing = 6;
         // background
-        Color _borderColor = Color.transparent;
         Color _backgroundColor = Color.transparent;
         Drawable _backgroundImage;
         BoxShadowDrawable _boxShadow;
         // text
         string _fontFace = "Arial";
         FontFamily _fontFamily = FontFamily.sans_serif;
-        Length _fontSize = Length.px(12);
+        Length _fontSize = Length.rem(1);
         FontStyle _fontStyle = FontStyle.normal;
         ushort _fontWeight = 400;
         TextAlign _textAlign = TextAlign.start;
-        Color _textDecorationColor = Color(0x000000);
         TextDecoration.Line _textDecorationLine = TextDecoration.Line.none;
         TextDecoration.Style _textDecorationStyle = TextDecoration.Style.solid;
         TextHotkey _textHotkey = TextHotkey.ignore;
@@ -451,6 +455,9 @@ struct ComputedStyle
         ubyte _alpha = 0;
         Color _textColor = Color(0x000000);
         Color _focusRectColor = Color.transparent;
+        // depend on text color
+        Color _borderColor = Color.transparent;
+        Color _textDecorationColor = Color(0x000000);
         // transitions and animations
         string _transitionProperty;
         TimingFunction _transitionTimingFunction;
@@ -469,16 +476,27 @@ struct ComputedStyle
     private LayoutLength applyEM(Length value) const
     {
         const LayoutLength ll = value.toLayout;
-        if (value.is_em)
+        if (value.is_rem)
+        {
+            const int def = FontManager.defaultFontSize;
+            return LayoutLength(ll.applyPercent(def));
+        }
+        else if (value.is_em)
             return LayoutLength(ll.applyPercent(fontSize));
         else
             return ll;
     }
 
+    /// ...without percent
     private int applyOnlyEM(Length value) const
     {
         const LayoutLength ll = value.toLayout;
-        if (value.is_em)
+        if (value.is_rem)
+        {
+            const int def = FontManager.defaultFontSize;
+            return ll.applyPercent(def);
+        }
+        else if (value.is_em)
             return ll.applyPercent(fontSize);
         else
             return ll.applyPercent(0);
@@ -499,7 +517,7 @@ struct ComputedStyle
             static foreach (name; __traits(allMembers, StyleProperty))
             {
                 case mixin(`StyleProperty.` ~ name):
-                    setProperty!name = mixin(`defaults._` ~ name); // set by user
+                    setDefault!name(true); // set by user
                     return;
             }
         }
@@ -558,7 +576,7 @@ struct ComputedStyle
                     }
                     if (st.isInitial(cssname))
                     {
-                        setProperty!name(mixin(`defaults._` ~ name), false);
+                        setDefault!name(false);
                         setInStyles = true;
                         break;
                     }
@@ -583,12 +601,12 @@ struct ComputedStyle
                 if (canInherit)
                     setProperty!name(mixin(`parent.style._` ~ name), false);
                 else
-                    setProperty!name(mixin(`defaults._` ~ name), false);
+                    setDefault!name(false);
             }
             else if (noValue)
             {
                 // if nothing there - return value to defaults
-                setProperty!name(mixin(`defaults._` ~ name), false);
+                setDefault!name(false);
             }
         }}
 
@@ -636,6 +654,26 @@ struct ComputedStyle
             return property == "background-color";
 
         return false;
+    }
+
+    private void setDefault(string name)(bool byUser)
+    {
+        enum ptype = mixin(`StyleProperty.` ~ name);
+
+        static if (ptype == StyleProperty.borderColor || ptype == StyleProperty.textDecorationColor)
+        {
+            // must be computed before
+            setProperty!name(_textColor, byUser);
+        }
+        else static if (ptype == StyleProperty.fontSize)
+        {
+            const int def = FontManager.defaultFontSize;
+            setProperty!name(Length.px(def), byUser);
+        }
+        else
+        {
+            setProperty!name(mixin(`defaults._` ~ name), byUser);
+        }
     }
 
     /// Set a property value, taking transitions into account
@@ -732,10 +770,10 @@ string getCSSName(StyleProperty ptype)
         case fontWeight: return "font-weight";
         case textAlign:  return "text-align";
         case textDecorationColor: return "text-decoration-color";
-        case textDecorationLine: return "text-decoration-line";
+        case textDecorationLine:  return "text-decoration-line";
         case textDecorationStyle: return "text-decoration-style";
-        case textHotkey: return "text-hotkey";
-        case textOverflow: return "text-overflow";
+        case textHotkey:    return "text-hotkey";
+        case textOverflow:  return "text-overflow";
         case textTransform: return "text-transform";
         case alpha:      return "opacity";
         case textColor:  return "color";
@@ -767,7 +805,9 @@ bool isAnimatable(StyleProperty ptype)
     switch (ptype) with (StyleProperty)
     {
         case width: .. case marginLeft:
-        case spacing: .. case columnSpacing:
+        case spacing:
+        case rowSpacing:
+        case columnSpacing:
         case borderColor:
         case backgroundColor:
         case textDecorationColor:

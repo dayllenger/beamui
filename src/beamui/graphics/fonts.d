@@ -664,6 +664,8 @@ struct FontFaceProps
     FontFamily family;
 }
 
+enum int MAX_ALLOWED_FONT_SIZE = 512;
+
 /// Access points to fonts.
 class FontManager
 {
@@ -682,11 +684,28 @@ class FontManager
             _instance = manager;
         }
 
+        /** Default font size for application, in device-independent pixels.
+
+            Used as fallback, and also represents `1rem` CSS length. 12 pixels initially.
+        */
+        int defaultFontSize() { return _defaultFontSize; }
+        /// ditto
+        void defaultFontSize(int size)
+        {
+            size = clamp(size, 1, MAX_ALLOWED_FONT_SIZE);
+            if (_defaultFontSize != size)
+            {
+                _defaultFontSize = size;
+                // TODO: update!
+            }
+        }
+
         /// Min font size for antialiased fonts (0 means antialiasing always on, some big value = always off)
         int minAntialiasedFontSize() { return _minAntialiasedFontSize; }
         /// ditto
         void minAntialiasedFontSize(int size)
         {
+            size = clamp(size, 1, MAX_ALLOWED_FONT_SIZE);
             if (_minAntialiasedFontSize != size)
             {
                 _minAntialiasedFontSize = size;
@@ -736,6 +755,7 @@ class FontManager
     private static __gshared
     {
         FontManager _instance;
+        int _defaultFontSize = 12;
         int _minAntialiasedFontSize = DEF_MIN_ANTIALIASED_FONT_SIZE;
         HintingMode _hintingMode = HintingMode.normal;
         SubpixelRenderingMode _subpixelRenderingMode = SubpixelRenderingMode.none;

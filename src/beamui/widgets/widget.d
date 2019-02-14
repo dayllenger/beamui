@@ -732,12 +732,17 @@ public:
         case textTransform:
             requestLayout();
             break;
-        case borderColor: .. case boxShadow:
+        case borderColor:
+        case backgroundColor:
+        case backgroundImage:
+        case boxShadow:
         case textAlign:
         case textDecorationColor:
         case textDecorationLine:
         case textDecorationStyle:
-        case alpha: .. case focusRectColor:
+        case alpha:
+        case textColor:
+        case focusRectColor:
             invalidate();
             break;
         case fontFace: .. case fontWeight:
