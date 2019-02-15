@@ -583,7 +583,8 @@ struct ComputedStyle
                         setInStyles = true;
                         break;
                     }
-                    if (auto p = st.peek!(T, specialCSSType)(cssname))
+                    // get value here, also pass predicate that checks sanity of value
+                    if (auto p = st.peek!(T, specialCSSType)(cssname, &sanitizeProperty!(ptype, T)))
                     {
                         setProperty!name(*p, false);
                         setInStyles = true;
@@ -630,6 +631,35 @@ struct ComputedStyle
     private void overrideProperty(StyleProperty ptype)
     {
         bts(overridenBitArray.ptr, ptype);
+    }
+
+    /// Checks bounds, like disallowed negative values
+    private bool sanitizeProperty(StyleProperty ptype, T)(ref const(T) value)
+    {
+        with (StyleProperty)
+        {
+            static if (ptype == fontSize)
+                return value.toLayout.applyPercent(100) >= 1;
+            else static if (
+                ptype == width ||
+                ptype == height ||
+                ptype == minWidth ||
+                ptype == maxWidth ||
+                ptype == minHeight ||
+                ptype == maxHeight ||
+                ptype == paddingTop ||
+                ptype == paddingRight ||
+                ptype == paddingBottom ||
+                ptype == paddingLeft ||
+                ptype == borderTopWidth ||
+                ptype == borderRightWidth ||
+                ptype == borderBottomWidth ||
+                ptype == borderLeftWidth
+            )
+                return value.toLayout.applyPercent(100) >= 0;
+            else
+                return true;
+        }
     }
 
     /// Check whether the style can make transition for a CSS property

@@ -65,8 +65,8 @@ struct Token
     TokenType type;
     string text;
     string dimensionUnit;
-    bool typeFlagID;
-    bool typeFlagInteger;
+    bool id;
+    bool integer;
     dchar[2] unicodeRange;
     size_t line;
 
@@ -81,11 +81,11 @@ struct Token
         this.text = text;
     }
 
-    this(TokenType type, string repr, bool typeFlagInteger)
+    this(TokenType type, string repr, bool integer)
     {
         this.type = type;
         this.text = repr;
-        this.typeFlagInteger = typeFlagInteger;
+        this.integer = integer;
     }
 
     this(TokenType type, dchar unicodeStart, dchar unicodeEnd)
@@ -261,7 +261,7 @@ private struct Tokenizer
             {
                 auto t = Token(TokenType.hash);
                 if (startsWithIdent())
-                    t.typeFlagID = true;
+                    t.id = true;
                 t.text = consumeName();
                 return t;
             }
@@ -763,6 +763,7 @@ unittest
             'str1' "str2"
             -moz-what: 1.23px 0.75em /* the comment */
             @keyword U+140?! -.234e+5;
+            color:   #fe5
             url(  'stuff.css')
             url(bad url);
             url('apparently, \
@@ -781,7 +782,7 @@ good'
     Token t = next;
     assert(t.type == TokenType.hash);
     assert(t.text == "id");
-    assert(t.typeFlagID == true);
+    assert(t.id);
     assert(next == Token(TokenType.openSquare));
     assert(next == Token(TokenType.substringMatch));
     assert(next == Token(TokenType.number, "12345", true));
@@ -801,13 +802,13 @@ good'
     t = next;
     assert(t.type == TokenType.dimension);
     assert(t.text == "1.23");
-    assert(t.typeFlagInteger == false);
+    assert(!t.integer);
     assert(t.dimensionUnit == "px");
     assert(next == Token(TokenType.whitespace));
     t = next;
     assert(t.type == TokenType.dimension);
     assert(t.text == "0.75");
-    assert(t.typeFlagInteger == false);
+    assert(!t.integer);
     assert(t.dimensionUnit == "em");
     assert(next == Token(TokenType.whitespace));
     assert(next == Token(TokenType.whitespace));
@@ -819,6 +820,14 @@ good'
     assert(next == Token(TokenType.whitespace));
     assert(next == Token(TokenType.number, "-.234e+5", false));
     assert(next == Token(TokenType.semicolon));
+    assert(next == Token(TokenType.whitespace));
+
+    assert(next == Token(TokenType.ident, "color"));
+    assert(next == Token(TokenType.colon));
+    assert(next == Token(TokenType.whitespace));
+    t = next;
+    assert(t.type == TokenType.hash);
+    assert(t.text == "fe5");
     assert(next == Token(TokenType.whitespace));
 
     assert(next == Token(TokenType.url, "stuff.css"));

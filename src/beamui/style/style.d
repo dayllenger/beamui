@@ -99,7 +99,8 @@ final class Style
     }
 
     /// Try to find a property in this style by exact type and CSS name hash
-    T* peek(T, SpecialCSSType specialType = SpecialCSSType.none)(StrHash name)
+    T* peek(T, SpecialCSSType specialType = SpecialCSSType.none)(StrHash name,
+        scope bool delegate(ref const(T)) sanitizer)
     {
         if (auto p = name in properties)
         {
@@ -118,6 +119,12 @@ final class Style
                     Result!T result = decode!T(*p);
                 if (!result.err)
                 {
+                    if (sanitizer && !sanitizer(result.val))
+                    {
+                        logInvalidValue(*p);
+                        rawProperties.remove(name);
+                        return null;
+                    }
                     properties[name] = Variant(result.val);
                     return (name in properties).peek!T;
                 }

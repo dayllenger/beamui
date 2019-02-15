@@ -22,7 +22,14 @@ import beamui.graphics.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.graphics.text;
 import beamui.style.types;
 
-/// Decode integer property
+void logInvalidValue(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    Log.fe("CSS(%s): invalid value", tokens[0].line);
+}
+
+/// Decode <integer> value
 Result!int decode(T : int)(const Token[] tokens)
 {
     assert(tokens.length > 0);
@@ -30,16 +37,34 @@ Result!int decode(T : int)(const Token[] tokens)
     const t = tokens[0];
     if (t.type == TokenType.number)
     {
-        if (t.typeFlagInteger)
+        if (t.integer)
         {
             int v = assertNotThrown(to!int(t.text));
             return Ok(v);
         }
         else
         {
-            Log.fe("CSS(%s): expected integer, got floating", t.line);
+            Log.fe("CSS(%s): expected integer, got real", t.line);
             return Err(0);
         }
+    }
+    else
+    {
+        Log.fe("CSS(%s): expected number, not '%s'", t.line, t.type);
+        return Err(0);
+    }
+}
+
+/// Decode <number> (real) value
+Result!float decode(T : float)(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const t = tokens[0];
+    if (t.type == TokenType.number)
+    {
+        float v = assertNotThrown(to!float(t.text));
+        return Ok(v);
     }
     else
     {

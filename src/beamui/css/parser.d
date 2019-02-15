@@ -330,7 +330,7 @@ struct Parser
                 entries ~= SelectorEntry(SelectorEntryType.element, t.text);
                 r.popFront();
             }
-            else if (t.type == hash && t.typeFlagID) // id
+            else if (t.type == hash && t.id) // id
             {
                 entries ~= SelectorEntry(SelectorEntryType.id, t.text);
                 r.popFront();
