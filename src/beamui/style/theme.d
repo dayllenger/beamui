@@ -128,7 +128,6 @@ Theme loadTheme(string name)
     import beamui.graphics.resources;
 
     string filename = resourceList.getPathByID((BACKEND_CONSOLE ? "console_" ~ name : name) ~ ".css");
-
     if (!filename)
         return null;
 
@@ -165,15 +164,47 @@ private void loadThemeFromCSS(Theme theme, const CSS.StyleSheet stylesheet)
     }
 }
 
+private void importStyleSheet(Theme theme, string resourceID)
+{
+    import beamui.graphics.resources;
+
+    if (!resourceID)
+        return;
+    if (!resourceID.endsWith(".css"))
+        resourceID ~= ".css";
+    string filename = resourceList.getPathByID(resourceID);
+    if (!filename)
+        return;
+    string src = cast(string)loadResourceBytes(filename);
+    if (!src)
+        return;
+    const stylesheet = CSS.createStyleSheet(src);
+    loadThemeFromCSS(theme, stylesheet);
+}
+
 private void applyAtRule(Theme theme, const CSS.AtRule rule)
 {
     import beamui.style.decode_css;
 
     const kw = rule.keyword;
     const ps = rule.properties;
-    assert(ps.length > 0);
 
-    if (kw == "define-colors")
+    if (kw == "import")
+    {
+        if (rule.content.length > 0)
+        {
+            const t = rule.content[0];
+            if (t.type == CSS.TokenType.url)
+                importStyleSheet(theme, t.text);
+            else
+                Log.e("CSS: in @import only 'url(resource-id)' is allowed for now");
+        }
+        else
+            Log.e("CSS: empty @import");
+        if (ps.length > 0)
+            Log.w("CSS: @import cannot have properties");
+    }
+    else if (kw == "define-colors")
     {
         foreach (p; ps)
         {
@@ -182,6 +213,8 @@ private void applyAtRule(Theme theme, const CSS.AtRule rule)
             if (const res = decode!Color(tokens))
                 theme.setColor(id, res.val);
         }
+        if (ps.length == 0)
+            Log.w("CSS: empty @define-colors block");
     }
     else if (kw == "define-drawables")
     {
@@ -202,6 +235,8 @@ private void applyAtRule(Theme theme, const CSS.AtRule rule)
                     theme.setDrawable(id, res.val);
             }
         }
+        if (ps.length == 0)
+            Log.w("CSS: empty @define-drawables block");
     }
     else
         Log.w("CSS: unknown at-rule keyword: ", kw);

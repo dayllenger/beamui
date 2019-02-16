@@ -149,9 +149,8 @@ struct Parser
         enum Null = Nullable!AtRule.init;
 
         auto rule = AtRule(r.front.text);
+        const line = r.line;
         r.popFront();
-        if (r.empty)
-            return Null;
 
         Token[] list;
         while (true) with (TokenType)
@@ -166,6 +165,8 @@ struct Parser
             {
                 // consume block
                 rule.properties = consumeDeclarationList();
+                if (rule.properties.length == 0)
+                    emitError("empty @" ~ rule.keyword ~ " block", t.line);
                 break;
             }
             if (t.type == semicolon)
@@ -179,7 +180,10 @@ struct Parser
         if (rule.content.length > 0 || rule.properties.length > 0)
             return nullable(rule);
         else
+        {
+            emitError("empty @" ~ rule.keyword ~ " rule, skipping", line);
             return Null;
+        }
     }
 
     Nullable!RuleSet consumeQualifiedRule()
