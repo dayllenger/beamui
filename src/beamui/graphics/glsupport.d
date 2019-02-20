@@ -12,16 +12,14 @@ module beamui.graphics.glsupport;
 import beamui.core.config;
 
 static if (USE_OPENGL):
-import std.array;
-import std.conv;
-import std.string;
-import beamui.core.functions;
-import beamui.core.geometry;
+import beamui.core.functions : eliminate;
+import beamui.core.geometry : Point, Rect;
 import beamui.core.logger;
 import beamui.core.math3d;
 import beamui.graphics.colors : Color;
 import beamui.graphics.gl.errors;
 import beamui.graphics.gl.objects;
+import beamui.graphics.gl.program;
 package(beamui) import beamui.graphics.gl.objects : glNoContext;
 
 version (Android)
@@ -67,195 +65,9 @@ else
     }
 }
 
-/// Base class for GUI shader programs
-class GLProgram
-{
-    abstract @property string vertexSource();
-    abstract @property string fragmentSource();
-    protected GLuint program;
-    protected bool initialized;
-    protected bool error;
-
-    private GLuint vertexShader;
-    private GLuint fragmentShader;
-    private string glslversion;
-    private int glslversionInt;
-    private char[] glslversionString;
-
-    private void compatibilityFixes(ref char[] code, GLuint type)
-    {
-        if (glslversionInt < 150)
-            code = replace(code, " texture(", " texture2D(");
-        if (glslversionInt < 140)
-        {
-            if (type == GL_VERTEX_SHADER)
-            {
-                code = replace(code, "in ", "attribute ");
-                code = replace(code, "out ", "varying ");
-            }
-            else
-            {
-                code = replace(code, "in ", "varying ");
-                code = replace(code, "out vec4 outColor;", "");
-                code = replace(code, "outColor", "gl_FragColor");
-            }
-        }
-    }
-
-    private GLuint compileShader(string src, GLuint type)
-    {
-        import std.string : toStringz, fromStringz;
-
-        char[] sourceCode;
-        if (glslversionString.length)
-        {
-            sourceCode ~= "#version ";
-            sourceCode ~= glslversionString;
-            sourceCode ~= "\n";
-        }
-        sourceCode ~= src;
-        compatibilityFixes(sourceCode, type);
-
-        Log.d("compileShader: glslVersion = ", glslversion, ", type: ", (type == GL_VERTEX_SHADER ?
-                "GL_VERTEX_SHADER" : (type == GL_FRAGMENT_SHADER ? "GL_FRAGMENT_SHADER" : "UNKNOWN")));
-        //Log.v("Shader code:\n", sourceCode);
-        GLuint shader = checkgl!glCreateShader(type);
-        const char* psrc = sourceCode.toStringz;
-        checkgl!glShaderSource(shader, 1, &psrc, null);
-        checkgl!glCompileShader(shader);
-        GLint compiled;
-        checkgl!glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-        if (compiled)
-        {
-            // compiled successfully
-            return shader;
-        }
-        else
-        {
-            Log.e("Failed to compile shader source:\n", sourceCode);
-            GLint blen = 0;
-            GLsizei slen = 0;
-            checkgl!glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &blen);
-            if (blen > 1)
-            {
-                GLchar[] msg = new GLchar[blen + 1];
-                checkgl!glGetShaderInfoLog(shader, blen, &slen, msg.ptr);
-                Log.e("Shader compilation error: ", fromStringz(msg.ptr));
-            }
-            return 0;
-        }
-    }
-
-    bool compile()
-    {
-        glslversion = checkgl!fromStringz(cast(const char*)glGetString(GL_SHADING_LANGUAGE_VERSION)).dup;
-        glslversionString.length = 0;
-        glslversionInt = 0;
-        foreach (ch; glslversion)
-        {
-            if (ch >= '0' && ch <= '9')
-            {
-                glslversionString ~= ch;
-                glslversionInt = glslversionInt * 10 + (ch - '0');
-            }
-            else if (ch != '.')
-                break;
-        }
-        version (Android)
-        {
-            glslversionInt = 130;
-        }
-
-        vertexShader = compileShader(vertexSource, GL_VERTEX_SHADER);
-        fragmentShader = compileShader(fragmentSource, GL_FRAGMENT_SHADER);
-        if (!vertexShader || !fragmentShader)
-        {
-            error = true;
-            return false;
-        }
-        program = checkgl!glCreateProgram();
-        checkgl!glAttachShader(program, vertexShader);
-        checkgl!glAttachShader(program, fragmentShader);
-        checkgl!glLinkProgram(program);
-        GLint isLinked = 0;
-        checkgl!glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
-        if (!isLinked)
-        {
-            GLint maxLength = 0;
-            checkgl!glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
-            GLchar[] msg = new GLchar[maxLength + 1];
-            checkgl!glGetProgramInfoLog(program, maxLength, &maxLength, msg.ptr);
-            Log.e("Error while linking program: ", fromStringz(msg.ptr));
-            error = true;
-            return false;
-        }
-        Log.d("Program linked successfully");
-
-        if (!initLocations())
-        {
-            Log.e("some of locations were not found");
-            error = true;
-        }
-        initialized = true;
-        Log.v("Program is initialized successfully");
-        return !error;
-    }
-
-    /// Override to init shader code locations
-    abstract bool initLocations();
-
-    ~this()
-    {
-        if (program)
-            glDeleteProgram(program);
-        if (vertexShader)
-            glDeleteShader(vertexShader);
-        if (fragmentShader)
-            glDeleteShader(fragmentShader);
-        program = vertexShader = fragmentShader = 0;
-        initialized = false;
-    }
-
-    /// Returns true if program is ready for use
-    bool check()
-    {
-        return !error && initialized;
-    }
-
-    static GLuint currentProgram;
-    /// Binds program to current context
-    void bind()
-    {
-        if (program != currentProgram)
-        {
-            checkgl!glUseProgram(program);
-            currentProgram = program;
-        }
-    }
-
-    /// Unbinds program from current context
-    static void unbind()
-    {
-        checkgl!glUseProgram(0);
-        currentProgram = 0;
-    }
-
-    /// Get uniform location from program, returns -1 if location is not found
-    int getUniformLocation(string variableName)
-    {
-        return checkgl!glGetUniformLocation(program, variableName.toStringz);
-    }
-
-    /// Get attribute location from program, returns -1 if location is not found
-    int getAttribLocation(string variableName)
-    {
-        return checkgl!glGetAttribLocation(program, variableName.toStringz);
-    }
-}
-
 class SolidFillProgram : GLProgram
 {
-    override @property string vertexSource()
+    override @property string vertexSource() const
     {
         return q{
             in vec3 vertexPosition;
@@ -271,7 +83,7 @@ class SolidFillProgram : GLProgram
         };
     }
 
-    override @property string fragmentSource()
+    override @property string fragmentSource() const
     {
         return q{
             in vec4 color;
@@ -337,7 +149,7 @@ class SolidFillProgram : GLProgram
 
 class TextureProgram : SolidFillProgram
 {
-    override @property string vertexSource()
+    override @property string vertexSource() const
     {
         return q{
             in vec3 vertexPosition;
@@ -356,7 +168,7 @@ class TextureProgram : SolidFillProgram
         };
     }
 
-    override @property string fragmentSource()
+    override @property string fragmentSource() const
     {
         return q{
             in vec4 color;
@@ -711,12 +523,10 @@ private final class NormalGLBackend : GLBackend
     {
         Log.v("Compiling solid fill program");
         _solidFillProgram = new SolidFillProgram;
-        _solidFillProgram.compile();
         if (!_solidFillProgram.check())
             return false;
         Log.v("Compiling texture program");
         _textureProgram = new TextureProgram;
-        _textureProgram.compile();
         if (!_textureProgram.check())
             return false;
         return true;
