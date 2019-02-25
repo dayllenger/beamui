@@ -47,11 +47,11 @@ public
     import beamui.dialogs.settingsdialog;
     import beamui.graphics.colors;
     import beamui.graphics.drawbuf;
-    import beamui.graphics.fonts;
     import beamui.graphics.images;
     import beamui.graphics.resources;
-    import beamui.graphics.text : TextAlign, TextDecoration, TextHotkey, TextOverflow, TextTransform;
     import beamui.style.theme;
+    import beamui.text.fonts;
+    import beamui.text.style;
     import beamui.widgets.appframe;
     import beamui.widgets.charts;
     import beamui.widgets.combobox;

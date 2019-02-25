@@ -8,8 +8,6 @@ Authors:   Vadim Lopatin
 module beamui.widgets.srcedit;
 
 import beamui.core.units;
-import beamui.graphics.colors;
-import beamui.graphics.fonts;
 import beamui.widgets.editors;
 import beamui.widgets.menu;
 import beamui.widgets.popup;

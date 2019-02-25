@@ -9,6 +9,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.platforms.common.platform;
 
+public import beamui.graphics.drawables : imageCache;
+public import beamui.widgets.widget : CursorType, Widget;
 import beamui.core.animations;
 import beamui.core.asyncsocket;
 import beamui.core.stdaction;

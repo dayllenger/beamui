@@ -10,14 +10,15 @@ module beamui.platforms.ansi_console.consoleapp;
 import beamui.core.config;
 
 static if (BACKEND_ANSI_CONSOLE):
+import beamui.core.events;
 import beamui.core.logger;
+import beamui.graphics.colors : Color;
+import beamui.graphics.drawables : ConsoleDrawBuf;
 import beamui.graphics.drawbuf;
-import beamui.graphics.fonts;
 import beamui.platforms.ansi_console.consolefont;
 import beamui.platforms.ansi_console.dconsole;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
-import beamui.widgets.widget;
 
 class ConsoleWindow : Window
 {

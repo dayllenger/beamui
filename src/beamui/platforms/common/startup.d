@@ -9,8 +9,8 @@ module beamui.platforms.common.startup;
 
 import beamui.core.config;
 import beamui.core.logger;
-import beamui.graphics.fonts;
 import beamui.graphics.resources;
+import beamui.text.fonts;
 
 static if (BACKEND_GUI)
 {
@@ -30,7 +30,7 @@ static if (BACKEND_GUI)
             try
             {
                 import core.sys.windows.shlobj;
-                import beamui.graphics.ftfonts;
+                import beamui.text.ftfonts;
 
                 Log.v("Trying to init FreeType font manager");
 
@@ -279,7 +279,7 @@ static if (BACKEND_GUI)
     }
     else
     {
-        import beamui.graphics.ftfonts;
+        import beamui.text.ftfonts;
 
         bool registerFonts(FreeTypeFontManager ft, string path)
         {
@@ -546,8 +546,8 @@ void initLogs()
 /// Call this on application initialization
 void initResourceManagers()
 {
-    import beamui.graphics.fonts;
     import beamui.graphics.resources;
+    import beamui.text.fonts;
 
     Log.d("Initializing resource managers");
 
@@ -557,7 +557,7 @@ void initResourceManagers()
     _gamma256 = new glyph_gamma_table!256(1.0);
     static if (USE_FREETYPE)
     {
-        import beamui.graphics.ftfonts;
+        import beamui.text.ftfonts;
 
         STD_FONT_FACES = ["Arial" : 12, "Times New Roman" : 12, "Courier New" : 10, "DejaVu Serif" : 10,
             "DejaVu Sans" : 10, "DejaVu Sans Mono" : 10, "Liberation Serif" : 11, "Liberation Sans" : 11,
@@ -658,7 +658,7 @@ void releaseResourcesOnAppExit()
         }
         static if (USE_FREETYPE)
         {
-            import beamui.graphics.ftfonts;
+            import beamui.text.ftfonts;
 
             if (FreeTypeFontFile.instanceCount > 0)
             {

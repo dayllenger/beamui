@@ -15,9 +15,9 @@ import beamui.core.units : Length;
 import CSS = beamui.css.tokenizer;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawables : Drawable;
-import beamui.graphics.text : TextDecoration;
 import beamui.style.decode_css;
 import beamui.style.types;
+import beamui.text.style : TextDecoration;
 
 /// Holds string hash and can compute it at compile time for faster CSS name lookup
 struct StrHash

@@ -13,10 +13,10 @@ import beamui.core.types : Result, Ok;
 import beamui.core.units : Length, LayoutLength;
 import beamui.graphics.colors : Color, decodeHexColor, decodeTextColor;
 import beamui.graphics.drawables : Drawable, BoxShadowDrawable;
-import beamui.graphics.fonts;
-import beamui.graphics.text;
 import beamui.style.style;
 import beamui.style.types;
+import beamui.text.fonts;
+import beamui.text.style;
 import beamui.widgets.widget : Widget;
 debug (styles) import beamui.core.logger;
 

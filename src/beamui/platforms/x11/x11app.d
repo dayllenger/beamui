@@ -22,10 +22,10 @@ import x11.Xtos;
 import x11.Xutil;
 import beamui.core.events;
 import beamui.core.files;
-import beamui.core.functions : toUTF8;
+import beamui.core.functions : eliminate, toUTF8;
 import beamui.core.logger;
+import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
-import beamui.widgets.widget;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 static if (USE_OPENGL)

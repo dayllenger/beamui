@@ -18,9 +18,9 @@ import beamui.core.units;
 import beamui.css.tokenizer : Token, TokenType;
 import beamui.graphics.colors;
 import beamui.graphics.drawables;
-import beamui.graphics.fonts : FontFamily, FontStyle, FontWeight;
-import beamui.graphics.text;
 import beamui.style.types;
+import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
+import beamui.text.style;
 
 void logInvalidValue(const Token[] tokens)
 {

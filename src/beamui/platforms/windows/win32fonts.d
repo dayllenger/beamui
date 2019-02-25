@@ -19,8 +19,8 @@ import core.sys.windows.windows;
 import std.string;
 import std.utf;
 import beamui.core.logger;
-import beamui.graphics.fonts;
 import beamui.platforms.windows.win32drawbuf;
+import beamui.text.fonts;
 
 private struct FontDef
 {

@@ -10,21 +10,21 @@ module beamui.platforms.sdl.sdlapp;
 import beamui.core.config;
 
 static if (BACKEND_SDL):
-import core.runtime;
 import std.file;
 import std.stdio;
 import std.string;
 import std.utf : toUTF32, toUTF16z;
 import bindbc.sdl;
 import beamui.core.events;
+import beamui.core.functions;
 import beamui.core.logger;
+import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
-import beamui.graphics.fonts;
-import beamui.graphics.ftfonts;
 import beamui.graphics.resources;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
-import beamui.widgets.widget;
+import beamui.text.fonts;
+import beamui.text.ftfonts;
 static if (USE_OPENGL)
 {
     import beamui.graphics.glsupport;

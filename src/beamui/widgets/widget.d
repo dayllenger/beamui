@@ -31,19 +31,20 @@ public
     import beamui.graphics.colors;
     import beamui.graphics.drawables;
     import beamui.graphics.drawbuf;
-    import beamui.graphics.fonts;
 
     import beamui.style.theme : currentTheme;
     import beamui.style.types;
+
+    import beamui.text.fonts;
 
     import beamui.widgets.popup : PopupAlign;
 }
 package import beamui.style.computed_style;
 import std.string : capitalize;
 import beamui.core.animations;
-import beamui.graphics.text : TextHotkey;
 import beamui.platforms.common.platform;
 import beamui.style.style;
+import beamui.text.style : TextHotkey;
 import beamui.widgets.menu;
 
 /// Widget visibility

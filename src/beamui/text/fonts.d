@@ -8,7 +8,7 @@ FontManager - base class for font managers - provides access to available fonts.
 
 Actual implementations are:
 
-beamui.graphics.ftfonts - FreeType based font manager.
+beamui.text.ftfonts - FreeType based font manager.
 
 beamui.platforms.ansi_console.consolefont - console font manager (with single font).
 
@@ -33,7 +33,7 @@ Copyright: Vadim Lopatin 2014-2017, dayllenger 2017
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
-module beamui.graphics.fonts;
+module beamui.text.fonts;
 
 public import beamui.core.types : Glyph, GlyphRef, SubpixelRenderingMode;
 public import beamui.core.geometry : Size;

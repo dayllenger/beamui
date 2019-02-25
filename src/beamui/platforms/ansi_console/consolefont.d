@@ -12,8 +12,8 @@ import beamui.core.config;
 static if (BACKEND_ANSI_CONSOLE):
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
-import beamui.graphics.fonts;
 import beamui.style.types : TextFlag;
+import beamui.text.fonts;
 
 class ConsoleFont : Font
 {

@@ -21,15 +21,16 @@ import std.file;
 import std.stdio;
 import std.string;
 import std.utf;
+import beamui.core.events;
+import beamui.core.functions;
 import beamui.core.logger;
+import beamui.core.signals;
 import beamui.graphics.drawbuf;
-import beamui.graphics.fonts;
 import beamui.graphics.images;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 import beamui.platforms.windows.win32drawbuf;
 import beamui.platforms.windows.win32fonts;
-import beamui.widgets.widget;
 static if (USE_OPENGL)
 {
     import beamui.graphics.glsupport;

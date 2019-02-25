@@ -31,6 +31,7 @@ module beamui.widgets.charts;
 
 import std.math;
 import beamui.graphics.text;
+import beamui.text.style;
 import beamui.widgets.widget;
 
 class SimpleBarChart : Widget
