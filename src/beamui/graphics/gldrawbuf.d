@@ -81,14 +81,14 @@ class GLDrawBuf : DrawBuf
             return;
         }
         applyAlpha(color);
-        glSupport.queue.addSolidRect(Rect(0, 0, _w, _h), color);
+        glSupport.queue.addSolidRect(RectF(0, 0, _w, _h), color);
     }
 
     override void fillRect(Rect rc, Color color)
     {
         applyAlpha(color);
         if (!color.isFullyTransparent && applyClipping(rc))
-            glSupport.queue.addSolidRect(rc, color);
+            glSupport.queue.addSolidRect(RectF(rc.left, rc.top, rc.right, rc.bottom), color);
     }
 
     override void fillGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4)
@@ -98,7 +98,8 @@ class GLDrawBuf : DrawBuf
         applyAlpha(color3);
         applyAlpha(color4);
         if (!(color1.isFullyTransparent && color3.isFullyTransparent) && applyClipping(rc))
-            glSupport.queue.addGradientRect(rc, color1, color2, color3, color4);
+            glSupport.queue.addGradientRect(RectF(rc.left, rc.top, rc.right, rc.bottom),
+                color1, color2, color3, color4);
     }
 
     override void drawPixel(int x, int y, Color color)
@@ -107,7 +108,7 @@ class GLDrawBuf : DrawBuf
             return;
         applyAlpha(color);
         if (!color.isFullyTransparent)
-            glSupport.queue.addSolidRect(Rect(x, y, x + 1, y + 1), color);
+            glSupport.queue.addSolidRect(RectF(x, y, x + 1, y + 1), color);
     }
 
     override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
@@ -154,7 +155,7 @@ class GLDrawBuf : DrawBuf
             return;
         applyAlpha(color);
         if (!color.isFullyTransparent)
-            glSupport.queue.addLine(p1, p2, color, color);
+            glSupport.queue.addLine(PointF(p1.x, p1.y), PointF(p2.x, p2.y), color, color);
     }
 
     override protected void fillTriangleFClipped(PointF p1, PointF p2, PointF p3, Color color)

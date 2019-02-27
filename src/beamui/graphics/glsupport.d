@@ -13,7 +13,7 @@ import beamui.core.config;
 
 static if (USE_OPENGL):
 import beamui.core.functions : eliminate;
-import beamui.core.geometry : Point, Rect;
+import beamui.core.geometry : Point, Rect, RectF;
 import beamui.core.logger;
 import beamui.core.math3d;
 import beamui.graphics.colors : Color;
@@ -792,13 +792,13 @@ private final class OpenGLQueue
     }
 
     /// Add solid rectangle to queue
-    void addSolidRect(Rect dstRect, Color color)
+    void addSolidRect(RectF dstRect, Color color)
     {
         addGradientRect(dstRect, color, color, color, color);
     }
 
     /// Add gradient rectangle to queue
-    void addGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4)
+    void addGradientRect(RectF rc, Color color1, Color color2, Color color3, Color color4)
     {
         if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.rect)
         {
@@ -813,10 +813,10 @@ private final class OpenGLQueue
         color3.rgbaf(colors[8], colors[9], colors[10], colors[11]);
         color4.rgbaf(colors[12], colors[13], colors[14], colors[15]);
 
-        float x0 = cast(float)(rc.left);
-        float y0 = cast(float)(glSupport.bufferDy - rc.top);
-        float x1 = cast(float)(rc.right);
-        float y1 = cast(float)(glSupport.bufferDy - rc.bottom);
+        float x0 = rc.left;
+        float y0 = glSupport.bufferDy - rc.top;
+        float x1 = rc.right;
+        float y1 = glSupport.bufferDy - rc.bottom;
 
         float[3 * 4] vertices = [x0, y0, Z_2D, x0, y1, Z_2D, x1, y0, Z_2D, x1, y1, Z_2D];
         // fill texture coords buffer with zeros
@@ -857,7 +857,7 @@ private final class OpenGLQueue
     }
 
     /// Add line to queue
-    void addLine(Point p1, Point p2, Color color1, Color color2)
+    void addLine(PointF p1, PointF p2, Color color1, Color color2)
     {
         if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.line)
         {
@@ -871,10 +871,10 @@ private final class OpenGLQueue
         color2.rgbaf(colors[4], colors[5], colors[6], colors[7]);
 
         // half-pixel offset is essential for correct result
-        float x0 = cast(float)(p1.x) + 0.5;
-        float y0 = cast(float)(glSupport.bufferDy - p1.y) - 0.5;
-        float x1 = cast(float)(p2.x) + 0.5;
-        float y1 = cast(float)(glSupport.bufferDy - p2.y) - 0.5;
+        float x0 = p1.x + 0.5;
+        float y0 = glSupport.bufferDy - p1.y - 0.5;
+        float x1 = p2.x + 0.5;
+        float y1 = glSupport.bufferDy - p2.y - 0.5;
 
         float[3 * 2] vertices = [x0, y0, Z_2D, x1, y1, Z_2D];
         // fill texture coords buffer with zeros

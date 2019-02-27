@@ -257,12 +257,12 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
     /// Return a box expanded by a margin
     BoxOf expanded(InsetsOf!T ins) const
     {
-        return Box(x - ins.left, y - ins.top, w + ins.left + ins.right, h + ins.top + ins.bottom);
+        return BoxOf(x - ins.left, y - ins.top, w + ins.left + ins.right, h + ins.top + ins.bottom);
     }
     /// Return a box shrinked by a margin
     BoxOf shrinked(InsetsOf!T ins) const
     {
-        return Box(x + ins.left, y + ins.top, w - ins.left - ins.right, h - ins.top - ins.bottom);
+        return BoxOf(x + ins.left, y + ins.top, w - ins.left - ins.right, h - ins.top - ins.bottom);
     }
 
     /// Expand box dimensions by a margin
@@ -494,6 +494,7 @@ struct RectOf(T) if (is(T == float) || is(T == int))
 }
 
 alias Rect = RectOf!int;
+alias RectF = RectOf!float;
 alias RectI = RectOf!int;
 
 /// Represents area around rectangle. Used for margin, border and padding
