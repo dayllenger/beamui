@@ -9,7 +9,7 @@ module beamui.core.geometry;
 
 import std.math : isFinite;
 import std.traits;
-import beamui.core.math3d : Vector;
+import beamui.core.linalg : Vector;
 
 /// True if size is sane, e.g. not `-infinity`. Used primarly in contracts
 bool isValidSize(float floating)

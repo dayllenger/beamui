@@ -11,8 +11,8 @@ public import beamui.core.geometry;
 public import beamui.core.types;
 import beamui.core.config;
 import beamui.core.functions;
+import beamui.core.linalg;
 import beamui.core.logger;
-import beamui.core.math3d;
 import beamui.graphics.colors;
 
 /// 9-patch image scaling information

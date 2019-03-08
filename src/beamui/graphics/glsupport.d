@@ -14,8 +14,8 @@ import beamui.core.config;
 static if (USE_OPENGL):
 import beamui.core.functions : eliminate;
 import beamui.core.geometry : Point, Rect, RectF;
+import beamui.core.linalg;
 import beamui.core.logger;
-import beamui.core.math3d;
 import beamui.graphics.colors : Color;
 import beamui.graphics.gl.errors;
 import beamui.graphics.gl.objects;

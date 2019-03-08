@@ -13,8 +13,8 @@ import beamui.core.config;
 
 static if (USE_OPENGL):
 import beamui.core.functions;
+import beamui.core.linalg;
 import beamui.core.logger;
-import beamui.core.math3d;
 import beamui.graphics.colors;
 import beamui.graphics.drawbuf;
 import beamui.graphics.glsupport;
