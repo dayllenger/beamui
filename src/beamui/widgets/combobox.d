@@ -19,7 +19,6 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.combobox;
 
-import std.algorithm;
 import beamui.widgets.controls;
 import beamui.widgets.editors;
 import beamui.widgets.layouts;

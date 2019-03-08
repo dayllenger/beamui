@@ -1,14 +1,15 @@
 /**
-
+Linear algebra: vectors and matrices.
 
 Copyright: Vadim Lopatin 2015-2016, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
-module beamui.core.math3d;
+module beamui.core.linalg;
 
-import std.math;
+import std.math : cos, sin, sqrt, tan, PI;
 import std.string : format;
+import beamui.core.math : fzero6;
 
 /// 2-4-dimensional vector
 struct Vector(T, int N) if (2 <= N && N <= 4)
@@ -199,11 +200,13 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
             ret += vec[i] * vec[i];
         return ret;
     }
-
     /// Length of vector
     T magnitude() const
     {
-        return cast(T)sqrt(cast(real)magnitudeSquared);
+        static if (is(T == float) || is(T == double) || is(T == real))
+            return sqrt(magnitudeSquared);
+        else
+            return cast(T)sqrt(cast(real)magnitudeSquared);
     }
     /// ditto
     alias length = magnitude;
@@ -254,11 +257,6 @@ alias Vec4d = Vector!(double, 4);
 alias Vec2i = Vector!(int, 2);
 alias Vec3i = Vector!(int, 3);
 alias Vec4i = Vector!(int, 4);
-
-bool fuzzyNull(float v)
-{
-    return v < 0.0000001f && v > -0.0000001f;
-}
 
 struct mat4
 {
@@ -415,7 +413,7 @@ struct mat4
         mat4 inverse;
 
         // Close to zero, can't invert.
-        if (fabs(det) <= 0.00000001f)
+        if (fzero6(det))
             return inverse;
 
         // Support the case where m == dst.
@@ -755,7 +753,7 @@ struct mat4
         if (!quick)
         {
             float len = x * x + y * y + z * z;
-            if (!fuzzyNull(len - 1.0f) && !fuzzyNull(len))
+            if (!fzero6(len - 1.0f) && !fzero6(len))
             {
                 len = sqrt(len);
                 x /= len;

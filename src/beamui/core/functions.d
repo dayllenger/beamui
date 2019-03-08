@@ -1,5 +1,5 @@
 /**
-This module declares and imports various utility and sugar functions.
+Various utility and sugar functions.
 
 Sugar templates are very efficient, don't worry about performance.
 
@@ -10,10 +10,11 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.core.functions;
 
 // some useful imports from Phobos
-public import std.algorithm : clamp, max, min, move, remove, sort, startsWith, endsWith;
+public import std.algorithm : move, remove, sort, startsWith, endsWith;
 public import std.conv : to;
 public import std.format : format;
 public import std.utf : toUTF8, toUTF32;
+public import beamui.core.math : clamp, max, min;
 import std.traits;
 import beamui.core.ownership : isReferenceType;
 
