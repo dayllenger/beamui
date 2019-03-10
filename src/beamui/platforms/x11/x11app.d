@@ -420,7 +420,7 @@ final class X11Window : DWindow
                 else
                 {
                     bindContext();
-                    if (!initGLSupport(_platform.GLVersionMajor < 3))
+                    if (!initGLBackend())
                         disableOpenGL();
                     if (!openglEnabled && _glc)
                     {

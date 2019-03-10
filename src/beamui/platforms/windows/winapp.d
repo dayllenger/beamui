@@ -174,7 +174,7 @@ static if (USE_OPENGL)
                 if (_context)
                 {
                     bind(device);
-                    bool initialized = initGLSupport(platform.GLVersionMajor < 3);
+                    bool initialized = initGLBackend();
                     unbind(device);
                     if (!initialized)
                     {

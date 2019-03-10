@@ -163,17 +163,22 @@ final class SDLWindow : Window
         {
             if (openglEnabled)
             {
-                bool success = createContext(_platform.GLVersionMajor, _platform.GLVersionMinor);
+                const major = clamp(_platform.GLVersionMajor, 3, 4);
+                const minor = clamp(_platform.GLVersionMinor, 0, major == 3 ? 3 : 6);
+                bool success = createContext(major, minor);
                 if (!success)
                 {
                     Log.w("trying other versions of OpenGL");
                     // lazy conditions
-                    if (_platform.GLVersionMajor >= 4)
+                    if (major == 4)
+                    {
+                        success = success || createContext(4, 3);
                         success = success || createContext(4, 0);
+                    }
                     success = success || createContext(3, 3);
                     success = success || createContext(3, 2);
                     success = success || createContext(3, 1);
-                    success = success || createContext(2, 1);
+                    success = success || createContext(3, 0);
                     if (!success)
                     {
                         disableOpenGL();
@@ -182,7 +187,7 @@ final class SDLWindow : Window
                 }
                 if (success)
                 {
-                    if (!initGLSupport(_platform.GLVersionMajor < 3))
+                    if (!initGLBackend())
                         disableOpenGL();
                 }
             }

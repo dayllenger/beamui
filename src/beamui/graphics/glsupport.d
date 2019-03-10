@@ -24,45 +24,14 @@ package(beamui) import beamui.graphics.gl.objects : glNoContext;
 
 version (Android)
 {
-    enum SUPPORT_LEGACY_OPENGL = false;
     import EGL.eglplatform : EGLint;
     import EGL.egl;
-
-    //import GLES2.gl2;
     import GLES3.gl3;
-
-    static if (SUPPORT_LEGACY_OPENGL)
-    {
-        import GLES.gl : glEnableClientState, glLightfv, glColor4f, GL_ALPHA_TEST,
-            GL_VERTEX_ARRAY, GL_COLOR_ARRAY, glVertexPointer, glColorPointer, glDisableClientState,
-            GL_TEXTURE_COORD_ARRAY, glTexCoordPointer, glColorPointer, glMatrixMode, glLoadMatrixf,
-            glLoadIdentity, GL_PROJECTION, GL_MODELVIEW;
-    }
 }
 else
 {
-    enum SUPPORT_LEGACY_OPENGL = true;
     import derelict.opengl3.types;
     import derelict.opengl3.gl3;
-    import derelict.opengl3.gl;
-
-    derelict.util.exception.ShouldThrow gl3MissingSymFunc(string symName)
-    {
-        import std.algorithm : equal;
-        static import derelict.util.exception;
-
-        foreach (s; ["glGetError", "glShaderSource", "glCompileShader", "glGetShaderiv",
-                "glGetShaderInfoLog", "glGetString", "glCreateProgram", "glUseProgram",
-                "glDeleteProgram", "glDeleteShader", "glEnable", "glDisable",
-                "glBlendFunc", "glUniformMatrix4fv", "glGetAttribLocation", "glGetUniformLocation",
-                "glGenVertexArrays", "glBindVertexArray", "glBufferData", "glBindBuffer", "glBufferSubData"])
-        {
-            if (symName.equal(s)) // Symbol is used
-                return derelict.util.exception.ShouldThrow.Yes;
-        }
-        // Don't throw for unused symbol
-        return derelict.util.exception.ShouldThrow.No;
-    }
 }
 
 class SolidFillProgram : GLProgram
@@ -236,10 +205,7 @@ bool initBasicOpenGL()
     glNoContext = false;
     try
     {
-        DerelictGL3.missingSymbolCallback = &gl3MissingSymFunc;
         DerelictGL3.load();
-        DerelictGL.missingSymbolCallback = &gl3MissingSymFunc;
-        DerelictGL.load();
         return true;
     }
     catch (Exception e)
@@ -250,87 +216,53 @@ bool initBasicOpenGL()
 }
 
 /// Initialize OpenGL backend (call only when current OpenGL context is initialized)
-bool initGLSupport(bool legacy)
+bool initGLBackend()
 {
     if (_glBackend)
         return true;
     version (Android)
     {
-        Log.d("initGLSupport");
+        Log.d("initGLBackend");
     }
     else
     {
         // at first reload DerelictGL
         static bool triedToReloadDerelict;
-        static bool gl3Reloaded;
-        static bool glReloaded;
+        static bool reloaded;
         if (!triedToReloadDerelict)
         {
             triedToReloadDerelict = true;
             try
             {
                 Log.v("Reloading DerelictGL3");
-                DerelictGL3.missingSymbolCallback = &gl3MissingSymFunc;
                 DerelictGL3.reload();
-                gl3Reloaded = true;
+                reloaded = true;
             }
             catch (Exception e)
             {
                 Log.e("Exception while reloading DerelictGL3: ", e);
             }
-            try
-            {
-                Log.v("Reloading DerelictGL");
-                DerelictGL.missingSymbolCallback = &gl3MissingSymFunc;
-                DerelictGL.reload();
-                glReloaded = true;
-            }
-            catch (Exception e)
-            {
-                Log.e("Exception while reloading DerelictGL: ", e);
-            }
         }
-        if (!gl3Reloaded && !glReloaded)
+        if (!reloaded)
         {
-            Log.e("Neither DerelictGL3 nor DerelictGL were reloaded successfully");
+            Log.e("DerelictGL3 was not reloaded");
             return false;
         }
-        legacy = legacy || glReloaded && !gl3Reloaded;
     }
     const char major = glGetString(GL_VERSION)[0];
-    legacy = legacy || major < '3';
-    if (!legacy)
+    if (major >= '3')
     {
-        auto normal = new NormalGLBackend;
-        if (normal.valid)
+        auto bak = new GLBackend;
+        if (bak.valid)
         {
-            _glBackend = normal;
+            _glBackend = bak;
             Log.v("OpenGL initialized successfully");
             return true;
         }
         else
-            destroy(normal);
+            destroy(bak);
     }
-    // trying legacy
-    static if (SUPPORT_LEGACY_OPENGL)
-    {
-        // situation when GL version is 3+ with no old functions
-        if (!glLightfv)
-        {
-            Log.w("Legacy GL API is not supported");
-            if (major >= '3')
-                Log.w("Try to create OpenGL context with <= 3.1 version");
-            return false;
-        }
-        _glBackend = new LegacyGLBackend;
-        Log.v("OpenGL initialized successfully");
-        return true;
-    }
-    else
-    {
-        // do not recreate legacy mode
-        return false;
-    }
+    return false;
 }
 
 /// Deinitialize GLBackend, destroy all internal shaders, buffers, etc.
@@ -340,9 +272,11 @@ void uninitGLSupport()
     glNoContext = true;
 }
 
-/// Open GL drawing backend
-abstract class GLBackend
+/// Drawing backend on OpenGL 3.0+
+final class GLBackend
 {
+    @property bool valid() const { return _shadersAreInitialized; }
+
     @property OpenGLQueue queue() { return _queue; }
     /// Projection matrix
     @property ref mat4 projectionMatrix() { return _projectionMatrix; }
@@ -355,17 +289,45 @@ abstract class GLBackend
         /// Current gl buffer height
         int bufferDy;
         mat4 _projectionMatrix;
+
+        SolidFillProgram _solidFillProgram;
+        TextureProgram _textureProgram;
+        bool _shadersAreInitialized;
+
+        VBO vbo;
+        EBO ebo;
     }
 
     this()
     {
         Log.d("Creating GL backend");
         _queue = new OpenGLQueue;
+        _shadersAreInitialized = initShaders();
+        if (_shadersAreInitialized)
+            Log.d("Shaders compiled successfully");
+        else
+            Log.e("Failed to compile shaders");
     }
 
     ~this()
     {
+        Log.d("Uniniting shaders");
+        eliminate(_solidFillProgram);
+        eliminate(_textureProgram);
         eliminate(_queue);
+    }
+
+    private bool initShaders()
+    {
+        Log.v("Compiling solid fill program");
+        _solidFillProgram = new SolidFillProgram;
+        if (!_solidFillProgram.check())
+            return false;
+        Log.v("Compiling texture program");
+        _textureProgram = new TextureProgram;
+        if (!_textureProgram.check())
+            return false;
+        return true;
     }
 
     void beforeRenderGUI()
@@ -375,23 +337,73 @@ abstract class GLBackend
         checkgl!glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
-    protected void fillBuffers(float[] vertices, float[] colors, float[] texcoords, int[] indices) {}
+    private void fillBuffers(float[] vertices, float[] colors, float[] texcoords, int[] indices)
+    {
+        assert(_solidFillProgram && _textureProgram);
 
-    protected void destroyBuffers() {}
+        resetBindings();
 
-    protected void drawLines(int length, int start);
+        vbo = new VBO;
+        ebo = new EBO;
 
-    protected void drawSolidFillTriangles(int length, int start);
+        vbo.bind();
+        vbo.fill([vertices, colors, texcoords]);
 
-    protected void drawColorAndTextureTriangles(Tex2D texture, bool linear, int length, int start);
+        ebo.bind();
+        ebo.fill(indices);
+
+        // create vertex array objects and bind vertex buffers to them
+        _solidFillProgram.createVAO(vertices.length);
+        vbo.bind();
+        ebo.bind();
+        _textureProgram.createVAO(vertices.length, colors.length);
+        vbo.bind();
+        ebo.bind();
+    }
+
+    private void destroyBuffers()
+    {
+        assert(_solidFillProgram && _textureProgram);
+
+        resetBindings();
+
+        _solidFillProgram.destroyBuffers();
+        _textureProgram.destroyBuffers();
+
+        eliminate(vbo);
+        eliminate(ebo);
+    }
+
+    /// This function is needed to draw custom OpenGL scene correctly
+    private static void resetBindings()
+    {
+        GLProgram.unbind();
+        VAO.unbind();
+        VBO.unbind();
+    }
+
+    private void drawLines(int length, int start)
+    {
+        _solidFillProgram.drawBatch(length, start, true);
+    }
+
+    private void drawSolidFillTriangles(int length, int start)
+    {
+        _solidFillProgram.drawBatch(length, start);
+    }
+
+    private void drawColorAndTextureTriangles(Tex2D texture, bool linear, int length, int start)
+    {
+        _textureProgram.drawBatch(texture, linear, length, start);
+    }
 
     /// Call glFlush
-    final void flushGL()
+    void flushGL()
     {
         checkgl!glFlush();
     }
 
-    final bool generateMipmap(int dx, int dy, ubyte* pixels, int level, ref ubyte[] dst)
+    bool generateMipmap(int dx, int dy, ubyte* pixels, int level, ref ubyte[] dst)
     {
         if ((dx & 1) || (dy & 1) || dx < 2 || dy < 2)
             return false; // size is not even
@@ -424,7 +436,7 @@ abstract class GLBackend
         return true;
     }
 
-    final bool setTextureImage(Tex2D texture, int dx, int dy, ubyte* pixels, int mipmapLevels = 0)
+    bool setTextureImage(Tex2D texture, int dx, int dy, ubyte* pixels, int mipmapLevels = 0)
     {
         checkError("before setTextureImage");
         texture.bind();
@@ -459,7 +471,7 @@ abstract class GLBackend
         return true;
     }
 
-    final bool setTextureImageAlpha(Tex2D texture, int dx, int dy, ubyte* pixels)
+    bool setTextureImageAlpha(Tex2D texture, int dx, int dy, ubyte* pixels)
     {
         checkError("before setTextureImageAlpha");
         texture.bind();
@@ -476,213 +488,17 @@ abstract class GLBackend
         return true;
     }
 
-    final void clearDepthBuffer()
+    void clearDepthBuffer()
     {
         glClear(GL_DEPTH_BUFFER_BIT);
-        //glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
 
-    void setOrthoProjection(Rect windowRect, Rect view);
-}
-
-/// Backend for OpenGL 3.0+
-private final class NormalGLBackend : GLBackend
-{
-    @property bool valid()
-    {
-        return _shadersAreInitialized;
-    }
-
-    private
-    {
-        SolidFillProgram _solidFillProgram;
-        TextureProgram _textureProgram;
-        bool _shadersAreInitialized;
-
-        VBO vbo;
-        EBO ebo;
-    }
-
-    this()
-    {
-        _shadersAreInitialized = initShaders();
-        if (_shadersAreInitialized)
-            Log.d("Shaders compiled successfully");
-        else
-            Log.e("Failed to compile shaders");
-    }
-
-    ~this()
-    {
-        Log.d("Uniniting shaders");
-        eliminate(_solidFillProgram);
-        eliminate(_textureProgram);
-    }
-
-    private bool initShaders()
-    {
-        Log.v("Compiling solid fill program");
-        _solidFillProgram = new SolidFillProgram;
-        if (!_solidFillProgram.check())
-            return false;
-        Log.v("Compiling texture program");
-        _textureProgram = new TextureProgram;
-        if (!_textureProgram.check())
-            return false;
-        return true;
-    }
-
-    override protected void fillBuffers(float[] vertices, float[] colors, float[] texcoords, int[] indices)
-    {
-        assert(_solidFillProgram && _textureProgram);
-
-        resetBindings();
-
-        vbo = new VBO;
-        ebo = new EBO;
-
-        vbo.bind();
-        vbo.fill([vertices, colors, texcoords]);
-
-        ebo.bind();
-        ebo.fill(indices);
-
-        // create vertex array objects and bind vertex buffers to them
-        _solidFillProgram.createVAO(vertices.length);
-        vbo.bind();
-        ebo.bind();
-        _textureProgram.createVAO(vertices.length, colors.length);
-        vbo.bind();
-        ebo.bind();
-    }
-
-    override protected void destroyBuffers()
-    {
-        assert(_solidFillProgram && _textureProgram);
-
-        resetBindings();
-
-        _solidFillProgram.destroyBuffers();
-        _textureProgram.destroyBuffers();
-
-        eliminate(vbo);
-        eliminate(ebo);
-    }
-
-    /// This function is needed to draw custom OpenGL scene correctly (especially on legacy API)
-    private static void resetBindings()
-    {
-        if (defined!glUseProgram)
-            GLProgram.unbind();
-        if (defined!glBindVertexArray)
-            VAO.unbind();
-        if (defined!glBindBuffer)
-            VBO.unbind();
-    }
-
-    private static bool defined(alias func)()
-    {
-        import std.traits : isFunction;
-
-        static if (isFunction!func)
-            return true;
-        else
-            return func !is null;
-    }
-
-    override protected void drawLines(int length, int start)
-    {
-        _solidFillProgram.drawBatch(length, start, true);
-    }
-
-    override protected void drawSolidFillTriangles(int length, int start)
-    {
-        _solidFillProgram.drawBatch(length, start);
-    }
-
-    override protected void drawColorAndTextureTriangles(Tex2D texture, bool linear, int length, int start)
-    {
-        _textureProgram.drawBatch(texture, linear, length, start);
-    }
-
-    override void setOrthoProjection(Rect windowRect, Rect view)
+    void setOrthoProjection(Rect windowRect, Rect view)
     {
         bufferDx = windowRect.width;
         bufferDy = windowRect.height;
         _projectionMatrix.setOrtho(view.left, view.right, view.top, view.bottom, 0.5f, 50.0f);
 
-        checkgl!glViewport(view.left, windowRect.height - view.bottom, view.width, view.height);
-    }
-}
-
-static if (SUPPORT_LEGACY_OPENGL)
-/// Backend for old fixed pipeline OpenGL
-private final class LegacyGLBackend : GLBackend
-{
-    override protected void drawLines(int length, int start)
-    {
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_COLOR_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, cast(void*)_queue._vertices.data.ptr);
-        glColorPointer(4, GL_FLOAT, 0, cast(void*)_queue._colors.data.ptr);
-
-        checkgl!glDrawElements(GL_LINES, cast(int)length, GL_UNSIGNED_INT,
-                cast(void*)(_queue._indices.data[start .. start + length].ptr));
-
-        glDisableClientState(GL_COLOR_ARRAY);
-        glDisableClientState(GL_VERTEX_ARRAY);
-    }
-
-    override protected void drawSolidFillTriangles(int length, int start)
-    {
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_COLOR_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, cast(void*)_queue._vertices.data.ptr);
-        glColorPointer(4, GL_FLOAT, 0, cast(void*)_queue._colors.data.ptr);
-
-        checkgl!glDrawElements(GL_TRIANGLES, cast(int)length, GL_UNSIGNED_INT,
-                cast(void*)(_queue._indices.data[start .. start + length].ptr));
-
-        glDisableClientState(GL_COLOR_ARRAY);
-        glDisableClientState(GL_VERTEX_ARRAY);
-    }
-
-    override protected void drawColorAndTextureTriangles(Tex2D texture, bool linear, int length, int start)
-    {
-        glEnable(GL_TEXTURE_2D);
-        texture.setup();
-        texture.setSamplerParams(linear);
-
-        glEnableClientState(GL_COLOR_ARRAY);
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, cast(void*)_queue._vertices.data.ptr);
-        glTexCoordPointer(2, GL_FLOAT, 0, cast(void*)_queue._texCoords.data.ptr);
-        glColorPointer(4, GL_FLOAT, 0, cast(void*)_queue._colors.data.ptr);
-
-        checkgl!glDrawElements(GL_TRIANGLES, cast(int)length, GL_UNSIGNED_INT,
-                cast(void*)(_queue._indices.data[start .. start + length].ptr));
-
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_COLOR_ARRAY);
-        glDisable(GL_TEXTURE_2D);
-    }
-
-    override void setOrthoProjection(Rect windowRect, Rect view)
-    {
-        bufferDx = windowRect.width;
-        bufferDy = windowRect.height;
-        _projectionMatrix.setOrtho(view.left, view.right, view.top, view.bottom, 0.5f, 50.0f);
-
-        glMatrixMode(GL_PROJECTION);
-        //checkgl!glPushMatrix();
-        //glLoadIdentity();
-        glLoadMatrixf(_projectionMatrix.m.ptr);
-        //glOrthof(0, _dx, 0, _dy, -1.0f, 1.0f);
-        glMatrixMode(GL_MODELVIEW);
-        //checkgl!glPushMatrix();
-        glLoadIdentity();
         checkgl!glViewport(view.left, windowRect.height - view.bottom, view.width, view.height);
     }
 }
