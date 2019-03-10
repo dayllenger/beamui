@@ -808,8 +808,8 @@ class DrawBuf : RefCountedObject
         */
         // just return middle point
         PointF p2p1 = (p2 - p1); //.normalized;
-        float d1 = p2p1.crossProduct(dir2);
-        float d2 = dir1.crossProduct(dir2);
+        float d1 = crossProduct(p2p1, dir2);
+        float d2 = crossProduct(dir1, dir2);
         // a * d1 = d2
         if (d2 >= -0.1f && d2 <= 0.1f)
         {
@@ -976,7 +976,7 @@ class DrawBuf : RefCountedObject
                 PointF p1 = list[i + 0];
                 PointF p2 = list[(i + 1) % list.length];
                 PointF p3 = list[(i + 2) % list.length];
-                float cross = (p2 - p1).crossProduct(p3 - p2);
+                float cross = crossProduct(p2 - p1, p3 - p2);
                 if (cross > 0)
                 {
                     // draw triangle

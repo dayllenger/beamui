@@ -9,14 +9,14 @@ module beamui.core.linalg;
 
 import std.math : cos, sin, sqrt, tan, PI;
 import std.string : format;
-import beamui.core.math : fzero6;
+import beamui.core.math : fequal6, fzero6;
 
 /// 2-4-dimensional vector
 struct Vector(T, int N) if (2 <= N && N <= 4)
 {
     union
     {
-        T[N] vec;
+        T[N] vec = 0;
         struct
         {
             T x;
@@ -61,11 +61,6 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
         vec = v[0 .. N];
     }
 
-    this(const T* v)
-    {
-        vec = v[0 .. N];
-    }
-
     this(const Vector v)
     {
         vec = v.vec;
@@ -90,12 +85,6 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     ref Vector opAssign(T[N] v)
     {
         vec = v;
-        return this;
-    }
-
-    ref Vector opAssign(Vector v)
-    {
-        vec = v.vec;
         return this;
     }
 
@@ -164,32 +153,7 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     /// Dot product (sum of by-component products of vector components)
     T opBinary(string op : "*")(const Vector v) const
     {
-        return dot(v);
-    }
-    /// ditto
-    T dot(const Vector v) const
-    {
-        T ret = 0;
-        static foreach (i; 0 .. N)
-            ret += vec[i] * v.vec[i];
-        return ret;
-    }
-
-    static if (N == 2)
-    {
-        /// Cross product of two Vec2 is scalar in Z axis
-        T crossProduct(const Vector v2) const
-        {
-            return x * v2.y - y * v2.x;
-        }
-    }
-    static if (N == 3)
-    {
-        /// 3D cross product
-        static Vector crossProduct(const Vector v1, const Vector v2)
-        {
-            return Vector(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x);
-        }
+        return dotProduct(this, v);
     }
 
     /// Sum of squares of all vector components
@@ -216,7 +180,6 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     {
         this /= length;
     }
-
     /// Returns normalized copy of this vector
     Vector normalized() const
     {
@@ -246,6 +209,25 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     }
 }
 
+/// Dot product (sum of by-component products of vector components)
+T dotProduct(T, int N)(Vector!(T, N) a, Vector!(T, N) b)
+{
+    T ret = 0;
+    static foreach (i; 0 .. N)
+        ret += a.vec[i] * b.vec[i];
+    return ret;
+}
+/// Cross product of two Vec2 is a scalar in Z axis
+T crossProduct(T)(Vector!(T, 2) a, Vector!(T, 2) b)
+{
+    return a.x * b.y - a.y * b.x;
+}
+/// 3D cross product
+Vector!(T, 3) crossProduct(T)(Vector!(T, 3) a, Vector!(T, 3) b)
+{
+    return Vector!(T, 3)(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+}
+
 alias Vec2 = Vector!(float, 2);
 alias Vec3 = Vector!(float, 3);
 alias Vec4 = Vector!(float, 4);
@@ -257,6 +239,200 @@ alias Vec4d = Vector!(double, 4);
 alias Vec2i = Vector!(int, 2);
 alias Vec3i = Vector!(int, 3);
 alias Vec4i = Vector!(int, 4);
+
+/// Alias for 2d float point
+alias PointF = Vec2;
+
+/** Row-major 2x3 floating point matrix, used for 2D affine transformations. Zero by default.
+
+    Multiplication and inversion are performed as 3x3 with implicit (0,0,1) last row.
+*/
+struct Mat2x3
+{
+    float[3][2] store = [[0.0f, 0.0f, 0.0f], [0.0f, 0.0f, 0.0f]];
+
+    /** Returns the pointer to the stored values array.
+
+        Note: Values are stored in row-major order, so when passing it to OpenGL
+        with `glUniform*` functions, you'll need to set `transpose` parameter to GL_TRUE.
+    */
+    const(float*) ptr() const { return store.ptr.ptr; }
+
+    this(float diagonal)
+    {
+        store[0][0] = diagonal;
+        store[1][1] = diagonal;
+    }
+    this(ref const float[6] array)
+    {
+        store = array;
+    }
+    this(const float[] array)
+    {
+        store = array[0 .. 6];
+    }
+    this(ref const Mat2x3 matrix)
+    {
+        store = matrix.store;
+    }
+
+    /// Identity matrix
+    enum Mat2x3 identity = Mat2x3(1.0f);
+    /// Reset this matrix to identity
+    ref Mat2x3 setIdentity()
+    {
+        store[0][0] = 1.0f;
+        store[0][1] = 0.0f;
+        store[0][2] = 0.0f;
+        store[1][0] = 0.0f;
+        store[1][1] = 1.0f;
+        store[1][2] = 0.0f;
+        return this;
+    }
+
+    /// Add or subtract a matrix
+    ref Mat2x3 opOpAssign(string op)(Mat2x3 mat) if (op == "+" || op == "-")
+    {
+        mixin("store[0] "~op~"= mat.store[0];");
+        mixin("store[1] "~op~"= mat.store[1];");
+        return this;
+    }
+    /// ditto
+    Mat2x3 opBinary(string op)(Mat2x3 mat) const if (op == "+" || op == "-")
+    {
+        Mat2x3 ret = this;
+        mixin("ret.store[0] "~op~"= mat.store[0];");
+        mixin("ret.store[1] "~op~"= mat.store[1];");
+        return ret;
+    }
+    /// Multiply this matrix by another one, as they were 3x3 with (0,0,1) last row
+    ref Mat2x3 opOpAssign(string op: "*")(Mat2x3 mat)
+    {
+        const a00 = store[0][0];
+        const a01 = store[0][1];
+        const a10 = store[1][0];
+        const a11 = store[1][1];
+        store[0][0]  = a00 * mat.store[0][0] + a01 * mat.store[1][0];
+        store[0][1]  = a00 * mat.store[0][1] + a01 * mat.store[1][1];
+        store[0][2] += a00 * mat.store[0][2] + a01 * mat.store[1][2];
+        store[1][0]  = a10 * mat.store[0][0] + a11 * mat.store[1][0];
+        store[1][1]  = a10 * mat.store[0][1] + a11 * mat.store[1][1];
+        store[1][2] += a10 * mat.store[0][2] + a11 * mat.store[1][2];
+        return this;
+    }
+    /// ditto
+    Mat2x3 opBinary(string op : "*")(Mat2x3 mat) const
+    {
+        Mat2x3 ret = void;
+        ret.store[0][0] = store[0][0] * mat.store[0][0] + store[0][1] * mat.store[1][0];
+        ret.store[0][1] = store[0][0] * mat.store[0][1] + store[0][1] * mat.store[1][1];
+        ret.store[0][2] = store[0][0] * mat.store[0][2] + store[0][1] * mat.store[1][2] + store[0][2];
+        ret.store[1][0] = store[1][0] * mat.store[0][0] + store[1][1] * mat.store[1][0];
+        ret.store[1][1] = store[1][0] * mat.store[0][1] + store[1][1] * mat.store[1][1];
+        ret.store[1][2] = store[1][0] * mat.store[0][2] + store[1][1] * mat.store[1][2] + store[1][2];
+        return ret;
+    }
+
+    /// Transform a vector by this matrix
+    Vec2 opBinary(string op : "*")(Vec2 vec) const
+    {
+        return Vec2(
+            store[0][0] * vec.x + store[0][1] * vec.y + store[0][2],
+            store[1][0] * vec.x + store[1][1] * vec.y + store[1][2]);
+    }
+
+    /// Invert this transform. If matrix is not invertible, resets it to identity matrix
+    ref Mat2x3 invert()
+    {
+        const float det = store[0][0] * store[1][1] - store[0][1] * store[1][0];
+        if (fzero6(det))
+        {
+            return setIdentity();
+        }
+        else
+        {
+            const invdet = 1.0f / det;
+            store[0][0] =  store[1][1] * invdet;
+            store[0][1] = -store[0][1] * invdet;
+            store[0][2] = (store[0][1] * store[1][2] - store[1][1] * store[0][2]) * invdet;
+            store[1][0] = -store[1][0] * invdet;
+            store[1][1] =  store[0][0] * invdet;
+            store[1][2] = (store[1][0] * store[0][2] - store[0][0] * store[1][2]) * invdet;
+            return this;
+        }
+    }
+    /// Returns inverted matrix. If matrix is not invertible, returns identity matrix
+    Mat2x3 inverted() const
+    {
+        Mat2x3 m = this;
+        return m.invert();
+    }
+
+    /// Apply translation to this matrix
+    ref Mat2x3 translate(Vec2 offset)
+    {
+        store[0][2] += store[0][0] * offset.x + store[0][1] * offset.y;
+        store[1][2] += store[1][0] * offset.x + store[1][1] * offset.y;
+        return this;
+    }
+    /// Make a translation matrix
+    static Mat2x3 translation(Vec2 offset)
+    {
+        Mat2x3 m = identity;
+        m.store[0][2] = offset.x;
+        m.store[1][2] = offset.y;
+        return m;
+    }
+    /// Apply rotation to this matrix. Positive angle rotates clockwise; must be in radians
+    ref Mat2x3 rotate(float angle)
+    {
+        const c = cos(angle);
+        const s = sin(angle);
+        const a00 = store[0][0];
+        const a10 = store[1][0];
+        store[0][0] = a00 * c - store[0][1] * s;
+        store[0][1] = a00 * s + store[0][1] * c;
+        store[1][0] = a10 * c - store[1][1] * s;
+        store[1][1] = a10 * c + store[1][1] * s;
+        return this;
+    }
+    /// Make a rotation matrix. Positive angle rotates clockwise; must be in radians
+    static Mat2x3 rotation(float angle)
+    {
+        Mat2x3 m;
+        const c = cos(angle);
+        const s = sin(angle);
+        m.store[0][0] = c;
+        m.store[0][1] = s;
+        m.store[1][0] = -s;
+        m.store[1][1] = c;
+        return m;
+    }
+    /// Apply scaling to this matrix
+    ref Mat2x3 scale(Vec2 factor)
+    {
+        store[0][0] *= factor.x;
+        store[1][0] *= factor.x;
+        store[0][1] *= factor.y;
+        store[1][1] *= factor.y;
+        return this;
+    }
+    /// Make a scaling matrix
+    static Mat2x3 scaling(Vec2 factor)
+    {
+        Mat2x3 m;
+        m.store[0][0] = factor.x;
+        m.store[1][1] = factor.y;
+        return m;
+    }
+
+    string toString() const
+    {
+        return "[%s %s %s] [%s %s %s]".format(
+            store[0][0], store[0][1], store[0][2],
+            store[1][0], store[1][1], store[1][2]);
+    }
+}
 
 struct mat4
 {
@@ -357,8 +533,8 @@ struct mat4
     ref mat4 lookAt(const Vec3 eye, const Vec3 center, const Vec3 up)
     {
         Vec3 forward = (center - eye).normalized();
-        Vec3 side = Vec3.crossProduct(forward, up).normalized();
-        Vec3 upVector = Vec3.crossProduct(side, forward);
+        Vec3 side = crossProduct(forward, up).normalized();
+        Vec3 upVector = crossProduct(side, forward);
 
         mat4 m;
         m.setIdentity();
@@ -951,6 +1127,20 @@ struct mat4
     }
 }
 
+/// Calculate normal for triangle
+Vec3 triangleNormal(Vec3 p1, Vec3 p2, Vec3 p3)
+{
+    return crossProduct(p2 - p1, p3 - p2).normalized();
+}
+/// ditto
+Vec3 triangleNormal(ref float[3] p1, ref float[3] p2, ref float[3] p3)
+{
+    return crossProduct(Vec3(p2) - Vec3(p1), Vec3(p3) - Vec3(p2)).normalized();
+}
+
+//===============================================================
+// Tests
+
 unittest
 {
     Vec3 a, b, c;
@@ -1011,6 +1201,39 @@ unittest
 
 unittest
 {
+    const a = Vec2(10, 8);
+    const b = Vec2(-5, -4);
+    const c = Vec2(5, 5);
+    const z = Mat2x3.init;
+    const i = Mat2x3.identity;
+    const t = Mat2x3.translation(Vec2(1, -1));
+    const r = Mat2x3.rotation(PI / 4);
+    const s = Mat2x3.scaling(Vec2(2, 3));
+    const za = z * a;
+    const ib = i * b;
+    const ta = t * a;
+    const tb = t * b;
+    const rc = r * c;
+    const sa = s * a;
+    const sb = s * b;
+    assert(fequal6(za.x,  0) && fequal6(za.y,  0));
+    assert(fequal6(ib.x, -5) && fequal6(ib.y, -4));
+    assert(fequal6(ta.x, 11) && fequal6(ta.y,  7));
+    assert(fequal6(tb.x, -4) && fequal6(tb.y, -5));
+    assert(fequal6(rc.x, sqrt(50.0f)) && fequal6(rc.y, 0));
+    assert(fequal6(sa.x,  20) && fequal6(sa.y,  24));
+    assert(fequal6(sb.x, -10) && fequal6(sb.y, -12));
+
+    const m1 = t * r * s;
+    const m2 = Mat2x3.identity.translate(Vec2(1, -1)).rotate(PI / 4).scale(Vec2(2, 3));
+    const d1 = m1 * Vec2(15, 10);
+    const d2 = m2 * Vec2(15, 10);
+    assert(fequal6(d1.x, sqrt(1800.0f) + 1) && fequal6(d1.y, -1));
+    assert(fequal6(d1.x, d2.x) && fequal6(d1.y, d2.y));
+}
+
+unittest
+{
     mat4 m;
     m.setIdentity();
     m = [1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f];
@@ -1041,20 +1264,7 @@ unittest
     m.rotateZ(10);
 }
 
-/// Calculate normal for triangle
-Vec3 triangleNormal(Vec3 p1, Vec3 p2, Vec3 p3)
-{
-    return Vec3.crossProduct(p2 - p1, p3 - p2).normalized();
-}
-
-/// Calculate normal for triangle
-Vec3 triangleNormal(ref float[3] p1, ref float[3] p2, ref float[3] p3)
-{
-    return Vec3.crossProduct(Vec3(p2) - Vec3(p1), Vec3(p3) - Vec3(p2)).normalized();
-}
-
-/// Alias for 2d float point
-alias PointF = Vec2;
+//===============================================================
 
 // this form can be used within shaders
 /// Cubic bezier curve
