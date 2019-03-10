@@ -16,8 +16,7 @@ module beamui.graphics.gl.objects;
 import beamui.core.config;
 
 static if (USE_OPENGL):
-import derelict.opengl3.gl3;
-import derelict.opengl3.types;
+import beamui.graphics.gl.api;
 import beamui.graphics.gl.errors;
 
 package(beamui) __gshared bool glNoContext;

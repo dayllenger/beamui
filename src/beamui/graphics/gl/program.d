@@ -11,9 +11,8 @@ import beamui.core.config;
 static if (USE_OPENGL):
 import std.array : replace;
 import std.string : toStringz;
-import derelict.opengl3.gl3;
-import derelict.opengl3.types;
 import beamui.core.logger;
+import beamui.graphics.gl.api;
 import beamui.graphics.gl.compiler;
 import beamui.graphics.gl.errors;
 

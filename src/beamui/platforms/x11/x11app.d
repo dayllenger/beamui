@@ -30,9 +30,9 @@ import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 static if (USE_OPENGL)
 {
-    import derelict.opengl3.gl;
     import derelict.opengl3.glx;
     import derelict.opengl3.glxext;
+    import beamui.graphics.gl.api : GLint, GL_TRUE;
     import beamui.graphics.glsupport;
 
     private __gshared derelict.util.xtypes.XVisualInfo* x11visual;

@@ -11,9 +11,8 @@ import beamui.core.config;
 
 static if (USE_OPENGL):
 import std.conv : to;
-import derelict.opengl3.gl3 : glGetError, GL_NO_ERROR;
-import derelict.opengl3.types : GLenum;
 import beamui.core.logger;
+import beamui.graphics.gl.api : GLenum, glGetError, GL_NO_ERROR;
 
 /// Convenient wrapper around glGetError(). Usage: checkgl!glFunction(funcParams);
 template checkgl(alias func)

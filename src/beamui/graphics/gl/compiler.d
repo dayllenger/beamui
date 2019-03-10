@@ -11,10 +11,9 @@ import beamui.core.config;
 
 static if (USE_OPENGL):
 import std.string : stripRight;
-import derelict.opengl3.gl3;
-import derelict.opengl3.types;
 import beamui.core.functions : min;
 import beamui.core.logger;
+import beamui.graphics.gl.api;
 
 enum ShaderStage : ubyte
 {

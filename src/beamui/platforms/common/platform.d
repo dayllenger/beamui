@@ -970,8 +970,7 @@ class Window : CustomEventTarget
 
         protected void drawUsingOpenGL(ref DrawBuf buf) // TODO: move drawbufs to the base class?
         {
-            import derelict.opengl3.gl;
-            import derelict.opengl3.gl3;
+            import beamui.graphics.gl.api;
             import beamui.graphics.gldrawbuf;
 
             const pw = physicalWidth;

@@ -17,22 +17,11 @@ import beamui.core.geometry : Point, Rect, RectF;
 import beamui.core.linalg;
 import beamui.core.logger;
 import beamui.graphics.colors : Color;
+import beamui.graphics.gl.api;
 import beamui.graphics.gl.errors;
 import beamui.graphics.gl.objects;
 import beamui.graphics.gl.program;
 package(beamui) import beamui.graphics.gl.objects : glNoContext;
-
-version (Android)
-{
-    import EGL.eglplatform : EGLint;
-    import EGL.egl;
-    import GLES3.gl3;
-}
-else
-{
-    import derelict.opengl3.types;
-    import derelict.opengl3.gl3;
-}
 
 class SolidFillProgram : GLProgram
 {
