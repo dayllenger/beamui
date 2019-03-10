@@ -54,9 +54,11 @@ class SolidFillProgram : GLProgram
         };
     }
 
+    protected VAO vao;
     protected GLint matrixLocation;
     protected GLint vertexLocation;
     protected GLint colAttrLocation;
+
     override bool initLocations()
     {
         matrixLocation = getUniformLocation("MVP");
@@ -65,15 +67,14 @@ class SolidFillProgram : GLProgram
         return matrixLocation >= 0 && vertexLocation >= 0 && colAttrLocation >= 0;
     }
 
-    VAO vao;
-
-    protected void beforeExecute()
+    void beforeExecute()
     {
         bind();
         checkgl!glUniformMatrix4fv(matrixLocation, 1, false, glSupport.projectionMatrix.m.ptr);
+        vao.bind();
     }
 
-    protected void createVAO(size_t verticesBufferLength)
+    void createVAO(size_t verticesBufferLength)
     {
         vao = new VAO;
 
@@ -85,21 +86,7 @@ class SolidFillProgram : GLProgram
         glEnableVertexAttribArray(colAttrLocation);
     }
 
-    bool drawBatch(int length, int start, bool areLines = false)
-    {
-        if (!check())
-            return false;
-        beforeExecute();
-
-        vao.bind();
-
-        checkgl!glDrawElements(areLines ? GL_LINES : GL_TRIANGLES, cast(int)length, GL_UNSIGNED_INT,
-                cast(void*)(start * 4));
-
-        return true;
-    }
-
-    void destroyBuffers()
+    void destroyVAO()
     {
         eliminate(vao);
     }
@@ -162,23 +149,6 @@ class TextureProgram : SolidFillProgram
         glEnableVertexAttribArray(vertexLocation);
         glEnableVertexAttribArray(colAttrLocation);
         glEnableVertexAttribArray(texCoordLocation);
-    }
-
-    bool drawBatch(Tex2D texture, bool linear, int length, int start)
-    {
-        if (!check())
-            return false;
-        beforeExecute();
-
-        texture.setup();
-        texture.setSamplerParams(linear);
-
-        vao.bind();
-
-        checkgl!glDrawElements(GL_TRIANGLES, cast(int)length, GL_UNSIGNED_INT, cast(void*)(start * 4));
-
-        texture.unbind();
-        return true;
     }
 }
 
@@ -264,8 +234,10 @@ void uninitGLSupport()
 /// Drawing backend on OpenGL 3.0+
 final class GLBackend
 {
-    @property bool valid() const { return _shadersAreInitialized; }
-
+    @property bool valid() const
+    {
+        return _solidFillProgram && _textureProgram;
+    }
     @property OpenGLQueue queue() { return _queue; }
     /// Projection matrix
     @property ref mat4 projectionMatrix() { return _projectionMatrix; }
@@ -281,7 +253,6 @@ final class GLBackend
 
         SolidFillProgram _solidFillProgram;
         TextureProgram _textureProgram;
-        bool _shadersAreInitialized;
 
         VBO vbo;
         EBO ebo;
@@ -291,11 +262,14 @@ final class GLBackend
     {
         Log.d("Creating GL backend");
         _queue = new OpenGLQueue;
-        _shadersAreInitialized = initShaders();
-        if (_shadersAreInitialized)
+        if (initShaders())
             Log.d("Shaders compiled successfully");
         else
+        {
             Log.e("Failed to compile shaders");
+            eliminate(_solidFillProgram);
+            eliminate(_textureProgram);
+        }
     }
 
     ~this()
@@ -356,8 +330,8 @@ final class GLBackend
 
         resetBindings();
 
-        _solidFillProgram.destroyBuffers();
-        _textureProgram.destroyBuffers();
+        _solidFillProgram.destroyVAO();
+        _textureProgram.destroyVAO();
 
         eliminate(vbo);
         eliminate(ebo);
@@ -373,17 +347,34 @@ final class GLBackend
 
     private void drawLines(int length, int start)
     {
-        _solidFillProgram.drawBatch(length, start, true);
+        assert(_solidFillProgram);
+
+        _solidFillProgram.beforeExecute();
+
+        checkgl!glDrawElements(GL_LINES, length, GL_UNSIGNED_INT, cast(void*)(start * 4));
     }
 
     private void drawSolidFillTriangles(int length, int start)
     {
-        _solidFillProgram.drawBatch(length, start);
+        assert(_solidFillProgram);
+
+        _solidFillProgram.beforeExecute();
+
+        checkgl!glDrawElements(GL_TRIANGLES, length, GL_UNSIGNED_INT, cast(void*)(start * 4));
     }
 
     private void drawColorAndTextureTriangles(Tex2D texture, bool linear, int length, int start)
     {
-        _textureProgram.drawBatch(texture, linear, length, start);
+        assert(_textureProgram);
+
+        _textureProgram.beforeExecute();
+
+        texture.setup();
+        texture.setSamplerParams(linear);
+
+        checkgl!glDrawElements(GL_TRIANGLES, length, GL_UNSIGNED_INT, cast(void*)(start * 4));
+
+        texture.unbind();
     }
 
     /// Call glFlush
