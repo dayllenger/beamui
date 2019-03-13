@@ -9,7 +9,7 @@ module beamui.core.linalg;
 
 import std.math : cos, sin, sqrt, tan, PI;
 import std.string : format;
-import beamui.core.math : fequal6, fzero6;
+import beamui.core.math;
 
 /// 2-4-dimensional vector
 struct Vector(T, int N) if (2 <= N && N <= 4)
@@ -383,28 +383,28 @@ struct Mat2x3
         m.store[1][2] = offset.y;
         return m;
     }
-    /// Apply rotation to this matrix. Positive angle rotates clockwise; must be in radians
-    ref Mat2x3 rotate(float angle)
+    /// Apply rotation to this matrix
+    ref Mat2x3 rotate(float radians)
     {
-        const c = cos(angle);
-        const s = sin(angle);
+        const c = cos(radians);
+        const s = sin(radians);
         const a00 = store[0][0];
         const a10 = store[1][0];
-        store[0][0] = a00 * c - store[0][1] * s;
-        store[0][1] = a00 * s + store[0][1] * c;
-        store[1][0] = a10 * c - store[1][1] * s;
-        store[1][1] = a10 * c + store[1][1] * s;
+        store[0][0] =  a00 * c + store[0][1] * s;
+        store[0][1] = -a00 * s + store[0][1] * c;
+        store[1][0] =  a10 * c + store[1][1] * s;
+        store[1][1] = -a10 * s + store[1][1] * c;
         return this;
     }
-    /// Make a rotation matrix. Positive angle rotates clockwise; must be in radians
-    static Mat2x3 rotation(float angle)
+    /// Make a rotation matrix
+    static Mat2x3 rotation(float radians)
     {
         Mat2x3 m;
-        const c = cos(angle);
-        const s = sin(angle);
+        const c = cos(radians);
+        const s = sin(radians);
         m.store[0][0] = c;
-        m.store[0][1] = s;
-        m.store[1][0] = -s;
+        m.store[0][1] = -s;
+        m.store[1][0] = s;
         m.store[1][1] = c;
         return m;
     }
@@ -1207,7 +1207,7 @@ unittest
     const z = Mat2x3.init;
     const i = Mat2x3.identity;
     const t = Mat2x3.translation(Vec2(1, -1));
-    const r = Mat2x3.rotation(PI / 4);
+    const r = Mat2x3.rotation(PI / 3);
     const s = Mat2x3.scaling(Vec2(2, 3));
     const za = z * a;
     const ib = i * b;
@@ -1220,15 +1220,15 @@ unittest
     assert(fequal6(ib.x, -5) && fequal6(ib.y, -4));
     assert(fequal6(ta.x, 11) && fequal6(ta.y,  7));
     assert(fequal6(tb.x, -4) && fequal6(tb.y, -5));
-    assert(fequal6(rc.x, sqrt(50.0f)) && fequal6(rc.y, 0));
+    assert(fequal1(rc.x, -1.83) && fequal1(rc.y, 6.83));
     assert(fequal6(sa.x,  20) && fequal6(sa.y,  24));
     assert(fequal6(sb.x, -10) && fequal6(sb.y, -12));
 
     const m1 = t * r * s;
-    const m2 = Mat2x3.identity.translate(Vec2(1, -1)).rotate(PI / 4).scale(Vec2(2, 3));
+    const m2 = Mat2x3.identity.translate(Vec2(1, -1)).rotate(PI / 3).scale(Vec2(2, 3));
     const d1 = m1 * Vec2(15, 10);
     const d2 = m2 * Vec2(15, 10);
-    assert(fequal6(d1.x, sqrt(1800.0f) + 1) && fequal6(d1.y, -1));
+    assert(fequal1(d1.x, -9.98) && fequal1(d1.y, 39.98));
     assert(fequal6(d1.x, d2.x) && fequal6(d1.y, d2.y));
 }
 
