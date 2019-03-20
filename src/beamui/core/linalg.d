@@ -383,6 +383,7 @@ struct Mat2x3
         m.store[1][2] = offset.y;
         return m;
     }
+
     /// Apply rotation to this matrix
     ref Mat2x3 rotate(float radians)
     {
@@ -408,6 +409,7 @@ struct Mat2x3
         m.store[1][1] = c;
         return m;
     }
+
     /// Apply scaling to this matrix
     ref Mat2x3 scale(Vec2 factor)
     {
@@ -423,6 +425,28 @@ struct Mat2x3
         Mat2x3 m;
         m.store[0][0] = factor.x;
         m.store[1][1] = factor.y;
+        return m;
+    }
+
+    /// Apply skewing to this matrix
+    ref Mat2x3 skew(Vec2 factor)
+    {
+        const a = tan(factor.x);
+        const b = tan(factor.y);
+        const a00 = store[0][0];
+        const a10 = store[1][0];
+        store[0][0] += b * store[0][1];
+        store[0][1] += a * a00;
+        store[1][0] += b * store[1][1];
+        store[1][1] += a * a10;
+        return this;
+    }
+    /// Make a skewing matrix
+    static Mat2x3 skewing(Vec2 factor)
+    {
+        Mat2x3 m = identity;
+        m.store[0][1] = tan(factor.x);
+        m.store[1][0] = tan(factor.y);
         return m;
     }
 
