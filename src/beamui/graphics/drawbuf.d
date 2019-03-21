@@ -119,13 +119,7 @@ class DrawBuf : RefCountedObject
     /// Applies current drawbuf alpha to color
     void applyAlpha(ref Color c)
     {
-        if (!_alpha)
-            return; // no drawbuf alpha
-        uint a1 = c.alpha;
-        if (a1 == 0xFF)
-            return; // fully transparent
-        uint a2 = _alpha & 0xFF;
-        c.alpha = blendAlpha(a1, a2);
+        c.addAlpha(_alpha);
     }
 
     //===============================================================
@@ -1546,7 +1540,7 @@ class ColorDrawBufBase : DrawBuf
                     continue;
                 if (colx < 0 || colx >= _w)
                     continue;
-                uint alpha2 = color.alpha;
+                uint alpha2 = color.a;
                 uint alpha1 = srcrow[xx] ^ 255;
                 uint alpha = ((((alpha1 ^ 255) * (alpha2 ^ 255)) >> 8) ^ 255) & 255;
                 if (subpixel)
@@ -1615,7 +1609,7 @@ class ColorDrawBufBase : DrawBuf
         if (applyClipping(rc))
         {
             uint c = color.hex;
-            uint alpha = color.alpha;
+            uint alpha = color.a;
             foreach (y; rc.top .. rc.bottom)
             {
                 uint* row = scanLine(y);
@@ -1663,7 +1657,7 @@ class ColorDrawBufBase : DrawBuf
             return;
         applyAlpha(color);
         uint c = color.hex;
-        uint alpha = color.alpha;
+        uint alpha = color.a;
         uint* row = scanLine(y);
         if (!alpha)
         {
@@ -1890,7 +1884,7 @@ class GrayDrawBuf : DrawBuf
                 if (colx < 0 || colx >= _w)
                     continue;
                 uint alpha1 = srcrow[xx] ^ 255;
-                uint alpha2 = color.alpha;
+                uint alpha2 = color.a;
                 uint alpha = ((((alpha1 ^ 255) * (alpha2 ^ 255)) >> 8) ^ 255) & 255;
                 uint pixel = row[colx];
                 if (!alpha)
@@ -1908,7 +1902,7 @@ class GrayDrawBuf : DrawBuf
     {
         if (applyClipping(rc))
         {
-            uint alpha = color.alpha;
+            uint alpha = color.a;
             ubyte cl = color.toGray;
             foreach (y; rc.top .. rc.bottom)
             {
@@ -1959,7 +1953,7 @@ class GrayDrawBuf : DrawBuf
             return;
         applyAlpha(color);
         ubyte cl = color.toGray;
-        uint alpha = color.alpha;
+        uint alpha = color.a;
         ubyte* row = scanLine(y);
         if (!alpha)
         {

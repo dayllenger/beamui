@@ -193,7 +193,7 @@ class BoxShadowDrawable : Drawable
         texture = new ColorDrawBuf(size, size); // TODO: get from/put to cache
         // clear
         Color cc = color;
-        cc.alpha = 0xFF;
+        cc.a = 0xFF;
         texture.fill(cc);
         // draw a square in center of the texture
         texture.fillRect(Rect(blurSize, blurSize, size - blurSize, size - blurSize), color);

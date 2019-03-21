@@ -407,11 +407,11 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
 
     static ubyte toConsoleColor(Color color, bool forBackground = false)
     {
-        if (forBackground && color.alpha >= 0x80)
+        if (forBackground && color.a >= 0x80)
             return CONSOLE_TRANSPARENT_BACKGROUND;
-        int r = color.red;
-        int g = color.green;
-        int b = color.blue;
+        int r = color.r;
+        int g = color.g;
+        int b = color.b;
         int bestMatch = CONSOLE_COLORS_RGB[0].match(r, g, b);
         int bestMatchIndex = 0;
         for (int i = 1; i < 16; i++)
@@ -430,8 +430,7 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
 
     override void fillRect(Rect rc, Color color)
     {
-        uint alpha = color.alpha;
-        if (alpha >= 128)
+        if (color.a >= 128)
             return; // transparent
         _console.backgroundColor = toConsoleColor(color);
         if (applyClipping(rc))

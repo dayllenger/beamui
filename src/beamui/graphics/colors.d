@@ -1,9 +1,7 @@
 /**
 Color type and useful color related operations.
 
-In beamui, colors are represented as 32 bit uint AARRGGBB values.
-
-Copyright: Vadim Lopatin 2015, dayllenger 2018
+Copyright: Vadim Lopatin 2015, dayllenger 2018-2019
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -16,132 +14,121 @@ import beamui.core.logger;
 import beamui.core.parseutils;
 import beamui.core.types;
 
-alias ARGB = uint;
+alias ARGB8 = uint;
 
-/// The main color data type, library-wide used
+/// Represents RGBA color with one byte per channel
 struct Color
 {
-    /// Internal color representation
-    private ARGB data;
+align(1):
+    ubyte r, g, b;
+    ubyte a; /// 0 - opaque, 255 - transparent
 
     /// Special color constant to identify value as not a color (to use default/parent value instead)
     enum none = Color(0xFFDEADFF);
-    /// Transparent color constant
+
     enum transparent = Color(0xFFFFFFFF);
+    enum black = Color(0x000000);
+    enum white = Color(0xFFFFFF);
 
     /// Make a color from hex value
-    this(uint argb8)
+    this(ARGB8 hex)
     {
-        data = argb8;
+        r = (hex >> 16) & 0xFF;
+        g = (hex >> 8) & 0xFF;
+        b = (hex >> 0) & 0xFF;
+        a = (hex >> 24) & 0xFF;
     }
     /// Make an opaque color from 3 integer components
-    this(T)(T r, T g, T b) if (isIntegral!T)
+    this(T)(T red, T green, T blue) if (isIntegral!T)
     {
-        data = (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
+        r = cast(ubyte)(red & 0xFF);
+        g = cast(ubyte)(green & 0xFF);
+        b = cast(ubyte)(blue & 0xFF);
     }
     /// Make a color from 4 integer components
-    this(T)(T r, T g, T b, T a) if (isIntegral!T)
+    this(T)(T red, T green, T blue, T alpha) if (isIntegral!T)
     {
-        data = (cast(uint)a << 24) | (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
+        r = cast(ubyte)(red & 0xFF);
+        g = cast(ubyte)(green & 0xFF);
+        b = cast(ubyte)(blue & 0xFF);
+        a = cast(ubyte)(alpha & 0xFF);
     }
 
-    /// Red component
-    @property uint red() const
+    @property
     {
-        return (data >> 16) & 0xFF;
-    }
-    /// ditto
-    @property void red(uint r)
-    {
-        data = (data & 0xFF00FFFF) | (r << 16);
-    }
-    /// Green component
-    @property uint green() const
-    {
-        return (data >> 8) & 0xFF;
-    }
-    /// ditto
-    @property void green(uint g)
-    {
-        data = (data & 0xFFFF00FF) | (g << 8);
-    }
-    /// Blue component
-    @property uint blue() const
-    {
-        return (data >> 0) & 0xFF;
-    }
-    /// ditto
-    @property void blue(uint b)
-    {
-        data = (data & 0xFFFFFF00) | (b << 0);
-    }
-    /// Alpha component (0=opaque .. 255=transparent)
-    @property uint alpha() const
-    {
-        return (data >> 24) & 0xFF;
-    }
-    /// ditto
-    @property void alpha(uint a)
-    {
-        data = (data & 0xFFFFFF) | (a << 24);
+        /// Get the "hexadecimal" 32-bit 0xAARRGGBB representation
+        ARGB8 hex() const
+        {
+            pragma(inline, true);
+            return (cast(uint)a << 24) | (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
+        }
+
+        /// True if the color has the alpha value meaning full opacity
+        bool isOpaque() const
+        {
+            pragma(inline, true);
+            return a == 0;
+        }
+        /// True if the color has the alpha value meaning complete transparency
+        bool isFullyTransparent() const
+        {
+            pragma(inline, true);
+            return a == 0xFF;
+        }
     }
 
-    /// Get the "hexadecimal" 32-bit representation
-    @property ARGB hex() const
-    {
-        return data;
-    }
-
-    /// Fill 3-vector with the values of red, green and blue channel in [0, 1] range
-    void rgbf(ref float r, ref float g, ref float b) const
-    {
-        r = ((data >> 16) & 255) / 255.0;
-        g = ((data >> 8) & 255) / 255.0;
-        b = ((data >> 0) & 255) / 255.0;
-    }
-    /// Fill 4-vector with the values of red, green, blue and alpha channel in [0, 1] range
-    void rgbaf(ref float r, ref float g, ref float b, ref float a) const
-    {
-        r = ((data >> 16) & 255) / 255.0;
-        g = ((data >> 8) & 255) / 255.0;
-        b = ((data >> 0) & 255) / 255.0;
-        a = (((data >> 24) & 255) ^ 255) / 255.0;
-    }
-
+    /// Convert to 1-byte grayscale color
     ubyte toGray() const
     {
-        uint srcr = (data >> 16) & 0xFF;
-        uint srcg = (data >> 8) & 0xFF;
-        uint srcb = (data >> 0) & 0xFF;
-        return ((srcr + srcg + srcg + srcb) >> 2) & 0xFF;
+        return ((r + g * 2 + b) >> 2) & 0xFF;
     }
-
-    /// Returns true if the color has the alpha value meaning complete transparency
-    bool isFullyTransparent() const
-    {
-        return (data >> 24) == 0xFF;
-    }
-
-    //===============================================================
 
     /// Apply additional alpha to the color
-    void addAlpha(uint a)
+    void addAlpha(uint alpha)
     {
-        a = blendAlpha(this.alpha, a);
-        this.alpha = a;
+        a = cast(ubyte)blendAlpha(a, alpha);
     }
 
     /// Blend two colors using alpha
     static Color blend(Color dst, Color src, uint alpha)
     {
-        uint dstalpha = dst.alpha;
+        const dstalpha = dst.a;
         if (dstalpha > 0x80)
             return src;
-        uint ialpha = 255 - alpha;
-        uint r = ((src.red * ialpha + dst.red * alpha) >> 8) & 0xFF;
-        uint g = ((src.green * ialpha + dst.green * alpha) >> 8) & 0xFF;
-        uint b = ((src.blue * ialpha + dst.blue * alpha) >> 8) & 0xFF;
+        const ialpha = 255 - alpha;
+        const r = ((src.r * ialpha + dst.r * alpha) >> 8) & 0xFF;
+        const g = ((src.g * ialpha + dst.g * alpha) >> 8) & 0xFF;
+        const b = ((src.b * ialpha + dst.b * alpha) >> 8) & 0xFF;
         return Color(r, g, b);
+    }
+}
+
+/// Represents RGBA color with floating point channels in [0, 1] range
+struct ColorF
+{
+    float r = 0;
+    float g = 0;
+    float b = 0;
+    float a = 0;
+
+    enum transparent = ColorF(0, 0, 0, 0);
+    enum black = ColorF(0, 0, 0, 1);
+    enum white = ColorF(1, 1, 1, 1);
+
+    this(float r, float g, float b, float a = 255.0f)
+    {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+
+    this(Color ucolor)
+    {
+        r = ucolor.r / 255.0f;
+        g = ucolor.g / 255.0f;
+        b = ucolor.b / 255.0f;
+        a = (255 - ucolor.a) / 255.0f;
     }
 }
 

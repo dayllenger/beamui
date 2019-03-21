@@ -979,8 +979,9 @@ class Window : CustomEventTarget
             bindContext();
             glDisable(GL_DEPTH_TEST);
             glViewport(0, 0, pw, ph);
-            float r, g, b;
-            _backgroundColor.rgbf(r, g, b);
+            const r = _backgroundColor.r / 255.0f;
+            const g = _backgroundColor.g / 255.0f;
+            const b = _backgroundColor.b / 255.0f;
             glClearColor(r, g, b, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
             if (!buf)

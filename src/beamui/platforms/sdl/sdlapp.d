@@ -570,10 +570,7 @@ final class SDLWindow : Window
         else
         {
             Color c = backgroundColor;
-            ubyte r = cast(ubyte)c.red;
-            ubyte g = cast(ubyte)c.green;
-            ubyte b = cast(ubyte)c.blue;
-            SDL_SetRenderDrawColor(_renderer, r, g, b, 255);
+            SDL_SetRenderDrawColor(_renderer, c.r, c.g, c.b, 255);
             SDL_RenderClear(_renderer);
 
             const pw = physicalWidth;

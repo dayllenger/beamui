@@ -16,7 +16,7 @@ import beamui.core.functions : eliminate;
 import beamui.core.geometry : Point, Rect, RectF;
 import beamui.core.linalg;
 import beamui.core.logger;
-import beamui.graphics.colors : Color;
+import beamui.graphics.colors : Color, ColorF;
 import beamui.graphics.gl.api;
 import beamui.graphics.gl.errors;
 import beamui.graphics.gl.objects;
@@ -563,11 +563,7 @@ private final class OpenGLQueue
                 batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
         }
 
-        float[4 * 4] colors;
-        color1.rgbaf(colors[0], colors[1], colors[2], colors[3]);
-        color2.rgbaf(colors[4], colors[5], colors[6], colors[7]);
-        color3.rgbaf(colors[8], colors[9], colors[10], colors[11]);
-        color4.rgbaf(colors[12], colors[13], colors[14], colors[15]);
+        ColorF[4] colors = [ ColorF(color1), ColorF(color2), ColorF(color3), ColorF(color4) ];
 
         float dstx0 = cast(float)dstrc.left;
         float dsty0 = cast(float)(glSupport.bufferDy - dstrc.top);
@@ -603,11 +599,7 @@ private final class OpenGLQueue
                 batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
         }
 
-        float[4 * 4] colors;
-        color1.rgbaf(colors[0], colors[1], colors[2], colors[3]);
-        color2.rgbaf(colors[4], colors[5], colors[6], colors[7]);
-        color3.rgbaf(colors[8], colors[9], colors[10], colors[11]);
-        color4.rgbaf(colors[12], colors[13], colors[14], colors[15]);
+        ColorF[4] colors = [ ColorF(color1), ColorF(color2), ColorF(color3), ColorF(color4) ];
 
         float x0 = rc.left;
         float y0 = glSupport.bufferDy - rc.top;
@@ -632,10 +624,7 @@ private final class OpenGLQueue
                 batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
         }
 
-        float[4 * 3] colors;
-        color1.rgbaf(colors[0], colors[1], colors[2], colors[3]);
-        color2.rgbaf(colors[4], colors[5], colors[6], colors[7]);
-        color3.rgbaf(colors[8], colors[9], colors[10], colors[11]);
+        ColorF[3] colors = [ ColorF(color1), ColorF(color2), ColorF(color3) ];
 
         float x0 = p1.x;
         float y0 = glSupport.bufferDy - p1.y;
@@ -662,9 +651,7 @@ private final class OpenGLQueue
                 batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
         }
 
-        float[4 * 2] colors;
-        color1.rgbaf(colors[0], colors[1], colors[2], colors[3]);
-        color2.rgbaf(colors[4], colors[5], colors[6], colors[7]);
+        ColorF[2] colors = [ ColorF(color1), ColorF(color2) ];
 
         // half-pixel offset is essential for correct result
         float x0 = p1.x + 0.5;
