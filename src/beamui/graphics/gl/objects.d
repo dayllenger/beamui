@@ -1,11 +1,5 @@
 /**
-Wrappers for basic OpenGL objects - buffers, vertex array objects, textures, and so on.
-
-Every class that represents OpenGL object uses RAII idiom:
-it creates a resource in constructor and deletes it in destructor,
-so don't forget about proper object destruction.
-
-Note: On construction each object binds itself to the target, and unbinds on destruction.
+Sugar for basic OpenGL objects - buffers, vertex array objects, textures, and so on.
 
 Copyright: dayllenger 2017-2018
 License:   Boost License 1.0
@@ -16,61 +10,61 @@ module beamui.graphics.gl.objects;
 import beamui.core.config;
 
 static if (USE_OPENGL):
+public import beamui.graphics.gl.api : GLuint;
 import beamui.graphics.gl.api;
 import beamui.graphics.gl.errors;
 
 package(beamui) __gshared bool glNoContext;
 
-final class Buffer(GLuint target)
+/// Buffer objects facility
+struct Buffer(GLuint target_)
 {
-    private immutable GLuint id;
+    alias target = target_;
 
-    this()
+static:
+    void bind(ref GLuint id)
     {
-        GLuint handle;
-        checkgl!glGenBuffers(1, &handle);
-        id = handle;
-        bind();
+        if (id == 0)
+            glGenBuffers(1, &id);
+        checkgl!glBindBuffer(target, id);
     }
 
-    ~this()
+    void unbind()
+    {
+        glBindBuffer(target, 0);
+    }
+
+    void del(ref GLuint id)
     {
         if (!glNoContext)
         {
-            unbind();
-            checkgl!glDeleteBuffers(1, &id);
+            glBindBuffer(target, 0);
+            glDeleteBuffers(1, &id);
         }
+        id = 0;
     }
 
-    void bind()
+    static if (target != GL_ELEMENT_ARRAY_BUFFER)
     {
-        glBindBuffer(target, id);
-    }
-
-    static void unbind()
-    {
-        checkgl!glBindBuffer(target, 0);
-    }
-
-    void fill(float[][] buffs)
-    {
-        int length;
-        foreach (b; buffs)
-            length += b.length;
-        checkgl!glBufferData(target, length * float.sizeof, null, GL_STATIC_DRAW);
-        int offset;
-        foreach (b; buffs)
+        void fill(float[][] buffs...)
         {
-            checkgl!glBufferSubData(target, offset, b.length * float.sizeof, b.ptr);
-            offset += b.length * float.sizeof;
+            size_t length;
+            foreach (b; buffs)
+                length += b.length;
+            checkgl!glBufferData(target, length * float.sizeof, null, GL_STATIC_DRAW);
+            int offset;
+            foreach (b; buffs)
+            {
+                checkgl!glBufferSubData(target, offset, b.length * float.sizeof, b.ptr);
+                offset += b.length * float.sizeof;
+            }
         }
     }
-
-    static if (target == GL_ELEMENT_ARRAY_BUFFER)
+    else
     {
         void fill(int[] indexes)
         {
-            checkgl!glBufferData(target, cast(int)(indexes.length * int.sizeof), indexes.ptr, GL_STATIC_DRAW);
+            checkgl!glBufferData(target, indexes.length * int.sizeof, indexes.ptr, GL_STATIC_DRAW);
         }
     }
 }
@@ -78,121 +72,110 @@ final class Buffer(GLuint target)
 alias VBO = Buffer!GL_ARRAY_BUFFER;
 alias EBO = Buffer!GL_ELEMENT_ARRAY_BUFFER;
 
-/// Vertex array object
-final class VAO
+/// Vertex array object facility
+struct VAO
 {
-    private immutable GLuint id;
-
-    this()
+static:
+    void bind(ref GLuint id)
     {
-        GLuint handle;
-        checkgl!glGenVertexArrays(1, &handle);
-        id = handle;
-        bind();
+        if (id == 0)
+            glGenVertexArrays(1, &id);
+        checkgl!glBindVertexArray(id);
     }
 
-    ~this()
+    void unbind()
+    {
+        glBindVertexArray(0);
+    }
+
+    void del(ref GLuint id)
     {
         if (!glNoContext)
         {
-            unbind();
-            checkgl!glDeleteVertexArrays(1, &id);
+            glBindVertexArray(0);
+            glDeleteVertexArrays(1, &id);
         }
-    }
-
-    void bind()
-    {
-        glBindVertexArray(id);
-    }
-
-    static void unbind()
-    {
-        checkgl!glBindVertexArray(0);
+        id = 0;
     }
 }
 
-class Tex2D
+/// 2D texture facility
+struct Tex2D
 {
-    immutable GLuint id;
-
-    this()
+static:
+    void bind(ref GLuint id)
     {
-        GLuint handle;
-        checkgl!glGenTextures(1, &handle);
-        id = handle;
-        bind();
+        if (id == 0)
+            glGenTextures(1, &id);
+        checkgl!glBindTexture(GL_TEXTURE_2D, id);
     }
 
-    ~this()
+    void setup(GLuint id, GLuint binding)
+    {
+        assert(id > 0);
+        glActiveTexture(GL_TEXTURE0 + binding);
+        glBindTexture(GL_TEXTURE_2D, id);
+        checkError("setup texture");
+    }
+
+    void unbind()
+    {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    void del(ref GLuint id)
     {
         if (!glNoContext)
         {
-            unbind();
-            checkgl!glDeleteTextures(1, &id);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glDeleteTextures(1, &id);
         }
+        id = 0;
     }
 
-    void bind()
-    {
-        glBindTexture(GL_TEXTURE_2D, id);
-    }
-
-    static void unbind()
-    {
-        checkgl!glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    void setSamplerParams(bool linear, bool clamp = false, bool mipmap = false)
+    void setFiltering(bool linear, bool mipmap)
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? (!mipmap ? GL_LINEAR
-                : GL_LINEAR_MIPMAP_LINEAR) : (!mipmap ? GL_NEAREST : GL_NEAREST_MIPMAP_NEAREST));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ?
+            (!mipmap ? GL_LINEAR : GL_LINEAR_MIPMAP_LINEAR) :
+            (!mipmap ? GL_NEAREST : GL_NEAREST_MIPMAP_NEAREST));
         checkError("filtering - glTexParameteri");
-        if (clamp)
+    }
+
+    void setRepeating(bool repeat)
+    {
+        if (!repeat)
         {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             checkError("clamp - glTexParameteri");
         }
     }
-
-    void setup(GLuint binding = 0)
-    {
-        glActiveTexture(GL_TEXTURE0 + binding);
-        glBindTexture(GL_TEXTURE_2D, id);
-        checkError("setup texture");
-    }
 }
 
-/// Framebuffer object
-final class FBO
+/// Framebuffer object facility
+struct FBO
 {
-    private immutable GLuint id;
-
-    this()
+static:
+    void bind(ref GLuint id)
     {
-        GLuint handle;
-        checkgl!glGenFramebuffers(1, &handle);
-        id = handle;
-        bind();
+        if (id == 0)
+            glGenFramebuffers(1, &id);
+        checkgl!glBindFramebuffer(GL_FRAMEBUFFER, id);
     }
 
-    ~this()
+    void unbind()
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    void del(ref GLuint id)
     {
         if (!glNoContext)
         {
-            unbind();
-            checkgl!glDeleteFramebuffers(1, &id);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDeleteFramebuffers(1, &id);
         }
-    }
-
-    void bind()
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, id);
-    }
-
-    static void unbind()
-    {
-        checkgl!glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        id = 0;
     }
 }

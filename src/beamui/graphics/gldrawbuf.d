@@ -18,7 +18,7 @@ import beamui.core.logger;
 import beamui.graphics.colors;
 import beamui.graphics.drawbuf;
 import beamui.graphics.glsupport;
-import beamui.graphics.gl.objects : Tex2D;
+import beamui.graphics.gl.objects : GLuint, Tex2D;
 
 /// Drawing buffer - image container which allows to perform some drawing operations
 class GLDrawBuf : DrawBuf
@@ -252,7 +252,7 @@ private abstract class GLCache
             int _x;
             bool _closed;
             bool _needUpdateTexture;
-            Tex2D _texture;
+            GLuint _texture;
             int _itemCount;
         }
 
@@ -267,31 +267,29 @@ private abstract class GLCache
         ~this()
         {
             eliminate(_drawbuf);
-            eliminate(_texture);
+            Tex2D.del(_texture);
         }
 
         final void updateTexture()
         {
             if (_drawbuf is null)
                 return; // no draw buffer!!!
-            if (_texture is null || _texture.id == 0)
+            if (_texture == 0)
             {
-                _texture = new Tex2D;
-                Log.d("updateTexture - new texture id=", _texture.id);
-                if (!_texture.id)
+                Tex2D.bind(_texture);
+                if (_texture == 0)
                     return;
+                Log.d("updateTexture - new texture id: ", _texture);
             }
             uint* pixels = _drawbuf.scanLine(0);
             if (!glSupport.setTextureImage(_texture, _drawbuf.width, _drawbuf.height, cast(ubyte*)pixels))
             {
-                eliminate(_texture);
+                Tex2D.del(_texture);
                 return;
             }
             _needUpdateTexture = false;
             if (_closed)
-            {
                 eliminate(_drawbuf);
-            }
         }
 
         final GLCacheItem reserveSpace(uint objectID, int width, int height)
@@ -349,7 +347,7 @@ private abstract class GLCache
         {
             if (_needUpdateTexture)
                 updateTexture();
-            if (_texture && _texture.id != 0)
+            if (_texture != 0)
             {
                 // convert coordinates to cached texture
                 srcrc.offset(item._rc.left, item._rc.top);

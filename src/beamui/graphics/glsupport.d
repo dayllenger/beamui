@@ -54,7 +54,7 @@ class SolidFillProgram : GLProgram
         };
     }
 
-    protected VAO vao;
+    protected GLuint vao;
     protected GLint matrixLocation;
     protected GLint vertexLocation;
     protected GLint colAttrLocation;
@@ -71,12 +71,12 @@ class SolidFillProgram : GLProgram
     {
         bind();
         checkgl!glUniformMatrix4fv(matrixLocation, 1, false, glSupport.projectionMatrix.m.ptr);
-        vao.bind();
+        VAO.bind(vao);
     }
 
     void createVAO(size_t verticesBufferLength)
     {
-        vao = new VAO;
+        VAO.bind(vao);
 
         glVertexAttribPointer(vertexLocation, 3, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
         glVertexAttribPointer(colAttrLocation, 4, GL_FLOAT, GL_FALSE, 0,
@@ -88,7 +88,7 @@ class SolidFillProgram : GLProgram
 
     void destroyVAO()
     {
-        eliminate(vao);
+        VAO.del(vao);
     }
 }
 
@@ -138,7 +138,7 @@ class TextureProgram : SolidFillProgram
 
     protected void createVAO(size_t verticesBufferLength, size_t colorsBufferLength)
     {
-        vao = new VAO;
+        VAO.bind(vao);
 
         glVertexAttribPointer(vertexLocation, 3, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
         glVertexAttribPointer(colAttrLocation, 4, GL_FLOAT, GL_FALSE, 0,
@@ -254,8 +254,8 @@ final class GLBackend
         SolidFillProgram _solidFillProgram;
         TextureProgram _textureProgram;
 
-        VBO vbo;
-        EBO ebo;
+        GLuint vbo;
+        GLuint ebo;
     }
 
     this()
@@ -306,22 +306,19 @@ final class GLBackend
 
         resetBindings();
 
-        vbo = new VBO;
-        ebo = new EBO;
+        VBO.bind(vbo);
+        VBO.fill(vertices, colors, texcoords);
 
-        vbo.bind();
-        vbo.fill([vertices, colors, texcoords]);
-
-        ebo.bind();
-        ebo.fill(indices);
+        EBO.bind(ebo);
+        EBO.fill(indices);
 
         // create vertex array objects and bind vertex buffers to them
         _solidFillProgram.createVAO(vertices.length);
-        vbo.bind();
-        ebo.bind();
+        VBO.bind(vbo);
+        EBO.bind(ebo);
         _textureProgram.createVAO(vertices.length, colors.length);
-        vbo.bind();
-        ebo.bind();
+        VBO.bind(vbo);
+        EBO.bind(ebo);
     }
 
     private void destroyBuffers()
@@ -333,8 +330,8 @@ final class GLBackend
         _solidFillProgram.destroyVAO();
         _textureProgram.destroyVAO();
 
-        eliminate(vbo);
-        eliminate(ebo);
+        VBO.del(vbo);
+        EBO.del(ebo);
     }
 
     /// This function is needed to draw custom OpenGL scene correctly
@@ -363,18 +360,18 @@ final class GLBackend
         checkgl!glDrawElements(GL_TRIANGLES, length, GL_UNSIGNED_INT, cast(void*)(start * 4));
     }
 
-    private void drawColorAndTextureTriangles(Tex2D texture, bool linear, int length, int start)
+    private void drawColorAndTextureTriangles(GLuint texture, bool linear, int length, int start)
     {
         assert(_textureProgram);
 
         _textureProgram.beforeExecute();
 
-        texture.setup();
-        texture.setSamplerParams(linear);
+        Tex2D.setup(texture, 0);
+        Tex2D.setFiltering(linear, false);
 
         checkgl!glDrawElements(GL_TRIANGLES, length, GL_UNSIGNED_INT, cast(void*)(start * 4));
 
-        texture.unbind();
+        Tex2D.unbind();
     }
 
     /// Call glFlush
@@ -383,7 +380,7 @@ final class GLBackend
         checkgl!glFlush();
     }
 
-    bool generateMipmap(int dx, int dy, ubyte* pixels, int level, ref ubyte[] dst)
+    private bool generateMipmap(int dx, int dy, ubyte* pixels, int level, ref ubyte[] dst)
     {
         if ((dx & 1) || (dy & 1) || dx < 2 || dy < 2)
             return false; // size is not even
@@ -416,16 +413,16 @@ final class GLBackend
         return true;
     }
 
-    bool setTextureImage(Tex2D texture, int dx, int dy, ubyte* pixels, int mipmapLevels = 0)
+    bool setTextureImage(GLuint texture, int dx, int dy, ubyte* pixels, int mipmapLevels = 0)
     {
         checkError("before setTextureImage");
-        texture.bind();
+        Tex2D.bind(texture);
         checkgl!glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        texture.setSamplerParams(true, true);
+        Tex2D.setFiltering(true, mipmapLevels > 1);
+        Tex2D.setRepeating(false);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipmapLevels > 0 ? mipmapLevels - 1 : 0);
-        // ORIGINAL: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dx, dy, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
         checkgl!glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dx, dy, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
         if (checkError("updateTexture - glTexImage2D"))
         {
@@ -447,16 +444,17 @@ final class GLBackend
                 src = buffer.ptr;
             }
         }
-        texture.unbind();
+        Tex2D.unbind();
         return true;
     }
 
-    bool setTextureImageAlpha(Tex2D texture, int dx, int dy, ubyte* pixels)
+    bool setTextureImageAlpha(GLuint texture, int dx, int dy, ubyte* pixels)
     {
         checkError("before setTextureImageAlpha");
-        texture.bind();
+        Tex2D.bind(texture);
         checkgl!glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        texture.setSamplerParams(true, true);
+        Tex2D.setFiltering(true, false);
+        Tex2D.setRepeating(false);
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, dx, dy, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
         if (checkError("setTextureImageAlpha - glTexImage2D"))
@@ -464,7 +462,7 @@ final class GLBackend
             Log.e("Cannot set image for texture");
             return false;
         }
-        texture.unbind();
+        Tex2D.unbind();
         return true;
     }
 
@@ -498,7 +496,7 @@ private final class OpenGLQueue
         }
         BatchType type;
 
-        Tex2D texture;
+        GLuint texture;
         int textureDx;
         int textureDy;
         bool textureLinear;
@@ -552,11 +550,13 @@ private final class OpenGLQueue
     static immutable float Z_2D = -2.0f;
 
     /// Add textured rectangle to queue
-    void addTexturedRect(Tex2D texture, int textureDx, int textureDy, Color color1, Color color2,
+    void addTexturedRect(GLuint texture, int textureDx, int textureDy, Color color1, Color color2,
             Color color3, Color color4, Rect srcrc, Rect dstrc, bool linear)
     {
+        if (texture == 0)
+            return;
         if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.texturedRect ||
-                batches.data[$ - 1].texture.id != texture.id || batches.data[$ - 1].textureLinear != linear)
+                batches.data[$ - 1].texture != texture || batches.data[$ - 1].textureLinear != linear)
         {
             batches ~= OpenGLBatch(OpenGLBatch.BatchType.texturedRect, texture, textureDx, textureDy, linear);
             if (batches.data.length > 1)
