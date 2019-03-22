@@ -56,15 +56,13 @@ class SolidFillProgram : GLProgram
 
     protected GLuint vao;
     protected GLint matrixLocation;
-    protected GLint vertexLocation;
-    protected GLint colAttrLocation;
 
     override bool initLocations()
     {
         matrixLocation = getUniformLocation("MVP");
-        vertexLocation = getAttribLocation("vertexPosition");
-        colAttrLocation = getAttribLocation("vertexColor");
-        return matrixLocation >= 0 && vertexLocation >= 0 && colAttrLocation >= 0;
+        bindAttribLocation("vertexPosition", 0);
+        bindAttribLocation("vertexColor", 1);
+        return matrixLocation >= 0;
     }
 
     void beforeExecute()
@@ -78,12 +76,12 @@ class SolidFillProgram : GLProgram
     {
         VAO.bind(vao);
 
-        glVertexAttribPointer(vertexLocation, 3, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
-        glVertexAttribPointer(colAttrLocation, 4, GL_FLOAT, GL_FALSE, 0,
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0,
                 cast(void*)(verticesBufferLength * float.sizeof));
 
-        glEnableVertexAttribArray(vertexLocation);
-        glEnableVertexAttribArray(colAttrLocation);
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
     }
 
     void destroyVAO()
@@ -128,27 +126,25 @@ class TextureProgram : SolidFillProgram
         };
     }
 
-    GLint texCoordLocation;
     override bool initLocations()
     {
-        bool res = super.initLocations();
-        texCoordLocation = getAttribLocation("vertexUV");
-        return res && texCoordLocation >= 0;
+        bindAttribLocation("vertexUV", 2);
+        return super.initLocations();
     }
 
     protected void createVAO(size_t verticesBufferLength, size_t colorsBufferLength)
     {
         VAO.bind(vao);
 
-        glVertexAttribPointer(vertexLocation, 3, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
-        glVertexAttribPointer(colAttrLocation, 4, GL_FLOAT, GL_FALSE, 0,
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0,
                 cast(void*)(verticesBufferLength * float.sizeof));
-        glVertexAttribPointer(texCoordLocation, 2, GL_FLOAT, GL_FALSE, 0,
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0,
                 cast(void*)((verticesBufferLength + colorsBufferLength) * float.sizeof));
 
-        glEnableVertexAttribArray(vertexLocation);
-        glEnableVertexAttribArray(colAttrLocation);
-        glEnableVertexAttribArray(texCoordLocation);
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(2);
     }
 }
 
@@ -284,11 +280,11 @@ final class GLBackend
     {
         Log.v("Compiling solid fill program");
         _solidFillProgram = new SolidFillProgram;
-        if (!_solidFillProgram.check())
+        if (!_solidFillProgram.valid)
             return false;
         Log.v("Compiling texture program");
         _textureProgram = new TextureProgram;
-        if (!_textureProgram.check())
+        if (!_textureProgram.valid)
             return false;
         return true;
     }

@@ -67,15 +67,25 @@ GLuint linkShaders(const GLuint[] shaderIDs...)
         programID = 0;
         glDeleteProgram(programID);
     }
-
-    // delete the program parts
+    // flag the shaders for deletion
     foreach(sh; shaderIDs)
     {
-        glDetachShader(programID, sh);
         glDeleteShader(sh);
     }
-
     return programID;
+}
+
+/// Relink after some location bindings. Nullifies `programID` in case of error
+void relinkProgram(ref GLuint programID)
+{
+    glLinkProgram(programID);
+
+    // check the program
+    if (!checkLinking(programID))
+    {
+        programID = 0;
+        glDeleteProgram(programID);
+    }
 }
 
 private enum logMaxLen = 1023;
@@ -98,11 +108,10 @@ private bool checkCompilation(const GLuint shaderID, const ShaderStage stage)
         // it can be some warning
         if (!ok)
         {
-            Log.fe("Failed to compile %s shader:", stage);
-            Log.e(s);
+            Log.fe("Failed to compile %s shader:\n%s", stage, s);
         }
         else
-            Log.w(s);
+            Log.w('\n', s);
     }
     return ok;
 }
@@ -125,11 +134,10 @@ private bool checkLinking(const GLuint programID)
         // it can be some warning
         if (!ok)
         {
-            Log.e("Failed to link shaders:");
-            Log.e(s);
+            Log.e("Failed to link shaders:\n", s);
         }
         else
-            Log.w(s);
+            Log.w('\n', s);
     }
     return ok;
 }

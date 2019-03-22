@@ -22,6 +22,12 @@ class GLProgram
     abstract @property string vertexSource() const;
     abstract @property string fragmentSource() const;
 
+    /// Returns true if program is ready for use
+    final @property bool valid() const
+    {
+        return programID != 0;
+    }
+
     private GLuint programID;
 
     private int glslVersionInt;
@@ -68,7 +74,10 @@ class GLProgram
             programID = 0;
             return;
         }
-        Log.v("Program initialized successfully");
+
+        relinkProgram(programID);
+        if (programID != 0)
+            Log.v("Program initialized successfully");
     }
 
     ~this()
@@ -105,16 +114,10 @@ class GLProgram
         return cast(string)buf;
     }
 
-    /// Returns true if program is ready for use
-    final bool check() const
-    {
-        return programID != 0;
-    }
-
     /// Binds program in the current context
-    void bind()
+    final void bind()
     {
-        assert(check(), "Attempt to bind invalid shader program");
+        assert(valid, "Attempt to bind invalid shader program");
         if (programID != currentProgramID)
         {
             checkgl!glUseProgram(programID);
@@ -132,15 +135,14 @@ class GLProgram
     /// Override to init shader code locations. Return `false` on error
     abstract bool initLocations();
 
-    /// Get uniform location from program, returns -1 if location is not found
-    final int getUniformLocation(string variableName) const
+    /// Associate a number with an attribute. Must be used inside of `initLocations`
+    final void bindAttribLocation(string name, GLuint location) const
     {
-        return checkgl!glGetUniformLocation(programID, variableName.toStringz);
+        checkgl!glBindAttribLocation(programID, location, toStringz(name));
     }
-
-    /// Get attribute location from program, returns -1 if location is not found
-    final int getAttribLocation(string variableName) const
+    /// Get uniform location from program, returns -1 if location is not found
+    final int getUniformLocation(string name) const
     {
-        return checkgl!glGetAttribLocation(programID, variableName.toStringz);
+        return checkgl!glGetUniformLocation(programID, toStringz(name));
     }
 }
