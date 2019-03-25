@@ -341,6 +341,17 @@ struct Mat2x3
             store[1][0] * vec.x + store[1][1] * vec.y + store[1][2]);
     }
 
+    bool opEquals()(auto ref const Mat2x3 m) const
+    {
+        return
+            fequal6(store[0][0], m.store[0][0]) &&
+            fequal6(store[0][1], m.store[0][1]) &&
+            fequal6(store[0][2], m.store[0][2]) &&
+            fequal6(store[1][0], m.store[1][0]) &&
+            fequal6(store[1][1], m.store[1][1]) &&
+            fequal6(store[1][2], m.store[1][2]);
+    }
+
     /// Invert this transform. If matrix is not invertible, resets it to identity matrix
     ref Mat2x3 invert()
     {
@@ -352,12 +363,18 @@ struct Mat2x3
         else
         {
             const invdet = 1.0f / det;
-            store[0][0] =  store[1][1] * invdet;
-            store[0][1] = -store[0][1] * invdet;
-            store[0][2] = (store[0][1] * store[1][2] - store[1][1] * store[0][2]) * invdet;
-            store[1][0] = -store[1][0] * invdet;
-            store[1][1] =  store[0][0] * invdet;
-            store[1][2] = (store[1][0] * store[0][2] - store[0][0] * store[1][2]) * invdet;
+            const a00 = store[0][0];
+            const a01 = store[0][1];
+            const a02 = store[0][2];
+            const a10 = store[1][0];
+            const a11 = store[1][1];
+            const a12 = store[1][2];
+            store[0][0] =  a11 * invdet;
+            store[0][1] = -a01 * invdet;
+            store[0][2] = (a01 * a12 - a02 * a11) * invdet;
+            store[1][0] = -a10 * invdet;
+            store[1][1] =  a00 * invdet;
+            store[1][2] = (a10 * a02 - a00 * a12) * invdet;
             return this;
         }
     }
@@ -1254,6 +1271,13 @@ unittest
     const d2 = m2 * Vec2(15, 10);
     assert(fequal1(d1.x, -9.98) && fequal1(d1.y, 39.98));
     assert(fequal6(d1.x, d2.x) && fequal6(d1.y, d2.y));
+
+    assert(i * i.inverted == Mat2x3.identity);
+    assert(t * t.inverted == Mat2x3.identity);
+    assert(r * r.inverted == Mat2x3.identity);
+    assert(s * s.inverted == Mat2x3.identity);
+    assert(m1 * m1.inverted == Mat2x3.identity);
+    assert(m2 * m2.inverted == Mat2x3.identity);
 }
 
 unittest
