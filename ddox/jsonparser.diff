@@ -1,0 +1,8 @@
+149a150,156
+> 			// workaround for a bug with repeating declarations in conditional block
+> 			foreach (prev; ret)
+> 				if (prev.line == decl.line) {
+> 					decl = null;
+> 					break;
+> 				}
+> 			if( !decl ) continue;
