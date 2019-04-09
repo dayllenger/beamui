@@ -207,6 +207,14 @@ bool initGLBackend()
     const char major = glGetString(GL_VERSION)[0];
     if (major >= '3')
     {
+        if (GLProgram.determineGLSLVersion())
+            Log.v("GLSL version: ", GLProgram.glslVersionInt);
+        else
+        {
+            Log.e("Cannot determine GLSL version");
+            return false;
+        }
+
         auto bak = new GLBackend;
         if (bak.valid)
         {
@@ -261,11 +269,7 @@ final class GLBackend
         if (initShaders())
             Log.d("Shaders compiled successfully");
         else
-        {
             Log.e("Failed to compile shaders");
-            eliminate(_solidFillProgram);
-            eliminate(_textureProgram);
-        }
     }
 
     ~this()

@@ -30,32 +30,9 @@ class GLProgram
 
     private GLuint programID;
 
-    private int glslVersionInt;
-    private char[] glslVersionString;
-
     this()
     {
-        const glslVersionRaw = cast(const(char)*)checkgl!glGetString(GL_SHADING_LANGUAGE_VERSION);
-        if (glslVersionRaw)
-        {
-            for (int i;; i++)
-            {
-                const ch = glslVersionRaw[i];
-                if (ch >= '0' && ch <= '9')
-                {
-                    glslVersionInt = glslVersionInt * 10 + (ch - '0');
-                    glslVersionString ~= ch;
-                }
-                else if (ch != '.')
-                    break;
-            }
-        }
-        version (Android)
-        {
-            glslVersionInt = 130;
-        }
-        if (glslVersionString.length > 0)
-            Log.v("GLSL version: ", glslVersionString);
+        assert(glslVersionInt != 0 && glslVersionString.length > 0);
 
         string vsrc = preprocess(vertexSource, ShaderStage.vertex);
         string fsrc = preprocess(fragmentSource, ShaderStage.fragment);
@@ -90,9 +67,7 @@ class GLProgram
     private string preprocess(string code, ShaderStage stage)
     {
         char[] buf;
-        if (glslVersionString.length > 0)
-            buf = "#version " ~ glslVersionString ~ "\n";
-        buf ~= code;
+        buf = "#version " ~ glslVersionString ~ "\n" ~ code;
 
         // compatibility fixes
         if (glslVersionInt < 150)
@@ -144,5 +119,32 @@ class GLProgram
     final int getUniformLocation(string name) const
     {
         return checkgl!glGetUniformLocation(programID, toStringz(name));
+    }
+
+    package(beamui) static int glslVersionInt;
+    private static char[] glslVersionString;
+
+    package(beamui) static bool determineGLSLVersion()
+    {
+        if (const raw = checkgl!glGetString(GL_SHADING_LANGUAGE_VERSION))
+        {
+            for (int i;; i++)
+            {
+                const ch = raw[i];
+                if (ch >= '0' && ch <= '9')
+                {
+                    glslVersionInt = glslVersionInt * 10 + (ch - '0');
+                    glslVersionString ~= ch;
+                }
+                else if (ch != '.')
+                    break;
+            }
+        }
+        version (Android)
+        {
+            glslVersionInt = 130;
+        }
+
+        return glslVersionInt != 0 && glslVersionString.length > 0;
     }
 }
