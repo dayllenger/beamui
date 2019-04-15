@@ -582,7 +582,7 @@ class ImageDrawable : Drawable
     override @property Insets padding() const
     {
         if (!_image.isNull && _image.hasNinePatch)
-            return Insets(_image.ninePatch.padding);
+            return Insets.from(_image.ninePatch.padding);
         else
             return Insets(0);
     }

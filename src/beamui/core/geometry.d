@@ -189,13 +189,11 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
         w = rc.width;
         h = rc.height;
     }
-    /// Construct a box from another BoxOf through casting
-    this(U)(BoxOf!U source)
+
+    /// Construct from a box with another base type via casting
+    static BoxOf from(U)(BoxOf!U source)
     {
-        x = cast(U)source.x;
-        y = cast(U)source.y;
-        w = cast(U)source.w;
-        h = cast(U)source.h;
+        return BoxOf!T(cast(T)source.x, cast(T)source.y, cast(T)source.w, cast(T)source.h);
     }
 
     /// Get box position
@@ -343,13 +341,16 @@ struct RectOf(T) if (is(T == float) || is(T == int))
         right = b.x + b.w;
         bottom = b.y + b.h;
     }
-    /// Construct a rectangle from another RectOf through casting
-    this(U)(RectOf!U source)
+
+    /// Construct from a rectangle with another base type via casting
+    static RectOf from(U)(RectOf!U source)
     {
-        left = cast(U)source.left;
-        top = cast(U)source.top;
-        right = cast(U)source.right;
-        bottom = cast(U)source.bottom;
+        return RectOf!T(
+            cast(T)source.left,
+            cast(T)source.top,
+            cast(T)source.right,
+            cast(T)source.bottom,
+        );
     }
 
     @property const
@@ -521,13 +522,16 @@ struct InsetsOf(T) if (is(T == float) || is(T == int))
         this.bottom = bottom;
         this.left = left;
     }
-    /// Create offsets from another InsetsOf through casting
-    this(U)(InsetsOf!U source)
+
+    /// Construct from offsets with another base type via casting
+    static InsetsOf from(U)(InsetsOf!U source)
     {
-        top = cast(U)source.top;
-        right = cast(U)source.right;
-        bottom = cast(U)source.bottom;
-        left = cast(U)source.left;
+        return InsetsOf!T(
+            cast(T)source.top,
+            cast(T)source.right,
+            cast(T)source.bottom,
+            cast(T)source.left
+        );
     }
 
     /// Get total offset
