@@ -91,8 +91,23 @@ struct TextStyle
     TextHotkey hotkey;
     TextOverflow overflow;
     TextTransform transform;
-    /// Text color
+    /// Text foreground color
     Color color;
     /// Text background color
-    Color backgroundColor;
+    Color background;
+}
+
+/// Holds properties of the text, that influence only its layout
+struct TextLayoutStyle
+{
+    TabSize tabSize;
+    TextTransform transform;
+    bool skipHotkeyMarks;
+
+    this(ref const TextStyle superStyle)
+    {
+        tabSize = superStyle.tabSize;
+        transform = superStyle.transform;
+        skipHotkeyMarks = superStyle.hotkey != TextHotkey.ignore;
+    }
 }

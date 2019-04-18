@@ -82,9 +82,8 @@ struct TextLine
 
     Supports Tab character processing and processing of menu item labels like `&File`.
     */
-    void measure(const ref TextStyle style)
+    void measure(Font font, ref const TextLayoutStyle style)
     {
-        Font font = (cast(TextStyle)style).font;
         assert(font !is null, "Font is mandatory");
 
         const size_t len = _str.length;
@@ -100,7 +99,6 @@ struct TextLine
         const ushort fixedCharWidth = cast(ushort)font.charWidth('M');
         const int spaceWidth = fixed ? fixedCharWidth : font.spaceWidth;
         const bool useKerning = !fixed && font.allowKerning;
-        const bool hotkeys = style.hotkey != TextHotkey.ignore;
 
         if (_charWidths.length < len || _charWidths.length >= len * 5)
             _charWidths.length = len;
@@ -123,7 +121,7 @@ struct TextLine
                 prevChar = 0;
                 continue;
             }
-            else if (hotkeys && ch == '&')
+            else if (style.skipHotkeyMarks && ch == '&')
             {
                 pwidths[i] = 0;
                 pglyphs[i] = null;
@@ -265,7 +263,7 @@ struct TextLine
     }
 
     /// Draw measured line at the position, applying alignment
-    void draw(DrawBuf buf, Point pos, int boxWidth, const ref TextStyle style)
+    void draw(DrawBuf buf, Point pos, int boxWidth, ref const TextStyle style)
     {
         if (_str.length == 0)
             return; // nothing to draw - empty text
@@ -439,24 +437,25 @@ struct SingleLineText
     /// Text style to adjust properties
     TextStyle style;
     private TextLine line;
-    private TextStyle oldStyle;
+    private Font oldFont;
+    private TextLayoutStyle oldLayoutStyle;
 
-    private bool needToMeasure() const
+    private bool needToMeasure(Font font, ref const TextLayoutStyle ls) const
     {
-        return line.needToMeasure || style.font !is oldStyle.font || style.tabSize != oldStyle.tabSize ||
-               style.hotkey == TextHotkey.hidden && oldStyle.hotkey == TextHotkey.ignore ||
-               style.hotkey == TextHotkey.ignore && oldStyle.hotkey == TextHotkey.hidden ||
-               style.transform != oldStyle.transform;
+        return line.needToMeasure || oldFont !is font || oldLayoutStyle !is ls;
     }
 
     /// Measure single-line text during layout
     void measure()
     {
-        if (!needToMeasure)
+        auto font = style.font;
+        auto ls = TextLayoutStyle(style);
+        if (!needToMeasure(font, ls))
             return;
 
-        line.measure(style);
-        oldStyle = style;
+        oldFont = font;
+        oldLayoutStyle = ls;
+        line.measure(font, ls);
     }
 
     /// Draw text into buffer. Measures, if needed
@@ -514,19 +513,17 @@ struct PlainText
         dstring original;
         Appender!(TextLine[]) _lines;
         Appender!(TextLine[]) _wrappedLines;
-        TextStyle oldStyle;
+        Font oldFont;
+        TextLayoutStyle oldLayoutStyle;
         Size _size;
 
         int previousWrapWidth = -1;
     }
 
-    private bool needToMeasure() const
+    private bool needToMeasure(Font font, ref const TextLayoutStyle ls) const
     {
-        if (style.font !is oldStyle.font || style.tabSize != oldStyle.tabSize ||
-            style.hotkey == TextHotkey.hidden && oldStyle.hotkey == TextHotkey.ignore ||
-            style.hotkey == TextHotkey.ignore && oldStyle.hotkey == TextHotkey.hidden ||
-            style.transform != oldStyle.transform)
-                return true;
+        if (oldFont !is font || oldLayoutStyle !is ls)
+            return true;
         foreach (ref line; _lines.data)
             if (line.needToMeasure)
                 return true;
@@ -536,19 +533,23 @@ struct PlainText
     /// Measure multiline text during layout
     void measure()
     {
-        if (!needToMeasure)
+        auto font = style.font;
+        auto ls = TextLayoutStyle(style);
+        if (!needToMeasure(font, ls))
             return;
+
+        oldFont = font;
+        oldLayoutStyle = ls;
 
         Size sz;
         foreach (ref line; _lines.data)
         {
             if (line.needToMeasure)
-                line.measure(style);
+                line.measure(font, ls);
             sz.w = max(sz.w, line.size.w);
             sz.h += line.size.h;
         }
         _size = sz;
-        oldStyle = style;
         _wrappedLines.clear();
     }
 
