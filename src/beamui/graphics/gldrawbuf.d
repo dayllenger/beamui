@@ -19,6 +19,7 @@ import beamui.graphics.colors;
 import beamui.graphics.drawbuf;
 import beamui.graphics.glsupport;
 import beamui.graphics.gl.objects : GLuint, Tex2D;
+import beamui.text.glyph : GlyphRef;
 
 /// Drawing buffer - image container which allows to perform some drawing operations
 class GLDrawBuf : DrawBuf

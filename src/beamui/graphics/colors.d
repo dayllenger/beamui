@@ -13,6 +13,7 @@ import beamui.core.functions : clamp, to;
 import beamui.core.logger;
 import beamui.core.parseutils;
 import beamui.core.types;
+import beamui.text.glyph : SubpixelRenderingMode;
 
 alias ARGB8 = uint;
 

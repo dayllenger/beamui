@@ -80,58 +80,6 @@ enum State : uint
     parent = 1 << 20,
 }
 
-/// Subpixel rendering mode for fonts (aka ClearType)
-enum SubpixelRenderingMode : ubyte
-{
-    /// No sub
-    none,
-    /// Subpixel rendering on, subpixel order on device: B,G,R
-    bgr,
-    /// Subpixel rendering on, subpixel order on device: R,G,B
-    rgb,
-}
-
-/**
-    Character glyph.
-
-    Holder for glyph metrics as well as image.
-*/
-align(1) struct Glyph
-{
-    static if (USE_OPENGL)
-    {
-        /// 0: unique id of glyph (for drawing in hardware accelerated scenes)
-        uint id;
-    }
-
-    /// 0: width of glyph black box
-    ushort blackBoxX;
-
-    @property ushort correctedBlackBoxX() const
-    {
-        return subpixelMode ? (blackBoxX + 2) / 3 : blackBoxX;
-    }
-
-    /// 2: height of glyph black box
-    ubyte blackBoxY;
-    /// 3: X origin for glyph
-    byte originX;
-    /// 4: Y origin for glyph
-    byte originY;
-
-    /// 5: full width of glyph
-    ubyte widthPixels;
-    /// 6: full width of glyph scaled * 64
-    ushort widthScaled;
-    /// 8: subpixel rendering mode - if !=SubpixelRenderingMode.none, glyph data contains 3 bytes per pixel instead of 1
-    SubpixelRenderingMode subpixelMode;
-
-    /// 9: glyph data, arbitrary size (blackBoxX * blackBoxY)
-    ubyte[] glyph;
-}
-/// Pointer to immutable Glyph
-alias GlyphRef = immutable(Glyph)*;
-
 /**
     Base class for reference counted objects, maintains reference counter inplace.
 

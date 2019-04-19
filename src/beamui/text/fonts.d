@@ -35,8 +35,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.text.fonts;
 
-public import beamui.core.types : Glyph, GlyphRef, SubpixelRenderingMode;
 public import beamui.core.geometry : Size;
+public import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
 import beamui.core.config;
 import beamui.core.functions;
 import beamui.core.logger;
@@ -44,6 +44,7 @@ import beamui.core.types;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
 import beamui.style.types;
+import beamui.text.glyph;
 
 /// Font families enum
 enum FontFamily : ubyte
@@ -78,12 +79,6 @@ enum FontStyle : ubyte
     italic
 }
 
-enum dchar UNICODE_SOFT_HYPHEN_CODE = 0x00ad;
-enum dchar UNICODE_ZERO_WIDTH_SPACE = 0x200b;
-enum dchar UNICODE_NO_BREAK_SPACE = 0x00a0;
-enum dchar UNICODE_HYPHEN = 0x2010;
-enum dchar UNICODE_NB_HYPHEN = 0x2011;
-
 /// Custom character properties - for char-by-char drawing of text string with different character color and style
 struct CustomCharProps
 {
@@ -97,43 +92,6 @@ struct CustomCharProps
             this.textFlags |= TextFlag.underline;
         if (strikeThrough)
             this.textFlags |= TextFlag.strikeThrough;
-    }
-}
-
-static if (USE_OPENGL)
-{
-    private __gshared void function(uint id) _glyphDestroyCallback;
-    /**
-     * get glyph destroy callback (to cleanup OpenGL caches)
-     *
-     * Used for resource management. Usually you don't have to call it manually.
-     */
-    @property void function(uint id) glyphDestroyCallback()
-    {
-        return _glyphDestroyCallback;
-    }
-    /**
-     * Set glyph destroy callback (to cleanup OpenGL caches)
-     * This callback is used to tell OpenGL glyph cache that glyph is not more used - to let OpenGL glyph cache delete texture if all glyphs in it are no longer used.
-     *
-     * Used for resource management. Usually you don't have to call it manually.
-     */
-    @property void glyphDestroyCallback(void function(uint id) callback)
-    {
-        _glyphDestroyCallback = callback;
-    }
-
-    private __gshared uint _nextGlyphID;
-    /**
-     * ID generator for glyphs
-     *
-     * Generates next glyph ID. Unique IDs are being used to control OpenGL glyph cache items lifetime.
-     *
-     * Used for resource management. Usually you don't have to call it manually.
-     */
-    uint nextGlyphID()
-    {
-        return _nextGlyphID++;
     }
 }
 
@@ -806,132 +764,30 @@ class FontManager
     }
 }
 
-/**
-    Glyph image cache
-
-    Recently used glyphs are marked. `checkpoint` clears usage marks.
-    `cleanup` removes all items not accessed since last `checkpoint`.
-*/
-struct GlyphCache
-{
-    private struct Item
-    {
-        GlyphRef glyph;
-        bool inUse;
-    }
-    private Item[][1024] _glyphs;
-
-    /// Try to find glyph for character in cache, returns null if not found
-    GlyphRef find(dchar ch)
-    {
-        ch = ch & 0xF_FFFF;
-        const p = ch >> 8;
-        Item[] row = _glyphs[p];
-        if (!row)
-            return null;
-        const i = ch & 0xFF;
-        Item* item = &row[i];
-        if (!item.glyph)
-            return null;
-        item.inUse = true;
-        return item.glyph;
-    }
-
-    /// Put character glyph to cache
-    GlyphRef put(dchar ch, GlyphRef glyph)
-    {
-        assert(glyph);
-        ch = ch & 0xF_FFFF;
-        const p = ch >> 8;
-        const i = ch & 0xFF;
-        if (_glyphs[p] is null)
-            _glyphs[p] = new Item[256];
-        _glyphs[p][i] = Item(glyph, true);
-        return glyph;
-    }
-
-    /// Removes entries not used after last call of checkpoint() or cleanup()
-    void cleanup()
-    {
-        foreach (part; _glyphs)
-        {
-            if (!part)
-                continue;
-            foreach (item; part)
-            {
-                if (!item.glyph || item.inUse)
-                    continue;
-                static if (USE_OPENGL)
-                {
-                    // notify about destroyed glyphs
-                    if (_glyphDestroyCallback)
-                        _glyphDestroyCallback(item.glyph.id);
-                }
-                eliminate(item.glyph);
-            }
-        }
-    }
-
-    /// Clear usage flags for all entries
-    void checkpoint()
-    {
-        foreach (part; _glyphs)
-        {
-            if (!part)
-                continue;
-            foreach (ref item; part)
-                item.inUse = false;
-        }
-    }
-
-    /// Removes all entries (when built with USE_OPENGL version, notify OpenGL cache about removed glyphs)
-    void clear()
-    {
-        foreach (part; _glyphs)
-        {
-            if (!part)
-                continue;
-            foreach (item; part)
-            {
-                if (!item.glyph)
-                    continue;
-                static if (USE_OPENGL)
-                {
-                    // notify about destroyed glyphs
-                    if (_glyphDestroyCallback)
-                        _glyphDestroyCallback(item.glyph.id);
-                }
-                eliminate(item.glyph);
-            }
-        }
-    }
-    /// On destroy, destroy all items (when built with USE_OPENGL version, notify OpenGL cache about removed glyphs)
-    ~this()
-    {
-        clear();
-    }
-}
-
-__gshared glyph_gamma_table!65 _gamma65;
-__gshared glyph_gamma_table!256 _gamma256;
+package(beamui) __gshared GlyphGammaTable!65 _gamma65;
+package(beamui) __gshared GlyphGammaTable!256 _gamma256;
 
 /**
-    Support of font glyph Gamma correction
-    table to correct gamma and translate to output range 0..255
-    maxv is 65 for win32 fonts, 256 for freetype
+    Support for font glyph gamma correction.
+
+    Table to correct gamma and translate to output range 0..255.
+    `maxv` is 65 for Win32 fonts and 256 for FreeType.
 */
-class glyph_gamma_table(int maxv = 65)
+final class GlyphGammaTable(int maxv)
 {
+    private ubyte[maxv] _map;
+    private double _gamma = 1.0;
+
     this(double gammaValue = 1.0)
     {
         gamma(gammaValue);
     }
 
-    @property double gamma() { return _gamma; }
+    @property double gamma() const { return _gamma; }
 
     @property void gamma(double g)
     {
-        import std.math;
+        import std.math : pow, round;
 
         _gamma = g;
         foreach (int i; 0 .. maxv)
@@ -943,18 +799,21 @@ class glyph_gamma_table(int maxv = 65)
             _map[i] = n_clamp;
         }
     }
+
     /// Correct byte value from source range to 0..255 applying gamma
-    ubyte correct(ubyte src)
+    ubyte correct(ubyte src) const
     {
         if (src >= maxv)
             src = maxv - 1;
         return _map[src];
     }
-
-private:
-    ubyte[maxv] _map;
-    double _gamma = 1.0;
 }
+
+enum dchar UNICODE_SOFT_HYPHEN_CODE = 0x00ad;
+enum dchar UNICODE_ZERO_WIDTH_SPACE = 0x200b;
+enum dchar UNICODE_NO_BREAK_SPACE = 0x00a0;
+enum dchar UNICODE_HYPHEN = 0x2010;
+enum dchar UNICODE_NB_HYPHEN = 0x2011;
 
 /// Find some suitable replacement for important characters missing in font
 dchar getReplacementChar(dchar code)

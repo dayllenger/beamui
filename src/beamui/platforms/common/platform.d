@@ -2170,6 +2170,8 @@ void disableOpenGL()
 {
     static if (USE_OPENGL)
     {
+        import beamui.text.glyph : glyphDestroyCallback;
+
         _openglEnabled = false;
         glyphDestroyCallback = null;
         Log.w("OpenGL was disabled");

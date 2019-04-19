@@ -18,6 +18,7 @@ import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types : Result, Ok, Err;
 import beamui.text.fonts;
+import beamui.text.glyph;
 
 package(beamui) __gshared int[string] STD_FONT_FACES;
 

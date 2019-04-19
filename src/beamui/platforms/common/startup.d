@@ -553,8 +553,8 @@ void initResourceManagers()
 
     debug APP_IS_SHUTTING_DOWN = false;
 
-    _gamma65 = new glyph_gamma_table!65(1.0);
-    _gamma256 = new glyph_gamma_table!256(1.0);
+    _gamma65 = new GlyphGammaTable!65(1.0);
+    _gamma256 = new GlyphGammaTable!256(1.0);
     static if (USE_FREETYPE)
     {
         import beamui.text.ftfonts;

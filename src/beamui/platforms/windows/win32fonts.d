@@ -21,6 +21,7 @@ import std.utf;
 import beamui.core.logger;
 import beamui.platforms.windows.win32drawbuf;
 import beamui.text.fonts;
+import beamui.text.glyph;
 
 private struct FontDef
 {

@@ -14,6 +14,7 @@ import beamui.core.functions;
 import beamui.core.linalg;
 import beamui.core.logger;
 import beamui.graphics.colors;
+import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
 
 /// 9-patch image scaling information
 struct NinePatch
