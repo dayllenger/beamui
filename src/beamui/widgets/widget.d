@@ -402,48 +402,37 @@ public:
             {
                 _needToRecomputeStyle = false;
                 Style[] chain = selectStyleChain();
-                const len = cast(uint)chain.length;
                 // assume that style recomputation is purely depends on style chain
                 // it may not change from previous update
-                if (cast(size_t[])cachedChain[0 .. cachedChainLen] != cast(size_t[])chain)
+                if (cast(size_t[])cachedChain[] != cast(size_t[])chain)
                 {
                     // copy
-                    if (cachedChain.length < len)
-                        cachedChain.length = len;
-                    cachedChainLen = len;
-                    cachedChain[0 .. len] = chain[];
+                    cachedChain.clear();
+                    cachedChain ~= chain;
                     // important: we cannot use shared array from `selectStyleChain` func
-                    _style.recompute(cachedChain[0 .. len]);
+                    _style.recompute(cachedChain.unsafe_slice);
                 }
                 if (stylesRecomputed.assigned)
-                    stylesRecomputed(cachedChain[0 .. len]);
+                    stylesRecomputed(cachedChain.unsafe_slice);
             }
         }
     }
-    private Style[] cachedChain;
-    private uint cachedChainLen;
+    private Buf!Style cachedChain;
 
     /// Get a style chain for this widget from current theme, least specific styles first
     Style[] selectStyleChain()
     {
-        static Style[] tmpchain;
+        static Buf!Style tmpchain;
+        tmpchain.clear();
         // first find our scope
         const Widget closure = findStyleScopeRoot();
         // we can skip half of work if the state is normal
         Style[] list = (state == State.normal) ? currentTheme.normalStyles : currentTheme.allStyles;
-        size_t count;
         foreach (style; list)
-        {
             if (matchSelector(style.selector, closure))
-            {
-                if (tmpchain.length <= count)
-                    tmpchain.length += 4;
-                tmpchain[count] = style;
-                count++;
-            }
-        }
-        sort(tmpchain[0 .. count]);
-        return tmpchain[0 .. count];
+                tmpchain ~= style;
+        sort(tmpchain.unsafe_slice);
+        return tmpchain.unsafe_slice;
     }
 
     /// Match this widget with selector
@@ -1134,7 +1123,7 @@ public:
         }
     }
 
-    private void findFocusableChildren(ref TabOrderInfo[] results, Rect clipRect, Widget currentWidget)
+    private void findFocusableChildren(ref Buf!TabOrderInfo results, Rect clipRect, Widget currentWidget)
     {
         if (visibility != Visibility.visible)
             return;
@@ -1156,14 +1145,14 @@ public:
 
     /// Find all focusables belonging to the same focusGroup as this widget (does not include current widget).
     /// Usually to be called for focused widget to get possible alternatives to navigate to
-    private TabOrderInfo[] findFocusables(Widget currentWidget)
+    private Buf!TabOrderInfo findFocusables(Widget currentWidget)
     {
-        TabOrderInfo[] result;
+        Buf!TabOrderInfo result;
         Widget group = focusGroupWidget();
         group.findFocusableChildren(result, Rect(group.box), currentWidget);
         for (ushort i = 0; i < result.length; i++)
-            result[i].childOrder = i + 1;
-        sort(result);
+            result.unsafe_ref(i).childOrder = i + 1;
+        sort(result.unsafe_slice);
         return result;
     }
 
@@ -1190,8 +1179,8 @@ public:
     {
         if (direction == FocusMovement.none)
             return this;
-        TabOrderInfo[] focusables = findFocusables(this);
-        if (!focusables.length)
+        auto focusables = findFocusables(this);
+        if (focusables.length == 0)
             return null;
         int myIndex = -1;
         for (int i = 0; i < focusables.length; i++)
@@ -1207,14 +1196,14 @@ public:
         if (myIndex == -1)
             return null; // not found myself
         if (focusables.length == 1)
-            return focusables[0].widget; // single option - use it
+            return focusables.unsafe_ref(0).widget; // single option - use it
         if (direction == FocusMovement.next)
         {
             // move forward
             int index = myIndex + 1;
             if (index >= focusables.length)
                 index = 0;
-            return focusables[index].widget;
+            return focusables.unsafe_ref(index).widget;
         }
         else if (direction == FocusMovement.previous)
         {
@@ -1222,18 +1211,18 @@ public:
             int index = myIndex - 1;
             if (index < 0)
                 index = cast(int)focusables.length - 1;
-            return focusables[index].widget;
+            return focusables.unsafe_ref(index).widget;
         }
         else
         {
             // Left, Right, Up, Down
             if (direction == FocusMovement.left || direction == FocusMovement.right)
             {
-                sort!(TabOrderInfo.lessHorizontal)(focusables);
+                sort!(TabOrderInfo.lessHorizontal)(focusables.unsafe_slice);
             }
             else
             {
-                sort!(TabOrderInfo.lessVertical)(focusables);
+                sort!(TabOrderInfo.lessVertical)(focusables.unsafe_slice);
             }
             myIndex = 0;
             for (int i = 0; i < focusables.length; i++)
@@ -1257,7 +1246,7 @@ public:
                 if (index >= focusables.length)
                     index = 0;
             }
-            return focusables[index].widget;
+            return focusables.unsafe_ref(index).widget;
         }
     }
 
@@ -2121,18 +2110,18 @@ struct TextTypingShortcutHelper
     /// Expiration time for entered text; after timeout collected text will be cleared
     int timeoutMillis = 800;
     private long _lastUpdateTimeStamp;
-    private dchar[] _text;
+    private Buf!dchar _text;
 
     /// Cancel text collection (next typed text will be collected from scratch)
     void cancel()
     {
-        _text.length = 0;
+        _text.clear();
         _lastUpdateTimeStamp = 0;
     }
     /// Returns collected text string - use it for lookup
     @property dstring text() const
     {
-        return _text.dup;
+        return _text[].idup;
     }
     /// Pass key event here; returns true if search text is updated and you can move selection using it
     bool onKeyEvent(KeyEvent event)

@@ -300,7 +300,9 @@ final class GLBackend
         checkgl!glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
-    private void fillBuffers(float[] vertices, float[] colors, float[] texcoords, int[] indices)
+    private void fillBuffers(
+        const float[] vertices, const float[] colors,
+        const float[] texcoords, const int[] indices)
     {
         assert(_solidFillProgram && _textureProgram);
 
@@ -507,20 +509,20 @@ private final class OpenGLQueue
         int start;
     }
 
-    import std.array : Appender;
+    import beamui.core.collections : Buf;
 
-    Appender!(OpenGLBatch[]) batches;
+    Buf!OpenGLBatch batches;
     // a big buffer
-    Appender!(float[]) _vertices;
-    Appender!(float[]) _colors;
-    Appender!(float[]) _texCoords;
-    Appender!(int[]) _indices;
+    Buf!float _vertices;
+    Buf!float _colors;
+    Buf!float _texCoords;
+    Buf!int _indices;
 
     /// Draw all
     void flush()
     {
-        glSupport.fillBuffers(_vertices.data, _colors.data, _texCoords.data, _indices.data);
-        foreach (b; batches.data)
+        glSupport.fillBuffers(_vertices[], _colors[], _texCoords[], _indices[]);
+        foreach (b; batches)
         {
             final switch (b.type) with (OpenGLBatch.BatchType)
             {
@@ -538,7 +540,7 @@ private final class OpenGLQueue
                 break;
             }
         }
-        //Log.d(batches.length, " ", _vertices.data.length, " ", _colors.data.length, " ", _texCoords.data.length, " ", _indices.data.length);
+        //Log.d(batches.length, " ", _vertices.length, " ", _colors.length, " ", _texCoords.length, " ", _indices.length);
         glSupport.destroyBuffers();
         batches.clear();
         _vertices.clear();
@@ -555,12 +557,12 @@ private final class OpenGLQueue
     {
         if (texture == 0)
             return;
-        if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.texturedRect ||
-                batches.data[$ - 1].texture != texture || batches.data[$ - 1].textureLinear != linear)
+        if (batches.length == 0 || batches[$ - 1].type != OpenGLBatch.BatchType.texturedRect ||
+                batches[$ - 1].texture != texture || batches[$ - 1].textureLinear != linear)
         {
             batches ~= OpenGLBatch(OpenGLBatch.BatchType.texturedRect, texture, textureDx, textureDy, linear);
-            if (batches.data.length > 1)
-                batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
+            if (batches.length > 1)
+                batches.unsafe_ref(-1).start = batches[$ - 2].start + batches[$ - 2].length;
         }
 
         ColorF[4] colors = [ ColorF(color1), ColorF(color2), ColorF(color3), ColorF(color4) ];
@@ -592,11 +594,11 @@ private final class OpenGLQueue
     /// Add gradient rectangle to queue
     void addGradientRect(RectF rc, Color color1, Color color2, Color color3, Color color4)
     {
-        if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.rect)
+        if (batches.length == 0 || batches[$ - 1].type != OpenGLBatch.BatchType.rect)
         {
             batches ~= OpenGLBatch(OpenGLBatch.BatchType.rect);
-            if (batches.data.length > 1)
-                batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
+            if (batches.length > 1)
+                batches.unsafe_ref(-1).start = batches[$ - 2].start + batches[$ - 2].length;
         }
 
         ColorF[4] colors = [ ColorF(color1), ColorF(color2), ColorF(color3), ColorF(color4) ];
@@ -617,11 +619,11 @@ private final class OpenGLQueue
     /// Add triangle to queue
     void addTriangle(PointF p1, PointF p2, PointF p3, Color color1, Color color2, Color color3)
     {
-        if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.triangle)
+        if (batches.length == 0 || batches[$ - 1].type != OpenGLBatch.BatchType.triangle)
         {
             batches ~= OpenGLBatch(OpenGLBatch.BatchType.triangle);
-            if (batches.data.length > 1)
-                batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
+            if (batches.length > 1)
+                batches.unsafe_ref(-1).start = batches[$ - 2].start + batches[$ - 2].length;
         }
 
         ColorF[3] colors = [ ColorF(color1), ColorF(color2), ColorF(color3) ];
@@ -644,11 +646,11 @@ private final class OpenGLQueue
     /// Add line to queue
     void addLine(PointF p1, PointF p2, Color color1, Color color2)
     {
-        if (batches.data.length == 0 || batches.data[$ - 1].type != OpenGLBatch.BatchType.line)
+        if (batches.length == 0 || batches[$ - 1].type != OpenGLBatch.BatchType.line)
         {
             batches ~= OpenGLBatch(OpenGLBatch.BatchType.line);
-            if (batches.data.length > 1)
-                batches.data[$ - 1].start = batches.data[$ - 2].start + batches.data[$ - 2].length;
+            if (batches.length > 1)
+                batches.unsafe_ref(-1).start = batches[$ - 2].start + batches[$ - 2].length;
         }
 
         ColorF[2] colors = [ ColorF(color1), ColorF(color2) ];
@@ -668,7 +670,7 @@ private final class OpenGLQueue
     }
 
     enum add = q{
-        int offset = cast(int)_vertices.data.length / 3;
+        int offset = _vertices.length / 3;
         static if (verts == 4)
         {
             // make indices for rectangle (2 triangles == 6 vertexes per rect)
@@ -697,7 +699,7 @@ private final class OpenGLQueue
         } else
             static assert(0);
 
-        batches.data[$ - 1].length += cast(int)indices.length;
+        batches.unsafe_ref(-1).length += indices.length;
 
         _vertices ~= cast(float[])vertices;
         _colors ~= cast(float[])colors;

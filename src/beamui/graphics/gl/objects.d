@@ -46,7 +46,7 @@ static:
 
     static if (target != GL_ELEMENT_ARRAY_BUFFER)
     {
-        void fill(float[][] buffs...)
+        void fill(const float[][] buffs...)
         {
             size_t length;
             foreach (b; buffs)
@@ -62,7 +62,7 @@ static:
     }
     else
     {
-        void fill(int[] indexes)
+        void fill(const int[] indexes)
         {
             checkgl!glBufferData(target, indexes.length * int.sizeof, indexes.ptr, GL_STATIC_DRAW);
         }

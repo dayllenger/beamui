@@ -61,7 +61,7 @@ class SimpleBarChart : Widget
         }
     }
 
-    private BarData[] _bars;
+    private BarData*[] _bars;
     private double _maxY = 0;
 
     @property size_t barCount() const
@@ -73,7 +73,7 @@ class SimpleBarChart : Widget
     {
         if (y < 0)
             return; // current limitation only positive values
-        _bars ~= BarData(y, color, barTitle);
+        _bars ~= new BarData(y, color, barTitle);
         if (y > _maxY)
             _maxY = y;
         requestLayout();

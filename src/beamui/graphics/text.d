@@ -7,8 +7,8 @@ Authors:   dayllenger
 */
 module beamui.graphics.text;
 
-import std.array : Appender;
 import std.uni : isAlphaNum, toLower, toUpper;
+import beamui.core.collections : Buf;
 import beamui.core.functions : clamp, max, move;
 import beamui.core.geometry : Point, Size;
 import beamui.core.logger;
@@ -493,12 +493,12 @@ struct PlainText
             _lines.put(TextLine(s[lineStart .. $]));
         }
 
-        const(TextLine[]) lines() const { return _lines.data; }
+        const(TextLine[]) lines() const { return _lines[]; }
 
         /// True whether there is no text
         bool empty() const
         {
-            return _lines.data.length == 0;
+            return _lines.length == 0;
         }
 
         /// Size of the text after the last measure
@@ -511,8 +511,8 @@ struct PlainText
     private
     {
         dstring original;
-        Appender!(TextLine[]) _lines;
-        Appender!(TextLine[]) _wrappedLines;
+        Buf!TextLine _lines;
+        Buf!TextLine _wrappedLines;
         Font oldFont;
         TextLayoutStyle oldLayoutStyle;
         Size _size;
@@ -524,7 +524,7 @@ struct PlainText
     {
         if (oldFont !is font || oldLayoutStyle !is ls)
             return true;
-        foreach (ref line; _lines.data)
+        foreach (ref line; _lines)
             if (line.needToMeasure)
                 return true;
         return false;
@@ -542,7 +542,7 @@ struct PlainText
         oldLayoutStyle = ls;
 
         Size sz;
-        foreach (ref line; _lines.data)
+        foreach (ref line; _lines.unsafe_slice)
         {
             if (line.needToMeasure)
                 line.measure(font, ls);
@@ -555,7 +555,7 @@ struct PlainText
 
     private bool needRewrap(int width) const
     {
-        return width != previousWrapWidth || _wrappedLines.data.length == 0;
+        return width != previousWrapWidth || _wrappedLines.length == 0;
     }
     /// Wrap lines within a width. Measures, if needed
     void wrapLines(int width)
@@ -566,7 +566,7 @@ struct PlainText
         measure();
         _wrappedLines.clear();
         Size sz;
-        foreach (ref line; _lines.data)
+        foreach (ref line; _lines.unsafe_slice)
         {
             TextLine[] ls = line.wrap(width);
             foreach (ref l; ls)
@@ -587,7 +587,7 @@ struct PlainText
 
         const int lineHeight = style.font.height;
         int y = pos.y;
-        auto lns = _wrappedLines.data.length > _lines.data.length ? _wrappedLines.data : _lines.data;
+        auto lns = _wrappedLines.length > _lines.length ? _wrappedLines.unsafe_slice : _lines.unsafe_slice;
         foreach (ref line; lns)
         {
             line.draw(buf, Point(pos.x, y), boxWidth, style);

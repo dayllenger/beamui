@@ -7,14 +7,14 @@ Authors:   dayllenger
 */
 module beamui.graphics.path;
 
-import std.container.array;
-import beamui.core.linalg : P = PointF, Vec2;
+import beamui.core.collections : Buf;
+import beamui.core.linalg : Vec2;
 import beamui.core.math : fequal1, fequal6, fzero1;
 import beamui.graphics.flattener;
 
 struct SubPath
 {
-    P[] points;
+    Vec2[] points;
     bool closed;
 }
 
@@ -26,7 +26,7 @@ struct Path
         /// True if no points and contours
         bool empty() const
         {
-            return subpaths.empty;
+            return subpaths.length == 0;
         }
         /// True if path includes only one contour
         bool integral() const
@@ -36,11 +36,11 @@ struct Path
         /// Get the first subpath. Will be empty if the path is empty
         const(SubPath) firstSubpath() const
         {
-            if (subpaths.empty)
+            if (subpaths.length == 0)
                 return SubPath.init;
 
             const end = subpaths.length > 1 ? subpaths[1].start : points.length;
-            const pts = (&points[0])[0 .. end];
+            const pts = points[][0 .. end];
             return const(SubPath)(pts, subpaths[0].closed);
         }
     }
@@ -53,8 +53,8 @@ struct Path
             bool closed;
         }
 
-        Array!P points;
-        Array!SubPathInternal subpaths;
+        Buf!Vec2 points;
+        Buf!SubPathInternal subpaths;
         bool closed = true;
         float posx = 0;
         float posy = 0;
@@ -64,15 +64,15 @@ struct Path
     {
         if (closed)
         {
-            const i = cast(uint)points.length;
-            points.insert(P(posx, posy));
-            subpaths.insert(SubPathInternal(i));
+            const i = points.length;
+            points ~= Vec2(posx, posy);
+            subpaths ~= SubPathInternal(i);
             closed = false;
         }
     }
     private void insertLastPoint()
     {
-        points.insert(P(posx, posy));
+        points ~= Vec2(posx, posy);
     }
 
     /// Set the current pen position. Closes current subpath, if one exists
@@ -154,9 +154,9 @@ struct Path
     {
         startSubpath();
         flattenQuadraticBezier(
-            P(posx, posy),
-            P(p1x, p1y),
-            P(p2x, p2y),
+            Vec2(posx, posy),
+            Vec2(p1x, p1y),
+            Vec2(p2x, p2y),
             false, points);
         posx = p2x;
         posy = p2y;
@@ -174,8 +174,8 @@ struct Path
     {
         startSubpath();
         flattenCubicBezier(
-            P(posx, posy), P(p1x, p1y),
-            P(p2x,  p2y),  P(p3x, p3y),
+            Vec2(posx, posy), Vec2(p1x, p1y),
+            Vec2(p2x,  p2y),  Vec2(p3x, p3y),
             false, points);
         posx = p3x;
         posy = p3y;
@@ -228,15 +228,15 @@ struct Path
     }
 
     /// Add a polyline to the path; equivalent to multiple `lineTo` calls with optional `moveTo` beforehand
-    ref Path addPolyline(const P[] array, bool move)
+    ref Path addPolyline(const Vec2[] array, bool detached)
     {
         if (array.length != 0)
         {
             const p0 = array[0];
-            if (move)
+            if (detached)
                 moveTo(p0.x, p0.y);
             if (!closed)
-                points.insert(p0);
+                points ~= p0;
             else
                 startSubpath();
 
@@ -245,7 +245,7 @@ struct Path
                 const a = array[i - 1];
                 const b = array[i];
                 if (!fequal6(a.x, b.x) || !fequal6(a.y, b.y))
-                    points.insert(b);
+                    points ~= b;
             }
         }
         return this;
@@ -257,12 +257,12 @@ struct Path
     {
         if (!closed)
         {
-            assert(!subpaths.empty);
-            subpaths.back.closed = true;
-            const start = points[subpaths.back.start];
-            const end = points.back;
+            assert(subpaths.length > 0);
+            subpaths.unsafe_ref(-1).closed = true;
+            const start = points[subpaths[$ - 1].start];
+            const end = points[$ - 1];
             if (!fequal6(end.x, start.x) || !fequal6(end.y, start.y))
-                points.insert(start);
+                points ~= start;
             posx = start.x;
             posy = start.y;
             closed = true;
@@ -273,7 +273,7 @@ struct Path
     /// Offset path by a vector. Can be expensive for very long path
     ref Path offset(float dx, float dy)
     {
-        foreach (ref p; points)
+        foreach (ref p; points.unsafe_slice)
         {
             p.x += dx;
             p.y += dy;
@@ -284,24 +284,31 @@ struct Path
     /// Clear path and reset it to initial state. Retains allocated memory for future use
     void reset()
     {
-        points.length = 0;
-        subpaths.length = 0;
+        points.clear();
+        subpaths.clear();
         closed = true;
         posx = posy = 0;
     }
 
     int opApply(scope int delegate(ref const SubPath) callback) const
     {
-        if (points.empty)
+        if (points.length == 0)
             return 0;
-        assert(!subpaths.empty);
+        assert(subpaths.length > 0);
 
-        const P[] pts = (&points[0])[0 .. points.length];
+        const Vec2[] pts = points[];
         foreach (i; 0 .. subpaths.length)
         {
             const start = subpaths[i].start;
             const end = (i + 1 < subpaths.length) ? subpaths[i + 1].start : pts.length;
             const subpath = const(SubPath)(pts[start .. end], subpaths[i].closed);
+
+            // the contour must not contain coincident adjacent points
+            debug foreach (j; 1 .. subpath.points.length)
+                if (fequal6(subpath.points[j - 1].x, subpath.points[j].x) &&
+                    fequal6(subpath.points[j - 1].y, subpath.points[j].y))
+                    assert(0, "Path has coincident adjacent points");
+
             const int result = callback(subpath);
             if (result != 0)
                 return result;

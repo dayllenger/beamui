@@ -460,17 +460,17 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         int _rows;
 
         /// Column widths before expanding and resizing
-        int[] _colUntouchedWidths;
+        Buf!int _colUntouchedWidths;
         /// Column widths
-        int[] _colWidths;
+        Buf!int _colWidths;
         /// Total width from the left of the first column to the right of specified column
-        int[] _colCumulativeWidths;
+        Buf!int _colCumulativeWidths;
         /// Row heights before expanding and resizing
-        int[] _rowUntouchedHeights;
+        Buf!int _rowUntouchedHeights;
         /// Row heights
-        int[] _rowHeights;
+        Buf!int _rowHeights;
         /// Total height from the top of the first row to the bottom of specified row
-        int[] _rowCumulativeHeights;
+        Buf!int _rowCumulativeHeights;
 
         /// When true, shows col headers row
         bool _showColHeaders;
@@ -553,22 +553,22 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     private bool _changedSize = true;
-    /// Recalculate _colCumulativeWidths, _rowCumulativeHeights after resizes
+    /// Recalculate `_colCumulativeWidths`, `_rowCumulativeHeights` after resizes
     protected void updateCumulativeSizes()
     {
         if (!_changedSize)
             return;
         _changedSize = false;
-        _colCumulativeWidths.length = _colWidths.length;
-        _rowCumulativeHeights.length = _rowHeights.length;
+        _colCumulativeWidths.resize(_colWidths.length);
+        _rowCumulativeHeights.resize(_rowHeights.length);
         int accum;
-        foreach (i; 0 .. _colCumulativeWidths.length)
+        foreach (i; 0 .. _colWidths.length)
         {
             accum += _colWidths[i];
             _colCumulativeWidths[i] = accum;
         }
         accum = 0;
-        foreach (i; 0 .. _rowCumulativeHeights.length)
+        foreach (i; 0 .. _rowHeights.length)
         {
             accum += _rowHeights[i];
             _rowCumulativeHeights[i] = accum;
@@ -581,15 +581,16 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         if (c == cols && r == rows)
             return;
         _changedSize = true;
-        _colWidths.length = c + _headerCols;
-        _colUntouchedWidths.length = c + _headerCols;
+        _colWidths.resize(c + _headerCols);
+        _colUntouchedWidths.resize(c + _headerCols);
         for (int i = _cols; i < c + _headerCols; i++)
         {
             _colWidths[i] = _defColumnWidth;
             _colUntouchedWidths[i] = _defColumnWidth;
         }
-        _rowHeights.length = r + _headerRows;
-        _rowUntouchedHeights.length = r + _headerRows;
+
+        _rowHeights.resize(r + _headerRows);
+        _rowUntouchedHeights.resize(r + _headerRows);
         for (int i = _rows; i < r + _headerRows; i++)
         {
             _rowHeights[i] = _defRowHeight;
@@ -771,7 +772,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (_changedSize)
             caching(this).updateCumulativeSizes();
-        return findPosIndex(_colCumulativeWidths, x);
+        return findPosIndex(_colCumulativeWidths[], x);
     }
 
     /// Row by Y, ignoring scroll position
@@ -779,7 +780,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (_changedSize)
             caching(this).updateCumulativeSizes();
-        return findPosIndex(_rowCumulativeHeights, y);
+        return findPosIndex(_rowCumulativeHeights[], y);
     }
 
     /// Returns first fully visible column in scroll area
@@ -1877,9 +1878,15 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     void autoFitColumnWidth(int i)
     {
         if (!_showRowHeaders && i < _headerCols)
-            _colWidths[i] = _colUntouchedWidths[i] = 0;
+        {
+            _colUntouchedWidths[i] = 0;
+            _colWidths[i] = 0;
+        }
         else
-            _colWidths[i] = _colUntouchedWidths[i] = measureColWidth(i) + (BACKEND_CONSOLE ? 1 : 3);
+        {
+            _colUntouchedWidths[i] = measureColWidth(i) + (BACKEND_CONSOLE ? 1 : 3);
+            _colWidths[i] = _colUntouchedWidths[i];
+        }
         _changedSize = true;
     }
 
@@ -1894,9 +1901,15 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     void autoFitRowHeight(int j)
     {
         if (!_showColHeaders && j < _headerRows)
-            _rowHeights[j] = _rowUntouchedHeights[j] = 0;
+        {
+            _rowUntouchedHeights[j] = 0;
+            _rowHeights[j] = 0;
+        }
         else
-            _rowHeights[j] = _rowUntouchedHeights[j] = measureRowHeight(j) + (BACKEND_CONSOLE ? 0 : 2);
+        {
+            _rowUntouchedHeights[j] = measureRowHeight(j) + (BACKEND_CONSOLE ? 0 : 2);
+            _rowHeights[j] = _rowUntouchedHeights[j];
+        }
         _changedSize = true;
     }
 
@@ -1908,7 +1921,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         foreach (k; 0 .. _cols)
             totalw += _colWidths[k];
         if (w > totalw)
-            _colWidths[i + _headerCols] += w - totalw;
+            _colWidths.unsafe_ref(i + _headerCols) += w - totalw;
         _changedSize = true;
         invalidate();
     }

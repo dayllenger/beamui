@@ -578,7 +578,7 @@ class ListWidget : WidgetGroup
 
     private
     {
-        Box[] _itemBoxes;
+        Buf!Box _itemBoxes;
         bool _needScrollbar;
         ScrollBar _scrollbar;
 
@@ -1097,8 +1097,7 @@ class ListWidget : WidgetGroup
         // calc item rectangles
         // layout() will be called on draw
 
-        if (_itemBoxes.length < itemCount)
-            _itemBoxes.length = itemCount;
+        _itemBoxes.resize(itemCount);
 
         int p;
         _needScrollbar = false;
@@ -1107,7 +1106,8 @@ class ListWidget : WidgetGroup
             Widget wt = itemWidget(i);
             if (wt is null || wt.visibility == Visibility.gone)
             {
-                _itemBoxes[i].w = _itemBoxes[i].h = 0;
+                _itemBoxes.unsafe_ref(i).w = 0;
+                _itemBoxes.unsafe_ref(i).h = 0;
                 continue;
             }
 
@@ -1115,10 +1115,7 @@ class ListWidget : WidgetGroup
             const wnat = wt.natSize;
             if (_orientation == Orientation.vertical)
             {
-                _itemBoxes[i].x = 0;
-                _itemBoxes[i].y = p;
-                _itemBoxes[i].w = inner.w;
-                _itemBoxes[i].h = wnat.h;
+                _itemBoxes[i] = Box(0, p, inner.w, wnat.h);
                 p += wnat.h;
                 if (p > inner.h)
                 {
@@ -1128,10 +1125,7 @@ class ListWidget : WidgetGroup
             }
             else // horizontal
             {
-                _itemBoxes[i].x = p;
-                _itemBoxes[i].y = 0;
-                _itemBoxes[i].w = wnat.w;
-                _itemBoxes[i].h = inner.h;
+                _itemBoxes[i] = Box(p, 0, wnat.w, inner.h);
                 p += wnat.w;
                 if (p > inner.w)
                 {
@@ -1167,7 +1161,8 @@ class ListWidget : WidgetGroup
                     Widget wt = itemWidget(i);
                     if (wt is null || wt.visibility == Visibility.gone)
                     {
-                        _itemBoxes[i].w = _itemBoxes[i].h = 0;
+                        _itemBoxes.unsafe_ref(i).w = 0;
+                        _itemBoxes.unsafe_ref(i).h = 0;
                         continue;
                     }
 
@@ -1175,18 +1170,12 @@ class ListWidget : WidgetGroup
                     const wnat = wt.natSize;
                     if (_orientation == Orientation.vertical)
                     {
-                        _itemBoxes[i].x = 0;
-                        _itemBoxes[i].y = p;
-                        _itemBoxes[i].w = inner.w;
-                        _itemBoxes[i].h = wnat.h;
+                        _itemBoxes[i] = Box(0, p, inner.w, wnat.h);
                         p += wnat.h;
                     }
                     else
                     {
-                        _itemBoxes[i].x = p;
-                        _itemBoxes[i].y = 0;
-                        _itemBoxes[i].w = wnat.w;
-                        _itemBoxes[i].h = inner.h;
+                        _itemBoxes[i] = Box(p, 0, wnat.w, inner.h);
                         p += wnat.w;
                     }
                 }
@@ -1198,11 +1187,11 @@ class ListWidget : WidgetGroup
                 {
                     if (_orientation == Orientation.vertical)
                     {
-                        _itemBoxes[i].w = inner.w;
+                        _itemBoxes.unsafe_ref(i).w = inner.w;
                     }
                     else
                     {
-                        _itemBoxes[i].h = inner.h;
+                        _itemBoxes.unsafe_ref(i).h = inner.h;
                     }
                 }
             }
@@ -1392,7 +1381,7 @@ class StringListWidget : ListWidget
         return (cast(StringListAdapter)adapter).item(_selectedItemIndex);
     }
 
-    private dstring _searchString;
+    private Buf!dchar _searchString;
     private StopWatch _stopWatch;
 
     this()
@@ -1427,12 +1416,12 @@ class StringListWidget : ListWidget
 
             Duration timePassed = _stopWatch.peek;
             if (timePassed > 500.msecs)
-                _searchString = ""d;
+                _searchString.clear();
 
             _searchString ~= event.text;
             _stopWatch.reset;
 
-            if (selectClosestMatch(_searchString))
+            if (selectClosestMatch(_searchString[]))
             {
                 invalidate();
                 return true;
@@ -1442,7 +1431,7 @@ class StringListWidget : ListWidget
         return super.onKeyEvent(event);
     }
 
-    private bool selectClosestMatch(dstring term)
+    private bool selectClosestMatch(const dchar[] term)
     {
         import std.uni : toLower;
 
@@ -1452,7 +1441,7 @@ class StringListWidget : ListWidget
         auto adptr = cast(StringListAdapter)adapter;
 
         // perfect match or best match
-        int[] indices;
+        Buf!int indices;
         foreach (int itemIndex; 0 .. adptr.itemCount)
         {
             dstring item = adptr.item(itemIndex);

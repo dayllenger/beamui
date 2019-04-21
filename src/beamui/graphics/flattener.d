@@ -7,9 +7,9 @@ Authors:   dayllenger
 */
 module beamui.graphics.flattener;
 
-public import std.container.array;
 import std.math : fabs, cos, sin, sqrt, PI, PI_2;
-import beamui.core.linalg : PointF;
+import beamui.core.collections : Buf;
+import beamui.core.linalg : Vec2;
 import beamui.core.math : fequal1, fzero6;
 
 // Bezier flattening is based on Maxim Shemanarev article
@@ -17,18 +17,18 @@ import beamui.core.math : fequal1, fzero6;
 // It works, but requires further development
 
 /// Convert cubic bezier curve into a list of points
-void flattenCubicBezier(PointF p0, PointF p1, PointF p2, PointF p3,
-    bool endpointsToo, ref Array!PointF output)
+void flattenCubicBezier(Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3,
+    bool endpointsToo, ref Buf!Vec2 output)
 {
     if (endpointsToo)
-        output.insert(p0);
+        output ~= p0;
     recursiveCubicBezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, 0, output);
     if (endpointsToo)
-        output.insert(p3);
+        output ~= p3;
 }
 
 private void recursiveCubicBezier(float x1, float y1, float x2, float y2,
-    float x3, float y3, float x4, float y4, int level, ref Array!PointF output)
+    float x3, float y3, float x4, float y4, int level, ref Buf!Vec2 output)
 {
     if (level > 10) return;
 
@@ -57,7 +57,7 @@ private void recursiveCubicBezier(float x1, float y1, float x2, float y2,
     // check flatness
     if ((d2 + d3) * (d2 + d3) <= distanceTolerance * (dx * dx + dy * dy))
     {
-        output.insert(PointF(x1234, y1234));
+        output ~= Vec2(x1234, y1234);
     }
     else
     {
@@ -67,18 +67,18 @@ private void recursiveCubicBezier(float x1, float y1, float x2, float y2,
 }
 
 /// Convert quadratic bezier curve into a list of points
-void flattenQuadraticBezier(PointF p0, PointF p1, PointF p2,
-    bool endpointsToo, ref Array!PointF output)
+void flattenQuadraticBezier(Vec2 p0, Vec2 p1, Vec2 p2,
+    bool endpointsToo, ref Buf!Vec2 output)
 {
     if (endpointsToo)
-        output.insert(p0);
+        output ~= p0;
     recursiveQuadraticBezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, 0, output);
     if (endpointsToo)
-        output.insert(p2);
+        output ~= p2;
 }
 
 private void recursiveQuadraticBezier(float x1, float y1, float x2, float y2, float x3, float y3,
-    int level, ref Array!PointF output)
+    int level, ref Buf!Vec2 output)
 {
     if (level > 10) return;
 
@@ -100,7 +100,7 @@ private void recursiveQuadraticBezier(float x1, float y1, float x2, float y2, fl
     // check flatness
     if (d <= distanceTolerance)
     {
-        output.insert(PointF(x123, y123));
+        output ~= Vec2(x123, y123);
     }
     else
     {
@@ -110,8 +110,8 @@ private void recursiveQuadraticBezier(float x1, float y1, float x2, float y2, fl
 }
 
 /// Convert circular arc into a list of points
-void flattenArc(PointF center, float radius, float startAngle, float angleOffset,
-    bool endpointsToo, ref Array!PointF output)
+void flattenArc(Vec2 center, float radius, float startAngle, float angleOffset,
+    bool endpointsToo, ref Buf!Vec2 output)
 {
     if (radius < 0)
         return;
@@ -120,7 +120,7 @@ void flattenArc(PointF center, float radius, float startAngle, float angleOffset
     const ry0 = radius * sin(startAngle);
 
     if (endpointsToo)
-        output.insert(PointF(center.x + rx0, center.y - ry0));
+        output ~= Vec2(center.x + rx0, center.y - ry0);
 
     if (fzero6(angleOffset) || fzero6(radius))
         return;
@@ -165,7 +165,7 @@ void flattenArc(PointF center, float radius, float startAngle, float angleOffset
 }
 
 private void flattenArcPart(float cx, float cy, float ax, float ay, float bx, float by,
-    bool lastToo, ref Array!PointF output)
+    bool lastToo, ref Buf!Vec2 output)
 {
     const q1 = ax * ax + ay * ay;
     const q2 = q1 + ax * bx + ay * by;
@@ -182,5 +182,5 @@ private void flattenArcPart(float cx, float cy, float ax, float ay, float bx, fl
 
     recursiveCubicBezier(x0, y0, x1, y1, x2, y2, x3, y3, 0, output);
     if (lastToo)
-        output.insert(PointF(x3, y3));
+        output ~= Vec2(x3, y3);
 }

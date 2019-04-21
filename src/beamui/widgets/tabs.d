@@ -197,7 +197,7 @@ class TabControl : WidgetGroup
     private
     {
         Button _moreButton;
-        Tup!(int, long)[] _sortedItems;
+        Buf!(Tup!(int, long)) _sortedItems;
 
         string _selectedTabID;
 
@@ -247,10 +247,10 @@ class TabControl : WidgetGroup
         return -1;
     }
 
-    protected Tup!(int, long)[] sortedItems()
+    protected const(Tup!(int, long)[]) sortedItems()
     {
-        _sortedItems.length = tabCount;
-        foreach (i, ref item; _sortedItems)
+        _sortedItems.resize(tabCount);
+        foreach (i, ref item; _sortedItems.unsafe_slice)
         {
             item[0] = cast(int)i + 1;
             if (auto wt = cast(TabItem)child(item[0]))
@@ -258,8 +258,8 @@ class TabControl : WidgetGroup
             else
                 item[1] = -1;
         }
-        _sortedItems.sort!((a, b) => a[1] > b[1]);
-        return _sortedItems;
+        sort!((a, b) => a[1] > b[1])(_sortedItems.unsafe_slice);
+        return _sortedItems[];
     }
 
     /// Find next or previous tab index, based on access time
@@ -269,7 +269,7 @@ class TabControl : WidgetGroup
             return -1;
         if (tabCount == 1)
             return 0;
-        auto items = sortedItems();
+        const items = sortedItems();
         int len = cast(int)items.length;
         foreach (i; 0 .. len)
         {
@@ -466,11 +466,10 @@ class TabControl : WidgetGroup
         return res;
     }
 
-    private Size[] itemSizes;
+    private Buf!Size itemSizes;
     override void measure()
     {
-        if (itemSizes.length < childCount)
-            itemSizes.length = childCount;
+        itemSizes.resize(childCount);
 
         Boundaries bs;
         // measure 'more' button

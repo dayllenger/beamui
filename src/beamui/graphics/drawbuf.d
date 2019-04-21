@@ -9,6 +9,7 @@ module beamui.graphics.drawbuf;
 
 public import beamui.core.geometry;
 public import beamui.core.types;
+import beamui.core.collections : Buf;
 import beamui.core.config;
 import beamui.core.functions;
 import beamui.core.linalg;
@@ -1357,18 +1358,16 @@ class ColorDrawBufBase : DrawBuf
         }
     }
 
-    import std.container.array;
-
     /// Create mapping of source coordinates to destination coordinates, for resize.
-    private Array!int createMap(int dst0, int dst1, int src0, int src1, double k)
+    private Buf!int createMap(int dst0, int dst1, int src0, int src1, double k)
     {
-        int dd = dst1 - dst0;
+        const dd = dst1 - dst0;
         //int sd = src1 - src0;
-        Array!int res;
-        res.length = dd;
+        Buf!int ret;
+        ret.reserve(dd);
         foreach (int i; 0 .. dd)
-            res[i] = src0 + cast(int)(i * k); //sd / dd;
-        return res;
+            ret ~= src0 + cast(int)(i * k); //sd / dd;
+        return ret;
     }
 
     override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
@@ -1382,9 +1381,9 @@ class ColorDrawBufBase : DrawBuf
         {
             auto xmapArray = createMap(dstrect.left, dstrect.right, srcrect.left, srcrect.right, kx);
             auto ymapArray = createMap(dstrect.top, dstrect.bottom, srcrect.top, srcrect.bottom, ky);
+            int* xmap = xmapArray.unsafe_ptr;
+            int* ymap = ymapArray.unsafe_ptr;
 
-            int* xmap = &xmapArray[0];
-            int* ymap = &ymapArray[0];
             int dx = dstrect.width;
             int dy = dstrect.height;
             ColorDrawBufBase colorDrawBuf = cast(ColorDrawBufBase)src;
@@ -1690,7 +1689,7 @@ class GrayDrawBuf : DrawBuf
         return _h;
     }
 
-    protected MallocBuf!ubyte _buf;
+    protected Buf!ubyte _buf;
 
     this(int width, int height)
     {
@@ -1700,7 +1699,7 @@ class GrayDrawBuf : DrawBuf
     ubyte* scanLine(int y)
     {
         if (y >= 0 && y < _h)
-            return _buf.ptr + _w * y;
+            return _buf.unsafe_ptr + _w * y;
         return null;
     }
 
@@ -1710,7 +1709,7 @@ class GrayDrawBuf : DrawBuf
             return;
         _w = width;
         _h = height;
-        _buf.length = _w * _h;
+        _buf.resize(_w * _h);
         resetClipping();
     }
 
@@ -1722,7 +1721,7 @@ class GrayDrawBuf : DrawBuf
             return;
         }
         int len = _w * _h;
-        ubyte* p = _buf.ptr;
+        ubyte* p = _buf.unsafe_ptr;
         ubyte cl = color.toGray;
         foreach (i; 0 .. len)
             p[i] = cl;
@@ -1756,14 +1755,15 @@ class GrayDrawBuf : DrawBuf
     }
 
     /// Create mapping of source coordinates to destination coordinates, for resize.
-    private int[] createMap(int dst0, int dst1, int src0, int src1)
+    private Buf!int createMap(int dst0, int dst1, int src0, int src1)
     {
-        int dd = dst1 - dst0;
-        int sd = src1 - src0;
-        int[] res = new int[dd];
+        const dd = dst1 - dst0;
+        const sd = src1 - src0;
+        Buf!int ret;
+        ret.reserve(dd);
         foreach (int i; 0 .. dd)
-            res[i] = src0 + i * sd / dd;
-        return res;
+            ret ~= src0 + i * sd / dd;
+        return ret;
     }
 
     override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
@@ -1771,8 +1771,11 @@ class GrayDrawBuf : DrawBuf
         //Log.d("drawRescaled ", dstrect, " <- ", srcrect);
         if (applyClipping(dstrect, srcrect))
         {
-            int[] xmap = createMap(dstrect.left, dstrect.right, srcrect.left, srcrect.right);
-            int[] ymap = createMap(dstrect.top, dstrect.bottom, srcrect.top, srcrect.bottom);
+            auto xmapArray = createMap(dstrect.left, dstrect.right, srcrect.left, srcrect.right);
+            auto ymapArray = createMap(dstrect.top, dstrect.bottom, srcrect.top, srcrect.bottom);
+            int* xmap = xmapArray.unsafe_ptr;
+            int* ymap = ymapArray.unsafe_ptr;
+
             int dx = dstrect.width;
             int dy = dstrect.height;
             GrayDrawBuf grayDrawBuf = cast(GrayDrawBuf)src;
@@ -1970,7 +1973,7 @@ class GrayDrawBuf : DrawBuf
 
 class ColorDrawBuf : ColorDrawBufBase
 {
-    protected MallocBuf!uint _buf;
+    protected Buf!uint _buf;
 
     /// Create ARGB8888 draw buf of specified width and height
     this(int width, int height)
@@ -1982,7 +1985,7 @@ class ColorDrawBuf : ColorDrawBufBase
     {
         this(v.width, v.height);
         if (auto len = _buf.length)
-            _buf.ptr[0 .. len] = v._buf.ptr[0 .. len];
+            _buf.unsafe_ptr[0 .. len] = v._buf.unsafe_ptr[0 .. len];
     }
     /// Create resized copy of ColorDrawBuf
     this(ColorDrawBuf v, int dx, int dy)
@@ -1994,7 +1997,7 @@ class ColorDrawBuf : ColorDrawBufBase
 
     void invertAndPreMultiplyAlpha()
     {
-        foreach (ref pixel; _buf[])
+        foreach (ref pixel; _buf.unsafe_slice)
         {
             uint a = (pixel >> 24) & 0xFF;
             uint r = (pixel >> 16) & 0xFF;
@@ -2013,13 +2016,13 @@ class ColorDrawBuf : ColorDrawBufBase
 
     void invertAlpha()
     {
-        foreach (ref pixel; _buf[])
+        foreach (ref pixel; _buf.unsafe_slice)
             pixel ^= 0xFF000000;
     }
 
     void invertByteOrder()
     {
-        foreach (ref pixel; _buf[])
+        foreach (ref pixel; _buf.unsafe_slice)
         {
             pixel = (pixel & 0xFF00FF00) | ((pixel & 0xFF0000) >> 16) | ((pixel & 0xFF) << 16);
         }
@@ -2028,7 +2031,7 @@ class ColorDrawBuf : ColorDrawBufBase
     // for passing of image to OpenGL texture
     void invertAlphaAndByteOrder()
     {
-        foreach (ref pixel; _buf[])
+        foreach (ref pixel; _buf.unsafe_slice)
         {
             pixel = ((pixel & 0xFF00FF00) | ((pixel & 0xFF0000) >> 16) | ((pixel & 0xFF) << 16));
             pixel ^= 0xFF000000;
@@ -2038,7 +2041,7 @@ class ColorDrawBuf : ColorDrawBufBase
     override uint* scanLine(int y)
     {
         if (y >= 0 && y < _h)
-            return _buf.ptr + _w * y;
+            return _buf.unsafe_ptr + _w * y;
         return null;
     }
 
@@ -2048,7 +2051,7 @@ class ColorDrawBuf : ColorDrawBufBase
             return;
         _w = width;
         _h = height;
-        _buf.length = _w * _h;
+        _buf.resize(_w * _h);
         resetClipping();
     }
 
@@ -2060,7 +2063,7 @@ class ColorDrawBuf : ColorDrawBufBase
             return;
         }
         int len = _w * _h;
-        uint* p = _buf.ptr;
+        uint* p = _buf.unsafe_ptr;
         foreach (i; 0 .. len)
             p[i] = color.hex;
     }
@@ -2072,7 +2075,7 @@ class ColorDrawBuf : ColorDrawBufBase
             return; // trivial case
 
         // utility functions to get and set color
-        float[4] get(uint[] buf, uint x, uint y)
+        float[4] get(const uint[] buf, uint x, uint y)
         {
             uint c = buf[x + y * _w];
             float a = 255 - (c >> 24);
@@ -2087,8 +2090,8 @@ class ColorDrawBuf : ColorDrawBufBase
             buf[x + y * _w] = makeRGBA(c[0], c[1], c[2], 255 - c[3]);
         }
 
-        import std.algorithm : max, min;
-        import std.math;
+        import std.math : exp, sqrt, PI;
+        import beamui.core.math : max, min;
 
         // Gaussian function
         static float weight(in float x, in float sigma)
@@ -2097,7 +2100,7 @@ class ColorDrawBuf : ColorDrawBufBase
             return exp(-x ^^ 2 / (2 * sigma ^^ 2)) * inv_sqrt_2pi / sigma;
         }
 
-        void blurOneDimension(uint[] bufIn, uint[] bufOut, uint blurSize, bool horizontally)
+        void blurOneDimension(const uint[] bufIn, uint[] bufOut, uint blurSize, bool horizontally)
         {
             float sigma = blurSize > 2 ? blurSize / 3.0 : blurSize / 2.0;
 
@@ -2124,12 +2127,12 @@ class ColorDrawBuf : ColorDrawBufBase
             }
         }
         // intermediate buffer for image
-        uint[] tmpbuf;
-        tmpbuf.length = _buf.length;
+        Buf!uint tmpbuf;
+        tmpbuf.resize(_buf.length);
         // do horizontal blur
-        blurOneDimension(_buf[], tmpbuf, blurSize, true);
+        blurOneDimension(_buf[], tmpbuf.unsafe_slice, blurSize, true);
         // then do vertical blur
-        blurOneDimension(tmpbuf, _buf[], blurSize, false);
+        blurOneDimension(tmpbuf[], _buf.unsafe_slice, blurSize, false);
     }
 }
 

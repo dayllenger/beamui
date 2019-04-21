@@ -165,10 +165,10 @@ private dstring preprocessInput(string src)
 // Parsing order was slightly changed.
 private struct Tokenizer
 {
-    import std.array : Appender;
     import std.ascii;
     import std.uni : icmp, isSurrogate;
     import std.utf : toUTF8;
+    import beamui.core.collections : Buf;
     import beamui.core.parseutils : parseHexDigit;
 
     /// Current line in the source range
@@ -178,7 +178,7 @@ private struct Tokenizer
     /// Current cursor position in the source range
     private size_t i;
     /// Just a buffer for names and numbers
-    private Appender!(dchar[]) appender;
+    private Buf!dchar appender;
 
     this(dstring str)
     {
@@ -482,7 +482,7 @@ private struct Tokenizer
             i++;
             if (isEOF(c) || c == quote)
             {
-                return Token(TokenType.str, appender.data.toUTF8);
+                return Token(TokenType.str, toUTF8(appender[]));
             }
             if (c == '\n')
             {
@@ -520,7 +520,7 @@ private struct Tokenizer
             else
             {
                 i--;
-                return appender.data.toUTF8;
+                return toUTF8(appender[]);
             }
         }
     }
@@ -616,7 +616,7 @@ private struct Tokenizer
             string repr;
             bool integer;
         }
-        return Result(appender.data.toUTF8, integer);
+        return Result(toUTF8(appender[]), integer);
     }
 
     Token consumeIdentLike()
