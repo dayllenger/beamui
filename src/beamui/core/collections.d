@@ -403,7 +403,11 @@ if (isMutable!T &&
         }
     }
 
-    /// Change the length of the buffer, possibly filling new items with `initial` value
+    /** Change the length of the buffer, possibly filling new items with `initial` value.
+
+        It may shrink the buffer if the requested length is much less than
+        the buffer has.
+    */
     void resize(uint len, T initial = T.init)
     {
         if (len > _capacity)
@@ -412,10 +416,11 @@ if (isMutable!T &&
         }
         else if (len * 8 < _length)
         {
-            _data = cast(T*)realloc(_data, len * T.sizeof);
+            const c = len * 3 / 2 + 1;
+            _data = cast(T*)realloc(_data, c * T.sizeof);
             if (!_data)
                 assert(0);
-            _capacity = len;
+            _capacity = c;
         }
         if (len > _length)
             _data[_length .. len] = initial;
@@ -560,7 +565,7 @@ unittest
     Buf!int b;
     b.resize(100);
     b.resize(10);
-    assert(b.capacity == b.length);
+    assert(b.capacity < 20);
 }
 
 unittest

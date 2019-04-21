@@ -15,6 +15,7 @@ import beamui.core.functions;
 import beamui.core.linalg;
 import beamui.core.logger;
 import beamui.graphics.colors;
+import beamui.graphics.text : TextRun;
 import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
 
 /// 9-patch image scaling information
@@ -374,6 +375,25 @@ class DrawBuf : RefCountedObject
     abstract void drawFragment(int x, int y, DrawBuf src, Rect srcrect);
     /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
     abstract void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect);
+
+    final void drawText(int x, int y, const TextRun run, Color color)
+    {
+        if (run.glyphs.length == 0 || color.isFullyTransparent)
+            return;
+
+        const clipLeft = _clipRect.left;
+        foreach (gi; run.glyphs)
+        {
+            GlyphRef g = gi.glyph;
+            const xx = x + gi.position.x;
+            if (xx + g.correctedBlackBoxX >= clipLeft)
+            {
+                const yy = y + gi.position.y;
+                drawGlyph(xx, yy, g, color);
+            }
+        }
+    }
+
     /// Draw unscaled image at specified coordinates
     void drawImage(int x, int y, DrawBuf src)
     {

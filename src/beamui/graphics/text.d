@@ -7,6 +7,7 @@ Authors:   dayllenger
 */
 module beamui.graphics.text;
 
+import std.array : Appender;
 import std.uni : isAlphaNum, toLower, toUpper;
 import beamui.core.collections : Buf;
 import beamui.core.functions : clamp, max, move;
@@ -15,6 +16,19 @@ import beamui.core.logger;
 import beamui.graphics.drawbuf;
 import beamui.text.fonts;
 import beamui.text.style;
+
+/// Positioned glyph
+struct GlyphInstance
+{
+    GlyphRef glyph;
+    Point position;
+}
+
+/// Represents a 2D sequence of glyphs with same attributes
+struct TextRun
+{
+    GlyphInstance[] glyphs;
+}
 
 /// Text style applied to a part of text line
 struct MarkupUnit
@@ -269,8 +283,9 @@ struct TextLine
             return; // nothing to draw - empty text
 
         Font font = (cast(TextStyle)style).font;
+        assert(font);
+
         const int height = font.height;
-        const int rightCorner = pos.x + boxWidth;
         const int lineWidth = _size.w;
         if (lineWidth < boxWidth)
         {
@@ -285,46 +300,44 @@ struct TextLine
             }
         }
         // check visibility
-        const Rect clip = buf.clipRect;
+        Rect clip = buf.clipRect;
         if (clip.empty)
             return; // clipped out
-        if (pos.y + height < clip.top || clip.bottom <= pos.y)
-            return; // fully above or below clipping rectangle
+        clip.offset(-pos.x, -pos.y);
+        if (height < clip.top || clip.bottom <= 0)
+            return; // fully above or below of the clipping rectangle
 
         const bool hotkeys = style.hotkey != TextHotkey.ignore;
-        bool hotkeyUnderline;
+        uint hotkeyIndex = uint.max;
+        int hotkeyPos;
+        int hotkeyW;
+        bool drawHotkey;
         const int baseline = font.baseline;
-        const decorColor = style.decoration.color;
-        const bool overline = style.decoration.line == TextDecoration.Line.overline;
-        const bool lineThrough = style.decoration.line == TextDecoration.Line.lineThrough;
-        const bool underline = style.decoration.line == TextDecoration.Line.underline;
-        const int decorationHeight = 1;
-        const int xheight = font.getCharGlyph('x').blackBoxY;
-        const int overlineY = pos.y;
-        const int lineThroughY = pos.y + baseline - xheight / 2 - decorationHeight;
-        const int underlineY = pos.y + baseline + decorationHeight;
 
         const bool drawEllipsis = boxWidth < lineWidth && style.overflow != TextOverflow.clip;
-        GlyphRef ellipsis = font.getCharGlyph('…');
-        const ushort ellipsisW = ellipsis.widthScaled >> 6;
-        const int ellipsisY = pos.y + baseline - ellipsis.originY;
-
+        GlyphRef ellipsis = drawEllipsis ? font.getCharGlyph('…') : null;
+        const ushort ellipsisW = drawEllipsis ? ellipsis.widthScaled >> 6 : 0;
         const bool ellipsisMiddle = style.overflow == TextOverflow.ellipsisMiddle;
-        const int ellipsisMiddleCorner = pos.x + (boxWidth + ellipsisW) / 2;
+        const int ellipsisMiddleCorner = (boxWidth + ellipsisW) / 2;
         bool tail;
         int ellipsisPos;
 
+        static Buf!GlyphInstance buffer;
+        buffer.clear();
+
         const pwidths = _charWidths.ptr;
         auto pglyphs = _glyphs.ptr;
-        int pen = pos.x;
-        for (size_t i; i < _str.length; i++) // `i` can mutate
+        int pen;
+        for (uint i; i < cast(uint)_str.length; i++) // `i` can mutate
         {
-            if (hotkeys && _str[i] == '&')
+            if (hotkeys && !drawHotkey && _str[i] == '&')
             {
+                // mark the next glyph to underline
                 if (style.hotkey == TextHotkey.underline)
-                    hotkeyUnderline = true; // turn ON underline for hotkey
-                continue; // skip '&' in hotkey
+                    hotkeyIndex = i + 1;
+                continue; // skip '&' before
             }
+
             const ushort w = pwidths[i];
             if (w == 0)
                 continue;
@@ -337,6 +350,13 @@ struct TextLine
             if (pen + 255 < clip.left)
                 continue; // far at left of clipping region
 
+            if (i == hotkeyIndex)
+            {
+                hotkeyPos = current;
+                hotkeyW = w;
+                drawHotkey = true;
+            }
+
             // check overflow
             if (drawEllipsis && !tail)
             {
@@ -347,8 +367,8 @@ struct TextLine
                     if (pen + ellipsisW > ellipsisMiddleCorner)
                     {
                         // walk to find tail width
-                        int tailStart = rightCorner;
-                        foreach_reverse (j; i .. _str.length)
+                        int tailStart = boxWidth;
+                        foreach_reverse (j; i .. cast(uint)_str.length)
                         {
                             if (tailStart - pwidths[j] < current + ellipsisW)
                             {
@@ -368,7 +388,7 @@ struct TextLine
                 else // at the end
                 {
                     // next glyph doesn't fit, so we need the current to give a space for ellipsis
-                    if (pen + ellipsisW > rightCorner)
+                    if (pen + ellipsisW > boxWidth)
                     {
                         ellipsisPos = current;
                         break;
@@ -376,31 +396,56 @@ struct TextLine
                 }
             }
 
-            // draw text decoration, if exists
-            if (underline || hotkeyUnderline)
-            {
-                buf.fillRect(Rect(current, underlineY, pen, underlineY + decorationHeight), decorColor);
-                // turn off underline after hotkey
-                hotkeyUnderline = false;
-            }
-            if (overline)
-                buf.fillRect(Rect(current, overlineY, pen, overlineY + decorationHeight), decorColor);
-
             GlyphRef glyph = pglyphs[i];
             if (glyph && glyph.blackBoxX && glyph.blackBoxY) // null if space or tab
             {
-                int gx = current + glyph.originX;
-                if (gx + glyph.correctedBlackBoxX >= clip.left)
-                {
-                    buf.drawGlyph(gx, pos.y + baseline - glyph.originY, glyph, style.color);
-                }
+                const p = Point(current + glyph.originX, baseline - glyph.originY);
+                buffer ~= GlyphInstance(glyph, p);
             }
-            // line-through goes over text
-            if (lineThrough)
-                buf.fillRect(Rect(current, lineThroughY, pen, lineThroughY + decorationHeight), decorColor);
         }
         if (drawEllipsis)
-            buf.drawGlyph(ellipsisPos, ellipsisY, ellipsis, style.color);
+        {
+            const p = Point(ellipsisPos, baseline - ellipsis.originY);
+            buffer ~= GlyphInstance(ellipsis, p);
+        }
+
+        // preform actual drawing
+        const decorHeight = 1;
+        const decorColor = style.decoration.color;
+        const underline = style.decoration.line == TextDecoration.Line.underline;
+        const overline = style.decoration.line == TextDecoration.Line.overline;
+        const lineThrough = style.decoration.line == TextDecoration.Line.lineThrough;
+        if (underline || drawHotkey)
+        {
+            const int underlineY = pos.y + baseline + decorHeight;
+            Rect r = Rect(pos.x, underlineY, pos.x, underlineY + decorHeight);
+            if (underline)
+            {
+                r.right += lineWidth;
+            }
+            else if (drawHotkey)
+            {
+                r.left += hotkeyPos;
+                r.right += hotkeyPos + hotkeyW;
+            }
+            buf.fillRect(r, decorColor);
+        }
+        if (overline)
+        {
+            const int overlineY = pos.y;
+            const r = Rect(pos.x, overlineY, pos.x + lineWidth, overlineY + decorHeight);
+            buf.fillRect(r, decorColor);
+        }
+        // text goes after overline and underline
+        buf.drawText(pos.x, pos.y, const(TextRun)(buffer[]), style.color);
+        // line-through goes over the text
+        if (lineThrough)
+        {
+            const xheight = font.getCharGlyph('x').blackBoxY;
+            const lineThroughY = pos.y + baseline - xheight / 2 - decorHeight;
+            const r = Rect(pos.x, lineThroughY, pos.x + lineWidth, lineThroughY + decorHeight);
+            buf.fillRect(r, decorColor);
+        }
     }
 }
 
@@ -493,12 +538,12 @@ struct PlainText
             _lines.put(TextLine(s[lineStart .. $]));
         }
 
-        const(TextLine[]) lines() const { return _lines[]; }
+        const(TextLine[]) lines() const { return _lines.data; }
 
         /// True whether there is no text
         bool empty() const
         {
-            return _lines.length == 0;
+            return _lines.data.length == 0;
         }
 
         /// Size of the text after the last measure
@@ -511,7 +556,7 @@ struct PlainText
     private
     {
         dstring original;
-        Buf!TextLine _lines;
+        Appender!(TextLine[]) _lines;
         Buf!TextLine _wrappedLines;
         Font oldFont;
         TextLayoutStyle oldLayoutStyle;
@@ -524,7 +569,7 @@ struct PlainText
     {
         if (oldFont !is font || oldLayoutStyle !is ls)
             return true;
-        foreach (ref line; _lines)
+        foreach (ref line; _lines.data)
             if (line.needToMeasure)
                 return true;
         return false;
@@ -542,7 +587,7 @@ struct PlainText
         oldLayoutStyle = ls;
 
         Size sz;
-        foreach (ref line; _lines.unsafe_slice)
+        foreach (ref line; _lines.data)
         {
             if (line.needToMeasure)
                 line.measure(font, ls);
@@ -566,7 +611,7 @@ struct PlainText
         measure();
         _wrappedLines.clear();
         Size sz;
-        foreach (ref line; _lines.unsafe_slice)
+        foreach (ref line; _lines.data)
         {
             TextLine[] ls = line.wrap(width);
             foreach (ref l; ls)
@@ -587,7 +632,7 @@ struct PlainText
 
         const int lineHeight = style.font.height;
         int y = pos.y;
-        auto lns = _wrappedLines.length > _lines.length ? _wrappedLines.unsafe_slice : _lines.unsafe_slice;
+        auto lns = _wrappedLines.length > _lines.data.length ? _wrappedLines.unsafe_slice : _lines.data;
         foreach (ref line; lns)
         {
             line.draw(buf, Point(pos.x, y), boxWidth, style);
