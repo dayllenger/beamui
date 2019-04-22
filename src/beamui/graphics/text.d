@@ -15,6 +15,7 @@ import beamui.core.geometry : Point, Size;
 import beamui.core.logger;
 import beamui.graphics.drawbuf;
 import beamui.text.fonts;
+import beamui.text.glyph : GlyphRef;
 import beamui.text.shaping;
 import beamui.text.style;
 
@@ -333,14 +334,14 @@ struct TextLine
         }
 
         // preform actual drawing
-        const decorHeight = 1;
+        const decorThickness = 1 + height / 24;
         const decorColor = style.decoration.color;
         const overline = style.decoration.line == TextDecoration.Line.overline;
         const lineThrough = style.decoration.line == TextDecoration.Line.lineThrough;
         if (underline || charUnderlineW > 0)
         {
-            const int underlineY = pos.y + baseline + decorHeight;
-            Rect r = Rect(pos.x, underlineY, pos.x, underlineY + decorHeight);
+            const int underlineY = pos.y + baseline + decorThickness;
+            Rect r = Rect(pos.x, underlineY, pos.x, underlineY + decorThickness);
             if (underline)
             {
                 r.right += lineWidth;
@@ -355,7 +356,7 @@ struct TextLine
         if (overline)
         {
             const int overlineY = pos.y;
-            const r = Rect(pos.x, overlineY, pos.x + lineWidth, overlineY + decorHeight);
+            const r = Rect(pos.x, overlineY, pos.x + lineWidth, overlineY + decorThickness);
             buf.fillRect(r, decorColor);
         }
         // text goes after overline and underline
@@ -364,8 +365,8 @@ struct TextLine
         if (lineThrough)
         {
             const xheight = font.getCharGlyph('x').blackBoxY;
-            const lineThroughY = pos.y + baseline - xheight / 2 - decorHeight;
-            const r = Rect(pos.x, lineThroughY, pos.x + lineWidth, lineThroughY + decorHeight);
+            const lineThroughY = pos.y + baseline - xheight / 2 - decorThickness;
+            const r = Rect(pos.x, lineThroughY, pos.x + lineWidth, lineThroughY + decorThickness);
             buf.fillRect(r, decorColor);
         }
     }
