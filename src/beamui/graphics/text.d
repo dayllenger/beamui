@@ -15,6 +15,7 @@ import beamui.core.geometry : Point, Size;
 import beamui.core.logger;
 import beamui.graphics.drawbuf;
 import beamui.text.fonts;
+import beamui.text.shaping;
 import beamui.text.style;
 
 /// Positioned glyph
@@ -59,16 +60,6 @@ struct TextLine
             return _str.length;
         }
 
-        /// Glyphs array, available after measuring
-        const(GlyphRef[]) glyphs() const
-        {
-            return !_needToMeasure ? _glyphs[0 .. _str.length] : null;
-        }
-        /// Measured character widths
-        const(ushort[]) charWidths() const
-        {
-            return !_needToMeasure ? _charWidths[0 .. _str.length] : null;
-        }
         /// Measured text line size
         Size size() const { return _size; }
 
@@ -79,8 +70,7 @@ struct TextLine
     private
     {
         dstring _str;
-        GlyphRef[] _glyphs;
-        ushort[] _charWidths;
+        ComputedGlyph[] _glyphs;
         Size _size;
 
         bool _needToMeasure = true;
@@ -91,10 +81,9 @@ struct TextLine
         _str = text;
     }
 
-    /**
-    Measure text string to calculate char sizes and total text size.
+    /** Measure text string to calculate char sizes and total text size.
 
-    Supports Tab character processing and processing of menu item labels like `&File`.
+        Supports tab stop processing.
     */
     void measure(Font font, ref const TextLayoutStyle style)
     {
@@ -109,79 +98,34 @@ struct TextLine
             return;
         }
 
-        const bool fixed = font.isFixed;
-        const ushort fixedCharWidth = cast(ushort)font.charWidth('M');
-        const int spaceWidth = fixed ? fixedCharWidth : font.spaceWidth;
-        const bool useKerning = !fixed && font.allowKerning;
+        static Buf!ComputedGlyph shapingBuf;
+        shape(_str, font, style.transform, shapingBuf);
 
-        if (_charWidths.length < len || _charWidths.length >= len * 5)
-            _charWidths.length = len;
-        if (_glyphs.length < len || _glyphs.length >= len * 5)
-            _glyphs.length = len;
-        auto pwidths = _charWidths.ptr;
-        auto pglyphs = _glyphs.ptr;
+        const int spaceWidth = font.spaceWidth;
+
+        auto pglyphs = shapingBuf.unsafe_ptr;
         int x;
-        dchar prevChar = 0;
         foreach (i, ch; _str)
         {
             if (ch == '\t')
             {
                 // calculate tab stop
-                int n = x / (spaceWidth * style.tabSize) + 1;
-                int tabPosition = spaceWidth * style.tabSize * n;
-                pwidths[i] = cast(ushort)(tabPosition - x);
-                pglyphs[i] = null;
+                const n = x / (spaceWidth * style.tabSize) + 1;
+                const tabPosition = spaceWidth * style.tabSize * n;
+                pglyphs[i].width = cast(ushort)(tabPosition - x);
+                pglyphs[i].glyph = null;
                 x = tabPosition;
-                prevChar = 0;
                 continue;
             }
-            // apply text transformation
-            dchar trch = ch;
-            if (style.transform == TextTransform.lowercase)
-            {
-                trch = toLower(ch);
-            }
-            else if (style.transform == TextTransform.uppercase)
-            {
-                trch = toUpper(ch);
-            }
-            else if (style.transform == TextTransform.capitalize)
-            {
-                if (!isAlphaNum(prevChar))
-                    trch = toUpper(ch);
-            }
-            // retrieve glyph
-            GlyphRef glyph = font.getCharGlyph(trch);
-            pglyphs[i] = glyph;
-            if (fixed)
-            {
-                // fast calculation for fixed pitch
-                pwidths[i] = fixedCharWidth;
-                x += fixedCharWidth;
-            }
-            else
-            {
-                if (glyph is null)
-                {
-                    // if no glyph, treat as zero width
-                    pwidths[i] = 0;
-                    prevChar = 0;
-                    continue;
-                }
-                int kerningDelta = useKerning && prevChar ? font.getKerningOffset(prevChar, ch) : 0;
-                if (kerningDelta != 0)
-                {
-                    // shrink previous glyph (or expand, maybe)
-                    pwidths[i - 1] += cast(short)(kerningDelta / 64);
-                }
-                int w = max(glyph.widthScaled >> 6, glyph.originX + glyph.correctedBlackBoxX);
-                pwidths[i] = cast(ushort)w;
-                x += w;
-            }
-            prevChar = trch;
+            x += pglyphs[i].width;
         }
         _size = Size(x, font.height);
         _needToMeasure = false;
+
+        // copy the temporary buffer. this will be removed eventually
+        if (_glyphs.length < len)
+            _glyphs.length = len;
+        _glyphs[0 .. len] = pglyphs[0 .. len];
     }
 
     /// Split line by width
@@ -195,7 +139,7 @@ struct TextLine
         TextLine[] result;
         const size_t len = _str.length;
         const pstr = _str.ptr;
-        const pwidths = _charWidths.ptr;
+        const pglyphs = _glyphs.ptr;
         size_t lineStart;
         size_t lastWordEnd;
         int lastWordEndX;
@@ -215,11 +159,11 @@ struct TextLine
                 }
                 whitespace = true;
                 // skip this char
-                lineWidth += pwidths[i];
+                lineWidth += pglyphs[i].width;
                 continue;
             }
             whitespace = false;
-            lineWidth += pwidths[i];
+            lineWidth += pglyphs[i].width;
             if (i > lineStart && lineWidth > width)
             {
                 // need splitting
@@ -234,7 +178,6 @@ struct TextLine
                 TextLine line;
                 line._str = _str[lineStart .. lineEnd];
                 line._glyphs = _glyphs[lineStart .. lineEnd];
-                line._charWidths = _charWidths[lineStart .. lineEnd];
                 line._size = Size(lineWidth, _size.h);
                 result ~= line;
 
@@ -262,7 +205,6 @@ struct TextLine
             TextLine line;
             line._str = _str[lineStart .. $];
             line._glyphs = _glyphs[lineStart .. $];
-            line._charWidths = _charWidths[lineStart .. $];
             line._size = Size(lineWidth, _size.h);
             result ~= line;
         }
@@ -316,12 +258,11 @@ struct TextLine
         static Buf!GlyphInstance buffer;
         buffer.clear();
 
-        const pwidths = _charWidths.ptr;
         auto pglyphs = _glyphs.ptr;
         int pen;
         for (uint i; i < cast(uint)_str.length; i++) // `i` can mutate
         {
-            const ushort w = pwidths[i];
+            const ushort w = pglyphs[i].width;
             if (w == 0)
                 continue;
 
@@ -352,7 +293,7 @@ struct TextLine
                         int tailStart = boxWidth;
                         foreach_reverse (j; i .. cast(uint)_str.length)
                         {
-                            if (tailStart - pwidths[j] < current + ellipsisW)
+                            if (tailStart - pglyphs[j].width < current + ellipsisW)
                             {
                                 // jump to the tail
                                 tail = true;
@@ -361,7 +302,7 @@ struct TextLine
                                 break;
                             }
                             else
-                                tailStart -= pwidths[j];
+                                tailStart -= pglyphs[j].width;
                         }
                         ellipsisPos = (current + tailStart - ellipsisW) / 2;
                         continue;
@@ -378,7 +319,7 @@ struct TextLine
                 }
             }
 
-            GlyphRef glyph = pglyphs[i];
+            GlyphRef glyph = pglyphs[i].glyph;
             if (glyph && glyph.blackBoxX && glyph.blackBoxY) // null if space or tab
             {
                 const p = Point(current + glyph.originX, baseline - glyph.originY);
