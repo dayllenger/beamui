@@ -8,9 +8,10 @@ Authors:   dayllenger
 module beamui.widgets.text;
 
 import beamui.graphics.text;
+import beamui.text.style : TextHotkey;
 import beamui.widgets.widget;
 
-/// Single-line text widget. Can contain `&` character for underlined hotkeys.
+/// Single-line text widget
 class Label : Widget
 {
     @property
@@ -80,7 +81,6 @@ class Label : Widget
 
     override void measure()
     {
-        textobj.style.hotkey = textHotkey;
         textobj.measure();
 
         Boundaries bs;
@@ -91,7 +91,6 @@ class Label : Widget
         }
         else
         {
-            minSizeTester.style.hotkey = textHotkey;
             minSizeTester.measure();
             bs.min = minSizeTester.size;
         }
@@ -109,7 +108,151 @@ class Label : Widget
         Box b = innerBox;
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
-        textobj.style.hotkey = textHotkey;
+        // align vertically to center
+        Size sz = Size(b.w, textobj.size.h);
+        applyAlign(b, sz, Align.unspecified, Align.vcenter);
+        textobj.draw(buf, b.pos, b.w);
+    }
+}
+
+/// Efficient single-line text widget. Can contain `&` character to underline a mnemonic
+class ShortLabel : Widget
+{
+    @property
+    {
+        /// Text to show
+        override dstring text() const { return original; }
+        /// ditto
+        override void text(dstring s)
+        {
+            if (style.textHotkey != TextHotkey.ignore)
+            {
+                auto r = extractMnemonic(s);
+                textobj.str = r[0];
+                hotkeyIndex = r[1];
+            }
+            else
+            {
+                textobj.str = s;
+                hotkeyIndex = -1;
+            }
+            original = s;
+            requestLayout();
+        }
+
+        /// Get the hotkey (mnemonic) character for the label (e.g. 'F' for `&File`).
+        /// 0 if no hotkey or if disabled in styles
+        dchar hotkey() const
+        {
+            import std.uni : toUpper;
+
+            if (hotkeyIndex >= 0)
+                return toUpper(textobj.str[hotkeyIndex]);
+            else
+                return 0;
+        }
+    }
+
+    private
+    {
+        dstring original;
+        int hotkeyIndex = -1;
+        SingleLineText textobj;
+        SingleLineText minSizeTester;
+    }
+
+    this(dstring txt = null)
+    {
+        text = txt;
+        minSizeTester.str = "aaaaa"; // TODO: test all this stuff
+        handleFontChange();
+    }
+
+    override void handleStyleChange(StyleProperty ptype)
+    {
+        super.handleStyleChange(ptype);
+
+        switch (ptype) with (StyleProperty)
+        {
+        case textHotkey:
+            // recompute the mnemonic
+            if (hotkeyIndex == -1 && style.textHotkey != TextHotkey.ignore)
+            {
+                auto r = extractMnemonic(original);
+                textobj.str = r[0];
+                hotkeyIndex = r[1];
+            }
+            else if (hotkeyIndex >= 0 && style.textHotkey == TextHotkey.ignore)
+            {
+                textobj.str = original;
+                hotkeyIndex = -1;
+            }
+            break;
+        case textAlign:
+            textobj.style.alignment = style.textAlign;
+            break;
+        case textColor:
+            textobj.style.color = style.textColor;
+            break;
+        case textDecorationColor:
+            textobj.style.decoration.color = style.textDecorationColor;
+            break;
+        case textDecorationLine:
+            textobj.style.decoration.line = style.textDecorationLine;
+            break;
+        case textDecorationStyle:
+            textobj.style.decoration.style = style.textDecorationStyle;
+            break;
+        case textOverflow:
+            textobj.style.overflow = style.textOverflow;
+            break;
+        case textTransform:
+            textobj.style.transform = style.textTransform;
+            minSizeTester.style.transform = style.textTransform;
+            break;
+        default:
+            break;
+        }
+    }
+
+    override protected void handleFontChange()
+    {
+        Font fnt = font.get;
+        textobj.style.font = fnt;
+        minSizeTester.style.font = fnt;
+    }
+
+    override void measure()
+    {
+        textobj.measure();
+
+        Boundaries bs;
+        // min size
+        if (textobj.str.length < minSizeTester.str.length * 2)
+        {
+            bs.min = textobj.size;
+        }
+        else
+        {
+            minSizeTester.measure();
+            bs.min = minSizeTester.size;
+        }
+        // nat size
+        bs.nat = textobj.size;
+        setBoundaries(bs);
+    }
+
+    override void onDraw(DrawBuf buf)
+    {
+        if (visibility != Visibility.visible)
+            return;
+
+        super.onDraw(buf);
+        Box b = innerBox;
+        auto saver = ClipRectSaver(buf, b, style.alpha);
+
+        textobj.style.underlinedCharIndex = textHotkey == TextHotkey.underline ? hotkeyIndex : -1;
+
         // align vertically to center
         Size sz = Size(b.w, textobj.size.h);
         applyAlign(b, sz, Align.unspecified, Align.vcenter);
@@ -193,7 +336,6 @@ class MultilineLabel : Widget
 
     override void measure()
     {
-        textobj.style.hotkey = textHotkey;
         textobj.measure();
 
         Boundaries bs;
@@ -204,7 +346,6 @@ class MultilineLabel : Widget
         }
         else
         {
-            minSizeTester.style.hotkey = textHotkey;
             minSizeTester.measure();
             bs.min = minSizeTester.size;
         }
@@ -215,7 +356,6 @@ class MultilineLabel : Widget
         }
         else
         {
-            natSizeTester.style.hotkey = textHotkey;
             natSizeTester.measure();
             bs.nat = natSizeTester.size;
         }
@@ -251,7 +391,6 @@ class MultilineLabel : Widget
         Box b = innerBox;
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
-        textobj.style.hotkey = textHotkey;
         textobj.draw(buf, b.pos, b.w);
     }
 }
@@ -259,4 +398,56 @@ class MultilineLabel : Widget
 /// Multiline text widget with inner formatting
 class MarkupLabel : Widget
 {
+}
+
+private Tup!(dstring, int) extractMnemonic(dstring s)
+{
+    if (s.length < 2)
+        return tup(s, -1);
+
+    const len = cast(int)s.length;
+    bool found;
+    foreach (i; 0 .. len - 1)
+    {
+        if (s[i] == '&')
+        {
+            found = true;
+            break;
+        }
+    }
+    if (found)
+    {
+        dchar[] result = new dchar[len];
+        int pos = -1;
+        found = false;
+        int j;
+        foreach (i; 0 .. len)
+        {
+            if (s[i] == '&' && !found)
+                found = true;
+            else
+            {
+                if (found && pos == -1 && s[i] != '&')
+                    pos = j;
+                result[j++] = s[i];
+                found = false;
+            }
+        }
+        return tup(cast(dstring)result[0 .. j], pos);
+    }
+    else
+        return tup(s, -1);
+}
+
+unittest
+{
+    assert(extractMnemonic(""d) == tup(""d, -1));
+    assert(extractMnemonic("a"d) == tup("a"d, -1));
+    assert(extractMnemonic("&"d) == tup("&"d, -1));
+    assert(extractMnemonic("abc123"d) == tup("abc123"d, -1));
+    assert(extractMnemonic("&File"d) == tup("File"d, 0));
+    assert(extractMnemonic("A && B"d) == tup("A & B"d, -1));
+    assert(extractMnemonic("A &&& &B"d) == tup("A & B"d, 3));
+    assert(extractMnemonic("&A&B&C&&D"d) == tup("ABC&D"d, 0));
+    assert(extractMnemonic("a &"d) == tup("a &"d, -1));
 }

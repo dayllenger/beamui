@@ -49,10 +49,10 @@ struct TextDecoration
     Style style;
 }
 
-/// Controls how text with `&` hotkey marks should be displayed
+/// Controls how text with `&` hotkey marks should be handled (used only in `ShortLabel`)
 enum TextHotkey : ubyte
 {
-    /// Treat as usual text
+    /// Treat as usual text without a hotkey
     ignore,
     /// Only hide `&` marks
     hidden,
@@ -88,9 +88,10 @@ struct TextStyle
     TabSize tabSize;
     TextAlign alignment;
     TextDecoration decoration;
-    TextHotkey hotkey;
     TextOverflow overflow;
     TextTransform transform;
+    /// Allows to underline a single character, usually mnemonic
+    int underlinedCharIndex = -1;
     /// Text foreground color
     Color color;
     /// Text background color
@@ -102,12 +103,10 @@ struct TextLayoutStyle
 {
     TabSize tabSize;
     TextTransform transform;
-    bool skipHotkeyMarks;
 
     this(ref const TextStyle superStyle)
     {
         tabSize = superStyle.tabSize;
         transform = superStyle.transform;
-        skipHotkeyMarks = superStyle.hotkey != TextHotkey.ignore;
     }
 }

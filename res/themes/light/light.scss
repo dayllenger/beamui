@@ -35,7 +35,7 @@ Button {
     padding: 4px 8px;
     border: 1px solid #aaa;
     background: linear(0deg, #eeeeee, #dddddd);
-    text-hotkey: underline;
+    text-hotkey: underline-on-alt;
     focus-rect-color: #bbb;
     transition: border-color 75ms ease;
 
@@ -225,6 +225,10 @@ Label {
     &:not(enabled) {
         color: $disabled-text-color;
     }
+}
+
+ShortLabel {
+    text-hotkey: underline-on-alt;
 }
 
 MultilineLabel {
@@ -472,7 +476,6 @@ TreeItemWidget {
     &::body {
         padding: 2px 4px;
         spacing: 0;
-        text-hotkey: inherit;
 
         &:hovered {
             background-color: $secondary-hovered-color;
@@ -485,10 +488,6 @@ TreeItemWidget {
 
     &::icon {
         padding-right: 3px;
-    }
-
-    &::label {
-        text-hotkey: inherit;
     }
 
     &::label:pressed, &::label:selected {
@@ -645,6 +644,7 @@ TabItem:selected {
 TabItem::label {
     align: hcenter bottom;
     padding: 0 3px 3px;
+    text-hotkey: underline-on-alt;
     transition: color 100ms ease;
 
     &:hovered, &:selected,

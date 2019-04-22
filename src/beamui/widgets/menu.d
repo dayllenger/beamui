@@ -74,8 +74,8 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         Widget _separator;
         Widget _checkbox;
         ImageWidget _icon;
-        Label _label;
-        Label _shortcut;
+        ShortLabel _label;
+        ShortLabel _shortcut;
         ImageWidget _arrow;
         int _checkboxWidth;
         int _iconWidth;
@@ -165,7 +165,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         // label
         if (!_label)
         {
-            _label = new Label(_action.label);
+            _label = new ShortLabel(_action.label);
             _label.id = "menu-label";
             _label.bindSubItem(this, "label");
             _label.state = State.parent;
@@ -178,7 +178,7 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         {
             if (!_shortcut)
             {
-                _shortcut = new Label(sc);
+                _shortcut = new ShortLabel(sc);
                 _shortcut.id = "menu-shortcut";
                 _shortcut.bindSubItem(this, "shortcut");
                 _shortcut.state = State.parent;
@@ -199,29 +199,6 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         enabled = _action.enabled;
         checked = _action.checked;
         visibility = _action.visible ? Visibility.visible : Visibility.gone;
-    }
-
-    /// Get hotkey character from label (e.g. 'F' for item labeled "&File"), 0 if no hotkey
-    dchar getHotkey() const
-    {
-        if (_action is null)
-            return 0;
-
-        import std.uni : toUpper;
-
-        dstring s = _action.label;
-        if (s.length < 2)
-            return 0;
-        dchar ch = 0;
-        for (int i = 0; i < s.length - 1; i++)
-        {
-            if (s[i] == '&')
-            {
-                ch = s[i + 1];
-                break;
-            }
-        }
-        return toUpper(ch);
     }
 
     void measureSubitems(ref int maxHeight, ref int maxCheckBoxWidth, ref int maxLabelWidth,
@@ -450,7 +427,7 @@ class Menu : ListWidget
         ch = toUpper(ch);
         foreach (i; 0 .. itemCount)
         {
-            if (menuItem(i).getHotkey() == ch)
+            if (menuItem(i)._label.hotkey == ch)
                 return i;
         }
         return -1;
@@ -469,7 +446,7 @@ class Menu : ListWidget
         foreach (i; 0 .. itemCount)
         {
             auto item = menuItem(i);
-            if (item.getHotkey() == ch)
+            if (item._label.hotkey == ch)
                 return item;
         }
         // search in submenus

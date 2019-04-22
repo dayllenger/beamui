@@ -135,13 +135,6 @@ struct TextLine
                 prevChar = 0;
                 continue;
             }
-            else if (style.skipHotkeyMarks && ch == '&')
-            {
-                pwidths[i] = 0;
-                pglyphs[i] = null;
-                prevChar = 0;
-                continue; // skip '&' in hotkey when measuring
-            }
             // apply text transformation
             dchar trch = ch;
             if (style.transform == TextTransform.lowercase)
@@ -307,12 +300,10 @@ struct TextLine
         if (height < clip.top || clip.bottom <= 0)
             return; // fully above or below of the clipping rectangle
 
-        const bool hotkeys = style.hotkey != TextHotkey.ignore;
-        uint hotkeyIndex = uint.max;
-        int hotkeyPos;
-        int hotkeyW;
-        bool drawHotkey;
         const int baseline = font.baseline;
+        const underline = style.decoration.line == TextDecoration.Line.underline;
+        int charUnderlinePos;
+        int charUnderlineW;
 
         const bool drawEllipsis = boxWidth < lineWidth && style.overflow != TextOverflow.clip;
         GlyphRef ellipsis = drawEllipsis ? font.getCharGlyph('…') : null;
@@ -330,14 +321,6 @@ struct TextLine
         int pen;
         for (uint i; i < cast(uint)_str.length; i++) // `i` can mutate
         {
-            if (hotkeys && !drawHotkey && _str[i] == '&')
-            {
-                // mark the next glyph to underline
-                if (style.hotkey == TextHotkey.underline)
-                    hotkeyIndex = i + 1;
-                continue; // skip '&' before
-            }
-
             const ushort w = pwidths[i];
             if (w == 0)
                 continue;
@@ -350,11 +333,10 @@ struct TextLine
             if (pen + 255 < clip.left)
                 continue; // far at left of clipping region
 
-            if (i == hotkeyIndex)
+            if (!underline && i == style.underlinedCharIndex)
             {
-                hotkeyPos = current;
-                hotkeyW = w;
-                drawHotkey = true;
+                charUnderlinePos = current;
+                charUnderlineW = w;
             }
 
             // check overflow
@@ -412,10 +394,9 @@ struct TextLine
         // preform actual drawing
         const decorHeight = 1;
         const decorColor = style.decoration.color;
-        const underline = style.decoration.line == TextDecoration.Line.underline;
         const overline = style.decoration.line == TextDecoration.Line.overline;
         const lineThrough = style.decoration.line == TextDecoration.Line.lineThrough;
-        if (underline || drawHotkey)
+        if (underline || charUnderlineW > 0)
         {
             const int underlineY = pos.y + baseline + decorHeight;
             Rect r = Rect(pos.x, underlineY, pos.x, underlineY + decorHeight);
@@ -423,10 +404,10 @@ struct TextLine
             {
                 r.right += lineWidth;
             }
-            else if (drawHotkey)
+            else if (charUnderlineW > 0)
             {
-                r.left += hotkeyPos;
-                r.right += hotkeyPos + hotkeyW;
+                r.left += charUnderlinePos;
+                r.right += charUnderlinePos + charUnderlineW;
             }
             buf.fillRect(r, decorColor);
         }

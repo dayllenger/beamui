@@ -154,7 +154,7 @@ class Button : LinearLayout, ActionHolder
             }
             else if (!_label)
             {
-                _label = new Label(s);
+                _label = new ShortLabel(s);
                 _label.id = "label";
                 _label.bindSubItem(this, "label");
                 _label.state = State.parent;
@@ -169,7 +169,7 @@ class Button : LinearLayout, ActionHolder
     private
     {
         ImageWidget _icon;
-        Label _label;
+        ShortLabel _label;
 
         Action _action;
     }
@@ -289,7 +289,7 @@ class CheckBox : LinearLayout
     private
     {
         Widget _icon;
-        Label _label;
+        ShortLabel _label;
     }
 
     this(dstring labelText = null)
@@ -299,7 +299,7 @@ class CheckBox : LinearLayout
         _icon = new Widget("icon");
         _icon.bindSubItem(this, "icon");
         _icon.state = State.parent;
-        _label = new Label(labelText);
+        _label = new ShortLabel(labelText);
         _label.id = "label";
         _label.bindSubItem(this, "label");
         _label.state = State.parent;

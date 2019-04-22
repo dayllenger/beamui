@@ -112,7 +112,7 @@ class TabItem : Row
     private
     {
         ImageWidget _icon;
-        Label _label;
+        ShortLabel _label;
         Button _closeButton;
 
         Object _objectParam;
@@ -130,7 +130,7 @@ class TabItem : Row
         _icon.bindSubItem(this, "icon");
         _icon.state = State.parent;
         _icon.visibility = iconID ? Visibility.visible : Visibility.gone;
-        _label = new Label(label);
+        _label = new ShortLabel(label);
         _label.bindSubItem(this, "label");
         _label.state = State.parent;
         _closeButton = new Button(null, "close");
