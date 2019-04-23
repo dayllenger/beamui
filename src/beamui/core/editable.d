@@ -7,13 +7,13 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.editable;
 
-import beamui.core.collections;
 import beamui.core.functions;
 import beamui.core.linestream;
 import beamui.core.logger;
 import beamui.core.parseutils;
 import beamui.core.signals;
 import beamui.core.streams;
+import beamui.core.undo;
 
 immutable dchar EOL = '\n';
 
@@ -272,7 +272,7 @@ enum EditStateMark : ubyte
 }
 
 /// Edit operation details for EditableContent
-class EditOperation
+class EditOperation : UndoOperation
 {
     private
     {
@@ -333,8 +333,11 @@ class EditOperation
     }
 
     /// Try to merge two operations (simple entering of characters in the same line), return true if succeded
-    bool merge(EditOperation op)
+    bool merge(UndoOperation unop)
     {
+        auto op = cast(EditOperation)unop;
+        assert(op);
+
         if (_range.start.line != op._range.start.line) // both ops whould be on the same line
             return false;
         if (_content.length != 1 || op._content.length != 1) // both ops should operate the same line
@@ -369,11 +372,11 @@ class EditOperation
         return false;
     }
 
-    void modified(bool all = true)
+    void modified()
     {
         foreach (i; 0 .. _oldEditMarks.length)
         {
-            if (all || _oldEditMarks[i] == EditStateMark.saved)
+            if (_oldEditMarks[i] == EditStateMark.saved)
                 _oldEditMarks[i] = EditStateMark.changed;
         }
     }
@@ -388,98 +391,6 @@ class EditOperation
     @property dchar singleChar() const
     {
         return _content.length == 1 && _content[0].length == 1 ? _content[0][0] : 0;
-    }
-}
-
-/// Undo/Redo buffer
-class UndoBuffer
-{
-    private Collection!EditOperation _undoList;
-    private Collection!EditOperation _redoList;
-
-    /// Returns true if buffer contains any undo items
-    @property bool hasUndo() const
-    {
-        return !_undoList.empty;
-    }
-
-    /// Returns true if buffer contains any redo items
-    @property bool hasRedo() const
-    {
-        return !_redoList.empty;
-    }
-
-    /// Add undo operation
-    void saveForUndo(EditOperation op)
-    {
-        _redoList.clear();
-        if (!_undoList.empty)
-        {
-            if (_undoList.back.merge(op))
-            {
-                //_undoList.back.modified();
-                return; // merged - no need to add new operation
-            }
-        }
-        _undoList.pushBack(op);
-    }
-
-    /// Returns operation to be undone (put it to redo), null if no undo ops available
-    EditOperation undo()
-    {
-        if (!hasUndo)
-            return null; // no undo operations
-        EditOperation result = _undoList.popBack();
-        _redoList.pushBack(result);
-        return result;
-    }
-
-    /// Returns operation to be redone (put it to undo), null if no undo ops available
-    EditOperation redo()
-    {
-        if (!hasRedo)
-            return null; // no undo operations
-        EditOperation result = _redoList.popBack();
-        _undoList.pushBack(result);
-        return result;
-    }
-
-    /// Clear both undo and redo buffers
-    void clear()
-    {
-        _undoList.clear();
-        _redoList.clear();
-        _savedState = null;
-    }
-
-    private EditOperation _savedState;
-
-    /// Current state is saved
-    void saved()
-    {
-        _savedState = _undoList.back;
-        foreach (op; _undoList)
-        {
-            op.modified();
-        }
-        foreach (op; _redoList)
-        {
-            op.modified();
-        }
-    }
-
-    /// Returns true if saved state is in redo buffer
-    bool savedInRedo()
-    {
-        if (!_savedState)
-            return false;
-        return _savedState in _redoList;
-    }
-
-    /// Returns true if content has been changed since last saved() or clear() call
-    @property bool modified() const
-    {
-        return _savedState !is _undoList.back;
     }
 }
 
@@ -1486,7 +1397,7 @@ class EditableContent
             op.oldContent = oldcontent;
             op.oldEditMarks = oldmarks;
             replaceRange(rangeBefore, rangeAfter, newcontent);
-            _undoBuffer.saveForUndo(op);
+            _undoBuffer.push(op);
             handleContentChange(op, rangeBefore, rangeAfter, source);
             return true;
         }
@@ -1513,7 +1424,7 @@ class EditableContent
             return false;
         if (readOnly)
             throw new Exception("content is readonly");
-        EditOperation op = _undoBuffer.undo();
+        auto op = cast(EditOperation)_undoBuffer.undo();
         TextRange rangeBefore = op.newRange;
         dstring[] oldcontent = op.content;
         dstring[] newcontent = op.oldContent;
@@ -1532,7 +1443,7 @@ class EditableContent
             return false;
         if (readOnly)
             throw new Exception("content is readonly");
-        EditOperation op = _undoBuffer.redo();
+        auto op = cast(EditOperation)_undoBuffer.redo();
         TextRange rangeBefore = op.range;
         dstring[] oldcontent = op.oldContent;
         dstring[] newcontent = op.content;
