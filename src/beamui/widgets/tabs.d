@@ -219,7 +219,7 @@ class TabControl : WidgetGroup
     {
         return childCount - 1;
     }
-    /// Returns tab item by index (null if index is out of range)
+    /// Returns tab item by index (`null` if index is out of range)
     TabItem tab(int index)
     {
         if (0 <= index && index < childCount - 1)
@@ -227,7 +227,7 @@ class TabControl : WidgetGroup
         else
             return null;
     }
-    /// Returns tab item by id (null if not found)
+    /// Returns tab item by id (`null` if not found)
     inout(TabItem) tab(string id) inout
     {
         foreach (i; 1 .. childCount)
@@ -578,7 +578,7 @@ class TabControl : WidgetGroup
     }
 }
 
-/// Container for widgets controlled by TabControl
+/// Container for widgets controlled by `TabControl`
 class TabHost : FrameLayout
 {
     @property
@@ -682,7 +682,7 @@ class TabHost : FrameLayout
     }
 }
 
-/// Compound widget - contains from TabControl widget (tabs header) and TabHost (content pages)
+/// Compound widget - contains from `TabControl` widget (tabs header) and `TabHost` (content pages)
 class TabWidget : Column
 {
     @property
@@ -793,12 +793,12 @@ class TabWidget : Column
         return _tabHost.tabBody(id);
     }
 
-    /// Returns tab item by index (null if index out of range)
+    /// Returns tab item by index (`null` if index out of range)
     TabItem tab(int index)
     {
         return _tabControl.tab(index);
     }
-    /// Returns tab item by id (null if not found)
+    /// Returns tab item by id (`null` if not found)
     TabItem tab(string id)
     {
         return _tabControl.tab(id);

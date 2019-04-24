@@ -41,7 +41,7 @@ enum WindowOptions : uint
 /// Window states
 enum WindowState
 {
-    /// State is unknown (not supported by platform?), as well for using in setWindowState when only want to activate window or change its size/position
+    /// State is unknown (not supported by platform?), as well for using in `setWindowState` when only want to activate window or change its size/position
     unspecified,
     /// Normal state
     normal,
@@ -184,7 +184,7 @@ class Window : CustomEventTarget
 
         /// Get main widget of the window
         inout(Widget) mainWidget() inout { return _mainWidget; }
-        /// Assign main widget to the window. Must not be null. Destroys previous main widget.
+        /// Assign main widget to the window. Must not be `null`. Destroys previous main widget.
         void mainWidget(Widget widget)
         {
             assert(widget, "Assigned null main widget");
@@ -197,9 +197,9 @@ class Window : CustomEventTarget
             widget.window = this;
         }
 
-        /// Returns current window override cursor type or NotSet if not overriding.
+        /// Returns current window override cursor type or `notSet` if not overriding
         CursorType overrideCursorType() const { return _overrideCursorType; }
-        /// Allow override cursor for entire window. Set to CursorType.notSet to remove cursor type overriding.
+        /// Allow override cursor for entire window. Set to `CursorType.notSet` to remove cursor type overriding
         void overrideCursorType(CursorType newCursorType)
         {
             _overrideCursorType = newCursorType;
@@ -552,7 +552,7 @@ class Window : CustomEventTarget
         beamui.core.units.setupDPI(_screenDPI, _devicePixelRatio);
     }
 
-    /// Set the minimal window size and resize the window if needed; called from show()
+    /// Set the minimal window size and resize the window if needed; called from `show()`
     protected void adjustSize()
     {
         assert(_mainWidget !is null);
@@ -581,7 +581,7 @@ class Window : CustomEventTarget
         resize(w, h);
     }
 
-    /// Adjust window position during show()
+    /// Adjust window position during `show()`
     protected void adjustPosition()
     {
         if (options & WindowOptions.centered)
@@ -814,7 +814,7 @@ class Window : CustomEventTarget
         return false;
     }
 
-    /// Returns last modal popup widget, or null if no modal popups opened
+    /// Returns last modal popup widget, or `null` if no modal popups opened
     Popup modalPopup()
     {
         foreach_reverse (p; _popups)
@@ -1268,7 +1268,7 @@ class Window : CustomEventTarget
             return dest.onKeyEvent(event) || res;
     }
 
-    /// Dispatch key event to widgets which have wantsKeyTracking == true
+    /// Dispatch key event to widgets which have `wantsKeyTracking == true`
     protected bool dispatchKeyEvent(Widget root, KeyEvent event)
     {
         // route key events to visible widgets only
@@ -1497,7 +1497,7 @@ class Window : CustomEventTarget
         return false;
     }
 
-    /// Widget which tracks Move events
+    /// Widget which tracks `move` events
     private WeakRef!Widget[] _mouseTrackingWidgets;
     private void addTracking(WeakRef!Widget w)
     {
@@ -1533,7 +1533,7 @@ class Window : CustomEventTarget
         return res;
     }
 
-    /// Widget which tracks all events after processed ButtonDown
+    /// Widget which tracks all events after processed `buttonDown`
     private WeakRef!Widget _mouseCaptureWidget;
     private ushort _mouseCaptureButtons;
     private bool _mouseCaptureFocusedOut;
@@ -1721,7 +1721,7 @@ class Window : CustomEventTarget
 
     bool isAnimationActive() const { return _animationActive; }
 
-    /// Request update for window (unless force is true, update will be performed only if layout, redraw or animation is required).
+    /// Request update for window (unless `force` is true, update will be performed only if layout, redraw or animation is required)
     void update(bool force = false)
     {
         bool needDraw = false;
@@ -1797,8 +1797,10 @@ class Window : CustomEventTarget
         }
     }
 
-    /// Set timer with a delegate, that will be called after interval expiration; returns timer id
-    /// Node: You must cancel the timer if you destroy object this handler belongs to.
+    /** Set timer with a delegate, that will be called after interval expiration; returns timer id.
+
+        Note: You must cancel the timer if you destroy object this handler belongs to.
+    */
     ulong setTimer(long intervalMillis, bool delegate() handler)
     {
         assert(handler !is null);
@@ -1811,7 +1813,7 @@ class Window : CustomEventTarget
         return res;
     }
 
-    /// Cancel previously scheduled widget timer (for timerID pass value returned from setTimer)
+    /// Cancel previously scheduled widget timer (for `timerID` pass value returned from `setTimer`)
     void cancelTimer(ulong timerID)
     {
         _timerQueue.cancelTimer(timerID);
@@ -1873,12 +1875,12 @@ struct WindowMap(W : Window, ID)
         return list.length;
     }
 
-    /// The first added existing window, null if no windows
+    /// The first added existing window, `null` if no windows
     @property W first()
     {
         return list.length > 0 ? list[0] : null;
     }
-    /// The last added existing window, null if no windows
+    /// The last added existing window, `null` if no windows
     @property W last()
     {
         return list.length > 0 ? list[$ - 1] : null;
@@ -1927,8 +1929,7 @@ struct WindowMap(W : Window, ID)
     }
 }
 
-/**
-    Platform abstraction layer.
+/** Platform abstraction layer.
 
     Represents application. Holds set of windows.
 */
@@ -2026,21 +2027,20 @@ class Platform
         eliminate(_iconProvider);
     }
 
-    /**
-    Starts application message loop.
+    /** Starts application message loop.
 
-    When returned from this method, application is shutting down.
-     */
+        When returned from this method, application is shutting down.
+    */
     abstract int enterMessageLoop();
 
     //===============================================================
     // Window routines
 
-    /**
-    Create a window.
+    /** Create a window.
+
     Params:
         title  = window title text
-        parent = parent Window, or null if no parent
+        parent = parent Window, or `null` if no parent
         options  = combination of `WindowOptions`
         width  = window width
         height = window height
@@ -2050,17 +2050,16 @@ class Platform
     abstract Window createWindow(dstring title, Window parent = null,
             WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
             uint width = 0, uint height = 0);
-    /**
-    Close a window.
 
-    Closes window earlier created with createWindow()
-     */
+    /** Close a window.
+
+        Closes window earlier created with createWindow()
+    */
     abstract void closeWindow(Window w);
 
-    /**
-    Returns true if there is some modal window opened above this window.
+    /** Returns true if there is some modal window opened above this window.
 
-    This window should not process mouse/key input and should not allow closing.
+        This window should not process mouse/key input and should not allow closing.
     */
     bool hasModalWindowsAbove(Window w)
     {
@@ -2075,9 +2074,9 @@ class Platform
 
     /// Check has clipboard text
     abstract bool hasClipboardText(bool mouseBuffer = false);
-    /// Retrieve text from clipboard (when mouseBuffer == true, use mouse selection clipboard - under linux)
+    /// Retrieve text from clipboard (under Linux, when `mouseBuffer` is true, use mouse selection clipboard)
     abstract dstring getClipboardText(bool mouseBuffer = false);
-    /// Set text to clipboard (when mouseBuffer == true, use mouse selection clipboard - under linux)
+    /// Set text to clipboard (under Linux, when `mouseBuffer` is true, use mouse selection clipboard)
     abstract void setClipboardText(dstring text, bool mouseBuffer = false);
 
     /// Reload current theme. Useful to quickly edit and test a theme

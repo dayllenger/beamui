@@ -226,7 +226,7 @@ class Button : LinearLayout, ActionHolder
     }
 }
 
-/// Hyperlink button. Like Button, may execute arbitrary actions.
+/// Hyperlink button. Like `Button`, may execute arbitrary actions.
 class LinkButton : Button // FIXME: in horizontal layout this button expands horizontally
 {
     this(dstring labelText, string url, string icon = "applications-internet")
@@ -364,7 +364,7 @@ class RadioButton : CheckBox
     }
 }
 
-/// Canvas widget - draw arbitrary graphics on it either by overriding of doDraw() or by assigning of `drawCalled`
+/// Canvas widget - draw arbitrary graphics on it either by overriding of `doDraw()` or by setting `drawCalled`
 class CanvasWidget : Widget
 {
     Listener!(void delegate(DrawBuf buf, Box area)) drawCalled;

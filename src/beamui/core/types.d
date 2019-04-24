@@ -80,21 +80,19 @@ enum State : uint
     parent = 1 << 20,
 }
 
-/**
-    Base class for reference counted objects, maintains reference counter inplace.
+/** Base class for reference counted objects, maintains reference counter inplace.
 
-    If some class is not inherited from RefCountedObject, additional object will be required to hold counters.
+    If some class is not inherited from `RefCountedObject`, additional object will be required to hold counters.
 */
 class RefCountedObject
 {
-    /// Count of references to this object from Ref
+    /// Count of references to this object from `Ref`
     size_t refCount;
 }
 
-/**
-    Reference counting support.
+/** Reference counting support.
 
-    Implemented for case when T is RefCountedObject.
+    Implemented for case when `T` is `RefCountedObject`.
     Similar to shared_ptr in C++.
     Allows to share object, destroying it when no more references left.
 
@@ -161,7 +159,7 @@ struct Ref(T) if (is(T : RefCountedObject))
     {
         releaseRef();
     }
-    /// Returns object reference (null if not assigned)
+    /// Returns object reference (`null` if not assigned)
     @property T get()
     {
         return _data;

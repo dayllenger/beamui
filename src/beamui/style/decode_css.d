@@ -29,7 +29,7 @@ void logInvalidValue(const Token[] tokens)
     Log.fe("CSS(%s): invalid value", tokens[0].line);
 }
 
-/// Decode <integer> value
+/// Decode `<integer>` value
 Result!int decode(T : int)(const Token[] tokens)
 {
     assert(tokens.length > 0);
@@ -55,7 +55,7 @@ Result!int decode(T : int)(const Token[] tokens)
     }
 }
 
-/// Decode <number> (real) value
+/// Decode `<number>` (real) value
 Result!float decode(T : float)(const Token[] tokens)
 {
     assert(tokens.length > 0);
@@ -81,7 +81,7 @@ Result!string decode(T : string)(const Token[] tokens)
     return Ok(tokens[0].text);
 }
 
-/// Decode CSS token sequence like "left vcenter" to `Align` bit set
+/// Decode CSS token sequence like 'left vcenter' to `Align` bit set
 Result!Align decode(T : Align)(const Token[] tokens)
 {
     assert(tokens.length > 0);
@@ -145,7 +145,7 @@ Length[] decodeInsets(const Token[] tokens)
         return null;
     }
 }
-/// Decode dimension, e.g. 1px, 20%, 1.2em, or "none"
+/// Decode dimension, e.g. 1px, 20%, 1.2em, or 'none'
 Result!Length decode(T : Length)(const Token[] tokens)
 {
     assert(tokens.length > 0);
@@ -755,7 +755,7 @@ Result!string decode(SpecialCSSType t : SpecialCSSType.transitionProperty)(const
         return Err!string;
     }
 }
-/// Decode transition timing function like linear or ease-in-out
+/// Decode transition timing function like 'linear' or 'ease-in-out'
 Result!TimingFunction decode(T : TimingFunction)(const Token[] tokens)
 {
     assert(tokens.length > 0);

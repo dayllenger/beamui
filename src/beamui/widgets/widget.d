@@ -136,7 +136,7 @@ private:
     /// If true, the style will be recomputed on next usage
     bool _needToRecomputeStyle = true;
 
-    /// Widget state (set of flags from State enum)
+    /// Widget state
     State _state = State.normal;
     /// Widget visibility: either visible, hidden, gone
     Visibility _visibility = Visibility.visible; // visible by default
@@ -211,7 +211,7 @@ public:
             *_isDestroyed = true;
     }
 
-    /// Flag for WeakRef that indicates widget destruction
+    /// Flag for `WeakRef` that indicates widget destruction
     final @property const(bool*) isDestroyed() const
     {
         return _isDestroyed;
@@ -220,7 +220,7 @@ public:
     //===============================================================
     // Widget ID
 
-    /// Widget id, null if not set
+    /// Widget id, `null` if not set
     @property string id() const { return _id; }
     /// ditto
     @property void id(string id)
@@ -246,7 +246,7 @@ public:
     //===============================================================
     // State
 
-    /// Widget state (set of flags from State enum)
+    /// Widget state (set of flags from `State` enum)
     @property State state() const
     {
         if ((_state & State.parent) != 0 && _parent !is null)
@@ -290,14 +290,14 @@ public:
             }
         }
     }
-    /// Add state flags (set of flags from State enum). Returns new state
+    /// Add state flags (set of flags from `State` enum). Returns new state
     State setState(State stateFlagsToSet)
     {
         State st = state | stateFlagsToSet;
         state = st;
         return st;
     }
-    /// Remove state flags (set of flags from State enum). Returns new state
+    /// Remove state flags (set of flags from `State` enum). Returns new state
     State resetState(State stateFlagsToUnset)
     {
         State st = state & ~stateFlagsToUnset;
@@ -631,7 +631,7 @@ public:
             return _background;
         }
 
-        /// Text flags (bit set of TextFlag enum values)
+        /// Text flags (bit set of `TextFlag` enum values)
         TextFlag textFlags() const
         {
             return TextFlag.unspecified;
@@ -757,7 +757,7 @@ public:
     //===============================================================
     // Animation
 
-    /// Returns true is widget is being animated - need to call animate() and redraw
+    /// Returns true is widget is being animated - need to call `animate()` and redraw
     @property bool animating() const
     {
         return animations.length > 0;
@@ -937,8 +937,10 @@ public:
     // Tooltips
 
     private dstring _tooltipText;
-    /// Tooltip text - when not empty, widget will show tooltips automatically.
-    /// For advanced tooltips - override hasTooltip and createTooltip methods.
+    /** Tooltip text - when not empty, widget will show tooltips automatically.
+
+        For advanced tooltips - override `hasTooltip` and `createTooltip` methods.
+    */
     @property dstring tooltipText() { return _tooltipText; }
     /// ditto
     @property void tooltipText(dstring text)
@@ -951,10 +953,9 @@ public:
         return tooltipText.length > 0;
     }
 
-    /**
-    Will be called from window once tooltip request timer expired.
+    /** Will be called from window once tooltip request timer expired.
 
-    If null is returned, popup will not be shown; you can change alignment and position of popup here.
+        If `null` is returned, popup will not be shown; you can change alignment and position of popup here.
     */
     Widget createTooltip(int mouseX, int mouseY, ref PopupAlign alignment, ref int x, ref int y)
     {
@@ -976,13 +977,12 @@ public:
     // About focus
 
     private bool _focusGroup;
-    /**
-    Focus group flag for container widget.
+    /** Focus group flag for container widget.
 
-    When focus group is set for some parent widget, focus from one of containing widgets can be moved
-    using keyboard only to one of other widgets containing in it and cannot bypass bounds of focusGroup.
-    If focused widget doesn't have any parent with focusGroup == true,
-    focus may be moved to any focusable within window.
+        When focus group is set for some parent widget, focus from one of containing widgets can be moved
+        using keyboard only to one of other widgets containing in it and cannot bypass bounds of `focusGroup`.
+        If focused widget doesn't have any parent with `focusGroup == true`,
+        focus may be moved to any focusable within window.
     */
     @property bool focusGroup() const { return _focusGroup; }
     /// ditto
@@ -1034,7 +1034,7 @@ public:
         }
     }
 
-    /// Find nearest parent of this widget with focusGroup flag, returns topmost parent if no focusGroup flag set to any of parents.
+    /// Find nearest parent of this widget with `focusGroup` flag. Returns topmost parent if no `focusGroup` flag set to any of parents
     inout(Widget) focusGroupWidget() inout
     {
         Widget p = cast()this;
@@ -1143,7 +1143,7 @@ public:
         }
     }
 
-    /// Find all focusables belonging to the same focusGroup as this widget (does not include current widget).
+    /// Find all focusables belonging to the same `focusGroup` as this widget (does not include current widget).
     /// Usually to be called for focused widget to get possible alternatives to navigate to
     private Buf!TabOrderInfo findFocusables(Widget currentWidget)
     {
@@ -1330,7 +1330,7 @@ public:
         }
         return window.setFocus(weakRef(this), reason);
     }
-    /// Search children for first focusable item, returns null if not found
+    /// Search children for first focusable item, returns `null` if not found
     Widget findFocusableChild(bool defaultOnly)
     {
         foreach (i; 0 .. childCount)
@@ -1389,7 +1389,7 @@ public:
         return 0; // no window - no timer
     }
 
-    /// Cancel timer - pass value returned from setTimer() as timerID parameter
+    /// Cancel timer - pass value returned from `setTimer()` as `timerID` parameter
     void cancelTimer(ulong timerID)
     {
         if (auto w = window)
@@ -1540,7 +1540,10 @@ public:
         return false;
     }
 
-    /// Execute delegate later in UI thread if this widget will be still available (can be used to modify UI from background thread, or just to postpone execution of action)
+    /** Execute delegate later in UI thread if this widget will be still available.
+
+        Can be used to modify UI from background thread, or just to postpone execution of action.
+    */
     void executeInUiThread(void delegate() runnable)
     {
         if (!window)
@@ -1875,7 +1878,11 @@ public:
         return -1;
     }
 
-    /// Returns true if item is child of this widget (when deepSearch == true - returns true if item is this widget or one of children inside children tree).
+    /** Returns true if item is child of this widget.
+
+        When `deepSearch == true`, returns true if item is this widget
+        or one of children inside children tree.
+    */
     bool isChild(Widget item, bool deepSearch = true)
     {
         if (deepSearch)
@@ -1901,7 +1908,7 @@ public:
         return false;
     }
 
-    /// Find child of specified type T by id, returns null if not found or cannot be converted to type T
+    /// Find child of specified type `T` by id, returns `null` if not found or cannot be converted to type `T`
     T childByID(T = typeof(this))(string id, bool deepSearch = true)
     {
         if (deepSearch)
@@ -1943,7 +1950,7 @@ public:
         return null;
     }
 
-    /// Parent widget, null for top level widget
+    /// Parent widget, `null` for top level widget
     @property Widget parent() const
     {
         return _parent ? cast(Widget)_parent : null;
@@ -1976,14 +1983,13 @@ public:
 /// Widget list holder
 alias WidgetList = Collection!(Widget, true);
 
-/**
-    Base class for widgets which have children.
+/** Base class for widgets which have children.
 
     Added children will correctly handle destruction of parent widget and theme change.
 
     If your widget has subwidgets which do not need to catch mouse and key events, focus, etc,
     you may not use this class. You may inherit directly from the Widget class
-    and add code for subwidgets to destructor, onThemeChanged, and onDraw (if needed).
+    and add code for subwidgets to destructor, `onThemeChanged`, and `onDraw` (if needed).
 */
 class WidgetGroup : Widget
 {
@@ -2065,7 +2071,7 @@ class WidgetGroup : Widget
         return cast(int)_children.indexOf(item);
     }
 
-    /// Replace one child with another. DOES NOT destroy the old item
+    /// Replace one child with another. It DOES NOT destroy the old item
     void replaceChild(Widget oldChild, Widget newChild)
     {
         assert(newChild !is null && oldChild !is null, "Widgets must exist");
@@ -2075,7 +2081,7 @@ class WidgetGroup : Widget
     }
 }
 
-/// WidgetGroup with default drawing of children (just draw all children)
+/// `WidgetGroup` with default drawing of children (just draw all children)
 class WidgetGroupDefaultDrawing : WidgetGroup
 {
     /// Empty parameter list constructor - for usage by factory

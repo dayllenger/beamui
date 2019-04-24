@@ -313,7 +313,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     private
     {
         EditableContent _content;
-        /// When _ownContent is false, _content should not be destroyed in editor destructor
+        /// When `_ownContent` is false, `_content` should not be destroyed in editor destructor
         bool _ownContent = true;
 
         int _lineHeight;
@@ -335,7 +335,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         Color _caretColorReplace = Color(0x808080FF);
         Color _matchingBracketHightlightColor = Color(0x60FFE0B0);
 
-        /// When true, call measureVisibleText on next layout
+        /// When true, call `measureVisibleText` on next layout
         bool _contentChanged = true;
 
         bool _showTabPositionMarks;
@@ -1043,7 +1043,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         invalidate();
     }
 
-    /// Used instead of using clientToTextPos for mouse input when in word wrap mode
+    /// Used instead of using `clientToTextPos` for mouse input when in word wrap mode
     protected TextPosition wordWrapMouseOffset(int x, int y)
     {
         if (_span.length == 0)
@@ -3351,7 +3351,7 @@ class EditBox : EditWidgetBase
     /**
         Custom text color and style highlight (using text highlight) support.
 
-        Return null if no syntax highlight required for line.
+        Return `null` if no syntax highlight required for line.
      */
     protected CustomCharProps[] handleCustomLineHighlight(int line, dstring txt, ref CustomCharProps[] buf)
     {

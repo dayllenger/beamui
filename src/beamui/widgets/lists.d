@@ -236,7 +236,7 @@ class StringListAdapterBase : ListAdapterBase
             _items[i].str = values[i];
     }
 
-    /// Init with array of StringListValue
+    /// Init with array of `StringListValue`
     this(StringListValue[] values)
     {
         _items.length = values.length;
@@ -359,7 +359,7 @@ class StringListAdapter : StringListAdapterBase
         super(items);
     }
 
-    /// Init with array of StringListValue
+    /// Init with array of `StringListValue`
     this(StringListValue[] items)
     {
         super(items);
@@ -428,7 +428,7 @@ class IconStringListAdapter : StringListAdapterBase
         super();
     }
 
-    /// Init with array of StringListValue
+    /// Init with array of `StringListValue`
     this(StringListValue[] items)
     {
         super(items);

@@ -101,9 +101,9 @@ enum int MAX_WIDTH_UNSPECIFIED = int.max;
 /**
     Instance of font with specific size, weight, face, etc.
 
-    Allows to measure text string and draw it on DrawBuf
+    Allows to measure text string and draw it on `DrawBuf`.
 
-    Use FontManager.instance.getFont() to retrieve font instance.
+    Use `FontManager.instance.getFont()` to retrieve font instance.
 */
 class Font : RefCountedObject
 {
@@ -492,7 +492,7 @@ class Font : RefCountedObject
 
     /// Clear usage flags for all entries
     abstract void checkpoint();
-    /// Removes entries not used after last call of checkpoint() or cleanup()
+    /// Removes entries not used after last call of `checkpoint()` or `cleanup()`
     abstract void cleanup();
     /// Clears glyph cache
     abstract void clearGlyphCache();
@@ -672,7 +672,7 @@ class FontManager
             }
         }
 
-        /// Current hinting mode (Normal, AutoHint, Disabled)
+        /// Current hinting mode (normal, autoHint, disabled)
         HintingMode hintingMode() { return _hintingMode; }
         /// ditto
         void hintingMode(HintingMode mode)
@@ -737,7 +737,7 @@ class FontManager
         fontCache[t] = res;
         return res;
     }
-    /// Non-caching implementation of getFont()
+    /// Non-caching implementation of `getFont()`
     abstract protected ref FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face);
 
     /// Override to return list of font faces available
@@ -749,7 +749,7 @@ class FontManager
     /// Clear usage flags for all entries - to clean up unused fonts
     abstract void checkpoint();
 
-    /// Removes entries not used after last call of checkpoint() or cleanup()
+    /// Removes entries not used after last call of `checkpoint()` or `cleanup()`
     abstract void cleanup();
 
     /// Clear glyph cache

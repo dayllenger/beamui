@@ -132,7 +132,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
     }
 
     /// Add widgets to the layout next to the last item.
-    /// Returns: Last cell pointer (not null), that allows to adjust layout properties for this widget.
+    /// Returns: Last cell pointer (not `null`), that allows to adjust layout properties for this widget.
     Cell* add(Widget first, Widget[] next...)
     {
         addChild(first);
@@ -141,7 +141,7 @@ class LinearLayout : WidgetGroupDefaultDrawing
         return _cells.back;
     }
 
-    /// Same as `add`, but skips null widgets. May return null cell
+    /// Same as `add`, but skips null widgets. May return `null` cell
     Cell* addSome(Widget first, Widget[] next...)
     {
         size_t prevLength = _cells.length;
@@ -587,7 +587,7 @@ private void shrink(string dim)(ref Array!LayoutItem items, int available)
     }
 }
 
-/// Shortcut for LinearLayout with horizontal orientation
+/// Shortcut for `LinearLayout` with horizontal orientation
 class Row : LinearLayout
 {
     this()
@@ -602,7 +602,7 @@ class Row : LinearLayout
     }
 }
 
-/// Shortcut for LinearLayout with vertical orientation
+/// Shortcut for `LinearLayout` with vertical orientation
 class Column : LinearLayout
 {
     this()
@@ -654,7 +654,7 @@ class FrameLayout : WidgetGroupDefaultDrawing
         }
     }
 
-    /// Make one of children (with specified ID) visible, for the rest, set visibility to otherChildrenVisibility
+    /// Make one of children (with specified ID) visible, for the rest, set visibility to `otherChildrenVisibility`
     bool showChild(string ID, Visibility otherChildrenVisibility = Visibility.hidden, bool updateFocus = false)
     {
         bool found;
@@ -703,7 +703,7 @@ class FreeLayout : WidgetGroupDefaultDrawing
     }
 
     /// Add a widget at specific position upper the added last item
-    /// Returns: Last cell pointer (not null), that allows to adjust layout properties for this widget.
+    /// Returns: Last cell pointer (not `null`), that allows to adjust layout properties for this widget.
     Cell* add(Widget item, int x, int y)
     {
         addChild(item);
@@ -989,7 +989,7 @@ enum ResizerEventType
 /**
     Resizer control.
 
-    Put it between other items in LinearLayout to allow resizing its siblings.
+    Put it between other items in `LinearLayout` to allow resizing its siblings.
     While dragging, it will resize previous and next children in layout.
 */
 class Resizer : Widget

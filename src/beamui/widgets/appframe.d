@@ -18,7 +18,7 @@ import beamui.widgets.statusline;
 import beamui.widgets.toolbars;
 import beamui.widgets.widget;
 
-/// To update status for background operation in AppFrame
+/// To update status for background operation in `AppFrame`
 class BackgroundOperationWatcher
 {
     @property
@@ -43,7 +43,7 @@ class BackgroundOperationWatcher
         {
             return 100;
         }
-        /// Returns true when task is done - to remove it from AppFrame
+        /// Returns true when task is done - to remove it from `AppFrame`
         bool finished() const
         {
             return _finished;
@@ -76,7 +76,7 @@ class BackgroundOperationWatcher
     {
         _cancelRequested = true;
     }
-    /// Will be called by app frame when BackgroundOperationWatcher is to be removed
+    /// Will be called by app frame when `BackgroundOperationWatcher` is to be removed
     void removing()
     {
         // in this handler, you can post new background operation to AppFrame

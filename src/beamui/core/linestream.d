@@ -252,8 +252,7 @@ class OutputLineStream
     }
 }
 
-/**
-    Support reading of file (or string in memory) by lines
+/** Support reading of file (or string in memory) by lines.
 
     Support utf8, utf16, utf32 be and le encodings, and line endings - according to D language source file specification.
 
@@ -269,7 +268,7 @@ class LineStream
         string filename() const { return _filename; }
         /// Returns current line number
         uint line() const { return _line; }
-        /// Returns file encoding EncodingType
+        /// Returns file encoding
         EncodingType encoding() const { return _encoding; }
 
         TextFileFormat textFormat() const
@@ -440,7 +439,7 @@ class LineStream
     /// Unknown line position
     immutable static uint LINE_POSITION_UNDEFINED = uint.max;
 
-    /// Read line from stream. Returns null on end of file or read error
+    /// Read line from stream. Returns `null` on end of file or read error
     dchar[] readLine()
     {
         if (_errorCode != 0)
@@ -563,7 +562,7 @@ class LineStream
         return create(stream, filename);
     }
 
-    /// Factory for InputStream parser
+    /// Factory for `InputStream` parser
     static LineStream create(InputStream stream, string filename, bool autodetectUTFIfNoBOM = true)
     {
         ubyte[] buf = new ubyte[BYTE_BUFFER_SIZE];

@@ -191,7 +191,7 @@ struct TextPosition
         return to!string(line) ~ ":" ~ to!string(pos);
     }
 
-    /// Adds deltaPos to position and returns result
+    /// Adds `deltaPos` to position and returns result
     TextPosition offset(int deltaPos)
     {
         return TextPosition(line, pos + deltaPos);
@@ -807,7 +807,7 @@ class EditableContent
         return index >= 0 && index < _lines.length ? _lines[index] : ""d;
     }
 
-    /// Returns character at position lineIndex, pos
+    /// Returns character at position `(lineIndex, pos)`
     dchar opIndex(int lineIndex, int pos)
     {
         const s = line(lineIndex);
@@ -815,7 +815,7 @@ class EditableContent
             return s[pos];
         return 0;
     }
-    /// Returns character at position lineIndex, pos
+    /// ditto
     dchar opIndex(TextPosition p)
     {
         const s = line(p.line);
@@ -850,18 +850,18 @@ class EditableContent
         return _editMarks[index];
     }
 
-    /// Returns text position for end of line lineIndex
-    TextPosition lineEnd(int lineIndex) const
+    /// Returns text position for the end of line `index`
+    TextPosition lineEnd(int index) const
     {
-        return TextPosition(lineIndex, lineLength(lineIndex));
+        return TextPosition(index, lineLength(index));
     }
 
-    /// Returns text position for begin of line lineIndex (if lineIndex > number of lines, returns end of last line)
-    TextPosition lineBegin(int lineIndex) const
+    /// Returns text position for the begin of line `index` (if index > the number of lines, returns end of last line)
+    TextPosition lineBegin(int index) const
     {
-        if (lineIndex >= _lines.length)
-            return lineEnd(lineIndex - 1);
-        return TextPosition(lineIndex, 0);
+        if (index >= _lines.length)
+            return lineEnd(index - 1);
+        return TextPosition(index, 0);
     }
 
     /// Returns previous character position
@@ -899,11 +899,11 @@ class EditableContent
         }
     }
 
-    /// Returns text range for whole line lineIndex
-    TextRange lineRange(int lineIndex) const
+    /// Returns text range for whole line `index`
+    TextRange lineRange(int index) const
     {
-        return TextRange(TextPosition(lineIndex, 0), lineIndex < cast(int)_lines.length - 1 ?
-                lineBegin(lineIndex + 1) : lineEnd(lineIndex));
+        return TextRange(TextPosition(index, 0), index < cast(int)_lines.length - 1 ?
+                lineBegin(index + 1) : lineEnd(index));
     }
 
     /// Find nearest next tab position
@@ -1020,12 +1020,12 @@ class EditableContent
         return res;
     }
 
-    /// Returns true if line with index lineIndex is empty (has length 0 or consists only of spaces and tabs)
-    bool lineIsEmpty(int lineIndex) const
+    /// Returns true if the line with `index` is empty (has length 0 or consists only of spaces and tabs)
+    bool lineIsEmpty(int index) const
     {
-        if (lineIndex < 0 || lineIndex >= _lines.length)
+        if (index < 0 || index >= _lines.length)
             return true;
-        foreach (ch; _lines[lineIndex])
+        foreach (ch; _lines[index])
             if (ch != ' ' && ch != '\t')
                 return false;
         return true;
@@ -1060,10 +1060,10 @@ class EditableContent
         return TextPosition(lineIndex, 0);
     }
 
-    /// Returns text position for end of line lineIndex
-    int lineLength(int lineIndex) const
+    /// Returns length of the line `index`
+    int lineLength(int index) const
     {
-        return lineIndex >= 0 && lineIndex < _lines.length ? cast(int)_lines[lineIndex].length : 0;
+        return index >= 0 && index < _lines.length ? cast(int)_lines[index].length : 0;
     }
 
     /// Returns maximum length of line
@@ -1158,7 +1158,7 @@ class EditableContent
         correctPosition(range.end);
     }
 
-    /// Removes removedCount lines starting from start
+    /// Removes `removedCount` lines starting from start
     protected void removeLines(int start, int removedCount)
     {
         const int end = start + removedCount;
@@ -1644,7 +1644,7 @@ struct LineIcons
     /// Returns count of items
     @property int length() const { return _len; }
 
-    /// Returns item by index, or null if index out of bounds
+    /// Returns item by index, or `null` if index out of bounds
     LineIcon opIndex(int index)
     {
         if (index < 0 || index >= _len)

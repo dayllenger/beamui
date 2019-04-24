@@ -310,7 +310,7 @@ final class Setting
             value.parent = parent;
             return value;
         }
-        /// Get item by index, returns null if index out of bounds
+        /// Get item by index, returns `null` if index out of bounds
         Setting get(size_t index)
         {
             if (index < 0 || index >= list.length)
@@ -355,14 +355,14 @@ final class Setting
         {
             return list.length == 0;
         }
-        /// Get item by index, returns null if index out of bounds
+        /// Get item by index, returns `null` if index out of bounds
         Setting get(size_t index)
         {
             if (index < 0 || index >= list.length)
                 return null;
             return list[index];
         }
-        /// Get item by key, returns null if key is not found
+        /// Get item by key, returns `null` if key is not found
         Setting get(string key)
         {
             auto p = (key in map);
@@ -672,7 +672,7 @@ final class Setting
     }
 
     /// Remove array or object item by an index.
-    /// Returns removed item or null if index is out of bounds or setting is neither array nor object.
+    /// Returns removed item or `null` if index is out of bounds or setting is neither array nor object.
     Setting remove(size_t index)
     {
         if (!isset)
@@ -685,7 +685,7 @@ final class Setting
             return null;
     }
     /// Remove object item by a key.
-    /// Returns removed item or null if is not found or setting is not an object
+    /// Returns removed item or `null` if is not found or setting is not an object
     Setting remove(string key)
     {
         if (!isset)
@@ -701,7 +701,7 @@ final class Setting
 
     // basic
 
-    /// String value of this setting. Getter returns null if setting holds wrong type.
+    /// String value of this setting. Getter returns `null` if setting holds wrong type.
     @property string str() const
     {
         return isString ? store.str : null;
@@ -839,7 +839,7 @@ final class Setting
         return list;
     }
 
-    /// Items as a Setting array
+    /// Items as a `Setting` array
     @property Setting[] array()
     {
         if (isArray || isObject)
@@ -865,7 +865,7 @@ final class Setting
         return list;
     }
 
-    /// Items as a string[string] map
+    /// Items as a `string[string]` map
     @property string[string] strMap()
     {
         if (isObject)
@@ -896,7 +896,7 @@ final class Setting
         return list;
     }
 
-    /// Items as an int[string] map
+    /// Items as an `int[string]` map
     @property int[string] intMap()
     {
         if (isObject)
@@ -924,7 +924,7 @@ final class Setting
         return list;
     }
 
-    /// Items as a Setting[string] map
+    /// Items as a `Setting[string]` map
     @property Setting[string] map()
     {
         if (isObject)
@@ -953,7 +953,7 @@ final class Setting
     //===============================================================
     // Operators
 
-    /// To iterate using foreach
+    /// To iterate using `foreach`
     int opApply(int delegate(ref Setting) dg)
     {
         int result = 0;
@@ -978,7 +978,7 @@ final class Setting
         return result;
     }
 
-    /// To iterate over object using foreach (key, value; map)
+    /// To iterate over object using `foreach (key, value; map)`
     int opApply(int delegate(ref string, ref Setting) dg)
     {
         int result = 0;
@@ -995,7 +995,7 @@ final class Setting
         return result;
     }
 
-    /// To iterate using foreach_reverse
+    /// To iterate using `foreach_reverse`
     int opApplyReverse(int delegate(ref Setting) dg)
     {
         int result = 0;
@@ -1020,7 +1020,7 @@ final class Setting
         return result;
     }
 
-    /// For array or object returns item by index, null if index is out of bounds or setting is neither array nor object
+    /// For array or object returns item by index, `null` if index is out of bounds or setting is neither array nor object
     Setting opIndex(size_t index)
     {
         Setting res;
@@ -1030,7 +1030,7 @@ final class Setting
             res = store.map.get(index);
         return res ? res : dummy;
     }
-    /// For object returns item by key, null if not found or this setting is not an object
+    /// For object returns item by key, `null` if not found or this setting is not an object
     Setting opIndex(string key)
     {
         Setting res;

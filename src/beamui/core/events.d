@@ -9,7 +9,7 @@ module beamui.core.events;
 
 import beamui.widgets.widget;
 
-/// Mouse action codes for MouseEvent
+/// Mouse action codes for `MouseEvent`
 enum MouseAction : uint
 {
     /// Button down handling is cancelled
@@ -20,18 +20,18 @@ enum MouseAction : uint
     buttonUp,
     /// Mouse pointer is moving
     move,
-    /// Pointer is back inside widget while button is down after FocusOut
+    /// Pointer is back inside widget while button is down after `focusOut`
     focusIn,
     /// Pointer moved outside of widget while button was down (if handler returns true, Move events will be sent even while pointer is outside widget)
     focusOut,
     /// Scroll wheel movement
     wheel,
     //hover,    // pointer entered widget which while button was not down (return true to track Hover state)
-    /// Pointer left widget which has before processed Move message, while button was not down
+    /// Pointer left widget which has before processed `move` message, while button was not down
     leave
 }
 
-/// Mouse flag bits (mouse buttons and keyboard modifiers) for MouseEvent
+/// Mouse flag bits (mouse buttons and keyboard modifiers) for `MouseEvent`
 enum MouseFlag : uint
 {
     // mouse buttons
@@ -60,7 +60,7 @@ enum MouseFlag : uint
     keyMask = control | shift | alt,
 }
 
-/// Mouse button codes for MouseEvent
+/// Mouse button codes for `MouseEvent`
 enum MouseButton : uint
 {
     /// No button
@@ -72,12 +72,12 @@ enum MouseButton : uint
     /// Right mouse button
     middle = MouseFlag.mbutton,
     /// Additional mouse button 1
-    xbutton1 = MouseFlag.xbutton1, // additional button 1
+    xbutton1 = MouseFlag.xbutton1,
     /// Additional mouse button 2
-    xbutton2 = MouseFlag.xbutton2, // additional button 2
+    xbutton2 = MouseFlag.xbutton2,
 }
 
-/// Converts MouseButton to MouseFlag
+/// Converts `MouseButton` to `MouseFlag`
 ushort mouseButtonToFlag(MouseButton btn)
 {
     switch (btn) with (MouseButton)
@@ -100,16 +100,16 @@ ushort mouseButtonToFlag(MouseButton btn)
 /// Double click max interval, milliseconds; may be changed by platform
 __gshared long DOUBLE_CLICK_THRESHOLD_MS = 400;
 
-/// Mouse button state details for MouseEvent
+/// Mouse button state details for `MouseEvent`
 struct ButtonDetails
 {
     private
     {
-        /// Clock.currStdTime() for down event of this button (0 if button is up) set after double click to time when first click occured.
+        /// `Clock.currStdTime` for down event of this button (0 if button is up) set after double click to time when first click occured
         long _prevDownTs;
-        /// Clock.currStdTime() for down event of this button (0 if button is up).
+        /// `Clock.currStdTime` for down event of this button (0 if button is up)
         long _downTs;
-        /// Clock.currStdTime() for up event of this button (0 if button is still down).
+        /// `Clock.currStdTime` for up event of this button (0 if button is still down)
         long _upTs;
         /// x coordinates of down event
         short _downX;
@@ -147,9 +147,9 @@ struct ButtonDetails
             long ts = std.datetime.Clock.currStdTime;
             return cast(int)(ts - _downTs);
         }
-        /// X coordinate of point where button was pressed Down last time
+        /// X coordinate of the point where button was pressed down last time
         short downX() const { return _downX; }
-        /// Y coordinate of point where button was pressed Down last time
+        /// Y coordinate of the point where button was pressed down last time
         short downY() const { return _downY; }
         /// Bit set of mouse flags saved on button down
         ushort downFlags() const { return _downFlags; }
@@ -201,13 +201,13 @@ final class MouseEvent
         long _eventTimestamp;
         /// Mouse action code
         MouseAction _action;
-        /// Mouse button code for ButtonUp/ButtonDown
+        /// Mouse button code for `buttonDown`/`buttonUp`
         MouseButton _button;
         /// x coordinate of pointer
         short _x;
         /// y coordinate of pointer
         short _y;
-        /// Flags bit set - usually from MouseFlag enum
+        /// Flags bit set - usually from `MouseFlag` enum
         ushort _flags;
         /// Wheel delta
         short _wheelDelta;
@@ -219,7 +219,7 @@ final class MouseEvent
         ButtonDetails _mbutton;
         /// Right button state details
         ButtonDetails _rbutton;
-        /// When true, no tracking of mouse on ButtonDown is necessary
+        /// When true, no tracking of mouse on `buttonDown` is necessary
         bool _doNotTrackButtonDown;
     }
 
@@ -268,7 +268,7 @@ final class MouseEvent
                 return _mbutton;
             return _lbutton;
         }
-        /// Button which caused ButtonUp or ButtonDown action
+        /// Button which caused `buttonDown` or `buttonUp` action
         MouseButton button() const { return _button; }
         /// Action
         MouseAction action() const { return _action; }
@@ -284,7 +284,7 @@ final class MouseEvent
         {
             return _flags & MouseFlag.keyMask;
         }
-        /// Returns delta for Wheel event
+        /// Returns delta for `wheel` event
         short wheelDelta() const { return _wheelDelta; }
         /// x coordinate of mouse pointer (relative to window client area)
         short x() const { return _x; }
@@ -308,7 +308,7 @@ final class MouseEvent
             return !noModifiers;
         }
 
-        /// Returns true for ButtonDown event when button is pressed second time in short interval after pressing first time
+        /// Returns true for `buttonDown` event when button is pressed second time in short interval after pressing first time
         bool doubleClick() const
         {
             if (_action != MouseAction.buttonDown)
@@ -316,7 +316,7 @@ final class MouseEvent
             return buttonDetails.doubleClick;
         }
 
-        /// Returns true for ButtonDown event when button is pressed third time in short interval after pressing first time
+        /// Returns true for `buttonDown` event when button is pressed third time in short interval after pressing first time
         bool tripleClick() const
         {
             if (_action != MouseAction.buttonDown)
@@ -352,7 +352,7 @@ final class MouseEvent
     }
 }
 
-/// Keyboard actions for KeyEvent
+/// Keyboard actions for `KeyEvent`
 enum KeyAction : uint
 {
     /// Key is pressed
@@ -365,7 +365,7 @@ enum KeyAction : uint
     repeat,
 }
 
-/// Keyboard flags for KeyEvent
+/// Keyboard flags for `KeyEvent`
 enum KeyFlag : uint
 {
     /// Ctrl key is down
@@ -403,7 +403,7 @@ enum KeyFlag : uint
     lrmenu = lmenu | rmenu, // both left and right
 }
 
-/// Key code constants for KeyEvent
+/// Key code constants for `KeyEvent`
 enum KeyCode : uint
 {
     none = 0,
@@ -537,9 +537,9 @@ final class KeyEvent
     {
         /// Action
         KeyAction _action;
-        /// Key code, usually from KeyCode enum
+        /// Key code, usually from `KeyCode` enum
         uint _keyCode;
-        /// Key flags bit set, usually combined from KeyFlag enum
+        /// Key flags bit set, usually combined from `KeyFlag` enum
         uint _flags;
         /// Entered text
         dstring _text;
@@ -556,13 +556,13 @@ final class KeyEvent
 
     @property
     {
-        /// Key action (KeyDown, KeyUp, Text, Repeat)
+        /// Key action (keyDown, keyUp, text, repeat)
         KeyAction action() const { return _action; }
-        /// Key code (usually from KeyCode enum)
+        /// Key code (usually from `KeyCode` enum)
         uint keyCode() const { return _keyCode; }
-        /// Flags (shift, ctrl, alt...) - KeyFlag enum
+        /// Flags (shift, ctrl, alt...) - `KeyFlag` enum
         uint flags() const { return _flags; }
-        /// Entered text, for Text action
+        /// Entered text, for `text` action
         dstring text() const { return _text; }
 
         /// Returns true if no modifier flags are set
@@ -575,7 +575,7 @@ final class KeyEvent
         {
             return !noModifiers;
         }
-        /// Returns modifier flags filtered for KeyFlag.control | KeyFlag.alt | KeyFlag.menu | KeyFlag.shift only
+        /// Returns modifier flags filtered for `KeyFlag.control | KeyFlag.alt | KeyFlag.menu | KeyFlag.shift` only
         uint modifiers() const
         {
             return (_flags & (KeyFlag.control | KeyFlag.alt | KeyFlag.menu | KeyFlag.shift));
@@ -588,7 +588,7 @@ final class KeyEvent
     }
 }
 
-/// Scroll bar / slider action codes for ScrollEvent.
+/// Scroll bar / slider action codes for `ScrollEvent`
 enum ScrollAction : ubyte
 {
     /// Space above indicator pressed
@@ -652,7 +652,7 @@ final class ScrollEvent
         }
     }
 
-    /// Default update position for actions like PageUp/PageDown, LineUp/LineDown
+    /// Default update position for actions like pageUp/pageDown, lineUp/lineDown
     int defaultUpdatePosition()
     {
         int delta = 0;
@@ -694,8 +694,7 @@ final class ScrollEvent
     }
 }
 
-/**
-    Converts key name to KeyCode enum value
+/** Convert key name to `KeyCode` enum value.
 
     For unknown key code, returns 0.
 */
@@ -800,8 +799,7 @@ uint parseKeyName(string name)
     }
 }
 
-/**
-    Converts KeyCode enum value to human readable key name
+/** Convert `KeyCode` enum value to human readable key name.
 
     For unknown key code, prints its hex value.
 */

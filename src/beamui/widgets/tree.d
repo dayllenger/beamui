@@ -69,7 +69,7 @@ class TreeItem
             return false;
         }
 
-        /// Tree item parent, null if it is the root
+        /// Tree item parent, `null` if it is the root
         inout(TreeItem) parent() inout { return _parent; }
         /// ditto
         protected void parent(TreeItem p)
@@ -370,7 +370,7 @@ class TreeItem
         return null;
     }
 
-    /// Returns item by id, null if not found
+    /// Returns item by id, `null` if not found
     TreeItem findItemByID(string id)
     {
         if (_id == id)
@@ -693,7 +693,7 @@ class TreeWidgetBase : ScrollArea, ActionOperator
         return res;
     }
 
-    /// Returns item by id, null if not found
+    /// Returns item by id, `null` if not found
     TreeItem findItemByID(string id)
     {
         return _tree.findItemByID(id);

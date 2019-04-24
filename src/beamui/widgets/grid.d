@@ -57,9 +57,9 @@ interface GridAdapter
     @property int rows() const;
     /// Returns widget to draw cell at (col, row)
     Widget cellWidget(int col, int row);
-    /// Returns row header widget, null if no header
+    /// Returns row header widget, `null` if no header
     Widget rowHeader(int row);
-    /// Returns column header widget, null if no header
+    /// Returns column header widget, `null` if no header
     Widget colHeader(int col);
 }
 
@@ -144,12 +144,12 @@ class StringGridAdapter : GridAdapter
     {
         return null;
     }
-    /// Returns row header widget, null if no header
+    /// Returns row header widget, `null` if no header
     Widget rowHeader(int row)
     {
         return null;
     }
-    /// Returns column header widget, null if no header
+    /// Returns column header widget, `null` if no header
     Widget colHeader(int col)
     {
         return null;
@@ -843,7 +843,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return row;
     }
 
-    /// Move scroll position horizontally by dx, and vertically by dy; returns true if scrolled
+    /// Move scroll position horizontally by `dx`, and vertically by `dy`; returns true if scrolled
     bool scrollBy(int dx, int dy)
     {
         if (_changedSize)
@@ -1106,7 +1106,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return true;
     }
 
-    /// Select cell and call onCellActivated handler
+    /// Select cell and call `onCellActivated` handler
     bool activateCell(int i, int j)
     {
         if (_changedSize)
@@ -1609,7 +1609,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         if (event.action == KeyAction.keyDown)
         {
             bool shiftPressed = !!(event.flags & KeyFlag.shift);
-            /// Move or expand selection left
+            // move or expand selection left
             if (event.keyCode == KeyCode.left)
             {
                 if (_multiSelect && shiftPressed)
@@ -1622,7 +1622,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 }
                 return true;
             }
-            /// Move or expand selection right
+            // move or expand selection right
             if (event.keyCode == KeyCode.right)
             {
                 if (_multiSelect && shiftPressed)
@@ -1635,7 +1635,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 }
                 return true;
             }
-            /// Move or expand selection up
+            // move or expand selection up
             if (event.keyCode == KeyCode.up)
             {
                 if (_multiSelect && shiftPressed)
@@ -1648,7 +1648,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 }
                 return true;
             }
-            /// Move or expand selection down
+            // move or expand selection down
             if (event.keyCode == KeyCode.down)
             {
                 if (_multiSelect && shiftPressed)

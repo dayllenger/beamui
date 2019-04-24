@@ -17,9 +17,9 @@ import beamui.widgets.widget : Widget;
 /// Keyboard shortcut (key + modifiers)
 struct Shortcut
 {
-    /// Key code, usually one of KeyCode enum items
+    /// Key code, usually one of `KeyCode` enum items
     uint keyCode;
-    /// Key flags bit set, usually one of KeyFlag enum items
+    /// Key flags bit set, usually one of `KeyFlag` enum items
     uint keyFlags;
 
     /// Returns accelerator text description
@@ -318,7 +318,7 @@ final class Action
             shortcutMap.add(this);
             changed();
         }
-        /// Returns text description for the first shortcut of action; null if no shortcuts
+        /// Returns text description for the first shortcut of action; `null` if no shortcuts
         dstring shortcutText() const
         {
             if (_shortcuts.length > 0)
@@ -636,7 +636,7 @@ final class Action
     }
 }
 
-/// Map of Shortcut to Action
+/// `Shortcut` to `Action` map
 struct ActionShortcutMap
 {
     protected Action[Shortcut] _map;
@@ -681,7 +681,7 @@ struct ActionShortcutMap
         KeyFlag.control | KeyFlag.alt | KeyFlag.shift | KeyFlag.menu
     ];
 
-    /// Find action by shortcut, returns null if not found
+    /// Find action by shortcut, returns `null` if not found
     Action find(uint keyCode, uint flags)
     {
         Shortcut sc;
