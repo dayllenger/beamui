@@ -28,27 +28,27 @@ struct Shortcut
         dstring buf;
         version (OSX)
         {
-            static if (true)
+            static if (true) // FIXME
             {
                 if (modifiers & KeyMods.control)
-                    buf ~= "Ctrl+";
+                    buf ~= "Command+";
                 if (modifiers & KeyMods.shift)
                     buf ~= "Shift+";
-                if (modifiers & KeyMods.option)
-                    buf ~= "Opt+";
-                if (modifiers & KeyMods.command)
-                    buf ~= "Cmd+";
+                if (modifiers & KeyMods.alt)
+                    buf ~= "Option+";
+                if (modifiers & KeyMods.meta)
+                    buf ~= "Control+";
             }
             else
             {
                 if (modifiers & KeyMods.control)
-                    buf ~= "⌃";
+                    buf ~= "⌘+";
                 if (modifiers & KeyMods.shift)
-                    buf ~= "⇧";
-                if (modifiers & KeyMods.option)
-                    buf ~= "⌥";
-                if (modifiers & KeyMods.command)
-                    buf ~= "⌘";
+                    buf ~= "⇧+";
+                if (modifiers & KeyMods.alt)
+                    buf ~= "⌥+";
+                if (modifiers & KeyMods.meta)
+                    buf ~= "⌃+";
             }
             buf ~= toUTF32(keyName(key));
         }
@@ -504,13 +504,6 @@ final class Action
     /// Add one more shortcut
     Action addShortcut(Key key, KeyMods modifiers = KeyMods.none)
     {
-        version (OSX)
-        {
-            if (modifiers & KeyMods.control)
-            {
-                _shortcuts ~= Shortcut(key, (modifiers & ~KeyMods.control) | KeyMods.command);
-            }
-        }
         _shortcuts ~= Shortcut(key, modifiers);
         shortcutMap.add(this);
         changed();

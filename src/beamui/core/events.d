@@ -361,18 +361,19 @@ enum KeyAction : uint
     repeat,  /// Repeated key down
 }
 
-/// Keyboard modifier flags for `KeyEvent`
+/** Keyboard modifier flags for `KeyEvent`.
+
+    Note that on macOS, for better portability, modifiers are converted to their
+    Windows/Linux analogs (Command to Ctrl, Option to Alt, and Control to Meta).
+*/
 enum KeyMods : uint
 {
     none = 0,
 
-    control = 1, /// Ctrl key
+    control = 1, /// Ctrl key (Command on macOS)
     shift = 2, /// Shift key
-    alt = 4, /// Alt key
-    meta = 8, /// Meta/Win key
-
-    option = alt,
-    command = meta,
+    alt = 4, /// Alt key (Option on macOS)
+    meta = 8, /// Meta/Win key (Control on macOS)
 
     /// Modifiers that don't count the difference between left or right
     common = control | shift | alt | meta,
