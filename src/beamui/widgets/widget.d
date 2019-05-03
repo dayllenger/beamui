@@ -1260,25 +1260,25 @@ public:
         FocusMovement direction = FocusMovement.none;
         const bool noMods = !event.hasModifiers;
         const bool shift = event.alteredBy(KeyMods.shift);
-        switch (event.keyCode) with (KeyCode)
+        switch (event.key)
         {
-        case left:
+        case Key.left:
             if (noMods)
                 direction = FocusMovement.left;
             break;
-        case right:
+        case Key.right:
             if (noMods)
                 direction = FocusMovement.right;
             break;
-        case up:
+        case Key.up:
             if (noMods)
                 direction = FocusMovement.up;
             break;
-        case down:
+        case Key.down:
             if (noMods)
                 direction = FocusMovement.down;
             break;
-        case tab:
+        case Key.tab:
             if (noMods)
                 direction = FocusMovement.next;
             else if (shift)
@@ -1409,7 +1409,7 @@ public:
         if (canClick)
         {
             // support onClick event initiated by Space or Return keys
-            if (event.keyCode == KeyCode.space || event.keyCode == KeyCode.enter)
+            if (event.key == Key.space || event.key == Key.enter)
             {
                 if (event.action == KeyAction.keyDown)
                 {
@@ -2145,7 +2145,7 @@ struct TextTypingShortcutHelper
         }
         if (event.action == KeyAction.keyDown || event.action == KeyAction.keyUp)
         {
-            switch (event.keyCode) with (KeyCode)
+            switch (event.key) with (Key)
             {
             case left:
             case right:

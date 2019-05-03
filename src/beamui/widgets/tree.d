@@ -593,7 +593,7 @@ class TreeItemWidget : Row
             return false;
         if (event.action != KeyAction.keyDown)
             return false;
-        if (event.keyCode == KeyCode.space || event.keyCode == KeyCode.enter)
+        if (event.key == Key.space || event.key == Key.enter)
         {
             if (_item.hasChildren)
                 _item.toggleExpand(_item);
@@ -839,18 +839,18 @@ class TreeWidgetBase : ScrollArea, ActionOperator
     {
         if (event.action == KeyAction.keyDown && !event.hasModifiers)
         {
-            switch (event.keyCode) with (KeyCode)
+            switch (event.key)
             {
-            case up:
+            case Key.up:
                 _tree.selectPrevious();
                 return true;
-            case down:
+            case Key.down:
                 _tree.selectNext();
                 return true;
-            case left:
+            case Key.left:
                 hscrollbar.maybe.sendScrollEvent(ScrollAction.lineUp);
                 return true;
-            case right:
+            case Key.right:
                 hscrollbar.maybe.sendScrollEvent(ScrollAction.lineDown);
                 return true;
             default:

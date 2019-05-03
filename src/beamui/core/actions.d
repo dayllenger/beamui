@@ -17,8 +17,8 @@ import beamui.widgets.widget : Widget;
 /// Keyboard shortcut (key + modifiers)
 struct Shortcut
 {
-    /// Key code, usually one of `KeyCode` enum items
-    uint keyCode;
+    /// Key code from `Key` enum
+    Key key;
     /// Key modifiers bit set
     KeyMods modifiers;
 
@@ -50,7 +50,7 @@ struct Shortcut
                 if (modifiers & KeyMods.command)
                     buf ~= "⌘";
             }
-            buf ~= toUTF32(keyName(keyCode));
+            buf ~= toUTF32(keyName(key));
         }
         else
         {
@@ -86,7 +86,7 @@ struct Shortcut
                 buf ~= "RMeta+";
             else if (modifiers & KeyMods.meta)
                 buf ~= "Meta+";
-            buf ~= toUTF32(keyName(keyCode));
+            buf ~= toUTF32(keyName(key));
         }
         return cast(dstring)buf;
     }
@@ -131,7 +131,7 @@ struct Shortcut
             buf ~= "RMeta+";
         else if (modifiers & KeyMods.meta)
             buf ~= "Meta+";
-        buf ~= keyName(keyCode);
+        buf ~= keyName(key);
         return cast(string)buf;
     }
 
@@ -140,7 +140,7 @@ struct Shortcut
     {
         import std.string : strip;
 
-        keyCode = 0;
+        key = Key.none;
         modifiers = KeyMods.none;
         s = s.strip;
         while (true)
@@ -222,8 +222,8 @@ struct Shortcut
                 break;
             s = s.strip;
         }
-        keyCode = parseKeyName(s);
-        return keyCode != 0;
+        key = parseKeyName(s);
+        return key != Key.none;
     }
 }
 
@@ -464,22 +464,22 @@ final class Action
     }
 
     /// Create an action with label and, optionally, shortcut
-    this(dstring label, uint keyCode = 0, KeyMods modifiers = KeyMods.none)
+    this(dstring label, Key key = Key.none, KeyMods modifiers = KeyMods.none)
     {
         _label = label;
-        if (keyCode)
-            addShortcut(keyCode, modifiers);
+        if (key != Key.none)
+            addShortcut(key, modifiers);
         if (label)
             nameMap[id] = this;
     }
 
     /// Create an action with label, icon ID and, optionally, shortcut
-    this(dstring label, string iconID, uint keyCode = 0, KeyMods modifiers = KeyMods.none)
+    this(dstring label, string iconID, Key key = Key.none, KeyMods modifiers = KeyMods.none)
     {
         _label = label;
         _iconID = iconID;
-        if (keyCode)
-            addShortcut(keyCode, modifiers);
+        if (key != Key.none)
+            addShortcut(key, modifiers);
         if (label)
             nameMap[id] = this;
     }
@@ -502,27 +502,27 @@ final class Action
     }
 
     /// Add one more shortcut
-    Action addShortcut(uint keyCode, KeyMods modifiers = KeyMods.none)
+    Action addShortcut(Key key, KeyMods modifiers = KeyMods.none)
     {
         version (OSX)
         {
             if (modifiers & KeyMods.control)
             {
-                _shortcuts ~= Shortcut(keyCode, (modifiers & ~KeyMods.control) | KeyMods.command);
+                _shortcuts ~= Shortcut(key, (modifiers & ~KeyMods.control) | KeyMods.command);
             }
         }
-        _shortcuts ~= Shortcut(keyCode, modifiers);
+        _shortcuts ~= Shortcut(key, modifiers);
         shortcutMap.add(this);
         changed();
         return this;
     }
 
     /// Returns true if shortcut matches provided key code and flags
-    bool hasShortcut(uint keyCode, KeyMods modifiers) const
+    bool hasShortcut(Key key, KeyMods modifiers) const
     {
         foreach (s; _shortcuts)
         {
-            if (s.keyCode == keyCode)
+            if (s.key == key)
             {
                 // match, counting left/right if needed
                 if ((s.modifiers & KeyMods.common) == (modifiers & KeyMods.common))
@@ -603,9 +603,9 @@ final class Action
     }
 
     /// Find action globally by a shortcut
-    static Action findByShortcut(uint keyCode, KeyMods modifiers)
+    static Action findByShortcut(Key key, KeyMods modifiers)
     {
-        return shortcutMap.find(keyCode, modifiers);
+        return shortcutMap.find(key, modifiers);
     }
 }
 
@@ -655,16 +655,16 @@ struct ActionShortcutMap
     ];
 
     /// Find action by shortcut, returns `null` if not found
-    Action find(uint keyCode, KeyMods modifiers)
+    Action find(Key key, KeyMods modifiers)
     {
         Shortcut sc;
-        sc.keyCode = keyCode;
+        sc.key = key;
         foreach (mask; modMasks)
         {
             sc.modifiers = modifiers & mask;
             if (auto p = sc in _map)
             {
-                assert(p.hasShortcut(keyCode, modifiers));
+                assert(p.hasShortcut(key, modifiers));
                 return *p;
             }
         }

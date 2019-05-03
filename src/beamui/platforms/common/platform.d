@@ -1225,7 +1225,7 @@ class Window : CustomEventTarget
         if (event.action == KeyAction.keyDown || event.action == KeyAction.keyUp)
         {
             _keyboardModifiers = event.allModifiers;
-            if (event.keyCode == KeyCode.alt || event.keyCode == KeyCode.lalt || event.keyCode == KeyCode.ralt)
+            if (event.key == Key.alt || event.key == Key.lalt || event.key == Key.ralt)
             {
                 debug (keys)
                     Log.d("Alt key: keyboardModifiers = ", _keyboardModifiers);
@@ -1248,7 +1248,7 @@ class Window : CustomEventTarget
             // process shortcuts
             if (event.action == KeyAction.keyDown)
             {
-                auto a = Action.findByShortcut(event.keyCode, event.allModifiers);
+                auto a = Action.findByShortcut(event.key, event.allModifiers);
                 if (call(a))
                     return true;
             }

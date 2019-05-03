@@ -48,7 +48,7 @@ int main()
     //=========================================================================
     // create main menu
 
-    auto fileOpenAction = new Action("&Open", "document-open", KeyCode.O, KeyMods.control);
+    auto fileOpenAction = new Action("&Open", "document-open", Key.O, KeyMods.control);
     fileOpenAction.bind(frame, {
         auto dlg = new FileDialog("Open Text File"d, window);
         dlg.allowMultipleFiles = true;
@@ -101,8 +101,8 @@ int main()
         };
         dlg.show();
     });
-    auto fileSaveAction = new Action("&Save", "document-save", KeyCode.S, KeyMods.control);
-    auto fileExitAction = new Action("E&xit", "document-close", KeyCode.X, KeyMods.alt);
+    auto fileSaveAction = new Action("&Save", "document-save", Key.S, KeyMods.control);
+    auto fileExitAction = new Action("E&xit", "document-close", Key.X, KeyMods.alt);
     fileExitAction.bind(frame, &window.close);
 
 

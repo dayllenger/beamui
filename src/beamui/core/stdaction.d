@@ -95,7 +95,7 @@ Action ACTION_PASTE;
 void initStandardActions()
 {
     ACTION_OK = new Action(tr("Ok"), "dialog-ok");
-    ACTION_CANCEL = new Action(tr("Cancel"), "dialog-cancel", KeyCode.escape);
+    ACTION_CANCEL = new Action(tr("Cancel"), "dialog-cancel", Key.escape);
     ACTION_APPLY = new Action(tr("Apply"));
     ACTION_YES = new Action(tr("Yes"), "dialog-ok");
     ACTION_NO = new Action(tr("No"), "dialog-cancel");
@@ -112,42 +112,42 @@ void initStandardActions()
     ACTION_DISCARD_ALL = new Action(tr("Discard all"));
     ACTION_OPEN_URL = new Action("applications-internet");
 
-    ACTION_LINE_BEGIN = new Action(null, KeyCode.home);
-    ACTION_LINE_END = new Action(null, KeyCode.end);
-    ACTION_PAGE_UP = new Action(null, KeyCode.pageUp);
-    ACTION_PAGE_DOWN = new Action(null, KeyCode.pageDown);
-    ACTION_PAGE_BEGIN = new Action(null, KeyCode.pageUp, KeyMods.control);
-    ACTION_PAGE_END = new Action(null, KeyCode.pageDown, KeyMods.control);
-    ACTION_DOCUMENT_BEGIN = new Action(null, KeyCode.home, KeyMods.control);
-    ACTION_DOCUMENT_END = new Action(null, KeyCode.end, KeyMods.control);
+    ACTION_LINE_BEGIN = new Action(null, Key.home);
+    ACTION_LINE_END = new Action(null, Key.end);
+    ACTION_PAGE_UP = new Action(null, Key.pageUp);
+    ACTION_PAGE_DOWN = new Action(null, Key.pageDown);
+    ACTION_PAGE_BEGIN = new Action(null, Key.pageUp, KeyMods.control);
+    ACTION_PAGE_END = new Action(null, Key.pageDown, KeyMods.control);
+    ACTION_DOCUMENT_BEGIN = new Action(null, Key.home, KeyMods.control);
+    ACTION_DOCUMENT_END = new Action(null, Key.end, KeyMods.control);
 
-    ACTION_SELECT_LINE_BEGIN = new Action(null, KeyCode.home, KeyMods.shift);
-    ACTION_SELECT_LINE_END = new Action(null, KeyCode.end, KeyMods.shift);
-    ACTION_SELECT_PAGE_UP = new Action(null, KeyCode.pageUp, KeyMods.shift);
-    ACTION_SELECT_PAGE_DOWN = new Action(null, KeyCode.pageDown, KeyMods.shift);
-    ACTION_SELECT_PAGE_BEGIN = new Action(null, KeyCode.pageUp, KeyMods.control | KeyMods.shift);
-    ACTION_SELECT_PAGE_END = new Action(null, KeyCode.pageDown, KeyMods.control | KeyMods.shift);
-    ACTION_SELECT_DOCUMENT_BEGIN = new Action(null, KeyCode.home, KeyMods.control | KeyMods.shift);
-    ACTION_SELECT_DOCUMENT_END = new Action(null, KeyCode.end, KeyMods.control | KeyMods.shift);
+    ACTION_SELECT_LINE_BEGIN = new Action(null, Key.home, KeyMods.shift);
+    ACTION_SELECT_LINE_END = new Action(null, Key.end, KeyMods.shift);
+    ACTION_SELECT_PAGE_UP = new Action(null, Key.pageUp, KeyMods.shift);
+    ACTION_SELECT_PAGE_DOWN = new Action(null, Key.pageDown, KeyMods.shift);
+    ACTION_SELECT_PAGE_BEGIN = new Action(null, Key.pageUp, KeyMods.control | KeyMods.shift);
+    ACTION_SELECT_PAGE_END = new Action(null, Key.pageDown, KeyMods.control | KeyMods.shift);
+    ACTION_SELECT_DOCUMENT_BEGIN = new Action(null, Key.home, KeyMods.control | KeyMods.shift);
+    ACTION_SELECT_DOCUMENT_END = new Action(null, Key.end, KeyMods.control | KeyMods.shift);
 
-    ACTION_ENTER = new Action(tr("Enter"), KeyCode.enter);
-    ACTION_BACKSPACE = new Action(tr("Backspace"), KeyCode.backspace);
-    ACTION_DELETE = new Action(tr("Delete"), KeyCode.del);
+    ACTION_ENTER = new Action(tr("Enter"), Key.enter);
+    ACTION_BACKSPACE = new Action(tr("Backspace"), Key.backspace);
+    ACTION_DELETE = new Action(tr("Delete"), Key.del);
 
-    ACTION_SELECT_ALL = new Action(tr("Select all"), KeyCode.A, KeyMods.control);
+    ACTION_SELECT_ALL = new Action(tr("Select all"), Key.A, KeyMods.control);
 
-    ACTION_ZOOM_IN = new Action(tr("Zoom In"), KeyCode.numAdd, KeyMods.control); // BUG: such combinations do not work
-    ACTION_ZOOM_OUT = new Action(tr("Zoom Out"), KeyCode.numSub, KeyMods.control);
+    ACTION_ZOOM_IN = new Action(tr("Zoom In"), Key.numAdd, KeyMods.control); // BUG: such combinations do not work
+    ACTION_ZOOM_OUT = new Action(tr("Zoom Out"), Key.numSub, KeyMods.control);
 
-    ACTION_UNDO = new Action(tr("&Undo"), KeyCode.Z, KeyMods.control).setEnabled(false);
-    ACTION_REDO = new Action(tr("&Redo"), KeyCode.Y, KeyMods.control).setEnabled(false)
-        .addShortcut(KeyCode.Z, KeyMods.control | KeyMods.shift);
-    ACTION_CUT = new Action(tr("Cu&t"), KeyCode.X, KeyMods.control).setEnabled(false)
-        .addShortcut(KeyCode.del, KeyMods.shift);
-    ACTION_COPY = new Action(tr("&Copy"), KeyCode.C, KeyMods.control).setEnabled(false)
-        .addShortcut(KeyCode.ins, KeyMods.control);
-    ACTION_PASTE = new Action(tr("&Paste"), KeyCode.V, KeyMods.control)
-        .addShortcut(KeyCode.ins, KeyMods.shift);
+    ACTION_UNDO = new Action(tr("&Undo"), Key.Z, KeyMods.control).setEnabled(false);
+    ACTION_REDO = new Action(tr("&Redo"), Key.Y, KeyMods.control).setEnabled(false)
+        .addShortcut(Key.Z, KeyMods.control | KeyMods.shift);
+    ACTION_CUT = new Action(tr("Cu&t"), Key.X, KeyMods.control).setEnabled(false)
+        .addShortcut(Key.del, KeyMods.shift);
+    ACTION_COPY = new Action(tr("&Copy"), Key.C, KeyMods.control).setEnabled(false)
+        .addShortcut(Key.ins, KeyMods.control);
+    ACTION_PASTE = new Action(tr("&Paste"), Key.V, KeyMods.control)
+        .addShortcut(Key.ins, KeyMods.shift);
 
     import beamui.core.functions : bunch;
 

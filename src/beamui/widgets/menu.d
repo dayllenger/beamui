@@ -384,9 +384,9 @@ class Menu : ListWidget
         return res;
     }
     /// Convenient function to add menu item by the action arguments
-    Action addAction(dstring label, string iconID = null, uint keyCode = 0, KeyMods modifiers = KeyMods.none)
+    Action addAction(dstring label, string iconID = null, Key key = Key.none, KeyMods modifiers = KeyMods.none)
     {
-        auto a = new Action(label, iconID, keyCode, modifiers);
+        auto a = new Action(label, iconID, key, modifiers);
         add(a);
         return a;
     }
@@ -707,7 +707,7 @@ class Menu : ListWidget
     override bool onKeyEvent(KeyEvent event)
     {
         navigatingUsingKeys = true;
-        if (event.action == KeyAction.keyDown && event.keyCode == KeyCode.escape && !event.hasModifiers)
+        if (event.action == KeyAction.keyDown && event.key == Key.escape && !event.hasModifiers)
         {
             close();
             return true;
@@ -716,12 +716,12 @@ class Menu : ListWidget
         {
             if (selectedItemIndex >= 0 && event.action == KeyAction.keyDown)
             {
-                if (event.keyCode == KeyCode.down)
+                if (event.key == Key.down)
                 {
                     onItemClicked(selectedItemIndex);
                     return true;
                 }
-                if (event.keyCode == KeyCode.up)
+                if (event.key == Key.up)
                 {
                     if (visualParentMenu && visualParentMenu.orientation == Orientation.vertical)
                     {
@@ -744,7 +744,7 @@ class Menu : ListWidget
                 return false;
             if (event.action == KeyAction.keyDown)
             {
-                if (event.keyCode == KeyCode.left)
+                if (event.key == Key.left)
                 {
                     if (visualParentMenu)
                     {
@@ -761,7 +761,7 @@ class Menu : ListWidget
                     }
                     return true;
                 }
-                if (event.keyCode == KeyCode.right)
+                if (event.key == Key.right)
                 {
                     auto item = selectedMenuItem;
                     if (item && item.hasSubmenu)
@@ -778,7 +778,7 @@ class Menu : ListWidget
             }
             else if (event.action == KeyAction.keyUp)
             {
-                if (event.keyCode == KeyCode.left || event.keyCode == KeyCode.right)
+                if (event.key == Key.left || event.key == Key.right)
                 {
                     return true;
                 }
@@ -901,8 +901,8 @@ class MenuBar : Menu
         dchar hotkey = 0;
         if (altPressed && noOtherModifiers && noAltGrKey)
         {
-            if (event.action == KeyAction.keyDown && KeyCode.A <= event.keyCode && event.keyCode <= KeyCode.Z)
-                hotkey = cast(dchar)((event.keyCode - KeyCode.A) + 'a');
+            if (event.action == KeyAction.keyDown && Key.A <= event.key && event.key <= Key.Z)
+                hotkey = cast(dchar)((event.key - Key.A) + 'a');
             else if (event.action == KeyAction.text)
                 hotkey = event.text[0];
         }
@@ -936,10 +936,8 @@ class MenuBar : Menu
         // toggle menu by single Alt press - for Windows only!
         version (Windows)
         {
+            const isAlt = event.key == Key.alt  || event.key == Key.lalt || event.key == Key.ralt;
             bool toggleMenu;
-            bool isAlt = event.keyCode == KeyCode.alt  ||
-                         event.keyCode == KeyCode.lalt ||
-                         event.keyCode == KeyCode.ralt;
             if (event.action == KeyAction.keyDown && isAlt && noOtherModifiers)
             {
                 _menuToggleState = true;

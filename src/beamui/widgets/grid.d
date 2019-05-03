@@ -1610,7 +1610,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             const bool shiftPressed = event.alteredBy(KeyMods.shift);
             // move or expand selection left
-            if (event.keyCode == KeyCode.left)
+            if (event.key == Key.left)
             {
                 if (_multiSelect && shiftPressed)
                 {
@@ -1623,7 +1623,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 return true;
             }
             // move or expand selection right
-            if (event.keyCode == KeyCode.right)
+            if (event.key == Key.right)
             {
                 if (_multiSelect && shiftPressed)
                 {
@@ -1636,7 +1636,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 return true;
             }
             // move or expand selection up
-            if (event.keyCode == KeyCode.up)
+            if (event.key == Key.up)
             {
                 if (_multiSelect && shiftPressed)
                 {
@@ -1649,7 +1649,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 return true;
             }
             // move or expand selection down
-            if (event.keyCode == KeyCode.down)
+            if (event.key == Key.down)
             {
                 if (_multiSelect && shiftPressed)
                 {

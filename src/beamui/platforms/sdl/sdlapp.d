@@ -709,132 +709,132 @@ final class SDLWindow : Window
         }
     }
 
-    private uint convertKeyCode(uint sdlKeyCode)
+    private Key convertKeyCode(uint sdlKeyCode)
     {
         switch (sdlKeyCode)
         {
-        case SDLK_0: return KeyCode.alpha0;
-        case SDLK_1: return KeyCode.alpha1;
-        case SDLK_2: return KeyCode.alpha2;
-        case SDLK_3: return KeyCode.alpha3;
-        case SDLK_4: return KeyCode.alpha4;
-        case SDLK_5: return KeyCode.alpha5;
-        case SDLK_6: return KeyCode.alpha6;
-        case SDLK_7: return KeyCode.alpha7;
-        case SDLK_8: return KeyCode.alpha8;
-        case SDLK_9: return KeyCode.alpha9;
-        case SDLK_a: return KeyCode.A;
-        case SDLK_b: return KeyCode.B;
-        case SDLK_c: return KeyCode.C;
-        case SDLK_d: return KeyCode.D;
-        case SDLK_e: return KeyCode.E;
-        case SDLK_f: return KeyCode.F;
-        case SDLK_g: return KeyCode.G;
-        case SDLK_h: return KeyCode.H;
-        case SDLK_i: return KeyCode.I;
-        case SDLK_j: return KeyCode.J;
-        case SDLK_k: return KeyCode.K;
-        case SDLK_l: return KeyCode.L;
-        case SDLK_m: return KeyCode.M;
-        case SDLK_n: return KeyCode.N;
-        case SDLK_o: return KeyCode.O;
-        case SDLK_p: return KeyCode.P;
-        case SDLK_q: return KeyCode.Q;
-        case SDLK_r: return KeyCode.R;
-        case SDLK_s: return KeyCode.S;
-        case SDLK_t: return KeyCode.T;
-        case SDLK_u: return KeyCode.U;
-        case SDLK_v: return KeyCode.V;
-        case SDLK_w: return KeyCode.W;
-        case SDLK_x: return KeyCode.X;
-        case SDLK_y: return KeyCode.Y;
-        case SDLK_z: return KeyCode.Z;
-        case SDLK_F1: return KeyCode.F1;
-        case SDLK_F2: return KeyCode.F2;
-        case SDLK_F3: return KeyCode.F3;
-        case SDLK_F4: return KeyCode.F4;
-        case SDLK_F5: return KeyCode.F5;
-        case SDLK_F6: return KeyCode.F6;
-        case SDLK_F7: return KeyCode.F7;
-        case SDLK_F8: return KeyCode.F8;
-        case SDLK_F9: return KeyCode.F9;
-        case SDLK_F10: return KeyCode.F10;
-        case SDLK_F11: return KeyCode.F11;
-        case SDLK_F12: return KeyCode.F12;
-        case SDLK_F13: return KeyCode.F13;
-        case SDLK_F14: return KeyCode.F14;
-        case SDLK_F15: return KeyCode.F15;
-        case SDLK_F16: return KeyCode.F16;
-        case SDLK_F17: return KeyCode.F17;
-        case SDLK_F18: return KeyCode.F18;
-        case SDLK_F19: return KeyCode.F19;
-        case SDLK_F20: return KeyCode.F20;
-        case SDLK_F21: return KeyCode.F21;
-        case SDLK_F22: return KeyCode.F22;
-        case SDLK_F23: return KeyCode.F23;
-        case SDLK_F24: return KeyCode.F24;
+        case SDLK_0: return Key.alpha0;
+        case SDLK_1: return Key.alpha1;
+        case SDLK_2: return Key.alpha2;
+        case SDLK_3: return Key.alpha3;
+        case SDLK_4: return Key.alpha4;
+        case SDLK_5: return Key.alpha5;
+        case SDLK_6: return Key.alpha6;
+        case SDLK_7: return Key.alpha7;
+        case SDLK_8: return Key.alpha8;
+        case SDLK_9: return Key.alpha9;
+        case SDLK_a: return Key.A;
+        case SDLK_b: return Key.B;
+        case SDLK_c: return Key.C;
+        case SDLK_d: return Key.D;
+        case SDLK_e: return Key.E;
+        case SDLK_f: return Key.F;
+        case SDLK_g: return Key.G;
+        case SDLK_h: return Key.H;
+        case SDLK_i: return Key.I;
+        case SDLK_j: return Key.J;
+        case SDLK_k: return Key.K;
+        case SDLK_l: return Key.L;
+        case SDLK_m: return Key.M;
+        case SDLK_n: return Key.N;
+        case SDLK_o: return Key.O;
+        case SDLK_p: return Key.P;
+        case SDLK_q: return Key.Q;
+        case SDLK_r: return Key.R;
+        case SDLK_s: return Key.S;
+        case SDLK_t: return Key.T;
+        case SDLK_u: return Key.U;
+        case SDLK_v: return Key.V;
+        case SDLK_w: return Key.W;
+        case SDLK_x: return Key.X;
+        case SDLK_y: return Key.Y;
+        case SDLK_z: return Key.Z;
+        case SDLK_F1: return Key.F1;
+        case SDLK_F2: return Key.F2;
+        case SDLK_F3: return Key.F3;
+        case SDLK_F4: return Key.F4;
+        case SDLK_F5: return Key.F5;
+        case SDLK_F6: return Key.F6;
+        case SDLK_F7: return Key.F7;
+        case SDLK_F8: return Key.F8;
+        case SDLK_F9: return Key.F9;
+        case SDLK_F10: return Key.F10;
+        case SDLK_F11: return Key.F11;
+        case SDLK_F12: return Key.F12;
+        case SDLK_F13: return Key.F13;
+        case SDLK_F14: return Key.F14;
+        case SDLK_F15: return Key.F15;
+        case SDLK_F16: return Key.F16;
+        case SDLK_F17: return Key.F17;
+        case SDLK_F18: return Key.F18;
+        case SDLK_F19: return Key.F19;
+        case SDLK_F20: return Key.F20;
+        case SDLK_F21: return Key.F21;
+        case SDLK_F22: return Key.F22;
+        case SDLK_F23: return Key.F23;
+        case SDLK_F24: return Key.F24;
         case SDLK_BACKSPACE:
-            return KeyCode.backspace;
+            return Key.backspace;
         case SDLK_SPACE:
-            return KeyCode.space;
+            return Key.space;
         case SDLK_TAB:
-            return KeyCode.tab;
+            return Key.tab;
         case SDLK_RETURN:
-            return KeyCode.enter;
+            return Key.enter;
         case SDLK_ESCAPE:
-            return KeyCode.escape;
+            return Key.escape;
         case SDLK_DELETE:
         case 0x40000063: // dirty hack for Linux - key on keypad
-            return KeyCode.del;
+            return Key.del;
         case SDLK_INSERT:
         case 0x40000062: // dirty hack for Linux - key on keypad
-            return KeyCode.ins;
+            return Key.ins;
         case SDLK_HOME:
         case 0x4000005f: // dirty hack for Linux - key on keypad
-            return KeyCode.home;
+            return Key.home;
         case SDLK_PAGEUP:
         case 0x40000061: // dirty hack for Linux - key on keypad
-            return KeyCode.pageUp;
+            return Key.pageUp;
         case SDLK_END:
         case 0x40000059: // dirty hack for Linux - key on keypad
-            return KeyCode.end;
+            return Key.end;
         case SDLK_PAGEDOWN:
         case 0x4000005b: // dirty hack for Linux - key on keypad
-            return KeyCode.pageDown;
+            return Key.pageDown;
         case SDLK_LEFT:
         case 0x4000005c: // dirty hack for Linux - key on keypad
-            return KeyCode.left;
+            return Key.left;
         case SDLK_RIGHT:
         case 0x4000005e: // dirty hack for Linux - key on keypad
-            return KeyCode.right;
+            return Key.right;
         case SDLK_UP:
         case 0x40000060: // dirty hack for Linux - key on keypad
-            return KeyCode.up;
+            return Key.up;
         case SDLK_DOWN:
         case 0x4000005a: // dirty hack for Linux - key on keypad
-            return KeyCode.down;
+            return Key.down;
         case SDLK_KP_ENTER:
-            return KeyCode.enter;
+            return Key.enter;
         case SDLK_LCTRL:
-            return KeyCode.lcontrol;
+            return Key.lcontrol;
         case SDLK_LSHIFT:
-            return KeyCode.lshift;
+            return Key.lshift;
         case SDLK_LALT:
-            return KeyCode.lalt;
+            return Key.lalt;
         case SDLK_RCTRL:
-            return KeyCode.rcontrol;
+            return Key.rcontrol;
         case SDLK_RSHIFT:
-            return KeyCode.rshift;
+            return Key.rshift;
         case SDLK_RALT:
-            return KeyCode.ralt;
+            return Key.ralt;
         case SDLK_LGUI:
-            return KeyCode.lwin;
+            return Key.lwin;
         case SDLK_RGUI:
-            return KeyCode.rwin;
+            return Key.rwin;
         case '/':
-            return KeyCode.divide;
+            return Key.divide;
         default:
-            return 0x10000 | sdlKeyCode;
+            return Key.none;
         }
     }
 
@@ -884,7 +884,7 @@ final class SDLWindow : Window
         if (mods & KeyMods.control || (mods & KeyMods.lalt) == KeyMods.lalt || mods & KeyMods.meta)
             return true;
 
-        bool res = dispatchKeyEvent(new KeyEvent(KeyAction.text, 0, mods, ds));
+        bool res = dispatchKeyEvent(new KeyEvent(KeyAction.text, Key.none, mods, ds));
         if (res)
         {
             debug (sdl)
@@ -911,41 +911,41 @@ final class SDLWindow : Window
         debug (keys)
             Log.fd("processKeyEvent %s, SDL key: 0x%08x, SDL mods: 0x%08x", action, sdlKeyCode, sdlKeymod);
 
-        uint keyCode = convertKeyCode(sdlKeyCode);
+        const key = convertKeyCode(sdlKeyCode);
         KeyMods mods = convertKeyMods(sdlKeymod);
         if (action == KeyAction.keyDown)
         {
-            switch (keyCode)
+            switch (key)
             {
-            case KeyCode.shift:
+            case Key.shift:
                 mods |= KeyMods.shift;
                 break;
-            case KeyCode.control:
+            case Key.control:
                 mods |= KeyMods.control;
                 break;
-            case KeyCode.alt:
+            case Key.alt:
                 mods |= KeyMods.alt;
                 break;
-            case KeyCode.lshift:
+            case Key.lshift:
                 mods |= KeyMods.lshift;
                 break;
-            case KeyCode.lcontrol:
+            case Key.lcontrol:
                 mods |= KeyMods.lcontrol;
                 break;
-            case KeyCode.lalt:
+            case Key.lalt:
                 mods |= KeyMods.lalt;
                 break;
-            case KeyCode.rshift:
+            case Key.rshift:
                 mods |= KeyMods.rshift;
                 break;
-            case KeyCode.rcontrol:
+            case Key.rcontrol:
                 mods |= KeyMods.rcontrol;
                 break;
-            case KeyCode.ralt:
+            case Key.ralt:
                 mods |= KeyMods.ralt;
                 break;
-            case KeyCode.lwin:
-            case KeyCode.rwin:
+            case Key.lwin:
+            case Key.rwin:
                 mods |= KeyMods.meta;
                 break;
             default:
@@ -955,7 +955,7 @@ final class SDLWindow : Window
         _keyMods = mods;
 
         debug (keys)
-            Log.fd("processKeyEvent %s, converted key: 0x%08x, converted mods: 0x%08x", action, keyCode, mods);
+            Log.fd("processKeyEvent %s, converted key: 0x%08x, converted mods: 0x%08x", action, key, mods);
 
         if (action == KeyAction.keyDown || action == KeyAction.keyUp)
         {
@@ -963,7 +963,7 @@ final class SDLWindow : Window
                 ) && isNumLockEnabled)
                 return false;
         }
-        bool res = dispatchKeyEvent(new KeyEvent(action, keyCode, mods));
+        bool res = dispatchKeyEvent(new KeyEvent(action, key, mods));
         if (res)
         {
             debug (redraw)

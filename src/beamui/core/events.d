@@ -393,8 +393,14 @@ enum KeyMods : uint
     lrmeta = lmeta | rmeta, /// Both left and right Meta key
 }
 
-/// Key code constants for `KeyEvent`
-enum KeyCode : uint
+/** Key code constants for `KeyEvent`.
+
+    Letters and numeric keys are sorted, so you can write something like
+    `Key.A <= key && key <= Key.Z`.
+
+    The constants are very similar to such in WinAPI, to simplify translation.
+*/
+enum Key : uint
 {
     none = 0,
     backspace = 8, /// Backspace
@@ -526,15 +532,15 @@ final class KeyEvent
     private
     {
         KeyAction _action;
-        uint _keyCode;
+        Key _key;
         KeyMods _mods;
         dstring _text;
     }
 
-    this(KeyAction action, uint keyCode, KeyMods mods, dstring text = null)
+    this(KeyAction action, Key key, KeyMods mods, dstring text = null)
     {
         _action = action;
-        _keyCode = keyCode;
+        _key = key;
         _mods = mods;
         _text = text;
     }
@@ -543,8 +549,8 @@ final class KeyEvent
     {
         /// Key action (keyDown, keyUp, text, repeat)
         KeyAction action() const { return _action; }
-        /// Key code (usually from `KeyCode` enum)
-        uint keyCode() const { return _keyCode; }
+        /// Key code from `Key` enum
+        Key key() const { return _key; }
         /// Key modifier bit flags (shift, ctrl, alt...)
         KeyMods allModifiers() const { return _mods; }
         /// Entered text, for `text` action
@@ -555,7 +561,7 @@ final class KeyEvent
         {
             return _mods & KeyMods.common;
         }
-        /// True if has some modifiers is applied
+        /// True if has some modifiers applied
         bool hasModifiers() const
         {
             return _mods != KeyMods.none;
@@ -570,7 +576,7 @@ final class KeyEvent
 
     override string toString() const
     {
-        return format("KeyEvent(%s, %s, %04x, %s)", _action, cast(KeyCode)_keyCode, _mods, _text);
+        return format("KeyEvent(%s, %s, %04x, %s)", _action, _key, _mods, _text);
     }
 }
 
@@ -680,12 +686,13 @@ final class ScrollEvent
     }
 }
 
-/** Convert key name to `KeyCode` enum value.
+/** Convert key name to `Key` enum item.
 
-    For unknown key code, returns 0.
+    For unknown key code, returns `Key.none`.
 */
-uint parseKeyName(string name)
+Key parseKeyName(string name)
 {
+    alias KeyCode = Key;
     switch (name)
     {
         case "A": case "a": return KeyCode.A;
@@ -781,17 +788,18 @@ uint parseKeyName(string name)
         case "NumLock": return KeyCode.numlock;
         case "ScrollLock": return KeyCode.scroll;
         default:
-            return 0;
+            return Key.none;
     }
 }
 
-/** Convert `KeyCode` enum value to human readable key name.
+/** Convert `Key` enum item into a human readable key name.
 
     For unknown key code, prints its hex value.
 */
-string keyName(uint keyCode)
+string keyName(Key key)
 {
-    switch (keyCode)
+    alias KeyCode = Key;
+    switch (key)
     {
         case KeyCode.A: return "A";
         case KeyCode.B: return "B";
@@ -886,7 +894,7 @@ string keyName(uint keyCode)
         case KeyCode.numlock: return "NumLock";
         case KeyCode.scroll: return "ScrollLock";
         default:
-            return format("0x%08x", keyCode);
+            return format("0x%08x", key);
     }
 }
 

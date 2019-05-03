@@ -890,16 +890,16 @@ class ListWidget : WidgetGroup
         {
             if (orientation == Orientation.vertical)
             {
-                if (event.keyCode == KeyCode.down)
+                if (event.key == Key.down)
                     navigationDelta = 1;
-                else if (event.keyCode == KeyCode.up)
+                else if (event.key == Key.up)
                     navigationDelta = -1;
             }
             else
             {
-                if (event.keyCode == KeyCode.right)
+                if (event.key == Key.right)
                     navigationDelta = 1;
-                else if (event.keyCode == KeyCode.left)
+                else if (event.key == Key.left)
                     navigationDelta = -1;
             }
         }
@@ -910,28 +910,28 @@ class ListWidget : WidgetGroup
         }
         if (event.action == KeyAction.keyDown)
         {
-            if (event.keyCode == KeyCode.home)
+            if (event.key == Key.home)
             {
                 // select first enabled item on Home key
                 selectItem(0, 1);
                 return true;
             }
-            else if (event.keyCode == KeyCode.end)
+            else if (event.key == Key.end)
             {
                 // select last enabled item on End key
                 selectItem(itemCount - 1, -1);
                 return true;
             }
-            else if (event.keyCode == KeyCode.pageDown)
+            else if (event.key == Key.pageDown)
             {
                 // TODO
             }
-            else if (event.keyCode == KeyCode.pageUp)
+            else if (event.key == Key.pageUp)
             {
                 // TODO
             }
         }
-        if (event.keyCode == KeyCode.space || event.keyCode == KeyCode.enter)
+        if (event.key == Key.space || event.key == Key.enter)
         {
             if (event.action == KeyAction.keyDown && enabled)
             {

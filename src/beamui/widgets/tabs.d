@@ -831,7 +831,7 @@ class TabWidget : Column
         }
         if (event.action == KeyAction.keyDown)
         {
-            if (event.keyCode == KeyCode.tab && event.alteredBy(KeyMods.control))
+            if (event.key == Key.tab && event.alteredBy(KeyMods.control))
             {
                 // support Ctrl+Tab and Ctrl+Shift+Tab for navigation
                 _tabNavigationInProgress = true;

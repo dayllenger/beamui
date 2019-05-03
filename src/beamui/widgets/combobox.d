@@ -430,7 +430,7 @@ class ComboEdit : ComboBox
 
     override bool onKeyEvent(KeyEvent event)
     {
-        if (event.keyCode == KeyCode.down && enabled)
+        if (event.key == Key.down && enabled)
         {
             if (event.action == KeyAction.keyDown)
             {
@@ -438,7 +438,7 @@ class ComboEdit : ComboBox
             }
             return true;
         }
-        if ((event.keyCode == KeyCode.space || event.keyCode == KeyCode.enter) && readOnly && enabled)
+        if ((event.key == Key.space || event.key == Key.enter) && readOnly && enabled)
         {
             if (event.action == KeyAction.keyDown)
             {
