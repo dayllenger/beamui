@@ -19,10 +19,10 @@ struct Shortcut
 {
     /// Key code, usually one of `KeyCode` enum items
     uint keyCode;
-    /// Key flags bit set, usually one of `KeyFlag` enum items
-    uint keyFlags;
+    /// Key modifiers bit set
+    KeyMods modifiers;
 
-    /// Returns accelerator text description
+    /// Get shortcut text description. For serialization use `toString` instead
     @property dstring label() const
     {
         dstring buf;
@@ -30,62 +30,62 @@ struct Shortcut
         {
             static if (true)
             {
-                if (keyFlags & KeyFlag.control)
+                if (modifiers & KeyMods.control)
                     buf ~= "Ctrl+";
-                if (keyFlags & KeyFlag.shift)
+                if (modifiers & KeyMods.shift)
                     buf ~= "Shift+";
-                if (keyFlags & KeyFlag.option)
+                if (modifiers & KeyMods.option)
                     buf ~= "Opt+";
-                if (keyFlags & KeyFlag.command)
+                if (modifiers & KeyMods.command)
                     buf ~= "Cmd+";
             }
             else
             {
-                if (keyFlags & KeyFlag.control)
+                if (modifiers & KeyMods.control)
                     buf ~= "⌃";
-                if (keyFlags & KeyFlag.shift)
+                if (modifiers & KeyMods.shift)
                     buf ~= "⇧";
-                if (keyFlags & KeyFlag.option)
+                if (modifiers & KeyMods.option)
                     buf ~= "⌥";
-                if (keyFlags & KeyFlag.command)
+                if (modifiers & KeyMods.command)
                     buf ~= "⌘";
             }
             buf ~= toUTF32(keyName(keyCode));
         }
         else
         {
-            if ((keyFlags & KeyFlag.lcontrol) == KeyFlag.lcontrol && (keyFlags & KeyFlag.rcontrol) == KeyFlag.rcontrol)
+            if ((modifiers & KeyMods.lrcontrol) == KeyMods.lrcontrol)
                 buf ~= "LCtrl+RCtrl+";
-            else if ((keyFlags & KeyFlag.lcontrol) == KeyFlag.lcontrol)
+            else if ((modifiers & KeyMods.lcontrol) == KeyMods.lcontrol)
                 buf ~= "LCtrl+";
-            else if ((keyFlags & KeyFlag.rcontrol) == KeyFlag.rcontrol)
+            else if ((modifiers & KeyMods.rcontrol) == KeyMods.rcontrol)
                 buf ~= "RCtrl+";
-            else if (keyFlags & KeyFlag.control)
+            else if (modifiers & KeyMods.control)
                 buf ~= "Ctrl+";
-            if ((keyFlags & KeyFlag.lalt) == KeyFlag.lalt && (keyFlags & KeyFlag.ralt) == KeyFlag.ralt)
+            if ((modifiers & KeyMods.lralt) == KeyMods.lralt)
                 buf ~= "LAlt+RAlt+";
-            else if ((keyFlags & KeyFlag.lalt) == KeyFlag.lalt)
+            else if ((modifiers & KeyMods.lalt) == KeyMods.lalt)
                 buf ~= "LAlt+";
-            else if ((keyFlags & KeyFlag.ralt) == KeyFlag.ralt)
+            else if ((modifiers & KeyMods.ralt) == KeyMods.ralt)
                 buf ~= "RAlt+";
-            else if (keyFlags & KeyFlag.alt)
+            else if (modifiers & KeyMods.alt)
                 buf ~= "Alt+";
-            if ((keyFlags & KeyFlag.lshift) == KeyFlag.lshift && (keyFlags & KeyFlag.rshift) == KeyFlag.rshift)
+            if ((modifiers & KeyMods.lrshift) == KeyMods.lrshift)
                 buf ~= "LShift+RShift+";
-            else if ((keyFlags & KeyFlag.lshift) == KeyFlag.lshift)
+            else if ((modifiers & KeyMods.lshift) == KeyMods.lshift)
                 buf ~= "LShift+";
-            else if ((keyFlags & KeyFlag.rshift) == KeyFlag.rshift)
+            else if ((modifiers & KeyMods.rshift) == KeyMods.rshift)
                 buf ~= "RShift+";
-            else if (keyFlags & KeyFlag.shift)
+            else if (modifiers & KeyMods.shift)
                 buf ~= "Shift+";
-            if ((keyFlags & KeyFlag.lmenu) == KeyFlag.lmenu && (keyFlags & KeyFlag.rmenu) == KeyFlag.rmenu)
-                buf ~= "LMenu+RMenu+";
-            else if ((keyFlags & KeyFlag.lmenu) == KeyFlag.lmenu)
-                buf ~= "LMenu+";
-            else if ((keyFlags & KeyFlag.rmenu) == KeyFlag.rmenu)
-                buf ~= "RMenu+";
-            else if (keyFlags & KeyFlag.menu)
-                buf ~= "Menu+";
+            if ((modifiers & KeyMods.lrmeta) == KeyMods.lrmeta)
+                buf ~= "LMeta+RMeta+";
+            else if ((modifiers & KeyMods.lmeta) == KeyMods.lmeta)
+                buf ~= "LMeta+";
+            else if ((modifiers & KeyMods.rmeta) == KeyMods.rmeta)
+                buf ~= "RMeta+";
+            else if (modifiers & KeyMods.meta)
+                buf ~= "Meta+";
             buf ~= toUTF32(keyName(keyCode));
         }
         return cast(dstring)buf;
@@ -96,41 +96,41 @@ struct Shortcut
     {
         char[] buf;
         // ctrl
-        if ((keyFlags & KeyFlag.lcontrol) == KeyFlag.lcontrol && (keyFlags & KeyFlag.rcontrol) == KeyFlag.rcontrol)
+        if ((modifiers & KeyMods.lrcontrol) == KeyMods.lrcontrol)
             buf ~= "LCtrl+RCtrl+";
-        else if ((keyFlags & KeyFlag.lcontrol) == KeyFlag.lcontrol)
+        else if ((modifiers & KeyMods.lcontrol) == KeyMods.lcontrol)
             buf ~= "LCtrl+";
-        else if ((keyFlags & KeyFlag.rcontrol) == KeyFlag.rcontrol)
+        else if ((modifiers & KeyMods.rcontrol) == KeyMods.rcontrol)
             buf ~= "RCtrl+";
-        else if (keyFlags & KeyFlag.control)
+        else if (modifiers & KeyMods.control)
             buf ~= "Ctrl+";
         // alt
-        if ((keyFlags & KeyFlag.lalt) == KeyFlag.lalt && (keyFlags & KeyFlag.ralt) == KeyFlag.ralt)
+        if ((modifiers & KeyMods.lralt) == KeyMods.lralt)
             buf ~= "LAlt+RAlt+";
-        else if ((keyFlags & KeyFlag.lalt) == KeyFlag.lalt)
+        else if ((modifiers & KeyMods.lalt) == KeyMods.lalt)
             buf ~= "LAlt+";
-        else if ((keyFlags & KeyFlag.ralt) == KeyFlag.ralt)
+        else if ((modifiers & KeyMods.ralt) == KeyMods.ralt)
             buf ~= "RAlt+";
-        else if (keyFlags & KeyFlag.alt)
+        else if (modifiers & KeyMods.alt)
             buf ~= "Alt+";
         // shift
-        if ((keyFlags & KeyFlag.lshift) == KeyFlag.lshift && (keyFlags & KeyFlag.rshift) == KeyFlag.rshift)
+        if ((modifiers & KeyMods.lrshift) == KeyMods.lrshift)
             buf ~= "LShift+RShift+";
-        else if ((keyFlags & KeyFlag.lshift) == KeyFlag.lshift)
+        else if ((modifiers & KeyMods.lshift) == KeyMods.lshift)
             buf ~= "LShift+";
-        else if ((keyFlags & KeyFlag.rshift) == KeyFlag.rshift)
+        else if ((modifiers & KeyMods.rshift) == KeyMods.rshift)
             buf ~= "RShift+";
-        else if (keyFlags & KeyFlag.shift)
+        else if (modifiers & KeyMods.shift)
             buf ~= "Shift+";
-        // menu
-        if ((keyFlags & KeyFlag.lmenu) == KeyFlag.lmenu && (keyFlags & KeyFlag.rmenu) == KeyFlag.rmenu)
-            buf ~= "LMenu+RMenu+";
-        else if ((keyFlags & KeyFlag.lmenu) == KeyFlag.lmenu)
-            buf ~= "LMenu+";
-        else if ((keyFlags & KeyFlag.rmenu) == KeyFlag.rmenu)
-            buf ~= "RMenu+";
-        else if (keyFlags & KeyFlag.menu)
-            buf ~= "Menu+";
+        // meta
+        if ((modifiers & KeyMods.lrmeta) == KeyMods.lrmeta)
+            buf ~= "LMeta+RMeta+";
+        else if ((modifiers & KeyMods.lmeta) == KeyMods.lmeta)
+            buf ~= "LMeta+";
+        else if ((modifiers & KeyMods.rmeta) == KeyMods.rmeta)
+            buf ~= "RMeta+";
+        else if (modifiers & KeyMods.meta)
+            buf ~= "Meta+";
         buf ~= keyName(keyCode);
         return cast(string)buf;
     }
@@ -141,122 +141,90 @@ struct Shortcut
         import std.string : strip;
 
         keyCode = 0;
-        keyFlags = 0;
+        modifiers = KeyMods.none;
         s = s.strip;
         while (true)
         {
-            bool flagFound;
+            bool found;
             if (s.startsWith("Ctrl+"))
             {
-                keyFlags |= KeyFlag.control;
+                modifiers |= KeyMods.control;
                 s = s[5 .. $];
-                flagFound = true;
+                found = true;
             }
             if (s.startsWith("LCtrl+"))
             {
-                keyFlags |= KeyFlag.lcontrol;
+                modifiers |= KeyMods.lcontrol;
                 s = s[5 .. $];
-                flagFound = true;
+                found = true;
             }
             if (s.startsWith("RCtrl+"))
             {
-                keyFlags |= KeyFlag.rcontrol;
+                modifiers |= KeyMods.rcontrol;
                 s = s[5 .. $];
-                flagFound = true;
+                found = true;
             }
             if (s.startsWith("Alt+"))
             {
-                keyFlags |= KeyFlag.alt;
+                modifiers |= KeyMods.alt;
                 s = s[4 .. $];
-                flagFound = true;
+                found = true;
             }
             if (s.startsWith("LAlt+"))
             {
-                keyFlags |= KeyFlag.lalt;
+                modifiers |= KeyMods.lalt;
                 s = s[4 .. $];
-                flagFound = true;
+                found = true;
             }
             if (s.startsWith("RAlt+"))
             {
-                keyFlags |= KeyFlag.ralt;
+                modifiers |= KeyMods.ralt;
                 s = s[4 .. $];
-                flagFound = true;
+                found = true;
             }
             if (s.startsWith("Shift+"))
             {
-                keyFlags |= KeyFlag.shift;
+                modifiers |= KeyMods.shift;
                 s = s[6 .. $];
-                flagFound = true;
+                found = true;
             }
             if (s.startsWith("LShift+"))
             {
-                keyFlags |= KeyFlag.lshift;
+                modifiers |= KeyMods.lshift;
                 s = s[6 .. $];
-                flagFound = true;
+                found = true;
             }
             if (s.startsWith("RShift+"))
             {
-                keyFlags |= KeyFlag.rshift;
+                modifiers |= KeyMods.rshift;
                 s = s[6 .. $];
-                flagFound = true;
+                found = true;
             }
-            if (s.startsWith("Menu+"))
+            if (s.startsWith("Meta+"))
             {
-                keyFlags |= KeyFlag.menu;
+                modifiers |= KeyMods.meta;
                 s = s[5 .. $];
-                flagFound = true;
+                found = true;
             }
-            if (s.startsWith("LMenu+"))
+            if (s.startsWith("LMeta+"))
             {
-                keyFlags |= KeyFlag.lmenu;
+                modifiers |= KeyMods.lmeta;
                 s = s[5 .. $];
-                flagFound = true;
+                found = true;
             }
-            if (s.startsWith("RMenu+"))
+            if (s.startsWith("RMeta+"))
             {
-                keyFlags |= KeyFlag.rmenu;
+                modifiers |= KeyMods.rmeta;
                 s = s[5 .. $];
-                flagFound = true;
+                found = true;
             }
-            if (!flagFound)
+            if (!found)
                 break;
             s = s.strip;
         }
         keyCode = parseKeyName(s);
         return keyCode != 0;
     }
-}
-
-/// Match key flags
-bool matchKeyFlags(uint eventFlags, uint requestedFlags)
-{
-    if (eventFlags == requestedFlags)
-        return true;
-    if ((requestedFlags & KeyFlag.rcontrol) == KeyFlag.rcontrol && (eventFlags & KeyFlag.rcontrol) != KeyFlag.rcontrol)
-        return false;
-    if ((requestedFlags & KeyFlag.lcontrol) == KeyFlag.lcontrol && (eventFlags & KeyFlag.lcontrol) != KeyFlag.lcontrol)
-        return false;
-    if ((requestedFlags & KeyFlag.rshift) == KeyFlag.rshift && (eventFlags & KeyFlag.rshift) != KeyFlag.rshift)
-        return false;
-    if ((requestedFlags & KeyFlag.lshift) == KeyFlag.lshift && (eventFlags & KeyFlag.lshift) != KeyFlag.lshift)
-        return false;
-    if ((requestedFlags & KeyFlag.ralt) == KeyFlag.ralt && (eventFlags & KeyFlag.ralt) != KeyFlag.ralt)
-        return false;
-    if ((requestedFlags & KeyFlag.lalt) == KeyFlag.lalt && (eventFlags & KeyFlag.lalt) != KeyFlag.lalt)
-        return false;
-    if ((requestedFlags & KeyFlag.rmenu) == KeyFlag.rmenu && (eventFlags & KeyFlag.rmenu) != KeyFlag.rmenu)
-        return false;
-    if ((requestedFlags & KeyFlag.lmenu) == KeyFlag.lmenu && (eventFlags & KeyFlag.lmenu) != KeyFlag.lmenu)
-        return false;
-    if ((requestedFlags & KeyFlag.control) == KeyFlag.control && (eventFlags & KeyFlag.control) != KeyFlag.control)
-        return false;
-    if ((requestedFlags & KeyFlag.shift) == KeyFlag.shift && (eventFlags & KeyFlag.shift) != KeyFlag.shift)
-        return false;
-    if ((requestedFlags & KeyFlag.alt) == KeyFlag.alt && (eventFlags & KeyFlag.alt) != KeyFlag.alt)
-        return false;
-    if ((requestedFlags & KeyFlag.menu) == KeyFlag.menu && (eventFlags & KeyFlag.menu) != KeyFlag.menu)
-        return false;
-    return true;
 }
 
 /// Defines where the user can invoke the action
@@ -496,22 +464,22 @@ final class Action
     }
 
     /// Create an action with label and, optionally, shortcut
-    this(dstring label, uint keyCode = 0, uint keyFlags = 0)
+    this(dstring label, uint keyCode = 0, KeyMods modifiers = KeyMods.none)
     {
         _label = label;
         if (keyCode)
-            addShortcut(keyCode, keyFlags);
+            addShortcut(keyCode, modifiers);
         if (label)
             nameMap[id] = this;
     }
 
     /// Create an action with label, icon ID and, optionally, shortcut
-    this(dstring label, string iconID, uint keyCode = 0, uint keyFlags = 0)
+    this(dstring label, string iconID, uint keyCode = 0, KeyMods modifiers = KeyMods.none)
     {
         _label = label;
         _iconID = iconID;
         if (keyCode)
-            addShortcut(keyCode, keyFlags);
+            addShortcut(keyCode, modifiers);
         if (label)
             nameMap[id] = this;
     }
@@ -534,28 +502,33 @@ final class Action
     }
 
     /// Add one more shortcut
-    Action addShortcut(uint keyCode, uint keyFlags = 0)
+    Action addShortcut(uint keyCode, KeyMods modifiers = KeyMods.none)
     {
         version (OSX)
         {
-            if (keyFlags & KeyFlag.control)
+            if (modifiers & KeyMods.control)
             {
-                _shortcuts ~= Shortcut(keyCode, (keyFlags & ~KeyFlag.control) | KeyFlag.command);
+                _shortcuts ~= Shortcut(keyCode, (modifiers & ~KeyMods.control) | KeyMods.command);
             }
         }
-        _shortcuts ~= Shortcut(keyCode, keyFlags);
+        _shortcuts ~= Shortcut(keyCode, modifiers);
         shortcutMap.add(this);
         changed();
         return this;
     }
 
     /// Returns true if shortcut matches provided key code and flags
-    bool hasShortcut(uint keyCode, uint keyFlags) const
+    bool hasShortcut(uint keyCode, KeyMods modifiers) const
     {
         foreach (s; _shortcuts)
         {
-            if (s.keyCode == keyCode && matchKeyFlags(keyFlags, s.keyFlags))
-                return true;
+            if (s.keyCode == keyCode)
+            {
+                // match, counting left/right if needed
+                if ((s.modifiers & KeyMods.common) == (modifiers & KeyMods.common))
+                    if ((s.modifiers & modifiers) == s.modifiers)
+                        return true;
+            }
         }
         return false;
     }
@@ -630,9 +603,9 @@ final class Action
     }
 
     /// Find action globally by a shortcut
-    static Action findByShortcut(uint keyCode, uint keyFlags)
+    static Action findByShortcut(uint keyCode, KeyMods modifiers)
     {
-        return shortcutMap.find(keyCode, keyFlags);
+        return shortcutMap.find(keyCode, modifiers);
     }
 }
 
@@ -658,40 +631,40 @@ struct ActionShortcutMap
             _map.remove(sc);
     }
 
-    private static __gshared immutable uint[] flagMasks = [
-        KeyFlag.lrcontrol | KeyFlag.lralt | KeyFlag.lrshift | KeyFlag.lrmenu,
+    private static immutable KeyMods[] modMasks = [
+        KeyMods.lrcontrol | KeyMods.lralt | KeyMods.lrshift | KeyMods.lrmeta,
 
-        KeyFlag.lrcontrol | KeyFlag.lralt | KeyFlag.lrshift | KeyFlag.lrmenu,
-        KeyFlag.lrcontrol | KeyFlag.alt | KeyFlag.lrshift | KeyFlag.lrmenu,
-        KeyFlag.lrcontrol | KeyFlag.lralt | KeyFlag.shift | KeyFlag.lrmenu,
-        KeyFlag.lrcontrol | KeyFlag.lralt | KeyFlag.lrshift | KeyFlag.menu,
+        KeyMods.lrcontrol | KeyMods.lralt | KeyMods.lrshift | KeyMods.lrmeta,
+        KeyMods.lrcontrol | KeyMods.alt | KeyMods.lrshift | KeyMods.lrmeta,
+        KeyMods.lrcontrol | KeyMods.lralt | KeyMods.shift | KeyMods.lrmeta,
+        KeyMods.lrcontrol | KeyMods.lralt | KeyMods.lrshift | KeyMods.meta,
 
-        KeyFlag.control | KeyFlag.alt | KeyFlag.lrshift | KeyFlag.lrmenu,
-        KeyFlag.control | KeyFlag.lralt | KeyFlag.shift | KeyFlag.lrmenu,
-        KeyFlag.control | KeyFlag.lralt | KeyFlag.lrshift | KeyFlag.menu,
-        KeyFlag.lrcontrol | KeyFlag.alt | KeyFlag.shift | KeyFlag.lrmenu,
-        KeyFlag.lrcontrol | KeyFlag.alt | KeyFlag.lrshift | KeyFlag.menu,
-        KeyFlag.lrcontrol | KeyFlag.lralt | KeyFlag.shift | KeyFlag.menu,
+        KeyMods.control | KeyMods.alt | KeyMods.lrshift | KeyMods.lrmeta,
+        KeyMods.control | KeyMods.lralt | KeyMods.shift | KeyMods.lrmeta,
+        KeyMods.control | KeyMods.lralt | KeyMods.lrshift | KeyMods.meta,
+        KeyMods.lrcontrol | KeyMods.alt | KeyMods.shift | KeyMods.lrmeta,
+        KeyMods.lrcontrol | KeyMods.alt | KeyMods.lrshift | KeyMods.meta,
+        KeyMods.lrcontrol | KeyMods.lralt | KeyMods.shift | KeyMods.meta,
 
-        KeyFlag.control | KeyFlag.alt | KeyFlag.shift | KeyFlag.lrmenu,
-        KeyFlag.control | KeyFlag.alt | KeyFlag.lrshift | KeyFlag.menu,
-        KeyFlag.control | KeyFlag.lralt | KeyFlag.shift | KeyFlag.menu,
-        KeyFlag.lrcontrol | KeyFlag.alt | KeyFlag.shift | KeyFlag.menu,
+        KeyMods.control | KeyMods.alt | KeyMods.shift | KeyMods.lrmeta,
+        KeyMods.control | KeyMods.alt | KeyMods.lrshift | KeyMods.meta,
+        KeyMods.control | KeyMods.lralt | KeyMods.shift | KeyMods.meta,
+        KeyMods.lrcontrol | KeyMods.alt | KeyMods.shift | KeyMods.meta,
 
-        KeyFlag.control | KeyFlag.alt | KeyFlag.shift | KeyFlag.menu
+        KeyMods.control | KeyMods.alt | KeyMods.shift | KeyMods.meta
     ];
 
     /// Find action by shortcut, returns `null` if not found
-    Action find(uint keyCode, uint flags)
+    Action find(uint keyCode, KeyMods modifiers)
     {
         Shortcut sc;
         sc.keyCode = keyCode;
-        foreach (mask; flagMasks)
+        foreach (mask; modMasks)
         {
-            sc.keyFlags = flags & mask;
+            sc.modifiers = modifiers & mask;
             if (auto p = sc in _map)
             {
-                assert(p.hasShortcut(keyCode, flags));
+                assert(p.hasShortcut(keyCode, modifiers));
                 return *p;
             }
         }

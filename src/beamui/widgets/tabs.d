@@ -822,7 +822,7 @@ class TabWidget : Column
         {
             if (event.action == KeyAction.keyDown || event.action == KeyAction.keyUp)
             {
-                if (!(event.flags & KeyFlag.control))
+                if (event.alteredBy(KeyMods.control))
                 {
                     _tabNavigationInProgress = false;
                     _tabControl.updateAccessTime();
@@ -831,12 +831,12 @@ class TabWidget : Column
         }
         if (event.action == KeyAction.keyDown)
         {
-            if (event.keyCode == KeyCode.tab && (event.flags & KeyFlag.control))
+            if (event.keyCode == KeyCode.tab && event.alteredBy(KeyMods.control))
             {
                 // support Ctrl+Tab and Ctrl+Shift+Tab for navigation
                 _tabNavigationInProgress = true;
-                int direction = (event.flags & KeyFlag.shift) ? -1 : 1;
-                int index = _tabControl.getNextItemIndex(direction);
+                const direction = event.alteredBy(KeyMods.shift) ? -1 : 1;
+                const index = _tabControl.getNextItemIndex(direction);
                 if (index >= 0)
                     selectTab(index, false);
                 return true;

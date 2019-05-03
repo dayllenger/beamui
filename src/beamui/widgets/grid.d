@@ -1608,7 +1608,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         +/
         if (event.action == KeyAction.keyDown)
         {
-            bool shiftPressed = !!(event.flags & KeyFlag.shift);
+            const bool shiftPressed = event.alteredBy(KeyMods.shift);
             // move or expand selection left
             if (event.keyCode == KeyCode.left)
             {

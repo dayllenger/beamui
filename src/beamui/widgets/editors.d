@@ -92,27 +92,27 @@ Action ACTION_ED_REPLACE;
 
 void initStandardEditorActions()
 {
-    ACTION_ED_DEL_PREV_WORD = new Action(null, KeyCode.backspace, KeyFlag.control);
-    ACTION_ED_DEL_NEXT_WORD = new Action(null, KeyCode.del, KeyFlag.control);
+    ACTION_ED_DEL_PREV_WORD = new Action(null, KeyCode.backspace, KeyMods.control);
+    ACTION_ED_DEL_NEXT_WORD = new Action(null, KeyCode.del, KeyMods.control);
 
     ACTION_ED_INDENT = new Action(null, KeyCode.tab);
-    ACTION_ED_UNINDENT = new Action(null, KeyCode.tab, KeyFlag.shift);
+    ACTION_ED_UNINDENT = new Action(null, KeyCode.tab, KeyMods.shift);
 
-    ACTION_ED_PREPEND_NEW_LINE = new Action(tr("Prepend new line"), KeyCode.enter, KeyFlag.control | KeyFlag.shift);
-    ACTION_ED_APPEND_NEW_LINE = new Action(tr("Append new line"), KeyCode.enter, KeyFlag.control);
-    ACTION_ED_DELETE_LINE = new Action(tr("Delete line"), KeyCode.D, KeyFlag.control).addShortcut(KeyCode.L, KeyFlag.control);
+    ACTION_ED_PREPEND_NEW_LINE = new Action(tr("Prepend new line"), KeyCode.enter, KeyMods.control | KeyMods.shift);
+    ACTION_ED_APPEND_NEW_LINE = new Action(tr("Append new line"), KeyCode.enter, KeyMods.control);
+    ACTION_ED_DELETE_LINE = new Action(tr("Delete line"), KeyCode.D, KeyMods.control).addShortcut(KeyCode.L, KeyMods.control);
     ACTION_ED_TOGGLE_REPLACE_MODE = new Action(tr("Replace mode"), KeyCode.ins);
-    ACTION_ED_TOGGLE_LINE_COMMENT = new Action(tr("Toggle line comment"), KeyCode.divide, KeyFlag.control);
-    ACTION_ED_TOGGLE_BLOCK_COMMENT = new Action(tr("Toggle block comment"), KeyCode.divide, KeyFlag.control | KeyFlag.shift);
+    ACTION_ED_TOGGLE_LINE_COMMENT = new Action(tr("Toggle line comment"), KeyCode.divide, KeyMods.control);
+    ACTION_ED_TOGGLE_BLOCK_COMMENT = new Action(tr("Toggle block comment"), KeyCode.divide, KeyMods.control | KeyMods.shift);
 
-    ACTION_ED_TOGGLE_BOOKMARK = new Action(tr("Toggle bookmark"), KeyCode.B, KeyFlag.control | KeyFlag.shift);
-    ACTION_ED_GOTO_NEXT_BOOKMARK = new Action(tr("Go to next bookmark"), KeyCode.down, KeyFlag.control | KeyFlag.shift | KeyFlag.alt);
-    ACTION_ED_GOTO_PREVIOUS_BOOKMARK = new Action(tr("Go to previous bookmark"), KeyCode.up, KeyFlag.control | KeyFlag.shift | KeyFlag.alt);
+    ACTION_ED_TOGGLE_BOOKMARK = new Action(tr("Toggle bookmark"), KeyCode.B, KeyMods.control | KeyMods.shift);
+    ACTION_ED_GOTO_NEXT_BOOKMARK = new Action(tr("Go to next bookmark"), KeyCode.down, KeyMods.control | KeyMods.shift | KeyMods.alt);
+    ACTION_ED_GOTO_PREVIOUS_BOOKMARK = new Action(tr("Go to previous bookmark"), KeyCode.up, KeyMods.control | KeyMods.shift | KeyMods.alt);
 
-    ACTION_ED_FIND = new Action(tr("Find..."), KeyCode.F, KeyFlag.control);
-    ACTION_ED_FIND_NEXT = new Action(tr("Find next"), KeyCode.F3, 0);
-    ACTION_ED_FIND_PREV = new Action(tr("Find previous"), KeyCode.F3, KeyFlag.shift);
-    ACTION_ED_REPLACE = new Action(tr("Replace..."), KeyCode.H, KeyFlag.control);
+    ACTION_ED_FIND = new Action(tr("Find..."), KeyCode.F, KeyMods.control);
+    ACTION_ED_FIND_NEXT = new Action(tr("Find next"), KeyCode.F3);
+    ACTION_ED_FIND_PREV = new Action(tr("Find previous"), KeyCode.F3, KeyMods.shift);
+    ACTION_ED_REPLACE = new Action(tr("Replace..."), KeyCode.H, KeyMods.control);
 
     bunch(
         ACTION_ED_DEL_PREV_WORD,
@@ -1728,14 +1728,14 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             startCaretBlinking();
         cancelHoverTimer();
 
-        const bool noOtherModifiers = !(event.flags & (KeyFlag.alt | KeyFlag.menu));
+        const bool noOtherModifiers = !event.alteredBy(KeyMods.alt | KeyMods.meta);
         if (event.action == KeyAction.keyDown && noOtherModifiers)
         {
             TextPosition oldCaretPos = _caretPos;
             const currentLineLength = _content[_caretPos.line].length;
 
-            const bool shiftPressed = !!(event.flags & KeyFlag.shift);
-            const bool controlPressed = !!(event.flags & KeyFlag.control);
+            const bool shiftPressed = event.alteredBy(KeyMods.shift);
+            const bool controlPressed = event.alteredBy(KeyMods.control);
             if (event.keyCode == KeyCode.left)
             {
                 if (!controlPressed)
@@ -1805,14 +1805,14 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             }
         }
 
-        const bool ctrlOrAltPressed = !!(event.flags & KeyFlag.control); // FIXME: Alt needed?
-        if (event.action == KeyAction.text && event.text.length && !ctrlOrAltPressed)
+        const bool noCtrlPressed = !event.alteredBy(KeyMods.control);
+        if (event.action == KeyAction.text && event.text.length && noCtrlPressed)
         {
             debug (editors)
                 Log.d("text entered: ", event.text);
             if (readOnly)
                 return true;
-            if (!(!!(event.flags & KeyFlag.alt) && event.text.length == 1 && isAlpha(event.text[0])))
+            if (!(event.alteredBy(KeyMods.alt) && event.text.length == 1 && isAlpha(event.text[0])))
             { // filter out Alt+A..Z
                 if (replaceMode && _selectionRange.empty &&
                         _content[_caretPos.line].length >= _caretPos.pos + event.text.length)
@@ -2378,13 +2378,13 @@ class EditBox : EditWidgetBase
 
     override bool onKeyEvent(KeyEvent event)
     {
-        const bool noOtherModifiers = !(event.flags & (KeyFlag.alt | KeyFlag.menu));
+        const bool noOtherModifiers = !event.alteredBy(KeyMods.alt | KeyMods.meta);
         if (event.action == KeyAction.keyDown && noOtherModifiers)
         {
             const TextPosition oldCaretPos = _caretPos;
 
-            const bool shiftPressed = !!(event.flags & KeyFlag.shift);
-            const bool controlPressed = !!(event.flags & KeyFlag.control);
+            const bool shiftPressed = event.alteredBy(KeyMods.shift);
+            const bool controlPressed = event.alteredBy(KeyMods.control);
             if (event.keyCode == KeyCode.up)
             {
                 if (!controlPressed)

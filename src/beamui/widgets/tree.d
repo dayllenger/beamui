@@ -837,7 +837,7 @@ class TreeWidgetBase : ScrollArea, ActionOperator
 
     override bool onKeyEvent(KeyEvent event)
     {
-        if (event.action == KeyAction.keyDown && event.flags == 0)
+        if (event.action == KeyAction.keyDown && !event.hasModifiers)
         {
             switch (event.keyCode) with (KeyCode)
             {

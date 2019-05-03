@@ -60,7 +60,7 @@ enum FileDialogActions
     deleteFile = 4002,
 }
 
-/// Filetype filter entry for FileDialog
+/// Filetype filter entry for `FileDialog`
 struct FileFilterEntry
 {
     dstring label;
@@ -350,7 +350,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         }
     }
 
-    /// Sort entries according to _sortOrder
+    /// Sort entries according to `_sortOrder`
     protected void sortEntries()
     {
         if (_entries.length < 1)
@@ -516,7 +516,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
     {
         if (event.action == KeyAction.keyDown)
         {
-            if (event.keyCode == KeyCode.backspace && event.flags == 0)
+            if (event.keyCode == KeyCode.backspace && !event.hasModifiers)
             {
                 upLevel();
                 return true;

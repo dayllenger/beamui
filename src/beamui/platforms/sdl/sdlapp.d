@@ -638,7 +638,7 @@ final class SDLWindow : Window
 
     private ushort lastFlags;
     private short lastx, lasty;
-    private uint _keyFlags;
+    private KeyMods _keyMods;
 
     private void processMouseEvent(MouseAction action, uint sdlButton, uint sdlFlags, int x, int y)
     {
@@ -647,15 +647,15 @@ final class SDLWindow : Window
         {
             // handle wheel
             short wheelDelta = cast(short)y;
-            if (_keyFlags & KeyFlag.shift)
+            if (_keyMods & KeyMods.shift)
                 lastFlags |= MouseFlag.shift;
             else
                 lastFlags &= ~MouseFlag.shift;
-            if (_keyFlags & KeyFlag.control)
+            if (_keyMods & KeyMods.control)
                 lastFlags |= MouseFlag.control;
             else
                 lastFlags &= ~MouseFlag.control;
-            if (_keyFlags & KeyFlag.alt)
+            if (_keyMods & KeyMods.alt)
                 lastFlags |= MouseFlag.alt;
             else
                 lastFlags &= ~MouseFlag.alt;
@@ -665,11 +665,11 @@ final class SDLWindow : Window
         else
         {
             lastFlags = convertMouseFlags(sdlFlags);
-            if (_keyFlags & KeyFlag.shift)
+            if (_keyMods & KeyMods.shift)
                 lastFlags |= MouseFlag.shift;
-            if (_keyFlags & KeyFlag.control)
+            if (_keyMods & KeyMods.control)
                 lastFlags |= MouseFlag.control;
-            if (_keyFlags & KeyFlag.alt)
+            if (_keyMods & KeyMods.alt)
                 lastFlags |= MouseFlag.alt;
             lastx = cast(short)x;
             lasty = cast(short)y;
@@ -838,53 +838,53 @@ final class SDLWindow : Window
         }
     }
 
-    private uint convertKeyFlags(uint sdlKeymod)
+    private KeyMods convertKeyMods(uint sdlKeymod)
     {
-        uint res;
-        if (sdlKeymod & KMOD_CTRL)
-            res |= KeyFlag.control;
+        KeyMods mods;
         if (sdlKeymod & KMOD_SHIFT)
-            res |= KeyFlag.shift;
+            mods |= KeyMods.shift;
+        if (sdlKeymod & KMOD_CTRL)
+            mods |= KeyMods.control;
         if (sdlKeymod & KMOD_ALT)
-            res |= KeyFlag.alt;
+            mods |= KeyMods.alt;
         if (sdlKeymod & KMOD_GUI)
-            res |= KeyFlag.menu;
-        if (sdlKeymod & KMOD_RCTRL)
-            res |= KeyFlag.rcontrol | KeyFlag.control;
-        if (sdlKeymod & KMOD_RSHIFT)
-            res |= KeyFlag.rshift | KeyFlag.shift;
-        if (sdlKeymod & KMOD_RALT)
-            res |= KeyFlag.ralt | KeyFlag.alt;
-        if (sdlKeymod & KMOD_LCTRL)
-            res |= KeyFlag.lcontrol | KeyFlag.control;
+            mods |= KeyMods.meta;
         if (sdlKeymod & KMOD_LSHIFT)
-            res |= KeyFlag.lshift | KeyFlag.shift;
+            mods |= KeyMods.lshift;
+        if (sdlKeymod & KMOD_LCTRL)
+            mods |= KeyMods.lcontrol;
         if (sdlKeymod & KMOD_LALT)
-            res |= KeyFlag.lalt | KeyFlag.alt;
-        return res;
+            mods |= KeyMods.lalt;
+        if (sdlKeymod & KMOD_RSHIFT)
+            mods |= KeyMods.rshift;
+        if (sdlKeymod & KMOD_RCTRL)
+            mods |= KeyMods.rcontrol;
+        if (sdlKeymod & KMOD_RALT)
+            mods |= KeyMods.ralt;
+        return mods;
     }
 
     private bool processTextInput(const char* s)
     {
         string str = fromStringz(s).dup;
         dstring ds = toUTF32(str);
-        uint flags = convertKeyFlags(SDL_GetModState());
+        KeyMods mods = convertKeyMods(SDL_GetModState());
         //do not handle Ctrl+Space as text https://github.com/buggins/dlangui/issues/160
         //but do hanlde RAlt https://github.com/buggins/dlangide/issues/129
         debug (keys)
-            Log.fd("processTextInput char: %s (%s), flags: %04x", ds, cast(int)ds[0], flags);
-        if ((flags & KeyFlag.alt) && (flags & KeyFlag.control))
+            Log.fd("processTextInput char: %s (%s), mods: %04x", ds, cast(int)ds[0], mods);
+        if ((mods & KeyMods.alt) && (mods & KeyMods.control))
         {
-            flags &= (~(KeyFlag.lralt)) & (~(KeyFlag.lrcontrol));
+            mods &= (~(KeyMods.lralt)) & (~(KeyMods.lrcontrol));
             debug (keys)
-                Log.fd("processTextInput removed Ctrl+Alt flags char: %s (%s), flags: %04x",
-                        ds, cast(int)ds[0], flags);
+                Log.fd("processTextInput removed Ctrl+Alt mods char: %s (%s), mods: %04x",
+                        ds, cast(int)ds[0], mods);
         }
 
-        if (flags & KeyFlag.control || (flags & KeyFlag.lalt) == KeyFlag.lalt || flags & KeyFlag.menu)
+        if (mods & KeyMods.control || (mods & KeyMods.lalt) == KeyMods.lalt || mods & KeyMods.meta)
             return true;
 
-        bool res = dispatchKeyEvent(new KeyEvent(KeyAction.text, 0, flags, ds));
+        bool res = dispatchKeyEvent(new KeyEvent(KeyAction.text, 0, mods, ds));
         if (res)
         {
             debug (sdl)
@@ -909,54 +909,53 @@ final class SDLWindow : Window
     private bool processKeyEvent(KeyAction action, uint sdlKeyCode, uint sdlKeymod)
     {
         debug (keys)
-            Log.fd("processKeyEvent %s, SDL key: 0x%08x, SDL flags: 0x%08x", action, sdlKeyCode, sdlKeymod);
+            Log.fd("processKeyEvent %s, SDL key: 0x%08x, SDL mods: 0x%08x", action, sdlKeyCode, sdlKeymod);
 
         uint keyCode = convertKeyCode(sdlKeyCode);
-        uint flags = convertKeyFlags(sdlKeymod);
+        KeyMods mods = convertKeyMods(sdlKeymod);
         if (action == KeyAction.keyDown)
         {
             switch (keyCode)
             {
-            case KeyCode.alt:
-                flags |= KeyFlag.alt;
-                break;
-            case KeyCode.ralt:
-                flags |= KeyFlag.alt | KeyFlag.ralt;
-                break;
-            case KeyCode.lalt:
-                flags |= KeyFlag.alt | KeyFlag.lalt;
+            case KeyCode.shift:
+                mods |= KeyMods.shift;
                 break;
             case KeyCode.control:
-                flags |= KeyFlag.control;
+                mods |= KeyMods.control;
+                break;
+            case KeyCode.alt:
+                mods |= KeyMods.alt;
+                break;
+            case KeyCode.lshift:
+                mods |= KeyMods.lshift;
+                break;
+            case KeyCode.lcontrol:
+                mods |= KeyMods.lcontrol;
+                break;
+            case KeyCode.lalt:
+                mods |= KeyMods.lalt;
+                break;
+            case KeyCode.rshift:
+                mods |= KeyMods.rshift;
+                break;
+            case KeyCode.rcontrol:
+                mods |= KeyMods.rcontrol;
+                break;
+            case KeyCode.ralt:
+                mods |= KeyMods.ralt;
                 break;
             case KeyCode.lwin:
             case KeyCode.rwin:
-                flags |= KeyFlag.menu;
+                mods |= KeyMods.meta;
                 break;
-            case KeyCode.rcontrol:
-                flags |= KeyFlag.control | KeyFlag.rcontrol;
-                break;
-            case KeyCode.lcontrol:
-                flags |= KeyFlag.control | KeyFlag.lcontrol;
-                break;
-            case KeyCode.shift:
-                flags |= KeyFlag.shift;
-                break;
-            case KeyCode.rshift:
-                flags |= KeyFlag.shift | KeyFlag.rshift;
-                break;
-            case KeyCode.lshift:
-                flags |= KeyFlag.shift | KeyFlag.lshift;
-                break;
-
             default:
                 break;
             }
         }
-        _keyFlags = flags;
+        _keyMods = mods;
 
         debug (keys)
-            Log.fd("processKeyEvent %s, converted key: 0x%08x, converted flags: 0x%08x", action, keyCode, flags);
+            Log.fd("processKeyEvent %s, converted key: 0x%08x, converted mods: 0x%08x", action, keyCode, mods);
 
         if (action == KeyAction.keyDown || action == KeyAction.keyUp)
         {
@@ -964,12 +963,7 @@ final class SDLWindow : Window
                 ) && isNumLockEnabled)
                 return false;
         }
-        bool res = dispatchKeyEvent(new KeyEvent(action, keyCode, flags));
-        //            if ((keyCode & 0x10000) && (keyCode & 0xF000) != 0xF000) {
-        //                dchar[1] text;
-        //                text[0] = keyCode & 0xFFFF;
-        //                res = dispatchKeyEvent(new KeyEvent(KeyAction.text, keyCode, flags, cast(dstring)text)) || res;
-        //            }
+        bool res = dispatchKeyEvent(new KeyEvent(action, keyCode, mods));
         if (res)
         {
             debug (redraw)

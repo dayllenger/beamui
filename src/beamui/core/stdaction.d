@@ -116,38 +116,38 @@ void initStandardActions()
     ACTION_LINE_END = new Action(null, KeyCode.end);
     ACTION_PAGE_UP = new Action(null, KeyCode.pageUp);
     ACTION_PAGE_DOWN = new Action(null, KeyCode.pageDown);
-    ACTION_PAGE_BEGIN = new Action(null, KeyCode.pageUp, KeyFlag.control);
-    ACTION_PAGE_END = new Action(null, KeyCode.pageDown, KeyFlag.control);
-    ACTION_DOCUMENT_BEGIN = new Action(null, KeyCode.home, KeyFlag.control);
-    ACTION_DOCUMENT_END = new Action(null, KeyCode.end, KeyFlag.control);
+    ACTION_PAGE_BEGIN = new Action(null, KeyCode.pageUp, KeyMods.control);
+    ACTION_PAGE_END = new Action(null, KeyCode.pageDown, KeyMods.control);
+    ACTION_DOCUMENT_BEGIN = new Action(null, KeyCode.home, KeyMods.control);
+    ACTION_DOCUMENT_END = new Action(null, KeyCode.end, KeyMods.control);
 
-    ACTION_SELECT_LINE_BEGIN = new Action(null, KeyCode.home, KeyFlag.shift);
-    ACTION_SELECT_LINE_END = new Action(null, KeyCode.end, KeyFlag.shift);
-    ACTION_SELECT_PAGE_UP = new Action(null, KeyCode.pageUp, KeyFlag.shift);
-    ACTION_SELECT_PAGE_DOWN = new Action(null, KeyCode.pageDown, KeyFlag.shift);
-    ACTION_SELECT_PAGE_BEGIN = new Action(null, KeyCode.pageUp, KeyFlag.control | KeyFlag.shift);
-    ACTION_SELECT_PAGE_END = new Action(null, KeyCode.pageDown, KeyFlag.control | KeyFlag.shift);
-    ACTION_SELECT_DOCUMENT_BEGIN = new Action(null, KeyCode.home, KeyFlag.control | KeyFlag.shift);
-    ACTION_SELECT_DOCUMENT_END = new Action(null, KeyCode.end, KeyFlag.control | KeyFlag.shift);
+    ACTION_SELECT_LINE_BEGIN = new Action(null, KeyCode.home, KeyMods.shift);
+    ACTION_SELECT_LINE_END = new Action(null, KeyCode.end, KeyMods.shift);
+    ACTION_SELECT_PAGE_UP = new Action(null, KeyCode.pageUp, KeyMods.shift);
+    ACTION_SELECT_PAGE_DOWN = new Action(null, KeyCode.pageDown, KeyMods.shift);
+    ACTION_SELECT_PAGE_BEGIN = new Action(null, KeyCode.pageUp, KeyMods.control | KeyMods.shift);
+    ACTION_SELECT_PAGE_END = new Action(null, KeyCode.pageDown, KeyMods.control | KeyMods.shift);
+    ACTION_SELECT_DOCUMENT_BEGIN = new Action(null, KeyCode.home, KeyMods.control | KeyMods.shift);
+    ACTION_SELECT_DOCUMENT_END = new Action(null, KeyCode.end, KeyMods.control | KeyMods.shift);
 
     ACTION_ENTER = new Action(tr("Enter"), KeyCode.enter);
     ACTION_BACKSPACE = new Action(tr("Backspace"), KeyCode.backspace);
     ACTION_DELETE = new Action(tr("Delete"), KeyCode.del);
 
-    ACTION_SELECT_ALL = new Action(tr("Select all"), KeyCode.A, KeyFlag.control);
+    ACTION_SELECT_ALL = new Action(tr("Select all"), KeyCode.A, KeyMods.control);
 
-    ACTION_ZOOM_IN = new Action(tr("Zoom In"), KeyCode.numAdd, KeyFlag.control); // BUG: such combinations do not work
-    ACTION_ZOOM_OUT = new Action(tr("Zoom Out"), KeyCode.numSub, KeyFlag.control);
+    ACTION_ZOOM_IN = new Action(tr("Zoom In"), KeyCode.numAdd, KeyMods.control); // BUG: such combinations do not work
+    ACTION_ZOOM_OUT = new Action(tr("Zoom Out"), KeyCode.numSub, KeyMods.control);
 
-    ACTION_UNDO = new Action(tr("&Undo"), KeyCode.Z, KeyFlag.control).setEnabled(false);
-    ACTION_REDO = new Action(tr("&Redo"), KeyCode.Y, KeyFlag.control).setEnabled(false)
-        .addShortcut(KeyCode.Z, KeyFlag.control | KeyFlag.shift);
-    ACTION_CUT = new Action(tr("Cu&t"), KeyCode.X, KeyFlag.control).setEnabled(false)
-        .addShortcut(KeyCode.del, KeyFlag.shift);
-    ACTION_COPY = new Action(tr("&Copy"), KeyCode.C, KeyFlag.control).setEnabled(false)
-        .addShortcut(KeyCode.ins, KeyFlag.control);
-    ACTION_PASTE = new Action(tr("&Paste"), KeyCode.V, KeyFlag.control)
-        .addShortcut(KeyCode.ins, KeyFlag.shift);
+    ACTION_UNDO = new Action(tr("&Undo"), KeyCode.Z, KeyMods.control).setEnabled(false);
+    ACTION_REDO = new Action(tr("&Redo"), KeyCode.Y, KeyMods.control).setEnabled(false)
+        .addShortcut(KeyCode.Z, KeyMods.control | KeyMods.shift);
+    ACTION_CUT = new Action(tr("Cu&t"), KeyCode.X, KeyMods.control).setEnabled(false)
+        .addShortcut(KeyCode.del, KeyMods.shift);
+    ACTION_COPY = new Action(tr("&Copy"), KeyCode.C, KeyMods.control).setEnabled(false)
+        .addShortcut(KeyCode.ins, KeyMods.control);
+    ACTION_PASTE = new Action(tr("&Paste"), KeyCode.V, KeyMods.control)
+        .addShortcut(KeyCode.ins, KeyMods.shift);
 
     import beamui.core.functions : bunch;
 

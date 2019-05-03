@@ -355,52 +355,42 @@ final class MouseEvent
 /// Keyboard actions for `KeyEvent`
 enum KeyAction : uint
 {
-    /// Key is pressed
-    keyDown,
-    /// Key is released
-    keyUp,
-    /// Text is entered
-    text,
-    /// Repeated key down
-    repeat,
+    keyDown, /// Key is pressed
+    keyUp,   /// Key is released
+    text,    /// Text is entered
+    repeat,  /// Repeated key down
 }
 
-/// Keyboard flags for `KeyEvent`
-enum KeyFlag : uint
+/// Keyboard modifier flags for `KeyEvent`
+enum KeyMods : uint
 {
-    /// Ctrl key is down
-    control = 0x0001,
-    /// Shift key is down
-    shift = 0x0002,
-    /// Alt key is down
-    alt = 0x0004,
-    option = alt,
-    /// Menu key
-    menu = 0x0008,
-    command = menu,
-    // Flags not counting left or right difference
-    mainFlags = 0xFF,
-    /// Right Ctrl key is down
-    rcontrol = 0x0101,
-    /// Right Shift key is down
-    rshift = 0x0202,
-    /// Right Alt key is down
-    ralt = 0x0404,
-    /// Right Menu/Win key is down
-    rmenu = 0x0808,
-    /// Left Ctrl key is down
-    lcontrol = 0x1001,
-    /// Left Shift key is down
-    lshift = 0x2002,
-    /// Left Alt key is down
-    lalt = 0x4004,
-    /// Left Menu/Win key is down
-    lmenu = 0x8008,
+    none = 0,
 
-    lrcontrol = lcontrol | rcontrol, // both left and right
-    lralt = lalt | ralt, // both left and right
-    lrshift = lshift | rshift, // both left and right
-    lrmenu = lmenu | rmenu, // both left and right
+    control = 1, /// Ctrl key
+    shift = 2, /// Shift key
+    alt = 4, /// Alt key
+    meta = 8, /// Meta/Win key
+
+    option = alt,
+    command = meta,
+
+    /// Modifiers that don't count the difference between left or right
+    common = control | shift | alt | meta,
+
+    lcontrol = control | 64, /// Left Ctrl key (includes `control` flag)
+    lshift = shift | 64, /// Left Shift key (includes `shift` flag)
+    lalt = alt | 64, /// Left Alt key (includes `alt` flag)
+    lmeta = meta | 64, /// Left Meta/Win key (includes `meta` flag)
+
+    rcontrol = control | 128, /// Right Ctrl key (includes `control` flag)
+    rshift = shift | 128, /// Right Shift key (includes `shift` flag)
+    ralt = alt | 128, /// Right Alt key (includes `alt` flag)
+    rmeta = meta | 128, /// Right Meta/Win key (includes `meta` flag)
+
+    lrcontrol = lcontrol | rcontrol, /// Both left and right Ctrl key
+    lralt = lalt | ralt, /// Both left and right Alt key
+    lrshift = lshift | rshift, /// Both left and right Shift key
+    lrmeta = lmeta | rmeta, /// Both left and right Meta key
 }
 
 /// Key code constants for `KeyEvent`
@@ -535,22 +525,17 @@ final class KeyEvent
 {
     private
     {
-        /// Action
         KeyAction _action;
-        /// Key code, usually from `KeyCode` enum
         uint _keyCode;
-        /// Key flags bit set, usually combined from `KeyFlag` enum
-        uint _flags;
-        /// Entered text
+        KeyMods _mods;
         dstring _text;
     }
 
-    /// Create key event
-    this(KeyAction action, uint keyCode, uint flags, dstring text = null)
+    this(KeyAction action, uint keyCode, KeyMods mods, dstring text = null)
     {
         _action = action;
         _keyCode = keyCode;
-        _flags = flags;
+        _mods = mods;
         _text = text;
     }
 
@@ -560,31 +545,32 @@ final class KeyEvent
         KeyAction action() const { return _action; }
         /// Key code (usually from `KeyCode` enum)
         uint keyCode() const { return _keyCode; }
-        /// Flags (shift, ctrl, alt...) - `KeyFlag` enum
-        uint flags() const { return _flags; }
+        /// Key modifier bit flags (shift, ctrl, alt...)
+        KeyMods allModifiers() const { return _mods; }
         /// Entered text, for `text` action
         dstring text() const { return _text; }
 
-        /// Returns true if no modifier flags are set
-        bool noModifiers() const
+        /// Get modifiers, not counting the difference between left or right
+        KeyMods modifiers() const
         {
-            return modifiers == 0;
+            return _mods & KeyMods.common;
         }
-        /// Returns true if any modifier flag is set
+        /// True if has some modifiers is applied
         bool hasModifiers() const
         {
-            return !noModifiers;
+            return _mods != KeyMods.none;
         }
-        /// Returns modifier flags filtered for `KeyFlag.control | KeyFlag.alt | KeyFlag.menu | KeyFlag.shift` only
-        uint modifiers() const
-        {
-            return (_flags & (KeyFlag.control | KeyFlag.alt | KeyFlag.menu | KeyFlag.shift));
-        }
+    }
+
+    /// Check whether all of `mod` modifiers are applied
+    bool alteredBy(KeyMods mod) const
+    {
+        return (_mods & mod) == mod;
     }
 
     override string toString() const
     {
-        return format("KeyEvent(%s, %s, %04x, %s)", _action, cast(KeyCode)_keyCode, _flags, _text);
+        return format("KeyEvent(%s, %s, %04x, %s)", _action, cast(KeyCode)_keyCode, _mods, _text);
     }
 }
 

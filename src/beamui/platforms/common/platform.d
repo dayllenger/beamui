@@ -207,7 +207,7 @@ class Window : CustomEventTarget
         }
 
         /// Get current key modifiers
-        uint keyboardModifiers() const { return _keyboardModifiers; }
+        KeyMods keyboardModifiers() const { return _keyboardModifiers; }
 
         /// Returns current window state
         WindowState windowState() const { return _windowState; }
@@ -253,7 +253,7 @@ class Window : CustomEventTarget
         Window[] _children;
         Window _parent;
 
-        uint _keyboardModifiers;
+        KeyMods _keyboardModifiers;
 
         /// Keep overrided cursor type to `notSet` to get cursor from widget
         CursorType _overrideCursorType = CursorType.notSet;
@@ -1224,7 +1224,7 @@ class Window : CustomEventTarget
         Popup modal = modalPopup();
         if (event.action == KeyAction.keyDown || event.action == KeyAction.keyUp)
         {
-            _keyboardModifiers = event.flags;
+            _keyboardModifiers = event.allModifiers;
             if (event.keyCode == KeyCode.alt || event.keyCode == KeyCode.lalt || event.keyCode == KeyCode.ralt)
             {
                 debug (keys)
@@ -1248,7 +1248,7 @@ class Window : CustomEventTarget
             // process shortcuts
             if (event.action == KeyAction.keyDown)
             {
-                auto a = Action.findByShortcut(event.keyCode, event.flags);
+                auto a = Action.findByShortcut(event.keyCode, event.allModifiers);
                 if (call(a))
                     return true;
             }

@@ -212,12 +212,12 @@ class Dialog : Column
     {
         if (event.action == KeyAction.keyDown)
         {
-            if (event.keyCode == KeyCode.enter && event.modifiers == KeyFlag.control)
+            if (event.keyCode == KeyCode.enter && event.modifiers == KeyMods.control)
             {
                 // Ctrl+Enter: default action
                 return closeWithDefaultAction();
             }
-            if (event.keyCode == KeyCode.escape && event.noModifiers)
+            if (event.keyCode == KeyCode.escape && !event.hasModifiers)
             {
                 // ESC: cancel/no action
                 return closeWithCancelAction();

@@ -660,8 +660,8 @@ public:
             {
                 if (auto w = window)
                 {
-                    const uint modifiers = w.keyboardModifiers;
-                    if ((modifiers & (KeyFlag.alt | KeyFlag.lalt | KeyFlag.ralt)) != 0)
+                    const modifiers = w.keyboardModifiers;
+                    if ((modifiers & KeyMods.alt) != 0)
                         // Alt pressed
                         return TextHotkey.underline;
                 }
@@ -1256,30 +1256,32 @@ public:
             return false;
         if (event.action != KeyAction.keyDown)
             return false;
+
         FocusMovement direction = FocusMovement.none;
-        uint flags = event.flags & (KeyFlag.shift | KeyFlag.control | KeyFlag.alt);
+        const bool noMods = !event.hasModifiers;
+        const bool shift = event.alteredBy(KeyMods.shift);
         switch (event.keyCode) with (KeyCode)
         {
         case left:
-            if (flags == 0)
+            if (noMods)
                 direction = FocusMovement.left;
             break;
         case right:
-            if (flags == 0)
+            if (noMods)
                 direction = FocusMovement.right;
             break;
         case up:
-            if (flags == 0)
+            if (noMods)
                 direction = FocusMovement.up;
             break;
         case down:
-            if (flags == 0)
+            if (noMods)
                 direction = FocusMovement.down;
             break;
         case tab:
-            if (flags == 0)
+            if (noMods)
                 direction = FocusMovement.next;
-            else if (flags == KeyFlag.shift)
+            else if (shift)
                 direction = FocusMovement.previous;
             break;
         default:

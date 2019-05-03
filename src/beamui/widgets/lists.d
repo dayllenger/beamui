@@ -995,7 +995,7 @@ class ListWidget : WidgetGroup
                     {
                         Widget oldParent = itemWidget.parent;
                         itemWidget.parent = this;
-                        if (event.action == MouseAction.move && event.noModifiers && itemWidget.hasTooltip)
+                        if (event.action == MouseAction.move && !event.hasModifiers && itemWidget.hasTooltip)
                         {
                             itemWidget.scheduleTooltip(200);
                         }

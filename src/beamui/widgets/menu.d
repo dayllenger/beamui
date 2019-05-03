@@ -384,9 +384,9 @@ class Menu : ListWidget
         return res;
     }
     /// Convenient function to add menu item by the action arguments
-    Action addAction(dstring label, string iconID = null, uint keyCode = 0, uint keyFlags = 0)
+    Action addAction(dstring label, string iconID = null, uint keyCode = 0, KeyMods modifiers = KeyMods.none)
     {
-        auto a = new Action(label, iconID, keyCode, keyFlags);
+        auto a = new Action(label, iconID, keyCode, modifiers);
         add(a);
         return a;
     }
@@ -433,7 +433,7 @@ class Menu : ListWidget
         return -1;
     }
 
-    /// Find subitem by hotkey character, returns an item, null if not found
+    /// Find subitem by hotkey character, returns an item, `null` if not found
     inout(MenuItem) findSubitemByHotkeyRecursive(dchar ch) inout
     {
         import std.uni : toUpper;
@@ -707,7 +707,7 @@ class Menu : ListWidget
     override bool onKeyEvent(KeyEvent event)
     {
         navigatingUsingKeys = true;
-        if (event.action == KeyAction.keyDown && event.keyCode == KeyCode.escape && event.flags == 0)
+        if (event.action == KeyAction.keyDown && event.keyCode == KeyCode.escape && !event.hasModifiers)
         {
             close();
             return true;
@@ -783,7 +783,7 @@ class Menu : ListWidget
                     return true;
                 }
             }
-            else if (event.action == KeyAction.text && event.flags == 0)
+            else if (event.action == KeyAction.text && !event.hasModifiers)
             {
                 dchar ch = event.text[0];
                 int index = cast(int)findSubitemByHotkey(ch);
@@ -894,19 +894,17 @@ class MenuBar : Menu
     override bool onKeyEvent(KeyEvent event)
     {
         // handle Alt key
-        bool altPressed = !!(event.flags & KeyFlag.alt);
-        bool noOtherModifiers = !(event.flags & (KeyFlag.shift | KeyFlag.control));
-        bool noAltGrKey = !((event.flags & KeyFlag.ralt) == KeyFlag.ralt);
+        const bool altPressed = event.alteredBy(KeyMods.alt);
+        const bool noOtherModifiers = !event.alteredBy(KeyMods.shift | KeyMods.control);
+        const bool noAltGrKey = !event.alteredBy(KeyMods.ralt);
 
         dchar hotkey = 0;
-        if (event.action == KeyAction.keyDown && event.keyCode >= KeyCode.A &&
-                event.keyCode <= KeyCode.Z && altPressed && noOtherModifiers && noAltGrKey)
+        if (altPressed && noOtherModifiers && noAltGrKey)
         {
-            hotkey = cast(dchar)((event.keyCode - KeyCode.A) + 'a');
-        }
-        if (event.action == KeyAction.text && altPressed && noOtherModifiers && noAltGrKey)
-        {
-            hotkey = event.text[0];
+            if (event.action == KeyAction.keyDown && KeyCode.A <= event.keyCode && event.keyCode <= KeyCode.Z)
+                hotkey = cast(dchar)((event.keyCode - KeyCode.A) + 'a');
+            else if (event.action == KeyAction.text)
+                hotkey = event.text[0];
         }
         if (hotkey)
         {
