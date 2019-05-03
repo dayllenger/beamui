@@ -854,12 +854,12 @@ final class SDLWindow : Window
         //do not handle Ctrl+Space as text https://github.com/buggins/dlangui/issues/160
         //but do hanlde RAlt https://github.com/buggins/dlangide/issues/129
         debug (keys)
-            Log.fd("processTextInput char: %s (%s), mods: %04x", ds, cast(int)ds[0], mods);
+            Log.fd("processTextInput char: %s (%s), mods: %s", ds, cast(int)ds[0], mods);
         if ((mods & KeyMods.alt) && (mods & KeyMods.control))
         {
             mods &= (~(KeyMods.lralt)) & (~(KeyMods.lrcontrol));
             debug (keys)
-                Log.fd("processTextInput removed Ctrl+Alt mods char: %s (%s), mods: %04x",
+                Log.fd("processTextInput removed Ctrl+Alt mods char: %s (%s), mods: %s",
                         ds, cast(int)ds[0], mods);
         }
 
@@ -937,7 +937,7 @@ final class SDLWindow : Window
         _keyMods = mods;
 
         debug (keys)
-            Log.fd("processKeyEvent %s, converted key: 0x%08x, converted mods: 0x%08x", action, key, mods);
+            Log.fd("converted, action: %s, key: %s, mods: %s", action, key, mods);
 
         if (action == KeyAction.keyDown || action == KeyAction.keyUp)
         {

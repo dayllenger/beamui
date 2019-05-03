@@ -762,41 +762,18 @@ final class X11Window : DWindow
     private ButtonDetails _mbutton;
     private ButtonDetails _rbutton;
 
-    // x11 gives flags from time prior event so if left button is pressed there is not Button1Mask
-    private ushort convertMouseFlags(uint x11Flags, MouseButton btn, bool pressed)
+    private MouseMods convertMouseMods(uint x11Flags, MouseButton btn, bool pressed)
     {
-        ushort res = 0;
-        if (btn == MouseButton.left)
-        {
-            if (pressed)
-                res |= MouseFlag.lbutton;
-            else
-                res &= ~MouseFlag.lbutton;
-        }
-        else if (x11Flags & Button1Mask)
-            res |= MouseFlag.lbutton;
-
-        if (btn == MouseButton.middle)
-        {
-            if (pressed)
-                res |= MouseFlag.mbutton;
-            else
-                res &= ~MouseFlag.mbutton;
-        }
-        else if (x11Flags & Button2Mask)
-            res |= MouseFlag.mbutton;
-
-        if (btn == MouseButton.right)
-        {
-            if (pressed)
-                res |= MouseFlag.rbutton;
-            else
-                res &= ~MouseFlag.rbutton;
-        }
-        else if (x11Flags & Button3Mask)
-            res |= MouseFlag.rbutton;
-
-        return res;
+        MouseMods mods = pressed ? toMouseMods(btn) : MouseMods.none;
+        // X11 gives flags from the time prior to event, so f.e. if the left button
+        // is pressed, there will be zero on `Button1Mask`
+        if (btn != MouseButton.left   && (x11Flags & Button1Mask) != 0)
+            mods |= MouseMods.left;
+        if (btn != MouseButton.middle && (x11Flags & Button2Mask) != 0)
+            mods |= MouseMods.middle;
+        if (btn != MouseButton.right  && (x11Flags & Button3Mask) != 0)
+            mods |= MouseMods.right;
+        return mods;
     }
 
     private MouseButton convertMouseButton(uint x11Button)
@@ -810,9 +787,9 @@ final class X11Window : DWindow
         return MouseButton.none;
     }
 
-    private ushort lastFlags;
+    private MouseMods lastPressed;
     private short lastx, lasty;
-    private uint _keyFlags;
+    private KeyMods _keyMods;
 
     private void processMouseEvent(MouseAction action, uint x11Button, uint x11Flags, int x, int y)
     {
@@ -821,35 +798,16 @@ final class X11Window : DWindow
         {
             // handle wheel
             short wheelDelta = cast(short)y;
-            if (_keyFlags & KeyFlag.shift)
-                lastFlags |= MouseFlag.shift;
-            else
-                lastFlags &= ~MouseFlag.shift;
-            if (_keyFlags & KeyFlag.control)
-                lastFlags |= MouseFlag.control;
-            else
-                lastFlags &= ~MouseFlag.control;
-            if (_keyFlags & KeyFlag.alt)
-                lastFlags |= MouseFlag.alt;
-            else
-                lastFlags &= ~MouseFlag.alt;
             if (wheelDelta)
-                event = new MouseEvent(action, MouseButton.none, lastFlags, lastx, lasty, wheelDelta);
+                event = new MouseEvent(action, MouseButton.none, lastPressed, _keyMods, lastx, lasty, wheelDelta);
         }
         else
         {
             MouseButton btn = convertMouseButton(x11Button);
-            lastFlags = convertMouseFlags(x11Flags, btn, action == MouseAction.buttonDown);
-
-            if (_keyFlags & KeyFlag.shift)
-                lastFlags |= MouseFlag.shift;
-            if (_keyFlags & KeyFlag.control)
-                lastFlags |= MouseFlag.control;
-            if (_keyFlags & KeyFlag.alt)
-                lastFlags |= MouseFlag.alt;
+            lastPressed = convertMouseMods(x11Flags, btn, action == MouseAction.buttonDown);
             lastx = cast(short)x;
             lasty = cast(short)y;
-            event = new MouseEvent(action, btn, lastFlags, lastx, lasty);
+            event = new MouseEvent(action, btn, lastPressed, _keyMods, lastx, lasty);
         }
         if (event)
         {
@@ -864,11 +822,11 @@ final class X11Window : DWindow
             {
                 if (action == MouseAction.buttonDown)
                 {
-                    pbuttonDetails.down(cast(short)x, cast(short)y, lastFlags);
+                    pbuttonDetails.down(cast(short)x, cast(short)y, lastPressed, _keyMods);
                 }
                 else if (action == MouseAction.buttonUp)
                 {
-                    pbuttonDetails.up(cast(short)x, cast(short)y, lastFlags);
+                    pbuttonDetails.up(cast(short)x, cast(short)y, lastPressed, _keyMods);
                 }
             }
             event.lbutton = _lbutton;
@@ -885,11 +843,11 @@ final class X11Window : DWindow
         }
     }
 
-    private uint convertKeyCode(uint x11Key)
+    private Key convertKeyCode(uint x11Key)
     {
         import x11.keysymdef;
 
-        alias KeyCode = beamui.core.events.KeyCode;
+        alias KeyCode = beamui.core.events.Key;
         switch (x11Key)
         {
         case XK_0: return KeyCode.alpha0;
@@ -1009,20 +967,20 @@ final class X11Window : DWindow
         case XK_KP_Divide:
             return KeyCode.divide;
         default:
-            return 0x10000 | x11Key;
+            return KeyCode.none;
         }
     }
 
-    private uint convertKeyFlags(uint x11Keymod)
+    private KeyMods convertKeyMods(uint x11Keymod)
     {
-        uint res;
+        KeyMods mods;
         if (x11Keymod & ControlMask)
-            res |= KeyFlag.control;
-        if (x11Keymod & ShiftMask)
-            res |= KeyFlag.shift;
+            mods |= KeyMods.control;
         if (x11Keymod & LockMask)
-            res |= KeyFlag.alt;
-        return res;
+            mods |= KeyMods.alt;
+        if (x11Keymod & ShiftMask)
+            mods |= KeyMods.shift;
+        return mods;
     }
 
     private bool processKeyEvent(KeyAction action, uint x11Key, uint x11Keymod)
@@ -1030,56 +988,53 @@ final class X11Window : DWindow
         debug (keys)
             Log.fd("processKeyEvent %s, X11 key: 0x%08x, X11 flags: 0x%08x", action, keyCode, flags);
 
-        uint keyCode = convertKeyCode(x11Key);
-        uint flags = convertKeyFlags(x11Keymod);
-
-        alias KeyCode = beamui.core.events.KeyCode;
+        const key = convertKeyCode(x11Key);
+        KeyMods mods = convertKeyMods(x11Keymod);
         if (action == KeyAction.keyDown)
         {
-            switch (keyCode)
+            switch (key)
             {
-            case KeyCode.alt:
-                flags |= KeyFlag.alt;
+            case Key.shift:
+                mods |= KeyMods.shift;
                 break;
-            case KeyCode.ralt:
-                flags |= KeyFlag.alt | KeyFlag.ralt;
+            case Key.control:
+                mods |= KeyMods.control;
                 break;
-            case KeyCode.lalt:
-                flags |= KeyFlag.alt | KeyFlag.lalt;
+            case Key.alt:
+                mods |= KeyMods.alt;
                 break;
-            case KeyCode.control:
-                flags |= KeyFlag.control;
+            case Key.lshift:
+                mods |= KeyMods.lshift;
                 break;
-            case KeyCode.rcontrol:
-                flags |= KeyFlag.control | KeyFlag.rcontrol;
+            case Key.lcontrol:
+                mods |= KeyMods.lcontrol;
                 break;
-            case KeyCode.lcontrol:
-                flags |= KeyFlag.control | KeyFlag.lcontrol;
+            case Key.lalt:
+                mods |= KeyMods.lalt;
                 break;
-            case KeyCode.shift:
-                flags |= KeyFlag.shift;
+            case Key.rshift:
+                mods |= KeyMods.rshift;
                 break;
-            case KeyCode.rshift:
-                flags |= KeyFlag.shift | KeyFlag.rshift;
+            case Key.rcontrol:
+                mods |= KeyMods.rcontrol;
                 break;
-            case KeyCode.lshift:
-                flags |= KeyFlag.shift | KeyFlag.lshift;
+            case Key.ralt:
+                mods |= KeyMods.ralt;
+                break;
+            case Key.lwin:
+            case Key.rwin:
+                mods |= KeyMods.meta;
                 break;
             default:
                 break;
             }
         }
-        _keyFlags = flags;
+        _keyMods = mods;
 
         debug (keys)
-            Log.fd("processKeyEvent %s, converted key: 0x%08x, converted flags: 0x%08x", action, keyCode, flags);
+            Log.fd("converted, action: %s, key: %s, mods: %s", action, key, mods);
 
-        bool res = dispatchKeyEvent(new KeyEvent(action, keyCode, flags));
-        //            if ((keyCode & 0x10000) && (keyCode & 0xF000) != 0xF000) {
-        //                dchar[1] text;
-        //                text[0] = keyCode & 0xFFFF;
-        //                res = dispatchKeyEvent(new KeyEvent(KeyAction.text, keyCode, flags, cast(dstring)text)) || res;
-        //            }
+        bool res = dispatchKeyEvent(new KeyEvent(action, key, mods));
         if (res)
         {
             debug (redraw)
@@ -1091,8 +1046,8 @@ final class X11Window : DWindow
 
     private bool processTextInput(dstring ds, uint x11Keymod)
     {
-        uint flags = convertKeyFlags(x11Keymod);
-        bool res = dispatchKeyEvent(new KeyEvent(KeyAction.text, 0, flags, ds));
+        KeyMods mods = convertKeyMods(x11Keymod);
+        bool res = dispatchKeyEvent(new KeyEvent(KeyAction.text, Key.none, mods, ds));
         if (res)
         {
             debug (keys)

@@ -776,29 +776,48 @@ final class Win32Window : Window
     private ButtonDetails _mbutton;
     private ButtonDetails _rbutton;
 
-    private void updateButtonsState(uint flags)
+    private void updateButtonsState(uint winFlags)
     {
-        if (!(flags & MK_LBUTTON) && _lbutton.isDown)
+        if (!(winFlags & MK_LBUTTON) && _lbutton.isDown)
             _lbutton.reset();
-        if (!(flags & MK_MBUTTON) && _mbutton.isDown)
+        if (!(winFlags & MK_MBUTTON) && _mbutton.isDown)
             _mbutton.reset();
-        if (!(flags & MK_RBUTTON) && _rbutton.isDown)
+        if (!(winFlags & MK_RBUTTON) && _rbutton.isDown)
             _rbutton.reset();
     }
 
-    private bool processMouseEvent(uint message, uint flags, short x, short y)
+    private MouseMods convertMouseMods(uint winFlags)
+    {
+        MouseMods mods;
+        if (winFlags & MK_LBUTTON)
+            mods |= MouseMods.left;
+        if (winFlags & MK_RBUTTON)
+            mods |= MouseMods.right;
+        if (winFlags & MK_MBUTTON)
+            mods |= MouseMods.middle;
+        if (winFlags & MK_XBUTTON1)
+            mods |= MouseMods.xbutton1;
+        if (winFlags & MK_XBUTTON2)
+            mods |= MouseMods.xbutton2;
+        return mods;
+    }
+
+    private KeyMods _keyMods;
+
+    private bool processMouseEvent(uint winMessage, uint winFlags, short x, short y)
     {
         debug (mouse)
-            Log.d("Win32 Mouse Message ", message, " flags=", flags, " x=", x, " y=", y);
-        MouseButton button = MouseButton.none;
+            Log.d("Win32 Mouse Message ", winMessage, ", flags: ", winFlags, ", x: ", x, ", y: ", y);
+
         MouseAction action = MouseAction.buttonDown;
-        ButtonDetails* pbuttonDetails = null;
-        short wheelDelta = 0;
-        switch (message)
+        MouseButton button;
+        ButtonDetails* pbuttonDetails;
+        short wheelDelta;
+        switch (winMessage)
         {
         case WM_MOUSEMOVE:
             action = MouseAction.move;
-            updateButtonsState(flags);
+            updateButtonsState(winFlags);
             break;
         case WM_LBUTTONDOWN:
             action = MouseAction.buttonDown;
@@ -839,32 +858,35 @@ final class Win32Window : Window
             action = MouseAction.leave;
             break;
         case WM_MOUSEWHEEL:
-            {
-                action = MouseAction.wheel;
-                wheelDelta = (cast(short)(flags >> 16)) / 120;
-                POINT pt;
-                pt.x = x;
-                pt.y = y;
-                ScreenToClient(_hwnd, &pt);
-                x = cast(short)pt.x;
-                y = cast(short)pt.y;
-            }
+            action = MouseAction.wheel;
+            wheelDelta = (cast(short)(winFlags >> 16)) / 120;
+            POINT pt;
+            pt.x = x;
+            pt.y = y;
+            ScreenToClient(_hwnd, &pt);
+            x = cast(short)pt.x;
+            y = cast(short)pt.y;
             break;
         default: // unsupported event
             return false;
         }
+
+        const mmods = convertMouseMods(winFlags);
+
         if (action == MouseAction.buttonDown)
         {
-            pbuttonDetails.down(x, y, cast(ushort)flags);
+            pbuttonDetails.down(x, y, mmods, _keyMods);
         }
         else if (action == MouseAction.buttonUp)
         {
-            pbuttonDetails.up(x, y, cast(ushort)flags);
+            pbuttonDetails.up(x, y, mmods, _keyMods);
         }
-        auto event = new MouseEvent(action, button, cast(ushort)flags, x, y, wheelDelta);
+
+        auto event = new MouseEvent(action, button, mmods, _keyMods, x, y, wheelDelta);
         event.lbutton = _lbutton;
         event.rbutton = _rbutton;
         event.mbutton = _mbutton;
+
         bool res = dispatchMouseEvent(event);
         if (res)
         {
@@ -875,142 +897,142 @@ final class Win32Window : Window
         return res;
     }
 
-    private uint _keyFlags;
-
-    private void updateKeyFlags(KeyAction action, KeyFlag flag, uint preserveFlag)
+    private void updateKeyMods(KeyAction action, KeyMods mod, KeyMods preserve)
     {
         if (action == KeyAction.keyDown)
-            _keyFlags |= flag;
+            _keyMods |= mod;
         else
         {
-            if (preserveFlag && (_keyFlags & preserveFlag) == preserveFlag)
-            {
-                // e.g. when both lctrl and rctrl are pressed, and lctrl is up, preserve rctrl flag
-                _keyFlags = (_keyFlags & ~flag) | preserveFlag;
-            }
+            if (preserve && (_keyMods & preserve) == preserve)
+                // e.g. when both lctrl and rctrl are pressed, and lctrl is up, preserve rctrl mod
+                _keyMods = (_keyMods & ~mod) | preserve;
             else
-            {
-                _keyFlags &= ~flag;
-            }
+                _keyMods &= ~mod;
         }
     }
 
-    private bool processKeyEvent(KeyAction action, uint keyCode, int repeatCount, dchar character = 0, bool syskey = false)
+    private bool processKeyEvent(KeyAction action, uint winKeyCode, int repeatCount, bool syskey = false)
     {
         debug (keys)
-            Log.fd("processKeyEvent %s, keyCode: %s, char: %s (%s), syskey: %s, _keyFlags: %04x",
-                action, keyCode, character, cast(int)character, syskey, _keyFlags);
-        KeyEvent event;
+            Log.fd("processKeyEvent %s, keyCode: %s, syskey: %s, mods: %s",
+                action, winKeyCode, syskey, _keyMods);
+
+        Key key = cast(Key)winKeyCode;
+        if (winKeyCode == 0xBF)
+            key = Key.divide;
+
         if (syskey)
-            _keyFlags |= KeyFlag.alt;
-        //else
-        //    _keyFlags &= ~KeyFlag.alt;
-        uint oldFlags = _keyFlags;
-        if (action == KeyAction.keyDown || action == KeyAction.keyUp)
-        {
-            switch (keyCode)
-            {
-            case KeyCode.lshift:
-                updateKeyFlags(action, KeyFlag.lshift, KeyFlag.rshift);
-                break;
-            case KeyCode.rshift:
-                updateKeyFlags(action, KeyFlag.rshift, KeyFlag.lshift);
-                break;
-            case KeyCode.lcontrol:
-                updateKeyFlags(action, KeyFlag.lcontrol, KeyFlag.rcontrol);
-                break;
-            case KeyCode.rcontrol:
-                updateKeyFlags(action, KeyFlag.rcontrol, KeyFlag.lcontrol);
-                break;
-            case KeyCode.lalt:
-                updateKeyFlags(action, KeyFlag.lalt, KeyFlag.ralt);
-                break;
-            case KeyCode.ralt:
-                updateKeyFlags(action, KeyFlag.ralt, KeyFlag.lalt);
-                break;
-            case KeyCode.lwin:
-                updateKeyFlags(action, KeyFlag.lmenu, KeyFlag.rmenu);
-                break;
-            case KeyCode.rwin:
-                updateKeyFlags(action, KeyFlag.rmenu, KeyFlag.lmenu);
-                break;
-                //case KeyCode.WIN:
-            case KeyCode.control:
-            case KeyCode.shift:
-            case KeyCode.alt: //case KeyCode.WIN:
-                break;
-            default:
-                updateKeyFlags((GetKeyState(VK_LCONTROL) & 0x8000) != 0 ? KeyAction.keyDown
-                        : KeyAction.keyUp, KeyFlag.lcontrol, KeyFlag.rcontrol);
-                updateKeyFlags((GetKeyState(VK_RCONTROL) & 0x8000) != 0 ? KeyAction.keyDown
-                        : KeyAction.keyUp, KeyFlag.rcontrol, KeyFlag.lcontrol);
-                updateKeyFlags((GetKeyState(VK_LSHIFT) & 0x8000) != 0 ? KeyAction.keyDown
-                        : KeyAction.keyUp, KeyFlag.lshift, KeyFlag.rshift);
-                updateKeyFlags((GetKeyState(VK_RSHIFT) & 0x8000) != 0 ? KeyAction.keyDown
-                        : KeyAction.keyUp, KeyFlag.rshift, KeyFlag.lshift);
-                updateKeyFlags((GetKeyState(VK_LWIN) & 0x8000) != 0 ? KeyAction.keyDown
-                        : KeyAction.keyUp, KeyFlag.lmenu, KeyFlag.rmenu);
-                updateKeyFlags((GetKeyState(VK_RWIN) & 0x8000) != 0 ? KeyAction.keyDown
-                        : KeyAction.keyUp, KeyFlag.rmenu, KeyFlag.lmenu);
-                updateKeyFlags((GetKeyState(VK_LMENU) & 0x8000) != 0 ? KeyAction.keyDown
-                        : KeyAction.keyUp, KeyFlag.lalt, KeyFlag.ralt);
-                updateKeyFlags((GetKeyState(VK_RMENU) & 0x8000) != 0 ? KeyAction.keyDown
-                        : KeyAction.keyUp, KeyFlag.ralt, KeyFlag.lalt);
-                //updateKeyFlags((GetKeyState(VK_LALT) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyFlag.lalt, KeyFlag.ralt);
-                //updateKeyFlags((GetKeyState(VK_RALT) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyFlag.ralt, KeyFlag.lalt);
-                break;
-            }
-            //updateKeyFlags((GetKeyState(VK_CONTROL) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyFlag.control);
-            //updateKeyFlags((GetKeyState(VK_SHIFT) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyFlag.shift);
-            //updateKeyFlags((GetKeyState(VK_MENU) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyFlag.alt);
-            if (keyCode == 0xBF)
-                keyCode = KeyCode.divide;
+            _keyMods |= KeyMods.alt;
 
-            debug (keys)
-            {
-                if (oldFlags != _keyFlags)
-                {
-                    Log.fd("processKeyEvent %s, flags updated: keyCode: %s, char: %s (%s), syskey: %s, _keyFlags: %04x",
-                        action, keyCode, character, cast(int)character, syskey, _keyFlags);
-                }
-            }
+        switch (key)
+        {
+        case Key.lshift:
+            updateKeyMods(action, KeyMods.lshift, KeyMods.rshift);
+            break;
+        case Key.rshift:
+            updateKeyMods(action, KeyMods.rshift, KeyMods.lshift);
+            break;
+        case Key.lcontrol:
+            updateKeyMods(action, KeyMods.lcontrol, KeyMods.rcontrol);
+            break;
+        case Key.rcontrol:
+            updateKeyMods(action, KeyMods.rcontrol, KeyMods.lcontrol);
+            break;
+        case Key.lalt:
+            updateKeyMods(action, KeyMods.lalt, KeyMods.ralt);
+            break;
+        case Key.ralt:
+            updateKeyMods(action, KeyMods.ralt, KeyMods.lalt);
+            break;
+        case Key.lwin:
+            updateKeyMods(action, KeyMods.lmeta, KeyMods.rmeta);
+            break;
+        case Key.rwin:
+            updateKeyMods(action, KeyMods.rmeta, KeyMods.lmeta);
+            break;
+        case Key.control:
+        case Key.shift:
+        case Key.alt:
+            break;
+        default:
+            updateKeyMods((GetKeyState(VK_LCONTROL) & 0x8000) != 0 ? KeyAction.keyDown
+                    : KeyAction.keyUp, KeyMods.lcontrol, KeyMods.rcontrol);
+            updateKeyMods((GetKeyState(VK_RCONTROL) & 0x8000) != 0 ? KeyAction.keyDown
+                    : KeyAction.keyUp, KeyMods.rcontrol, KeyMods.lcontrol);
+            updateKeyMods((GetKeyState(VK_LSHIFT) & 0x8000) != 0 ? KeyAction.keyDown
+                    : KeyAction.keyUp, KeyMods.lshift, KeyMods.rshift);
+            updateKeyMods((GetKeyState(VK_RSHIFT) & 0x8000) != 0 ? KeyAction.keyDown
+                    : KeyAction.keyUp, KeyMods.rshift, KeyMods.lshift);
+            updateKeyMods((GetKeyState(VK_LWIN) & 0x8000) != 0 ? KeyAction.keyDown
+                    : KeyAction.keyUp, KeyMods.lmeta, KeyMods.rmeta);
+            updateKeyMods((GetKeyState(VK_RWIN) & 0x8000) != 0 ? KeyAction.keyDown
+                    : KeyAction.keyUp, KeyMods.rmeta, KeyMods.lmeta);
+            updateKeyMods((GetKeyState(VK_LMENU) & 0x8000) != 0 ? KeyAction.keyDown
+                    : KeyAction.keyUp, KeyMods.lalt, KeyMods.ralt);
+            updateKeyMods((GetKeyState(VK_RMENU) & 0x8000) != 0 ? KeyAction.keyDown
+                    : KeyAction.keyUp, KeyMods.ralt, KeyMods.lalt);
+            //updateKeyMods((GetKeyState(VK_LALT) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.lalt, KeyMods.ralt);
+            //updateKeyMods((GetKeyState(VK_RALT) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.ralt, KeyMods.lalt);
+            break;
+        }
+        //updateKeyMods((GetKeyState(VK_CONTROL) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.control);
+        //updateKeyMods((GetKeyState(VK_SHIFT) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.shift);
+        //updateKeyMods((GetKeyState(VK_MENU) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.alt);
 
-            event = new KeyEvent(action, keyCode, _keyFlags);
-        }
-        else if (action == KeyAction.text && character != 0)
-        {
-            bool ctrlAZKeyCode = (character >= 1 && character <= 26);
-            if ((_keyFlags & (KeyFlag.control | KeyFlag.alt)) && ctrlAZKeyCode)
-            {
-                event = new KeyEvent(action, KeyCode.A + character - 1, _keyFlags);
-            }
-            else
-            {
-                dchar[] text;
-                text ~= character;
-                uint newFlags = _keyFlags;
-                if ((newFlags & KeyFlag.alt) && (newFlags & KeyFlag.control))
-                {
-                    newFlags &= (~(KeyFlag.lralt)) & (~(KeyFlag.lrcontrol));
-                    debug (keys)
-                        Log.fd("processKeyEvent, flags updated for text: keyCode: %s, char: %s (%s), syskey: %s, _keyFlags: %04x",
-                            keyCode, character, cast(int)character, syskey, _keyFlags);
-                }
-                event = new KeyEvent(action, 0, newFlags, cast(dstring)text);
-            }
-        }
-        bool res;
-        if (event !is null)
-        {
-            res = dispatchKeyEvent(event);
-        }
-        if (res)
+        debug (keys)
+            Log.fd("converted, action: %s, key: %s, syskey: %s, mods: %s",
+                action, key, syskey, _keyMods);
+
+        const result = dispatchKeyEvent(new KeyEvent(action, key, _keyMods));
+        if (result)
         {
             debug (redraw)
                 Log.d("Calling update() after key event");
             update();
         }
-        return res;
+        return result;
+    }
+
+    private bool processTextInput(dchar ch, int repeatCount)
+    {
+        if (ch == 0)
+            return false;
+
+        debug (keys)
+            Log.fd("processTextInput char: %s (%s)", ch, cast(int)ch);
+
+        KeyEvent event;
+        const bool ctrlAZKeyCode = 1 <= ch && ch <= 26;
+        if (ctrlAZKeyCode && (_keyMods & (KeyMods.control | KeyMods.alt)) != 0)
+        {
+            event = new KeyEvent(KeyAction.text, cast(Key)(Key.A + ch - 1), _keyMods);
+        }
+        else
+        {
+            dchar[] text;
+            text ~= ch;
+            KeyMods mods = _keyMods;
+            if ((mods & KeyMods.alt) && (mods & KeyMods.control))
+            {
+                mods &= (~(KeyMods.lralt)) & (~(KeyMods.lrcontrol));
+                debug (keys)
+                    Log.fd("processKeyEvent, removed Ctrl+Alt mods, char: %s (%s), mods: %s",
+                        ch, cast(int)ch, mods);
+            }
+            if (mods & KeyMods.control || (mods & KeyMods.lalt) == KeyMods.lalt || mods & KeyMods.meta)
+                return true;
+
+            event = new KeyEvent(KeyAction.text, Key.none, mods, cast(dstring)text);
+        }
+
+        const result = dispatchKeyEvent(event);
+        if (result)
+        {
+            debug (redraw)
+                Log.d("Calling update() after text event");
+            update();
+        }
+        return result;
     }
 
     //===============================================================
@@ -1357,9 +1379,13 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 break;
             }
 
-            if (window.processKeyEvent(message == WM_KEYDOWN || message == WM_SYSKEYDOWN ? KeyAction.keyDown
-                    : KeyAction.keyUp, cast(uint)new_vk, repeatCount, 0, message == WM_SYSKEYUP ||
-                    message == WM_SYSKEYDOWN))
+            KeyAction action;
+            if (message == WM_KEYDOWN || message == WM_SYSKEYDOWN)
+                action = KeyAction.keyDown;
+            else
+                action = KeyAction.keyUp;
+            if (window.processKeyEvent(action, cast(uint)new_vk, repeatCount,
+                    message == WM_SYSKEYUP || message == WM_SYSKEYDOWN))
                 return 0; // processed
         }
         break;
@@ -1370,7 +1396,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(uint)wParam;
             debug (keys)
                 Log.d("WM_UNICHAR ", ch, " (", cast(int)ch, ")");
-            if (window.processKeyEvent(KeyAction.text, cast(uint)wParam, repeatCount, ch))
+            if (window.processTextInput(ch, repeatCount))
                 return 1; // processed
             return 1;
         }
@@ -1382,7 +1408,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(uint)wParam;
             debug (keys)
                 Log.d("WM_CHAR ", ch, " (", cast(int)ch, ")");
-            if (window.processKeyEvent(KeyAction.text, cast(uint)wParam, repeatCount, ch))
+            if (window.processTextInput(ch, repeatCount))
                 return 1; // processed
             return 1;
         }
