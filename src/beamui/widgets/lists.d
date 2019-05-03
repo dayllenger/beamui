@@ -995,7 +995,8 @@ class ListWidget : WidgetGroup
                     {
                         Widget oldParent = itemWidget.parent;
                         itemWidget.parent = this;
-                        if (event.action == MouseAction.move && !event.hasModifiers && itemWidget.hasTooltip)
+                        if (event.action == MouseAction.move && event.noKeyMods && event.noMouseMods &&
+                            itemWidget.hasTooltip)
                         {
                             itemWidget.scheduleTooltip(200);
                         }
@@ -1005,7 +1006,9 @@ class ListWidget : WidgetGroup
                 }
                 debug (lists)
                     Log.d("mouse event action=", event.action, " button=", event.button, " flags=", event.flags);
-                if ((event.flags & (MouseFlag.lbutton || MouseFlag.rbutton)) || _selectOnHover)
+                if (event.alteredByButton(MouseButton.left) ||
+                    event.alteredByButton(MouseButton.right) ||
+                    _selectOnHover)
                 {
                     if (_selectedItemIndex != i && itemEnabled(i))
                     {

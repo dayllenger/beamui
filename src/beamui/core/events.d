@@ -31,69 +31,39 @@ enum MouseAction : uint
     leave
 }
 
-/// Mouse flag bits (mouse buttons and keyboard modifiers) for `MouseEvent`
-enum MouseFlag : uint
-{
-    // mouse buttons
-    /// Left mouse button is down
-    lbutton = 0x0001,
-    /// Middle mouse button is down
-    mbutton = 0x0010,
-    /// Right mouse button is down
-    rbutton = 0x0002,
-    /// X1 mouse button is down
-    xbutton1 = 0x0020,
-    /// X2 mouse button is down
-    xbutton2 = 0x0040,
-
-    // keyboard modifiers
-    /// Ctrl key is down
-    control = 0x0008,
-    /// Shift key is down
-    shift = 0x0004,
-    /// Alt key is down
-    alt = 0x0080,
-
-    /// Mask for mouse button flags
-    buttonsMask = lbutton | mbutton | rbutton | xbutton1 | xbutton2,
-    /// Mask for keyboard flags
-    keyMask = control | shift | alt,
-}
-
 /// Mouse button codes for `MouseEvent`
 enum MouseButton : uint
 {
-    /// No button
-    none,
-    /// Left mouse button
-    left = MouseFlag.lbutton,
-    /// Right mouse button
-    right = MouseFlag.rbutton,
-    /// Right mouse button
-    middle = MouseFlag.mbutton,
-    /// Additional mouse button 1
-    xbutton1 = MouseFlag.xbutton1,
-    /// Additional mouse button 2
-    xbutton2 = MouseFlag.xbutton2,
+    none, /// No button
+    left, /// Left mouse button
+    right, /// Right mouse button
+    middle, /// Middle mouse button
+    xbutton1, /// Additional mouse button 1
+    xbutton2, /// Additional mouse button 2
 }
 
-/// Converts `MouseButton` to `MouseFlag`
-ushort mouseButtonToFlag(MouseButton btn)
+/// Represents pressed mouse buttons during `MouseEvent`
+enum MouseMods : uint
 {
-    switch (btn) with (MouseButton)
+    none = 0,  /// No button
+    left = 1,  /// Left mouse button
+    right = 2, /// Right mouse button
+    middle = 4, /// Middle mouse button
+    xbutton1 = 8, /// Additional mouse button 1
+    xbutton2 = 16, /// Additional mouse button 2
+}
+
+/// Convert `MouseButton` to `MouseMods`
+MouseMods toMouseMods(MouseButton btn)
+{
+    final switch (btn) with (MouseButton)
     {
-    case left:
-        return MouseFlag.lbutton;
-    case right:
-        return MouseFlag.rbutton;
-    case middle:
-        return MouseFlag.mbutton;
-    case xbutton1:
-        return MouseFlag.xbutton1;
-    case xbutton2:
-        return MouseFlag.xbutton2;
-    default:
-        return 0;
+        case none: return MouseMods.none;
+        case left: return MouseMods.left;
+        case right: return MouseMods.right;
+        case middle: return MouseMods.middle;
+        case xbutton1: return MouseMods.xbutton1;
+        case xbutton2: return MouseMods.xbutton2;
     }
 }
 
@@ -111,12 +81,10 @@ struct ButtonDetails
         long _downTs;
         /// `Clock.currStdTime` for up event of this button (0 if button is still down)
         long _upTs;
-        /// x coordinates of down event
         short _downX;
-        /// y coordinates of down event
         short _downY;
-        /// Mouse button flags when down event occured
-        ushort _downFlags;
+        MouseMods _mouseMods;
+        KeyMods _keyMods;
         /// True if button is made down shortly after up - valid if button is down
         bool _doubleClick;
         /// True if button is made down twice shortly after up - valid if button is down
@@ -151,26 +119,30 @@ struct ButtonDetails
         short downX() const { return _downX; }
         /// Y coordinate of the point where button was pressed down last time
         short downY() const { return _downY; }
-        /// Bit set of mouse flags saved on button down
-        ushort downFlags() const { return _downFlags; }
+        /// Bit set of mouse buttons saved on button down
+        MouseMods mouseMods() const { return _mouseMods; }
+        /// Bit set of key modifiers saved on button down
+        KeyMods keyMods() const { return _keyMods; }
     }
 
     void reset()
     {
         _downTs = _upTs = 0;
-        _downFlags = 0;
+        _mouseMods = MouseMods.none;
+        _keyMods = KeyMods.none;
         _downX = _downY = 0;
     }
 
     /// Update for button down
-    void down(short x, short y, ushort flags)
+    void down(short x, short y, MouseMods mouseMods, KeyMods keyMods)
     {
         static import std.datetime;
 
         long oldDownTs = _downTs;
         _downX = x;
         _downY = y;
-        _downFlags = flags;
+        _mouseMods = mouseMods;
+        _keyMods = keyMods;
         _upTs = 0;
         _downTs = std.datetime.Clock.currStdTime;
         long downIntervalMs = (_downTs - oldDownTs) / 10000;
@@ -180,7 +152,7 @@ struct ButtonDetails
         _prevDownTs = _doubleClick ? oldDownTs : 0;
     }
     /// Update for button up
-    void up(short x, short y, ushort flags)
+    void up(short x, short y, MouseMods mouseMods, KeyMods keyMods)
     {
         static import std.datetime;
 
@@ -197,41 +169,29 @@ final class MouseEvent
 {
     private
     {
-        /// Timestamp of event
-        long _eventTimestamp;
-        /// Mouse action code
         MouseAction _action;
-        /// Mouse button code for `buttonDown`/`buttonUp`
         MouseButton _button;
-        /// x coordinate of pointer
         short _x;
-        /// y coordinate of pointer
         short _y;
-        /// Flags bit set - usually from `MouseFlag` enum
-        ushort _flags;
-        /// Wheel delta
+        MouseMods _mouseMods;
+        KeyMods _keyMods;
         short _wheelDelta;
         /// Widget which currently tracks mouse events
         WeakRef!Widget _trackingWidget;
-        /// Left button state details
         ButtonDetails _lbutton;
-        /// Middle button state details
         ButtonDetails _mbutton;
-        /// Right button state details
         ButtonDetails _rbutton;
         /// When true, no tracking of mouse on `buttonDown` is necessary
         bool _doNotTrackButtonDown;
     }
 
     /// Construct mouse event from data
-    this(MouseAction a, MouseButton b, ushort f, short x, short y, short wheelDelta = 0)
+    this(MouseAction a, MouseButton b, MouseMods mouseMods, KeyMods keyMods, short x, short y, short wheelDelta = 0)
     {
-        static import std.datetime;
-
-        _eventTimestamp = std.datetime.Clock.currStdTime;
         _action = a;
         _button = b;
-        _flags = f;
+        _mouseMods = mouseMods;
+        _keyMods = keyMods & KeyMods.common;
         _x = x;
         _y = y;
         _wheelDelta = wheelDelta;
@@ -239,10 +199,10 @@ final class MouseEvent
     /// Copy constructor
     this(MouseEvent e)
     {
-        _eventTimestamp = e._eventTimestamp;
         _action = e._action;
         _button = e._button;
-        _flags = e._flags;
+        _mouseMods = e._mouseMods;
+        _keyMods = e._keyMods;
         _x = e._x;
         _y = e._y;
         _lbutton = e._lbutton;
@@ -253,6 +213,15 @@ final class MouseEvent
 
     @property
     {
+        /// Action - `buttonDown`, `move`, etc.
+        MouseAction action() const { return _action; }
+        /// Button which caused `buttonDown` or `buttonUp` action
+        MouseButton button() const { return _button; }
+        /// Mouse buttons, pressed during this event
+        MouseMods mouseMods() const { return _mouseMods; }
+        /// Keyboard modifiers (only common, i.e. not distinguishing left and right)
+        KeyMods keyMods() const { return _keyMods; }
+
         /// Left button state details
         ref inout(ButtonDetails) lbutton() inout { return _lbutton; }
         /// Right button state details
@@ -268,44 +237,17 @@ final class MouseEvent
                 return _mbutton;
             return _lbutton;
         }
-        /// Button which caused `buttonDown` or `buttonUp` action
-        MouseButton button() const { return _button; }
-        /// Action
-        MouseAction action() const { return _action; }
-        /// Returns flags (buttons and keys state)
-        ushort flags() const { return _flags; }
-        /// Returns mouse button flags only
-        ushort buttonFlags() const
-        {
-            return _flags & MouseFlag.buttonsMask;
-        }
-        /// Returns keyboard modifier flags only
-        ushort keyFlags() const
-        {
-            return _flags & MouseFlag.keyMask;
-        }
+
         /// Returns delta for `wheel` event
         short wheelDelta() const { return _wheelDelta; }
         /// x coordinate of mouse pointer (relative to window client area)
         short x() const { return _x; }
         /// y coordinate of mouse pointer (relative to window client area)
         short y() const { return _y; }
-
         /// Returns point for mouse cursor position
         Point pos() const
         {
             return Point(_x, _y);
-        }
-
-        /// Returns true if no modifier flags are set
-        bool noModifiers() const
-        {
-            return (_flags & (MouseFlag.control | MouseFlag.alt | MouseFlag.shift)) == 0;
-        }
-        /// Returns true if any modifier flag is set
-        bool hasModifiers() const
-        {
-            return !noModifiers;
         }
 
         /// Returns true for `buttonDown` event when button is pressed second time in short interval after pressing first time
@@ -315,13 +257,23 @@ final class MouseEvent
                 return false;
             return buttonDetails.doubleClick;
         }
-
         /// Returns true for `buttonDown` event when button is pressed third time in short interval after pressing first time
         bool tripleClick() const
         {
             if (_action != MouseAction.buttonDown)
                 return false;
             return buttonDetails.tripleClick;
+        }
+
+        /// True if has no mouse buttons pressed during the event
+        bool noMouseMods() const
+        {
+            return _mouseMods == MouseMods.none;
+        }
+        /// True if has no keyboard modifiers pressed
+        bool noKeyMods() const
+        {
+            return _keyMods == KeyMods.none;
         }
 
         /// Get event tracking widget to override
@@ -333,6 +285,17 @@ final class MouseEvent
         {
             _doNotTrackButtonDown = flag;
         }
+    }
+
+    /// Check whether the mouse button is pressed during this event
+    bool alteredByButton(MouseButton btn) const
+    {
+        return (_mouseMods & toMouseMods(btn)) != MouseMods.none;
+    }
+    /// Check whether all of `mod` keyboard modifiers are applied during this event
+    bool alteredBy(KeyMods mod) const
+    {
+        return (_keyMods & mod) == mod;
     }
 
     /// Override action code (for usage from platform code)
@@ -348,7 +311,7 @@ final class MouseEvent
 
     override string toString() const
     {
-        return format("MouseEvent(%s, %s, %04x, (%s, %s))", _action, cast(MouseButton)_button, _flags, _x, _y);
+        return format("MouseEvent(%s, %s, %s, %s, (%s, %s))", _action, _button, _mouseMods, _keyMods, _x, _y);
     }
 }
 
@@ -562,10 +525,10 @@ final class KeyEvent
         {
             return _mods & KeyMods.common;
         }
-        /// True if has some modifiers applied
-        bool hasModifiers() const
+        /// True if has no modifiers applied
+        bool noModifiers() const
         {
-            return _mods != KeyMods.none;
+            return _mods == KeyMods.none;
         }
     }
 
@@ -577,7 +540,7 @@ final class KeyEvent
 
     override string toString() const
     {
-        return format("KeyEvent(%s, %s, %04x, %s)", _action, _key, _mods, _text);
+        return format("KeyEvent(%s, %s, %s, %s)", _action, _key, _mods, _text);
     }
 }
 

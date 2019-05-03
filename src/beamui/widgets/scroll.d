@@ -162,7 +162,7 @@ class ScrollAreaBase : WidgetGroup
     {
         if (event.action == MouseAction.wheel)
         {
-            if (event.flags == MouseFlag.shift)
+            if (event.keyMods == KeyMods.shift)
             {
                 if (_hscrollbar)
                 {
@@ -170,7 +170,7 @@ class ScrollAreaBase : WidgetGroup
                     return true; // TODO: return false when nothing to scroll
                 }
             }
-            else if (event.flags == 0)
+            else if (event.noKeyMods)
             {
                 if (_vscrollbar)
                 {

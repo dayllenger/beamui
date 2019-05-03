@@ -707,7 +707,7 @@ class Menu : ListWidget
     override bool onKeyEvent(KeyEvent event)
     {
         navigatingUsingKeys = true;
-        if (event.action == KeyAction.keyDown && event.key == Key.escape && !event.hasModifiers)
+        if (event.action == KeyAction.keyDown && event.key == Key.escape && event.noModifiers)
         {
             close();
             return true;
@@ -783,7 +783,7 @@ class Menu : ListWidget
                     return true;
                 }
             }
-            else if (event.action == KeyAction.text && !event.hasModifiers)
+            else if (event.action == KeyAction.text && event.noModifiers)
             {
                 dchar ch = event.text[0];
                 int index = cast(int)findSubitemByHotkey(ch);

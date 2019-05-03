@@ -1258,7 +1258,7 @@ public:
             return false;
 
         FocusMovement direction = FocusMovement.none;
-        const bool noMods = !event.hasModifiers;
+        const bool noMods = event.noModifiers;
         const bool shift = event.alteredBy(KeyMods.shift);
         switch (event.key)
         {
@@ -1476,7 +1476,7 @@ public:
                 return true;
             }
         }
-        if (event.action == MouseAction.move && !event.hasModifiers && hasTooltip)
+        if (event.action == MouseAction.move && event.noKeyMods && event.noMouseMods && hasTooltip)
         {
             scheduleTooltip(200);
         }

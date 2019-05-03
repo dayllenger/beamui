@@ -217,7 +217,7 @@ class Dialog : Column
                 // Ctrl+Enter: default action
                 return closeWithDefaultAction();
             }
-            if (event.key == Key.escape && !event.hasModifiers)
+            if (event.key == Key.escape && event.noModifiers)
             {
                 // ESC: cancel/no action
                 return closeWithCancelAction();

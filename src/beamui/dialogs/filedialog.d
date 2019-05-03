@@ -516,7 +516,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
     {
         if (event.action == KeyAction.keyDown)
         {
-            if (event.key == Key.backspace && !event.hasModifiers)
+            if (event.key == Key.backspace && event.noModifiers)
             {
                 upLevel();
                 return true;

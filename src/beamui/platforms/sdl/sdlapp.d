@@ -613,16 +613,16 @@ final class SDLWindow : Window
     private ButtonDetails _mbutton;
     private ButtonDetails _rbutton;
 
-    private ushort convertMouseFlags(uint sdlFlags)
+    private MouseMods convertMouseMods(uint sdlFlags)
     {
-        ushort res = 0;
+        MouseMods mods;
         if (sdlFlags & SDL_BUTTON_LMASK)
-            res |= MouseFlag.lbutton;
+            mods |= MouseMods.left;
         if (sdlFlags & SDL_BUTTON_RMASK)
-            res |= MouseFlag.rbutton;
+            mods |= MouseMods.right;
         if (sdlFlags & SDL_BUTTON_MMASK)
-            res |= MouseFlag.mbutton;
-        return res;
+            mods |= MouseMods.middle;
+        return mods;
     }
 
     private MouseButton convertMouseButton(uint sdlButton)
@@ -636,7 +636,7 @@ final class SDLWindow : Window
         return MouseButton.none;
     }
 
-    private ushort lastFlags;
+    private MouseMods lastPressed;
     private short lastx, lasty;
     private KeyMods _keyMods;
 
@@ -647,34 +647,16 @@ final class SDLWindow : Window
         {
             // handle wheel
             short wheelDelta = cast(short)y;
-            if (_keyMods & KeyMods.shift)
-                lastFlags |= MouseFlag.shift;
-            else
-                lastFlags &= ~MouseFlag.shift;
-            if (_keyMods & KeyMods.control)
-                lastFlags |= MouseFlag.control;
-            else
-                lastFlags &= ~MouseFlag.control;
-            if (_keyMods & KeyMods.alt)
-                lastFlags |= MouseFlag.alt;
-            else
-                lastFlags &= ~MouseFlag.alt;
             if (wheelDelta)
-                event = new MouseEvent(action, MouseButton.none, lastFlags, lastx, lasty, wheelDelta);
+                event = new MouseEvent(action, MouseButton.none, lastPressed, _keyMods, lastx, lasty, wheelDelta);
         }
         else
         {
-            lastFlags = convertMouseFlags(sdlFlags);
-            if (_keyMods & KeyMods.shift)
-                lastFlags |= MouseFlag.shift;
-            if (_keyMods & KeyMods.control)
-                lastFlags |= MouseFlag.control;
-            if (_keyMods & KeyMods.alt)
-                lastFlags |= MouseFlag.alt;
+            lastPressed = convertMouseMods(sdlFlags);
             lastx = cast(short)x;
             lasty = cast(short)y;
             MouseButton btn = convertMouseButton(sdlButton);
-            event = new MouseEvent(action, btn, lastFlags, lastx, lasty);
+            event = new MouseEvent(action, btn, lastPressed, _keyMods, lastx, lasty);
         }
         if (event)
         {
@@ -689,11 +671,11 @@ final class SDLWindow : Window
             {
                 if (action == MouseAction.buttonDown)
                 {
-                    pbuttonDetails.down(cast(short)x, cast(short)y, lastFlags);
+                    pbuttonDetails.down(cast(short)x, cast(short)y, lastPressed, _keyMods);
                 }
                 else if (action == MouseAction.buttonUp)
                 {
-                    pbuttonDetails.up(cast(short)x, cast(short)y, lastFlags);
+                    pbuttonDetails.up(cast(short)x, cast(short)y, lastPressed, _keyMods);
                 }
             }
             event.lbutton = _lbutton;

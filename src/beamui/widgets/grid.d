@@ -1723,9 +1723,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 {
                     activateCell(c, r);
                 }
-                else if (_multiSelect && (event.flags & (MouseFlag.shift | MouseFlag.control)) != 0)
+                else if (_multiSelect && event.alteredBy(KeyMods.control))
                 {
-                    multiSelectCell(c, r, (event.flags & MouseFlag.shift) != 0);
+                    multiSelectCell(c, r, event.alteredBy(KeyMods.shift));
                 }
                 else
                 {
@@ -1741,7 +1741,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 headerCellClicked(c, r);
             }
         }
-        if (event.action == MouseAction.move && (event.flags & MouseFlag.lbutton))
+        if (event.action == MouseAction.move && event.alteredByButton(MouseButton.left))
         {
             // TODO: selection
             if (cellFound && normalCell)
@@ -1759,7 +1759,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
         if (event.action == MouseAction.wheel)
         {
-            if (event.flags & MouseFlag.shift)
+            if (event.alteredBy(KeyMods.shift))
                 scrollBy(-cast(int)event.wheelDelta, 0);
             else
                 scrollBy(0, -cast(int)event.wheelDelta);

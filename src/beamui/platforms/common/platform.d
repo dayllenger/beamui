@@ -1324,7 +1324,7 @@ class Window : CustomEventTarget
             Log.fd("dispatchMouseEvent %s (%s, %s)", event.action, event.x, event.y);
 
         bool res;
-        const ushort currentButtons = event.flags & (MouseFlag.lbutton | MouseFlag.rbutton | MouseFlag.mbutton);
+        const currentButtons = event.mouseMods;
         if (_mouseCaptureWidget)
         {
             // try to forward message directly to active widget
@@ -1379,7 +1379,7 @@ class Window : CustomEventTarget
                     // sending FocusOut message
                     event.changeAction(MouseAction.focusOut);
                     _mouseCaptureFocusedOut = true;
-                    _mouseCaptureButtons = event.flags & (MouseFlag.lbutton | MouseFlag.rbutton | MouseFlag.mbutton);
+                    _mouseCaptureButtons = event.mouseMods;
                     return sendAndCheckOverride(_mouseCaptureWidget, event);
                 }
                 else
@@ -1404,9 +1404,9 @@ class Window : CustomEventTarget
             }
             // other messages
             res = sendAndCheckOverride(_mouseCaptureWidget, event);
-            if (!currentButtons)
+            if (currentButtons == MouseMods.none)
             {
-                // usable capturing - no more buttons pressed
+                // disable capturing - no more buttons pressed
                 debug (mouse)
                     Log.d("unsetting active widget");
                 clearMouseCapture();
@@ -1535,7 +1535,7 @@ class Window : CustomEventTarget
 
     /// Widget which tracks all events after processed `buttonDown`
     private WeakRef!Widget _mouseCaptureWidget;
-    private ushort _mouseCaptureButtons;
+    private MouseMods _mouseCaptureButtons;
     private bool _mouseCaptureFocusedOut;
     /// Does current capture widget want to receive move events even if pointer left it
     private bool _mouseCaptureFocusedOutTrackMovements;
@@ -1543,7 +1543,7 @@ class Window : CustomEventTarget
     protected void setCaptureWidget(WeakRef!Widget w, MouseEvent event)
     {
         _mouseCaptureWidget = w;
-        _mouseCaptureButtons = event.flags & (MouseFlag.lbutton | MouseFlag.rbutton | MouseFlag.mbutton);
+        _mouseCaptureButtons = event.mouseMods;
         captureMouse(true);
     }
 
@@ -1552,7 +1552,7 @@ class Window : CustomEventTarget
         _mouseCaptureWidget.nullify();
         _mouseCaptureFocusedOut = false;
         _mouseCaptureFocusedOutTrackMovements = false;
-        _mouseCaptureButtons = 0;
+        _mouseCaptureButtons = MouseMods.none;
         captureMouse(false);
     }
 

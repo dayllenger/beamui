@@ -1903,22 +1903,22 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             }
             else
             {
-                const bool doSelect = (event.keyFlags & MouseFlag.shift) != 0;
+                const bool doSelect = event.alteredBy(KeyMods.shift);
                 updateCaretPositionByMouse(event.x - clientBox.x, event.y - clientBox.y, doSelect);
 
-                if (event.keyFlags == MouseFlag.control)
+                if (event.keyMods == KeyMods.control)
                     onControlClick();
             }
             startCaretBlinking();
             invalidate();
             return true;
         }
-        if (event.action == MouseAction.move && (event.flags & MouseButton.left) != 0)
+        if (event.action == MouseAction.move && event.alteredByButton(MouseButton.left))
         {
             updateCaretPositionByMouse(event.x - clientBox.x, event.y - clientBox.y, true);
             return true;
         }
-        if (event.action == MouseAction.move && event.flags == 0)
+        if (event.action == MouseAction.move && event.noMouseMods)
         {
             // hover
             if (focused && !insideLeftPane)
@@ -2095,7 +2095,7 @@ class EditLine : EditWidgetBase
     {
         if (enterKeyPressed.assigned)
         {
-            if (event.key == Key.enter && !event.hasModifiers)
+            if (event.key == Key.enter && event.noModifiers)
             {
                 if (event.action == KeyAction.keyDown)
                 {
@@ -2492,15 +2492,15 @@ class EditBox : EditWidgetBase
         if (event.action == MouseAction.wheel)
         {
             cancelHoverTimer();
-            const uint keyFlags = event.flags & (MouseFlag.shift | MouseFlag.control | MouseFlag.alt);
+            const mods = event.keyMods;
             if (event.wheelDelta < 0)
             {
-                if (keyFlags == MouseFlag.shift)
+                if (mods == KeyMods.shift)
                 {
                     scroll(EditorScrollAction.right);
                     return true;
                 }
-                if (keyFlags == MouseFlag.control)
+                if (mods == KeyMods.control)
                 {
                     zoom(false);
                     return true;
@@ -2510,12 +2510,12 @@ class EditBox : EditWidgetBase
             }
             else if (event.wheelDelta > 0)
             {
-                if (keyFlags == MouseFlag.shift)
+                if (mods == KeyMods.shift)
                 {
                     scroll(EditorScrollAction.left);
                     return true;
                 }
-                if (keyFlags == MouseFlag.control)
+                if (mods == KeyMods.control)
                 {
                     zoom(true);
                     return true;

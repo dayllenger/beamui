@@ -1101,7 +1101,7 @@ class Resizer : Widget
             return true;
         }
         if (event.action == MouseAction.buttonUp && event.button == MouseButton.left ||
-                !event.lbutton.isDown && _dragging)
+            !event.alteredByButton(MouseButton.left) && _dragging)
         {
             resetState(State.pressed);
             if (_dragging)
