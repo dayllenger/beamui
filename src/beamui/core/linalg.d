@@ -61,11 +61,6 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
         vec = v[0 .. N];
     }
 
-    this(const Vector v)
-    {
-        vec = v.vec;
-    }
-
     static if (N == 4)
     {
         this(Vector!(T, 3) v)
@@ -270,10 +265,6 @@ struct Mat2x3
     this(const float[] array)
     {
         store = array[0 .. 6];
-    }
-    this(ref const Mat2x3 matrix)
-    {
-        store = matrix.store;
     }
 
     /// Identity matrix
@@ -482,11 +473,6 @@ struct mat4
     this(float v)
     {
         setDiagonal(v);
-    }
-
-    this(const ref mat4 v)
-    {
-        m[] = v.m[];
     }
 
     this(const float[16] v)
