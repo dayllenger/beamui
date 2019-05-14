@@ -56,7 +56,7 @@ class WindowFrame : Column
             bindSubItem(this, "caption");
             add(_title, _closeButton);
             _title.bindSubItem(this, "label");
-            _closeButton.style = "flat";
+            _closeButton.setAttribute("flat");
         }
         with (_bodyLayout) {
             bindSubItem(this, "body");

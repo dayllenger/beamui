@@ -84,9 +84,12 @@ Widget createControlsPanel()
         }
         Row r2 = new Row;
         with (r2) {
-            add(new Button("Button")).setFillWidth(true);
-            add(new Button("Button", "folder").addStyleClasses("folder"),
-                new Button(null, "dialog-cancel"));
+            auto btn1 = new Button("Button");
+            auto btn2 = new Button("Button", "folder");
+            auto btn3 = new Button(null, "dialog-cancel");
+            btn2.setAttribute("folder");
+            add(btn1).setFillWidth(true);
+            add(btn2, btn3);
         }
         add(gb);
         add(new ScrollBar(Orientation.horizontal), new Slider(Orientation.horizontal));

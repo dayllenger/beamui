@@ -602,7 +602,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         {
             auto btn = new Button(root.label, root.icon);
             btn.orientation = Orientation.vertical;
-            btn.style = "flat";
+            btn.setAttribute("flat");
             btn.allowsFocus = false;
             btn.tooltipText = root.path.toUTF32;
             adapter.add(btn);

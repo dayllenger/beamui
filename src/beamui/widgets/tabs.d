@@ -178,7 +178,16 @@ class TabControl : WidgetGroup
         void tabAlignment(Align a)
         {
             _tabAlignment = a;
-            style = a == Align.top ? "top" : "bottom";
+            if (a == Align.top)
+            {
+                removeAttribute("bottom");
+                setAttribute("top");
+            }
+            else
+            {
+                removeAttribute("top");
+                setAttribute("bottom");
+            }
         }
     }
 

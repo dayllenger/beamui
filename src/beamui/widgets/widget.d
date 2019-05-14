@@ -124,8 +124,9 @@ private:
     /// Widget id
     string _id;
 
-    /// Style class list
-    bool[string] styleClasses; // value means nothing
+    /// Custom attributes map
+    string[string] attributes;
+
     struct StyleSubItemInfo
     {
         const(Object) parent;
@@ -314,52 +315,81 @@ public:
     }
 
     //===============================================================
-    // Style
+    // Attributes
 
-    /// Check whether widget has certain style class
-    bool hasStyleClass(string name) const
+    /** Returns a value of a custom attribute by its name, `null` if no such attribute.
+
+        Note: the name must have non-zero length.
+    */
+    string getAttribute(string name) const
     {
-        return (name in styleClasses) !is null;
+        assert(name.length > 0);
+        return attributes.get(name, null);
     }
-    /// Add style classes to the widget
-    Widget addStyleClasses(string[] names...)
+
+    /// Returns true if the widget has a custom attribute of the `name`
+    bool hasAttribute(string name) const
     {
-        foreach (name; names)
+        return (name in attributes) !is null;
+    }
+
+    /** Remove the custom attribute by `name` from the widget. Does nothing if no such attribute.
+
+        Note: the name must have non-zero length.
+    */
+    void removeAttribute(string name)
+    {
+        assert(name.length > 0);
+        if (attributes.remove(name))
+            invalidateStyles();
+    }
+
+    /** Add a custom attribute of the `name` or change its value if already exists.
+
+        Note: the name must have non-zero length.
+    */
+    void setAttribute(string name)
+    {
+        assert(name.length > 0);
+        if (auto p = name in attributes)
         {
-            assert(name.length);
-            styleClasses[name] = false;
+            if (*p) // if has some value - erase it
+            {
+                *p = null;
+                invalidateStyles();
+            }
         }
-        invalidateStyles();
-        return this;
-    }
-    /// Remove style classes from the widget
-    Widget removeStyleClasses(string[] names...)
-    {
-        foreach (name; names)
+        else
         {
-            assert(name.length);
-            styleClasses.remove(name);
+            attributes[name] = null;
+            invalidateStyles();
         }
-        invalidateStyles();
-        return this;
     }
-    /// Toggle style class on the widget - remove if present, add if not
-    void toggleStyleClass(string name)
+    /// ditto
+    void setAttribute(string name, string value)
+    {
+        assert(name.length > 0);
+        if (auto p = name in attributes)
+            *p = value;
+        else
+            attributes[name] = value;
+        invalidateStyles();
+    }
+
+    /** Toggle a custom attribute on the widget - remove if present, add if not.
+
+        Note: the name must have non-zero length.
+    */
+    void toggleAttribute(string name)
     {
         assert(name.length);
-        bool present = styleClasses.remove(name);
-        if (!present)
-            styleClasses[name] = false;
+        if (!attributes.remove(name))
+            attributes[name] = null;
         invalidateStyles();
     }
-    /// Shorthand to set one style class to the widget
-    @property void style(string name)
-    {
-        assert(name.length);
-        styleClasses.clear();
-        styleClasses[name] = false;
-        invalidateStyles();
-    }
+
+    //===============================================================
+    // Style
 
     /// Set this widget to be a subitem in stylesheet
     void bindSubItem(const(Object) parent, string subName)
@@ -508,7 +538,8 @@ public:
         // class
         foreach (name; sel.classes)
         {
-            if ((name in styleClasses) is null)
+            auto p = name in attributes;
+            if (!p || (*p)) // skip also attributes with values
                 return false;
         }
         return matchContextSelector(sel, closure);
