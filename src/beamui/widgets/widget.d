@@ -535,11 +535,22 @@ public:
         // state
         if ((sel.specifiedState & state) != sel.enabledState)
             return false;
-        // class
+        // classes
         foreach (name; sel.classes)
         {
             auto p = name in attributes;
             if (!p || (*p)) // skip also attributes with values
+                return false;
+        }
+        // attributes
+        foreach (ref attr; sel.attributes)
+        {
+            if (auto p = attr.name in attributes)
+            {
+                if (!attr.match(*p))
+                    return false;
+            }
+            else
                 return false;
         }
         return matchContextSelector(sel, closure);

@@ -338,6 +338,27 @@ private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref cons
             applyStateFlag(s, "activated", State.activated);
             applyStateFlag(s, "window-focused", State.windowFocused);
             break;
+        case attr:
+            sel.attributes ~= Selector.Attr(s, null, Selector.Attr.Pattern.whatever);
+            break;
+        case attrExact:
+            sel.attributes ~= Selector.Attr(s, e.str, Selector.Attr.Pattern.exact);
+            break;
+        case attrInclude:
+            sel.attributes ~= Selector.Attr(s, e.str, Selector.Attr.Pattern.include);
+            break;
+        case attrDash:
+            sel.attributes ~= Selector.Attr(s, e.str, Selector.Attr.Pattern.dash);
+            break;
+        case attrPrefix:
+            sel.attributes ~= Selector.Attr(s, e.str, Selector.Attr.Pattern.prefix);
+            break;
+        case attrSuffix:
+            sel.attributes ~= Selector.Attr(s, e.str, Selector.Attr.Pattern.suffix);
+            break;
+        case attrSubstring:
+            sel.attributes ~= Selector.Attr(s, e.str, Selector.Attr.Pattern.substring);
+            break;
         case descendant:
             result = nullable(Selector.Combinator.descendant);
             entries = entries[i + 1 .. $];
@@ -361,6 +382,7 @@ private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref cons
     }
     sel.specifiedState = specified;
     sel.enabledState = enabled;
+    sel.validateAttrs();
     sel.calculateUniversality();
     sel.calculateSpecificity();
     return result;
