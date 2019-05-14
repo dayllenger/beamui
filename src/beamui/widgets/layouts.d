@@ -648,9 +648,9 @@ class FrameLayout : WidgetGroupDefaultDrawing
         {
             Widget item = child(i);
             if (item.visibility == Visibility.visible)
-            {
                 item.layout(inner);
-            }
+            else
+                item.cancelLayout();
         }
     }
 
