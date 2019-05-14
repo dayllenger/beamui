@@ -917,18 +917,6 @@ class Window : CustomEventTarget
         animations ~= Animation(duration * ONE_SECOND / 1000, handler);
     }
 
-    private void animate(Widget root, long interval)
-    {
-        if (root is null)
-            return;
-        if (root.visibility != Visibility.visible)
-            return;
-        foreach (i; 0 .. root.childCount)
-            animate(root.child(i), interval);
-        if (root.animating)
-            root.animate(interval);
-    }
-
     private void animate(long interval)
     {
         // process global animations
@@ -958,6 +946,27 @@ class Window : CustomEventTarget
             animate(p, interval);
         if (auto p = _tooltip.popup)
             animate(p, interval);
+    }
+
+    private void animate(Widget root, long interval)
+    {
+        assert(root);
+
+        if (root.visibility != Visibility.visible)
+            return;
+
+        foreach (i; 0 .. root.childCount)
+            animate(root.child(i), interval);
+        if (root.animating)
+            root.animate(interval);
+    }
+
+    // will be called periodically to update animations
+    private bool animationTimerHandler()
+    {
+        needUpdate = true;
+        invalidate();
+        return true;
     }
 
     /// OpenGL-specific routines
@@ -1030,12 +1039,11 @@ class Window : CustomEventTarget
         {
             setupGlobalDPI();
 
+            // check if we need to relayout
             bool needDraw;
             bool needLayout;
             bool animationActive;
             checkUpdateNeeded(needDraw, needLayout, animationActive);
-            if (needLayout || animationActive)
-                needDraw = true;
 
             const long ts = std.datetime.Clock.currStdTime;
             if (animationActive && lastDrawTs != 0)
@@ -1045,7 +1053,7 @@ class Window : CustomEventTarget
                 checkUpdateNeeded(needDraw, needLayout, animationActive);
                 // do update every 16 milliseconds
                 if (animationUpdateTimerID == 0)
-                    animationUpdateTimerID = setTimer(16, { invalidate(); return true; });
+                    animationUpdateTimerID = setTimer(16, &animationTimerHandler);
             }
             lastDrawTs = ts;
 
@@ -1095,6 +1103,8 @@ class Window : CustomEventTarget
                 cancelTimer(animationUpdateTimerID);
                 animationUpdateTimerID = 0;
             }
+
+            needUpdate = false;
         }
         catch (Exception e)
         {
@@ -1681,24 +1691,44 @@ class Window : CustomEventTarget
         // override to support different mouse cursors
     }
 
+    // set by widgets themselves
+    package(beamui) bool needUpdate;
+
     /// Check content widgets for necessary redraw and/or layout
     bool checkUpdateNeeded(out bool needDraw, out bool needLayout, out bool animationActive)
     {
         animationActive = animations.length > 0;
+        // skip costly update if no one notified
+        if (!needUpdate)
+            return animationActive;
 
         checkUpdateNeeded(_mainWidget, needDraw, needLayout, animationActive);
         foreach (p; _popups)
             checkUpdateNeeded(p, needDraw, needLayout, animationActive);
-        checkUpdateNeeded(_tooltip.popup, needDraw, needLayout, animationActive);
-        return needDraw || needLayout || animationActive;
+        if (auto p = _tooltip.popup)
+            checkUpdateNeeded(p, needDraw, needLayout, animationActive);
+
+        const ret = needDraw || needLayout || animationActive;
+        debug (redraw)
+        {
+            if (ret)
+            {
+                Log.d("needed:"
+                    ~ (needDraw ? " draw" : null)
+                    ~ (needLayout ? " layout" : null)
+                    ~ (animationActive ? " animation" : null));
+            }
+        }
+        return ret;
     }
     /// Check content widgets for necessary redraw and/or layout
     protected void checkUpdateNeeded(Widget root, ref bool needDraw, ref bool needLayout, ref bool animationActive)
     {
-        if (root is null)
-            return;
+        assert(root);
+
         if (root.visibility == Visibility.gone)
             return;
+
         needLayout = needLayout || root.needLayout;
         debug (redraw)
         {
@@ -1733,9 +1763,6 @@ class Window : CustomEventTarget
                 Log.d("Requesting update");
             invalidate();
         }
-        debug (redraw)
-            Log.d("checkUpdateNeeded returned needDraw: ", needDraw, ", needLayout: ", needLayout,
-                    ", animationActive: ", _animationActive);
     }
 
     //===============================================================

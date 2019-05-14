@@ -601,6 +601,7 @@ public:
                 foreach (i; start + 1 .. _parent.childCount)
                     _parent.child(i).invalidateStylesRecursively();
             }
+            needUpdate(); // useless when no parent
         }
     }
 
@@ -804,6 +805,7 @@ public:
     {
         assert(name && duration > 0 && handler);
         animations[name] = Animation(duration * ONE_SECOND / 1000, handler);
+        needUpdate();
     }
     /// Experimental API
     void cancelAnimation(string name)
@@ -1651,10 +1653,17 @@ public:
         return _box.isPointInside(x, y);
     }
 
+    /// Tell the window (if some), that the widget may be invalidated
+    private void needUpdate()
+    {
+        if (auto w = window)
+            w.needUpdate = true;
+    }
     /// Request relayout of widget and its children
     void requestLayout()
     {
         _needLayout = true;
+        needUpdate();
     }
     /// Cancel relayout of widget
     void cancelLayout()
@@ -1665,6 +1674,7 @@ public:
     void invalidate()
     {
         _needDraw = true;
+        needUpdate();
     }
     /// Indicate that drawing is done
     protected void drawn()
@@ -1982,6 +1992,8 @@ public:
     /// ditto
     @property void parent(Widget parent)
     {
+        if (_parent)
+            needUpdate();
         _parent = parent;
         invalidateStyles();
     }
