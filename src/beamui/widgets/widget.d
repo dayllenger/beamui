@@ -615,7 +615,7 @@ public:
                 p.bottom = bp.bottom;
 
             if (style.focusRectColor != Color.transparent &&
-                (focusable || ((state & State.parent) && parent.focusable)))
+                (allowsFocus || ((state & State.parent) && parent.allowsFocus)))
             {
                 // add two pixels to padding when focus rect is required
                 // one pixel for focus rect, one for additional space
@@ -813,15 +813,15 @@ public:
 
     private
     {
-        bool _clickable;
-        bool _checkable;
-        bool _focusable;
-        bool _trackHover;
+        bool _allowsClick;
+        bool _allowsFocus;
+        bool _allowsHover;
+        bool _allowsToggle;
     }
 
     @property
     {
-        /// True if state has State.enabled flag set
+        /// True if the widget state has `State.enabled` flag set
         bool enabled() const
         {
             return (state & State.enabled) != 0;
@@ -832,33 +832,7 @@ public:
             flag ? setState(State.enabled) : resetState(State.enabled);
         }
 
-        /// When true, user can click this control, and signals `clicked`
-        bool clickable() const { return _clickable; }
-        /// ditto
-        void clickable(bool flag)
-        {
-            _clickable = flag;
-        }
-
-        bool canClick() const
-        {
-            return _clickable && enabled && visible;
-        }
-
-        /// When true, control supports `checked` state
-        bool checkable() const { return _checkable; }
-        /// ditto
-        void checkable(bool flag)
-        {
-            _checkable = flag;
-        }
-
-        bool canCheck() const
-        {
-            return _checkable && enabled && visible;
-        }
-
-        /// Checked state
+        /// True if the widget state has `State.checked` flag set
         bool checked() const
         {
             return (state & State.checked) != 0;
@@ -866,24 +840,20 @@ public:
         /// ditto
         void checked(bool flag)
         {
-            if (flag != checked)
-            {
-                if (flag)
-                    setState(State.checked);
-                else
-                    resetState(State.checked);
-                invalidate();
-            }
+            flag ? setState(State.checked) : resetState(State.checked);
         }
 
-        /// Whether widget can be focused
-        bool focusable() const { return _focusable; }
-        /// ditto
-        void focusable(bool flag)
+        /// True if this widget and all its parents are visible
+        bool visible() const
         {
-            _focusable = flag;
+            if (visibility != Visibility.visible)
+                return false;
+            if (parent is null)
+                return true;
+            return parent.visible;
         }
 
+        /// True if this widget is currently focused
         bool focused() const
         {
             if (auto w = window)
@@ -892,15 +862,52 @@ public:
                 return false;
         }
 
-        /// When true, widget will change `hover` state while mouse is moving upon it
-        bool trackHover() const
+        /// True if the widget supports click by mouse button or enter/space key
+        bool allowsClick() const { return _allowsClick; }
+        /// ditto
+        void allowsClick(bool flag)
         {
-            return _trackHover && !TOUCH_MODE;
+            _allowsClick = flag;
+        }
+        /// True if the widget can be focused
+        bool allowsFocus() const { return _allowsFocus; }
+        /// ditto
+        void allowsFocus(bool flag)
+        {
+            _allowsFocus = flag;
+        }
+        /// True if the widget will change `hover` state while mouse pointer is moving upon it
+        bool allowsHover() const
+        {
+            return _allowsHover && !TOUCH_MODE;
         }
         /// ditto
-        void trackHover(bool v)
+        void allowsHover(bool v)
         {
-            _trackHover = v;
+            _allowsHover = v;
+        }
+        /// True if the widget supports `checked` state
+        bool allowsToggle() const { return _allowsToggle; }
+        /// ditto
+        void allowsToggle(bool flag)
+        {
+            _allowsToggle = flag;
+        }
+
+        /// True if the widget allows click, and it's visible and enabled
+        bool canClick() const
+        {
+            return _allowsClick && enabled && visible;
+        }
+        /// True if the widget allows focus, and it's visible and enabled
+        bool canFocus() const
+        {
+            return _allowsFocus && visible && enabled;
+        }
+        /// True if the widget allows toggle, and it's visible and enabled
+        bool canToggle() const
+        {
+            return _allowsToggle && enabled && visible;
         }
 
         /// Override and return true to track key events even when not focused
@@ -1296,22 +1303,6 @@ public:
         return true;
     }
 
-    /// Returns true if this widget and all its parents are visible
-    @property bool visible() const
-    {
-        if (visibility != Visibility.visible)
-            return false;
-        if (parent is null)
-            return true;
-        return parent.visible;
-    }
-
-    /// Returns true if widget is focusable and visible and enabled
-    @property bool canFocus() const
-    {
-        return focusable && visible && enabled;
-    }
-
     /// Set focus to this widget or suitable focusable child, returns previously focused widget
     Widget setFocus(FocusReason reason = FocusReason.unspecified)
     {
@@ -1495,11 +1486,11 @@ public:
             setFocus();
             return true;
         }
-        if (trackHover)
+        if (allowsHover)
         {
             if (event.action == MouseAction.focusOut || event.action == MouseAction.cancel)
             {
-                if ((state & State.hovered))
+                if (state & State.hovered)
                 {
                     debug (mouse)
                         Log.d("Hover off ", id);

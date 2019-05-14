@@ -95,8 +95,6 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
             _separator.id = "menu-separator";
             _separator.bindSubItem(this, "separator");
             addChild(_separator);
-            trackHover = false;
-            clickable = false;
             enabled = false;
         }
         else
@@ -105,8 +103,8 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
             _action = action;
             action.changed ~= &updateContent;
             action.stateChanged ~= &updateState;
-            trackHover = true;
-            clickable = true;
+            allowsClick = true;
+            allowsHover = true;
 
             updateContent();
             updateState();
@@ -126,16 +124,16 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
     protected void updateContent()
     {
         // check box
-        if (_action.checkable != checkable)
+        if (_action.checkable != allowsToggle)
         {
-            checkable = _action.checkable;
-            if (checkable && !_checkbox)
+            allowsToggle = _action.checkable;
+            if (allowsToggle && !_checkbox)
             {
                 _checkbox = new Widget("menu-checkbox");
                 _checkbox.state = State.parent;
                 addChild(_checkbox);
             }
-            else if (!checkable && _checkbox)
+            else if (!allowsToggle && _checkbox)
             {
                 removeChild(_checkbox);
                 eliminate(_checkbox);

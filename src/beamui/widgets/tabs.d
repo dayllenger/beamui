@@ -142,9 +142,9 @@ class TabItem : Row
         addChild(_icon);
         addChild(_label);
         addChild(_closeButton);
-        clickable = true;
-        trackHover = true;
-        _label.trackHover = true;
+        allowsClick = true;
+        allowsHover = true;
+        _label.allowsHover = true;
         _lastAccessTime = _lastAccessCounter++;
     }
 

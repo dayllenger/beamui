@@ -24,14 +24,14 @@ class ToolBarButton : Button
     this(Action a)
     {
         super(a);
-        focusable = false;
+        allowsFocus = false;
     }
 
     override protected void updateContent()
     {
          // TODO: image only / image + text / text only
         iconID = action.iconID;
-        checkable = action.checkable;
+        allowsToggle = action.checkable;
     }
 
     override @property bool hasTooltip() const

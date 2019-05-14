@@ -612,7 +612,7 @@ class ListWidget : WidgetGroup
     this(Orientation orientation = Orientation.vertical)
     {
         _orientation = orientation;
-        focusable = true;
+        allowsFocus = true;
         _scrollbar = new ScrollBar(orientation);
         _scrollbar.visibility = Visibility.gone;
         _scrollbar.scrolled ~= &onScrollEvent;

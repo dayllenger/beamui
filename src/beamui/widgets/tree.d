@@ -517,9 +517,9 @@ class TreeItemWidget : Row
         _item = item;
         id = item.id;
 
-        clickable = true;
-        focusable = true;
-        trackHover = true;
+        allowsClick = true;
+        allowsFocus = true;
+        allowsHover = true;
 
         int icount = _item.level - 1;
         if (!_item.root.canCollapseTopLevel)
@@ -536,8 +536,8 @@ class TreeItemWidget : Row
             _expander = new ImageWidget;
             _expander.id = "tree-item-expander";
             _expander.bindSubItem(this, "expander");
-            _expander.clickable = true;
-            _expander.trackHover = true;
+            _expander.allowsClick = true;
+            _expander.allowsHover = true;
 
             _expander.clicked ~= {
                 _item.selectItem(_item);

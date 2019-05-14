@@ -603,7 +603,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             auto btn = new Button(root.label, root.icon);
             btn.orientation = Orientation.vertical;
             btn.style = "flat";
-            btn.focusable = false;
+            btn.allowsFocus = false;
             btn.tooltipText = root.path.toUTF32;
             adapter.add(btn);
         }
@@ -612,7 +612,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             openDirectory(_roots[itemIndex].path, null);
             res.selectItem(-1);
         };
-        res.focusable = true;
+        res.allowsFocus = true;
         return res;
     }
 
@@ -945,14 +945,14 @@ class FilePathPanelItem : Row
         string fname = isRoot(path) ? path : baseName(path);
         _text = new Label(toUTF32(fname));
         _text.bindSubItem(this, "label");
-        _text.trackHover = true;
-        _text.clickable = true;
+        _text.allowsHover = true;
+        _text.allowsClick = true;
         _text.clicked ~= &onTextClick;
         _button = new Button(null, "scrollbar_btn_right");
         _button.bindSubItem(this, "button");
-        _button.focusable = false;
+        _button.allowsFocus = false;
         _button.clicked ~= &onButtonClick;
-        trackHover = true;
+        allowsHover = true;
         add(_text, _button);
     }
 
@@ -1004,7 +1004,7 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
 
     this()
     {
-        clickable = true;
+        allowsClick = true;
     }
 
     protected void initialize(string path)

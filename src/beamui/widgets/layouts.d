@@ -1014,7 +1014,7 @@ class Resizer : Widget
     this(Orientation orient = Orientation.vertical)
     {
         _orientation = orient;
-        trackHover = true;
+        allowsHover = true;
     }
 
     override CursorType getCursorType(int x, int y) const
@@ -1092,7 +1092,7 @@ class Resizer : Widget
                 resized(ResizerEventType.dragging, _delta - _dragStartDelta);
             return true;
         }
-        if (event.action == MouseAction.move && trackHover)
+        if (event.action == MouseAction.move && allowsHover)
         {
             if (!(state & State.hovered))
             {
@@ -1112,12 +1112,12 @@ class Resizer : Widget
             }
             return true;
         }
-        if (event.action == MouseAction.leave && trackHover)
+        if (event.action == MouseAction.leave && allowsHover)
         {
             resetState(State.hovered);
             return true;
         }
-        if (event.action == MouseAction.cancel && trackHover)
+        if (event.action == MouseAction.cancel && allowsHover)
         {
             resetState(State.hovered);
             resetState(State.pressed);

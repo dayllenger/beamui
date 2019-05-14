@@ -347,7 +347,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
          ScrollBarMode vscrollbarMode = ScrollBarMode.automatic)
     {
         super(hscrollbarMode, vscrollbarMode);
-        focusable = true;
+        allowsFocus = true;
         bindActions();
         handleFontChange();
     }
@@ -368,7 +368,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     override @property bool canFocus() const
     {
         // allow to focus even if not enabled
-        return focusable && visible;
+        return allowsFocus && visible;
     }
 
     override Widget setFocus(FocusReason reason = FocusReason.unspecified)
@@ -3890,11 +3890,11 @@ class FindPanel : Row
                 with (findSettings) {
                     add(_cbCaseSensitive, _cbWholeWords, _cbSelection);
                     with (_cbCaseSensitive) {
-                        checkable = true;
+                        allowsToggle = true;
                         tooltipText = "Case sensitive";
                     }
                     with (_cbWholeWords) {
-                        checkable = true;
+                        allowsToggle = true;
                         tooltipText = "Whole words";
                     }
                 }

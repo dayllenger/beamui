@@ -71,7 +71,7 @@ class ComboBoxBase : Row
     {
         _adapter = adapter;
         _ownAdapter = ownAdapter;
-        trackHover = true;
+        allowsHover = true;
         initialize();
     }
 
@@ -81,9 +81,9 @@ class ComboBoxBase : Row
         _body.clicked ~= &onClick;
         _body.state = State.parent;
         _button = createButton();
-        _button.focusable = false;
-        _body.focusable = false;
-        focusable = true;
+        _button.allowsFocus = false;
+        _body.allowsFocus = false;
+        allowsFocus = true;
         add(_body).setFillWidth(true);
         add(_button);
     }
@@ -275,10 +275,10 @@ class ComboBox : ComboBoxBase
     override void initialize()
     {
         super.initialize();
-        _body.focusable = false;
-        _body.clickable = true;
-        focusable = true;
-        clickable = true;
+        _body.allowsFocus = false;
+        _body.allowsClick = true;
+        allowsFocus = true;
+        allowsClick = true;
         clicked ~= &onClick;
     }
 
@@ -287,7 +287,7 @@ class ComboBox : ComboBoxBase
         auto res = new Label;
         res.id = "COMBOBOX_BODY";
         res.bindSubItem(this, "body");
-        res.clickable = true;
+        res.allowsClick = true;
         int minItemWidth;
         foreach (i; 0 .. _adapter.itemCount)
         {
@@ -374,10 +374,10 @@ class IconTextComboBox : ComboBoxBase
     override void initialize()
     {
         super.initialize();
-        _body.focusable = false;
-        _body.clickable = true;
-        focusable = true;
-        clickable = true;
+        _body.allowsFocus = false;
+        _body.allowsClick = true;
+        allowsFocus = true;
+        allowsClick = true;
         clicked ~= &onClick;
     }
 
@@ -386,7 +386,7 @@ class IconTextComboBox : ComboBoxBase
         auto res = new Label;
         res.id = "COMBOBOX_BODY";
         res.bindSubItem(this, "body");
-        res.clickable = true;
+        res.allowsClick = true;
         int minItemWidth;
         foreach (i; 0 .. _adapter.itemCount)
         {
@@ -423,9 +423,9 @@ class ComboEdit : ComboBox
 
     protected void postInit()
     {
-        focusable = false;
-        clickable = false;
-        _edit.focusable = true;
+        allowsClick = false;
+        allowsFocus = false;
+        _edit.allowsFocus = true;
     }
 
     override bool onKeyEvent(KeyEvent event)
@@ -468,7 +468,7 @@ class ComboEdit : ComboBox
         res.readOnly = false;
         _edit = res;
         postInit();
-        //_edit.focusable = true;
+        //_edit.allowsFocus = true;
         return res;
     }
 }

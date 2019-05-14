@@ -398,7 +398,7 @@ class AbstractSlider : WidgetGroup
                 }
                 return true;
             }
-            if (event.action == MouseAction.move && trackHover)
+            if (event.action == MouseAction.move && allowsHover)
             {
                 if (!(state & State.hovered))
                 {
@@ -408,17 +408,17 @@ class AbstractSlider : WidgetGroup
                 }
                 return true;
             }
-            if (event.action == MouseAction.leave && trackHover)
+            if (event.action == MouseAction.leave && allowsHover)
             {
                 debug (scrollbars)
                     Log.d("SliderButton: leave");
                 resetState(State.hovered);
                 return true;
             }
-            if (event.action == MouseAction.cancel && trackHover)
+            if (event.action == MouseAction.cancel && allowsHover)
             {
                 debug (scrollbars)
-                    Log.d("SliderButton: cancel with trackHover");
+                    Log.d("SliderButton: cancel with allowsHover");
                 resetState(State.hovered);
                 resetState(State.pressed);
                 _dragging = false;
@@ -441,8 +441,8 @@ class AbstractSlider : WidgetGroup
         this(string ID)
         {
             super(ID);
-            trackHover = true;
-            clickable = true;
+            allowsClick = true;
+            allowsHover = true;
         }
     }
 }
@@ -476,7 +476,7 @@ class ScrollBar : AbstractSlider
         addChild(_indicator);
         addChild(_pageUp);
         addChild(_pageDown);
-        bunch(_btnBack, _btnForward, _indicator, _pageUp, _pageDown).focusable(false);
+        bunch(_btnBack, _btnForward, _indicator, _pageUp, _pageDown).allowsFocus(false);
         _btnBack.clicked ~= { sendScrollEvent(ScrollAction.lineUp); };
         _btnForward.clicked ~= { sendScrollEvent(ScrollAction.lineDown); };
         _pageUp.clicked ~= { sendScrollEvent(ScrollAction.pageUp); };
@@ -607,7 +607,7 @@ class Slider : AbstractSlider
         addChild(_indicator);
         addChild(_pageUp);
         addChild(_pageDown);
-        bunch(_indicator, _pageUp, _pageDown).focusable(false);
+        bunch(_indicator, _pageUp, _pageDown).allowsFocus(false);
         _pageUp.clicked ~= { sendScrollEvent(ScrollAction.pageUp); };
         _pageDown.clicked ~= { sendScrollEvent(ScrollAction.pageDown); };
     }

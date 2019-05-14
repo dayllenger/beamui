@@ -537,7 +537,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
         _showColHeaders = true;
         _showRowHeaders = true;
-        focusable = true;
+        allowsFocus = true;
         resize(1, 1);
 
         bindActions();

@@ -179,10 +179,10 @@ class Button : LinearLayout, ActionHolder
         super(Orientation.horizontal);
         this.iconID = iconID;
         this.text = caption;
-        this.checkable = checkable;
-        clickable = true;
-        focusable = true;
-        trackHover = true;
+        allowsClick = true;
+        allowsFocus = true;
+        allowsHover = true;
+        allowsToggle = checkable;
     }
 
     /// Constructor from action by click
@@ -206,7 +206,7 @@ class Button : LinearLayout, ActionHolder
     {
         iconID = _action.iconID;
         text = _action.label;
-        checkable = _action.checkable;
+        allowsToggle = _action.checkable;
     }
 
     protected void updateState()
@@ -220,7 +220,7 @@ class Button : LinearLayout, ActionHolder
     {
         if (auto w = window)
             w.call(_action);
-        if (checkable)
+        if (allowsToggle)
             checked = !checked;
         super.handleClick();
     }
@@ -250,9 +250,9 @@ class SwitchButton : Widget
 {
     this()
     {
-        clickable = true;
-        focusable = true;
-        trackHover = true;
+        allowsClick = true;
+        allowsFocus = true;
+        allowsHover = true;
     }
 
     override protected void handleClick()
@@ -295,7 +295,6 @@ class CheckBox : LinearLayout
     this(dstring labelText = null)
     {
         super(Orientation.horizontal);
-        this.checkable = checkable;
         _icon = new Widget("icon");
         _icon.bindSubItem(this, "icon");
         _icon.state = State.parent;
@@ -307,9 +306,9 @@ class CheckBox : LinearLayout
         add(_label).setFillHeight(false);
         if (!labelText)
             _label.visibility = Visibility.gone;
-        clickable = true;
-        focusable = true;
-        trackHover = true;
+        allowsClick = true;
+        allowsFocus = true;
+        allowsHover = true;
     }
 
     override protected void handleClick()

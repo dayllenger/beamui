@@ -38,9 +38,9 @@ class SimpleBarChart : Widget
 {
     this(dstring title = null)
     {
-        clickable = false;
-        focusable = false;
-        trackHover = false;
+        allowsClick = false;
+        allowsFocus = false;
+        allowsHover = false;
         _axisX.arrowSize = 1;
         this.title = title ? title : tr("New chart");
         _minDescSizeTester.str = "aaaaaaaaaa";
