@@ -15,7 +15,7 @@ import beamui.core.signals;
 import beamui.core.stdaction;
 import beamui.core.streams;
 import beamui.graphics.colors;
-import beamui.graphics.text;
+import beamui.text.sizetest;
 import beamui.widgets.controls;
 import beamui.widgets.layouts;
 import beamui.widgets.menu;
@@ -289,6 +289,17 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             requestLayout();
         }
 
+        dstring minSizeTester() const
+        {
+            return _minSizeTester.str;
+        }
+        /// ditto
+        void minSizeTester(dstring txt)
+        {
+            _minSizeTester.str = txt;
+            requestLayout();
+        }
+
         /// Font line height, always > 0
         protected int lineHeight() const { return _lineHeight; }
     }
@@ -341,6 +352,8 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         bool _showTabPositionMarks;
 
         bool _wordWrap;
+
+        TextSizeTester _minSizeTester;
     }
 
     this(ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
@@ -410,6 +423,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _fixedFont = font.isFixed;
         _spaceWidth = font.spaceWidth;
         _lineHeight = max(font.height, 1);
+        _minSizeTester.style.font = font;
     }
 
     /// Updates `stateChanged` with recent position
@@ -760,10 +774,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
     @property
     {
-        abstract dstring minSizeTester() const;
-        /// ditto
-        abstract void minSizeTester(dstring txt);
-
         /// Returns caret position
         TextPosition caretPos() const { return _caretPos; }
 
@@ -1974,16 +1984,6 @@ class EditLine : EditWidgetBase
                 requestLayout();
             }
         }
-
-        override dstring minSizeTester() const
-        {
-            return _minSizeTester.str;
-        }
-        override void minSizeTester(dstring txt)
-        {
-            _minSizeTester.str = txt;
-            requestLayout();
-        }
     }
 
     /// Handle Enter key press inside line editor
@@ -1994,7 +1994,6 @@ class EditLine : EditWidgetBase
         dstring _measuredText;
         int[] _measuredTextWidths;
         Size _measuredTextSize;
-        SingleLineText _minSizeTester;
 
         dchar _passwordChar = 0;
     }
@@ -2018,12 +2017,6 @@ class EditLine : EditWidgetBase
         popupMenu = new Menu;
         popupMenu.add(ACTION_UNDO, ACTION_REDO, ACTION_CUT, ACTION_COPY, ACTION_PASTE);
         return this;
-    }
-
-    override protected void handleFontChange()
-    {
-        super.handleFontChange();
-        _minSizeTester.style.font = font;
     }
 
     override protected Box textPosToClient(TextPosition p) const
@@ -2111,8 +2104,7 @@ class EditLine : EditWidgetBase
     {
         measureVisibleText();
         _minSizeTester.style.tabSize = _content.tabSize;
-        _minSizeTester.measure();
-        const sz = _minSizeTester.size + Size(_leftPaneWidth, 0);
+        const sz = _minSizeTester.getSize() + Size(_leftPaneWidth, 0);
         bs.min += sz;
         bs.nat += sz;
     }
@@ -2219,16 +2211,6 @@ class EditBox : EditWidgetBase
             }
         }
 
-        override dstring minSizeTester() const
-        {
-            return _minSizeTester.str;
-        }
-        override void minSizeTester(dstring txt)
-        {
-            _minSizeTester.str = txt;
-            requestLayout();
-        }
-
         protected int firstVisibleLine() const { return _firstVisibleLine; }
 
         final protected int linesOnScreen() const
@@ -2251,8 +2233,6 @@ class EditBox : EditWidgetBase
         int[] _visibleLinesWidths; // width (in pixels) of visible lines
         CustomCharProps[][] _visibleLinesHighlights;
         CustomCharProps[][] _visibleLinesHighlightsBuf;
-
-        PlainText _minSizeTester;
 
         bool _showWhiteSpaceMarks;
     }
@@ -2280,12 +2260,6 @@ class EditBox : EditWidgetBase
 
         if (ptype == StyleProperty.fontSize)
             _needRewrap = true;
-    }
-
-    override protected void handleFontChange()
-    {
-        super.handleFontChange();
-        _minSizeTester.style.font = font;
     }
 
     override void wordWrapRefresh()
@@ -3167,8 +3141,7 @@ class EditBox : EditWidgetBase
     {
         updateMaxLineWidth();
         _minSizeTester.style.tabSize = _content.tabSize;
-        _minSizeTester.measure();
-        const sz = _minSizeTester.size + Size(_leftPaneWidth, 0);
+        const sz = _minSizeTester.getSize() + Size(_leftPaneWidth, 0);
         bs.min += sz;
         bs.nat += sz;
     }

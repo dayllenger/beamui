@@ -8,6 +8,7 @@ Authors:   dayllenger
 module beamui.widgets.text;
 
 import beamui.graphics.text;
+import beamui.text.sizetest;
 import beamui.text.style : TextHotkey;
 import beamui.widgets.widget;
 
@@ -29,13 +30,13 @@ class Label : Widget
     private
     {
         SingleLineText textobj;
-        SingleLineText minSizeTester;
+        TextSizeTester minSizeTester;
     }
 
     this(dstring txt = null)
     {
         textobj.str = txt;
-        minSizeTester.str = "aaaaa"; // TODO: test all this stuff
+        minSizeTester.str = "aaaaa";
         handleFontChange();
     }
 
@@ -84,18 +85,11 @@ class Label : Widget
         textobj.measure();
 
         Boundaries bs;
-        // min size
-        if (textobj.str.length < minSizeTester.str.length * 2)
-        {
-            bs.min = textobj.size;
-        }
-        else
-        {
-            minSizeTester.measure();
-            bs.min = minSizeTester.size;
-        }
-        // nat size
-        bs.nat = textobj.size;
+        const sz = textobj.size;
+        const tmin = minSizeTester.getSize();
+        bs.min.w = min(sz.w, tmin.w);
+        bs.min.h = min(sz.h, tmin.h);
+        bs.nat = sz;
         setBoundaries(bs);
     }
 
@@ -158,13 +152,13 @@ class ShortLabel : Widget
         dstring original;
         int hotkeyIndex = -1;
         SingleLineText textobj;
-        SingleLineText minSizeTester;
+        TextSizeTester minSizeTester;
     }
 
     this(dstring txt = null)
     {
         text = txt;
-        minSizeTester.str = "aaaaa"; // TODO: test all this stuff
+        minSizeTester.str = "aaaaa";
         handleFontChange();
     }
 
@@ -227,18 +221,11 @@ class ShortLabel : Widget
         textobj.measure();
 
         Boundaries bs;
-        // min size
-        if (textobj.str.length < minSizeTester.str.length * 2)
-        {
-            bs.min = textobj.size;
-        }
-        else
-        {
-            minSizeTester.measure();
-            bs.min = minSizeTester.size;
-        }
-        // nat size
-        bs.nat = textobj.size;
+        const sz = textobj.size;
+        const tmin = minSizeTester.getSize();
+        bs.min.w = min(sz.w, tmin.w);
+        bs.min.h = min(sz.h, tmin.h);
+        bs.nat = sz;
         setBoundaries(bs);
     }
 
@@ -278,8 +265,8 @@ class MultilineLabel : Widget
     private
     {
         PlainText textobj;
-        PlainText minSizeTester;
-        PlainText natSizeTester;
+        TextSizeTester minSizeTester;
+        TextSizeTester natSizeTester;
     }
 
     this(dstring txt = null)
@@ -339,26 +326,13 @@ class MultilineLabel : Widget
         textobj.measure();
 
         Boundaries bs;
-        // min size
-        if (textobj.lines[0].length < minSizeTester.lines[0].length)
-        {
-            bs.min = textobj.size;
-        }
-        else
-        {
-            minSizeTester.measure();
-            bs.min = minSizeTester.size;
-        }
-        // nat size
-        if (textobj.lines[0].length < natSizeTester.lines[0].length)
-        {
-            bs.nat = textobj.size;
-        }
-        else
-        {
-            natSizeTester.measure();
-            bs.nat = natSizeTester.size;
-        }
+        const sz = textobj.size;
+        const tmin = minSizeTester.getSize();
+        const tnat = natSizeTester.getSize();
+        bs.min.w = min(sz.w, tmin.w);
+        bs.min.h = min(sz.h, tmin.h);
+        bs.nat.w = min(sz.w, tnat.w);
+        bs.nat.h = min(sz.h, tnat.h);
         setBoundaries(bs);
     }
 

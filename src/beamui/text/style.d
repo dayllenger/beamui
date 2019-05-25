@@ -101,11 +101,13 @@ struct TextStyle
 /// Holds properties of the text, that influence only its layout
 struct TextLayoutStyle
 {
+    Font font;
     TabSize tabSize;
     TextTransform transform;
 
-    this(ref const TextStyle superStyle)
+    this(ref TextStyle superStyle)
     {
+        font = superStyle.font;
         tabSize = superStyle.tabSize;
         transform = superStyle.transform;
     }

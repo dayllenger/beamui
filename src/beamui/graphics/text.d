@@ -86,8 +86,9 @@ struct TextLine
 
         Supports tab stop processing.
     */
-    void measure(Font font, ref const TextLayoutStyle style)
+    void measure(ref const TextLayoutStyle style)
     {
+        Font font = cast()style.font;
         assert(font !is null, "Font is mandatory");
 
         const size_t len = _str.length;
@@ -405,25 +406,22 @@ struct SingleLineText
     /// Text style to adjust properties
     TextStyle style;
     private TextLine line;
-    private Font oldFont;
     private TextLayoutStyle oldLayoutStyle;
 
-    private bool needToMeasure(Font font, ref const TextLayoutStyle ls) const
+    private bool needToMeasure(ref const TextLayoutStyle ls) const
     {
-        return line.needToMeasure || oldFont !is font || oldLayoutStyle !is ls;
+        return line.needToMeasure || oldLayoutStyle !is ls;
     }
 
     /// Measure single-line text during layout
     void measure()
     {
-        auto font = style.font;
         auto ls = TextLayoutStyle(style);
-        if (!needToMeasure(font, ls))
+        if (!needToMeasure(ls))
             return;
 
-        oldFont = font;
         oldLayoutStyle = ls;
-        line.measure(font, ls);
+        line.measure(ls);
     }
 
     /// Draw text into buffer. Measures, if needed
@@ -488,9 +486,9 @@ struct PlainText
         int previousWrapWidth = -1;
     }
 
-    private bool needToMeasure(Font font, ref const TextLayoutStyle ls) const
+    private bool needToMeasure(ref const TextLayoutStyle ls) const
     {
-        if (oldFont !is font || oldLayoutStyle !is ls)
+        if (oldLayoutStyle !is ls)
             return true;
         foreach (ref line; _lines.data)
             if (line.needToMeasure)
@@ -501,19 +499,17 @@ struct PlainText
     /// Measure multiline text during layout
     void measure()
     {
-        auto font = style.font;
         auto ls = TextLayoutStyle(style);
-        if (!needToMeasure(font, ls))
+        if (!needToMeasure(ls))
             return;
 
-        oldFont = font;
         oldLayoutStyle = ls;
 
         Size sz;
         foreach (ref line; _lines.data)
         {
             if (line.needToMeasure)
-                line.measure(font, ls);
+                line.measure(ls);
             sz.w = max(sz.w, line.size.w);
             sz.h += line.size.h;
         }

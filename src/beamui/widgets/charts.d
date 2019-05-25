@@ -31,6 +31,7 @@ module beamui.widgets.charts;
 
 import std.math;
 import beamui.graphics.text;
+import beamui.text.sizetest;
 import beamui.text.style;
 import beamui.widgets.widget;
 
@@ -224,7 +225,7 @@ class SimpleBarChart : Widget
         int _axisXMinWfromZero = 150;
         int _axisYMinDescWidth = 30;
 
-        SingleLineText _minDescSizeTester;
+        TextSizeTester _minDescSizeTester;
     }
 
     @property
@@ -302,8 +303,7 @@ class SimpleBarChart : Widget
 
         _axisY.maxDescriptionSize = measureAxisYDesc();
 
-        _minDescSizeTester.measure();
-        int currentMinBarWidth = max(_minBarWidth, _minDescSizeTester.size.w);
+        int currentMinBarWidth = max(_minBarWidth, _minDescSizeTester.getSize().w);
 
         int minAxisXLength = max(cast(int)barCount * (currentMinBarWidth + _barSpacing), _axisXMinWfromZero);
         int minAxixYLength = cast(int)round(_axisRatio * minAxisXLength);
