@@ -15,6 +15,7 @@ import beamui.core.signals;
 import beamui.core.stdaction;
 import beamui.core.streams;
 import beamui.graphics.colors;
+import beamui.text.simple;
 import beamui.text.sizetest;
 import beamui.widgets.controls;
 import beamui.widgets.layouts;
@@ -300,6 +301,27 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             requestLayout();
         }
 
+        /// Placeholder is a short peace of text that describe expected value in an input field
+        dstring placeholder() const
+        {
+            return _placeholder ? _placeholder.str : null;
+        }
+        /// ditto
+        void placeholder(dstring txt)
+        {
+            if (!_placeholder)
+            {
+                if (txt.length > 0)
+                {
+                    _placeholder = new SimpleText(txt);
+                    _placeholder.style.font = font;
+                    _placeholder.style.color = NamedColor.gray;
+                }
+            }
+            else
+                _placeholder.str = txt;
+        }
+
         /// Font line height, always > 0
         protected int lineHeight() const { return _lineHeight; }
     }
@@ -353,6 +375,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
         bool _wordWrap;
 
+        SimpleText* _placeholder;
         TextSizeTester _minSizeTester;
     }
 
@@ -417,13 +440,44 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
     //===============================================================
 
+    override void handleStyleChange(StyleProperty ptype)
+    {
+        super.handleStyleChange(ptype);
+
+        if (auto ph = _placeholder)
+        {
+            switch (ptype) with (StyleProperty)
+            {
+            case textAlign:
+                ph.style.alignment = style.textAlign;
+                break;
+            case textDecorationLine:
+                ph.style.decoration.line = style.textDecorationLine;
+                break;
+            case textDecorationStyle:
+                ph.style.decoration.style = style.textDecorationStyle;
+                break;
+            case textOverflow:
+                ph.style.overflow = style.textOverflow;
+                break;
+            case textTransform:
+                ph.style.transform = style.textTransform;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
     override protected void handleFontChange()
     {
-        FontRef font = font();
+        Font font = font();
         _fixedFont = font.isFixed;
         _spaceWidth = font.spaceWidth;
         _lineHeight = max(font.height, 1);
         _minSizeTester.style.font = font;
+        if (auto ph = _placeholder)
+            ph.style.font = font;
     }
 
     /// Updates `stateChanged` with recent position
@@ -2170,11 +2224,16 @@ class EditLine : EditWidgetBase
         const b = innerBox;
         const saver = ClipRectSaver(buf, b, style.alpha);
 
-        FontRef font = font();
-        dstring txt = applyPasswordChar(text);
-
         drawLineBackground(buf, Rect(clientBox), Rect(clientBox));
-        font.drawText(buf, b.x - _scrollPos.x, b.y, txt, style.textColor, tabSize);
+
+        if (_measuredText.length == 0)
+        {
+            // draw the placeholder when no text
+            if (auto ph = _placeholder)
+                ph.draw(buf, b.x - _scrollPos.x, b.y, b.w);
+        }
+        else
+            font.drawText(buf, b.x - _scrollPos.x, b.y, _measuredText, style.textColor, tabSize);
 
         drawCaret(buf);
     }
@@ -3171,6 +3230,9 @@ class EditBox : EditWidgetBase
             _contentChanged = false;
         }
 
+        if (auto ph = _placeholder)
+            ph.wrap(clientBox.w);
+
         box = geom;
     }
 
@@ -3525,19 +3587,27 @@ class EditBox : EditWidgetBase
             doRewrap = true;
         }
 
+        if (auto ph = _placeholder)
+        {
+            // draw the placeholder when no text
+            const ls = _content.lines;
+            if (ls.length == 0 || (ls.length == 1 && ls[0].length == 0))
+                ph.draw(buf, b.x - _scrollPos.x, b.y, b.w);
+        }
+
         FontRef font = font();
         int previousWraps;
         for (int i = 0; i < _visibleLines.length; i++)
         {
             const dstring txt = _visibleLines[i];
             Rect lineRect;
-            lineRect.left = clientBox.x - _scrollPos.x;
+            lineRect.left = b.x - _scrollPos.x;
             lineRect.right = lineRect.left + calcLineWidth(_content[_firstVisibleLine + i]);
-            lineRect.top = clientBox.y + i * _lineHeight;
+            lineRect.top = b.y + i * _lineHeight;
             lineRect.bottom = lineRect.top + _lineHeight;
             Rect visibleRect = lineRect;
-            visibleRect.left = clientBox.x;
-            visibleRect.right = clientBox.x + clientBox.w;
+            visibleRect.left = b.x;
+            visibleRect.right = b.x + b.w;
             drawLineBackground(buf, _firstVisibleLine + i, lineRect, visibleRect);
             if (_showTabPositionMarks)
                 drawTabPositionMarks(buf, font, _firstVisibleLine + i, lineRect);
@@ -3576,27 +3646,27 @@ class EditBox : EditWidgetBase
                     foreach (q, curWrap; wrappedLine)
                     {
                         const int lineOffset = cast(int)q + i + wrapsUpTo(i + _firstVisibleLine);
+                        const x = b.x - _scrollPos.x;
+                        const y = b.y + lineOffset * _lineHeight;
                         if (highlight)
                         {
                             wrapProps = highlight[accumulativeLength .. $];
                             accumulativeLength += curWrap.length;
-                            font.drawColoredText(buf, b.x - _scrollPos.x,
-                                    b.y + lineOffset * _lineHeight, curWrap, wrapProps, tabSize);
+                            font.drawColoredText(buf, x, y, curWrap, wrapProps, tabSize);
                         }
                         else
-                            font.drawText(buf, b.x - _scrollPos.x,
-                                    b.y + lineOffset * _lineHeight, curWrap, style.textColor, tabSize);
-
+                            font.drawText(buf, x, y, curWrap, style.textColor, tabSize);
                     }
                     previousWraps += cast(int)wrappedLine.length - 1;
                 }
                 else
                 {
+                    const x = b.x - _scrollPos.x;
+                    const y = b.y + i * _lineHeight;
                     if (highlight)
-                        font.drawColoredText(buf, b.x - _scrollPos.x, b.y + i * _lineHeight,
-                                txt, highlight, tabSize);
+                        font.drawColoredText(buf, x, y, txt, highlight, tabSize);
                     else
-                        font.drawText(buf, b.x - _scrollPos.x, b.y + i * _lineHeight, txt, style.textColor, tabSize);
+                        font.drawText(buf, x, y, txt, style.textColor, tabSize);
                 }
             }
         }
