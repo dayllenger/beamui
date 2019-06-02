@@ -15,7 +15,6 @@ import beamui.core.functions;
 import beamui.core.linalg;
 import beamui.core.logger;
 import beamui.graphics.colors;
-import beamui.graphics.text : TextRun;
 import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
 
 /// 9-patch image scaling information
@@ -31,6 +30,13 @@ enum PatternType : uint
 {
     solid,
     dotted,
+}
+
+/// Positioned glyph
+struct GlyphInstance
+{
+    GlyphRef glyph;
+    Point position;
 }
 
 static if (USE_OPENGL)
@@ -376,13 +382,13 @@ class DrawBuf : RefCountedObject
     /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
     abstract void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect);
 
-    final void drawText(int x, int y, const TextRun run, Color color)
+    final void drawText(int x, int y, const GlyphInstance[] run, Color color)
     {
-        if (run.glyphs.length == 0 || color.isFullyTransparent)
+        if (run.length == 0 || color.isFullyTransparent)
             return;
 
         const clipLeft = _clipRect.left;
-        foreach (gi; run.glyphs)
+        foreach (gi; run)
         {
             GlyphRef g = gi.glyph;
             const xx = x + gi.position.x;

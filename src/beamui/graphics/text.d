@@ -19,19 +19,6 @@ import beamui.text.glyph : GlyphRef;
 import beamui.text.shaping;
 import beamui.text.style;
 
-/// Positioned glyph
-struct GlyphInstance
-{
-    GlyphRef glyph;
-    Point position;
-}
-
-/// Represents a 2D sequence of glyphs with same attributes
-struct TextRun
-{
-    GlyphInstance[] glyphs;
-}
-
 /// Text style applied to a part of text line
 struct MarkupUnit
 {
@@ -361,7 +348,7 @@ struct TextLine
             buf.fillRect(r, decorColor);
         }
         // text goes after overline and underline
-        buf.drawText(pos.x, pos.y, const(TextRun)(buffer[]), style.color);
+        buf.drawText(pos.x, pos.y, buffer[], style.color);
         // line-through goes over the text
         if (lineThrough)
         {
