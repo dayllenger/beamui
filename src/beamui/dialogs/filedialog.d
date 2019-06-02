@@ -996,7 +996,7 @@ class FilePathPanelItem : Row
 }
 
 /// Panel with buttons - path segments - for fast navigation to subdirs.
-class FilePathPanelButtons : WidgetGroupDefaultDrawing
+class FilePathPanelButtons : WidgetGroup
 {
     Listener!onPathSelectionHandler pathSelected;
 
@@ -1099,6 +1099,12 @@ class FilePathPanelButtons : WidgetGroupDefaultDrawing
                 ibox.x += ibox.w;
             }
         }
+    }
+
+    override void onDraw(DrawBuf buf)
+    {
+        super.onDraw(buf);
+        drawAllChildren(buf);
     }
 }
 

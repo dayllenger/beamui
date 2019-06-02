@@ -22,7 +22,7 @@ struct LayoutItem
 }
 
 /// Arranges items either vertically or horizontally
-class LinearLayout : WidgetGroupDefaultDrawing
+class LinearLayout : WidgetGroup
 {
     @property
     {
@@ -386,6 +386,12 @@ class LinearLayout : WidgetGroupDefaultDrawing
             pen += sz.pick!dim + spacing;
         }
     }
+
+    override void onDraw(DrawBuf buf)
+    {
+        super.onDraw(buf);
+        drawAllChildren(buf);
+    }
 }
 
 private ref auto pick(string dim, T)(ref T s)
@@ -618,7 +624,7 @@ class Column : LinearLayout
 }
 
 /// Place all children into same place (usually, only one child should be visible at a time)
-class FrameLayout : WidgetGroupDefaultDrawing
+class FrameLayout : WidgetGroup
 {
     override void measure()
     {
@@ -678,10 +684,16 @@ class FrameLayout : WidgetGroupDefaultDrawing
             foundWidget.setFocus();
         return found;
     }
+
+    override void onDraw(DrawBuf buf)
+    {
+        super.onDraw(buf);
+        drawAllChildren(buf);
+    }
 }
 
 /// Place children at specified coordinates
-class FreeLayout : WidgetGroupDefaultDrawing
+class FreeLayout : WidgetGroup
 {
     static struct Cell
     {
@@ -797,10 +809,16 @@ class FreeLayout : WidgetGroupDefaultDrawing
             }
         }
     }
+
+    override void onDraw(DrawBuf buf)
+    {
+        super.onDraw(buf);
+        drawAllChildren(buf);
+    }
 }
 
 /// Layout children as table with rows and columns
-class TableLayout : WidgetGroupDefaultDrawing
+class TableLayout : WidgetGroup
 {
     @property
     {
@@ -968,6 +986,12 @@ class TableLayout : WidgetGroupDefaultDrawing
             }
             ypen += h + rowSpacing;
         }
+    }
+
+    override void onDraw(DrawBuf buf)
+    {
+        super.onDraw(buf);
+        drawAllChildren(buf);
     }
 }
 

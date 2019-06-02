@@ -1790,6 +1790,29 @@ public:
         }
     }
 
+    /** Just draw all children. Used as default behaviour in some widgets.
+
+        Example:
+        ---
+        override void onDraw(DrawBuf buf)
+        {
+            super.onDraw(buf);
+            drawAllChildren(buf);
+        }
+        ---
+    */
+    void drawAllChildren(DrawBuf buf)
+    {
+        const count = childCount;
+        if (count == 0 || visibility != Visibility.visible)
+            return;
+
+        const b = _innerBox;
+        const saver = ClipRectSaver(buf, b, style.alpha);
+        foreach (i; 0 .. count)
+            child(i).onDraw(buf);
+    }
+
     /// Applies alignment to a box for content of size `sz`
     static void applyAlign(ref Box b, Size sz, Align ha, Align va) // TODO: unittest
     {
@@ -2125,35 +2148,6 @@ class WidgetGroup : Widget
         _children.replace(oldChild, newChild);
         oldChild.parent = null;
         newChild.parent = this;
-    }
-}
-
-/// `WidgetGroup` with default drawing of children (just draw all children)
-class WidgetGroupDefaultDrawing : WidgetGroup
-{
-    /// Empty parameter list constructor - for usage by factory
-    this()
-    {
-        super(null);
-    }
-    /// Create with ID parameter
-    this(string ID)
-    {
-        super(ID);
-    }
-
-    override void onDraw(DrawBuf buf)
-    {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.onDraw(buf);
-        Box b = _innerBox;
-        auto saver = ClipRectSaver(buf, b, style.alpha);
-        foreach (widget; _children)
-        {
-            widget.onDraw(buf);
-        }
     }
 }
 

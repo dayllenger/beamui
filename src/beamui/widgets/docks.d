@@ -171,7 +171,7 @@ struct DockSpace
 }
 
 /// Layout for docking support - contains body widget and optional docked windows
-class DockHost : WidgetGroupDefaultDrawing
+class DockHost : WidgetGroup
 {
     @property
     {
@@ -314,6 +314,12 @@ class DockHost : WidgetGroupDefaultDrawing
             }
         }
         _bodyWidget.maybe.layout(inner.shrinked(sp));
+    }
+
+    override void onDraw(DrawBuf buf)
+    {
+        super.onDraw(buf);
+        drawAllChildren(buf);
     }
 }
 

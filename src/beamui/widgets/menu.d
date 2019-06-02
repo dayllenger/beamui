@@ -20,7 +20,7 @@ import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Widget that draws menu item
-class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
+class MenuItem : WidgetGroup, ActionHolder
 {
     @property
     {
@@ -318,6 +318,12 @@ class MenuItem : WidgetGroupDefaultDrawing, ActionHolder
         b.w = _arrowWidth;
         _arrow.maybe.layout(b);
         b.x += b.w;
+    }
+
+    override void onDraw(DrawBuf buf)
+    {
+        super.onDraw(buf);
+        drawAllChildren(buf);
     }
 }
 
