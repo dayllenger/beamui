@@ -7,7 +7,7 @@ Authors:   dayllenger
 */
 module beamui.widgets.text;
 
-import beamui.graphics.text;
+import beamui.text.simple;
 import beamui.text.sizetest;
 import beamui.text.style : TextHotkey;
 import beamui.widgets.widget;
@@ -29,7 +29,7 @@ class Label : Widget
 
     private
     {
-        SingleLineText textobj;
+        SimpleText textobj;
         TextSizeTester minSizeTester;
     }
 
@@ -105,7 +105,7 @@ class Label : Widget
         // align vertically to center
         Size sz = Size(b.w, textobj.size.h);
         applyAlign(b, sz, Align.unspecified, Align.vcenter);
-        textobj.draw(buf, b.pos, b.w);
+        textobj.draw(buf, b.x, b.y, b.w);
     }
 }
 
@@ -151,7 +151,7 @@ class ShortLabel : Widget
     {
         dstring original;
         int hotkeyIndex = -1;
-        SingleLineText textobj;
+        SimpleText textobj;
         TextSizeTester minSizeTester;
     }
 
@@ -243,7 +243,7 @@ class ShortLabel : Widget
         // align vertically to center
         Size sz = Size(b.w, textobj.size.h);
         applyAlign(b, sz, Align.unspecified, Align.vcenter);
-        textobj.draw(buf, b.pos, b.w);
+        textobj.draw(buf, b.x, b.y, b.w);
     }
 }
 
@@ -264,7 +264,7 @@ class MultilineLabel : Widget
 
     private
     {
-        PlainText textobj;
+        SimpleText textobj;
         TextSizeTester minSizeTester;
         TextSizeTester natSizeTester;
     }
@@ -340,8 +340,8 @@ class MultilineLabel : Widget
     {
         Size p = padding.size;
         int w = width - p.w;
-        textobj.wrapLines(w);
-        return textobj.size.h + p.h;
+        textobj.wrap(w);
+        return textobj.sizeAfterWrap.h + p.h;
     }
 
     override void layout(Box geom)
@@ -353,7 +353,7 @@ class MultilineLabel : Widget
         // wrap again in case the parent widget had not called heightForWidth
         // must be cached when width is the same
         int w = geom.w - padding.width;
-        textobj.wrapLines(w);
+        textobj.wrap(w);
     }
 
     override void onDraw(DrawBuf buf)
@@ -365,7 +365,7 @@ class MultilineLabel : Widget
         Box b = innerBox;
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
-        textobj.draw(buf, b.pos, b.w);
+        textobj.draw(buf, b.x, b.y, b.w);
     }
 }
 

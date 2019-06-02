@@ -30,7 +30,7 @@ Authors:   Andrzej Kilijański
 module beamui.widgets.charts;
 
 import std.math;
-import beamui.graphics.text;
+import beamui.text.simple;
 import beamui.text.sizetest;
 import beamui.text.style;
 import beamui.widgets.widget;
@@ -51,7 +51,7 @@ class SimpleBarChart : Widget
     struct BarData
     {
         double y;
-        PlainText title;
+        SimpleText title;
         Color color;
 
         this(double y, Color color, dstring title)
@@ -136,7 +136,7 @@ class SimpleBarChart : Widget
 
     private
     {
-        PlainText _title;
+        SimpleText _title;
         bool _showTitle = true;
         int _marginAfterTitle = 2;
     }
@@ -211,8 +211,8 @@ class SimpleBarChart : Widget
 
     private
     {
-        SingleLineText _axisYMaxValueDesc;
-        SingleLineText _axisYAvgValueDesc;
+        SimpleText _axisYMaxValueDesc;
+        SimpleText _axisYAvgValueDesc;
         double cachedMaxYValue;
         double cachedAvgYValue;
 
@@ -263,7 +263,7 @@ class SimpleBarChart : Widget
         foreach (ref bar; _bars)
         {
             bar.title.style.font = fnt;
-            bar.title.wrapLines(_barWidth);
+            bar.title.wrap(_barWidth);
             Size ts = bar.title.size;
             sz.w = max(sz.w, ts.w);
             sz.h = max(sz.h, ts.h);
@@ -370,7 +370,7 @@ class SimpleBarChart : Widget
             // align to the center of chart view
             _title.style.color = style.textColor;
             _title.style.alignment = TextAlign.center;
-            _title.draw(buf, Point(x1, b.y), x2 - x1);
+            _title.draw(buf, x1, b.y, x2 - x1);
         }
 
         // draw axes
@@ -407,7 +407,7 @@ class SimpleBarChart : Widget
             bar.title.style.color = style.textColor;
             bar.title.style.alignment = TextAlign.center;
             int yoffset = (_axisX.maxDescriptionSize.h + bar.title.size.h) / 2;
-            bar.title.draw(buf, Point(firstBarX, b.y + b.h - yoffset), _barWidth);
+            bar.title.draw(buf, firstBarX, b.y + b.h - yoffset, _barWidth);
 
             firstBarX += _barWidth + _barSpacing;
         }
@@ -430,8 +430,8 @@ class SimpleBarChart : Widget
         _axisYAvgValueDesc.style.color = style.textColor;
         _axisYMaxValueDesc.style.alignment = TextAlign.end;
         _axisYAvgValueDesc.style.alignment = TextAlign.end;
-        _axisYMaxValueDesc.draw(buf, Point(b.x, yMax - _axisY.maxDescriptionSize.h / 2), axisYWidth);
-        _axisYAvgValueDesc.draw(buf, Point(b.x, yAvg - _axisY.maxDescriptionSize.h / 2), axisYWidth);
+        _axisYMaxValueDesc.draw(buf, b.x, yMax - _axisY.maxDescriptionSize.h / 2, axisYWidth);
+        _axisYAvgValueDesc.draw(buf, b.x, yAvg - _axisY.maxDescriptionSize.h / 2, axisYWidth);
     }
 
     protected int barYValueToPixels(int axisInPixels, double barYValue)
