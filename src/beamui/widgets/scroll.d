@@ -46,8 +46,7 @@ enum ScrollBarMode
     external,
 }
 
-/**
-    Abstract scrollable widget (used as a base for other widgets with scrolling)
+/** Abstract scrollable widget (used as a base for other widgets with scrolling).
 
     Provides scroll bars and basic scrolling functionality.
  */
@@ -55,56 +54,84 @@ class ScrollAreaBase : WidgetGroup
 {
     @property
     {
-        /// Mode of the vertical scrollbar
-        ScrollBarMode vscrollbarMode() const { return _vscrollbarMode; }
-        /// ditto
-        void vscrollbarMode(ScrollBarMode m)
-        {
-            _vscrollbarMode = m;
-        }
         /// Mode of the horizontal scrollbar
         ScrollBarMode hscrollbarMode() const { return _hscrollbarMode; }
         /// ditto
         void hscrollbarMode(ScrollBarMode m)
         {
-            _hscrollbarMode = m;
+            if (_hscrollbarMode != m)
+            {
+                _hscrollbarMode = m;
+                requestLayout();
+                if (m != ScrollBarMode.hidden)
+                {
+                    _hscrollbar = new ScrollBar(Orientation.horizontal);
+                    _hscrollbar.id = "hscrollbar";
+                    _hscrollbar.scrolled ~= &onHScroll;
+                    addChild(_hscrollbar);
+                }
+            }
+        }
+        /// Mode of the vertical scrollbar
+        ScrollBarMode vscrollbarMode() const { return _vscrollbarMode; }
+        /// ditto
+        void vscrollbarMode(ScrollBarMode m)
+        {
+            if (_vscrollbarMode != m)
+            {
+                _vscrollbarMode = m;
+                requestLayout();
+                if (m != ScrollBarMode.hidden)
+                {
+                    _vscrollbar = new ScrollBar(Orientation.vertical);
+                    _vscrollbar.id = "vscrollbar";
+                    _vscrollbar.scrolled ~= &onVScroll;
+                    addChild(_vscrollbar);
+                }
+            }
         }
 
-        /// Horizontal scrollbar control
-        ScrollBar hscrollbar() { return _hscrollbar; }
+        /// Horizontal scrollbar control. Can be `null`, and can be set to another scrollbar or `null`
+        inout(ScrollBar) hscrollbar() inout { return _hscrollbar; }
         /// ditto
         void hscrollbar(ScrollBar hbar)
         {
+            if (_hscrollbar !is hbar)
+                requestLayout();
             if (_hscrollbar)
             {
                 removeChild(_hscrollbar);
                 destroy(_hscrollbar);
                 _hscrollbar = null;
-                _hscrollbarMode = ScrollBarMode.hidden;
             }
             if (hbar)
             {
                 _hscrollbar = hbar;
                 _hscrollbarMode = ScrollBarMode.external;
             }
+            else
+                _hscrollbarMode = ScrollBarMode.hidden;
         }
-        /// Vertical scrollbar control
-        ScrollBar vscrollbar() { return _vscrollbar; }
+        /// Vertical scrollbar control. Can be `null`, and can be set to another scrollbar or `null`
+        inout(ScrollBar) vscrollbar() inout { return _vscrollbar; }
         /// ditto
         void vscrollbar(ScrollBar vbar)
         {
+            if (_vscrollbar !is vbar)
+                requestLayout();
             if (_vscrollbar)
             {
                 removeChild(_vscrollbar);
                 destroy(_vscrollbar);
                 _vscrollbar = null;
-                _vscrollbarMode = ScrollBarMode.hidden;
             }
             if (vbar)
             {
                 _vscrollbar = vbar;
                 _vscrollbarMode = ScrollBarMode.external;
             }
+            else
+                _vscrollbarMode = ScrollBarMode.hidden;
         }
 
         /// Inner area, excluding additional controls like scrollbars
@@ -133,10 +160,10 @@ class ScrollAreaBase : WidgetGroup
 
     private
     {
-        ScrollBarMode _vscrollbarMode;
         ScrollBarMode _hscrollbarMode;
-        ScrollBar _vscrollbar;
+        ScrollBarMode _vscrollbarMode;
         ScrollBar _hscrollbar;
+        ScrollBar _vscrollbar;
         Size _sbsz;
 
         Box _clientBox;
@@ -146,16 +173,8 @@ class ScrollAreaBase : WidgetGroup
     this(ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
          ScrollBarMode vscrollbarMode = ScrollBarMode.automatic)
     {
-        _hscrollbarMode = hscrollbarMode;
-        _vscrollbarMode = vscrollbarMode;
-        _hscrollbar = new ScrollBar(Orientation.horizontal);
-        _vscrollbar = new ScrollBar(Orientation.vertical);
-        _hscrollbar.id = "hscrollbar";
-        _vscrollbar.id = "vscrollbar";
-        _hscrollbar.scrolled ~= &onHScroll;
-        _vscrollbar.scrolled ~= &onVScroll;
-        addChild(_hscrollbar);
-        addChild(_vscrollbar);
+        this.hscrollbarMode = hscrollbarMode;
+        this.vscrollbarMode = vscrollbarMode;
     }
 
     override bool onMouseEvent(MouseEvent event)
@@ -265,14 +284,14 @@ class ScrollAreaBase : WidgetGroup
             Box b = Box(inner.x, inner.y + inner.h - _sbsz.h, sz.w - vsbw, _sbsz.h);
             _hscrollbar.layout(b);
         }
-        else
+        else if (_hscrollbar)
             _hscrollbar.cancelLayout();
         if (needVScroll)
         {
             Box b = Box(inner.x + inner.w - _sbsz.w, inner.y, _sbsz.w, sz.h - hsbh);
             _vscrollbar.layout(b);
         }
-        else
+        else if (_vscrollbar)
             _vscrollbar.cancelLayout();
     }
 
@@ -378,6 +397,7 @@ class ScrollAreaBase : WidgetGroup
     /// Update horizontal scrollbar widget position
     protected void updateHScrollBar()
     {
+        assert(_hscrollbar);
         // default implementation: use fullContentSize, _clientBox, override it if necessary
         _hscrollbar.data.setRange(0, fullContentSize.w);
         _hscrollbar.data.pageSize = _clientBox.w;
@@ -387,6 +407,7 @@ class ScrollAreaBase : WidgetGroup
     /// Update verticat scrollbar widget position
     protected void updateVScrollBar()
     {
+        assert(_vscrollbar);
         // default implementation: use fullContentSize, _clientBox, override it if necessary
         _vscrollbar.data.setRange(0, fullContentSize.h);
         _vscrollbar.data.pageSize = _clientBox.h;
@@ -438,18 +459,22 @@ class ScrollAreaBase : WidgetGroup
  */
 class ScrollArea : ScrollAreaBase
 {
-    @property Widget contentWidget() { return _contentWidget; }
+    @property inout(Widget) contentWidget() inout { return _contentWidget; }
     /// ditto
-    @property void contentWidget(Widget newContent)
+    @property void contentWidget(Widget widget)
     {
+        if (_contentWidget !is widget)
+            requestLayout();
         if (_contentWidget)
         {
-            removeChild(childIndex(_contentWidget));
+            removeChild(_contentWidget);
             destroy(_contentWidget);
         }
-        _contentWidget = newContent;
-        addChild(_contentWidget);
-        requestLayout();
+        if (widget)
+        {
+            _contentWidget = widget;
+            addChild(widget);
+        }
     }
 
     override @property Size fullContentSize() const { return _fullContentSize; }
