@@ -24,9 +24,9 @@ class ImageWidget : Widget
         {
             _imageID = id;
             _drawable.clear();
-            if (_imageID)
+            if (id.length)
             {
-                auto img = imageCache.get(_imageID);
+                auto img = imageCache.get(id);
                 if (!img.isNull)
                     _drawable = new ImageDrawable(img);
             }
@@ -38,6 +38,7 @@ class ImageWidget : Widget
         {
             imageID = null;
             _drawable = img;
+            requestLayout();
         }
     }
 
@@ -94,11 +95,14 @@ class Button : LinearLayout, ActionHolder
         /// ditto
         void iconID(string id)
         {
-            if (!id)
+            const some = id.length > 0;
+            if (_icon)
             {
-                removeChild(_icon);
+                if (some)
+                    _icon.imageID = id;
+                _icon.visibility = some ? Visibility.visible : Visibility.gone;
             }
-            else if (!_icon)
+            else if (some)
             {
                 _icon = new ImageWidget(id);
                 _icon.id = "icon";
@@ -106,23 +110,27 @@ class Button : LinearLayout, ActionHolder
                 _icon.state = State.parent;
                 add(_icon);
             }
-            else
-                _icon.imageID = id;
-            requestLayout();
         }
 
         /// Set custom drawable for icon
         void drawable(DrawableRef img)
         {
-            if (!_icon)
+            const some = !img.isNull;
+            if (_icon)
+            {
+                if (some)
+                    _icon.drawable = img;
+                _icon.visibility = some ? Visibility.visible : Visibility.gone;
+            }
+            else if (some)
             {
                 _icon = new ImageWidget;
                 _icon.id = "icon";
                 _icon.bindSubItem(this, "icon");
                 _icon.state = State.parent;
+                _icon.drawable = img;
                 add(_icon);
             }
-            _icon.drawable = img;
         }
 
         /// Action to emit on click
@@ -130,11 +138,19 @@ class Button : LinearLayout, ActionHolder
         /// ditto
         void action(Action a)
         {
+            if (_action)
+            {
+                _action.changed -= &updateContent;
+                _action.stateChanged -= &updateState;
+            }
             _action = a;
-            a.changed ~= &updateContent;
-            a.stateChanged ~= &updateState;
-            updateContent();
-            updateState();
+            if (a)
+            {
+                a.changed ~= &updateContent;
+                a.stateChanged ~= &updateState;
+                updateContent();
+                updateState();
+            }
         }
     }
 
@@ -148,11 +164,14 @@ class Button : LinearLayout, ActionHolder
         /// Set label plain unicode string
         void text(dstring s)
         {
-            if (!s)
+            const some = s.length > 0;
+            if (_label)
             {
-                removeChild(_label);
+                if (some)
+                    _label.text = s;
+                _label.visibility = some ? Visibility.visible : Visibility.gone;
             }
-            else if (!_label)
+            else if (some)
             {
                 _label = new ShortLabel(s);
                 _label.id = "label";
@@ -160,9 +179,6 @@ class Button : LinearLayout, ActionHolder
                 _label.state = State.parent;
                 add(_label).setFillWidth(true).setFillHeight(false);
             }
-            else
-                _label.text = s;
-            requestLayout();
         }
     }
 

@@ -2113,17 +2113,18 @@ class WidgetGroup : Widget
     override Widget removeChild(string id)
     {
         int index = cast(int)_children.indexOf(id);
-        if (index < 0)
-            return null;
-        return removeChild(index);
+        return index >= 0 ? removeChild(index) : null;
     }
 
     override Widget removeChild(Widget child)
     {
-        int index = cast(int)_children.indexOf(child);
-        if (index < 0)
-            return null;
-        return removeChild(index);
+        if (child)
+        {
+            int index = cast(int)_children.indexOf(child);
+            if (index >= 0)
+                return removeChild(index);
+        }
+        return null;
     }
 
     override void removeAllChildren(bool destroyThem = true)
