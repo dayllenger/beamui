@@ -366,7 +366,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
         Color _caretColor = Color(0x0);
         Color _caretColorReplace = Color(0x808080FF);
-        Color _matchingBracketHightlightColor = Color(0x60FFE0B0);
+        Color _matchingBracketHighlightColor = Color(0x60FFE0B0);
 
         /// When true, call `measureVisibleText` on next layout
         bool _contentChanged = true;
@@ -993,7 +993,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _selectionColorNormal = currentTheme.getColor("editor_selection_normal", Color(0xD060A0FF));
         _searchHighlightColorCurrent = currentTheme.getColor("editor_search_highlight_current", Color(0x808080FF));
         _searchHighlightColorOther = currentTheme.getColor("editor_search_highlight_other", Color(0xC08080FF));
-        _matchingBracketHightlightColor = currentTheme.getColor("editor_matching_bracket_highlight", Color(0x60FFE0B0));
+        _matchingBracketHighlightColor = currentTheme.getColor("editor_matching_bracket_highlight", Color(0x60FFE0B0));
     }
 
     /// When cursor position or selection is out of content bounds, fix it to nearest valid position
@@ -3316,12 +3316,12 @@ class EditBox : EditWidgetBase
         if (_matchingBraces.start.line == lineIndex)
         {
             const r = TextRange(_matchingBraces.start, _matchingBraces.start.offset(1));
-            highlightLineRange(buf, lineRect, _matchingBracketHightlightColor, r);
+            highlightLineRange(buf, lineRect, _matchingBracketHighlightColor, r);
         }
         if (_matchingBraces.end.line == lineIndex)
         {
             const r = TextRange(_matchingBraces.end, _matchingBraces.end.offset(1));
-            highlightLineRange(buf, lineRect, _matchingBracketHightlightColor, r);
+            highlightLineRange(buf, lineRect, _matchingBracketHighlightColor, r);
         }
 
         // frame around current line
@@ -3373,12 +3373,12 @@ class EditBox : EditWidgetBase
     private CustomCharProps[ubyte] _tokenHighlightColors;
 
     /// Set highlight options for particular token category
-    void setTokenHightlightColor(ubyte tokenCategory, Color color, bool underline = false, bool strikeThrough = false)
+    void setTokenHighlightColor(ubyte tokenCategory, Color color, bool underline = false, bool strikeThrough = false)
     {
         _tokenHighlightColors[tokenCategory] = CustomCharProps(color, underline, strikeThrough);
     }
     /// Clear highlight colors
-    void clearTokenHightlightColors()
+    void clearTokenHighlightColors()
     {
         destroy(_tokenHighlightColors);
     }
