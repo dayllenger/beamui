@@ -17,75 +17,93 @@ import beamui.core.undo;
 
 immutable dchar EOL = '\n';
 
-const ubyte TOKEN_CATEGORY_SHIFT = 4;
+private const ubyte TC_SHIFT = 4;
 const ubyte TOKEN_CATEGORY_MASK = 0xF0; // token category 0..15
 const ubyte TOKEN_SUBCATEGORY_MASK = 0x0F; // token subcategory 0..15
 const ubyte TOKEN_UNKNOWN = 0;
 
-/*
-Bit mask:
-7654 3210
-cccc ssss
-|    |
-|    \ ssss = token subcategory
-|
-\ cccc = token category
+/** Token category for syntax highlight.
 
+    Bit mask:
+    ---
+    7654 3210
+    cccc ssss
+    |    |
+    |    token subcategory
+    |
+    token category
+    ---
 */
-/// Token category for syntax highlight
 enum TokenCategory : ubyte
 {
-    WhiteSpace = (0 << TOKEN_CATEGORY_SHIFT),
-    WhiteSpace_Space = (0 << TOKEN_CATEGORY_SHIFT) | 1,
-    WhiteSpace_Tab = (0 << TOKEN_CATEGORY_SHIFT) | 2,
+    /// Whitespace category
+    whitespace = (0 << TC_SHIFT),
+    /// Space character sequence
+    whitespaceSpace = (0 << TC_SHIFT) | 1,
+    /// Tab character sequence
+    whitespaceTab = (0 << TC_SHIFT) | 2,
 
-    Comment = (1 << TOKEN_CATEGORY_SHIFT),
-    Comment_SingleLine = (1 << TOKEN_CATEGORY_SHIFT) | 1, // single line comment
-    Comment_SingleLineDoc = (1 << TOKEN_CATEGORY_SHIFT) | 2, // documentation in single line comment
-    Comment_MultyLine = (1 << TOKEN_CATEGORY_SHIFT) | 3, // multiline coment
-    Comment_MultyLineDoc = (1 << TOKEN_CATEGORY_SHIFT) | 4, // documentation in multiline comment
-    Comment_Documentation = (1 << TOKEN_CATEGORY_SHIFT) | 5, // documentation comment
+    /// Comment category
+    comment = (1 << TC_SHIFT),
+    /// Single-line comment
+    commentSingleLine = comment | 1,
+    /// Single-line documentation comment
+    commentSingleLineDoc = comment | 2,
+    /// Multiline coment
+    commentMultiLine = comment | 3,
+    /// Multiline documentation comment
+    commentMultiLineDoc = comment | 4,
+    /// Documentation comment
+    commentDoc = comment | 5,
 
-    Identifier = (2 << TOKEN_CATEGORY_SHIFT), // identifier (exact subcategory is unknown)
-    Identifier_Class = (2 << TOKEN_CATEGORY_SHIFT) | 1, // class name
-    Identifier_Struct = (2 << TOKEN_CATEGORY_SHIFT) | 2, // struct name
-    Identifier_Local = (2 << TOKEN_CATEGORY_SHIFT) | 3, // local variable
-    Identifier_Member = (2 << TOKEN_CATEGORY_SHIFT) | 4, // struct or class member
-    Identifier_Deprecated = (2 << TOKEN_CATEGORY_SHIFT) | 15, // usage of this identifier is deprecated
+    /// Identifier category
+    identifier = (2 << TC_SHIFT),
+    /// Class name
+    identifierClass = identifier | 1,
+    /// Struct name
+    identifierStruct = identifier | 2,
+    /// Local variable
+    identifierLocal = identifier | 3,
+    /// Struct or class member
+    identifierMember = identifier | 4,
+    /// Usage of this identifier is deprecated
+    identifierDeprecated = identifier | 15,
+
     /// String literal
-    String = (3 << TOKEN_CATEGORY_SHIFT),
+    string = (3 << TC_SHIFT),
     /// Character literal
-    Character = (4 << TOKEN_CATEGORY_SHIFT),
+    character = (4 << TC_SHIFT),
     /// Integer literal
-    Integer = (5 << TOKEN_CATEGORY_SHIFT),
+    integer = (5 << TC_SHIFT),
     /// Floating point number literal
-    Float = (6 << TOKEN_CATEGORY_SHIFT),
+    floating = (6 << TC_SHIFT),
     /// Keyword
-    Keyword = (7 << TOKEN_CATEGORY_SHIFT),
+    keyword = (7 << TC_SHIFT),
     /// Operator
-    Op = (8 << TOKEN_CATEGORY_SHIFT),
-    // add more here
-    //....
-    /// Error - unparsed character sequence
-    Error = (15 << TOKEN_CATEGORY_SHIFT),
+    op = (8 << TC_SHIFT),
+
+    // add more here...
+
+    /// Error category - unparsed character sequence
+    error = (15 << TC_SHIFT),
     /// Invalid token - generic
-    Error_InvalidToken = (15 << TOKEN_CATEGORY_SHIFT) | 1,
-    /// Invalid number token - error occured while parsing number
-    Error_InvalidNumber = (15 << TOKEN_CATEGORY_SHIFT) | 2,
-    /// Invalid string token - error occured while parsing string
-    Error_InvalidString = (15 << TOKEN_CATEGORY_SHIFT) | 3,
-    /// Invalid identifier token - error occured while parsing identifier
-    Error_InvalidIdentifier = (15 << TOKEN_CATEGORY_SHIFT) | 4,
-    /// Invalid comment token - error occured while parsing comment
-    Error_InvalidComment = (15 << TOKEN_CATEGORY_SHIFT) | 7,
-    /// Invalid comment token - error occured while parsing comment
-    Error_InvalidOp = (15 << TOKEN_CATEGORY_SHIFT) | 8,
+    errorInvalidToken = error | 1,
+    /// Invalid number token
+    errorInvalidNumber = error | 2,
+    /// Invalid string token
+    errorInvalidString = error | 3,
+    /// Invalid identifier token
+    errorInvalidIdentifier = error | 4,
+    /// Invalid comment token
+    errorInvalidComment = error | 7,
+    /// Invalid operator token
+    errorInvalidOp = error | 8,
 }
 
 /// Extracts token category, clearing subcategory
-ubyte tokenCategory(ubyte t)
+TokenCategory tokenCategory(TokenCategory t)
 {
-    return t & 0xF0;
+    return cast(TokenCategory)(t & 0xF0);
 }
 
 /// Split dstring by delimiters
