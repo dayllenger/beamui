@@ -1,7 +1,7 @@
 /**
 Single-line and multiline simple text editors.
 
-Copyright: Vadim Lopatin 2014-2017, James Johnson 2017
+Copyright: Vadim Lopatin 2014-2017, James Johnson 2017, dayllenger 2019
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -349,7 +349,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         /// When `_ownContent` is false, `_content` should not be destroyed in editor destructor
         bool _ownContent = true;
 
-        int _lineHeight;
+        int _lineHeight = 1;
         Point _scrollPos;
         bool _fixedFont;
         int _spaceWidth;
@@ -2274,7 +2274,7 @@ class EditBox : EditWidgetBase
 
         final protected int linesOnScreen() const
         {
-            return clientBox.height / _lineHeight;
+            return (clientBox.height + _lineHeight - 1) / _lineHeight;
         }
     }
 
@@ -2282,18 +2282,26 @@ class EditBox : EditWidgetBase
     {
         int _minFontSize = -1; // disable zooming
         int _maxFontSize = -1; // disable zooming
+        bool _showWhiteSpaceMarks;
 
         int _firstVisibleLine;
-
         int _maxLineWidth;
-        int _numVisibleLines; // number of lines visible in client area
-        dstring[] _visibleLines; // text for visible lines
-        int[][] _visibleLinesMeasurement; // char positions for visible lines
-        int[] _visibleLinesWidths; // width (in pixels) of visible lines
-        CustomCharProps[][] _visibleLinesHighlights;
-        CustomCharProps[][] _visibleLinesHighlightsBuf;
 
-        bool _showWhiteSpaceMarks;
+        static struct VisibleLine
+        {
+            dstring str;
+            int[] positions; /// Char positions
+            int width; /// Width (in pixels)
+            CustomCharProps[] highlight;
+            CustomCharProps[] highlightBuf;
+
+            size_t length() const
+            {
+                return str.length;
+            }
+        }
+        /// Lines, visible in the client area
+        VisibleLine[] _visibleLines;
     }
 
     this(dstring initialContent = null,
@@ -2644,14 +2652,15 @@ class EditBox : EditWidgetBase
         res.y = lineIndex * _lineHeight;
         res.h = _lineHeight;
         // if visible
-        if (lineIndex >= 0 && lineIndex < _visibleLines.length)
+        if (0 <= lineIndex && lineIndex < _visibleLines.length)
         {
+            const VisibleLine* line = &_visibleLines[lineIndex];
             if (p.pos == 0)
                 res.x = 0;
-            else if (p.pos >= _visibleLinesMeasurement[lineIndex].length)
-                res.x = _visibleLinesWidths[lineIndex];
+            else if (p.pos >= line.positions.length)
+                res.x = line.width;
             else
-                res.x = _visibleLinesMeasurement[lineIndex][p.pos - 1];
+                res.x = line.positions[p.pos - 1];
         }
         res.x -= _scrollPos.x;
         res.w = 1;
@@ -2665,11 +2674,12 @@ class EditBox : EditWidgetBase
         const int lineIndex = max(pt.y / _lineHeight, 0);
         if (lineIndex < _visibleLines.length)
         {
+            const VisibleLine* line = &_visibleLines[lineIndex];
             res.line = lineIndex + _firstVisibleLine;
-            foreach (i; 0 .. _visibleLines[lineIndex].length)
+            foreach (i; 0 .. line.length)
             {
-                const int x0 = i > 0 ? _visibleLinesMeasurement[lineIndex][i - 1] : 0;
-                const int x1 = _visibleLinesMeasurement[lineIndex][i];
+                const int x0 = i > 0 ? line.positions[i - 1] : 0;
+                const int x1 = line.positions[i];
                 const int mx = (x0 + x1) / 2;
                 if (pt.x <= mx)
                 {
@@ -2677,7 +2687,7 @@ class EditBox : EditWidgetBase
                     return res;
                 }
             }
-            res.pos = cast(int)_visibleLines[lineIndex].length;
+            res.pos = cast(int)line.length;
         }
         else if (_visibleLines.length > 0)
         {
@@ -3238,44 +3248,36 @@ class EditBox : EditWidgetBase
 
     override protected Size measureVisibleText()
     {
-        FontRef font = font();
+        Font font = font();
         _lineHeight = font.height;
-        _numVisibleLines = (clientBox.height + _lineHeight - 1) / _lineHeight;
+
+        int numVisibleLines = linesOnScreen;
         if (_firstVisibleLine >= _content.length)
         {
-            _firstVisibleLine = max(_content.length - _numVisibleLines + 1, 0);
+            _firstVisibleLine = max(_content.length - numVisibleLines + 1, 0);
             _caretPos.line = _content.length - 1;
             _caretPos.pos = 0;
         }
-        _numVisibleLines = max(_numVisibleLines, 1);
-        if (_firstVisibleLine + _numVisibleLines > _content.length)
-            _numVisibleLines = _content.length - _firstVisibleLine;
-        _numVisibleLines = max(_numVisibleLines, 1);
-        _visibleLines.length = _numVisibleLines;
-        if (_visibleLinesMeasurement.length < _numVisibleLines)
-            _visibleLinesMeasurement.length = _numVisibleLines;
-        if (_visibleLinesWidths.length < _numVisibleLines)
-            _visibleLinesWidths.length = _numVisibleLines;
-        if (_visibleLinesHighlights.length < _numVisibleLines)
-        {
-            _visibleLinesHighlights.length = _numVisibleLines;
-            _visibleLinesHighlightsBuf.length = _numVisibleLines;
-        }
+        numVisibleLines = max(numVisibleLines, 1);
+        if (_firstVisibleLine + numVisibleLines > _content.length)
+            numVisibleLines = max(_content.length - _firstVisibleLine, 1);
+
+        _visibleLines.length = numVisibleLines;
+
         Size sz;
-        foreach (i; 0 .. _numVisibleLines)
+        foreach (i, ref line; _visibleLines)
         {
-            _visibleLines[i] = _content[_firstVisibleLine + i];
-            const len = _visibleLines[i].length;
-            if (_visibleLinesMeasurement[i].length < len)
-                _visibleLinesMeasurement[i].length = len;
-            if (_visibleLinesHighlightsBuf[i].length < len)
-                _visibleLinesHighlightsBuf[i].length = len;
-            _visibleLinesHighlights[i] = handleCustomLineHighlight(_firstVisibleLine + i,
-                    _visibleLines[i], _visibleLinesHighlightsBuf[i]);
-            const int charsMeasured = font.measureText(_visibleLines[i], _visibleLinesMeasurement[i], int.max, tabSize);
-            _visibleLinesWidths[i] = charsMeasured > 0 ? _visibleLinesMeasurement[i][charsMeasured - 1] : 0;
+            line.str = _content[_firstVisibleLine + cast(int)i];
+            const len = line.str.length;
+            if (line.positions.length < len)
+                line.positions.length = len;
+            if (line.highlightBuf.length < len)
+                line.highlightBuf.length = len;
+            line.highlight = handleCustomLineHighlight(_firstVisibleLine + cast(int)i, line.str, line.highlightBuf);
+            const int charsMeasured = font.measureText(line.str, line.positions, int.max, tabSize);
+            line.width = charsMeasured > 0 ? line.positions[charsMeasured - 1] : 0;
             // width - max from visible lines
-            sz.w = max(sz.w, _visibleLinesWidths[i]);
+            sz.w = max(sz.w, line.width);
         }
         sz.w = _maxLineWidth;
         sz.h = _lineHeight * _content.length; // height - for all lines
@@ -3597,9 +3599,9 @@ class EditBox : EditWidgetBase
 
         FontRef font = font();
         int previousWraps;
-        for (int i = 0; i < _visibleLines.length; i++)
+        foreach (i; 0 .. cast(int)_visibleLines.length)
         {
-            const dstring txt = _visibleLines[i];
+            const dstring txt = _visibleLines[i].str;
             Rect lineRect;
             lineRect.left = b.x - _scrollPos.x;
             lineRect.right = lineRect.left + calcLineWidth(_content[_firstVisibleLine + i]);
@@ -3633,7 +3635,7 @@ class EditBox : EditWidgetBase
             }
             if (txt.length > 0 || _wordWrap)
             {
-                CustomCharProps[] highlight = _visibleLinesHighlights[i];
+                CustomCharProps[] highlight = _visibleLines[i].highlight;
                 if (_wordWrap)
                 {
                     dstring[] wrappedLine;
