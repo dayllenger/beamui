@@ -448,36 +448,42 @@ struct WrapPoint
     int wrapWidth;
 }
 
-/// Interface for custom syntax highlight, comments toggling, smart indents, and other language dependent features for source code editors
+/// Interface for custom syntax highlight, comments toggling, smart indents,
+/// and other language dependent features for source code editors
 interface SyntaxSupport
 {
-    /// Returns editable content
-    @property EditableContent content();
-    /// Set editable content
-    @property SyntaxSupport content(EditableContent content);
+    @property
+    {
+        /// Editable content
+        inout(EditableContent) content() inout;
+        /// ditto
+        void content(EditableContent);
+
+        /// Returns true if supports toggle line comment for that language
+        bool supportsToggleLineComment() const;
+        /// Returns true if supports toggle block comment for that language
+        bool supportsToggleBlockComment() const;
+        /// Returns true if supports smart indent for that language
+        bool supportsSmartIndents() const;
+    }
 
     /// Categorize characters in content by token types
-    void updateHighlight(dstring[] lines, TokenPropString[] props, int changeStartLine, int changeEndLine);
+    void updateHighlight(dstring[] lines, TokenPropString[] props, int startLine, int endLine);
 
-    /// Returns true if toggle line comment is supported for file type
-    @property bool supportsToggleLineComment();
+    /// Find paired bracket `{}` `()` `[]` for char at position `p`.
+    /// Returns: Paired char position or `p` if not found or not a bracket.
+    TextPosition findPairedBracket(TextPosition p);
+
     /// Returns true if can toggle line comments for specified text range
-    bool canToggleLineComment(TextRange range);
+    bool canToggleLineComment(TextRange range) const;
     /// Toggle line comments for specified text range
     void toggleLineComment(TextRange range, Object source);
 
-    /// Returns true if toggle block comment is supported for file type
-    @property bool supportsToggleBlockComment();
     /// Returns true if can toggle block comments for specified text range
-    bool canToggleBlockComment(TextRange range);
+    bool canToggleBlockComment(TextRange range) const;
     /// Toggle block comments for specified text range
     void toggleBlockComment(TextRange range, Object source);
 
-    /// Returns paired bracket {} () [] for char at position p, returns paired char position or p if not found or not bracket
-    TextPosition findPairedBracket(TextPosition p);
-
-    /// Returns true if smart indent is supported
-    bool supportsSmartIndents() const;
     /// Apply smart indent after edit operation, if needed
     void applySmartIndent(EditOperation op, Object source);
 }

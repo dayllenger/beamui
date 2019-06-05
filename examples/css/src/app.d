@@ -12,6 +12,7 @@ Authors:   dayllenger
 module app;
 
 import beamui;
+import beamui.css.syntax;
 
 int main()
 {
@@ -41,6 +42,10 @@ int main()
             style.height = 500;
             add(editor).setFillHeight(true);
             add(btnUpdate).setFillWidth(false);
+            with (editor) {
+                smartIndents = true;
+                content.syntaxSupport = new CssSyntaxSupport;
+            }
             btnUpdate.id = "update";
         }
         with (controls) {
