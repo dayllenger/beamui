@@ -22,6 +22,7 @@ import beamui.widgets.layouts;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
 import beamui.widgets.scroll;
+import beamui.widgets.scrollbar : SliderData;
 import beamui.widgets.widget;
 import beamui.platforms.common.platform;
 
@@ -256,24 +257,26 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
         /// To hold _scrollpos.x toggling between normal and word wrap mode
         private int previousXScrollPos;
+        private ScrollBarMode previousHScrollbarMode;
         /// True if word wrap mode is set
         bool wordWrap() const { return _wordWrap; }
-        /// Enable or disable word wrap mode
+        /// ditto
         void wordWrap(bool v)
         {
             _wordWrap = v;
             // horizontal scrollbar should not be visible in word wrap mode
             if (v)
             {
-                hscrollbar.visibility = Visibility.hidden;
-                previousXScrollPos = _scrollPos.x;
-                _scrollPos.x = 0;
+                previousHScrollbarMode = hscrollbarMode;
+                previousXScrollPos = scrollPos.x;
+                hscrollbarMode = ScrollBarMode.hidden;
+                scrollPos.x = 0;
                 wordWrapRefresh();
             }
             else
             {
-                hscrollbar.visibility = Visibility.visible;
-                _scrollPos.x = previousXScrollPos;
+                hscrollbarMode = previousHScrollbarMode;
+                scrollPos.x = previousXScrollPos;
             }
             invalidate();
         }
@@ -350,7 +353,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         bool _ownContent = true;
 
         int _lineHeight = 1;
-        Point _scrollPos;
         bool _fixedFont;
         int _spaceWidth;
 
@@ -945,7 +947,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
         if (_wordWrap)
         {
-            _scrollPos.x = 0;
             const int wrapLine = findWrapLine(_caretPos);
             int xOffset;
             if (wrapLine > 0)
@@ -2038,6 +2039,11 @@ class EditLine : EditWidgetBase
                 requestLayout();
             }
         }
+
+        override Size fullContentSize() const
+        {
+            return Size(_measuredTextSize.w + clientBox.w / 16, _measuredTextSize.h);
+        }
     }
 
     /// Handle Enter key press inside line editor
@@ -2083,14 +2089,14 @@ class EditLine : EditWidgetBase
             res.x = _measuredTextSize.w;
         else
             res.x = _measuredTextWidths[p.pos - 1];
-        res.x -= _scrollPos.x;
+        res.x -= scrollPos.x;
         res.w = 1;
         return res;
     }
 
     override protected TextPosition clientToTextPos(Point pt) const
     {
-        pt.x += _scrollPos.x;
+        pt.x += scrollPos.x;
         TextPosition res;
         foreach (i; 0 .. _measuredText.length)
         {
@@ -2109,19 +2115,17 @@ class EditLine : EditWidgetBase
 
     override protected void ensureCaretVisible(bool center = false)
     {
-        //_scrollPos
         const Box b = textPosToClient(_caretPos);
         if (b.x < 0)
         {
             // scroll left
-            _scrollPos.x -= -b.x + clientBox.width / 10;
-            _scrollPos.x = max(_scrollPos.x, 0);
+            scrollPos.x = max(scrollPos.x + b.x - clientBox.width / 10, 0);
             invalidate();
         }
         else if (b.x >= clientBox.width - 10)
         {
             // scroll right
-            _scrollPos.x += (b.x - clientBox.width) + _spaceWidth * 4;
+            scrollPos.x += (b.x - clientBox.width) + _spaceWidth * 4;
             invalidate();
         }
         updateScrollBars();
@@ -2165,12 +2169,11 @@ class EditLine : EditWidgetBase
 
     override protected Size measureVisibleText()
     {
-        FontRef font = font();
         _measuredText = applyPasswordChar(text);
         _measuredTextWidths.length = _measuredText.length;
         int charsMeasured = font.measureText(_measuredText, _measuredTextWidths, MAX_WIDTH_UNSPECIFIED, tabSize);
         _measuredTextSize.w = charsMeasured > 0 ? _measuredTextWidths[charsMeasured - 1] : 0;
-        _measuredTextSize.h = font.height;
+        _measuredTextSize.h = _lineHeight;
         return _measuredTextSize;
     }
 
@@ -2230,10 +2233,10 @@ class EditLine : EditWidgetBase
         {
             // draw the placeholder when no text
             if (auto ph = _placeholder)
-                ph.draw(buf, b.x - _scrollPos.x, b.y, b.w);
+                ph.draw(buf, b.x - scrollPos.x, b.y, b.w);
         }
         else
-            font.drawText(buf, b.x - _scrollPos.x, b.y, _measuredText, style.textColor, tabSize);
+            font.drawText(buf, b.x - scrollPos.x, b.y, _measuredText, style.textColor, tabSize);
 
         drawCaret(buf);
     }
@@ -2276,7 +2279,15 @@ class EditBox : EditWidgetBase
         {
             return (clientBox.height + _lineHeight - 1) / _lineHeight;
         }
+
+        override Size fullContentSize() const
+        {
+            return Size(_maxLineWidth + (_extendRightScrollBound ? clientBox.w / 16 : 0),
+                        _lineHeight * _content.length);
+        }
     }
+
+    protected bool _extendRightScrollBound = true;
 
     private
     {
@@ -2351,30 +2362,20 @@ class EditBox : EditWidgetBase
         _maxLineWidth = maxw;
     }
 
-    protected bool _extendRightScrollBound = true;
-    // TODO: `_maxLineWidth + (_extendRightScrollBound ? clientBox.width / 16 : 0)` add to fullContentSize?
-
-    override protected void updateHScrollBar() // TODO: bug as in ScrollArea.updateScrollBars when delete text
+    override protected void updateVScrollBar(SliderData data)
     {
-        hscrollbar.data.setRange(0, _maxLineWidth + (_extendRightScrollBound ? clientBox.width / 16 : 0));
-        hscrollbar.data.pageSize = clientBox.width;
-        hscrollbar.data.position = _scrollPos.x;
-    }
-
-    override protected void updateVScrollBar()
-    {
-        vscrollbar.data.setRange(0, _content.length);
-        vscrollbar.data.pageSize = linesOnScreen;
-        vscrollbar.data.position = _firstVisibleLine;
+        data.setRange(0, _content.length);
+        data.pageSize = max(linesOnScreen - 1, 1);
+        data.position = _firstVisibleLine;
     }
 
     override void onHScroll(ScrollEvent event)
     {
         if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
         {
-            if (_scrollPos.x != event.position)
+            if (scrollPos.x != event.position)
             {
-                _scrollPos.x = event.position;
+                scrollPos.x = event.position;
                 invalidate();
             }
         }
@@ -2625,20 +2626,21 @@ class EditBox : EditWidgetBase
             measureVisibleText();
             invalidate();
         }
-        //_scrollPos
+
         const Box b = textPosToClient(_caretPos);
         if (b.x < 0)
         {
             // scroll left
-            _scrollPos.x -= -b.x + clientBox.width / 4;
-            _scrollPos.x = max(_scrollPos.x, 0);
+            scrollPos.x = max(scrollPos.x + b.x - clientBox.width / 4, 0);
             invalidate();
         }
         else if (b.x >= clientBox.width - 10)
         {
             // scroll right
             if (!_wordWrap)
-                _scrollPos.x += (b.x - clientBox.width) + clientBox.width / 4;
+                scrollPos.x += (b.x - clientBox.width) + clientBox.width / 4;
+            else
+                scrollPos.x = 0;
             invalidate();
         }
         updateScrollBars();
@@ -2662,7 +2664,7 @@ class EditBox : EditWidgetBase
             else
                 res.x = line.positions[p.pos - 1];
         }
-        res.x -= _scrollPos.x;
+        res.x -= scrollPos.x;
         res.w = 1;
         return res;
     }
@@ -2670,7 +2672,7 @@ class EditBox : EditWidgetBase
     override protected TextPosition clientToTextPos(Point pt) const
     {
         TextPosition res;
-        pt.x += _scrollPos.x;
+        pt.x += scrollPos.x;
         const int lineIndex = max(pt.y / _lineHeight, 0);
         if (lineIndex < _visibleLines.length)
         {
@@ -2962,15 +2964,15 @@ class EditBox : EditWidgetBase
     /// Scroll somewhere (not changing cursor)
     protected void scroll(EditorScrollAction where)
     {
-        const int oldScrollPosX = _scrollPos.x;
+        const int oldScrollPosX = scrollPos.x;
         const int oldFirstVisibleLine = _firstVisibleLine;
         final switch (where) with (EditorScrollAction)
         {
         case left:
-            _scrollPos.x = max(_scrollPos.x - _spaceWidth * 4, 0);
+            scrollPos.x = max(scrollPos.x - _spaceWidth * 4, 0);
             break;
         case right:
-            _scrollPos.x = min(_scrollPos.x + _spaceWidth * 4, _maxLineWidth - clientBox.width);
+            scrollPos.x = min(scrollPos.x + _spaceWidth * 4, fullContentSize.w - clientBox.width);
             break;
         case lineUp:
             _firstVisibleLine = max(_firstVisibleLine - 3, 0);
@@ -2986,7 +2988,7 @@ class EditBox : EditWidgetBase
             _firstVisibleLine = max(min(_firstVisibleLine + screen * 3 / 4, _content.length - screen), 0);
             break;
         }
-        if (oldScrollPosX != _scrollPos.x)
+        if (oldScrollPosX != scrollPos.x)
         {
             updateScrollBars();
             invalidate();
@@ -3201,11 +3203,6 @@ class EditBox : EditWidgetBase
         }
     }
 
-    override Size fullContentSize() const
-    {
-        return Size(_maxLineWidth, _lineHeight * _content.length);
-    }
-
     override protected void onMeasure(ref Boundaries bs)
     {
         updateMaxLineWidth();
@@ -3248,9 +3245,6 @@ class EditBox : EditWidgetBase
 
     override protected Size measureVisibleText()
     {
-        Font font = font();
-        _lineHeight = font.height;
-
         int numVisibleLines = linesOnScreen;
         if (_firstVisibleLine >= _content.length)
         {
@@ -3594,7 +3588,7 @@ class EditBox : EditWidgetBase
             // draw the placeholder when no text
             const ls = _content.lines;
             if (ls.length == 0 || (ls.length == 1 && ls[0].length == 0))
-                ph.draw(buf, b.x - _scrollPos.x, b.y, b.w);
+                ph.draw(buf, b.x - scrollPos.x, b.y, b.w);
         }
 
         FontRef font = font();
@@ -3603,7 +3597,7 @@ class EditBox : EditWidgetBase
         {
             const dstring txt = _visibleLines[i].str;
             Rect lineRect;
-            lineRect.left = b.x - _scrollPos.x;
+            lineRect.left = b.x - scrollPos.x;
             lineRect.right = lineRect.left + calcLineWidth(_content[_firstVisibleLine + i]);
             lineRect.top = b.y + i * _lineHeight;
             lineRect.bottom = lineRect.top + _lineHeight;
@@ -3648,7 +3642,7 @@ class EditBox : EditWidgetBase
                     foreach (q, curWrap; wrappedLine)
                     {
                         const int lineOffset = cast(int)q + i + wrapsUpTo(i + _firstVisibleLine);
-                        const x = b.x - _scrollPos.x;
+                        const x = b.x - scrollPos.x;
                         const y = b.y + lineOffset * _lineHeight;
                         if (highlight)
                         {
@@ -3663,7 +3657,7 @@ class EditBox : EditWidgetBase
                 }
                 else
                 {
-                    const x = b.x - _scrollPos.x;
+                    const x = b.x - scrollPos.x;
                     const y = b.y + i * _lineHeight;
                     if (highlight)
                         font.drawColoredText(buf, x, y, txt, highlight, tabSize);

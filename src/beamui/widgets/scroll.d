@@ -145,11 +145,7 @@ class ScrollAreaBase : WidgetGroup
         protected ref Point scrollPos() { return _scrollPos; }
 
         /// Get full content size in pixels
-        Size fullContentSize() const
-        {
-            // override it
-            return Size(0, 0);
-        }
+        abstract Size fullContentSize() const;
 
         /// Get full content size in pixels including widget borders / padding
         Size fullContentSizeWithBorders() const
@@ -381,37 +377,43 @@ class ScrollAreaBase : WidgetGroup
         _scrollPos.y = clamp(csz.h - _clientBox.h, 0, _scrollPos.y);
     }
 
-    /// Update scrollbar positions
+    /// Update scrollbar data - ranges, positions, etc.
     protected void updateScrollBars()
     {
+        correctScrollPos();
+
         bool needHScroll;
         bool needVScroll;
         needToShowScrollbars(needHScroll, needVScroll);
 
         if (needHScroll)
-            updateHScrollBar();
+            updateHScrollBar(_hscrollbar.data);
         if (needVScroll)
-            updateVScrollBar();
+            updateVScrollBar(_vscrollbar.data);
     }
 
-    /// Update horizontal scrollbar widget position
-    protected void updateHScrollBar()
+    /** Update horizontal scrollbar data - range, position, etc.
+
+        Default implementation is intended to scroll full contents
+        inside the client box, override it if necessary.
+    */
+    protected void updateHScrollBar(SliderData data)
     {
-        assert(_hscrollbar);
-        // default implementation: use fullContentSize, _clientBox, override it if necessary
-        _hscrollbar.data.setRange(0, fullContentSize.w);
-        _hscrollbar.data.pageSize = _clientBox.w;
-        _hscrollbar.data.position = _scrollPos.x;
+        data.setRange(0, fullContentSize.w);
+        data.pageSize = _clientBox.w;
+        data.position = _scrollPos.x;
     }
 
-    /// Update verticat scrollbar widget position
-    protected void updateVScrollBar()
+    /** Update vertical scrollbar data - range, position, etc.
+
+        Default implementation is intended to scroll full contents
+        inside the client box, override it if necessary.
+    */
+    protected void updateVScrollBar(SliderData data)
     {
-        assert(_vscrollbar);
-        // default implementation: use fullContentSize, _clientBox, override it if necessary
-        _vscrollbar.data.setRange(0, fullContentSize.h);
-        _vscrollbar.data.pageSize = _clientBox.h;
-        _vscrollbar.data.position = _scrollPos.y;
+        data.setRange(0, fullContentSize.h);
+        data.pageSize = _clientBox.h;
+        data.position = _scrollPos.y;
     }
 
     protected void drawClient(DrawBuf buf)
@@ -587,12 +589,6 @@ class ScrollArea : ScrollAreaBase
             +/
             _contentWidget.layout(cb);
         }
-    }
-
-    override protected void updateScrollBars()
-    {
-        correctScrollPos();
-        super.updateScrollBars();
     }
 
     override protected void drawClient(DrawBuf buf)
