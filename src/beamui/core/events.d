@@ -75,11 +75,11 @@ struct ButtonDetails
 {
     private
     {
-        /// `Clock.currStdTime` for down event of this button (0 if button is up) set after double click to time when first click occured
-        long _prevDownTs;
-        /// `Clock.currStdTime` for down event of this button (0 if button is up)
+        /// Timestamp of the button press (0 if the button is up)
         long _downTs;
-        /// `Clock.currStdTime` for up event of this button (0 if button is still down)
+        /// Timestamp of the first press of the last double-click (0 if the button is up)
+        long _prevDownTs;
+        /// Timestamp of the button release (0 if the button is still pressed)
         long _upTs;
         short _downX;
         short _downY;
@@ -136,20 +136,29 @@ struct ButtonDetails
     /// Update for button down
     void down(short x, short y, MouseMods mouseMods, KeyMods keyMods)
     {
+        import std.math : abs;
         static import std.datetime;
 
-        long oldDownTs = _downTs;
+        const oldDownTs = _downTs;
+        _downTs = std.datetime.Clock.currStdTime;
+        _upTs = 0;
+        // allow only slight cursor movements when generating double/triple clicks
+        if (_downTs - oldDownTs < DOUBLE_CLICK_THRESHOLD_MS * 10_000 &&
+            abs(_downX - x) < 5 && abs(_downY - y) < 5)
+        {
+            _tripleClick = _downTs - _prevDownTs < DOUBLE_CLICK_THRESHOLD_MS * 20_000;
+            _doubleClick = !_tripleClick;
+            _prevDownTs = _doubleClick ? oldDownTs : 0;
+        }
+        else
+        {
+            _doubleClick = false;
+            _tripleClick = false;
+        }
         _downX = x;
         _downY = y;
         _mouseMods = mouseMods;
         _keyMods = keyMods;
-        _upTs = 0;
-        _downTs = std.datetime.Clock.currStdTime;
-        long downIntervalMs = (_downTs - oldDownTs) / 10000;
-        long prevDownIntervalMs = (_downTs - _prevDownTs) / 10000;
-        _tripleClick = (prevDownIntervalMs && prevDownIntervalMs < DOUBLE_CLICK_THRESHOLD_MS * 2);
-        _doubleClick = !_tripleClick && (oldDownTs && downIntervalMs < DOUBLE_CLICK_THRESHOLD_MS);
-        _prevDownTs = _doubleClick ? oldDownTs : 0;
     }
     /// Update for button up
     void up(short x, short y, MouseMods mouseMods, KeyMods keyMods)

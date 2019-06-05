@@ -1155,7 +1155,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     {
         const TextPosition oldCaretPos = _caretPos;
         const TextPosition newPos = _wordWrap ? wordWrapMouseOffset(x, y) : clientToTextPos(Point(x, y));
-        const TextRange r = content.wordBounds(newPos);
+        const TextRange r = _content.wordBounds(newPos);
         if (r.start < r.end)
         {
             _selectionRange = r;
@@ -1171,13 +1171,11 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         handleEditorStateChange();
     }
 
-    protected void selectLineByMouse(int x, int y, bool onSameLineOnly = true)
+    protected void selectLineByMouse(int x, int y)
     {
         const TextPosition oldCaretPos = _caretPos;
         const TextPosition newPos = _wordWrap ? wordWrapMouseOffset(x, y) : clientToTextPos(Point(x, y));
-        if (onSameLineOnly && newPos.line != oldCaretPos.line)
-            return; // different lines
-        const TextRange r = content.lineRange(newPos.line);
+        const TextRange r = _content.lineRange(newPos.line);
         if (r.start < r.end)
         {
             _selectionRange = r;
@@ -1201,8 +1199,9 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         {
             _caretPos = newPos;
             updateSelectionAfterCursorMovement(oldCaretPos, selecting);
-            invalidate();
         }
+        else if (!selecting)
+            clearSelection();
         handleEditorStateChange();
     }
 
@@ -3425,25 +3424,25 @@ class EditBox : EditWidgetBase
     /// Find max tab mark column position for line
     protected int findMaxTabMarkColumn(int lineIndex) const
     {
-        if (lineIndex < 0 || lineIndex >= content.length)
+        if (lineIndex < 0 || lineIndex >= _content.length)
             return -1;
         int maxSpace = -1;
-        auto space = content.getLineWhiteSpace(lineIndex);
+        auto space = _content.getLineWhiteSpace(lineIndex);
         maxSpace = space.firstNonSpaceColumn;
         if (maxSpace >= 0)
             return maxSpace;
         foreach_reverse (i; 0 .. lineIndex)
         {
-            space = content.getLineWhiteSpace(i);
+            space = _content.getLineWhiteSpace(i);
             if (!space.empty)
             {
                 maxSpace = space.firstNonSpaceColumn;
                 break;
             }
         }
-        foreach (i; lineIndex + 1 .. content.length)
+        foreach (i; lineIndex + 1 .. _content.length)
         {
-            space = content.getLineWhiteSpace(i);
+            space = _content.getLineWhiteSpace(i);
             if (!space.empty)
             {
                 if (maxSpace < 0 || maxSpace < space.firstNonSpaceColumn)
@@ -3555,7 +3554,7 @@ class EditBox : EditWidgetBase
     override protected void drawClient(DrawBuf buf)
     {
         // update matched braces
-        if (!content.findMatchedBraces(_caretPos, _matchingBraces))
+        if (!_content.findMatchedBraces(_caretPos, _matchingBraces))
         {
             _matchingBraces.start.line = -1;
             _matchingBraces.end.line = -1;
@@ -3816,7 +3815,7 @@ class LogWidget : EditBox
             return;
         dstring[] lines = text.split("\n");
         //lines ~= ""d; // append new line after last line
-        content.appendLines(lines);
+        _content.appendLines(lines);
         if (_maxLines > 0 && lineCount > _maxLines)
         {
             TextRange range;
