@@ -58,8 +58,8 @@ enum StyleProperty
     fontStyle,
     fontWeight,
     textAlign,
-    textDecorationLine,
-    textDecorationStyle,
+    textDecorLine,
+    textDecorStyle,
     textHotkey,
     textOverflow,
     textTransform,
@@ -69,7 +69,7 @@ enum StyleProperty
     focusRectColor,
     // depend on text color
     borderColor,
-    textDecorationColor,
+    textDecorColor,
     // transitions and animations
     transitionProperty,
     transitionTimingFunction,
@@ -340,30 +340,32 @@ struct ComputedStyle
         TextAlign textAlign() const { return _textAlign; }
         /// ditto
         void textAlign(TextAlign a) { setProperty!"textAlign" = a; }
+
         /// Text decoration - underline, overline, and so on
-        TextDecoration textDecoration() const
+        TextDecor textDecor() const
         {
-            return TextDecoration(_textDecorationColor, _textDecorationLine, _textDecorationStyle);
+            return TextDecor(_textDecorLine, _textDecorColor, _textDecorStyle);
         }
         /// ditto
-        void textDecoration(TextDecoration compound)
+        void textDecor(TextDecor compound)
         {
-            setProperty!"textDecorationColor" = compound.color;
-            setProperty!"textDecorationLine" = compound.line;
-            setProperty!"textDecorationStyle" = compound.style;
+            setProperty!"textDecorLine" = compound.line;
+            setProperty!"textDecorColor" = compound.color;
+            setProperty!"textDecorStyle" = compound.style;
         }
+        /// The color of text decorations, set with `textDecorLine`
+        Color textDecorColor() const { return _textDecorColor; }
         /// ditto
-        void textDecoration(Color color) { setProperty!"textDecorationColor" = color; }
+        void textDecorColor(Color color) { setProperty!"textDecorColor" = color; }
+        /// Place where text decoration line(s) appears. Required to be not `none` to draw something
+        TextDecorLine textDecorLine() const { return _textDecorLine; }
         /// ditto
-        void textDecoration(TextDecoration.Line line) { setProperty!"textDecorationLine" = line; }
+        void textDecorLine(TextDecorLine line) { setProperty!"textDecorLine" = line; }
+        /// Style of the line drawn for text decoration - solid, dashed, and the like
+        TextDecorStyle textDecorStyle() const { return _textDecorStyle; }
         /// ditto
-        void textDecoration(TextDecoration.Style style) { setProperty!"textDecorationStyle" = style; }
-        /// Color of text decoration lines
-        Color textDecorationColor() const { return _textDecorationColor; }
-        /// Place where text decoration line appears
-        TextDecoration.Line textDecorationLine() const { return _textDecorationLine; }
-        /// Style of text decoration line - solid, dashed, wavy, and so on
-        TextDecoration.Style textDecorationStyle() const { return _textDecorationStyle; }
+        void textDecorStyle(TextDecorStyle style) { setProperty!"textDecorStyle" = style; }
+
         /// Controls how text with `&` hotkey marks should be displayed
         TextHotkey textHotkey() const { return _textHotkey; }
         /// ditto
@@ -449,8 +451,8 @@ struct ComputedStyle
         FontStyle _fontStyle = FontStyle.normal;
         ushort _fontWeight = 400;
         TextAlign _textAlign = TextAlign.start;
-        TextDecoration.Line _textDecorationLine = TextDecoration.Line.none;
-        TextDecoration.Style _textDecorationStyle = TextDecoration.Style.solid;
+        TextDecorLine _textDecorLine = TextDecorLine.none;
+        TextDecorStyle _textDecorStyle = TextDecorStyle.solid;
         TextHotkey _textHotkey = TextHotkey.ignore;
         TextOverflow _textOverflow = TextOverflow.clip;
         TextTransform _textTransform = TextTransform.none;
@@ -460,7 +462,7 @@ struct ComputedStyle
         Color _focusRectColor = Color.transparent;
         // depend on text color
         Color _borderColor = Color.transparent;
-        Color _textDecorationColor = Color(0x000000);
+        Color _textDecorColor = Color(0x000000);
         // transitions and animations
         string _transitionProperty;
         TimingFunction _transitionTimingFunction;
@@ -542,8 +544,8 @@ struct ComputedStyle
             st.explode(ShorthandBorder("border", "border-top-width", "border-right-width",
                     "border-bottom-width", "border-left-width", "border-color"));
             st.explode(ShorthandDrawable("background", "background-color", "background-image"));
-            st.explode(ShorthandTextDecoration("text-decoration", "text-decoration-color",
-                    "text-decoration-line", "text-decoration-style"));
+            st.explode(ShorthandTextDecor("text-decoration", "text-decoration-line",
+                    "text-decoration-color", "text-decoration-style"));
             st.explode(ShorthandTransition("transition", "transition-property", "transition-duration",
                     "transition-timing-function", "transition-delay"));
         }
@@ -693,7 +695,7 @@ struct ComputedStyle
     {
         enum ptype = mixin(`StyleProperty.` ~ name);
 
-        static if (ptype == StyleProperty.borderColor || ptype == StyleProperty.textDecorationColor)
+        static if (ptype == StyleProperty.borderColor || ptype == StyleProperty.textDecorColor)
         {
             // must be computed before
             setProperty!name(_textColor, byUser);
@@ -802,9 +804,9 @@ string getCSSName(StyleProperty ptype)
         case fontStyle:  return "font-style";
         case fontWeight: return "font-weight";
         case textAlign:  return "text-align";
-        case textDecorationColor: return "text-decoration-color";
-        case textDecorationLine:  return "text-decoration-line";
-        case textDecorationStyle: return "text-decoration-style";
+        case textDecorColor: return "text-decoration-color";
+        case textDecorLine:  return "text-decoration-line";
+        case textDecorStyle: return "text-decoration-style";
         case textHotkey:    return "text-hotkey";
         case textOverflow:  return "text-overflow";
         case textTransform: return "text-transform";
@@ -843,7 +845,7 @@ bool isAnimatable(StyleProperty ptype)
         case columnSpacing:
         case borderColor:
         case backgroundColor:
-        case textDecorationColor:
+        case textDecorColor:
         case alpha:
         case textColor:
         case focusRectColor:

@@ -52,14 +52,14 @@ class Label : Widget
         case textColor:
             textobj.style.color = style.textColor;
             break;
-        case textDecorationColor:
-            textobj.style.decoration.color = style.textDecorationColor;
+        case textDecorColor:
+            textobj.style.decoration.color = style.textDecorColor;
             break;
-        case textDecorationLine:
-            textobj.style.decoration.line = style.textDecorationLine;
+        case textDecorLine:
+            textobj.style.decoration.line = style.textDecorLine;
             break;
-        case textDecorationStyle:
-            textobj.style.decoration.style = style.textDecorationStyle;
+        case textDecorStyle:
+            textobj.style.decoration.style = style.textDecorStyle;
             break;
         case textOverflow:
             textobj.style.overflow = style.textOverflow;
@@ -188,14 +188,14 @@ class ShortLabel : Widget
         case textColor:
             textobj.style.color = style.textColor;
             break;
-        case textDecorationColor:
-            textobj.style.decoration.color = style.textDecorationColor;
+        case textDecorColor:
+            textobj.style.decoration.color = style.textDecorColor;
             break;
-        case textDecorationLine:
-            textobj.style.decoration.line = style.textDecorationLine;
+        case textDecorLine:
+            textobj.style.decoration.line = style.textDecorLine;
             break;
-        case textDecorationStyle:
-            textobj.style.decoration.style = style.textDecorationStyle;
+        case textDecorStyle:
+            textobj.style.decoration.style = style.textDecorStyle;
             break;
         case textOverflow:
             textobj.style.overflow = style.textOverflow;
@@ -291,14 +291,14 @@ class MultilineLabel : Widget
         case textColor:
             textobj.style.color = style.textColor;
             break;
-        case textDecorationColor:
-            textobj.style.decoration.color = style.textDecorationColor;
+        case textDecorColor:
+            textobj.style.decoration.color = style.textDecorColor;
             break;
-        case textDecorationLine:
-            textobj.style.decoration.line = style.textDecorationLine;
+        case textDecorLine:
+            textobj.style.decoration.line = style.textDecorLine;
             break;
-        case textDecorationStyle:
-            textobj.style.decoration.style = style.textDecorationStyle;
+        case textDecorStyle:
+            textobj.style.decoration.style = style.textDecorStyle;
             break;
         case textOverflow:
             textobj.style.overflow = style.textOverflow;

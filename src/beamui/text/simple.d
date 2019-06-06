@@ -178,7 +178,7 @@ private struct Line
             return; // fully above or below of the clipping rectangle
 
         const int baseline = font.baseline;
-        const underline = style.decoration.line == TextDecoration.Line.underline;
+        const underline = (style.decoration.line & TextDecorLine.under) != 0;
         int charUnderlinePos;
         int charUnderlineW;
 
@@ -270,8 +270,8 @@ private struct Line
         // preform actual drawing
         const decorThickness = 1 + height / 24;
         const decorColor = style.decoration.color;
-        const overline = style.decoration.line == TextDecoration.Line.overline;
-        const lineThrough = style.decoration.line == TextDecoration.Line.lineThrough;
+        const overline = (style.decoration.line & TextDecorLine.over) != 0;
+        const lineThrough = (style.decoration.line & TextDecorLine.through) != 0;
         if (underline || charUnderlineW > 0)
         {
             const int underlineY = y + baseline + decorThickness;

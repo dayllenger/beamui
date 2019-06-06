@@ -502,29 +502,35 @@ Result!TextAlign decode(T : TextAlign)(const Token[] tokens)
 }
 
 /// Decode text decoration line
-Result!(TextDecoration.Line) decode(T : TextDecoration.Line)(const Token[] tokens)
+Result!TextDecorLine decode(T : TextDecorLine)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    TextDecorLine result;
+    foreach (t; tokens)
     {
-        Log.fe("CSS(%s): text decoration line should be an identifier, not '%s'", t.line, t.type);
-        return Err!(TextDecoration.Line);
+        if (t.type != TokenType.ident)
+        {
+            Log.fe("CSS(%s): text decoration line should be an identifier, not '%s'", t.line, t.type);
+            return Err!TextDecorLine;
+        }
+        switch (t.text)
+        {
+            case "overline": result |= TextDecorLine.over; break;
+            case "underline": result |= TextDecorLine.under; break;
+            case "line-through": result |= TextDecorLine.through; break;
+            case "none": break;
+            default:
+                Log.fe("CSS(%s): unknown text decoration line: %s", t.line, t.text);
+                return Err!TextDecorLine;
+        }
     }
-    switch (t.text)
-    {
-        case "none": return Ok(TextDecoration.Line.none);
-        case "overline": return Ok(TextDecoration.Line.overline);
-        case "underline": return Ok(TextDecoration.Line.underline);
-        case "line-through": return Ok(TextDecoration.Line.lineThrough);
-        default:
-            Log.fe("CSS(%s): unknown text decoration line: %s", t.line, t.text);
-            return Err!(TextDecoration.Line);
-    }
+    return Ok(result);
+
+
 }
 /// Decode text decoration style
-Result!(TextDecoration.Style) decode(T : TextDecoration.Style)(const Token[] tokens)
+Result!TextDecorStyle decode(T : TextDecorStyle)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -532,32 +538,32 @@ Result!(TextDecoration.Style) decode(T : TextDecoration.Style)(const Token[] tok
     if (t.type != TokenType.ident)
     {
         Log.fe("CSS(%s): text decoration style should be an identifier, not '%s'", t.line, t.type);
-        return Err!(TextDecoration.Style);
+        return Err!TextDecorStyle;
     }
     switch (t.text)
     {
-        case "solid": return Ok(TextDecoration.Style.solid);
-        case "double": return Ok(TextDecoration.Style.doubled);
-        case "dotted": return Ok(TextDecoration.Style.dotted);
-        case "dashed": return Ok(TextDecoration.Style.dashed);
-        case "wavy": return Ok(TextDecoration.Style.wavy);
+        case "solid": return Ok(TextDecorStyle.solid);
+        case "double": return Ok(TextDecorStyle.doubled);
+        case "dotted": return Ok(TextDecorStyle.dotted);
+        case "dashed": return Ok(TextDecorStyle.dashed);
+        case "wavy": return Ok(TextDecorStyle.wavy);
         default:
             Log.fe("CSS(%s): unknown text decoration style: %s", t.line, t.text);
-            return Err!(TextDecoration.Style);
+            return Err!TextDecorStyle;
     }
 }
-alias TextDecorationHere = Tup!(TextDecoration.Line, Result!Color, Result!(TextDecoration.Style));
+alias TextDecorHere = Tup!(TextDecorLine, Result!Color, Result!TextDecorStyle);
 /// Decode whole shorthand text decoration property
-Result!TextDecorationHere decodeTextDecoration(const(Token)[] tokens)
+Result!TextDecorHere decodeTextDecor(const(Token)[] tokens)
 {
     assert(tokens.length > 0);
 
     const line = tokens[0].line;
-    alias E = Err!TextDecorationHere;
-    TextDecorationHere result;
+    alias E = Err!TextDecorHere;
+    TextDecorHere result;
     // required
     {
-        if (const res = decode!(TextDecoration.Line)(tokens))
+        if (const res = decode!TextDecorLine(tokens))
             result[0] = res.val;
         else
             return E();
@@ -571,9 +577,9 @@ Result!TextDecorationHere decodeTextDecoration(const(Token)[] tokens)
         else
             return E();
     }
-    if (startsWithTextDecorationStyle(tokens))
+    if (startsWithtextDecorStyle(tokens))
     {
-        if (const res = decode!(TextDecoration.Style)(tokens))
+        if (const res = decode!TextDecorStyle(tokens))
             result[2] = res;
         else
             return E();
@@ -951,7 +957,7 @@ bool startsWithFontWeight(const Token[] tokens)
 }
 
 /// True if token sequence starts with `<text-decoration-style>` value
-bool startsWithTextDecorationStyle(const Token[] tokens)
+bool startsWithtextDecorStyle(const Token[] tokens)
 {
     if (tokens.length == 0)
         return false;

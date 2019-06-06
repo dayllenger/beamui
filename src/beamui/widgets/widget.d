@@ -770,9 +770,9 @@ public:
         case backgroundImage:
         case boxShadow:
         case textAlign:
-        case textDecorationColor:
-        case textDecorationLine:
-        case textDecorationStyle:
+        case textDecorColor:
+        case textDecorLine:
+        case textDecorStyle:
         case alpha:
         case textColor:
         case focusRectColor:

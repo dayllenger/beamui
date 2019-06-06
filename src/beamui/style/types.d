@@ -263,11 +263,11 @@ struct ShorthandInsets
     string left;
 }
 
-struct ShorthandTextDecoration
+struct ShorthandTextDecor
 {
     string name;
-    string color;
     string line;
+    string color;
     string style;
 }
 

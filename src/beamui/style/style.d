@@ -17,7 +17,6 @@ import beamui.graphics.colors : Color;
 import beamui.graphics.drawables : Drawable;
 import beamui.style.decode_css;
 import beamui.style.types;
-import beamui.text.style : TextDecoration;
 
 /// Holds string hash and can compute it at compile time for faster CSS name lookup
 struct StrHash
@@ -216,12 +215,12 @@ final class Style
         }
     }
     /// Find a shorthand text decoration property, split it into components and decode
-    void explode(ShorthandTextDecoration sh)
+    void explode(ShorthandTextDecor sh)
     {
         const name = StrHash(sh.name);
         if (auto p = name in rawProperties)
         {
-            if (auto res = decodeTextDecoration(*p))
+            if (auto res = decodeTextDecor(*p))
             {
                 auto line = res.val[0];
                 auto color = res.val[1];
@@ -234,8 +233,8 @@ final class Style
         }
         if (auto p = name in metaProperties)
         {
-            metaProperties[StrHash(sh.color)] = *p;
             metaProperties[StrHash(sh.line)] = *p;
+            metaProperties[StrHash(sh.color)] = *p;
             metaProperties[StrHash(sh.style)] = *p;
             metaProperties.remove(name);
         }

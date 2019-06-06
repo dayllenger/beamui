@@ -20,33 +20,34 @@ enum TextAlign : ubyte
     justify
 }
 
-/// Decoration added to text (like underline)
-struct TextDecoration
-{
-    enum Line : ubyte
-    {
-        none,
-        overline,
-        underline,
-        lineThrough
-    }
-    enum Style : ubyte
-    {
-        solid,
-        doubled,
-        dotted,
-        dashed,
-        wavy
-    }
-    alias none = Line.none;
-    alias overline = Line.overline;
-    alias underline = Line.underline;
-    alias lineThrough = Line.lineThrough;
-    alias solid = Style.solid;
+/** Specifies where to put text decoration lines, if any.
 
+    Note that they can be combined with `|` to draw several lines.
+*/
+enum TextDecorLine
+{
+    none = 0,
+    over = 1,
+    under = 2,
+    through = 4
+}
+
+/// Specifies the style of the text decoration line(s)
+enum TextDecorStyle : ubyte
+{
+    solid,
+    doubled,
+    dotted,
+    dashed,
+    wavy
+}
+
+/// Decoration added to text (underline, etc.)
+struct TextDecor
+{
+    TextDecorLine line;
     Color color;
-    Line line;
-    Style style;
+    TextDecorStyle style;
 }
 
 /// Controls how text with `&` hotkey marks should be handled (used only in `ShortLabel`)
@@ -87,7 +88,7 @@ struct TextStyle
     /// Size of the tab character in number of spaces
     TabSize tabSize;
     TextAlign alignment;
-    TextDecoration decoration;
+    TextDecor decoration;
     TextOverflow overflow;
     TextTransform transform;
     /// Allows to underline a single character, usually mnemonic

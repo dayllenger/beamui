@@ -453,11 +453,11 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             case textAlign:
                 ph.style.alignment = style.textAlign;
                 break;
-            case textDecorationLine:
-                ph.style.decoration.line = style.textDecorationLine;
+            case textDecorLine:
+                ph.style.decoration.line = style.textDecorLine;
                 break;
-            case textDecorationStyle:
-                ph.style.decoration.style = style.textDecorationStyle;
+            case textDecorStyle:
+                ph.style.decoration.style = style.textDecorStyle;
                 break;
             case textOverflow:
                 ph.style.overflow = style.textOverflow;
