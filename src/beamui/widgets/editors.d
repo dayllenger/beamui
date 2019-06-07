@@ -731,10 +731,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         return x < box.x + _leftPaneWidth ? CursorType.arrow : CursorType.ibeam;
     }
 
-    protected void updateMaxLineWidth()
-    {
-    }
-
     protected void processSmartIndent(EditOperation operation)
     {
         if (!supportsSmartIndents)
@@ -759,7 +755,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 _caretPos = rangeAfter.end;
                 _selectionRange.start = _caretPos;
                 _selectionRange.end = _caretPos;
-                updateMaxLineWidth();
                 measureVisibleText();
                 ensureCaretVisible();
                 correctCaretPos();
@@ -776,7 +771,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 _caretPos = rangeAfter.end;
                 _selectionRange.start = _caretPos;
                 _selectionRange.end = _caretPos;
-                updateMaxLineWidth();
                 measureVisibleText();
                 ensureCaretVisible();
                 updateActions();
@@ -785,7 +779,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
         else
         {
-            updateMaxLineWidth();
             measureVisibleText();
             correctCaretPos();
             requestLayout();
@@ -2295,7 +2288,8 @@ class EditBox : EditWidgetBase
         bool _showWhiteSpaceMarks;
 
         int _firstVisibleLine;
-        int _maxLineWidth;
+        int _maxLineWidth; // computed in `measureVisibleText`
+        int _lastMeasureLineCount;
 
         static struct VisibleLine
         {
@@ -2349,18 +2343,6 @@ class EditBox : EditWidgetBase
         return _content.length;
     }
 
-    override protected void updateMaxLineWidth()
-    {
-        // find max line width. TODO: optimize!!!
-        int maxw;
-        foreach (i; 0 .. _content.length)
-        {
-            dstring s = _content[i];
-            maxw = max(maxw, calcLineWidth(s));
-        }
-        _maxLineWidth = maxw;
-    }
-
     override protected void updateVScrollBar(SliderData data)
     {
         data.setRange(0, _content.length);
@@ -2396,6 +2378,7 @@ class EditBox : EditWidgetBase
             {
                 _firstVisibleLine = event.position;
                 measureVisibleText();
+                updateScrollBars();
                 invalidate();
             }
         }
@@ -3204,7 +3187,7 @@ class EditBox : EditWidgetBase
 
     override protected void onMeasure(ref Boundaries bs)
     {
-        updateMaxLineWidth();
+        measureVisibleText();
         _minSizeTester.style.tabSize = _content.tabSize;
         const sz = _minSizeTester.getSize() + Size(_leftPaneWidth, 0);
         bs.min += sz;
@@ -3272,8 +3255,16 @@ class EditBox : EditWidgetBase
             // width - max from visible lines
             sz.w = max(sz.w, line.width);
         }
-        sz.w = _maxLineWidth;
         sz.h = _lineHeight * _content.length; // height - for all lines
+        // we use max width of the viewed lines as content width
+        // in some situations, we reset it to shrink the horizontal scrolling range
+        if (lineCount < _lastMeasureLineCount / 3)
+            _maxLineWidth = sz.w;
+        else if (sz.w * 10 < _maxLineWidth && clientBox.w < sz.w)
+            _maxLineWidth = sz.w;
+        else
+            _maxLineWidth = max(_maxLineWidth, sz.w);
+        _lastMeasureLineCount = lineCount;
         return sz;
     }
 
