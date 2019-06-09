@@ -10,6 +10,7 @@ module beamui.core.geometry;
 import std.math : isFinite;
 import std.traits;
 import beamui.core.linalg : Vector;
+import beamui.core.math : clamp, max;
 
 /// True if size is sane, e.g. not `-infinity`. Used primarly in contracts
 bool isValidSize(float floating)
@@ -98,8 +99,6 @@ alias SizeI = SizeOf!int;
 /// Holds minimum, maximum and natural (preferred) size for widget
 struct Boundaries
 {
-    static import std.algorithm;
-
     Size min;
     Size nat;
     Size max = Size.none;
@@ -107,13 +106,13 @@ struct Boundaries
     /// Special add operator: it clamps result between 0 and SIZE_UNSPECIFIED
     static int clampingAdd(int a, int b)
     {
-        return std.algorithm.clamp(a + b, 0, SIZE_UNSPECIFIED!int);
+        return .clamp(a + b, 0, SIZE_UNSPECIFIED!int);
     }
 
     /// Special subtract operator: it clamps result between 0 and SIZE_UNSPECIFIED
     static int clampingSub(int a, int b)
     {
-        return std.algorithm.clamp(a - b, 0, SIZE_UNSPECIFIED!int);
+        return .clamp(a - b, 0, SIZE_UNSPECIFIED!int);
     }
 
     void addWidth(const ref Boundaries from)
@@ -125,9 +124,9 @@ struct Boundaries
 
     void maximizeWidth(const ref Boundaries from)
     {
-        max.w = std.algorithm.max(max.w, from.max.w);
-        nat.w = std.algorithm.max(nat.w, from.nat.w);
-        min.w = std.algorithm.max(min.w, from.min.w);
+        max.w = .max(max.w, from.max.w);
+        nat.w = .max(nat.w, from.nat.w);
+        min.w = .max(min.w, from.min.w);
     }
 
     void addHeight(const ref Boundaries from)
@@ -139,9 +138,9 @@ struct Boundaries
 
     void maximizeHeight(const ref Boundaries from)
     {
-        max.h = std.algorithm.max(max.h, from.max.h);
-        nat.h = std.algorithm.max(nat.h, from.nat.h);
-        min.h = std.algorithm.max(min.h, from.min.h);
+        max.h = .max(max.h, from.max.h);
+        nat.h = .max(nat.h, from.nat.h);
+        min.h = .max(min.h, from.min.h);
     }
 }
 

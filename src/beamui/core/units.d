@@ -354,13 +354,14 @@ package(beamui) void setupDPI(float dpi, float dpr)
 /// (pass 0 to disable override and use value detected by platform)
 void overrideDPI(float dpi, float dpr)
 {
+    import beamui.core.math : clamp;
+
     if (dpi <= 0 || dpr <= 0)
     {
         overriden = false;
         return;
     }
 
-    import std.algorithm : clamp;
     dpi = clamp(dpi, 10, 1000);
     dpr = clamp(dpr, 0.1, 10);
 

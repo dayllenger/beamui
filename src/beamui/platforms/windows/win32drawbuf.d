@@ -17,6 +17,7 @@ import beamui.core.config;
 static if (BACKEND_GUI):
 import core.sys.windows.windows;
 import beamui.core.logger;
+import beamui.core.math : max;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
 
@@ -134,12 +135,11 @@ class Win32ColorDrawBuf : ColorDrawBufBase
 
     override void resize(int width, int height)
     {
-        if (width < 0)
-            width = 0;
-        if (height < 0)
-            height = 0;
+        width = max(width, 0);
+        height = max(height, 0);
         if (_w == width && _h == height)
             return;
+
         clear();
         _w = width;
         _h = height;

@@ -620,42 +620,30 @@ final class ScrollEvent
     /// Default update position for actions like pageUp/pageDown, lineUp/lineDown
     int defaultUpdatePosition()
     {
-        int delta = 0;
+        import beamui.core.math : max, min;
+
+        int delta;
         switch (_action) with (ScrollAction)
         {
         case lineUp:
-            delta = _pageSize / 20;
-            if (delta < 1)
-                delta = 1;
-            delta = -delta;
+            delta = -max(_pageSize / 20, 1);
             break;
         case lineDown:
-            delta = _pageSize / 20;
-            if (delta < 1)
-                delta = 1;
+            delta = max(_pageSize / 20, 1);
             break;
         case pageUp:
-            delta = _pageSize * 3 / 4;
-            if (delta < 1)
-                delta = 1;
-            delta = -delta;
+            delta = -max(_pageSize * 3 / 4, 1);
             break;
         case pageDown:
-            delta = _pageSize * 3 / 4;
-            if (delta < 1)
-                delta = 1;
+            delta = max(_pageSize * 3 / 4, 1);
             break;
         default:
-            return position;
+            return _position;
         }
-        int newPosition = _position + delta;
-        if (newPosition > _maxValue - _pageSize)
-            newPosition = _maxValue - _pageSize;
-        if (newPosition < _minValue)
-            newPosition = _minValue;
-        if (_position != newPosition)
-            position = newPosition;
-        return position;
+        const pos = max(_minValue, min(_position + delta, _maxValue - _pageSize));
+        if (_position != pos)
+            position = pos;
+        return pos;
     }
 }
 
