@@ -718,7 +718,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         col = colByAbsoluteX(x < ns.w ? x : x + scrollPos.x);
         row = rowByAbsoluteY(y < ns.h ? y : y + scrollPos.y);
         cellb = cellBox(col, row);
-        return cellb.isPointInside(x, y);
+        return cellb.contains(x, y);
     }
 
     override protected void updateScrollBars()

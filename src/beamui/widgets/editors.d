@@ -949,10 +949,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             }
             const int yOffset = -1 * _lineHeight * (wrapsUpTo(_caretPos.line) + wrapLine);
             caretHeightOffset = yOffset;
-            caretRc.offset(clientBox.x - xOffset, clientBox.y - yOffset);
+            caretRc.translate(clientBox.x - xOffset, clientBox.y - yOffset);
         }
         else
-            caretRc.offset(clientBox.x, clientBox.y);
+            caretRc.translate(clientBox.x, clientBox.y);
         return caretRc;
     }
 
@@ -3170,14 +3170,14 @@ class EditBox : EditWidgetBase
         auto limitNumber = (int num, int limit) => num > limit ? limit : num;
         const LineSpan curSpan = getSpan(line);
         const yOffset = _lineHeight * (wrapsUpTo(line));
-        rc.offset(0, yOffset);
+        rc.translate(0, yOffset);
         Rect[] wrappedSelection;
         wrappedSelection.length = curSpan.len;
         foreach (i, wrapLineRect; wrappedSelection)
         {
             const startingDifference = rc.left - clientBox.x;
             wrapLineRect = rc;
-            wrapLineRect.offset(-1 * curSpan.accumulation(cast(int)i, LineSpan.WrapPointInfo.width),
+            wrapLineRect.translate(-curSpan.accumulation(cast(int)i, LineSpan.WrapPointInfo.width),
                     cast(int)i * _lineHeight);
             wrapLineRect.right = limitNumber(wrapLineRect.right,
                     (rc.left + curSpan.wrapPoints[i].wrapWidth) - startingDifference);
@@ -3316,7 +3316,7 @@ class EditBox : EditWidgetBase
         {
             //TODO: Figure out why a little slow to catch up
             if (_wordWrap)
-                visibleRect.offset(0, -caretHeightOffset);
+                visibleRect.translate(0, -caretHeightOffset);
             buf.drawFrame(visibleRect, Color(0xA0808080), Insets(1));
         }
     }
@@ -3603,11 +3603,8 @@ class EditBox : EditWidgetBase
             {
                 Rect whiteSpaceRc = lineRect;
                 Rect whiteSpaceRcVisible = visibleRect;
-                for (int z; z < previousWraps; z++)
-                {
-                    whiteSpaceRc.offset(0, _lineHeight);
-                    whiteSpaceRcVisible.offset(0, _lineHeight);
-                }
+                whiteSpaceRc.translate(0, previousWraps * _lineHeight);
+                whiteSpaceRcVisible.translate(0, previousWraps * _lineHeight);
                 drawWhiteSpaceMarks(buf, font, txt, _content.tabSize, whiteSpaceRc, whiteSpaceRcVisible);
             }
             if (_leftPaneWidth > 0)

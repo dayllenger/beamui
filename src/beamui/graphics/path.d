@@ -270,8 +270,8 @@ struct Path
         return this;
     }
 
-    /// Offset path by a vector. Can be expensive for very long path
-    ref Path offset(float dx, float dy)
+    /// Translate path by a vector. Can be expensive for very long path
+    ref Path translate(float dx, float dy)
     {
         foreach (ref p; points.unsafe_slice)
         {

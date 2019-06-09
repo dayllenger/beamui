@@ -209,20 +209,25 @@ class ScrollAreaBase : WidgetGroup
 
     void makeBoxVisible(Box b, bool alignHorizontally = true, bool alignVertically = true)
     {
-        Box visible = Box(_scrollPos, _clientBox.size);
-        if (b.isInsideOf(visible))
+        const visible = Box(_scrollPos, _clientBox.size);
+        if (visible.contains(b))
             return;
 
-        Point oldp = _scrollPos;
-        if (alignHorizontally && visible.x + visible.w < b.x + b.w)
-            _scrollPos.x = b.x + b.w - visible.w;
-        if (alignHorizontally && b.x < visible.x)
-            _scrollPos.x = b.x;
-        if (alignVertically && visible.y + visible.h < b.y + b.h)
-            _scrollPos.y = b.y + b.h - visible.h;
-        if (alignVertically && b.y < visible.y)
-            _scrollPos.y = b.y;
-
+        const oldp = _scrollPos;
+        if (alignHorizontally)
+        {
+            if (visible.x + visible.w < b.x + b.w)
+                _scrollPos.x = b.x + b.w - visible.w;
+            if (b.x < visible.x)
+                _scrollPos.x = b.x;
+        }
+        if (alignVertically)
+        {
+            if (visible.y + visible.h < b.y + b.h)
+                _scrollPos.y = b.y + b.h - visible.h;
+            if (b.y < visible.y)
+                _scrollPos.y = b.y;
+        }
         if (_scrollPos != oldp)
             requestLayout();
     }

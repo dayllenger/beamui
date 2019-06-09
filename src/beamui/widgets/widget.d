@@ -1658,10 +1658,10 @@ public:
         }
     }
 
-    /// Returns true if point is inside of this widget
-    bool isPointInside(int x, int y)
+    /// Returns true if the point is inside of this widget
+    bool contains(int x, int y) const
     {
-        return _box.isPointInside(x, y);
+        return _box.contains(x, y);
     }
 
     /// Tell the window (if some), that the widget may be invalidated

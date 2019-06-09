@@ -1311,7 +1311,7 @@ class Window : CustomEventTarget
         {
             import std.math : abs;
 
-            if (_tooltip.popup && _tooltip.popup.isPointInside(event.x, event.y))
+            if (_tooltip.popup && _tooltip.popup.contains(event.x, event.y))
             {
                 // freely move mouse inside of tooltip
                 return true;
@@ -1342,7 +1342,7 @@ class Window : CustomEventTarget
             {
                 debug (mouse)
                     Log.d("dispatchMouseEvent: Move, buttons state: ", currentButtons);
-                if (!_mouseCaptureWidget.isPointInside(event.x, event.y))
+                if (!_mouseCaptureWidget.contains(event.x, event.y))
                 {
                     if (currentButtons != _mouseCaptureButtons)
                     {
@@ -1401,7 +1401,7 @@ class Window : CustomEventTarget
             }
             else if (event.action == MouseAction.buttonDown || event.action == MouseAction.buttonUp)
             {
-                if (!_mouseCaptureWidget.isPointInside(event.x, event.y))
+                if (!_mouseCaptureWidget.contains(event.x, event.y))
                 {
                     if (currentButtons != _mouseCaptureButtons)
                     {
@@ -1439,7 +1439,7 @@ class Window : CustomEventTarget
             {
                 if (p is modal)
                     break;
-                if (p.isPointInside(event.x, event.y))
+                if (p.contains(event.x, event.y))
                     insideOneOfPopups = true;
             }
             foreach_reverse (p; _popups)
@@ -1468,7 +1468,7 @@ class Window : CustomEventTarget
         // route mouse events to visible widgets only
         if (root.visibility != Visibility.visible)
             return false;
-        if (!root.isPointInside(event.x, event.y))
+        if (!root.contains(event.x, event.y))
             return false;
         // offer event to children first
         foreach (i; 0 .. root.childCount)
@@ -1526,7 +1526,7 @@ class Window : CustomEventTarget
         {
             if (w.isNull)
                 continue;
-            if (event.action == MouseAction.leave || !w.isPointInside(event.x, event.y))
+            if (event.action == MouseAction.leave || !w.contains(event.x, event.y))
             {
                 // send Leave message
                 auto leaveEvent = new MouseEvent(event);

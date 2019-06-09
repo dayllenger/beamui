@@ -40,10 +40,6 @@ enum float SIZE_UNSPECIFIED(T : float) = float.infinity;
 /// ditto
 enum int SIZE_UNSPECIFIED(T : int) = 1 << 29; // not too much to safely sum two such values
 
-alias PointOf(T) = Vector!(T, 2);
-alias Point = PointOf!int;
-alias PointI = PointOf!int;
-
 /// 2D size
 struct SizeOf(T) if (is(T == float) || is(T == int))
 {
@@ -93,9 +89,6 @@ struct SizeOf(T) if (is(T == float) || is(T == int))
     }
 }
 
-alias Size = SizeOf!int;
-alias SizeI = SizeOf!int;
-
 /// Holds minimum, maximum and natural (preferred) size for widget
 struct Boundaries
 {
@@ -115,29 +108,39 @@ struct Boundaries
         return .clamp(a - b, 0, SIZE_UNSPECIFIED!int);
     }
 
-    void addWidth(const ref Boundaries from)
+    void addWidth(ref const Boundaries from)
     {
         max.w = clampingAdd(max.w, from.max.w);
         nat.w += from.nat.w;
         min.w += from.min.w;
     }
 
-    void maximizeWidth(const ref Boundaries from)
-    {
-        max.w = .max(max.w, from.max.w);
-        nat.w = .max(nat.w, from.nat.w);
-        min.w = .max(min.w, from.min.w);
-    }
-
-    void addHeight(const ref Boundaries from)
+    void addHeight(ref const Boundaries from)
     {
         max.h = clampingAdd(max.h, from.max.h);
         nat.h += from.nat.h;
         min.h += from.min.h;
     }
 
-    void maximizeHeight(const ref Boundaries from)
+    void maximizeWidth(ref const Boundaries from)
     {
+        max.w = .max(max.w, from.max.w);
+        nat.w = .max(nat.w, from.nat.w);
+        min.w = .max(min.w, from.min.w);
+    }
+
+    void maximizeHeight(ref const Boundaries from)
+    {
+        max.h = .max(max.h, from.max.h);
+        nat.h = .max(nat.h, from.nat.h);
+        min.h = .max(min.h, from.min.h);
+    }
+
+    void maximize(ref const Boundaries from)
+    {
+        max.w = .max(max.w, from.max.w);
+        nat.w = .max(nat.w, from.nat.w);
+        min.w = .max(min.w, from.min.w);
         max.h = .max(max.h, from.max.h);
         nat.h = .max(nat.h, from.nat.h);
         min.h = .max(min.h, from.min.h);
@@ -195,60 +198,79 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
         return BoxOf!T(cast(T)source.x, cast(T)source.y, cast(T)source.w, cast(T)source.h);
     }
 
-    /// Get box position
-    @property PointOf!T pos() const
+    @property
     {
-        return PointOf!T(x, y);
-    }
-    /// Get box size
-    @property SizeOf!T size() const
-    {
-        return SizeOf!T(w, h);
-    }
-    /// Set box position
-    @property void pos(PointOf!T p)
-    {
-        x = p.x;
-        y = p.y;
-    }
-    /// Set box size
-    @property void size(SizeOf!T s)
-    {
-        w = s.w;
-        h = s.h;
+        /// Position as `PointOf!T`
+        PointOf!T pos() const
+        {
+            return PointOf!T(x, y);
+        }
+        /// ditto
+        void pos(PointOf!T p)
+        {
+            x = p.x;
+            y = p.y;
+        }
+
+        /// Size as `SizeOf!T`
+        SizeOf!T size() const
+        {
+            return SizeOf!T(w, h);
+        }
+        /// ditto
+        void size(SizeOf!T s)
+        {
+            w = s.w;
+            h = s.h;
+        }
+
+        /// True if the box is empty
+        bool empty() const
+        {
+            return w <= 0 || h <= 0;
+        }
+
+        /// The center point
+        PointOf!T middle() const
+        {
+            return PointOf!T(x + w / 2, y + h / 2);
+        }
+        /// The midpoint of X side
+        T middleX() const
+        {
+            return x + w / 2;
+        }
+        /// The midpoint of Y side
+        T middleY() const
+        {
+            return y + h / 2;
+        }
     }
 
-    /// Returns true if box is empty
-    @property bool empty() const
+    /// Returns true if `b` is completely inside the box
+    bool contains(BoxOf b) const
     {
-        return w <= 0 || h <= 0;
+        return x <= b.x && b.x + b.w <= x + w && y <= b.y && b.y + b.h <= y + h;
     }
-
-    /// Returns center of the box
-    @property PointOf!T middle() const
+    /// Returns true if `pt` is inside the box
+    bool contains(PointOf!T pt) const
     {
-        return PointOf!T(x + w / 2, y + h / 2);
+        return x <= pt.x && pt.x < x + w && y <= pt.y && pt.y < y + h;
     }
-    /// Returns x coordinate of the center
-    @property T middlex() const
-    {
-        return x + w / 2;
-    }
-    /// Returns y coordinate of the center
-    @property T middley() const
-    {
-        return y + h / 2;
-    }
-
-    /// Returns true if point is inside of this rectangle
-    bool isPointInside(T px, T py) const
+    /// Returns true if `(px, py)` point is inside the rectangle
+    bool contains(T px, T py) const
     {
         return x <= px && px < x + w && y <= py && py < y + h;
     }
-    /// Returns true if this box is completely inside of `b`
-    bool isInsideOf(BoxOf b) const
+    /// Returns true if `px` is between left and right sides
+    bool containsX(T px) const
     {
-        return b.x <= x && x + w <= b.x + b.w && b.y <= y && y + h <= b.y + b.h;
+        return x <= px && px < x + w;
+    }
+    /// Returns true if `py` is between top and bottom sides
+    bool containsY(T py) const
+    {
+        return y <= py && py < y + h;
     }
 
     /// Return a box expanded by a margin
@@ -280,7 +302,7 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
     }
 
     /// Move this box to fit `b` bounds, retaining the same size
-    void moveToFit(const ref BoxOf b)
+    void moveToFit(BoxOf b)
     {
         if (x + w > b.x + b.w)
             x = b.x + b.w - w;
@@ -293,16 +315,12 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
     }
 }
 
-alias Box = BoxOf!int;
-alias BoxI = BoxOf!int;
+/** 2D rectangle.
 
-/**
-    2D rectangle
+    It differs from `Box` in that it stores coordinates of the top-left and bottom-right corners.
+    `Box` is more convenient when dealing with widgets, `Rect` is better in drawing procedures.
 
-    It differs from Box in that it stores coordinates of the top-left and bottom-right corners.
-    Box is more convenient when dealing with widgets, Rect is better in drawing procedures.
-
-    Note: Rect(0,0,20,10) has size 20x10, but right and bottom sides are non-inclusive.
+    Note: `Rect(0,0,20,10)` has size 20x10, but right and bottom sides are non-inclusive.
     If you draw such rect, rightmost drawn pixel will be x=19 and bottom pixel y=9
 */
 struct RectOf(T) if (is(T == float) || is(T == int))
@@ -354,57 +372,84 @@ struct RectOf(T) if (is(T == float) || is(T == int))
 
     @property const
     {
-        /// Returns average of left, right
-        T middlex()
-        {
-            return (left + right) / 2;
-        }
-        /// Returns average of top, bottom
-        T middley()
-        {
-            return (top + bottom) / 2;
-        }
-        /// Returns middle point
-        PointOf!T middle()
-        {
-            return PointOf!T(middlex, middley);
-        }
-
-        /// Returns top left point of rectangle
+        /// Top left point
         PointOf!T topLeft()
         {
             return PointOf!T(left, top);
         }
-        /// Returns bottom right point of rectangle
+        /// Bottom right point
         PointOf!T bottomRight()
         {
             return PointOf!T(right, bottom);
         }
 
-        /// Returns size (right - left, bottom - top)
+        /// Size (i.e. `right - left, bottom - top`)
         SizeOf!T size()
         {
             return SizeOf!T(right - left, bottom - top);
         }
-        /// Get width of rectangle (right - left)
+        /// Width (i.e. `right - left`)
         T width()
         {
             return right - left;
         }
-        /// Get height of rectangle (bottom - top)
+        /// Height (i.e. `bottom - top`)
         T height()
         {
             return bottom - top;
         }
-        /// Returns true if rectangle is empty (right <= left || bottom <= top)
+
+        /// True if the rectangle is empty (i.e. `right <= left || bottom <= top`)
         bool empty()
         {
             return right <= left || bottom <= top;
         }
+
+        /// The center point
+        PointOf!T middle()
+        {
+            return PointOf!T((left + right) / 2, (top + bottom) / 2);
+        }
+        /// The midpoint of X side
+        T middleX()
+        {
+            return (left + right) / 2;
+        }
+        /// The midpoint of Y side
+        T middleY()
+        {
+            return (top + bottom) / 2;
+        }
     }
 
-    /// Add offset to horizontal and vertical coordinates
-    void offset(T dx, T dy)
+    /// Returns true if `rc` is completely inside the rectangle
+    bool contains(RectOf rc) const
+    {
+        return left <= rc.left && right >= rc.right && top <= rc.top && bottom >= rc.bottom;
+    }
+    /// Returns true if `pt` is inside the rectangle
+    bool contains(PointOf!T pt) const
+    {
+        return left <= pt.x && pt.x < right && top <= pt.y && pt.y < bottom;
+    }
+    /// Returns true if `(x, y)` point is inside the rectangle
+    bool contains(T x, T y) const
+    {
+        return left <= x && x < right && top <= y && y < bottom;
+    }
+    /// Returns true if `x` is between left and right sides
+    bool containsX(T x) const
+    {
+        return left <= x && x < right;
+    }
+    /// Returns true if `y` is between top and bottom sides
+    bool containsY(T y) const
+    {
+        return top <= y && y < bottom;
+    }
+
+    /// Translate the rectangle by `(dx, dy)`
+    void translate(T dx, T dy)
     {
         left += dx;
         right += dx;
@@ -427,33 +472,21 @@ struct RectOf(T) if (is(T == float) || is(T == int))
         top += dy;
         bottom -= dy;
     }
-    /// For all fields, sets this.field to rc.field if rc.field > this.field
-    void setMax(RectOf rc)
-    {
-        if (left < rc.left)
-            left = rc.left;
-        if (right < rc.right)
-            right = rc.right;
-        if (top < rc.top)
-            top = rc.top;
-        if (bottom < rc.bottom)
-            bottom = rc.bottom;
-    }
-    /// Translate rectangle coordinates by (x,y) - add deltax to x coordinates, and deltay to y coordinates
-    alias moveBy = offset;
-    /// Moves this rect to fit rc bounds, retaining the same size
-    void moveToFit(ref RectOf rc)
+
+    /// Moves this rect to fit `rc` bounds, retaining the same size
+    void moveToFit(RectOf rc)
     {
         if (right > rc.right)
-            moveBy(rc.right - right, 0);
+            translate(rc.right - right, 0);
         if (bottom > rc.bottom)
-            moveBy(0, rc.bottom - bottom);
+            translate(0, rc.bottom - bottom);
         if (left < rc.left)
-            moveBy(rc.left - left, 0);
+            translate(rc.left - left, 0);
         if (top < rc.top)
-            moveBy(0, rc.top - top);
+            translate(0, rc.top - top);
     }
-    /// Update this rect to intersection with rc, returns true if result is non empty
+
+    /// Update this rect to intersection with `rc`, returns true if it's not empty after that
     bool intersect(RectOf rc)
     {
         if (left < rc.left)
@@ -466,36 +499,12 @@ struct RectOf(T) if (is(T == float) || is(T == int))
             bottom = rc.bottom;
         return right > left && bottom > top;
     }
-    /// Returns true if this rect has nonempty intersection with rc
+    /// Returns true if this rect has nonempty intersection with `rc`
     bool intersects(RectOf rc) const
     {
         return rc.left < right && rc.top < bottom && rc.right > left && rc.bottom > top;
     }
-    /// Returns true if point is inside of this rectangle
-    bool isPointInside(PointOf!T pt) const
-    {
-        return left <= pt.x && pt.x < right && top <= pt.y && pt.y < bottom;
-    }
-    /// Returns true if point is inside of this rectangle
-    bool isPointInside(T x, T y) const
-    {
-        return left <= x && x < right && top <= y && y < bottom;
-    }
-    /// This rectangle is completely inside rc
-    bool isInsideOf(RectOf rc) const
-    {
-        return left >= rc.left && right <= rc.right && top >= rc.top && bottom <= rc.bottom;
-    }
-
-    bool opEquals(RectOf rc) const
-    {
-        return left == rc.left && right == rc.right && top == rc.top && bottom == rc.bottom;
-    }
 }
-
-alias Rect = RectOf!int;
-alias RectF = RectOf!float;
-alias RectI = RectOf!int;
 
 /// Represents area around rectangle. Used for margin, border and padding
 struct InsetsOf(T) if (is(T == float) || is(T == int))
@@ -575,5 +584,15 @@ struct InsetsOf(T) if (is(T == float) || is(T == int))
     }
 }
 
+alias PointOf(T) = Vector!(T, 2);
+alias Point = PointOf!int;
+alias PointI = PointOf!int;
+alias Size = SizeOf!int;
+alias SizeI = SizeOf!int;
+alias Box = BoxOf!int;
+alias BoxI = BoxOf!int;
+alias Rect = RectOf!int;
+alias RectF = RectOf!float;
+alias RectI = RectOf!int;
 alias Insets = InsetsOf!int;
 alias InsetsI = InsetsOf!int;

@@ -749,7 +749,7 @@ class ListWidget : WidgetGroup
 
         Rect viewrc = Rect(0, 0, _clientBox.width, _clientBox.height);
         Rect scrolledrc = Rect(itemBox(itemIndex));
-        if (scrolledrc.isInsideOf(viewrc)) // completely visible
+        if (viewrc.contains(scrolledrc)) // completely visible
             return;
         int delta = 0;
         if (_orientation == Orientation.vertical)
@@ -986,7 +986,7 @@ class ListWidget : WidgetGroup
             ib.x += b.x;
             ib.y += b.y;
             (vert ? ib.y : ib.x) -= scrollOffset;
-            if (ib.isPointInside(event.x, event.y))
+            if (ib.contains(event.x, event.y))
             {
                 if (_adapter && _adapter.wantMouseEvents)
                 {

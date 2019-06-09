@@ -173,7 +173,7 @@ private struct Line
         Rect clip = buf.clipRect;
         if (clip.empty)
             return; // clipped out
-        clip.offset(-x, -y);
+        clip.translate(-x, -y);
         if (height < clip.top || clip.bottom <= 0)
             return; // fully above or below of the clipping rectangle
 

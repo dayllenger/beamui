@@ -94,7 +94,7 @@ class Popup : LinearLayout
                 closePolicy & onReleaseOutside && event.action == MouseAction.buttonUp)
             {
                 if (closePolicy & anchor && this.anchor.widget &&
-                    this.anchor.widget.isPointInside(event.x, event.y))
+                    this.anchor.widget.contains(event.x, event.y))
                     return false;
 
                 closedByEvent = true;
@@ -153,8 +153,8 @@ class Popup : LinearLayout
             if (anchor.alignment & PopupAlign.center)
             {
                 // center around the center of anchor widget
-                p.x = anchorbox.middlex - geom.w / 2;
-                p.y = anchorbox.middley - geom.h / 2;
+                p.x = anchorbox.middleX - geom.w / 2;
+                p.y = anchorbox.middleY - geom.h / 2;
             }
             else
             {

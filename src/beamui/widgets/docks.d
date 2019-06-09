@@ -258,9 +258,7 @@ class DockHost : WidgetGroup
             if (item.visibility != Visibility.gone)
             {
                 item.measure();
-                const wbs = item.boundaries;
-                bs.maximizeWidth(wbs);
-                bs.maximizeHeight(wbs);
+                bs.maximize(item.boundaries);
             }
         }
         setBoundaries(bs);

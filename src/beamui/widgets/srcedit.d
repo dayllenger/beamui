@@ -173,7 +173,7 @@ class SourceEdit : EditBox
         {
             if (lineBox.y > cb.y + cb.h)
                 break;
-            if (lineBox.y <= event.y && event.y < lineBox.y + lineBox.h)
+            if (lineBox.containsY(event.y))
                 return handleLeftPaneMouseClick(event, lineBox, i);
 
             i++;
@@ -189,28 +189,28 @@ class SourceEdit : EditBox
         {
             b.w -= _foldingWidth;
             Box b2 = Box(b.x + b.w, b.y, _foldingWidth, b.h);
-            if (b2.x <= event.x && event.x < b2.x + b2.w)
+            if (b2.containsX(event.x))
                 return handleLeftPaneFoldingMouseClick(event, b2, line);
         }
         if (_modificationMarksWidth)
         {
             b.w -= _modificationMarksWidth;
             Box b2 = Box(b.x + b.w, b.y, _modificationMarksWidth, b.h);
-            if (b2.x <= event.x && event.x < b2.x + b2.w)
+            if (b2.containsX(event.x))
                 return handleLeftPaneModificationMarksMouseClick(event, b2, line);
         }
         if (_lineNumbersWidth)
         {
             b.w -= _lineNumbersWidth;
             Box b2 = Box(b.x + b.w, b.y, _lineNumbersWidth, b.h);
-            if (b2.x <= event.x && event.x < b2.x + b2.w)
+            if (b2.containsX(event.x))
                 return handleLeftPaneLineNumbersMouseClick(event, b2, line);
         }
         if (_iconsWidth)
         {
             b.w -= _iconsWidth;
             Box b2 = Box(b.x + b.w, b.y, _iconsWidth, b.h);
-            if (b2.x <= event.x && event.x < b2.x + b2.w)
+            if (b2.containsX(event.x))
                 return handleLeftPaneIconsMouseClick(event, b2, line);
         }
         return true;

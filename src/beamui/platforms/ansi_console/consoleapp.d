@@ -463,7 +463,7 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
 
     override void drawChar(int x, int y, dchar ch, Color color, Color bgcolor)
     {
-        if (!clipRect.isPointInside(x, y))
+        if (!clipRect.contains(x, y))
             return;
         ubyte tc = toConsoleColor(color, false);
         ubyte bc = toConsoleColor(bgcolor, true);

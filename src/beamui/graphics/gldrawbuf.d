@@ -105,7 +105,7 @@ class GLDrawBuf : DrawBuf
 
     override void drawPixel(int x, int y, Color color)
     {
-        if (!clipRect.isPointInside(x, y))
+        if (!clipRect.contains(x, y))
             return;
         applyAlpha(color);
         if (!color.isFullyTransparent)
@@ -351,7 +351,7 @@ private abstract class GLCache
             if (_texture != 0)
             {
                 // convert coordinates to cached texture
-                srcrc.offset(item._rc.left, item._rc.top);
+                srcrc.translate(item._rc.left, item._rc.top);
                 if (!dstrc.empty)
                     glSupport.queue.addTexturedRect(_texture, _tdx, _tdy, color, color, color, color,
                             srcrc, dstrc, smooth);

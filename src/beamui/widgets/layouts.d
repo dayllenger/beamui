@@ -636,9 +636,7 @@ class FrameLayout : WidgetGroup
                 continue;
 
             item.measure();
-            Boundaries wbs = item.boundaries;
-            bs.maximizeWidth(wbs);
-            bs.maximizeHeight(wbs);
+            bs.maximize(item.boundaries);
         }
         setBoundaries(bs);
     }
@@ -786,8 +784,7 @@ class FreeLayout : WidgetGroup
             wbs.nat.h += c.y;
             wbs.max.w += c.x;
             wbs.max.h += c.y;
-            bs.maximizeWidth(wbs);
-            bs.maximizeHeight(wbs);
+            bs.maximize(wbs);
         }
         setBoundaries(bs);
     }

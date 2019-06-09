@@ -1241,7 +1241,7 @@ class DrawBuf : RefCountedObject
         // fill inner area, doing this manually by sectors to reduce flickering artifacts
         if (!fillColor.isFullyTransparent)
         {
-            PointF center = PointF(rect.middlex, rect.middley);
+            PointF center = PointF(rect.middleX, rect.middleY);
             for (int i = 0; i < fullPath.length - 1; i++)
             {
                 fillTriangleF(center, fullPath[i], fullPath[i + 1], fillColor);
@@ -1679,7 +1679,7 @@ class ColorDrawBufBase : DrawBuf
 
     override void drawPixel(int x, int y, Color color)
     {
-        if (!_clipRect.isPointInside(x, y))
+        if (!_clipRect.contains(x, y))
             return;
         applyAlpha(color);
         uint c = color.hex;
@@ -1979,7 +1979,7 @@ class GrayDrawBuf : DrawBuf
 
     override void drawPixel(int x, int y, Color color)
     {
-        if (!_clipRect.isPointInside(x, y))
+        if (!_clipRect.contains(x, y))
             return;
         applyAlpha(color);
         ubyte cl = color.toGray;
