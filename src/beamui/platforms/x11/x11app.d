@@ -11,10 +11,8 @@ import beamui.core.config;
 
 static if (BACKEND_X11):
 import core.stdc.config : c_ulong, c_long;
-import core.stdc.string;
-import std.stdio;
-import std.string;
-import std.utf;
+import std.string : fromStringz, toStringz;
+import std.utf : toUTF32;
 import x11.X;
 import x11.Xatom;
 import x11.Xlib;
@@ -833,13 +831,8 @@ final class X11Window : DWindow
             event.rbutton = _rbutton;
             event.mbutton = _mbutton;
 
-            bool res = dispatchMouseEvent(event);
-            if (res)
-            {
-                debug (mouse)
-                    Log.d("Calling update() after mouse event");
-                update();
-            }
+            dispatchMouseEvent(event);
+            update();
         }
     }
 
@@ -983,7 +976,7 @@ final class X11Window : DWindow
         return mods;
     }
 
-    private bool processKeyEvent(KeyAction action, uint x11Key, uint x11Keymod)
+    private void processKeyEvent(KeyAction action, uint x11Key, uint x11Keymod)
     {
         debug (keys)
             Log.fd("processKeyEvent %s, X11 key: 0x%08x, X11 flags: 0x%08x", action, keyCode, flags);
@@ -1034,27 +1027,15 @@ final class X11Window : DWindow
         debug (keys)
             Log.fd("converted, action: %s, key: %s, mods: %s", action, key, mods);
 
-        bool res = dispatchKeyEvent(new KeyEvent(action, key, mods));
-        if (res)
-        {
-            debug (redraw)
-                Log.d("Calling update() after key event");
-            update();
-        }
-        return res;
+        dispatchKeyEvent(new KeyEvent(action, key, mods));
+        update();
     }
 
-    private bool processTextInput(dstring ds, uint x11Keymod)
+    private void processTextInput(dstring ds, uint x11Keymod)
     {
         KeyMods mods = convertKeyMods(x11Keymod);
-        bool res = dispatchKeyEvent(new KeyEvent(KeyAction.text, Key.none, mods, ds));
-        if (res)
-        {
-            debug (keys)
-                Log.d("Calling update() after text event");
-            update();
-        }
-        return res;
+        dispatchKeyEvent(new KeyEvent(KeyAction.text, Key.none, mods, ds));
+        update();
     }
 
     //===============================================================

@@ -10,10 +10,8 @@ module beamui.platforms.sdl.sdlapp;
 import beamui.core.config;
 
 static if (BACKEND_SDL):
-import std.file;
-import std.stdio;
-import std.string;
-import std.utf : toUTF32, toUTF16z;
+import std.string : fromStringz, toStringz;
+import std.utf : toUTF32;
 import bindbc.sdl;
 import beamui.core.events;
 import beamui.core.functions;
@@ -681,13 +679,8 @@ final class SDLWindow : Window
             event.lbutton = _lbutton;
             event.rbutton = _rbutton;
             event.mbutton = _mbutton;
-            bool res = dispatchMouseEvent(event);
-            if (res)
-            {
-                debug (mouse)
-                    Log.d("Calling update() after mouse event");
-                update();
-            }
+            dispatchMouseEvent(event);
+            update();
         }
     }
 
@@ -846,7 +839,7 @@ final class SDLWindow : Window
         return mods;
     }
 
-    private bool processTextInput(const char* s)
+    private void processTextInput(const char* s)
     {
         string str = fromStringz(s).dup;
         dstring ds = toUTF32(str);
@@ -864,16 +857,10 @@ final class SDLWindow : Window
         }
 
         if (mods & KeyMods.control || (mods & KeyMods.lalt) == KeyMods.lalt || mods & KeyMods.meta)
-            return true;
+            return;
 
-        bool res = dispatchKeyEvent(new KeyEvent(KeyAction.text, Key.none, mods, ds));
-        if (res)
-        {
-            debug (sdl)
-                Log.d("Calling update() after text event");
-            update();
-        }
-        return res;
+        dispatchKeyEvent(new KeyEvent(KeyAction.text, Key.none, mods, ds));
+        update();
     }
 
     static bool isNumLockEnabled()
@@ -888,7 +875,7 @@ final class SDLWindow : Window
         }
     }
 
-    private bool processKeyEvent(KeyAction action, uint sdlKeyCode, uint sdlKeymod)
+    private void processKeyEvent(KeyAction action, uint sdlKeyCode, uint sdlKeymod)
     {
         debug (keys)
             Log.fd("processKeyEvent %s, SDL key: 0x%08x, SDL mods: 0x%08x", action, sdlKeyCode, sdlKeymod);
@@ -941,18 +928,12 @@ final class SDLWindow : Window
 
         if (action == KeyAction.keyDown || action == KeyAction.keyUp)
         {
-            if ((sdlKeyCode >= SDLK_KP_1 && sdlKeyCode <= SDLK_KP_0 || sdlKeyCode == SDLK_KP_PERIOD //|| sdlKeyCode >= 0x40000059 && sdlKeyCode
-                ) && isNumLockEnabled)
-                return false;
+            if ((SDLK_KP_1 <= sdlKeyCode && sdlKeyCode <= SDLK_KP_0 ||
+                 sdlKeyCode == SDLK_KP_PERIOD) && isNumLockEnabled)
+                    return;
         }
-        bool res = dispatchKeyEvent(new KeyEvent(action, key, mods));
-        if (res)
-        {
-            debug (redraw)
-                Log.d("Calling update() after key event");
-            update();
-        }
-        return res;
+        dispatchKeyEvent(new KeyEvent(action, key, mods));
+        update();
     }
 
     //===============================================================

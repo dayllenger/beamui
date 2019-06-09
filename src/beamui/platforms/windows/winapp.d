@@ -16,11 +16,8 @@ import beamui.core.config;
 static if (BACKEND_WIN32):
 import core.runtime;
 import core.sys.windows.windows;
-import std.algorithm;
-import std.file;
-import std.stdio;
-import std.string;
-import std.utf;
+import std.string : toStringz;
+import std.utf : toUTF16, toUTF16z;
 import beamui.core.events;
 import beamui.core.functions;
 import beamui.core.logger;
@@ -804,7 +801,7 @@ final class Win32Window : Window
 
     private KeyMods _keyMods;
 
-    private bool processMouseEvent(uint winMessage, uint winFlags, short x, short y)
+    private void processMouseEvent(uint winMessage, uint winFlags, short x, short y)
     {
         debug (mouse)
             Log.d("Win32 Mouse Message ", winMessage, ", flags: ", winFlags, ", x: ", x, ", y: ", y);
@@ -868,7 +865,7 @@ final class Win32Window : Window
             y = cast(short)pt.y;
             break;
         default: // unsupported event
-            return false;
+            return;
         }
 
         const mmods = convertMouseMods(winFlags);
@@ -887,14 +884,8 @@ final class Win32Window : Window
         event.rbutton = _rbutton;
         event.mbutton = _mbutton;
 
-        bool res = dispatchMouseEvent(event);
-        if (res)
-        {
-            debug (mouse)
-                Log.d("Calling update() after mouse event");
-            update();
-        }
-        return res;
+        dispatchMouseEvent(event);
+        update();
     }
 
     private void updateKeyMods(KeyAction action, KeyMods mod, KeyMods preserve)
@@ -911,7 +902,7 @@ final class Win32Window : Window
         }
     }
 
-    private bool processKeyEvent(KeyAction action, uint winKeyCode, int repeatCount, bool syskey = false)
+    private void processKeyEvent(KeyAction action, uint winKeyCode, int repeatCount, bool syskey = false)
     {
         debug (keys)
             Log.fd("processKeyEvent %s, keyCode: %s, syskey: %s, mods: %s",
@@ -983,20 +974,13 @@ final class Win32Window : Window
             Log.fd("converted, action: %s, key: %s, syskey: %s, mods: %s",
                 action, key, syskey, _keyMods);
 
-        const result = dispatchKeyEvent(new KeyEvent(action, key, _keyMods));
-        if (result)
-        {
-            debug (redraw)
-                Log.d("Calling update() after key event");
-            update();
-        }
-        return result;
+        dispatchKeyEvent(new KeyEvent(action, key, _keyMods));
+        update();
     }
 
-    private bool processTextInput(dchar ch, int repeatCount)
+    private void processTextInput(dchar ch, int repeatCount)
     {
-        if (ch == 0)
-            return false;
+        assert(ch != 0);
 
         debug (keys)
             Log.fd("processTextInput char: %s (%s)", ch, cast(int)ch);
@@ -1020,19 +1004,13 @@ final class Win32Window : Window
                         ch, cast(int)ch, mods);
             }
             if (mods & KeyMods.control || (mods & KeyMods.lalt) == KeyMods.lalt || mods & KeyMods.meta)
-                return true;
+                return;
 
             event = new KeyEvent(KeyAction.text, Key.none, mods, cast(dstring)text);
         }
 
-        const result = dispatchKeyEvent(event);
-        if (result)
-        {
-            debug (redraw)
-                Log.d("Calling update() after text event");
-            update();
-        }
-        return result;
+        dispatchKeyEvent(event);
+        update();
     }
 
     //===============================================================
@@ -1250,6 +1228,10 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         Log.e("Cannot find window in map by HWND");
     }
 
+    // related documentation:
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms633573(v=vs.85).aspx
+    // https://docs.microsoft.com/en-us/windows/desktop/winmsg/about-messages-and-message-queues
+
     switch (message)
     {
     case WM_CREATE:
@@ -1317,8 +1299,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         return 0;
     case WM_ERASEBKGND:
-        // processed
-        return 1;
+        return 1; // processed
     case WM_PAINT:
         if (window)
             window.onPaint();
@@ -1344,23 +1325,22 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_MOUSEWHEEL:
         if (window)
         {
-            if (window.processMouseEvent(message, cast(uint)wParam, cast(short)(lParam & 0xFFFF),
-                    cast(short)((lParam >> 16) & 0xFFFF)))
-                return 0; // processed
+            window.processMouseEvent(message, cast(uint)wParam, cast(short)(lParam & 0xFFFF),
+                cast(short)((lParam >> 16) & 0xFFFF));
+            return 0; // processed
         }
-        // not processed - default handling
-        return DefWindowProc(hwnd, message, wParam, lParam);
+        break;
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP:
         if (window)
         {
-            int repeatCount = lParam & 0xFFFF;
-            WPARAM vk = wParam;
+            const int repeatCount = lParam & 0xFFFF;
+            const WPARAM vk = wParam;
             WPARAM new_vk = vk;
-            UINT scancode = (lParam & 0x00ff0000) >> 16;
-            int extended = (lParam & 0x01000000) != 0;
+            const UINT scancode = (lParam & 0x00ff0000) >> 16;
+            const int extended = (lParam & 0x01000000) != 0;
             switch (vk)
             {
             case VK_SHIFT:
@@ -1384,33 +1364,37 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 action = KeyAction.keyDown;
             else
                 action = KeyAction.keyUp;
-            if (window.processKeyEvent(action, cast(uint)new_vk, repeatCount,
-                    message == WM_SYSKEYUP || message == WM_SYSKEYDOWN))
-                return 0; // processed
+            window.processKeyEvent(action, cast(uint)new_vk, repeatCount,
+                message == WM_SYSKEYUP || message == WM_SYSKEYDOWN);
+            return 0; // processed
         }
         break;
     case WM_UNICHAR:
         if (window)
         {
             int repeatCount = lParam & 0xFFFF;
-            dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(uint)wParam;
+            dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(dchar)wParam;
             debug (keys)
                 Log.d("WM_UNICHAR ", ch, " (", cast(int)ch, ")");
-            if (window.processTextInput(ch, repeatCount))
-                return 1; // processed
-            return 1;
+            if (ch)
+            {
+                window.processTextInput(ch, repeatCount);
+                return 0; // processed
+            }
         }
         break;
     case WM_CHAR:
         if (window)
         {
             int repeatCount = lParam & 0xFFFF;
-            dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(uint)wParam;
+            dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(dchar)wParam;
             debug (keys)
                 Log.d("WM_CHAR ", ch, " (", cast(int)ch, ")");
-            if (window.processTextInput(ch, repeatCount))
-                return 1; // processed
-            return 1;
+            if (ch)
+            {
+                window.processTextInput(ch, repeatCount);
+                return 0; // processed
+            }
         }
         break;
     case CUSTOM_MESSAGE:
@@ -1438,16 +1422,16 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             if (files.length)
                 window.handleDroppedFiles(files);
             DragFinish(hdrop);
+            return 0;
         }
-        return 0;
+        break;
     case WM_CLOSE:
         if (window)
         {
             if (!window.canClose)
                 return 0; // prevent closing
-            //destroy(window);
         }
-        // default handler inside DefWindowProc will close window
+        // default handler inside DefWindowProc will close the window
         break;
     case WM_GETMINMAXINFO:
     case WM_NCCREATE:
@@ -1456,7 +1440,9 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         //Log.d("Unhandled message ", message);
         break;
     }
+
     if (window)
         return window.handleUnknownWindowMessage(message, wParam, lParam);
-    return DefWindowProc(hwnd, message, wParam, lParam);
+    else
+        return DefWindowProc(hwnd, message, wParam, lParam);
 }
