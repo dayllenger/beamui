@@ -566,6 +566,16 @@ class ListWidget : WidgetGroup
         {
             selectItem(index);
         }
+
+        final protected int scrollPosition() const
+        {
+            return cast(int)_scrollbar.data.value;
+        }
+
+        final protected void scrollPosition(int v)
+        {
+            _scrollbar.data.value = v;
+        }
     }
 
     /// Handle selection change
@@ -582,12 +592,6 @@ class ListWidget : WidgetGroup
         bool _needScrollbar;
         ScrollBar _scrollbar;
 
-        /// First visible item index
-        int _firstVisibleItem;
-        /// Scroll position - offset of scroll area
-        int _scrollPosition;
-        /// Maximum scroll position
-        int _maxScrollPosition;
         /// Client area (without scrollbar and padding)
         Box _clientBox;
         /// Total height of all items for vertical orientation, or width for horizontal
@@ -644,9 +648,9 @@ class ListWidget : WidgetGroup
             return Box.init;
         Box res = itemBoxNoScroll(index);
         if (_orientation == Orientation.horizontal)
-            res.x -= _scrollPosition;
+            res.x -= scrollPosition;
         else
-            res.y -= _scrollPosition;
+            res.y -= scrollPosition;
         return res;
     }
 
@@ -751,7 +755,8 @@ class ListWidget : WidgetGroup
         Rect scrolledrc = Rect(itemBox(itemIndex));
         if (viewrc.contains(scrolledrc)) // completely visible
             return;
-        int delta = 0;
+
+        int delta;
         if (_orientation == Orientation.vertical)
         {
             if (scrolledrc.top < viewrc.top)
@@ -766,10 +771,7 @@ class ListWidget : WidgetGroup
             else if (scrolledrc.right > viewrc.right)
                 delta = scrolledrc.right - viewrc.right;
         }
-        const newPosition = _scrollPosition + delta;
-        _scrollbar.data.value = newPosition;
-        _scrollPosition = newPosition;
-        invalidate();
+        scrollPosition = scrollPosition + delta;
     }
 
     /// Move selection
@@ -862,22 +864,14 @@ class ListWidget : WidgetGroup
     /// Handle scroll event
     protected void onScrollEvent(ScrollEvent event)
     {
-        int newPosition = _scrollPosition;
+        int newPosition = scrollPosition;
         if (event.action == ScrollAction.sliderMoved)
-        {
             // scroll
             newPosition = event.position;
-        }
         else
-        {
             // use default handler for page/line up/down events
             newPosition = event.defaultUpdatePosition();
-        }
-        if (_scrollPosition != newPosition)
-        {
-            _scrollPosition = clamp(newPosition, 0, _maxScrollPosition);
-            invalidate();
-        }
+        scrollPosition = newPosition;
     }
 
     /// List navigation using keys
@@ -978,7 +972,7 @@ class ListWidget : WidgetGroup
         const b = innerBox;
         // same as in onDraw
         const bool vert = _orientation == Orientation.vertical;
-        const int scrollOffset = _scrollPosition;
+        const int scrollOffset = scrollPosition;
         const int start = findViewportIndex();
         foreach (i; start .. itemCount)
         {
@@ -1101,9 +1095,10 @@ class ListWidget : WidgetGroup
         // layout() will be called on draw
 
         _itemBoxes.resize(itemCount);
-
-        int p;
         _needScrollbar = false;
+
+        const vertical = _orientation == Orientation.vertical;
+        int p;
         foreach (i; 0 .. itemCount)
         {
             Widget wt = itemWidget(i);
@@ -1116,7 +1111,7 @@ class ListWidget : WidgetGroup
 
             wt.measure();
             const wnat = wt.natSize;
-            if (_orientation == Orientation.vertical)
+            if (vertical)
             {
                 _itemBoxes[i] = Box(0, p, inner.w, wnat.h);
                 p += wnat.h;
@@ -1126,7 +1121,7 @@ class ListWidget : WidgetGroup
                     break;
                 }
             }
-            else // horizontal
+            else
             {
                 _itemBoxes[i] = Box(p, 0, wnat.w, inner.h);
                 p += wnat.w;
@@ -1144,7 +1139,7 @@ class ListWidget : WidgetGroup
 
             _scrollbar.measure();
             const sbnat = _scrollbar.natSize;
-            if (_orientation == Orientation.vertical)
+            if (vertical)
             {
                 sbsz = sbnat.w;
                 inner.w -= sbsz;
@@ -1171,7 +1166,7 @@ class ListWidget : WidgetGroup
 
                     wt.measure();
                     const wnat = wt.natSize;
-                    if (_orientation == Orientation.vertical)
+                    if (vertical)
                     {
                         _itemBoxes[i] = Box(0, p, inner.w, wnat.h);
                         p += wnat.h;
@@ -1188,7 +1183,7 @@ class ListWidget : WidgetGroup
             {
                 foreach (i; 0 .. itemCount)
                 {
-                    if (_orientation == Orientation.vertical)
+                    if (vertical)
                     {
                         _itemBoxes.unsafe_ref(i).w = inner.w;
                     }
@@ -1205,34 +1200,18 @@ class ListWidget : WidgetGroup
         }
         _clientBox = inner;
 
-        // maximum scroll position
-        if (_orientation == Orientation.vertical)
-            _maxScrollPosition = max(_totalSize - _clientBox.height, 0);
-        else
-            _maxScrollPosition = max(_totalSize - _clientBox.width, 0);
-        _scrollPosition = clamp(_scrollPosition, 0, _maxScrollPosition);
         // update scrollbar parameters
         if (_needScrollbar)
         {
-            if (_orientation == Orientation.vertical)
-            {
-                _scrollbar.data.setRange(0, _totalSize);
-                _scrollbar.data.pageSize = _clientBox.height;
-                _scrollbar.data.value = _scrollPosition;
-            }
-            else
-            {
-                _scrollbar.data.setRange(0, _totalSize);
-                _scrollbar.data.pageSize = _clientBox.width;
-                _scrollbar.data.value = _scrollPosition;
-            }
+            _scrollbar.data.setRange(0, _totalSize);
+            _scrollbar.data.pageSize = vertical ? _clientBox.height : _clientBox.width;
         }
 
         // lay out scrollbar
         if (_needScrollbar)
         {
             Box sbb = inner;
-            if (_orientation == Orientation.vertical)
+            if (vertical)
             {
                 sbb.x += sbb.w;
                 sbb.w = sbsz;
@@ -1272,7 +1251,7 @@ class ListWidget : WidgetGroup
 
         // draw items
         const bool vert = _orientation == Orientation.vertical;
-        const int scrollOffset = _scrollPosition;
+        const int scrollOffset = scrollPosition;
         const int start = findViewportIndex();
         bool started;
         foreach (i; start .. itemCount)
@@ -1315,7 +1294,7 @@ class ListWidget : WidgetGroup
         int start = 0;
         int end = itemCount - 1;
         const bool vert = _orientation == Orientation.vertical;
-        const int offset = _scrollPosition;
+        const int offset = scrollPosition;
         while (true)
         {
             const Box ib1 = _itemBoxes[start];
