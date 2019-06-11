@@ -25,12 +25,14 @@ import beamui.widgets.widget;
 /// Component for slider data. It validates it and reacts on changes
 class SliderData
 {
+    import std.math : isFinite, quantize;
+
     final @property
     {
         /// Slider current value
-        int value() const { return _value; }
+        double value() const { return _value; }
         /// ditto
-        void value(int v)
+        void value(double v)
         {
             adjustValue(v);
             if (_value != v)
@@ -40,18 +42,19 @@ class SliderData
             }
         }
         /// Slider range min value
-        int minValue() const { return _minValue; }
+        double minValue() const { return _minValue; }
         /// Slider range max value
-        int maxValue() const { return _maxValue; }
+        double maxValue() const { return _maxValue; }
         /// Step between values. Always > 0
-        int step() const { return _step; }
+        double step() const { return _step; }
         /// The difference between max and min values. Always >= 0
-        int range() const { return _maxValue - _minValue; }
+        double range() const { return _maxValue - _minValue; }
         /// Page size (visible area size in scrollbars). Always >= 0, may be > `range`
-        int pageSize() const { return _pageSize; }
+        double pageSize() const { return _pageSize; }
         /// ditto
-        void pageSize(int v)
+        void pageSize(double v)
         {
+            assert(isFinite(v));
             v = max(v, 0);
             if (_pageSize != v)
             {
@@ -65,21 +68,25 @@ class SliderData
 
     private
     {
-        int _value = 20;
-        int _minValue = 0;
-        int _maxValue = 100;
-        int _step = 1;
-        int _pageSize = 30;
+        double _value = 0;
+        double _minValue = 0;
+        double _maxValue = 100;
+        double _step = 1;
+        double _pageSize = 0;
     }
 
     /** Set new range (min, max, and step values for slider).
 
         `min` must not be more than `max`, `step` must be more than 0.
     */
-    final void setRange(int min, int max, int step = 1)
+    final void setRange(double min, double max, double step = 1)
     {
+        assert(isFinite(min));
+        assert(isFinite(max));
+        assert(isFinite(step));
         assert(min <= max);
         assert(step > 0);
+
         if (_minValue != min || _maxValue != max || _step != step)
         {
             _minValue = min;
@@ -90,9 +97,17 @@ class SliderData
         }
     }
 
-    private void adjustValue(ref int v)
+    private void adjustValue(ref double v)
     {
-        v = max(_minValue, min(v, _maxValue - _pageSize));
+        assert(isFinite(v));
+
+        if (v > _minValue)
+        {
+            const uplim = max(_maxValue - _pageSize, _minValue);
+            v = min(quantize(v - _minValue, _step) + _minValue, uplim);
+        }
+        else
+            v = _minValue;
     }
 }
 
@@ -159,11 +174,11 @@ class AbstractSlider : WidgetGroup
         return sendScrollEvent(action, _data.value);
     }
 
-    bool sendScrollEvent(ScrollAction action, int pos)
+    bool sendScrollEvent(ScrollAction action, double value)
     {
         if (!scrolled.assigned)
             return false;
-        auto event = new ScrollEvent(action, _data.minValue, _data.maxValue, _data.pageSize, pos);
+        auto event = new ScrollEvent(action, cast(int)_data.minValue, cast(int)_data.maxValue, cast(int)_data.pageSize, cast(int)value);
         scrolled(event);
         if (event.positionChanged)
             _data.value = event.position;
@@ -179,7 +194,7 @@ class AbstractSlider : WidgetGroup
         }
     }
 
-    protected bool onIndicatorDragging(int initialValue, int currentValue)
+    protected bool onIndicatorDragging(double initialValue, double currentValue)
     {
         _data.value = currentValue;
         return sendScrollEvent(ScrollAction.sliderMoved, currentValue);
@@ -210,7 +225,8 @@ class AbstractSlider : WidgetGroup
             indicatorSize = availableSize;
             return false;
         }
-        indicatorSize = max(r ? _data.pageSize * availableSize / r : 0, _minIndicatorSize);
+        indicatorSize = r > 0 ? cast(int)(_data.pageSize * availableSize / r) : 0;
+        indicatorSize = max(indicatorSize, _minIndicatorSize);
         if (indicatorSize >= availableSize)
         {
             // full size
@@ -219,9 +235,10 @@ class AbstractSlider : WidgetGroup
             return false;
         }
         const spaceLeft = availableSize - indicatorSize;
-        const topv = max(_data.value - _data.minValue, 0);
-        const bottomv = max(r - (_data.value + _data.pageSize - _data.minValue), 0);
-        spaceBackSize = cast(int)(cast(long)spaceLeft * topv / (topv + bottomv));
+        const topv = _data.value - _data.minValue;
+        const bottomv = r - topv - _data.pageSize;
+        assert(topv + bottomv > 0);
+        spaceBackSize = cast(int)(spaceLeft * topv / (topv + bottomv));
         spaceForwardSize = spaceLeft - spaceBackSize;
         return true;
     }
@@ -319,7 +336,7 @@ class AbstractSlider : WidgetGroup
     {
         bool _dragging;
         Point _dragStart;
-        int _dragStartValue;
+        double _dragStartValue;
         Box _dragStartBox;
 
         Box _scrollArea;
@@ -380,9 +397,9 @@ class AbstractSlider : WidgetGroup
                     offset = b.x - _scrollArea.x;
                     space = _scrollArea.w - b.w;
                 }
-                int v = _data.minValue;
+                double v = _data.minValue;
                 if (space > 0)
-                    v += cast(int)(cast(long)offset * max(_data.range - _data.pageSize, 0) / space);
+                    v += offset * max(_data.range - _data.pageSize, 0) / space;
                 onIndicatorDragging(_dragStartValue, v);
                 return true;
             }
@@ -597,7 +614,6 @@ class Slider : AbstractSlider
     this(Orientation orient = Orientation.horizontal)
     {
         _orient = orient;
-        _data.pageSize = 0;
         _pageUp = new PageScrollButton("PAGE_UP");
         _pageDown = new PageScrollButton("PAGE_DOWN");
         _indicator = new SliderButton;
