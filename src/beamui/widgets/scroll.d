@@ -406,7 +406,7 @@ class ScrollAreaBase : WidgetGroup
     {
         data.setRange(0, fullContentSize.w);
         data.pageSize = _clientBox.w;
-        data.position = _scrollPos.x;
+        data.value = _scrollPos.x;
     }
 
     /** Update vertical scrollbar data - range, position, etc.
@@ -418,7 +418,7 @@ class ScrollAreaBase : WidgetGroup
     {
         data.setRange(0, fullContentSize.h);
         data.pageSize = _clientBox.h;
-        data.position = _scrollPos.y;
+        data.value = _scrollPos.y;
     }
 
     protected void drawClient(DrawBuf buf)

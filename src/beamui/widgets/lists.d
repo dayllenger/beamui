@@ -766,8 +766,8 @@ class ListWidget : WidgetGroup
             else if (scrolledrc.right > viewrc.right)
                 delta = scrolledrc.right - viewrc.right;
         }
-        int newPosition = _scrollPosition + delta;
-        _scrollbar.data.position = newPosition;
+        const newPosition = _scrollPosition + delta;
+        _scrollbar.data.value = newPosition;
         _scrollPosition = newPosition;
         invalidate();
     }
@@ -1218,13 +1218,13 @@ class ListWidget : WidgetGroup
             {
                 _scrollbar.data.setRange(0, _totalSize);
                 _scrollbar.data.pageSize = _clientBox.height;
-                _scrollbar.data.position = _scrollPosition;
+                _scrollbar.data.value = _scrollPosition;
             }
             else
             {
                 _scrollbar.data.setRange(0, _totalSize);
                 _scrollbar.data.pageSize = _clientBox.width;
-                _scrollbar.data.position = _scrollPosition;
+                _scrollbar.data.value = _scrollPosition;
             }
         }
 

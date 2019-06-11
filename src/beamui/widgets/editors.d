@@ -2347,7 +2347,7 @@ class EditBox : EditWidgetBase
     {
         data.setRange(0, _content.length);
         data.pageSize = max(linesOnScreen - 1, 1);
-        data.position = _firstVisibleLine;
+        data.value = _firstVisibleLine;
     }
 
     override void onHScroll(ScrollEvent event)

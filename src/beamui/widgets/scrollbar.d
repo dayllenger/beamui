@@ -5,16 +5,15 @@ Synopsis:
 ---
 auto slider = new Slider(Orientation.horizontal);
 // slider values are stored inside of `.data`
-slider.data.minValue = -50;
-slider.data.maxValue = 50;
-slider.data.position = 0;
+slider.data.value = 0;
+slider.data.setRange(-50, 50);
 slider.scrolled ~= (ScrollEvent event) {
     if (event.action == ScrollAction.sliderMoved)
-        Log.d(slider.data.position);
+        Log.d(slider.data.value);
 };
 ---
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -23,53 +22,40 @@ module beamui.widgets.scrollbar;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
-/// Slider component
+/// Component for slider data. It validates it and reacts on changes
 class SliderData
 {
-    @property
+    final @property
     {
+        /// Slider current value
+        int value() const { return _value; }
+        /// ditto
+        void value(int v)
+        {
+            adjustValue(v);
+            if (_value != v)
+            {
+                _value = v;
+                changed();
+            }
+        }
         /// Slider range min value
         int minValue() const { return _minValue; }
-        /// ditto
-        void minValue(int value)
-        {
-            if (_minValue != value)
-            {
-                _minValue = value;
-                changed();
-            }
-        }
         /// Slider range max value
         int maxValue() const { return _maxValue; }
-        /// ditto
-        void maxValue(int value)
-        {
-            if (_maxValue != value)
-            {
-                _maxValue = value;
-                changed();
-            }
-        }
-        /// Page size (visible area size)
+        /// Step between values. Always > 0
+        int step() const { return _step; }
+        /// The difference between max and min values. Always >= 0
+        int range() const { return _maxValue - _minValue; }
+        /// Page size (visible area size in scrollbars). Always >= 0, may be > `range`
         int pageSize() const { return _pageSize; }
         /// ditto
-        void pageSize(int value)
+        void pageSize(int v)
         {
-            if (_pageSize != value)
+            v = max(v, 0);
+            if (_pageSize != v)
             {
-                _pageSize = value;
-                changed();
-            }
-        }
-        /// Slider position
-        int position() const { return _position; }
-        /// ditto
-        void position(int value)
-        {
-            value = clamp(value, _minValue, _maxValue);
-            if (_position != value)
-            {
-                _position = value;
+                _pageSize = v;
                 changed();
             }
         }
@@ -79,21 +65,34 @@ class SliderData
 
     private
     {
+        int _value = 20;
         int _minValue = 0;
         int _maxValue = 100;
+        int _step = 1;
         int _pageSize = 30;
-        int _position = 20;
     }
 
-    /// Set new range (min and max values for slider)
-    void setRange(int min, int max)
+    /** Set new range (min, max, and step values for slider).
+
+        `min` must not be more than `max`, `step` must be more than 0.
+    */
+    final void setRange(int min, int max, int step = 1)
     {
-        if (_minValue != min || _maxValue != max)
+        assert(min <= max);
+        assert(step > 0);
+        if (_minValue != min || _maxValue != max || _step != step)
         {
             _minValue = min;
             _maxValue = max;
+            _step = step;
+            adjustValue(_value);
             changed();
         }
+    }
+
+    private void adjustValue(ref int v)
+    {
+        v = max(_minValue, min(v, _maxValue - _pageSize));
     }
 }
 
@@ -155,25 +154,9 @@ class AbstractSlider : WidgetGroup
         // override
     }
 
-    override bool onMouseEvent(MouseEvent event)
-    {
-        if (visibility != Visibility.visible)
-            return false;
-        if (event.action == MouseAction.wheel)
-        {
-            int delta = event.wheelDelta;
-            if (delta > 0)
-                sendScrollEvent(ScrollAction.lineUp);
-            else if (delta < 0)
-                sendScrollEvent(ScrollAction.lineDown);
-            return true;
-        }
-        return super.onMouseEvent(event);
-    }
-
     bool sendScrollEvent(ScrollAction action)
     {
-        return sendScrollEvent(action, _data.position);
+        return sendScrollEvent(action, _data.value);
     }
 
     bool sendScrollEvent(ScrollAction action, int pos)
@@ -183,47 +166,51 @@ class AbstractSlider : WidgetGroup
         auto event = new ScrollEvent(action, _data.minValue, _data.maxValue, _data.pageSize, pos);
         scrolled(event);
         if (event.positionChanged)
-            _data.position = event.position;
+            _data.value = event.position;
         return true;
     }
 
     protected void onDataChanged()
     {
         if (!needLayout)
+        {
             layoutButtons();
+            invalidate();
+        }
     }
 
-    protected bool onIndicatorDragging(int initialPosition, int currentPosition)
+    protected bool onIndicatorDragging(int initialValue, int currentValue)
     {
-        _data.position = currentPosition;
-        return sendScrollEvent(ScrollAction.sliderMoved, currentPosition);
+        _data.value = currentValue;
+        return sendScrollEvent(ScrollAction.sliderMoved, currentValue);
     }
 
-    override void cancelLayout()
+    override bool onMouseEvent(MouseEvent event)
     {
-        bunch(_indicator, _pageUp, _pageDown).cancelLayout();
-        super.cancelLayout();
-    }
-
-    /// Hide controls when scroll is not possible
-    protected void updateState()
-    {
-        // override
+        if (visibility != Visibility.visible)
+            return false;
+        if (event.action == MouseAction.wheel)
+        {
+            const delta = event.wheelDelta;
+            if (delta != 0)
+                sendScrollEvent(delta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
+            return true;
+        }
+        return super.onMouseEvent(event);
     }
 
     protected bool calcButtonSizes(int availableSize, ref int spaceBackSize, ref int spaceForwardSize,
             ref int indicatorSize)
     {
-        int dv = _data.maxValue - _data.minValue;
-        if (_data.pageSize >= dv)
+        const r = _data.range;
+        if (_data.pageSize >= r)
         {
             // full size
             spaceBackSize = spaceForwardSize = 0;
             indicatorSize = availableSize;
             return false;
         }
-        dv = max(dv, 0);
-        indicatorSize = max(dv ? _data.pageSize * availableSize / dv : 0, _minIndicatorSize);
+        indicatorSize = max(r ? _data.pageSize * availableSize / r : 0, _minIndicatorSize);
         if (indicatorSize >= availableSize)
         {
             // full size
@@ -231,9 +218,9 @@ class AbstractSlider : WidgetGroup
             indicatorSize = availableSize;
             return false;
         }
-        int spaceLeft = availableSize - indicatorSize;
-        int topv = max(_data.position - _data.minValue, 0);
-        int bottomv = max(dv - (_data.position + _data.pageSize - _data.minValue), 0);
+        const spaceLeft = availableSize - indicatorSize;
+        const topv = max(_data.value - _data.minValue, 0);
+        const bottomv = max(r - (_data.value + _data.pageSize - _data.minValue), 0);
         spaceBackSize = cast(int)(cast(long)spaceLeft * topv / (topv + bottomv));
         spaceForwardSize = spaceLeft - spaceBackSize;
         return true;
@@ -258,7 +245,7 @@ class AbstractSlider : WidgetGroup
             ibox.w -= spaceBackSize + spaceForwardSize;
             layoutButtons(ibox);
         }
-        updateState();
+        updateVisibility();
         cancelLayout();
     }
 
@@ -316,11 +303,23 @@ class AbstractSlider : WidgetGroup
         }
     }
 
+    /// Hide controls when scroll is not possible
+    protected void updateVisibility()
+    {
+        // override
+    }
+
+    override void cancelLayout()
+    {
+        bunch(_indicator, _pageUp, _pageDown).cancelLayout();
+        super.cancelLayout();
+    }
+
     class SliderButton : Button
     {
         bool _dragging;
         Point _dragStart;
-        int _dragStartPosition;
+        int _dragStartValue;
         Box _dragStartBox;
 
         Box _scrollArea;
@@ -343,7 +342,7 @@ class AbstractSlider : WidgetGroup
                 _dragging = true;
                 _dragStart.x = event.x;
                 _dragStart.y = event.y;
-                _dragStartPosition = _data.position;
+                _dragStartValue = _data.value;
                 _dragStartBox = box;
                 sendScrollEvent(ScrollAction.sliderPressed);
                 return true;
@@ -381,11 +380,10 @@ class AbstractSlider : WidgetGroup
                     offset = b.x - _scrollArea.x;
                     space = _scrollArea.w - b.w;
                 }
-                layoutButtons(b);
-                int position = cast(int)(space > 0 ? _data.minValue +
-                    cast(long)offset * (_data.maxValue - _data.minValue - _data.pageSize) / space : 0);
-                invalidate();
-                onIndicatorDragging(_dragStartPosition, position);
+                int v = _data.minValue;
+                if (space > 0)
+                    v += cast(int)(cast(long)offset * max(_data.range - _data.pageSize, 0) / space);
+                onIndicatorDragging(_dragStartValue, v);
                 return true;
             }
             if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
@@ -484,9 +482,9 @@ class ScrollBar : AbstractSlider
     }
 
     /// True if full scroll range is visible, and no need of scrolling at all
-    @property bool fullRangeVisible()
+    @property bool fullRangeVisible() const
     {
-        return _data.pageSize >= _data.maxValue - _data.minValue;
+        return _data.pageSize >= _data.range;
     }
 
     override protected void updateDrawables()
@@ -499,16 +497,16 @@ class ScrollBar : AbstractSlider
             "scrollbar_indicator_vertical" : "scrollbar_indicator_horizontal");
     }
 
-    override protected void updateState()
+    override protected void updateVisibility()
     {
-        bool canScroll = _data.maxValue - _data.minValue > _data.pageSize;
+        const canScroll = _data.range > _data.pageSize;
         if (canScroll)
         {
             bunch(_btnBack, _btnForward).setState(State.enabled);
             _indicator.visibility = Visibility.visible;
-            if (_data.position > _data.minValue)
+            if (_data.value > _data.minValue)
                 _pageUp.visibility = Visibility.visible;
-            if (_data.position < _data.maxValue)
+            if (_data.value < _data.maxValue)
                 _pageDown.visibility = Visibility.visible;
         }
         else
@@ -599,7 +597,7 @@ class Slider : AbstractSlider
     this(Orientation orient = Orientation.horizontal)
     {
         _orient = orient;
-        _data.pageSize = 1;
+        _data.pageSize = 0;
         _pageUp = new PageScrollButton("PAGE_UP");
         _pageDown = new PageScrollButton("PAGE_DOWN");
         _indicator = new SliderButton;
@@ -618,9 +616,9 @@ class Slider : AbstractSlider
             "scrollbar_indicator_vertical" : "scrollbar_indicator_horizontal");
     }
 
-    override protected void updateState()
+    override protected void updateVisibility()
     {
-        bool canScroll = _data.maxValue - _data.minValue > _data.pageSize;
+        const canScroll = _data.range > _data.pageSize;
         if (canScroll)
         {
             bunch(_indicator, _pageUp, _pageDown).visibility(Visibility.visible);
