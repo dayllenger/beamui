@@ -90,7 +90,7 @@ class ScrollData
     }
 }
 
-/// Scroll bar / slider action codes for `ScrollEvent`
+/// Scroll bar action codes for `ScrollEvent`
 enum ScrollAction : ubyte
 {
     pressed,  /// Indicator dragging started
@@ -102,7 +102,7 @@ enum ScrollAction : ubyte
     lineDown, /// Down/right button pressed
 }
 
-/// Slider/scrollbar event
+/// Scrollbar event
 final class ScrollEvent
 {
     const ScrollAction action;
@@ -117,15 +117,15 @@ final class ScrollEvent
         value = v;
     }
 
-    /// Set new slider value in an event handler
+    /// Set new scrollbar position in an event handler
     void amend(int value)
     {
         amendment = value;
     }
 }
 
-/// Base class for widgets like scrollbars and sliders
-class AbstractSlider : WidgetGroup
+/// Scroll bar - either vertical or horizontal
+class ScrollBar : WidgetGroup
 {
     @property
     {
@@ -144,6 +144,12 @@ class AbstractSlider : WidgetGroup
                 requestLayout();
             }
         }
+
+        /// True if full scroll range is visible, and no need of scrolling at all
+        bool fullRangeVisible() const
+        {
+            return _data.pageSize >= _data.range;
+        }
     }
 
     /// Scroll event listeners
@@ -156,19 +162,39 @@ class AbstractSlider : WidgetGroup
         // not _orientation to not intersect with inner buttons _orientation
         Orientation _orient = Orientation.vertical;
 
-        SliderButton _indicator;
+        ScrollIndicator _indicator;
         PageScrollButton _pageUp;
         PageScrollButton _pageDown;
+        Button _btnBack;
+        Button _btnForward;
 
         Box _scrollArea;
         int _minIndicatorSize;
+        int _btnSize;
     }
 
-    this()
+    this(Orientation orient = Orientation.vertical)
     {
         isolateStyle();
         _data = new SliderData;
         _data.changed ~= &onDataChanged;
+        _orient = orient;
+        _btnBack = new Button;
+        _btnBack.id = "BACK";
+        _btnBack.bindSubItem(this, "button");
+        _btnForward = new Button;
+        _btnForward.id = "FORWARD";
+        _btnForward.bindSubItem(this, "button");
+        _pageUp = new PageScrollButton("PAGE_UP");
+        _pageDown = new PageScrollButton("PAGE_DOWN");
+        _indicator = new ScrollIndicator;
+        updateDrawables();
+        addChildren(_btnBack, _btnForward, _indicator, _pageUp, _pageDown);
+        bunch(_btnBack, _btnForward, _indicator, _pageUp, _pageDown).allowsFocus(false);
+        _btnBack.clicked ~= { sendScrollEvent(ScrollAction.lineUp); };
+        _btnForward.clicked ~= { sendScrollEvent(ScrollAction.lineDown); };
+        _pageUp.clicked ~= { sendScrollEvent(ScrollAction.pageUp); };
+        _pageDown.clicked ~= { sendScrollEvent(ScrollAction.pageDown); };
     }
 
     override void onThemeChanged()
@@ -179,7 +205,12 @@ class AbstractSlider : WidgetGroup
 
     protected void updateDrawables()
     {
-        // override
+        _btnBack.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
+            "scrollbar_button_up" : "scrollbar_button_left");
+        _btnForward.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
+            "scrollbar_button_down" : "scrollbar_button_right");
+        _indicator.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
+            "scrollbar_indicator_vertical" : "scrollbar_indicator_horizontal");
     }
 
     void sendScrollEvent(ScrollAction action)
@@ -239,6 +270,11 @@ class AbstractSlider : WidgetGroup
         return delta;
     }
 
+    protected void onIndicatorDragging(double initialValue, double currentValue)
+    {
+        sendScrollEvent(currentValue);
+    }
+
     protected void onDataChanged()
     {
         if (!needLayout)
@@ -248,15 +284,8 @@ class AbstractSlider : WidgetGroup
         }
     }
 
-    protected void onIndicatorDragging(double initialValue, double currentValue)
-    {
-        sendScrollEvent(currentValue);
-    }
-
     override bool onMouseEvent(MouseEvent event)
     {
-        if (visibility != Visibility.visible)
-            return false;
         if (event.action == MouseAction.wheel)
         {
             const delta = event.wheelDelta;
@@ -376,202 +405,6 @@ class AbstractSlider : WidgetGroup
     /// Hide controls when scroll is not possible
     protected void updateVisibility()
     {
-        // override
-    }
-
-    override void cancelLayout()
-    {
-        bunch(_indicator, _pageUp, _pageDown).cancelLayout();
-        super.cancelLayout();
-    }
-
-    class SliderButton : ImageWidget
-    {
-        @property void scrollArea(Box b)
-        {
-            _scrollArea = b;
-        }
-
-        private
-        {
-            bool _dragging;
-            Point _dragStart;
-            double _dragStartValue;
-            Box _dragStartBox;
-
-            Box _scrollArea;
-        }
-
-        this()
-        {
-            id = "SLIDER_BUTTON";
-        }
-
-        override bool onMouseEvent(MouseEvent event)
-        {
-            if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
-            {
-                setState(State.pressed);
-                _dragging = true;
-                _dragStart.x = event.x;
-                _dragStart.y = event.y;
-                _dragStartValue = _data.value;
-                _dragStartBox = box;
-                sendScrollEvent(ScrollAction.pressed);
-                return true;
-            }
-            if (event.action == MouseAction.focusIn && _dragging)
-            {
-                debug (scrollbars)
-                    Log.d("SliderButton: dragging, focusIn");
-                return true;
-            }
-            if (event.action == MouseAction.focusOut && _dragging)
-            {
-                debug (scrollbars)
-                    Log.d("SliderButton: dragging, focusOut");
-                return true;
-            }
-            if (event.action == MouseAction.move && _dragging)
-            {
-                int delta = _orient == Orientation.vertical ?
-                        event.y - _dragStart.y : event.x - _dragStart.x;
-                debug (scrollbars)
-                    Log.d("SliderButton: dragging, move delta: ", delta);
-                Box b = _dragStartBox;
-                int offset;
-                int space;
-                if (_orient == Orientation.vertical)
-                {
-                    b.y = clamp(b.y + delta, _scrollArea.y, _scrollArea.y + _scrollArea.h - b.h);
-                    offset = b.y - _scrollArea.y;
-                    space = _scrollArea.h - b.h;
-                }
-                else
-                {
-                    b.x = clamp(b.x + delta, _scrollArea.x, _scrollArea.x + _scrollArea.w - b.w);
-                    offset = b.x - _scrollArea.x;
-                    space = _scrollArea.w - b.w;
-                }
-                double v = _data.minValue;
-                if (space > 0)
-                    v += offset * max(_data.range - _data.pageSize, 0) / space;
-                onIndicatorDragging(_dragStartValue, v);
-                return true;
-            }
-            if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
-            {
-                resetState(State.pressed);
-                if (_dragging)
-                {
-                    sendScrollEvent(ScrollAction.released);
-                    _dragging = false;
-                }
-                return true;
-            }
-            if (event.action == MouseAction.move && allowsHover)
-            {
-                if (!(state & State.hovered))
-                {
-                    debug (scrollbars)
-                        Log.d("SliderButton: hover");
-                    setState(State.hovered);
-                }
-                return true;
-            }
-            if (event.action == MouseAction.leave && allowsHover)
-            {
-                debug (scrollbars)
-                    Log.d("SliderButton: leave");
-                resetState(State.hovered);
-                return true;
-            }
-            if (event.action == MouseAction.cancel && allowsHover)
-            {
-                debug (scrollbars)
-                    Log.d("SliderButton: cancel with allowsHover");
-                resetState(State.hovered);
-                resetState(State.pressed);
-                _dragging = false;
-                return true;
-            }
-            if (event.action == MouseAction.cancel)
-            {
-                debug (scrollbars)
-                    Log.d("SliderButton: cancel");
-                resetState(State.pressed);
-                _dragging = false;
-                return true;
-            }
-            return false;
-        }
-    }
-
-    class PageScrollButton : Widget
-    {
-        this(string ID)
-        {
-            super(ID);
-            allowsClick = true;
-            allowsHover = true;
-        }
-    }
-}
-
-/// Scroll bar - either vertical or horizontal
-class ScrollBar : AbstractSlider
-{
-    private
-    {
-        Button _btnBack;
-        Button _btnForward;
-
-        int _btnSize;
-    }
-
-    this(Orientation orient = Orientation.vertical)
-    {
-        _orient = orient;
-        _btnBack = new Button;
-        _btnBack.id = "BACK";
-        _btnBack.bindSubItem(this, "button");
-        _btnForward = new Button;
-        _btnForward.id = "FORWARD";
-        _btnForward.bindSubItem(this, "button");
-        _pageUp = new PageScrollButton("PAGE_UP");
-        _pageDown = new PageScrollButton("PAGE_DOWN");
-        _indicator = new SliderButton;
-        updateDrawables();
-        addChild(_btnBack);
-        addChild(_btnForward);
-        addChild(_indicator);
-        addChild(_pageUp);
-        addChild(_pageDown);
-        bunch(_btnBack, _btnForward, _indicator, _pageUp, _pageDown).allowsFocus(false);
-        _btnBack.clicked ~= { sendScrollEvent(ScrollAction.lineUp); };
-        _btnForward.clicked ~= { sendScrollEvent(ScrollAction.lineDown); };
-        _pageUp.clicked ~= { sendScrollEvent(ScrollAction.pageUp); };
-        _pageDown.clicked ~= { sendScrollEvent(ScrollAction.pageDown); };
-    }
-
-    /// True if full scroll range is visible, and no need of scrolling at all
-    @property bool fullRangeVisible() const
-    {
-        return _data.pageSize >= _data.range;
-    }
-
-    override protected void updateDrawables()
-    {
-        _btnBack.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
-            "scrollbar_button_up" : "scrollbar_button_left");
-        _btnForward.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
-            "scrollbar_button_down" : "scrollbar_button_right");
-        _indicator.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
-            "scrollbar_indicator_vertical" : "scrollbar_indicator_horizontal");
-    }
-
-    override protected void updateVisibility()
-    {
         const canScroll = _data.range > _data.pageSize;
         if (canScroll)
         {
@@ -591,7 +424,7 @@ class ScrollBar : AbstractSlider
 
     override void cancelLayout()
     {
-        bunch(_btnBack, _btnForward).cancelLayout();
+        bunch(_indicator, _pageUp, _pageDown, _btnBack, _btnForward).cancelLayout();
         super.cancelLayout();
     }
 
@@ -662,106 +495,137 @@ class ScrollBar : AbstractSlider
         const saver = ClipRectSaver(buf, innerBox, style.alpha);
         bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).onDraw(buf);
     }
-}
 
-/// Slider widget - either vertical or horizontal
-class Slider : AbstractSlider
-{
-    this(Orientation orient = Orientation.horizontal)
+    class ScrollIndicator : ImageWidget
     {
-        _orient = orient;
-        _pageUp = new PageScrollButton("PAGE_UP");
-        _pageDown = new PageScrollButton("PAGE_DOWN");
-        _indicator = new SliderButton;
-        updateDrawables();
-        addChild(_indicator);
-        addChild(_pageUp);
-        addChild(_pageDown);
-        bunch(_indicator, _pageUp, _pageDown).allowsFocus(false);
-        _pageUp.clicked ~= { sendScrollEvent(ScrollAction.pageUp); };
-        _pageDown.clicked ~= { sendScrollEvent(ScrollAction.pageDown); };
-    }
-
-    override protected void updateDrawables()
-    {
-        _indicator.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
-            "scrollbar_indicator_vertical" : "scrollbar_indicator_horizontal");
-    }
-
-    override protected void updateVisibility()
-    {
-        const canScroll = _data.range > _data.pageSize;
-        if (canScroll)
+        @property void scrollArea(Box b)
         {
-            bunch(_indicator, _pageUp, _pageDown).visibility(Visibility.visible);
+            _scrollArea = b;
         }
-        else
+
+        private
         {
-            bunch(_indicator, _pageUp, _pageDown).visibility(Visibility.gone);
+            bool _dragging;
+            Point _dragStart;
+            double _dragStartValue;
+            Box _dragStartBox;
+
+            Box _scrollArea;
         }
-    }
 
-    override void measure()
-    {
-        _indicator.measure();
-        Boundaries bs = _indicator.boundaries;
-        if (_orient == Orientation.vertical)
+        this()
         {
-            _minIndicatorSize = bs.nat.h;
-            bs.nat.h = bs.min.h = bs.nat.h * 5;
-            bs.max.w = bs.nat.w = bs.min.w = bs.nat.w;
+            id = "SCROLL_INDICATOR";
+            allowsHover = true;
         }
-        else
+
+        override bool onMouseEvent(MouseEvent event)
         {
-            _minIndicatorSize = bs.nat.w;
-            bs.nat.w = bs.min.w = bs.nat.w * 5;
-            bs.max.h = bs.nat.h = bs.min.h = bs.nat.h;
-        }
-        setBoundaries(bs);
-    }
-
-    override void layout(Box geom)
-    {
-        if (visibility == Visibility.gone)
-            return;
-
-        box = geom;
-        geom = innerBox;
-
-        _scrollArea = geom;
-        _indicator.scrollArea = geom;
-        layoutButtons();
-    }
-
-    override void onDraw(DrawBuf buf)
-    {
-        if (visibility != Visibility.visible)
-            return;
-
-        Box b = box;
-        auto saver = ClipRectSaver(buf, b, style.alpha);
-        auto bg = background;
-        {
-            if (_orient == Orientation.vertical)
+            if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
             {
-                int dw = bg.width;
-                b.x += (b.w - dw) / 2;
-                b.w = dw;
+                setState(State.pressed);
+                _dragging = true;
+                _dragStart.x = event.x;
+                _dragStart.y = event.y;
+                _dragStartValue = _data.value;
+                _dragStartBox = box;
+                sendScrollEvent(ScrollAction.pressed);
+                return true;
             }
-            else
+            if (event.action == MouseAction.focusIn && _dragging)
             {
-                int dh = bg.height;
-                b.y += (b.h - dh) / 2;
-                b.h = dh;
+                debug (scrollbars)
+                    Log.d("ScrollIndicator: dragging, focusIn");
+                return true;
             }
-            bg.drawTo(buf, b);
+            if (event.action == MouseAction.focusOut && _dragging)
+            {
+                debug (scrollbars)
+                    Log.d("ScrollIndicator: dragging, focusOut");
+                return true;
+            }
+            if (event.action == MouseAction.move && _dragging)
+            {
+                int delta = _orient == Orientation.vertical ?
+                        event.y - _dragStart.y : event.x - _dragStart.x;
+                debug (scrollbars)
+                    Log.d("ScrollIndicator: dragging, move delta: ", delta);
+                Box b = _dragStartBox;
+                int offset;
+                int space;
+                if (_orient == Orientation.vertical)
+                {
+                    b.y = clamp(b.y + delta, _scrollArea.y, _scrollArea.y + _scrollArea.h - b.h);
+                    offset = b.y - _scrollArea.y;
+                    space = _scrollArea.h - b.h;
+                }
+                else
+                {
+                    b.x = clamp(b.x + delta, _scrollArea.x, _scrollArea.x + _scrollArea.w - b.w);
+                    offset = b.x - _scrollArea.x;
+                    space = _scrollArea.w - b.w;
+                }
+                double v = _data.minValue;
+                if (space > 0)
+                    v += offset * max(_data.range - _data.pageSize, 0) / space;
+                onIndicatorDragging(_dragStartValue, v);
+                return true;
+            }
+            if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
+            {
+                resetState(State.pressed);
+                if (_dragging)
+                {
+                    sendScrollEvent(ScrollAction.released);
+                    _dragging = false;
+                }
+                return true;
+            }
+            if (event.action == MouseAction.move && allowsHover)
+            {
+                if (!(state & State.hovered))
+                {
+                    debug (scrollbars)
+                        Log.d("ScrollIndicator: hover");
+                    setState(State.hovered);
+                }
+                return true;
+            }
+            if (event.action == MouseAction.leave && allowsHover)
+            {
+                debug (scrollbars)
+                    Log.d("ScrollIndicator: leave");
+                resetState(State.hovered);
+                return true;
+            }
+            if (event.action == MouseAction.cancel && allowsHover)
+            {
+                debug (scrollbars)
+                    Log.d("ScrollIndicator: cancel with allowsHover");
+                resetState(State.hovered);
+                resetState(State.pressed);
+                _dragging = false;
+                return true;
+            }
+            if (event.action == MouseAction.cancel)
+            {
+                debug (scrollbars)
+                    Log.d("ScrollIndicator: cancel");
+                resetState(State.pressed);
+                _dragging = false;
+                return true;
+            }
+            return false;
         }
-        if (state & State.focused)
-        {
-            drawFocusRect(buf);
-        }
-        bunch(_pageUp, _pageDown, _indicator).onDraw(buf);
+    }
 
-        drawn();
+    class PageScrollButton : Widget
+    {
+        this(string ID)
+        {
+            super(ID);
+            allowsClick = true;
+            allowsHover = true;
+        }
     }
 }

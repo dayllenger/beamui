@@ -555,12 +555,7 @@ ScrollBar::button {
     }
 }
 
-Slider {
-    border: 1px solid #888;
-    background-color: #fff;
-}
-
-AbstractSlider SliderButton {
+ScrollBar ScrollIndicator {
     padding: 3px;
     background-color: #c2c2c2;
 
@@ -577,7 +572,7 @@ AbstractSlider SliderButton {
     }
 }
 
-AbstractSlider PageScrollButton {
+ScrollBar PageScrollButton {
     &:pressed {
         background-color: fade-out(#404080, 0.9);
     }
@@ -585,6 +580,28 @@ AbstractSlider PageScrollButton {
     &:hovered {
         background-color: fade-out(#404080, 0.95);
     }
+}
+
+Slider {
+    border: 1px solid #888;
+    background-color: #fff;
+}
+
+AbstractSlider SliderButton {
+    padding: 3px;
+    background-color: $secondary-color;
+
+    &:pressed {
+        background-color: $main-color;
+    }
+
+    &:not(enabled) {
+        opacity: 0.4;
+    }
+}
+
+AbstractSlider::range-before {
+    background-color: $focused-border-color;
 }
 
 @define-drawables {

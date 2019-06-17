@@ -67,6 +67,7 @@ public
     import beamui.widgets.progressbar;
     import beamui.widgets.scroll;
     import beamui.widgets.scrollbar;
+    import beamui.widgets.slider;
     import beamui.widgets.srcedit;
     import beamui.widgets.statusline;
     import beamui.widgets.tabs;

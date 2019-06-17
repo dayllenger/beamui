@@ -321,7 +321,7 @@ int main()
         };
 
         sb.scrolled ~= (ScrollEvent event) { Log.d("scrollbar: ", event.action); };
-        sl.scrolled ~= (ScrollEvent event) { Log.d("slider: ", event.action); };
+        sl.scrolled ~= (SliderEvent event) { Log.d("slider: ", event.action); };
 
         import std.random : uniform;
 

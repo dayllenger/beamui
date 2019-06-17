@@ -118,6 +118,7 @@ editors
 lists
 menus
 scrollbars
+sliders
 trees
 ```
 

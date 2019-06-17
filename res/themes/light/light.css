@@ -214,19 +214,27 @@ ScrollArea { min-width: 200px; min-height: 150px; }
 /* ========================================================================== scrollbar.d */
 ScrollBar { background-color: rgba(0, 0, 0, 0.05); }
 
+ScrollBar ScrollIndicator { padding: 3px; background-color: #c2c2c2; }
+
+ScrollBar ScrollIndicator:hovered { background-color: #d2d2d2; }
+
+ScrollBar ScrollIndicator:pressed { background-color: #d8d8d8; }
+
+ScrollBar ScrollIndicator:not(enabled) { opacity: 0.4; }
+
+ScrollBar PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
+
+ScrollBar PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
+
 Slider { border: 1px solid #888; background-color: #fff; }
 
-AbstractSlider SliderButton { padding: 3px; background-color: #c2c2c2; }
+AbstractSlider SliderButton { padding: 3px; background-color: #417fbf; }
 
-AbstractSlider SliderButton:hovered { background-color: #d2d2d2; }
-
-AbstractSlider SliderButton:pressed { background-color: #d8d8d8; }
+AbstractSlider SliderButton:pressed { background-color: #4e93da; }
 
 AbstractSlider SliderButton:not(enabled) { opacity: 0.4; }
 
-AbstractSlider PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
-
-AbstractSlider PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
+AbstractSlider::range-before { background-color: #2e93fa; }
 
 @define-drawables { scrollbar_button_up: url(scrollbar_btn_up);
   scrollbar_button_down: url(scrollbar_btn_down);
