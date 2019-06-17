@@ -619,7 +619,6 @@ class ListWidget : WidgetGroup
         allowsFocus = true;
         _scrollbar = new ScrollBar(orientation);
         _scrollbar.visibility = Visibility.gone;
-        _scrollbar.scrolled ~= &onScrollEvent;
         addChild(_scrollbar);
     }
 
@@ -859,19 +858,6 @@ class ListWidget : WidgetGroup
             w.onThemeChanged();
         }
         _adapter.maybe.onThemeChanged();
-    }
-
-    /// Handle scroll event
-    protected void onScrollEvent(ScrollEvent event)
-    {
-        int newPosition = scrollPosition;
-        if (event.action == ScrollAction.sliderMoved)
-            // scroll
-            newPosition = event.position;
-        else
-            // use default handler for page/line up/down events
-            newPosition = event.defaultUpdatePosition();
-        scrollPosition = newPosition;
     }
 
     /// List navigation using keys

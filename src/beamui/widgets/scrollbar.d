@@ -8,8 +8,8 @@ auto slider = new Slider(Orientation.horizontal);
 slider.data.value = 0;
 slider.data.setRange(-50, 50);
 slider.scrolled ~= (ScrollEvent event) {
-    if (event.action == ScrollAction.sliderMoved)
-        Log.d(slider.data.value);
+    if (event.action == ScrollAction.moved)
+        Log.d(event.value);
 };
 ---
 
@@ -19,46 +19,52 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.scrollbar;
 
+public import beamui.widgets.slider : SliderData;
+import std.math : isFinite, quantize;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
-/// Component for slider data. It validates it and reacts on changes
-class SliderData
+class ScrollData
 {
-    import std.math : isFinite, quantize;
-
     final @property
     {
-        /// Slider current value
-        double value() const { return _value; }
+        /// Scrollbar current position, in [0, 1] range
+        double position() const { return _position; }
         /// ditto
-        void value(double v)
+        void position(double v)
         {
-            adjustValue(v);
-            if (_value != v)
+            adjustPos(v);
+            if (_position != v)
             {
-                _value = v;
+                _position = v;
                 changed();
             }
         }
-        /// Slider range min value
-        double minValue() const { return _minValue; }
-        /// Slider range max value
-        double maxValue() const { return _maxValue; }
-        /// Step between values. Always > 0
-        double step() const { return _step; }
-        /// The difference between max and min values. Always >= 0
-        double range() const { return _maxValue - _minValue; }
-        /// Page size (visible area size in scrollbars). Always >= 0, may be > `range`
+        /// Page size (visible area size), in [0, 1] range
         double pageSize() const { return _pageSize; }
         /// ditto
         void pageSize(double v)
         {
             assert(isFinite(v));
-            v = max(v, 0);
+            v = clamp(v, 0, 1);
             if (_pageSize != v)
             {
                 _pageSize = v;
+                adjustPos(_position);
+                changed();
+            }
+        }
+        /// Step between positions, in [0, 1] range
+        double step() const { return _step; }
+        /// ditto
+        void step(double v)
+        {
+            assert(isFinite(v));
+            v = clamp(v, 0, 1);
+            if (_step != v)
+            {
+                _step = v;
+                adjustPos(_position);
                 changed();
             }
         }
@@ -68,46 +74,53 @@ class SliderData
 
     private
     {
-        double _value = 0;
-        double _minValue = 0;
-        double _maxValue = 100;
-        double _step = 1;
-        double _pageSize = 0;
+        double _position = 0;
+        double _pageSize = 1;
+        double _step = 0;
     }
 
-    /** Set new range (min, max, and step values for slider).
-
-        `min` must not be more than `max`, `step` must be more than 0.
-    */
-    final void setRange(double min, double max, double step = 1)
-    {
-        assert(isFinite(min));
-        assert(isFinite(max));
-        assert(isFinite(step));
-        assert(min <= max);
-        assert(step > 0);
-
-        if (_minValue != min || _maxValue != max || _step != step)
-        {
-            _minValue = min;
-            _maxValue = max;
-            _step = step;
-            adjustValue(_value);
-            changed();
-        }
-    }
-
-    private void adjustValue(ref double v)
+    private void adjustPos(ref double v, bool snap = false)
     {
         assert(isFinite(v));
 
-        if (v > _minValue)
-        {
-            const uplim = max(_maxValue - _pageSize, _minValue);
-            v = min(quantize(v - _minValue, _step) + _minValue, uplim);
-        }
+        if (!snap || _step == 0)
+            v = clamp(v, 0, 1);
         else
-            v = _minValue;
+            v = v > 0 ? min(quantize(v, _step), 1) : 0;
+    }
+}
+
+/// Scroll bar / slider action codes for `ScrollEvent`
+enum ScrollAction : ubyte
+{
+    pressed,  /// Indicator dragging started
+    moved,    /// Dragging in progress
+    released, /// Dragging finished
+    pageUp,   /// Space above indicator pressed
+    pageDown, /// Space below indicator pressed
+    lineUp,   /// Up/left button pressed
+    lineDown, /// Down/right button pressed
+}
+
+/// Slider/scrollbar event
+final class ScrollEvent
+{
+    const ScrollAction action;
+    const SliderData data;
+    const double value;
+    private double amendment;
+
+    this(ScrollAction a, SliderData d, double v)
+    {
+        action = a;
+        data = d;
+        value = v;
+    }
+
+    /// Set new slider value in an event handler
+    void amend(int value)
+    {
+        amendment = value;
     }
 }
 
@@ -169,20 +182,61 @@ class AbstractSlider : WidgetGroup
         // override
     }
 
-    bool sendScrollEvent(ScrollAction action)
+    void sendScrollEvent(ScrollAction action)
     {
-        return sendScrollEvent(action, _data.value);
+        if (scrolled.assigned)
+        {
+            auto event = new ScrollEvent(action, _data, _data.value);
+            scrolled(event);
+            if (isFinite(event.amendment))
+            {
+                _data.value = event.amendment;
+                return;
+            }
+        }
+        _data.value = _data.value + getDefaultOffset(action);
     }
 
-    bool sendScrollEvent(ScrollAction action, double value)
+    void sendScrollEvent(double value)
     {
-        if (!scrolled.assigned)
-            return false;
-        auto event = new ScrollEvent(action, cast(int)_data.minValue, cast(int)_data.maxValue, cast(int)_data.pageSize, cast(int)value);
-        scrolled(event);
-        if (event.positionChanged)
-            _data.value = event.position;
-        return true;
+        if (_data.value == value)
+            return;
+
+        if (scrolled.assigned)
+        {
+            auto event = new ScrollEvent(ScrollAction.moved, _data, value);
+            scrolled(event);
+            if (isFinite(event.amendment))
+            {
+                _data.value = event.amendment;
+                return;
+            }
+        }
+        _data.value = value;
+    }
+
+    /// Default slider offset on pageUp/pageDown, lineUp/lineDown actions
+    protected double getDefaultOffset(ScrollAction action) const
+    {
+        double delta = 0;
+        switch (action) with (ScrollAction)
+        {
+        case lineUp:
+        case lineDown:
+            delta = max(_data.pageSize / 20, 1);
+            if (action == lineUp)
+                delta *= -1;
+            break;
+        case pageUp:
+        case pageDown:
+            delta = max(_data.pageSize * 3 / 4, 1);
+            if (action == pageUp)
+                delta *= -1;
+            break;
+        default:
+            break;
+        }
+        return delta;
     }
 
     protected void onDataChanged()
@@ -194,10 +248,9 @@ class AbstractSlider : WidgetGroup
         }
     }
 
-    protected bool onIndicatorDragging(double initialValue, double currentValue)
+    protected void onIndicatorDragging(double initialValue, double currentValue)
     {
-        _data.value = currentValue;
-        return sendScrollEvent(ScrollAction.sliderMoved, currentValue);
+        sendScrollEvent(currentValue);
     }
 
     override bool onMouseEvent(MouseEvent event)
@@ -332,23 +385,26 @@ class AbstractSlider : WidgetGroup
         super.cancelLayout();
     }
 
-    class SliderButton : Button
+    class SliderButton : ImageWidget
     {
-        bool _dragging;
-        Point _dragStart;
-        double _dragStartValue;
-        Box _dragStartBox;
+        @property void scrollArea(Box b)
+        {
+            _scrollArea = b;
+        }
 
-        Box _scrollArea;
+        private
+        {
+            bool _dragging;
+            Point _dragStart;
+            double _dragStartValue;
+            Box _dragStartBox;
+
+            Box _scrollArea;
+        }
 
         this()
         {
             id = "SLIDER_BUTTON";
-        }
-
-        @property void scrollArea(Box b)
-        {
-            _scrollArea = b;
         }
 
         override bool onMouseEvent(MouseEvent event)
@@ -361,7 +417,7 @@ class AbstractSlider : WidgetGroup
                 _dragStart.y = event.y;
                 _dragStartValue = _data.value;
                 _dragStartBox = box;
-                sendScrollEvent(ScrollAction.sliderPressed);
+                sendScrollEvent(ScrollAction.pressed);
                 return true;
             }
             if (event.action == MouseAction.focusIn && _dragging)
@@ -408,7 +464,7 @@ class AbstractSlider : WidgetGroup
                 resetState(State.pressed);
                 if (_dragging)
                 {
-                    sendScrollEvent(ScrollAction.sliderReleased);
+                    sendScrollEvent(ScrollAction.released);
                     _dragging = false;
                 }
                 return true;

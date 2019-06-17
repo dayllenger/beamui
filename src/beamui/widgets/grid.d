@@ -46,6 +46,7 @@ import beamui.core.stdaction;
 import beamui.widgets.controls;
 import beamui.widgets.menu;
 import beamui.widgets.scroll;
+import beamui.widgets.scrollbar;
 import beamui.widgets.widget;
 
 /// Data provider for GridWidget.
@@ -904,9 +905,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     override void onHScroll(ScrollEvent event)
     {
         // scroll w/o changing selection
-        if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
+        if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            scrollTo(event.position, scrollPos.y);
+            scrollTo(cast(int)event.value, scrollPos.y);
         }
         else if (event.action == ScrollAction.pageUp)
         {
@@ -941,9 +942,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     override void onVScroll(ScrollEvent event)
     {
         // scroll w/o changing selection
-        if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
+        if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            scrollTo(scrollPos.x, event.position);
+            scrollTo(scrollPos.x, cast(int)event.value);
         }
         else if (event.action == ScrollAction.pageUp)
         {

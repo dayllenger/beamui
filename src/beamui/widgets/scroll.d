@@ -508,9 +508,9 @@ class ScrollArea : ScrollAreaBase
 
     override void onHScroll(ScrollEvent event)
     {
-        if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
+        if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            scrollTo(event.position, scrollPos.y);
+            scrollTo(cast(int)event.value, scrollPos.y);
         }
         else if (event.action == ScrollAction.pageUp)
         {
@@ -532,9 +532,9 @@ class ScrollArea : ScrollAreaBase
 
     override void onVScroll(ScrollEvent event)
     {
-        if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
+        if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            scrollTo(scrollPos.x, event.position);
+            scrollTo(scrollPos.x, cast(int)event.value);
         }
         else if (event.action == ScrollAction.pageUp)
         {

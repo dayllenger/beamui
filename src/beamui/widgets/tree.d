@@ -46,6 +46,7 @@ import beamui.widgets.layouts;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
 import beamui.widgets.scroll;
+import beamui.widgets.scrollbar : ScrollAction;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 

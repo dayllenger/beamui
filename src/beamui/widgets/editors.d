@@ -22,7 +22,7 @@ import beamui.widgets.layouts;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
 import beamui.widgets.scroll;
-import beamui.widgets.scrollbar : SliderData;
+import beamui.widgets.scrollbar;
 import beamui.widgets.widget;
 import beamui.platforms.common.platform;
 
@@ -2352,11 +2352,12 @@ class EditBox : EditWidgetBase
 
     override void onHScroll(ScrollEvent event)
     {
-        if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
+        if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            if (scrollPos.x != event.position)
+            const p = cast(int)event.value;
+            if (scrollPos.x != p)
             {
-                scrollPos.x = event.position;
+                scrollPos.x = p;
                 invalidate();
             }
         }
@@ -2372,11 +2373,12 @@ class EditBox : EditWidgetBase
 
     override void onVScroll(ScrollEvent event)
     {
-        if (event.action == ScrollAction.sliderMoved || event.action == ScrollAction.sliderReleased)
+        if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            if (_firstVisibleLine != event.position)
+            const p = cast(int)event.value;
+            if (_firstVisibleLine != p)
             {
-                _firstVisibleLine = event.position;
+                _firstVisibleLine = p;
                 measureVisibleText();
                 updateScrollBars();
                 invalidate();
