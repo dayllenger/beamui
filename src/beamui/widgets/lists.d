@@ -569,12 +569,12 @@ class ListWidget : WidgetGroup
 
         final protected int scrollPosition() const
         {
-            return cast(int)_scrollbar.data.value;
+            return _scrollbar.data.position;
         }
 
         final protected void scrollPosition(int v)
         {
-            _scrollbar.data.value = v;
+            _scrollbar.data.position = v;
         }
     }
 
@@ -1186,16 +1186,13 @@ class ListWidget : WidgetGroup
         }
         _clientBox = inner;
 
-        // update scrollbar parameters
+        // update scrollbar and lay out
         if (_needScrollbar)
         {
-            _scrollbar.data.setRange(0, _totalSize);
-            _scrollbar.data.pageSize = vertical ? _clientBox.height : _clientBox.width;
-        }
+            _scrollbar.data.setRange(_totalSize, vertical ? _clientBox.h : _clientBox.w);
+            if (_itemBoxes.length > 0)
+                _scrollbar.lineStep = vertical ? _itemBoxes[0].h : _itemBoxes[0].w;
 
-        // lay out scrollbar
-        if (_needScrollbar)
-        {
             Box sbb = inner;
             if (vertical)
             {

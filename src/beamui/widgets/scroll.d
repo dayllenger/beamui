@@ -65,7 +65,7 @@ class ScrollAreaBase : WidgetGroup
                 requestLayout();
                 if (m != ScrollBarMode.hidden)
                 {
-                    _hscrollbar = new ScrollBar(Orientation.horizontal);
+                    _hscrollbar = new ScrollBar(Orientation.horizontal, _hdata);
                     _hscrollbar.id = "hscrollbar";
                     _hscrollbar.scrolled ~= &onHScroll;
                     addChild(_hscrollbar);
@@ -83,7 +83,7 @@ class ScrollAreaBase : WidgetGroup
                 requestLayout();
                 if (m != ScrollBarMode.hidden)
                 {
-                    _vscrollbar = new ScrollBar(Orientation.vertical);
+                    _vscrollbar = new ScrollBar(Orientation.vertical, _vdata);
                     _vscrollbar.id = "vscrollbar";
                     _vscrollbar.scrolled ~= &onVScroll;
                     addChild(_vscrollbar);
@@ -108,6 +108,9 @@ class ScrollAreaBase : WidgetGroup
             {
                 _hscrollbar = hbar;
                 _hscrollbarMode = ScrollBarMode.external;
+                destroy(_hdata);
+                _hdata = hbar.data;
+                updateHScrollBar(_hdata);
             }
             else
                 _hscrollbarMode = ScrollBarMode.hidden;
@@ -129,6 +132,9 @@ class ScrollAreaBase : WidgetGroup
             {
                 _vscrollbar = vbar;
                 _vscrollbarMode = ScrollBarMode.external;
+                destroy(_vdata);
+                _vdata = vbar.data;
+                updateVScrollBar(_vdata);
             }
             else
                 _vscrollbarMode = ScrollBarMode.hidden;
@@ -160,6 +166,8 @@ class ScrollAreaBase : WidgetGroup
         ScrollBarMode _vscrollbarMode;
         ScrollBar _hscrollbar;
         ScrollBar _vscrollbar;
+        ScrollData _hdata;
+        ScrollData _vdata;
         Size _sbsz;
 
         Box _clientBox;
@@ -169,6 +177,8 @@ class ScrollAreaBase : WidgetGroup
     this(ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
          ScrollBarMode vscrollbarMode = ScrollBarMode.automatic)
     {
+        _hdata = new ScrollData;
+        _vdata = new ScrollData;
         this.hscrollbarMode = hscrollbarMode;
         this.vscrollbarMode = vscrollbarMode;
     }
@@ -392,9 +402,9 @@ class ScrollAreaBase : WidgetGroup
         needToShowScrollbars(needHScroll, needVScroll);
 
         if (needHScroll)
-            updateHScrollBar(_hscrollbar.data);
+            updateHScrollBar(_hdata);
         if (needVScroll)
-            updateVScrollBar(_vscrollbar.data);
+            updateVScrollBar(_vdata);
     }
 
     /** Update horizontal scrollbar data - range, position, etc.
@@ -402,11 +412,10 @@ class ScrollAreaBase : WidgetGroup
         Default implementation is intended to scroll full contents
         inside the client box, override it if necessary.
     */
-    protected void updateHScrollBar(SliderData data)
+    protected void updateHScrollBar(ScrollData data)
     {
-        data.setRange(0, fullContentSize.w);
-        data.pageSize = _clientBox.w;
-        data.value = _scrollPos.x;
+        data.setRange(fullContentSize.w, _clientBox.w);
+        data.position = _scrollPos.x;
     }
 
     /** Update vertical scrollbar data - range, position, etc.
@@ -414,11 +423,10 @@ class ScrollAreaBase : WidgetGroup
         Default implementation is intended to scroll full contents
         inside the client box, override it if necessary.
     */
-    protected void updateVScrollBar(SliderData data)
+    protected void updateVScrollBar(ScrollData data)
     {
-        data.setRange(0, fullContentSize.h);
-        data.pageSize = _clientBox.h;
-        data.value = _scrollPos.y;
+        data.setRange(fullContentSize.h, _clientBox.h);
+        data.position = _scrollPos.y;
     }
 
     protected void drawClient(DrawBuf buf)
@@ -510,7 +518,7 @@ class ScrollArea : ScrollAreaBase
     {
         if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            scrollTo(cast(int)event.value, scrollPos.y);
+            scrollTo(event.position, scrollPos.y);
         }
         else if (event.action == ScrollAction.pageUp)
         {
@@ -534,7 +542,7 @@ class ScrollArea : ScrollAreaBase
     {
         if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            scrollTo(scrollPos.x, cast(int)event.value);
+            scrollTo(scrollPos.x, event.position);
         }
         else if (event.action == ScrollAction.pageUp)
         {

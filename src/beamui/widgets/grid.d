@@ -907,7 +907,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         // scroll w/o changing selection
         if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            scrollTo(cast(int)event.value, scrollPos.y);
+            scrollTo(event.position, scrollPos.y);
         }
         else if (event.action == ScrollAction.pageUp)
         {
@@ -944,7 +944,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         // scroll w/o changing selection
         if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            scrollTo(scrollPos.x, cast(int)event.value);
+            scrollTo(scrollPos.x, event.position);
         }
         else if (event.action == ScrollAction.pageUp)
         {

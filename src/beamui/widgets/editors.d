@@ -2343,21 +2343,19 @@ class EditBox : EditWidgetBase
         return _content.length;
     }
 
-    override protected void updateVScrollBar(SliderData data)
+    override protected void updateVScrollBar(ScrollData data)
     {
-        data.setRange(0, _content.length);
-        data.pageSize = max(linesOnScreen - 1, 1);
-        data.value = _firstVisibleLine;
+        data.setRange(_content.length, max(linesOnScreen - 1, 1));
+        data.position = _firstVisibleLine;
     }
 
     override void onHScroll(ScrollEvent event)
     {
         if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            const p = cast(int)event.value;
-            if (scrollPos.x != p)
+            if (scrollPos.x != event.position)
             {
-                scrollPos.x = p;
+                scrollPos.x = event.position;
                 invalidate();
             }
         }
@@ -2375,10 +2373,9 @@ class EditBox : EditWidgetBase
     {
         if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
-            const p = cast(int)event.value;
-            if (_firstVisibleLine != p)
+            if (_firstVisibleLine != event.position)
             {
-                _firstVisibleLine = p;
+                _firstVisibleLine = event.position;
                 measureVisibleText();
                 updateScrollBars();
                 invalidate();
@@ -2551,6 +2548,56 @@ class EditBox : EditWidgetBase
             }
         }
         return super.onMouseEvent(event);
+    }
+
+    protected enum EditorScrollAction
+    {
+        left,
+        right,
+        lineUp,
+        lineDown,
+        pageUp,
+        pageDown,
+    }
+
+    /// Scroll somewhere (not changing cursor)
+    protected void scroll(EditorScrollAction where)
+    {
+        const int oldScrollPosX = scrollPos.x;
+        const int oldFirstVisibleLine = _firstVisibleLine;
+        final switch (where) with (EditorScrollAction)
+        {
+        case left:
+            scrollPos.x = max(scrollPos.x - _spaceWidth * 4, 0);
+            break;
+        case right:
+            scrollPos.x = min(scrollPos.x + _spaceWidth * 4, fullContentSize.w - clientBox.width);
+            break;
+        case lineUp:
+            _firstVisibleLine = max(_firstVisibleLine - 3, 0);
+            break;
+        case lineDown:
+            _firstVisibleLine = max(min(_firstVisibleLine + 3, _content.length - linesOnScreen), 0);
+            break;
+        case pageUp:
+            _firstVisibleLine = max(_firstVisibleLine - linesOnScreen * 3 / 4, 0);
+            break;
+        case pageDown:
+            const int screen = linesOnScreen;
+            _firstVisibleLine = max(min(_firstVisibleLine + screen * 3 / 4, _content.length - screen), 0);
+            break;
+        }
+        if (oldScrollPosX != scrollPos.x)
+        {
+            updateScrollBars();
+            invalidate();
+        }
+        if (oldFirstVisibleLine != _firstVisibleLine)
+        {
+            measureVisibleText();
+            updateScrollBars();
+            invalidate();
+        }
     }
 
     private bool _enableScrollAfterText = true;
@@ -2929,59 +2976,6 @@ class EditBox : EditWidgetBase
             correctCaretPos();
             auto op = new EditOperation(EditAction.replace, _content.lineRange(_caretPos.line), [""d]);
             _content.performOperation(op, this);
-        }
-    }
-
-    //===============================================================
-    // Scrolling
-
-    protected enum EditorScrollAction
-    {
-        left,
-        right,
-        lineUp,
-        lineDown,
-        pageUp,
-        pageDown,
-    }
-
-    /// Scroll somewhere (not changing cursor)
-    protected void scroll(EditorScrollAction where)
-    {
-        const int oldScrollPosX = scrollPos.x;
-        const int oldFirstVisibleLine = _firstVisibleLine;
-        final switch (where) with (EditorScrollAction)
-        {
-        case left:
-            scrollPos.x = max(scrollPos.x - _spaceWidth * 4, 0);
-            break;
-        case right:
-            scrollPos.x = min(scrollPos.x + _spaceWidth * 4, fullContentSize.w - clientBox.width);
-            break;
-        case lineUp:
-            _firstVisibleLine = max(_firstVisibleLine - 3, 0);
-            break;
-        case lineDown:
-            _firstVisibleLine = max(min(_firstVisibleLine + 3, _content.length - linesOnScreen), 0);
-            break;
-        case pageUp:
-            _firstVisibleLine = max(_firstVisibleLine - linesOnScreen * 3 / 4, 0);
-            break;
-        case pageDown:
-            const int screen = linesOnScreen;
-            _firstVisibleLine = max(min(_firstVisibleLine + screen * 3 / 4, _content.length - screen), 0);
-            break;
-        }
-        if (oldScrollPosX != scrollPos.x)
-        {
-            updateScrollBars();
-            invalidate();
-        }
-        if (oldFirstVisibleLine != _firstVisibleLine)
-        {
-            measureVisibleText();
-            updateScrollBars();
-            invalidate();
         }
     }
 

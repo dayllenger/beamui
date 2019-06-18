@@ -1,17 +1,5 @@
 /**
-Simple scrollbar-like controls.
-
-Synopsis:
----
-auto slider = new Slider(Orientation.horizontal);
-// slider values are stored inside of `.data`
-slider.data.value = 0;
-slider.data.setRange(-50, 50);
-slider.scrolled ~= (ScrollEvent event) {
-    if (event.action == ScrollAction.moved)
-        Log.d(event.value);
-};
----
+Scrollbar control.
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
 License:   Boost License 1.0
@@ -19,74 +7,59 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.scrollbar;
 
-public import beamui.widgets.slider : SliderData;
-import std.math : isFinite, quantize;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
+/// Component for scroll data. It validates it and reacts on changes
 class ScrollData
 {
     final @property
     {
-        /// Scrollbar current position, in [0, 1] range
-        double position() const { return _position; }
+        /// Current scroll position, between 0 and `range - page`
+        int position() const { return _pos; }
         /// ditto
-        void position(double v)
+        void position(int v)
         {
             adjustPos(v);
-            if (_position != v)
+            if (_pos != v)
             {
-                _position = v;
+                _pos = v;
                 changed();
             }
         }
-        /// Page size (visible area size), in [0, 1] range
-        double pageSize() const { return _pageSize; }
-        /// ditto
-        void pageSize(double v)
-        {
-            assert(isFinite(v));
-            v = clamp(v, 0, 1);
-            if (_pageSize != v)
-            {
-                _pageSize = v;
-                adjustPos(_position);
-                changed();
-            }
-        }
-        /// Step between positions, in [0, 1] range
-        double step() const { return _step; }
-        /// ditto
-        void step(double v)
-        {
-            assert(isFinite(v));
-            v = clamp(v, 0, 1);
-            if (_step != v)
-            {
-                _step = v;
-                adjustPos(_position);
-                changed();
-            }
-        }
+        /// Scroll length (max `position` + `page`). Always >= 0
+        int range() const { return _range; }
+        /// Page (visible area) size. Always >= 0, may be > `range`
+        int page() const { return _page; }
     }
 
     Signal!(void delegate()) changed;
 
     private
     {
-        double _position = 0;
-        double _pageSize = 1;
-        double _step = 0;
+        int _pos;
+        int _range = 100;
+        int _page = 10;
     }
 
-    private void adjustPos(ref double v, bool snap = false)
+    /// Set new `range` and `page` values for scrolling. They must be >= 0
+    final void setRange(int range, int page)
     {
-        assert(isFinite(v));
+        assert(range >= 0);
+        assert(page >= 0);
 
-        if (!snap || _step == 0)
-            v = clamp(v, 0, 1);
-        else
-            v = v > 0 ? min(quantize(v, _step), 1) : 0;
+        if (_range != range || _page != page)
+        {
+            _range = range;
+            _page = page;
+            adjustPos(_pos);
+            changed();
+        }
+    }
+
+    private void adjustPos(ref int v)
+    {
+        v = max(0, min(v, _range - _page));
     }
 }
 
@@ -106,21 +79,21 @@ enum ScrollAction : ubyte
 final class ScrollEvent
 {
     const ScrollAction action;
-    const SliderData data;
-    const double value;
-    private double amendment;
+    const ScrollData data;
+    const int position;
+    private int amendment = int.min;
 
-    this(ScrollAction a, SliderData d, double v)
+    this(ScrollAction a, ScrollData d, int p)
     {
         action = a;
         data = d;
-        value = v;
+        position = p;
     }
 
     /// Set new scrollbar position in an event handler
-    void amend(int value)
+    void amend(int position)
     {
-        amendment = value;
+        amendment = position;
     }
 }
 
@@ -129,10 +102,10 @@ class ScrollBar : WidgetGroup
 {
     @property
     {
-        /// Slider data component
-        inout(SliderData) data() inout { return _data; }
+        /// Scrollbar data component
+        inout(ScrollData) data() inout { return _data; }
 
-        /// Slider orientation (vertical, horizontal)
+        /// Scrollbar orientation (vertical, horizontal)
         Orientation orientation() const { return _orient; }
         /// ditto
         void orientation(Orientation value)
@@ -148,16 +121,19 @@ class ScrollBar : WidgetGroup
         /// True if full scroll range is visible, and no need of scrolling at all
         bool fullRangeVisible() const
         {
-            return _data.pageSize >= _data.range;
+            return _data.page >= _data.range;
         }
     }
 
     /// Scroll event listeners
     Signal!(void delegate(ScrollEvent event)) scrolled;
 
+    /// Jump length on lineUp/lineDown events
+    uint lineStep;
+
     private
     {
-        SliderData _data;
+        ScrollData _data;
 
         // not _orientation to not intersect with inner buttons _orientation
         Orientation _orient = Orientation.vertical;
@@ -173,10 +149,10 @@ class ScrollBar : WidgetGroup
         int _btnSize;
     }
 
-    this(Orientation orient = Orientation.vertical)
+    this(Orientation orient = Orientation.vertical, ScrollData data = null)
     {
         isolateStyle();
-        _data = new SliderData;
+        _data = data ? data : new ScrollData;
         _data.changed ~= &onDataChanged;
         _orient = orient;
         _btnBack = new Button;
@@ -217,60 +193,61 @@ class ScrollBar : WidgetGroup
     {
         if (scrolled.assigned)
         {
-            auto event = new ScrollEvent(action, _data, _data.value);
+            auto event = new ScrollEvent(action, _data, _data.position);
             scrolled(event);
-            if (isFinite(event.amendment))
+            if (event.amendment >= 0)
             {
-                _data.value = event.amendment;
+                _data.position = event.amendment;
                 return;
             }
         }
-        _data.value = _data.value + getDefaultOffset(action);
+        _data.position = _data.position + getDefaultOffset(action);
     }
 
-    void sendScrollEvent(double value)
+    void sendScrollEvent(int position)
     {
-        if (_data.value == value)
+        _data.adjustPos(position);
+        if (_data.position == position)
             return;
 
         if (scrolled.assigned)
         {
-            auto event = new ScrollEvent(ScrollAction.moved, _data, value);
+            auto event = new ScrollEvent(ScrollAction.moved, _data, position);
             scrolled(event);
-            if (isFinite(event.amendment))
+            if (event.amendment >= 0)
             {
-                _data.value = event.amendment;
+                _data.position = event.amendment;
                 return;
             }
         }
-        _data.value = value;
+        _data.position = position;
     }
 
     /// Default slider offset on pageUp/pageDown, lineUp/lineDown actions
-    protected double getDefaultOffset(ScrollAction action) const
+    protected int getDefaultOffset(ScrollAction action) const
     {
         double delta = 0;
         switch (action) with (ScrollAction)
         {
         case lineUp:
         case lineDown:
-            delta = max(_data.pageSize / 20, 1);
+            delta = lineStep > 0 ? lineStep : max(_data.page * 0.1, 1);
             if (action == lineUp)
                 delta *= -1;
             break;
         case pageUp:
         case pageDown:
-            delta = max(_data.pageSize * 3 / 4, 1);
+            delta = max(_data.page * 0.75, lineStep, 1);
             if (action == pageUp)
                 delta *= -1;
             break;
         default:
             break;
         }
-        return delta;
+        return cast(int)delta;
     }
 
-    protected void onIndicatorDragging(double initialValue, double currentValue)
+    protected void onIndicatorDragging(int initialValue, int currentValue)
     {
         sendScrollEvent(currentValue);
     }
@@ -300,14 +277,14 @@ class ScrollBar : WidgetGroup
             ref int indicatorSize)
     {
         const r = _data.range;
-        if (_data.pageSize >= r)
+        if (_data.page >= r)
         {
             // full size
             spaceBackSize = spaceForwardSize = 0;
             indicatorSize = availableSize;
             return false;
         }
-        indicatorSize = r > 0 ? cast(int)(_data.pageSize * availableSize / r) : 0;
+        indicatorSize = r > 0 ? _data.page * availableSize / r : 0;
         indicatorSize = max(indicatorSize, _minIndicatorSize);
         if (indicatorSize >= availableSize)
         {
@@ -317,10 +294,10 @@ class ScrollBar : WidgetGroup
             return false;
         }
         const spaceLeft = availableSize - indicatorSize;
-        const topv = _data.value - _data.minValue;
-        const bottomv = r - topv - _data.pageSize;
-        assert(topv + bottomv > 0);
-        spaceBackSize = cast(int)(spaceLeft * topv / (topv + bottomv));
+        const double before = _data.position;
+        const double after = r - before - _data.page;
+        assert(before + after > 0);
+        spaceBackSize = cast(int)(spaceLeft * before / (before + after));
         spaceForwardSize = spaceLeft - spaceBackSize;
         return true;
     }
@@ -334,7 +311,6 @@ class ScrollBar : WidgetGroup
             bool indicatorVisible = calcButtonSizes(_scrollArea.h, spaceBackSize, spaceForwardSize, indicatorSize);
             ibox.y += spaceBackSize;
             ibox.h -= spaceBackSize + spaceForwardSize;
-            layoutButtons(ibox);
         }
         else // horizontal
         {
@@ -342,8 +318,8 @@ class ScrollBar : WidgetGroup
             bool indicatorVisible = calcButtonSizes(_scrollArea.w, spaceBackSize, spaceForwardSize, indicatorSize);
             ibox.x += spaceBackSize;
             ibox.w -= spaceBackSize + spaceForwardSize;
-            layoutButtons(ibox);
         }
+        layoutButtons(ibox);
         updateVisibility();
         cancelLayout();
     }
@@ -405,14 +381,14 @@ class ScrollBar : WidgetGroup
     /// Hide controls when scroll is not possible
     protected void updateVisibility()
     {
-        const canScroll = _data.range > _data.pageSize;
+        const canScroll = _data.range > _data.page;
         if (canScroll)
         {
             bunch(_btnBack, _btnForward).setState(State.enabled);
             _indicator.visibility = Visibility.visible;
-            if (_data.value > _data.minValue)
+            if (_data.position > 0)
                 _pageUp.visibility = Visibility.visible;
-            if (_data.value < _data.maxValue)
+            if (_data.position < _data.range - _data.page)
                 _pageDown.visibility = Visibility.visible;
         }
         else
@@ -507,7 +483,7 @@ class ScrollBar : WidgetGroup
         {
             bool _dragging;
             Point _dragStart;
-            double _dragStartValue;
+            int _dragStartPos;
             Box _dragStartBox;
 
             Box _scrollArea;
@@ -527,7 +503,7 @@ class ScrollBar : WidgetGroup
                 _dragging = true;
                 _dragStart.x = event.x;
                 _dragStart.y = event.y;
-                _dragStartValue = _data.value;
+                _dragStartPos = _data.position;
                 _dragStartBox = box;
                 sendScrollEvent(ScrollAction.pressed);
                 return true;
@@ -565,10 +541,10 @@ class ScrollBar : WidgetGroup
                     offset = b.x - _scrollArea.x;
                     space = _scrollArea.w - b.w;
                 }
-                double v = _data.minValue;
+                int v;
                 if (space > 0)
-                    v += offset * max(_data.range - _data.pageSize, 0) / space;
-                onIndicatorDragging(_dragStartValue, v);
+                    v = offset * max(_data.range - _data.page, 0) / space;
+                onIndicatorDragging(_dragStartPos, v);
                 return true;
             }
             if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
