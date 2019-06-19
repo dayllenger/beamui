@@ -1,6 +1,18 @@
 /**
 Slider controls.
 
+Synopsis:
+---
+auto slider = new Slider(Orientation.horizontal);
+// slider values are stored inside `.data`
+slider.data.value = 0;
+slider.data.setRange(-50, 50);
+slider.scrolled ~= (SliderEvent event) {
+    if (event.action == SliderAction.moved)
+        Log.d(event.value);
+};
+---
+
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
 License:   Boost License 1.0
 Authors:   dayllenger
@@ -11,61 +23,33 @@ import std.math : isFinite, quantize;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
-/// Component for slider data. It validates it and reacts on changes
-class SliderData
+/// Base for slider data components. They validate data and react on changes
+class SliderDataBase
 {
     final @property
     {
-        /// Slider current value
-        double value() const { return _value; }
-        /// ditto
-        void value(double v)
-        {
-            adjustValue(v);
-            if (_value != v)
-            {
-                _value = v;
-                changed();
-            }
-        }
         /// Slider range min value
         double minValue() const { return _minValue; }
-        /// Slider range max value
+        /// Slider range max value. Always >= `minValue`
         double maxValue() const { return _maxValue; }
         /// Step between values. Always > 0
         double step() const { return _step; }
         /// The difference between max and min values. Always >= 0
         double range() const { return _maxValue - _minValue; }
-        /// Page size (visible area size in scrollbars). Always >= 0, may be > `range`
-        double pageSize() const { return _pageSize; }
-        /// ditto
-        void pageSize(double v)
-        {
-            assert(isFinite(v));
-            v = max(v, 0);
-            if (_pageSize != v)
-            {
-                _pageSize = v;
-                adjustValue(_value);
-                changed();
-            }
-        }
     }
 
     Signal!(void delegate()) changed;
 
     private
     {
-        double _value = 0;
         double _minValue = 0;
         double _maxValue = 100;
         double _step = 1;
-        double _pageSize = 0;
     }
 
     /** Set new range (min, max, and step values for slider).
 
-        `min` must not be more than `max`, `step` must be more than 0.
+        `min` must be <= `max`, `step` must be > 0.
     */
     final void setRange(double min, double max, double step = 1)
     {
@@ -80,22 +64,97 @@ class SliderData
             _minValue = min;
             _maxValue = max;
             _step = step;
-            adjustValue(_value);
+            adjustValue();
             changed();
         }
     }
 
-    private void adjustValue(ref double v)
+    void adjustValue() {}
+}
+
+/// Component for slider data
+class SliderData : SliderDataBase
+{
+    final @property
+    {
+        /// Single current value
+        double value() const { return _value; }
+        /// ditto
+        void value(double v)
+        {
+            adjustValue(v);
+            if (_value != v)
+            {
+                _value = v;
+                changed();
+            }
+        }
+    }
+
+    private double _value = 0;
+
+    override void adjustValue()
+    {
+        adjustValue(_value);
+    }
+
+    final void adjustValue(ref double v)
     {
         assert(isFinite(v));
 
-        if (v > _minValue)
+        const mn = _minValue;
+        const mx = _maxValue;
+        v = v > mn ? min(quantize(v - mn, _step) + mn, mx) : mn;
+    }
+}
+
+/// Data component for sliders used to select a range between two values
+class RangeSliderData : SliderDataBase
+{
+    final @property
+    {
+        /// The first value
+        double first() const { return _first; }
+        /// ditto
+        void first(double v)
         {
-            const uplim = max(_maxValue - _pageSize, _minValue);
-            v = min(quantize(v - _minValue, _step) + _minValue, uplim);
+            adjustFirst(v);
+            if (_first != v)
+            {
+                _first = v;
+                changed();
+            }
         }
-        else
-            v = _minValue;
+        /// The second value
+        double second() const { return _second; }
+        /// ditto
+        void second(double v)
+        {
+            adjustSecond(v);
+            if (_second != v)
+            {
+                _second = v;
+                changed();
+            }
+        }
+        /// Difference between `second` and `first`. Always >= 0
+        double innerRange() const { return _second - _first; }
+    }
+
+    private double _first = 0;
+    private double _second = 0;
+
+    override void adjustValue()
+    {
+        _second = max(_second, _first);
+    }
+
+    final void adjustFirst(ref double v)
+    {
+    }
+
+    final void adjustSecond(ref double v)
+    {
     }
 }
 
@@ -157,6 +216,9 @@ abstract class AbstractSlider : WidgetGroup
 
     /// Scroll event listeners
     Signal!(void delegate(SliderEvent event)) scrolled;
+
+    /// `data.step` factor for pageDown/pageUp events
+    uint pageStep = 5;
 
     private
     {
@@ -235,13 +297,13 @@ abstract class AbstractSlider : WidgetGroup
         {
         case lineUp:
         case lineDown:
-            delta = max(_data.pageSize / 20, 1);
+            delta = _data.step;
             if (action == lineUp)
                 delta *= -1;
             break;
         case pageUp:
         case pageDown:
-            delta = max(_data.pageSize * 3 / 4, 1);
+            delta = pageStep > 0 ? _data.step * pageStep : _data.step;
             if (action == pageUp)
                 delta *= -1;
             break;
@@ -277,32 +339,31 @@ abstract class AbstractSlider : WidgetGroup
         return super.onMouseEvent(event);
     }
 
-    protected bool calcButtonSizes(int availableSize, ref int spaceBackSize, ref int spaceForwardSize,
+    protected bool calcButtonSizes(int availableSize, ref int spaceBefore, ref int spaceAfter,
             ref int indicatorSize)
     {
         const r = _data.range;
-        if (_data.pageSize >= r)
+        if (r == 0)
         {
             // full size
-            spaceBackSize = spaceForwardSize = 0;
+            spaceBefore = spaceAfter = 0;
             indicatorSize = availableSize;
             return false;
         }
-        indicatorSize = r > 0 ? cast(int)(_data.pageSize * availableSize / r) : 0;
-        indicatorSize = max(indicatorSize, _minIndicatorSize);
+        indicatorSize = max(_minIndicatorSize, 0);
         if (indicatorSize >= availableSize)
         {
             // full size
-            spaceBackSize = spaceForwardSize = 0;
+            spaceBefore = spaceAfter = 0;
             indicatorSize = availableSize;
             return false;
         }
         const spaceLeft = availableSize - indicatorSize;
-        const topv = _data.value - _data.minValue;
-        const bottomv = r - topv - _data.pageSize;
-        assert(topv + bottomv > 0);
-        spaceBackSize = cast(int)(spaceLeft * topv / (topv + bottomv));
-        spaceForwardSize = spaceLeft - spaceBackSize;
+        const before = _data.value - _data.minValue;
+        const after = r - before;
+        assert(before + after > 0);
+        spaceBefore = cast(int)(spaceLeft * before / (before + after));
+        spaceAfter = spaceLeft - spaceBefore;
         return true;
     }
 
@@ -311,20 +372,19 @@ abstract class AbstractSlider : WidgetGroup
         Box ibox = _scrollArea;
         if (_orient == Orientation.vertical)
         {
-            int spaceBackSize, spaceForwardSize, indicatorSize;
-            bool indicatorVisible = calcButtonSizes(_scrollArea.h, spaceBackSize, spaceForwardSize, indicatorSize);
-            ibox.y += spaceBackSize;
-            ibox.h -= spaceBackSize + spaceForwardSize;
-            layoutButtons(ibox);
+            int spaceBefore, spaceAfter, indicatorSize;
+            bool indicatorVisible = calcButtonSizes(_scrollArea.h, spaceBefore, spaceAfter, indicatorSize);
+            ibox.y += spaceBefore;
+            ibox.h -= spaceBefore + spaceAfter;
         }
         else // horizontal
         {
-            int spaceBackSize, spaceForwardSize, indicatorSize;
-            bool indicatorVisible = calcButtonSizes(_scrollArea.w, spaceBackSize, spaceForwardSize, indicatorSize);
-            ibox.x += spaceBackSize;
-            ibox.w -= spaceBackSize + spaceForwardSize;
-            layoutButtons(ibox);
+            int spaceBefore, spaceAfter, indicatorSize;
+            bool indicatorVisible = calcButtonSizes(_scrollArea.w, spaceBefore, spaceAfter, indicatorSize);
+            ibox.x += spaceBefore;
+            ibox.w -= spaceBefore + spaceAfter;
         }
+        layoutButtons(ibox);
         updateVisibility();
         cancelLayout();
     }
@@ -419,6 +479,44 @@ abstract class AbstractSlider : WidgetGroup
             allowsHover = true;
         }
 
+        override bool onKeyEvent(KeyEvent event)
+        {
+            if (event.action != KeyAction.keyDown)
+                return super.onKeyEvent(event);
+
+            if (event.key == Key.left || event.key == Key.down)
+            {
+                sendScrollEvent(SliderAction.lineUp);
+                return true;
+            }
+            if (event.key == Key.right || event.key == Key.up)
+            {
+                sendScrollEvent(SliderAction.lineDown);
+                return true;
+            }
+            if (event.key == Key.pageDown)
+            {
+                sendScrollEvent(SliderAction.pageDown);
+                return true;
+            }
+            if (event.key == Key.pageUp)
+            {
+                sendScrollEvent(SliderAction.pageUp);
+                return true;
+            }
+            if (event.key == Key.home)
+            {
+                sendScrollEvent(_data.minValue);
+                return true;
+            }
+            if (event.key == Key.end)
+            {
+                sendScrollEvent(_data.maxValue);
+                return true;
+            }
+            return super.onKeyEvent(event);
+        }
+
         override bool onMouseEvent(MouseEvent event)
         {
             if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
@@ -469,7 +567,7 @@ abstract class AbstractSlider : WidgetGroup
                 }
                 double v = _data.minValue;
                 if (space > 0)
-                    v += offset * max(_data.range - _data.pageSize, 0) / space;
+                    v += offset * _data.range / space;
                 onIndicatorDragging(_dragStartValue, v);
                 return true;
             }
@@ -558,15 +656,8 @@ class Slider : AbstractSlider
 
     override protected void updateVisibility()
     {
-        const canScroll = _data.range > _data.pageSize;
-        if (canScroll)
-        {
-            bunch(_rangeBefore, _rangeAfter).visibility(Visibility.visible);
-        }
-        else
-        {
-            bunch(_rangeBefore, _rangeAfter).visibility(Visibility.gone);
-        }
+        _rangeBefore.visibility = _data.value > _data.minValue ? Visibility.visible : Visibility.gone;
+        _rangeAfter.visibility  = _data.value < _data.maxValue ? Visibility.visible : Visibility.gone;
     }
 
     override void measure()

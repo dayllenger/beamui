@@ -226,15 +226,23 @@ ScrollBar PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
 
 ScrollBar PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
 
-Slider { border: 1px solid #888; background-color: #fff; }
+AbstractSlider SliderButton { padding: 6px; border: 1px solid transparent; background-color: #4e93da; }
 
-AbstractSlider SliderButton { padding: 3px; background-color: #417fbf; }
-
-AbstractSlider SliderButton:pressed { background-color: #4e93da; }
+AbstractSlider SliderButton:pressed { background-color: rgba(78, 147, 218, 0.7); }
 
 AbstractSlider SliderButton:not(enabled) { opacity: 0.4; }
 
-AbstractSlider::range-before { background-color: #2e93fa; }
+AbstractSlider::range-before { border-color: transparent; background-color: #417fbf; }
+
+AbstractSlider.horizontal::range-before { border-top-width: 4px; border-bottom-width: 4px; }
+
+AbstractSlider.vertical::range-before { border-left-width: 4px; border-right-width: 4px; }
+
+AbstractSlider::range-after { border-color: transparent; background-color: #888; }
+
+AbstractSlider.horizontal::range-after { border-top-width: 4px; border-bottom-width: 4px; }
+
+AbstractSlider.vertical::range-after { border-left-width: 4px; border-right-width: 4px; }
 
 @define-drawables { scrollbar_button_up: url(scrollbar_btn_up);
   scrollbar_button_down: url(scrollbar_btn_down);

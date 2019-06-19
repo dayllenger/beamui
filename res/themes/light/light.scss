@@ -582,17 +582,13 @@ ScrollBar PageScrollButton {
     }
 }
 
-Slider {
-    border: 1px solid #888;
-    background-color: #fff;
-}
-
 AbstractSlider SliderButton {
-    padding: 3px;
-    background-color: $secondary-color;
+    padding: 6px;
+    border: 1px solid transparent;
+    background-color: $main-color;
 
     &:pressed {
-        background-color: $main-color;
+        background-color: fade-out($main-color, 0.3);
     }
 
     &:not(enabled) {
@@ -600,8 +596,38 @@ AbstractSlider SliderButton {
     }
 }
 
-AbstractSlider::range-before {
-    background-color: $focused-border-color;
+AbstractSlider {
+    &::range-before {
+        border-color: transparent;
+        background-color: $secondary-color;
+    }
+
+    &.horizontal::range-before {
+        border-top-width: 4px;
+        border-bottom-width: 4px;
+    }
+
+    &.vertical::range-before {
+        border-left-width: 4px;
+        border-right-width: 4px;
+    }
+}
+
+AbstractSlider {
+    &::range-after {
+        border-color: transparent;
+        background-color: #888;
+    }
+
+    &.horizontal::range-after {
+        border-top-width: 4px;
+        border-bottom-width: 4px;
+    }
+
+    &.vertical::range-after {
+        border-left-width: 4px;
+        border-right-width: 4px;
+    }
 }
 
 @define-drawables {
