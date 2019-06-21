@@ -184,10 +184,11 @@ int main()
                 auto col3 = new Column;
                     auto gb31 = new GroupBox("SwitchButton"d);
             auto line2 = new Row;
-                auto gb5 = new GroupBox("Slider and Scrollbar"d, Orientation.horizontal);
-                    auto sl = new Slider(Orientation.horizontal);
+                auto gb5 = new GroupBox("Scrollbar, Slider, RangeSlider"d);
                     auto sb = new ScrollBar(Orientation.horizontal);
-                auto gb6 = new GroupBox("EditLine"d, Orientation.horizontal);
+                    auto sl = new Slider;
+                    auto rsl = new RangeSlider;
+                auto gb6 = new GroupBox("EditLine"d);
             auto line3 = new Row;
                 auto gbeditbox = new GroupBox("EditBox"d);
                     auto edbox = new EditBox("Some text in EditBox\nOne more line\nYet another text line");
@@ -264,10 +265,7 @@ int main()
             with (line2) {
                 add(gb5).setFillWidth(true);
                 add(gb6);
-                with (gb5) {
-                    add(sb).setFillWidth(true);
-                    add(sl).setFillWidth(true);
-                }
+                gb5.add(sb, sl, rsl);
                 with (gb6) {
                     auto ed1 = new EditLine("Some text"d);
                     auto ed2 = new EditLine("Some text"d);
@@ -321,7 +319,14 @@ int main()
         };
 
         sb.scrolled ~= (ScrollEvent event) { Log.d("scrollbar: ", event.action); };
-        sl.scrolled ~= (SliderEvent event) { Log.d("slider: ", event.action); };
+        sl.scrolled ~= (SliderEvent event) { Log.d("slider: ", event.value); };
+        rsl.firstScrolled  ~= (SliderEvent event) { Log.d("range-slider 1st: ", event.value); };
+        rsl.secondScrolled ~= (SliderEvent event) { Log.d("range-slider 2nd: ", event.value); };
+        sl.data.setRange(-0.75, 0.75, 0.1);
+        rsl.data.setRange(0, 10, 0.01);
+        rsl.data.second = 4;
+        rsl.data.first = 2;
+        rsl.pageStep = 100;
 
         import std.random : uniform;
 
