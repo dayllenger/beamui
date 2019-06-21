@@ -582,13 +582,13 @@ ScrollBar PageScrollButton {
     }
 }
 
-AbstractSlider SliderButton {
+AbstractSlider SliderHandle {
     padding: 6px;
     border: 1px solid transparent;
     background-color: $main-color;
 
     &:pressed {
-        background-color: fade-out($main-color, 0.3);
+        background-color: fade-out($focused-border-color, 0.3);
     }
 
     &:not(enabled) {
@@ -597,34 +597,40 @@ AbstractSlider SliderButton {
 }
 
 AbstractSlider {
-    &::range-before {
+    &::range-before, &::range-after {
         border-color: transparent;
-        background-color: $secondary-color;
+        background-color: #888;
     }
 
-    &.horizontal::range-before {
+    &.horizontal::range-before, &.horizontal::range-after {
         border-top-width: 4px;
         border-bottom-width: 4px;
     }
 
-    &.vertical::range-before {
+    &.vertical::range-before, &.vertical::range-after {
         border-left-width: 4px;
         border-right-width: 4px;
     }
 }
 
-AbstractSlider {
-    &::range-after {
+Slider {
+    &::range-before {
+        background-color: $secondary-color;
+    }
+}
+
+RangeSlider {
+    &::range-between {
         border-color: transparent;
-        background-color: #888;
+        background-color: $secondary-color;
     }
 
-    &.horizontal::range-after {
+    &.horizontal::range-between {
         border-top-width: 4px;
         border-bottom-width: 4px;
     }
 
-    &.vertical::range-after {
+    &.vertical::range-between {
         border-left-width: 4px;
         border-right-width: 4px;
     }
