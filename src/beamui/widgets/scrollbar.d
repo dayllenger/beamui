@@ -80,6 +80,7 @@ final class ScrollEvent
 {
     const ScrollAction action;
     const ScrollData data;
+    /// Position after default event handling
     const int position;
     private int amendment = int.min;
 
@@ -167,10 +168,10 @@ class ScrollBar : WidgetGroup
         updateDrawables();
         addChildren(_btnBack, _btnForward, _indicator, _pageUp, _pageDown);
         bunch(_btnBack, _btnForward, _indicator, _pageUp, _pageDown).allowsFocus(false);
-        _btnBack.clicked ~= { sendScrollEvent(ScrollAction.lineUp); };
-        _btnForward.clicked ~= { sendScrollEvent(ScrollAction.lineDown); };
-        _pageUp.clicked ~= { sendScrollEvent(ScrollAction.pageUp); };
-        _pageDown.clicked ~= { sendScrollEvent(ScrollAction.pageDown); };
+        _btnBack.clicked ~= { triggerAction(ScrollAction.lineUp); };
+        _btnForward.clicked ~= { triggerAction(ScrollAction.lineDown); };
+        _pageUp.clicked ~= { triggerAction(ScrollAction.pageUp); };
+        _pageDown.clicked ~= { triggerAction(ScrollAction.pageDown); };
     }
 
     override void onThemeChanged()
@@ -181,46 +182,47 @@ class ScrollBar : WidgetGroup
 
     protected void updateDrawables()
     {
-        _btnBack.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
+        const vert = _orient == Orientation.vertical;
+        _btnBack.drawable = currentTheme.getDrawable(vert ?
             "scrollbar_button_up" : "scrollbar_button_left");
-        _btnForward.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
+        _btnForward.drawable = currentTheme.getDrawable(vert ?
             "scrollbar_button_down" : "scrollbar_button_right");
-        _indicator.drawable = currentTheme.getDrawable(_orient == Orientation.vertical ?
+        _indicator.drawable = currentTheme.getDrawable(vert ?
             "scrollbar_indicator_vertical" : "scrollbar_indicator_horizontal");
     }
 
-    void sendScrollEvent(ScrollAction action)
+    final void triggerAction(ScrollAction action)
     {
-        if (scrolled.assigned)
-        {
-            auto event = new ScrollEvent(action, _data, _data.position);
-            scrolled(event);
-            if (event.amendment >= 0)
-            {
-                _data.position = event.amendment;
-                return;
-            }
-        }
-        _data.position = _data.position + getDefaultOffset(action);
+        int pos = _data.position + getDefaultOffset(action);
+        _data.adjustPos(pos);
+        sendEvent(action, pos);
     }
 
-    void sendScrollEvent(int position)
+    final void moveTo(int position)
     {
         _data.adjustPos(position);
-        if (_data.position == position)
-            return;
+        if (_data.position != position)
+            sendEvent(ScrollAction.moved, position);
+    }
+
+    private bool insideHandler;
+    private void sendEvent(ScrollAction a, int pos)
+    {
+        assert(!insideHandler, "Cannot trigger a scrollbar action inside the event handler");
 
         if (scrolled.assigned)
         {
-            auto event = new ScrollEvent(ScrollAction.moved, _data, position);
+            auto event = new ScrollEvent(a, _data, pos);
+            insideHandler = true;
             scrolled(event);
+            insideHandler = false;
             if (event.amendment >= 0)
             {
                 _data.position = event.amendment;
                 return;
             }
         }
-        _data.position = position;
+        _data.position = pos;
     }
 
     /// Default slider offset on pageUp/pageDown, lineUp/lineDown actions
@@ -249,7 +251,7 @@ class ScrollBar : WidgetGroup
 
     protected void onIndicatorDragging(int initialValue, int currentValue)
     {
-        sendScrollEvent(currentValue);
+        moveTo(currentValue);
     }
 
     protected void onDataChanged()
@@ -267,7 +269,7 @@ class ScrollBar : WidgetGroup
         {
             const delta = event.wheelDelta;
             if (delta != 0)
-                sendScrollEvent(delta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
+                triggerAction(delta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
             return true;
         }
         return super.onMouseEvent(event);
@@ -340,18 +342,14 @@ class ScrollBar : WidgetGroup
                 _pageUp.layout(Box(b.x, b.y, b.w, top));
             }
             else
-            {
                 _pageUp.visibility = Visibility.hidden;
-            }
             if (bottom > 0)
             {
                 _pageDown.visibility = Visibility.visible;
                 _pageDown.layout(Box(b.x, b.y + b.h - bottom, b.w, bottom));
             }
             else
-            {
                 _pageDown.visibility = Visibility.hidden;
-            }
         }
         else
         {
@@ -363,18 +361,14 @@ class ScrollBar : WidgetGroup
                 _pageUp.layout(Box(b.x, b.y, left, b.h));
             }
             else
-            {
                 _pageUp.visibility = Visibility.hidden;
-            }
             if (right > 0)
             {
                 _pageDown.visibility = Visibility.visible;
                 _pageDown.layout(Box(b.x + b.w - right, b.y, right, b.h));
             }
             else
-            {
                 _pageDown.visibility = Visibility.hidden;
-            }
         }
     }
 
@@ -386,10 +380,10 @@ class ScrollBar : WidgetGroup
         {
             bunch(_btnBack, _btnForward).setState(State.enabled);
             _indicator.visibility = Visibility.visible;
-            if (_data.position > 0)
-                _pageUp.visibility = Visibility.visible;
-            if (_data.position < _data.range - _data.page)
-                _pageDown.visibility = Visibility.visible;
+            const up = _data.position > 0;
+            const down = _data.position < _data.range - _data.page;
+            _pageUp.visibility = up ? Visibility.visible : Visibility.hidden;
+            _pageDown.visibility = down ? Visibility.visible : Visibility.hidden;
         }
         else
         {
@@ -505,7 +499,7 @@ class ScrollBar : WidgetGroup
                 _dragStart.y = event.y;
                 _dragStartPos = _data.position;
                 _dragStartBox = box;
-                sendScrollEvent(ScrollAction.pressed);
+                triggerAction(ScrollAction.pressed);
                 return true;
             }
             if (event.action == MouseAction.focusIn && _dragging)
@@ -552,7 +546,7 @@ class ScrollBar : WidgetGroup
                 resetState(State.pressed);
                 if (_dragging)
                 {
-                    sendScrollEvent(ScrollAction.released);
+                    triggerAction(ScrollAction.released);
                     _dragging = false;
                 }
                 return true;

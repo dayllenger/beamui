@@ -187,19 +187,20 @@ class ScrollAreaBase : WidgetGroup
     {
         if (event.action == MouseAction.wheel)
         {
+            const a = event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown;
             if (event.keyMods == KeyMods.shift)
             {
                 if (_hscrollbar)
                 {
-                    _hscrollbar.sendScrollEvent(event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
-                    return true; // TODO: return false when nothing to scroll
+                    _hscrollbar.triggerAction(a);
+                    return true;
                 }
             }
             else if (event.noKeyMods)
             {
                 if (_vscrollbar)
                 {
-                    _vscrollbar.sendScrollEvent(event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
+                    _vscrollbar.triggerAction(a);
                     return true;
                 }
             }

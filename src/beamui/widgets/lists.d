@@ -943,7 +943,8 @@ class ListWidget : WidgetGroup
             }
             else
             {
-                _scrollbar.sendScrollEvent(event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
+                const a = event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown;
+                _scrollbar.triggerAction(a);
                 return true;
             }
         }

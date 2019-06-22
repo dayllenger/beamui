@@ -203,6 +203,7 @@ final class SliderEvent
 {
     const SliderAction action;
     const SliderDataBase data;
+    /// Value after default event handling
     const double value;
     private double amendment;
 
@@ -279,7 +280,7 @@ abstract class AbstractSlider : WidgetGroup
         addChild(_rangeAfter);
     }
 
-    /// Get default slider value for some actions
+    /// Get default slider value for some actions. It doesn't clamp them by default
     protected double getDefaultValue(SliderAction action, double was) const
     {
         switch (action) with (SliderAction)
@@ -633,36 +634,35 @@ class Slider : AbstractSlider
 
     final void triggerAction(SliderAction action)
     {
-        if (scrolled.assigned)
-        {
-            auto event = new SliderEvent(action, _data, _data.value);
-            scrolled(event);
-            if (isFinite(event.amendment))
-            {
-                _data.value = event.amendment;
-                return;
-            }
-        }
-        _data.value = getDefaultValue(action, _data.value);
+        const v = getDefaultValue(action, _data.value);
+        sendEvent(action, clamp(v, _data.minValue, _data.maxValue));
     }
 
     final void moveTo(double value)
     {
         _data.adjustValue(value);
-        if (_data.value == value)
-            return;
+        if (_data.value != value)
+            sendEvent(SliderAction.move, value);
+    }
+
+    private bool insideHandler;
+    private void sendEvent(SliderAction a, double v)
+    {
+        assert(!insideHandler, "Cannot trigger a slider action inside the event handler");
 
         if (scrolled.assigned)
         {
-            auto event = new SliderEvent(SliderAction.move, _data, value);
+            auto event = new SliderEvent(a, _data, v);
+            insideHandler = true;
             scrolled(event);
+            insideHandler = false;
             if (isFinite(event.amendment))
             {
                 _data.value = event.amendment;
                 return;
             }
         }
-        _data.value = value;
+        _data.value = v;
     }
 
     protected void onHandleDragging(double computedValue)
@@ -763,8 +763,8 @@ class RangeSlider : AbstractSlider
         _2ndHandle = new SliderHandle;
         _1stHandle.onAction = &triggerActionOnFirst;
         _2ndHandle.onAction = &triggerActionOnSecond;
-        _1stHandle.dragging = &on1stHandleDragging;
-        _2ndHandle.dragging = &on2ndHandleDragging;
+        _1stHandle.dragging = &onHandleDragging1;
+        _2ndHandle.dragging = &onHandleDragging2;
         _rangeBetween = new SliderBar;
         _rangeBetween.bindSubItem(this, "range-between");
         addChild(_1stHandle);
@@ -774,78 +774,76 @@ class RangeSlider : AbstractSlider
 
     final void triggerActionOnFirst(SliderAction action)
     {
-        if (firstScrolled.assigned)
-        {
-            auto event = new SliderEvent(action, _data, _data.first);
-            firstScrolled(event);
-            if (isFinite(event.amendment))
-            {
-                _data.first = event.amendment;
-                return;
-            }
-        }
-        _data.first = getDefaultValue(action, _data.first);
+        const v = getDefaultValue(action, _data.first);
+        sendEvent1(action, clamp(v, _data.minValue, _data.second));
     }
 
     final void triggerActionOnSecond(SliderAction action)
     {
-        if (secondScrolled.assigned)
-        {
-            auto event = new SliderEvent(action, _data, _data.second);
-            secondScrolled(event);
-            if (isFinite(event.amendment))
-            {
-                _data.second = event.amendment;
-                return;
-            }
-        }
-        _data.second = getDefaultValue(action, _data.second);
+        const v = getDefaultValue(action, _data.second);
+        sendEvent2(action, clamp(v, _data.first, _data.maxValue));
     }
 
     final void moveFirstTo(double value)
     {
         _data.adjustFirst(value);
-        if (_data.first == value)
-            return;
+        if (_data.first != value)
+            sendEvent1(SliderAction.move, value);
+    }
+
+    final void moveSecondTo(double value)
+    {
+        _data.adjustSecond(value);
+        if (_data.second != value)
+            sendEvent2(SliderAction.move, value);
+    }
+
+    private bool insideHandler;
+
+    private void sendEvent1(SliderAction a, double v)
+    {
+        assert(!insideHandler, "Cannot trigger a slider action inside the event handler");
 
         if (firstScrolled.assigned)
         {
-            auto event = new SliderEvent(SliderAction.move, _data, value);
+            auto event = new SliderEvent(a, _data, v);
+            insideHandler = true;
             firstScrolled(event);
+            insideHandler = false;
             if (isFinite(event.amendment))
             {
                 _data.first = event.amendment;
                 return;
             }
         }
-        _data.first = value;
+        _data.first = v;
     }
 
-    final void moveSecondTo(double value)
+    private void sendEvent2(SliderAction a, double v)
     {
-        _data.adjustSecond(value);
-        if (_data.second == value)
-            return;
+        assert(!insideHandler, "Cannot trigger a slider action inside the event handler");
 
         if (secondScrolled.assigned)
         {
-            auto event = new SliderEvent(SliderAction.move, _data, value);
+            auto event = new SliderEvent(a, _data, v);
+            insideHandler = true;
             secondScrolled(event);
+            insideHandler = false;
             if (isFinite(event.amendment))
             {
                 _data.second = event.amendment;
                 return;
             }
         }
-        _data.second = value;
+        _data.second = v;
     }
 
-    protected void on1stHandleDragging(double computedValue)
+    protected void onHandleDragging1(double computedValue)
     {
         moveFirstTo(computedValue);
     }
 
-    protected void on2ndHandleDragging(double computedValue)
+    protected void onHandleDragging2(double computedValue)
     {
         moveSecondTo(computedValue);
     }
