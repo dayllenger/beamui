@@ -2108,18 +2108,19 @@ class EditLine : EditWidgetBase
     override protected void ensureCaretVisible(bool center = false)
     {
         const Box b = textPosToClient(_caretPos);
+        const oldpos = scrollPos.x;
         if (b.x < 0)
         {
             // scroll left
             scrollPos.x = max(scrollPos.x + b.x - clientBox.width / 10, 0);
-            invalidate();
         }
         else if (b.x >= clientBox.width - 10)
         {
             // scroll right
             scrollPos.x += (b.x - clientBox.width) + _spaceWidth * 4;
-            invalidate();
         }
+        if (oldpos != scrollPos.x)
+            invalidate();
         updateScrollBars();
         handleEditorStateChange();
     }
@@ -2526,26 +2527,22 @@ class EditBox : EditWidgetBase
     override protected void ensureCaretVisible(bool center = false)
     {
         _caretPos.line = clamp(_caretPos.line, 0, _content.length - 1);
+
         // fully visible lines
-        const int visibleLines = linesOnScreen;
+        const int visibleLines = max(linesOnScreen - 1, 1);
         int maxFirstVisibleLine = _content.length - 1;
         if (!_enableScrollAfterText)
-            maxFirstVisibleLine = _content.length - visibleLines;
-        maxFirstVisibleLine = max(maxFirstVisibleLine, 0);
+            maxFirstVisibleLine = max(_content.length - visibleLines, 0);
+
+        int line = _firstVisibleLine;
 
         if (_caretPos.line < _firstVisibleLine)
         {
-            _firstVisibleLine = _caretPos.line;
+            line = _caretPos.line;
             if (center)
-            {
-                _firstVisibleLine -= visibleLines / 2;
-                _firstVisibleLine = max(_firstVisibleLine, 0);
-            }
-            _firstVisibleLine = min(_firstVisibleLine, maxFirstVisibleLine);
-            measureVisibleText();
-            invalidate();
+                line -= visibleLines / 2;
         }
-        else if (_wordWrap && !(_firstVisibleLine > maxFirstVisibleLine))
+        else if (_wordWrap && _firstVisibleLine <= maxFirstVisibleLine)
         {
             // for wordwrap mode, move down sooner
             const int offsetLines = -1 * caretHeightOffset / _lineHeight;
@@ -2553,39 +2550,32 @@ class EditBox : EditWidgetBase
                 Log.d("offsetLines: ", offsetLines);
             if (_caretPos.line >= _firstVisibleLine + visibleLines - offsetLines)
             {
-                _firstVisibleLine = _caretPos.line - visibleLines + 1 + offsetLines;
+                line = _caretPos.line - visibleLines + 1 + offsetLines;
                 if (center)
-                    _firstVisibleLine += visibleLines / 2;
-                _firstVisibleLine = min(_firstVisibleLine, maxFirstVisibleLine);
-                _firstVisibleLine = max(_firstVisibleLine, 0);
-                measureVisibleText();
-                invalidate();
+                    line += visibleLines / 2;
             }
         }
         else if (_caretPos.line >= _firstVisibleLine + visibleLines)
         {
-            _firstVisibleLine = _caretPos.line - visibleLines + 1;
+            line = _caretPos.line - visibleLines + 1;
             if (center)
-                _firstVisibleLine += visibleLines / 2;
-            _firstVisibleLine = min(_firstVisibleLine, maxFirstVisibleLine);
-            _firstVisibleLine = max(_firstVisibleLine, 0);
-            measureVisibleText();
-            invalidate();
+                line += visibleLines / 2;
         }
-        else if (_firstVisibleLine > maxFirstVisibleLine)
+
+        line = clamp(line, 0, maxFirstVisibleLine);
+        if (_firstVisibleLine != line)
         {
-            _firstVisibleLine = maxFirstVisibleLine;
-            _firstVisibleLine = max(_firstVisibleLine, 0);
+            _firstVisibleLine = line;
             measureVisibleText();
             invalidate();
         }
 
         const Box b = textPosToClient(_caretPos);
+        const oldpos = scrollPos.x;
         if (b.x < 0)
         {
             // scroll left
             scrollPos.x = max(scrollPos.x + b.x - clientBox.width / 4, 0);
-            invalidate();
         }
         else if (b.x >= clientBox.width - 10)
         {
@@ -2594,8 +2584,9 @@ class EditBox : EditWidgetBase
                 scrollPos.x += (b.x - clientBox.width) + clientBox.width / 4;
             else
                 scrollPos.x = 0;
-            invalidate();
         }
+        if (oldpos != scrollPos.x)
+            invalidate();
         updateScrollBars();
         handleEditorStateChange();
     }
