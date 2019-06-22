@@ -91,10 +91,16 @@ final class ScrollEvent
         position = p;
     }
 
-    /// Set new scrollbar position in an event handler
+    /// Set a new scroll position in an event handler
     void amend(int position)
     {
         amendment = position;
+    }
+
+    /// Set that the scroll position should not be updated to `position` after the event
+    void discard()
+    {
+        amendment = int.min - 1;
     }
 }
 
@@ -216,6 +222,9 @@ class ScrollBar : WidgetGroup
             insideHandler = true;
             scrolled(event);
             insideHandler = false;
+
+            if (event.amendment == int.min - 1)
+                return;
             if (event.amendment >= 0)
             {
                 _data.position = event.amendment;

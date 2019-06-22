@@ -2317,6 +2317,7 @@ class EditBox : EditWidgetBase
         _content.contentChanged ~= &onContentChange;
         text = initialContent;
         _minSizeTester.str = "aaaaa\naaaaa"d;
+        setScrollSteps(0, 3);
         onThemeChanged();
     }
 
@@ -2349,53 +2350,24 @@ class EditBox : EditWidgetBase
         data.position = _firstVisibleLine;
     }
 
-    override void onHScroll(ScrollEvent event)
+    override protected void onHScroll(ScrollEvent event)
     {
-        if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
+        if (scrollPos.x != event.position)
         {
-            if (scrollPos.x != event.position)
-            {
-                scrollPos.x = event.position;
-                invalidate();
-            }
-        }
-        else if (event.action == ScrollAction.lineUp || event.action == ScrollAction.pageUp)
-        {
-            scroll(EditorScrollAction.left);
-        }
-        else if (event.action == ScrollAction.lineDown || event.action == ScrollAction.pageDown)
-        {
-            scroll(EditorScrollAction.right);
+            scrollPos.x = event.position;
+            invalidate();
         }
     }
 
-    override void onVScroll(ScrollEvent event)
+    override protected void onVScroll(ScrollEvent event)
     {
-        if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
+        if (_firstVisibleLine != event.position)
         {
-            if (_firstVisibleLine != event.position)
-            {
-                _firstVisibleLine = event.position;
-                measureVisibleText();
-                updateScrollBars();
-                invalidate();
-            }
-        }
-        else if (event.action == ScrollAction.pageUp)
-        {
-            scroll(EditorScrollAction.pageUp);
-        }
-        else if (event.action == ScrollAction.pageDown)
-        {
-            scroll(EditorScrollAction.pageDown);
-        }
-        else if (event.action == ScrollAction.lineUp)
-        {
-            scroll(EditorScrollAction.lineUp);
-        }
-        else if (event.action == ScrollAction.lineDown)
-        {
-            scroll(EditorScrollAction.lineDown);
+            _firstVisibleLine = event.position;
+            event.discard();
+            measureVisibleText();
+            updateScrollBars();
+            invalidate();
         }
     }
 
@@ -2451,7 +2423,7 @@ class EditBox : EditWidgetBase
                 }
                 else
                 {
-                    scroll(EditorScrollAction.lineUp);
+                    scrollUp();
                     return true;
                 }
             }
@@ -2502,7 +2474,7 @@ class EditBox : EditWidgetBase
                 }
                 else
                 {
-                    scroll(EditorScrollAction.lineDown);
+                    scrollDown();
                     return true;
                 }
             }
@@ -2520,7 +2492,7 @@ class EditBox : EditWidgetBase
             {
                 if (mods == KeyMods.shift)
                 {
-                    scroll(EditorScrollAction.right);
+                    scrollRight();
                     return true;
                 }
                 if (mods == KeyMods.control)
@@ -2528,14 +2500,14 @@ class EditBox : EditWidgetBase
                     zoom(false);
                     return true;
                 }
-                scroll(EditorScrollAction.lineDown);
+                scrollDown();
                 return true;
             }
             else if (event.wheelDelta > 0)
             {
                 if (mods == KeyMods.shift)
                 {
-                    scroll(EditorScrollAction.left);
+                    scrollLeft();
                     return true;
                 }
                 if (mods == KeyMods.control)
@@ -2543,61 +2515,11 @@ class EditBox : EditWidgetBase
                     zoom(true);
                     return true;
                 }
-                scroll(EditorScrollAction.lineUp);
+                scrollUp();
                 return true;
             }
         }
         return super.onMouseEvent(event);
-    }
-
-    protected enum EditorScrollAction
-    {
-        left,
-        right,
-        lineUp,
-        lineDown,
-        pageUp,
-        pageDown,
-    }
-
-    /// Scroll somewhere (not changing cursor)
-    protected void scroll(EditorScrollAction where)
-    {
-        const int oldScrollPosX = scrollPos.x;
-        const int oldFirstVisibleLine = _firstVisibleLine;
-        final switch (where) with (EditorScrollAction)
-        {
-        case left:
-            scrollPos.x = max(scrollPos.x - _spaceWidth * 4, 0);
-            break;
-        case right:
-            scrollPos.x = min(scrollPos.x + _spaceWidth * 4, fullContentSize.w - clientBox.width);
-            break;
-        case lineUp:
-            _firstVisibleLine = max(_firstVisibleLine - 3, 0);
-            break;
-        case lineDown:
-            _firstVisibleLine = max(min(_firstVisibleLine + 3, _content.length - linesOnScreen), 0);
-            break;
-        case pageUp:
-            _firstVisibleLine = max(_firstVisibleLine - linesOnScreen * 3 / 4, 0);
-            break;
-        case pageDown:
-            const int screen = linesOnScreen;
-            _firstVisibleLine = max(min(_firstVisibleLine + screen * 3 / 4, _content.length - screen), 0);
-            break;
-        }
-        if (oldScrollPosX != scrollPos.x)
-        {
-            updateScrollBars();
-            invalidate();
-        }
-        if (oldFirstVisibleLine != _firstVisibleLine)
-        {
-            measureVisibleText();
-            updateScrollBars();
-            invalidate();
-        }
     }
 
     private bool _enableScrollAfterText = true;
@@ -2846,17 +2768,16 @@ class EditBox : EditWidgetBase
         {
             const int currentFontSize = style.fontSize;
             const int increment = currentFontSize >= 30 ? 2 : 1;
-            int newFontSize = currentFontSize + increment * dir; //* 110 / 100;
-            if (newFontSize > 30)
-                newFontSize &= 0xFFFE;
-            if (currentFontSize != newFontSize && newFontSize <= _maxFontSize && newFontSize >= _minFontSize)
+            int fs = currentFontSize + increment * dir;
+            if (fs > 30)
+                fs &= 0xFFFE;
+            if (currentFontSize != fs && _minFontSize <= fs && fs <= _maxFontSize)
             {
                 debug (editors)
-                    Log.i("Font size in editor ", id, " zoomed to ", newFontSize);
-                style.fontSize = cast(ushort)newFontSize;
+                    Log.i("Font size in editor ", id, " zoomed to ", fs);
+                style.fontSize = cast(ushort)fs;
                 measureVisibleText();
                 updateScrollBars();
-                invalidate();
             }
         }
     }

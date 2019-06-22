@@ -46,6 +46,23 @@ enum ScrollBarMode
     external,
 }
 
+/// Scroll action codes for scrolling areas
+enum ScrollAreaAction
+{
+    left,
+    right,
+    pageLeft,
+    pageRight,
+    leftCorner,
+    rightCorner,
+    up,
+    down,
+    pageUp,
+    pageDown,
+    topCorner,
+    bottomCorner,
+}
+
 /** Abstract scrollable widget (used as a base for other widgets with scrolling).
 
     Provides scroll bars and basic scrolling functionality.
@@ -55,15 +72,15 @@ class ScrollAreaBase : WidgetGroup
     @property
     {
         /// Mode of the horizontal scrollbar
-        ScrollBarMode hscrollbarMode() const { return _hscrollbarMode; }
+        ScrollBarMode hscrollbarMode() const { return _hmode; }
         /// ditto
         void hscrollbarMode(ScrollBarMode m)
         {
-            if (_hscrollbarMode != m)
+            if (_hmode != m)
             {
-                _hscrollbarMode = m;
+                _hmode = m;
                 requestLayout();
-                if (m != ScrollBarMode.hidden)
+                if (m != Mode.hidden)
                 {
                     _hscrollbar = new ScrollBar(Orientation.horizontal, _hdata);
                     _hscrollbar.id = "hscrollbar";
@@ -73,15 +90,15 @@ class ScrollAreaBase : WidgetGroup
             }
         }
         /// Mode of the vertical scrollbar
-        ScrollBarMode vscrollbarMode() const { return _vscrollbarMode; }
+        ScrollBarMode vscrollbarMode() const { return _vmode; }
         /// ditto
         void vscrollbarMode(ScrollBarMode m)
         {
-            if (_vscrollbarMode != m)
+            if (_vmode != m)
             {
-                _vscrollbarMode = m;
+                _vmode = m;
                 requestLayout();
-                if (m != ScrollBarMode.hidden)
+                if (m != Mode.hidden)
                 {
                     _vscrollbar = new ScrollBar(Orientation.vertical, _vdata);
                     _vscrollbar.id = "vscrollbar";
@@ -92,11 +109,11 @@ class ScrollAreaBase : WidgetGroup
         }
 
         /// Horizontal scrollbar control. Can be `null`, and can be set to another scrollbar or `null`
-        inout(ScrollBar) hscrollbar() inout { return _hscrollbar; }
+        const(ScrollBar) hscrollbar() const { return _hscrollbar; }
         /// ditto
-        void hscrollbar(ScrollBar hbar)
+        void hscrollbar(ScrollBar bar)
         {
-            if (_hscrollbar !is hbar)
+            if (_hscrollbar !is bar)
                 requestLayout();
             if (_hscrollbar)
             {
@@ -104,23 +121,25 @@ class ScrollAreaBase : WidgetGroup
                 destroy(_hscrollbar);
                 _hscrollbar = null;
             }
-            if (hbar)
+            if (bar)
             {
-                _hscrollbar = hbar;
-                _hscrollbarMode = ScrollBarMode.external;
+                _hscrollbar = bar;
+                _hmode = Mode.external;
+                bar.lineStep = _hlineStep;
+                // swap the data
                 destroy(_hdata);
-                _hdata = hbar.data;
+                _hdata = bar.data;
                 updateHScrollBar(_hdata);
             }
             else
-                _hscrollbarMode = ScrollBarMode.hidden;
+                _hmode = Mode.hidden;
         }
         /// Vertical scrollbar control. Can be `null`, and can be set to another scrollbar or `null`
-        inout(ScrollBar) vscrollbar() inout { return _vscrollbar; }
+        const(ScrollBar) vscrollbar() const { return _vscrollbar; }
         /// ditto
-        void vscrollbar(ScrollBar vbar)
+        void vscrollbar(ScrollBar bar)
         {
-            if (_vscrollbar !is vbar)
+            if (_vscrollbar !is bar)
                 requestLayout();
             if (_vscrollbar)
             {
@@ -128,16 +147,18 @@ class ScrollAreaBase : WidgetGroup
                 destroy(_vscrollbar);
                 _vscrollbar = null;
             }
-            if (vbar)
+            if (bar)
             {
-                _vscrollbar = vbar;
-                _vscrollbarMode = ScrollBarMode.external;
+                _vscrollbar = bar;
+                _vmode = Mode.external;
+                bar.lineStep = _vlineStep;
+                // swap the data
                 destroy(_vdata);
-                _vdata = vbar.data;
+                _vdata = bar.data;
                 updateVScrollBar(_vdata);
             }
             else
-                _vscrollbarMode = ScrollBarMode.hidden;
+                _vmode = Mode.hidden;
         }
 
         /// Inner area, excluding additional controls like scrollbars
@@ -162,12 +183,16 @@ class ScrollAreaBase : WidgetGroup
 
     private
     {
-        ScrollBarMode _hscrollbarMode;
-        ScrollBarMode _vscrollbarMode;
+        alias Mode = ScrollBarMode;
+
+        Mode _hmode;
+        Mode _vmode;
         ScrollBar _hscrollbar;
         ScrollBar _vscrollbar;
         ScrollData _hdata;
         ScrollData _vdata;
+        uint _hlineStep;
+        uint _vlineStep;
         Size _sbsz;
 
         Box _clientBox;
@@ -181,6 +206,116 @@ class ScrollAreaBase : WidgetGroup
         _vdata = new ScrollData;
         this.hscrollbarMode = hscrollbarMode;
         this.vscrollbarMode = vscrollbarMode;
+    }
+
+    void setScrollSteps(uint hor, uint vert)
+    {
+        _hlineStep = hor;
+        _vlineStep = vert;
+        if (auto h = _hscrollbar)
+            h.lineStep = hor;
+        if (auto v = _vscrollbar)
+            v.lineStep = vert;
+    }
+
+    final void scrollLeft()
+    {
+        _hscrollbar.maybe.triggerAction(ScrollAction.lineUp);
+    }
+
+    final void scrollRight()
+    {
+        _hscrollbar.maybe.triggerAction(ScrollAction.lineDown);
+    }
+
+    final void scrollPageLeft()
+    {
+        _hscrollbar.maybe.triggerAction(ScrollAction.pageUp);
+    }
+
+    final void scrollPageRight()
+    {
+        _hscrollbar.maybe.triggerAction(ScrollAction.pageDown);
+    }
+
+    final void scrollLeftCorner()
+    {
+        _hscrollbar.maybe.moveTo(0);
+    }
+
+    final void scrollRightCorner()
+    {
+        _hscrollbar.maybe.moveTo(_hdata.range);
+    }
+
+    final void scrollUp()
+    {
+        _vscrollbar.maybe.triggerAction(ScrollAction.lineUp);
+    }
+
+    final void scrollDown()
+    {
+        _vscrollbar.maybe.triggerAction(ScrollAction.lineDown);
+    }
+
+    final void scrollPageUp()
+    {
+        _vscrollbar.maybe.triggerAction(ScrollAction.pageUp);
+    }
+
+    final void scrollPageDown()
+    {
+        _vscrollbar.maybe.triggerAction(ScrollAction.pageDown);
+    }
+
+    final void scrollTopCorner()
+    {
+        _vscrollbar.maybe.moveTo(0);
+    }
+
+    final void scrollBottomCorner()
+    {
+        _vscrollbar.maybe.moveTo(_vdata.range);
+    }
+
+    final void scroll(ScrollAreaAction action)
+    {
+        if (auto h = _hscrollbar)
+        {
+            switch (action) with (ScrollAreaAction)
+            {
+                case left:        h.triggerAction(ScrollAction.lineUp);   return;
+                case right:       h.triggerAction(ScrollAction.lineDown); return;
+                case pageLeft:    h.triggerAction(ScrollAction.pageUp);   return;
+                case pageRight:   h.triggerAction(ScrollAction.pageDown); return;
+                case leftCorner:  h.moveTo(0); return;
+                case rightCorner: h.moveTo(_hdata.range); return;
+                default: break;
+            }
+        }
+        if (auto v = _vscrollbar)
+        {
+            switch (action) with (ScrollAreaAction)
+            {
+                case up:           v.triggerAction(ScrollAction.lineUp);   return;
+                case down:         v.triggerAction(ScrollAction.lineDown); return;
+                case pageUp:       v.triggerAction(ScrollAction.pageUp);   return;
+                case pageDown:     v.triggerAction(ScrollAction.pageDown); return;
+                case topCorner:    v.moveTo(0); return;
+                case bottomCorner: v.moveTo(_vdata.range); return;
+                default: break;
+            }
+        }
+    }
+
+    /// Process horizontal scroll event
+    protected void onHScroll(ScrollEvent event)
+    {
+    }
+
+    /// Process vertical scroll event
+    protected void onVScroll(ScrollEvent event)
+    {
     }
 
     override bool onMouseEvent(MouseEvent event)
@@ -206,16 +341,6 @@ class ScrollAreaBase : WidgetGroup
             }
         }
         return super.onMouseEvent(event);
-    }
-
-    /// Process horizontal scrollbar event
-    void onHScroll(ScrollEvent event)
-    {
-    }
-
-    /// Process vertical scrollbar event
-    void onVScroll(ScrollEvent event)
-    {
     }
 
     void makeBoxVisible(Box b, bool alignHorizontally = true, bool alignVertically = true)
@@ -247,12 +372,12 @@ class ScrollAreaBase : WidgetGroup
     {
         Boundaries bs;
         // do first measure to get scrollbar widths
-        if (_hscrollbar && _hscrollbarMode == ScrollBarMode.visible || _hscrollbarMode == ScrollBarMode.automatic)
+        if (_hscrollbar && (_hmode == Mode.visible || _hmode == Mode.automatic))
         {
             _hscrollbar.measure();
             _sbsz.h = _hscrollbar.natSize.h;
         }
-        if (_vscrollbar && _vscrollbarMode == ScrollBarMode.visible || _vscrollbarMode == ScrollBarMode.automatic)
+        if (_vscrollbar && (_vmode == Mode.visible || _vmode == Mode.automatic))
         {
             _vscrollbar.measure();
             _sbsz.w = _vscrollbar.natSize.w;
@@ -311,19 +436,19 @@ class ScrollAreaBase : WidgetGroup
     protected void updateScrollBarsVisibility(const Size clientSize)
     {
         // do not touch external scrollbars
-        bool hupdate = _hscrollbar && _hscrollbarMode != ScrollBarMode.external;
-        bool vupdate = _vscrollbar && _vscrollbarMode != ScrollBarMode.external;
+        const bool hupdate = _hscrollbar && _hmode != Mode.external;
+        const bool vupdate = _vscrollbar && _vmode != Mode.external;
         if (!hupdate && !vupdate)
             return;
-        bool hvisible = _hscrollbarMode == ScrollBarMode.visible;
-        bool vvisible = _vscrollbarMode == ScrollBarMode.visible;
+        bool hvisible = _hmode == Mode.visible;
+        bool vvisible = _vmode == Mode.visible;
         if (!hvisible || !vvisible)
         {
             // full content size and bar widths are known here
-            Size contentSize = fullContentSize;
-            bool xExceeds = clientSize.w < contentSize.w;
-            bool yExceeds = clientSize.h < contentSize.h;
-            if (_hscrollbarMode == ScrollBarMode.automatic && _vscrollbarMode == ScrollBarMode.automatic)
+            const Size contentSize = fullContentSize;
+            const bool xExceeds = clientSize.w < contentSize.w;
+            const bool yExceeds = clientSize.h < contentSize.h;
+            if (_hmode == Mode.automatic && _vmode == Mode.automatic)
             {
                 if (xExceeds && yExceeds)
                 {
@@ -347,13 +472,13 @@ class ScrollAreaBase : WidgetGroup
                     hvisible = true;
                 }
             }
-            else if (_hscrollbarMode == ScrollBarMode.automatic)
+            else if (_hmode == Mode.automatic)
             {
                 // only horizontal scroll bar is in auto mode
                 hvisible = xExceeds || vvisible && clientSize.w - _vscrollbar.box.w < contentSize.w;
 
             }
-            else if (_vscrollbarMode == ScrollBarMode.automatic)
+            else if (_vmode == Mode.automatic)
             {
                 // only vertical scroll bar is in auto mode
                 vvisible = yExceeds || hvisible && clientSize.h - _hscrollbar.box.h < contentSize.h;
@@ -372,9 +497,9 @@ class ScrollAreaBase : WidgetGroup
     /// Determine whether scrollbars are needed or not
     protected void needToShowScrollbars(out bool needHScroll, out bool needVScroll)
     {
-        needHScroll = _hscrollbar && _hscrollbarMode != ScrollBarMode.external &&
+        needHScroll = _hscrollbar && _hmode != Mode.external &&
                 _hscrollbar.visibility == Visibility.visible;
-        needVScroll = _vscrollbar && _vscrollbarMode != ScrollBarMode.external &&
+        needVScroll = _vscrollbar && _vmode != Mode.external &&
                 _vscrollbar.visibility == Visibility.visible;
     }
 
@@ -468,10 +593,9 @@ class ScrollAreaBase : WidgetGroup
     }
 }
 
-/**
-    Shows content of a widget with optional scrolling (directly usable class)
+/** Shows content of a widget with optional scrolling (directly usable class).
 
-    If size of content widget exceeds available space, allows to scroll it.
+    If the size of the content widget exceeds available space, it allows to scroll it.
  */
 class ScrollArea : ScrollAreaBase
 {
@@ -505,61 +629,31 @@ class ScrollArea : ScrollAreaBase
         super(hscrollbarMode, vscrollbarMode);
     }
 
-    protected void scrollTo(int x, int y)
-    {
-        Size sz = fullContentSize;
-        _scrollPos.x = max(0, min(x, sz.w - _clientBox.w));
-        _scrollPos.y = max(0, min(y, sz.h - _clientBox.h));
-        updateScrollBars();
-        requestLayout();
-//         invalidate();
-    }
+//     protected void scrollTo(int x, int y)
+//     {
+//         Size sz = fullContentSize;
+//         _scrollPos.x = max(0, min(x, sz.w - _clientBox.w));
+//         _scrollPos.y = max(0, min(y, sz.h - _clientBox.h));
+//         updateScrollBars();
+//         requestLayout();
+// //         invalidate();
+//     }
 
-    override void onHScroll(ScrollEvent event)
+    override protected void onHScroll(ScrollEvent event)
     {
-        if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
+        if (event.position != _scrollPos.x)
         {
-            scrollTo(event.position, scrollPos.y);
-        }
-        else if (event.action == ScrollAction.pageUp)
-        {
-            scrollTo(scrollPos.x - _clientBox.w * 3 / 4, scrollPos.y);
-        }
-        else if (event.action == ScrollAction.pageDown)
-        {
-            scrollTo(scrollPos.x + _clientBox.w * 3 / 4, scrollPos.y);
-        }
-        else if (event.action == ScrollAction.lineUp)
-        {
-            scrollTo(scrollPos.x - _clientBox.w / 10, scrollPos.y);
-        }
-        else if (event.action == ScrollAction.lineDown)
-        {
-            scrollTo(scrollPos.x + _clientBox.w / 10, scrollPos.y);
+            _scrollPos.x = event.position;
+            requestLayout();
         }
     }
 
-    override void onVScroll(ScrollEvent event)
+    override protected void onVScroll(ScrollEvent event)
     {
-        if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
+        if (event.position != _scrollPos.y)
         {
-            scrollTo(scrollPos.x, event.position);
-        }
-        else if (event.action == ScrollAction.pageUp)
-        {
-            scrollTo(scrollPos.x, scrollPos.y - _clientBox.h * 3 / 4);
-        }
-        else if (event.action == ScrollAction.pageDown)
-        {
-            scrollTo(scrollPos.x, scrollPos.y + _clientBox.h * 3 / 4);
-        }
-        else if (event.action == ScrollAction.lineUp)
-        {
-            scrollTo(scrollPos.x, scrollPos.y - _clientBox.h / 10);
-        }
-        else if (event.action == ScrollAction.lineDown)
-        {
-            scrollTo(scrollPos.x, scrollPos.y + _clientBox.h / 10);
+            _scrollPos.y = event.position;
+            requestLayout();
         }
     }
 

@@ -331,7 +331,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             if (_showColHeaders != show)
             {
                 _showColHeaders = show;
-                for (int i = 0; i < _headerRows; i++)
+                foreach (i; 0 .. _headerRows)
                     autoFitRowHeight(i);
                 _changedSize = true;
                 invalidate();
@@ -346,7 +346,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             if (_showRowHeaders != show)
             {
                 _showRowHeaders = show;
-                for (int i = 0; i < _headerCols; i++)
+                foreach (i; 0 .. _headerCols)
                     autoFitColumnWidth(i);
                 _changedSize = true;
                 invalidate();
@@ -726,7 +726,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (_changedSize)
             updateCumulativeSizes();
-        correctScrollPos();
         super.updateScrollBars();
     }
 
@@ -888,9 +887,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (_changedSize)
             updateCumulativeSizes();
-        Point oldpos = scrollPos;
-        Point newpos = Point(x, y);
-        bool changed = oldpos != newpos;
+        const oldpos = scrollPos;
+        const newpos = Point(x, y);
+        const bool changed = oldpos != newpos;
         if (changed)
         {
             scrollPos = newpos;
@@ -902,8 +901,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return changed;
     }
 
-    override void onHScroll(ScrollEvent event)
+    override protected void onHScroll(ScrollEvent event)
     {
+        event.discard();
         // scroll w/o changing selection
         if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
@@ -911,23 +911,11 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
         else if (event.action == ScrollAction.pageUp)
         {
-            // scroll left cell by cell
-            int sc = scrollCol;
-            while (scrollCol > nonScrollCols)
-            {
-                scrollBy(-1, 0);
-                if (lastScrollCol <= sc)
-                    break;
-            }
+            scrollBy(scrollCol - lastScrollCol, 0);
         }
         else if (event.action == ScrollAction.pageDown)
         {
-            int prevCol = lastScrollCol;
-            while (scrollCol < prevCol)
-            {
-                if (!scrollBy(1, 0))
-                    break;
-            }
+            scrollBy(lastScrollCol - scrollCol, 0);
         }
         else if (event.action == ScrollAction.lineUp)
         {
@@ -939,8 +927,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
     }
 
-    override void onVScroll(ScrollEvent event)
+    override protected void onVScroll(ScrollEvent event)
     {
+        event.discard();
         // scroll w/o changing selection
         if (event.action == ScrollAction.moved || event.action == ScrollAction.released)
         {
@@ -948,23 +937,11 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
         else if (event.action == ScrollAction.pageUp)
         {
-            // scroll up line by line
-            int sr = scrollRow;
-            while (scrollRow > nonScrollRows)
-            {
-                scrollBy(0, -1);
-                if (lastScrollRow <= sr)
-                    break;
-            }
+            scrollBy(0, scrollRow - lastScrollRow);
         }
         else if (event.action == ScrollAction.pageDown)
         {
-            int prevRow = lastScrollRow;
-            while (scrollRow < prevRow)
-            {
-                if (!scrollBy(0, 1))
-                    break;
-            }
+            scrollBy(0, lastScrollRow - scrollRow);
         }
         else if (event.action == ScrollAction.lineUp)
         {

@@ -820,8 +820,8 @@ class TreeWidgetBase : ScrollArea, ActionOperator
         ACTION_PAGE_UP.bind(this, &_tree.selectPrevious);
         // TODO: implement page down
         ACTION_PAGE_DOWN.bind(this, &_tree.selectNext);
-        ACTION_PAGE_BEGIN.bind(this, { vscrollbar.maybe.triggerAction(ScrollAction.pageUp); });
-        ACTION_PAGE_END.bind(this, { vscrollbar.maybe.triggerAction(ScrollAction.pageDown); });
+        ACTION_PAGE_BEGIN.bind(this, &scrollTopCorner);
+        ACTION_PAGE_END.bind(this, &scrollBottomCorner);
 
         // TODO: ctrl+up, ctrl+left, ctrl+home, etc.
     }
@@ -849,10 +849,10 @@ class TreeWidgetBase : ScrollArea, ActionOperator
                 _tree.selectNext();
                 return true;
             case Key.left:
-                hscrollbar.maybe.triggerAction(ScrollAction.lineUp);
+                scrollLeft();
                 return true;
             case Key.right:
-                hscrollbar.maybe.triggerAction(ScrollAction.lineDown);
+                scrollRight();
                 return true;
             default:
                 break;
