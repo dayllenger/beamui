@@ -102,6 +102,22 @@ align(1):
         const b = ((src.b * ialpha + dst.b * alpha) >> 8) & 0xFF;
         return Color(r, g, b);
     }
+
+    /// Linearly interpolate between two colors
+    static Color mix(Color c1, Color c2, double factor)
+    {
+        assert(0 <= factor && factor <= 1);
+        if (c1 == c2)
+            return c1;
+
+        const alpha = cast(uint)(factor * 255);
+        const ialpha = 255 - alpha;
+        const r = ((c1.r * ialpha + c2.r * alpha) >> 8) & 0xFF;
+        const g = ((c1.g * ialpha + c2.g * alpha) >> 8) & 0xFF;
+        const b = ((c1.b * ialpha + c2.b * alpha) >> 8) & 0xFF;
+        const a = ((c1.a * ialpha + c2.a * alpha) >> 8) & 0xFF;
+        return Color(r, g, b, a);
+    }
 }
 
 /// Represents RGBA color with floating point channels in [0, 1] range
