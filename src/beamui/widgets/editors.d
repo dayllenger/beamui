@@ -17,6 +17,7 @@ import beamui.core.streams;
 import beamui.graphics.colors;
 import beamui.text.simple;
 import beamui.text.sizetest;
+import beamui.text.style;
 import beamui.widgets.controls;
 import beamui.widgets.layouts;
 import beamui.widgets.menu;
@@ -2297,8 +2298,7 @@ class EditBox : EditWidgetBase
             dstring str;
             int[] positions; /// Char positions
             int width; /// Width (in pixels)
-            CustomCharProps[] highlight;
-            CustomCharProps[] highlightBuf;
+            LineMarkup markup;
 
             size_t length() const
             {
@@ -3155,9 +3155,7 @@ class EditBox : EditWidgetBase
             const len = line.str.length;
             if (line.positions.length < len)
                 line.positions.length = len;
-            if (line.highlightBuf.length < len)
-                line.highlightBuf.length = len;
-            line.highlight = handleCustomLineHighlight(_firstVisibleLine + cast(int)i, line.str, line.highlightBuf);
+            handleCustomLineMarkup(_firstVisibleLine + cast(int)i, line.str, line.markup);
             const int charsMeasured = font.measureText(line.str, line.positions, int.max, tabSize);
             line.width = charsMeasured > 0 ? line.positions[charsMeasured - 1] : 0;
             // width - max from visible lines
@@ -3264,58 +3262,68 @@ class EditBox : EditWidgetBase
         }
     }
 
-    private CustomCharProps[ubyte] _tokenHighlightColors;
+    private TextAttr[][ubyte] _tokenHighlight;
 
     /// Set highlight options for particular token category
-    void setTokenHighlightColor(ubyte tokenCategory, Color color, bool underline = false, bool strikeThrough = false)
+    void setTokenHighlight(TokenCategory category, TextAttr attribute)
     {
-        _tokenHighlightColors[tokenCategory] = CustomCharProps(color, underline, strikeThrough);
+        if (auto p = category in _tokenHighlight)
+            *p ~= attribute;
+        else
+            _tokenHighlight[category] = [attribute];
     }
-    /// Clear highlight colors
-    void clearTokenHighlightColors()
+    /// Clear highlight options for all tokens
+    void clearTokenHighlight()
     {
-        destroy(_tokenHighlightColors);
+        _tokenHighlight.clear();
     }
 
-    /**
-        Custom text color and style highlight (using text highlight) support.
-
-        Return `null` if no syntax highlight required for line.
-     */
-    protected CustomCharProps[] handleCustomLineHighlight(int line, dstring txt, ref CustomCharProps[] buf)
+    /// Construct a custom text markup to highlight the line
+    protected void handleCustomLineMarkup(int line, dstring txt, ref LineMarkup result)
     {
-        if (!_tokenHighlightColors)
-            return null; // no highlight colors set
+        import std.algorithm : group;
+
+        result.clear();
+
+        if (_tokenHighlight.length == 0)
+            return; // no highlight attributes set
+
         TokenPropString tokenProps = _content.lineTokenProps(line);
-        if (tokenProps.length > 0)
+        if (tokenProps.length == 0)
+            return;
+
+        bool hasNonzeroTokens;
+        foreach (t; tokenProps)
         {
-            bool hasNonzeroTokens;
-            foreach (t; tokenProps)
-                if (t)
-                {
-                    hasNonzeroTokens = true;
-                    break;
-                }
-            if (!hasNonzeroTokens)
-                return null; // all characters are of unknown token type (or white space)
-            if (buf.length < tokenProps.length)
-                buf.length = tokenProps.length;
-            CustomCharProps[] colors = buf[0 .. tokenProps.length]; //new CustomCharProps[tokenProps.length];
-            for (int i = 0; i < tokenProps.length; i++)
+            if (t)
             {
-                const ubyte p = tokenProps[i];
-                if (p in _tokenHighlightColors)
-                    colors[i] = _tokenHighlightColors[p];
-                else if ((p & TOKEN_CATEGORY_MASK) in _tokenHighlightColors)
-                    colors[i] = _tokenHighlightColors[(p & TOKEN_CATEGORY_MASK)];
-                else
-                    colors[i].color = style.textColor;
-                if (colors[i].color.isFullyTransparent)
-                    colors[i].color = style.textColor;
+                hasNonzeroTokens = true;
+                break;
             }
-            return colors;
         }
-        return null;
+        if (!hasNonzeroTokens)
+            return; // all characters are of unknown token type (uncategorized)
+
+        uint i;
+        foreach (item; group(tokenProps))
+        {
+            const tok = item[0];
+            TextAttr[] attrs;
+            if (auto p = tok in _tokenHighlight)
+                attrs = *p;
+            else if (auto p = (tok & TOKEN_CATEGORY_MASK) in _tokenHighlight)
+                attrs = *p;
+
+            const len = cast(uint)item[1];
+            if (attrs.length > 0)
+            {
+                MarkupSpan span = result.span(i, len);
+                foreach (ref a; attrs)
+                    span.set(a);
+            }
+            i += len;
+        }
+        assert(i == tokenProps.length);
     }
 
     private TextRange _matchingBraces;
@@ -3352,7 +3360,7 @@ class EditBox : EditWidgetBase
         return maxSpace;
     }
 
-    void drawTabPositionMarks(DrawBuf buf, ref FontRef font, int lineIndex, Rect lineRect)
+    void drawTabPositionMarks(DrawBuf buf, Font font, int lineIndex, Rect lineRect)
     {
         const int maxCol = findMaxTabMarkColumn(lineIndex);
         if (maxCol > 0)
@@ -3370,7 +3378,7 @@ class EditBox : EditWidgetBase
         }
     }
 
-    void drawWhiteSpaceMarks(DrawBuf buf, ref FontRef font, dstring txt, TabSize tabSize, Rect lineRect, Rect visibleRect)
+    void drawWhiteSpaceMarks(DrawBuf buf, Font font, dstring txt, TabSize tabSize, Rect lineRect, Rect visibleRect)
     {
         int firstNonSpace = -1;
         int lastNonSpace = -1;
@@ -3489,7 +3497,8 @@ class EditBox : EditWidgetBase
                 ph.draw(buf, b.x - scrollPos.x, b.y, b.w);
         }
 
-        FontRef font = font();
+        Font font = font.get;
+        const color = style.textColor;
         int previousWraps;
         foreach (i; 0 .. cast(int)_visibleLines.length)
         {
@@ -3524,7 +3533,9 @@ class EditBox : EditWidgetBase
             }
             if (txt.length > 0 || _wordWrap)
             {
-                CustomCharProps[] highlight = _visibleLines[i].highlight;
+                static Buf!CustomCharProps highlight;
+                convertMarkupToCustomCharProps(cast(uint)txt.length, CustomCharProps(color),
+                    _visibleLines[i].markup, highlight);
                 if (_wordWrap)
                 {
                     dstring[] wrappedLine;
@@ -3533,20 +3544,19 @@ class EditBox : EditWidgetBase
                     else if (i < _span.length)
                         wrappedLine = _span[i].wrappedContent;
                     int accumulativeLength;
-                    CustomCharProps[] wrapProps;
                     foreach (q, curWrap; wrappedLine)
                     {
                         const int lineOffset = cast(int)q + i + wrapsUpTo(i + _firstVisibleLine);
                         const x = b.x - scrollPos.x;
                         const y = b.y + lineOffset * _lineHeight;
-                        if (highlight)
+                        if (highlight.length > 0)
                         {
-                            wrapProps = highlight[accumulativeLength .. $];
+                            const wrapProps = highlight[][accumulativeLength .. $];
                             accumulativeLength += curWrap.length;
                             font.drawColoredText(buf, x, y, curWrap, wrapProps, tabSize);
                         }
                         else
-                            font.drawText(buf, x, y, curWrap, style.textColor, tabSize);
+                            font.drawText(buf, x, y, curWrap, color, tabSize);
                     }
                     previousWraps += cast(int)wrappedLine.length - 1;
                 }
@@ -3554,10 +3564,10 @@ class EditBox : EditWidgetBase
                 {
                     const x = b.x - scrollPos.x;
                     const y = b.y + i * _lineHeight;
-                    if (highlight)
-                        font.drawColoredText(buf, x, y, txt, highlight, tabSize);
+                    if (highlight.length > 0)
+                        font.drawColoredText(buf, x, y, txt, highlight[], tabSize);
                     else
-                        font.drawText(buf, x, y, txt, style.textColor, tabSize);
+                        font.drawText(buf, x, y, txt, color, tabSize);
                 }
             }
         }
