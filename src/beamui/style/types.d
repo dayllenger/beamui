@@ -7,6 +7,8 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.style.types;
 
 import beamui.core.types : State;
+import beamui.core.units : Length;
+import beamui.graphics.drawables : BgSizeType;
 
 /// Align option bit constants
 enum Align : uint
@@ -48,6 +50,38 @@ enum TextFlag : uint
     strikeThrough = 16, // TODO:
     /// Use text flags from parent widget
     parent = 32
+}
+
+struct BgPositionRaw
+{
+    Length x = Length.percent(50);
+    Length y = Length.percent(50);
+
+    static BgPositionRaw mix(BgPositionRaw a, BgPositionRaw b, double factor)
+    {
+        const x = a.x * (1 - factor) + b.x * factor;
+        const y = a.y * (1 - factor) + b.y * factor;
+        return BgPositionRaw(x, y);
+    }
+}
+
+struct BgSizeRaw
+{
+    BgSizeType type;
+    Length x;
+    Length y;
+
+    static BgSizeRaw mix(BgSizeRaw a, BgSizeRaw b, double factor)
+    {
+        if (a.type == BgSizeType.length && b.type == BgSizeType.length)
+        {
+            const x = a.x * (1 - factor) + b.x * factor;
+            const y = a.y * (1 - factor) + b.y * factor;
+            return BgSizeRaw(b.type, x, y);
+        }
+        else
+            return b;
+    }
 }
 
 /// CSS element selector

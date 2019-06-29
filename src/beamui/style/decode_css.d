@@ -18,7 +18,7 @@ import beamui.core.units;
 import beamui.css.tokenizer : Token, TokenType;
 import beamui.graphics.colors;
 import beamui.graphics.drawables;
-import beamui.style.types;
+import beamui.style.types : Align, BgPositionRaw, BgSizeRaw, SpecialCSSType;
 import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.text.style;
 
@@ -27,6 +27,21 @@ void logInvalidValue(const Token[] tokens)
     assert(tokens.length > 0);
 
     Log.fe("CSS(%s): invalid value", tokens[0].line);
+}
+
+private void shouldbe(string what, string types, ref const Token t)
+{
+    Log.fe("CSS(%s): %s should be %s, not '%s'", t.line, what, types, t.type);
+}
+
+private void unknown(string what, ref const Token t)
+{
+    Log.fe("CSS(%s): unknown %s: %s", t.line, what, t.text);
+}
+
+private void toomany(string what, size_t line)
+{
+    Log.fw("CSS(%s): too many values for %s", line, what);
 }
 
 /// Decode `<integer>` value
@@ -50,7 +65,7 @@ Result!int decode(T : int)(const Token[] tokens)
     }
     else
     {
-        Log.fe("CSS(%s): expected number, not '%s'", t.line, t.type);
+        Log.fe("CSS(%s): expected integer, not '%s'", t.line, t.type);
         return Err(0);
     }
 }
@@ -91,7 +106,7 @@ Result!Align decode(T : Align)(const Token[] tokens)
     {
         if (t.type != TokenType.ident)
         {
-            Log.fe("CSS(%s): alignment should be an identifier, not '%s'", t.line, t.type);
+            shouldbe("alignment", "an identifier", t);
             return Err!Align;
         }
         switch (t.text)
@@ -105,7 +120,7 @@ Result!Align decode(T : Align)(const Token[] tokens)
             case "vcenter": result |= Align.vcenter; break;
             case "top-left": result |= Align.topleft; break;
             default:
-                Log.fe("CSS(%s): unknown alignment: %s", t.line, t.text);
+                unknown("alignment", t);
                 return Err!Align;
         }
     }
@@ -128,12 +143,12 @@ Length[] decodeInsets(const Token[] tokens)
         }
         else
         {
-            Log.fe("CSS(%s): rectangle value should be numeric, not '%s'", t.line, t.type);
+            shouldbe("rectangle value", "numeric", t);
             return null;
         }
         if (result.length > 4)
         {
-            Log.fw("CSS(%s): too many values for rectangle", t.line);
+            toomany("rectangle", t.line);
             return null;
         }
     }
@@ -145,6 +160,7 @@ Length[] decodeInsets(const Token[] tokens)
         return null;
     }
 }
+
 /// Decode dimension, e.g. 1px, 20%, 1.2em, or 'none'
 Result!Length decode(T : Length)(const Token[] tokens)
 {
@@ -156,7 +172,7 @@ Result!Length decode(T : Length)(const Token[] tokens)
         if (t.text == "none")
             return Ok(Length.none);
         else
-            Log.fe("CSS(%s): unknown length identifier: '%s'", t.line, t.text);
+            unknown("length identifier", t);
     }
     else if (t.type == TokenType.number)
     {
@@ -187,6 +203,9 @@ Result!Length decode(T : Length)(const Token[] tokens)
     return Err!Length;
 }
 
+//===============================================================
+// Background, border, and box shadow
+
 alias BackgroundHere = Tup!(Result!Color, Result!Drawable);
 /// Decode shortcut background property
 Result!BackgroundHere decodeBackground(const(Token)[] tokens)
@@ -215,7 +234,7 @@ Result!BackgroundHere decodeBackground(const(Token)[] tokens)
     if (result[0] || result[1])
     {
         if (tokens.length > 0)
-            Log.fw("CSS(%s): too many values for background", line);
+            toomany("background", line);
         return Ok(result);
     }
     else
@@ -241,7 +260,7 @@ Result!Drawable decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)
             return Ok!Drawable(null);
         else
         {
-            Log.fe("CSS(%s): unknown image identifier: '%s'", t0.line, t0.text);
+            unknown("image identifier", t0);
             return Err!Drawable;
         }
     }
@@ -305,6 +324,238 @@ Result!Drawable decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)
     return Err!Drawable;
 }
 
+/// Decode background position property
+Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "background position";
+    BgPositionRaw ret;
+    if (tokens.length == 1)
+    {
+        const t = tokens[0];
+        if (t.type == TokenType.ident)
+        {
+            switch (t.text)
+            {
+                case "center": break;
+                case "left":   ret.x = Length.percent(0);   break;
+                case "right":  ret.x = Length.percent(100); break;
+                case "top":    ret.y = Length.percent(0);   break;
+                case "bottom": ret.y = Length.percent(100); break;
+                default:
+                    unknown(what, t);
+                    return Err!BgPositionRaw;
+            }
+        }
+        else
+        {
+            const x = decode!Length(tokens[0 .. 1]);
+            if (!x.err)
+                ret.x = x.val;
+            else
+                return Err!BgPositionRaw;
+        }
+    }
+    else
+    {
+        const t1 = tokens[0];
+        const t2 = tokens[1];
+        if (tokens.length > 2)
+            toomany(what, t1.line);
+
+        if (t1.type == TokenType.ident)
+        {
+            switch (t1.text)
+            {
+                case "center": break;
+                case "left":  ret.x = Length.percent(0);   break;
+                case "right": ret.x = Length.percent(100); break;
+                default:
+                    unknown(what, t1);
+                    return Err!BgPositionRaw;
+            }
+        }
+        else
+        {
+            const x = decode!Length(tokens[0 .. 1]);
+            if (!x.err)
+                ret.x = x.val;
+            else
+                return Err!BgPositionRaw;
+        }
+        if (t2.type == TokenType.ident)
+        {
+            switch (t2.text)
+            {
+                case "center": break;
+                case "top":    ret.y = Length.percent(0);   break;
+                case "bottom": ret.y = Length.percent(100); break;
+                default:
+                    unknown(what, t2);
+                    return Err!BgPositionRaw;
+            }
+        }
+        else
+        {
+            const y = decode!Length(tokens[1 .. 2]);
+            if (!y.err)
+                ret.y = y.val;
+            else
+                return Err!BgPositionRaw;
+        }
+    }
+    return Ok(ret);
+}
+
+/// Decode background size property
+Result!BgSizeRaw decode(T : BgSizeRaw)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "background size";
+    BgSizeRaw ret;
+    if (tokens.length == 1)
+    {
+        const t = tokens[0];
+        if (t.type == TokenType.ident)
+        {
+            switch (t.text)
+            {
+                case "auto": break;
+                case "contain": ret.type = BgSizeType.contain; break;
+                case "cover":   ret.type = BgSizeType.cover;   break;
+                default:
+                    unknown(what, t);
+                    return Err!BgSizeRaw;
+            }
+        }
+        else
+        {
+            const x = decode!Length(tokens[0 .. 1]);
+            if (!x.err)
+                ret.x = x.val;
+            else
+                return Err!BgSizeRaw;
+        }
+    }
+    else
+    {
+        const t1 = tokens[0];
+        const t2 = tokens[1];
+        if (tokens.length > 2)
+            toomany(what, t1.line);
+
+        if (t1.type != TokenType.ident || t1.text != "auto")
+        {
+            const x = decode!Length(tokens[0 .. 1]);
+            if (!x.err)
+                ret.x = x.val;
+            else
+                return Err!BgSizeRaw;
+        }
+        if (t2.type != TokenType.ident || t2.text != "auto")
+        {
+            const y = decode!Length(tokens[1 .. 2]);
+            if (!y.err)
+                ret.y = y.val;
+            else
+                return Err!BgSizeRaw;
+        }
+    }
+    return Ok(ret);
+}
+
+/// Decode background/image repeat property
+Result!RepeatStyle decode(T : RepeatStyle)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    RepeatStyle ret = { Tiling.none, Tiling.none };
+    if (tokens.length == 1)
+    {
+        const t = tokens[0];
+        if (t.type == TokenType.ident)
+        {
+            if (t.text == "repeat-x")
+            {
+                ret.x = Tiling.repeat;
+                return Ok(ret);
+            }
+            if (t.text == "repeat-y")
+            {
+                ret.y = Tiling.repeat;
+                return Ok(ret);
+            }
+        }
+        const both = decodeTiling(t);
+        if (!both.err)
+        {
+            ret.x = both.val;
+            ret.y = both.val;
+            return Ok(ret);
+        }
+    }
+    else
+    {
+        if (tokens.length > 2)
+            toomany("repeat style", tokens[0].line);
+        const x = decodeTiling(tokens[0]);
+        const y = decodeTiling(tokens[1]);
+        if (!x.err && !y.err)
+        {
+            ret.x = x.val;
+            ret.y = y.val;
+            return Ok(ret);
+        }
+    }
+    return Err!RepeatStyle;
+}
+
+private Result!Tiling decodeTiling(ref const Token t)
+{
+    if (t.type != TokenType.ident)
+    {
+        shouldbe("repeat style", "an identifier", t);
+        return Err!Tiling;
+    }
+    switch (t.text)
+    {
+        case "repeat":    return Ok(Tiling.repeat);
+        case "no-repeat": return Ok(Tiling.none);
+        case "space": return Ok(Tiling.space);
+        case "round": return Ok(Tiling.round);
+        default:
+            unknown("tiling", t);
+            return Err!Tiling;
+    }
+}
+
+/// Decode box property ('border-box', 'padding-box', 'content-box')
+Result!BoxType decode(T : BoxType)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "box";
+    const t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        shouldbe(what, "an identifier", t);
+        return Err!BoxType;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+    switch (t.text)
+    {
+        case "border-box":  return Ok(BoxType.border);
+        case "padding-box": return Ok(BoxType.padding);
+        case "content-box": return Ok(BoxType.content);
+        default:
+            unknown(what, t);
+            return Err!BoxType;
+    }
+}
+
 alias BorderHere = Tup!(Result!Color, Result!Length);
 /// Decode shortcut border property
 Result!BorderHere decodeBorder(const(Token)[] tokens)
@@ -351,7 +602,7 @@ Result!BorderHere decodeBorder(const(Token)[] tokens)
     if (result[0] || result[1])
     {
         if (tokens.length > 0)
-            Log.fw("CSS(%s): too many values for border", line);
+            toomany("border", line);
         return Ok(result);
     }
     else
@@ -402,15 +653,19 @@ Result!BoxShadowDrawable decode(T : BoxShadowDrawable)(const Token[] tokens)
     return Ok(new BoxShadowDrawable(xoffset.val.toDevice, yoffset.val.toDevice, blur.val.toDevice, color.val));
 }
 
+//===============================================================
+// Font and textual
+
 /// Decode font family
 Result!FontFamily decode(T : FontFamily)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    const what = "font family";
     const t = tokens[0];
     if (t.type != TokenType.ident)
     {
-        Log.fe("CSS(%s): font family should be an identifier, not '%s'", t.line, t.type);
+        shouldbe(what, "an identifier", t);
         return Err!FontFamily;
     }
     switch (t.text)
@@ -422,7 +677,7 @@ Result!FontFamily decode(T : FontFamily)(const Token[] tokens)
         case "monospace": return Ok(FontFamily.monospace);
         case "none": return Ok(FontFamily.unspecified);
         default:
-            Log.fe("CSS(%s): unknown font family: %s", t.line, t.text);
+            unknown(what, t);
             return Err!FontFamily;
     }
 }
@@ -431,18 +686,21 @@ Result!FontStyle decode(T : FontStyle)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    const what = "font style";
     const t = tokens[0];
     if (t.type != TokenType.ident)
     {
-        Log.fe("CSS(%s): font style should be an identifier, not '%s'", t.line, t.type);
+        shouldbe(what, "an identifier", t);
         return Err!FontStyle;
     }
+    if (tokens.length > 1)
+        toomany(what, t.line);
     switch (t.text)
     {
         case "normal": return Ok(FontStyle.normal);
         case "italic": return Ok(FontStyle.italic);
         default:
-            Log.fe("CSS(%s): unknown font style: %s", t.line, t.text);
+            unknown(what, t);
             return Err!FontStyle;
     }
 }
@@ -451,12 +709,15 @@ Result!ushort decode(SpecialCSSType t : SpecialCSSType.fontWeight)(const Token[]
 {
     assert(tokens.length > 0);
 
+    const what = "font weight";
     const t = tokens[0];
     if (t.type != TokenType.ident && t.type != TokenType.number)
     {
-        Log.fe("CSS(%s): font weight should be an identifier or number, not '%s'", t.line, t.type);
+        shouldbe(what, "an identifier or integer", t);
         return Err!ushort;
     }
+    if (tokens.length > 1)
+        toomany(what, t.line);
     switch (t.text)
     {
         case "lighter":
@@ -473,7 +734,7 @@ Result!ushort decode(SpecialCSSType t : SpecialCSSType.fontWeight)(const Token[]
         case "600": return Ok!ushort(600);
         case "800": return Ok!ushort(800);
         default:
-            Log.fe("CSS(%s): unknown font weight: %s", t.line, t.text);
+            unknown(what, t);
             return Err!ushort;
     }
 }
@@ -483,12 +744,15 @@ Result!TextAlign decode(T : TextAlign)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    const what = "text alignment";
     const t = tokens[0];
     if (t.type != TokenType.ident)
     {
-        Log.fe("CSS(%s): text alignment should be an identifier, not '%s'", t.line, t.type);
+        shouldbe(what, "an identifier", t);
         return Err!TextAlign;
     }
+    if (tokens.length > 1)
+        toomany(what, t.line);
     switch (t.text)
     {
         case "start": return Ok(TextAlign.start);
@@ -496,7 +760,7 @@ Result!TextAlign decode(T : TextAlign)(const Token[] tokens)
         case "end": return Ok(TextAlign.end);
         case "justify": return Ok(TextAlign.justify);
         default:
-            Log.fe("CSS(%s): unknown text alignment: %s", t.line, t.text);
+            unknown(what, t);
             return Err!TextAlign;
     }
 }
@@ -506,12 +770,13 @@ Result!TextDecorLine decode(T : TextDecorLine)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    const what = "text decoration line";
     TextDecorLine result;
     foreach (t; tokens)
     {
         if (t.type != TokenType.ident)
         {
-            Log.fe("CSS(%s): text decoration line should be an identifier, not '%s'", t.line, t.type);
+            shouldbe(what, "an identifier", t);
             return Err!TextDecorLine;
         }
         switch (t.text)
@@ -521,25 +786,26 @@ Result!TextDecorLine decode(T : TextDecorLine)(const Token[] tokens)
             case "line-through": result |= TextDecorLine.through; break;
             case "none": break;
             default:
-                Log.fe("CSS(%s): unknown text decoration line: %s", t.line, t.text);
+                unknown(what, t);
                 return Err!TextDecorLine;
         }
     }
     return Ok(result);
-
-
 }
 /// Decode text decoration style
 Result!TextDecorStyle decode(T : TextDecorStyle)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    const what = "text decoration style";
     const t = tokens[0];
     if (t.type != TokenType.ident)
     {
-        Log.fe("CSS(%s): text decoration style should be an identifier, not '%s'", t.line, t.type);
+        shouldbe(what, "an identifier", t);
         return Err!TextDecorStyle;
     }
+    if (tokens.length > 1)
+        toomany(what, t.line);
     switch (t.text)
     {
         case "solid": return Ok(TextDecorStyle.solid);
@@ -548,7 +814,7 @@ Result!TextDecorStyle decode(T : TextDecorStyle)(const Token[] tokens)
         case "dashed": return Ok(TextDecorStyle.dashed);
         case "wavy": return Ok(TextDecorStyle.wavy);
         default:
-            Log.fe("CSS(%s): unknown text decoration style: %s", t.line, t.text);
+            unknown(what, t);
             return Err!TextDecorStyle;
     }
 }
@@ -577,16 +843,16 @@ Result!TextDecorHere decodeTextDecor(const(Token)[] tokens)
         else
             return E();
     }
-    if (startsWithtextDecorStyle(tokens))
+    if (startsWithTextDecorStyle(tokens))
     {
-        if (const res = decode!TextDecorStyle(tokens))
+        if (const res = decode!TextDecorStyle(tokens[0 .. 1]))
             result[2] = res;
         else
             return E();
         tokens = tokens[1 .. $];
     }
     if (tokens.length > 0)
-        Log.fw("CSS(%s): too many values for text-decoration", line);
+        toomany("text-decoration", line);
     return Ok(result);
 }
 
@@ -595,12 +861,15 @@ Result!TextHotkey decode(T : TextHotkey)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    const what = "text hotkey option";
     const t = tokens[0];
     if (t.type != TokenType.ident)
     {
-        Log.fe("CSS(%s): text hotkey option should be an identifier, not '%s'", t.line, t.type);
+        shouldbe(what, "an identifier", t);
         return Err!TextHotkey;
     }
+    if (tokens.length > 1)
+        toomany(what, t.line);
     switch (t.text)
     {
         case "ignore": return Ok(TextHotkey.ignore);
@@ -608,7 +877,7 @@ Result!TextHotkey decode(T : TextHotkey)(const Token[] tokens)
         case "underline": return Ok(TextHotkey.underline);
         case "underline-on-alt": return Ok(TextHotkey.underlineOnAlt);
         default:
-            Log.fe("CSS(%s): unknown text hotkey option: %s", t.line, t.text);
+            unknown(what, t);
             return Err!TextHotkey;
     }
 }
@@ -618,19 +887,22 @@ Result!TextOverflow decode(T : TextOverflow)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    const what = "text overflow";
     const t = tokens[0];
     if (t.type != TokenType.ident)
     {
-        Log.fe("CSS(%s): text overflow should be an identifier, not '%s'", t.line, t.type);
+        shouldbe(what, "an identifier", t);
         return Err!TextOverflow;
     }
+    if (tokens.length > 1)
+        toomany(what, t.line);
     switch (t.text)
     {
         case "clip": return Ok(TextOverflow.clip);
         case "ellipsis": return Ok(TextOverflow.ellipsis);
         case "ellipsis-middle": return Ok(TextOverflow.ellipsisMiddle);
         default:
-            Log.fe("CSS(%s): unknown text overflow: %s", t.line, t.text);
+            unknown(what, t);
             return Err!TextOverflow;
     }
 }
@@ -640,12 +912,15 @@ Result!TextTransform decode(T : TextTransform)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    const what = "text transform";
     const t = tokens[0];
     if (t.type != TokenType.ident)
     {
-        Log.fe("CSS(%s): text transform should be an identifier, not '%s'", t.line, t.type);
+        shouldbe(what, "an identifier", t);
         return Err!TextTransform;
     }
+    if (tokens.length > 1)
+        toomany(what, t.line);
     switch (t.text)
     {
         case "none": return Ok(TextTransform.none);
@@ -653,10 +928,12 @@ Result!TextTransform decode(T : TextTransform)(const Token[] tokens)
         case "uppercase": return Ok(TextTransform.uppercase);
         case "lowercase": return Ok(TextTransform.lowercase);
         default:
-            Log.fe("CSS(%s): unknown text transform: %s", t.line, t.text);
+            unknown(what, t);
             return Err!TextTransform;
     }
 }
+
+//===============================================================
 
 /// Decode CSS color. This function mutates the range - skips found color value
 Result!Color decode(T : Color)(ref const(Token)[] tokens)
@@ -707,7 +984,7 @@ Result!Color decode(T : Color)(ref const(Token)[] tokens)
         // TODO: hsl, hsla
         else
         {
-            Log.fe("CSS(%s): unknown color function: %s", t.line, fn);
+            unknown("color function", t);
             return Err!Color;
         }
     }
@@ -757,7 +1034,7 @@ Result!string decode(SpecialCSSType t : SpecialCSSType.transitionProperty)(const
         return Ok(t.text);
     else
     {
-        Log.fe("CSS(%s): transition property must be an identifier", t.line);
+        shouldbe("transition property", "an identifier", t);
         return Err!string;
     }
 }
@@ -766,25 +1043,25 @@ Result!TimingFunction decode(T : TimingFunction)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    const what = "transition timing function";
     const t = tokens[0];
-    if (t.type == TokenType.ident)
+    if (t.type != TokenType.ident)
     {
-        switch (t.text)
-        {
-            case "linear": return Ok(cast(TimingFunction)TimingFunction.linear);
-            case "ease": return Ok(cast(TimingFunction)TimingFunction.ease);
-            case "ease-in": return Ok(cast(TimingFunction)TimingFunction.easeIn);
-            case "ease-out": return Ok(cast(TimingFunction)TimingFunction.easeOut);
-            case "ease-in-out": return Ok(cast(TimingFunction)TimingFunction.easeInOut);
-            default:
-                Log.fe("CSS(%s): unknown or unsupported transition timing function: %s", t.line, t.text);
-                return Err!TimingFunction;
-        }
-    }
-    else
-    {
-        Log.fe("CSS(%s): transition timing function must be an identifier", t.line);
+        shouldbe(what, "an identifier", t);
         return Err!TimingFunction;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+    switch (t.text)
+    {
+        case "linear": return Ok(cast(TimingFunction)TimingFunction.linear);
+        case "ease": return Ok(cast(TimingFunction)TimingFunction.ease);
+        case "ease-in": return Ok(cast(TimingFunction)TimingFunction.easeIn);
+        case "ease-out": return Ok(cast(TimingFunction)TimingFunction.easeOut);
+        case "ease-in-out": return Ok(cast(TimingFunction)TimingFunction.easeInOut);
+        default:
+            unknown(what, t);
+            return Err!TimingFunction;
     }
 }
 alias TransitionHere = Tup!(Result!string, Result!uint, Result!TimingFunction, Result!uint);
@@ -815,7 +1092,7 @@ Result!TransitionHere decodeTransition(const(Token)[] tokens)
     }
     if (startsWithTimingFunction(tokens))
     {
-        if (auto res = decode!TimingFunction(tokens))
+        if (auto res = decode!TimingFunction(tokens[0 .. 1]))
             result[2] = res;
         else
             return E();
@@ -833,7 +1110,7 @@ Result!TransitionHere decodeTransition(const(Token)[] tokens)
     if (result[0] || result[1] || result[2] || result[3])
     {
         if (tokens.length > 0)
-            Log.fw("CSS(%s): too many values for transition", line);
+            toomany("transition", line);
         return Ok(result);
     }
     else
@@ -957,7 +1234,7 @@ bool startsWithFontWeight(const Token[] tokens)
 }
 
 /// True if token sequence starts with `<text-decoration-style>` value
-bool startsWithtextDecorStyle(const Token[] tokens)
+bool startsWithTextDecorStyle(const Token[] tokens)
 {
     if (tokens.length == 0)
         return false;

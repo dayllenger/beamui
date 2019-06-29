@@ -33,7 +33,7 @@ public
     import beamui.graphics.drawbuf;
 
     import beamui.style.theme : currentTheme;
-    import beamui.style.types;
+    import beamui.style.types : Align;
 
     import beamui.text.fonts;
 
@@ -44,6 +44,7 @@ import std.string : capitalize;
 import beamui.core.animations;
 import beamui.platforms.common.platform;
 import beamui.style.style;
+import beamui.style.types : Selector, TextFlag;
 import beamui.text.style : TextHotkey;
 import beamui.widgets.menu;
 
@@ -744,10 +745,10 @@ public:
         case borderColor:
             _background.border.color = _style.borderColor;
             break;
-        case backgroundColor:
+        case bgColor:
             _background.color = _style.backgroundColor;
             break;
-        case backgroundImage:
+        case bgImage:
             _background.image = _style.backgroundImage;
             break;
         case boxShadow:
@@ -765,9 +766,7 @@ public:
         case textTransform:
             requestLayout();
             break;
-        case borderColor:
-        case backgroundColor:
-        case backgroundImage:
+        case bgColor: .. case bgClip:
         case boxShadow:
         case textAlign:
         case textDecorColor:
@@ -776,6 +775,7 @@ public:
         case alpha:
         case textColor:
         case focusRectColor:
+        case borderColor:
             invalidate();
             break;
         case fontFace: .. case fontWeight:

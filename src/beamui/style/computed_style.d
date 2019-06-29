@@ -12,7 +12,7 @@ import beamui.core.geometry : Insets;
 import beamui.core.types : Result, Ok;
 import beamui.core.units : Length, LayoutLength;
 import beamui.graphics.colors : Color, decodeHexColor, decodeTextColor;
-import beamui.graphics.drawables : Drawable, BoxShadowDrawable;
+import beamui.graphics.drawables;
 import beamui.style.style;
 import beamui.style.types;
 import beamui.text.fonts;
@@ -48,8 +48,13 @@ enum StyleProperty
     rowSpacing,
     columnSpacing,
     // background
-    backgroundColor,
-    backgroundImage,
+    bgColor,
+    bgImage,
+    bgPosition,
+    bgSize,
+    bgRepeat,
+    bgOrigin,
+    bgClip,
     boxShadow,
     // text
     fontFace,
@@ -274,24 +279,50 @@ struct ComputedStyle
         /// ditto
         void borderColor(Color value) { setProperty!"borderColor" = value; }
         /// Background color of the widget
-        Color backgroundColor() const { return _backgroundColor; }
+        Color backgroundColor() const { return _bgColor; }
         /// ditto
-        void backgroundColor(Color value) { setProperty!"backgroundColor" = value; }
+        void backgroundColor(Color value) { setProperty!"bgColor" = value; }
         /// Set background color as ARGB 32 bit value
-        void backgroundColor(uint value) { setProperty!"backgroundColor" = Color(value); }
+        void backgroundColor(uint value) { setProperty!"bgColor" = Color(value); }
         /// Set background color from string like "#5599CC" or "white"
         void backgroundColor(string colorString)
         {
-            setProperty!"backgroundColor" =
+            setProperty!"bgColor" =
                 decodeHexColor(colorString)
                     .failed(decodeTextColor(colorString))
                     .failed(Ok(Color.transparent))
                     .val;
         }
         /// Background image drawable
-        inout(Drawable) backgroundImage() inout { return _backgroundImage; }
+        inout(Drawable) backgroundImage() inout { return _bgImage; }
         /// ditto
-        void backgroundImage(Drawable image) { setProperty!"backgroundImage" = image; }
+        void backgroundImage(Drawable image) { setProperty!"bgImage" = image; }
+
+        BgPosition backgroundPosition() const
+        {
+            return BgPosition(applyEM(_bgPosition.x), applyEM(_bgPosition.y));
+        }
+
+        BgSize backgroundSize() const
+        {
+            const t = _bgSize.type;
+            if (t == BgSizeType.length)
+                return BgSize(t, applyEM(_bgSize.x), applyEM(_bgSize.y));
+            else
+                return BgSize(t);
+        }
+
+        RepeatStyle backgroundRepeat() const { return _bgRepeat; }
+        /// ditto
+        void backgroundRepeat(RepeatStyle value) { setProperty!"bgRepeat" = value; }
+
+        BoxType backgroundOrigin() const { return _bgOrigin; }
+        /// ditto
+        void backgroundOrigin(BoxType value) { setProperty!"bgOrigin" = value; }
+
+        BoxType backgroundClip() const { return _bgClip; }
+        /// ditto
+        void backgroundClip(BoxType value) { setProperty!"bgClip" = value; }
 
         inout(BoxShadowDrawable) boxShadow() inout { return _boxShadow; }
         /// ditto
@@ -441,8 +472,13 @@ struct ComputedStyle
         int _rowSpacing = 6;
         int _columnSpacing = 6;
         // background
-        Color _backgroundColor = Color.transparent;
-        Drawable _backgroundImage;
+        Color _bgColor = Color.transparent;
+        Drawable _bgImage;
+        BgPositionRaw _bgPosition;
+        BgSizeRaw _bgSize;
+        RepeatStyle _bgRepeat;
+        BoxType _bgOrigin = BoxType.padding;
+        BoxType _bgClip = BoxType.border;
         BoxShadowDrawable _boxShadow;
         // text
         string _fontFace = "Arial";
@@ -474,8 +510,8 @@ struct ComputedStyle
     {
         if (isOverriden(StyleProperty.boxShadow))
             eliminate(_boxShadow);
-        if (isOverriden(StyleProperty.backgroundImage))
-            eliminate(_backgroundImage);
+        if (isOverriden(StyleProperty.bgImage))
+            eliminate(_bgImage);
     }
 
     private LayoutLength applyEM(Length value) const
@@ -795,8 +831,13 @@ string getCSSName(StyleProperty ptype)
         case rowSpacing: return "row-spacing";
         case columnSpacing: return "column-spacing";
         case borderColor:     return "border-color";
-        case backgroundColor: return "background-color";
-        case backgroundImage: return "background-image";
+        case bgColor: return "background-color";
+        case bgImage: return "background-image";
+        case bgPosition: return "background-position";
+        case bgSize: return "background-size";
+        case bgRepeat: return "background-repeat";
+        case bgOrigin: return "background-origin";
+        case bgClip: return "background-clip";
         case boxShadow:  return "box-shadow";
         case fontFace:   return "font-face";
         case fontFamily: return "font-family";
@@ -824,9 +865,9 @@ private SpecialCSSType getSpecialCSSType(StyleProperty ptype)
 {
     switch (ptype) with (StyleProperty)
     {
-        case backgroundImage:    return SpecialCSSType.image;
-        case fontWeight:         return SpecialCSSType.fontWeight;
-        case alpha:              return SpecialCSSType.opacity;
+        case bgImage:    return SpecialCSSType.image;
+        case fontWeight: return SpecialCSSType.fontWeight;
+        case alpha:      return SpecialCSSType.opacity;
         case transitionProperty: return SpecialCSSType.transitionProperty;
         case transitionDuration: return SpecialCSSType.time;
         case transitionDelay:    return SpecialCSSType.time;
@@ -844,7 +885,9 @@ bool isAnimatable(StyleProperty ptype)
         case rowSpacing:
         case columnSpacing:
         case borderColor:
-        case backgroundColor:
+        case bgColor:
+        case bgPosition:
+        case bgSize:
         case textDecorColor:
         case alpha:
         case textColor:

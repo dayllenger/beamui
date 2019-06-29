@@ -656,6 +656,49 @@ struct Border
     Insets size;
 }
 
+struct BgPosition
+{
+    LayoutLength x = LayoutLength.percent(0);
+    LayoutLength y = LayoutLength.percent(0);
+}
+
+enum BgSizeType
+{
+    length,
+    contain,
+    cover,
+}
+
+struct BgSize
+{
+    BgSizeType type;
+    LayoutLength x;
+    LayoutLength y;
+}
+
+/// Tiling options for one image axis
+enum Tiling
+{
+    none,
+    repeat,
+    space,
+    round,
+}
+
+/// Tiling options for both image axes
+struct RepeatStyle
+{
+    Tiling x;
+    Tiling y;
+}
+
+enum BoxType
+{
+    border,
+    padding,
+    content,
+}
+
 /// Standard widget background. It can combine together background color,
 /// image (raster, gradient, etc.), borders and box shadows.
 class Background
