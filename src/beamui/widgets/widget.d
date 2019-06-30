@@ -787,9 +787,11 @@ public:
         case textTransform:
             requestLayout();
             break;
+        case zIndex:
         case bgColor: .. case bgClip:
         case borderTopColor: .. case borderLeftColor:
         case borderTopStyle: .. case borderLeftStyle:
+        case borderTopLeftRadius: .. case borderBottomRightRadius:
         case boxShadow:
         case textAlign:
         case textDecorColor:

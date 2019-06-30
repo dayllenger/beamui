@@ -266,6 +266,7 @@ enum SpecialCSSType
     opacity, /// ubyte
     time, /// uint
     transitionProperty, /// string
+    zIndex, /// int
 }
 
 struct ShorthandInsets

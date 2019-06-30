@@ -47,6 +47,7 @@ enum StyleProperty
     spacing,
     rowSpacing,
     columnSpacing,
+    zIndex,
     // background
     bgColor,
     bgImage,
@@ -433,6 +434,11 @@ struct ComputedStyle
         /// ditto
         void columnSpacing(int px) { setProperty!"columnSpacing" = px; }
 
+        /// Widget stack order (`int.min` if unspecified)
+        int zIndex() const { return _zIndex; }
+        /// ditto
+        void zIndex(int z) { setProperty!"zIndex" = z; }
+
         /// Background color of the widget
         Color backgroundColor() const { return _bgColor; }
         /// ditto
@@ -758,6 +764,7 @@ struct ComputedStyle
         int _spacing = 6;
         int _rowSpacing = 6;
         int _columnSpacing = 6;
+        int _zIndex = int.min;
         // background
         Color _bgColor = Color.transparent;
         Drawable _bgImage;
@@ -1238,6 +1245,7 @@ string getCSSName(StyleProperty ptype)
         case spacing:    return "spacing";
         case rowSpacing: return "row-spacing";
         case columnSpacing: return "column-spacing";
+        case zIndex: return "z-index";
         case bgColor:    return "background-color";
         case bgImage:    return "background-image";
         case bgPosition: return "background-position";
@@ -1288,6 +1296,7 @@ private SpecialCSSType getSpecialCSSType(StyleProperty ptype)
 {
     switch (ptype) with (StyleProperty)
     {
+        case zIndex:     return SpecialCSSType.zIndex;
         case bgImage:    return SpecialCSSType.image;
         case fontWeight: return SpecialCSSType.fontWeight;
         case alpha:      return SpecialCSSType.opacity;
