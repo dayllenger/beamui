@@ -572,19 +572,8 @@ struct ComputedStyle
 
         // explode shorthands first
         foreach_reverse (st; chain)
-        {
-            st.explode(ShorthandInsets("margin", "margin-top", "margin-right", "margin-bottom", "margin-left"));
-            st.explode(ShorthandInsets("padding", "padding-top", "padding-right", "padding-bottom", "padding-left"));
-            st.explode(ShorthandInsets("border-width", "border-top-width", "border-right-width",
-                    "border-bottom-width", "border-left-width"));
-            st.explode(ShorthandBorder("border", "border-top-width", "border-right-width",
-                    "border-bottom-width", "border-left-width", "border-color"));
-            st.explode(ShorthandDrawable("background", "background-color", "background-image"));
-            st.explode(ShorthandTextDecor("text-decoration", "text-decoration-line",
-                    "text-decoration-color", "text-decoration-style"));
-            st.explode(ShorthandTransition("transition", "transition-property", "transition-duration",
-                    "transition-timing-function", "transition-delay"));
-        }
+            explodeShorthands(st);
+
         // find that we are not tied, being the root of style scope
         Widget parent = widget.parent;
         const bool canInherit = parent && !widget.styleIsolated;
@@ -801,6 +790,57 @@ struct ComputedStyle
             }
         );
     }
+}
+
+private void explodeShorthands(Style st)
+{
+    static immutable margin = ShorthandInsets(
+        StrHash("margin"),
+        StrHash("margin-top"),
+        StrHash("margin-right"),
+        StrHash("margin-bottom"),
+        StrHash("margin-left"));
+    static immutable padding = ShorthandInsets(
+        StrHash("padding"),
+        StrHash("padding-top"),
+        StrHash("padding-right"),
+        StrHash("padding-bottom"),
+        StrHash("padding-left"));
+    static immutable borderWidth = ShorthandInsets(
+        StrHash("border-width"),
+        StrHash("border-top-width"),
+        StrHash("border-right-width"),
+        StrHash("border-bottom-width"),
+        StrHash("border-left-width"));
+    static immutable border = ShorthandBorder(
+        StrHash("border"),
+        StrHash("border-top-width"),
+        StrHash("border-right-width"),
+        StrHash("border-bottom-width"),
+        StrHash("border-left-width"),
+        StrHash("border-color"));
+    static immutable bg = ShorthandDrawable(
+        StrHash("background"),
+        StrHash("background-color"),
+        StrHash("background-image"));
+    static immutable textDecor = ShorthandTextDecor(
+        StrHash("text-decoration"),
+        StrHash("text-decoration-line"),
+        StrHash("text-decoration-color"),
+        StrHash("text-decoration-style"));
+    static immutable transition = ShorthandTransition(
+        StrHash("transition"),
+        StrHash("transition-property"),
+        StrHash("transition-duration"),
+        StrHash("transition-timing-function"),
+        StrHash("transition-delay"));
+    st.explode(margin);
+    st.explode(padding);
+    st.explode(borderWidth);
+    st.explode(border);
+    st.explode(bg);
+    st.explode(textDecor);
+    st.explode(transition);
 }
 
 /// Get property name how it looks in CSS

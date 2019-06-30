@@ -139,10 +139,9 @@ final class Style
     }
 
     /// Find a shorthand border property, split it into components and decode
-    void explode(ShorthandBorder sh)
+    void explode(ref immutable ShorthandBorder sh)
     {
-        const name = StrHash(sh.name);
-        if (auto p = name in rawProperties)
+        if (auto p = sh.name in rawProperties)
         {
             if (auto res = decodeBorder(*p))
             {
@@ -154,23 +153,22 @@ final class Style
                 tryToSetShorthandPart(sh.leftWidth, width.err, Variant(width.val));
                 tryToSetShorthandPart(sh.color, color.err, Variant(color.val));
             }
-            rawProperties.remove(name);
+            rawProperties.remove(sh.name);
         }
-        if (auto p = name in metaProperties)
+        if (auto p = sh.name in metaProperties)
         {
-            metaProperties[StrHash(sh.topWidth)] = *p;
-            metaProperties[StrHash(sh.rightWidth)] = *p;
-            metaProperties[StrHash(sh.bottomWidth)] = *p;
-            metaProperties[StrHash(sh.leftWidth)] = *p;
-            metaProperties[StrHash(sh.color)] = *p;
-            metaProperties.remove(name);
+            metaProperties[sh.topWidth] = *p;
+            metaProperties[sh.rightWidth] = *p;
+            metaProperties[sh.bottomWidth] = *p;
+            metaProperties[sh.leftWidth] = *p;
+            metaProperties[sh.color] = *p;
+            metaProperties.remove(sh.name);
         }
     }
     /// Find a shorthand drawable (background, usually) property, split it into components and decode
-    void explode(ShorthandDrawable sh)
+    void explode(ref immutable ShorthandDrawable sh)
     {
-        const name = StrHash(sh.name);
-        if (auto p = name in rawProperties)
+        if (auto p = sh.name in rawProperties)
         {
             if (auto res = decodeBackground(*p))
             {
@@ -179,20 +177,19 @@ final class Style
                 tryToSetShorthandPart(sh.color, color.err, Variant(color.val));
                 tryToSetShorthandPart(sh.image, image.err, Variant(image.val));
             }
-            rawProperties.remove(name);
+            rawProperties.remove(sh.name);
         }
-        if (auto p = name in metaProperties)
+        if (auto p = sh.name in metaProperties)
         {
-            metaProperties[StrHash(sh.color)] = *p;
-            metaProperties[StrHash(sh.image)] = *p;
-            metaProperties.remove(name);
+            metaProperties[sh.color] = *p;
+            metaProperties[sh.image] = *p;
+            metaProperties.remove(sh.name);
         }
     }
     /// Find a shorthand insets (margin, padding, border-width) property, split it into components and decode
-    void explode(ShorthandInsets sh)
+    void explode(ref immutable ShorthandInsets sh)
     {
-        const name = StrHash(sh.name);
-        if (auto p = name in rawProperties)
+        if (auto p = sh.name in rawProperties)
         {
             Length[] list = decodeInsets(*p);
             if (list.length > 0)
@@ -203,22 +200,21 @@ final class Style
                 tryToSetShorthandPart(sh.bottom, false, Variant(list[list.length > 2 ? 2 : 0]));
                 tryToSetShorthandPart(sh.left, false, Variant(list[list.length == 4 ? 3 : list.length == 1 ? 0 : 1]));
             }
-            rawProperties.remove(name);
+            rawProperties.remove(sh.name);
         }
-        if (auto p = name in metaProperties)
+        if (auto p = sh.name in metaProperties)
         {
-            metaProperties[StrHash(sh.top)] = *p;
-            metaProperties[StrHash(sh.right)] = *p;
-            metaProperties[StrHash(sh.bottom)] = *p;
-            metaProperties[StrHash(sh.left)] = *p;
-            metaProperties.remove(name);
+            metaProperties[sh.top] = *p;
+            metaProperties[sh.right] = *p;
+            metaProperties[sh.bottom] = *p;
+            metaProperties[sh.left] = *p;
+            metaProperties.remove(sh.name);
         }
     }
     /// Find a shorthand text decoration property, split it into components and decode
-    void explode(ShorthandTextDecor sh)
+    void explode(ref immutable ShorthandTextDecor sh)
     {
-        const name = StrHash(sh.name);
-        if (auto p = name in rawProperties)
+        if (auto p = sh.name in rawProperties)
         {
             if (auto res = decodeTextDecor(*p))
             {
@@ -229,21 +225,20 @@ final class Style
                 tryToSetShorthandPart(sh.color, color.err, Variant(color.val));
                 tryToSetShorthandPart(sh.style, style.err, Variant(style.val));
             }
-            rawProperties.remove(name);
+            rawProperties.remove(sh.name);
         }
-        if (auto p = name in metaProperties)
+        if (auto p = sh.name in metaProperties)
         {
-            metaProperties[StrHash(sh.line)] = *p;
-            metaProperties[StrHash(sh.color)] = *p;
-            metaProperties[StrHash(sh.style)] = *p;
-            metaProperties.remove(name);
+            metaProperties[sh.line] = *p;
+            metaProperties[sh.color] = *p;
+            metaProperties[sh.style] = *p;
+            metaProperties.remove(sh.name);
         }
     }
     /// Find a shorthand transition property, split it into components and decode
-    void explode(ShorthandTransition sh)
+    void explode(ref immutable ShorthandTransition sh)
     {
-        const name = StrHash(sh.name);
-        if (auto p = name in rawProperties)
+        if (auto p = sh.name in rawProperties)
         {
             if (auto res = decodeTransition(*p))
             {
@@ -256,21 +251,20 @@ final class Style
                 tryToSetShorthandPart(sh.timingFunction, tfunc.err, Variant(tfunc.val));
                 tryToSetShorthandPart(sh.delay, delay.err, Variant(delay.val));
             }
-            rawProperties.remove(name);
+            rawProperties.remove(sh.name);
         }
-        if (auto p = name in metaProperties)
+        if (auto p = sh.name in metaProperties)
         {
-            metaProperties[StrHash(sh.property)] = *p;
-            metaProperties[StrHash(sh.timingFunction)] = *p;
-            metaProperties[StrHash(sh.duration)] = *p;
-            metaProperties[StrHash(sh.delay)] = *p;
-            metaProperties.remove(name);
+            metaProperties[sh.property] = *p;
+            metaProperties[sh.timingFunction] = *p;
+            metaProperties[sh.duration] = *p;
+            metaProperties[sh.delay] = *p;
+            metaProperties.remove(sh.name);
         }
     }
 
-    private void tryToSetShorthandPart(string name, bool initial, lazy Variant v)
+    private void tryToSetShorthandPart(size_t hash, bool initial, lazy Variant v)
     {
-        const hash = StrHash(name);
         if (initial)
         {
             if (hash !in metaProperties)

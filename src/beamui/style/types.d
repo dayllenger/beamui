@@ -258,9 +258,6 @@ struct Selector
     }
 }
 
-//===============================================================
-// Annotations
-
 enum SpecialCSSType
 {
     none,
@@ -273,48 +270,43 @@ enum SpecialCSSType
 
 struct ShorthandBorder
 {
-    string name;
-    string topWidth;
-    string rightWidth;
-    string bottomWidth;
-    string leftWidth;
-    string color;
+    size_t name;
+    size_t topWidth;
+    size_t rightWidth;
+    size_t bottomWidth;
+    size_t leftWidth;
+    size_t color;
 }
 
 struct ShorthandDrawable
 {
-    string name;
-    string color;
-    string image;
+    size_t name;
+    size_t color;
+    size_t image;
 }
 
 struct ShorthandInsets
 {
-    string name;
-    string top;
-    string right;
-    string bottom;
-    string left;
+    size_t name;
+    size_t top;
+    size_t right;
+    size_t bottom;
+    size_t left;
 }
 
 struct ShorthandTextDecor
 {
-    string name;
-    string line;
-    string color;
-    string style;
+    size_t name;
+    size_t line;
+    size_t color;
+    size_t style;
 }
 
 struct ShorthandTransition
 {
-    string name;
-    string property;
-    string duration;
-    string timingFunction;
-    string delay;
-}
-
-/// Annotate CSS property with @animatable to enable animations for it
-struct animatable
-{
+    size_t name;
+    size_t property;
+    size_t duration;
+    size_t timingFunction;
+    size_t delay;
 }
