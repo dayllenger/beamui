@@ -59,6 +59,10 @@ enum StyleProperty
     borderRightStyle,
     borderBottomStyle,
     borderLeftStyle,
+    borderTopLeftRadius,
+    borderTopRightRadius,
+    borderBottomLeftRadius,
+    borderBottomRightRadius,
     boxShadow,
     // text
     fontFace,
@@ -525,6 +529,86 @@ struct ComputedStyle
         /// ditto
         void borderLeftStyle(BorderStyle value) { setProperty!"borderLeftStyle" = value; }
 
+        /// Set a border radius for all corners simultaneously
+        void borderRadius(Insets px4)
+        {
+            if (isDefinedSize(px4.top))
+                setProperty!"borderTopLeftRadius" = Length.px(px4.top);
+            if (isDefinedSize(px4.right))
+                setProperty!"borderTopRightRadius" = Length.px(px4.right);
+            if (isDefinedSize(px4.bottom))
+                setProperty!"borderBottomLeftRadius" = Length.px(px4.bottom);
+            if (isDefinedSize(px4.left))
+                setProperty!"borderBottomRightRadius" = Length.px(px4.left);
+        }
+        /// ditto
+        void borderRadius(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"borderTopLeftRadius" = len;
+            setProperty!"borderTopRightRadius" = len;
+            setProperty!"borderBottomLeftRadius" = len;
+            setProperty!"borderBottomRightRadius" = len;
+        }
+        /// ditto
+        void borderRadius(int px) { borderRadius = Length.px(px); }
+
+        LayoutLength borderTopLeftRadius() const { return applyEM(_borderTopLeftRadius); }
+        /// ditto
+        void borderTopLeftRadius(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"borderTopLeftRadius" = len;
+        }
+        /// ditto
+        void borderTopLeftRadius(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"borderTopLeftRadius" = Length.px(px);
+        }
+
+        LayoutLength borderTopRightRadius() const { return applyEM(_borderTopLeftRadius); }
+        /// ditto
+        void borderTopRightRadius(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"borderTopRightRadius" = len;
+        }
+        /// ditto
+        void borderTopRightRadius(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"borderTopRightRadius" = Length.px(px);
+        }
+
+        LayoutLength borderBottomLeftRadius() const { return applyEM(_borderTopLeftRadius); }
+        /// ditto
+        void borderBottomLeftRadius(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"borderBottomLeftRadius" = len;
+        }
+        /// ditto
+        void borderBottomLeftRadius(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"borderBottomLeftRadius" = Length.px(px);
+        }
+
+        LayoutLength borderBottomRightRadius() const { return applyEM(_borderTopLeftRadius); }
+        /// ditto
+        void borderBottomRightRadius(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"borderBottomRightRadius" = len;
+        }
+        /// ditto
+        void borderBottomRightRadius(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"borderBottomRightRadius" = Length.px(px);
+        }
+
         inout(BoxShadowDrawable) boxShadow() inout { return _boxShadow; }
         /// ditto
         void boxShadow(BoxShadowDrawable shadow) { setProperty!"boxShadow" = shadow; }
@@ -686,6 +770,10 @@ struct ComputedStyle
         BorderStyle _borderRightStyle = BorderStyle.none;
         BorderStyle _borderBottomStyle = BorderStyle.none;
         BorderStyle _borderLeftStyle = BorderStyle.none;
+        Length _borderTopLeftRadius = Length.zero;
+        Length _borderTopRightRadius = Length.zero;
+        Length _borderBottomLeftRadius = Length.zero;
+        Length _borderBottomRightRadius = Length.zero;
         BoxShadowDrawable _boxShadow;
         // text
         string _fontFace = "Arial";
@@ -891,7 +979,11 @@ struct ComputedStyle
                 ptype == borderTopWidth ||
                 ptype == borderRightWidth ||
                 ptype == borderBottomWidth ||
-                ptype == borderLeftWidth
+                ptype == borderLeftWidth ||
+                ptype == borderTopLeftRadius ||
+                ptype == borderTopRightRadius ||
+                ptype == borderBottomLeftRadius ||
+                ptype == borderBottomRightRadius
             )
                 return value.toLayout.applyPercent(100) >= 0;
             else
@@ -1090,6 +1182,12 @@ private void explodeShorthands(Style st)
         StrHash("border-left-width"),
         StrHash("border-left-style"),
         StrHash("border-left-color"));
+    static immutable borderRadii = ShorthandInsets(
+        StrHash("border-radius"),
+        StrHash("border-top-left-radius"),
+        StrHash("border-top-right-radius"),
+        StrHash("border-bottom-left-radius"),
+        StrHash("border-bottom-right-radius"));
     static immutable textDecor = ShorthandTextDecor(
         StrHash("text-decoration"),
         StrHash("text-decoration-line"),
@@ -1112,6 +1210,7 @@ private void explodeShorthands(Style st)
     st.explode(borderRight);
     st.explode(borderBottom);
     st.explode(borderLeft);
+    st.explode(borderRadii);
     st.explode(textDecor);
     st.explode(transition);
 }
@@ -1158,6 +1257,10 @@ string getCSSName(StyleProperty ptype)
         case borderRightStyle:  return "border-right-style";
         case borderBottomStyle: return "border-bottom-style";
         case borderLeftStyle:   return "border-left-style";
+        case borderTopLeftRadius: return "border-top-left-radius";
+        case borderTopRightRadius: return "border-top-right-radius";
+        case borderBottomLeftRadius: return "border-bottom-left-radius";
+        case borderBottomRightRadius: return "border-bottom-right-radius";
         case boxShadow:  return "box-shadow";
         case fontFace:   return "font-face";
         case fontFamily: return "font-family";
