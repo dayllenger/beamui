@@ -675,7 +675,7 @@ TabHost {
 TabItem {
     padding: 6px 1px 0 0;
     spacing: 0;
-    border-color: transparent;
+    border: 0 solid transparent;
 }
 
 TabControl.top TabItem {
@@ -809,6 +809,7 @@ ToolBar {
     padding-left: 6px;
     spacing: 4;
     border-color: #bbb;
+    border-style: solid;
     border-left-width: 2px;
 }
 
@@ -816,6 +817,7 @@ ToolBar::separator {
     margin-top: 3px;
     margin-bottom: 3px;
     border-color: #999;
+    border-style: solid;
     border-left-width: 1px;
 }
 

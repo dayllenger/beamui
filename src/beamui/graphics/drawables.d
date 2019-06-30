@@ -647,15 +647,6 @@ static if (USE_OPENGL)
     }
 }
 
-/// Solid borders description
-struct Border
-{
-    /// Border color
-    Color color = Color.transparent;
-    /// Border width, in pixels
-    Insets size;
-}
-
 struct BgPosition
 {
     LayoutLength x = LayoutLength.percent(0);
@@ -699,6 +690,45 @@ enum BoxType
     content,
 }
 
+enum BorderStyle
+{
+    none,
+    solid,
+    dotted,
+    dashed,
+    doubled,
+}
+
+struct BorderSide
+{
+    int thickness; /// Thickness in pixels
+    BorderStyle style;
+    Color color = Color.transparent;
+}
+
+/// Box border description
+struct Border
+{
+    BorderSide top;
+    BorderSide right;
+    BorderSide bottom;
+    BorderSide left;
+
+    Insets getSize() const
+    {
+        return Insets(top.thickness, right.thickness, bottom.thickness, left.thickness);
+    }
+}
+
+/// 8 border radii in pixels
+struct BorderRadii
+{
+    int[2] topLeft;
+    int[2] topRight;
+    int[2] bottomLeft;
+    int[2] bottomRight;
+}
+
 /// Standard widget background. It can combine together background color,
 /// image (raster, gradient, etc.), borders and box shadows.
 class Background
@@ -706,30 +736,25 @@ class Background
     Color color = Color.transparent;
     Drawable image;
     Border border;
+    BorderRadii radii;
     BoxShadowDrawable shadow;
 
     @property int width() const
     {
-        if (image)
-            return image.width + border.size.width;
-        else
-            return border.size.width;
+        const th = border.left.thickness + border.right.thickness;
+        return image ? image.width + th : th;
     }
 
     @property int height() const
     {
-        if (image)
-            return image.height + border.size.height;
-        else
-            return border.size.height;
+        const th = border.top.thickness + border.bottom.thickness;
+        return image ? image.height + th : th;
     }
 
     @property Insets padding() const
     {
-        if (image)
-            return image.padding + border.size;
-        else
-            return border.size;
+        const bs = border.getSize;
+        return image ? image.padding + bs : bs;
     }
 
     void drawTo(DrawBuf buf, Box b)
@@ -737,15 +762,17 @@ class Background
         // shadow
         shadow.maybe.drawTo(buf, b);
         // make background image smaller to fit borders
+        const bs = border.getSize;
         Box back = b;
-        back.shrink(border.size);
+        back.shrink(bs);
         // color
         if (!color.isFullyTransparent)
             buf.fillRect(Rect(back), color);
         // image
         image.maybe.drawTo(buf, back);
         // border
-        buf.drawFrame(Rect(b), border.color, border.size);
+        if (border.left.style != BorderStyle.none)
+            buf.drawFrame(Rect(b), border.left.color, bs);
     }
 }
 

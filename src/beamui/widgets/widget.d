@@ -730,26 +730,47 @@ public:
     {
         switch (ptype) with (StyleProperty)
         {
-        case borderTopWidth:
-            _background.border.size.top = _style.borderTopWidth;
-            break;
-        case borderRightWidth:
-            _background.border.size.right = _style.borderRightWidth;
-            break;
-        case borderBottomWidth:
-            _background.border.size.bottom = _style.borderBottomWidth;
-            break;
-        case borderLeftWidth:
-            _background.border.size.left = _style.borderLeftWidth;
-            break;
-        case borderColor:
-            _background.border.color = _style.borderColor;
-            break;
         case bgColor:
             _background.color = _style.backgroundColor;
             break;
         case bgImage:
             _background.image = _style.backgroundImage;
+            break;
+        case borderTopWidth:
+            _background.border.top.thickness = _style.borderTopWidth;
+            break;
+        case borderRightWidth:
+            _background.border.right.thickness = _style.borderRightWidth;
+            break;
+        case borderBottomWidth:
+            _background.border.bottom.thickness = _style.borderBottomWidth;
+            break;
+        case borderLeftWidth:
+            _background.border.left.thickness = _style.borderLeftWidth;
+            break;
+        case borderTopColor:
+            _background.border.top.color = _style.borderTopColor;
+            break;
+        case borderRightColor:
+            _background.border.right.color = _style.borderRightColor;
+            break;
+        case borderBottomColor:
+            _background.border.bottom.color = _style.borderBottomColor;
+            break;
+        case borderLeftColor:
+            _background.border.left.color = _style.borderLeftColor;
+            break;
+        case borderTopStyle:
+            _background.border.top.style = _style.borderTopStyle;
+            break;
+        case borderRightStyle:
+            _background.border.right.style = _style.borderRightStyle;
+            break;
+        case borderBottomStyle:
+            _background.border.bottom.style = _style.borderBottomStyle;
+            break;
+        case borderLeftStyle:
+            _background.border.left.style = _style.borderLeftStyle;
             break;
         case boxShadow:
             _background.shadow = _style.boxShadow;
@@ -767,6 +788,8 @@ public:
             requestLayout();
             break;
         case bgColor: .. case bgClip:
+        case borderTopColor: .. case borderLeftColor:
+        case borderTopStyle: .. case borderLeftStyle:
         case boxShadow:
         case textAlign:
         case textDecorColor:
@@ -775,7 +798,6 @@ public:
         case alpha:
         case textColor:
         case focusRectColor:
-        case borderColor:
             invalidate();
             break;
         case fontFace: .. case fontWeight:

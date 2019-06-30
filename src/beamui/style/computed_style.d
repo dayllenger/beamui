@@ -55,6 +55,10 @@ enum StyleProperty
     bgRepeat,
     bgOrigin,
     bgClip,
+    borderTopStyle,
+    borderRightStyle,
+    borderBottomStyle,
+    borderLeftStyle,
     boxShadow,
     // text
     fontFace,
@@ -72,8 +76,11 @@ enum StyleProperty
     alpha,
     textColor,
     focusRectColor,
-    // depend on text color
-    borderColor,
+    // depend on text color, so must be computed after
+    borderTopColor,
+    borderRightColor,
+    borderBottomColor,
+    borderLeftColor,
     textDecorColor,
     // transitions and animations
     transitionProperty,
@@ -274,10 +281,6 @@ struct ComputedStyle
         /// ditto
         void columnSpacing(int value) { setProperty!"columnSpacing" = value; }
 
-        /// Color of widget border
-        Color borderColor() const { return _borderColor; }
-        /// ditto
-        void borderColor(Color value) { setProperty!"borderColor" = value; }
         /// Background color of the widget
         Color backgroundColor() const { return _bgColor; }
         /// ditto
@@ -323,6 +326,56 @@ struct ComputedStyle
         BoxType backgroundClip() const { return _bgClip; }
         /// ditto
         void backgroundClip(BoxType value) { setProperty!"bgClip" = value; }
+
+        /// Set a color for all four border sides
+        void borderColor(Color value)
+        {
+            setProperty!"borderTopColor" = value;
+            setProperty!"borderRightColor" = value;
+            setProperty!"borderBottomColor" = value;
+            setProperty!"borderLeftColor" = value;
+        }
+        /// Color of the top widget border
+        Color borderTopColor() const { return _borderTopColor; }
+        /// ditto
+        void borderTopColor(Color value) { setProperty!"borderTopColor" = value; }
+        /// Color of the right widget border
+        Color borderRightColor() const { return _borderRightColor; }
+        /// ditto
+        void borderRightColor(Color value) { setProperty!"borderRightColor" = value; }
+        /// Color of the bottom widget border
+        Color borderBottomColor() const { return _borderBottomColor; }
+        /// ditto
+        void borderBottomColor(Color value) { setProperty!"borderBottomColor" = value; }
+        /// Color of the left widget border
+        Color borderLeftColor() const { return _borderLeftColor; }
+        /// ditto
+        void borderLeftColor(Color value) { setProperty!"borderLeftColor" = value; }
+
+        /// Set a line style for all four border sides
+        void borderStyle(BorderStyle value)
+        {
+            setProperty!"borderTopStyle" = value;
+            setProperty!"borderRightStyle" = value;
+            setProperty!"borderBottomStyle" = value;
+            setProperty!"borderLeftStyle" = value;
+        }
+        /// Line style of the top widget border
+        BorderStyle borderTopStyle() const { return _borderTopStyle; }
+        /// ditto
+        void borderTopStyle(BorderStyle value) { setProperty!"borderTopStyle" = value; }
+        /// Line style of the right widget border
+        BorderStyle borderRightStyle() const { return _borderRightStyle; }
+        /// ditto
+        void borderRightStyle(BorderStyle value) { setProperty!"borderRightStyle" = value; }
+        /// Line style of the bottom widget border
+        BorderStyle borderBottomStyle() const { return _borderBottomStyle; }
+        /// ditto
+        void borderBottomStyle(BorderStyle value) { setProperty!"borderBottomStyle" = value; }
+        /// Line style of the left widget border
+        BorderStyle borderLeftStyle() const { return _borderLeftStyle; }
+        /// ditto
+        void borderLeftStyle(BorderStyle value) { setProperty!"borderLeftStyle" = value; }
 
         inout(BoxShadowDrawable) boxShadow() inout { return _boxShadow; }
         /// ditto
@@ -479,6 +532,10 @@ struct ComputedStyle
         RepeatStyle _bgRepeat;
         BoxType _bgOrigin = BoxType.padding;
         BoxType _bgClip = BoxType.border;
+        BorderStyle _borderTopStyle = BorderStyle.none;
+        BorderStyle _borderRightStyle = BorderStyle.none;
+        BorderStyle _borderBottomStyle = BorderStyle.none;
+        BorderStyle _borderLeftStyle = BorderStyle.none;
         BoxShadowDrawable _boxShadow;
         // text
         string _fontFace = "Arial";
@@ -497,7 +554,10 @@ struct ComputedStyle
         Color _textColor = Color(0x000000);
         Color _focusRectColor = Color.transparent;
         // depend on text color
-        Color _borderColor = Color.transparent;
+        Color _borderTopColor = Color.transparent;
+        Color _borderRightColor = Color.transparent;
+        Color _borderBottomColor = Color.transparent;
+        Color _borderLeftColor = Color.transparent;
         Color _textDecorColor = Color(0x000000);
         // transitions and animations
         string _transitionProperty;
@@ -701,17 +761,37 @@ struct ComputedStyle
             return property == "padding-top" || property == "padding-right" ||
                    property == "padding-bottom" || property == "padding-left";
 
-        if (_transitionProperty == "border-width")
-            return property == "border-top-width" || property == "border-right-width" ||
-                   property == "border-bottom-width" || property == "border-left-width";
-
-        if (_transitionProperty == "border")
-            return property == "border-top-width" || property == "border-right-width" ||
-                   property == "border-bottom-width" || property == "border-left-width" ||
-                   property == "border-color";
-
         if (_transitionProperty == "background")
             return property == "background-color";
+
+        const bprefix = "border-";
+        const bplen = bprefix.length;
+        if (_transitionProperty == "border-width")
+        {
+            if (property.length <= bplen || property[0 .. bplen] != bprefix)
+                return false;
+            const rest = property[bplen .. $];
+            return rest == "top-width" || rest == "right-width" ||
+                   rest == "bottom-width" || rest == "left-width";
+        }
+        if (_transitionProperty == "border-color")
+        {
+            if (property.length <= bplen || property[0 .. bplen] != bprefix)
+                return false;
+            const rest = property[bplen .. $];
+            return rest == "top-color" || rest == "right-color" ||
+                   rest == "bottom-color" || rest == "left-color";
+        }
+        if (_transitionProperty == "border")
+        {
+            if (property.length <= bplen || property[0 .. bplen] != bprefix)
+                return false;
+            const rest = property[bplen .. $];
+            return rest == "top-width" || rest == "right-width" ||
+                   rest == "bottom-width" || rest == "left-width" ||
+                   rest == "top-color" || rest == "right-color" ||
+                   rest == "bottom-color" || rest == "left-color";
+        }
 
         return false;
     }
@@ -720,7 +800,12 @@ struct ComputedStyle
     {
         enum ptype = mixin(`StyleProperty.` ~ name);
 
-        static if (ptype == StyleProperty.borderColor || ptype == StyleProperty.textDecorColor)
+        static if (
+            ptype == StyleProperty.borderTopColor ||
+            ptype == StyleProperty.borderRightColor ||
+            ptype == StyleProperty.borderBottomColor ||
+            ptype == StyleProperty.borderLeftColor ||
+            ptype == StyleProperty.textDecorColor)
         {
             // must be computed before
             setProperty!name(_textColor, byUser);
@@ -806,23 +891,62 @@ private void explodeShorthands(Style st)
         StrHash("padding-right"),
         StrHash("padding-bottom"),
         StrHash("padding-left"));
+    static immutable bg = ShorthandDrawable(
+        StrHash("background"),
+        StrHash("background-color"),
+        StrHash("background-image"));
+    static immutable border = ShorthandBorder(
+        StrHash("border"),
+        StrHash("border-top-width"),
+        StrHash("border-top-style"),
+        StrHash("border-top-color"),
+        StrHash("border-right-width"),
+        StrHash("border-right-style"),
+        StrHash("border-right-color"),
+        StrHash("border-bottom-width"),
+        StrHash("border-bottom-style"),
+        StrHash("border-bottom-color"),
+        StrHash("border-left-width"),
+        StrHash("border-left-style"),
+        StrHash("border-left-color"));
     static immutable borderWidth = ShorthandInsets(
         StrHash("border-width"),
         StrHash("border-top-width"),
         StrHash("border-right-width"),
         StrHash("border-bottom-width"),
         StrHash("border-left-width"));
-    static immutable border = ShorthandBorder(
-        StrHash("border"),
+    static immutable borderStyle = ShorthandBorderStyle(
+        StrHash("border-style"),
+        StrHash("border-top-style"),
+        StrHash("border-right-style"),
+        StrHash("border-bottom-style"),
+        StrHash("border-left-style"));
+    static immutable borderColor = ShorthandColors(
+        StrHash("border-color"),
+        StrHash("border-top-color"),
+        StrHash("border-right-color"),
+        StrHash("border-bottom-color"),
+        StrHash("border-left-color"));
+    static immutable borderTop = ShorthandBorderSide(
+        StrHash("border-top"),
         StrHash("border-top-width"),
+        StrHash("border-top-style"),
+        StrHash("border-top-color"));
+    static immutable borderRight = ShorthandBorderSide(
+        StrHash("border-right"),
         StrHash("border-right-width"),
+        StrHash("border-right-style"),
+        StrHash("border-right-color"),);
+    static immutable borderBottom = ShorthandBorderSide(
+        StrHash("border-bottom"),
         StrHash("border-bottom-width"),
+        StrHash("border-bottom-style"),
+        StrHash("border-bottom-color"));
+    static immutable borderLeft = ShorthandBorderSide(
+        StrHash("border-left"),
         StrHash("border-left-width"),
-        StrHash("border-color"));
-    static immutable bg = ShorthandDrawable(
-        StrHash("background"),
-        StrHash("background-color"),
-        StrHash("background-image"));
+        StrHash("border-left-style"),
+        StrHash("border-left-color"));
     static immutable textDecor = ShorthandTextDecor(
         StrHash("text-decoration"),
         StrHash("text-decoration-line"),
@@ -836,9 +960,15 @@ private void explodeShorthands(Style st)
         StrHash("transition-delay"));
     st.explode(margin);
     st.explode(padding);
-    st.explode(borderWidth);
-    st.explode(border);
     st.explode(bg);
+    st.explode(border);
+    st.explode(borderWidth);
+    st.explode(borderStyle);
+    st.explode(borderColor);
+    st.explode(borderTop);
+    st.explode(borderRight);
+    st.explode(borderBottom);
+    st.explode(borderLeft);
     st.explode(textDecor);
     st.explode(transition);
 }
@@ -858,10 +988,6 @@ string getCSSName(StyleProperty ptype)
         case paddingRight:  return "padding-right";
         case paddingBottom: return "padding-bottom";
         case paddingLeft:   return "padding-left";
-        case borderTopWidth:    return "border-top-width";
-        case borderRightWidth:  return "border-right-width";
-        case borderBottomWidth: return "border-bottom-width";
-        case borderLeftWidth:   return "border-left-width";
         case marginTop:    return "margin-top";
         case marginRight:  return "margin-right";
         case marginBottom: return "margin-bottom";
@@ -870,14 +996,25 @@ string getCSSName(StyleProperty ptype)
         case spacing:    return "spacing";
         case rowSpacing: return "row-spacing";
         case columnSpacing: return "column-spacing";
-        case borderColor:     return "border-color";
-        case bgColor: return "background-color";
-        case bgImage: return "background-image";
+        case bgColor:    return "background-color";
+        case bgImage:    return "background-image";
         case bgPosition: return "background-position";
-        case bgSize: return "background-size";
-        case bgRepeat: return "background-repeat";
-        case bgOrigin: return "background-origin";
-        case bgClip: return "background-clip";
+        case bgSize:     return "background-size";
+        case bgRepeat:   return "background-repeat";
+        case bgOrigin:   return "background-origin";
+        case bgClip:     return "background-clip";
+        case borderTopWidth:    return "border-top-width";
+        case borderRightWidth:  return "border-right-width";
+        case borderBottomWidth: return "border-bottom-width";
+        case borderLeftWidth:   return "border-left-width";
+        case borderTopColor:    return "border-top-color";
+        case borderRightColor:  return "border-right-color";
+        case borderBottomColor: return "border-bottom-color";
+        case borderLeftColor:   return "border-left-color";
+        case borderTopStyle:    return "border-top-style";
+        case borderRightStyle:  return "border-right-style";
+        case borderBottomStyle: return "border-bottom-style";
+        case borderLeftStyle:   return "border-left-style";
         case boxShadow:  return "box-shadow";
         case fontFace:   return "font-face";
         case fontFamily: return "font-family";
@@ -924,14 +1061,14 @@ bool isAnimatable(StyleProperty ptype)
         case spacing:
         case rowSpacing:
         case columnSpacing:
-        case borderColor:
         case bgColor:
         case bgPosition:
         case bgSize:
-        case textDecorColor:
         case alpha:
         case textColor:
         case focusRectColor:
+        case borderTopColor: .. case borderLeftColor:
+        case textDecorColor:
             return true;
         default:
             return false;

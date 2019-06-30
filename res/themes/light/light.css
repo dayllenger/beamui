@@ -264,7 +264,7 @@ TabControl::more:hovered { opacity: 1; }
 
 TabHost { padding: 6px; background-color: #f2f4f5; }
 
-TabItem { padding: 6px 1px 0 0; spacing: 0; border-color: transparent; }
+TabItem { padding: 6px 1px 0 0; spacing: 0; border: 0 solid transparent; }
 
 TabControl.top TabItem { border-bottom-width: 2px; }
 
@@ -323,9 +323,9 @@ StatusLine { weight: 0; padding: 1px; background-color: #eceffa; }
 /* ========================================================================== toolbars.d */
 ToolBarHost { padding: 6px; spacing: 8; }
 
-ToolBar { padding-left: 6px; spacing: 4; border-color: #bbb; border-left-width: 2px; }
+ToolBar { padding-left: 6px; spacing: 4; border-color: #bbb; border-style: solid; border-left-width: 2px; }
 
-ToolBar::separator { margin-top: 3px; margin-bottom: 3px; border-color: #999; border-left-width: 1px; }
+ToolBar::separator { margin-top: 3px; margin-bottom: 3px; border-color: #999; border-style: solid; border-left-width: 1px; }
 
 ToolBar * { background: none; }
 

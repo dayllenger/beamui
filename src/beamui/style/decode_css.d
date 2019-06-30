@@ -351,7 +351,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
         else
         {
             const x = decode!Length(tokens[0 .. 1]);
-            if (!x.err)
+            if (x)
                 ret.x = x.val;
             else
                 return Err!BgPositionRaw;
@@ -379,7 +379,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
         else
         {
             const x = decode!Length(tokens[0 .. 1]);
-            if (!x.err)
+            if (x)
                 ret.x = x.val;
             else
                 return Err!BgPositionRaw;
@@ -399,7 +399,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
         else
         {
             const y = decode!Length(tokens[1 .. 2]);
-            if (!y.err)
+            if (y)
                 ret.y = y.val;
             else
                 return Err!BgPositionRaw;
@@ -433,7 +433,7 @@ Result!BgSizeRaw decode(T : BgSizeRaw)(const(Token)[] tokens)
         else
         {
             const x = decode!Length(tokens[0 .. 1]);
-            if (!x.err)
+            if (x)
                 ret.x = x.val;
             else
                 return Err!BgSizeRaw;
@@ -449,7 +449,7 @@ Result!BgSizeRaw decode(T : BgSizeRaw)(const(Token)[] tokens)
         if (t1.type != TokenType.ident || t1.text != "auto")
         {
             const x = decode!Length(tokens[0 .. 1]);
-            if (!x.err)
+            if (x)
                 ret.x = x.val;
             else
                 return Err!BgSizeRaw;
@@ -457,7 +457,7 @@ Result!BgSizeRaw decode(T : BgSizeRaw)(const(Token)[] tokens)
         if (t2.type != TokenType.ident || t2.text != "auto")
         {
             const y = decode!Length(tokens[1 .. 2]);
-            if (!y.err)
+            if (y)
                 ret.y = y.val;
             else
                 return Err!BgSizeRaw;
@@ -489,7 +489,7 @@ Result!RepeatStyle decode(T : RepeatStyle)(const(Token)[] tokens)
             }
         }
         const both = decodeTiling(t);
-        if (!both.err)
+        if (both)
         {
             ret.x = both.val;
             ret.y = both.val;
@@ -502,7 +502,7 @@ Result!RepeatStyle decode(T : RepeatStyle)(const(Token)[] tokens)
             toomany("repeat style", tokens[0].line);
         const x = decodeTiling(tokens[0]);
         const y = decodeTiling(tokens[1]);
-        if (!x.err && !y.err)
+        if (x && y)
         {
             ret.x = x.val;
             ret.y = y.val;
@@ -556,7 +556,34 @@ Result!BoxType decode(T : BoxType)(const(Token)[] tokens)
     }
 }
 
-alias BorderHere = Tup!(Result!Color, Result!Length);
+/// Decode border style property
+Result!BorderStyle decode(T : BorderStyle)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "border style";
+    const t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        shouldbe(what, "an identifier", t);
+        return Err!BorderStyle;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+    switch (t.text)
+    {
+        case "solid":  return Ok(BorderStyle.solid);
+        case "none":   return Ok(BorderStyle.none);
+        case "dotted": return Ok(BorderStyle.dotted);
+        case "dashed": return Ok(BorderStyle.dashed);
+        case "double": return Ok(BorderStyle.doubled);
+        default:
+            unknown(what, t);
+            return Err!BorderStyle;
+    }
+}
+
+alias BorderHere = Tup!(Result!Length, BorderStyle, Result!Color);
 /// Decode shortcut border property
 Result!BorderHere decodeBorder(const(Token)[] tokens)
 {
@@ -568,10 +595,11 @@ Result!BorderHere decodeBorder(const(Token)[] tokens)
 
     if (tokens[0].type == TokenType.ident && tokens[0].text == "none")
     {
-        result[0] = Ok(Color.transparent);
-        result[1] = Ok(Length.zero);
+        result[0] = Ok(Length.zero);
+        result[2] = Ok(Color.transparent);
         return Ok(result);
     }
+    // width
     if (startsWithLength(tokens))
     {
         if (const res = decode!Length(tokens))
@@ -582,24 +610,39 @@ Result!BorderHere decodeBorder(const(Token)[] tokens)
                 return E();
             }
             else
-                result[1] = res;
+                result[0] = res;
         }
         else
             return E();
         tokens = tokens[1 .. $];
     }
-    // style is not implemented yet
+    // style
     if (tokens.length > 0)
-        tokens = tokens[1 .. $];
+    {
+        const st = decode!BorderStyle(tokens[0 .. 1]);
+        if (st)
+        {
+            result[1] = st.val;
+            tokens = tokens[1 .. $];
+        }
+        else
+            return E();
+    }
+    else
+    {
+        Log.fe("CSS(%s): border style is required", line);
+        return E();
+    }
+    // color
     if (startsWithColor(tokens))
     {
         if (const res = decode!Color(tokens))
-            result[0] = res;
+            result[2] = res;
         else
             return E();
     }
 
-    if (result[0] || result[1])
+    if (result[0] || result[2])
     {
         if (tokens.length > 0)
             toomany("border", line);

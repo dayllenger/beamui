@@ -14,7 +14,7 @@ import beamui.core.types : Result, State;
 import beamui.core.units : Length;
 import CSS = beamui.css.tokenizer;
 import beamui.graphics.colors : Color;
-import beamui.graphics.drawables : Drawable;
+import beamui.graphics.drawables : BorderStyle, Drawable;
 import beamui.style.decode_css;
 import beamui.style.types;
 
@@ -138,30 +138,27 @@ final class Style
         }
     }
 
-    /// Find a shorthand border property, split it into components and decode
-    void explode(ref immutable ShorthandBorder sh)
+    /// Find a shorthand color property, split it into components and decode
+    void explode(ref immutable ShorthandColors sh)
     {
         if (auto p = sh.name in rawProperties)
         {
-            if (auto res = decodeBorder(*p))
+            if (auto res = decode!Color(*p))
             {
-                auto color = res.val[0];
-                auto width = res.val[1];
-                tryToSetShorthandPart(sh.topWidth, width.err, Variant(width.val));
-                tryToSetShorthandPart(sh.rightWidth, width.err, Variant(width.val));
-                tryToSetShorthandPart(sh.bottomWidth, width.err, Variant(width.val));
-                tryToSetShorthandPart(sh.leftWidth, width.err, Variant(width.val));
-                tryToSetShorthandPart(sh.color, color.err, Variant(color.val));
+                auto v = Variant(res.val);
+                tryToSetShorthandPart(sh.top, false, v);
+                tryToSetShorthandPart(sh.right, false, v);
+                tryToSetShorthandPart(sh.bottom, false, v);
+                tryToSetShorthandPart(sh.left, false, v);
             }
             rawProperties.remove(sh.name);
         }
         if (auto p = sh.name in metaProperties)
         {
-            metaProperties[sh.topWidth] = *p;
-            metaProperties[sh.rightWidth] = *p;
-            metaProperties[sh.bottomWidth] = *p;
-            metaProperties[sh.leftWidth] = *p;
-            metaProperties[sh.color] = *p;
+            metaProperties[sh.top] = *p;
+            metaProperties[sh.right] = *p;
+            metaProperties[sh.bottom] = *p;
+            metaProperties[sh.left] = *p;
             metaProperties.remove(sh.name);
         }
     }
@@ -208,6 +205,95 @@ final class Style
             metaProperties[sh.right] = *p;
             metaProperties[sh.bottom] = *p;
             metaProperties[sh.left] = *p;
+            metaProperties.remove(sh.name);
+        }
+    }
+    /// Find a shorthand border property, split it into components and decode
+    void explode(ref immutable ShorthandBorder sh)
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            if (auto res = decodeBorder(*p))
+            {
+                auto wv = Variant(res.val[0].val);
+                auto sv = Variant(res.val[1]);
+                auto cv = Variant(res.val[2].val);
+                const wreset = res.val[0].err;
+                const creset = res.val[2].err;
+                tryToSetShorthandPart(sh.topWidth, wreset, wv);
+                tryToSetShorthandPart(sh.topStyle, false, sv);
+                tryToSetShorthandPart(sh.topColor, creset, cv);
+                tryToSetShorthandPart(sh.rightWidth, wreset, wv);
+                tryToSetShorthandPart(sh.rightStyle, false, sv);
+                tryToSetShorthandPart(sh.rightColor, creset, cv);
+                tryToSetShorthandPart(sh.bottomWidth, wreset, wv);
+                tryToSetShorthandPart(sh.bottomStyle, false, sv);
+                tryToSetShorthandPart(sh.bottomColor, creset, cv);
+                tryToSetShorthandPart(sh.leftWidth, wreset, wv);
+                tryToSetShorthandPart(sh.leftStyle, false, sv);
+                tryToSetShorthandPart(sh.leftColor, creset, cv);
+            }
+            rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.topWidth] = *p;
+            metaProperties[sh.topStyle] = *p;
+            metaProperties[sh.topColor] = *p;
+            metaProperties[sh.rightWidth] = *p;
+            metaProperties[sh.rightStyle] = *p;
+            metaProperties[sh.rightColor] = *p;
+            metaProperties[sh.bottomWidth] = *p;
+            metaProperties[sh.bottomStyle] = *p;
+            metaProperties[sh.bottomColor] = *p;
+            metaProperties[sh.leftWidth] = *p;
+            metaProperties[sh.leftStyle] = *p;
+            metaProperties[sh.leftColor] = *p;
+            metaProperties.remove(sh.name);
+        }
+    }
+    /// Find a shorthand border style property, split it into components and decode
+    void explode(ref immutable ShorthandBorderStyle sh)
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            if (auto res = decode!BorderStyle(*p))
+            {
+                auto v = Variant(res.val);
+                tryToSetShorthandPart(sh.top, false, v);
+                tryToSetShorthandPart(sh.right, false, v);
+                tryToSetShorthandPart(sh.bottom, false, v);
+                tryToSetShorthandPart(sh.left, false, v);
+            }
+            rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.top] = *p;
+            metaProperties[sh.right] = *p;
+            metaProperties[sh.bottom] = *p;
+            metaProperties[sh.left] = *p;
+            metaProperties.remove(sh.name);
+        }
+    }
+    /// Find a shorthand border side property, split it into components and decode
+    void explode(ref immutable ShorthandBorderSide sh)
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            if (auto res = decodeBorder(*p))
+            {
+                tryToSetShorthandPart(sh.width, res.val[0].err, Variant(res.val[0].val));
+                tryToSetShorthandPart(sh.style, false, Variant(res.val[1]));
+                tryToSetShorthandPart(sh.color, res.val[2].err, Variant(res.val[2].val));
+            }
+            rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.width] = *p;
+            metaProperties[sh.style] = *p;
+            metaProperties[sh.color] = *p;
             metaProperties.remove(sh.name);
         }
     }

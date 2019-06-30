@@ -268,14 +268,13 @@ enum SpecialCSSType
     transitionProperty, /// string
 }
 
-struct ShorthandBorder
+struct ShorthandInsets
 {
     size_t name;
-    size_t topWidth;
-    size_t rightWidth;
-    size_t bottomWidth;
-    size_t leftWidth;
-    size_t color;
+    size_t top;
+    size_t right;
+    size_t bottom;
+    size_t left;
 }
 
 struct ShorthandDrawable
@@ -285,13 +284,47 @@ struct ShorthandDrawable
     size_t image;
 }
 
-struct ShorthandInsets
+struct ShorthandColors
 {
     size_t name;
     size_t top;
     size_t right;
     size_t bottom;
     size_t left;
+}
+
+struct ShorthandBorder
+{
+    size_t name;
+    size_t topWidth;
+    size_t topStyle;
+    size_t topColor;
+    size_t rightWidth;
+    size_t rightStyle;
+    size_t rightColor;
+    size_t bottomWidth;
+    size_t bottomStyle;
+    size_t bottomColor;
+    size_t leftWidth;
+    size_t leftStyle;
+    size_t leftColor;
+}
+
+struct ShorthandBorderStyle
+{
+    size_t name;
+    size_t top;
+    size_t right;
+    size_t bottom;
+    size_t left;
+}
+
+struct ShorthandBorderSide
+{
+    size_t name;
+    size_t width;
+    size_t style;
+    size_t color;
 }
 
 struct ShorthandTextDecor
