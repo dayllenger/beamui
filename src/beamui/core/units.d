@@ -35,7 +35,7 @@ struct Length
     /// Zero length
     enum Length zero = Length.device(0);
     /// Unspecified length
-    enum Length none = Length.device(SIZE_UNSPECIFIED!int);
+    enum Length none = Length.init;
 
     /// Construct with some value and type
     this(float value, LengthUnit type)

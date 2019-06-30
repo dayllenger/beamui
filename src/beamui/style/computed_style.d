@@ -8,7 +8,7 @@ module beamui.style.computed_style;
 
 import beamui.core.animations;
 import beamui.core.functions : clamp, eliminate, format;
-import beamui.core.geometry : Insets;
+import beamui.core.geometry : Insets, isDefinedSize;
 import beamui.core.types : Result, Ok;
 import beamui.core.units : Length, LayoutLength;
 import beamui.graphics.colors : Color, decodeHexColor, decodeTextColor;
@@ -99,49 +99,56 @@ struct ComputedStyle
         /// Widget natural (preferred) width (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength width() const { return applyEM(_width); }
         /// ditto
-        void width(Length value) { setProperty!"width" = value; }
+        void width(Length len) { setProperty!"width" = len; }
         /// ditto
-        void width(int value) { setProperty!"width" = Length.px(value); }
+        void width(int px) { setProperty!"width" = Length.px(px); }
         /// Widget natural (preferred) height (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength height() const { return applyEM(_height); }
         /// ditto
-        void height(Length value) { setProperty!"height" = value; }
+        void height(Length len) { setProperty!"height" = len; }
         /// ditto
-        void height(int value) { setProperty!"height" = Length.px(value); }
-        /// Min width style constraint (0, `Length.zero` or `Length.none` to unset)
+        void height(int px) { setProperty!"height" = Length.px(px); }
+
+        /// Min width style constraint (0 or `Length.zero` to unset)
         LayoutLength minWidth() const { return applyEM(_minWidth); }
         /// ditto
-        void minWidth(Length value)
+        void minWidth(Length len)
         {
-            if (value == Length.none)
-                value = Length.zero;
-            setProperty!"minWidth" = value;
+            assert(len != Length.none);
+            setProperty!"minWidth" = len;
         }
         /// ditto
-        void minWidth(int value) { setProperty!"minWidth" = Length.px(value); } // TODO: clamp
+        void minWidth(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"minWidth" = Length.px(px);
+        }
+        /// Min height style constraint (0 or `Length.zero` to unset)
+        LayoutLength minHeight() const { return applyEM(_minHeight); }
+        /// ditto
+        void minHeight(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"minHeight" = len;
+        }
+        /// ditto
+        void minHeight(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"minHeight" = Length.px(px);
+        }
         /// Max width style constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength maxWidth() const { return applyEM(_maxWidth); }
         /// ditto
-        void maxWidth(Length value) { setProperty!"maxWidth" = value; }
+        void maxWidth(Length len) { setProperty!"maxWidth" = len; }
         /// ditto
-        void maxWidth(int value) { setProperty!"maxWidth" = Length.px(value); }
-        /// Min height style constraint (0, `Length.zero` or `Length.none` to unset)
-        LayoutLength minHeight() const { return applyEM(_minHeight); }
-        /// ditto
-        void minHeight(Length value)
-        {
-            if (value == Length.none)
-                value = Length.zero;
-            setProperty!"minHeight" = value;
-        }
-        /// ditto
-        void minHeight(int value) { setProperty!"minHeight" = Length.px(value); }
+        void maxWidth(int px) { setProperty!"maxWidth" = Length.px(px); }
         /// Max height style constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength maxHeight() const { return applyEM(_maxHeight); }
         /// ditto
-        void maxHeight(Length value) { setProperty!"maxHeight" = value; }
+        void maxHeight(Length len) { setProperty!"maxHeight" = len; }
         /// ditto
-        void maxHeight(int value) { setProperty!"maxHeight" = Length.px(value); }
+        void maxHeight(int px) { setProperty!"maxHeight" = Length.px(px); }
 
         /// Padding (between background bounds and content of widget)
         Insets padding() const
@@ -150,37 +157,84 @@ struct ComputedStyle
                           applyOnlyEM(_paddingBottom), applyOnlyEM(_paddingLeft));
         }
         /// ditto
-        void padding(Insets value)
+        void padding(Insets px4)
         {
-            setProperty!"paddingTop" = Length.px(value.top);
-            setProperty!"paddingRight" = Length.px(value.right);
-            setProperty!"paddingBottom" = Length.px(value.bottom);
-            setProperty!"paddingLeft" = Length.px(value.left);
+            if (isDefinedSize(px4.top))
+                setProperty!"paddingTop" = Length.px(px4.top);
+            if (isDefinedSize(px4.right))
+                setProperty!"paddingRight" = Length.px(px4.right);
+            if (isDefinedSize(px4.bottom))
+                setProperty!"paddingBottom" = Length.px(px4.bottom);
+            if (isDefinedSize(px4.left))
+                setProperty!"paddingLeft" = Length.px(px4.left);
         }
         /// ditto
-        void padding(int v)
+        void padding(Length len)
         {
-            setProperty!"paddingTop" = Length.px(v);
-            setProperty!"paddingRight" = Length.px(v);
-            setProperty!"paddingBottom" = Length.px(v);
-            setProperty!"paddingLeft" = Length.px(v);
+            assert(len != Length.none);
+            setProperty!"paddingTop" = len;
+            setProperty!"paddingRight" = len;
+            setProperty!"paddingBottom" = len;
+            setProperty!"paddingLeft" = len;
         }
+        /// ditto
+        void padding(int px) { padding = Length.px(px); }
         /// Top padding value
         int paddingTop() const { return applyOnlyEM(_paddingTop); }
         /// ditto
-        void paddingTop(int value) { setProperty!"paddingTop" = Length.px(value); }
+        void paddingTop(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"paddingTop" = len;
+        }
+        /// ditto
+        void paddingTop(int px)
+        {
+            assert(isDefinedSize(px));
+            paddingTop = Length.px(px);
+        }
         /// Right padding value
         int paddingRight() const { return applyOnlyEM(_paddingRight); }
         /// ditto
-        void paddingRight(int value) { setProperty!"paddingRight" = Length.px(value); }
+        void paddingRight(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"paddingRight" = len;
+        }
+        /// ditto
+        void paddingRight(int px)
+        {
+            assert(isDefinedSize(px));
+            paddingRight = Length.px(px);
+        }
         /// Bottom padding value
         int paddingBottom() const { return applyOnlyEM(_paddingBottom); }
         /// ditto
-        void paddingBottom(int value) { setProperty!"paddingBottom" = Length.px(value); }
+        void paddingBottom(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"paddingBottom" = len;
+        }
+        /// ditto
+        void paddingBottom(int px)
+        {
+            assert(isDefinedSize(px));
+            paddingBottom = Length.px(px);
+        }
         /// Left padding value
         int paddingLeft() const { return applyOnlyEM(_paddingLeft); }
         /// ditto
-        void paddingLeft(int value) { setProperty!"paddingLeft" = Length.px(value); }
+        void paddingLeft(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"paddingLeft" = len;
+        }
+        /// ditto
+        void paddingLeft(int px)
+        {
+            assert(isDefinedSize(px));
+            paddingLeft = Length.px(px);
+        }
 
         Insets borderWidth() const
         {
@@ -188,37 +242,84 @@ struct ComputedStyle
                           applyOnlyEM(_borderBottomWidth), applyOnlyEM(_borderLeftWidth));
         }
         /// ditto
-        void borderWidth(Insets value)
+        void borderWidth(Insets px4)
         {
-            setProperty!"borderTopWidth" = Length.px(value.top);
-            setProperty!"borderRightWidth" = Length.px(value.right);
-            setProperty!"borderBottomWidth" = Length.px(value.bottom);
-            setProperty!"borderLeftWidth" = Length.px(value.left);
+            if (isDefinedSize(px4.top))
+                setProperty!"borderTopWidth" = Length.px(px4.top);
+            if (isDefinedSize(px4.right))
+                setProperty!"borderRightWidth" = Length.px(px4.right);
+            if (isDefinedSize(px4.bottom))
+                setProperty!"borderBottomWidth" = Length.px(px4.bottom);
+            if (isDefinedSize(px4.left))
+                setProperty!"borderLeftWidth" = Length.px(px4.left);
         }
         /// ditto
-        void borderWidth(int v)
+        void borderWidth(Length len)
         {
-            setProperty!"borderTopWidth" = Length.px(v);
-            setProperty!"borderRightWidth" = Length.px(v);
-            setProperty!"borderBottomWidth" = Length.px(v);
-            setProperty!"borderLeftWidth" = Length.px(v);
+            assert(len != Length.none);
+            setProperty!"borderTopWidth" = len;
+            setProperty!"borderRightWidth" = len;
+            setProperty!"borderBottomWidth" = len;
+            setProperty!"borderLeftWidth" = len;
         }
+        /// ditto
+        void borderWidth(int px) { borderWidth = Length.px(px); }
 
         int borderTopWidth() const { return applyOnlyEM(_borderTopWidth); }
         /// ditto
-        void borderTopWidth(int value) { setProperty!"borderTopWidth" = Length.px(value); }
+        void borderTopWidth(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"borderTopWidth" = len;
+        }
+        /// ditto
+        void borderTopWidth(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"borderTopWidth" = Length.px(px);
+        }
 
         int borderRightWidth() const { return applyOnlyEM(_borderRightWidth); }
         /// ditto
-        void borderRightWidth(int value) { setProperty!"borderRightWidth" = Length.px(value); }
+        void borderRightWidth(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"borderRightWidth" = len;
+        }
+        /// ditto
+        void borderRightWidth(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"borderRightWidth" = Length.px(px);
+        }
 
         int borderBottomWidth() const { return applyOnlyEM(_borderBottomWidth); }
         /// ditto
-        void borderBottomWidth(int value) { setProperty!"borderBottomWidth" = Length.px(value); }
+        void borderBottomWidth(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"borderBottomWidth" = len;
+        }
+        /// ditto
+        void borderBottomWidth(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"borderBottomWidth" = Length.px(px);
+        }
 
         int borderLeftWidth() const { return applyOnlyEM(_borderLeftWidth); }
         /// ditto
-        void borderLeftWidth(int value) { setProperty!"borderLeftWidth" = Length.px(value); }
+        void borderLeftWidth(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"borderLeftWidth" = len;
+        }
+        /// ditto
+        void borderLeftWidth(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"borderLeftWidth" = Length.px(px);
+        }
 
         /// Margins (between widget bounds and its background)
         Insets margins() const
@@ -227,37 +328,84 @@ struct ComputedStyle
                           applyOnlyEM(_marginBottom), applyOnlyEM(_marginLeft));
         }
         /// ditto
-        void margins(Insets value)
+        void margins(Insets px4)
         {
-            setProperty!"marginTop" = Length.px(value.top);
-            setProperty!"marginRight" = Length.px(value.right);
-            setProperty!"marginBottom" = Length.px(value.bottom);
-            setProperty!"marginLeft" = Length.px(value.left);
+            if (isDefinedSize(px4.top))
+                setProperty!"marginTop" = Length.px(px4.top);
+            if (isDefinedSize(px4.right))
+                setProperty!"marginRight" = Length.px(px4.right);
+            if (isDefinedSize(px4.bottom))
+                setProperty!"marginBottom" = Length.px(px4.bottom);
+            if (isDefinedSize(px4.left))
+                setProperty!"marginLeft" = Length.px(px4.left);
         }
         /// ditto
-        void margins(int v)
+        void margins(Length len)
         {
-            setProperty!"marginTop" = Length.px(v);
-            setProperty!"marginRight" = Length.px(v);
-            setProperty!"marginBottom" = Length.px(v);
-            setProperty!"marginLeft" = Length.px(v);
+            assert(len != Length.none);
+            setProperty!"marginTop" = len;
+            setProperty!"marginRight" = len;
+            setProperty!"marginBottom" = len;
+            setProperty!"marginLeft" = len;
         }
+        /// ditto
+        void margins(int px) { margins = Length.px(px); }
         /// Top margin value
         int marginTop() const { return applyOnlyEM(_marginTop); }
         /// ditto
-        void marginTop(int value) { setProperty!"marginTop" = Length.px(value); }
+        void marginTop(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"marginTop" = len;
+        }
+        /// ditto
+        void marginTop(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"marginTop" = Length.px(px);
+        }
         /// Right margin value
         int marginRight() const { return applyOnlyEM(_marginRight); }
         /// ditto
-        void marginRight(int value) { setProperty!"marginRight" = Length.px(value); }
+        void marginRight(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"marginRight" = len;
+        }
+        /// ditto
+        void marginRight(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"marginRight" = Length.px(px);
+        }
         /// Bottom margin value
         int marginBottom() const { return applyOnlyEM(_marginBottom); }
         /// ditto
-        void marginBottom(int value) { setProperty!"marginBottom" = Length.px(value); }
+        void marginBottom(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"marginBottom" = len;
+        }
+        /// ditto
+        void marginBottom(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"marginBottom" = Length.px(px);
+        }
         /// Left margin value
         int marginLeft() const { return applyOnlyEM(_marginLeft); }
         /// ditto
-        void marginLeft(int value) { setProperty!"marginLeft" = Length.px(value); }
+        void marginLeft(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"marginLeft" = len;
+        }
+        /// ditto
+        void marginLeft(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"marginLeft" = Length.px(px);
+        }
 
         /// Alignment (combined vertical and horizontal)
         Align alignment() const { return _alignment; }
@@ -271,28 +419,28 @@ struct ComputedStyle
         /// Space between items in layouts
         int spacing() const { return _spacing; }
         /// ditto
-        void spacing(int value) { setProperty!"spacing" = value; }
+        void spacing(int px) { setProperty!"spacing" = px; }
         /// Space between rows (vertical)
         int rowSpacing() const { return _rowSpacing; }
         /// ditto
-        void rowSpacing(int value) { setProperty!"rowSpacing" = value; }
+        void rowSpacing(int px) { setProperty!"rowSpacing" = px; }
         /// Space between columns (horizontal)
         int columnSpacing() const { return _columnSpacing; }
         /// ditto
-        void columnSpacing(int value) { setProperty!"columnSpacing" = value; }
+        void columnSpacing(int px) { setProperty!"columnSpacing" = px; }
 
         /// Background color of the widget
         Color backgroundColor() const { return _bgColor; }
         /// ditto
         void backgroundColor(Color value) { setProperty!"bgColor" = value; }
         /// Set background color as ARGB 32 bit value
-        void backgroundColor(uint value) { setProperty!"bgColor" = Color(value); }
+        void backgroundColor(uint hex) { setProperty!"bgColor" = Color(hex); }
         /// Set background color from string like "#5599CC" or "white"
-        void backgroundColor(string colorString)
+        void backgroundColor(string str)
         {
             setProperty!"bgColor" =
-                decodeHexColor(colorString)
-                    .failed(decodeTextColor(colorString))
+                decodeHexColor(str)
+                    .failed(decodeTextColor(str))
                     .failed(Ok(Color.transparent))
                     .val;
         }
@@ -321,11 +469,11 @@ struct ComputedStyle
 
         BoxType backgroundOrigin() const { return _bgOrigin; }
         /// ditto
-        void backgroundOrigin(BoxType value) { setProperty!"bgOrigin" = value; }
+        void backgroundOrigin(BoxType box) { setProperty!"bgOrigin" = box; }
 
         BoxType backgroundClip() const { return _bgClip; }
         /// ditto
-        void backgroundClip(BoxType value) { setProperty!"bgClip" = value; }
+        void backgroundClip(BoxType box) { setProperty!"bgClip" = box; }
 
         /// Set a color for all four border sides
         void borderColor(Color value)
@@ -406,15 +554,17 @@ struct ComputedStyle
             return ll.applyPercent(base);
         }
         /// ditto
-        void fontSize(Length value)
+        void fontSize(Length len)
         {
-            if (value != Length.none)
-                setProperty!"fontSize" = value;
-            else
-                setDefault!"fontSize"(true);
+            assert(len != Length.none);
+            setProperty!"fontSize" = len;
         }
         /// ditto
-        void fontSize(int size) { fontSize = Length.px(size); }
+        void fontSize(int px)
+        {
+            assert(isDefinedSize(px));
+            fontSize = Length.px(px);
+        }
         /// Font weight for widget
         ushort fontWeight() const { return _fontWeight; }
         /// ditto
@@ -473,13 +623,13 @@ struct ComputedStyle
         /// ditto
         void textColor(Color value) { setProperty!"textColor" = value; }
         /// Set text color as ARGB 32 bit value
-        void textColor(uint value) { setProperty!"textColor" = Color(value); }
+        void textColor(uint hex) { setProperty!"textColor" = Color(hex); }
         /// Set text color from string like "#5599CC" or "white"
-        void textColor(string colorString)
+        void textColor(string str)
         {
             setProperty!"textColor" =
-                decodeHexColor(colorString)
-                    .failed(decodeTextColor(colorString))
+                decodeHexColor(str)
+                    .failed(decodeTextColor(str))
                     .failed(Ok(Color.transparent))
                     .val;
         }
@@ -810,15 +960,8 @@ struct ComputedStyle
             // must be computed before
             setProperty!name(_textColor, byUser);
         }
-        else static if (ptype == StyleProperty.fontSize)
-        {
-            const int def = FontManager.defaultFontSize;
-            setProperty!name(Length.px(def), byUser);
-        }
         else
-        {
             setProperty!name(mixin(`defaults._` ~ name), byUser);
-        }
     }
 
     /// Set a property value, taking transitions into account
