@@ -55,6 +55,42 @@ align(1):
         a = cast(ubyte)(alpha & 0xFF);
     }
 
+    /// Make a color from HSL representation. `h`, `s`, and `l` must be in [0, 1] range
+    static Color fromHSLA(float h, float s, float l, uint a)
+    {
+        assert(0 <= h && h <= 1);
+        assert(0 <= s && s <= 1);
+        assert(0 <= l && l <= 1);
+
+        if (s == 0) // achromatic
+        {
+            const v = cast(uint)(l * 255);
+            return Color(v, v, v, a);
+        }
+
+        static float hue2rgb(float p, float q, float t)
+        {
+            if (t < 0)
+                t += 1;
+            if (t > 1)
+                t -= 1;
+            if (t < 1.0f / 6)
+                return p + (q - p) * 6 * t;
+            if (t < 1.0f / 2)
+                return q;
+            if (t < 2.0f / 3)
+                return p + (q - p) * (2.0f / 3 - t) * 6;
+            return p;
+        }
+
+        const q = l < 0.5f ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        const r = hue2rgb(p, q, h + 1.0f / 3);
+        const g = hue2rgb(p, q, h);
+        const b = hue2rgb(p, q, h - 1.0f / 3);
+        return Color(cast(uint)(r * 255), cast(uint)(g * 255), cast(uint)(b * 255), a);
+    }
+
     @property
     {
         /// Get the "hexadecimal" 32-bit 0xAARRGGBB representation

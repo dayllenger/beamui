@@ -13,7 +13,7 @@ import std.exception : assertNotThrown;
 import beamui.core.animations : TimingFunction;
 import beamui.core.functions;
 import beamui.core.logger;
-import beamui.core.types : Result, Ok, Err, Tup;
+import beamui.core.types : Result, Ok, Err, Tup, tup;
 import beamui.core.units;
 import beamui.css.tokenizer : Token, TokenType;
 import beamui.graphics.colors;
@@ -102,7 +102,7 @@ Result!Align decode(T : Align)(const Token[] tokens)
     assert(tokens.length > 0);
 
     Align result;
-    foreach (t; tokens)
+    foreach (ref t; tokens)
     {
         if (t.type != TokenType.ident)
         {
@@ -134,7 +134,7 @@ Length[] decodeInsets(const Token[] tokens)
 
     Length[] result;
     result.reserve(4);
-    foreach (t; tokens)
+    foreach (ref t; tokens)
     {
         if (t.type == TokenType.number || t.type == TokenType.dimension)
         {
@@ -815,7 +815,7 @@ Result!TextDecorLine decode(T : TextDecorLine)(const Token[] tokens)
 
     const what = "text decoration line";
     TextDecorLine result;
-    foreach (t; tokens)
+    foreach (ref t; tokens)
     {
         if (t.type != TokenType.ident)
         {
@@ -996,35 +996,88 @@ Result!Color decode(T : Color)(ref const(Token)[] tokens)
     }
     if (t.type == TokenType.func)
     {
-        const(Token)[] func;
-        foreach (i, tok; tokens)
+        Tup!(string, bool)[4] args;
+        uint argsCount;
+        bool closed;
+        foreach (i, ref tok; tokens)
         {
             if (tok.type == TokenType.closeParen)
             {
-                func = tokens[0 .. i];
+                tokens = tokens[i + 1 .. $];
+                closed = true;
                 break;
             }
+            if (tok.type == TokenType.number || tok.type == TokenType.percentage)
+            {
+                if (argsCount < 4)
+                    args[argsCount] = tup(tok.text, tok.type == TokenType.percentage);
+                argsCount++;
+            }
         }
-        if (func is null)
+        if (!closed)
         {
             Log.fe("CSS(%s): expected closing parenthesis", t.line);
             return Err!Color;
         }
-        else
-            tokens = tokens[func.length + 1 .. $];
+        if (argsCount > 4)
+            toomany("color function", t.line);
 
-        string fn = t.text;
+        const fn = t.text;
         if (fn == "rgb" || fn == "rgba")
         {
-            func = func.efilter!(t => t.type == TokenType.number);
-            auto convert = (size_t idx) => func.length > idx ? clamp(to!uint(func[idx].text), 0, 255) : 0;
-            uint r = convert(0);
-            uint g = convert(1);
-            uint b = convert(2);
-            uint a = func.length > 3 ? opacityToAlpha(to!float(func[3].text)) : 0;
+            uint r, g, b, a;
+            if (argsCount > 0)
+            {
+                float f = to!float(args[0][0]);
+                if (args[0][1])
+                    f *= 2.55f;
+                r = cast(uint)clamp(f, 0, 255);
+            }
+            if (argsCount > 1)
+            {
+                float f = to!float(args[1][0]);
+                if (args[1][1])
+                    f *= 2.55f;
+                g = cast(uint)clamp(f, 0, 255);
+            }
+            if (argsCount > 2)
+            {
+                float f = to!float(args[2][0]);
+                if (args[2][1])
+                    f *= 2.55f;
+                b = cast(uint)clamp(f, 0, 255);
+            }
+            if (argsCount > 3)
+            {
+                const f = to!float(args[3][0]);
+                a = opacityToAlpha(args[3][1] ? f / 100 : f);
+            }
             return Ok(Color(r, g, b, a));
         }
-        // TODO: hsl, hsla
+        else if (fn == "hsl" || fn == "hsla")
+        {
+            float h = 0, s = 0, l = 0;
+            uint a;
+            if (argsCount > 0 && !args[0][1])
+            {
+                const ih = cast(int)to!float(args[0][0]);
+                h = ((ih % 360 + 360) % 360) / 360.0f;
+            }
+            if (argsCount > 1 && args[1][1])
+            {
+                s = clamp(to!float(args[1][0]) / 100, 0, 1);
+            }
+            if (argsCount > 2 && args[2][1])
+            {
+                l = clamp(to!float(args[2][0]) / 100, 0, 1);
+            }
+            if (argsCount > 3)
+            {
+                const f = to!float(args[3][0]);
+                a = opacityToAlpha(args[3][1] ? f / 100 : f);
+            }
+            return Ok(Color.fromHSLA(h, s, l, a));
+        }
         else
         {
             unknown("color function", t);
