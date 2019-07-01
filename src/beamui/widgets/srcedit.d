@@ -8,6 +8,7 @@ Authors:   Vadim Lopatin
 module beamui.widgets.srcedit;
 
 import beamui.core.units;
+import beamui.text.sizetest;
 import beamui.widgets.editors;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
@@ -270,8 +271,8 @@ class SourceEdit : EditBox
             dchar[] s = to!(dchar[])(lineCount + 1);
             foreach (ref ch; s)
                 ch = '9';
-            FontRef fnt = font;
-            Size sz = fnt.textSize(cast(immutable)s);
+            auto st = TextLayoutStyle(font.get);
+            const sz = computeTextSize(cast(immutable)s, st);
             _lineNumbersWidth = sz.w;
         }
         _leftPaneWidth = _lineNumbersWidth + _modificationMarksWidth + _foldingWidth + _iconsWidth;
@@ -343,8 +344,9 @@ class SourceEdit : EditBox
         if (line < 0)
             return;
         dstring s = to!dstring(line + 1);
-        FontRef fnt = font;
-        Size sz = fnt.textSize(s);
+        Font fnt = font.get;
+        auto st = TextLayoutStyle(fnt);
+        const sz = computeTextSize(s, st);
         int x = rc.right - sz.w;
         int y = rc.top + (rc.height - sz.h) / 2;
         Color color = _leftPaneLineNumColor;

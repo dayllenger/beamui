@@ -11,6 +11,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.statusline;
 
+import beamui.text.sizetest;
 import beamui.widgets.controls;
 import beamui.widgets.editors;
 import beamui.widgets.layouts;
@@ -135,8 +136,8 @@ class StatusLineEditorStatePanel : StatusLineTextPanel
 
     private void updateSize()
     {
-        FontRef fnt = font;
-        Size sz = fnt.textSize("  ch=0x00000    000000 : 000    INS  "d);
+        auto st = TextLayoutStyle(font.get);
+        const sz = computeTextSize("  ch=0x00000    000000 : 000    INS  "d, st);
         _text.style.minWidth = sz.w;
     }
 

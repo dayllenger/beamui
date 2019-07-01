@@ -306,37 +306,6 @@ class Font : RefCountedObject
      ************************************************************************/
     protected int[] _textSizeBuffer;
 
-    /*************************************************************************
-     * Measure text string as single line, returns width and height
-     *
-     * Params:
-     *          text = text string to measure
-     *          maxWidth = maximum width - measure is stopping if max width is reached
-     *          tabSize = tabulation size, in number of spaces
-     *          tabOffset = when string is drawn not from left position, use to move tab stops left/right
-     *          textFlags = TextFlag bit set - to control underline, hotkey label processing, etc...
-     ************************************************************************/
-    Size textSize(dstring text, int maxWidth = MAX_WIDTH_UNSPECIFIED, int tabSize = 4,
-            int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
-    {
-        return textSizeMemoized(this, text, maxWidth, tabSize, tabOffset, textFlags);
-    }
-
-    import std.functional : memoize;
-
-    alias textSizeMemoized = memoize!(Font.textSizeImpl);
-
-    static Size textSizeImpl(Font font, const dchar[] text, int maxWidth = MAX_WIDTH_UNSPECIFIED,
-            int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
-    {
-        if (font._textSizeBuffer.length < text.length + 1)
-            font._textSizeBuffer.length = text.length + 1;
-        int charsMeasured = font.measureText(text, font._textSizeBuffer, maxWidth, tabSize, tabOffset, textFlags);
-        if (charsMeasured < 1)
-            return Size(0, 0);
-        return Size(font._textSizeBuffer[charsMeasured - 1], font.height);
-    }
-
     /*****************************************************************************************
      * Draw text string to buffer.
      *

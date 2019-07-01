@@ -106,6 +106,11 @@ struct TextLayoutStyle
     TabSize tabSize;
     TextTransform transform;
 
+    this(Font font)
+    {
+        this.font = font;
+    }
+
     this(ref TextStyle superStyle)
     {
         font = superStyle.font;

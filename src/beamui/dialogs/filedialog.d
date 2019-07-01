@@ -24,6 +24,7 @@ import beamui.core.functions;
 import beamui.core.i18n;
 import beamui.core.stdaction;
 import beamui.dialogs.dialog;
+import beamui.text.sizetest;
 import beamui.widgets.combobox;
 import beamui.widgets.controls;
 import beamui.widgets.editors;
@@ -547,20 +548,16 @@ class FileDialog : Dialog, CustomGridCellAdapter
     {
         if (col == 1)
         {
-            FontRef fnt = _fileList.font;
             dstring txt = _fileList.cellText(col, row);
-            Size sz = fnt.textSize(txt);
-            sz.h = max(sz.h, fnt.height);
-            return sz;
+            auto st = TextLayoutStyle(_fileList.font.get);
+            return computeTextSize(txt, st);
         }
-        if (BACKEND_CONSOLE)
+        static if (BACKEND_CONSOLE)
             return Size(0, 0);
         else
         {
             const icon = rowIcon(row);
-            if (icon.isNull)
-                return Size(0, 0);
-            return Size(icon.width + 2, icon.height + 2);
+            return !icon.isNull ? Size(icon.width + 2, icon.height + 2) : Size(0, 0);
         }
     }
 
@@ -572,17 +569,12 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 b.shrink(Insets(1, 2));
             else
                 b.width--;
-            FontRef fnt = _fileList.font;
             dstring txt = _fileList.cellText(col, row);
-            Size sz = fnt.textSize(txt);
-            Align ha = Align.left;
-            //if (sz.h < b.h)
-            //    applyAlign(b, sz, ha, Align.vcenter);
-            int offset = BACKEND_CONSOLE ? 0 : 1;
+            const offset = BACKEND_CONSOLE ? 0 : 1;
             Color cl = _fileList.style.textColor;
             if (_entries[row].isDir)
                 cl = currentTheme.getColor("file_dialog_dir_name", cl);
-            fnt.drawText(buf, b.x + offset, b.y + offset, txt, cl);
+            _fileList.font.drawText(buf, b.x + offset, b.y + offset, txt, cl);
             return;
         }
         DrawableRef img = rowIcon(row);

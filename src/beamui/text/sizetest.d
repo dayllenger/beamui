@@ -7,10 +7,12 @@ Authors:   dayllenger
 */
 module beamui.text.sizetest;
 
+public import beamui.text.style : TextLayoutStyle;
 import beamui.core.collections : Buf;
 import beamui.core.geometry : Size;
+import beamui.core.math : max;
+import beamui.core.types : Tup, tup;
 import beamui.text.shaping;
-import beamui.text.style : TextLayoutStyle;
 
 /** Used to determine minimal or natural sizes of text widgets.
 
@@ -48,33 +50,60 @@ struct TextSizeTester
 
         oldStyle = style;
 
-        if (style.font && _str.length > 0)
-        {
-            static Buf!ComputedGlyph shapingBuf;
-            shape(_str, style.font, style.transform, shapingBuf);
-
-            const int spaceWidth = style.font.spaceWidth;
-            const int height = style.font.height;
-
-            auto pglyphs = shapingBuf.unsafe_ptr;
-            Size sz = Size(0, height);
-            foreach (i, ch; _str)
-            {
-                if (ch == '\t')
-                {
-                    // calculate tab stop
-                    const n = sz.w / (spaceWidth * style.tabSize) + 1;
-                    sz.w = spaceWidth * style.tabSize * n;
-                    continue;
-                }
-                sz.w += pglyphs[i].width;
-                if (ch == '\n')
-                    sz.h += height;
-            }
-            computedSize = sz;
-        }
-        else
-            computedSize = Size();
-        return computedSize;
+        return computedSize = computeTextSize(_str, style);
     }
+}
+
+/** Measure multiline text to find only its size. Caches results from previous calls.
+
+    Example:
+    ---
+    Font font;
+    dstring txt = "Hello";
+    auto st = TextLayoutStyle(font);
+    const Size sz = computeTextSize(txt, st);
+    ---
+*/
+Size computeTextSize(dstring str, ref TextLayoutStyle style)
+{
+    if (!style.font || str.length == 0)
+        return Size(0, 0);
+
+    // find memoized value
+    static Size[Tup!(dstring, TextLayoutStyle)] cache;
+    auto args = tup(str, style);
+    if (auto p = args in cache)
+        return *p;
+
+    // compute freshly if not found
+    static Buf!ComputedGlyph shapingBuf;
+    shape(str, style.font, style.transform, shapingBuf);
+
+    const int spaceWidth = style.font.spaceWidth;
+    const int height = style.font.height;
+
+    auto pglyphs = shapingBuf.unsafe_ptr;
+    Size sz = Size(0, height);
+    int w;
+    foreach (i, ch; str)
+    {
+        if (ch == '\t')
+        {
+            // calculate tab stop
+            const n = w / (spaceWidth * style.tabSize) + 1;
+            w = spaceWidth * style.tabSize * n;
+            continue;
+        }
+        w += pglyphs[i].width;
+        if (ch == '\n')
+        {
+            sz.w = max(sz.w, w);
+            sz.h += height;
+            w = 0;
+        }
+    }
+    sz.w = max(sz.w, w);
+    // memoize
+    cache[args] = sz;
+    return sz;
 }

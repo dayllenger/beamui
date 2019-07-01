@@ -43,6 +43,7 @@ module beamui.widgets.grid;
 import std.container.rbtree;
 import beamui.core.config;
 import beamui.core.stdaction;
+import beamui.text.sizetest;
 import beamui.widgets.controls;
 import beamui.widgets.menu;
 import beamui.widgets.scroll;
@@ -2083,8 +2084,9 @@ class StringGridWidget : StringGridWidgetBase
             txt = colTitle(x);
         else if (y >= 0 && x < 0)
             txt = rowTitle(y);
-        FontRef fnt = font;
-        Size sz = fnt.textSize(txt);
+        Font fnt = font.get;
+        auto st = TextLayoutStyle(fnt);
+        Size sz = computeTextSize(txt, st);
         sz.h = max(sz.h, fnt.height);
         return sz;
     }
@@ -2092,30 +2094,24 @@ class StringGridWidget : StringGridWidgetBase
     override protected void drawCell(DrawBuf buf, Box b, int col, int row)
     {
         if (_customCellAdapter && _customCellAdapter.isCustomCell(col, row))
-        {
             return _customCellAdapter.drawCell(buf, b, col, row);
-        }
-        if (BACKEND_GUI)
+
+        static if (BACKEND_GUI)
             b.shrink(Insets(1, 2));
         else
             b.width--;
-        FontRef fnt = font;
+
         dstring txt = cellText(col, row);
-        Size sz = fnt.textSize(txt);
-        Align ha = Align.left;
-        //if (sz.h < b.h)
-        //    applyAlign(b, sz, ha, Align.vcenter);
-        int offset = BACKEND_CONSOLE ? 0 : 1;
-        fnt.drawText(buf, b.x + offset, b.y + offset, txt, style.textColor);
+        const offset = BACKEND_CONSOLE ? 0 : 1;
+        font.drawText(buf, b.x + offset, b.y + offset, txt, style.textColor);
     }
 
     override protected void drawHeaderCell(DrawBuf buf, Box b, int col, int row)
     {
-        if (BACKEND_GUI)
+        static if (BACKEND_GUI)
             b.shrink(Insets(1, 2));
         else
             b.width--;
-        FontRef fnt = font;
         dstring txt;
         if (row < 0 && col >= 0)
             txt = colTitle(col);
@@ -2123,16 +2119,17 @@ class StringGridWidget : StringGridWidgetBase
             txt = rowTitle(row);
         if (!txt.length)
             return;
-        Size sz = fnt.textSize(txt);
+        Font fnt = font.get;
+        auto st = TextLayoutStyle(fnt);
+        const sz = computeTextSize(txt, st);
         Align ha = Align.left;
         if (col < 0)
             ha = Align.right;
         //if (row < 0)
         //    ha = Align.hcenter;
         applyAlign(b, sz, ha, Align.vcenter);
-        int offset = BACKEND_CONSOLE ? 0 : 1;
-        Color cl = style.textColor;
-        cl = currentTheme.getColor("grid_cell_text_header", cl);
+        const offset = BACKEND_CONSOLE ? 0 : 1;
+        const cl = currentTheme.getColor("grid_cell_text_header", style.textColor);
         fnt.drawText(buf, b.x + offset, b.y + offset, txt, cl);
     }
 
