@@ -11,6 +11,7 @@ module beamui.style.decode_css;
 
 import std.exception : assertNotThrown;
 import beamui.core.animations : TimingFunction;
+import beamui.core.editable : TabSize;
 import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types : Result, Ok, Err, Tup, tup;
@@ -798,6 +799,17 @@ Result!ushort decode(SpecialCSSType t : SpecialCSSType.fontWeight)(const Token[]
             unknown(what, t);
             return Err!ushort;
     }
+}
+
+/// Decode tab character size
+Result!TabSize decode(T : TabSize)(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    if (const i = decode!int(tokens))
+        return Ok(TabSize(i.val));
+    else
+        return Err!TabSize;
 }
 
 /// Decode text alignment

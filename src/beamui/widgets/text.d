@@ -46,6 +46,9 @@ class Label : Widget
 
         switch (ptype) with (StyleProperty)
         {
+        case tabSize:
+            textobj.style.tabSize = style.tabSize;
+            break;
         case textAlign:
             textobj.style.alignment = style.textAlign;
             break;
@@ -168,6 +171,9 @@ class ShortLabel : Widget
 
         switch (ptype) with (StyleProperty)
         {
+        case tabSize:
+            textobj.style.tabSize = style.tabSize;
+            break;
         case textHotkey:
             // recompute the mnemonic
             if (hotkeyIndex == -1 && style.textHotkey != TextHotkey.ignore)
@@ -285,6 +291,9 @@ class MultilineLabel : Widget
 
         switch (ptype) with (StyleProperty)
         {
+        case tabSize:
+            textobj.style.tabSize = style.tabSize;
+            break;
         case textAlign:
             textobj.style.alignment = style.textAlign;
             break;

@@ -7,6 +7,7 @@ Authors:   dayllenger
 module beamui.style.computed_style;
 
 import beamui.core.animations;
+import beamui.core.editable : TabSize;
 import beamui.core.functions : clamp, eliminate, format;
 import beamui.core.geometry : Insets, isDefinedSize;
 import beamui.core.types : Result, Ok;
@@ -71,12 +72,17 @@ enum StyleProperty
     fontSize,
     fontStyle,
     fontWeight,
+    letterSpacing,
+    lineHeight,
+    tabSize,
     textAlign,
     textDecorLine,
     textDecorStyle,
     textHotkey,
+    textIndent,
     textOverflow,
     textTransform,
+    wordSpacing,
     // colors
     alpha,
     textColor,
@@ -660,6 +666,13 @@ struct ComputedStyle
         /// ditto
         void fontWeight(ushort value) { setProperty!"fontWeight" = cast(ushort)clamp(value, 100, 900); }
 
+        /// Tab stop size, in number of spaces from 1 to 16
+        TabSize tabSize() const { return _tabSize; }
+        /// ditto
+        void tabSize(TabSize sz) { setProperty!"tabSize" = sz; }
+        /// ditto
+        void tabSize(int i) { setProperty!"tabSize" = TabSize(i); }
+
         /// Text alignment - start, center, end, or justify
         TextAlign textAlign() const { return _textAlign; }
         /// ditto
@@ -702,6 +715,62 @@ struct ComputedStyle
         TextTransform textTransform() const { return _textTransform; }
         /// ditto
         void textTransform(TextTransform value) { setProperty!"textTransform" = value; }
+
+        int letterSpacing() const { return applyOnlyEM(_letterSpacing); }
+        /// ditto
+        void letterSpacing(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"letterSpacing" = len;
+        }
+        /// ditto
+        void letterSpacing(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"letterSpacing" = Length.px(px);
+        }
+
+        int lineHeight() const { return applyOnlyEM(_lineHeight); }
+        /// ditto
+        void lineHeight(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"lineHeight" = len;
+        }
+        /// ditto
+        void lineHeight(int px)
+        {
+            assert(isDefinedSize(px));
+            lineHeight = Length.px(px);
+        }
+
+        LayoutLength textIndent() const { return applyEM(_textIndent); }
+        /// ditto
+        void textIndent(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"textIndent" = len;
+        }
+        /// ditto
+        void textIndent(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"textIndent" = Length.px(px);
+        }
+
+        int wordSpacing() const { return applyOnlyEM(_wordSpacing); }
+        /// ditto
+        void wordSpacing(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"wordSpacing" = len;
+        }
+        /// ditto
+        void wordSpacing(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"wordSpacing" = Length.px(px);
+        }
 
         /// Widget drawing opacity (0 = opaque .. 255 = transparent)
         ubyte alpha() const { return _alpha; }
@@ -788,12 +857,17 @@ struct ComputedStyle
         Length _fontSize = Length.rem(1);
         FontStyle _fontStyle = FontStyle.normal;
         ushort _fontWeight = 400;
+        Length _letterSpacing = Length.zero;
+        Length _lineHeight = Length.rem(1.2);
+        TabSize _tabSize;
         TextAlign _textAlign = TextAlign.start;
         TextDecorLine _textDecorLine = TextDecorLine.none;
         TextDecorStyle _textDecorStyle = TextDecorStyle.solid;
         TextHotkey _textHotkey = TextHotkey.ignore;
+        Length _textIndent = Length.zero;
         TextOverflow _textOverflow = TextOverflow.clip;
         TextTransform _textTransform = TextTransform.none;
+        Length _wordSpacing = Length.zero;
         // colors
         ubyte _alpha = 0;
         Color _textColor = Color(0x000000);
@@ -990,7 +1064,8 @@ struct ComputedStyle
                 ptype == borderTopLeftRadius ||
                 ptype == borderTopRightRadius ||
                 ptype == borderBottomLeftRadius ||
-                ptype == borderBottomRightRadius
+                ptype == borderBottomRightRadius ||
+                ptype == lineHeight
             )
                 return value.toLayout.applyPercent(100) >= 0;
             else
@@ -1275,13 +1350,18 @@ string getCSSName(StyleProperty ptype)
         case fontSize:   return "font-size";
         case fontStyle:  return "font-style";
         case fontWeight: return "font-weight";
-        case textAlign:  return "text-align";
+        case letterSpacing: return "letter-spacing";
+        case lineHeight:    return "line-height";
+        case tabSize:       return "tab-size";
+        case textAlign:     return "text-align";
         case textDecorColor: return "text-decoration-color";
         case textDecorLine:  return "text-decoration-line";
         case textDecorStyle: return "text-decoration-style";
         case textHotkey:    return "text-hotkey";
+        case textIndent:    return "text-indent";
         case textOverflow:  return "text-overflow";
         case textTransform: return "text-transform";
+        case wordSpacing:   return "word-spacing";
         case alpha:      return "opacity";
         case textColor:  return "color";
         case focusRectColor: return "focus-rect-color";
@@ -1319,6 +1399,9 @@ bool isAnimatable(StyleProperty ptype)
         case bgColor:
         case bgPosition:
         case bgSize:
+        case letterSpacing:
+        case lineHeight:
+        case wordSpacing:
         case alpha:
         case textColor:
         case focusRectColor:
@@ -1336,8 +1419,13 @@ bool inherited(StyleProperty ptype)
     switch (ptype) with (StyleProperty)
     {
         case fontFace: .. case fontWeight:
+        case letterSpacing:
+        case lineHeight:
+        case tabSize:
         case textAlign:
+        case textIndent:
         case textTransform:
+        case wordSpacing:
         case textColor:
             return true;
         default:

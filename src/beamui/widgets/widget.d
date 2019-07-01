@@ -782,9 +782,14 @@ public:
         switch (ptype) with (StyleProperty)
         {
         case width: .. case alignment:
+        case letterSpacing:
+        case lineHeight:
+        case tabSize:
         case textHotkey:
+        case textIndent:
         case textOverflow:
         case textTransform:
+        case wordSpacing:
             requestLayout();
             break;
         case zIndex:
