@@ -531,65 +531,65 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     /// Characters at which content is split for word wrap mode
     dchar[] splitChars = [' ', '-', '\t'];
 
+    /// Information about line span into several lines - in word wrap mode
+    protected inout(LineSpan[]) lineSpanInfo() inout { return _span; }
+    protected bool wrapped() const { return _wordWrap && _span.length > 0; }
+
+    private LineSpan[] _span;
+
     /// Divides up a string for word wrapping, sets info in _span
     dstring[] wrapLine(dstring str, int lineNumber)
     {
-        FontRef font = font();
+        const int maxWidth = clientBox.width;
         dstring[] words = explode(str, splitChars);
-        int curLineLength = 0;
-        dchar[] buildingStr;
+        Buf!dchar buildingStr;
         dstring[] buildingStrArr;
         WrapPoint[] wrapPoints;
-        int wrappedLineCount = 0;
-        int curLineWidth = 0;
-        int maxWidth = clientBox.width;
-        for (int i = 0; i < words.length; i++)
+        int len, x;
+        foreach (word; words)
         {
-            dstring word = words[i];
-            if (curLineWidth + measureWrappedText(word) > maxWidth)
+            if (x + calcLineWidth(word) > maxWidth)
             {
-                if (curLineWidth > 0)
+                if (x > 0)
                 {
-                    buildingStrArr ~= to!dstring(buildingStr);
-                    wrappedLineCount++;
-                    wrapPoints ~= WrapPoint(curLineLength, curLineWidth);
-                    curLineLength = 0;
-                    curLineWidth = 0;
-                    buildingStr = [];
+                    buildingStrArr ~= buildingStr[].idup;
+                    wrapPoints ~= WrapPoint(len, x);
+                    len = 0;
+                    x = 0;
+                    buildingStr.clear();
                 }
-                while (measureWrappedText(word) > maxWidth)
+                while (calcLineWidth(word) > maxWidth)
                 {
                     //For when string still too long
-                    int wrapPoint = findWrapPoint(word);
-                    wrapPoints ~= WrapPoint(wrapPoint, measureWrappedText(word[0 .. wrapPoint]));
-                    buildingStr ~= word[0 .. wrapPoint];
-                    word = word[wrapPoint .. $];
-                    buildingStrArr ~= to!dstring(buildingStr);
-                    buildingStr = [];
-                    wrappedLineCount++;
+                    const wrapPoint = findWrapPoint(word);
+                    wrapPoints ~= wrapPoint;
+                    buildingStr ~= word[0 .. wrapPoint.pos];
+                    word = word[wrapPoint.pos .. $];
+                    buildingStrArr ~= buildingStr[].idup;
+                    buildingStr.clear();
                 }
             }
             buildingStr ~= word;
-            curLineLength += to!int(word.length);
-            curLineWidth += measureWrappedText(word);
+            len += cast(int)word.length;
+            x += calcLineWidth(word);
         }
-        wrapPoints ~= WrapPoint(curLineLength, curLineWidth);
-        buildingStrArr ~= to!dstring(buildingStr);
-        _span ~= LineSpan(lineNumber, wrappedLineCount + 1, wrapPoints, buildingStrArr);
+        wrapPoints ~= WrapPoint(len, x);
+        buildingStrArr ~= buildingStr[].idup;
+        _span ~= LineSpan(lineNumber, cast(int)wrapPoints.length, wrapPoints, buildingStrArr);
         return buildingStrArr;
     }
 
     /// Divide (and conquer) text into words
     dstring[] explode(dstring str, dchar[] splitChars)
     {
-        dstring[] parts;
-        int startIndex = 0;
+        import std.ascii : isWhite;
         import std.string : indexOfAny;
 
+        dstring[] parts;
+        ptrdiff_t startIndex;
         while (true)
         {
-            int index = to!int(str.indexOfAny(splitChars, startIndex));
-
+            const index = indexOfAny(str, splitChars, startIndex);
             if (index == -1)
             {
                 parts ~= str[startIndex .. $];
@@ -599,14 +599,11 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             }
 
             dstring word = str[startIndex .. index];
-            dchar nextChar = (str[index .. index + 1])[0];
-
-            import std.ascii : isWhite;
-
+            dchar nextChar = str[index];
             if (isWhite(nextChar))
             {
                 parts ~= word;
-                parts ~= to!dstring(nextChar);
+                parts ~= [nextChar];
             }
             else
             {
@@ -616,100 +613,79 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
     }
 
-    /// Information about line span into several lines - in word wrap mode
-    private LineSpan[] _span;
-    private LineSpan[] _spanCache;
-
     /// Finds good visual wrapping point for string
-    int findWrapPoint(dstring text)
+    WrapPoint findWrapPoint(dstring word)
     {
-        int maxWidth = clientBox.width;
-        int wrapPoint = 0;
+        const int maxWidth = clientBox.width;
+        WrapPoint ret;
+        int pos;
         while (true)
         {
-            if (measureWrappedText(text[0 .. wrapPoint]) < maxWidth)
+            const w = calcLineWidth(word[0 .. pos]);
+            if (w < maxWidth)
             {
-                wrapPoint++;
+                ret.pos = pos;
+                ret.width = w;
+                pos++;
             }
             else
-            {
-                return wrapPoint;
-            }
+                return ret;
         }
     }
 
-    /// Call measureText for word wrap
-    int measureWrappedText(dstring text)
-    {
-        FontRef font = font();
-        int[] measuredWidths;
-        measuredWidths.length = text.length;
-        //DO NOT REMOVE THIS
-        int boggle = font.measureText(text, measuredWidths);
-        if (measuredWidths.length > 0)
-            return measuredWidths[$ - 1];
-        return 0;
-    }
-
     /// Returns number of visible wraps up to a line (not including the first wrapLines themselves)
-    int wrapsUpTo(int line)
+    int wrapsUpTo(int line) const
     {
         int sum;
-        lineSpanIterate(delegate(LineSpan curSpan) {
+        foreach (ref curSpan; lineSpanInfo)
+        {
             if (curSpan.start < line)
                 sum += curSpan.len - 1;
-        });
+        }
         return sum;
     }
 
     /// Returns LineSpan for line based on actual line number
     LineSpan getSpan(int lineNumber)
     {
-        LineSpan lineSpan = LineSpan(lineNumber, 0, [WrapPoint(0, 0)], []);
-        lineSpanIterate(delegate(LineSpan curSpan) {
+        foreach (curSpan; lineSpanInfo)
+        {
             if (curSpan.start == lineNumber)
-                lineSpan = curSpan;
-        });
-        return lineSpan;
+                return curSpan;
+        }
+        return LineSpan(lineNumber, 0, [WrapPoint(0, 0)]);
     }
 
-    /// Based on a TextPosition, finds which wrapLine it is on for its current line
+    /// Based on a TextPosition, finds the wrap line index it is on for its current line
     int findWrapLine(TextPosition textPos)
     {
-        int curWrapLine = 0;
+        int curWrapLine;
         int curPosition = textPos.pos;
         LineSpan curSpan = getSpan(textPos.line);
         while (true)
         {
-            if (curWrapLine == curSpan.wrapPoints.length - 1)
+            if (curWrapLine + 1 == curSpan.wrapPoints.length)
                 return curWrapLine;
-            curPosition -= curSpan.wrapPoints[curWrapLine].wrapPos;
+            curPosition -= curSpan.wrapPoints[curWrapLine].pos;
             if (curPosition < 0)
-            {
                 return curWrapLine;
-            }
             curWrapLine++;
         }
     }
 
-    /// Simple way of iterating through _span
-    void lineSpanIterate(void delegate(LineSpan curSpan) iterator)
-    {
-        //TODO: Rename iterator to iteration?
-        foreach (currentSpan; _span)
-            iterator(currentSpan);
-    }
-
     //===============================================================
+
+    protected int calcLineWidth(dstring txt)
+    {
+        Font font = font.get;
+        auto st = TextLayoutStyle(font);
+        const sz = computeTextSize(txt, st);
+        return sz.w;
+    }
 
     /// Override to add custom items on left panel
     protected void updateLeftPaneWidth()
     {
-    }
-
-    protected bool onLeftPaneMouseClick(MouseEvent event)
-    {
-        return false;
     }
 
     protected void drawLeftPane(DrawBuf buf, Rect rc, int line)
@@ -939,14 +915,14 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 caretRc.right += _spaceWidth;
             }
         }
-        if (_wordWrap)
+        if (wrapped)
         {
             const int wrapLine = findWrapLine(_caretPos);
             int xOffset;
             if (wrapLine > 0)
             {
                 LineSpan curSpan = getSpan(_caretPos.line);
-                xOffset = curSpan.accumulation(wrapLine, LineSpan.WrapPointInfo.width);
+                xOffset = curSpan.accumulation(wrapLine, WrapPoint.Field.width);
             }
             const int yOffset = -1 * _lineHeight * (wrapsUpTo(_caretPos.line) + wrapLine);
             caretHeightOffset = yOffset;
@@ -1000,39 +976,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         if (_selectionRange.empty)
             _selectionRange = TextRange(_caretPos, _caretPos);
         handleEditorStateChange();
-    }
-
-    private int[] _lineWidthBuf;
-    protected int calcLineWidth(dstring s)
-    {
-        int w;
-        if (_fixedFont)
-        {
-            const int tabw = tabSize * _spaceWidth;
-            // version optimized for fixed font
-            foreach (ch; s)
-            {
-                if (ch == '\t')
-                {
-                    w += _spaceWidth;
-                    w = (w + tabw - 1) / tabw * tabw;
-                }
-                else
-                {
-                    w += _spaceWidth;
-                }
-            }
-        }
-        else
-        {
-            // variable pitch font
-            if (_lineWidthBuf.length < s.length)
-                _lineWidthBuf.length = s.length;
-            const int charsMeasured = font.measureText(s, _lineWidthBuf, int.max);
-            if (charsMeasured > 0)
-                w = _lineWidthBuf[charsMeasured - 1];
-        }
-        return w;
     }
 
     protected void updateSelectionAfterCursorMovement(TextPosition oldCaretPos, bool selecting)
@@ -1105,19 +1048,16 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     /// Used instead of using `clientToTextPos` for mouse input when in word wrap mode
     protected TextPosition wordWrapMouseOffset(int x, int y)
     {
-        if (_span.length == 0)
-            return clientToTextPos(Point(x, y));
+        assert(wrapped);
+
         const int selectedVisibleLine = y / _lineHeight;
-
-        LineSpan _curSpan;
-
         int wrapLine;
         int curLine;
         bool foundWrap;
         int accumulativeWidths;
         int curWrapOfSpan;
-
-        lineSpanIterate(delegate(LineSpan curSpan) {
+        foreach (ref curSpan; lineSpanInfo)
+        {
             while (!foundWrap)
             {
                 if (wrapLine == selectedVisibleLine)
@@ -1125,7 +1065,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                     foundWrap = true;
                     break;
                 }
-                accumulativeWidths += curSpan.wrapPoints[curWrapOfSpan].wrapWidth;
+                accumulativeWidths += curSpan.wrapPoints[curWrapOfSpan].width;
                 wrapLine++;
                 curWrapOfSpan++;
                 if (curWrapOfSpan >= curSpan.len)
@@ -1139,7 +1079,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 curLine++;
             }
             curWrapOfSpan = 0;
-        });
+        }
 
         const int fakeLineHeight = curLine * _lineHeight;
         return clientToTextPos(Point(x + accumulativeWidths, fakeLineHeight));
@@ -1148,7 +1088,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     protected void selectWordByMouse(int x, int y)
     {
         const TextPosition oldCaretPos = _caretPos;
-        const TextPosition newPos = _wordWrap ? wordWrapMouseOffset(x, y) : clientToTextPos(Point(x, y));
+        const TextPosition newPos = wrapped ? wordWrapMouseOffset(x, y) : clientToTextPos(Point(x, y));
         const TextRange r = _content.wordBounds(newPos);
         if (r.start < r.end)
         {
@@ -1168,7 +1108,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     protected void selectLineByMouse(int x, int y)
     {
         const TextPosition oldCaretPos = _caretPos;
-        const TextPosition newPos = _wordWrap ? wordWrapMouseOffset(x, y) : clientToTextPos(Point(x, y));
+        const TextPosition newPos = wrapped ? wordWrapMouseOffset(x, y) : clientToTextPos(Point(x, y));
         const TextRange r = _content.lineRange(newPos.line);
         if (r.start < r.end)
         {
@@ -1188,7 +1128,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     protected void updateCaretPositionByMouse(int x, int y, bool selecting)
     {
         const TextPosition oldCaretPos = _caretPos;
-        const TextPosition newPos = _wordWrap ? wordWrapMouseOffset(x, y) : clientToTextPos(Point(x, y));
+        const TextPosition newPos = wrapped ? wordWrapMouseOffset(x, y) : clientToTextPos(Point(x, y));
         if (newPos != _caretPos)
         {
             _caretPos = newPos;
@@ -2008,6 +1948,11 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         return super.onMouseEvent(event);
     }
 
+    protected bool onLeftPaneMouseClick(MouseEvent event)
+    {
+        return false;
+    }
+
     /// Handle Ctrl + Left mouse click on text
     protected void onControlClick()
     {
@@ -2377,110 +2322,115 @@ class EditBox : EditWidgetBase
         const bool noOtherModifiers = !event.alteredBy(KeyMods.alt | KeyMods.meta);
         if (event.action == KeyAction.keyDown && noOtherModifiers)
         {
-            const TextPosition oldCaretPos = _caretPos;
-
             const bool shiftPressed = event.alteredBy(KeyMods.shift);
             const bool controlPressed = event.alteredBy(KeyMods.control);
             if (event.key == Key.up)
             {
                 if (!controlPressed)
-                {
                     // move cursor one line up (with selection when Shift pressed)
-                    if (_caretPos.line > 0 || wordWrap)
-                    {
-                        if (_wordWrap)
-                        {
-                            LineSpan curSpan = getSpan(_caretPos.line);
-                            int curWrap = findWrapLine(_caretPos);
-                            if (curWrap > 0)
-                            {
-                                _caretPos.pos -= curSpan.wrapPoints[curWrap - 1].wrapPos;
-                            }
-                            else
-                            {
-                                const int previousPos = _caretPos.pos;
-                                curSpan = getSpan(_caretPos.line - 1);
-                                curWrap = curSpan.len - 1;
-                                if (curWrap > 0)
-                                {
-                                    const int accumulativePoint = curSpan.accumulation(curSpan.len - 1,
-                                            LineSpan.WrapPointInfo.position);
-                                    _caretPos.line--;
-                                    _caretPos.pos = accumulativePoint + previousPos;
-                                }
-                                else
-                                {
-                                    _caretPos.line--;
-                                }
-                            }
-                        }
-                        else if (_caretPos.line > 0)
-                            _caretPos.line--;
-                        correctCaretPos();
-                        updateSelectionAfterCursorMovement(oldCaretPos, shiftPressed);
-                        ensureCaretVisible();
-                    }
-                    return true;
-                }
+                    moveCursorByLine(true, shiftPressed);
                 else
-                {
                     scrollUp();
-                    return true;
-                }
+                return true;
             }
             if (event.key == Key.down)
             {
                 if (!controlPressed)
-                {
                     // move cursor one line down (with selection when Shift pressed)
-                    if (_caretPos.line < _content.length - 1)
-                    {
-                        if (_wordWrap)
-                        {
-                            const LineSpan curSpan = getSpan(_caretPos.line);
-                            const int curWrap = findWrapLine(_caretPos);
-                            if (curWrap < curSpan.len - 1)
-                            {
-                                const int previousPos = _caretPos.pos;
-                                _caretPos.pos += curSpan.wrapPoints[curWrap].wrapPos;
-                                correctCaretPos();
-                                if (_caretPos.pos == previousPos)
-                                {
-                                    _caretPos.pos = 0;
-                                    _caretPos.line++;
-                                }
-                            }
-                            else if (curSpan.len > 1)
-                            {
-                                const int previousPos = _caretPos.pos;
-                                const int previousAccumulatedPosition = curSpan.accumulation(curSpan.len - 1,
-                                        LineSpan.WrapPointInfo.position);
-                                _caretPos.line++;
-                                _caretPos.pos = previousPos - previousAccumulatedPosition;
-                            }
-                            else
-                            {
-                                _caretPos.line++;
-                            }
-                        }
-                        else
-                        {
-                            _caretPos.line++;
-                        }
-                        correctCaretPos();
-                        updateSelectionAfterCursorMovement(oldCaretPos, shiftPressed);
-                        ensureCaretVisible();
-                    }
-                    return true;
-                }
+                    moveCursorByLine(false, shiftPressed);
                 else
-                {
                     scrollDown();
-                    return true;
-                }
+                return true;
             }
         }
         return super.onKeyEvent(event);
+    }
+
+    protected void moveCursorByLine(bool up, bool select)
+    {
+        const TextPosition oldCaretPos = _caretPos;
+        bool done;
+        if (up)
+        {
+            if (wrapped)
+            {
+                LineSpan curSpan = getSpan(_caretPos.line);
+                int curWrap = findWrapLine(_caretPos);
+                if (curWrap > 0)
+                {
+                    _caretPos.pos -= curSpan.wrapPoints[curWrap - 1].pos;
+                }
+                else
+                {
+                    const int previousPos = _caretPos.pos;
+                    curSpan = getSpan(_caretPos.line - 1);
+                    curWrap = curSpan.len - 1;
+                    if (curWrap > 0)
+                    {
+                        const int accumPoint = curSpan.accumulation(curSpan.len - 1,
+                                WrapPoint.Field.position);
+                        _caretPos.line--;
+                        _caretPos.pos = accumPoint + previousPos;
+                    }
+                    else
+                    {
+                        _caretPos.line--;
+                    }
+                }
+                done = true;
+            }
+            else if (_caretPos.line > 0)
+            {
+                _caretPos.line--;
+                done = true;
+            }
+        }
+        else
+        {
+            if (_caretPos.line < _content.length - 1)
+            {
+                if (wrapped)
+                {
+                    const LineSpan curSpan = getSpan(_caretPos.line);
+                    const int curWrap = findWrapLine(_caretPos);
+                    if (curWrap < curSpan.len - 1)
+                    {
+                        const int previousPos = _caretPos.pos;
+                        _caretPos.pos += curSpan.wrapPoints[curWrap].pos;
+                        correctCaretPos();
+                        if (_caretPos.pos == previousPos)
+                        {
+                            _caretPos.pos = 0;
+                            _caretPos.line++;
+                        }
+                    }
+                    else if (curSpan.len > 1)
+                    {
+                        const int previousPos = _caretPos.pos;
+                        const int accumPoint = curSpan.accumulation(curSpan.len - 1,
+                                WrapPoint.Field.position);
+                        _caretPos.line++;
+                        _caretPos.pos = previousPos - accumPoint;
+                    }
+                    else
+                    {
+                        _caretPos.line++;
+                    }
+                    done = true;
+                }
+                else
+                {
+                    _caretPos.line++;
+                    done = true;
+                }
+            }
+        }
+        if (done)
+        {
+            correctCaretPos();
+            updateSelectionAfterCursorMovement(oldCaretPos, select);
+            ensureCaretVisible();
+        }
     }
 
     override bool onMouseEvent(MouseEvent event)
@@ -3060,36 +3010,31 @@ class EditBox : EditWidgetBase
         Rect rc = lineRect;
         rc.left = clientBox.x + start.x;
         rc.right = clientBox.x + end.x + end.w;
-        if (_wordWrap && !rc.empty)
+        if (!rc.empty)
         {
-            wordWrapFillRect(buf, r.start.line, rc, color);
-        }
-        else if (!rc.empty)
-        {
-            // draw selection rect for matching bracket
-            buf.fillRect(rc, color);
+            if (wrapped)
+                wordWrapFillRect(buf, r.start.line, rc, color);
+            else
+                // draw selection rect for matching bracket
+                buf.fillRect(rc, color);
         }
     }
 
     /// Used in place of directly calling buf.fillRect in word wrap mode
     void wordWrapFillRect(DrawBuf buf, int line, Rect lineToDivide, Color color)
     {
+        assert(wrapped);
         Rect rc = lineToDivide;
-        auto limitNumber = (int num, int limit) => num > limit ? limit : num;
         const LineSpan curSpan = getSpan(line);
         const yOffset = _lineHeight * (wrapsUpTo(line));
         rc.translate(0, yOffset);
-        Rect[] wrappedSelection;
-        wrappedSelection.length = curSpan.len;
-        foreach (i, wrapLineRect; wrappedSelection)
+        foreach (i; 0 .. curSpan.len)
         {
-            const startingDifference = rc.left - clientBox.x;
-            wrapLineRect = rc;
-            wrapLineRect.translate(-curSpan.accumulation(cast(int)i, LineSpan.WrapPointInfo.width),
-                    cast(int)i * _lineHeight);
-            wrapLineRect.right = limitNumber(wrapLineRect.right,
-                    (rc.left + curSpan.wrapPoints[i].wrapWidth) - startingDifference);
-            buf.fillRect(wrapLineRect, color);
+            const startingDiff = rc.left - clientBox.x;
+            Rect r = rc;
+            r.translate(-curSpan.accumulation(i, WrapPoint.Field.width), i * _lineHeight);
+            r.right = min(r.right, rc.left + curSpan.wrapPoints[i].width - startingDiff);
+            buf.fillRect(r, color);
         }
     }
 
@@ -3192,14 +3137,14 @@ class EditBox : EditWidgetBase
             Rect rc = lineRect;
             rc.left = startx;
             rc.right = endx;
-            if (!rc.empty && _wordWrap)
+            if (!rc.empty)
             {
-                wordWrapFillRect(buf, lineIndex, rc, focused ? _selectionColorFocused : _selectionColorNormal);
-            }
-            else if (!rc.empty)
-            {
+                const c = focused ? _selectionColorFocused : _selectionColorNormal;
                 // draw selection rect for line
-                buf.fillRect(rc, focused ? _selectionColorFocused : _selectionColorNormal);
+                if (wrapped)
+                    wordWrapFillRect(buf, lineIndex, rc, c);
+                else
+                    buf.fillRect(rc, c);
             }
         }
 
@@ -3221,7 +3166,7 @@ class EditBox : EditWidgetBase
                 _selectionRange.start.line == _caretPos.line)
         {
             //TODO: Figure out why a little slow to catch up
-            if (_wordWrap)
+            if (wrapped)
                 visibleRect.translate(0, -caretHeightOffset);
             buf.drawFrame(visibleRect, Color(0xA0808080), Insets(1));
         }
@@ -3242,7 +3187,7 @@ class EditBox : EditWidgetBase
                 break;
             drawLeftPane(buf, Rect(lineBox), i < lc ? i : -1);
             lineBox.y += _lineHeight;
-            if (_wordWrap)
+            if (wrapped)
             {
                 int currentWrap = 1;
                 while (true)
@@ -3503,17 +3448,17 @@ class EditBox : EditWidgetBase
         foreach (i; 0 .. cast(int)_visibleLines.length)
         {
             const dstring txt = _visibleLines[i].str;
+            const lineIndex = _firstVisibleLine + i;
             Rect lineRect;
-            lineRect.left = b.x - scrollPos.x;
-            lineRect.right = lineRect.left + calcLineWidth(_content[_firstVisibleLine + i]);
-            lineRect.top = b.y + i * _lineHeight;
-            lineRect.bottom = lineRect.top + _lineHeight;
+            lineRect.right = _visibleLines[i].width;
+            lineRect.bottom = _lineHeight;
+            lineRect.translate(b.x - scrollPos.x, b.y + i * _lineHeight);
             Rect visibleRect = lineRect;
             visibleRect.left = b.x;
             visibleRect.right = b.x + b.w;
-            drawLineBackground(buf, _firstVisibleLine + i, lineRect, visibleRect);
+            drawLineBackground(buf, lineIndex, lineRect, visibleRect);
             if (_showTabPositionMarks)
-                drawTabPositionMarks(buf, font, _firstVisibleLine + i, lineRect);
+                drawTabPositionMarks(buf, font, lineIndex, lineRect);
             if (!txt.length && !_wordWrap)
                 continue;
             if (_showWhiteSpaceMarks)
@@ -3540,13 +3485,14 @@ class EditBox : EditWidgetBase
                 {
                     dstring[] wrappedLine;
                     if (doRewrap)
-                        wrappedLine = wrapLine(txt, _firstVisibleLine + i);
+                        wrappedLine = wrapLine(txt, lineIndex);
                     else if (i < _span.length)
                         wrappedLine = _span[i].wrappedContent;
                     int accumulativeLength;
+                    const wraps = wrapsUpTo(lineIndex);
                     foreach (q, curWrap; wrappedLine)
                     {
-                        const int lineOffset = cast(int)q + i + wrapsUpTo(i + _firstVisibleLine);
+                        const int lineOffset = cast(int)q + i + wraps;
                         const x = b.x - scrollPos.x;
                         const y = b.y + lineOffset * _lineHeight;
                         if (highlight.length > 0)

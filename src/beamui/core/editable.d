@@ -434,23 +434,15 @@ struct LineSpan
     /// The wrapped text
     dstring[] wrappedContent;
 
-    enum WrapPointInfo : bool
-    {
-        position,
-        width,
-    }
-
     ///Adds up either positions or widths to a wrapLine
-    int accumulation(int wrapLine, bool wrapPointInfo) const
+    int accumulation(int wrapLine, WrapPoint.Field field) const
     {
         int total;
-        for (int i; i < wrapLine; i++)
+        foreach (i; 0 .. wrapLine)
         {
-            if (i < this.wrapPoints.length - 1)
+            if (i + 1 < wrapPoints.length)
             {
-                int curVal;
-                curVal = wrapPointInfo ? this.wrapPoints[i].wrapWidth : this.wrapPoints[i].wrapPos;
-                total += curVal;
+                total += field ? wrapPoints[i].width : wrapPoints[i].pos;
             }
         }
         return total;
@@ -461,9 +453,15 @@ struct LineSpan
 struct WrapPoint
 {
     ///The relative wrapping position (related to TextPosition.pos)
-    int wrapPos;
+    int pos;
     ///The associated calculated width of the wrapLine
-    int wrapWidth;
+    int width;
+
+    enum Field : bool
+    {
+        position,
+        width,
+    }
 }
 
 /// Interface for custom syntax highlight, comments toggling, smart indents,
