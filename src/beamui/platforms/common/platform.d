@@ -1118,7 +1118,7 @@ class Window : CustomEventTarget
     private WeakRef!Widget _focusedWidget;
     private State _focusStateToApply = State.focused;
     /// Returns current focused widget
-    @property WeakRef!Widget focusedWidget() { return _focusedWidget; }
+    @property inout(WeakRef!Widget) focusedWidget() inout { return _focusedWidget; }
 
     /// Change focus to widget
     Widget setFocus(WeakRef!Widget target, FocusReason reason = FocusReason.unspecified)

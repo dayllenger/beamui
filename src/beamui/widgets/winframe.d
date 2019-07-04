@@ -21,7 +21,6 @@ class WindowFrame : Column
         _bodyLayout.replaceChild(_bodyWidget, widget);
         destroy(_bodyWidget);
         _bodyWidget = widget;
-        requestLayout();
     }
 
     @property Label title() { return _title; }

@@ -603,8 +603,8 @@ class ScrollArea : ScrollAreaBase
     /// ditto
     @property void contentWidget(Widget widget)
     {
-        if (_contentWidget !is widget)
-            requestLayout();
+        if (_contentWidget is widget)
+            return;
         if (_contentWidget)
         {
             removeChild(_contentWidget);

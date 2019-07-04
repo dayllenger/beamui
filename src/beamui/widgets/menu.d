@@ -545,7 +545,7 @@ class Menu : ListWidget
             handleClose();
     }
 
-    override @property Widget parent() const
+    override @property inout(Widget) parent() inout
     {
         return super.parent;
     }

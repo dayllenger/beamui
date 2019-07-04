@@ -174,7 +174,6 @@ class LinearLayout : WidgetGroup
         super.addChild(item);
         Cell* cell = createDefaultCell(item);
         _cells ~= cell;
-        requestLayout();
         return item;
     }
 
@@ -183,7 +182,6 @@ class LinearLayout : WidgetGroup
         super.insertChild(index, item);
         Cell* cell = createDefaultCell(item);
         _cells.insertBefore(_cells[index .. $], cell);
-        requestLayout();
         return item;
     }
 
@@ -191,7 +189,6 @@ class LinearLayout : WidgetGroup
     {
         Widget result = super.removeChild(index);
         _cells.linearRemove(_cells[index .. index + 1]);
-        requestLayout();
         return result;
     }
 
@@ -209,7 +206,6 @@ class LinearLayout : WidgetGroup
     {
         super.removeAllChildren(destroyThem);
         _cells.clear();
-        requestLayout();
     }
 
     override void replaceChild(Widget oldChild, Widget newChild)
@@ -669,14 +665,11 @@ class FrameLayout : WidgetGroup
             if (item.compareID(ID))
             {
                 item.visibility = Visibility.visible;
-                item.requestLayout();
                 foundWidget = item;
                 found = true;
             }
             else
-            {
                 item.visibility = otherChildrenVisibility;
-            }
         }
         if (foundWidget !is null && updateFocus)
             foundWidget.setFocus();
@@ -693,45 +686,6 @@ class FrameLayout : WidgetGroup
 /// Place children at specified coordinates
 class FreeLayout : WidgetGroup
 {
-    override Widget addChild(Widget item)
-    {
-        super.addChild(item);
-        requestLayout();
-        return item;
-    }
-
-    override Widget insertChild(int index, Widget item)
-    {
-        super.insertChild(index, item);
-        requestLayout();
-        return item;
-    }
-
-    override Widget removeChild(int index)
-    {
-        Widget result = super.removeChild(index);
-        requestLayout();
-        return result;
-    }
-
-    override Widget removeChild(string id)
-    {
-        return super.removeChild(id);
-    }
-
-    override Widget removeChild(Widget child)
-    {
-        return super.removeChild(child);
-    }
-
-    override void removeAllChildren(bool destroyThem = true)
-    {
-        super.removeAllChildren(destroyThem);
-        requestLayout();
-    }
-
-    //===============================================================
-
     override void measure()
     {
         Boundaries bs;

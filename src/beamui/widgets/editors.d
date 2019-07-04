@@ -3586,7 +3586,6 @@ class EditBox : EditWidgetBase
                 res = true;
             }
         }
-        requestLayout();
         return res;
     }
 
@@ -3605,7 +3604,6 @@ class EditBox : EditWidgetBase
                 removeChild(_findPanel);
                 destroy(_findPanel);
                 _findPanel = null;
-                requestLayout();
             }
         }
     }

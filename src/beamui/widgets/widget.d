@@ -2048,26 +2048,28 @@ public:
     }
 
     /// Parent widget, `null` for top level widget
-    @property Widget parent() const
-    {
-        return _parent ? cast(Widget)_parent : null;
-    }
+    @property inout(Widget) parent() inout { return _parent; }
     /// ditto
-    @property void parent(Widget parent)
+    @property void parent(Widget widget)
     {
-        if (_parent)
-            needUpdate();
-        _parent = parent;
+        if (_visibility != Visibility.gone)
+        {
+            if (_parent)
+                _parent.requestLayout();
+            if (widget)
+                widget.requestLayout();
+        }
+        _parent = widget;
         invalidateStyles();
     }
     /// Returns window (if widget or its parent is attached to window)
-    @property Window window() const
+    @property inout(Window) window() inout
     {
         Widget p = cast()this;
         while (p)
         {
             if (p._window)
-                return cast()p._window;
+                return cast(inout)p._window;
             p = p.parent;
         }
         return null;

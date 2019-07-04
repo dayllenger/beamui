@@ -294,14 +294,12 @@ class TabControl : WidgetGroup
     /// Add new tab
     void addTab(TabItem item, int index = -1)
     {
-        item.parent = this;
         item.mouseEvent ~= (MouseEvent e) { return onMouseTabBtn(item.id, e); };
         item.tabClosed ~= &tabClosed.emit;
         if (index >= 0)
             insertChild(index, item);
         else
             addChild(item);
-        requestLayout();
     }
     /// Add new tab by id and label string
     void addTab(string id, dstring label, string iconID = null, bool enableCloseButton = false,
@@ -329,9 +327,7 @@ class TabControl : WidgetGroup
         if (index >= 0)
         {
             Widget w = removeChild(index + 1);
-            if (w)
-                destroy(w);
-            requestLayout();
+            destroy(w);
         }
         if (nextID)
         {
@@ -648,9 +644,8 @@ class TabHost : FrameLayout
     {
         assert(_tabControl !is null, "No TabControl set for TabHost");
         Widget child = removeChild(id);
-        eliminate(child);
+        destroy(child);
         _tabControl.removeTab(id);
-        requestLayout();
     }
 
     /// Add new tab by id and label string
@@ -760,7 +755,6 @@ class TabWidget : Column
     void removeTab(string id)
     {
         _tabHost.removeTab(id);
-        requestLayout();
     }
 
     /// Change name of the tab
