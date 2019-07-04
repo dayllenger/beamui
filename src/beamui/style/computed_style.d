@@ -44,6 +44,10 @@ enum StyleProperty
     marginRight,
     marginBottom,
     marginLeft,
+    left,
+    top,
+    right,
+    bottom,
     alignment,
     spacing,
     rowSpacing,
@@ -417,6 +421,30 @@ struct ComputedStyle
             assert(isDefinedSize(px));
             setProperty!"marginLeft" = Length.px(px);
         }
+
+        LayoutLength left() const { return applyEM(_left); }
+        /// ditto
+        void left(Length len) { setProperty!"left" = len; }
+        /// ditto
+        void left(int px) { setProperty!"left" = Length.px(px); }
+
+        LayoutLength top() const { return applyEM(_top); }
+        /// ditto
+        void top(Length len) { setProperty!"top" = len; }
+        /// ditto
+        void top(int px) { setProperty!"top" = Length.px(px); }
+
+        LayoutLength right() const { return applyEM(_right); }
+        /// ditto
+        void right(Length len) { setProperty!"right" = len; }
+        /// ditto
+        void right(int px) { setProperty!"right" = Length.px(px); }
+
+        LayoutLength bottom() const { return applyEM(_bottom); }
+        /// ditto
+        void bottom(Length len) { setProperty!"bottom" = len; }
+        /// ditto
+        void bottom(int px) { setProperty!"bottom" = Length.px(px); }
 
         /// Alignment (combined vertical and horizontal)
         Align alignment() const { return _alignment; }
@@ -829,6 +857,10 @@ struct ComputedStyle
         Length _marginRight = Length.zero;
         Length _marginBottom = Length.zero;
         Length _marginLeft = Length.zero;
+        Length _left = Length.none;
+        Length _top = Length.none;
+        Length _right = Length.none;
+        Length _bottom = Length.none;
         Align _alignment;
         int _spacing = 6;
         int _rowSpacing = 6;
@@ -1316,6 +1348,10 @@ string getCSSName(StyleProperty ptype)
         case marginRight:  return "margin-right";
         case marginBottom: return "margin-bottom";
         case marginLeft:   return "margin-left";
+        case left:   return "left";
+        case top:    return "top";
+        case right:  return "right";
+        case bottom: return "bottom";
         case alignment:  return "align";
         case spacing:    return "spacing";
         case rowSpacing: return "row-spacing";
@@ -1393,6 +1429,7 @@ bool isAnimatable(StyleProperty ptype)
     switch (ptype) with (StyleProperty)
     {
         case width: .. case marginLeft:
+        case left: .. case bottom:
         case spacing:
         case rowSpacing:
         case columnSpacing:

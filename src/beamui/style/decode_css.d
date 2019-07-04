@@ -170,7 +170,7 @@ Result!Length decode(T : Length)(const Token[] tokens)
     const t = tokens[0];
     if (t.type == TokenType.ident)
     {
-        if (t.text == "none")
+        if (t.text == "auto" || t.text == "none")
             return Ok(Length.none);
         else
             unknown("length identifier", t);

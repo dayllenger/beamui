@@ -693,40 +693,9 @@ class FrameLayout : WidgetGroup
 /// Place children at specified coordinates
 class FreeLayout : WidgetGroup
 {
-    static struct Cell
-    {
-        int x, y;
-
-        private Size size;
-    }
-    private Array!(Cell*) _cells;
-
-    /// Returns cell pointer by specified index. Index must be in range
-    Cell* cell(size_t i)
-    {
-        return _cells[i];
-    }
-    /// Returns cell pointer by specified widget. Widget must be in the layout
-    Cell* cell(Widget item)
-    {
-        return _cells[childIndex(item)];
-    }
-
-    /// Add a widget at specific position upper the added last item
-    /// Returns: Last cell pointer (not `null`), that allows to adjust layout properties for this widget.
-    Cell* add(Widget item, int x, int y)
-    {
-        addChild(item);
-        Cell* c = _cells.back;
-        c.x = x;
-        c.y = y;
-        return c;
-    }
-
     override Widget addChild(Widget item)
     {
         super.addChild(item);
-        _cells ~= new Cell;
         requestLayout();
         return item;
     }
@@ -734,7 +703,6 @@ class FreeLayout : WidgetGroup
     override Widget insertChild(int index, Widget item)
     {
         super.insertChild(index, item);
-        _cells.insertBefore(_cells[index .. $], new Cell);
         requestLayout();
         return item;
     }
@@ -742,7 +710,6 @@ class FreeLayout : WidgetGroup
     override Widget removeChild(int index)
     {
         Widget result = super.removeChild(index);
-        _cells.linearRemove(_cells[index .. index + 1]);
         requestLayout();
         return result;
     }
@@ -760,7 +727,6 @@ class FreeLayout : WidgetGroup
     override void removeAllChildren(bool destroyThem = true)
     {
         super.removeAllChildren(destroyThem);
-        _cells.clear();
         requestLayout();
     }
 
@@ -774,17 +740,9 @@ class FreeLayout : WidgetGroup
             Widget item = child(i);
             if (item.visibility == Visibility.gone)
                 continue;
-            Cell* c = _cells[i];
+
             item.measure();
-            Boundaries wbs = item.boundaries;
-            c.size = wbs.nat;
-            wbs.min.w += c.x;
-            wbs.min.h += c.y;
-            wbs.nat.w += c.x;
-            wbs.nat.h += c.y;
-            wbs.max.w += c.x;
-            wbs.max.h += c.y;
-            bs.maximize(wbs);
+            bs.maximize(item.boundaries);
         }
         setBoundaries(bs);
     }
@@ -799,11 +757,41 @@ class FreeLayout : WidgetGroup
         foreach (i; 0 .. childCount)
         {
             Widget item = child(i);
-            if (item.visibility == Visibility.visible)
+            if (item.visibility != Visibility.visible)
+                continue;
+
+            const st = item.style;
+            const LayoutLength left = st.left;
+            const LayoutLength top = st.top;
+            const LayoutLength right = st.right;
+            const LayoutLength bottom = st.bottom;
+            Box b;
+            b.size = item.natSize;
+            if (left.isDefined)
+                b.x = left.applyPercent(inner.w);
+            if (right.isDefined)
             {
-                Cell* c = _cells[i];
-                item.layout(Box(inner.x + c.x, inner.y + c.y, c.size.w, c.size.h));
+                const x1 = inner.w - right.applyPercent(inner.w);
+                if (left.isDefined)
+                    b.w = x1 - b.x;
+                else
+                    b.x = x1 - b.w;
             }
+            if (top.isDefined)
+                b.y = top.applyPercent(inner.h);
+            if (bottom.isDefined)
+            {
+                const y1 = inner.h - bottom.applyPercent(inner.h);
+                if (left.isDefined)
+                    b.h = y1 - b.y;
+                else
+                    b.y = y1 - b.h;
+            }
+            b.x += inner.x;
+            b.y += inner.y;
+            b.w = max(b.w, 0);
+            b.h = max(b.h, 0);
+            item.layout(b);
         }
     }
 
