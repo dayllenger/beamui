@@ -2196,6 +2196,28 @@ class WidgetGroup : Widget
         oldChild.parent = null;
         newChild.parent = this;
     }
+
+    /// Make one child (with specified ID) visible, set `othersVisibility` to the rest
+    bool showChild(string ID, Visibility othersVisibility = Visibility.hidden, bool updateFocus = false)
+    {
+        bool found;
+        Widget foundWidget;
+        foreach (i; 0 .. childCount)
+        {
+            Widget item = child(i);
+            if (item.compareID(ID))
+            {
+                item.visibility = Visibility.visible;
+                foundWidget = item;
+                found = true;
+            }
+            else
+                item.visibility = othersVisibility;
+        }
+        if (found && updateFocus)
+            foundWidget.setFocus();
+        return found;
+    }
 }
 
 /// Helper for locating items in list, tree, table or other controls by typing their name

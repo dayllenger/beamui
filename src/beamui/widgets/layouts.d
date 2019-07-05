@@ -479,28 +479,6 @@ class FrameLayout : WidgetGroup
         }
     }
 
-    /// Make one of children (with specified ID) visible, for the rest, set visibility to `otherChildrenVisibility`
-    bool showChild(string ID, Visibility otherChildrenVisibility = Visibility.hidden, bool updateFocus = false)
-    {
-        bool found;
-        Widget foundWidget;
-        foreach (i; 0 .. childCount)
-        {
-            Widget item = child(i);
-            if (item.compareID(ID))
-            {
-                item.visibility = Visibility.visible;
-                foundWidget = item;
-                found = true;
-            }
-            else
-                item.visibility = otherChildrenVisibility;
-        }
-        if (foundWidget !is null && updateFocus)
-            foundWidget.setFocus();
-        return found;
-    }
-
     override void onDraw(DrawBuf buf)
     {
         super.onDraw(buf);
