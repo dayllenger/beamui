@@ -200,12 +200,12 @@ class LinearLayout : WidgetGroup
             static if (horiz)
             {
                 res.x += pen;
-                applyAlign(res, sz, Align.unspecified, wstyle.valign);
+                res = alignBox(res, sz, wstyle.valign);
             }
             else
             {
                 res.y += pen;
-                applyAlign(res, sz, wstyle.halign, Align.unspecified);
+                res = alignBox(res, sz, wstyle.halign);
             }
             res.w -= m.width;
             res.h -= m.height;

@@ -1849,41 +1849,6 @@ public:
             child(i).onDraw(buf);
     }
 
-    /// Applies alignment to a box for content of size `sz`
-    static void applyAlign(ref Box b, Size sz, Align ha, Align va) // TODO: unittest
-    {
-        if (ha == Align.right)
-        {
-            b.x += b.w - sz.w;
-            b.w = sz.w;
-        }
-        else if (ha == Align.hcenter)
-        {
-            int dx = (b.w - sz.w) / 2;
-            b.x += dx;
-            b.w = sz.w;
-        }
-        else
-        {
-            b.w = sz.w;
-        }
-        if (va == Align.bottom)
-        {
-            b.y += b.h - sz.h;
-            b.h = sz.h;
-        }
-        else if (va == Align.vcenter)
-        {
-            int dy = (b.h - sz.h) / 2;
-            b.y += dy;
-            b.h = sz.h;
-        }
-        else
-        {
-            b.h = sz.h;
-        }
-    }
-
     //===============================================================
     // Popup (contextual) menu support
 

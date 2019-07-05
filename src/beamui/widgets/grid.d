@@ -2127,10 +2127,10 @@ class StringGridWidget : StringGridWidgetBase
             ha = Align.right;
         //if (row < 0)
         //    ha = Align.hcenter;
-        applyAlign(b, sz, ha, Align.vcenter);
+        const cb = alignBox(b, sz, ha | Align.vcenter);
         const offset = BACKEND_CONSOLE ? 0 : 1;
         const cl = currentTheme.getColor("grid_cell_text_header", style.textColor);
-        fnt.drawText(buf, b.x + offset, b.y + offset, txt, cl);
+        fnt.drawText(buf, cb.x + offset, cb.y + offset, txt, cl);
     }
 
     override protected void drawHeaderCellBackground(DrawBuf buf, Box b, int c, int r)

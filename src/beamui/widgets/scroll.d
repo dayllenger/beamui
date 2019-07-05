@@ -595,7 +595,9 @@ class ScrollAreaBase : WidgetGroup
 
 /** Shows content of a widget with optional scrolling (directly usable class).
 
-    If the size of the content widget exceeds available space, it allows to scroll it.
+    If the size of the content widget exceeds available space, it allows
+    to scroll it. If the widget fits, `ScrollArea` can stretch and align it,
+    using the respective style properties.
  */
 class ScrollArea : ScrollAreaBase
 {
@@ -686,16 +688,28 @@ class ScrollArea : ScrollAreaBase
             return;
 
         super.layout(geom);
-        if (_contentWidget)
+
+        if (_contentWidget && _contentWidget.visibility != Visibility.gone)
         {
-            Box cb = Box(_clientBox.pos - _scrollPos, _fullContentSize);
-            /+ TODO: add some behaviour for the content widget like alignment or fill
-            if (_contentWidget.fillsWidth)
-                cb.w = max(cb.w, _clientBox.w);
-            if (_contentWidget.fillsHeight)
-                cb.h = max(cb.h, _clientBox.h);
-            +/
-            _contentWidget.layout(cb);
+            const stretch = _contentWidget.style.stretch;
+            const scrolled = Box(_clientBox.pos - _scrollPos, _clientBox.size);
+            Size sz = _fullContentSize;
+            Align a;
+            if (_clientBox.w > sz.w)
+            {
+                if (stretch == Stretch.cross || stretch == Stretch.both)
+                    sz.w = scrolled.w;
+                else
+                    a |= _contentWidget.style.halign;
+            }
+            if (_clientBox.h > sz.h)
+            {
+                if (stretch == Stretch.main || stretch == Stretch.both)
+                    sz.h = scrolled.h;
+                else
+                    a |= _contentWidget.style.valign;
+            }
+            _contentWidget.layout(alignBox(scrolled, sz, a));
         }
     }
 

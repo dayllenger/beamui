@@ -6,6 +6,8 @@ Authors:   dayllenger
 */
 module beamui.layout.alignment;
 
+import beamui.core.geometry : Box, Point, Size;
+
 /// Box alignment options
 enum Align : uint
 {
@@ -38,4 +40,19 @@ enum Stretch
     /// Applies along secondary axis, i.e. by height in horizontal layouts and by width in vertical ones
     cross,
     both,
+}
+
+/// Applies alignment to a box for content of size `sz`
+Box alignBox(Box room, Size sz, Align a)
+{
+    Point p = room.pos;
+    if ((a & Align.hcenter) == Align.hcenter)
+        p.x += (room.w - sz.w) / 2;
+    else if (a & Align.right)
+        p.x += room.w - sz.w;
+    if ((a & Align.vcenter) == Align.vcenter)
+        p.y += (room.h - sz.h) / 2;
+    else if (a & Align.bottom)
+        p.y += room.h - sz.h;
+    return Box(p, sz);
 }

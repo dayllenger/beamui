@@ -71,13 +71,12 @@ class ImageWidget : Widget
 
         super.onDraw(buf);
         const saver = ClipRectSaver(buf, box, style.alpha);
-        Box b = innerBox;
         DrawableRef img = _drawable;
         if (!img.isNull)
         {
-            Size sz = Size(img.width, img.height);
-            applyAlign(b, sz, Align.hcenter, Align.vcenter);
-            img.drawTo(buf, b);
+            const sz = Size(img.width, img.height);
+            const ib = alignBox(innerBox, sz, Align.center);
+            img.drawTo(buf, ib);
         }
     }
 }

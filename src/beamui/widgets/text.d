@@ -106,8 +106,8 @@ class Label : Widget
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
         // align vertically to center
-        Size sz = Size(b.w, textobj.size.h);
-        applyAlign(b, sz, Align.unspecified, Align.vcenter);
+        const sz = Size(b.w, textobj.size.h);
+        b = alignBox(b, sz, Align.vcenter);
         textobj.draw(buf, b.x, b.y, b.w);
     }
 }
@@ -248,7 +248,7 @@ class ShortLabel : Widget
 
         // align vertically to center
         Size sz = Size(b.w, textobj.size.h);
-        applyAlign(b, sz, Align.unspecified, Align.vcenter);
+        b = alignBox(b, sz, Align.vcenter);
         textobj.draw(buf, b.x, b.y, b.w);
     }
 }

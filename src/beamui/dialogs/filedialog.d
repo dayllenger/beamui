@@ -582,9 +582,9 @@ class FileDialog : Dialog, CustomGridCellAdapter
         DrawableRef img = rowIcon(row);
         if (!img.isNull)
         {
-            Size sz = Size(img.width, img.height);
-            applyAlign(b, sz, Align.hcenter, Align.vcenter);
-            img.drawTo(buf, b);
+            const sz = Size(img.width, img.height);
+            const ib = alignBox(b, sz, Align.center);
+            img.drawTo(buf, ib);
         }
     }
 
