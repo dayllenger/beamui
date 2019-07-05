@@ -51,9 +51,8 @@ enum StyleProperty
     bottom,
     alignment,
     stretch,
-    spacing,
-    rowSpacing,
-    columnSpacing,
+    rowGap,
+    columnGap,
     zIndex,
     // background
     bgColor,
@@ -465,18 +464,48 @@ struct ComputedStyle
         /// ditto
         void stretch(Stretch value) { setProperty!"stretch" = value; }
 
-        /// Space between items in layouts
-        int spacing() const { return _spacing; }
+        /// Set one value for row and column gaps
+        void gap(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"rowGap" = len;
+            setProperty!"columnGap" = len;
+        }
         /// ditto
-        void spacing(int px) { setProperty!"spacing" = px; }
-        /// Space between rows (vertical)
-        int rowSpacing() const { return _rowSpacing; }
+        void gap(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"rowGap" = Length.px(px);
+            setProperty!"columnGap" = Length.px(px);
+        }
+        /// Space between rows in layouts (e.g. in vertical linear layout)
+        LayoutLength rowGap() const { return applyEM(_rowGap); }
         /// ditto
-        void rowSpacing(int px) { setProperty!"rowSpacing" = px; }
-        /// Space between columns (horizontal)
-        int columnSpacing() const { return _columnSpacing; }
+        void rowGap(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"rowGap" = len;
+        }
         /// ditto
-        void columnSpacing(int px) { setProperty!"columnSpacing" = px; }
+        void rowGap(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"rowGap" = Length.px(px);
+        }
+        /// Space between columns in layouts (e.g. in horizontal linear layout)
+        LayoutLength columnGap() const { return applyEM(_columnGap); }
+        /// ditto
+        void columnGap(Length len)
+        {
+            assert(len != Length.none);
+            setProperty!"columnGap" = len;
+        }
+        /// ditto
+        void columnGap(int px)
+        {
+            assert(isDefinedSize(px));
+            setProperty!"columnGap" = Length.px(px);
+        }
 
         /// Widget stack order (`int.min` if unspecified)
         int zIndex() const { return _zIndex; }
@@ -873,9 +902,8 @@ struct ComputedStyle
         Length _bottom = Length.none;
         Align _alignment;
         Stretch _stretch = Stretch.cross;
-        int _spacing = 6;
-        int _rowSpacing = 6;
-        int _columnSpacing = 6;
+        Length _rowGap = Length.zero;
+        Length _columnGap = Length.zero;
         int _zIndex = int.min;
         // background
         Color _bgColor = Color.transparent;
@@ -1103,6 +1131,8 @@ struct ComputedStyle
                 ptype == borderTopWidth ||
                 ptype == borderRightWidth ||
                 ptype == borderBottomWidth ||
+                ptype == rowGap ||
+                ptype == columnGap ||
                 ptype == borderLeftWidth ||
                 ptype == borderTopLeftRadius ||
                 ptype == borderTopRightRadius ||
@@ -1159,6 +1189,9 @@ struct ComputedStyle
                    rest == "top-color" || rest == "right-color" ||
                    rest == "bottom-color" || rest == "left-color";
         }
+
+        if (_transitionProperty == "gap")
+            return property == "row-gap" || property == "column-gap";
 
         return false;
     }
@@ -1251,6 +1284,10 @@ private void explodeShorthands(Style st)
         StrHash("padding-right"),
         StrHash("padding-bottom"),
         StrHash("padding-left"));
+    static immutable gap = ShorthandLengthPair(
+        StrHash("gap"),
+        StrHash("row-gap"),
+        StrHash("column-gap"));
     static immutable bg = ShorthandDrawable(
         StrHash("background"),
         StrHash("background-color"),
@@ -1326,6 +1363,7 @@ private void explodeShorthands(Style st)
         StrHash("transition-delay"));
     st.explode(margin);
     st.explode(padding);
+    st.explode(gap);
     st.explode(bg);
     st.explode(border);
     st.explode(borderWidth);
@@ -1365,9 +1403,8 @@ string getCSSName(StyleProperty ptype)
         case bottom: return "bottom";
         case alignment: return "align";
         case stretch:   return "stretch";
-        case spacing:       return "spacing";
-        case rowSpacing:    return "row-spacing";
-        case columnSpacing: return "column-spacing";
+        case rowGap:    return "row-gap";
+        case columnGap: return "column-gap";
         case zIndex: return "z-index";
         case bgColor:    return "background-color";
         case bgImage:    return "background-image";
@@ -1442,9 +1479,8 @@ bool isAnimatable(StyleProperty ptype)
     {
         case width: .. case marginLeft:
         case left: .. case bottom:
-        case spacing:
-        case rowSpacing:
-        case columnSpacing:
+        case rowGap:
+        case columnGap:
         case bgColor:
         case bgPosition:
         case bgSize:

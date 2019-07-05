@@ -16,6 +16,7 @@ $focused-border-color: saturate($main-color, 30%);
 */
 
 * {
+    gap: 6px;
     font-face: "Helvetica Neue, Liberation Sans, DejaVu Sans, Verdana, Arial, Helvetica, Roboto, Droid Sans";
     font-family: sans-serif;
     font-size: 13px;
@@ -475,14 +476,14 @@ MenuItem {
 TreeItemWidget {
     min-width: 100px;
     min-height: 14px;
-    spacing: 0;
+    gap: 0;
 
     &::expander {
     }
 
     &::body {
         padding: 2px 4px;
-        spacing: 0;
+        gap: 0;
 
         &:hovered {
             background-color: $secondary-hovered-color;
@@ -657,7 +658,7 @@ RangeSlider {
 */
 
 TabWidget {
-    spacing: 0;
+    gap: 0;
 }
 
 TabControl {
@@ -682,7 +683,7 @@ TabHost {
 
 TabItem {
     padding: 6px 1px 0 0;
-    spacing: 0;
+    gap: 0;
     border: 0 solid transparent;
 }
 
@@ -829,12 +830,12 @@ StatusLine > Label {
 
 ToolBarHost {
     padding: 6px;
-    spacing: 8;
+    gap: 8px;
 }
 
 ToolBar {
     padding-left: 6px;
-    spacing: 4;
+    gap: 4px;
     border-color: #bbb;
     border-style: solid;
     border-left-width: 2px;
@@ -966,7 +967,7 @@ FileDialog {
     padding: 4px;
 
     .content {
-        spacing: 1;
+        gap: 1px;
         stretch: both;
     }
 
@@ -1023,7 +1024,7 @@ SettingsDialog {
     padding: 4px;
 
     .content {
-        spacing: 2;
+        gap: 2px;
         stretch: both;
     }
 

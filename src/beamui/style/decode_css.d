@@ -189,6 +189,42 @@ Length[] decodeInsets(const Token[] tokens)
     }
 }
 
+/// Decode CSS length pair, e.g. `gap` property
+Result!(Length[2]) decodeLengthPair(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    alias E = Err!(Length[2]);
+
+    Length[2] ret;
+    if (tokens.length == 1)
+    {
+        const v = decode!Length(tokens[0 .. 1]);
+        if (v)
+            ret[0] = ret[1] = v.val;
+        else
+            return E();
+    }
+    else
+    {
+        if (tokens.length > 2)
+            toomany("length pair", tokens[0].line);
+
+        const v1 = decode!Length(tokens[0 .. 1]);
+        if (v1)
+            ret[0] = v1.val;
+        else
+            return E();
+
+        const v2 = decode!Length(tokens[1 .. 2]);
+        if (v2)
+            ret[1] = v2.val;
+        else
+            return E();
+    }
+    return Ok(ret);
+}
+
 /// Decode dimension, e.g. 1px, 20%, 1.2em, or 'none'
 Result!Length decode(T : Length)(const Token[] tokens)
 {

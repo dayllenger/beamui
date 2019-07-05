@@ -57,7 +57,7 @@ class LinearLayout : WidgetGroup
     {
         super.handleStyleChange(ptype);
 
-        if (ptype == StyleProperty.spacing)
+        if (ptype == StyleProperty.rowGap || ptype == StyleProperty.columnGap)
             requestLayout();
     }
 
@@ -102,15 +102,18 @@ class LinearLayout : WidgetGroup
                 bs.addHeight(wbs);
             }
         }
-        int space = style.spacing * (cast(int)items.length - 1);
         if (_orientation == Orientation.horizontal)
         {
+            const gap = style.columnGap.applyPercent(bs.nat.w);
+            const space = gap * (cast(int)items.length - 1);
             bs.max.w += space;
             bs.nat.w += space;
             bs.min.w += space;
         }
         else
         {
+            const gap = style.rowGap.applyPercent(bs.nat.h);
+            const space = gap * (cast(int)items.length - 1);
             bs.max.h += space;
             bs.nat.h += space;
             bs.min.h += space;
@@ -161,7 +164,10 @@ class LinearLayout : WidgetGroup
                     item.bs.nat.h = item.wt.heightForWidth(item.result.w - m.width) + m.height;
             }
         }
-        const int spacing = style.spacing;
+        static if (horiz)
+            const int spacing = style.columnGap.applyPercent(geom.w);
+        else
+            const int spacing = style.rowGap.applyPercent(geom.h);
         int gaps = spacing * (cast(int)items.length - 1);
         allocateSpace!dim(items, geom.pick!dim - gaps);
         // apply resizers
@@ -425,7 +431,8 @@ class Row : LinearLayout
     this(int spacing)
     {
         super(Orientation.horizontal);
-        style.spacing = spacing;
+        style.rowGap = spacing;
+        style.columnGap = spacing;
     }
 }
 
@@ -440,7 +447,8 @@ class Column : LinearLayout
     this(int spacing)
     {
         super(Orientation.vertical);
-        style.spacing = spacing;
+        style.rowGap = spacing;
+        style.columnGap = spacing;
     }
 }
 
@@ -591,16 +599,16 @@ class TableLayout : WidgetGroup
         int _colCount = 1;
     }
 
-    protected int rowSpace() const
+    protected int rowSpace(int gap) const
     {
         int c = rowCount;
-        return c > 1 ? style.rowSpacing * (c - 1) : 0;
+        return c > 1 ? gap * (c - 1) : 0;
     }
 
-    protected int colSpace() const
+    protected int colSpace(int gap) const
     {
         int c = colCount;
-        return c > 1 ? style.columnSpacing * (c - 1) : 0;
+        return c > 1 ? gap * (c - 1) : 0;
     }
 
     protected ref LayoutItem cell(int col, int row)
@@ -632,7 +640,7 @@ class TableLayout : WidgetGroup
     {
         super.handleStyleChange(ptype);
 
-        if (ptype == StyleProperty.rowSpacing || ptype == StyleProperty.columnSpacing)
+        if (ptype == StyleProperty.rowGap || ptype == StyleProperty.columnGap)
             requestLayout();
     }
 
@@ -693,7 +701,9 @@ class TableLayout : WidgetGroup
             bs.addWidth(col(x).bs);
         }
 
-        Size space = Size(rowSpace, colSpace);
+        const colgap = style.columnGap.applyPercent(bs.nat.w);
+        const rowgap = style.columnGap.applyPercent(bs.nat.h);
+        const space = Size(colSpace(colgap), rowSpace(rowgap));
         bs.min += space;
         bs.nat += space;
         bs.max += space;
@@ -708,11 +718,11 @@ class TableLayout : WidgetGroup
         box = geom;
         const inner = innerBox;
 
-        allocateSpace!`h`(_rows, inner.h - rowSpace);
-        allocateSpace!`w`(_cols, inner.w - colSpace);
+        const colgap = style.columnGap.applyPercent(inner.w);
+        const rowgap = style.columnGap.applyPercent(inner.h);
+        allocateSpace!`w`(_cols, inner.w - colSpace(colgap));
+        allocateSpace!`h`(_rows, inner.h - rowSpace(rowgap));
 
-        const int rowSpacing = style.rowSpacing;
-        const int colSpacing = style.columnSpacing;
         int ypen = 0;
         foreach (y; 0 .. rowCount)
         {
@@ -724,9 +734,9 @@ class TableLayout : WidgetGroup
                 Box wb = Box(inner.x + xpen, inner.y + ypen, w, h);
 
                 cell(x, y).wt.maybe.layout(wb);
-                xpen += w + colSpacing;
+                xpen += w + colgap;
             }
-            ypen += h + rowSpacing;
+            ypen += h + rowgap;
         }
     }
 

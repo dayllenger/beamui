@@ -208,6 +208,25 @@ final class Style
             metaProperties.remove(sh.name);
         }
     }
+    /// Find a shorthand property with two length values, split it into components and decode
+    void explode(ref immutable ShorthandLengthPair sh)
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            if (auto res = decodeLengthPair(*p))
+            {
+                tryToSetShorthandPart(sh.first, false, Variant(res.val[0]));
+                tryToSetShorthandPart(sh.second, false, Variant(res.val[1]));
+            }
+            rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.first] = *p;
+            metaProperties[sh.second] = *p;
+            metaProperties.remove(sh.name);
+        }
+    }
     /// Find a shorthand border property, split it into components and decode
     void explode(ref immutable ShorthandBorder sh)
     {

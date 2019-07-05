@@ -255,6 +255,13 @@ struct ShorthandInsets
     size_t left;
 }
 
+struct ShorthandLengthPair
+{
+    size_t name;
+    size_t first;
+    size_t second;
+}
+
 struct ShorthandDrawable
 {
     size_t name;

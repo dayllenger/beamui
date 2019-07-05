@@ -72,7 +72,7 @@ Widget createControlsPanel()
 
     auto tab1 = new Column;
     with (tab1) {
-        style.spacing = 15;
+        style.gap = 15;
         auto gb = new GroupBox("Group Box");
         with (gb) {
             add(new CheckBox("Check Box").setChecked(true),
@@ -118,7 +118,7 @@ Button#update {
 
 Row#split-view {
     padding: 10px;
-    spacing: 3;
+    gap: 3px;
 }
 
 /* write your own and press the button below */
