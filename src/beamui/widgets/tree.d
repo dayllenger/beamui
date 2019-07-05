@@ -42,8 +42,8 @@ Authors:   Vadim Lopatin
 module beamui.widgets.tree;
 
 import beamui.core.stdaction;
+import beamui.layout.linear;
 import beamui.widgets.controls;
-import beamui.widgets.layouts;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
 import beamui.widgets.scroll;

@@ -12,7 +12,7 @@ module beamui.widgets.appframe;
 import std.path;
 import beamui.core.files;
 import beamui.core.settings;
-import beamui.widgets.layouts;
+import beamui.layout.linear;
 import beamui.widgets.menu;
 import beamui.widgets.statusline;
 import beamui.widgets.toolbars;

@@ -9,7 +9,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.groupbox;
 
-import beamui.widgets.layouts;
+import beamui.layout.linear;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 

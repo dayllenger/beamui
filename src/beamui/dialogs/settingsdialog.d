@@ -15,15 +15,18 @@ import beamui.core.parseutils;
 import beamui.core.settings;
 import beamui.core.stdaction;
 import beamui.dialogs.dialog;
+import beamui.layout.frame;
+import beamui.layout.linear;
+import beamui.layout.table;
 import beamui.platforms.common.platform;
 import beamui.widgets.combobox;
 import beamui.widgets.controls;
 import beamui.widgets.editors;
-import beamui.widgets.layouts;
 import beamui.widgets.lists;
 import beamui.widgets.menu;
 import beamui.widgets.text;
 import beamui.widgets.tree;
+import beamui.widgets.widget;
 
 /// Item on settings page
 class SettingsItem

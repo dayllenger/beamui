@@ -11,9 +11,9 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.toolbars;
 
+import beamui.layout.linear;
 import beamui.widgets.combobox;
 import beamui.widgets.controls;
-import beamui.widgets.layouts;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 

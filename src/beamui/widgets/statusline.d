@@ -11,11 +11,12 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.statusline;
 
+import beamui.layout.linear;
 import beamui.text.sizetest;
 import beamui.widgets.controls;
 import beamui.widgets.editors;
-import beamui.widgets.layouts;
 import beamui.widgets.text;
+import beamui.widgets.widget;
 
 class StatusLineTextPanel : Row
 {

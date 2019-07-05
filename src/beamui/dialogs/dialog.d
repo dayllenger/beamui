@@ -11,9 +11,10 @@ import std.conv;
 import beamui.core.i18n;
 import beamui.core.signals;
 import beamui.core.stdaction;
+import beamui.layout.linear;
 import beamui.widgets.controls;
-import beamui.widgets.layouts;
 import beamui.widgets.popup;
+import beamui.widgets.widget;
 import beamui.widgets.winframe;
 import beamui.platforms.common.platform;
 

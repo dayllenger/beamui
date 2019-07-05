@@ -23,13 +23,14 @@ Authors:   Vadim Lopatin
 */
 module beamui.dialogs.messagebox;
 
+import beamui.core.actions;
 import beamui.core.i18n;
 import beamui.core.signals;
 import beamui.core.stdaction;
 import beamui.dialogs.dialog;
-import beamui.widgets.layouts;
-import beamui.widgets.text;
+import beamui.layout.linear;
 import beamui.platforms.common.platform;
+import beamui.widgets.text;
 
 /// Message box
 class MessageBox : Dialog

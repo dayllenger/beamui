@@ -8,8 +8,8 @@ Authors:   Vadim Lopatin
 module beamui.widgets.lists;
 
 import beamui.core.signals;
+import beamui.layout.linear;
 import beamui.widgets.controls;
-import beamui.widgets.layouts;
 import beamui.widgets.scrollbar;
 import beamui.widgets.text;
 import beamui.widgets.widget;

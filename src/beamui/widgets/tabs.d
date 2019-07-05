@@ -22,11 +22,13 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.tabs;
 
+import beamui.layout.frame;
+import beamui.layout.linear;
 import beamui.widgets.controls;
-import beamui.widgets.layouts;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
 import beamui.widgets.text;
+import beamui.widgets.widget;
 
 /// Current tab is changed handler
 alias tabChangedHandler = void delegate(string newActiveTabID, string previousTabID);

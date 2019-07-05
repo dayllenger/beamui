@@ -11,8 +11,9 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.docks;
 
+import beamui.layout.linear;
 import beamui.widgets.controls;
-import beamui.widgets.layouts;
+import beamui.widgets.widget;
 import beamui.widgets.winframe;
 
 /// Dock alignment types

@@ -11,8 +11,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.popup;
 
+import beamui.layout.linear;
 import beamui.platforms.common.platform;
-import beamui.widgets.layouts;
 import beamui.widgets.widget;
 
 /// Popup alignment option flags

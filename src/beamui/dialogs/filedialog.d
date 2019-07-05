@@ -24,17 +24,19 @@ import beamui.core.functions;
 import beamui.core.i18n;
 import beamui.core.stdaction;
 import beamui.dialogs.dialog;
+import beamui.layout.frame;
+import beamui.layout.linear;
+import beamui.platforms.common.platform;
 import beamui.text.sizetest;
 import beamui.widgets.combobox;
 import beamui.widgets.controls;
 import beamui.widgets.editors;
 import beamui.widgets.grid;
-import beamui.widgets.layouts;
 import beamui.widgets.lists;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
 import beamui.widgets.text;
-import beamui.platforms.common.platform;
+import beamui.widgets.widget;
 
 /// Flags for file dialog options
 enum FileDialogFlag : uint

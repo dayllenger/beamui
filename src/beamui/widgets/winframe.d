@@ -7,9 +7,10 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.winframe;
 
+import beamui.layout.linear;
 import beamui.widgets.controls;
-import beamui.widgets.layouts;
 import beamui.widgets.text;
+import beamui.widgets.widget;
 
 /// Window frame with caption widget
 class WindowFrame : Column

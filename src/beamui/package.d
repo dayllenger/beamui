@@ -50,6 +50,10 @@ public
     import beamui.graphics.images;
     import beamui.graphics.resources;
     import beamui.layout.alignment;
+    import beamui.layout.frame;
+    import beamui.layout.free;
+    import beamui.layout.linear;
+    import beamui.layout.table;
     import beamui.style.theme;
     import beamui.text.fonts;
     import beamui.text.style;
@@ -61,7 +65,6 @@ public
     import beamui.widgets.editors;
     import beamui.widgets.grid;
     import beamui.widgets.groupbox;
-    import beamui.widgets.layouts;
     import beamui.widgets.lists;
     import beamui.widgets.menu;
     import beamui.widgets.popup;
