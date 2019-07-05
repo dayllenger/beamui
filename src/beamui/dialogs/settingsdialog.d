@@ -579,12 +579,10 @@ class SettingsDialog : Dialog
         _frame = new FrameLayout;
         _frame.bindSubItem(this, "page");
         createControls(_layout, _tree.items);
-        auto content = new Row(2);
-        content.add(_tree);
-        content.addResizer();
-        content.add(_frame).setFillWidth(true);
-        add(content).setFillHeight(true);
-        add(createButtonsPanel([ACTION_APPLY, ACTION_CANCEL], 0, 0));
+        auto content = new Row;
+        content.setAttribute("content");
+        content.add(_tree, new Resizer, _frame);
+        add(content, createButtonsPanel([ACTION_APPLY, ACTION_CANCEL], 0, 0));
         if (_layout.childCount > 0)
             _tree.selectItem(_layout.child(0).id);
     }

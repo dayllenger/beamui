@@ -14,6 +14,7 @@ import beamui.core.types : Result, Ok;
 import beamui.core.units : Length, LayoutLength;
 import beamui.graphics.colors : Color, decodeHexColor, decodeTextColor;
 import beamui.graphics.drawables;
+import beamui.layout.alignment;
 import beamui.style.style;
 import beamui.style.types;
 import beamui.text.fonts;
@@ -49,6 +50,7 @@ enum StyleProperty
     right,
     bottom,
     alignment,
+    stretch,
     spacing,
     rowSpacing,
     columnSpacing,
@@ -454,6 +456,14 @@ struct ComputedStyle
         Align halign() const { return _alignment & Align.hcenter; }
         /// Returns vertical alignment
         Align valign() const { return _alignment & Align.vcenter; }
+
+        /** Controls whether widget occupies all available width/height in a linear layout.
+
+            `Stretch.cross` by default.
+        */
+        Stretch stretch() const { return _stretch; }
+        /// ditto
+        void stretch(Stretch value) { setProperty!"stretch" = value; }
 
         /// Space between items in layouts
         int spacing() const { return _spacing; }
@@ -862,6 +872,7 @@ struct ComputedStyle
         Length _right = Length.none;
         Length _bottom = Length.none;
         Align _alignment;
+        Stretch _stretch = Stretch.cross;
         int _spacing = 6;
         int _rowSpacing = 6;
         int _columnSpacing = 6;
@@ -1352,9 +1363,10 @@ string getCSSName(StyleProperty ptype)
         case top:    return "top";
         case right:  return "right";
         case bottom: return "bottom";
-        case alignment:  return "align";
-        case spacing:    return "spacing";
-        case rowSpacing: return "row-spacing";
+        case alignment: return "align";
+        case stretch:   return "stretch";
+        case spacing:       return "spacing";
+        case rowSpacing:    return "row-spacing";
         case columnSpacing: return "column-spacing";
         case zIndex: return "z-index";
         case bgColor:    return "background-color";

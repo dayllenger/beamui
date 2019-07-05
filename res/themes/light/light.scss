@@ -58,6 +58,7 @@ Button {
     }
 
     &::label {
+        stretch: main;
         text-align: center;
         text-hotkey: inherit;
         text-overflow: ellipsis;
@@ -108,6 +109,7 @@ CheckBox {
 
 CheckBox::label, RadioButton::label {
     align: left vcenter;
+    stretch: main;
     text-overflow: ellipsis;
     transition: color 100ms ease;
 
@@ -244,6 +246,10 @@ MultilineLabel {
    layouts.d
 */
 
+Spacer {
+    stretch: both;
+}
+
 Resizer {
     min-width: 3px;
     min-height: 3px;
@@ -342,8 +348,9 @@ ComboBox {
 
     &::body {
         min-width: 40px;
-        align: left vcenter;
         padding: 2px;
+        align: left vcenter;
+        stretch: both;
         transition: color 100ms ease;
 
         &:hovered {
@@ -669,6 +676,7 @@ TabControl::more {
 
 TabHost {
     padding: 6px;
+    stretch: both;
     background-color: #f2f4f5;
 }
 
@@ -747,6 +755,21 @@ FindPanel {
     padding: 4px;
 }
 
+FindPanel > Column {
+    stretch: both;
+}
+
+FindPanel > Button {
+    padding: 0;
+    stretch: none;
+    background: none;
+    border: none;
+}
+
+FindPanel EditLine {
+    stretch: both;
+}
+
 @define-colors {
     edit_caret: black;
     edit_caret_replace: fade-out(#8080ff, 0.5);
@@ -794,6 +817,10 @@ StatusLine {
     weight: 0;
     padding: 1px;
     background-color: #eceffa;
+}
+
+StatusLine > Label {
+    stretch: both;
 }
 
 /* ==========================================================================
@@ -908,6 +935,7 @@ WindowFrame {
 
     &::body {
         padding: 3px;
+        stretch: both;
     }
 }
 
@@ -915,7 +943,8 @@ WindowFrame {
    appframe.d
 */
 
-AppFrame {
+AppFrame::body {
+    stretch: both;
 }
 
 /* ==========================================================================
@@ -933,7 +962,21 @@ DialogFrame {
 }
 
 FileDialog {
+    min-height: 400px;
     padding: 4px;
+
+    .content {
+        spacing: 1;
+        stretch: both;
+    }
+
+    .right-panel {
+        stretch: both;
+    }
+
+    &::grid {
+        stretch: both;
+    }
 }
 
 FilePathPanelButtons {
@@ -960,6 +1003,10 @@ FilePathPanelItem {
     }
 }
 
+FileNameEditLine EditLine {
+    stretch: both;
+}
+
 @define-colors {
     file_dialog_dir_name: #000080;
 }
@@ -975,11 +1022,17 @@ InputBox, MessageBox {
 SettingsDialog {
     padding: 4px;
 
+    .content {
+        spacing: 2;
+        stretch: both;
+    }
+
     &::tree {
         min-width: 50px;
         weight: 3;
         margin: 8px;
         padding: 4px;
+        stretch: both;
         border: 1px solid rgba(0, 0, 0, 0.1);
         background-color: #fff;
         font-size: 16px;
@@ -991,6 +1044,7 @@ SettingsDialog {
         margin: 8px;
         margin-left: 0;
         padding: 4px;
+        stretch: both;
     }
 }
 

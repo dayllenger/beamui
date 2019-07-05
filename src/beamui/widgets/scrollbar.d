@@ -172,7 +172,7 @@ class ScrollBar : WidgetGroup
         _pageDown = new PageScrollButton("PAGE_DOWN");
         _indicator = new ScrollIndicator;
         updateDrawables();
-        addChildren(_btnBack, _btnForward, _indicator, _pageUp, _pageDown);
+        add(_btnBack, _btnForward, _indicator, _pageUp, _pageDown);
         bunch(_btnBack, _btnForward, _indicator, _pageUp, _pageDown).allowsFocus(false);
         _btnBack.clicked ~= { triggerAction(ScrollAction.lineUp); };
         _btnForward.clicked ~= { triggerAction(ScrollAction.lineDown); };

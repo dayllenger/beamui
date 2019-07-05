@@ -68,7 +68,8 @@ class StatusLineTextAndIconPanel : StatusLineTextPanel
         _icon = new ImageWidget;
         _icon.style.minWidth = BACKEND_CONSOLE ? 1 : 20;
         _icon.style.minHeight = BACKEND_CONSOLE ? 1 : 20;
-        add(_icon).alignment(Align.center);
+        _icon.style.alignment = Align.center;
+        add(_icon);
     }
 
     @property string iconID() const
@@ -173,11 +174,9 @@ class StatusLine : Row
     this()
     {
         _defStatus = new Label(" "d);
-        add(_defStatus).setFillWidth(true);
         _backgroundOperationPanel = new StatusLineBackgroundOperationPanel;
         _editorStatePanel = new StatusLineEditorStatePanel;
-        addChild(_backgroundOperationPanel);
-        addChild(_editorStatePanel);
+        add(_defStatus, _backgroundOperationPanel, _editorStatePanel);
     }
 
     /// Set text to show in status line in specific panel

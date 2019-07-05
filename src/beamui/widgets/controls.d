@@ -177,7 +177,7 @@ class Button : LinearLayout, ActionHolder
                 _label.id = "label";
                 _label.bindSubItem(this, "label");
                 _label.state = State.parent;
-                add(_label).setFillWidth(true).setFillHeight(false);
+                add(_label);
             }
         }
     }
@@ -315,11 +315,9 @@ class CheckBox : LinearLayout
         _icon.bindSubItem(this, "icon");
         _icon.state = State.parent;
         _label = new ShortLabel(labelText);
-        _label.id = "label";
         _label.bindSubItem(this, "label");
         _label.state = State.parent;
-        add(_icon);
-        add(_label).setFillHeight(false);
+        add(_icon, _label);
         if (!labelText)
             _label.visibility = Visibility.gone;
         allowsClick = true;

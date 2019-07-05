@@ -59,7 +59,7 @@ class WindowFrame : Column
         }
         with (_bodyLayout) {
             bindSubItem(this, "body");
-            add(_bodyWidget).setFillWidth(true);
+            add(_bodyWidget);
         }
         add(_titleLayout, _bodyLayout);
 

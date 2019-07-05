@@ -242,9 +242,12 @@ class AppFrame : Column
         _toolbarHost = createToolbars();
         _statusLine = createStatusLine();
         _body = createBody();
-        _body.focusGroup = true;
+        if (_body)
+        {
+            _body.bindSubItem(this, "body");
+            _body.focusGroup = true;
+        }
         addSome(_mainMenu, _toolbarHost, _body, _statusLine);
-        cell(_body).setFillHeight(true);
         if (_mainMenu)
             _mainMenu.menuItemClicked ~= &onMenuItemClick;
         updateShortcuts();

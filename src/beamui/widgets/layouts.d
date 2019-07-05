@@ -39,77 +39,10 @@ class LinearLayout : WidgetGroup
         }
     }
 
-    static struct Cell
-    {
-        @property // at single line for compactness
-        {
-            /// Widget occupies all available width in layout
-            bool fillWidth() const { return _fillWidth; }
-            /// ditto
-            void fillWidth(bool flag) { _fillWidth = flag; }
-            /// Widget occupies all available height in layout
-            bool fillHeight() const { return _fillHeight; }
-            /// ditto
-            void fillHeight(bool flag) { _fillHeight = flag; }
-
-            /// Alignment (combined vertical and horizontal)
-            Align alignment() const { return widget.style.alignment; }
-            /// ditto
-            void alignment(Align value) { widget.style.alignment = value; }
-            /// Returns horizontal alignment
-            Align halign() const { return widget.style.alignment & Align.hcenter; }
-            /// Returns vertical alignment
-            Align valign() const { return widget.style.alignment & Align.vcenter; }
-
-            /// Margins (between widget bounds and its background)
-            Insets margins() const { return widget.style.margins; }
-            /// ditto
-            void margins(Insets value) { widget.style.margins = value; }
-            /// ditto
-            void margins(int v) { widget.style.margins = v; }
-            /// Top margin value
-            int marginTop() const { return widget.style.marginTop; }
-            /// ditto
-            void marginTop(int value) { widget.style.marginTop = value; }
-            /// Right margin value
-            int marginRight() const { return widget.style.marginRight; }
-            /// ditto
-            void marginRight(int value) { widget.style.marginRight = value; }
-            /// Bottom margin value
-            int marginBottom() const { return widget.style.marginBottom; }
-            /// ditto
-            void marginBottom(int value) { widget.style.marginBottom = value; }
-            /// Left margin value
-            int marginLeft() const { return widget.style.marginLeft; }
-            /// ditto
-            void marginLeft(int value) { widget.style.marginLeft = value; }
-        }
-
-        /// Chained version of `fillWidth`
-        Cell* setFillWidth(bool flag) { _fillWidth = flag; return &this; }
-        /// Chained version of `fillHeight`
-        Cell* setFillHeight(bool flag) { _fillHeight = flag; return &this; }
-        /// Chained version of `alignment`
-        Cell* setAlignment(Align value) { widget.style.alignment = value; return &this; }
-        /// Chained version of `margins`
-        Cell* setMargins(Insets value) { widget.style.margins = value; return &this; }
-        /// ditto
-        Cell* setMargins(int v) { widget.style.margins = v; return &this; }
-
-        private
-        {
-            Widget widget;
-            bool _fillWidth;
-            bool _fillHeight;
-        }
-    }
-
     private
     {
         Orientation _orientation = Orientation.vertical;
 
-        /// Array of cells, synchronized with the list of children
-        Array!(Cell*) _cells;
         /// Temporary layout item list
         Array!LayoutItem items;
     }
@@ -120,115 +53,6 @@ class LinearLayout : WidgetGroup
         _orientation = orientation;
     }
 
-    /// Returns cell pointer by specified index. Index must be in range
-    Cell* cell(size_t i)
-    {
-        return _cells[i];
-    }
-    /// Returns cell pointer by specified widget. Widget must be in the layout
-    Cell* cell(Widget item)
-    {
-        return _cells[childIndex(item)];
-    }
-
-    /// Add widgets to the layout next to the last item.
-    /// Returns: Last cell pointer (not `null`), that allows to adjust layout properties for this widget.
-    Cell* add(Widget first, Widget[] next...)
-    {
-        addChild(first);
-        foreach (item; next)
-            addChild(item);
-        return _cells.back;
-    }
-
-    /// Same as `add`, but skips null widgets. May return `null` cell
-    Cell* addSome(Widget first, Widget[] next...)
-    {
-        size_t prevLength = _cells.length;
-        if (first)
-            addChild(first);
-        foreach (item; next)
-            if (item)
-                addChild(item);
-        return _cells.length > prevLength ? _cells.back : null;
-    }
-
-    /// Add a spacer
-    LinearLayout addSpacer()
-    {
-        auto item = new Spacer;
-        super.addChild(item);
-        _cells ~= new Cell(item, true, true);
-        return this;
-    }
-
-    /// Add a resizer
-    LinearLayout addResizer()
-    {
-        add(new Resizer);
-        return this;
-    }
-
-    override Widget addChild(Widget item)
-    {
-        super.addChild(item);
-        Cell* cell = createDefaultCell(item);
-        _cells ~= cell;
-        return item;
-    }
-
-    override Widget insertChild(int index, Widget item)
-    {
-        super.insertChild(index, item);
-        Cell* cell = createDefaultCell(item);
-        _cells.insertBefore(_cells[index .. $], cell);
-        return item;
-    }
-
-    override Widget removeChild(int index)
-    {
-        Widget result = super.removeChild(index);
-        _cells.linearRemove(_cells[index .. index + 1]);
-        return result;
-    }
-
-    override Widget removeChild(string id)
-    {
-        return super.removeChild(id);
-    }
-
-    override Widget removeChild(Widget child)
-    {
-        return super.removeChild(child);
-    }
-
-    override void removeAllChildren(bool destroyThem = true)
-    {
-        super.removeAllChildren(destroyThem);
-        _cells.clear();
-    }
-
-    override void replaceChild(Widget oldChild, Widget newChild)
-    {
-        super.replaceChild(oldChild, newChild);
-        foreach (ref c; _cells)
-        {
-            if (c.widget is oldChild)
-            {
-                c.widget = newChild;
-                break;
-            }
-        }
-    }
-
-    private Cell* createDefaultCell(Widget item) const
-    {
-        if (_orientation == Orientation.vertical)
-            return new Cell(item, true, false);
-        else
-            return new Cell(item, false, true);
-    }
-
     override void handleStyleChange(StyleProperty ptype)
     {
         super.handleStyleChange(ptype);
@@ -236,8 +60,6 @@ class LinearLayout : WidgetGroup
         if (ptype == StyleProperty.spacing)
             requestLayout();
     }
-
-    //===============================================================
 
     override void measure()
     {
@@ -264,7 +86,7 @@ class LinearLayout : WidgetGroup
             item.wt.measure();
             Boundaries wbs = item.wt.boundaries;
             // add margins
-            Size m = _cells[item.index].margins.size;
+            Size m = item.wt.style.margins.size;
             Boundaries ms = Boundaries(m, m, m);
             wbs.addWidth(ms);
             wbs.addHeight(ms);
@@ -319,19 +141,22 @@ class LinearLayout : WidgetGroup
         // setup fill
         foreach (ref item; items)
         {
-            Cell* c = _cells[item.index];
-            Insets m = c.margins;
+            const wstyle = item.wt.style;
+            const stretch = wstyle.stretch;
+            const bool main = stretch == Stretch.main || stretch == Stretch.both;
+            const bool cross = stretch == Stretch.cross || stretch == Stretch.both;
+            const Insets m = wstyle.margins;
             static if (horiz)
             {
-                item.fill = c.fillWidth;
-                item.result.h = c.fillHeight ? min(geom.h, item.bs.max.h) : item.bs.nat.h;
+                item.fill = main;
+                item.result.h = cross ? min(geom.h, item.bs.max.h) : item.bs.nat.h;
                 if (item.wt.dependentSize == DependentSize.width)
                     item.bs.nat.w = item.wt.widthForHeight(item.result.h - m.height) + m.width;
             }
             else
             {
-                item.fill = c.fillHeight;
-                item.result.w = c.fillWidth ? min(geom.w, item.bs.max.w) : item.bs.nat.w;
+                item.fill = main;
+                item.result.w = cross ? min(geom.w, item.bs.max.w) : item.bs.nat.w;
                 if (item.wt.dependentSize == DependentSize.height)
                     item.bs.nat.h = item.wt.heightForWidth(item.result.w - m.width) + m.height;
             }
@@ -348,11 +173,11 @@ class LinearLayout : WidgetGroup
                 LayoutItem* left  = &items[i - 1];
                 LayoutItem* right = &items[i + 1];
 
-                int lmin = left.bs.min.pick!dim;
-                int rmin = right.bs.min.pick!dim;
-                int lresult = left.result.pick!dim;
-                int rresult = right.result.pick!dim;
-                int delta = clamp(resizer.delta, -(lresult - lmin), rresult - rmin);
+                const lmin = left.bs.min.pick!dim;
+                const rmin = right.bs.min.pick!dim;
+                const lresult = left.result.pick!dim;
+                const rresult = right.result.pick!dim;
+                const delta = clamp(resizer.delta, -(lresult - lmin), rresult - rmin);
                 resizer._delta = delta;
                 left.result.pick!dim  = lresult + delta;
                 right.result.pick!dim = rresult - delta;
@@ -362,19 +187,19 @@ class LinearLayout : WidgetGroup
         int pen;
         foreach (ref item; items)
         {
-            Cell* c = _cells[item.index];
-            Insets m = c.margins;
-            Size sz = item.result;
+            const wstyle = item.wt.style;
+            const Insets m = wstyle.margins;
+            const Size sz = item.result;
             Box res = Box(geom.x + m.left, geom.y + m.top, geom.w, geom.h);
             static if (horiz)
             {
                 res.x += pen;
-                applyAlign(res, sz, Align.unspecified, c.valign);
+                applyAlign(res, sz, Align.unspecified, wstyle.valign);
             }
             else
             {
                 res.y += pen;
-                applyAlign(res, sz, c.halign, Align.unspecified);
+                applyAlign(res, sz, wstyle.halign, Align.unspecified);
             }
             res.w -= m.width;
             res.h -= m.height;

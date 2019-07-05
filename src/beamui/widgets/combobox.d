@@ -84,8 +84,7 @@ class ComboBoxBase : Row
         _button.allowsFocus = false;
         _body.allowsFocus = false;
         allowsFocus = true;
-        add(_body).setFillWidth(true);
-        add(_button);
+        add(_body, _button);
     }
 
     protected Widget createSelectedItemWidget()

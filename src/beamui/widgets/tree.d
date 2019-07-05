@@ -4,7 +4,14 @@ Tree widgets.
 Synopsis:
 ---
 // tree example
-auto tree = new TreeWidget;
+auto treePane = new Column;
+    auto treeItemLabel = new Label;
+    auto tree = new TreeWidget;
+treePane.add(treeItemLabel, tree);
+
+treeItemLabel.style.textAlign = TextAlign.center;
+tree.style.stretch = Stretch.both;
+
 TreeItem tree1 = tree.items.newChild("group1", "Group 1"d, "folder");
 tree1.newChild("g1_1", "item 1"d, "text-plain");
 tree1.newChild("g1_2", "item 2"d, "text-plain");
@@ -20,12 +27,6 @@ tree22.newChild("group3_2_3", "item 3"d);
 tree22.newChild("group3_2_4", "item 4"d);
 tree22.newChild("group3_2_5", "item 5"d);
 tree2.newChild("g2_4", "item 4"d);
-
-auto treePane = new Column;
-auto treeItemLabel = new Label;
-treeItemLabel.style.textAlign = TextAlign.center;
-treePane.add(treeItemLabel);
-treePane.add(tree).setFillHeight(true);
 
 tree.itemSelected ~= (TreeItem selectedItem, bool activated) {
     dstring label = "Selected item: "d ~ toUTF32(selectedItem.id) ~ (activated ? " selected + activated"d : " selected"d);

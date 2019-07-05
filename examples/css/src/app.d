@@ -33,20 +33,20 @@ int main()
 
     with (splitView) {
         id = "split-view";
-        add(editorPane).setFillWidth(true);
-        addResizer();
-        add(controls);
+        add(editorPane, new Resizer, controls);
         with (editorPane) {
             id = "editor-pane";
             style.width = 500;
             style.height = 500;
-            add(editor).setFillHeight(true);
-            add(btnUpdate).setFillWidth(false);
+            style.stretch = Stretch.both;
+            add(editor, btnUpdate);
             with (editor) {
+                style.stretch = Stretch.both;
                 smartIndents = true;
                 content.syntaxSupport = new CssSyntaxSupport;
             }
             btnUpdate.id = "update";
+            btnUpdate.style.stretch = Stretch.none;
         }
         with (controls) {
             id = "controls";
@@ -84,8 +84,8 @@ Widget createControlsPanel()
             auto ed = new EditLine("Edit line");
             auto comb = new ComboBox(["Item 1", "Item 2", "Item 3"]);
             comb.selectedItemIndex = 0;
-            add(ed).setFillWidth(true);
-            add(comb);
+            add(ed, comb);
+            ed.style.stretch = Stretch.both;
         }
         Row r2 = new Row;
         with (r2) {
@@ -93,8 +93,8 @@ Widget createControlsPanel()
             auto btn2 = new Button("Button", "folder");
             auto btn3 = new Button(null, "dialog-cancel");
             btn2.setAttribute("folder");
-            add(btn1).setFillWidth(true);
-            add(btn2, btn3);
+            add(btn1, btn2, btn3);
+            btn1.style.stretch = Stretch.both;
         }
         add(gb);
         add(new ScrollBar(Orientation.horizontal), new Slider(Orientation.horizontal));

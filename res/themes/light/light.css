@@ -14,7 +14,7 @@ Button:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
 Button::icon, Button::label { align: center; }
 
-Button::label { text-align: center; text-hotkey: inherit; text-overflow: ellipsis; transition: color 75ms ease; }
+Button::label { stretch: main; text-align: center; text-hotkey: inherit; text-overflow: ellipsis; transition: color 75ms ease; }
 
 Button::label:hovered { color: #46617e; }
 
@@ -34,7 +34,7 @@ LinkButton::label:not(enabled) { color: rgba(192, 192, 255, 0.7); }
 
 CheckBox { padding: 2px; }
 
-CheckBox::label, RadioButton::label { align: left vcenter; text-overflow: ellipsis; transition: color 100ms ease; }
+CheckBox::label, RadioButton::label { align: left vcenter; stretch: main; text-overflow: ellipsis; transition: color 100ms ease; }
 
 CheckBox::label:hovered, RadioButton::label:hovered { color: #46617e; }
 
@@ -94,6 +94,8 @@ MultilineLabel { align: left top; padding: 1px; }
 MultilineLabel:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 /* ========================================================================== layouts.d */
+Spacer { stretch: both; }
+
 Resizer { min-width: 3px; min-height: 3px; }
 
 Resizer:hovered { background-color: rgba(255, 255, 0, 0.2); }
@@ -133,7 +135,7 @@ ComboBox:pressed { border-color: #4e93da; background: linear(180deg, #eeeeee, #d
 
 ComboBox:not(enabled) { border-color: #ccc; opacity: 0.4; }
 
-ComboBox::body { min-width: 40px; align: left vcenter; padding: 2px; transition: color 100ms ease; }
+ComboBox::body { min-width: 40px; padding: 2px; align: left vcenter; stretch: both; transition: color 100ms ease; }
 
 ComboBox::body:hovered { color: #46617e; }
 
@@ -262,7 +264,7 @@ TabControl::more { padding: 0 2px 4px 0; opacity: 0.6; transition: opacity 100ms
 
 TabControl::more:hovered { opacity: 1; }
 
-TabHost { padding: 6px; background-color: #f2f4f5; }
+TabHost { padding: 6px; stretch: both; background-color: #f2f4f5; }
 
 TabItem { padding: 6px 1px 0 0; spacing: 0; border: 0 solid transparent; }
 
@@ -293,6 +295,12 @@ LogWidget { font-family: monospace; font-size: 10px; }
 
 FindPanel { padding: 4px; }
 
+FindPanel > Column { stretch: both; }
+
+FindPanel > Button { padding: 0; stretch: none; background: none; border: none; }
+
+FindPanel EditLine { stretch: both; }
+
 @define-colors { edit_caret: black;
   edit_caret_replace: rgba(128, 128, 255, 0.5);
   editor_selection_focused: rgba(96, 160, 255, 0.3);
@@ -319,6 +327,8 @@ SourceEdit:not(enabled) { background-color: #f0f0f0; }
 
 /* ========================================================================== statusline.d */
 StatusLine { weight: 0; padding: 1px; background-color: #eceffa; }
+
+StatusLine > Label { stretch: both; }
 
 /* ========================================================================== toolbars.d */
 ToolBarHost { padding: 6px; spacing: 8; }
@@ -362,15 +372,23 @@ WindowFrame::caption { padding: 3px; background: #e4e4e4; }
 
 WindowFrame::label { align: left vcenter; padding: 2px; color: #333; font-size: 90%; text-transform: uppercase; }
 
-WindowFrame::body { padding: 3px; }
+WindowFrame::body { padding: 3px; stretch: both; }
 
 /* ========================================================================== appframe.d */
+AppFrame::body { stretch: both; }
+
 /* ========================================================================== dialog.d, filedialog.d, inputbox.d, messagebox.d, settingsdialog.d */
 DialogFrame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px #555; }
 
 @define-colors { dialog_background: #eee; }
 
-FileDialog { padding: 4px; }
+FileDialog { min-height: 400px; padding: 4px; }
+
+FileDialog .content { spacing: 1; stretch: both; }
+
+FileDialog .right-panel { stretch: both; }
+
+FileDialog::grid { stretch: both; }
 
 FilePathPanelButtons { padding-left: 3px; padding-right: 6px; }
 
@@ -382,6 +400,8 @@ FilePathPanelItem::button { padding: 0 1px; }
 
 FilePathPanelItem::button:hovered { background-color: #c7d9ec; }
 
+FileNameEditLine EditLine { stretch: both; }
+
 @define-colors { file_dialog_dir_name: #000080; }
 
 InputBox, MessageBox { padding: 10px; }
@@ -390,9 +410,11 @@ InputBox MultilineLabel, MessageBox MultilineLabel { padding: 10px; }
 
 SettingsDialog { padding: 4px; }
 
-SettingsDialog::tree { min-width: 50px; weight: 3; margin: 8px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; font-size: 16px; }
+SettingsDialog .content { spacing: 2; stretch: both; }
 
-SettingsDialog::page { min-width: 100px; weight: 5; margin: 8px; margin-left: 0; padding: 4px; }
+SettingsDialog::tree { min-width: 50px; weight: 3; margin: 8px; padding: 4px; stretch: both; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; font-size: 16px; }
+
+SettingsDialog::page { min-width: 100px; weight: 5; margin: 8px; margin-left: 0; padding: 4px; stretch: both; }
 
 SettingsPage::title { weight: 0; padding: 4px 4px 12px; font-size: 120%; }
 

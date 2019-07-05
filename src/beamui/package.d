@@ -49,6 +49,7 @@ public
     import beamui.graphics.drawbuf;
     import beamui.graphics.images;
     import beamui.graphics.resources;
+    import beamui.layout.alignment;
     import beamui.style.theme;
     import beamui.text.fonts;
     import beamui.text.style;

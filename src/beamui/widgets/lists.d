@@ -449,12 +449,12 @@ class IconStringListAdapter : StringListAdapterBase
             {
                 _widget = new Row;
                 _widget.bindSubItem(this, "item");
-                _label = new Label;
-                _label.id = "label";
                 _icon = new ImageWidget;
                 _icon.id = "icon";
-                _widget.add(_icon);
-                _widget.add(_label).setFillWidth(true);
+                _label = new Label;
+                _label.id = "label";
+                _label.style.stretch = Stretch.both;
+                _widget.add(_icon, _label);
             }
             // update widget
             _widget.state = _items[index].state;

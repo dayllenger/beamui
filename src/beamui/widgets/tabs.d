@@ -732,15 +732,9 @@ class TabWidget : Column
         _tabControl.tabClosed ~= &tabClosed.emit;
         _tabHost = new TabHost(_tabControl);
         if (tabAlignment == Align.top)
-        {
-            add(_tabControl);
-            add(_tabHost).setFillHeight(true);
-        }
+            add(_tabControl, _tabHost);
         else
-        {
-            add(_tabHost).setFillHeight(true);
-            add(_tabControl);
-        }
+            add(_tabHost, _tabControl);
         focusGroup = true;
     }
 

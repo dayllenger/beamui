@@ -761,9 +761,8 @@ class FileDialog : Dialog, CustomGridCellAdapter
         _roots = getRootPaths() ~ getBookmarkPaths();
 
         style.minWidth = BACKEND_CONSOLE ? 50 : 600;
-        style.minHeight = 400; // TODO: move in styles
 
-        auto content = new Row(1);
+        auto content = new Row;
             Widget leftPanel = createRootsList();
             Column rightPanel = new Column;
                 _edPath = new FilePathPanel;
@@ -771,31 +770,25 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 _edFilename = new EditLine;
 
         with (content) {
-            id = "dlgcontent";
-            add(leftPanel);
-            addResizer();
-            add(rightPanel).setFillWidth(true);
-
+            setAttribute("content");
+            add(leftPanel, new Resizer, rightPanel);
             with (leftPanel) {
-                id = "leftPanel";
+                setAttribute("left-panel");
                 style.minWidth = BACKEND_CONSOLE ? 7 : 40;
             }
             with (rightPanel) {
-                id = "rightPanel";
-                add(new Label(tr("Path") ~ ":"), _edPath);
-                add(_fileList).setFillHeight(true);
-                add(_edFilename);
+                setAttribute("right-panel");
+                add(new Label(tr("Path") ~ ":"), _edPath, _fileList, _edFilename);
                 if (_filters.length)
                 {
                     _cbFilters = new ComboBox;
-                    _cbFilters.id = "filter";
+                    _cbFilters.setAttribute("filter");
                     add(_cbFilters);
                 }
                 with (_edPath) {
-                    id = "path";
+                    setAttribute("path");
                 }
                 with (_fileList) {
-                    id = "files";
                     bindSubItem(this, "grid");
                     fullColumnOnLeft = false;
                     fullRowOnTop = false;
@@ -804,12 +797,12 @@ class FileDialog : Dialog, CustomGridCellAdapter
                     minVisibleCols = 4;
                 }
                 with (_edFilename) {
-                    id = "filename";
+                    setAttribute("filename");
                     setDefaultPopupMenu();
                 }
             }
         }
-        add(content).setFillHeight(true);
+        add(content);
 
         if (_flags & FileDialogFlag.enableCreateDirectory)
         {
@@ -1262,10 +1255,8 @@ class FileNameEditLine : Row
     {
         _caption = tr("Open File");
         _edFileName = new EditLine;
-        _edFileName.id = "FileNameEditLine_edFileName";
         _edFileName.style.minWidth = BACKEND_CONSOLE ? 16 : 200;
         _btn = new Button("..."d);
-        _btn.id = "FileNameEditLine_btnFile";
         _btn.bindSubItem(this, "button");
         _btn.clicked ~= {
             auto dlg = new FileDialog(_caption, window, null, _fileDialogFlags);
@@ -1295,8 +1286,7 @@ class FileNameEditLine : Row
         };
         _edFileName.contentChanged ~= &contentChanged.emit;
         _edFileName.modifiedStateChanged ~= &modifiedStateChanged.emit;
-        add(_edFileName).setFillWidth(true);
-        add(_btn);
+        add(_edFileName, _btn);
     }
 
     void setDefaultPopupMenu()

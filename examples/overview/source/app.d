@@ -263,8 +263,8 @@ int main()
                 }
             }
             with (line2) {
-                add(gb5).setFillWidth(true);
-                add(gb6);
+                add(gb5, gb6);
+                gb5.style.stretch = Stretch.both;
                 gb5.add(sb, sl, rsl);
                 with (gb6) {
                     auto ed1 = new EditLine("Some text"d);
@@ -277,10 +277,11 @@ int main()
                 }
             }
             with (line3) {
-                add(gbeditbox).setFillWidth(true);
-                add(gbtabs);
+                add(gbeditbox, gbtabs);
                 with (gbeditbox) {
-                    add(edbox).setFillHeight(true);
+                    add(edbox);
+                    gbeditbox.style.stretch = Stretch.both;
+                    edbox.style.stretch = Stretch.both;
                 }
                 with (gbtabs) {
                     add(tabs1);
@@ -295,17 +296,19 @@ int main()
                 }
             }
             with (line4) {
-                add(gbgrid).setFillWidth(true);
-                add(gbtree);
+                add(gbgrid, gbtree);
                 with (gbgrid) {
-                    add(grid).setFillHeight(true);
+                    add(grid);
+                    gbgrid.style.stretch = Stretch.both;
+                    grid.style.stretch = Stretch.both;
                 }
                 with (gbtree) {
                     add(tree, newTreeItemForm);
                     with (newTreeItemForm) {
-                        add(newTreeItemEd);
-                        add(newTreeItemFormRow).setFillWidth(false).setAlignment(Align.right);
+                        add(newTreeItemEd, newTreeItemFormRow);
                         with (newTreeItemFormRow) {
+                            style.alignment = Align.right;
+                            style.stretch = Stretch.none;
                             add(btnAddItem, btnRemoveItem);
                         }
                     }
@@ -422,9 +425,9 @@ int main()
                 auto addbtn = new Button("Add item"d);
 
         with (longLists) {
-            add(list).setFillWidth(true);
-            add(list2).setFillWidth(true);
-            add(itemedit);
+            add(list, list2, itemedit);
+            list.style.stretch = Stretch.both;
+            list2.style.stretch = Stretch.both;
             with (itemedit) {
                 style.padding = Insets(0, 6);
                 add(new Label("New item text:"d), itemtext, addbtn);
@@ -529,19 +532,19 @@ void main()
 
         with (editors) {
             add(editLineLabel, editLineControl, editLine);
-            add(editorLabel1, editorControl);
-            add(sourceEditor1).setFillHeight(true);
-            add(editorLabel2);
-            add(sourceEditor2).setFillHeight(true);
+            add(editorLabel1, editorControl, sourceEditor1);
+            add(editorLabel2, sourceEditor2);
             with (editLine) {
                 popupMenu = editorPopupMenu;
             }
             with (sourceEditor1) {
+                style.stretch = Stretch.both;
                 text = sourceCode;
                 popupMenu = editorPopupMenu;
                 showIcons = true;
             }
             with (sourceEditor2) {
+                style.stretch = Stretch.both;
                 content = sourceEditor1.content; // view the same content as first editbox
             }
         }
@@ -558,14 +561,14 @@ void main()
             auto grid = new StringGridWidget;
 
         with (gridTab) {
-            add(gridSettings);
-            add(grid).setFillHeight(true);
+            add(gridSettings, grid);
             with (gridSettings) {
                 add(cb1, cb2);
                 cb1.tooltipText = "Extends scroll area to show full column at left when scrolled to rightmost column"d;
                 cb2.tooltipText = "Extends scroll area to show full row at top when scrolled to end row"d;
             }
             with (grid) {
+                grid.style.stretch = Stretch.both;
                 showColHeaders = true;
                 showRowHeaders = true;
             }
@@ -660,7 +663,8 @@ void main()
     //==========================================================================
 
     tabs.selectTab("CONTROLS");
-    frame.add(tabs).setFillHeight(true);
+    tabs.style.stretch = Stretch.both;
+    frame.add(tabs);
 
     window.mainWidget = frame;
     static if (BACKEND_GUI)

@@ -3773,8 +3773,7 @@ class FindPanel : Row
         with (main) {
             add(rowFind, rowReplace);
             with (rowFind) {
-                add(_edFind).setFillWidth(true);
-                add(_btnFindNext, _btnFindPrev, findSettings);
+                add(_edFind, _btnFindNext, _btnFindPrev, findSettings);
                 with (findSettings) {
                     add(_cbCaseSensitive, _cbWholeWords, _cbSelection);
                     with (_cbCaseSensitive) {
@@ -3788,13 +3787,10 @@ class FindPanel : Row
                 }
             }
             with (rowReplace) {
-                id = "rowReplace";
-                add(_edReplace).setFillWidth(true);
-                add(btnReplace, btnReplaceAndFind, btnReplaceAll);
+                add(_edReplace, btnReplace, btnReplaceAndFind, btnReplaceAll);
             }
         }
-        add(main).setFillWidth(true);
-        add(closeBtn).setFillHeight(false);
+        add(main, closeBtn);
 
         _edFind.enterKeyPressed ~= { findNext(_backDirection); return true; };
         _edFind.contentChanged ~= &onFindTextChange;

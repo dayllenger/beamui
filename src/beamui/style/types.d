@@ -10,29 +10,6 @@ import beamui.core.types : State;
 import beamui.core.units : Length;
 import beamui.graphics.drawables : BgSizeType;
 
-/// Align option bit constants
-enum Align : uint
-{
-    /// Alignment is not specified
-    unspecified = 0,
-    /// Horizontally align to the left of box
-    left = 1,
-    /// Horizontally align to the right of box
-    right = 2,
-    /// Horizontally align to the center of box
-    hcenter = 1 | 2,
-    /// Vertically align to the top of box
-    top = 4,
-    /// Vertically align to the bottom of box
-    bottom = 8,
-    /// Vertically align to the center of box
-    vcenter = 4 | 8,
-    /// Align to the center of box (vcenter | hcenter)
-    center = vcenter | hcenter,
-    /// Align to the top left corner of box (left | top)
-    topleft = left | top,
-}
-
 /// Text drawing flag bits
 enum TextFlag : uint
 {

@@ -19,7 +19,8 @@ import beamui.core.units;
 import beamui.css.tokenizer : Token, TokenType;
 import beamui.graphics.colors;
 import beamui.graphics.drawables;
-import beamui.style.types : Align, BgPositionRaw, BgSizeRaw, SpecialCSSType;
+import beamui.layout.alignment;
+import beamui.style.types : BgPositionRaw, BgSizeRaw, SpecialCSSType;
 import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.text.style;
 
@@ -126,6 +127,32 @@ Result!Align decode(T : Align)(const Token[] tokens)
         }
     }
     return Ok(result);
+}
+
+/// Decode stretch property
+Result!Stretch decode(T : Stretch)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "stretch";
+    const t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        shouldbe(what, "an identifier", t);
+        return Err!Stretch;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+    switch (t.text)
+    {
+        case "main":  return Ok(Stretch.main);
+        case "cross": return Ok(Stretch.cross);
+        case "both":  return Ok(Stretch.both);
+        case "none":  return Ok(Stretch.none);
+        default:
+            unknown(what, t);
+            return Err!Stretch;
+    }
 }
 
 /// Decode CSS rectangle declaration to `Length[]`

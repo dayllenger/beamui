@@ -102,7 +102,7 @@ class Dialog : Column
         foreach (i, a; actions)
         {
             if (splitBeforeIndex == i)
-                res.addSpacer();
+                res.addChild(new Spacer);
             auto btn = new Button(a);
             (Action a) {
                 btn.clicked ~= { handleAction(a); };
@@ -114,7 +114,7 @@ class Dialog : Column
             }
             if (a is ACTION_NO || a is ACTION_CANCEL)
                 _cancelButton = btn;
-            res.add(btn);
+            res.addChild(btn);
         }
         return res;
     }

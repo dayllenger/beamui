@@ -32,8 +32,9 @@ public
     import beamui.graphics.drawables;
     import beamui.graphics.drawbuf;
 
+    import beamui.layout.alignment;
+
     import beamui.style.theme : currentTheme;
-    import beamui.style.types : Align;
 
     import beamui.text.fonts;
 
@@ -781,7 +782,13 @@ public:
 
         switch (ptype) with (StyleProperty)
         {
-        case width: .. case alignment:
+        case width: .. case maxHeight:
+        case paddingTop: .. case paddingLeft:
+        case borderTopWidth: .. case borderLeftWidth:
+        case marginTop: .. case marginLeft:
+        case left: .. case bottom:
+        case alignment:
+        case stretch:
         case letterSpacing:
         case lineHeight:
         case tabSize:
@@ -1931,13 +1938,21 @@ public:
     {
         assert(false, "addChild: this widget does not support having children");
     }
-    /// Add several children
-    void addChildren(Widget[] items...)
+    /// Append several children
+    final void add(Widget first, Widget[] next...)
     {
-        foreach (item; items)
-        {
+        addChild(first);
+        foreach (item; next)
             addChild(item);
-        }
+    }
+    /// Append several children, skipping `null` widgets
+    final void addSome(Widget first, Widget[] next...)
+    {
+        if (first)
+            addChild(first);
+        foreach (item; next)
+            if (item)
+                addChild(item);
     }
     /// Insert child before given index, returns inserted item
     Widget insertChild(int index, Widget item)
