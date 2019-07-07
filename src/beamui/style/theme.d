@@ -6,12 +6,14 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.style.theme;
 
+import beamui.core.config;
 import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types : State;
 import CSS = beamui.css.css;
 import beamui.graphics.colors;
 import beamui.graphics.drawables;
+import beamui.graphics.resources;
 import beamui.style.style;
 import beamui.style.types : Selector, SpecialCSSType;
 
@@ -119,25 +121,46 @@ void currentTheme(Theme theme)
 shared static ~this()
 {
     currentTheme = null;
+    defaultStyleSheet = CSS.StyleSheet.init;
+    defaultIsLoaded = false;
 }
 
-/// Load theme from file, null if failed
+private __gshared CSS.StyleSheet defaultStyleSheet;
+private __gshared bool defaultIsLoaded;
+
+/// Load theme from file, `null` if failed
 Theme loadTheme(string name)
 {
-    import beamui.core.config;
-    import beamui.graphics.resources;
+    if (!name.length)
+        return null;
 
-    string filename = resourceList.getPathByID((BACKEND_CONSOLE ? "console_" ~ name : name) ~ ".css");
-    if (!filename)
+    if (!defaultIsLoaded)
+    {
+        string src = cast(string)loadResourceBytes("@embedded@/themes/default.css");
+        assert(src.length > 0);
+        defaultStyleSheet = CSS.createStyleSheet(src);
+        defaultIsLoaded = true;
+    }
+    if (name == "default")
+    {
+        auto theme = new Theme(name);
+        loadThemeFromCSS(theme, defaultStyleSheet);
+        return theme;
+    }
+
+    string id = (BACKEND_CONSOLE ? "console_" ~ name : name) ~ ".css";
+    string filename = resourceList.getPathByID(id);
+    if (!filename.length)
         return null;
 
     Log.d("Loading theme from file ", filename);
     string src = cast(string)loadResourceBytes(filename);
-    if (!src)
+    if (!src.length)
         return null;
 
     auto theme = new Theme(name);
     const stylesheet = CSS.createStyleSheet(src);
+    loadThemeFromCSS(theme, defaultStyleSheet);
     loadThemeFromCSS(theme, stylesheet);
     return theme;
 }
@@ -166,8 +189,6 @@ private void loadThemeFromCSS(Theme theme, const CSS.StyleSheet stylesheet)
 
 private void importStyleSheet(Theme theme, string resourceID)
 {
-    import beamui.graphics.resources;
-
     if (!resourceID)
         return;
     if (!resourceID.endsWith(".css"))

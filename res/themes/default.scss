@@ -1,9 +1,11 @@
-/* This is the default theme, always embedded into the library.
-Command: sassc --style compressed default.scss default.css
+/* This is the default stylesheet. It is always embedded into binaries and
+   applied before any other CSS at runtime.
+
+   Command: sassc --style compressed default.scss default.css
 */
 
 * {
-    color: $text-color;
+    color: #222;
     font-family: sans-serif;
     font-size: 14px;
 }
