@@ -15,7 +15,6 @@ import beamui.core.signals;
 import beamui.core.stdaction;
 import beamui.core.streams;
 import beamui.graphics.colors;
-import beamui.layout.linear;
 import beamui.text.simple;
 import beamui.text.sizetest;
 import beamui.text.style;
@@ -3709,7 +3708,7 @@ class LogWidget : EditBox
     }
 }
 
-class FindPanel : Row
+class FindPanel : Panel
 {
     @property
     {
@@ -3754,16 +3753,16 @@ class FindPanel : Row
         _editor = editor;
         _replaceMode = replace;
 
-        auto main = new Column;
-            Row rowFind = new Row;
+        auto main = new Panel(null, "main");
+            auto rowFind = new Panel(null, "find");
                 _edFind = new EditLine(initialText);
                 _btnFindNext = new Button("Find next");
                 _btnFindPrev = new Button("Find previous");
-                Row findSettings = new Row;
+                auto findSettings = new Panel(null, "settings");
                     _cbCaseSensitive = new Button(null, "find_case_sensitive");
                     _cbWholeWords = new Button(null, "find_whole_words");
                     _cbSelection = new CheckBox("Sel");
-            Row rowReplace = new Row;
+            auto rowReplace = new Panel(null, "replace");
                 _edReplace = new EditLine(initialText);
                 auto btnReplace = new Button("Replace");
                 auto btnReplaceAndFind = new Button("Replace and find");

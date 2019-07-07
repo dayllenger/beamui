@@ -8,7 +8,6 @@ Authors:   Vadim Lopatin
 module beamui.widgets.lists;
 
 import beamui.core.signals;
-import beamui.layout.linear;
 import beamui.widgets.controls;
 import beamui.widgets.scrollbar;
 import beamui.widgets.text;
@@ -417,7 +416,7 @@ class IconStringListAdapter : StringListAdapterBase
 {
     private
     {
-        Row _widget;
+        Panel _widget;
         Label _label;
         ImageWidget _icon;
     }
@@ -447,7 +446,7 @@ class IconStringListAdapter : StringListAdapterBase
         {
             if (_widget is null)
             {
-                _widget = new Row;
+                _widget = new Panel;
                 _widget.bindSubItem(this, "item");
                 _icon = new ImageWidget;
                 _icon.id = "icon";

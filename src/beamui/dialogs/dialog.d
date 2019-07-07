@@ -11,7 +11,7 @@ import std.conv;
 import beamui.core.i18n;
 import beamui.core.signals;
 import beamui.core.stdaction;
-import beamui.layout.linear;
+import beamui.layout.linear : Spacer;
 import beamui.widgets.controls;
 import beamui.widgets.popup;
 import beamui.widgets.widget;
@@ -30,7 +30,7 @@ enum DialogFlag : uint
 }
 
 /// Base for all dialogs
-class Dialog : Column
+class Dialog : Panel
 {
     /// Dialog icon resource id
     @property string windowIcon() const { return _icon; }
@@ -84,7 +84,6 @@ class Dialog : Column
     this(dstring caption, Window parentWindow = null, uint flags = DialogFlag.modal,
             int initialWidth = 0, int initialHeight = 0)
     {
-        id = "dialog-main-widget";
         _initialWidth = initialWidth;
         _initialHeight = initialHeight;
         _title = caption;
@@ -98,8 +97,7 @@ class Dialog : Column
     {
         _defaultButtonIndex = defaultActionIndex;
         _buttonActions = actions;
-        auto res = new Row;
-        res.id = "buttons";
+        auto res = new Panel("buttons");
         foreach (i, a; actions)
         {
             if (splitBeforeIndex == i)

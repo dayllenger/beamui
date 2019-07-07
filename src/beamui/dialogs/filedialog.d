@@ -24,7 +24,6 @@ import beamui.core.functions;
 import beamui.core.i18n;
 import beamui.core.stdaction;
 import beamui.dialogs.dialog;
-import beamui.layout.frame;
 import beamui.layout.linear;
 import beamui.platforms.common.platform;
 import beamui.text.sizetest;
@@ -595,7 +594,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         foreach (ref RootEntry root; _roots)
         {
             auto btn = new Button(root.label, root.icon);
-            btn.orientation = Orientation.vertical;
+            btn.style.display = "column";
             btn.setAttribute("flat");
             btn.allowsFocus = false;
             btn.tooltipText = root.path.toUTF32;
@@ -764,9 +763,9 @@ class FileDialog : Dialog, CustomGridCellAdapter
 
         style.minWidth = BACKEND_CONSOLE ? 50 : 600;
 
-        auto content = new Row;
+        auto content = new Panel;
             Widget leftPanel = createRootsList();
-            Column rightPanel = new Column;
+            auto rightPanel = new Panel;
                 _edPath = new FilePathPanel;
                 _fileList = new StringGridWidget;
                 _edFilename = new EditLine;
@@ -914,7 +913,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
 
 alias onPathSelectionHandler = bool delegate(string path);
 
-class FilePathPanelItem : Row
+class FilePathPanelItem : Panel
 {
     Listener!onPathSelectionHandler pathSelected;
 
@@ -927,7 +926,6 @@ class FilePathPanelItem : Row
 
     this(string path)
     {
-        super(0);
         _path = path;
         string fname = isRoot(path) ? path : baseName(path);
         _text = new Label(toUTF32(fname));
@@ -1096,7 +1094,7 @@ class FilePathPanelButtons : WidgetGroup
 }
 
 /// Panel - either path segment buttons or text editor line
-class FilePathPanel : FrameLayout
+class FilePathPanel : Panel
 {
     @property string path() const { return _path; }
 
@@ -1175,7 +1173,7 @@ class FilePathPanel : FrameLayout
     }
 }
 
-class FileNameEditLine : Row
+class FileNameEditLine : Panel
 {
     @property
     {

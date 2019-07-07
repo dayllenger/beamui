@@ -22,8 +22,6 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.tabs;
 
-import beamui.layout.frame;
-import beamui.layout.linear;
 import beamui.widgets.controls;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
@@ -36,7 +34,7 @@ alias tabChangedHandler = void delegate(string newActiveTabID, string previousTa
 alias tabClosedHandler = void delegate(string tabID);
 
 /// Tab item widget - to show tab header
-class TabItem : Row
+class TabItem : Panel
 {
     @property
     {
@@ -127,7 +125,7 @@ class TabItem : Row
     this(string id, dstring label, string iconID = null, bool enableCloseButton = false,
          dstring tooltipText = null)
     {
-        this.id = id;
+        super(id);
         _icon = new ImageWidget(iconID);
         _icon.bindSubItem(this, "icon");
         _icon.state = State.parent;
@@ -586,7 +584,7 @@ class TabControl : WidgetGroup
 }
 
 /// Container for widgets controlled by `TabControl`
-class TabHost : FrameLayout
+class TabHost : Panel
 {
     @property
     {
@@ -689,7 +687,7 @@ class TabHost : FrameLayout
 }
 
 /// Compound widget - contains from `TabControl` widget (tabs header) and `TabHost` (content pages)
-class TabWidget : Column
+class TabWidget : Panel
 {
     @property
     {

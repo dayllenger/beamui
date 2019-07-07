@@ -19,7 +19,6 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.combobox;
 
-import beamui.layout.linear;
 import beamui.widgets.controls;
 import beamui.widgets.editors;
 import beamui.widgets.lists;
@@ -28,7 +27,7 @@ import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Abstract ComboBox
-class ComboBoxBase : Row
+class ComboBoxBase : Panel
 {
     /// Selected item index
     @property int selectedItemIndex() const { return _selectedItemIndex; }

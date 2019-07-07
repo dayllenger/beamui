@@ -41,7 +41,6 @@ public
     import beamui.widgets.popup : PopupAlign;
 }
 package import beamui.style.computed_style;
-import std.string : capitalize;
 import beamui.core.animations;
 import beamui.platforms.common.platform;
 import beamui.style.style;
@@ -786,7 +785,6 @@ public:
         case paddingTop: .. case paddingLeft:
         case borderTopWidth: .. case borderLeftWidth:
         case marginTop: .. case marginLeft:
-        case left: .. case bottom:
         case alignment:
         case stretch:
         case letterSpacing:
@@ -2160,6 +2158,172 @@ class WidgetGroup : Widget
         _children.replace(oldChild, newChild);
         oldChild.parent = null;
         newChild.parent = this;
+    }
+}
+
+interface ILayout
+{
+    void onSetup(Widget host);
+    void onDetach();
+    void onStyleChange(StyleProperty p);
+
+    void prepare(ref Buf!Widget list);
+    Boundaries measure();
+    void arrange(Box box);
+}
+
+/** Panel is a widget group with some layout.
+
+    By default, without specified layout, it places all children to fill its
+    inner frame (usually, only one child should be visible at a time, see
+    `showChild` method).
+*/
+class Panel : WidgetGroup
+{
+    import beamui.layout.factory : createLayout;
+
+    private string _kind;
+    private ILayout _layout;
+    private Buf!Widget preparedItems;
+
+    this()
+    {
+        super();
+    }
+
+    /// Create a panel with `id` and, perhaps, several style classes
+    this(string id, string[] classes...)
+    {
+        super(id);
+        foreach (a; classes)
+        {
+            if (a.length)
+                setAttribute(a);
+        }
+    }
+
+    ~this()
+    {
+        _layout.maybe.onDetach();
+    }
+
+    /** Get the layout object to adjust some properties. May be `null`.
+
+        Example:
+        ---
+        if (TableLayout t = panel.getLayout!TableLayout)
+            t.colCount = 2;
+        ---
+    */
+    T getLayout(T)() if (is(T : ILayout))
+    {
+        return cast(T)_layout;
+    }
+
+    private void setLayout(string kind)
+    {
+        if (_kind == kind)
+            return;
+
+        _kind = kind;
+
+        ILayout obj;
+        if (kind.length)
+        {
+            obj = createLayout(kind);
+            debug if (!obj)
+                Log.fw("Layout of kind '%s' is null", kind);
+        }
+        if (_layout || obj)
+        {
+            _layout.maybe.onDetach();
+            _layout = obj;
+            obj.maybe.onSetup(this);
+            requestLayout();
+        }
+    }
+
+    override void handleStyleChange(StyleProperty ptype)
+    {
+        if (ptype == StyleProperty.display)
+        {
+            setLayout(_style.display);
+        }
+        else
+        {
+            super.handleStyleChange(ptype);
+            _layout.maybe.onStyleChange(ptype);
+        }
+    }
+
+    override void measure()
+    {
+        updateStyles();
+
+        preparedItems.clear();
+        foreach (i; 0 .. childCount)
+        {
+            Widget item = child(i);
+            if (item.visibility != Visibility.gone)
+                preparedItems ~= item;
+            else
+                item.cancelLayout();
+        }
+        // now we can safely work with items
+        Boundaries bs;
+        if (_layout)
+        {
+            _layout.prepare(preparedItems);
+            bs = _layout.measure();
+        }
+        else
+        {
+            foreach (item; preparedItems.unsafe_slice)
+            {
+                item.measure();
+                bs.maximize(item.boundaries);
+            }
+        }
+        setBoundaries(bs);
+    }
+
+    override void layout(Box geometry)
+    {
+        _needLayout = false;
+        if (visibility == Visibility.gone)
+            return;
+
+        _box = geometry;
+        const b = geometry.shrinked(padding);
+        _innerBox = b;
+
+        if (_layout)
+        {
+            _layout.arrange(b);
+        }
+        else
+        {
+            foreach (item; preparedItems.unsafe_slice)
+            {
+                item.layout(b);
+            }
+        }
+    }
+
+    override void onDraw(DrawBuf buf)
+    {
+        if (visibility != Visibility.visible)
+            return;
+
+        super.onDraw(buf);
+
+        if (preparedItems.length > 0)
+        {
+            const b = _innerBox;
+            const saver = ClipRectSaver(buf, b, style.alpha);
+            foreach (item; preparedItems.unsafe_slice)
+                item.onDraw(buf);
+        }
     }
 
     /// Make one child (with specified ID) visible, set `othersVisibility` to the rest

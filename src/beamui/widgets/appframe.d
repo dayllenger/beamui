@@ -12,7 +12,6 @@ module beamui.widgets.appframe;
 import std.path;
 import beamui.core.files;
 import beamui.core.settings;
-import beamui.layout.linear;
 import beamui.widgets.menu;
 import beamui.widgets.statusline;
 import beamui.widgets.toolbars;
@@ -86,7 +85,7 @@ class BackgroundOperationWatcher
 }
 
 /// Base class for application frame with main menu, status line, toolbars
-class AppFrame : Column
+class AppFrame : Panel
 {
     @property
     {

@@ -40,8 +40,10 @@ int main()
     // expand window size if content is bigger than defaults
     auto window = platform.createWindow("Controls overview - beamui");
 
-    // create main content layout (0 is for no spacing between parts)
-    auto frame = new Column(0);
+    // create main content layout
+    auto frame = new Panel;
+    frame.style.display = "column";
+    frame.style.gap = 0; // remove spacing between main menu and tabs
 
     TabWidget tabs;
 
@@ -169,46 +171,48 @@ int main()
 
     // most of controls example
     {
-        auto controls = new Column;
-            auto line1 = new Row;
+        auto controls = new Panel;
+            auto line1 = new Panel;
                 auto gb = new GroupBox("CheckBox"d);
                 auto gb2 = new GroupBox("RadioButton"d);
-                auto col1 = new Column;
+                auto col1 = new Panel;
                     auto gb3 = new GroupBox("Button"d, Orientation.horizontal);
                     auto gb4 = new GroupBox("Button with icon and text"d, Orientation.horizontal);
                     auto gbtext = new GroupBox("Label"d, Orientation.horizontal);
-                auto col2 = new Column;
+                auto col2 = new Panel;
                     auto gb21 = new GroupBox("Button with Action"d);
                         auto btnToggle = new Button("Toggle action above"d, null, true);
                     auto gb22 = new GroupBox("ImageWidget"d);
-                auto col3 = new Column;
+                auto col3 = new Panel;
                     auto gb31 = new GroupBox("SwitchButton"d);
-            auto line2 = new Row;
+            auto line2 = new Panel;
                 auto gb5 = new GroupBox("Scrollbar, Slider, RangeSlider"d);
                     auto sb = new ScrollBar(Orientation.horizontal);
                     auto sl = new Slider;
                     auto rsl = new RangeSlider;
                 auto gb6 = new GroupBox("EditLine"d);
-            auto line3 = new Row;
+            auto line3 = new Panel;
                 auto gbeditbox = new GroupBox("EditBox"d);
                     auto edbox = new EditBox("Some text in EditBox\nOne more line\nYet another text line");
                 auto gbtabs = new GroupBox("TabWidget"d);
                     auto tabs1 = new TabWidget;
-            auto line4 = new Row;
+            auto line4 = new Panel;
                 auto gbgrid = new GroupBox("StringGridWidget"d);
                     auto grid = new StringGridWidget;
                 auto gbtree = new GroupBox("TreeWidget"d, Orientation.vertical);
                     auto tree = new TreeWidget;
-                    auto newTreeItemForm = new Column;
+                    auto newTreeItemForm = new Panel;
                         auto newTreeItemEd = new EditLine("new item"d);
-                        auto newTreeItemFormRow = new Row;
+                        auto newTreeItemFormRow = new Panel;
                             auto btnAddItem = new Button("Add"d);
                             auto btnRemoveItem = new Button("Remove"d);
 
         with (controls) {
+            style.display = "column";
             style.padding = 12;
             add(line1, line2, line3, line4);
             with (line1) {
+                style.display = "row";
                 add(gb, gb2, col1, col2, col3);
                 with (gb) {
                     add(new CheckBox("CheckBox 1"d),
@@ -222,6 +226,7 @@ int main()
                         new RadioButton("RadioButton disabled"d).setEnabled(false));
                 }
                 with (col1) {
+                    style.display = "column";
                     add(gb3, gb4, gbtext);
                     with (gb3) {
                         add(new Button("Button"d),
@@ -242,10 +247,11 @@ int main()
                     }
                 }
                 with (col2) {
+                    style.display = "column";
                     add(gb21, gb22);
                     with (gb21) {
                         auto btn = new Button(fileOpenAction);
-                        btn.orientation = Orientation.vertical;
+                        btn.style.display = "column";
                         add(btn, btnToggle);
                     }
                     with (gb22) {
@@ -253,6 +259,7 @@ int main()
                     }
                 }
                 with (col3) {
+                    style.display = "column";
                     add(gb31);
                     with (gb31) {
                         add(new SwitchButton(),
@@ -263,6 +270,7 @@ int main()
                 }
             }
             with (line2) {
+                style.display = "row";
                 add(gb5, gb6);
                 gb5.style.stretch = Stretch.both;
                 gb5.add(sb, sl, rsl);
@@ -277,6 +285,7 @@ int main()
                 }
             }
             with (line3) {
+                style.display = "row";
                 add(gbeditbox, gbtabs);
                 with (gbeditbox) {
                     add(edbox);
@@ -296,6 +305,7 @@ int main()
                 }
             }
             with (line4) {
+                style.display = "row";
                 add(gbgrid, gbtree);
                 with (gbgrid) {
                     add(grid);
@@ -305,8 +315,10 @@ int main()
                 with (gbtree) {
                     add(tree, newTreeItemForm);
                     with (newTreeItemForm) {
+                        style.display = "column";
                         add(newTreeItemEd, newTreeItemFormRow);
                         with (newTreeItemFormRow) {
+                            style.display = "row";
                             style.alignment = Align.right;
                             style.stretch = Stretch.none;
                             add(btnAddItem, btnRemoveItem);
@@ -403,7 +415,8 @@ int main()
 
     // indicators
     {
-        auto indicators = new Column;
+        auto indicators = new Panel;
+        indicators.style.display = "column";
 
         auto pb = new ProgressBar;
         pb.data.progress = 250;
@@ -417,18 +430,20 @@ int main()
     // left one is list with widgets as items
     // right one is list with string list adapter
     {
-        auto longLists = new Row;
+        auto longLists = new Panel;
             auto list = new ListWidget(Orientation.vertical);
             auto list2 = new StringListWidget;
-            auto itemedit = new Column;
+            auto itemedit = new Panel;
                 auto itemtext = new EditLine("Text for new item"d);
                 auto addbtn = new Button("Add item"d);
 
         with (longLists) {
+            style.display = "row";
             add(list, list2, itemedit);
             list.style.stretch = Stretch.both;
             list2.style.stretch = Stretch.both;
             with (itemedit) {
+                style.display = "column";
                 style.padding = Insets(0, 6);
                 add(new Label("New item text:"d), itemtext, addbtn);
             }
@@ -471,8 +486,10 @@ int main()
 
     // form as a table layout
     {
-        auto table = new TableLayout;
-        table.colCount = 2;
+        auto table = new Panel;
+        table.style.display = "table";
+        if (TableLayout t = table.getLayout!TableLayout)
+            t.colCount = 2;
         // headers
         table.addChild(new Label("Parameter"d));
         table.addChild(new Label("Field"d));
@@ -518,7 +535,7 @@ void main()
     writefln("%s\n%s\n%s\n", arr1, arr2, arr3);
 }
 }d;
-        auto editors = new Column;
+        auto editors = new Panel;
             auto editLineLabel = new Label("EditLine: Single line editor"d);
             auto editLine = new EditLine("Single line editor sample text");
             auto editorLabel1 = new Label("SourceEdit: multiline editor, for source code editing"d);
@@ -531,6 +548,7 @@ void main()
                 .addSourceEditorControls(sourceEditor1);
 
         with (editors) {
+            style.display = "column";
             add(editLineLabel, editLineControl, editLine);
             add(editorLabel1, editorControl, sourceEditor1);
             add(editorLabel2, sourceEditor2);
@@ -554,15 +572,17 @@ void main()
 
     // string grid
     {
-        auto gridTab = new Column;
-            auto gridSettings = new Row;
+        auto gridTab = new Panel;
+            auto gridSettings = new Panel;
                 auto cb1 = new CheckBox("Full column on left"d);
                 auto cb2 = new CheckBox("Full row on top"d);
             auto grid = new StringGridWidget;
 
         with (gridTab) {
+            style.display = "column";
             add(gridSettings, grid);
             with (gridSettings) {
+                style.display = "row";
                 add(cb1, cb2);
                 cb1.tooltipText = "Extends scroll area to show full column at left when scrolled to rightmost column"d;
                 cb2.tooltipText = "Extends scroll area to show full row at top when scrolled to end row"d;
@@ -639,14 +659,17 @@ void main()
         barChart4.addBar(12.0, Color(230, 126, 34), "Orange bar"d);
         barChart4.axisRatio = 1.3;
 
-        auto chartsLayout = new Row;
+        auto chartsLayout = new Panel;
         with (chartsLayout) {
-            auto col1 = new Column;
-            auto col2 = new Column;
+            style.display = "row";
+            auto col1 = new Panel;
+            auto col2 = new Panel;
             with (col1) {
+                style.display = "column";
                 add(barChart1, barChart2);
             }
             with (col2) {
+                style.display = "column";
                 add(barChart3, barChart4);
             }
             add(col1, col2);
@@ -676,13 +699,14 @@ void main()
 
 Widget createBaseEditorSettingsControl(EditWidgetBase editor)
 {
-    auto row = new Row;
+    auto row = new Panel;
     auto cb1 = new CheckBox("Catch tabs");
     auto cb2 = new CheckBox("Use spaces for indentation");
     auto cb3 = new CheckBox("Read only");
     auto cb4 = new CheckBox("Fixed font");
     auto cb5 = new CheckBox("Tab size 8");
     row.add(cb1, cb2, cb3, cb4, cb5);
+    row.style.display = "row";
 
     cb1.checked = editor.wantTabs;
     cb2.checked = editor.useSpacesForTabs;

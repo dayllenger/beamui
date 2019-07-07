@@ -11,7 +11,6 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.toolbars;
 
-import beamui.layout.linear;
 import beamui.widgets.combobox;
 import beamui.widgets.controls;
 import beamui.widgets.text;
@@ -59,12 +58,12 @@ class ToolBarComboBox : ComboBox
 }
 
 /// Layout with buttons
-class ToolBar : Row
+class ToolBar : Panel
 {
     /// Construct a tool bar with ID
     this(string ID = "TOOLBAR")
     {
-        id = ID;
+        super(ID);
     }
 
     /// Add image button to the tool bar
@@ -95,7 +94,7 @@ class ToolBar : Row
 }
 
 /// Layout with several toolbars
-class ToolBarHost : Row
+class ToolBarHost : Panel
 {
     /// Create and add new toolbar (returns existing one if already exists)
     ToolBar getOrAddToolbar(string ID)

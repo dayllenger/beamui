@@ -15,19 +15,19 @@ int main()
     Window window = platform.createWindow("Basic example - beamui", null, WindowOptions.expanded, 1, 1);
 
     // create some widgets to show
-    // Column arranges items vertically
-    auto pane = new Column;
+    auto pane = new Panel;
         auto header = new Label("Header");
         auto ed1 = new EditLine("Hello");
         auto ed2 = new EditLine("world");
         auto check = new CheckBox("Check me");
-        // Row organizes items horizontally
-        auto line = new Row;
+        auto line = new Panel;
             auto ok = new Button("OK");
             auto exit = new Button("Exit");
 
     // using "with" statement for readability
     with (pane) {
+        // column arranges items vertically
+        style.display = "column";
         style.minWidth = 200;
         style.padding = Insets(30);
         add(header, ed1, ed2, check, line);
@@ -35,6 +35,8 @@ int main()
             style.fontSize = 18;
         }
         with (line) {
+            // row organizes items horizontally
+            style.display = "row";
             add(ok, exit);
             // let the buttons fill horizontal space
             ok.style.stretch = Stretch.main;

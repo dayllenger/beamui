@@ -9,17 +9,23 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.groupbox;
 
-import beamui.layout.linear;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-class GroupBox : LinearLayout
+class GroupBox : Panel
 {
     private Label _caption;
 
-    this(dstring caption = ""d, Orientation orientation = Orientation.vertical)
+    this(dstring caption = ""d)
     {
-        super(orientation);
+        _caption = new Label(caption);
+        _caption.bindSubItem(this, "caption");
+        _caption.parent = this;
+    }
+
+    this(dstring caption, Orientation orientation)
+    {
+        style.display = orientation == Orientation.vertical ? "column" : "row";
         _caption = new Label(caption);
         _caption.bindSubItem(this, "caption");
         _caption.parent = this;

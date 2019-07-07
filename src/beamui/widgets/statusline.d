@@ -11,14 +11,13 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.statusline;
 
-import beamui.layout.linear;
 import beamui.text.sizetest;
 import beamui.widgets.controls;
 import beamui.widgets.editors;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-class StatusLineTextPanel : Row
+class StatusLineTextPanel : Panel
 {
     private Label _text;
 
@@ -39,7 +38,7 @@ class StatusLineTextPanel : Row
     }
 }
 
-class StatusLineIconPanel : Row
+class StatusLineIconPanel : Panel
 {
     private ImageWidget _icon;
 
@@ -163,7 +162,7 @@ class StatusLineEditorStatePanel : StatusLineTextPanel
 }
 
 /// Status line control
-class StatusLine : Row
+class StatusLine : Panel
 {
     private
     {

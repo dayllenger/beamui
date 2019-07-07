@@ -15,8 +15,7 @@ import beamui.core.parseutils;
 import beamui.core.settings;
 import beamui.core.stdaction;
 import beamui.dialogs.dialog;
-import beamui.layout.frame;
-import beamui.layout.linear;
+import beamui.layout.linear : Resizer;
 import beamui.layout.table;
 import beamui.platforms.common.platform;
 import beamui.widgets.combobox;
@@ -506,15 +505,15 @@ class SettingsPage
     /// Create page widget (default implementation creates empty page)
     Widget createWidget(Setting settings)
     {
-        auto res = new Column;
-        res.id = _id;
+        auto res = new Panel(_id);
+        res.style.display = "column";
         if (itemCount > 0)
         {
             auto caption = new Label(_label);
             caption.id = "prop-body-caption-" ~ _id;
             caption.bindSubItem(this, "title");
             res.addChild(caption);
-            TableLayout tbl;
+            Panel tbl;
             foreach (i; 0 .. itemCount)
             {
                 SettingsItem v = item(i);
@@ -528,8 +527,10 @@ class SettingsPage
                 {
                     if (!tbl)
                     {
-                        tbl = new TableLayout;
-                        tbl.colCount = 2;
+                        tbl = new Panel;
+                        tbl.style.display = "table";
+                        if (TableLayout t = tbl.getLayout!TableLayout)
+                            t.colCount = 2;
                         res.addChild(tbl);
                     }
                     tbl.addChild(w[0]);
@@ -558,7 +559,7 @@ class SettingsDialog : Dialog
     private
     {
         TreeWidget _tree;
-        FrameLayout _frame;
+        Panel _frame;
         Setting _settings;
         SettingsPage _layout;
     }
@@ -579,10 +580,10 @@ class SettingsDialog : Dialog
         _tree = new TreeWidget(ScrollBarMode.automatic, ScrollBarMode.automatic);
         _tree.bindSubItem(this, "tree");
         _tree.itemSelected ~= &onTreeItemSelected;
-        _frame = new FrameLayout;
+        _frame = new Panel;
         _frame.bindSubItem(this, "page");
         createControls(_layout, _tree.items);
-        auto content = new Row;
+        auto content = new Panel;
         content.setAttribute("content");
         content.add(_tree, new Resizer, _frame);
         add(content, createButtonsPanel([ACTION_APPLY, ACTION_CANCEL], 0, 0));

@@ -14,7 +14,6 @@ import beamui.widgets.widget;
 struct LayoutItem
 {
     Widget wt;
-    int index = -1;
 
     Boundaries bs;
     bool fill;
@@ -22,7 +21,7 @@ struct LayoutItem
 }
 
 /// Arranges items either vertically or horizontally
-class LinearLayout : WidgetGroup
+class LinearLayout : ILayout
 {
     @property
     {
@@ -34,7 +33,7 @@ class LinearLayout : WidgetGroup
             if (_orientation != value)
             {
                 _orientation = value;
-                requestLayout();
+                host.maybe.requestLayout();
             }
         }
     }
@@ -43,6 +42,7 @@ class LinearLayout : WidgetGroup
     {
         Orientation _orientation = Orientation.vertical;
 
+        Widget host;
         /// Temporary layout item list
         Array!LayoutItem items;
     }
@@ -53,31 +53,37 @@ class LinearLayout : WidgetGroup
         _orientation = orientation;
     }
 
-    override void handleStyleChange(StyleProperty ptype)
+    void onSetup(Widget host)
     {
-        super.handleStyleChange(ptype);
-
-        if (ptype == StyleProperty.rowGap || ptype == StyleProperty.columnGap)
-            requestLayout();
+        this.host = host;
     }
 
-    override void measure()
+    void onDetach()
     {
-        // fill items array
+        host = null;
         items.length = 0;
-        foreach (i; 0 .. childCount)
-        {
-            Widget wt = child(i);
-            if (wt.visibility != Visibility.gone)
-                items ~= LayoutItem(wt, i);
-        }
-        // now we can safely work with items
+    }
 
-        if (items.length == 0)
+    void onStyleChange(StyleProperty p)
+    {
+        if (p == StyleProperty.rowGap || p == StyleProperty.columnGap)
+            host.requestLayout();
+    }
+
+    void prepare(ref Buf!Widget list)
+    {
+        items.length = 0;
+        // fill items array
+        foreach (wt; list.unsafe_slice)
         {
-            super.measure(); // do default computation
-            return;
+            items ~= LayoutItem(wt);
         }
+    }
+
+    Boundaries measure()
+    {
+        if (items.length == 0)
+            return Boundaries();
 
         // has items
         Boundaries bs;
@@ -104,7 +110,7 @@ class LinearLayout : WidgetGroup
         }
         if (_orientation == Orientation.horizontal)
         {
-            const gap = style.columnGap.applyPercent(bs.nat.w);
+            const gap = host.style.columnGap.applyPercent(bs.nat.w);
             const space = gap * (cast(int)items.length - 1);
             bs.max.w += space;
             bs.nat.w += space;
@@ -112,27 +118,23 @@ class LinearLayout : WidgetGroup
         }
         else
         {
-            const gap = style.rowGap.applyPercent(bs.nat.h);
+            const gap = host.style.rowGap.applyPercent(bs.nat.h);
             const space = gap * (cast(int)items.length - 1);
             bs.max.h += space;
             bs.nat.h += space;
             bs.min.h += space;
         }
-        setBoundaries(bs);
+        return bs;
     }
 
-    override void layout(Box geom)
+    void arrange(Box box)
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        box = geom;
         if (items.length > 0)
         {
             if (_orientation == Orientation.horizontal)
-                doLayout!`w`(innerBox);
+                doLayout!`w`(box);
             else
-                doLayout!`h`(innerBox);
+                doLayout!`h`(box);
         }
     }
 
@@ -165,17 +167,18 @@ class LinearLayout : WidgetGroup
             }
         }
         static if (horiz)
-            const int spacing = style.columnGap.applyPercent(geom.w);
+            const int spacing = host.style.columnGap.applyPercent(geom.w);
         else
-            const int spacing = style.rowGap.applyPercent(geom.h);
+            const int spacing = host.style.rowGap.applyPercent(geom.h);
         int gaps = spacing * (cast(int)items.length - 1);
         allocateSpace!dim(items, geom.pick!dim - gaps);
         // apply resizers
         foreach (i; 1 .. items.length - 1)
         {
-            auto resizer = cast(Resizer)items[i].wt;
-            if (resizer)
+            if (auto resizer = cast(Resizer)items[i].wt)
             {
+                resizer._orientation = _orientation;
+
                 LayoutItem* left  = &items[i - 1];
                 LayoutItem* right = &items[i + 1];
 
@@ -189,6 +192,10 @@ class LinearLayout : WidgetGroup
                 right.result.pick!dim = rresult - delta;
             }
         }
+        if (auto resizer = cast(Resizer)items.front.wt)
+            resizer._orientation = _orientation;
+        if (auto resizer = cast(Resizer)items.back.wt)
+            resizer._orientation = _orientation;
         // lay out items
         int pen;
         foreach (ref item; items)
@@ -212,12 +219,6 @@ class LinearLayout : WidgetGroup
             item.wt.layout(res);
             pen += sz.pick!dim + spacing;
         }
-    }
-
-    override void onDraw(DrawBuf buf)
-    {
-        super.onDraw(buf);
-        drawAllChildren(buf);
     }
 }
 
@@ -420,38 +421,6 @@ private void shrink(string dim)(ref Array!LayoutItem items, int available)
     }
 }
 
-/// Shortcut for `LinearLayout` with horizontal orientation
-class Row : LinearLayout
-{
-    this()
-    {
-        super(Orientation.horizontal);
-    }
-    /// Create with spacing parameter
-    this(int spacing)
-    {
-        super(Orientation.horizontal);
-        style.rowGap = spacing;
-        style.columnGap = spacing;
-    }
-}
-
-/// Shortcut for `LinearLayout` with vertical orientation
-class Column : LinearLayout
-{
-    this()
-    {
-        super(Orientation.vertical);
-    }
-    /// Create with spacing parameter
-    this(int spacing)
-    {
-        super(Orientation.vertical);
-        style.rowGap = spacing;
-        style.columnGap = spacing;
-    }
-}
-
 /// Spacer to fill empty space in layouts
 class Spacer : Widget
 {
@@ -469,27 +438,23 @@ enum ResizerEventType
 
 /** Resizer control.
 
-    Put it between other items in `LinearLayout` to allow resizing its siblings.
-    While dragging, it will resize previous and next children in layout.
+    Put it between other items in a panel with `row` or `column` layout kind
+    to enable resizing of its siblings. While dragging, it will resize previous
+    and next children in the layout.
+
+    Also it can be utilized per se, by connecting to `resized` signal.
 */
 class Resizer : Widget
 {
     /// Orientation: vertical to resize vertically, horizontal to resize horizontally
     @property Orientation orientation() const { return _orientation; }
 
-    @property bool validProps() const
-    {
-        return _previousWidget && _nextWidget;
-    }
+    /// Resizer offset from initial position
+    @property int delta() const { return _delta; }
 
     Signal!(void delegate(ResizerEventType, int dragDelta)) resized;
 
-    private
-    {
-        Orientation _orientation;
-        Widget _previousWidget;
-        Widget _nextWidget;
-    }
+    private Orientation _orientation;
 
     this(Orientation orient = Orientation.vertical)
     {
@@ -504,37 +469,6 @@ class Resizer : Widget
         else
             return CursorType.sizeWE;
     }
-
-    protected void updateProps()
-    {
-        _previousWidget = null;
-        _nextWidget = null;
-        auto parentLayout = cast(LinearLayout)parent;
-        if (parentLayout)
-        {
-            _orientation = parentLayout.orientation;
-            int index = parentLayout.childIndex(this);
-            _previousWidget = parentLayout.child(index - 1);
-            _nextWidget = parentLayout.child(index + 1);
-        }
-        if (!validProps)
-        {
-            _previousWidget = null;
-            _nextWidget = null;
-        }
-    }
-
-    override void layout(Box geom)
-    {
-        if (visibility == Visibility.gone)
-            return;
-
-        box = geom;
-        updateProps();
-    }
-
-    /// Resizer offset from initial position
-    @property int delta() const { return _delta; } // TODO: make setter?
 
     private
     {
@@ -566,7 +500,8 @@ class Resizer : Widget
         }
         if (event.action == MouseAction.move && _dragging)
         {
-            _delta = _dragStartDelta + (_orientation == Orientation.vertical ? event.y : event.x) - _dragStartPosition;
+            const pos = _orientation == Orientation.vertical ? event.y : event.x;
+            _delta = _dragStartDelta + pos - _dragStartPosition;
             requestLayout();
             if (resized.assigned)
                 resized(ResizerEventType.dragging, _delta - _dragStartDelta);
@@ -599,8 +534,7 @@ class Resizer : Widget
         }
         if (event.action == MouseAction.cancel && allowsHover)
         {
-            resetState(State.hovered);
-            resetState(State.pressed);
+            resetState(State.hovered | State.pressed);
             if (_dragging)
             {
                 _dragging = false;

@@ -5,8 +5,9 @@ Synopsis:
 ---
 // Scroll view example
 
-auto scrollContent = new Column;
+auto scrollContent = new Panel;
 with (scrollContent) {
+    style.display = "column";
     style.padding = 10;
     add(new Label("Some buttons"d),
         new Button("Close"d, "fileclose"),

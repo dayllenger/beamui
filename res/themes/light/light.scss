@@ -244,12 +244,8 @@ MultilineLabel {
 }
 
 /* ==========================================================================
-   layouts.d
+   layout/linear.d
 */
-
-Spacer {
-    stretch: both;
-}
 
 Resizer {
     min-width: 3px;
@@ -756,7 +752,7 @@ FindPanel {
     padding: 4px;
 }
 
-FindPanel > Column {
+FindPanel > Panel {
     stretch: both;
 }
 
@@ -928,6 +924,7 @@ WindowFrame {
 
     &::label {
         align: left vcenter;
+        stretch: both;
         padding: 2px;
         color: #333;
         font-size: 90%;
@@ -968,7 +965,6 @@ FileDialog {
 
     .content {
         gap: 1px;
-        stretch: both;
     }
 
     .right-panel {
@@ -986,6 +982,8 @@ FilePathPanelButtons {
 }
 
 FilePathPanelItem {
+    gap: 0;
+
     &::label {
         align: center;
         padding: 2px 3px;
@@ -1025,7 +1023,6 @@ SettingsDialog {
 
     .content {
         gap: 2px;
-        stretch: both;
     }
 
     &::tree {

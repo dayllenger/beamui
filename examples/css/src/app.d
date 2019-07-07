@@ -25,42 +25,31 @@ int main()
 
     Window window = platform.createWindow("CSS sandbox");
 
-    Row splitView = new Row;
-        auto editorPane = new Column;
+    auto splitView = new Panel("split-view");
+        auto editorPane = new Panel("editor-pane");
             auto editor = new SourceEdit;
             auto btnUpdate = new Button("Update styles");
         auto controls = new GroupBox("Controls");
 
-    with (splitView) {
-        id = "split-view";
-        add(editorPane, new Resizer, controls);
-        with (editorPane) {
-            id = "editor-pane";
-            style.width = 500;
-            style.height = 500;
-            style.stretch = Stretch.both;
-            add(editor, btnUpdate);
-            with (editor) {
-                style.stretch = Stretch.both;
-                smartIndents = true;
-                content.syntaxSupport = new CssSyntaxSupport;
-            }
-            btnUpdate.id = "update";
-            btnUpdate.style.stretch = Stretch.none;
-        }
-        with (controls) {
-            id = "controls";
-            add(createControlsPanel());
-        }
-    }
-    window.mainWidget = splitView;
+    splitView.add(editorPane, new Resizer, controls);
+        editorPane.add(editor, btnUpdate);
+        controls.add(createControlsPanel());
 
-    editor.text = stylesheet.toUTF32;
+    btnUpdate.id = "update";
+    controls.id = "controls";
+
+    with (editor) {
+        smartIndents = true;
+        content.syntaxSupport = new CssSyntaxSupport;
+        text = stylesheet.toUTF32;
+    }
+
     btnUpdate.clicked ~= {
         platform.reloadTheme();
         currentTheme.setStyleSheet(editor.text.toUTF8);
     };
 
+    window.mainWidget = splitView;
     window.show();
 
     return platform.enterMessageLoop();
@@ -70,16 +59,15 @@ Widget createControlsPanel()
 {
     auto tabs = new TabWidget;
 
-    auto tab1 = new Column;
+    auto tab1 = new Panel;
     with (tab1) {
-        style.gap = 15;
         auto gb = new GroupBox("Group Box");
         with (gb) {
             add(new CheckBox("Check Box").setChecked(true),
                 new RadioButton("Radio button").setChecked(true),
                 new RadioButton("Radio button"));
         }
-        Row r1 = new Row;
+        auto r1 = new Panel("p1");
         with (r1) {
             auto ed = new EditLine("Edit line");
             auto comb = new ComboBox(["Item 1", "Item 2", "Item 3"]);
@@ -87,7 +75,7 @@ Widget createControlsPanel()
             add(ed, comb);
             ed.style.stretch = Stretch.both;
         }
-        Row r2 = new Row;
+        auto r2 = new Panel("p2");
         with (r2) {
             auto btn1 = new Button("Button");
             auto btn2 = new Button("Button", "folder");
@@ -110,18 +98,40 @@ Widget createControlsPanel()
 string stylesheet =
 `/* some styles for this window */
 
-Button#update {
-    align: hcenter;
-    padding: 6px;
-    focus-rect-color: none;
-}
-
-Row#split-view {
+#split-view {
+    display: row;
     padding: 10px;
     gap: 3px;
 }
 
+#editor-pane {
+    display: column;
+    width: 500px;
+    height: 500px;
+    stretch: both;
+}
+
+#editor-pane SourceEdit {
+    stretch: both;
+}
+
+Button#update {
+    align: hcenter;
+    stretch: none;
+    padding: 6px;
+    focus-rect-color: none;
+}
+
 /* write your own and press the button below */
+
+#tab1 {
+    display: column;
+    gap: 15px;
+}
+
+#p1, #p2 {
+    display: row;
+}
 
 Button.folder::label {
     color: orange;

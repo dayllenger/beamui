@@ -93,9 +93,7 @@ MultilineLabel { align: left top; padding: 1px; }
 
 MultilineLabel:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
-/* ========================================================================== layouts.d */
-Spacer { stretch: both; }
-
+/* ========================================================================== layout/linear.d */
 Resizer { min-width: 3px; min-height: 3px; }
 
 Resizer:hovered { background-color: rgba(255, 255, 0, 0.2); }
@@ -295,7 +293,7 @@ LogWidget { font-family: monospace; font-size: 10px; }
 
 FindPanel { padding: 4px; }
 
-FindPanel > Column { stretch: both; }
+FindPanel > Panel { stretch: both; }
 
 FindPanel > Button { padding: 0; stretch: none; background: none; border: none; }
 
@@ -370,7 +368,7 @@ WindowFrame { background: #f4f4f4; }
 
 WindowFrame::caption { padding: 3px; background: #e4e4e4; }
 
-WindowFrame::label { align: left vcenter; padding: 2px; color: #333; font-size: 90%; text-transform: uppercase; }
+WindowFrame::label { align: left vcenter; stretch: both; padding: 2px; color: #333; font-size: 90%; text-transform: uppercase; }
 
 WindowFrame::body { padding: 3px; stretch: both; }
 
@@ -384,13 +382,15 @@ DialogFrame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px #555; }
 
 FileDialog { min-height: 400px; padding: 4px; }
 
-FileDialog .content { gap: 1px; stretch: both; }
+FileDialog .content { gap: 1px; }
 
 FileDialog .right-panel { stretch: both; }
 
 FileDialog::grid { stretch: both; }
 
 FilePathPanelButtons { padding-left: 3px; padding-right: 6px; }
+
+FilePathPanelItem { gap: 0; }
 
 FilePathPanelItem::label { align: center; padding: 2px 3px; }
 
@@ -410,7 +410,7 @@ InputBox MultilineLabel, MessageBox MultilineLabel { padding: 10px; }
 
 SettingsDialog { padding: 4px; }
 
-SettingsDialog .content { gap: 2px; stretch: both; }
+SettingsDialog .content { gap: 2px; }
 
 SettingsDialog::tree { min-width: 50px; weight: 3; margin: 8px; padding: 4px; stretch: both; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; font-size: 16px; }
 

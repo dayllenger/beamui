@@ -11,7 +11,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.docks;
 
-import beamui.layout.linear;
+import beamui.layout.linear : Resizer, ResizerEventType;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 import beamui.widgets.winframe;

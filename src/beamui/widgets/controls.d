@@ -8,7 +8,6 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.widgets.controls;
 
 import beamui.core.stdaction;
-import beamui.layout.linear;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
@@ -82,7 +81,7 @@ class ImageWidget : Widget
 }
 
 /// Button, which can have icon, label, and can be checkable
-class Button : LinearLayout, ActionHolder
+class Button : Panel, ActionHolder
 {
     @property
     {
@@ -191,7 +190,6 @@ class Button : LinearLayout, ActionHolder
 
     this(dstring caption = null, string iconID = null, bool checkable = false)
     {
-        super(Orientation.horizontal);
         this.iconID = iconID;
         this.text = caption;
         allowsClick = true;
@@ -299,7 +297,7 @@ class SwitchButton : Widget
 }
 
 /// Check button that can be toggled on or off
-class CheckBox : LinearLayout
+class CheckBox : Panel
 {
     private
     {
@@ -309,7 +307,6 @@ class CheckBox : LinearLayout
 
     this(dstring labelText = null)
     {
-        super(Orientation.horizontal);
         _icon = new Widget("icon");
         _icon.bindSubItem(this, "icon");
         _icon.state = State.parent;

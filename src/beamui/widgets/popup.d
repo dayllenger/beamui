@@ -11,7 +11,6 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.popup;
 
-import beamui.layout.linear;
 import beamui.platforms.common.platform;
 import beamui.widgets.widget;
 
@@ -54,7 +53,7 @@ enum PopupClosePolicy : uint // TODO: on(Press|Release)OutsideParent, onEscapeKe
 }
 
 /// Popup widget container
-class Popup : LinearLayout
+class Popup : Panel
 {
     PopupAnchor anchor;
     PopupClosePolicy closePolicy = PopupClosePolicy.onPressOutside;
@@ -68,7 +67,6 @@ class Popup : LinearLayout
 
     this(Widget content, Window window)
     {
-        id = "POPUP";
         this.window = window;
         addChild(content);
     }

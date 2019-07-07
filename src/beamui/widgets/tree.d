@@ -4,11 +4,12 @@ Tree widgets.
 Synopsis:
 ---
 // tree example
-auto treePane = new Column;
+auto treePane = new Panel;
     auto treeItemLabel = new Label;
     auto tree = new TreeWidget;
 treePane.add(treeItemLabel, tree);
 
+treePane.display = "column";
 treeItemLabel.style.textAlign = TextAlign.center;
 tree.style.stretch = Stretch.both;
 
@@ -42,7 +43,6 @@ Authors:   Vadim Lopatin
 module beamui.widgets.tree;
 
 import beamui.core.stdaction;
-import beamui.layout.linear;
 import beamui.widgets.controls;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
@@ -496,7 +496,7 @@ class RootTreeItem : TreeItem
 }
 
 /// Item widget for displaying in trees
-class TreeItemWidget : Row
+class TreeItemWidget : Panel
 {
     /// TreeItem prototype of this widget
     @property TreeItem item() { return _item; }
@@ -510,14 +510,14 @@ class TreeItemWidget : Row
         ImageWidget _expander;
         ImageWidget _icon;
         Label _label;
-        Row _body;
+        Panel _body;
         long lastClickTime;
     }
 
     this(TreeItem item)
     {
+        super(item.id);
         _item = item;
-        id = item.id;
 
         allowsClick = true;
         allowsFocus = true;
@@ -546,8 +546,7 @@ class TreeItemWidget : Row
                 _item.toggleExpand(_item);
             };
         }
-        _body = new Row;
-        _body.id = "tree-item-body";
+        _body = new Panel("tree-item-body");
         _body.bindSubItem(this, "body");
         _body.setState(State.parent);
         if (_item.iconID.length > 0)
@@ -668,7 +667,7 @@ class TreeWidgetBase : ScrollArea, ActionOperator
          ScrollBarMode vscrollbarMode = ScrollBarMode.automatic)
     {
         super(hscrollbarMode, vscrollbarMode);
-        contentWidget = new Column(0);
+        contentWidget = new Panel;
         _tree = new RootTreeItem;
         _tree.contentChanged = &onTreeContentChange;
         _tree.stateChanged = &onTreeStateChange;

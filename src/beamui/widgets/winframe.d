@@ -7,13 +7,12 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.winframe;
 
-import beamui.layout.linear;
 import beamui.widgets.controls;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Window frame with caption widget
-class WindowFrame : Column
+class WindowFrame : Panel
 {
     @property Widget bodyWidget() { return _bodyWidget; }
     /// ditto
@@ -31,11 +30,11 @@ class WindowFrame : Column
     private
     {
         Widget _bodyWidget;
-        Row _titleLayout;
+        Panel _titleLayout;
         Label _title;
         Button _closeButton;
         bool _showCloseButton;
-        Row _bodyLayout;
+        Panel _bodyLayout;
     }
 
     this(bool showCloseButton = true)
@@ -46,10 +45,10 @@ class WindowFrame : Column
 
     protected void initialize()
     {
-        _titleLayout = new Row;
+        _titleLayout = new Panel;
             _title = new Label;
             _closeButton = new Button(null, "close");
-        _bodyLayout = new Row;
+        _bodyLayout = new Panel;
             _bodyWidget = createBodyWidget();
 
         with (_titleLayout) {
