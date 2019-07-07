@@ -27,6 +27,7 @@ debug (styles) import beamui.core.logger;
 enum StyleProperty
 {
     // layout
+    display,
     width,
     height,
     minWidth,
@@ -112,6 +113,11 @@ struct ComputedStyle
 {
     @property // written mostly at single line for compactness
     {
+        /// A kind of layout this widget may apply to its children list
+        string display() const { return _display; }
+        /// ditto
+        void display(string name) { setProperty!"display" = name; }
+
         /// Widget natural (preferred) width (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength width() const { return applyEM(_width); }
         /// ditto
@@ -878,6 +884,7 @@ struct ComputedStyle
         size_t[bits / (8 * size_t.sizeof) + 1] overridenBitArray;
 
         // layout
+        string _display;
         Length _width = Length.none;
         Length _height = Length.none;
         Length _minWidth = Length.zero;
@@ -1383,6 +1390,7 @@ string getCSSName(StyleProperty ptype)
 {
     final switch (ptype) with (StyleProperty)
     {
+        case display: return "display";
         case width:     return "width";
         case height:    return "height";
         case minWidth:  return "min-width";

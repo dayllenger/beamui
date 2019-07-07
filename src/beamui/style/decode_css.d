@@ -95,7 +95,13 @@ Result!string decode(T : string)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
-    return Ok(tokens[0].text);
+    const t = &tokens[0];
+    if (t.type != TokenType.ident && t.type != TokenType.str)
+    {
+        shouldbe("string value", "an identifier or a quoted string", *t);
+        return Err!string;
+    }
+    return Ok(t.text);
 }
 
 /// Decode CSS token sequence like 'left vcenter' to `Align` bit set
