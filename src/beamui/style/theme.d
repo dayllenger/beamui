@@ -136,7 +136,11 @@ Theme loadTheme(string name)
 
     if (!defaultIsLoaded)
     {
-        string src = cast(string)loadResourceBytes("@embedded@/themes/default.css");
+        version (Windows)
+            string fn = `@embedded@\themes\default.css`;
+        else
+            string fn = `@embedded@/themes/default.css`;
+        string src = cast(string)loadResourceBytes(fn);
         assert(src.length > 0);
         defaultStyleSheet = CSS.createStyleSheet(src);
         defaultIsLoaded = true;
