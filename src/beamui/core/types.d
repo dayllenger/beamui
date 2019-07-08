@@ -52,7 +52,7 @@ Result!T Err(T)(T val = T.init)
 enum State : uint
 {
     /// Indefinite state
-    unspecified = 0, // TODO: think about it
+    unspecified = 0,
     /// State not specified / normal
     normal = enabled | windowFocused,
 

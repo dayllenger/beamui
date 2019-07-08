@@ -140,7 +140,6 @@ class LinearLayout : ILayout
 
     private void doLayout(string dim)(Box geom)
     {
-        // TODO: percent
         enum horiz = dim == `w`;
 
         // setup fill

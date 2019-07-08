@@ -507,41 +507,43 @@ class TabControl : WidgetGroup
         box = geom;
         geom = innerBox;
 
-        // consider more button space if it is enabled
-        if (enableMoreButton)
-            geom.w -= itemSizes[0].w;
-
-        // tabs
-        // update visibility
+        int spaceForItems = geom.w;
         bool needMoreButton;
         int w;
-        foreach (item; sortedItems())
+        foreach (i; 1 .. itemSizes.length)
         {
-            int idx = item[0];
-            auto widget = child(idx);
-            if (w + itemSizes[idx].w <= geom.w)
+            w += itemSizes[i].w;
+            if (w > geom.w)
             {
-                w += itemSizes[idx].w;
-                widget.visibility = Visibility.visible;
-            }
-            else
-            {
-                widget.visibility = Visibility.gone;
                 needMoreButton = true;
+                // consider size of the 'more' button
+                spaceForItems -= itemSizes[0].w;
+                break;
             }
         }
-        // more button
+        w = 0;
+        if (needMoreButton)
+        {
+            // update visibility
+            foreach (item; sortedItems())
+            {
+                const idx = item[0];
+                auto widget = child(idx);
+                if (w + itemSizes[idx].w <= spaceForItems)
+                    w += itemSizes[idx].w;
+                else
+                    widget.visibility = Visibility.gone;
+            }
+        }
+        // 'more' button
         if (enableMoreButton && needMoreButton)
         {
             _moreButton.visibility = Visibility.visible;
             Size msz = itemSizes[0];
-            _moreButton.layout(Box(geom.x + geom.w, geom.y + (geom.h - msz.h) / 2, // TODO: generalize?
-                                   msz.w, geom.h));
+            _moreButton.layout(alignBox(geom, msz, Align.right | Align.vcenter));
         }
         else
-        {
             _moreButton.visibility = Visibility.gone;
-        }
         // layout visible items
         int pen;
         foreach (i; 1 .. childCount)

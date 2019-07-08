@@ -256,9 +256,9 @@ RangeSlider.vertical::range-between { border-left-width: 4px; border-right-width
 /* ========================================================================== tabs.d */
 TabWidget { gap: 0; }
 
-TabControl { padding-left: 3px; }
+TabControl { padding-left: 3px; padding-right: 3px; }
 
-TabControl::more { padding: 0 2px 4px 0; opacity: 0.6; transition: opacity 100ms ease; }
+TabControl::more { opacity: 0.6; transition: opacity 100ms ease; }
 
 TabControl::more:hovered { opacity: 1; }
 

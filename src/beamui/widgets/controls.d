@@ -240,12 +240,12 @@ class Button : Panel, ActionHolder
 }
 
 /// Hyperlink button. Like `Button`, may execute arbitrary actions.
-class LinkButton : Button // FIXME: in horizontal layout this button expands horizontally
+class LinkButton : Button
 {
+    import beamui.platforms.common.platform : platform;
+
     this(dstring labelText, string url, string icon = "applications-internet")
     {
-        import beamui.platforms.common.platform;
-
         super(labelText, icon);
         auto a = new Action(labelText, icon); // TODO: consider link hotkeys
         a.bind(this, { platform.openURL(url); });

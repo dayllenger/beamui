@@ -134,11 +134,44 @@ class SimpleBarChart : Widget
         requestLayout();
     }
 
+    struct AxisData
+    {
+        Size maxDescriptionSize = Size(30, 20);
+        int thickness = 1;
+        int segmentTagLength = 4;
+        int zeroValueDist = 3;
+        int lengthFromZeroToArrow = 200;
+        int arrowSize = 20;
+    }
+
+    AxisData _axisX;
+    AxisData _axisY;
+
     private
     {
         SimpleText _title;
         bool _showTitle = true;
         int _marginAfterTitle = 2;
+
+        Color _backgroundColor = Color(0xffffff);
+        Color _axisColor = Color(0xc0c0c0);
+        Color _segmentTagColor = Color(0xc0c0c0);
+
+        SimpleText _axisYMaxValueDesc;
+        SimpleText _axisYAvgValueDesc;
+        double cachedMaxYValue;
+        double cachedAvgYValue;
+
+        double _axisRatio = 0.6;
+
+        int _minBarWidth = 10;
+        int _barWidth = 10;
+        int _barSpacing = 3;
+
+        int _axisXMinWfromZero = 150;
+        int _axisYMinDescWidth = 30;
+
+        TextSizeTester _minDescSizeTester;
     }
 
     @property
@@ -165,71 +198,39 @@ class SimpleBarChart : Widget
             }
         }
 
-        Color chartBackgroundColor() const
+        Color chartBackgroundColor() const { return _backgroundColor; }
+        /// ditto
+        void chartBackgroundColor(Color value)
         {
-            return currentTheme.getColor("chart_background", Color(0xffffff));
-        }
-        void chartBackgroundColor(Color newColor)
-        {
-            //ownStyle.setCustomColor("chart_background", newColor); // TODO
-            invalidate();
-        }
-
-        Color chartAxisColor() const
-        {
-            return currentTheme.getColor("chart_axis", Color(0xc0c0c0));
-        }
-        void chartAxisColor(Color newColor)
-        {
-            //ownStyle.setCustomColor("chart_axis", newColor); // TODO
-            invalidate();
+            if (_backgroundColor != value)
+            {
+                _backgroundColor = value;
+                invalidate();
+            }
         }
 
-        Color chartSegmentTagColor() const
+        Color chartAxisColor() const { return _axisColor; }
+        /// ditto
+        void chartAxisColor(Color value)
         {
-            return currentTheme.getColor("chart_segment_tag", Color(0xc0c0c0));
+            if (_axisColor != value)
+            {
+                _axisColor = value;
+                invalidate();
+            }
         }
-        void chartSegmentTagColor(Color newColor)
+
+        Color chartSegmentTagColor() const { return _segmentTagColor; }
+        /// ditto
+        void chartSegmentTagColor(Color value)
         {
-            //ownStyle.setCustomColor("chart_segment_tag", newColor); // TODO
-            invalidate();
+            if (_segmentTagColor != value)
+            {
+                _segmentTagColor = value;
+                invalidate();
+            }
         }
-    }
 
-    struct AxisData
-    {
-        Size maxDescriptionSize = Size(30, 20);
-        int thickness = 1;
-        int segmentTagLength = 4;
-        int zeroValueDist = 3;
-        int lengthFromZeroToArrow = 200;
-        int arrowSize = 20;
-    }
-
-    AxisData _axisX;
-    AxisData _axisY;
-
-    private
-    {
-        SimpleText _axisYMaxValueDesc;
-        SimpleText _axisYAvgValueDesc;
-        double cachedMaxYValue;
-        double cachedAvgYValue;
-
-        double _axisRatio = 0.6;
-
-        int _minBarWidth = 10;
-        int _barWidth = 10;
-        int _barSpacing = 3;
-
-        int _axisXMinWfromZero = 150;
-        int _axisYMinDescWidth = 30;
-
-        TextSizeTester _minDescSizeTester;
-    }
-
-    @property
-    {
         double axisRatio() const { return _axisRatio; }
 
         void axisRatio(double newRatio)
@@ -245,6 +246,15 @@ class SimpleBarChart : Widget
             _minDescSizeTester.str = txt;
             requestLayout();
         }
+    }
+
+    override void onThemeChanged()
+    {
+        super.onThemeChanged();
+        _backgroundColor = currentTheme.getColor("chart_background", Color(0xffffff));
+        _axisColor = currentTheme.getColor("chart_axis", Color(0xc0c0c0));
+        _segmentTagColor = currentTheme.getColor("chart_segment_tag", Color(0xc0c0c0));
+        handleFontChange();
     }
 
     override protected void handleFontChange()
@@ -374,19 +384,19 @@ class SimpleBarChart : Widget
         }
 
         // draw axes
-        buf.fillRect(Rect(x1, y1, x2, y2), chartBackgroundColor);
+        buf.fillRect(Rect(x1, y1, x2, y2), _backgroundColor);
 
         // y axis
-        buf.drawLine(Point(x1, y1), Point(x1, y2), chartAxisColor);
+        buf.drawLine(Point(x1, y1), Point(x1, y2), _axisColor);
 
         // x axis
-        buf.drawLine(Point(x1, y2 - 1), Point(x2, y2 - 1), chartAxisColor);
+        buf.drawLine(Point(x1, y2 - 1), Point(x2, y2 - 1), _axisColor);
 
         // top line - will be optional in the future
-        buf.drawLine(Point(x1, y1), Point(x2, y1), chartAxisColor);
+        buf.drawLine(Point(x1, y1), Point(x2, y1), _axisColor);
 
         // right line - will be optional in the future
-        buf.drawLine(Point(x2 - 1, y1), Point(x2 - 1, y2), chartAxisColor);
+        buf.drawLine(Point(x2 - 1, y1), Point(x2 - 1, y2), _axisColor);
 
         // draw bars
 
@@ -401,7 +411,7 @@ class SimpleBarChart : Widget
 
             // draw x axis segment under bar
             buf.drawLine(Point(firstBarX + _barWidth / 2, y2), Point(firstBarX + _barWidth / 2,
-                    y2 + _axisX.segmentTagLength), chartSegmentTagColor);
+                    y2 + _axisX.segmentTagLength), _segmentTagColor);
 
             // draw x axis description
             bar.title.style.color = style.textColor;
@@ -421,10 +431,8 @@ class SimpleBarChart : Widget
         int axisYWidth = _axisY.maxDescriptionSize.w;
         int horTagStart = b.x + axisYWidth;
 
-        buf.drawLine(Point(horTagStart, yMax), Point(horTagStart + _axisY.segmentTagLength, yMax),
-                     chartSegmentTagColor);
-        buf.drawLine(Point(horTagStart, yAvg), Point(horTagStart + _axisY.segmentTagLength, yAvg),
-                     chartSegmentTagColor);
+        buf.drawLine(Point(horTagStart, yMax), Point(horTagStart + _axisY.segmentTagLength, yMax), _segmentTagColor);
+        buf.drawLine(Point(horTagStart, yAvg), Point(horTagStart + _axisY.segmentTagLength, yAvg), _segmentTagColor);
 
         _axisYMaxValueDesc.style.color = style.textColor;
         _axisYAvgValueDesc.style.color = style.textColor;
@@ -442,11 +450,5 @@ class SimpleBarChart : Widget
 
         double pixValue = axisInPixels / currentMaxValue;
         return cast(int)round(barYValue * pixValue);
-    }
-
-    override void onThemeChanged()
-    {
-        super.onThemeChanged();
-        handleFontChange();
     }
 }

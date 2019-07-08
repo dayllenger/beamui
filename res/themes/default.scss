@@ -18,6 +18,10 @@ Button, CheckBox, ComboBoxBase {
     display: row;
 }
 
+LinkButton {
+    stretch: none;
+}
+
 FindPanel {
     display: row;
 

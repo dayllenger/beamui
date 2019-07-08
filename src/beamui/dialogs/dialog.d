@@ -224,17 +224,6 @@ class Dialog : Panel
         }
         return super.onKeyEvent(event);
     }
-/+
-    override Size measureContent(in Size bounds, bool exactW, bool exactH)
-    {
-        Size sz = super.measureContent(bounds, exactW, exactH);
-        if ((_flags & DialogFlag.resizable) && (_flags & DialogFlag.popup))
-        {
-            return Size(_parentWindow.width * 4 / 5, _parentWindow.height * 4 / 5); // FIXME: wat?
-        }
-        else
-            return sz;
-    }+/
 }
 
 /// Frame with caption for dialog
