@@ -19,6 +19,7 @@ import beamui.platforms.ansi_console.consolefont;
 import beamui.platforms.ansi_console.dconsole;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
+import beamui.text.glyph : GlyphRef;
 
 class ConsoleWindow : Window
 {
@@ -254,7 +255,7 @@ class ConsolePlatform : Platform
 
     override bool hasClipboardText(bool mouseBuffer = false)
     {
-        return (_clipboardText.length > 0);
+        return _clipboardText.length > 0;
     }
 
     override dstring getClipboardText(bool mouseBuffer = false)
@@ -426,7 +427,7 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         return cast(ubyte)bestMatchIndex;
     }
 
-    static immutable dstring SPACE_STRING = "                                                                                                    " ~ "                                                                                                    " ~ "                                                                                                    " ~ "                                                                                                    " ~ "                                                                                                    ";
+    static immutable dchar[512] SPACE_STRING = ' ';
 
     override void fillRect(Rect rc, Color color)
     {

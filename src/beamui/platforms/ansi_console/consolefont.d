@@ -13,6 +13,7 @@ static if (BACKEND_ANSI_CONSOLE):
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
 import beamui.style.types : TextFlag;
+import beamui.text.glyph;
 import beamui.text.fonts;
 
 class ConsoleFont : Font
@@ -36,14 +37,17 @@ class ConsoleFont : Font
 
     this()
     {
-        _glyph.blackBoxX = 1;
-        _glyph.blackBoxY = 1;
-        _glyph.widthPixels = 1;
-        _glyph.widthScaled = 1 << 6;
-        _glyph.originX = 0;
-        _glyph.originY = 0;
-        _glyph.subpixelMode = SubpixelRenderingMode.none;
-        _glyph.glyph = [0];
+        immutable(Glyph) g = {
+            blackBoxX: 1,
+            blackBoxY: 1,
+            widthPixels: 1,
+            widthScaled: 1 << 6,
+            originX: 0,
+            originY: 0,
+            subpixelMode: SubpixelRenderingMode.none,
+            glyph: [0],
+        };
+        _glyph = g;
     }
 
     override int charWidth(dchar ch) const { return 1; }

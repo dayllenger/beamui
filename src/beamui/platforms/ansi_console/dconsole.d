@@ -18,6 +18,7 @@ version (Windows)
     import core.sys.windows.basetyps, core.sys.windows.w32api, core.sys.windows.winnt;
 }
 import std.stdio;
+import std.utf;
 import beamui.core.events;
 import beamui.core.logger;
 import beamui.core.signals;
@@ -56,37 +57,43 @@ struct ConsoleChar
 {
     dchar ch;
     uint attr = 0xFFFFFFFF;
-    @property ubyte backgroundColor()
+
+    @property
     {
-        return cast(ubyte)((attr >> 8) & 0xFF);
+        ubyte backgroundColor() const
+        {
+            return cast(ubyte)((attr >> 8) & 0xFF);
+        }
+
+        void backgroundColor(ubyte b)
+        {
+            attr = (attr & 0xFFFF00FF) | ((cast(uint)b) << 8);
+        }
+
+        ubyte textColor() const
+        {
+            return cast(ubyte)((attr) & 0xFF);
+        }
+
+        void textColor(ubyte b)
+        {
+            attr = (attr & 0xFFFFFF00) | (cast(uint)b);
+        }
+
+        bool underline() const
+        {
+            return (attr & 0x10000) != 0;
+        }
+
+        void underline(bool b)
+        {
+            if (b)
+                attr |= 0x10000;
+            else
+                attr &= ~0x10000;
+        }
     }
 
-    @property void backgroundColor(ubyte b)
-    {
-        attr = (attr & 0xFFFF00FF) | ((cast(uint)b) << 8);
-    }
-
-    @property ubyte textColor()
-    {
-        return cast(ubyte)((attr) & 0xFF);
-    }
-
-    @property void textColor(ubyte b)
-    {
-        attr = (attr & 0xFFFFFF00) | ((cast(uint)b));
-    }
-
-    @property bool underline()
-    {
-        return (attr & 0x10000) != 0;
-    }
-
-    @property void underline(bool b)
-    {
-        attr = (attr & ~0x10000);
-        if (b)
-            attr |= 0x10000;
-    }
     /// Set value, supporting transparent background
     void set(ConsoleChar v)
     {
@@ -105,30 +112,21 @@ immutable ConsoleChar UNKNOWN_CHAR = ConsoleChar.init;
 
 struct ConsoleBuf
 {
-    protected int _width;
-    protected int _height;
-    protected int _cursorX;
-    protected int _cursorY;
-    protected ConsoleChar[] _chars;
-
-    @property int width() const
+    @property
     {
-        return _width;
+        int width() const { return _width; }
+        int height() const { return _height; }
+        int cursorX() const { return _cursorX; }
+        int cursorY() const { return _cursorY; }
     }
 
-    @property int height() const
+    private
     {
-        return _height;
-    }
-
-    @property int cursorX() const
-    {
-        return _cursorX;
-    }
-
-    @property int cursorY() const
-    {
-        return _cursorY;
+        int _width;
+        int _height;
+        int _cursorX;
+        int _cursorY;
+        ConsoleChar[] _chars;
     }
 
     void clear(ConsoleChar ch)
@@ -245,7 +243,6 @@ version (Windows)
 else
 {
     import core.sys.posix.signal;
-    import beamui.core.logger;
 
     __gshared bool SIGHUP_flag = false;
     extern (C) void signalHandler_SIGHUP(int) nothrow @nogc @system
@@ -641,45 +638,45 @@ class Console
     /// Flush batched updates
     void flush()
     {
-        if (_batchMode)
+        if (!_batchMode)
+            return;
+
+        bool drawn;
+        foreach (y; 0 .. _batchBuf.height)
         {
-            bool drawn = false;
-            for (int i = 0; i < _batchBuf.height; i++)
+            ConsoleChar[] batchLine = _batchBuf.line(y);
+            ConsoleChar[] bufLine = _buf.line(y);
+            foreach (x; 0 .. _batchBuf.width)
             {
-                ConsoleChar[] batchLine = _batchBuf.line(i);
-                ConsoleChar[] bufLine = _buf.line(i);
-                for (int x = 0; x < _batchBuf.width; x++)
+                if (batchLine[x] != ConsoleChar.init && batchLine[x] != bufLine[x])
                 {
-                    if (batchLine[x] != ConsoleChar.init && batchLine[x] != bufLine[x])
+                    // found non-empty sequence
+                    int xx = 1;
+                    dchar[] str;
+                    str ~= batchLine[x].ch;
+                    bufLine[x] = batchLine[x];
+                    const uint firstAttr = batchLine[x].attr;
+                    for (; x + xx < _batchBuf.width; xx++)
                     {
-                        // found non-empty sequence
-                        int xx = 1;
-                        dchar[] str;
-                        str ~= batchLine[x].ch;
-                        bufLine[x] = batchLine[x];
-                        uint firstAttr = batchLine[x].attr;
-                        for (; x + xx < _batchBuf.width; xx++)
-                        {
-                            if (batchLine[x + xx] == ConsoleChar.init || batchLine[x + xx].attr != firstAttr)
-                                break;
-                            str ~= batchLine[x + xx].ch;
-                            bufLine[x + xx].set(batchLine[x + xx]);
-                        }
-                        rawWriteTextAt(x, i, firstAttr, cast(dstring)str);
-                        x += xx - 1;
-                        drawn = true;
+                        if (batchLine[x + xx] == ConsoleChar.init || batchLine[x + xx].attr != firstAttr)
+                            break;
+                        str ~= batchLine[x + xx].ch;
+                        bufLine[x + xx].set(batchLine[x + xx]);
                     }
+                    rawWriteTextAt(x, y, firstAttr, cast(dstring)str);
+                    x += xx - 1;
+                    drawn = true;
                 }
             }
-            if (drawn || _cursorX != _batchBuf.cursorX || _cursorY != _batchBuf.cursorY)
-            {
-                _cursorX = _batchBuf.cursorX;
-                _cursorY = _batchBuf.cursorY;
-                rawSetCursor(_cursorX, _cursorY);
-                rawSetCursorType(_cursorType);
-            }
-            _batchBuf.clear(ConsoleChar.init);
         }
+        if (drawn || _cursorX != _batchBuf.cursorX || _cursorY != _batchBuf.cursorY)
+        {
+            _cursorX = _batchBuf.cursorX;
+            _cursorY = _batchBuf.cursorY;
+            rawSetCursor(_cursorX, _cursorY);
+            rawSetCursorType(_cursorType);
+        }
+        _batchBuf.clear(ConsoleChar.init);
     }
 
     /// Write text string
@@ -730,8 +727,6 @@ class Console
         _windowCaption = str;
         version (Windows)
         {
-            import std.utf;
-
             SetConsoleTitle(toUTF16z(str));
         }
         else
@@ -830,16 +825,12 @@ class Console
     {
         version (Windows)
         {
-            import std.utf;
-
             wstring s16 = toUTF16(str);
             DWORD charsWritten;
             WriteConsole(_hstdout, cast(const(void)*)s16.ptr, cast(uint)s16.length, &charsWritten, cast(void*)null);
         }
         else
         {
-            import std.utf;
-
             string s8 = toUTF8(str);
             rawWrite(s8);
         }
@@ -1026,19 +1017,17 @@ class Console
     }
 
     /// Mouse event signal
-    Signal!(bool delegate(MouseEvent)) mouseEvent;
+    Listener!(bool delegate(MouseEvent)) mouseEvent;
     /// Keyboard event signal
-    Signal!(bool delegate(KeyEvent)) keyEvent;
+    Listener!(bool delegate(KeyEvent)) keyEvent;
     /// Console size changed signal
-    Signal!(bool delegate(int width, int height)) resizeEvent;
+    Listener!(bool delegate(int width, int height)) resizeEvent;
     /// Console input is idle
-    Signal!(bool delegate()) inputIdleEvent;
+    Listener!(bool delegate()) inputIdleEvent;
 
     protected bool handleKeyEvent(KeyEvent event)
     {
-        if (keyEvent.assigned)
-            return keyEvent(event);
-        return false;
+        return keyEvent(event);
     }
 
     protected bool handleMouseEvent(MouseEvent event)
@@ -1054,19 +1043,17 @@ class Console
         {
             if (event.action == MouseAction.buttonDown)
             {
-                pbuttonDetails.down(event.x, event.y, event.flags);
+                pbuttonDetails.down(event.x, event.y, event.mouseMods, event.keyMods);
             }
             else if (event.action == MouseAction.buttonUp)
             {
-                pbuttonDetails.up(event.x, event.y, event.flags);
+                pbuttonDetails.up(event.x, event.y, event.mouseMods, event.keyMods);
             }
         }
         event.lbutton = _lbutton;
         event.rbutton = _rbutton;
         event.mbutton = _mbutton;
-        if (mouseEvent.assigned)
-            return mouseEvent(event);
-        return false;
+        return mouseEvent(event);
     }
 
     protected bool handleConsoleResize(int width, int height)
@@ -1085,8 +1072,8 @@ class Console
         return false;
     }
 
-    private ushort lastMouseFlags = 0;
-    private MouseButton lastButtonDown = MouseButton.none;
+    private MouseMods lastMouseMods;
+    private MouseButton lastButtonDown;
 
     protected ButtonDetails _lbutton;
     protected ButtonDetails _mbutton;
@@ -1110,139 +1097,128 @@ class Console
         {
             INPUT_RECORD record;
             DWORD eventsRead;
-            if (PeekConsoleInput(_hstdin, &record, 1, &eventsRead))
-            {
-                if (eventsRead)
-                {
-                    if (ReadConsoleInput(_hstdin, &record, 1, &eventsRead))
-                    {
-                        switch (record.EventType)
-                        {
-                        case KEY_EVENT:
-                            KeyAction action = record.KeyEvent.bKeyDown ? KeyAction.keyDown : KeyAction.keyUp;
-                            KeyCode keyCode = KeyCode.none;
-                            ushort flags = 0;
-                            uint keyState = record.KeyEvent.dwControlKeyState;
-                            if (keyState & LEFT_ALT_PRESSED)
-                                flags |= KeyFlag.alt | KeyFlag.lalt;
-                            if (keyState & RIGHT_ALT_PRESSED)
-                                flags |= KeyFlag.alt | KeyFlag.ralt;
-                            if (keyState & LEFT_CTRL_PRESSED)
-                                flags |= KeyFlag.control | KeyFlag.lcontrol;
-                            if (keyState & RIGHT_CTRL_PRESSED)
-                                flags |= KeyFlag.control | KeyFlag.rcontrol;
-                            if (keyState & SHIFT_PRESSED)
-                                flags |= KeyFlag.shift;
-                            keyCode = cast(KeyCode)record.KeyEvent.wVirtualKeyCode;
-                            dchar ch = record.KeyEvent.UnicodeChar;
-                            handleKeyEvent(new KeyEvent(action, keyCode, flags));
-                            if (action == KeyAction.keyDown && ch)
-                            {
-                                handleKeyEvent(new KeyEvent(KeyAction.text, keyCode, flags, [ch]));
-                            }
-                            break;
-                        case MOUSE_EVENT:
-                            short x = record.MouseEvent.dwMousePosition.X;
-                            short y = record.MouseEvent.dwMousePosition.Y;
-                            uint buttonState = record.MouseEvent.dwButtonState;
-                            uint keyState = record.MouseEvent.dwControlKeyState;
-                            uint eventFlags = record.MouseEvent.dwEventFlags;
-                            ushort flags = 0;
-                            if ((keyState & LEFT_ALT_PRESSED) || (keyState & RIGHT_ALT_PRESSED))
-                                flags |= MouseFlag.alt;
-                            if ((keyState & LEFT_CTRL_PRESSED) || (keyState & RIGHT_CTRL_PRESSED))
-                                flags |= MouseFlag.control;
-                            if (keyState & SHIFT_PRESSED)
-                                flags |= MouseFlag.shift;
-                            if (buttonState & FROM_LEFT_1ST_BUTTON_PRESSED)
-                                flags |= MouseFlag.lbutton;
-                            if (buttonState & FROM_LEFT_2ND_BUTTON_PRESSED)
-                                flags |= MouseFlag.mbutton;
-                            if (buttonState & RIGHTMOST_BUTTON_PRESSED)
-                                flags |= MouseFlag.rbutton;
-                            bool actionSent = false;
-                            if ((flags & MouseFlag.buttonsMask) != (lastMouseFlags & MouseFlag.buttonsMask))
-                            {
-                                MouseButton btn = MouseButton.none;
-                                MouseAction action = MouseAction.cancel;
-                                if ((flags & MouseFlag.lbutton) != (lastMouseFlags & MouseFlag.lbutton))
-                                {
-                                    btn = MouseButton.left;
-                                    action = (flags & MouseFlag.lbutton) ? MouseAction.buttonDown : MouseAction
-                                        .buttonUp;
-                                    handleMouseEvent(new MouseEvent(action, btn, flags, cast(short)x, cast(short)y));
-                                }
-                                if ((flags & MouseFlag.rbutton) != (lastMouseFlags & MouseFlag.rbutton))
-                                {
-                                    btn = MouseButton.right;
-                                    action = (flags & MouseFlag.rbutton) ? MouseAction.buttonDown : MouseAction
-                                        .buttonUp;
-                                    handleMouseEvent(new MouseEvent(action, btn, flags, cast(short)x, cast(short)y));
-                                }
-                                if ((flags & MouseFlag.mbutton) != (lastMouseFlags & MouseFlag.mbutton))
-                                {
-                                    btn = MouseButton.middle;
-                                    action = (flags & MouseFlag.mbutton) ? MouseAction.buttonDown : MouseAction
-                                        .buttonUp;
-                                    handleMouseEvent(new MouseEvent(action, btn, flags, cast(short)x, cast(short)y));
-                                }
-                                if (action != MouseAction.cancel)
-                                    actionSent = true;
-                            }
-                            if ((eventFlags & MOUSE_MOVED) && !actionSent)
-                            {
-                                handleMouseEvent(new MouseEvent(MouseAction.move, MouseButton.none,
-                                        flags, cast(short)x, cast(short)y));
-                                actionSent = true;
-                            }
-                            if (eventFlags & MOUSE_WHEELED)
-                            {
-                                short delta = (cast(short)(buttonState >> 16));
-                                handleMouseEvent(new MouseEvent(MouseAction.wheel, MouseButton.none,
-                                        flags, cast(short)x, cast(short)y, delta));
-                                actionSent = true;
-                            }
-                            lastMouseFlags = flags;
-                            break;
-                        case WINDOW_BUFFER_SIZE_EVENT:
-                            handleConsoleResize(record.WindowBufferSizeEvent.dwSize.X,
-                                    record.WindowBufferSizeEvent.dwSize.Y);
-                            break;
-                        default:
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    handleInputIdle();
-                    Sleep(1);
-                }
-            }
-            else
+            BOOL success = PeekConsoleInput(_hstdin, &record, 1, &eventsRead);
+            if (!success)
             {
                 DWORD err = GetLastError();
                 _stopped = true;
                 return false;
             }
+            if (eventsRead == 0)
+            {
+                handleInputIdle();
+                Sleep(1);
+                return true;
+            }
+            success = ReadConsoleInput(_hstdin, &record, 1, &eventsRead);
+            if (!success)
+            {
+                return false;
+            }
+            switch (record.EventType)
+            {
+            case KEY_EVENT:
+                const action = record.KeyEvent.bKeyDown ? KeyAction.keyDown : KeyAction.keyUp;
+                const key = cast(Key)record.KeyEvent.wVirtualKeyCode;
+                const dchar ch = record.KeyEvent.UnicodeChar;
+                const uint keyState = record.KeyEvent.dwControlKeyState;
+                KeyMods mods;
+                if (keyState & LEFT_ALT_PRESSED)
+                    mods |= KeyMods.alt | KeyMods.lalt;
+                if (keyState & RIGHT_ALT_PRESSED)
+                    mods |= KeyMods.alt | KeyMods.ralt;
+                if (keyState & LEFT_CTRL_PRESSED)
+                    mods |= KeyMods.control | KeyMods.lcontrol;
+                if (keyState & RIGHT_CTRL_PRESSED)
+                    mods |= KeyMods.control | KeyMods.rcontrol;
+                if (keyState & SHIFT_PRESSED)
+                    mods |= KeyMods.shift;
+
+                handleKeyEvent(new KeyEvent(action, key, mods));
+                if (action == KeyAction.keyDown && ch)
+                    handleKeyEvent(new KeyEvent(KeyAction.text, key, mods, [ch]));
+                break;
+            case MOUSE_EVENT:
+                const short x = record.MouseEvent.dwMousePosition.X;
+                const short y = record.MouseEvent.dwMousePosition.Y;
+                const uint buttonState = record.MouseEvent.dwButtonState;
+                const uint keyState = record.MouseEvent.dwControlKeyState;
+                const uint eventFlags = record.MouseEvent.dwEventFlags;
+                MouseMods mmods;
+                KeyMods kmods;
+                if ((keyState & LEFT_ALT_PRESSED) || (keyState & RIGHT_ALT_PRESSED))
+                    kmods |= KeyMods.alt;
+                if ((keyState & LEFT_CTRL_PRESSED) || (keyState & RIGHT_CTRL_PRESSED))
+                    kmods |= KeyMods.control;
+                if (keyState & SHIFT_PRESSED)
+                    kmods |= KeyMods.shift;
+                if (buttonState & FROM_LEFT_1ST_BUTTON_PRESSED)
+                    mmods |= MouseMods.left;
+                if (buttonState & FROM_LEFT_2ND_BUTTON_PRESSED)
+                    mmods |= MouseMods.middle;
+                if (buttonState & RIGHTMOST_BUTTON_PRESSED)
+                    mmods |= MouseMods.right;
+                bool actionSent;
+                if (mmods != lastMouseMods)
+                {
+                    MouseButton btn = MouseButton.none;
+                    MouseAction action = MouseAction.cancel;
+                    if ((mmods & MouseMods.left) != (lastMouseMods & MouseMods.left))
+                    {
+                        btn = MouseButton.left;
+                        action = (mmods & MouseMods.left) ? MouseAction.buttonDown : MouseAction.buttonUp;
+                        handleMouseEvent(new MouseEvent(action, btn, mmods, kmods, x, y));
+                    }
+                    if ((mmods & MouseMods.right) != (lastMouseMods & MouseMods.right))
+                    {
+                        btn = MouseButton.right;
+                        action = (mmods & MouseMods.right) ? MouseAction.buttonDown : MouseAction.buttonUp;
+                        handleMouseEvent(new MouseEvent(action, btn, mmods, kmods, x, y));
+                    }
+                    if ((mmods & MouseMods.middle) != (lastMouseMods & MouseMods.middle))
+                    {
+                        btn = MouseButton.middle;
+                        action = (mmods & MouseMods.middle) ? MouseAction.buttonDown : MouseAction.buttonUp;
+                        handleMouseEvent(new MouseEvent(action, btn, mmods, kmods, x, y));
+                    }
+                    if (action != MouseAction.cancel)
+                        actionSent = true;
+                }
+                if ((eventFlags & MOUSE_MOVED) && !actionSent)
+                {
+                    auto e = new MouseEvent(MouseAction.move, MouseButton.none, mmods, kmods, x, y);
+                    handleMouseEvent(e);
+                    actionSent = true;
+                }
+                if (eventFlags & MOUSE_WHEELED)
+                {
+                    const delta = cast(short)(buttonState >> 16);
+                    auto e = new MouseEvent(MouseAction.wheel, MouseButton.none, mmods, kmods, x, y, delta);
+                    handleMouseEvent(e);
+                    actionSent = true;
+                }
+                lastMouseMods = mmods;
+                break;
+            case WINDOW_BUFFER_SIZE_EVENT:
+                const sz = record.WindowBufferSizeEvent.dwSize;
+                handleConsoleResize(sz.X, sz.Y);
+                break;
+            default:
+                break;
+            }
         }
         else
         {
-            import std.algorithm;
+            import std.algorithm : startsWith;
 
             if (SIGHUP_flag)
             {
                 Log.i("SIGHUP signal fired");
                 _stopped = true;
             }
-            import beamui.core.logger;
 
             string s = rawRead(20);
-            if (s is null)
+            if (s.length == 0)
             {
                 handleInputIdle();
                 return !_stopped;
@@ -1251,62 +1227,62 @@ class Console
             {
                 // mouse event
                 MouseAction a = MouseAction.cancel;
-                int mb = s[3] - 32;
-                int mx = s[4] - 32 - 1;
-                int my = s[5] - 32 - 1;
+                const int mb = s[3] - 32;
+                const int mx = s[4] - 32 - 1;
+                const int my = s[5] - 32 - 1;
 
-                int btn = mb & 3;
+                const int btn = mb & 3;
                 if (btn < 3)
                     a = MouseAction.buttonDown;
                 else
                     a = MouseAction.buttonUp;
                 if (mb & 32)
-                {
                     a = MouseAction.move;
-                }
-                MouseButton button = MouseButton.none;
-                ushort flags = 0;
+
+                MouseButton button;
+                MouseMods mmods;
+                KeyMods kmods;
                 if (btn == 0)
                 {
-                    flags |= MouseFlag.lbutton;
                     button = MouseButton.left;
+                    mmods |= MouseMods.left;
                 }
-                if (btn == 2)
+                else if (btn == 1)
                 {
-                    flags |= MouseFlag.rbutton;
-                    button = MouseButton.right;
-                }
-                if (btn == 1)
-                {
-                    flags |= MouseFlag.mbutton;
                     button = MouseButton.middle;
+                    mmods |= MouseMods.middle;
                 }
-                if (btn == 3 && a != MouseAction.move)
+                else if (btn == 2)
+                {
+                    button = MouseButton.right;
+                    mmods |= MouseMods.right;
+                }
+                else if (btn == 3 && a != MouseAction.move)
                     a = MouseAction.buttonUp;
                 if (button != MouseButton.none)
                     lastButtonDown = button;
                 else if (a == MouseAction.buttonUp)
                     button = lastButtonDown;
                 if (mb & 4)
-                    flags |= MouseFlag.shift;
+                    kmods |= KeyMods.shift;
                 if (mb & 8)
-                    flags |= MouseFlag.alt;
+                    kmods |= KeyMods.alt;
                 if (mb & 16)
-                    flags |= MouseFlag.control;
+                    kmods |= KeyMods.control;
                 //Log.d("mouse evt:", s, " mb=", mb, " mx=", mx, " my=", my, "  action=", a, " button=", button, " flags=", flags);
-                MouseEvent evt = new MouseEvent(a, button, flags, cast(short)mx, cast(short)my);
+                auto evt = new MouseEvent(a, button, mmods, kmods, cast(short)mx, cast(short)my);
                 handleMouseEvent(evt);
                 return true;
             }
-            int keyCode = 0;
-            int keyFlags = 0;
+
+            Key key;
+            KeyMods mods;
             dstring text;
             if (s[0] == 27)
             {
-                //
                 string escSequence = s[1 .. $];
                 //Log.d("ESC ", escSequence);
-                char letter = escSequence[$ - 1];
+                const char letter = escSequence[$ - 1];
                 if (escSequence.startsWith("[") && escSequence.length > 1)
                 {
                     import std.string : indexOf;
@@ -1315,151 +1291,73 @@ class Console
                     if (letter == '~')
                     {
                         string code = options;
-                        int semicolonPos = cast(int)options.indexOf(";");
+                        const semicolonPos = options.indexOf(";");
                         if (semicolonPos >= 0)
                         {
                             code = options[0 .. semicolonPos];
                             options = options[semicolonPos + 1 .. $];
                         }
                         else
-                        {
                             options = null;
-                        }
+
                         switch (options)
                         {
-                        case "5":
-                            keyFlags = KeyFlag.control;
-                            break;
-                        case "2":
-                            keyFlags = KeyFlag.shift;
-                            break;
-                        case "3":
-                            keyFlags = KeyFlag.alt;
-                            break;
-                        case "4":
-                            keyFlags = KeyFlag.shift | KeyFlag.alt;
-                            break;
-                        case "6":
-                            keyFlags = KeyFlag.shift | KeyFlag.control;
-                            break;
-                        case "7":
-                            keyFlags = KeyFlag.alt | KeyFlag.control;
-                            break;
-                        case "8":
-                            keyFlags = KeyFlag.shift | KeyFlag.alt | KeyFlag.control;
-                            break;
-                        default:
-                            break;
+                            case "5": mods = KeyMods.control; break;
+                            case "2": mods = KeyMods.shift; break;
+                            case "3": mods = KeyMods.alt; break;
+                            case "4": mods = KeyMods.shift | KeyMods.alt; break;
+                            case "6": mods = KeyMods.shift | KeyMods.control; break;
+                            case "7": mods = KeyMods.alt | KeyMods.control; break;
+                            case "8": mods = KeyMods.shift | KeyMods.alt | KeyMods.control; break;
+                            default: break;
                         }
                         switch (code)
                         {
-                        case "15":
-                            keyCode = KeyCode.F5;
-                            break;
-                        case "17":
-                            keyCode = KeyCode.F6;
-                            break;
-                        case "18":
-                            keyCode = KeyCode.F7;
-                            break;
-                        case "19":
-                            keyCode = KeyCode.F8;
-                            break;
-                        case "20":
-                            keyCode = KeyCode.F9;
-                            break;
-                        case "21":
-                            keyCode = KeyCode.F10;
-                            break;
-                        case "23":
-                            keyCode = KeyCode.F11;
-                            break;
-                        case "24":
-                            keyCode = KeyCode.F12;
-                            break;
-                        case "5":
-                            keyCode = KeyCode.pageUp;
-                            break;
-                        case "6":
-                            keyCode = KeyCode.pageDown;
-                            break;
-                        case "2":
-                            keyCode = KeyCode.ins;
-                            break;
-                        case "3":
-                            keyCode = KeyCode.del;
-                            break;
-                        default:
-                            break;
+                            case "15": key = Key.F5; break;
+                            case "17": key = Key.F6; break;
+                            case "18": key = Key.F7; break;
+                            case "19": key = Key.F8; break;
+                            case "20": key = Key.F9; break;
+                            case "21": key = Key.F10; break;
+                            case "23": key = Key.F11; break;
+                            case "24": key = Key.F12; break;
+                            case "5":  key = Key.pageUp; break;
+                            case "6":  key = Key.pageDown; break;
+                            case "2":  key = Key.ins; break;
+                            case "3":  key = Key.del; break;
+                            default: break;
                         }
                     }
                     else
                     {
                         switch (options)
                         {
-                        case "1;5":
-                            keyFlags = KeyFlag.control;
-                            break;
-                        case "1;2":
-                            keyFlags = KeyFlag.shift;
-                            break;
-                        case "1;3":
-                            keyFlags = KeyFlag.alt;
-                            break;
-                        case "1;4":
-                            keyFlags = KeyFlag.shift | KeyFlag.alt;
-                            break;
-                        case "1;6":
-                            keyFlags = KeyFlag.shift | KeyFlag.control;
-                            break;
-                        case "1;7":
-                            keyFlags = KeyFlag.alt | KeyFlag.control;
-                            break;
-                        case "1;8":
-                            keyFlags = KeyFlag.shift | KeyFlag.alt | KeyFlag.control;
-                            break;
-                        default:
-                            break;
+                            case "1;5": mods = KeyMods.control; break;
+                            case "1;2": mods = KeyMods.shift; break;
+                            case "1;3": mods = KeyMods.alt; break;
+                            case "1;4": mods = KeyMods.shift | KeyMods.alt; break;
+                            case "1;6": mods = KeyMods.shift | KeyMods.control; break;
+                            case "1;7": mods = KeyMods.alt | KeyMods.control; break;
+                            case "1;8": mods = KeyMods.shift | KeyMods.alt | KeyMods.control; break;
+                            default: break;
                         }
                         switch (letter)
                         {
-                        case 'A':
-                            keyCode = KeyCode.up;
-                            break;
-                        case 'B':
-                            keyCode = KeyCode.down;
-                            break;
-                        case 'D':
-                            keyCode = KeyCode.left;
-                            break;
-                        case 'C':
-                            keyCode = KeyCode.right;
-                            break;
-                        case 'H':
-                            keyCode = KeyCode.home;
-                            break;
-                        case 'F':
-                            keyCode = KeyCode.end;
-                            break;
-                        default:
-                            break;
+                            case 'A': key = Key.up; break;
+                            case 'B': key = Key.down; break;
+                            case 'D': key = Key.left; break;
+                            case 'C': key = Key.right; break;
+                            case 'H': key = Key.home; break;
+                            case 'F': key = Key.end; break;
+                            default: break;
                         }
                         switch (letter)
                         {
-                        case 'P':
-                            keyCode = KeyCode.F1;
-                            break;
-                        case 'Q':
-                            keyCode = KeyCode.F2;
-                            break;
-                        case 'R':
-                            keyCode = KeyCode.F3;
-                            break;
-                        case 'S':
-                            keyCode = KeyCode.F4;
-                            break;
-                        default:
-                            break;
+                            case 'P': key = Key.F1; break;
+                            case 'Q': key = Key.F2; break;
+                            case 'R': key = Key.F3; break;
+                            case 'S': key = Key.F4; break;
+                            default: break;
                         }
                     }
                 }
@@ -1467,249 +1365,77 @@ class Console
                 {
                     switch (letter)
                     {
-                    case 'P':
-                        keyCode = KeyCode.F1;
-                        break;
-                    case 'Q':
-                        keyCode = KeyCode.F2;
-                        break;
-                    case 'R':
-                        keyCode = KeyCode.F3;
-                        break;
-                    case 'S':
-                        keyCode = KeyCode.F4;
-                        break;
-                    default:
-                        break;
+                        case 'P': key = Key.F1; break;
+                        case 'Q': key = Key.F2; break;
+                        case 'R': key = Key.F3; break;
+                        case 'S': key = Key.F4; break;
+                        default: break;
                     }
                 }
             }
             else
             {
-                import std.utf;
+                import std.uni : toLower;
 
-                //Log.d("stdin: ", s);
                 try
                 {
                     dstring s32 = toUTF32(s);
-                    switch (s)
+                    if (s32.length == 1)
                     {
-                    case " ":
-                        keyCode = KeyCode.space;
-                        text = " ";
-                        break;
-                    case "\t":
-                        keyCode = KeyCode.tab;
-                        break;
-                    case "\n":
-                        keyCode = KeyCode.enter; /* text = " " ; */ break;
-                    case "0":
-                        keyCode = KeyCode.alpha0;
-                        text = s32;
-                        break;
-                    case "1":
-                        keyCode = KeyCode.alpha1;
-                        text = s32;
-                        break;
-                    case "2":
-                        keyCode = KeyCode.alpha2;
-                        text = s32;
-                        break;
-                    case "3":
-                        keyCode = KeyCode.alpha3;
-                        text = s32;
-                        break;
-                    case "4":
-                        keyCode = KeyCode.alpha4;
-                        text = s32;
-                        break;
-                    case "5":
-                        keyCode = KeyCode.alpha5;
-                        text = s32;
-                        break;
-                    case "6":
-                        keyCode = KeyCode.alpha6;
-                        text = s32;
-                        break;
-                    case "7":
-                        keyCode = KeyCode.alpha7;
-                        text = s32;
-                        break;
-                    case "8":
-                        keyCode = KeyCode.alpha8;
-                        text = s32;
-                        break;
-                    case "9":
-                        keyCode = KeyCode.alpha9;
-                        text = s32;
-                        break;
-                    case "a":
-                    case "A":
-                        keyCode = KeyCode.A;
-                        text = s32;
-                        break;
-                    case "b":
-                    case "B":
-                        keyCode = KeyCode.B;
-                        text = s32;
-                        break;
-                    case "c":
-                    case "C":
-                        keyCode = KeyCode.C;
-                        text = s32;
-                        break;
-                    case "d":
-                    case "D":
-                        keyCode = KeyCode.D;
-                        text = s32;
-                        break;
-                    case "e":
-                    case "E":
-                        keyCode = KeyCode.E;
-                        text = s32;
-                        break;
-                    case "f":
-                    case "F":
-                        keyCode = KeyCode.F;
-                        text = s32;
-                        break;
-                    case "g":
-                    case "G":
-                        keyCode = KeyCode.G;
-                        text = s32;
-                        break;
-                    case "h":
-                    case "H":
-                        keyCode = KeyCode.H;
-                        text = s32;
-                        break;
-                    case "i":
-                    case "I":
-                        keyCode = KeyCode.I;
-                        text = s32;
-                        break;
-                    case "j":
-                    case "J":
-                        keyCode = KeyCode.J;
-                        text = s32;
-                        break;
-                    case "k":
-                    case "K":
-                        keyCode = KeyCode.K;
-                        text = s32;
-                        break;
-                    case "l":
-                    case "L":
-                        keyCode = KeyCode.L;
-                        text = s32;
-                        break;
-                    case "m":
-                    case "M":
-                        keyCode = KeyCode.M;
-                        text = s32;
-                        break;
-                    case "n":
-                    case "N":
-                        keyCode = KeyCode.N;
-                        text = s32;
-                        break;
-                    case "o":
-                    case "O":
-                        keyCode = KeyCode.O;
-                        text = s32;
-                        break;
-                    case "p":
-                    case "P":
-                        keyCode = KeyCode.P;
-                        text = s32;
-                        break;
-                    case "q":
-                    case "Q":
-                        keyCode = KeyCode.Q;
-                        text = s32;
-                        break;
-                    case "r":
-                    case "R":
-                        keyCode = KeyCode.R;
-                        text = s32;
-                        break;
-                    case "s":
-                    case "S":
-                        keyCode = KeyCode.S;
-                        text = s32;
-                        break;
-                    case "t":
-                    case "T":
-                        keyCode = KeyCode.T;
-                        text = s32;
-                        break;
-                    case "u":
-                    case "U":
-                        keyCode = KeyCode.U;
-                        text = s32;
-                        break;
-                    case "v":
-                    case "V":
-                        keyCode = KeyCode.V;
-                        text = s32;
-                        break;
-                    case "w":
-                    case "W":
-                        keyCode = KeyCode.W;
-                        text = s32;
-                        break;
-                    case "x":
-                    case "X":
-                        keyCode = KeyCode.X;
-                        text = s32;
-                        break;
-                    case "y":
-                    case "Y":
-                        keyCode = KeyCode.Y;
-                        text = s32;
-                        break;
-                    case "z":
-                    case "Z":
-                        keyCode = KeyCode.Z;
-                        text = s32;
-                        break;
-                    default:
-                        if (s32[0] >= 32)
+                        const ch = toLower(s32[0]);
+                        if (ch == ' ')
+                        {
+                            key = Key.space;
+                            text = " ";
+                        }
+                        else if (ch == '\t')
+                            key = Key.tab;
+                        else if (ch == '\n')
+                            key = Key.enter;
+                        else if ('a' <= ch && ch <= 'z')
+                        {
+                            key = cast(Key)(Key.A + ch - 'a');
                             text = s32;
-                        keyCode = 0x400000 | s32[0];
-                        break;
+                        }
+                        else if ('0' <= ch && ch <= '9')
+                        {
+                            key = cast(Key)(Key.alpha0 + ch - '0');
+                            text = s32;
+                        }
+
+                        if (1 <= s32[0] && s32[0] <= 26)
+                        {
+                            // ctrl + A..Z
+                            key = cast(Key)(Key.A + s32[0] - 1);
+                            mods = KeyMods.control;
+                        }
+                        if ('A' <= s32[0] && s32[0] <= 'Z')
+                        {
+                            // uppercase letter - with shift
+                            mods = KeyMods.shift;
+                        }
                     }
-                    if (s32.length == 1 && s32[0] >= 1 && s32[0] <= 26)
-                    {
-                        // ctrl + A..Z
-                        keyCode = KeyCode.A + s32[0] - 1;
-                        keyFlags = KeyFlag.control;
-                    }
-                    if (s32.length == 1 && s32[0] >= 'A' && s32[0] <= 'Z')
-                    {
-                        // uppercase letter - with shift
-                        keyFlags = KeyFlag.shift;
-                    }
+                    else if (s32[0] >= 32)
+                        text = s32;
                 }
                 catch (Exception e)
                 {
                     // skip invalid utf8 encoding
                 }
             }
-            if (keyCode)
+            if (key != Key.none)
             {
-                KeyEvent keyDown = new KeyEvent(KeyAction.keyDown, keyCode, keyFlags);
+                auto keyDown = new KeyEvent(KeyAction.keyDown, key, mods);
                 handleKeyEvent(keyDown);
                 if (text.length)
                 {
-                    KeyEvent keyText = new KeyEvent(KeyAction.text, keyCode, keyFlags, text);
+                    auto keyText = new KeyEvent(KeyAction.text, key, mods, text);
                     handleKeyEvent(keyText);
                 }
-                KeyEvent keyUp = new KeyEvent(KeyAction.keyUp, keyCode, keyFlags);
+                auto keyUp = new KeyEvent(KeyAction.keyUp, key, mods);
                 handleKeyEvent(keyUp);
             }
         }
         return !_stopped;
     }
 }
-
