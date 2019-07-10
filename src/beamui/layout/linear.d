@@ -500,10 +500,14 @@ class Resizer : Widget
         if (event.action == MouseAction.move && _dragging)
         {
             const pos = _orientation == Orientation.vertical ? event.y : event.x;
-            _delta = _dragStartDelta + pos - _dragStartPosition;
-            requestLayout();
-            if (resized.assigned)
-                resized(ResizerEventType.dragging, _delta - _dragStartDelta);
+            const delta = _dragStartDelta + pos - _dragStartPosition;
+            if (_delta != delta)
+            {
+                _delta = delta;
+                requestLayout();
+                if (resized.assigned)
+                    resized(ResizerEventType.dragging, delta - _dragStartDelta);
+            }
             return true;
         }
         if (event.action == MouseAction.move && allowsHover)
