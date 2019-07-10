@@ -336,7 +336,7 @@ class SimpleBarChart : Widget
         if (visibility == Visibility.gone)
             return;
 
-        box = geom;
+        setBox(geom);
         const inner = innerBox;
 
         int extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;

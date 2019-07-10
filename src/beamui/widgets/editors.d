@@ -3074,7 +3074,7 @@ class EditBox : EditWidgetBase
         if (auto ph = _placeholder)
             ph.wrap(clientBox.w);
 
-        box = geom;
+        setBox(geom);
     }
 
     override protected Size measureVisibleText()

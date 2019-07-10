@@ -504,7 +504,7 @@ class TabControl : WidgetGroup
         if (visibility == Visibility.gone)
             return;
 
-        box = geom;
+        setBox(geom);
         geom = innerBox;
 
         int spaceForItems = geom.w;

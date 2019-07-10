@@ -1661,13 +1661,6 @@ public:
 
         /// Get current widget full box in device-independent pixels (computed and set in `layout`)
         ref const(Box) box() const { return _box; }
-        /// Set widget box value and indicate that layout process is done (for usage in subclass' `layout`)
-        final protected void box(ref Box b)
-        {
-            _box = b;
-            _innerBox = b.shrinked(padding);
-            _needLayout = false;
-        }
         /// Get current widget box without padding and borders (computed and set in `layout`)
         ref const(Box) innerBox() const { return _innerBox; }
 
@@ -1789,8 +1782,58 @@ public:
         if (visibility == Visibility.gone)
             return;
 
-        _box = geometry;
-        _innerBox = geometry.shrinked(padding);
+        setBox(geometry);
+    }
+
+    /// Set widget `box`, compute `innerBox`, and shrink padding if necessary
+    /// (for usage in subclass' `layout`)
+    final protected void setBox(ref const Box b)
+    {
+        _needLayout = false;
+        // shrink padding when appropriate
+        Insets p = padding;
+        if (_boundaries.nat.w > b.w)
+        {
+            const pdiff = p.width - (b.w - _boundaries.min.w);
+            if (pdiff > 0)
+            {
+                const pdiff2 = pdiff / 2;
+                p.left -= pdiff2;
+                p.right -= pdiff - pdiff2;
+                if (p.left < 0)
+                {
+                    p.right += p.left;
+                    p.left = 0;
+                }
+                else if (p.right < 0)
+                {
+                    p.left += p.right;
+                    p.right = 0;
+                }
+            }
+        }
+        if (_boundaries.nat.h > b.h)
+        {
+            const pdiff = p.height - (b.h - _boundaries.min.h);
+            if (pdiff > 0)
+            {
+                const pdiff2 = pdiff / 2;
+                p.top -= pdiff2;
+                p.bottom -= pdiff - pdiff2;
+                if (p.top < 0)
+                {
+                    p.bottom += p.top;
+                    p.top = 0;
+                }
+                else if (p.bottom < 0)
+                {
+                    p.top += p.bottom;
+                    p.bottom = 0;
+                }
+            }
+        }
+        _box = b;
+        _innerBox = b.shrinked(p);
     }
 
     /// Draw widget at its position to a buffer
@@ -2293,19 +2336,17 @@ class Panel : WidgetGroup
         if (visibility == Visibility.gone)
             return;
 
-        _box = geometry;
-        const b = geometry.shrinked(padding);
-        _innerBox = b;
+        setBox(geometry);
 
         if (_layout)
         {
-            _layout.arrange(b);
+            _layout.arrange(_innerBox);
         }
         else
         {
             foreach (item; preparedItems.unsafe_slice)
             {
-                item.layout(b);
+                item.layout(_innerBox);
             }
         }
     }

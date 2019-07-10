@@ -438,7 +438,7 @@ class ScrollBar : WidgetGroup
         if (visibility == Visibility.gone)
             return;
 
-        box = geom;
+        setBox(geom);
         geom = innerBox;
 
         if (_orient == Orientation.vertical)

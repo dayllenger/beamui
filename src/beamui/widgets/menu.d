@@ -290,7 +290,7 @@ class MenuItem : WidgetGroup, ActionHolder
         if (visibility == Visibility.gone)
             return;
 
-        box = b;
+        setBox(b);
         b = innerBox;
 
         if (isSeparator)

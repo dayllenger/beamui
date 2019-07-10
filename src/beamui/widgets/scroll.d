@@ -393,7 +393,7 @@ class ScrollAreaBase : WidgetGroup
         if (visibility == Visibility.gone)
             return;
 
-        box = geom;
+        setBox(geom);
 
         const inner = innerBox;
         const sz = inner.size;

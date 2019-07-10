@@ -319,7 +319,7 @@ abstract class AbstractSlider : WidgetGroup
         if (visibility == Visibility.gone)
             return;
 
-        box = geom;
+        setBox(geom);
 
         const b = innerBox;
         Box innerArea = b;

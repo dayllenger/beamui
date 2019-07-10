@@ -1073,7 +1073,7 @@ class ListWidget : WidgetGroup
         if (visibility == Visibility.gone)
             return;
 
-        box = geom;
+        setBox(geom);
         Box inner = innerBox;
 
         // measure children
