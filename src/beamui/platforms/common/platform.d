@@ -1733,8 +1733,8 @@ class Window : CustomEventTarget
         debug (redraw)
         {
             if (root.needLayout)
-                Log.fd("Need layout: %s, id: %s, parent: %s", root.classinfo.name,
-                    root.id, root.parent ? root.parent.classinfo.name : "null");
+                Log.fd("Need layout: %s, id: %s, parent: %s", getShortClassName(root),
+                    root.id, root.parent ? getShortClassName(root.parent) : "null");
         }
         if (root.visibility == Visibility.hidden)
             return;

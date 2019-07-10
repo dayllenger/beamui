@@ -184,7 +184,7 @@ public:
         _background = new Background;
         debug _instanceCount++;
         debug (resalloc)
-            Log.fd("Created widget `%s` %s, count: %s", _id, this.classinfo.name, _instanceCount);
+            Log.fd("Created widget `%s` %s, count: %s", _id, getShortClassName(this), _instanceCount);
     }
 
     debug
@@ -198,9 +198,9 @@ public:
     {
         debug _instanceCount--;
         debug (resalloc)
-            Log.fd("Destroyed widget `%s` %s, count: %s", _id, this.classinfo.name, _instanceCount);
+            Log.fd("Destroyed widget `%s` %s, count: %s", _id, getShortClassName(this), _instanceCount);
         debug if (APP_IS_SHUTTING_DOWN)
-            onResourceDestroyWhileShutdown(_id, this.classinfo.name);
+            onResourceDestroyWhileShutdown(_id, getShortClassName(this));
 
         animations.clear();
 

@@ -85,7 +85,7 @@ class DrawBuf : RefCountedObject
         debug
         {
             if (APP_IS_SHUTTING_DOWN)
-                onResourceDestroyWhileShutdown("DrawBuf", this.classinfo.name);
+                onResourceDestroyWhileShutdown("drawbuf", getShortClassName(this));
             _instanceCount--;
         }
         clear();

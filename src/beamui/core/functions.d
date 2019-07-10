@@ -365,6 +365,24 @@ unittest
     assert(b.maybe.i == 5);
 }
 
+/// Get the short class name, i.e. without module path. `obj` must not be `null`
+string getShortClassName(Object obj)
+{
+    assert(obj);
+    string name = obj.classinfo.name;
+    int i = cast(int)name.length;
+    while (i > 0 && name[i - 1] != '.')
+        i--;
+    return name[i .. $];
+}
+///
+unittest
+{
+    class A {}
+    A a = new A;
+    assert(getShortClassName(a) == "A");
+}
+
 /// Check whether first name of class is equal to a string
 bool equalShortClassName(TypeInfo_Class type, string shortName)
 {

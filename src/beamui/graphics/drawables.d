@@ -39,14 +39,14 @@ class Drawable : RefCountedObject
     {
         debug _instanceCount++;
         debug (resalloc)
-            Log.d("Created drawable ", this.classinfo.name, ", count: ", _instanceCount);
+            Log.d("Created drawable ", getShortClassName(this), ", count: ", _instanceCount);
     }
 
     ~this()
     {
         debug _instanceCount--;
         debug (resalloc)
-            Log.d("Destroyed drawable ", this.classinfo.name, ", count: ", _instanceCount);
+            Log.d("Destroyed drawable ", getShortClassName(this), ", count: ", _instanceCount);
     }
 
     abstract void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0);
