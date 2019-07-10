@@ -985,7 +985,10 @@ final class SDLPlatform : Platform
         SDL_Quit();
     }
 
-    protected alias setGLVersions = typeof(super).setGLVersions;
+    package void setGLVersions(int major, int minor)
+    {
+        super.setGLVersions(major, minor);
+    }
 
     override void closeWindow(Window w)
     {
