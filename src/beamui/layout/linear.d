@@ -481,12 +481,30 @@ class Resizer : Widget
     {
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
-            setState(State.pressed);
-            _dragging = true;
-            _dragStartPosition = _orientation == Orientation.vertical ? event.y : event.x;
-            _dragStartDelta = _delta;
-            if (resized.assigned)
-                resized(ResizerEventType.startDragging, 0);
+            if (!event.doubleClick)
+            {
+                setState(State.pressed);
+                _dragging = true;
+                _dragStartPosition = _orientation == Orientation.vertical ? event.y : event.x;
+                _dragStartDelta = _delta;
+                if (resized.assigned)
+                    resized(ResizerEventType.startDragging, 0);
+            }
+            else
+            {
+                if (_delta != 0)
+                {
+                    const delta = -_delta;
+                    _delta = 0;
+                    requestLayout();
+                    if (resized.assigned)
+                    {
+                        resized(ResizerEventType.startDragging, 0);
+                        resized(ResizerEventType.dragging, delta);
+                        resized(ResizerEventType.endDragging, 0);
+                    }
+                }
+            }
             return true;
         }
         if (event.action == MouseAction.focusIn && _dragging)
