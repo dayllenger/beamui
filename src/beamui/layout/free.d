@@ -26,7 +26,11 @@ class FreeLayout : ILayout
         items = null;
     }
 
-    void onStyleChange(StyleProperty p)
+    void onStyleChange(StyleProperty)
+    {
+    }
+
+    void onChildStyleChange(StyleProperty p)
     {
         with (StyleProperty) {
             if (p == left || p == right || p == top || p == bottom)

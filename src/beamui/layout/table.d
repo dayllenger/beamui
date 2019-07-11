@@ -91,6 +91,12 @@ class TableLayout : ILayout
             host.requestLayout();
     }
 
+    void onChildStyleChange(StyleProperty p)
+    {
+        if (p == StyleProperty.alignment || p == StyleProperty.stretch)
+            host.requestLayout();
+    }
+
     void prepare(ref Buf!Widget list)
     {
         const int cc = _colCount;

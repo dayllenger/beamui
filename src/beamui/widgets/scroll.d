@@ -673,6 +673,15 @@ class ScrollArea : ScrollAreaBase
         makeBoxVisible(wbox, alignHorizontally, alignVertically);
     }
 
+    override protected void handleChildStyleChange(StyleProperty p, Visibility v)
+    {
+        if (v != Visibility.gone)
+        {
+            if (p == StyleProperty.alignment || p == StyleProperty.stretch)
+                requestLayout();
+        }
+    }
+
     override void measure()
     {
         if (_contentWidget)

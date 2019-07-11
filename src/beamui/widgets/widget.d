@@ -726,9 +726,9 @@ public:
     }
 
     /// Handle changes of style properties (e.g. invalidate)
-    void handleStyleChange(StyleProperty ptype)
+    void handleStyleChange(StyleProperty p)
     {
-        switch (ptype) with (StyleProperty)
+        switch (p) with (StyleProperty)
         {
         case bgColor:
             _background.color = _style.backgroundColor;
@@ -779,14 +779,12 @@ public:
             break;
         }
 
-        switch (ptype) with (StyleProperty)
+        switch (p) with (StyleProperty)
         {
         case width: .. case maxHeight:
         case paddingTop: .. case paddingLeft:
         case borderTopWidth: .. case borderLeftWidth:
         case marginTop: .. case marginLeft:
-        case alignment:
-        case stretch:
         case letterSpacing:
         case lineHeight:
         case tabSize:
@@ -824,6 +822,13 @@ public:
         default:
             break;
         }
+
+        if (_parent)
+            _parent.handleChildStyleChange(p, _visibility);
+    }
+
+    protected void handleChildStyleChange(StyleProperty p, Visibility v)
+    {
     }
 
     /// Override to handle font changes
@@ -2209,6 +2214,7 @@ interface ILayout
     void onSetup(Widget host);
     void onDetach();
     void onStyleChange(StyleProperty p);
+    void onChildStyleChange(StyleProperty p);
 
     void prepare(ref Buf!Widget list);
     Boundaries measure();
@@ -2286,17 +2292,23 @@ class Panel : WidgetGroup
         }
     }
 
-    override void handleStyleChange(StyleProperty ptype)
+    override void handleStyleChange(StyleProperty p)
     {
-        if (ptype == StyleProperty.display)
+        if (p == StyleProperty.display)
         {
             setLayout(_style.display);
         }
         else
         {
-            super.handleStyleChange(ptype);
-            _layout.maybe.onStyleChange(ptype);
+            super.handleStyleChange(p);
+            _layout.maybe.onStyleChange(p);
         }
+    }
+
+    override protected void handleChildStyleChange(StyleProperty p, Visibility v)
+    {
+        if (v != Visibility.gone && _layout)
+            _layout.onChildStyleChange(p);
     }
 
     override void measure()
