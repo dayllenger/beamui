@@ -583,7 +583,6 @@ class TreeItemWidget : Panel
         }
         else
             lastClickTime = ts;
-        super.handleClick();
     }
 
     override bool handleKeyEvent(KeyEvent event)

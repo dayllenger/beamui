@@ -235,7 +235,6 @@ class Button : Panel, ActionHolder
             w.call(_action);
         if (allowsToggle)
             checked = !checked;
-        super.handleClick();
     }
 }
 
@@ -271,7 +270,6 @@ class SwitchButton : Widget
     override protected void handleClick()
     {
         checked = !checked;
-        super.handleClick();
     }
 
     override void measure()
@@ -324,7 +322,6 @@ class CheckBox : Panel
     override protected void handleClick()
     {
         checked = !checked;
-        onClick();
     }
 }
 
@@ -339,7 +336,6 @@ class RadioButton : CheckBox
     override protected void handleClick()
     {
         checked = true;
-        onClick();
     }
 
     override protected void handleToggling(bool checked)

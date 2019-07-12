@@ -306,11 +306,12 @@ public:
         state = st;
         return st;
     }
-    /// Override to handle focus changes
+
+    /// Called to process focus changes before `onFocusChange` signal, override to do it
     protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
     {
     }
-    /// Override to handle check changes
+    /// Called to process checked state changes before `onToggle` signal, override to do it
     protected void handleToggling(bool checked)
     {
     }
@@ -904,7 +905,10 @@ public:
 
     @property
     {
-        /// True if the widget state has `State.enabled` flag set
+        /** True if the widget is interactive.
+
+            Corresponds to `State.enabled` state flag.
+        */
         bool enabled() const
         {
             return (state & State.enabled) != 0;
@@ -915,7 +919,10 @@ public:
             flag ? setState(State.enabled) : resetState(State.enabled);
         }
 
-        /// True if the widget state has `State.checked` flag set
+        /** True if the widget is somehow checked, as a checkbox or button.
+
+            Corresponds to `State.checked` state flag.
+        */
         bool checked() const
         {
             return (state & State.checked) != 0;
@@ -985,7 +992,7 @@ public:
         /// True if the widget allows focus, and it's visible and enabled
         bool canFocus() const
         {
-            return _allowsFocus && visible && enabled;
+            return _allowsFocus && enabled && visible;
         }
         /// True if the widget allows toggle, and it's visible and enabled
         bool canToggle() const
@@ -1435,22 +1442,21 @@ public:
     /// Focus state change event listener
     Signal!(void delegate(bool)) onFocusChange;
 
-    /// Key event listener, must return true if event is processed by handler
+    /// Fires on key events, return true to prevent further widget actions
     Signal!(bool delegate(KeyEvent)) onKeyEvent;
 
-    /// Mouse event listener, must return true if event is processed by handler
+    /// Fires on mouse events, return true to prevent further widget actions
     Signal!(bool delegate(MouseEvent)) onMouseEvent;
 
-    /// Fires on mouse/touchpad scroll events
+    /// Fires on mouse/touchpad scroll events, return true to prevent further widget actions
     Signal!(bool delegate(WheelEvent)) onWheelEvent;
 
     //===============================================================
     // Events
 
-    /// Called to process click and notify listeners
+    /// Called to process click before `onClick` signal, override to do it
     protected void handleClick()
     {
-        onClick();
     }
 
     /// Set new timer to call a delegate after specified interval (for recurred notifications, return true from the handler)
@@ -1478,8 +1484,6 @@ public:
     /// Process key event, return true if event is processed
     bool handleKeyEvent(KeyEvent event)
     {
-        if (onKeyEvent.assigned && onKeyEvent(event))
-            return true; // processed by external handler
         // handle focus navigation using keys
         if (focused && handleMoveFocusUsingKeys(event))
             return true;
@@ -1499,6 +1503,7 @@ public:
                     {
                         resetState(State.pressed);
                         handleClick();
+                        onClick();
                     }
                     return true;
                 }
@@ -1507,11 +1512,9 @@ public:
         return false;
     }
 
-    /// Process mouse event; return true if event is processed by widget.
+    /// Process mouse event; return true if event is processed by widget
     bool handleMouseEvent(MouseEvent event)
     {
-        if (onMouseEvent.assigned && onMouseEvent(event))
-            return true; // processed by external handler
         debug (mouse)
             Log.fd("mouse event, '%s': %s  (%s, %s)", id, event.action, event.x, event.y);
         // support click
@@ -1532,6 +1535,7 @@ public:
                     {
                         resetState(State.pressed);
                         handleClick();
+                        onClick();
                     }
                     return true;
                 }
@@ -1548,8 +1552,7 @@ public:
             }
             if (event.action == MouseAction.cancel)
             {
-                resetState(State.pressed);
-                resetState(State.hovered);
+                resetState(State.pressed | State.hovered);
                 return true;
             }
         }
@@ -1606,10 +1609,9 @@ public:
         return false;
     }
 
+    /// Process wheel event, return true if the event is processed
     bool handleWheelEvent(WheelEvent event)
     {
-        if (onWheelEvent.assigned && onWheelEvent(event))
-            return true; // processed by external handler
         return false;
     }
 

@@ -1264,7 +1264,7 @@ class Window : CustomEventTarget
             }
             while (focus)
             {
-                if (focus.handleKeyEvent(event))
+                if (handleKeyEvent(weakRef(focus), event))
                     return true; // processed by focused widget or its parent in focus group
                 if (focus.focusGroup)
                     break;
@@ -1275,7 +1275,7 @@ class Window : CustomEventTarget
         if (dispatchKeyEvent(dest, event))
             return res;
         else
-            return dest.handleKeyEvent(event) || res;
+            return handleKeyEvent(weakRef(dest), event) || res;
     }
 
     /// Dispatch key event to widgets which have `wantsKeyTracking == true`
@@ -1286,7 +1286,7 @@ class Window : CustomEventTarget
             return false;
         if (root.wantsKeyTracking)
         {
-            if (root.handleKeyEvent(event))
+            if (handleKeyEvent(weakRef(root), event))
                 return true;
         }
         foreach (i; 0 .. root.childCount)
@@ -1531,7 +1531,7 @@ class Window : CustomEventTarget
                 // send Leave message
                 auto leaveEvent = new MouseEvent(event);
                 leaveEvent.changeAction(MouseAction.leave);
-                res = w.handleMouseEvent(leaveEvent) || res;
+                res = handleMouseEvent(w, leaveEvent) || res;
                 debug (mouse)
                     Log.d("removeTracking of ", w.id);
                 w.nullify();
@@ -1574,7 +1574,7 @@ class Window : CustomEventTarget
     protected bool dispatchCancel(MouseEvent event)
     {
         event.changeAction(MouseAction.cancel);
-        bool res = _mouseCaptureWidget.handleMouseEvent(event);
+        const res = handleMouseEvent(_mouseCaptureWidget, event);
         clearMouseCapture();
         return res;
     }
@@ -1583,7 +1583,7 @@ class Window : CustomEventTarget
     {
         if (widget.isNull)
             return false;
-        bool res = widget.handleMouseEvent(event);
+        const res = handleMouseEvent(widget, event);
         if (event.trackingWidget !is null && _mouseCaptureWidget !is event.trackingWidget)
         {
             setCaptureWidget(event.trackingWidget, event);
@@ -1605,10 +1605,10 @@ class Window : CustomEventTarget
 
         hideTooltip();
 
-        if (Widget active = _mouseCaptureWidget)
+        if (auto active = _mouseCaptureWidget)
         {
             // try to forward message directly to active widget
-            active.handleWheelEvent(event);
+            handleWheelEvent(active, event);
             if (event.mouseMods == MouseMods.none)
             {
                 // disable capturing - no more buttons pressed
@@ -1648,7 +1648,40 @@ class Window : CustomEventTarget
                 return true;
         }
         // if not processed by children, offer event to the root
-        return root.handleWheelEvent(event);
+        return handleWheelEvent(root, event);
+    }
+
+    private static bool handleKeyEvent(WeakRef!Widget weak, KeyEvent e)
+    {
+        Widget w = weak.get;
+        if (w.onKeyEvent.assigned && w.onKeyEvent(e))
+            return true;  // processed by external handler
+        else if (weak.isNull)
+            return false; // destroyed in the handler, but not processed
+        else
+            return w.handleKeyEvent(e);
+    }
+
+    private static bool handleMouseEvent(WeakRef!Widget weak, MouseEvent e)
+    {
+        Widget w = weak.get;
+        if (w.onMouseEvent.assigned && w.onMouseEvent(e))
+            return true;
+        else if (weak.isNull)
+            return false;
+        else
+            return w.handleMouseEvent(e);
+    }
+
+    private static bool handleWheelEvent(WeakRef!Widget weak, WheelEvent e)
+    {
+        Widget w = weak.get;
+        if (w.onWheelEvent.assigned && w.onWheelEvent(e))
+            return true;
+        else if (weak.isNull)
+            return false;
+        else
+            return w.handleWheelEvent(e);
     }
 
     /// Handle theme change: e.g. reload some themed resources
