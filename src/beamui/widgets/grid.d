@@ -1736,15 +1736,16 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             }
             return true;
         }
-        if (event.action == MouseAction.wheel)
-        {
-            if (event.alteredBy(KeyMods.shift))
-                scrollBy(-cast(int)event.wheelDelta, 0);
-            else
-                scrollBy(0, -cast(int)event.wheelDelta);
-            return true;
-        }
         return super.handleMouseEvent(event);
+    }
+
+    override bool handleWheelEvent(WheelEvent event)
+    {
+        if (event.alteredBy(KeyMods.shift))
+            scrollBy(event.deltaY, event.deltaX);
+        else
+            scrollBy(event.deltaX, event.deltaY);
+        return true;
     }
 
     //===============================================================

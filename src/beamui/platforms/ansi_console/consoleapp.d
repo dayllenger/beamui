@@ -114,6 +114,7 @@ class ConsolePlatform : Platform
         _console.batchMode = true;
         _console.onKeyEvent = &handleKey;
         _console.onMouseEvent = &handleMouse;
+        _console.onWheelEvent = &handleWheel;
         _console.onResize = &handleResize;
         _console.onInputIdle = &handleInputIdle;
         _console.init();
@@ -173,6 +174,16 @@ class ConsolePlatform : Platform
             return true;
         }
         return false;
+    }
+
+    protected bool handleWheel(WheelEvent event)
+    {
+        auto w = activeWindow;
+        if (!w)
+            return false;
+        w.dispatchWheelEvent(event);
+        _needRedraw = true;
+        return true;
     }
 
     protected bool handleResize(int width, int height)

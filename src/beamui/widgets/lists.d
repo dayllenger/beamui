@@ -933,20 +933,6 @@ class ListWidget : WidgetGroup
             setHoverItem(-1);
             return true;
         }
-        // delegate processing of mouse wheel to scrollbar widget
-        if (event.action == MouseAction.wheel)
-        {
-            if (_needScrollbar) // visible
-            {
-                return _scrollbar.handleMouseEvent(event);
-            }
-            else
-            {
-                const a = event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown;
-                _scrollbar.triggerAction(a);
-                return true;
-            }
-        }
         if (event.action == MouseAction.buttonDown)
             setFocus();
 
@@ -1020,6 +1006,25 @@ class ListWidget : WidgetGroup
             }
         }
         return true;
+    }
+
+    override bool handleWheelEvent(WheelEvent event)
+    {
+        // delegate wheel event processing to the scrollbar
+        if (_needScrollbar) // visible
+        {
+            return _scrollbar.handleWheelEvent(event);
+        }
+        else
+        {
+            if (event.deltaX != 0 || event.deltaY != 0)
+            {
+                const down = event.deltaX > 0 || event.deltaY > 0;
+                _scrollbar.triggerAction(down ? ScrollAction.lineDown : ScrollAction.lineUp);
+                return true;
+            }
+        }
+        return super.handleWheelEvent(event);
     }
 
     // TODO: fully test this optimization

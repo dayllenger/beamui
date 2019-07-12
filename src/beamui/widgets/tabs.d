@@ -295,6 +295,7 @@ class TabControl : WidgetGroup
     void addTab(TabItem item, int index = -1)
     {
         item.onMouseEvent ~= (MouseEvent e) { return handleTabBtnMouse(item.id, e); };
+        item.onWheelEvent ~= &handleTabBtnWheel;
         item.onTabClose ~= &onTabClose.emit;
         if (index >= 0)
             insertChild(index, item);
@@ -410,12 +411,14 @@ class TabControl : WidgetGroup
                 selectTab(index, true);
             }
         }
-        if (event.action == MouseAction.wheel)
-        {
-            // select next or previous tab
-            int next = wrapAround(tabIndex(_selectedTabID) - event.wheelDelta, 0, tabCount - 1);
-            selectTab(next, true);
-        }
+        return true;
+    }
+
+    protected bool handleTabBtnWheel(WheelEvent event)
+    {
+        // select next or previous tab
+        const next = wrapAround(tabIndex(_selectedTabID) + event.deltaX + event.deltaY, 0, tabCount - 1);
+        selectTab(next, true);
         return true;
     }
 

@@ -791,47 +791,46 @@ final class X11Window : DWindow
 
     private void processMouseEvent(MouseAction action, uint x11Button, uint x11Flags, int x, int y)
     {
-        MouseEvent event;
-        if (action == MouseAction.wheel)
-        {
-            // handle wheel
-            short wheelDelta = cast(short)y;
-            if (wheelDelta)
-                event = new MouseEvent(action, MouseButton.none, lastPressed, _keyMods, lastx, lasty, wheelDelta);
-        }
-        else
-        {
-            MouseButton btn = convertMouseButton(x11Button);
-            lastPressed = convertMouseMods(x11Flags, btn, action == MouseAction.buttonDown);
-            lastx = cast(short)x;
-            lasty = cast(short)y;
-            event = new MouseEvent(action, btn, lastPressed, _keyMods, lastx, lasty);
-        }
-        if (event)
-        {
-            ButtonDetails* pbuttonDetails;
-            if (event.button == MouseButton.left)
-                pbuttonDetails = &_lbutton;
-            else if (event.button == MouseButton.right)
-                pbuttonDetails = &_rbutton;
-            else if (event.button == MouseButton.middle)
-                pbuttonDetails = &_mbutton;
-            if (pbuttonDetails)
-            {
-                if (action == MouseAction.buttonDown)
-                {
-                    pbuttonDetails.down(cast(short)x, cast(short)y, lastPressed, _keyMods);
-                }
-                else if (action == MouseAction.buttonUp)
-                {
-                    pbuttonDetails.up(cast(short)x, cast(short)y, lastPressed, _keyMods);
-                }
-            }
-            event.lbutton = _lbutton;
-            event.rbutton = _rbutton;
-            event.mbutton = _mbutton;
+        MouseButton btn = convertMouseButton(x11Button);
+        lastPressed = convertMouseMods(x11Flags, btn, action == MouseAction.buttonDown);
+        lastx = cast(short)x;
+        lasty = cast(short)y;
+        auto event = new MouseEvent(action, btn, lastPressed, _keyMods, lastx, lasty);
 
-            dispatchMouseEvent(event);
+        ButtonDetails* pbuttonDetails;
+        if (btn == MouseButton.left)
+            pbuttonDetails = &_lbutton;
+        else if (btn == MouseButton.right)
+            pbuttonDetails = &_rbutton;
+        else if (btn == MouseButton.middle)
+            pbuttonDetails = &_mbutton;
+        if (pbuttonDetails)
+        {
+            if (action == MouseAction.buttonDown)
+            {
+                pbuttonDetails.down(cast(short)x, cast(short)y, lastPressed, _keyMods);
+            }
+            else if (action == MouseAction.buttonUp)
+            {
+                pbuttonDetails.up(cast(short)x, cast(short)y, lastPressed, _keyMods);
+            }
+        }
+        event.lbutton = _lbutton;
+        event.rbutton = _rbutton;
+        event.mbutton = _mbutton;
+
+        dispatchMouseEvent(event);
+        update();
+    }
+
+    private void processWheelEvent(int deltaX, int deltaY)
+    {
+        if (deltaX != 0 || deltaY != 0)
+        {
+            const dx = cast(short)deltaX;
+            const dy = cast(short)deltaY;
+            auto event = new WheelEvent(lastx, lasty, lastPressed, _keyMods, dx, dy);
+            dispatchWheelEvent(event);
             update();
         }
     }
@@ -1360,7 +1359,7 @@ final class X11Platform : Platform
             {
                 if (event.xbutton.button == 4 || event.xbutton.button == 5)
                 {
-                    w.processMouseEvent(MouseAction.wheel, 0, 0, 0, event.xbutton.button == 4 ? 1 : -1);
+                    w.processWheelEvent(0, event.xbutton.button == 4 ? -1 : 1);
                 }
                 else
                 {

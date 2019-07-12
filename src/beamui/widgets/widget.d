@@ -1441,6 +1441,9 @@ public:
     /// Mouse event listener, must return true if event is processed by handler
     Signal!(bool delegate(MouseEvent)) onMouseEvent;
 
+    /// Fires on mouse/touchpad scroll events
+    Signal!(bool delegate(WheelEvent)) onWheelEvent;
+
     //===============================================================
     // Events
 
@@ -1600,6 +1603,13 @@ public:
                 return true;
             }
         }
+        return false;
+    }
+
+    bool handleWheelEvent(WheelEvent event)
+    {
+        if (onWheelEvent.assigned && onWheelEvent(event))
+            return true; // processed by external handler
         return false;
     }
 

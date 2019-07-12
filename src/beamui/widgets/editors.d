@@ -2432,44 +2432,54 @@ class EditBox : EditWidgetBase
         }
     }
 
-    override bool handleMouseEvent(MouseEvent event)
+    override bool handleWheelEvent(WheelEvent event)
     {
-        if (event.action == MouseAction.wheel)
+        cancelHoverTimer();
+
+        const mods = event.keyMods;
+        if (event.deltaY > 0)
         {
-            cancelHoverTimer();
-            const mods = event.keyMods;
-            if (event.wheelDelta < 0)
-            {
-                if (mods == KeyMods.shift)
-                {
-                    scrollRight();
-                    return true;
-                }
-                if (mods == KeyMods.control)
-                {
-                    zoom(false);
-                    return true;
-                }
+            if (mods == KeyMods.shift)
+                scrollRight();
+            else if (mods == KeyMods.control)
+                zoom(false);
+            else
                 scrollDown();
-                return true;
-            }
-            else if (event.wheelDelta > 0)
-            {
-                if (mods == KeyMods.shift)
-                {
-                    scrollLeft();
-                    return true;
-                }
-                if (mods == KeyMods.control)
-                {
-                    zoom(true);
-                    return true;
-                }
-                scrollUp();
-                return true;
-            }
+            return true;
         }
-        return super.handleMouseEvent(event);
+        if (event.deltaY < 0)
+        {
+            if (mods == KeyMods.shift)
+                scrollLeft();
+            else if (mods == KeyMods.control)
+                zoom(true);
+            else
+                scrollUp();
+            return true;
+        }
+
+        if (event.deltaX < 0)
+        {
+            scrollLeft();
+            return true;
+        }
+        if (event.deltaX > 0)
+        {
+            scrollRight();
+            return true;
+        }
+        if (event.deltaZ < 0)
+        {
+            zoom(false);
+            return true;
+        }
+        if (event.deltaZ > 0)
+        {
+            zoom(true);
+            return true;
+        }
+
+        return super.handleWheelEvent(event);
     }
 
     private bool _enableScrollAfterText = true;

@@ -24,8 +24,6 @@ enum MouseAction : uint
     focusIn,
     /// Pointer moved outside of widget while button was down (if handler returns true, Move events will be sent even while pointer is outside widget)
     focusOut,
-    /// Scroll wheel movement
-    wheel,
     //hover,    // pointer entered widget which while button was not down (return true to track Hover state)
     /// Pointer left widget which has before processed `move` message, while button was not down
     leave
@@ -184,7 +182,6 @@ final class MouseEvent
         short _y;
         MouseMods _mouseMods;
         KeyMods _keyMods;
-        short _wheelDelta;
         /// Widget which currently tracks mouse events
         WeakRef!Widget _trackingWidget;
         ButtonDetails _lbutton;
@@ -195,7 +192,7 @@ final class MouseEvent
     }
 
     /// Construct mouse event from data
-    this(MouseAction a, MouseButton b, MouseMods mouseMods, KeyMods keyMods, short x, short y, short wheelDelta = 0)
+    this(MouseAction a, MouseButton b, MouseMods mouseMods, KeyMods keyMods, short x, short y)
     {
         _action = a;
         _button = b;
@@ -203,7 +200,6 @@ final class MouseEvent
         _keyMods = keyMods & KeyMods.common;
         _x = x;
         _y = y;
-        _wheelDelta = wheelDelta;
     }
     /// Copy constructor
     this(MouseEvent e)
@@ -217,7 +213,6 @@ final class MouseEvent
         _lbutton = e._lbutton;
         _rbutton = e._rbutton;
         _mbutton = e._mbutton;
-        _wheelDelta = e._wheelDelta;
     }
 
     @property
@@ -247,8 +242,6 @@ final class MouseEvent
             return _lbutton;
         }
 
-        /// Returns delta for `wheel` event
-        short wheelDelta() const { return _wheelDelta; }
         /// x coordinate of mouse pointer (relative to window client area)
         short x() const { return _x; }
         /// y coordinate of mouse pointer (relative to window client area)
@@ -321,6 +314,95 @@ final class MouseEvent
     override string toString() const
     {
         return format("MouseEvent(%s, %s, %s, %s, (%s, %s))", _action, _button, _mouseMods, _keyMods, _x, _y);
+    }
+}
+
+/// Mouse/touchpad scroll event
+final class WheelEvent
+{
+    @property
+    {
+        /// Positive when scrolling right, negative when scrolling left
+        int deltaX() const { return _deltaX; }
+        /// Positive when scrolling down, negative when scrolling up
+        int deltaY() const { return _deltaY; }
+        /// Positive when scrolling in, negative when scrolling out
+        int deltaZ() const { return _deltaZ; }
+        /// Last X coordinate of mouse pointer (relative to window client area)
+        int x() const { return _x; }
+        /// Last Y coordinate of mouse pointer (relative to window client area)
+        int y() const { return _y; }
+        /// Last mouse pointer position (relative to window client area)
+        Point pos() const
+        {
+            return Point(_x, _y);
+        }
+
+        /// Mouse buttons, pressed during this event
+        MouseMods mouseMods() const { return _mouseMods; }
+        /// Keyboard modifiers (only common, i.e. not distinguishing left and right)
+        KeyMods keyMods() const { return _keyMods; }
+
+        /// True if has no mouse buttons pressed during the event
+        bool noMouseMods() const
+        {
+            return _mouseMods == MouseMods.none;
+        }
+        /// True if has no keyboard modifiers pressed
+        bool noKeyMods() const
+        {
+            return _keyMods == KeyMods.none;
+        }
+    }
+
+    private
+    {
+        short _deltaX;
+        short _deltaY;
+        short _deltaZ;
+        short _x;
+        short _y;
+        MouseMods _mouseMods;
+        KeyMods _keyMods;
+    }
+
+    this(short x, short y, MouseMods mouseMods, KeyMods keyMods, short deltaX, short deltaY, short deltaZ = 0)
+    {
+        _deltaX = deltaX;
+        _deltaY = deltaY;
+        _deltaZ = deltaZ;
+        _x = x;
+        _y = y;
+        _mouseMods = mouseMods;
+        _keyMods = keyMods & KeyMods.common;
+    }
+    /// Copy constructor
+    this(WheelEvent e)
+    {
+        _deltaX = e._deltaX;
+        _deltaY = e._deltaY;
+        _deltaZ = e._deltaZ;
+        _x = e._x;
+        _y = e._y;
+        _mouseMods = e._mouseMods;
+        _keyMods = e._keyMods;
+    }
+
+    /// Check whether the mouse button is pressed during this event
+    bool alteredByButton(MouseButton btn) const
+    {
+        return (_mouseMods & toMouseMods(btn)) != MouseMods.none;
+    }
+    /// Check whether all of `mod` keyboard modifiers are applied during this event
+    bool alteredBy(KeyMods mod) const
+    {
+        return (_keyMods & mod) == mod;
+    }
+
+    override string toString() const
+    {
+        return format("WheelEvent(%s, %s, %s, (%s, %s), %s, %s)",
+            _deltaX, _deltaY, _deltaZ, _x, _y, _mouseMods, _keyMods);
     }
 }
 

@@ -1231,7 +1231,6 @@ class Window : CustomEventTarget
             return false;
         bool res;
         hideTooltip();
-        Popup modal = modalPopup();
         if (event.action == KeyAction.keyDown || event.action == KeyAction.keyUp)
         {
             _keyboardModifiers = event.allModifiers;
@@ -1253,6 +1252,7 @@ class Window : CustomEventTarget
                 return res;
         }
         Widget focus = focusedWidget;
+        Popup modal = modalPopup();
         if (!modal || modal.isChild(focus))
         {
             // process shortcuts
@@ -1322,7 +1322,7 @@ class Window : CustomEventTarget
             _lastMouseX = event.x;
             _lastMouseY = event.y;
         }
-        if (event.action == MouseAction.buttonDown || event.action == MouseAction.wheel)
+        if (event.action == MouseAction.buttonDown)
         {
             if (_tooltip.popup)
             {
@@ -1595,6 +1595,60 @@ class Window : CustomEventTarget
     bool isMouseCaptured() const
     {
         return !_mouseCaptureWidget.isNull;
+    }
+
+    /// Dispatch wheel event to window content widgets
+    void dispatchWheelEvent(WheelEvent event)
+    {
+        if (hasModalWindowsAbove || !_firstDrawCalled)
+            return;
+
+        hideTooltip();
+
+        if (Widget active = _mouseCaptureWidget)
+        {
+            // try to forward message directly to active widget
+            active.handleWheelEvent(event);
+            if (event.mouseMods == MouseMods.none)
+            {
+                // disable capturing - no more buttons pressed
+                debug (mouse)
+                    Log.d("unsetting active widget");
+                clearMouseCapture();
+            }
+            return;
+        }
+        if (Widget modal = modalPopup())
+        {
+            dispatchWheelEvent(weakRef(modal), event);
+            return;
+        }
+        foreach_reverse (Widget p; _popups)
+        {
+            if (p.contains(event.x, event.y))
+                if (dispatchWheelEvent(weakRef(p), event))
+                    return;
+        }
+        dispatchWheelEvent(weakRef(_mainWidget), event);
+    }
+
+    protected bool dispatchWheelEvent(WeakRef!Widget root, WheelEvent event)
+    {
+        // route wheel events to visible widgets only
+        if (root.visibility != Visibility.visible)
+            return false;
+        if (!root.contains(event.x, event.y))
+            return false;
+
+        // offer event to children first
+        foreach (i; 0 .. root.childCount)
+        {
+            Widget child = root.child(i);
+            if (dispatchWheelEvent(weakRef(child), event))
+                return true;
+        }
+        // if not processed by children, offer event to the root
+        return root.handleWheelEvent(event);
     }
 
     /// Handle theme change: e.g. reload some themed resources

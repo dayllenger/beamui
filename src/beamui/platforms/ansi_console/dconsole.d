@@ -1016,10 +1016,12 @@ class Console
         }
     }
 
-    /// Mouse event signal
-    Listener!(bool delegate(MouseEvent)) onMouseEvent;
     /// Keyboard event signal
     Listener!(bool delegate(KeyEvent)) onKeyEvent;
+    /// Mouse event signal
+    Listener!(bool delegate(MouseEvent)) onMouseEvent;
+    /// Wheel event signal
+    Listener!(bool delegate(WheelEvent)) onWheelEvent;
     /// Console size changed signal
     Listener!(bool delegate(int width, int height)) onResize;
     /// Console input is idle
@@ -1056,20 +1058,21 @@ class Console
         return onMouseEvent(event);
     }
 
+    protected bool handleWheelEvent(WheelEvent event)
+    {
+        return onWheelEvent(event);
+    }
+
     protected bool handleConsoleResize(int width, int height)
     {
         resize(width, height);
-        if (onResize.assigned)
-            return onResize(width, height);
-        return false;
+        return onResize(width, height);
     }
 
     protected bool handleInputIdle()
     {
         checkResize();
-        if (onInputIdle.assigned)
-            return onInputIdle();
-        return false;
+        return onInputIdle();
     }
 
     private MouseMods lastMouseMods;
@@ -1192,9 +1195,9 @@ class Console
                 }
                 if (eventFlags & MOUSE_WHEELED)
                 {
-                    const delta = cast(short)(buttonState >> 16);
-                    auto e = new MouseEvent(MouseAction.wheel, MouseButton.none, mmods, kmods, x, y, delta);
-                    handleMouseEvent(e);
+                    const int delta = (buttonState >> 16) & 0xFFFF;
+                    auto e = new WheelEvent(x, y, mmods, kmods, 0, -delta);
+                    handleWheelEvent(e);
                     actionSent = true;
                 }
                 lastMouseMods = mmods;

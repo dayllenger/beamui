@@ -668,16 +668,15 @@ class Slider : AbstractSlider
         moveTo(computedValue);
     }
 
-    override bool handleMouseEvent(MouseEvent event)
+    override bool handleWheelEvent(WheelEvent event)
     {
-        if (event.action == MouseAction.wheel)
+        const delta = event.deltaX - event.deltaY;
+        if (delta != 0)
         {
-            const delta = event.wheelDelta;
-            if (delta != 0)
-                triggerAction(delta > 0 ? SliderAction.increase : SliderAction.decrease);
+            triggerAction(delta > 0 ? SliderAction.increase : SliderAction.decrease);
             return true;
         }
-        return super.handleMouseEvent(event);
+        return super.handleWheelEvent(event);
     }
 
     private int handleSize;
@@ -846,34 +845,31 @@ class RangeSlider : AbstractSlider
         moveSecondTo(computedValue);
     }
 
-    override bool handleMouseEvent(MouseEvent event)
+    override bool handleWheelEvent(WheelEvent event)
     {
-        if (event.action == MouseAction.wheel)
+        const delta = event.deltaX - event.deltaY;
+        if (delta != 0)
         {
-            const delta = event.wheelDelta;
-            if (delta != 0)
+            const a = delta > 0 ? SliderAction.increase : SliderAction.decrease;
+            // move the closest
+            int diff1, diff2;
+            if (_orient == Orientation.horizontal)
             {
-                const a = delta > 0 ? SliderAction.increase : SliderAction.decrease;
-                // move the closest
-                int diff1, diff2;
-                if (_orient == Orientation.horizontal)
-                {
-                    diff1 = event.x - (_1stHandle.box.x + _1stHandle.box.w / 2);
-                    diff2 = event.x - (_2ndHandle.box.x + _2ndHandle.box.w / 2);
-                }
-                else
-                {
-                    diff1 = event.y - (_1stHandle.box.y + _1stHandle.box.h / 2);
-                    diff2 = event.y - (_2ndHandle.box.y + _2ndHandle.box.h / 2);
-                }
-                if (abs(diff1) < abs(diff2))
-                    triggerActionOnFirst(a);
-                else
-                    triggerActionOnSecond(a);
+                diff1 = event.x - (_1stHandle.box.x + _1stHandle.box.w / 2);
+                diff2 = event.x - (_2ndHandle.box.x + _2ndHandle.box.w / 2);
             }
+            else
+            {
+                diff1 = event.y - (_1stHandle.box.y + _1stHandle.box.h / 2);
+                diff2 = event.y - (_2ndHandle.box.y + _2ndHandle.box.h / 2);
+            }
+            if (abs(diff1) < abs(diff2))
+                triggerActionOnFirst(a);
+            else
+                triggerActionOnSecond(a);
             return true;
         }
-        return super.handleMouseEvent(event);
+        return super.handleWheelEvent(event);
     }
 
     private int[2] handleSizes;

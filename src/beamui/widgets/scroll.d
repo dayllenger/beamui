@@ -319,11 +319,17 @@ class ScrollAreaBase : WidgetGroup
     {
     }
 
-    override bool handleMouseEvent(MouseEvent event)
+    override bool handleWheelEvent(WheelEvent event)
     {
-        if (event.action == MouseAction.wheel)
+        if (event.deltaX != 0 && _hscrollbar)
         {
-            const a = event.wheelDelta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown;
+            const a = event.deltaX > 0 ? ScrollAction.lineDown : ScrollAction.lineUp;
+            _hscrollbar.triggerAction(a);
+            return true;
+        }
+        if (event.deltaY != 0)
+        {
+            const a = event.deltaY > 0 ? ScrollAction.lineDown : ScrollAction.lineUp;
             if (event.keyMods == KeyMods.shift)
             {
                 if (_hscrollbar)
@@ -341,7 +347,7 @@ class ScrollAreaBase : WidgetGroup
                 }
             }
         }
-        return super.handleMouseEvent(event);
+        return super.handleWheelEvent(event);
     }
 
     void makeBoxVisible(Box b, bool alignHorizontally = true, bool alignVertically = true)

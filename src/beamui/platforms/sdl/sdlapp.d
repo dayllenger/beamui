@@ -640,46 +640,46 @@ final class SDLWindow : Window
 
     private void processMouseEvent(MouseAction action, uint sdlButton, uint sdlFlags, int x, int y)
     {
-        MouseEvent event;
-        if (action == MouseAction.wheel)
+        lastPressed = convertMouseMods(sdlFlags);
+        lastx = cast(short)x;
+        lasty = cast(short)y;
+        MouseButton btn = convertMouseButton(sdlButton);
+        auto event = new MouseEvent(action, btn, lastPressed, _keyMods, lastx, lasty);
+
+        ButtonDetails* pbuttonDetails;
+        if (btn == MouseButton.left)
+            pbuttonDetails = &_lbutton;
+        else if (btn == MouseButton.right)
+            pbuttonDetails = &_rbutton;
+        else if (btn == MouseButton.middle)
+            pbuttonDetails = &_mbutton;
+        if (pbuttonDetails)
         {
-            // handle wheel
-            short wheelDelta = cast(short)y;
-            if (wheelDelta)
-                event = new MouseEvent(action, MouseButton.none, lastPressed, _keyMods, lastx, lasty, wheelDelta);
-        }
-        else
-        {
-            lastPressed = convertMouseMods(sdlFlags);
-            lastx = cast(short)x;
-            lasty = cast(short)y;
-            MouseButton btn = convertMouseButton(sdlButton);
-            event = new MouseEvent(action, btn, lastPressed, _keyMods, lastx, lasty);
-        }
-        if (event)
-        {
-            ButtonDetails* pbuttonDetails;
-            if (event.button == MouseButton.left)
-                pbuttonDetails = &_lbutton;
-            else if (event.button == MouseButton.right)
-                pbuttonDetails = &_rbutton;
-            else if (event.button == MouseButton.middle)
-                pbuttonDetails = &_mbutton;
-            if (pbuttonDetails)
+            if (action == MouseAction.buttonDown)
             {
-                if (action == MouseAction.buttonDown)
-                {
-                    pbuttonDetails.down(cast(short)x, cast(short)y, lastPressed, _keyMods);
-                }
-                else if (action == MouseAction.buttonUp)
-                {
-                    pbuttonDetails.up(cast(short)x, cast(short)y, lastPressed, _keyMods);
-                }
+                pbuttonDetails.down(cast(short)x, cast(short)y, lastPressed, _keyMods);
             }
-            event.lbutton = _lbutton;
-            event.rbutton = _rbutton;
-            event.mbutton = _mbutton;
-            dispatchMouseEvent(event);
+            else if (action == MouseAction.buttonUp)
+            {
+                pbuttonDetails.up(cast(short)x, cast(short)y, lastPressed, _keyMods);
+            }
+        }
+        event.lbutton = _lbutton;
+        event.rbutton = _rbutton;
+        event.mbutton = _mbutton;
+
+        dispatchMouseEvent(event);
+        update();
+    }
+
+    private void processWheelEvent(int deltaX, int deltaY)
+    {
+        if (deltaX != 0 || deltaY != 0)
+        {
+            const dx = cast(short)deltaX;
+            const dy = cast(short)deltaY;
+            auto event = new WheelEvent(lastx, lasty, lastPressed, _keyMods, dx, dy);
+            dispatchWheelEvent(event);
             update();
         }
     }
@@ -1275,7 +1275,7 @@ final class SDLPlatform : Platform
             {
                 debug (sdl)
                     Log.d("SDL_MOUSEWHEEL x=", event.wheel.x, " y=", event.wheel.y);
-                w.processMouseEvent(MouseAction.wheel, 0, 0, event.wheel.x, event.wheel.y);
+                w.processWheelEvent(-event.wheel.x, -event.wheel.y);
             }
             break;
         default:

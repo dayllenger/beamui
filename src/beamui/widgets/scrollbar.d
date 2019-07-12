@@ -272,16 +272,15 @@ class ScrollBar : WidgetGroup
         }
     }
 
-    override bool handleMouseEvent(MouseEvent event)
+    override bool handleWheelEvent(WheelEvent event)
     {
-        if (event.action == MouseAction.wheel)
+        const delta = _orient == Orientation.horizontal ? event.deltaX : event.deltaY;
+        if (delta != 0)
         {
-            const delta = event.wheelDelta;
-            if (delta != 0)
-                triggerAction(delta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
+            triggerAction(delta > 0 ? ScrollAction.lineDown : ScrollAction.lineUp);
             return true;
         }
-        return super.handleMouseEvent(event);
+        return super.handleWheelEvent(event);
     }
 
     protected bool calcButtonSizes(int availableSize, ref int spaceBackSize, ref int spaceForwardSize,

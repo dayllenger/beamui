@@ -810,7 +810,6 @@ final class Win32Window : Window
         MouseAction action = MouseAction.buttonDown;
         MouseButton button;
         ButtonDetails* pbuttonDetails;
-        short wheelDelta;
         switch (winMessage)
         {
         case WM_MOUSEMOVE:
@@ -855,16 +854,6 @@ final class Win32Window : Window
                 Log.d("WM_MOUSELEAVE");
             action = MouseAction.leave;
             break;
-        case WM_MOUSEWHEEL:
-            action = MouseAction.wheel;
-            wheelDelta = (cast(short)(winFlags >> 16)) / 120;
-            POINT pt;
-            pt.x = x;
-            pt.y = y;
-            ScreenToClient(_hwnd, &pt);
-            x = cast(short)pt.x;
-            y = cast(short)pt.y;
-            break;
         default: // unsupported event
             return;
         }
@@ -880,13 +869,29 @@ final class Win32Window : Window
             pbuttonDetails.up(x, y, mmods, _keyMods);
         }
 
-        auto event = new MouseEvent(action, button, mmods, _keyMods, x, y, wheelDelta);
+        auto event = new MouseEvent(action, button, mmods, _keyMods, x, y);
         event.lbutton = _lbutton;
         event.rbutton = _rbutton;
         event.mbutton = _mbutton;
 
         dispatchMouseEvent(event);
         update();
+    }
+
+    private void processWheelEvent(uint winFlags, POINT pt, int deltaX, int deltaY)
+    {
+        if (deltaX != 0 || deltaY != 0)
+        {
+            ScreenToClient(_hwnd, &pt);
+            const x = cast(short)pt.x;
+            const y = cast(short)pt.y;
+            const mmods = convertMouseMods(winFlags);
+            const dx = cast(short)deltaX;
+            const dy = cast(short)deltaY;
+            auto event = new WheelEvent(x, y, mmods, _keyMods, dx, dy);
+            dispatchWheelEvent(event);
+            update();
+        }
     }
 
     private void updateKeyMods(KeyAction action, KeyMods mod, KeyMods preserve)
@@ -1323,12 +1328,29 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-    case WM_MOUSEWHEEL:
         if (window)
         {
             window.processMouseEvent(message, cast(uint)wParam, cast(short)(lParam & 0xFFFF),
                 cast(short)((lParam >> 16) & 0xFFFF));
             return 0; // processed
+        }
+        break;
+    case WM_MOUSEWHEEL:
+        if (window)
+        {
+            const pt = POINT(lParam & 0xFFFF, (lParam >> 16) & 0xFFFF);
+            const delta = (cast(short)(wParam >> 16)) / 120;
+            window.processWheelEvent(cast(uint)wParam, pt, 0, -delta);
+            return 0;
+        }
+        break;
+    case 0x020E: // WM_MOUSEHWHEEL
+        if (window)
+        {
+            const pt = POINT(lParam & 0xFFFF, (lParam >> 16) & 0xFFFF);
+            const delta = (cast(short)(wParam >> 16)) / 120;
+            window.processWheelEvent(cast(uint)wParam, pt, delta, 0);
+            return 0;
         }
         break;
     case WM_KEYDOWN:
