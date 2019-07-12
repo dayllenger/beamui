@@ -248,9 +248,9 @@ class SimpleBarChart : Widget
         }
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
+        super.handleThemeChange();
         _backgroundColor = currentTheme.getColor("chart_background", Color(0xffffff));
         _axisColor = currentTheme.getColor("chart_axis", Color(0xc0c0c0));
         _segmentTagColor = currentTheme.getColor("chart_segment_tag", Color(0xc0c0c0));
@@ -357,11 +357,11 @@ class SimpleBarChart : Widget
             (_showTitle ? _title.size.h + _marginAfterTitle : 0);
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
-        super.onDraw(buf);
+        super.draw(buf);
 
         const b = innerBox;
 

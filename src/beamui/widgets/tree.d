@@ -29,7 +29,7 @@ tree22.newChild("group3_2_4", "item 4"d);
 tree22.newChild("group3_2_5", "item 5"d);
 tree2.newChild("g2_4", "item 4"d);
 
-tree.itemSelected ~= (TreeItem selectedItem, bool activated) {
+tree.onSelect ~= (TreeItem selectedItem, bool activated) {
     dstring label = "Selected item: "d ~ toUTF32(selectedItem.id) ~ (activated ? " selected + activated"d : " selected"d);
     treeItemLabel.text = label;
 };
@@ -249,7 +249,7 @@ class TreeItem
                 root.selectItem(null);
         }
         _children.clear();
-        root.onUpdate();
+        root.handleUpdate();
     }
 
     /// Returns true if item has at least one child
@@ -276,7 +276,7 @@ class TreeItem
             _children.append(item);
         item.parent = this;
         item.level = _level + 1;
-        item.onUpdate();
+        item.handleUpdate();
         return item;
     }
     /// Removes child, returns removed item
@@ -300,7 +300,7 @@ class TreeItem
             }
         }
         root.selectItem(newSelection);
-        root.onUpdate();
+        root.handleUpdate();
         return res;
     }
     /// Removes child by reference, returns removed item
@@ -322,9 +322,9 @@ class TreeItem
     }
 
     /// Notify listeners
-    protected void onUpdate()
+    protected void handleUpdate()
     {
-        root.onUpdate();
+        root.handleUpdate();
     }
 
     protected void toggleExpand(TreeItem item)
@@ -398,10 +398,10 @@ class RootTreeItem : TreeItem
         return true;
     }
 
-    Listener!(void delegate()) contentChanged;
-    Listener!(void delegate()) stateChanged;
-    Listener!(void delegate(TreeItem)) expandChanged;
-    Listener!(void delegate(TreeItem, bool activated)) itemSelected;
+    Listener!(void delegate()) onContentChange;
+    Listener!(void delegate()) onStateChange;
+    Listener!(void delegate(TreeItem)) onToggleExpand;
+    Listener!(void delegate(TreeItem, bool activated)) onSelect;
 
     bool canCollapseTopLevel = true;
 
@@ -421,9 +421,9 @@ class RootTreeItem : TreeItem
             return item.hasChildren;
     }
 
-    override protected void onUpdate()
+    override protected void handleUpdate()
     {
-        contentChanged();
+        onContentChange();
     }
 
     override void toggleExpand(TreeItem item)
@@ -442,9 +442,9 @@ class RootTreeItem : TreeItem
             item.expand();
             changed = true;
         }
-        stateChanged();
+        onStateChange();
         if (changed)
-            expandChanged(item);
+            onToggleExpand(item);
     }
 
     override void selectItem(TreeItem item)
@@ -452,14 +452,14 @@ class RootTreeItem : TreeItem
         if (_selectedItem is item)
             return;
         _selectedItem = item;
-        stateChanged();
-        itemSelected(_selectedItem, false);
+        onStateChange();
+        onSelect(_selectedItem, false);
     }
 
     void setDefaultItem(TreeItem item)
     {
         _defaultItem = item;
-        stateChanged();
+        onStateChange();
     }
 
     override void activateItem(TreeItem item)
@@ -467,9 +467,9 @@ class RootTreeItem : TreeItem
         if (!(_selectedItem is item))
         {
             _selectedItem = item;
-            stateChanged();
+            onStateChange();
         }
-        itemSelected(_selectedItem, true);
+        onSelect(_selectedItem, true);
     }
 
     void selectNext()
@@ -541,7 +541,7 @@ class TreeItemWidget : Panel
             _expander.allowsClick = true;
             _expander.allowsHover = true;
 
-            _expander.clicked ~= {
+            _expander.onClick ~= {
                 _item.selectItem(_item);
                 _item.toggleExpand(_item);
             };
@@ -586,9 +586,9 @@ class TreeItemWidget : Panel
         super.handleClick();
     }
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
-        if (keyEvent.assigned && keyEvent(event))
+        if (onKeyEvent.assigned && onKeyEvent(event))
             return true; // processed by external handler
         if (!focused || !visible)
             return false;
@@ -605,7 +605,7 @@ class TreeItemWidget : Panel
         return false;
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.right)
         {
@@ -619,7 +619,7 @@ class TreeItemWidget : Panel
                 }
             }
         }
-        return super.onMouseEvent(event);
+        return super.handleMouseEvent(event);
     }
 
     void updateWidgetState()
@@ -649,8 +649,8 @@ class TreeWidgetBase : ScrollArea, ActionOperator
     /// Access tree items
     @property RootTreeItem items() { return _tree; }
 
-    Signal!(void delegate(TreeItem, bool activated)) itemSelected;
-    Signal!(void delegate(TreeItem)) expandChanged;
+    Signal!(void delegate(TreeItem, bool activated)) onSelect;
+    Signal!(void delegate(TreeItem)) onToggleExpand;
 
     /// Allows to provide individual popup menu for items
     Listener!(Menu delegate(TreeItem)) popupMenuBuilder;
@@ -669,10 +669,10 @@ class TreeWidgetBase : ScrollArea, ActionOperator
         super(hscrollbarMode, vscrollbarMode);
         contentWidget = new Panel;
         _tree = new RootTreeItem;
-        _tree.contentChanged = &onTreeContentChange;
-        _tree.stateChanged = &onTreeStateChange;
-        _tree.itemSelected = &onTreeItemSelected;
-        _tree.expandChanged = &onTreeItemExpanded;
+        _tree.onContentChange = &handleTreeContentChange;
+        _tree.onStateChange = &handleTreeStateChange;
+        _tree.onSelect = &handleTreeItemSelection;
+        _tree.onToggleExpand = &handleTreeItemOpening;
 
         _needUpdateWidgets = true;
         _needUpdateWidgetStates = true;
@@ -740,24 +740,24 @@ class TreeWidgetBase : ScrollArea, ActionOperator
         super.measure();
     }
 
-    protected void onTreeContentChange()
+    protected void handleTreeContentChange()
     {
         _needUpdateWidgets = true;
         requestLayout();
     }
 
-    protected void onTreeStateChange()
+    protected void handleTreeStateChange()
     {
         _needUpdateWidgetStates = true;
         requestLayout();
     }
 
-    protected void onTreeItemExpanded(TreeItem item)
+    protected void handleTreeItemOpening(TreeItem item)
     {
-        expandChanged(item);
+        onToggleExpand(item);
     }
 
-    protected void onTreeItemSelected(TreeItem selectedItem, bool activated)
+    protected void handleTreeItemSelection(TreeItem selectedItem, bool activated)
     {
         TreeItemWidget selected = findItemWidget(selectedItem);
         if (selected && selected.visibility == Visibility.visible)
@@ -765,7 +765,7 @@ class TreeWidgetBase : ScrollArea, ActionOperator
             selected.setFocus();
             makeWidgetVisible(selected, false, true);
         }
-        itemSelected(selectedItem, activated);
+        onSelect(selectedItem, activated);
     }
 
     TreeItemWidget findItemWidget(TreeItem item)
@@ -836,7 +836,7 @@ class TreeWidgetBase : ScrollArea, ActionOperator
         ).unbind(this);
     }
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         if (event.action == KeyAction.keyDown && event.noModifiers)
         {
@@ -858,7 +858,7 @@ class TreeWidgetBase : ScrollArea, ActionOperator
                 break;
             }
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 }
 

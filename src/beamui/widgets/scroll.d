@@ -85,7 +85,7 @@ class ScrollAreaBase : WidgetGroup
                 {
                     _hscrollbar = new ScrollBar(Orientation.horizontal, _hdata);
                     _hscrollbar.id = "hscrollbar";
-                    _hscrollbar.scrolled ~= &onHScroll;
+                    _hscrollbar.onScroll ~= &handleHScroll;
                     addChild(_hscrollbar);
                 }
             }
@@ -103,7 +103,7 @@ class ScrollAreaBase : WidgetGroup
                 {
                     _vscrollbar = new ScrollBar(Orientation.vertical, _vdata);
                     _vscrollbar.id = "vscrollbar";
-                    _vscrollbar.scrolled ~= &onVScroll;
+                    _vscrollbar.onScroll ~= &handleVScroll;
                     addChild(_vscrollbar);
                 }
             }
@@ -310,16 +310,16 @@ class ScrollAreaBase : WidgetGroup
     }
 
     /// Process horizontal scroll event
-    protected void onHScroll(ScrollEvent event)
+    protected void handleHScroll(ScrollEvent event)
     {
     }
 
     /// Process vertical scroll event
-    protected void onVScroll(ScrollEvent event)
+    protected void handleVScroll(ScrollEvent event)
     {
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         if (event.action == MouseAction.wheel)
         {
@@ -341,7 +341,7 @@ class ScrollAreaBase : WidgetGroup
                 }
             }
         }
-        return super.onMouseEvent(event);
+        return super.handleMouseEvent(event);
     }
 
     void makeBoxVisible(Box b, bool alignHorizontally = true, bool alignVertically = true)
@@ -409,7 +409,7 @@ class ScrollAreaBase : WidgetGroup
         if (needVScroll)
             _clientBox.w -= _sbsz.w;
 
-        handleClientBoxLayout(_clientBox);
+        adjustClientBox(_clientBox);
 
         // update scrollbar button positions before laying out
         updateScrollBars();
@@ -505,7 +505,7 @@ class ScrollAreaBase : WidgetGroup
     }
 
     /// Override to support modification of client rect after change, e.g. apply offset
-    protected void handleClientBoxLayout(ref Box clb)
+    protected void adjustClientBox(ref Box clb)
     {
     }
 
@@ -565,20 +565,20 @@ class ScrollAreaBase : WidgetGroup
     {
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         Box b = box;
         auto saver = ClipRectSaver(buf, b, style.alpha);
         auto bg = background;
         bg.drawTo(buf, b);
 
         // draw scrollbars
-        _hscrollbar.maybe.onDraw(buf);
-        _vscrollbar.maybe.onDraw(buf);
+        _hscrollbar.maybe.draw(buf);
+        _vscrollbar.maybe.draw(buf);
         {
             // apply clipping
             auto saver2 = ClipRectSaver(buf, _clientBox, 0);
@@ -642,7 +642,7 @@ class ScrollArea : ScrollAreaBase
 // //         invalidate();
 //     }
 
-    override protected void onHScroll(ScrollEvent event)
+    override protected void handleHScroll(ScrollEvent event)
     {
         if (event.position != _scrollPos.x)
         {
@@ -651,7 +651,7 @@ class ScrollArea : ScrollAreaBase
         }
     }
 
-    override protected void onVScroll(ScrollEvent event)
+    override protected void handleVScroll(ScrollEvent event)
     {
         if (event.position != _scrollPos.y)
         {
@@ -725,6 +725,6 @@ class ScrollArea : ScrollAreaBase
 
     override protected void drawClient(DrawBuf buf)
     {
-        _contentWidget.maybe.onDraw(buf);
+        _contentWidget.maybe.draw(buf);
     }
 }

@@ -58,7 +58,7 @@ int main()
         dlg.addFilter(FileFilterEntry("Text files", "*.txt;*.log"));
         dlg.addFilter(FileFilterEntry("Source files", "*.d;*.dd;*.c;*.cpp;*.h;*.hpp"));
         dlg.addFilter(FileFilterEntry("Executable files", "*", true));
-        dlg.dialogClosed ~= (const Action result) {
+        dlg.onClose ~= (const Action result) {
             import std.path : baseName;
 
             if (result is ACTION_OPEN)
@@ -164,8 +164,8 @@ int main()
     // create tabs
 
     tabs = new TabWidget;
-    tabs.tabClosed ~= (string tabID) { tabs.removeTab(tabID); };
-    tabs.tabChanged ~= (string newTabID, string oldTabID) {
+    tabs.onTabClose ~= (string tabID) { tabs.removeTab(tabID); };
+    tabs.onTabChange ~= (string newTabID, string oldTabID) {
         window.title = tabs.tab(newTabID).text ~ " - controls overview - beamui"d;
     };
 
@@ -329,14 +329,14 @@ int main()
         }
 
         btnToggle.checked = fileOpenAction.enabled;
-        btnToggle.clicked ~= {
+        btnToggle.onClick ~= {
             fileOpenAction.enabled = !fileOpenAction.enabled;
         };
 
-        sb.scrolled ~= (ScrollEvent event) { Log.d("scrollbar: ", event.action); };
-        sl.scrolled ~= (SliderEvent event) { Log.d("slider: ", event.value); };
-        rsl.firstScrolled  ~= (SliderEvent event) { Log.d("range-slider 1st: ", event.value); };
-        rsl.secondScrolled ~= (SliderEvent event) { Log.d("range-slider 2nd: ", event.value); };
+        sb.onScroll ~= (ScrollEvent event) { Log.d("scrollbar: ", event.action); };
+        sl.onScroll ~= (SliderEvent event) { Log.d("slider: ", event.value); };
+        rsl.onScroll1 ~= (SliderEvent event) { Log.d("range-slider 1st: ", event.value); };
+        rsl.onScroll2 ~= (SliderEvent event) { Log.d("range-slider 2nd: ", event.value); };
         sl.data.setRange(-0.75, 0.75, 0.1);
         rsl.data.setRange(0, 10, 0.01);
         rsl.data.second = 4;
@@ -390,7 +390,7 @@ int main()
         tree3.newChild("g3_6", "Group 3 item 6"d);
         tree.items.selectItem(tree1);
         // test adding new tree items
-        btnAddItem.clicked ~= {
+        btnAddItem.onClick ~= {
             dstring label = newTreeItemEd.text;
             string id = format("item%d", uniform(1000000, 9999999));
             TreeItem item = tree.items.selectedItem;
@@ -401,7 +401,7 @@ int main()
                 item.addChild(newItem);
             }
         };
-        btnRemoveItem.clicked ~= {
+        btnRemoveItem.onClick ~= {
             TreeItem item = tree.items.selectedItem;
             if (item)
             {
@@ -476,7 +476,7 @@ int main()
         assert(list.itemEnabled(5) == false);
         assert(list.itemEnabled(6) == true);
 
-        addbtn.clicked ~= {
+        addbtn.onClick ~= {
             stringList.add(itemtext.text);
             listAdapter.add(new Label(itemtext.text));
         };
@@ -596,8 +596,8 @@ void main()
 
         cb1.checked = grid.fullColumnOnLeft;
         cb2.checked = grid.fullRowOnTop;
-        cb1.toggled ~= (checked) { grid.fullColumnOnLeft = checked; };
-        cb2.toggled ~= (checked) { grid.fullRowOnTop = checked; };
+        cb1.onToggle ~= (checked) { grid.fullColumnOnLeft = checked; };
+        cb2.onToggle ~= (checked) { grid.fullRowOnTop = checked; };
 
         grid.resize(30, 50);
         grid.fixedCols = 3;
@@ -713,10 +713,10 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
     cb3.checked = editor.readOnly;
     cb4.checked = editor.style.fontFamily == FontFamily.monospace;
     cb5.checked = editor.tabSize == 8;
-    cb1.toggled ~= (checked) { editor.wantTabs = checked; };
-    cb2.toggled ~= (checked) { editor.useSpacesForTabs = checked; };
-    cb3.toggled ~= (checked) { editor.readOnly = checked; };
-    cb4.toggled ~= (checked) {
+    cb1.onToggle ~= (checked) { editor.wantTabs = checked; };
+    cb2.onToggle ~= (checked) { editor.useSpacesForTabs = checked; };
+    cb3.onToggle ~= (checked) { editor.readOnly = checked; };
+    cb4.onToggle ~= (checked) {
         if (checked)
         {
             editor.style.fontFace = "Courier New";
@@ -728,7 +728,7 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
             editor.style.fontFamily = FontFamily.sans_serif;
         }
     };
-    cb5.toggled ~= (checked) { editor.tabSize(checked ? 8 : 4); };
+    cb5.onToggle ~= (checked) { editor.tabSize(checked ? 8 : 4); };
 
     return row;
 }
@@ -738,6 +738,6 @@ Widget addSourceEditorControls(Widget base, SourceEdit editor)
     auto cb1 = new CheckBox("Show line numbers");
     base.addChild(cb1);
     cb1.checked = editor.showLineNumbers;
-    cb1.toggled ~= (checked) { editor.showLineNumbers = checked; };
+    cb1.onToggle ~= (checked) { editor.showLineNumbers = checked; };
     return base;
 }

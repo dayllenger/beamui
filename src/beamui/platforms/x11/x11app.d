@@ -692,7 +692,7 @@ final class X11Window : DWindow
         immutable width = _cachedWidth;
         immutable height = _cachedHeight;
         if (width > 0 && height > 0)
-            onResize(width, height);
+            handleResize(width, height);
         debug (x11)
             Log.d(format("redraw(%d, %d)", width, height));
         if (openglEnabled)
@@ -716,7 +716,7 @@ final class X11Window : DWindow
             _drawbuf.resetClipping();
             // draw widgets into buffer
             _drawbuf.fill(backgroundColor);
-            onDraw(_drawbuf);
+            draw(_drawbuf);
             // draw buffer on X11 window
             XImage img;
             img.width = _drawbuf.width;
@@ -1072,9 +1072,9 @@ final class X11Window : DWindow
         XUnlockDisplay(x11display2);
     }
 
-    override protected void onTimer()
+    override protected void handleTimer()
     {
-        super.onTimer();
+        super.handleTimer();
     }
 }
 
@@ -1521,7 +1521,7 @@ final class X11Platform : Platform
                 }
                 else if (event.xclient.message_type == atom_beamui_TIMER_EVENT)
                 {
-                    w.onTimer();
+                    w.handleTimer();
                 }
                 else if (event.xclient.message_type == atom_beamui_REDRAW_EVENT)
                 {
@@ -1671,9 +1671,9 @@ final class X11Platform : Platform
         }
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
+        super.handleThemeChange();
         foreach (w; windows)
             w.dispatchThemeChanged();
     }

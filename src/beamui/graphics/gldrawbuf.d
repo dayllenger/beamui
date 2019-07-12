@@ -61,7 +61,7 @@ class GLDrawBuf : DrawBuf
         resetClipping();
     }
 
-    override void drawCustomOpenGLScene(Rect rc, OpenGLDrawableDelegate handler)
+    override void drawCustomOpenGLScene(Rect rc, DrawHandler handler)
     {
         if (handler)
         {

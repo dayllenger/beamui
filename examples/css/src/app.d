@@ -44,7 +44,7 @@ int main()
         text = stylesheet.toUTF32;
     }
 
-    btnUpdate.clicked ~= {
+    btnUpdate.onClick ~= {
         platform.reloadTheme();
         currentTheme.setStyleSheet(editor.text.toUTF8);
     };

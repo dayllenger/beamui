@@ -47,15 +47,15 @@ int main()
     // disable OK button
     ok.enabled = false;
     // and enable it when the check box has been pressed
-    check.toggled ~= (bool checked) {
+    check.onToggle ~= (bool checked) {
         ok.enabled = checked;
     };
     // show message box on OK button click
-    ok.clicked ~= {
+    ok.onClick ~= {
         window.showMessageBox("Message box"d, format("%s, %s!"d, ed1.text, ed2.text));
     };
     // close the window by clicking Exit
-    exit.clicked ~= &window.close;
+    exit.onClick ~= &window.close;
 
     // set main widget for the window and show it
     window.mainWidget = pane;

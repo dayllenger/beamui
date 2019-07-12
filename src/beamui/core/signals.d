@@ -35,20 +35,20 @@ unittest
 
     struct S
     {
-        Listener!(bool delegate()) fired;
-        Signal!(bool delegate(string)) multiFired;
+        Listener!(bool delegate()) onFire;
+        Signal!(bool delegate(string)) onMultiFire;
 
         void fire()
         {
             // call the signal, which calls a listener
-            // may be called with explicit fired.emit()
-            bool done = fired();
+            // may be called with explicit onFire.emit()
+            bool done = onFire();
             assert(done);
         }
 
         void multiFire()
         {
-            bool done = multiFired("world");
+            bool done = onMultiFire("world");
             assert(done);
         }
     }
@@ -75,17 +75,17 @@ unittest
     Z z;
     // assign a lambda to the signal
     // there are 10 ways to declare a lambda, here we use short {} syntax
-    s.fired = { return z.hello("world"); };
+    s.onFire = { return z.hello("world"); };
     // check if any listener is connected
-    assert(s.fired.assigned);
+    assert(s.onFire.assigned);
     s.fire();
 
     Z z1, z2;
     // connect methods by reference
     // may be connected with explicit .connect()
-    s.multiFired ~= &z.goodbye;
-    s.multiFired ~= &z1.hello;
-    s.multiFired ~= &z2.goodbye;
+    s.onMultiFire ~= &z.goodbye;
+    s.onMultiFire ~= &z1.hello;
+    s.onMultiFire ~= &z2.goodbye;
     s.multiFire();
     // signal invokes slots one by one in order they added
     // by default, signal stops on first nonzero value, returned by a slot
@@ -95,9 +95,9 @@ unittest
     assert(Z.goodbyeCount == 1);
 
     // you can disconnect individual slots using disconnect()
-    s.multiFired.disconnect(&z1.hello);
+    s.onMultiFire.disconnect(&z1.hello);
     // or -= operator
-    s.multiFired -= &z2.goodbye;
+    s.onMultiFire -= &z2.goodbye;
 }
 
 /// Single listener; parameter is some delegate

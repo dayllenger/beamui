@@ -100,13 +100,13 @@ class GroupBox : Panel
         _frameBottom = dp.bottom;
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
-        _caption.onThemeChanged();
+        super.handleThemeChange();
+        _caption.handleThemeChange();
     }
 
-    override protected void onMeasure(ref Boundaries bs)
+    override protected void adjustBoundaries(ref Boundaries bs)
     {
         _caption.measure();
         // expand if the caption is bigger than the content
@@ -129,15 +129,15 @@ class GroupBox : Panel
         _caption.layout(b);
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         Box b = box;
 
-        _caption.onDraw(buf);
+        _caption.draw(buf);
 
         // correct top of the frame to be exactly at the center of the caption
         int dh = 0;

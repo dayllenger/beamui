@@ -154,7 +154,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             if (_content !is null)
             {
                 // disconnect old content
-                _content.contentChanged.disconnect(&onContentChange);
+                _content.onContentChange.disconnect(&handleContentChange);
                 if (_ownContent)
                 {
                     destroy(_content);
@@ -162,7 +162,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             }
             _content = content;
             _ownContent = false;
-            _content.contentChanged.connect(&onContentChange);
+            _content.onContentChange.connect(&handleContentChange);
             if (_content.readOnly)
                 enabled = false;
         }
@@ -335,13 +335,13 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     bool copyCurrentLineWhenNoSelection = true;
 
     /// Modified state change listener (e.g. content has been saved, or first time modified after save)
-    Signal!(void delegate(bool modified)) modifiedStateChanged;
+    Signal!(void delegate(bool modified)) onModifiedStateChange;
 
     /// Signal to emit when editor content is changed
-    Signal!(void delegate(EditableContent)) contentChanged;
+    Signal!(void delegate(EditableContent)) onContentChange;
 
     /// Signal to emit when editor cursor position or Insert/Replace mode is changed.
-    Signal!(void delegate(ref EditorStateInfo editorState)) stateChanged;
+    Signal!(void delegate(ref EditorStateInfo editorState)) onStateChange;
 
     // left pane - can be used to show line numbers, collapse controls, bookmarks, breakpoints, custom icons
     protected int _leftPaneWidth;
@@ -482,10 +482,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             ph.style.font = font;
     }
 
-    /// Updates `stateChanged` with recent position
+    /// Updates `onStateChange` with recent position
     protected void handleEditorStateChange()
     {
-        if (!stateChanged.assigned)
+        if (!onStateChange.assigned)
             return;
         EditorStateInfo info;
         if (visible)
@@ -502,10 +502,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                     info.character = '\n';
             }
         }
-        stateChanged(info);
+        onStateChange(info);
     }
 
-    override protected void handleClientBoxLayout(ref Box clb)
+    override protected void adjustClientBox(ref Box clb)
     {
         updateLeftPaneWidth();
         clb.x += _leftPaneWidth;
@@ -716,11 +716,11 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _content.syntaxSupport.applySmartIndent(operation, this);
     }
 
-    protected void onContentChange(EditOperation operation,
+    protected void handleContentChange(EditOperation operation,
             ref TextRange rangeBefore, ref TextRange rangeAfter, Object source)
     {
         debug (editors)
-            Log.d("onContentChange rangeBefore: ", rangeBefore, ", rangeAfter: ", rangeAfter,
+            Log.d("handleContentChange rangeBefore: ", rangeBefore, ", rangeAfter: ", rangeAfter,
                     ", text: ", operation.content);
         _contentChanged = true;
         if (source is this)
@@ -761,16 +761,16 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             updateActions();
         }
         invalidate();
-        if (modifiedStateChanged.assigned)
+        if (onModifiedStateChange.assigned)
         {
             if (_lastReportedModifiedState != _content.modified)
             {
                 _lastReportedModifiedState = _content.modified;
-                modifiedStateChanged(_content.modified);
+                onModifiedStateChange(_content.modified);
                 updateActions();
             }
         }
-        contentChanged(_content);
+        onContentChange(_content);
         handleEditorStateChange();
         return;
     }
@@ -954,9 +954,9 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
     //===============================================================
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
+        super.handleThemeChange();
         _caretColor = currentTheme.getColor("edit_caret", Color(0x0));
         _caretColorReplace = currentTheme.getColor("edit_caret_replace", Color(0x808080FF));
         _selectionColorFocused = currentTheme.getColor("editor_selection_focused", Color(0xB060A0FF));
@@ -1715,12 +1715,12 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     //===============================================================
     // Events
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         import std.ascii : isAlpha;
 
         debug (keys)
-            Log.d("onKeyEvent ", event.action, " ", event.key, ", mods ", event.allModifiers);
+            Log.d("handleKeyEvent ", event.action, " ", event.key, ", mods ", event.allModifiers);
         if (focused)
             startCaretBlinking();
         cancelHoverTimer();
@@ -1828,7 +1828,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 return true;
             }
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 
     private TextPosition _hoverTextPosition;
@@ -1837,17 +1837,17 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     private long _hoverTimeoutMillis = 800;
 
     /// Override to handle mouse hover timeout in text
-    protected void onHoverTimeout(Point pt, TextPosition pos)
+    protected void handleHoverTimeout(Point pt, TextPosition pos)
     {
         // override to do something useful on hover timeout
     }
 
-    protected void onHover(Point pos)
+    protected void handleHover(Point pos)
     {
         if (_hoverMousePosition == pos)
             return;
         debug (mouse)
-            Log.d("onHover ", pos);
+            Log.d("handleHover ", pos);
         const int x = pos.x - box.x - _leftPaneWidth;
         const int y = pos.y - box.y;
         _hoverMousePosition = pos;
@@ -1857,7 +1857,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         if (x < reversePos.x + 10)
         {
             _hoverTimer = setTimer(_hoverTimeoutMillis, delegate() {
-                onHoverTimeout(_hoverMousePosition, _hoverTextPosition);
+                handleHoverTimeout(_hoverMousePosition, _hoverTextPosition);
                 _hoverTimer = 0;
                 return false;
             });
@@ -1873,17 +1873,17 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         debug (mouse)
-            Log.d("onMouseEvent ", id, " ", event.action, "  (", event.x, ",", event.y, ")");
+            Log.d("mouse event: ", id, " ", event.action, "  (", event.x, ",", event.y, ")");
         // support onClick
         const bool insideLeftPane = event.x < clientBox.x && event.x >= clientBox.x - _leftPaneWidth;
         if (event.action == MouseAction.buttonDown && insideLeftPane)
         {
             setFocus();
             cancelHoverTimer();
-            if (onLeftPaneMouseClick(event))
+            if (handleLeftPaneMouseClick(event))
                 return true;
         }
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
@@ -1904,7 +1904,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 updateCaretPositionByMouse(event.x - clientBox.x, event.y - clientBox.y, doSelect);
 
                 if (event.keyMods == KeyMods.control)
-                    onControlClick();
+                    handleControlClick();
             }
             startCaretBlinking();
             invalidate();
@@ -1920,7 +1920,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             // hover
             if (focused && !insideLeftPane)
             {
-                onHover(event.pos);
+                handleHover(event.pos);
             }
             else
             {
@@ -1944,16 +1944,16 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             return true;
         }
         cancelHoverTimer();
-        return super.onMouseEvent(event);
+        return super.handleMouseEvent(event);
     }
 
-    protected bool onLeftPaneMouseClick(MouseEvent event)
+    protected bool handleLeftPaneMouseClick(MouseEvent event)
     {
         return false;
     }
 
     /// Handle Ctrl + Left mouse click on text
-    protected void onControlClick()
+    protected void handleControlClick()
     {
         // override to do something useful on Ctrl + Left mouse click in text
     }
@@ -1984,7 +1984,7 @@ class EditLine : EditWidgetBase
     }
 
     /// Handle Enter key press inside line editor
-    Signal!(bool delegate()) enterKeyPressed; // FIXME: better name
+    Signal!(bool delegate()) onEnterKeyPress; // FIXME: better name
 
     private
     {
@@ -1999,13 +1999,13 @@ class EditLine : EditWidgetBase
     {
         super(ScrollBarMode.hidden, ScrollBarMode.hidden);
         _content = new EditableContent(false);
-        _content.contentChanged ~= &onContentChange;
+        _content.onContentChange ~= &handleContentChange;
         _selectAllWhenFocusedWithTab = true;
         _deselectAllWhenUnfocused = true;
         wantTabs = false;
         text = initialContent;
         _minSizeTester.str = "aaaaa"d;
-        onThemeChanged();
+        handleThemeChange();
     }
 
     /// Set default popup menu with copy/paste/cut/undo/redo
@@ -2080,23 +2080,23 @@ class EditLine : EditWidgetBase
         return cast(dstring)ss;
     }
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
-        if (enterKeyPressed.assigned)
+        if (onEnterKeyPress.assigned)
         {
             if (event.key == Key.enter && event.noModifiers)
             {
                 if (event.action == KeyAction.keyDown)
                 {
-                    if (enterKeyPressed())
+                    if (onEnterKeyPress())
                         return true;
                 }
             }
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 
-    override protected void onMeasure(ref Boundaries bs)
+    override protected void adjustBoundaries(ref Boundaries bs)
     {
         measureVisibleText();
         _minSizeTester.style.tabSize = _content.tabSize;
@@ -2156,12 +2156,12 @@ class EditLine : EditWidgetBase
         }
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         const b = innerBox;
         const saver = ClipRectSaver(buf, b, style.alpha);
 
@@ -2259,11 +2259,11 @@ class EditBox : EditWidgetBase
     {
         super(hscrollbarMode, vscrollbarMode);
         _content = new EditableContent(true); // multiline
-        _content.contentChanged ~= &onContentChange;
+        _content.onContentChange ~= &handleContentChange;
         text = initialContent;
         _minSizeTester.str = "aaaaa\naaaaa"d;
         setScrollSteps(0, 3);
-        onThemeChanged();
+        handleThemeChange();
     }
 
     ~this()
@@ -2295,7 +2295,7 @@ class EditBox : EditWidgetBase
         data.position = _firstVisibleLine;
     }
 
-    override protected void onHScroll(ScrollEvent event)
+    override protected void handleHScroll(ScrollEvent event)
     {
         if (scrollPos.x != event.position)
         {
@@ -2304,7 +2304,7 @@ class EditBox : EditWidgetBase
         }
     }
 
-    override protected void onVScroll(ScrollEvent event)
+    override protected void handleVScroll(ScrollEvent event)
     {
         if (_firstVisibleLine != event.position)
         {
@@ -2316,7 +2316,7 @@ class EditBox : EditWidgetBase
         }
     }
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         const bool noOtherModifiers = !event.alteredBy(KeyMods.alt | KeyMods.meta);
         if (event.action == KeyAction.keyDown && noOtherModifiers)
@@ -2342,7 +2342,7 @@ class EditBox : EditWidgetBase
                 return true;
             }
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 
     protected void moveCursorByLine(bool up, bool select)
@@ -2432,7 +2432,7 @@ class EditBox : EditWidgetBase
         }
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         if (event.action == MouseAction.wheel)
         {
@@ -2469,7 +2469,7 @@ class EditBox : EditWidgetBase
                 return true;
             }
         }
-        return super.onMouseEvent(event);
+        return super.handleMouseEvent(event);
     }
 
     private bool _enableScrollAfterText = true;
@@ -3037,7 +3037,7 @@ class EditBox : EditWidgetBase
         }
     }
 
-    override protected void onMeasure(ref Boundaries bs)
+    override protected void adjustBoundaries(ref Boundaries bs)
     {
         measureVisibleText();
         _minSizeTester.style.tabSize = _content.tabSize;
@@ -3607,14 +3607,14 @@ class EditBox : EditWidgetBase
         }
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
-        super.onDraw(buf);
+        super.draw(buf);
         if (_findPanel && _findPanel.visibility == Visibility.visible)
         {
-            _findPanel.onDraw(buf);
+            _findPanel.draw(buf);
         }
     }
 }
@@ -3652,7 +3652,7 @@ class LogWidget : EditBox
         // allow font zoom with Ctrl + MouseWheel
         minFontSize = 8;
         maxFontSize = 36;
-        onThemeChanged();
+        handleThemeChange();
     }
 
     /// Append lines to the end of text
@@ -3791,27 +3791,27 @@ class FindPanel : Panel
         }
         add(main, closeBtn);
 
-        _edFind.enterKeyPressed ~= { findNext(_backDirection); return true; };
-        _edFind.contentChanged ~= &onFindTextChange;
+        _edFind.onEnterKeyPress ~= { findNext(_backDirection); return true; };
+        _edFind.onContentChange ~= &handleFindTextChange;
 
-        _btnFindNext.clicked ~= { findNext(false); };
-        _btnFindPrev.clicked ~= { findNext(true); };
+        _btnFindNext.onClick ~= { findNext(false); };
+        _btnFindPrev.onClick ~= { findNext(true); };
 
-        _cbCaseSensitive.toggled ~= &onCaseSensitiveToggling;
-        _cbWholeWords.toggled ~= &onCaseSensitiveToggling;
-        _cbSelection.toggled ~= &onCaseSensitiveToggling;
+        _cbCaseSensitive.onToggle ~= &handleCaseSensitiveToggle;
+        _cbWholeWords.onToggle ~= &handleCaseSensitiveToggle;
+        _cbSelection.onToggle ~= &handleCaseSensitiveToggle;
 
         if (!replace)
             rowReplace.visibility = Visibility.gone;
 
-        btnReplace.clicked ~= { replaceOne(); };
-        btnReplaceAndFind.clicked ~= {
+        btnReplace.onClick ~= { replaceOne(); };
+        btnReplaceAndFind.onClick ~= {
             replaceOne();
             findNext(_backDirection);
         };
-        btnReplaceAll.clicked ~= { replaceAll(); };
+        btnReplaceAll.onClick ~= { replaceAll(); };
 
-        closeBtn.clicked ~= &close;
+        closeBtn.onClick ~= &close;
 
         focusGroup = true;
 
@@ -3834,10 +3834,10 @@ class FindPanel : Panel
         _editor.closeFindPanel();
     }
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         if (event.key == Key.tab)
-            return super.onKeyEvent(event);
+            return super.handleKeyEvent(event);
         if (event.action == KeyAction.keyDown && event.key == Key.escape)
         {
             close();
@@ -3953,14 +3953,14 @@ class FindPanel : Panel
         _editor.setTextToHighlight(currentText, makeSearchOptions());
     }
 
-    void onFindTextChange(EditableContent source)
+    void handleFindTextChange(EditableContent source)
     {
         debug (editors)
-            Log.d("onFindTextChange");
+            Log.d("handleFindTextChange");
         updateHighlight();
     }
 
-    void onCaseSensitiveToggling(bool checkValue)
+    void handleCaseSensitiveToggle(bool checkValue)
     {
         updateHighlight();
     }

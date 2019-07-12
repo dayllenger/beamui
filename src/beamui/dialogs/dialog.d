@@ -61,7 +61,7 @@ class Dialog : Panel
     }
 
     /// Signal to pass dialog result
-    Signal!(void delegate(const Action result)) dialogClosed;
+    Signal!(void delegate(const Action result)) onClose;
 
     protected
     {
@@ -104,7 +104,7 @@ class Dialog : Panel
                 res.addChild(new Spacer);
             auto btn = new Button(a);
             (Action a) {
-                btn.clicked ~= { handleAction(a); };
+                btn.onClick ~= { handleAction(a); };
             }(a);
             if (defaultActionIndex == i)
             {
@@ -139,7 +139,7 @@ class Dialog : Panel
             auto _frame = new DialogFrame(this, _cancelButton !is null);
             if (_cancelButton)
             {
-                _frame.closeButtonClicked ~= {
+                _frame.onCloseButtonClick ~= {
                     handleAction(_cancelButton.action);
                 };
             }
@@ -156,11 +156,11 @@ class Dialog : Panel
             _window.mainWidget = this;
             _window.show();
         }
-        onShow();
+        handleShow();
     }
 
     /// Called after window with dialog is shown
-    protected void onShow()
+    protected void handleShow()
     {
         // override to do something useful
         _defaultButton.maybe.setFocus();
@@ -169,9 +169,9 @@ class Dialog : Panel
     /// Notify about dialog result (if action is not null), and then close dialog
     void close(const Action action)
     {
-        if (action && dialogClosed.assigned)
+        if (action && onClose.assigned)
         {
-            dialogClosed(action);
+            onClose(action);
         }
         if (_popup)
             _parentWindow.removePopup(_popup);
@@ -207,7 +207,7 @@ class Dialog : Panel
         return false;
     }
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         if (event.action == KeyAction.keyDown)
         {
@@ -222,7 +222,7 @@ class Dialog : Panel
                 return closeWithCancelAction();
             }
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 }
 

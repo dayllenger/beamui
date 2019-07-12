@@ -29,9 +29,9 @@ import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Current tab is changed handler
-alias tabChangedHandler = void delegate(string newActiveTabID, string previousTabID);
+alias TabChangeHandler = void delegate(string newActiveTabID, string previousTabID);
 /// Tab close button pressed handler
-alias tabClosedHandler = void delegate(string tabID);
+alias TabCloseHandler = void delegate(string tabID);
 
 /// Tab item widget - to show tab header
 class TabItem : Panel
@@ -107,7 +107,7 @@ class TabItem : Panel
     }
 
     /// Signals tab close button click
-    Signal!tabClosedHandler tabClosed;
+    Signal!TabCloseHandler onTabClose;
 
     private
     {
@@ -136,7 +136,7 @@ class TabItem : Panel
         _closeButton = new Button(null, "close");
         _closeButton.id = "CLOSE";
         _closeButton.bindSubItem(this, "close");
-        _closeButton.clicked ~= { tabClosed(id); };
+        _closeButton.onClick ~= { onTabClose(id); };
         this.enableCloseButton = enableCloseButton;
         this.tooltipText = tooltipText;
         addChild(_icon);
@@ -192,11 +192,11 @@ class TabControl : WidgetGroup
     }
 
     /// Signal of tab change (e.g. by clicking on tab header)
-    Signal!tabChangedHandler tabChanged;
+    Signal!TabChangeHandler onTabChange;
     /// Signals tab close button click
-    Signal!tabClosedHandler tabClosed;
+    Signal!TabCloseHandler onTabClose;
     /// Signals more button click
-    Signal!(void delegate()) moreButtonClicked;
+    Signal!(void delegate()) onMoreButtonClick;
     /// Handler for more button popup menu
     Signal!(Menu delegate(Widget)) moreButtonPopupMenuBuilder;
 
@@ -219,7 +219,7 @@ class TabControl : WidgetGroup
         _moreButton = new Button(null, "tab_more");
         _moreButton.id = "MORE";
         _moreButton.bindSubItem(this, "more");
-        _moreButton.mouseEvent ~= &onMouseMoreBtn;
+        _moreButton.onMouseEvent ~= &handleMoreBtnMouse;
         addChild(_moreButton); // first child is always MORE button, the rest corresponds to tab list
     }
 
@@ -294,8 +294,8 @@ class TabControl : WidgetGroup
     /// Add new tab
     void addTab(TabItem item, int index = -1)
     {
-        item.mouseEvent ~= (MouseEvent e) { return onMouseTabBtn(item.id, e); };
-        item.tabClosed ~= &tabClosed.emit;
+        item.onMouseEvent ~= (MouseEvent e) { return handleTabBtnMouse(item.id, e); };
+        item.onTabClose ~= &onTabClose.emit;
         if (index >= 0)
             insertChild(index, item);
         else
@@ -397,10 +397,10 @@ class TabControl : WidgetGroup
                 child(i).state = State.normal;
             }
         }
-        tabChanged(_selectedTabID, previousSelectedTab);
+        onTabChange(_selectedTabID, previousSelectedTab);
     }
 
-    protected bool onMouseTabBtn(string id, MouseEvent event)
+    protected bool handleTabBtnMouse(string id, MouseEvent event)
     {
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
@@ -419,13 +419,13 @@ class TabControl : WidgetGroup
         return true;
     }
 
-    protected bool onMouseMoreBtn(MouseEvent event)
+    protected bool handleMoreBtnMouse(MouseEvent event)
     {
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
             if (handleMorePopupMenu())
                 return true;
-            moreButtonClicked(); // FIXME: emit signal every time?
+            onMoreButtonClick(); // FIXME: emit signal every time?
         }
         return false;
     }
@@ -558,12 +558,12 @@ class TabControl : WidgetGroup
         }
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         const saver = ClipRectSaver(buf, innerBox);
         // draw all items except selected
         int selected = -1;
@@ -577,11 +577,11 @@ class TabControl : WidgetGroup
                 selected = i;
                 continue;
             }
-            item.onDraw(buf);
+            item.draw(buf);
         }
         // draw selected item
         if (selected >= 0)
-            child(selected).onDraw(buf);
+            child(selected).draw(buf);
     }
 }
 
@@ -595,9 +595,10 @@ class TabHost : Panel
         /// ditto
         void tabControl(TabControl newWidget)
         {
+            // TODO
             _tabControl = newWidget;
             if (_tabControl !is null)
-                _tabControl.tabChanged ~= &onTabChanged;
+                _tabControl.onTabChange ~= &handleTabChange;
         }
 
         Visibility hiddenTabsVisibility() const { return _hiddenTabsVisibility; }
@@ -609,7 +610,7 @@ class TabHost : Panel
     }
 
     /// Signal of tab change (e.g. by clicking on tab header)
-    Signal!tabChangedHandler tabChanged;
+    Signal!TabChangeHandler onTabChange;
 
     private TabControl _tabControl;
     private Visibility _hiddenTabsVisibility = Visibility.hidden;
@@ -618,16 +619,16 @@ class TabHost : Panel
     {
         _tabControl = tabControl;
         if (_tabControl !is null)
-            _tabControl.tabChanged ~= &onTabChanged;
+            _tabControl.onTabChange ~= &handleTabChange;
     }
 
-    protected void onTabChanged(string newActiveTabID, string previousTabID)
+    protected void handleTabChange(string newActiveTabID, string previousTabID)
     {
         if (newActiveTabID !is null)
         {
             showChild(newActiveTabID, _hiddenTabsVisibility, true);
         }
-        tabChanged(newActiveTabID, previousTabID);
+        onTabChange(newActiveTabID, previousTabID);
     }
 
     /// Get tab content widget by id
@@ -719,9 +720,9 @@ class TabWidget : Panel
     }
 
     /// Signal of tab change (e.g. by clicking on tab header)
-    Signal!tabChangedHandler tabChanged;
+    Signal!TabChangeHandler onTabChange;
     /// Signal on tab close button
-    Signal!tabClosedHandler tabClosed;
+    Signal!TabCloseHandler onTabClose;
 
     private TabControl _tabControl;
     private TabHost _tabHost;
@@ -730,8 +731,8 @@ class TabWidget : Panel
     this(Align tabAlignment = Align.top)
     {
         _tabControl = new TabControl(tabAlignment);
-        _tabControl.tabChanged ~= &tabChanged.emit;
-        _tabControl.tabClosed ~= &tabClosed.emit;
+        _tabControl.onTabChange ~= &onTabChange.emit;
+        _tabControl.onTabClose ~= &onTabClose.emit;
         _tabHost = new TabHost(_tabControl);
         if (tabAlignment == Align.top)
             add(_tabControl, _tabHost);
@@ -815,7 +816,7 @@ class TabWidget : Panel
 
     private bool _tabNavigationInProgress;
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         if (_tabNavigationInProgress)
         {
@@ -841,7 +842,7 @@ class TabWidget : Panel
                 return true;
             }
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 
     /// Focus selected tab body

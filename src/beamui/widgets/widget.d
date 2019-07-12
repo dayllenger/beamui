@@ -272,23 +272,23 @@ public:
             if ((oldState & State.focused) && !(newState & State.focused))
             {
                 handleFocusChange(false);
-                focusChanged(false);
+                onFocusChange(false);
             }
             else if (!(oldState & State.focused) && (newState & State.focused))
             {
                 handleFocusChange(true, cast(bool)(newState & State.keyboardFocused));
-                focusChanged(true);
+                onFocusChange(true);
             }
             // notify checked changes
             if ((oldState & State.checked) && !(newState & State.checked))
             {
                 handleToggling(false);
-                toggled(false);
+                onToggle(false);
             }
             else if (!(oldState & State.checked) && (newState & State.checked))
             {
                 handleToggling(true);
-                toggled(true);
+                onToggle(true);
             }
         }
     }
@@ -401,7 +401,7 @@ public:
     }
 
     /// Signals when styles are being recomputed. Used for mixing properties in the widget.
-    Listener!(void delegate(Style[] chain)) stylesRecomputed;
+    Listener!(void delegate(Style[] chain)) onStyleUpdate;
 
     /// Computed style of this widget. Allows to query and mutate its properties
     final @property inout(ComputedStyle)* style() inout
@@ -443,8 +443,8 @@ public:
                     // important: we cannot use shared array from `selectStyleChain` func
                     _style.recompute(cachedChain.unsafe_slice);
                 }
-                if (stylesRecomputed.assigned)
-                    stylesRecomputed(cachedChain.unsafe_slice);
+                if (onStyleUpdate.assigned)
+                    onStyleUpdate(cachedChain.unsafe_slice);
             }
         }
     }
@@ -627,11 +627,11 @@ public:
     }
 
     /// Handle theme change: e.g. reload some themed resources
-    void onThemeChanged()
+    void handleThemeChange()
     {
         // default implementation: call recursive for children
         foreach (i; 0 .. childCount)
-            child(i).onThemeChanged();
+            child(i).handleThemeChange();
 
         _needToRecomputeStyle = true;
     }
@@ -1427,19 +1427,19 @@ public:
     // Signals
 
     /// On click event listener
-    Signal!(void delegate()) clicked;
+    Signal!(void delegate()) onClick;
 
     /// Checked state change event listener
-    Signal!(void delegate(bool)) toggled;
+    Signal!(void delegate(bool)) onToggle;
 
     /// Focus state change event listener
-    Signal!(void delegate(bool)) focusChanged;
+    Signal!(void delegate(bool)) onFocusChange;
 
     /// Key event listener, must return true if event is processed by handler
-    Signal!(bool delegate(KeyEvent)) keyEvent;
+    Signal!(bool delegate(KeyEvent)) onKeyEvent;
 
     /// Mouse event listener, must return true if event is processed by handler
-    Signal!(bool delegate(MouseEvent)) mouseEvent;
+    Signal!(bool delegate(MouseEvent)) onMouseEvent;
 
     //===============================================================
     // Events
@@ -1447,7 +1447,7 @@ public:
     /// Called to process click and notify listeners
     protected void handleClick()
     {
-        clicked();
+        onClick();
     }
 
     /// Set new timer to call a delegate after specified interval (for recurred notifications, return true from the handler)
@@ -1473,9 +1473,9 @@ public:
     }
 
     /// Process key event, return true if event is processed
-    bool onKeyEvent(KeyEvent event)
+    bool handleKeyEvent(KeyEvent event)
     {
-        if (keyEvent.assigned && keyEvent(event))
+        if (onKeyEvent.assigned && onKeyEvent(event))
             return true; // processed by external handler
         // handle focus navigation using keys
         if (focused && handleMoveFocusUsingKeys(event))
@@ -1505,12 +1505,12 @@ public:
     }
 
     /// Process mouse event; return true if event is processed by widget.
-    bool onMouseEvent(MouseEvent event)
+    bool handleMouseEvent(MouseEvent event)
     {
-        if (mouseEvent.assigned && mouseEvent(event))
+        if (onMouseEvent.assigned && onMouseEvent(event))
             return true; // processed by external handler
         debug (mouse)
-            Log.fd("onMouseEvent '%s': %s  (%s, %s)", id, event.action, event.x, event.y);
+            Log.fd("mouse event, '%s': %s  (%s, %s)", id, event.action, event.x, event.y);
         // support click
         if (canClick)
         {
@@ -1604,7 +1604,7 @@ public:
     }
 
     /// Handle custom event
-    bool onEvent(CustomEvent event)
+    bool handleEvent(CustomEvent event)
     {
         if (auto runnable = cast(RunnableEvent)event)
         {
@@ -1730,7 +1730,7 @@ public:
         Override this method only when you make completely new algorithm
         and don't intend to call `super.measure()`.
         But if you only need to adjust widget boundaries, e.g. add some width,
-        then override `onMeasure` method.
+        then override `adjustBoundaries` method.
     */
     void measure()
     {
@@ -1738,7 +1738,7 @@ public:
     }
 
     /// Callback to adjust widget boundaries; called after measure and before applying style to them
-    protected void onMeasure(ref Boundaries bs)
+    protected void adjustBoundaries(ref Boundaries bs)
     {
     }
 
@@ -1747,7 +1747,7 @@ public:
     final protected void setBoundaries(Boundaries bs)
     {
         const Size p = padding.size; // updates style
-        onMeasure(bs);
+        adjustBoundaries(bs);
         bs.min.w = max(bs.min.w, _style.minWidth.applyPercent(0));
         bs.min.h = max(bs.min.h, _style.minHeight.applyPercent(0));
         bs.max.w = max(min(bs.max.w + p.w, _style.maxWidth.applyPercent(0)), bs.min.w);
@@ -1842,7 +1842,7 @@ public:
     }
 
     /// Draw widget at its position to a buffer
-    void onDraw(DrawBuf buf)
+    void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
@@ -1876,9 +1876,9 @@ public:
 
         Example:
         ---
-        override void onDraw(DrawBuf buf)
+        override void draw(DrawBuf buf)
         {
-            super.onDraw(buf);
+            super.draw(buf);
             drawAllChildren(buf);
         }
         ---
@@ -1892,7 +1892,7 @@ public:
         const b = _innerBox;
         const saver = ClipRectSaver(buf, b, style.alpha);
         foreach (i; 0 .. count)
-            child(i).onDraw(buf);
+            child(i).draw(buf);
     }
 
     //===============================================================
@@ -2116,7 +2116,7 @@ alias WidgetList = Collection!(Widget, true);
 
     If your widget has subwidgets which do not need to catch mouse and key events, focus, etc,
     you may not use this class. You may inherit directly from the Widget class
-    and add code for subwidgets to destructor, `onThemeChanged`, and `onDraw` (if needed).
+    and add code for subwidgets to destructor, `handleThemeChange`, and `draw` (if needed).
 */
 class WidgetGroup : Widget
 {
@@ -2363,19 +2363,19 @@ class Panel : WidgetGroup
         }
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
 
         if (preparedItems.length > 0)
         {
             const b = _innerBox;
             const saver = ClipRectSaver(buf, b, style.alpha);
             foreach (item; preparedItems.unsafe_slice)
-                item.onDraw(buf);
+                item.draw(buf);
         }
     }
 
@@ -2422,7 +2422,7 @@ struct TextTypingShortcutHelper
         return _text[].idup;
     }
     /// Pass key event here; returns true if search text is updated and you can move selection using it
-    bool onKeyEvent(KeyEvent event)
+    bool handleKeyEvent(KeyEvent event)
     {
         long ts = currentTimeMillis;
         if (_lastUpdateTimeStamp && ts - _lastUpdateTimeStamp > timeoutMillis)
@@ -2457,7 +2457,7 @@ struct TextTypingShortcutHelper
     }
 
     /// Cancel text typing on some mouse events, if necessary
-    void onMouseEvent(MouseEvent event)
+    void handleMouseEvent(MouseEvent event)
     {
         if (event.action == MouseAction.buttonUp || event.action == MouseAction.buttonDown)
             cancel();

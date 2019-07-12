@@ -24,7 +24,7 @@ class ScrollData
             if (_pos != v)
             {
                 _pos = v;
-                changed();
+                onChange();
             }
         }
         /// Scroll length (max `position` + `page`). Always >= 0
@@ -33,7 +33,7 @@ class ScrollData
         int page() const { return _page; }
     }
 
-    Signal!(void delegate()) changed;
+    Signal!(void delegate()) onChange;
 
     private
     {
@@ -53,7 +53,7 @@ class ScrollData
             _range = range;
             _page = page;
             adjustPos(_pos);
-            changed();
+            onChange();
         }
     }
 
@@ -133,7 +133,7 @@ class ScrollBar : WidgetGroup
     }
 
     /// Scroll event listeners
-    Signal!(void delegate(ScrollEvent event)) scrolled;
+    Signal!(void delegate(ScrollEvent event)) onScroll;
 
     /// Jump length on lineUp/lineDown events
     uint lineStep;
@@ -160,7 +160,7 @@ class ScrollBar : WidgetGroup
     {
         isolateStyle();
         _data = data ? data : new ScrollData;
-        _data.changed ~= &onDataChanged;
+        _data.onChange ~= &handleDataChange;
         _orient = orient;
         _btnBack = new Button;
         _btnBack.id = "BACK";
@@ -174,15 +174,15 @@ class ScrollBar : WidgetGroup
         updateDrawables();
         add(_btnBack, _btnForward, _indicator, _pageUp, _pageDown);
         bunch(_btnBack, _btnForward, _indicator, _pageUp, _pageDown).allowsFocus(false);
-        _btnBack.clicked ~= { triggerAction(ScrollAction.lineUp); };
-        _btnForward.clicked ~= { triggerAction(ScrollAction.lineDown); };
-        _pageUp.clicked ~= { triggerAction(ScrollAction.pageUp); };
-        _pageDown.clicked ~= { triggerAction(ScrollAction.pageDown); };
+        _btnBack.onClick ~= { triggerAction(ScrollAction.lineUp); };
+        _btnForward.onClick ~= { triggerAction(ScrollAction.lineDown); };
+        _pageUp.onClick ~= { triggerAction(ScrollAction.pageUp); };
+        _pageDown.onClick ~= { triggerAction(ScrollAction.pageDown); };
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
+        super.handleThemeChange();
         updateDrawables();
     }
 
@@ -216,11 +216,11 @@ class ScrollBar : WidgetGroup
     {
         assert(!insideHandler, "Cannot trigger a scrollbar action inside the event handler");
 
-        if (scrolled.assigned)
+        if (onScroll.assigned)
         {
             auto event = new ScrollEvent(a, _data, pos);
             insideHandler = true;
-            scrolled(event);
+            onScroll(event);
             insideHandler = false;
 
             if (event.amendment == int.min - 1)
@@ -258,12 +258,12 @@ class ScrollBar : WidgetGroup
         return cast(int)delta;
     }
 
-    protected void onIndicatorDragging(int initialValue, int currentValue)
+    protected void handleIndicatorDragging(int initialValue, int currentValue)
     {
         moveTo(currentValue);
     }
 
-    protected void onDataChanged()
+    protected void handleDataChange()
     {
         if (!needLayout)
         {
@@ -272,7 +272,7 @@ class ScrollBar : WidgetGroup
         }
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         if (event.action == MouseAction.wheel)
         {
@@ -281,7 +281,7 @@ class ScrollBar : WidgetGroup
                 triggerAction(delta > 0 ? ScrollAction.lineUp : ScrollAction.lineDown);
             return true;
         }
-        return super.onMouseEvent(event);
+        return super.handleMouseEvent(event);
     }
 
     protected bool calcButtonSizes(int availableSize, ref int spaceBackSize, ref int spaceForwardSize,
@@ -465,14 +465,14 @@ class ScrollBar : WidgetGroup
         layoutButtons();
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         const saver = ClipRectSaver(buf, innerBox, style.alpha);
-        bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).onDraw(buf);
+        bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).draw(buf);
     }
 
     class ScrollIndicator : ImageWidget
@@ -498,7 +498,7 @@ class ScrollBar : WidgetGroup
             allowsHover = true;
         }
 
-        override bool onMouseEvent(MouseEvent event)
+        override bool handleMouseEvent(MouseEvent event)
         {
             if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
             {
@@ -547,7 +547,7 @@ class ScrollBar : WidgetGroup
                 int v;
                 if (space > 0)
                     v = offset * max(_data.range - _data.page, 0) / space;
-                onIndicatorDragging(_dragStartPos, v);
+                handleIndicatorDragging(_dragStartPos, v);
                 return true;
             }
             if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)

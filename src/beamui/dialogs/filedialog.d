@@ -514,7 +514,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         return true;
     }
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         if (event.action == KeyAction.keyDown)
         {
@@ -524,7 +524,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 return true;
             }
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 
     override bool isCustomCell(int col, int row) const
@@ -601,7 +601,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             adapter.add(btn);
         }
         res.ownAdapter = adapter;
-        res.itemClicked ~= (int itemIndex) {
+        res.onItemClick ~= (int itemIndex) {
             openDirectory(_roots[itemIndex].path, null);
             res.selectItem(-1);
         };
@@ -610,7 +610,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
     }
 
     /// File list item activated (double clicked or Enter key pressed)
-    protected void onItemActivated(int index)
+    protected void handleItemActivation(int index)
     {
         DirEntry e = _entries[index];
         if (e.isDir)
@@ -633,7 +633,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
     }
 
     /// File list item selected
-    protected void onItemSelected(int index)
+    protected void handleItemSelection(int index)
     {
         DirEntry e = _entries[index];
         string fname = e.name;
@@ -720,7 +720,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         );
     }
 
-    bool onPathSelected(string path)
+    bool handlePathSelection(string path)
     {
         return openDirectory(path, null);
     }
@@ -814,7 +814,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             add(createButtonsPanel([_action, ACTION_CANCEL], 0, 0));
         }
 
-        _edPath.pathSelected = &onPathSelected;
+        _edPath.onPathSelection = &handlePathSelection;
         if (_flags & FileDialogFlag.selectDirectory)
         {
             _edFilename.visibility = Visibility.gone;
@@ -826,20 +826,20 @@ class FileDialog : Dialog, CustomGridCellAdapter
         _fileList.rowSelect = true;
         _fileList.multiSelect = _allowMultipleFiles;
         _fileList.cellPopupMenuBuilder ~= &getCellPopupMenu;
-        _fileList.headerCellClicked = &onHeaderCellClicked;
+        _fileList.onHeaderCellClick = &handleHeaderCellClick;
 
-        _fileList.keyEvent ~= (KeyEvent event) {
-            if (_shortcutHelper.onKeyEvent(event))
+        _fileList.onKeyEvent ~= (KeyEvent event) {
+            if (_shortcutHelper.handleKeyEvent(event))
                 locateFileInList(_shortcutHelper.text);
             return false;
         };
 
         _fileList.customCellAdapter = this;
-        _fileList.cellActivated = delegate(int col, int row) {
-            onItemActivated(row);
+        _fileList.onActivateCell = delegate(int col, int row) {
+            handleItemActivation(row);
         };
-        _fileList.cellSelected = delegate(int col, int row) {
-            onItemSelected(row);
+        _fileList.onSelectCell = delegate(int col, int row) {
+            handleItemSelection(row);
         };
 
         if (_filters.length)
@@ -849,7 +849,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 filterLabels ~= f.label;
             _cbFilters.items = filterLabels;
             _cbFilters.selectedItemIndex = _filterIndex;
-            _cbFilters.itemSelected ~= (int itemIndex) {
+            _cbFilters.onSelect ~= (int itemIndex) {
                 _filterIndex = itemIndex;
                 reopenDirectory();
             };
@@ -888,9 +888,9 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 FileListSortOrder.timestampDesc, FileListSortOrder.timestamp));
     }
 
-    protected void onHeaderCellClicked(int col, int row)
+    protected void handleHeaderCellClick(int col, int row)
     {
-        debug Log.d("onHeaderCellClicked col=", col, " row=", row);
+        debug Log.d("header cell clicked: col=", col, " row=", row);
         if (row == 0 && col >= 2 && col <= 4)
         {
             // 2=NAME, 3=SIZE, 4=MODIFIED
@@ -898,7 +898,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         }
     }
 
-    override protected void onShow()
+    override protected void handleShow()
     {
         _fileList.setFocus();
     }
@@ -911,11 +911,11 @@ class FileDialog : Dialog, CustomGridCellAdapter
     }
 }
 
-alias onPathSelectionHandler = bool delegate(string path);
+alias PathSelectionHandler = bool delegate(string path);
 
 class FilePathPanelItem : Panel
 {
-    Listener!onPathSelectionHandler pathSelected;
+    Listener!PathSelectionHandler onPathSelection;
 
     private
     {
@@ -932,22 +932,22 @@ class FilePathPanelItem : Panel
         _text.bindSubItem(this, "label");
         _text.allowsHover = true;
         _text.allowsClick = true;
-        _text.clicked ~= &onTextClick;
+        _text.onClick ~= &handleTextClick;
         _button = new Button(null, "scrollbar_btn_right");
         _button.bindSubItem(this, "button");
         _button.allowsFocus = false;
-        _button.clicked ~= &onButtonClick;
+        _button.onClick ~= &handleButtonClick;
         allowsHover = true;
         add(_text, _button);
     }
 
-    private void onTextClick()
+    private void handleTextClick()
     {
-        if (pathSelected.assigned)
-            pathSelected(_path);
+        if (onPathSelection.assigned)
+            onPathSelection(_path);
     }
 
-    private void onButtonClick()
+    private void handleButtonClick()
     {
         // show popup menu with subdirs
         string[] filters;
@@ -971,8 +971,8 @@ class FilePathPanelItem : Panel
                 string fullPath = e.name;
                 string d = baseName(fullPath);
                 menu.addAction(toUTF32(d)).bind(this, {
-                    if (pathSelected.assigned)
-                        pathSelected(fullPath);
+                    if (onPathSelection.assigned)
+                        onPathSelection(fullPath);
                 });
             }();
         }
@@ -983,7 +983,7 @@ class FilePathPanelItem : Panel
 /// Panel with buttons - path segments - for fast navigation to subdirs.
 class FilePathPanelButtons : WidgetGroup
 {
-    Listener!onPathSelectionHandler pathSelected;
+    Listener!PathSelectionHandler onPathSelection;
 
     private string _path;
 
@@ -1000,7 +1000,7 @@ class FilePathPanelButtons : WidgetGroup
         while (true)
         {
             auto item = new FilePathPanelItem(itemPath);
-            item.pathSelected = &onPathSelected;
+            item.onPathSelection = &handlePathSelection;
             addChild(item);
             if (isRoot(itemPath))
                 break;
@@ -1010,9 +1010,9 @@ class FilePathPanelButtons : WidgetGroup
         itemSizes.length = childCount;
     }
 
-    protected bool onPathSelected(string path)
+    protected bool handlePathSelection(string path)
     {
-        return pathSelected.assigned ? pathSelected(path) : false;
+        return onPathSelection.assigned ? onPathSelection(path) : false;
     }
 
     private int[] itemSizes;
@@ -1086,9 +1086,9 @@ class FilePathPanelButtons : WidgetGroup
         }
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
-        super.onDraw(buf);
+        super.draw(buf);
         drawAllChildren(buf);
     }
 }
@@ -1106,7 +1106,7 @@ class FilePathPanel : Panel
         showChild(ID_SEGMENTS);
     }
 
-    Listener!onPathSelectionHandler pathSelected;
+    Listener!PathSelectionHandler onPathSelection;
 
     static const ID_SEGMENTS = "SEGMENTS";
     static const ID_EDITOR = "ED_PATH";
@@ -1124,10 +1124,10 @@ class FilePathPanel : Panel
         _segments.id = ID_SEGMENTS;
         _edPath = new EditLine;
         _edPath.id = ID_EDITOR;
-        _edPath.enterKeyPressed ~= &onEnterKey;
-        _edPath.focusChanged ~= &onEditorFocusChanged;
-        _segments.clicked ~= &onSegmentsClickOutside;
-        _segments.pathSelected = &onPathSelected;
+        _edPath.onEnterKeyPress ~= &handleEnterKey;
+        _edPath.onFocusChange ~= &handleEditorFocusChanged;
+        _segments.onClick ~= &handleSegmentClickOutside;
+        _segments.onPathSelection = &handlePathSelection;
         addChild(_segments);
         addChild(_edPath);
     }
@@ -1137,7 +1137,7 @@ class FilePathPanel : Panel
         _edPath.setDefaultPopupMenu();
     }
 
-    protected void onEditorFocusChanged(bool focused)
+    protected void handleEditorFocusChanged(bool focused)
     {
         if (!focused)
         {
@@ -1146,17 +1146,17 @@ class FilePathPanel : Panel
         }
     }
 
-    protected bool onPathSelected(string path)
+    protected bool handlePathSelection(string path)
     {
-        if (pathSelected.assigned)
+        if (onPathSelection.assigned)
         {
             if (exists(path))
-                return pathSelected(path);
+                return onPathSelection(path);
         }
         return false;
     }
 
-    protected void onSegmentsClickOutside()
+    protected void handleSegmentClickOutside()
     {
         // switch to editor
         _edPath.text = toUTF32(_path);
@@ -1164,11 +1164,11 @@ class FilePathPanel : Panel
         _edPath.setFocus();
     }
 
-    protected bool onEnterKey()
+    protected bool handleEnterKey()
     {
         string fn = buildNormalizedPath(toUTF8(_edPath.text));
         if (exists(fn) && isDir(fn))
-            onPathSelected(fn);
+            handlePathSelection(fn);
         return true;
     }
 }
@@ -1178,9 +1178,9 @@ class FileNameEditLine : Panel
     @property
     {
         /// Handle Enter key press inside line editor
-        ref Signal!(bool delegate()) enterKeyPressed()
+        ref Signal!(bool delegate()) onEnterKeyPress()
         {
-            return _edFileName.enterKeyPressed;
+            return _edFileName.onEnterKeyPress;
         }
 
         uint fileDialogFlags() const { return _fileDialogFlags; }
@@ -1235,9 +1235,9 @@ class FileNameEditLine : Panel
     }
 
     /// Modified state change listener (e.g. content has been saved, or first time modified after save)
-    Signal!(void delegate(bool modified)) modifiedStateChanged;
+    Signal!(void delegate(bool modified)) onModifiedStateChange;
     /// Editor content is changed
-    Signal!(void delegate(EditableContent)) contentChanged;
+    Signal!(void delegate(EditableContent)) onContentChange;
 
     private
     {
@@ -1258,12 +1258,12 @@ class FileNameEditLine : Panel
         _edFileName.style.minWidth = BACKEND_CONSOLE ? 16 : 200;
         _btn = new Button("..."d);
         _btn.bindSubItem(this, "button");
-        _btn.clicked ~= {
+        _btn.onClick ~= {
             auto dlg = new FileDialog(_caption, window, null, _fileDialogFlags);
             foreach (key, value; _filetypeIcons)
                 dlg.filetypeIcons[key] = value;
             dlg.filters = _filters;
-            dlg.dialogClosed ~= (const Action result) {
+            dlg.onClose ~= (const Action result) {
                 if (result is ACTION_OPEN || result is ACTION_OPEN_DIRECTORY)
                 {
                     _edFileName.text = toUTF32((cast(FileDialog)dlg).filename);
@@ -1284,8 +1284,8 @@ class FileNameEditLine : Panel
             }
             dlg.show();
         };
-        _edFileName.contentChanged ~= &contentChanged.emit;
-        _edFileName.modifiedStateChanged ~= &modifiedStateChanged.emit;
+        _edFileName.onContentChange ~= &onContentChange.emit;
+        _edFileName.onModifiedStateChange ~= &onModifiedStateChange.emit;
         add(_edFileName, _btn);
     }
 

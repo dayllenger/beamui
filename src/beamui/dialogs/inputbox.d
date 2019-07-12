@@ -45,7 +45,7 @@ class InputBox : Dialog
         _text = initialText;
         if (handler)
         {
-            dialogClosed ~= (const Action action) {
+            onClose ~= (const Action action) {
                 if (action is ACTION_OK)
                 {
                     handler(_text);
@@ -60,18 +60,18 @@ class InputBox : Dialog
         msg.id = "msg";
         _editor = new EditLine(_text);
         _editor.id = "inputbox_editor";
-        _editor.enterKeyPressed ~= {
+        _editor.onEnterKeyPress ~= {
             closeWithDefaultAction();
             return true;
         };
-        _editor.contentChanged ~= (EditableContent content) { _text = content.text; };
+        _editor.onContentChange ~= (EditableContent content) { _text = content.text; };
         _editor.setDefaultPopupMenu();
         add(msg, _editor, createButtonsPanel(_actions, _defaultButtonIndex, 0));
     }
 
-    override protected void onShow()
+    override protected void handleShow()
     {
-        super.onShow();
+        super.handleShow();
         _editor.selectAll();
         _editor.setFocus();
     }

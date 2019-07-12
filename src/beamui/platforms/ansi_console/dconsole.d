@@ -1017,17 +1017,17 @@ class Console
     }
 
     /// Mouse event signal
-    Listener!(bool delegate(MouseEvent)) mouseEvent;
+    Listener!(bool delegate(MouseEvent)) onMouseEvent;
     /// Keyboard event signal
-    Listener!(bool delegate(KeyEvent)) keyEvent;
+    Listener!(bool delegate(KeyEvent)) onKeyEvent;
     /// Console size changed signal
-    Listener!(bool delegate(int width, int height)) resizeEvent;
+    Listener!(bool delegate(int width, int height)) onResize;
     /// Console input is idle
-    Listener!(bool delegate()) inputIdleEvent;
+    Listener!(bool delegate()) onInputIdle;
 
     protected bool handleKeyEvent(KeyEvent event)
     {
-        return keyEvent(event);
+        return onKeyEvent(event);
     }
 
     protected bool handleMouseEvent(MouseEvent event)
@@ -1053,22 +1053,22 @@ class Console
         event.lbutton = _lbutton;
         event.rbutton = _rbutton;
         event.mbutton = _mbutton;
-        return mouseEvent(event);
+        return onMouseEvent(event);
     }
 
     protected bool handleConsoleResize(int width, int height)
     {
         resize(width, height);
-        if (resizeEvent.assigned)
-            return resizeEvent(width, height);
+        if (onResize.assigned)
+            return onResize(width, height);
         return false;
     }
 
     protected bool handleInputIdle()
     {
         checkResize();
-        if (inputIdleEvent.assigned)
-            return inputIdleEvent();
+        if (onInputIdle.assigned)
+            return onInputIdle();
         return false;
     }
 

@@ -616,23 +616,23 @@ static if (USE_OPENGL)
     /// Custom OpenGL drawing inside a drawable
     class OpenGLDrawable : Drawable
     {
-        OpenGLDrawableDelegate drawHandler;
+        DrawHandler onDraw;
 
-        this(OpenGLDrawableDelegate drawHandler = null)
+        this(DrawHandler drawHandler = null)
         {
-            this.drawHandler = drawHandler;
+            onDraw = drawHandler;
         }
 
-        void onDraw(Rect windowRect, Rect rc)
+        void doDraw(Rect windowRect, Rect rc)
         {
             // either override this method or assign draw handler
-            if (drawHandler)
-                drawHandler(windowRect, rc);
+            if (onDraw)
+                onDraw(windowRect, rc);
         }
 
         override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
         {
-            buf.drawCustomOpenGLScene(Rect(b), &onDraw);
+            buf.drawCustomOpenGLScene(Rect(b), &doDraw);
         }
 
         override @property int width() const

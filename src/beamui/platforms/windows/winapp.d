@@ -232,7 +232,7 @@ static if (USE_OPENGL)
 }
 
 /// Returns true if message is handled, put return value into result
-alias unknownWindowMessageHandler =
+alias UnknownWindowMessageHandler =
     bool delegate(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, ref LRESULT result);
 
 final class Win32Window : Window
@@ -356,14 +356,15 @@ final class Win32Window : Window
         return BoxI(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top);
     }
 
-    override @property void onFilesDropped(void delegate(string[]) handler)
+    override @property void onFileDrop(void delegate(string[]) handler)
     {
         DragAcceptFiles(_hwnd, handler ? TRUE : FALSE);
-        super.onFilesDropped(handler);
+        super.onFileDrop(handler);
     }
 
     /// Custom window message handler
-    Signal!unknownWindowMessageHandler onUnknownWindowMessage;
+    Signal!UnknownWindowMessageHandler onUnknownWindowMessage;
+
     private LRESULT handleUnknownWindowMessage(UINT message, WPARAM wParam, LPARAM lParam)
     {
         if (onUnknownWindowMessage.assigned)
@@ -632,7 +633,7 @@ final class Win32Window : Window
         return h;
     }
 
-    private void onSetCursorType()
+    private void handleSetCursorType()
     {
         HANDLE winCursor = null;
         switch (_cursorType) with (CursorType)
@@ -687,7 +688,7 @@ final class Win32Window : Window
     override protected void setCursorType(CursorType cursorType)
     {
         _cursorType = cursorType;
-        onSetCursorType();
+        handleSetCursorType();
     }
 
     private void updateDPI()
@@ -697,10 +698,10 @@ final class Win32Window : Window
         setDPI(dpi, 1); // TODO
     }
 
-    private void onPaint()
+    private void paint()
     {
         debug (redraw)
-            Log.d("onPaint()");
+            Log.d("paint");
         long paintStart = currentTimeMillis;
         static if (USE_OPENGL)
         {
@@ -738,7 +739,7 @@ final class Win32Window : Window
         _drawbuf.resetClipping();
 
         _drawbuf.fill(backgroundColor);
-        onDraw(_drawbuf);
+        draw(_drawbuf);
         (cast(Win32ColorDrawBuf)_drawbuf).drawTo(hdc, 0, 0);
     }
 
@@ -1036,9 +1037,9 @@ final class Win32Window : Window
         PostMessageW(_hwnd, TIMER_MESSAGE, 0, 0);
     }
 
-    override protected void onTimer()
+    override protected void handleTimer()
     {
-        super.onTimer();
+        super.handleTimer();
     }
 }
 
@@ -1091,9 +1092,9 @@ final class Win32Platform : Platform
         }
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
+        super.handleThemeChange();
         foreach (w; windows)
             w.dispatchThemeChanged();
     }
@@ -1283,7 +1284,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 if (window.width != w || window.height != h)
                 {
                     window.updateDPI(); // TODO: WM_DPICHANGED
-                    window.onResize(w, h);
+                    window.handleResize(w, h);
                     InvalidateRect(hwnd, null, FALSE);
                 }
             }
@@ -1302,14 +1303,14 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         return 1; // processed
     case WM_PAINT:
         if (window)
-            window.onPaint();
+            window.paint();
         return 0; // processed
     case WM_SETCURSOR:
         if (window)
         {
             if (LOWORD(lParam) == HTCLIENT)
             {
-                window.onSetCursorType();
+                window.handleSetCursorType();
                 return 1;
             }
         }
@@ -1403,7 +1404,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         return 1;
     case TIMER_MESSAGE:
         if (window)
-            window.onTimer();
+            window.handleTimer();
         return 1;
     case WM_DROPFILES:
         if (window)

@@ -46,7 +46,7 @@ static if (USE_OPENGL)
 }
 
 /// Custom draw delegate for OpenGL direct drawing
-alias OpenGLDrawableDelegate = void delegate(Rect windowRect, Rect rc);
+alias DrawHandler = void delegate(Rect windowRect, Rect rc);
 
 /// Drawing buffer - image container which allows to perform some drawing operations
 class DrawBuf : RefCountedObject
@@ -1257,7 +1257,7 @@ class DrawBuf : RefCountedObject
     }
 
     /// Draw custom OpenGL scene
-    void drawCustomOpenGLScene(Rect rc, OpenGLDrawableDelegate handler)
+    void drawCustomOpenGLScene(Rect rc, DrawHandler handler)
     {
         // override it for OpenGL draw buffer
         Log.w("drawCustomOpenGLScene is called for non-OpenGL DrawBuf");

@@ -112,10 +112,10 @@ class ConsolePlatform : Platform
 
         _console = new Console;
         _console.batchMode = true;
-        _console.keyEvent = &onConsoleKey;
-        _console.mouseEvent = &onConsoleMouse;
-        _console.resizeEvent = &onConsoleResize;
-        _console.inputIdleEvent = &onInputIdle;
+        _console.onKeyEvent = &handleKey;
+        _console.onMouseEvent = &handleMouse;
+        _console.onResize = &handleResize;
+        _console.onInputIdle = &handleInputIdle;
         _console.init();
         _console.setCursorType(ConsoleCursorType.hidden);
         _drawBuf = new ANSIConsoleDrawBuf(_console);
@@ -149,7 +149,7 @@ class ConsolePlatform : Platform
         return windows.last;
     }
 
-    protected bool onConsoleKey(KeyEvent event)
+    protected bool handleKey(KeyEvent event)
     {
         auto w = activeWindow;
         if (!w)
@@ -162,7 +162,7 @@ class ConsolePlatform : Platform
         return false;
     }
 
-    protected bool onConsoleMouse(MouseEvent event)
+    protected bool handleMouse(MouseEvent event)
     {
         auto w = activeWindow;
         if (!w)
@@ -175,12 +175,12 @@ class ConsolePlatform : Platform
         return false;
     }
 
-    protected bool onConsoleResize(int width, int height)
+    protected bool handleResize(int width, int height)
     {
         drawBuf.resize(width, height);
         foreach (w; windows)
         {
-            w.onResize(width, height);
+            w.handleResize(width, height);
         }
         _needRedraw = true;
         return false;
@@ -201,7 +201,7 @@ class ConsolePlatform : Platform
             if (w.visible)
             {
                 _drawBuf.fillRect(Rect(0, 0, w.width, w.height), w.backgroundColor);
-                w.onDraw(_drawBuf);
+                w.draw(_drawBuf);
                 auto caretRect = w.caretRect;
                 if (w is activeWindow)
                 {
@@ -222,7 +222,7 @@ class ConsolePlatform : Platform
         _needRedraw = false;
     }
 
-    protected bool onInputIdle()
+    protected bool handleInputIdle()
     {
         foreach (w; windows)
         {
@@ -273,7 +273,7 @@ class ConsolePlatform : Platform
         // TODO
     }
 
-    private void onCtrlC()
+    private void handleCtrlC()
     {
         Log.w("Ctrl+C pressed - stopping application");
         if (_console)
@@ -501,7 +501,7 @@ extern (C) void mySignalHandler(int value)
 {
     Log.i("Signal handler - signal = ", value);
     if (auto platform = cast(ConsolePlatform)platform)
-        platform.onCtrlC();
+        platform.handleCtrlC();
 }
 
 extern (C) Platform initPlatform(AppConf conf)

@@ -101,8 +101,8 @@ class MenuItem : WidgetGroup, ActionHolder
         {
             id = "menu-item";
             _action = action;
-            action.changed ~= &updateContent;
-            action.stateChanged ~= &updateState;
+            action.onChange ~= &updateContent;
+            action.onStateChange ~= &updateState;
             allowsClick = true;
             allowsHover = true;
 
@@ -116,8 +116,8 @@ class MenuItem : WidgetGroup, ActionHolder
         eliminate(_submenu);
         if (_action)
         {
-            _action.changed -= &updateContent;
-            _action.stateChanged -= &updateState;
+            _action.onChange -= &updateContent;
+            _action.onStateChange -= &updateState;
         }
     }
 
@@ -252,10 +252,10 @@ class MenuItem : WidgetGroup, ActionHolder
         _height = maxHeight;
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
-        _submenu.maybe.onThemeChanged();
+        super.handleThemeChange();
+        _submenu.maybe.handleThemeChange();
     }
 
     override void measure()
@@ -320,9 +320,9 @@ class MenuItem : WidgetGroup, ActionHolder
         b.x += b.w;
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
-        super.onDraw(buf);
+        super.draw(buf);
         drawAllChildren(buf);
     }
 }
@@ -330,10 +330,10 @@ class MenuItem : WidgetGroup, ActionHolder
 /// Base class for menus (vertical by default)
 class Menu : ListWidget
 {
-    /// Menu item click signal. Silences `itemClicked` signal from base class
-    Signal!(void delegate(MenuItem)) menuItemClicked;
+    /// Menu item click signal. Silences `onItemClick` signal from base class
+    Signal!(void delegate(MenuItem)) onMenuItemClick;
     /// Prepare for opening of submenu, return true if opening is allowed
-    Signal!(bool delegate(Menu)) openingSubmenu;
+    Signal!(bool delegate(Menu)) openingSubmenu; // FIXME
 
     private
     {
@@ -552,18 +552,18 @@ class Menu : ListWidget
     override @property void parent(Widget p)
     {
         // ok, this menu needs to know whether popup is closed
-        // so, when popup sets itself as menu's parent, we add our slot to popupClosed
+        // so, when popup sets itself as menu's parent, we add our slot to onPopupClose
         // and remove it on menu close
         if (auto popup = cast(Popup)p)
         {
             if (auto prev = thisPopup)
-                prev.popupClosed -= &onThisPopupClosed;
-            popup.popupClosed ~= &onThisPopupClosed;
+                prev.onPopupClose -= &handleThisPopupClose;
+            popup.onPopupClose ~= &handleThisPopupClose;
         }
         super.parent = p;
     }
 
-    protected void onThisPopupClosed(bool byEvent)
+    protected void handleThisPopupClose(bool byEvent)
     {
         assert(thisPopup);
         debug (menus)
@@ -594,7 +594,7 @@ class Menu : ListWidget
         }
         visualParentMenu = null;
 
-        thisPopup.popupClosed -= &onThisPopupClosed;
+        thisPopup.onPopupClose -= &handleThisPopupClose;
     }
 
     protected void handleClose()
@@ -623,7 +623,7 @@ class Menu : ListWidget
         super.handleFocusChange(focused);
     }
 
-    override protected void onSelectionChanged(int index, int previouslySelectedItem = -1)
+    override protected void handleSelection(int index, int previouslySelectedItem = -1)
     {
         debug (menus)
             Log.d("Menu: selection changed from ", previouslySelectedItem, " to ", index);
@@ -641,7 +641,7 @@ class Menu : ListWidget
         }
     }
 
-    override protected void onItemClicked(int index)
+    override protected void handleItemClick(int index)
     {
         if (auto item = menuItem(index))
         {
@@ -655,17 +655,17 @@ class Menu : ListWidget
             }
             else
             {
-                onMenuItem(item);
+                handleMenuItemClick(item);
             }
         }
     }
 
     /// Process menu item action in a top level menu
-    protected void onMenuItem(MenuItem item)
+    protected void handleMenuItemClick(MenuItem item)
     {
         if (visualParentMenu)
             // send up
-            visualParentMenu.onMenuItem(item);
+            visualParentMenu.handleMenuItemClick(item);
         else
         {
             if (item.isSeparator)
@@ -676,7 +676,7 @@ class Menu : ListWidget
                 Log.d("Menu: process item ", item.action.label);
 
             // copy stuff we need
-            auto menuItemClickedCopy = menuItemClicked;
+            auto menuItemClickedCopy = onMenuItemClick;
             auto w = window;
             auto a = item.action;
 
@@ -708,7 +708,7 @@ class Menu : ListWidget
     }
 
     /// Menu navigation using keys
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         navigatingUsingKeys = true;
         if (event.action == KeyAction.keyDown && event.key == Key.escape && event.noModifiers)
@@ -722,7 +722,7 @@ class Menu : ListWidget
             {
                 if (event.key == Key.down)
                 {
-                    onItemClicked(selectedItemIndex);
+                    handleItemClick(selectedItemIndex);
                     return true;
                 }
                 if (event.key == Key.up)
@@ -793,18 +793,18 @@ class Menu : ListWidget
                 int index = cast(int)findSubitemByHotkey(ch);
                 if (index >= 0)
                 {
-                    onItemClicked(index);
+                    handleItemClick(index);
                     return true;
                 }
             }
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         navigatingUsingKeys = false;
-        return super.onMouseEvent(event);
+        return super.handleMouseEvent(event);
     }
 
     override void measure()
@@ -855,7 +855,7 @@ class MenuBar : Menu
         super.handleClose();
     }
 
-    override protected void onSelectionChanged(int index, int previouslySelectedItem = -1)
+    override protected void handleSelection(int index, int previouslySelectedItem = -1)
     {
         debug (menus)
             Log.d("MenuBar: selection changed from ", previouslySelectedItem, " to ", index);
@@ -871,7 +871,7 @@ class MenuBar : Menu
         }
     }
 
-    override protected void onItemClicked(int index)
+    override protected void handleItemClick(int index)
     {
         if (!navigatingUsingKeys) // open submenu here by enter/space/down keys only
             return;
@@ -888,14 +888,14 @@ class MenuBar : Menu
             }
             else
             {
-                onMenuItem(item);
+                handleMenuItemClick(item);
             }
         }
     }
 
     private bool _menuToggleState;
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         // handle Alt key
         const bool altPressed = event.alteredBy(KeyMods.alt);
@@ -919,8 +919,8 @@ class MenuBar : Menu
                 if (index != prevIndex)
                 {
                     selectItem(index);
-                    onSelectionChanged(index, prevIndex);
-                    onItemClicked(index);
+                    handleSelection(index, prevIndex);
+                    handleItemClick(index);
                 }
                 return true;
             }
@@ -930,7 +930,7 @@ class MenuBar : Menu
                 {
                     debug (menus)
                         Log.d("found menu item recursive");
-                    onMenuItem(item);
+                    handleMenuItemClick(item);
                     return true;
                 }
                 return false;
@@ -971,6 +971,6 @@ class MenuBar : Menu
                 return true;
             }
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 }

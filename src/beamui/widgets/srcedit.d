@@ -144,9 +144,9 @@ class SourceEdit : EditBox
         return false;
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
+        super.handleThemeChange();
         _leftPaneBgColor = currentTheme.getColor("editor_left_pane_background", Color(0xF4F4F4));
         _leftPaneBgColor2 = currentTheme.getColor("editor_left_pane_background2", Color(0xFFFFFF));
         _leftPaneBgColor3 = currentTheme.getColor("editor_left_pane_background3", Color(0xF8F8F8));
@@ -162,7 +162,7 @@ class SourceEdit : EditBox
         _colorIconError = currentTheme.getColor("editor_left_pane_line_icon_error", Color(0x80FF0000));
     }
 
-    override protected bool onLeftPaneMouseClick(MouseEvent event)
+    override protected bool handleLeftPaneMouseClick(MouseEvent event)
     {
         if (_leftPaneWidth <= 0)
             return false;

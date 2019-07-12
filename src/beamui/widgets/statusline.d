@@ -142,9 +142,9 @@ class StatusLineEditorStatePanel : StatusLineTextPanel
         _text.style.minWidth = sz.w;
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
+        super.handleThemeChange();
         updateSize();
     }
 
@@ -195,8 +195,8 @@ class StatusLine : Panel
         _backgroundOperationPanel.setBackgroundOperationStatus(icon, statusText);
     }
 
-    /// Editor `stateChanged` slot
-    protected void onEditorStateUpdate(Widget source, ref EditorStateInfo editorState)
+    /// Editor `onStateChange` slot
+    protected void handleEditorStateChange(Widget source, ref EditorStateInfo editorState)
     {
         _editorStatePanel.setState(source, editorState);
     }

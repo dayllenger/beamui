@@ -446,13 +446,13 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Callback to handle selection change
-    Listener!(void delegate(int col, int row)) cellSelected;
+    Listener!(void delegate(int col, int row)) onSelectCell;
     /// Callback to handle cell double click or Enter key press
-    Listener!(void delegate(int col, int row)) cellActivated;
+    Listener!(void delegate(int col, int row)) onActivateCell;
     /// Callback for handling of view scroll (top left visible cell change)
-    Listener!(void delegate(int col, int row)) viewScrolled;
+    Listener!(void delegate(int col, int row)) onViewScroll;
     /// Callback for handling header cell click
-    Listener!(void delegate(int col, int row)) headerCellClicked;
+    Listener!(void delegate(int col, int row)) onHeaderCellClick;
 
     private
     {
@@ -896,13 +896,13 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             scrollPos = newpos;
             updateScrollBars();
             invalidate();
-            if (viewScrolled.assigned)
-                viewScrolled(x, y);
+            if (onViewScroll.assigned)
+                onViewScroll(x, y);
         }
         return changed;
     }
 
-    override protected void onHScroll(ScrollEvent event)
+    override protected void handleHScroll(ScrollEvent event)
     {
         event.discard();
         // scroll w/o changing selection
@@ -928,7 +928,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
     }
 
-    override protected void onVScroll(ScrollEvent event)
+    override protected void handleVScroll(ScrollEvent event)
     {
         event.discard();
         // scroll w/o changing selection
@@ -1080,8 +1080,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         invalidate();
         if (makeVisible)
             makeCellVisible(_col, _row);
-        if (cellSelected.assigned)
-            cellSelected(_col - _headerCols, _row - _headerRows);
+        if (onSelectCell.assigned)
+            onSelectCell(_col - _headerCols, _row - _headerRows);
         return true;
     }
 
@@ -1094,7 +1094,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             selectCell(i, j, true);
         }
-        cellActivated(this.col, this.row);
+        onActivateCell(this.col, this.row);
         return true;
     }
 
@@ -1227,7 +1227,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         ACTION_SELECT_DOCUMENT_BEGIN.bind(this, &selectDocumentBegin);
         ACTION_SELECT_DOCUMENT_END.bind(this, &selectDocumentEnd);
 
-        ACTION_ENTER.bind(this, { cellActivated(col, row); });
+        ACTION_ENTER.bind(this, { onActivateCell(col, row); });
         ACTION_SELECT_ALL.bind(this, &selectAll);
     }
 
@@ -1561,7 +1561,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     // Events
 
     /// Grid navigation using keys
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         /+
         if (_rowSelect)
@@ -1641,10 +1641,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 return true;
             }
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         if (visibility != Visibility.visible)
             return false;
@@ -1717,7 +1717,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             if (cellFound && !normalCell)
             {
-                headerCellClicked(c, r);
+                onHeaderCellClick(c, r);
             }
         }
         if (event.action == MouseAction.move && event.alteredByButton(MouseButton.left))
@@ -1744,7 +1744,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 scrollBy(0, -cast(int)event.wheelDelta);
             return true;
         }
-        return super.onMouseEvent(event);
+        return super.handleMouseEvent(event);
     }
 
     //===============================================================
@@ -1775,7 +1775,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         requestLayout();
     }
 
-    override protected void onMeasure(ref Boundaries bs)
+    override protected void adjustBoundaries(ref Boundaries bs)
     {
         if (_cols == 0 || _rows == 0)
         {
@@ -2019,7 +2019,7 @@ class StringGridWidget : StringGridWidgetBase
 
     this()
     {
-        onThemeChanged();
+        handleThemeChange();
     }
 
     /// Get cell text
@@ -2221,9 +2221,9 @@ class StringGridWidget : StringGridWidgetBase
         }
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
+        super.handleThemeChange();
         _selectionColor = currentTheme.getColor("grid_selection", Color(0x804040FF));
         _selectionColorRowSelect = currentTheme.getColor("grid_selection_row", Color(0xC0A0B0FF));
         _fixedCellBackgroundColor = currentTheme.getColor("grid_cell_background_fixed", Color(0xC0E0E0E0));

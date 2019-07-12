@@ -39,7 +39,7 @@ class ProgressData
             if (_progress != value)
             {
                 _progress = value;
-                changed();
+                onChange();
             }
         }
         /// Returns true if progress bar is in indeterminate state
@@ -49,7 +49,7 @@ class ProgressData
         }
     }
 
-    Signal!(void delegate()) changed;
+    Signal!(void delegate()) onChange;
 
     private int _progress = PROGRESS_INDETERMINATE;
 
@@ -98,7 +98,7 @@ class ProgressBar : Widget
     this(int progress = PROGRESS_INDETERMINATE)
     {
         _data = new ProgressData(progress);
-        _data.changed ~= &invalidate;
+        _data.onChange ~= &invalidate;
     }
 
     protected void scheduleAnimation()
@@ -125,7 +125,7 @@ class ProgressBar : Widget
                     elapsed = clamp(ts - _lastAnimationTs, 0, 5000);
                 }
                 _lastAnimationTs = ts;
-                onAnimationTimer(elapsed);
+                handleAnimationTimer(elapsed);
                 return _animationInterval != 0;
             });
         invalidate();
@@ -142,7 +142,7 @@ class ProgressBar : Widget
     }
 
     /// Called on animation timer
-    protected void onAnimationTimer(long millisElapsed)
+    protected void handleAnimationTimer(long millisElapsed)
     {
         _animationPhase += millisElapsed;
         invalidate();
@@ -166,12 +166,12 @@ class ProgressBar : Widget
         setBoundaries(bs);
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         const b = innerBox;
         DrawableRef animDrawable;
         if (_data.progress >= 0)

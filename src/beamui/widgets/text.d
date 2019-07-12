@@ -96,12 +96,12 @@ class Label : Widget
         setBoundaries(bs);
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         Box b = innerBox;
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
@@ -235,12 +235,12 @@ class ShortLabel : Widget
         setBoundaries(bs);
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         Box b = innerBox;
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
@@ -365,12 +365,12 @@ class MultilineLabel : Widget
         textobj.wrap(w);
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         Box b = innerBox;
         auto saver = ClipRectSaver(buf, b, style.alpha);
 

@@ -47,7 +47,7 @@ class MessageBox : Dialog
         _actions = buttons;
         _defaultButtonIndex = defaultButtonIndex;
         if (handler)
-            dialogClosed ~= handler;
+            onClose ~= handler;
     }
 
     override void initialize()

@@ -40,7 +40,7 @@ interface ListAdapter
     ListAdapter disconnect(void delegate() handler);
 
     /// Called when theme is changed
-    void onThemeChanged();
+    void handleThemeChange();
 
     /// Returns true to receive mouse events
     @property bool wantMouseEvents();
@@ -52,17 +52,17 @@ interface ListAdapter
 class ListAdapterBase : ListAdapter
 {
     /// Handle items change
-    private Signal!(void delegate()) adapterChanged;
+    private Signal!(void delegate()) onAdapterChange;
 
     override ListAdapter connect(void delegate() handler)
     {
-        adapterChanged.connect(handler);
+        onAdapterChange.connect(handler);
         return this;
     }
 
     override ListAdapter disconnect(void delegate() handler)
     {
-        adapterChanged.disconnect(handler);
+        onAdapterChange.disconnect(handler);
         return this;
     }
 
@@ -111,11 +111,11 @@ class ListAdapterBase : ListAdapter
     /// Notify listeners about list items changes
     void updateViews()
     {
-        adapterChanged();
+        onAdapterChange();
     }
 
     /// Called when theme is changed
-    void onThemeChanged()
+    void handleThemeChange()
     {
     }
 
@@ -185,10 +185,10 @@ class WidgetListAdapter : ListAdapterBase
         updateViews();
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
         foreach (w; _widgets)
-            w.onThemeChanged();
+            w.handleThemeChange();
     }
 
     ~this()
@@ -389,9 +389,9 @@ class StringListAdapter : StringListAdapterBase
         return _widget;
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        _widget.maybe.onThemeChanged();
+        _widget.maybe.handleThemeChange();
     }
 
     override State setItemState(int index, State flags)
@@ -472,9 +472,9 @@ class IconStringListAdapter : StringListAdapterBase
         return _widget;
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        _widget.maybe.onThemeChanged();
+        _widget.maybe.handleThemeChange();
     }
 
     override State setItemState(int index, State flags)
@@ -530,26 +530,26 @@ class ListWidget : WidgetGroup
         {
             if (_adapter is adapter)
                 return; // no changes
-            _adapter.maybe.disconnect(&onAdapterChange);
+            _adapter.maybe.disconnect(&handleAdapterChange);
             if (_adapter !is null && _ownAdapter)
                 destroy(_adapter);
             _adapter = adapter;
-            _adapter.maybe.connect(&onAdapterChange);
+            _adapter.maybe.connect(&handleAdapterChange);
             _ownAdapter = false;
-            onAdapterChange();
+            handleAdapterChange();
         }
         /// Set adapter, which will be owned by list (destroy will be called for adapter on widget destroy)
         void ownAdapter(ListAdapter adapter)
         {
             if (_adapter is adapter)
                 return; // no changes
-            _adapter.maybe.disconnect(&onAdapterChange);
+            _adapter.maybe.disconnect(&handleAdapterChange);
             if (_adapter !is null && _ownAdapter)
                 destroy(_adapter);
             _adapter = adapter;
-            _adapter.maybe.connect(&onAdapterChange);
+            _adapter.maybe.connect(&handleAdapterChange);
             _ownAdapter = true;
-            onAdapterChange();
+            handleAdapterChange();
         }
 
         /// Returns number of widgets in list
@@ -578,9 +578,9 @@ class ListWidget : WidgetGroup
     }
 
     /// Handle selection change
-    Signal!(void delegate(int)) itemSelected;
+    Signal!(void delegate(int)) onSelect;
     /// Handle item click / activation (e.g. Space or Enter key pressed and mouse double clicked)
-    Signal!(void delegate(int)) itemClicked;
+    Signal!(void delegate(int)) onItemClick;
 
     /// Policy for `measure`: when true, it considers items' total size
     bool sumItemSizes;
@@ -603,7 +603,7 @@ class ListWidget : WidgetGroup
         Orientation _orientation = Orientation.vertical;
         /// When true, mouse hover selects underlying item
         bool _selectOnHover;
-        /// If true, generate itemClicked on mouse down instead mouse up event
+        /// If true, generate `onItemClick` on mouse down instead mouse up event
         bool _clickOnButtonDown;
 
         ListAdapter _adapter;
@@ -623,7 +623,7 @@ class ListWidget : WidgetGroup
 
     ~this()
     {
-        _adapter.maybe.disconnect(&onAdapterChange);
+        _adapter.maybe.disconnect(&handleAdapterChange);
         debug (lists)
             Log.d("Destroying List ", _id);
         if (_adapter !is null && _ownAdapter)
@@ -690,7 +690,7 @@ class ListWidget : WidgetGroup
     }
 
     /// Item list has changed
-    protected void onAdapterChange()
+    protected void handleAdapterChange()
     {
         needToRecalculateSize = true;
         needToRecalculateItemSizes = true;
@@ -698,15 +698,15 @@ class ListWidget : WidgetGroup
     }
 
     /// Override to handle change of selection
-    protected void onSelectionChanged(int index, int previouslySelectedItem = -1)
+    protected void handleSelection(int index, int previouslySelectedItem = -1)
     {
-        itemSelected(index);
+        onSelect(index);
     }
 
     /// Override to handle mouse up on item
-    protected void onItemClicked(int index)
+    protected void handleItemClick(int index)
     {
-        itemClicked(index);
+        onItemClick(index);
     }
 
     override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
@@ -794,7 +794,7 @@ class ListWidget : WidgetGroup
             {
                 if (selectItem(newIndex))
                 {
-                    onSelectionChanged(_selectedItemIndex, index);
+                    handleSelection(_selectedItemIndex, index);
                     return true;
                 }
                 index = newIndex;
@@ -847,20 +847,20 @@ class ListWidget : WidgetGroup
         return true;
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
-        _scrollbar.onThemeChanged();
+        super.handleThemeChange();
+        _scrollbar.handleThemeChange();
         foreach (i; 0 .. itemCount)
         {
             Widget w = itemWidget(i);
-            w.onThemeChanged();
+            w.handleThemeChange();
         }
-        _adapter.maybe.onThemeChanged();
+        _adapter.maybe.handleThemeChange();
     }
 
     /// List navigation using keys
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         if (itemCount == 0)
             return false;
@@ -916,18 +916,18 @@ class ListWidget : WidgetGroup
             {
                 if (itemEnabled(_selectedItemIndex))
                 {
-                    onItemClicked(_selectedItemIndex);
+                    handleItemClick(_selectedItemIndex);
                 }
             }
             return true;
         }
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         debug (lists)
-            Log.d("onMouseEvent ", id, " ", event.action, "  (", event.x, ",", event.y, ")");
+            Log.d("mouse event: ", id, " ", event.action, "  (", event.x, ",", event.y, ")");
         if (event.action == MouseAction.leave || event.action == MouseAction.cancel)
         {
             setHoverItem(-1);
@@ -938,7 +938,7 @@ class ListWidget : WidgetGroup
         {
             if (_needScrollbar) // visible
             {
-                return _scrollbar.onMouseEvent(event);
+                return _scrollbar.handleMouseEvent(event);
             }
             else
             {
@@ -956,7 +956,7 @@ class ListWidget : WidgetGroup
             return true; // layout not yet called
 
         const b = innerBox;
-        // same as in onDraw
+        // same as in `draw()`
         const bool vert = _orientation == Orientation.vertical;
         const int scrollOffset = scrollPosition;
         const int start = findViewportIndex();
@@ -980,7 +980,7 @@ class ListWidget : WidgetGroup
                         {
                             itemWidget.scheduleTooltip(200);
                         }
-                        //itemWidget.onMouseEvent(event);
+                        //itemWidget.handleMouseEvent(event);
                         itemWidget.parent = oldParent;
                     }
                 }
@@ -995,7 +995,7 @@ class ListWidget : WidgetGroup
                         int prevSelection = _selectedItemIndex;
                         selectItem(i);
                         setHoverItem(-1);
-                        onSelectionChanged(_selectedItemIndex, prevSelection);
+                        handleSelection(_selectedItemIndex, prevSelection);
                     }
                 }
                 else
@@ -1010,7 +1010,7 @@ class ListWidget : WidgetGroup
                     {
                         if (itemEnabled(i))
                         {
-                            onItemClicked(i);
+                            handleItemClick(i);
                             if (_clickOnButtonDown)
                                 event.doNotTrackButtonDown = true;
                         }
@@ -1216,18 +1216,18 @@ class ListWidget : WidgetGroup
         }
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         const b = innerBox;
         const saver = ClipRectSaver(buf, b, style.alpha);
 
         // draw scrollbar
         if (_needScrollbar)
-            _scrollbar.onDraw(buf);
+            _scrollbar.draw(buf);
 
         if (itemCount == 0)
             return;
@@ -1249,7 +1249,7 @@ class ListWidget : WidgetGroup
                 if (w is null || w.visibility != Visibility.visible)
                     continue;
                 w.layout(ib);
-                w.onDraw(buf);
+                w.draw(buf);
                 started = true;
             }
             else if (started)
@@ -1366,7 +1366,7 @@ class StringListWidget : ListWidget
         ownAdapter = new StringListAdapter(items);
     }
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         if (itemCount == 0)
             return false;
@@ -1393,7 +1393,7 @@ class StringListWidget : ListWidget
             }
         }
 
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 
     private bool selectClosestMatch(const dchar[] term)
@@ -1444,7 +1444,7 @@ class StringListWidget : ListWidget
         if (indices.length > 0)
         {
             selectItem(indices[0]);
-            itemSelected(indices[0]);
+            onSelect(indices[0]);
             return true;
         }
 

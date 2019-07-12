@@ -220,7 +220,7 @@ final class SDLWindow : Window
         int w = 0;
         int h = 0;
         SDL_GetWindowSize(_win, &w, &h);
-        onResize(w, h);
+        handleResize(w, h);
     }
 
     override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
@@ -579,7 +579,7 @@ final class SDLWindow : Window
                 _drawbuf.resize(pw, ph);
             _drawbuf.fill(c);
 
-            onDraw(_drawbuf);
+            draw(_drawbuf);
 
             SDL_Rect rect;
             rect.w = _drawbuf.width;
@@ -964,9 +964,9 @@ final class SDLWindow : Window
         SDL_PushEvent(&sdlevent);
     }
 
-    override protected void onTimer()
+    override protected void handleTimer()
     {
-        super.onTimer();
+        super.handleTimer();
     }
 }
 
@@ -1010,9 +1010,9 @@ final class SDLPlatform : Platform
         }
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
+        super.handleThemeChange();
         foreach (w; windows)
             w.dispatchThemeChanged();
     }
@@ -1288,7 +1288,7 @@ final class SDLPlatform : Platform
                 }
                 else if (event.type == TIMER_EVENT_ID)
                 {
-                    w.onTimer();
+                    w.handleTimer();
                 }
                 else if (event.type == WINDOW_CLOSE_EVENT_ID)
                 {

@@ -413,10 +413,10 @@ class EditOperation : UndoOperation
 }
 
 /// Editable Content change listener
-alias onContentChangeHandler = void delegate(EditOperation operation,
+alias ContentChangeHandler = void delegate(EditOperation operation,
         ref TextRange rangeBefore, ref TextRange rangeAfter, Object source);
 
-alias onEditableContentMarksChangeHandler = void delegate(LineIcon[] movedMarks, LineIcon[] removedMarks);
+alias MarksChangeHandler = void delegate(LineIcon[] movedMarks, LineIcon[] removedMarks);
 
 /// TokenCategory holder
 alias TokenProp = ubyte;
@@ -617,9 +617,9 @@ class EditableContent
     bool smartIndentsAfterPaste;
 
     /// Listeners for edit operations
-    Signal!onContentChangeHandler contentChanged;
+    Signal!ContentChangeHandler onContentChange;
     /// Listeners for mark changes after edit operation
-    Signal!onEditableContentMarksChangeHandler marksChanged;
+    Signal!MarksChangeHandler onMarksChange;
 
     private
     {
@@ -1106,12 +1106,12 @@ class EditableContent
         LineIcon[] removed;
         if (_lineIcons.updateLinePositions(rangeBefore, rangeAfter, moved, removed))
         {
-            if (marksChanged.assigned)
-                marksChanged(moved, removed);
+            if (onMarksChange.assigned)
+                onMarksChange(moved, removed);
         }
         // call listeners
-        if (contentChanged.assigned)
-            contentChanged(op, rangeBefore, rangeAfter, source);
+        if (onContentChange.assigned)
+            onContentChange(op, rangeBefore, rangeAfter, source);
     }
 
     /// Returns edit marks for specified range

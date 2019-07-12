@@ -63,12 +63,12 @@ class ImageWidget : Widget
         setBoundaries(Boundaries(sz, sz));
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         const saver = ClipRectSaver(buf, box, style.alpha);
         DrawableRef img = _drawable;
         if (!img.isNull)
@@ -138,14 +138,14 @@ class Button : Panel, ActionHolder
         {
             if (_action)
             {
-                _action.changed -= &updateContent;
-                _action.stateChanged -= &updateState;
+                _action.onChange -= &updateContent;
+                _action.onStateChange -= &updateState;
             }
             _action = a;
             if (a)
             {
-                a.changed ~= &updateContent;
-                a.stateChanged ~= &updateState;
+                a.onChange ~= &updateContent;
+                a.onStateChange ~= &updateState;
                 updateContent();
                 updateState();
             }
@@ -210,8 +210,8 @@ class Button : Panel, ActionHolder
     {
         if (_action)
         {
-            _action.changed -= &updateContent;
-            _action.stateChanged -= &updateState;
+            _action.onChange -= &updateContent;
+            _action.onStateChange -= &updateState;
         }
     }
 
@@ -281,7 +281,7 @@ class SwitchButton : Widget
         setBoundaries(Boundaries(sz, sz, sz));
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
@@ -324,7 +324,7 @@ class CheckBox : Panel
     override protected void handleClick()
     {
         checked = !checked;
-        clicked();
+        onClick();
     }
 }
 
@@ -339,7 +339,7 @@ class RadioButton : CheckBox
     override protected void handleClick()
     {
         checked = true;
-        clicked();
+        onClick();
     }
 
     override protected void handleToggling(bool checked)
@@ -373,23 +373,23 @@ class RadioButton : CheckBox
     }
 }
 
-/// Canvas widget - draw arbitrary graphics on it either by overriding of `doDraw()` or by setting `drawCalled`
+/// Canvas widget - draw arbitrary graphics on it either by overriding of `doDraw()` or by setting `onDraw`
 class CanvasWidget : Widget
 {
-    Listener!(void delegate(DrawBuf buf, Box area)) drawCalled;
+    Listener!(void delegate(DrawBuf buf, Box area)) onDraw;
 
     void doDraw(DrawBuf buf, Box area)
     {
-        if (drawCalled.assigned)
-            drawCalled(buf, area);
+        if (onDraw.assigned)
+            onDraw(buf, area);
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        super.onDraw(buf);
+        super.draw(buf);
         const saver = ClipRectSaver(buf, box, style.alpha);
         doDraw(buf, innerBox);
     }

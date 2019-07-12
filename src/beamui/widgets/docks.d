@@ -72,13 +72,13 @@ struct DockSpace
             break;
         }
         _resizer.visibility = Visibility.gone;
-        _resizer.resized ~= &onResize;
+        _resizer.onResize ~= &handleResize;
         return _resizer;
     }
 
     private int _dragStartSpace;
 
-    protected void onResize(ResizerEventType event, int dragDelta)
+    protected void handleResize(ResizerEventType event, int dragDelta)
     {
         if (!_space)
             return;
@@ -315,9 +315,9 @@ class DockHost : WidgetGroup
         _bodyWidget.maybe.layout(inner.shrinked(sp));
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
-        super.onDraw(buf);
+        super.draw(buf);
         drawAllChildren(buf);
     }
 }

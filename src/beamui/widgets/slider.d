@@ -7,7 +7,7 @@ auto slider = new Slider(Orientation.horizontal);
 // slider values are stored inside `.data`
 slider.data.value = 0;
 slider.data.setRange(-50, 50);
-slider.scrolled ~= (SliderEvent event) {
+slider.onScroll ~= (SliderEvent event) {
     if (event.action == SliderAction.moved)
         Log.d(event.value);
 };
@@ -38,7 +38,7 @@ class SliderDataBase
         double range() const { return _maxValue - _minValue; }
     }
 
-    Signal!(void delegate()) changed;
+    Signal!(void delegate()) onChanged;
 
     private
     {
@@ -65,7 +65,7 @@ class SliderDataBase
             _maxValue = max;
             _step = step;
             adjustValue();
-            changed();
+            onChanged();
         }
     }
 
@@ -86,7 +86,7 @@ class SliderData : SliderDataBase
             if (_value != v)
             {
                 _value = v;
-                changed();
+                onChanged();
             }
         }
     }
@@ -127,7 +127,7 @@ class RangeSliderData : SliderDataBase
             if (_first != v)
             {
                 _first = v;
-                changed();
+                onChanged();
             }
         }
         /// The second value. Setting this value won't adjust another one
@@ -139,7 +139,7 @@ class RangeSliderData : SliderDataBase
             if (_second != v)
             {
                 _second = v;
-                changed();
+                onChanged();
             }
         }
         /// Difference between `second` and `first`. Always >= 0
@@ -221,8 +221,6 @@ final class SliderEvent
     }
 }
 
-alias onSlideHandler = void delegate(SliderEvent);
-
 /// Base class for sliders
 abstract class AbstractSlider : WidgetGroup
 {
@@ -268,7 +266,7 @@ abstract class AbstractSlider : WidgetGroup
     this(Orientation orient, scope SliderDataBase data)
     {
         assert(data);
-        data.changed ~= &onDataChanged;
+        data.onChanged ~= &handleDataChange;
         isolateStyle();
         _orient = orient;
         setAttribute(orient == Orientation.horizontal ? "horizontal" : "vertical");
@@ -305,7 +303,7 @@ abstract class AbstractSlider : WidgetGroup
         }
     }
 
-    protected void onDataChanged()
+    protected void handleDataChange()
     {
         if (!needLayout)
         {
@@ -390,7 +388,7 @@ abstract class AbstractSlider : WidgetGroup
             return space / 2;
     }
 
-    override void onDraw(DrawBuf buf)
+    override void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
@@ -413,8 +411,8 @@ abstract class AbstractSlider : WidgetGroup
         }
         bg.drawTo(buf, b);
 
-        _rangeBefore.onDraw(buf);
-        _rangeAfter.onDraw(buf);
+        _rangeBefore.draw(buf);
+        _rangeAfter.draw(buf);
         drawInner(buf);
 
         if (state & State.focused)
@@ -428,7 +426,7 @@ abstract class AbstractSlider : WidgetGroup
     class SliderHandle : ImageWidget
     {
         Listener!(void delegate(SliderAction)) onAction;
-        Listener!(void delegate(double)) dragging;
+        Listener!(void delegate(double)) onDragging;
 
         private
         {
@@ -453,10 +451,10 @@ abstract class AbstractSlider : WidgetGroup
             _span = span;
         }
 
-        override bool onKeyEvent(KeyEvent event)
+        override bool handleKeyEvent(KeyEvent event)
         {
             if (event.action != KeyAction.keyDown)
-                return super.onKeyEvent(event);
+                return super.handleKeyEvent(event);
 
             if (event.key == Key.left || event.key == Key.down)
             {
@@ -488,10 +486,10 @@ abstract class AbstractSlider : WidgetGroup
                 onAction(SliderAction.moveToMax);
                 return true;
             }
-            return super.onKeyEvent(event);
+            return super.handleKeyEvent(event);
         }
 
-        override bool onMouseEvent(MouseEvent event)
+        override bool handleMouseEvent(MouseEvent event)
         {
             if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
             {
@@ -536,7 +534,7 @@ abstract class AbstractSlider : WidgetGroup
                 double v = data.minValue;
                 if (_span > 0)
                     v += offset * data.range / _span;
-                dragging(v);
+                onDragging(v);
                 return true;
             }
             if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
@@ -604,7 +602,7 @@ class Slider : AbstractSlider
     override @property inout(SliderData) data() inout { return _data; }
 
     /// Slider event listeners
-    Signal!onSlideHandler scrolled;
+    Signal!(void delegate(SliderEvent)) onScroll;
 
     private
     {
@@ -618,17 +616,17 @@ class Slider : AbstractSlider
             data = new SliderData;
         super(orient, data);
         _data = data;
-        _rangeBefore.clicked ~= {
+        _rangeBefore.onClick ~= {
             _handle.setFocus();
             triggerAction(SliderAction.decPage);
         };
-        _rangeAfter.clicked ~= {
+        _rangeAfter.onClick ~= {
             _handle.setFocus();
             triggerAction(SliderAction.incPage);
         };
         _handle = new SliderHandle;
         _handle.onAction = &triggerAction;
-        _handle.dragging = &onHandleDragging;
+        _handle.onDragging = &handleDragging;
         addChild(_handle);
     }
 
@@ -650,11 +648,11 @@ class Slider : AbstractSlider
     {
         assert(!insideHandler, "Cannot trigger a slider action inside the event handler");
 
-        if (scrolled.assigned)
+        if (onScroll.assigned)
         {
             auto event = new SliderEvent(a, _data, v);
             insideHandler = true;
-            scrolled(event);
+            onScroll(event);
             insideHandler = false;
             if (isFinite(event.amendment))
             {
@@ -665,12 +663,12 @@ class Slider : AbstractSlider
         _data.value = v;
     }
 
-    protected void onHandleDragging(double computedValue)
+    protected void handleDragging(double computedValue)
     {
         moveTo(computedValue);
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         if (event.action == MouseAction.wheel)
         {
@@ -679,7 +677,7 @@ class Slider : AbstractSlider
                 triggerAction(delta > 0 ? SliderAction.increase : SliderAction.decrease);
             return true;
         }
-        return super.onMouseEvent(event);
+        return super.handleMouseEvent(event);
     }
 
     private int handleSize;
@@ -723,7 +721,7 @@ class Slider : AbstractSlider
 
     override protected void drawInner(DrawBuf buf)
     {
-        _handle.onDraw(buf);
+        _handle.draw(buf);
     }
 }
 
@@ -733,9 +731,9 @@ class RangeSlider : AbstractSlider
     override @property inout(RangeSliderData) data() inout { return _data; }
 
     /// The first handle event listeners
-    Signal!onSlideHandler firstScrolled;
+    Signal!(void delegate(SliderEvent)) onScroll1;
     /// The second handle event listeners
-    Signal!onSlideHandler secondScrolled;
+    Signal!(void delegate(SliderEvent)) onScroll2;
 
     private
     {
@@ -751,11 +749,11 @@ class RangeSlider : AbstractSlider
             data = new RangeSliderData;
         super(orient, data);
         _data = data;
-        _rangeBefore.clicked ~= {
+        _rangeBefore.onClick ~= {
             _1stHandle.setFocus();
             triggerActionOnFirst(SliderAction.decPage);
         };
-        _rangeAfter.clicked ~= {
+        _rangeAfter.onClick ~= {
             _2ndHandle.setFocus();
             triggerActionOnSecond(SliderAction.incPage);
         };
@@ -763,8 +761,8 @@ class RangeSlider : AbstractSlider
         _2ndHandle = new SliderHandle;
         _1stHandle.onAction = &triggerActionOnFirst;
         _2ndHandle.onAction = &triggerActionOnSecond;
-        _1stHandle.dragging = &onHandleDragging1;
-        _2ndHandle.dragging = &onHandleDragging2;
+        _1stHandle.onDragging = &handleDragging1;
+        _2ndHandle.onDragging = &handleDragging2;
         _rangeBetween = new SliderBar;
         _rangeBetween.bindSubItem(this, "range-between");
         addChild(_1stHandle);
@@ -804,11 +802,11 @@ class RangeSlider : AbstractSlider
     {
         assert(!insideHandler, "Cannot trigger a slider action inside the event handler");
 
-        if (firstScrolled.assigned)
+        if (onScroll1.assigned)
         {
             auto event = new SliderEvent(a, _data, v);
             insideHandler = true;
-            firstScrolled(event);
+            onScroll1(event);
             insideHandler = false;
             if (isFinite(event.amendment))
             {
@@ -823,11 +821,11 @@ class RangeSlider : AbstractSlider
     {
         assert(!insideHandler, "Cannot trigger a slider action inside the event handler");
 
-        if (secondScrolled.assigned)
+        if (onScroll2.assigned)
         {
             auto event = new SliderEvent(a, _data, v);
             insideHandler = true;
-            secondScrolled(event);
+            onScroll2(event);
             insideHandler = false;
             if (isFinite(event.amendment))
             {
@@ -838,17 +836,17 @@ class RangeSlider : AbstractSlider
         _data.second = v;
     }
 
-    protected void onHandleDragging1(double computedValue)
+    protected void handleDragging1(double computedValue)
     {
         moveFirstTo(computedValue);
     }
 
-    protected void onHandleDragging2(double computedValue)
+    protected void handleDragging2(double computedValue)
     {
         moveSecondTo(computedValue);
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         if (event.action == MouseAction.wheel)
         {
@@ -875,7 +873,7 @@ class RangeSlider : AbstractSlider
             }
             return true;
         }
-        return super.onMouseEvent(event);
+        return super.handleMouseEvent(event);
     }
 
     private int[2] handleSizes;
@@ -963,8 +961,8 @@ class RangeSlider : AbstractSlider
 
     override protected void drawInner(DrawBuf buf)
     {
-        _rangeBetween.onDraw(buf);
-        _1stHandle.onDraw(buf);
-        _2ndHandle.onDraw(buf);
+        _rangeBetween.draw(buf);
+        _1stHandle.draw(buf);
+        _2ndHandle.draw(buf);
     }
 }

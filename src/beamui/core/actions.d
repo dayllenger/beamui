@@ -264,7 +264,7 @@ final class Action
         void label(dstring text)
         {
             _label = text;
-            changed();
+            onChange();
         }
 
         /// Icon resource id
@@ -273,7 +273,7 @@ final class Action
         void iconID(string id)
         {
             _iconID = id;
-            changed();
+            onChange();
         }
 
         /// Array of shortcuts
@@ -284,7 +284,7 @@ final class Action
             shortcutMap.remove(_shortcuts);
             _shortcuts = ss;
             shortcutMap.add(this);
-            changed();
+            onChange();
         }
         /// Returns text description for the first shortcut of action; `null` if no shortcuts
         dstring shortcutText() const
@@ -321,7 +321,7 @@ final class Action
         void context(ActionContext ac)
         {
             _context = ac;
-            changed();
+            onChange();
         }
 
         /// When false, action cannot be called and control showing this action should be disabled
@@ -336,7 +336,7 @@ final class Action
             if (_state != newstate)
             {
                 _state = newstate;
-                stateChanged();
+                onStateChange();
             }
         }
 
@@ -352,7 +352,7 @@ final class Action
             if (_state != newstate)
             {
                 _state = newstate;
-                stateChanged();
+                onStateChange();
             }
         }
 
@@ -364,7 +364,7 @@ final class Action
             if (_checkable != flag)
             {
                 _checkable = flag;
-                changed();
+                onChange();
             }
         }
 
@@ -386,7 +386,7 @@ final class Action
             if (_state != newstate)
             {
                 _state = newstate;
-                stateChanged();
+                onStateChange();
             }
         }
     }
@@ -417,11 +417,11 @@ final class Action
     }
 
     /// Signals when action is called
-    Signal!(void delegate()) triggered;
+    Signal!(void delegate()) onCall;
     /// Signals when action content is changed
-    Signal!(void delegate()) changed;
+    Signal!(void delegate()) onChange;
     /// Signals when action state is changed
-    Signal!(void delegate()) stateChanged;
+    Signal!(void delegate()) onStateChange;
 
     private
     {
@@ -497,7 +497,7 @@ final class Action
         foreach (a; actions)
         {
             a.actionGroup = gr;
-            a.changed();
+            a.onChange();
         }
     }
 
@@ -506,7 +506,7 @@ final class Action
     {
         _shortcuts ~= Shortcut(key, modifiers);
         shortcutMap.add(this);
-        changed();
+        onChange();
         return this;
     }
 
@@ -577,7 +577,7 @@ final class Action
                 }
                 // call chosen delegate
                 slot();
-                triggered();
+                onCall();
                 return true;
             }
         }

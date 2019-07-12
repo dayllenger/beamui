@@ -41,7 +41,7 @@ class ComboBoxBase : Panel
             _adapter.resetItemState(_selectedItemIndex, State.selected | State.focused | State.hovered);
         }
         _selectedItemIndex = index;
-        itemSelected(index);
+        onSelect(index);
     }
 
     override @property bool enabled() const
@@ -55,7 +55,7 @@ class ComboBoxBase : Panel
     }
 
     /// Handle item click
-    Signal!(void delegate(int)) itemSelected;
+    Signal!(void delegate(int)) onSelect;
 
     private
     {
@@ -77,7 +77,7 @@ class ComboBoxBase : Panel
     protected void initialize()
     {
         _body = createSelectedItemWidget();
-        _body.clicked ~= &onClick;
+        _body.onClick ~= &handleClick;
         _body.state = State.parent;
         _button = createButton();
         _button.allowsFocus = false;
@@ -101,7 +101,7 @@ class ComboBoxBase : Panel
         return res;
     }
 
-    protected void onClick()
+    override protected void handleClick()
     {
         if (enabled && !_popup)
         {
@@ -114,7 +114,7 @@ class ComboBoxBase : Panel
         auto res = new Button(null, "scrollbar_btn_down");
         res.id = "COMBOBOX_BUTTON";
         res.bindSubItem(this, "button");
-        res.clicked ~= &onClick;
+        res.onClick ~= &handleClick;
         return res;
     }
 
@@ -132,7 +132,7 @@ class ComboBoxBase : Panel
     private Popup _popup;
     private ListWidget _popupList;
 
-    protected void popupClosed()
+    protected void onPopupClose()
     {
     }
 
@@ -142,17 +142,17 @@ class ComboBoxBase : Panel
             return; // don't show empty popup
         _popupList = createPopup();
         _popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
-        _popup.popupClosed ~= (bool b) {
+        _popup.onPopupClose ~= (bool b) {
             _popup = null;
             _popupList = null;
         };
-        _popupList.itemSelected ~= (int index) {
+        _popupList.onSelect ~= (int index) {
             selectedItemIndex = index;
             if (_popup !is null)
             {
                 _popup.close();
                 _popup = null;
-                popupClosed();
+                onPopupClose();
             }
         };
         _popupList.setFocus();
@@ -171,10 +171,10 @@ class ComboBoxBase : Panel
         initialize();
     }
 
-    override void onThemeChanged()
+    override void handleThemeChange()
     {
-        super.onThemeChanged();
-        bunch(_body.maybe, _adapter.maybe, _button.maybe).onThemeChanged();
+        super.handleThemeChange();
+        bunch(_body.maybe, _adapter.maybe, _button.maybe).handleThemeChange();
     }
 }
 
@@ -277,7 +277,7 @@ class ComboBox : ComboBoxBase
         _body.allowsClick = true;
         allowsFocus = true;
         allowsClick = true;
-        clicked ~= &onClick;
+        onClick ~= &handleClick;
     }
 
     override protected Widget createSelectedItemWidget()
@@ -376,7 +376,7 @@ class IconTextComboBox : ComboBoxBase
         _body.allowsClick = true;
         allowsFocus = true;
         allowsClick = true;
-        clicked ~= &onClick;
+        onClick ~= &handleClick;
     }
 
     override protected Widget createSelectedItemWidget()
@@ -426,7 +426,7 @@ class ComboEdit : ComboBox
         _edit.allowsFocus = true;
     }
 
-    override bool onKeyEvent(KeyEvent event)
+    override bool handleKeyEvent(KeyEvent event)
     {
         if (event.key == Key.down && enabled)
         {
@@ -444,12 +444,12 @@ class ComboEdit : ComboBox
             }
             return true;
         }
-        if (_edit.onKeyEvent(event))
+        if (_edit.handleKeyEvent(event))
             return true;
-        return super.onKeyEvent(event);
+        return super.handleKeyEvent(event);
     }
 
-    override protected void popupClosed()
+    override protected void onPopupClose()
     {
         _edit.setFocus();
     }

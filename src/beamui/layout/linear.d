@@ -447,7 +447,7 @@ enum ResizerEventType
     to enable resizing of its siblings. While dragging, it will resize previous
     and next children in the layout.
 
-    Also it can be utilized per se, by connecting to `resized` signal.
+    Also it can be utilized per se, by connecting to `onResize` signal.
 */
 class Resizer : Widget
 {
@@ -457,7 +457,7 @@ class Resizer : Widget
     /// Resizer offset from initial position
     @property int delta() const { return _delta; }
 
-    Signal!(void delegate(ResizerEventType, int dragDelta)) resized;
+    Signal!(void delegate(ResizerEventType, int dragDelta)) onResize;
 
     private Orientation _orientation;
 
@@ -483,7 +483,7 @@ class Resizer : Widget
         int _delta;
     }
 
-    override bool onMouseEvent(MouseEvent event)
+    override bool handleMouseEvent(MouseEvent event)
     {
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
@@ -493,8 +493,8 @@ class Resizer : Widget
                 _dragging = true;
                 _dragStartPosition = _orientation == Orientation.vertical ? event.y : event.x;
                 _dragStartDelta = _delta;
-                if (resized.assigned)
-                    resized(ResizerEventType.startDragging, 0);
+                if (onResize.assigned)
+                    onResize(ResizerEventType.startDragging, 0);
             }
             else
             {
@@ -503,11 +503,11 @@ class Resizer : Widget
                     const delta = -_delta;
                     _delta = 0;
                     requestLayout();
-                    if (resized.assigned)
+                    if (onResize.assigned)
                     {
-                        resized(ResizerEventType.startDragging, 0);
-                        resized(ResizerEventType.dragging, delta);
-                        resized(ResizerEventType.endDragging, 0);
+                        onResize(ResizerEventType.startDragging, 0);
+                        onResize(ResizerEventType.dragging, delta);
+                        onResize(ResizerEventType.endDragging, 0);
                     }
                 }
             }
@@ -529,8 +529,8 @@ class Resizer : Widget
             {
                 _delta = delta;
                 requestLayout();
-                if (resized.assigned)
-                    resized(ResizerEventType.dragging, delta - _dragStartDelta);
+                if (onResize.assigned)
+                    onResize(ResizerEventType.dragging, delta - _dragStartDelta);
             }
             return true;
         }
@@ -549,8 +549,8 @@ class Resizer : Widget
             if (_dragging)
             {
                 _dragging = false;
-                if (resized.assigned)
-                    resized(ResizerEventType.endDragging, _delta - _dragStartDelta);
+                if (onResize.assigned)
+                    onResize(ResizerEventType.endDragging, _delta - _dragStartDelta);
             }
             return true;
         }
@@ -565,8 +565,8 @@ class Resizer : Widget
             if (_dragging)
             {
                 _dragging = false;
-                if (resized.assigned)
-                    resized(ResizerEventType.endDragging, _delta - _dragStartDelta);
+                if (onResize.assigned)
+                    onResize(ResizerEventType.endDragging, _delta - _dragStartDelta);
             }
             return true;
         }
@@ -576,8 +576,8 @@ class Resizer : Widget
             if (_dragging)
             {
                 _dragging = false;
-                if (resized.assigned)
-                    resized(ResizerEventType.endDragging, _delta - _dragStartDelta);
+                if (onResize.assigned)
+                    onResize(ResizerEventType.endDragging, _delta - _dragStartDelta);
             }
             return true;
         }

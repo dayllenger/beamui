@@ -248,7 +248,7 @@ class AppFrame : Panel
         }
         addSome(_mainMenu, _toolbarHost, _body, _statusLine);
         if (_mainMenu)
-            _mainMenu.menuItemClicked ~= &onMenuItemClick;
+            _mainMenu.onMenuItemClick ~= &handleMenuItemClick;
         updateShortcuts();
     }
 
@@ -258,7 +258,7 @@ class AppFrame : Panel
     }
 
     /// Override if you want extra handling for main menu commands
-    protected void onMenuItemClick(MenuItem item)
+    protected void handleMenuItemClick(MenuItem item)
     {
     }
 

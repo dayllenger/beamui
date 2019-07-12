@@ -63,7 +63,7 @@ class Popup : Panel
     bool ownContent = true;
 
     /// Popup close signal
-    Signal!(void delegate(bool byEvent)) popupClosed;
+    Signal!(void delegate(bool byEvent)) onPopupClose;
 
     this(Widget content, Window window)
     {
@@ -74,7 +74,7 @@ class Popup : Panel
     /// Close and destroy popup
     void close()
     {
-        popupClosed(closedByEvent);
+        onPopupClose(closedByEvent);
         if (!ownContent)
             removeChild(0);
         window.removePopup(this);
@@ -82,7 +82,7 @@ class Popup : Panel
 
     private bool closedByEvent;
     /// Called for mouse activity outside shown popup bounds
-    bool onMouseEventOutside(MouseEvent event)
+    bool handleMouseEventOutside(MouseEvent event)
     {
         with (PopupClosePolicy)
         {

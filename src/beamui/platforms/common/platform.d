@@ -283,7 +283,7 @@ class Window : CustomEventTarget
             _parent = null;
         }
 
-        closing();
+        onClose();
 
         timerThread.maybe.stop();
         eliminate(_tooltip.popup);
@@ -367,7 +367,7 @@ class Window : CustomEventTarget
     //===============================================================
 
     /// Window state change signal
-    Signal!(void delegate(WindowState state, BoxI rect)) windowStateChanged;
+    Signal!(void delegate(WindowState state, BoxI rect)) onWindowStateChange;
 
     /// Update and signal window state and/or size/positon changes - for using in platform inplementations
     protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
@@ -388,8 +388,8 @@ class Window : CustomEventTarget
             signalWindow = true;
         }
 
-        if (signalWindow && windowStateChanged.assigned)
-            windowStateChanged(newState, newWindowRect);
+        if (signalWindow && onWindowStateChange.assigned)
+            onWindowStateChange(newState, newWindowRect);
     }
 
     /// Change window state, position, or size; returns true if successful, false if not supported by platform
@@ -632,7 +632,7 @@ class Window : CustomEventTarget
         }
     }
 
-    void onResize(int width, int height)
+    void handleResize(int width, int height)
     {
         if (_w == width && _h == height)
             return;
@@ -644,7 +644,7 @@ class Window : CustomEventTarget
 
         debug (resizing)
         {
-            Log.d("onResize ", _w, "x", _h);
+            Log.d("handleResize ", _w, "x", _h);
             const layoutStart = currentTimeMillis;
         }
 
@@ -687,20 +687,20 @@ class Window : CustomEventTarget
             _tooltip.x = x;
             _tooltip.y = y;
             _tooltip.ownerWidget = ownerWidget;
-            _tooltip.timerID = setTimer(delay, &onTooltipTimer);
+            _tooltip.timerID = setTimer(delay, &handleTooltipTimer);
         }
     }
 
-    /// Call when tooltip timer is expired
-    private bool onTooltipTimer()
+    /// Called when tooltip timer is expired
+    private bool handleTooltipTimer()
     {
         debug (tooltips)
-            Log.d("onTooltipTimer");
+            Log.d("tooltip timer");
         _tooltip.timerID = 0;
         if (_tooltip.ownerWidget)
         {
             debug (tooltips)
-                Log.d("onTooltipTimer: create tooltip");
+                Log.d("create tooltip");
             Widget w = _tooltip.ownerWidget.createTooltip(_lastMouseX, _lastMouseY,
                     _tooltip.alignment, _tooltip.x, _tooltip.y);
             if (w)
@@ -713,7 +713,7 @@ class Window : CustomEventTarget
     Popup showTooltip(Widget content, WeakRef!Widget anchor = null,
             PopupAlign alignment = PopupAlign.center, int x = int.min, int y = int.min)
     {
-        bool noTooltipBefore = _tooltip.popup is null;
+        const noTooltipBefore = _tooltip.popup is null;
         hideTooltip();
 
         debug (tooltips)
@@ -847,7 +847,7 @@ class Window : CustomEventTarget
 
     private Listener!(void delegate(string[])) _filesDropped;
     /// Set handler for files dropped to app window
-    @property void onFilesDropped(void delegate(string[]) handler)
+    @property void onFileDrop(void delegate(string[]) handler)
     {
         _filesDropped = handler;
     }
@@ -862,7 +862,7 @@ class Window : CustomEventTarget
     /// Handler to ask whether it is allowed for window to close itself
     Listener!(bool delegate()) allowClose;
     /// Handler for window closing
-    Listener!(void delegate()) closing;
+    Listener!(void delegate()) onClose;
 
     /// Returns true if there is some modal window opened above this window, and this window should not process mouse/key input and should not allow closing
     @property bool hasModalWindowsAbove()
@@ -1017,7 +1017,7 @@ class Window : CustomEventTarget
             }
             else
             {
-                onDraw(buf);
+                draw(buf);
             }
             buf.afterDrawing();
             swapBuffers();
@@ -1030,7 +1030,7 @@ class Window : CustomEventTarget
     private bool _firstDrawCalled;
     private long lastDrawTs;
 
-    void onDraw(DrawBuf buf)
+    void draw(DrawBuf buf)
     {
         _firstDrawCalled = true;
         static import std.datetime;
@@ -1074,7 +1074,7 @@ class Window : CustomEventTarget
                 const drawStart = currentTimeMillis;
 
             // draw main widget
-            _mainWidget.onDraw(buf);
+            _mainWidget.draw(buf);
 
             // draw popups
             const modal = modalPopup();
@@ -1085,11 +1085,11 @@ class Window : CustomEventTarget
                     // TODO: get shadow color from theme
                     buf.fillRect(Rect(0, 0, buf.width, buf.height), Color(0xD0404040));
                 }
-                p.onDraw(buf);
+                p.draw(buf);
             }
 
             // and draw tooltip
-            _tooltip.popup.maybe.onDraw(buf);
+            _tooltip.popup.maybe.draw(buf);
 
             debug (redraw)
             {
@@ -1108,7 +1108,7 @@ class Window : CustomEventTarget
         }
         catch (Exception e)
         {
-            Log.e("Exception inside window.onDraw: ", e);
+            Log.e("Exception inside window.draw: ", e);
         }
     }
 
@@ -1178,7 +1178,7 @@ class Window : CustomEventTarget
     abstract @property bool isActive() const;
 
     /// Window activate/deactivate signal
-    Signal!(void delegate(bool isWindowActive)) windowActivityChanged;
+    Signal!(void delegate(bool isWindowActive)) onWindowActivityChange;
 
     protected void handleWindowActivityChange(bool isWindowActive)
     {
@@ -1186,7 +1186,7 @@ class Window : CustomEventTarget
             applyFocus();
         else
             removeFocus();
-        windowActivityChanged(isWindowActive);
+        onWindowActivityChange(isWindowActive);
     }
 
     //===============================================================
@@ -1264,7 +1264,7 @@ class Window : CustomEventTarget
             }
             while (focus)
             {
-                if (focus.onKeyEvent(event))
+                if (focus.handleKeyEvent(event))
                     return true; // processed by focused widget or its parent in focus group
                 if (focus.focusGroup)
                     break;
@@ -1275,7 +1275,7 @@ class Window : CustomEventTarget
         if (dispatchKeyEvent(dest, event))
             return res;
         else
-            return dest.onKeyEvent(event) || res;
+            return dest.handleKeyEvent(event) || res;
     }
 
     /// Dispatch key event to widgets which have `wantsKeyTracking == true`
@@ -1286,7 +1286,7 @@ class Window : CustomEventTarget
             return false;
         if (root.wantsKeyTracking)
         {
-            if (root.onKeyEvent(event))
+            if (root.handleKeyEvent(event))
                 return true;
         }
         foreach (i; 0 .. root.childCount)
@@ -1453,7 +1453,7 @@ class Window : CustomEventTarget
                 }
                 else
                 {
-                    if (p.onMouseEventOutside(event))
+                    if (p.handleMouseEventOutside(event))
                         return true;
                 }
             }
@@ -1531,7 +1531,7 @@ class Window : CustomEventTarget
                 // send Leave message
                 auto leaveEvent = new MouseEvent(event);
                 leaveEvent.changeAction(MouseAction.leave);
-                res = w.onMouseEvent(leaveEvent) || res;
+                res = w.handleMouseEvent(leaveEvent) || res;
                 debug (mouse)
                     Log.d("removeTracking of ", w.id);
                 w.nullify();
@@ -1574,7 +1574,7 @@ class Window : CustomEventTarget
     protected bool dispatchCancel(MouseEvent event)
     {
         event.changeAction(MouseAction.cancel);
-        bool res = _mouseCaptureWidget.onMouseEvent(event);
+        bool res = _mouseCaptureWidget.handleMouseEvent(event);
         clearMouseCapture();
         return res;
     }
@@ -1583,7 +1583,7 @@ class Window : CustomEventTarget
     {
         if (widget.isNull)
             return false;
-        bool res = widget.onMouseEvent(event);
+        bool res = widget.handleMouseEvent(event);
         if (event.trackingWidget !is null && _mouseCaptureWidget !is event.trackingWidget)
         {
             setCaptureWidget(event.trackingWidget, event);
@@ -1600,10 +1600,10 @@ class Window : CustomEventTarget
     /// Handle theme change: e.g. reload some themed resources
     void dispatchThemeChanged()
     {
-        _mainWidget.onThemeChanged();
+        _mainWidget.handleThemeChange();
         foreach (p; _popups)
-            p.onThemeChanged();
-        _tooltip.popup.maybe.onThemeChanged();
+            p.handleThemeChange();
+        _tooltip.popup.maybe.handleThemeChange();
         if (currentTheme)
         {
             _backgroundColor = currentTheme.getColor("window_background");
@@ -1668,7 +1668,7 @@ class Window : CustomEventTarget
     {
         if (auto dest = event.destinationWidget.get)
         {
-            return dest.onEvent(event);
+            return dest.handleEvent(event);
         }
         else
         {
@@ -1776,7 +1776,7 @@ class Window : CustomEventTarget
 
     Platform timers are implemented using timer thread by default, but it is possible
     to use platform timers - override this method, calculate an interval and set the timer there.
-    When timer expires and platform receives its event, call `window.onTimer()`.
+    When timer expires and platform receives its event, call `window.handleTimer()`.
     */
     protected void scheduleSystemTimer(long timestamp)
     {
@@ -1801,10 +1801,10 @@ class Window : CustomEventTarget
     }
 
     /// System timer interval expired - notify queue
-    protected void onTimer()
+    protected void handleTimer()
     {
         debug (timers)
-            Log.d("window.onTimer");
+            Log.d("window.handleTimer");
         bool res = _timerQueue.notify();
         if (res)
         {
@@ -1987,7 +1987,7 @@ class Platform
             if (_conf.theme != name)
             {
                 _conf.theme = setupTheme(name);
-                onThemeChanged();
+                handleThemeChange();
                 requestLayout();
             }
         }
@@ -2117,7 +2117,7 @@ class Platform
             return;
         }
         currentTheme = theme;
-        onThemeChanged();
+        handleThemeChange();
         requestLayout();
     }
 
@@ -2138,7 +2138,7 @@ class Platform
     }
 
     /// Handle theme change, e.g. reload some themed resources
-    void onThemeChanged()
+    void handleThemeChange()
     {
         // override and call dispatchThemeChange for all windows
         static if (BACKEND_GUI)

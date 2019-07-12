@@ -25,7 +25,7 @@ class WindowFrame : Panel
 
     @property Label title() { return _title; }
 
-    Signal!(void delegate()) closeButtonClicked;
+    Signal!(void delegate()) onCloseButtonClick;
 
     private
     {
@@ -63,7 +63,7 @@ class WindowFrame : Panel
         }
         add(_titleLayout, _bodyLayout);
 
-        _closeButton.clicked ~= &closeButtonClicked.emit;
+        _closeButton.onClick ~= &onCloseButtonClick.emit;
         if (!_showCloseButton)
             _closeButton.visibility = Visibility.gone;
     }

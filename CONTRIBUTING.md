@@ -71,6 +71,16 @@ I don't use `pure nothrow @nogc @system/@trusted/@safe` attributes in the librar
 
 `@property` is needed only to split properties from other methods in documentation.
 
+### Naming
+
+Signals and events almost always fit in such scheme:
+* onXYZ - signal
+* handleXYZ - corresponding class method (often `protected`)
+* XYZHandler - delegate alias
+* XYZSignal - signal alias
+
+Simple enumerations are in singular, flag enums are almost always in plural.
+
 ### Documentation
 
 Use one general documentation comment and `ditto` in getter/setter pairs.
