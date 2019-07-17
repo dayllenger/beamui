@@ -17,6 +17,15 @@ import beamui.core.undo;
 
 immutable dchar EOL = '\n';
 
+version (Windows)
+{
+    immutable dstring SYSTEM_DEFAULT_EOL = "\r\n";
+}
+else
+{
+    immutable dstring SYSTEM_DEFAULT_EOL = "\n";
+}
+
 private const ubyte TC_SHIFT = 4;
 const ubyte TOKEN_CATEGORY_MASK = 0xF0; // token category 0..15
 const ubyte TOKEN_SUBCATEGORY_MASK = 0x0F; // token subcategory 0..15
@@ -39,9 +48,9 @@ enum TokenCategory : ubyte
     /// Whitespace category
     whitespace = (0 << TC_SHIFT),
     /// Space character sequence
-    whitespaceSpace = (0 << TC_SHIFT) | 1,
+    whitespaceSpace = whitespace | 1,
     /// Tab character sequence
-    whitespaceTab = (0 << TC_SHIFT) | 2,
+    whitespaceTab = whitespace | 2,
 
     /// Comment category
     comment = (1 << TC_SHIFT),
@@ -107,41 +116,37 @@ TokenCategory tokenCategory(TokenCategory t)
 }
 
 /// Split dstring by delimiters
-dstring[] splitDString(dstring source, dchar delimiter = EOL)
+dstring[] splitDString(const dstring source, dchar delimiter = EOL)
 {
-    int start = 0;
-    dstring[] res;
-    for (int i = 0; i <= source.length; i++)
+    if (source.length == 0)
+        return null;
+
+    dstring[] list;
+    int start;
+    for (int i; i <= source.length; i++)
     {
         if (i == source.length || source[i] == delimiter)
         {
-            if (i >= start)
+            if (i > start)
             {
-                dchar prevchar = i > 1 && i > start + 1 ? source[i - 1] : 0;
                 int end = i;
-                if (delimiter == EOL && prevchar == '\r') // windows CR/LF
+                // check Windows CR/LF
+                if (delimiter == EOL && i > 1 && i > start + 1 && source[i - 1] == '\r')
                     end--;
-                dstring line = i > start ? cast(dstring)(source[start .. end].dup) : ""d;
-                res ~= line;
+                list ~= source[start .. end].idup;
             }
             start = i + 1;
         }
     }
-    return res;
-}
-
-version (Windows)
-{
-    immutable dstring SYSTEM_DEFAULT_EOL = "\r\n";
-}
-else
-{
-    immutable dstring SYSTEM_DEFAULT_EOL = "\n";
+    return list;
 }
 
 /// Concat strings from array using delimiter
-dstring concatDStrings(dstring[] lines, dstring delimiter = SYSTEM_DEFAULT_EOL)
+dstring concatDStrings(const dstring[] lines, dstring delimiter = SYSTEM_DEFAULT_EOL)
 {
+    if (lines.length == 0)
+        return null;
+
     dchar[] buf;
     foreach (i, line; lines)
     {
@@ -153,28 +158,54 @@ dstring concatDStrings(dstring[] lines, dstring delimiter = SYSTEM_DEFAULT_EOL)
 }
 
 /// Replace end of lines with spaces
-dstring replaceEOLsWithSpaces(dstring source)
+dstring replaceEOLsWithSpaces(const dstring source)
 {
-    dchar[] buf;
+    import std.array : uninitializedArray;
+
+    if (source.length == 0)
+        return null;
+
+    dchar[] buf = uninitializedArray!(dchar[])(source.length);
     dchar lastch;
+    int i;
     foreach (ch; source)
     {
         if (ch == '\r')
         {
-            buf ~= ' ';
+            buf[i] = ' ';
         }
         else if (ch == '\n')
         {
             if (lastch != '\r')
-                buf ~= ' ';
+                buf[i] = ' ';
+            else
+                i--;
         }
         else
-        {
-            buf ~= ch;
-        }
+            buf[i] = ch;
+        i++;
         lastch = ch;
     }
-    return cast(dstring)buf;
+    return cast(dstring)buf[0 .. i];
+}
+
+unittest
+{
+    const s1 = "The\nquick\r\nbrown\nfox jumps\nover the lazy\r\ndog"d;
+    const s2 = "The\nquick\nbrown\nfox jumps\nover the lazy\ndog"d;
+    const s3 = "The quick brown fox jumps over the lazy dog"d;
+
+    assert(splitDString(s1).length == 6);
+    assert(concatDStrings(splitDString(s1)) == s2);
+    assert(replaceEOLsWithSpaces(s1) == s3);
+    assert(replaceEOLsWithSpaces(s2) == s3);
+
+    assert(splitDString(" \n \n "d) == [" "d, " "d, " "d]);
+    assert(replaceEOLsWithSpaces(" \n \r \r\n"d) == "      "d);
+
+    assert(splitDString(null) is null);
+    assert(concatDStrings(null) is null);
+    assert(replaceEOLsWithSpaces(null) is null);
 }
 
 /// Text content position
@@ -197,11 +228,6 @@ struct TextPosition
         if (pos > v.pos)
             return 1;
         return 0;
-    }
-
-    bool opEquals(ref inout TextPosition v) inout
-    {
-        return line == v.line && pos == v.pos;
     }
 
     string toString() const
@@ -585,7 +611,7 @@ class EditableContent
         dstring text() const
         {
             if (_lines.length == 0)
-                return "";
+                return null;
             if (_lines.length == 1)
                 return _lines[0];
             // concat lines
@@ -597,6 +623,28 @@ class EditableContent
                 buf ~= item;
             }
             return cast(dstring)buf;
+        }
+        /// Replace whole text with another content
+        void text(dstring newContent)
+        {
+            clearUndo();
+            if (_multiline)
+            {
+                _lines = splitDString(newContent);
+                if (_lines.length == 0)
+                    _lines.length = 1;
+                _tokenProps.length = _lines.length;
+                updateTokenProps(0, cast(int)_lines.length);
+            }
+            else
+            {
+                _lines.length = 1;
+                _lines[0] = replaceEOLsWithSpaces(newContent);
+                _tokenProps.length = 1;
+                updateTokenProps(0, 1);
+            }
+            clearEditMarks();
+            notifyContentReplaced();
         }
 
         /// Returns line count
@@ -665,13 +713,16 @@ class EditableContent
         res.end = pos;
         if (pos.line < 0 || pos.line >= _lines.length)
             return res;
+
         dstring s = line(pos.line);
+        const len = s.length;
         int p = pos.pos;
-        if (p < 0 || p > s.length || s.length == 0)
+        if (p < 0 || p > len || len == 0)
             return res;
+
         const leftChar = p > 0 ? s[p - 1] : 0;
-        const rightChar = p < s.length - 1 ? s[p + 1] : 0;
-        const centerChar = p < s.length ? s[p] : 0;
+        const rightChar = p + 1 < len ? s[p + 1] : 0;
+        const centerChar = p < len ? s[p] : 0;
         if (isAlphaForWordSelection(centerChar))
         {
             // ok
@@ -685,14 +736,13 @@ class EditableContent
             p++;
         }
         else
-        {
             return res;
-        }
+
         int start = p;
         int end = p;
         while (start > 0 && isAlphaForWordSelection(s[start - 1]))
             start--;
-        while (end + 1 < s.length && isAlphaForWordSelection(s[end + 1]))
+        while (end + 1 < len && isAlphaForWordSelection(s[end + 1]))
             end++;
         end++;
         res.start.pos = start;
@@ -701,9 +751,8 @@ class EditableContent
     }
 
     /// Call listener to say that whole content is replaced e.g. by loading from file
-    void notifyContentReplaced()
+    private void notifyContentReplaced()
     {
-        clearEditMarks();
         TextRange rangeBefore;
         TextRange rangeAfter;
         // notify about content change
@@ -711,7 +760,7 @@ class EditableContent
     }
 
     /// Call listener to say that content is saved
-    void notifyContentSaved()
+    private void notifyContentSaved()
     {
         // mark all changed lines as saved
         foreach (i; 0 .. _editMarks.length)
@@ -762,22 +811,19 @@ class EditableContent
         }
     }
 
-    /// Set props arrays size equal to text line sizes, bit fill with unknown token
+    /// Set props arrays size equal to text line sizes and fill with unknown token
     protected void clearTokenProps(int startLine, int endLine)
     {
         foreach (i; startLine .. endLine)
         {
             if (hasSyntaxHighlight)
             {
-                const int len = cast(int)_lines[i].length;
+                const len = _lines[i].length;
                 _tokenProps[i].length = len;
-                foreach (j; 0 .. len)
-                    _tokenProps[i][j] = TOKEN_UNKNOWN;
+                _tokenProps[i][] = TOKEN_UNKNOWN;
             }
             else
-            {
                 _tokenProps[i] = null; // no token props
-            }
         }
     }
 
@@ -786,28 +832,6 @@ class EditableContent
         _editMarks.length = _lines.length;
         foreach (i; 0 .. _editMarks.length)
             _editMarks[i] = EditStateMark.unchanged;
-    }
-
-    /// Replace whole text with another content
-    @property void text(dstring newContent)
-    {
-        clearUndo();
-        _lines.length = 0;
-        if (_multiline)
-        {
-            _lines = splitDString(newContent);
-            _tokenProps.length = _lines.length;
-            updateTokenProps(0, cast(int)_lines.length);
-        }
-        else
-        {
-            _lines.length = 1;
-            _lines[0] = replaceEOLsWithSpaces(newContent);
-            _tokenProps.length = 1;
-            updateTokenProps(0, cast(int)_lines.length);
-        }
-        clearEditMarks();
-        notifyContentReplaced();
     }
 
     /// Clear content
@@ -881,9 +905,7 @@ class EditableContent
     /// Returns text position for the begin of line `index` (if index > the number of lines, returns end of last line)
     TextPosition lineBegin(int index) const
     {
-        if (index >= _lines.length)
-            return lineEnd(index - 1);
-        return TextPosition(index, 0);
+        return index >= _lines.length ? lineEnd(index - 1) : TextPosition(index, 0);
     }
 
     /// Returns previous character position
@@ -924,8 +946,9 @@ class EditableContent
     /// Returns text range for whole line `index`
     TextRange lineRange(int index) const
     {
-        return TextRange(TextPosition(index, 0), index < cast(int)_lines.length - 1 ?
-                lineBegin(index + 1) : lineEnd(index));
+        const start = TextPosition(index, 0);
+        const end = index + 1 < _lines.length ? lineBegin(index + 1) : lineEnd(index);
+        return TextRange(start, end);
     }
 
     /// Find nearest next tab position
@@ -1015,8 +1038,8 @@ class EditableContent
         res.len = cast(int)s.length;
         if (lineIndex < 0 || lineIndex >= _lines.length)
             return res;
-        int x = 0;
-        for (int i = 0; i < s.length; i++)
+        int x;
+        for (int i; i < s.length; i++)
         {
             const ch = s[i];
             if (ch == ' ')
@@ -1475,7 +1498,7 @@ class EditableContent
         handleContentChange(op, rangeBefore, rangeAfter, source ? source : this);
         return true;
     }
-    /// Clear undo/redp history
+    /// Clear undo/redo history
     void clearUndo()
     {
         _undoBuffer.clear();
@@ -1506,22 +1529,22 @@ class EditableContent
                 dchar[] s = lines.readLine();
                 if (s is null)
                     break;
-                int pos = cast(int)(_lines.length++);
-                _tokenProps.length = _lines.length;
-                _lines[pos] = s.dup;
-                clearTokenProps(pos, pos + 1);
+                _lines ~= s.idup;
             }
             if (lines.errorCode != 0)
             {
-                clear();
+                _lines.length = 1;
+                _tokenProps.length = 1;
                 Log.e("Error ", lines.errorCode, " ", lines.errorMessage, " -- at line ",
                         lines.errorLine, " position ", lines.errorPos);
                 notifyContentReplaced();
                 return false;
             }
             // EOF
+            _tokenProps.length = _lines.length;
+            clearTokenProps(0, cast(int)_lines.length);
+            clearEditMarks();
             _format = lines.textFormat;
-            _undoBuffer.clear();
             debug (FileFormats)
                 Log.d("loaded file:", filename, " format detected:", _format);
             notifyContentReplaced();
@@ -1529,8 +1552,9 @@ class EditableContent
         }
         catch (Exception e)
         {
+            _lines.length = 1;
+            _tokenProps.length = 1;
             Log.e("Exception while trying to read file ", fname, " ", e.toString);
-            clear();
             notifyContentReplaced();
             return false;
         }
@@ -1626,11 +1650,8 @@ class EditableContent
 /// Types of text editor line icon marks (bookmark / breakpoint / error / ...)
 enum LineIconType
 {
-    /// Bookmark
     bookmark,
-    /// Breakpoint mark
     breakpoint,
-    /// Error mark
     error,
 }
 
