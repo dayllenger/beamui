@@ -529,8 +529,8 @@ class ScrollBar : WidgetGroup
                 debug (scrollbars)
                     Log.d("ScrollIndicator: dragging, move delta: ", delta);
                 Box b = _dragStartBox;
-                int offset;
-                int space;
+                long offset;
+                long space;
                 if (_orient == Orientation.vertical)
                 {
                     b.y = clamp(b.y + delta, _scrollArea.y, _scrollArea.y + _scrollArea.h - b.h);
@@ -543,10 +543,10 @@ class ScrollBar : WidgetGroup
                     offset = b.x - _scrollArea.x;
                     space = _scrollArea.w - b.w;
                 }
-                int v;
+                long v;
                 if (space > 0)
                     v = offset * max(_data.range - _data.page, 0) / space;
-                handleIndicatorDragging(_dragStartPos, v);
+                handleIndicatorDragging(_dragStartPos, cast(int)v);
                 return true;
             }
             if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
