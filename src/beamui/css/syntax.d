@@ -26,7 +26,7 @@ final class CssSyntaxSupport : SyntaxSupport
 
     private EditableContent _content;
 
-    void updateHighlight(dstring[] lines, TokenPropString[] props, int startLine, int endLine)
+    void updateHighlight(const dstring[] lines, TokenPropString[] props, int startLine, int endLine)
     {
     }
 

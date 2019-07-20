@@ -319,7 +319,7 @@ class SourceEdit : EditBox
 
     protected void drawLeftPaneModificationMarks(DrawBuf buf, Rect rc, int line)
     {
-        if (line >= 0 && line < content.length)
+        if (0 <= line && line < content.lineCount)
         {
             EditStateMark m = content.editMark(line);
             if (m == EditStateMark.changed)
@@ -352,7 +352,7 @@ class SourceEdit : EditBox
         Color color = _leftPaneLineNumColor;
         if (line == caretPos.line && !_leftPaneLineNumColorCurrentLine.isFullyTransparent)
             color = _leftPaneLineNumColorCurrentLine;
-        if (line >= 0 && line < content.length)
+        if (0 <= line && line < content.lineCount)
         {
             EditStateMark m = content.editMark(line);
             if (m == EditStateMark.changed)

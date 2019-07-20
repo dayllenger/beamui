@@ -493,7 +493,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             info.replaceMode = _replaceMode;
             info.line = _caretPos.line + 1;
             info.col = _caretPos.pos + 1;
-            if (_caretPos.line >= 0 && _caretPos.line < _content.length)
+            if (0 <= _caretPos.line && _caretPos.line < _content.lineCount)
             {
                 dstring line = _content.line(_caretPos.line);
                 if (_caretPos.pos >= 0 && _caretPos.pos < line.length)
@@ -1349,10 +1349,11 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     protected void DocumentEnd(bool select)
     {
         const TextPosition oldCaretPos = _caretPos;
-        if (_caretPos.line < _content.length - 1 || _caretPos.pos < _content[_content.length - 1].length)
+        const lastLine = _content.lineCount - 1;
+        if (_caretPos.line < lastLine || _caretPos.pos < _content[lastLine].length)
         {
-            _caretPos.line = _content.length - 1;
-            _caretPos.pos = cast(int)_content[_content.length - 1].length;
+            _caretPos.line = lastLine;
+            _caretPos.pos = cast(int)_content[lastLine].length;
             ensureCaretVisible();
             updateSelectionAfterCursorMovement(oldCaretPos, select);
         }
@@ -1395,7 +1396,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             range.end.pos++;
             removeRangeText(range);
         }
-        else if (_caretPos.line < _content.length - 1)
+        else if (_caretPos.line < _content.lineCount - 1)
         {
             // merge with next line
             auto range = TextRange(_caretPos, _caretPos);
@@ -1576,7 +1577,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     {
         _selectionRange.start.line = 0;
         _selectionRange.start.pos = 0;
-        _selectionRange.end = _content.lineEnd(_content.length - 1);
+        _selectionRange.end = _content.lineEnd(_content.lineCount - 1);
         _caretPos = _selectionRange.end;
         ensureCaretVisible();
         invalidate();
@@ -1778,7 +1779,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                         updateSelectionAfterCursorMovement(oldCaretPos, shiftPressed);
                         ensureCaretVisible();
                     }
-                    else if (_caretPos.line < _content.length - 1 && _content.multiline)
+                    else if (_caretPos.line < _content.lineCount - 1 && _content.multiline)
                     {
                         _caretPos.pos = 0;
                         _caretPos.line++;
@@ -2221,7 +2222,7 @@ class EditBox : EditWidgetBase
         override Size fullContentSize() const
         {
             return Size(_maxLineWidth + (_extendRightScrollBound ? clientBox.w / 16 : 0),
-                        _lineHeight * _content.length);
+                        _lineHeight * _content.lineCount);
         }
     }
 
@@ -2286,12 +2287,12 @@ class EditBox : EditWidgetBase
 
     override protected int lineCount() const
     {
-        return _content.length;
+        return _content.lineCount;
     }
 
     override protected void updateVScrollBar(ScrollData data)
     {
-        data.setRange(_content.length, max(linesOnScreen - 1, 1));
+        data.setRange(_content.lineCount, max(linesOnScreen - 1, 1));
         data.position = _firstVisibleLine;
     }
 
@@ -2386,7 +2387,7 @@ class EditBox : EditWidgetBase
         }
         else
         {
-            if (_caretPos.line < _content.length - 1)
+            if (_caretPos.line < _content.lineCount - 1)
             {
                 if (wrapped)
                 {
@@ -2485,13 +2486,13 @@ class EditBox : EditWidgetBase
     private bool _enableScrollAfterText = true;
     override protected void ensureCaretVisible(bool center = false)
     {
-        _caretPos.line = clamp(_caretPos.line, 0, _content.length - 1);
+        _caretPos.line = clamp(_caretPos.line, 0, _content.lineCount - 1);
 
         // fully visible lines
         const int visibleLines = max(linesOnScreen - 1, 1);
-        int maxFirstVisibleLine = _content.length - 1;
+        int maxFirstVisibleLine = _content.lineCount - 1;
         if (!_enableScrollAfterText)
-            maxFirstVisibleLine = max(_content.length - visibleLines, 0);
+            maxFirstVisibleLine = max(_content.lineCount - visibleLines, 0);
 
         int line = _firstVisibleLine;
 
@@ -2746,8 +2747,8 @@ class EditBox : EditWidgetBase
         ensureCaretVisible();
         const int fullLines = linesOnScreen;
         int newpos = _firstVisibleLine + fullLines - 1;
-        if (newpos >= _content.length)
-            newpos = _content.length - 1;
+        if (newpos >= _content.lineCount)
+            newpos = _content.lineCount - 1;
         _caretPos.line = newpos;
         correctCaretPos();
         updateSelectionAfterCursorMovement(oldCaretPos, select);
@@ -2778,9 +2779,9 @@ class EditBox : EditWidgetBase
         TextPosition oldCaretPos = _caretPos;
         ensureCaretVisible();
         const int newpos = _firstVisibleLine + linesOnScreen;
-        if (newpos >= _content.length)
+        if (newpos >= _content.lineCount)
         {
-            _caretPos.line = _content.length - 1;
+            _caretPos.line = _content.lineCount - 1;
         }
         else
         {
@@ -2861,7 +2862,7 @@ class EditBox : EditWidgetBase
             // support highlighting selection text - if whole word is selected
             if (_selectionRange.empty || !_selectionRange.singleLine)
                 return;
-            if (_selectionRange.start.line >= _content.length)
+            if (_selectionRange.start.line >= _content.lineCount)
                 return;
             const dstring selLine = _content.line(_selectionRange.start.line);
             const int start = _selectionRange.start.pos;
@@ -2936,7 +2937,7 @@ class EditBox : EditWidgetBase
         const bool wholeWords = (options & TextSearchOptions.wholeWords) != 0;
         const bool selectionOnly = (options & TextSearchOptions.selectionOnly) != 0;
         TextRange[] res;
-        foreach (i; 0 .. _content.length)
+        foreach (i; 0 .. _content.lineCount)
         {
             const dstring lineText = _content.line(i);
             if (lineText.length < pattern.length)
@@ -3090,15 +3091,15 @@ class EditBox : EditWidgetBase
     override protected Size measureVisibleText()
     {
         int numVisibleLines = linesOnScreen;
-        if (_firstVisibleLine >= _content.length)
+        if (_firstVisibleLine >= _content.lineCount)
         {
-            _firstVisibleLine = max(_content.length - numVisibleLines + 1, 0);
-            _caretPos.line = _content.length - 1;
+            _firstVisibleLine = max(_content.lineCount - numVisibleLines + 1, 0);
+            _caretPos.line = _content.lineCount - 1;
             _caretPos.pos = 0;
         }
         numVisibleLines = max(numVisibleLines, 1);
-        if (_firstVisibleLine + numVisibleLines > _content.length)
-            numVisibleLines = max(_content.length - _firstVisibleLine, 1);
+        if (_firstVisibleLine + numVisibleLines > _content.lineCount)
+            numVisibleLines = max(_content.lineCount - _firstVisibleLine, 1);
 
         _visibleLines.length = numVisibleLines;
 
@@ -3115,7 +3116,7 @@ class EditBox : EditWidgetBase
             // width - max from visible lines
             sz.w = max(sz.w, line.width);
         }
-        sz.h = _lineHeight * _content.length; // height - for all lines
+        sz.h = _lineHeight * _content.lineCount; // height - for all lines
         // we use max width of the viewed lines as content width
         // in some situations, we reset it to shrink the horizontal scrolling range
         if (lineCount < _lastMeasureLineCount / 3)
@@ -3285,7 +3286,7 @@ class EditBox : EditWidgetBase
     /// Find max tab mark column position for line
     protected int findMaxTabMarkColumn(int lineIndex) const
     {
-        if (lineIndex < 0 || lineIndex >= _content.length)
+        if (lineIndex < 0 || lineIndex >= _content.lineCount)
             return -1;
         int maxSpace = -1;
         auto space = _content.getLineWhiteSpace(lineIndex);
@@ -3301,7 +3302,7 @@ class EditBox : EditWidgetBase
                 break;
             }
         }
-        foreach (i; lineIndex + 1 .. _content.length)
+        foreach (i; lineIndex + 1 .. _content.lineCount)
         {
             space = _content.getLineWhiteSpace(i);
             if (!space.empty)
@@ -3668,13 +3669,15 @@ class LogWidget : EditBox
     /// Append lines to the end of text
     void appendText(dstring text)
     {
-        import std.array : split;
-
         if (text.length == 0)
             return;
-        dstring[] lines = text.split("\n");
-        //lines ~= ""d; // append new line after last line
-        _content.appendLines(lines);
+        {
+            dstring[] lines = splitDString(text);
+            TextRange range;
+            range.start = range.end = _content.end;
+            auto op = new EditOperation(EditAction.replace, range, lines);
+            _content.performOperation(op, this);
+        }
         if (_maxLines > 0 && lineCount > _maxLines)
         {
             TextRange range;
@@ -3694,12 +3697,12 @@ class LogWidget : EditBox
     TextPosition lastLineBegin() const
     {
         TextPosition res;
-        if (_content.length == 0)
+        if (_content.lineCount == 0)
             return res;
-        if (_content.lineLength(_content.length - 1) == 0 && _content.length > 1)
-            res.line = _content.length - 2;
+        if (_content.lineLength(_content.lineCount - 1) == 0 && _content.lineCount > 1)
+            res.line = _content.lineCount - 2;
         else
-            res.line = _content.length - 1;
+            res.line = _content.lineCount - 1;
         return res;
     }
 

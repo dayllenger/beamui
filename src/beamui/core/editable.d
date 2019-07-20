@@ -135,6 +135,8 @@ dstring[] splitDString(const dstring source, dchar delimiter = EOL)
                     end--;
                 list ~= source[start .. end].idup;
             }
+            else
+                list ~= null;
             start = i + 1;
         }
     }
@@ -191,11 +193,11 @@ dstring replaceEOLsWithSpaces(const dstring source)
 
 unittest
 {
-    const s1 = "The\nquick\r\nbrown\nfox jumps\nover the lazy\r\ndog"d;
-    const s2 = "The\nquick\nbrown\nfox jumps\nover the lazy\ndog"d;
-    const s3 = "The quick brown fox jumps over the lazy dog"d;
+    const s1 = "The\nquick\r\nbrown\n\n\nfox jumps\nover the lazy\r\ndog\n"d;
+    const s2 = "The\nquick\nbrown\n\n\nfox jumps\nover the lazy\ndog\n"d;
+    const s3 = "The quick brown   fox jumps over the lazy dog "d;
 
-    assert(splitDString(s1).length == 6);
+    assert(splitDString(s1).length == 9);
     assert(concatDStrings(splitDString(s1)) == s2);
     assert(replaceEOLsWithSpaces(s1) == s3);
     assert(replaceEOLsWithSpaces(s2) == s3);
@@ -213,7 +215,7 @@ struct TextPosition
 {
     /// Line number, zero based
     int line;
-    /// Character position in line (0 == before first character)
+    /// Character position in line (0 == before the first character)
     int pos;
 
     /// Compares two positions
@@ -288,6 +290,361 @@ struct TextRange
     }
 }
 
+enum TextChange
+{
+    replaceAll,
+    append,
+    insert,
+    replace,
+    remove,
+}
+
+/// Text content by lines
+class TextContent
+{
+    import std.array : insertInPlace, replaceInPlace;
+
+    final @property
+    {
+        /// True whether there is no text
+        bool empty() const
+        {
+            return _lines.length == 0;
+        }
+
+        const(dstring[]) lines() const { return _lines; }
+
+        /// Total line count
+        int lineCount() const
+        {
+            return cast(int)_lines.length;
+        }
+
+        /// Position for the end of the last line
+        TextPosition end() const
+        {
+            const len = _lines.length;
+            if (len > 0)
+                return TextPosition(cast(int)len - 1, cast(int)_lines[len - 1].length);
+            else
+                return TextPosition(0, 0);
+        }
+    }
+
+    Signal!(void delegate(TextChange, uint lineIndex, uint lineCount)) onChange;
+
+    private dstring[] _lines;
+
+    this(uint emptyLines)
+    {
+        _lines.length = emptyLines;
+    }
+
+    this(dstring initialText)
+    {
+        _lines = splitDString(initialText);
+    }
+
+final:
+
+    dstring getStr() const
+    {
+        return concatDStrings(_lines);
+    }
+
+    /// Replace the whole content
+    void replaceAll(dstring str)
+    {
+        _lines = splitDString(str);
+        onChange(TextChange.replaceAll, 0, lineCount);
+    }
+    /// ditto
+    void replaceAll(dstring[] lines)
+    {
+        _lines = lines;
+        onChange(TextChange.replaceAll, 0, lineCount);
+    }
+
+    /// Remove the whole content
+    void removeAll()
+    {
+        if (_lines.length > 0)
+        {
+            _lines.length = 0;
+            onChange(TextChange.replaceAll, 0, 0);
+        }
+    }
+
+    void appendLine(dstring str)
+    {
+        _lines ~= str;
+        onChange(TextChange.append, 0, 1);
+    }
+
+    void insertLine(uint index, dstring str)
+    {
+        assert(index < _lines.length);
+
+        if (index + 1 < _lines.length)
+        {
+            insertInPlace(_lines, index, str);
+            onChange(TextChange.insert, index, 1);
+        }
+        else
+        {
+            _lines ~= str;
+            onChange(TextChange.append, 0, 1);
+        }
+    }
+
+    void replaceLine(uint index, dstring str)
+    {
+        assert(index < _lines.length);
+        _lines[index] = str;
+        onChange(TextChange.replace, index, 1);
+    }
+
+    void removeLine(uint index)
+    {
+        assert(index < _lines.length);
+        _lines = remove(_lines, index);
+        onChange(TextChange.remove, index, 1);
+    }
+
+    /// Append several lines at the end
+    void appendLines(dstring[] list)
+    {
+        if (list.length > 0)
+        {
+            _lines ~= list;
+            onChange(TextChange.append, 0, cast(uint)list.length);
+        }
+    }
+
+    void insertLines(uint index, dstring[] list)
+    {
+        assert(index < _lines.length);
+
+        if (list.length > 0)
+        {
+            if (index + 1 < _lines.length)
+            {
+                insertInPlace(_lines, index, list);
+                onChange(TextChange.insert, index, cast(uint)list.length);
+            }
+            else
+            {
+                _lines ~= list;
+                onChange(TextChange.append, 0, cast(uint)list.length);
+            }
+        }
+    }
+
+    void replaceLines(uint index, uint count, dstring[] list)
+    {
+        assert(index < _lines.length);
+        assert(index + count < _lines.length);
+
+        const itemCount = cast(uint)list.length;
+        if (count > 0 || itemCount > 0)
+        {
+            replaceInPlace(_lines, index, index + count, list);
+            const replaced = min(count, itemCount);
+            if (replaced > 0)
+                onChange(TextChange.replace, index, replaced);
+            if (count < itemCount)
+                onChange(TextChange.insert, index + count, itemCount - count);
+            else if (count > itemCount)
+                onChange(TextChange.remove, index + itemCount, count - itemCount);
+        }
+    }
+
+    void removeLines(uint index, uint count)
+    {
+        assert(index < _lines.length);
+        assert(index + count < _lines.length);
+
+        if (count > 0)
+        {
+            dstring[] dummy;
+            replaceInPlace(_lines, index, index + count, dummy);
+            onChange(TextChange.remove, index, count);
+        }
+    }
+
+    alias opDollar = lineCount;
+
+    /// Allows to change the line string by index. The index must be in range
+    void opIndexAssign(dstring str, uint i)
+    {
+        assert(i < _lines.length);
+        _lines[i] = str;
+        onChange(TextChange.replace, i, 1);
+    }
+
+    /// Get the line string by index, `null` if index is out of bounds
+    dstring opIndex(uint i) const
+    {
+        return i < _lines.length ? _lines[i] : null;
+    }
+
+    /// Returns character at position `(lineIndex, pos)`
+    dchar opIndex(int lineIndex, int pos)
+    {
+        const s = line(lineIndex);
+        if (0 <= pos && pos < s.length)
+            return s[pos];
+        else
+            return 0;
+    }
+    /// ditto
+    dchar opIndex(TextPosition p)
+    {
+        const s = line(p.line);
+        if (0 <= p.pos && p.pos < s.length)
+            return s[p.pos];
+        else
+            return 0;
+    }
+
+    /// Returns the line string by index, `null` if index is out of bounds
+    dstring line(uint i) const
+    {
+        return i < _lines.length ? _lines[i] : null;
+    }
+
+    /// Returns length of a line by index
+    int lineLength(uint i) const
+    {
+        return i < _lines.length ? cast(int)_lines[i].length : 0;
+    }
+
+    /// Calculate maximum line length
+    int getMaxLineLength() const
+    {
+        size_t m;
+        foreach (s; _lines)
+            if (m < s.length)
+                m = s.length;
+        return cast(int)m;
+    }
+
+    /// Returns text position for the begin of line by index, clamps if necessary
+    TextPosition lineBegin(int i) const
+    {
+        const len = cast(int)_lines.length;
+        if (i < 0 || len == 0)
+            return TextPosition(0, 0);
+        if (i >= len)
+            return TextPosition(len - 1, cast(int)_lines[len - 1].length);
+        return TextPosition(i, 0);
+    }
+
+    /// Returns text position for the end of line by index, clamps if necessary
+    TextPosition lineEnd(int i) const
+    {
+        const len = cast(int)_lines.length;
+        if (i < 0 || len == 0)
+            return TextPosition(0, 0);
+        if (i >= len)
+            return TextPosition(len - 1, cast(int)_lines[len - 1].length);
+        return TextPosition(i, cast(int)_lines[i].length);
+    }
+
+    /// Returns previous character position
+    TextPosition prevCharPos(TextPosition p) const
+    {
+        if (p.line < 0)
+            return TextPosition(0, 0);
+        p.pos--;
+        while (true)
+        {
+            if (p.line < 0)
+                return TextPosition(0, 0);
+            if (0 <= p.pos && p.pos < lineLength(p.line))
+                return p;
+            p.line--;
+            p.pos = lineLength(p.line) - 1;
+        }
+    }
+
+    /// Returns previous character position
+    TextPosition nextCharPos(TextPosition p) const
+    {
+        TextPosition eof = end();
+        if (p >= eof)
+            return eof;
+        p.pos++;
+        while (true)
+        {
+            if (p >= eof)
+                return eof;
+            if (0 <= p.pos && p.pos < lineLength(p.line))
+                return p;
+            p.line++;
+            p.pos = 0;
+        }
+    }
+
+    /// Returns text range for whole line `index`
+    TextRange lineRange(int index) const
+    {
+        const start = TextPosition(index, 0);
+        const end = index + 1 < lineCount ? lineBegin(index + 1) : lineEnd(index);
+        return TextRange(start, end);
+    }
+
+    /// Returns text for specified range
+    dstring[] rangeText(TextRange range) const
+    {
+        dstring[] txt;
+        if (range.empty)
+        {
+            txt ~= null;
+            return txt;
+        }
+        for (int i = range.start.line; i <= range.end.line; i++)
+        {
+            const s = line(i);
+            const len = cast(int)s.length;
+            const int start = (i == range.start.line) ? range.start.pos : 0;
+            const int end = (i == range.end.line) ? min(range.end.pos, len) : len;
+            if (start < end)
+                txt ~= s[start .. end];
+            else
+                txt ~= null;
+        }
+        return txt;
+    }
+
+    /// When position is out of content bounds, fix it to nearest valid position
+    void correctPosition(ref TextPosition position)
+    {
+        if (position.line >= lineCount)
+        {
+            position.line = lineCount - 1;
+            position.pos = lineLength(position.line);
+        }
+        else if (position.line < 0)
+        {
+            position.line = 0;
+            position.pos = 0;
+        }
+        else
+        {
+            const currentLineLength = lineLength(position.line);
+            position.pos = clamp(position.pos, 0, currentLineLength);
+        }
+    }
+
+    /// When range positions is out of content bounds, fix it to nearest valid position
+    void correctRange(ref TextRange range)
+    {
+        correctPosition(range.start);
+        correctPosition(range.end);
+    }
+}
+
 /// Action performed with editable contents
 enum EditAction
 {
@@ -318,6 +675,27 @@ enum EditStateMark : ubyte
 /// Edit operation details for EditableContent
 class EditOperation : UndoOperation
 {
+    final @property
+    {
+        /// Action performed
+        EditAction action() const { return _action; }
+
+        /// Source range to replace with new content
+        TextRange range() const { return _range; }
+
+        /// New range after operation applied
+        TextRange newRange() const { return _newRange; }
+
+        /// New content for range (if required for this action)
+        dstring[] content() { return _content; }
+
+        /// Line edit marks for old range
+        EditStateMark[] oldEditMarks() { return _oldEditMarks; }
+
+        /// Old content for range
+        dstring[] oldContent() { return _oldContent; }
+    }
+
     private
     {
         EditAction _action;
@@ -355,25 +733,12 @@ class EditOperation : UndoOperation
             _content[i] = text[i].dup;
     }
 
-    @property
+    void setNewRange(TextRange r, dstring[] oldContent, EditStateMark[] oldEditMarks)
     {
-        /// Action performed
-        EditAction action() const { return _action; }
-
-        /// Source range to replace with new content
-        ref TextRange range() { return _range; }
-
-        /// New range after operation applied
-        ref TextRange newRange() { return _newRange; }
-
-        /// New content for range (if required for this action)
-        ref dstring[] content() { return _content; }
-
-        /// Line edit marks for old range
-        ref EditStateMark[] oldEditMarks() { return _oldEditMarks; }
-
-        /// Old content for range
-        ref dstring[] oldContent() { return _oldContent; }
+        assert(oldContent.length > 0);
+        _newRange = r;
+        _oldContent = oldContent;
+        _oldEditMarks = oldEditMarks;
     }
 
     /// Try to merge two operations (simple entering of characters in the same line), return true if succeded
@@ -510,7 +875,7 @@ interface SyntaxSupport
     }
 
     /// Categorize characters in content by token types
-    void updateHighlight(dstring[] lines, TokenPropString[] props, int startLine, int endLine);
+    void updateHighlight(const dstring[] lines, TokenPropString[] props, int startLine, int endLine);
 
     /// Find paired bracket `{}` `()` `[]` for char at position `p`.
     /// Returns: Paired char position or `p` if not found or not a bracket.
@@ -565,7 +930,7 @@ struct TabSize
 }
 
 /// Editable plain text (single/multiline)
-class EditableContent
+class EditableContent : TextContent
 {
     @property
     {
@@ -576,17 +941,15 @@ class EditableContent
 
         inout(SyntaxSupport) syntaxSupport() inout { return _syntaxSupport; }
         /// ditto
-        void syntaxSupport(SyntaxSupport syntaxSupport)
+        void syntaxSupport(SyntaxSupport syntax)
         {
-            _syntaxSupport = syntaxSupport;
-            if (_syntaxSupport)
+            _syntaxSupport = syntax;
+            if (syntax)
             {
-                _syntaxSupport.content = this;
-                updateTokenProps(0, cast(int)_lines.length);
+                syntax.content = this;
+                updateTokenProps(0, lineCount);
             }
         }
-
-        const(dstring[]) lines() const { return _lines; }
 
         /// Returns true if content has syntax highlight handler set
         bool hasSyntaxHighlight() const
@@ -594,31 +957,31 @@ class EditableContent
             return _syntaxSupport !is null;
         }
 
-        ref LineIcons lineIcons() { return _lineIcons; }
-
         /// True if smart indents are supported
         bool supportsSmartIndents() const
         {
             return _syntaxSupport && _syntaxSupport.supportsSmartIndents;
         }
 
-        /// Returns true if miltiline content is supported
-        bool multiline() const { return _multiline; }
+        ref LineIcons lineIcons() { return _lineIcons; }
 
         EditStateMark[] editMarks() { return _editMarks; }
 
-        /// Returns all lines concatenated delimited by '\n'
+        /// Returns true if miltiline content is supported
+        bool multiline() const { return _multiline; }
+
+        /// Returns all lines concatenated by '\n' delimiter
         dstring text() const
         {
-            if (_lines.length == 0)
+            if (lineCount == 0)
                 return null;
-            if (_lines.length == 1)
-                return _lines[0];
+            if (lineCount == 1)
+                return lines[0];
             // concat lines
             dchar[] buf;
-            foreach (index, item; _lines)
+            foreach (i, item; lines)
             {
-                if (index)
+                if (i)
                     buf ~= EOL;
                 buf ~= item;
             }
@@ -630,27 +993,18 @@ class EditableContent
             clearUndo();
             if (_multiline)
             {
-                _lines = splitDString(newContent);
-                if (_lines.length == 0)
-                    _lines.length = 1;
-                _tokenProps.length = _lines.length;
-                updateTokenProps(0, cast(int)_lines.length);
+                replaceAll(newContent);
+                if (lineCount == 0)
+                    appendLine(null);
+                updateTokenProps(0, lineCount);
             }
             else
             {
-                _lines.length = 1;
-                _lines[0] = replaceEOLsWithSpaces(newContent);
-                _tokenProps.length = 1;
+                removeAll();
+                appendLine(replaceEOLsWithSpaces(newContent));
                 updateTokenProps(0, 1);
             }
-            clearEditMarks();
             notifyContentReplaced();
-        }
-
-        /// Returns line count
-        int length() const
-        {
-            return cast(int)_lines.length;
         }
     }
 
@@ -677,8 +1031,6 @@ class EditableContent
 
         bool _multiline;
 
-        /// Text content by lines
-        dstring[] _lines;
         /// Token properties by lines - for syntax highlight
         TokenPropString[] _tokenProps;
 
@@ -688,19 +1040,60 @@ class EditableContent
 
     this(bool multiline)
     {
+        super(1); // initial state: single empty line
+        onChange ~= &handleChange;
         _multiline = multiline;
-        _lines.length = 1; // initial state: single empty line
         _editMarks.length = 1;
         _undoBuffer = new UndoBuffer;
     }
 
-    /// Append one or more lines at end
-    void appendLines(dstring[] lines...)
+    protected void handleChange(TextChange type, uint index, uint count)
     {
-        TextRange rangeBefore;
-        rangeBefore.start = rangeBefore.end = lineEnd(_lines.length ? cast(int)_lines.length - 1 : 0);
-        auto op = new EditOperation(EditAction.replace, rangeBefore, lines);
-        performOperation(op, this);
+        if (type == TextChange.replaceAll)
+        {
+            _tokenProps.length = count;
+            _editMarks.length = count;
+            _editMarks[] = EditStateMark.unchanged;
+            return;
+        }
+        if (count > 0)
+        {
+            if (type == TextChange.append)
+            {
+                _tokenProps.length += count;
+                _editMarks.length += count;
+            }
+            else if (type == TextChange.insert)
+            {
+                _tokenProps.length += count;
+                _editMarks.length += count;
+                foreach_reverse (i; index + count .. _tokenProps.length)
+                {
+                    _tokenProps[i] = _tokenProps[i - count];
+                    _editMarks[i] = _editMarks[i - count];
+                }
+                foreach (i; index .. index + count)
+                {
+                    _tokenProps[i] = null;
+                    _editMarks[i] = EditStateMark.changed;
+                }
+            }
+            else if (type == TextChange.remove)
+            {
+                foreach (i; index .. _tokenProps.length - count)
+                {
+                    _tokenProps[i] = _tokenProps[i + count];
+                    _editMarks[i] = _editMarks[i + count];
+                }
+                foreach (i; _tokenProps.length - count .. _tokenProps.length)
+                {
+                    _tokenProps[i] = null; // free unused line references
+                    _editMarks[i] = EditStateMark.unchanged;
+                }
+                _tokenProps.length -= count;
+                _editMarks.length -= count;
+            }
+        }
     }
 
     static alias isAlphaForWordSelection = isAlNum;
@@ -711,7 +1104,7 @@ class EditableContent
         TextRange res;
         res.start = pos;
         res.end = pos;
-        if (pos.line < 0 || pos.line >= _lines.length)
+        if (pos.line < 0 || lineCount <= pos.line)
             return res;
 
         dstring s = line(pos.line);
@@ -799,7 +1192,7 @@ class EditableContent
         clearTokenProps(startLine, endLine);
         if (_syntaxSupport)
         {
-            _syntaxSupport.updateHighlight(_lines, _tokenProps, startLine, endLine);
+            _syntaxSupport.updateHighlight(lines, _tokenProps, startLine, endLine);
         }
     }
 
@@ -818,8 +1211,7 @@ class EditableContent
         {
             if (hasSyntaxHighlight)
             {
-                const len = _lines[i].length;
-                _tokenProps[i].length = len;
+                _tokenProps[i].length = lineLength(i);
                 _tokenProps[i][] = TOKEN_UNKNOWN;
             }
             else
@@ -829,126 +1221,38 @@ class EditableContent
 
     void clearEditMarks()
     {
-        _editMarks.length = _lines.length;
-        foreach (i; 0 .. _editMarks.length)
-            _editMarks[i] = EditStateMark.unchanged;
+        _editMarks.length = lineCount;
+        _editMarks[] = EditStateMark.unchanged;
     }
 
     /// Clear content
     void clear()
     {
+        removeAll();
         clearUndo();
         clearEditMarks();
-        _lines.length = 0;
-    }
-
-    dstring opIndex(int index) const
-    {
-        return line(index);
-    }
-
-    /// Returns line text by index, "" if index is out of bounds
-    dstring line(int index) const
-    {
-        return index >= 0 && index < _lines.length ? _lines[index] : ""d;
-    }
-
-    /// Returns character at position `(lineIndex, pos)`
-    dchar opIndex(int lineIndex, int pos)
-    {
-        const s = line(lineIndex);
-        if (pos >= 0 && pos < s.length)
-            return s[pos];
-        return 0;
-    }
-    /// ditto
-    dchar opIndex(TextPosition p)
-    {
-        const s = line(p.line);
-        if (p.pos >= 0 && p.pos < s.length)
-            return s[p.pos];
-        return 0;
     }
 
     /// Returns line token properties one item per character (index is 0 based line number)
     TokenPropString lineTokenProps(int index)
     {
-        return index >= 0 && index < _tokenProps.length ? _tokenProps[index] : null;
+        return 0 <= index && index < _tokenProps.length ? _tokenProps[index] : null;
     }
 
     /// Returns token properties character position
     TokenProp tokenProp(TextPosition p)
     {
-        return p.line >= 0 && p.line < _tokenProps.length && p.pos >= 0 &&
-            p.pos < _tokenProps[p.line].length ? _tokenProps[p.line][p.pos] : 0;
-    }
-
-    /// Returns position for end of last line
-    @property TextPosition endOfFile() const
-    {
-        return TextPosition(cast(int)_lines.length - 1, cast(int)_lines[$ - 1].length);
+        if (0 <= p.line && p.line < _tokenProps.length)
+            if (0 <= p.pos && p.pos < _tokenProps[p.line].length)
+                return _tokenProps[p.line][p.pos];
+        return 0;
     }
 
     /// Returns access to line edit mark by line index (0 based)
     ref EditStateMark editMark(int index)
     {
-        assert(index >= 0 && index < _editMarks.length);
+        assert(0 <= index && index < _editMarks.length);
         return _editMarks[index];
-    }
-
-    /// Returns text position for the end of line `index`
-    TextPosition lineEnd(int index) const
-    {
-        return TextPosition(index, lineLength(index));
-    }
-
-    /// Returns text position for the begin of line `index` (if index > the number of lines, returns end of last line)
-    TextPosition lineBegin(int index) const
-    {
-        return index >= _lines.length ? lineEnd(index - 1) : TextPosition(index, 0);
-    }
-
-    /// Returns previous character position
-    TextPosition prevCharPos(TextPosition p) const
-    {
-        if (p.line < 0)
-            return TextPosition(0, 0);
-        p.pos--;
-        while (true)
-        {
-            if (p.line < 0)
-                return TextPosition(0, 0);
-            if (p.pos >= 0 && p.pos < lineLength(p.line))
-                return p;
-            p.line--;
-            p.pos = lineLength(p.line) - 1;
-        }
-    }
-
-    /// Returns previous character position
-    TextPosition nextCharPos(TextPosition p) const
-    {
-        TextPosition eof = endOfFile();
-        if (p >= eof)
-            return eof;
-        p.pos++;
-        while (true)
-        {
-            if (p >= eof)
-                return eof;
-            if (p.pos >= 0 && p.pos < lineLength(p.line))
-                return p;
-            p.line++;
-            p.pos = 0;
-        }
-    }
-
-    /// Returns text range for whole line `index`
-    TextRange lineRange(int index) const
-    {
-        const start = TextPosition(index, 0);
-        const end = index + 1 < _lines.length ? lineBegin(index + 1) : lineEnd(index);
-        return TextRange(start, end);
     }
 
     /// Find nearest next tab position
@@ -974,11 +1278,11 @@ class EditableContent
     LineWhiteSpace getLineWhiteSpace(int lineIndex) const
     {
         LineWhiteSpace res;
-        if (lineIndex < 0 || lineIndex >= _lines.length)
+        const s = line(lineIndex);
+        if (s is null)
             return res;
-        const s = _lines[lineIndex];
-        int x = 0;
-        for (int i = 0; i < s.length; i++)
+        int x;
+        for (int i; i < s.length; i++)
         {
             const ch = s[i];
             if (ch == '\t')
@@ -1034,10 +1338,10 @@ class EditableContent
     TextLineMeasure measureLine(int lineIndex) const
     {
         TextLineMeasure res;
-        const s = _lines[lineIndex];
-        res.len = cast(int)s.length;
-        if (lineIndex < 0 || lineIndex >= _lines.length)
+        const s = line(lineIndex);
+        if (s is null)
             return res;
+        res.len = cast(int)s.length;
         int x;
         for (int i; i < s.length; i++)
         {
@@ -1068,9 +1372,7 @@ class EditableContent
     /// Returns true if the line with `index` is empty (has length 0 or consists only of spaces and tabs)
     bool lineIsEmpty(int index) const
     {
-        if (index < 0 || index >= _lines.length)
-            return true;
-        foreach (ch; _lines[index])
+        foreach (ch; line(index))
             if (ch != ' ' && ch != '\t')
                 return false;
         return true;
@@ -1105,22 +1407,6 @@ class EditableContent
         return TextPosition(lineIndex, 0);
     }
 
-    /// Returns length of the line `index`
-    int lineLength(int index) const
-    {
-        return index >= 0 && index < _lines.length ? cast(int)_lines[index].length : 0;
-    }
-
-    /// Returns maximum length of line
-    int maxLineLength() const
-    {
-        int m = 0;
-        foreach (s; _lines)
-            if (m < s.length)
-                m = cast(int)s.length;
-        return m;
-    }
-
     void handleContentChange(EditOperation op, ref TextRange rangeBefore, ref TextRange rangeAfter, Object source)
     {
         // update highlight if necessary
@@ -1153,76 +1439,30 @@ class EditableContent
         return res;
     }
 
-    /// Returns text for specified range
-    dstring[] rangeText(TextRange range) const
+    /// Removes `count` lines starting from start
+    protected void removeLines(int start, int count)
     {
-        dstring[] res;
-        if (range.empty)
-        {
-            res ~= ""d;
-            return res;
-        }
-        for (int lineIndex = range.start.line; lineIndex <= range.end.line; lineIndex++)
-        {
-            const lineText = line(lineIndex);
-            dstring lineFragment = lineText;
-            const int startchar = (lineIndex == range.start.line) ? range.start.pos : 0;
-            int endchar = (lineIndex == range.end.line) ? range.end.pos : cast(int)lineText.length;
-            if (endchar > lineText.length)
-                endchar = cast(int)lineText.length;
-            if (endchar <= startchar)
-                lineFragment = ""d;
-            else if (startchar != 0 || endchar != lineText.length)
-                lineFragment = lineText[startchar .. endchar].dup;
-            res ~= lineFragment;
-        }
-        return res;
-    }
+        const int end = start + count;
+        assert(count > 0);
+        assert(0 <= start && start < _lines.length);
+        assert(0 < end && end <= _lines.length);
 
-    /// When position is out of content bounds, fix it to nearest valid position
-    void correctPosition(ref TextPosition position)
-    {
-        if (position.line >= length)
+        foreach (i; start .. lineCount - count)
         {
-            position.line = length - 1;
-            position.pos = lineLength(position.line);
+            _lines[i] = _lines[i + count];
+            _tokenProps[i] = _tokenProps[i + count];
+            _editMarks[i] = _editMarks[i + count];
         }
-        if (position.line < 0)
+        foreach (i; lineCount - count .. lineCount)
         {
-            position.line = 0;
-            position.pos = 0;
+            // free unused line references
+            _lines[i] = null;
+            _tokenProps[i] = null;
+            _editMarks[i] = EditStateMark.unchanged;
         }
-        const currentLineLength = lineLength(position.line);
-        position.pos = clamp(position.pos, 0, currentLineLength);
-    }
-
-    /// When range positions is out of content bounds, fix it to nearest valid position
-    void correctRange(ref TextRange range)
-    {
-        correctPosition(range.start);
-        correctPosition(range.end);
-    }
-
-    /// Removes `removedCount` lines starting from start
-    protected void removeLines(int start, int removedCount)
-    {
-        const int end = start + removedCount;
-        assert(removedCount > 0 && start >= 0 && end > 0 && start < _lines.length && end <= _lines.length);
-        for (int i = start; i < _lines.length - removedCount; i++)
-        {
-            _lines[i] = _lines[i + removedCount];
-            _tokenProps[i] = _tokenProps[i + removedCount];
-            _editMarks[i] = _editMarks[i + removedCount];
-        }
-        for (int i = cast(int)_lines.length - removedCount; i < _lines.length; i++)
-        {
-            _lines[i] = null; // free unused line references
-            _tokenProps[i] = null; // free unused line references
-            _editMarks[i] = EditStateMark.unchanged; // free unused line references
-        }
-        _lines.length -= removedCount;
-        _tokenProps.length = _lines.length;
-        _editMarks.length = _lines.length;
+        _lines.length -= count;
+        _tokenProps.length -= count;
+        _editMarks.length -= count;
     }
 
     /// Inserts count empty lines at specified position
@@ -1230,9 +1470,9 @@ class EditableContent
     {
         assert(count > 0);
         _lines.length += count;
-        _tokenProps.length = _lines.length;
-        _editMarks.length = _lines.length;
-        for (int i = cast(int)_lines.length - 1; i >= start + count; i--)
+        _tokenProps.length += count;
+        _editMarks.length += count;
+        foreach_reverse (i; start + count .. lineCount)
         {
             _lines[i] = _lines[i - count];
             _tokenProps[i] = _tokenProps[i - count];
@@ -1240,7 +1480,7 @@ class EditableContent
         }
         foreach (i; start .. start + count)
         {
-            _lines[i] = ""d;
+            _lines[i] = null;
             _tokenProps[i] = null;
             _editMarks[i] = EditStateMark.changed;
         }
@@ -1251,10 +1491,10 @@ class EditableContent
     {
         const dstring firstLineBefore = line(before.start.line);
         const dstring lastLineBefore = before.singleLine ? firstLineBefore : line(before.end.line);
-        const dstring firstLineHead = before.start.pos > 0 && before.start.pos <= firstLineBefore.length ?
-            firstLineBefore[0 .. before.start.pos] : ""d;
-        const dstring lastLineTail = before.end.pos >= 0 && before.end.pos < lastLineBefore.length ?
-            lastLineBefore[before.end.pos .. $] : ""d;
+        const dstring firstLineHead = 0 < before.start.pos && before.start.pos <= firstLineBefore.length ?
+            firstLineBefore[0 .. before.start.pos] : null;
+        const dstring lastLineTail = 0 <= before.end.pos && before.end.pos < lastLineBefore.length ?
+            lastLineBefore[before.end.pos .. $] : null;
 
         const int linesBefore = before.lines;
         const int linesAfter = after.lines;
@@ -1268,55 +1508,33 @@ class EditableContent
             // remove extra lines
             removeLines(before.start.line + 1, linesBefore - linesAfter);
         }
-        foreach (int i; after.start.line .. after.end.line + 1)
+
+        const start = after.start.line;
+        const end = after.end.line;
+        foreach (int i; start .. end + 1)
         {
-            if (marks)
+            if (i - start < marks.length)
             {
-                //if (i - after.start.line < marks.length)
-                _editMarks[i] = marks[i - after.start.line];
+                _editMarks[i] = marks[i - start];
             }
-            const dstring newline = newContent[i - after.start.line];
-            if (i == after.start.line && i == after.end.line)
+            dstring insertion = newContent[i - start]; // no dup needed
+            if (i == start && i == end)
             {
-                dchar[] buf;
-                buf ~= firstLineHead;
-                buf ~= newline;
-                buf ~= lastLineTail;
-                //Log.d("merging lines ", firstLineHead, " ", newline, " ", lastLineTail);
-                _lines[i] = cast(dstring)buf;
-                clearTokenProps(i, i + 1);
-                if (!marks)
-                    markChangedLines(i, i + 1);
-                //Log.d("merge result: ", _lines[i]);
+                insertion = firstLineHead ~ insertion ~ lastLineTail;
             }
-            else if (i == after.start.line)
+            else if (i == start)
             {
-                dchar[] buf;
-                buf ~= firstLineHead;
-                buf ~= newline;
-                _lines[i] = cast(dstring)buf;
-                clearTokenProps(i, i + 1);
-                if (!marks)
-                    markChangedLines(i, i + 1);
+                insertion = firstLineHead ~ insertion;
             }
-            else if (i == after.end.line)
+            else if (i == end)
             {
-                dchar[] buf;
-                buf ~= newline;
-                buf ~= lastLineTail;
-                _lines[i] = cast(dstring)buf;
-                clearTokenProps(i, i + 1);
-                if (!marks)
-                    markChangedLines(i, i + 1);
+                insertion = insertion ~ lastLineTail;
             }
-            else
-            {
-                _lines[i] = newline; // no dup needed
-                clearTokenProps(i, i + 1);
-                if (!marks)
-                    markChangedLines(i, i + 1);
-            }
+            _lines[i] = insertion;
         }
+        clearTokenProps(start, end + 1);
+        if (!marks.length)
+            markChangedLines(start, end + 1);
     }
 
     static bool isWordBound(dchar thischar, dchar nextchar)
@@ -1375,7 +1593,7 @@ class EditableContent
             if (p.pos >= linelen)
             {
                 // last position of line
-                if (p.line < length - 1)
+                if (p.line < lineCount - 1)
                     p = firstNonSpace(p.line + 1);
             }
             else if (p.pos >= lastns.pos)
@@ -1438,9 +1656,7 @@ class EditableContent
                 rangeAfter.end.pos = rangeAfter.start.pos + cast(int)newcontent[0].length;
             }
             assert(rangeAfter.start <= rangeAfter.end);
-            op.newRange = rangeAfter;
-            op.oldContent = oldcontent;
-            op.oldEditMarks = oldmarks;
+            op.setNewRange(rangeAfter, oldcontent, oldmarks);
             replaceRange(rangeBefore, rangeAfter, newcontent);
             _undoBuffer.push(op);
             handleContentChange(op, rangeBefore, rangeAfter, source);
@@ -1462,6 +1678,7 @@ class EditableContent
     {
         return _undoBuffer.hasRedo;
     }
+
     /// Undoes last change
     bool undo(Object source)
     {
@@ -1480,7 +1697,6 @@ class EditableContent
         handleContentChange(op, rangeBefore, rangeAfter, source ? source : this);
         return true;
     }
-
     /// Redoes last undone change
     bool redo(Object source)
     {
@@ -1498,6 +1714,7 @@ class EditableContent
         handleContentChange(op, rangeBefore, rangeAfter, source ? source : this);
         return true;
     }
+
     /// Clear undo/redo history
     void clearUndo()
     {
@@ -1523,28 +1740,27 @@ class EditableContent
         _format = TextFileFormat.init;
         try
         {
-            LineStream lines = LineStream.create(f, fname);
+            LineStream stream = LineStream.create(f, fname);
+            dstring[] lines;
             while (true)
             {
-                dchar[] s = lines.readLine();
+                dchar[] s = stream.readLine();
                 if (s is null)
                     break;
-                _lines ~= s.idup;
+                lines ~= s.idup;
             }
-            if (lines.errorCode != 0)
+            if (stream.errorCode != 0)
             {
-                _lines.length = 1;
-                _tokenProps.length = 1;
-                Log.e("Error ", lines.errorCode, " ", lines.errorMessage, " -- at line ",
-                        lines.errorLine, " position ", lines.errorPos);
+                appendLine(null);
+                Log.e("Error ", stream.errorCode, " ", stream.errorMessage, " -- at line ",
+                        stream.errorLine, " position ", stream.errorPos);
                 notifyContentReplaced();
                 return false;
             }
             // EOF
-            _tokenProps.length = _lines.length;
-            clearTokenProps(0, cast(int)_lines.length);
-            clearEditMarks();
-            _format = lines.textFormat;
+            replaceAll(lines);
+            clearTokenProps(0, lineCount);
+            _format = stream.textFormat;
             debug (FileFormats)
                 Log.d("loaded file:", filename, " format detected:", _format);
             notifyContentReplaced();
@@ -1552,8 +1768,7 @@ class EditableContent
         }
         catch (Exception e)
         {
-            _lines.length = 1;
-            _tokenProps.length = 1;
+            appendLine(null);
             Log.e("Exception while trying to read file ", fname, " ", e.toString);
             notifyContentReplaced();
             return false;
@@ -1604,7 +1819,7 @@ class EditableContent
                 Log.d("creating output stream, file=", filename, " format=", format);
             auto writer = new OutputLineStream(stream, filename, format);
             scope (exit) writer.close();
-            foreach (line; _lines)
+            foreach (line; lines)
             {
                 writer.writeLine(line);
             }
