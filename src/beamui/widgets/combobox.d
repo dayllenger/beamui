@@ -3,17 +3,19 @@ Combo Box controls, simple and editable.
 
 Synopsis:
 ---
-// creation of simple combo box
-auto cbox = new ComboBox("combo1", ["value 1"d, "value 2"d, "value 3"d]);
+dstring[] list = ["value 1", "value 2", "value 3"];
 
-// select first item
+// creation of simple combo box
+auto cbox = new ComboBox(list);
+
+// select the first item
 cbox.selectedItemIndex = 0;
 
 // get selected item text
 writeln(cbox.text);
 ---
 
-Copyright: Vadim Lopatin 2014-2017
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2019
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -27,34 +29,37 @@ import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Abstract ComboBox
-class ComboBoxBase : Panel
+abstract class ComboBoxBase : Panel
 {
-    /// Selected item index
-    @property int selectedItemIndex() const { return _selectedItemIndex; }
-    /// ditto
-    @property void selectedItemIndex(int index)
+    @property
     {
-        if (_selectedItemIndex == index)
-            return;
-        if (_selectedItemIndex != -1 && _adapter.itemCount > _selectedItemIndex)
+        /// Selected item index
+        int selectedItemIndex() const { return _selectedItemIndex; }
+        /// ditto
+        void selectedItemIndex(int index)
         {
-            _adapter.resetItemState(_selectedItemIndex, State.selected | State.focused | State.hovered);
+            if (_selectedItemIndex == index)
+                return;
+            if (_selectedItemIndex != -1 && _adapter.itemCount > _selectedItemIndex)
+            {
+                _adapter.resetItemState(_selectedItemIndex, State.selected | State.focused | State.hovered);
+            }
+            _selectedItemIndex = index;
+            onSelect(index);
         }
-        _selectedItemIndex = index;
-        onSelect(index);
+
+        override bool enabled() const
+        {
+            return super.enabled;
+        }
+        override void enabled(bool flag)
+        {
+            super.enabled = flag;
+            _button.enabled = flag;
+        }
     }
 
-    override @property bool enabled() const
-    {
-        return super.enabled;
-    }
-    override @property void enabled(bool flag)
-    {
-        super.enabled = flag;
-        _button.enabled = flag;
-    }
-
-    /// Handle item click
+    /// Triggers on item selection and passes integer index of the item
     Signal!(void delegate(int)) onSelect;
 
     private
@@ -70,92 +75,15 @@ class ComboBoxBase : Panel
     {
         _adapter = adapter;
         _ownAdapter = ownAdapter;
+        isolateStyle();
         allowsHover = true;
         initialize();
     }
 
-    protected void initialize()
+    ~this()
     {
-        _body = createSelectedItemWidget();
-        _body.onClick ~= &handleClick;
-        _body.state = State.parent;
-        _button = createButton();
-        _button.allowsFocus = false;
-        _body.allowsFocus = false;
-        allowsFocus = true;
-        add(_body, _button);
-    }
-
-    protected Widget createSelectedItemWidget()
-    {
-        Widget res;
-        if (_adapter && _selectedItemIndex < _adapter.itemCount)
-        {
-            res = _adapter.itemWidget(_selectedItemIndex);
-            res.id = "COMBOBOX_BODY";
-        }
-        else
-        {
-            res = new Widget("COMBOBOX_BODY");
-        }
-        return res;
-    }
-
-    override protected void handleClick()
-    {
-        if (enabled && !_popup)
-        {
-            showPopup();
-        }
-    }
-
-    protected Button createButton()
-    {
-        auto res = new Button(null, "scrollbar_btn_down");
-        res.id = "COMBOBOX_BUTTON";
-        res.bindSubItem(this, "button");
-        res.onClick ~= &handleClick;
-        return res;
-    }
-
-    protected ListWidget createPopup()
-    {
-        auto list = new ListWidget;
-        list.id = "POPUP_LIST";
-        list.bindSubItem(this, "list");
-        list.adapter = _adapter;
-        list.selectedItemIndex = _selectedItemIndex;
-        list.sumItemSizes = true;
-        return list;
-    }
-
-    private Popup _popup;
-    private ListWidget _popupList;
-
-    protected void onPopupClose()
-    {
-    }
-
-    protected void showPopup()
-    {
-        if (!_adapter || !_adapter.itemCount)
-            return; // don't show empty popup
-        _popupList = createPopup();
-        _popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
-        _popup.onPopupClose ~= (bool b) {
-            _popup = null;
-            _popupList = null;
-        };
-        _popupList.onSelect ~= (int index) {
-            selectedItemIndex = index;
-            if (_popup !is null)
-            {
-                _popup.close();
-                _popup = null;
-                onPopupClose();
-            }
-        };
-        _popupList.setFocus();
+        if (_ownAdapter)
+            eliminate(_adapter);
     }
 
     void setAdapter(ListAdapter adapter, bool ownAdapter = true)
@@ -171,16 +99,178 @@ class ComboBoxBase : Panel
         initialize();
     }
 
+    protected void initialize()
+    {
+        _body = createSelectedItemWidget();
+        _body.bindSubItem(this, "body");
+        _body.state = State.parent;
+        _body.allowsFocus = false;
+        _body.onClick ~= &handleClick;
+
+        _button = createButton();
+        _button.bindSubItem(this, "button");
+        _button.allowsFocus = false;
+        _button.onClick ~= &handleClick;
+
+        add(_body, _button);
+        allowsFocus = true;
+    }
+
+    protected Widget createSelectedItemWidget()
+    {
+        if (_adapter && _selectedItemIndex < _adapter.itemCount)
+            return _adapter.itemWidget(_selectedItemIndex);
+        else
+            return new Widget;
+    }
+
+    protected Button createButton()
+    {
+        return new Button(null, "scrollbar_btn_down");
+    }
+
+    protected ListWidget createPopup()
+    {
+        auto list = new ListWidget;
+        list.adapter = _adapter;
+        list.selectedItemIndex = _selectedItemIndex;
+        list.sumItemSizes = true;
+        return list;
+    }
+
+    private Popup _popup;
+    private ListWidget _popupList;
+
+    protected void showPopup()
+    {
+        if (!_adapter || !_adapter.itemCount)
+            return; // don't show empty popup
+
+        _popupList = createPopup();
+        _popupList.bindSubItem(this, "list");
+        _popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
+        _popup.onPopupClose ~= (bool b) {
+            _popup = null;
+            _popupList = null;
+            removeAttribute("opened");
+            handlePopupClose();
+        };
+        setAttribute("opened");
+        _popupList.onSelect ~= (int index) {
+            selectedItemIndex = index;
+            if (_popup)
+            {
+                _popup.close();
+                _popup = null;
+            }
+        };
+        _popupList.setFocus();
+    }
+
+    protected void handlePopupClose()
+    {
+        setFocus();
+    }
+
+    override protected void handleClick()
+    {
+        if (enabled && !_popup)
+        {
+            showPopup();
+        }
+    }
+
+    override bool handleWheelEvent(WheelEvent event)
+    {
+        if (!enabled)
+            return false;
+        const delta = event.deltaY > 0 ? 1 : -1;
+        const oldIndex = selectedItemIndex;
+        selectedItemIndex = clamp(selectedItemIndex + delta, 0, _adapter.itemCount - 1);
+        return oldIndex != selectedItemIndex;
+    }
+
     override void handleThemeChange()
     {
         super.handleThemeChange();
-        bunch(_body.maybe, _adapter.maybe, _button.maybe).handleThemeChange();
+        _adapter.maybe.handleThemeChange();
     }
 }
 
 /// ComboBox with list of strings
 class ComboBox : ComboBoxBase
 {
+    @property
+    {
+        void items(dstring[] items)
+        {
+            _selectedItemIndex = -1;
+            setAdapter(new StringListAdapter(items));
+            if (items.length > 0)
+            {
+                if (selectedItemIndex == -1 || selectedItemIndex > items.length)
+                    selectedItemIndex = 0;
+            }
+            requestLayout();
+        }
+
+        void items(StringListValue[] items)
+        {
+            _selectedItemIndex = -1;
+            if (auto a = cast(StringListAdapter)_adapter)
+                a.items = items;
+            else
+                setAdapter(new StringListAdapter(items));
+            if (items.length > 0)
+            {
+                selectedItemIndex = 0;
+            }
+            requestLayout();
+        }
+
+        /// Get selected item as text
+        dstring selectedItem()
+        {
+            if (_selectedItemIndex < 0 || _selectedItemIndex >= _adapter.itemCount)
+                return null;
+            return adapter.item(_selectedItemIndex);
+        }
+
+        inout(StringListAdapter) adapter() inout
+        {
+            return cast(inout(StringListAdapter))_adapter;
+        }
+
+        override dstring text() const
+        {
+            return _body.text;
+        }
+        override void text(dstring txt)
+        {
+            const idx = adapter.find(txt);
+            if (idx >= 0)
+            {
+                selectedItemIndex = idx;
+            }
+            else
+            {
+                // not found
+                _selectedItemIndex = -1;
+                _body.text = txt;
+            }
+        }
+
+        override int selectedItemIndex() const
+        {
+            return super.selectedItemIndex;
+        }
+        override void selectedItemIndex(int index)
+        {
+            _body.text = adapter.item(index);
+            super.selectedItemIndex = index;
+        }
+    }
+
     this()
     {
         super(new StringListAdapter, true);
@@ -196,80 +286,6 @@ class ComboBox : ComboBoxBase
         super(new StringListAdapter(items), true);
     }
 
-    ~this()
-    {
-        eliminate(_adapter);
-    }
-
-    @property void items(dstring[] items)
-    {
-        _selectedItemIndex = -1;
-        setAdapter(new StringListAdapter(items));
-        if (items.length > 0)
-        {
-            if (selectedItemIndex == -1 || selectedItemIndex > items.length)
-                selectedItemIndex = 0;
-        }
-        requestLayout();
-    }
-
-    @property void items(StringListValue[] items)
-    {
-        _selectedItemIndex = -1;
-        if (auto a = cast(StringListAdapter)_adapter)
-            a.items = items;
-        else
-            setAdapter(new StringListAdapter(items));
-        if (items.length > 0)
-        {
-            selectedItemIndex = 0;
-        }
-        requestLayout();
-    }
-
-    /// Get selected item as text
-    @property dstring selectedItem()
-    {
-        if (_selectedItemIndex < 0 || _selectedItemIndex >= _adapter.itemCount)
-            return "";
-        return adapter.item(_selectedItemIndex);
-    }
-
-    @property inout(StringListAdapter) adapter() inout
-    {
-        return cast(inout(StringListAdapter))_adapter;
-    }
-
-    override @property dstring text() const
-    {
-        return _body.text;
-    }
-
-    override @property void text(dstring txt)
-    {
-        int idx = adapter.find(txt);
-        if (idx >= 0)
-        {
-            selectedItemIndex = idx;
-        }
-        else
-        {
-            // not found
-            _selectedItemIndex = -1;
-            _body.text = txt;
-        }
-    }
-
-    override @property int selectedItemIndex() const
-    {
-        return super.selectedItemIndex;
-    }
-    override @property void selectedItemIndex(int index)
-    {
-        _body.text = adapter.item(index);
-        super.selectedItemIndex = index;
-    }
-
     override void initialize()
     {
         super.initialize();
@@ -277,15 +293,12 @@ class ComboBox : ComboBoxBase
         _body.allowsClick = true;
         allowsFocus = true;
         allowsClick = true;
-        onClick ~= &handleClick;
     }
 
     override protected Widget createSelectedItemWidget()
     {
-        auto res = new Label;
-        res.id = "COMBOBOX_BODY";
-        res.bindSubItem(this, "body");
-        res.allowsClick = true;
+        auto label = new Label;
+        label.allowsClick = true;
         int minItemWidth;
         foreach (i; 0 .. _adapter.itemCount)
         {
@@ -294,79 +307,76 @@ class ComboBox : ComboBoxBase
             Size sz = item.minSize;
             minItemWidth = max(minItemWidth, sz.w);
         }
-        res.style.minWidth = minItemWidth;
-        return res;
+        label.style.minWidth = minItemWidth;
+        return label;
     }
 }
 
 /// ComboBox with list of strings
 class IconTextComboBox : ComboBoxBase
 {
+    @property
+    {
+        void items(StringListValue[] items)
+        {
+            _selectedItemIndex = -1;
+            if (auto a = cast(IconStringListAdapter)_adapter)
+                a.items = items;
+            else
+                setAdapter(new IconStringListAdapter(items));
+            if (items.length > 0)
+            {
+                selectedItemIndex = 0;
+            }
+            requestLayout();
+        }
+
+        /// Get selected item as text
+        dstring selectedItem() const
+        {
+            if (_selectedItemIndex < 0 || _selectedItemIndex >= _adapter.itemCount)
+                return null;
+            return adapter.item(_selectedItemIndex);
+        }
+
+        inout(IconStringListAdapter) adapter() inout
+        {
+            return cast(inout(IconStringListAdapter))_adapter;
+        }
+
+        override dstring text() const
+        {
+            return _body.text;
+        }
+        override void text(dstring txt)
+        {
+            const idx = adapter.find(txt);
+            if (idx >= 0)
+            {
+                selectedItemIndex = idx;
+            }
+            else
+            {
+                // not found
+                _selectedItemIndex = -1;
+                _body.text = txt;
+            }
+        }
+
+        override int selectedItemIndex() const
+        {
+            return super.selectedItemIndex;
+        }
+        override void selectedItemIndex(int index)
+        {
+            _body.text = adapter.item(index);
+            super.selectedItemIndex = index;
+        }
+    }
+
     this(StringListValue[] items = null)
     {
         super(new IconStringListAdapter(items), true);
-    }
-
-    ~this()
-    {
-        eliminate(_adapter);
-    }
-
-    @property void items(StringListValue[] items)
-    {
-        _selectedItemIndex = -1;
-        if (auto a = cast(IconStringListAdapter)_adapter)
-            a.items = items;
-        else
-            setAdapter(new IconStringListAdapter(items));
-        if (items.length > 0)
-        {
-            selectedItemIndex = 0;
-        }
-        requestLayout();
-    }
-
-    /// Get selected item as text
-    @property dstring selectedItem() const
-    {
-        if (_selectedItemIndex < 0 || _selectedItemIndex >= _adapter.itemCount)
-            return "";
-        return adapter.item(_selectedItemIndex);
-    }
-
-    @property inout(IconStringListAdapter) adapter() inout
-    {
-        return cast(inout(IconStringListAdapter))_adapter;
-    }
-
-    override @property dstring text() const
-    {
-        return _body.text;
-    }
-
-    override @property void text(dstring txt)
-    {
-        int idx = adapter.find(txt);
-        if (idx >= 0)
-        {
-            selectedItemIndex = idx;
-        }
-        else
-        {
-            // not found
-            _selectedItemIndex = -1;
-            _body.text = txt;
-        }
-    }
-
-    override @property int selectedItemIndex() const
-    {
-        return super.selectedItemIndex;
-    }
-    override @property void selectedItemIndex(int index)
-    {
-        _body.text = adapter.item(index);
-        super.selectedItemIndex = index;
     }
 
     override void initialize()
@@ -376,15 +386,12 @@ class IconTextComboBox : ComboBoxBase
         _body.allowsClick = true;
         allowsFocus = true;
         allowsClick = true;
-        onClick ~= &handleClick;
     }
 
     override protected Widget createSelectedItemWidget()
     {
-        auto res = new Label;
-        res.id = "COMBOBOX_BODY";
-        res.bindSubItem(this, "body");
-        res.allowsClick = true;
+        auto label = new Label;
+        label.allowsClick = true;
         int minItemWidth;
         foreach (i; 0 .. _adapter.itemCount)
         {
@@ -393,8 +400,8 @@ class IconTextComboBox : ComboBoxBase
             Size sz = item.minSize;
             minItemWidth = max(minItemWidth, sz.w);
         }
-        res.style.minWidth = minItemWidth;
-        return res;
+        label.style.minWidth = minItemWidth;
+        return label;
     }
 }
 
@@ -416,14 +423,20 @@ class ComboEdit : ComboBox
     this(dstring[] items = null)
     {
         super(items);
-        postInit();
     }
 
-    protected void postInit()
+    override void initialize()
     {
+        super.initialize();
+        _edit.allowsFocus = true;
         allowsClick = false;
         allowsFocus = false;
-        _edit.allowsFocus = true;
+    }
+
+    override protected Widget createSelectedItemWidget()
+    {
+        _edit = new EditLine;
+        return _edit;
     }
 
     override bool handleKeyEvent(KeyEvent event)
@@ -447,26 +460,5 @@ class ComboEdit : ComboBox
         if (_edit.handleKeyEvent(event))
             return true;
         return super.handleKeyEvent(event);
-    }
-
-    override protected void onPopupClose()
-    {
-        _edit.setFocus();
-    }
-
-    override protected void handleClick()
-    {
-        _edit.setFocus();
-    }
-
-    override protected Widget createSelectedItemWidget()
-    {
-        auto res = new EditLine("COMBOBOX_BODY");
-        res.bindSubItem(this, "body");
-        res.readOnly = false;
-        _edit = res;
-        postInit();
-        //_edit.allowsFocus = true;
-        return res;
     }
 }

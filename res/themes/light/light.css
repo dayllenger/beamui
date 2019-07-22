@@ -3,7 +3,7 @@
 
 @define-colors { window_background: #f0f1f1; }
 
-/* ========================================================================== controls.d */
+/* controls */
 Button { align: center; padding: 4px 8px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); focus-rect-color: #bbb; transition: border-color 75ms ease; }
 
 Button:hovered:not(checked) { border-color: #417fbf; }
@@ -82,12 +82,12 @@ SwitchButton:checked:not(enabled) { background: url(switch_on); opacity: 0.4; }
 
 CanvasWidget { min-width: 50px; min-height: 50px; }
 
-/* ========================================================================== text.d */
+/* text */
 Label { padding: 2px; }
 
 Label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
-/* ========================================================================== layout/linear.d */
+/* layout.linear */
 Resizer { min-width: 3px; min-height: 3px; }
 
 Resizer:hovered { background-color: rgba(255, 255, 0, 0.2); }
@@ -96,7 +96,7 @@ Resizer:focused { background-color: rgba(192, 192, 0, 0.8); }
 
 Resizer:pressed { background-color: rgba(78, 147, 218, 0.8); }
 
-/* ========================================================================== groupbox.d */
+/* groupbox */
 GroupBox { padding: 20px 10px 16px; }
 
 GroupBox::caption { align: left vcenter; padding: 1px; color: #504840; text-overflow: ellipsis; }
@@ -105,7 +105,7 @@ GroupBox::caption { align: left vcenter; padding: 1px; color: #504840; text-over
   group_box_frame_up_right: url(group_box_frame_up_right);
   group_box_frame_bottom: url(group_box_frame_bottom); }
 
-/* ========================================================================== lists.d */
+/* lists */
 ListWidget { min-width: 100px; min-height: 100px; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
 
 ListWidget:focused { border-color: #2e93fa; }
@@ -118,32 +118,42 @@ StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { backgroun
 
 StringListAdapter::item:focused, StringListAdapter::item:selected, IconStringListAdapter::item:focused, IconStringListAdapter::item:selected { background-color: #4e93da; color: #f0f0f0; }
 
-/* ========================================================================== combobox.d */
-ComboBox { min-width: 40px; padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
+/* combobox */
+ComboBoxBase { min-width: 40px; padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
 
-ComboBox:hovered { border-color: #417fbf; }
+ComboBoxBase:hovered { border-color: #417fbf; }
 
-ComboBox:pressed { border-color: #4e93da; background: linear(180deg, #eeeeee, #dddddd); }
+ComboBoxBase:pressed { border-color: #4e93da; background: linear(180deg, #eeeeee, #dddddd); }
 
-ComboBox:not(enabled) { border-color: #ccc; opacity: 0.4; }
+ComboBoxBase.opened { border-color: #4e93da; }
 
-ComboBox::body { min-width: 40px; padding: 2px; align: left vcenter; stretch: both; transition: color 100ms ease; }
+ComboBoxBase:not(enabled) { border-color: #ccc; opacity: 0.4; }
 
-ComboBox::body:hovered { color: #46617e; }
+ComboBoxBase::body { min-width: 40px; padding: 2px; align: left vcenter; stretch: both; transition: color 100ms ease; }
 
-ComboBox::body:pressed { color: #417fbf; }
+ComboBoxBase::body:hovered { color: #46617e; }
 
-ComboBox::button { align: center; padding: 3px 2px; }
+ComboBoxBase::body:pressed { color: #417fbf; }
 
-ComboBox::body:not(enabled), ComboBox::button:not(enabled) { opacity: 0.4; }
+ComboBoxBase::button { align: center; padding: 3px 2px; }
 
-ComboBox::list { min-width: 0; min-height: 0; border: 1px solid #aaa; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); background-color: white; }
+ComboBoxBase::body:not(enabled), ComboBoxBase::button:not(enabled) { opacity: 0.4; }
 
-ComboBox::list:focused { border: 1px solid rgba(32, 64, 255, 0.75); }
+ComboBoxBase::list { min-width: 0; min-height: 0; border: 1px solid #aaa; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); background-color: white; }
 
-ComboBox::list:not(enabled) { background-color: #f0f0f0; }
+ComboBoxBase::list:focused { border: 1px solid rgba(32, 64, 255, 0.75); }
 
-/* ========================================================================== menu.d */
+ComboBoxBase::list:not(enabled) { background-color: #f0f0f0; }
+
+ComboEdit { background: none; }
+
+ComboEdit:focused { border-color: #4e93da; }
+
+ComboEdit::body:hovered, ComboEdit::body:pressed { color: #404040; }
+
+ComboEdit::body:focused { color: initial; }
+
+/* menu */
 Menu { width: none; height: none; min-width: 0; min-height: 0; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; }
 
 MenuBar { weight: 0; margin: 0; padding-left: 3px; box-shadow: 0 0 5px #888; background-color: #f3f4f5; }
@@ -172,7 +182,7 @@ MenuItem::label:focused, MenuItem::label:selected, MenuItem::shortcut:focused, M
 
 MenuItem::label:not(enabled), MenuItem::shortcut:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
-/* ========================================================================== tree.d */
+/* tree */
 TreeItemWidget { min-width: 100px; min-height: 14px; gap: 0; }
 
 TreeItemWidget::body { padding: 2px 4px; gap: 0; }
@@ -187,7 +197,7 @@ TreeItemWidget::label:pressed, TreeItemWidget::label:selected { color: #f0f0f0; 
 
 TreeItemWidget::label:default { font-weight: bold; }
 
-/* ========================================================================== grid.d */
+/* grid */
 StringGridWidget, FileDialog::grid { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; transition: border-color 100ms ease; }
 
 StringGridWidget:focused, FileDialog::grid:focused { border-color: #2e93fa; }
@@ -202,10 +212,10 @@ StringGridWidget:not(enabled), FileDialog::grid:not(enabled) { background-color:
   grid_cell_background_header: rgba(144, 144, 144, 0.2);
   grid_cell_background_header_selected: rgba(255, 192, 64, 0.5); }
 
-/* ========================================================================== scroll.d */
+/* scroll */
 ScrollArea { min-width: 200px; min-height: 150px; }
 
-/* ========================================================================== scrollbar.d */
+/* scrollbar */
 ScrollBar { background-color: rgba(0, 0, 0, 0.05); }
 
 ScrollBar ScrollIndicator { padding: 3px; background-color: #c2c2c2; }
@@ -247,7 +257,7 @@ RangeSlider.vertical::range-between { border-left-width: 4px; border-right-width
   scrollbar_indicator_vertical: none;
   scrollbar_indicator_horizontal: none; }
 
-/* ========================================================================== tabs.d */
+/* tabs */
 TabWidget { gap: 0; }
 
 TabControl { padding-left: 3px; padding-right: 3px; }
@@ -270,7 +280,7 @@ TabItem::label { align: hcenter bottom; padding: 0 3px 3px; text-hotkey: underli
 
 TabItem::label:hovered, TabItem::label:selected, TabItem::label:focused, TabItem::label:selected:focused { color: #4e93da; }
 
-/* ========================================================================== editors.d */
+/* editors */
 EditLine { padding: 4px; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
 
 EditLine:focused { border-color: #2e93fa; }
@@ -301,7 +311,7 @@ FindPanel EditLine { stretch: both; }
   editor_search_highlight_current: rgba(160, 192, 255, 0.6);
   editor_search_highlight_other: rgba(240, 208, 128, 0.4); }
 
-/* ========================================================================== srcedit.d */
+/* srcedit */
 SourceEdit { font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console"; font-family: monospace; font-size: 14px; }
 
 SourceEdit:focused { border: 1px solid #2e93fa; }
@@ -317,12 +327,12 @@ SourceEdit:not(enabled) { background-color: #f0f0f0; }
   editor_left_pane_line_icon_bookmark: #1818f2;
   editor_left_pane_line_icon_error: rgba(242, 24, 24, 0.5); }
 
-/* ========================================================================== statusline.d */
+/* statusline */
 StatusLine { weight: 0; padding: 1px; background-color: #eceffa; }
 
 StatusLine > Label { stretch: both; }
 
-/* ========================================================================== toolbars.d */
+/* toolbars */
 ToolBarHost { padding: 6px; gap: 8px; }
 
 ToolBar { padding-left: 6px; gap: 4px; border-color: #bbb; border-style: solid; border-left-width: 2px; }
@@ -337,19 +347,19 @@ ToolBar *:not(enabled) { border: none; opacity: 0.4; }
 
 ToolBarButton { padding: 4px; focus-rect-color: none; }
 
-/* ========================================================================== docks.d */
+/* docks */
 DockHost { padding: 2px; background-color: #eceffa; }
 
 DockHostBody { margin: 3px; padding: 0; }
 
-/* ========================================================================== charts.d */
+/* charts */
 SimpleBarChart { padding: 2px; }
 
 @define-colors { chart_background: #ffffff;
   chart_axis: #c0c0c0;
   chart_segment_tag: #c0c0c0; }
 
-/* ========================================================================== progressbar.d */
+/* progressbar */
 ProgressBar { min-width: 50px; min-height: 16px; max-height: 16px; padding: 2px; border: 1px solid #ccc; }
 
 @define-drawables { progress_bar_gauge: #4080ff;
@@ -357,7 +367,7 @@ ProgressBar { min-width: 50px; min-height: 16px; max-height: 16px; padding: 2px;
   progress_bar_indeterminate: #80c080;
   progress_bar_indeterminate_animation: url(progress_bar_gauge_animation.tiled); }
 
-/* ========================================================================== winframe.d */
+/* winframe */
 WindowFrame { background: #f4f4f4; }
 
 WindowFrame::caption { padding: 3px; background: #e4e4e4; }
@@ -366,10 +376,10 @@ WindowFrame::label { align: left vcenter; stretch: both; padding: 2px; color: #3
 
 WindowFrame::body { padding: 3px; stretch: both; }
 
-/* ========================================================================== appframe.d */
+/* appframe */
 AppFrame::body { stretch: both; }
 
-/* ========================================================================== dialog.d, filedialog.d, inputbox.d, messagebox.d, settingsdialog.d */
+/* dialog, filedialog, inputbox, messagebox, settingsdialog */
 DialogFrame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px #555; }
 
 @define-colors { dialog_background: #eee; }
@@ -412,7 +422,7 @@ SettingsDialog::page { min-width: 100px; weight: 5; margin: 8px; margin-left: 0;
 
 SettingsPage::title { weight: 0; padding: 4px 4px 12px; font-size: 120%; }
 
-/* ========================================================================== Tooltips */
+/* Tooltips */
 Label#tooltip { padding: 3px; box-shadow: 0 2px 7px rgba(0, 0, 0, 0.4); background-color: #222; color: #eee; }
 
 Popup#tooltip-popup { padding: 10px 2px 1px; }

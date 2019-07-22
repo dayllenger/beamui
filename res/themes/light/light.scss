@@ -27,9 +27,7 @@ $focused-border-color: saturate($main-color, 30%);
     window_background: #f0f1f1;
 }
 
-/* ==========================================================================
-   controls.d
-*/
+/* controls */
 
 Button {
     align: center;
@@ -217,9 +215,7 @@ CanvasWidget {
     min-height: 50px;
 }
 
-/* ==========================================================================
-   text.d
-*/
+/* text */
 
 Label {
     padding: 2px;
@@ -229,9 +225,7 @@ Label {
     }
 }
 
-/* ==========================================================================
-   layout/linear.d
-*/
+/* layout.linear */
 
 Resizer {
     min-width: 3px;
@@ -250,9 +244,7 @@ Resizer {
     }
 }
 
-/* ==========================================================================
-   groupbox.d
-*/
+/* groupbox */
 
 GroupBox {
     padding: 20px 10px 16px;
@@ -271,9 +263,7 @@ GroupBox::caption {
     group_box_frame_bottom: url(group_box_frame_bottom);
 }
 
-/* ==========================================================================
-   lists.d
-*/
+/* lists */
 
 ListWidget {
     min-width: 100px;
@@ -304,11 +294,9 @@ StringListAdapter::item, IconStringListAdapter::item {
     }
 }
 
-/* ==========================================================================
-   combobox.d
-*/
+/* combobox */
 
-ComboBox {
+ComboBoxBase {
     min-width: 40px;
     padding: 3px 4px;
     border: 1px solid #aaa;
@@ -322,6 +310,10 @@ ComboBox {
     &:pressed {
         border-color: $main-color;
         background: linear(180deg, #eeeeee, #dddddd);
+    }
+
+    &.opened {
+        border-color: $main-color;
     }
 
     &:not(enabled) {
@@ -371,9 +363,23 @@ ComboBox {
     }
 }
 
-/* ==========================================================================
-   menu.d
-*/
+ComboEdit {
+    background: none;
+
+    &:focused {
+        border-color: $main-color;
+    }
+
+    &::body:hovered, &::body:pressed {
+        color: $text-color;
+    }
+
+    &::body:focused {
+        color: initial;
+    }
+}
+
+/* menu */
 
 Menu {
     width: none;
@@ -449,9 +455,7 @@ MenuItem {
     }
 }
 
-/* ==========================================================================
-   tree.d
-*/
+/* tree */
 
 TreeItemWidget {
     min-width: 100px;
@@ -487,9 +491,7 @@ TreeItemWidget {
     }
 }
 
-/* ==========================================================================
-   grid.d
-*/
+/* grid */
 
 StringGridWidget, FileDialog::grid {
     min-width: 100px;
@@ -518,18 +520,14 @@ StringGridWidget, FileDialog::grid {
     grid_cell_background_header_selected: fade-out(#ffc040, 0.5);
 }
 
-/* ==========================================================================
-   scroll.d
-*/
+/* scroll */
 
 ScrollArea {
     min-width: 200px;
     min-height: 150px;
 }
 
-/* ==========================================================================
-   scrollbar.d
-*/
+/* scrollbar */
 
 ScrollBar {
     background-color: fade-out(black, 0.95);
@@ -633,9 +631,7 @@ RangeSlider {
     scrollbar_indicator_horizontal: none;
 }
 
-/* ==========================================================================
-   tabs.d
-*/
+/* tabs */
 
 TabWidget {
     gap: 0;
@@ -691,9 +687,7 @@ TabItem::label {
     }
 }
 
-/* ==========================================================================
-   editors.d
-*/
+/* editors */
 
 EditLine {
     padding: 4px;
@@ -761,9 +755,7 @@ FindPanel EditLine {
     editor_search_highlight_other: fade-out(#f0d080, 0.6);
 }
 
-/* ==========================================================================
-   srcedit.d
-*/
+/* srcedit */
 
 SourceEdit {
     font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console";
@@ -790,9 +782,7 @@ SourceEdit {
     editor_left_pane_line_icon_error: fade-out(#f21818, 0.5);
 }
 
-/* ==========================================================================
-   statusline.d
-*/
+/* statusline */
 
 StatusLine {
     weight: 0;
@@ -804,9 +794,7 @@ StatusLine > Label {
     stretch: both;
 }
 
-/* ==========================================================================
-   toolbars.d
-*/
+/* toolbars */
 
 ToolBarHost {
     padding: 6px;
@@ -847,9 +835,7 @@ ToolBarButton {
     focus-rect-color: none;
 }
 
-/* ==========================================================================
-   docks.d
-*/
+/* docks */
 
 DockHost {
     padding: 2px;
@@ -861,9 +847,7 @@ DockHostBody {
     padding: 0;
 }
 
-/* ==========================================================================
-   charts.d
-*/
+/* charts */
 
 SimpleBarChart {
     padding: 2px;
@@ -875,9 +859,7 @@ SimpleBarChart {
     chart_segment_tag: #c0c0c0;
 }
 
-/* ==========================================================================
-   progressbar.d
-*/
+/* progressbar */
 
 ProgressBar {
     min-width: 50px;
@@ -894,9 +876,7 @@ ProgressBar {
     progress_bar_indeterminate_animation: url(progress_bar_gauge_animation.tiled);
 }
 
-/* ==========================================================================
-   winframe.d
-*/
+/* winframe */
 
 WindowFrame {
     background: #f4f4f4;
@@ -921,17 +901,13 @@ WindowFrame {
     }
 }
 
-/* ==========================================================================
-   appframe.d
-*/
+/* appframe */
 
 AppFrame::body {
     stretch: both;
 }
 
-/* ==========================================================================
-   dialog.d, filedialog.d, inputbox.d, messagebox.d, settingsdialog.d
-*/
+/* dialog, filedialog, inputbox, messagebox, settingsdialog */
 
 DialogFrame {
     padding: 0;
@@ -1036,9 +1012,7 @@ SettingsPage::title {
     font-size: 120%;
 }
 
-/* ==========================================================================
-   Tooltips
-*/
+/* Tooltips */
 
 Label#tooltip {
     padding: 3px;
