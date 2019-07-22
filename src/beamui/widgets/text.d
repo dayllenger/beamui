@@ -1,7 +1,7 @@
 /**
 Widgets to show plain or formatted single- and multiline text.
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -14,108 +14,11 @@ import beamui.text.sizetest;
 import beamui.text.style;
 import beamui.widgets.widget;
 
-/// Single-line text widget
+/** Efficient single- or multiline plain text widget.
+
+    Can contain `&` character to underline a mnemonic key.
+*/
 class Label : Widget
-{
-    @property
-    {
-        /// Text to show
-        override dstring text() const { return textobj.str; }
-        /// ditto
-        override void text(dstring s)
-        {
-            textobj.str = s;
-            requestLayout();
-        }
-    }
-
-    private
-    {
-        SimpleText textobj;
-        TextSizeTester minSizeTester;
-    }
-
-    this(dstring txt = null)
-    {
-        textobj.str = txt;
-        minSizeTester.str = "aaaaa";
-        handleFontChange();
-    }
-
-    override void handleStyleChange(StyleProperty ptype)
-    {
-        super.handleStyleChange(ptype);
-
-        switch (ptype) with (StyleProperty)
-        {
-        case tabSize:
-            textobj.style.tabSize = style.tabSize;
-            break;
-        case textAlign:
-            textobj.style.alignment = style.textAlign;
-            break;
-        case textColor:
-            textobj.style.color = style.textColor;
-            break;
-        case textDecorColor:
-            textobj.style.decoration.color = style.textDecorColor;
-            break;
-        case textDecorLine:
-            textobj.style.decoration.line = style.textDecorLine;
-            break;
-        case textDecorStyle:
-            textobj.style.decoration.style = style.textDecorStyle;
-            break;
-        case textOverflow:
-            textobj.style.overflow = style.textOverflow;
-            break;
-        case textTransform:
-            textobj.style.transform = style.textTransform;
-            minSizeTester.style.transform = style.textTransform;
-            break;
-        default:
-            break;
-        }
-    }
-
-    override protected void handleFontChange()
-    {
-        Font fnt = font.get;
-        textobj.style.font = fnt;
-        minSizeTester.style.font = fnt;
-    }
-
-    override void measure()
-    {
-        textobj.measure();
-
-        Boundaries bs;
-        const sz = textobj.size;
-        const tmin = minSizeTester.getSize();
-        bs.min.w = min(sz.w, tmin.w);
-        bs.min.h = min(sz.h, tmin.h);
-        bs.nat = sz;
-        setBoundaries(bs);
-    }
-
-    override void draw(DrawBuf buf)
-    {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
-        Box b = innerBox;
-        auto saver = ClipRectSaver(buf, b, style.alpha);
-
-        // align vertically to center
-        const sz = Size(b.w, textobj.size.h);
-        b = alignBox(b, sz, Align.vcenter);
-        textobj.draw(buf, b.x, b.y, b.w);
-    }
-}
-
-/// Efficient single-line text widget. Can contain `&` character to underline a mnemonic
-class ShortLabel : Widget
 {
     @property
     {
@@ -145,6 +48,9 @@ class ShortLabel : Widget
         {
             import std.uni : toUpper;
 
+            // needed because `style.textHotkey` may change
+            updateStyles();
+
             if (hotkeyIndex >= 0)
                 return toUpper(textobj.str[hotkeyIndex]);
             else
@@ -158,13 +64,17 @@ class ShortLabel : Widget
         int hotkeyIndex = -1;
         SimpleText textobj;
         TextSizeTester minSizeTester;
+        TextSizeTester natSizeTester;
     }
 
     this(dstring txt = null)
     {
-        text = txt;
+        original = txt;
+        textobj.str = txt;
         minSizeTester.str = "aaaaa";
-        handleFontChange();
+        // natSizeTester.str =
+        //     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\na";
+        // dependentSize = DependentSize.height;
     }
 
     override void handleStyleChange(StyleProperty ptype)
@@ -174,7 +84,25 @@ class ShortLabel : Widget
         switch (ptype) with (StyleProperty)
         {
         case tabSize:
-            textobj.style.tabSize = style.tabSize;
+            const tsz = style.tabSize;
+            textobj.style.tabSize = tsz;
+            minSizeTester.style.tabSize = tsz;
+            natSizeTester.style.tabSize = tsz;
+            break;
+        case textAlign:
+            textobj.style.alignment = style.textAlign;
+            break;
+        case textColor:
+            textobj.style.color = style.textColor;
+            break;
+        case textDecorColor:
+            textobj.style.decoration.color = style.textDecorColor;
+            break;
+        case textDecorLine:
+            textobj.style.decoration.line = style.textDecorLine;
+            break;
+        case textDecorStyle:
+            textobj.style.decoration.style = style.textDecorStyle;
             break;
         case textHotkey:
             // recompute the mnemonic
@@ -190,27 +118,14 @@ class ShortLabel : Widget
                 hotkeyIndex = -1;
             }
             break;
-        case textAlign:
-            textobj.style.alignment = style.textAlign;
-            break;
-        case textColor:
-            textobj.style.color = style.textColor;
-            break;
-        case textDecorColor:
-            textobj.style.decoration.color = style.textDecorColor;
-            break;
-        case textDecorLine:
-            textobj.style.decoration.line = style.textDecorLine;
-            break;
-        case textDecorStyle:
-            textobj.style.decoration.style = style.textDecorStyle;
-            break;
         case textOverflow:
             textobj.style.overflow = style.textOverflow;
             break;
         case textTransform:
-            textobj.style.transform = style.textTransform;
-            minSizeTester.style.transform = style.textTransform;
+            const tr = style.textTransform;
+            textobj.style.transform = tr;
+            minSizeTester.style.transform = tr;
+            natSizeTester.style.transform = tr;
             break;
         default:
             break;
@@ -219,121 +134,16 @@ class ShortLabel : Widget
 
     override protected void handleFontChange()
     {
-        Font fnt = font.get;
-        textobj.style.font = fnt;
-        minSizeTester.style.font = fnt;
+        Font f = font.get;
+        textobj.style.font = f;
+        minSizeTester.style.font = f;
+        natSizeTester.style.font = f;
     }
 
     override void measure()
     {
-        textobj.measure();
+        updateStyles();
 
-        Boundaries bs;
-        const sz = textobj.size;
-        const tmin = minSizeTester.getSize();
-        bs.min.w = min(sz.w, tmin.w);
-        bs.min.h = min(sz.h, tmin.h);
-        bs.nat = sz;
-        setBoundaries(bs);
-    }
-
-    override void draw(DrawBuf buf)
-    {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
-        Box b = innerBox;
-        auto saver = ClipRectSaver(buf, b, style.alpha);
-
-        textobj.style.underlinedCharIndex = textHotkey == TextHotkey.underline ? hotkeyIndex : -1;
-
-        // align vertically to center
-        Size sz = Size(b.w, textobj.size.h);
-        b = alignBox(b, sz, Align.vcenter);
-        textobj.draw(buf, b.x, b.y, b.w);
-    }
-}
-
-/// Multiline text widget
-class MultilineLabel : Widget
-{
-    @property
-    {
-        /// Text to show
-        override dstring text() const { return textobj.str; }
-        /// ditto
-        override void text(dstring s)
-        {
-            textobj.str = s;
-            requestLayout();
-        }
-    }
-
-    private
-    {
-        SimpleText textobj;
-        TextSizeTester minSizeTester;
-        TextSizeTester natSizeTester;
-    }
-
-    this(dstring txt = null)
-    {
-        textobj.str = txt;
-        minSizeTester.str = "aaaaa\na";
-        natSizeTester.str =
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\na";
-        dependentSize = DependentSize.height;
-        handleFontChange();
-    }
-
-    override void handleStyleChange(StyleProperty ptype)
-    {
-        super.handleStyleChange(ptype);
-
-        switch (ptype) with (StyleProperty)
-        {
-        case tabSize:
-            textobj.style.tabSize = style.tabSize;
-            break;
-        case textAlign:
-            textobj.style.alignment = style.textAlign;
-            break;
-        case textColor:
-            textobj.style.color = style.textColor;
-            break;
-        case textDecorColor:
-            textobj.style.decoration.color = style.textDecorColor;
-            break;
-        case textDecorLine:
-            textobj.style.decoration.line = style.textDecorLine;
-            break;
-        case textDecorStyle:
-            textobj.style.decoration.style = style.textDecorStyle;
-            break;
-        case textOverflow:
-            textobj.style.overflow = style.textOverflow;
-            break;
-        case textTransform:
-            textobj.style.transform = style.textTransform;
-            minSizeTester.style.transform = style.textTransform;
-            natSizeTester.style.transform = style.textTransform;
-            break;
-        default:
-            break;
-        }
-    }
-
-    override protected void handleFontChange()
-    {
-        Font fnt = font.get;
-        textobj.style.font = fnt;
-        minSizeTester.style.font = fnt;
-        natSizeTester.style.font = fnt;
-    }
-
-    override void measure()
-    {
         textobj.measure();
 
         Boundaries bs;
@@ -342,16 +152,15 @@ class MultilineLabel : Widget
         const tnat = natSizeTester.getSize();
         bs.min.w = min(sz.w, tmin.w);
         bs.min.h = min(sz.h, tmin.h);
-        bs.nat.w = min(sz.w, tnat.w);
-        bs.nat.h = min(sz.h, tnat.h);
+        bs.nat.w = max(sz.w, tnat.w);
+        bs.nat.h = max(sz.h, tnat.h);
         setBoundaries(bs);
     }
 
     override int heightForWidth(int width)
     {
         Size p = padding.size;
-        int w = width - p.w;
-        textobj.wrap(w);
+        textobj.wrap(width - p.w);
         return textobj.sizeAfterWrap.h + p.h;
     }
 
@@ -363,8 +172,7 @@ class MultilineLabel : Widget
         super.layout(geom);
         // wrap again in case the parent widget had not called heightForWidth
         // must be cached when width is the same
-        int w = geom.w - padding.width;
-        textobj.wrap(w);
+        // textobj.wrap(geom.w - padding.width);
     }
 
     override void draw(DrawBuf buf)
@@ -374,8 +182,11 @@ class MultilineLabel : Widget
 
         super.draw(buf);
         Box b = innerBox;
-        auto saver = ClipRectSaver(buf, b, style.alpha);
+        const saver = ClipRectSaver(buf, b, style.alpha);
 
+        textobj.style.underlinedCharIndex = textHotkey == TextHotkey.underline ? hotkeyIndex : -1;
+
+        // TODO: align vertically?
         textobj.draw(buf, b.x, b.y, b.w);
     }
 }
@@ -730,7 +541,10 @@ class Paragraph : Widget
         switch (ptype) with (StyleProperty)
         {
         case tabSize:
-            _txtStyle.tabSize = style.tabSize;
+            const tsz = style.tabSize;
+            _txtStyle.tabSize = tsz;
+            minSizeTester.style.tabSize = tsz;
+            natSizeTester.style.tabSize = tsz;
             break;
         case textAlign:
             _txtStyle.alignment = style.textAlign;
@@ -751,9 +565,10 @@ class Paragraph : Widget
             _txtStyle.overflow = style.textOverflow;
             break;
         case textTransform:
-            _txtStyle.transform = style.textTransform;
-            minSizeTester.style.transform = style.textTransform;
-            natSizeTester.style.transform = style.textTransform;
+            const tr = style.textTransform;
+            _txtStyle.transform = tr;
+            minSizeTester.style.transform = tr;
+            natSizeTester.style.transform = tr;
             break;
         default:
             break;

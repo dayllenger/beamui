@@ -36,7 +36,6 @@ Button {
     padding: 4px 8px;
     border: 1px solid #aaa;
     background: linear(0deg, #eeeeee, #dddddd);
-    text-hotkey: underline-on-alt;
     focus-rect-color: #bbb;
     transition: border-color 75ms ease;
 
@@ -61,7 +60,7 @@ Button {
     &::label {
         stretch: main;
         text-align: center;
-        text-hotkey: inherit;
+        text-hotkey: underline-on-alt;
         text-overflow: ellipsis;
         transition: color 75ms ease;
 
@@ -111,6 +110,7 @@ CheckBox {
 CheckBox::label, RadioButton::label {
     align: left vcenter;
     stretch: main;
+    text-hotkey: underline-on-alt;
     text-overflow: ellipsis;
     transition: color 100ms ease;
 
@@ -222,21 +222,7 @@ CanvasWidget {
 */
 
 Label {
-    align: left vcenter;
-    padding: 2px 4px;
-
-    &:not(enabled) {
-        color: $disabled-text-color;
-    }
-}
-
-ShortLabel {
-    text-hotkey: underline-on-alt;
-}
-
-MultilineLabel {
-    align: left top;
-    padding: 1px;
+    padding: 2px;
 
     &:not(enabled) {
         color: $disabled-text-color;
@@ -397,7 +383,6 @@ Menu {
     border: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     background-color: #f4f4f4;
-    text-hotkey: underline-on-alt;
 }
 
 MenuBar {
@@ -410,7 +395,6 @@ MenuBar {
 
 MenuItem {
     padding: 6px 4px;
-    text-hotkey: inherit;
 
     &#menu-separator {
         padding: 4px;
@@ -442,7 +426,7 @@ MenuItem {
     &::label {
         align: left vcenter;
         padding: 0 4px;
-        text-hotkey: inherit;
+        text-hotkey: underline-on-alt;
     }
 
     &::shortcut {
@@ -1013,7 +997,7 @@ FileNameEditLine EditLine {
 InputBox, MessageBox {
     padding: 10px;
 
-    MultilineLabel {
+    Label {
         padding: 10px;
     }
 }

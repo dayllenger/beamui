@@ -50,7 +50,7 @@ struct TextDecor
     TextDecorStyle style;
 }
 
-/// Controls how text with `&` hotkey marks should be handled (used only in `ShortLabel`)
+/// Controls how text with `&` hotkey marks should be handled (used only in `Label`)
 enum TextHotkey : ubyte
 {
     /// Treat as usual text without a hotkey

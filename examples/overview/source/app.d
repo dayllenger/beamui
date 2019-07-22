@@ -297,7 +297,7 @@ int main()
                     with (tabs1) {
                         tabHost.style.padding = 10;
                         tabHost.style.backgroundColor = 0xE0E0E0;
-                        auto tab1 = new MultilineLabel("Label on tab page\nLabels can be\nMultiline"d);
+                        auto tab1 = new Label("Label on tab page\nLabels can be\nMultiline"d);
                         auto tab2 = new ImageWidget("beamui-logo");
                         addTab(tab1.setID("tab1"), "Tab 1"d);
                         addTab(tab2.setID("tab2"), "Tab 2"d);

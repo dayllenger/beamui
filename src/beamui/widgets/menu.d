@@ -74,8 +74,8 @@ class MenuItem : WidgetGroup, ActionHolder
         Widget _separator;
         Widget _checkbox;
         ImageWidget _icon;
-        ShortLabel _label;
-        ShortLabel _shortcut;
+        Label _label;
+        Label _shortcut;
         ImageWidget _arrow;
         int _checkboxWidth;
         int _iconWidth;
@@ -163,7 +163,7 @@ class MenuItem : WidgetGroup, ActionHolder
         // label
         if (!_label)
         {
-            _label = new ShortLabel(_action.label);
+            _label = new Label(_action.label);
             _label.id = "menu-label";
             _label.bindSubItem(this, "label");
             _label.state = State.parent;
@@ -176,7 +176,7 @@ class MenuItem : WidgetGroup, ActionHolder
         {
             if (!_shortcut)
             {
-                _shortcut = new ShortLabel(sc);
+                _shortcut = new Label(sc);
                 _shortcut.id = "menu-shortcut";
                 _shortcut.bindSubItem(this, "shortcut");
                 _shortcut.state = State.parent;
@@ -450,8 +450,11 @@ class Menu : ListWidget
         foreach (i; 0 .. itemCount)
         {
             auto item = menuItem(i);
-            if (item._label.hotkey == ch)
-                return item;
+            if (!item.isSeparator)
+            {
+                if (item._label.hotkey == ch)
+                    return item;
+            }
         }
         // search in submenus
         foreach (i; 0 .. itemCount)

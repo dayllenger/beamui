@@ -103,7 +103,6 @@ class Button : Panel, ActionHolder
             else if (some)
             {
                 _icon = new ImageWidget(id);
-                _icon.id = "icon";
                 _icon.bindSubItem(this, "icon");
                 _icon.state = State.parent;
                 add(_icon);
@@ -123,7 +122,6 @@ class Button : Panel, ActionHolder
             else if (some)
             {
                 _icon = new ImageWidget;
-                _icon.id = "icon";
                 _icon.bindSubItem(this, "icon");
                 _icon.state = State.parent;
                 _icon.drawable = img;
@@ -171,8 +169,7 @@ class Button : Panel, ActionHolder
             }
             else if (some)
             {
-                _label = new ShortLabel(s);
-                _label.id = "label";
+                _label = new Label(s);
                 _label.bindSubItem(this, "label");
                 _label.state = State.parent;
                 add(_label);
@@ -183,7 +180,7 @@ class Button : Panel, ActionHolder
     private
     {
         ImageWidget _icon;
-        ShortLabel _label;
+        Label _label;
 
         Action _action;
     }
@@ -300,7 +297,7 @@ class CheckBox : Panel
     private
     {
         Widget _icon;
-        ShortLabel _label;
+        Label _label;
     }
 
     this(dstring labelText = null)
@@ -308,7 +305,7 @@ class CheckBox : Panel
         _icon = new Widget("icon");
         _icon.bindSubItem(this, "icon");
         _icon.state = State.parent;
-        _label = new ShortLabel(labelText);
+        _label = new Label(labelText);
         _label.bindSubItem(this, "label");
         _label.state = State.parent;
         add(_icon, _label);

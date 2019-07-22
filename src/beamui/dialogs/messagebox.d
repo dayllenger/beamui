@@ -52,7 +52,7 @@ class MessageBox : Dialog
 
     override void initialize()
     {
-        auto msg = new MultilineLabel(_message);
+        auto msg = new Label(_message);
         msg.id = "msg";
         addChild(msg);
         addChild(createButtonsPanel(_actions, _defaultButtonIndex, 0));
