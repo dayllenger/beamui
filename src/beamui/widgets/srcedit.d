@@ -268,7 +268,7 @@ class SourceEdit : EditBox
         _lineNumbersWidth = 0;
         if (_showLineNumbers)
         {
-            dchar[] s = to!(dchar[])(lineCount + 1);
+            dchar[] s = to!(dchar[])(content.lineCount + 1);
             foreach (ref ch; s)
                 ch = '9';
             auto st = TextLayoutStyle(font.get);

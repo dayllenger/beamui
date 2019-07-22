@@ -15,6 +15,7 @@ import beamui.core.signals;
 import beamui.core.stdaction;
 import beamui.core.streams;
 import beamui.graphics.colors;
+import beamui.text.line : TextLine;
 import beamui.text.simple;
 import beamui.text.sizetest;
 import beamui.text.style;
@@ -212,6 +213,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             if (ts != _content.tabSize)
             {
                 _content.tabSize = ts;
+                _txtStyle.tabSize = ts;
                 requestLayout();
             }
         }
@@ -264,6 +266,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         void wordWrap(bool v)
         {
             _wordWrap = v;
+            _txtStyle.wrap = v;
             // horizontal scrollbar should not be visible in word wrap mode
             if (v)
             {
@@ -377,6 +380,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
         bool _wordWrap;
 
+        TextStyle _txtStyle;
         SimpleText* _placeholder;
         TextSizeTester _minSizeTester;
     }
@@ -469,6 +473,34 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 break;
             }
         }
+
+        switch (ptype) with (StyleProperty)
+        {
+        case textAlign:
+            _txtStyle.alignment = style.textAlign;
+            break;
+        case textColor:
+            _txtStyle.color = style.textColor;
+            break;
+        case textDecorColor:
+            _txtStyle.decoration.color = style.textDecorColor;
+            break;
+        case textDecorLine:
+            _txtStyle.decoration.line = style.textDecorLine;
+            break;
+        case textDecorStyle:
+            _txtStyle.decoration.style = style.textDecorStyle;
+            break;
+        case textOverflow:
+            _txtStyle.overflow = style.textOverflow;
+            break;
+        case textTransform:
+            _txtStyle.transform = style.textTransform;
+            _minSizeTester.style.transform = style.textTransform;
+            break;
+        default:
+            break;
+        }
     }
 
     override protected void handleFontChange()
@@ -477,6 +509,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _fixedFont = font.isFixed;
         _spaceWidth = font.spaceWidth;
         _lineHeight = max(font.height, 1);
+        _txtStyle.font = font;
         _minSizeTester.style.font = font;
         if (auto ph = _placeholder)
             ph.style.font = font;
@@ -510,12 +543,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         updateLeftPaneWidth();
         clb.x += _leftPaneWidth;
         clb.w -= _leftPaneWidth;
-    }
-
-    /// Override for multiline editors
-    protected int lineCount() const
-    {
-        return 1;
     }
 
     //===============================================================
@@ -1980,7 +2007,9 @@ class EditLine : EditWidgetBase
 
         override Size fullContentSize() const
         {
-            return Size(_measuredTextSize.w + clientBox.w / 16, _measuredTextSize.h);
+            Size sz = _txtline.size;
+            sz.w += clientBox.w / 16;
+            return sz;
         }
     }
 
@@ -1989,11 +2018,9 @@ class EditLine : EditWidgetBase
 
     private
     {
-        dstring _measuredText;
-        int[] _measuredTextWidths;
-        Size _measuredTextSize;
-
         dchar _passwordChar = 0;
+
+        TextLine _txtline;
     }
 
     this(dstring initialContent = null)
@@ -2019,36 +2046,36 @@ class EditLine : EditWidgetBase
 
     override protected Box textPosToClient(TextPosition p) const
     {
-        Box res;
-        res.h = clientBox.height;
-        if (p.pos == 0)
-            res.x = 0;
-        else if (p.pos >= _measuredText.length)
-            res.x = _measuredTextSize.w;
+        Box b;
+        if (p.pos <= 0)
+            b.x = 0;
+        else if (p.pos >= _txtline.glyphCount)
+            b.x = _txtline.size.w;
         else
-            res.x = _measuredTextWidths[p.pos - 1];
-        res.x -= scrollPos.x;
-        res.w = 1;
-        return res;
+        {
+            foreach (ref fg; _txtline.glyphs[0 .. p.pos])
+                b.x += fg.width;
+        }
+        b.x -= scrollPos.x;
+        b.w = 1;
+        b.h = clientBox.height;
+        return b;
     }
 
     override protected TextPosition clientToTextPos(Point pt) const
     {
         pt.x += scrollPos.x;
-        TextPosition res;
-        foreach (i; 0 .. _measuredText.length)
+        const gs = _txtline.glyphs;
+        int x0, x1;
+        foreach (i; 0 .. _txtline.glyphCount)
         {
-            const int x0 = i > 0 ? _measuredTextWidths[i - 1] : 0;
-            const int x1 = _measuredTextWidths[i];
+            x1 += gs[i].width;
             const int mx = (x0 + x1) / 2;
             if (pt.x <= mx)
-            {
-                res.pos = cast(int)i;
-                return res;
-            }
+                return TextPosition(0, i);
+            x0 = x1;
         }
-        res.pos = cast(int)_measuredText.length;
-        return res;
+        return TextPosition(0, _txtline.glyphCount);
     }
 
     override protected void ensureCaretVisible(bool center = false)
@@ -2108,12 +2135,12 @@ class EditLine : EditWidgetBase
 
     override protected Size measureVisibleText()
     {
-        _measuredText = applyPasswordChar(text);
-        _measuredTextWidths.length = _measuredText.length;
-        int charsMeasured = font.measureText(_measuredText, _measuredTextWidths, MAX_WIDTH_UNSPECIFIED, tabSize);
-        _measuredTextSize.w = charsMeasured > 0 ? _measuredTextWidths[charsMeasured - 1] : 0;
-        _measuredTextSize.h = _lineHeight;
-        return _measuredTextSize;
+        _txtline.str = applyPasswordChar(text);
+        _txtline.measured = false;
+        auto tlstyle = TextLayoutStyle(_txtStyle);
+        tlstyle.wrap = false;
+        _txtline.measure(tlstyle);
+        return _txtline.size;
     }
 
     override void layout(Box geom)
@@ -2168,14 +2195,14 @@ class EditLine : EditWidgetBase
 
         drawLineBackground(buf, Rect(clientBox), Rect(clientBox));
 
-        if (_measuredText.length == 0)
+        if (_txtline.glyphCount == 0)
         {
             // draw the placeholder when no text
             if (auto ph = _placeholder)
                 ph.draw(buf, b.x - scrollPos.x, b.y, b.w);
         }
         else
-            font.drawText(buf, b.x - scrollPos.x, b.y, _measuredText, style.textColor, tabSize);
+            _txtline.draw(buf, Point(b.x - scrollPos.x, b.y), b.w, _txtStyle);
 
         drawCaret(buf);
     }
@@ -2243,7 +2270,7 @@ class EditBox : EditWidgetBase
             dstring str;
             int[] positions; /// Char positions
             int width; /// Width (in pixels)
-            LineMarkup markup;
+            LineMarkup* markup;
 
             size_t length() const
             {
@@ -2252,6 +2279,9 @@ class EditBox : EditWidgetBase
         }
         /// Lines, visible in the client area
         VisibleLine[] _visibleLines;
+        // a stupid pool for markup
+        LineMarkup[] _markup;
+        uint _markupEngaged;
     }
 
     this(dstring initialContent = null,
@@ -2283,11 +2313,6 @@ class EditBox : EditWidgetBase
     override void wordWrapRefresh()
     {
         _needRewrap = true;
-    }
-
-    override protected int lineCount() const
-    {
-        return _content.lineCount;
     }
 
     override protected void updateVScrollBar(ScrollData data)
@@ -3102,6 +3127,7 @@ class EditBox : EditWidgetBase
             numVisibleLines = max(_content.lineCount - _firstVisibleLine, 1);
 
         _visibleLines.length = numVisibleLines;
+        _markupEngaged = 0;
 
         Size sz;
         foreach (i, ref line; _visibleLines)
@@ -3110,7 +3136,7 @@ class EditBox : EditWidgetBase
             const len = line.str.length;
             if (line.positions.length < len)
                 line.positions.length = len;
-            handleCustomLineMarkup(_firstVisibleLine + cast(int)i, line.str, line.markup);
+            line.markup = handleCustomLineMarkup(_firstVisibleLine + cast(int)i, line.str);
             const int charsMeasured = font.measureText(line.str, line.positions, int.max, tabSize);
             line.width = charsMeasured > 0 ? line.positions[charsMeasured - 1] : 0;
             // width - max from visible lines
@@ -3119,13 +3145,13 @@ class EditBox : EditWidgetBase
         sz.h = _lineHeight * _content.lineCount; // height - for all lines
         // we use max width of the viewed lines as content width
         // in some situations, we reset it to shrink the horizontal scrolling range
-        if (lineCount < _lastMeasureLineCount / 3)
+        if (_content.lineCount < _lastMeasureLineCount / 3)
             _maxLineWidth = sz.w;
         else if (sz.w * 10 < _maxLineWidth && clientBox.w < sz.w)
             _maxLineWidth = sz.w;
         else
             _maxLineWidth = max(_maxLineWidth, sz.w);
-        _lastMeasureLineCount = lineCount;
+        _lastMeasureLineCount = _content.lineCount;
         return sz;
     }
 
@@ -3190,7 +3216,7 @@ class EditBox : EditWidgetBase
         const cb = clientBox;
         Box lineBox = Box(cb.x - _leftPaneWidth, cb.y, _leftPaneWidth, _lineHeight);
         int i = _firstVisibleLine;
-        const int lc = lineCount;
+        const int lc = _content.lineCount;
         while (true)
         {
             if (lineBox.y > cb.y + cb.h)
@@ -3234,18 +3260,16 @@ class EditBox : EditWidgetBase
     }
 
     /// Construct a custom text markup to highlight the line
-    protected void handleCustomLineMarkup(int line, dstring txt, ref LineMarkup result)
+    protected LineMarkup* handleCustomLineMarkup(int line, dstring txt)
     {
         import std.algorithm : group;
 
-        result.clear();
-
         if (_tokenHighlight.length == 0)
-            return; // no highlight attributes set
+            return null; // no highlight attributes set
 
         TokenPropString tokenProps = _content.lineTokenProps(line);
         if (tokenProps.length == 0)
-            return;
+            return null;
 
         bool hasNonzeroTokens;
         foreach (t; tokenProps)
@@ -3257,7 +3281,15 @@ class EditBox : EditWidgetBase
             }
         }
         if (!hasNonzeroTokens)
-            return; // all characters are of unknown token type (uncategorized)
+            return null; // all characters are of unknown token type (uncategorized)
+
+        const index = _markupEngaged;
+        _markupEngaged++;
+        if (_markup.length < _markupEngaged)
+            _markup.length = _markupEngaged;
+
+        LineMarkup* result = &_markup[index];
+        result.clear();
 
         uint i;
         foreach (item; group(tokenProps))
@@ -3279,6 +3311,8 @@ class EditBox : EditWidgetBase
             i += len;
         }
         assert(i == tokenProps.length);
+        result.prepare(); // FIXME: should be automatic
+        return result;
     }
 
     private TextRange _matchingBraces;
@@ -3489,8 +3523,11 @@ class EditBox : EditWidgetBase
             if (txt.length > 0 || _wordWrap)
             {
                 static Buf!CustomCharProps highlight;
-                convertMarkupToCustomCharProps(cast(uint)txt.length, CustomCharProps(color),
-                    _visibleLines[i].markup, highlight);
+                if (auto mk = _visibleLines[i].markup)
+                {
+                    convertMarkupToCustomCharProps(cast(uint)txt.length, CustomCharProps(color),
+                        *mk, highlight);
+                }
                 if (_wordWrap)
                 {
                     dstring[] wrappedLine;
@@ -3678,10 +3715,10 @@ class LogWidget : EditBox
             auto op = new EditOperation(EditAction.replace, range, lines);
             _content.performOperation(op, this);
         }
-        if (_maxLines > 0 && lineCount > _maxLines)
+        if (_maxLines > 0 && _content.lineCount > _maxLines)
         {
             TextRange range;
-            range.end.line = lineCount - _maxLines;
+            range.end.line = _content.lineCount - _maxLines;
             auto op = new EditOperation(EditAction.replace, range, [""d]);
             _content.performOperation(op, this);
             _contentChanged = true;
