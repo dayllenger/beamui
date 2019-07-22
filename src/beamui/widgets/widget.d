@@ -184,12 +184,12 @@ public:
         _background = new Background;
         debug _instanceCount++;
         debug (resalloc)
-            Log.fd("Created widget `%s` %s, count: %s", _id, getShortClassName(this), _instanceCount);
+            Log.fd("Created widget (count: %s): %s", _instanceCount, dbgname());
     }
 
     debug
     {
-        private static __gshared int _instanceCount;
+        private __gshared int _instanceCount;
         /// Number of created widget objects, not yet destroyed - for debug purposes
         static @property int instanceCount() { return _instanceCount; }
     }
@@ -198,9 +198,9 @@ public:
     {
         debug _instanceCount--;
         debug (resalloc)
-            Log.fd("Destroyed widget `%s` %s, count: %s", _id, getShortClassName(this), _instanceCount);
+            Log.fd("Destroyed widget (count: %s): %s", _instanceCount, dbgname());
         debug if (APP_IS_SHUTTING_DOWN)
-            onResourceDestroyWhileShutdown(_id, getShortClassName(this));
+            onResourceDestroyWhileShutdown("widget", dbgname());
 
         animations.clear();
 
@@ -217,6 +217,17 @@ public:
     final @property const(bool*) isDestroyed() const
     {
         return _isDestroyed;
+    }
+
+    /// Pretty printed name for debugging purposes
+    debug string dbgname() const
+    {
+        string s = getShortClassName(this);
+        if (_id.length)
+            s ~= '#' ~ id;
+        if (subInfo)
+            s ~= " as " ~ getShortClassName(subInfo.parent) ~ "::" ~ subInfo.subName;
+        return s;
     }
 
     //===============================================================

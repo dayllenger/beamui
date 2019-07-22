@@ -366,7 +366,7 @@ unittest
 }
 
 /// Get the short class name, i.e. without module path. `obj` must not be `null`
-string getShortClassName(Object obj)
+string getShortClassName(const Object obj)
 {
     assert(obj);
     string name = obj.classinfo.name;

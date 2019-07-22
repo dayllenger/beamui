@@ -1143,7 +1143,7 @@ class Window : CustomEventTarget
             {
                 // when calling setState(focused), window.focusedWidget is still previously focused widget
                 debug (focus)
-                    Log.d("new focus: ", newFocus.id);
+                    Log.d("new focus: ", newFocus.dbgname);
                 newFocus.setState(targetState);
             }
             _focusedWidget = weakRef(newFocus);
@@ -1516,7 +1516,7 @@ class Window : CustomEventTarget
                 return;
         _mouseTrackingWidgets ~= w;
         debug (mouse)
-            Log.d("addTracking: ", w.id, ", items after: ", _mouseTrackingWidgets.length);
+            Log.d("addTracking: ", w.dbgname, ", items after: ", _mouseTrackingWidgets.length);
     }
 
     private bool checkRemoveTracking(MouseEvent event)
@@ -1533,7 +1533,7 @@ class Window : CustomEventTarget
                 leaveEvent.changeAction(MouseAction.leave);
                 res = handleMouseEvent(w, leaveEvent) || res;
                 debug (mouse)
-                    Log.d("removeTracking of ", w.id);
+                    Log.d("removeTracking of ", w.dbgname);
                 w.nullify();
             }
         }
@@ -1820,8 +1820,8 @@ class Window : CustomEventTarget
         debug (redraw)
         {
             if (root.needLayout)
-                Log.fd("Need layout: %s, id: %s, parent: %s", getShortClassName(root),
-                    root.id, root.parent ? getShortClassName(root.parent) : "null");
+                Log.fd("Need layout: %s, parent: %s", root.dbgname,
+                    root.parent ? getShortClassName(root.parent) : "null");
         }
         if (root.visibility == Visibility.hidden)
             return;
