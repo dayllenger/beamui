@@ -91,12 +91,13 @@ struct TextStyle
     TextDecor decoration;
     TextOverflow overflow;
     TextTransform transform;
+    bool wrap;
     /// Allows to underline a single character, usually mnemonic
     int underlinedCharIndex = -1;
     /// Text foreground color
     Color color;
     /// Text background color
-    Color background;
+    Color background = Color.transparent;
 }
 
 /// Holds properties of the text, that influence only its layout
@@ -105,6 +106,7 @@ struct TextLayoutStyle
     Font font;
     TabSize tabSize;
     TextTransform transform;
+    bool wrap;
 
     this(Font font)
     {
@@ -116,6 +118,7 @@ struct TextLayoutStyle
         font = superStyle.font;
         tabSize = superStyle.tabSize;
         transform = superStyle.transform;
+        wrap = superStyle.wrap;
     }
 }
 
@@ -131,7 +134,6 @@ struct TextAttr
         fontSize,
         fontStyle,
         fontWeight,
-        tabSize,
         decoration,
         transform,
     }
@@ -144,7 +146,6 @@ struct TextAttr
         int fontSize;
         FontStyle fontStyle;
         ushort fontWeight;
-        TabSize tabSize;
         TextDecor decoration;
         TextTransform transform;
     }
@@ -165,11 +166,6 @@ struct TextAttr
     {
         type = Type.fontStyle;
         data.fontStyle = fontStyle;
-    }
-    this(TabSize tabSize)
-    {
-        type = Type.tabSize;
-        data.tabSize = tabSize;
     }
     this(TextDecor decoration)
     {
@@ -268,8 +264,8 @@ struct LineMarkup
 
     package Array!MarkupUnit list;
     package TextAlign alignment;
+    package bool alignmentSet;
     private uint currentIndex; // absolute
-    private bool alignmentSet;
 
     @property bool empty() const
     {
@@ -298,7 +294,7 @@ struct LineMarkup
         currentIndex = 0;
     }
 
-    package void prepare()
+    void prepare()
     {
         import std.algorithm.sorting : sort;
 
