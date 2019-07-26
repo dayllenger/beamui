@@ -10,6 +10,7 @@ module beamui.widgets.srcedit;
 import beamui.core.units;
 import beamui.text.simple : drawSimpleText;
 import beamui.text.sizetest;
+import beamui.text.style : TextAlign, TextStyle;
 import beamui.widgets.editors;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
@@ -269,7 +270,7 @@ class SourceEdit : EditBox
         _lineNumbersWidth = 0;
         if (_showLineNumbers)
         {
-            dchar[] s = to!(dchar[])(content.lineCount + 1);
+            dchar[] s = to!(dchar[])(content.lineCount);
             foreach (ref ch; s)
                 ch = '9';
             auto st = TextLayoutStyle(font.get);
@@ -284,8 +285,6 @@ class SourceEdit : EditBox
     override protected void drawLeftPane(DrawBuf buf, Rect rc, int line)
     {
         buf.fillRect(rc, _leftPaneBgColor);
-        //buf.fillRect(Rect(rc.right - 2, rc.top, rc.right - 1, rc.bottom), _leftPaneBgColor2);
-        //buf.fillRect(Rect(rc.right - 1, rc.top, rc.right - 0, rc.bottom), _leftPaneBgColor3);
         rc.right -= BACKEND_CONSOLE ? 1 : 3;
         if (_foldingWidth)
         {
@@ -344,30 +343,29 @@ class SourceEdit : EditBox
         buf.fillRect(rc, bgcolor);
         if (line < 0)
             return;
+
         dstring s = to!dstring(line + 1);
-        Font fnt = font.get;
-        auto st = TextLayoutStyle(fnt);
-        const sz = computeTextSize(s, st);
-        int x = rc.right - sz.w;
-        int y = rc.top + (rc.height - sz.h) / 2;
-        Color color = _leftPaneLineNumColor;
+        TextStyle st;
+        st.font = font.get;
+        st.alignment = TextAlign.end;
+        st.color = _leftPaneLineNumColor;
         if (line == caretPos.line && !_leftPaneLineNumColorCurrentLine.isFullyTransparent)
-            color = _leftPaneLineNumColorCurrentLine;
+            st.color = _leftPaneLineNumColorCurrentLine;
         if (0 <= line && line < content.lineCount)
         {
             EditStateMark m = content.editMark(line);
             if (m == EditStateMark.changed)
             {
                 // modified, not saved
-                color = _leftPaneLineNumColorEdited;
+                st.color = _leftPaneLineNumColorEdited;
             }
             else if (m == EditStateMark.saved)
             {
                 // modified, saved
-                color = _leftPaneLineNumColorSaved;
+                st.color = _leftPaneLineNumColorSaved;
             }
         }
-        drawSimpleText(buf, s, x, y, fnt, color);
+        drawSimpleText(buf, s, rc.left, rc.top, rc.width, st);
     }
 
     protected void drawLeftPaneIcons(DrawBuf buf, Rect rc, int line)

@@ -356,7 +356,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         bool _ownContent = true;
 
         int _lineHeight = 1;
-        bool _fixedFont;
         int _spaceWidth;
 
         bool _selectAllWhenFocusedWithTab;
@@ -515,7 +514,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     override protected void handleFontChange()
     {
         Font font = font();
-        _fixedFont = font.isFixed;
         _spaceWidth = font.spaceWidth;
         _lineHeight = max(font.height, 1);
         _txtStyle.font = font;
@@ -2067,14 +2065,14 @@ class EditLine : EditWidgetBase
     }
 
     /// Override to custom highlight of line background
-    protected void drawLineBackground(DrawBuf buf, Rect lineRect, Rect visibleRect)
+    protected void drawLineBackground(DrawBuf buf, Box lineBox, Box visibleBox)
     {
         if (!_selectionRange.empty)
         {
             // line inside selection
             const int start = textPosToClient(_selectionRange.start).x;
             const int end = textPosToClient(_selectionRange.end).x;
-            Rect rc = lineRect;
+            Rect rc = lineBox;
             rc.left = start + clientBox.x;
             rc.right = end + clientBox.x;
             if (!rc.empty)
@@ -2084,7 +2082,7 @@ class EditLine : EditWidgetBase
             }
             if (_leftPaneWidth > 0)
             {
-                Rect leftPaneRect = visibleRect;
+                Rect leftPaneRect = visibleBox;
                 leftPaneRect.right = leftPaneRect.left;
                 leftPaneRect.left -= _leftPaneWidth;
                 drawLeftPane(buf, leftPaneRect, 0);
@@ -2101,7 +2099,7 @@ class EditLine : EditWidgetBase
         const b = innerBox;
         const saver = ClipRectSaver(buf, b, style.alpha);
 
-        drawLineBackground(buf, Rect(clientBox), Rect(clientBox));
+        drawLineBackground(buf, clientBox, clientBox);
 
         if (_txtline.glyphCount == 0)
         {
@@ -2822,7 +2820,7 @@ class EditBox : EditWidgetBase
 
     //===============================================================
 
-    protected void highlightTextPattern(DrawBuf buf, int lineIndex, Rect lineRect, Rect visibleRect)
+    protected void highlightTextPattern(DrawBuf buf, int lineIndex, Box lineBox, Box visibleBox)
     {
         dstring pattern = _textToHighlight;
         TextSearchOptions options = _textToHighlightOptions;
@@ -2871,7 +2869,7 @@ class EditBox : EditWidgetBase
                 const r = TextRange(TextPosition(lineIndex, cast(int)start),
                         TextPosition(lineIndex, cast(int)(start + pattern.length)));
                 const color = r.isInsideOrNext(caretPos) ? _searchHighlightColorCurrent : _searchHighlightColorOther;
-                highlightLineRange(buf, lineRect, color, r);
+                highlightLineRange(buf, lineBox, color, r);
             }
             start += pattern.length;
         }
@@ -2982,11 +2980,11 @@ class EditBox : EditWidgetBase
         return true;
     }
 
-    protected void highlightLineRange(DrawBuf buf, Rect lineRect, Color color, TextRange r)
+    protected void highlightLineRange(DrawBuf buf, Box lineBox, Color color, TextRange r)
     {
         const Box start = textPosToClient(r.start);
         const Box end = textPosToClient(r.end);
-        Rect rc = lineRect;
+        Rect rc = lineBox;
         rc.left = clientBox.x + start.x;
         rc.right = clientBox.x + end.x + end.w;
         if (!rc.empty)
@@ -3000,7 +2998,7 @@ class EditBox : EditWidgetBase
     }
 
     /// Used in place of directly calling buf.fillRect in word wrap mode
-    void wordWrapFillRect(DrawBuf buf, int line, Rect lineToDivide, Color color)
+    protected void wordWrapFillRect(DrawBuf buf, int line, Rect lineToDivide, Color color)
     {
         assert(wrapped);
         Rect rc = lineToDivide;
@@ -3100,23 +3098,25 @@ class EditBox : EditWidgetBase
     }
 
     /// Override to custom highlight of line background
-    protected void drawLineBackground(DrawBuf buf, int lineIndex, Rect lineRect, Rect visibleRect)
+    protected void drawLineBackground(DrawBuf buf, int lineIndex, Box lineBox, Box visibleBox)
     {
         // highlight odd lines
         //if ((lineIndex & 1))
         //    buf.fillRect(visibleRect, 0xF4808080);
 
-        if (!_selectionRange.empty && _selectionRange.start.line <= lineIndex && _selectionRange.end.line >= lineIndex)
+        const sel = _selectionRange;
+        if (!sel.empty && sel.start.line <= lineIndex && lineIndex <= sel.end.line)
         {
-            // line inside selection
-            const int selStart = textPosToClient(_selectionRange.start).x;
-            const int selEnd = textPosToClient(_selectionRange.end).x;
-            const int startx = lineIndex == _selectionRange.start.line ? selStart + clientBox.x : lineRect.left;
-            const int endx = lineIndex == _selectionRange.end.line ? selEnd + clientBox.x
-                : lineRect.right + _spaceWidth;
-            Rect rc = lineRect;
-            rc.left = startx;
-            rc.right = endx;
+            // line is inside selection
+            const int selStart = textPosToClient(sel.start).x;
+            const int selEnd = textPosToClient(sel.end).x;
+            Rect rc = lineBox;
+            if (lineIndex == sel.start.line)
+                rc.left = selStart + clientBox.x;
+            if (lineIndex == sel.end.line)
+                rc.right = selEnd + clientBox.x;
+            else
+                rc.right += _spaceWidth;
             if (!rc.empty)
             {
                 const c = focused ? _selectionColorFocused : _selectionColorNormal;
@@ -3128,17 +3128,17 @@ class EditBox : EditWidgetBase
             }
         }
 
-        highlightTextPattern(buf, lineIndex, lineRect, visibleRect);
+        highlightTextPattern(buf, lineIndex, lineBox, visibleBox);
 
         if (_matchingBraces.start.line == lineIndex)
         {
             const r = TextRange(_matchingBraces.start, _matchingBraces.start.offset(1));
-            highlightLineRange(buf, lineRect, _matchingBracketHighlightColor, r);
+            highlightLineRange(buf, lineBox, _matchingBracketHighlightColor, r);
         }
         if (_matchingBraces.end.line == lineIndex)
         {
             const r = TextRange(_matchingBraces.end, _matchingBraces.end.offset(1));
-            highlightLineRange(buf, lineRect, _matchingBracketHighlightColor, r);
+            highlightLineRange(buf, lineBox, _matchingBracketHighlightColor, r);
         }
 
         // frame around current line
@@ -3147,8 +3147,8 @@ class EditBox : EditWidgetBase
         {
             //TODO: Figure out why a little slow to catch up
             if (wrapped)
-                visibleRect.translate(0, -caretHeightOffset);
-            buf.drawFrame(visibleRect, Color(0xA0808080), Insets(1));
+                visibleBox.y -= caretHeightOffset;
+            buf.drawFrame(Rect(visibleBox), Color(0xA0808080), Insets(1));
         }
     }
 
@@ -3157,16 +3157,14 @@ class EditBox : EditWidgetBase
         if (_leftPaneWidth <= 0)
             return;
 
+        const int lineCount = _content.lineCount;
         const cb = clientBox;
-        Box lineBox = Box(cb.x - _leftPaneWidth, cb.y, _leftPaneWidth, _lineHeight);
+        Box b = Box(cb.x - _leftPaneWidth, cb.y, _leftPaneWidth, _lineHeight);
         int i = _firstVisibleLine;
-        const int lc = _content.lineCount;
-        while (true)
+        while (b.y < cb.y + cb.h)
         {
-            if (lineBox.y > cb.y + cb.h)
-                break;
-            drawLeftPane(buf, Rect(lineBox), i < lc ? i : -1);
-            lineBox.y += _lineHeight;
+            drawLeftPane(buf, Rect(b), i < lineCount ? i : -1);
+            b.y += _lineHeight;
             if (wrapped)
             {
                 int currentWrap = 1;
@@ -3175,10 +3173,10 @@ class EditBox : EditWidgetBase
                     LineSpan curSpan = getSpan(i);
                     if (currentWrap > curSpan.len - 1)
                         break;
-                    if (lineBox.y > cb.y + cb.h)
+                    if (b.y > cb.y + cb.h)
                         break;
-                    drawLeftPane(buf, Rect(lineBox), -1);
-                    lineBox.y += _lineHeight;
+                    drawLeftPane(buf, Rect(b), -1);
+                    b.y += _lineHeight;
 
                     currentWrap++;
                 }
@@ -3293,25 +3291,25 @@ class EditBox : EditWidgetBase
         return maxSpace;
     }
 
-    void drawTabPositionMarks(DrawBuf buf, Font font, int lineIndex, Rect lineRect)
+    protected void drawTabPositionMarks(DrawBuf buf, int lineIndex, Box lineBox)
     {
         const int maxCol = findMaxTabMarkColumn(lineIndex);
         if (maxCol > 0)
         {
-            const int spaceWidth = font.charWidth(' ');
-            Rect rc = lineRect;
+            const int spaceWidth = _spaceWidth;
+            Rect rc = lineBox;
             Color color = style.textColor;
             color.addAlpha(0xC0);
             for (int i = 0; i < maxCol; i += tabSize)
             {
-                rc.left = lineRect.left + i * spaceWidth;
+                rc.left = lineBox.x + i * spaceWidth;
                 rc.right = rc.left + 1;
                 buf.fillRectPattern(rc, color, PatternType.dotted);
             }
         }
     }
 
-    void drawWhiteSpaceMarks(DrawBuf buf, Font font, dstring txt, TabSize tabSize, Rect lineRect, Rect visibleRect)
+    protected void drawWhiteSpaceMarks(DrawBuf buf, Font font, dstring txt, TabSize tabSize, Box lineBox, Box visibleBox)
     {
         int firstNonSpace = -1;
         int lastNonSpace = -1;
@@ -3330,20 +3328,23 @@ class EditBox : EditWidgetBase
             }
         }
         const bool spacesOnly = txt.length > 0 && firstNonSpace < 0;
-        if (firstNonSpace <= 0 && lastNonSpace >= txt.length && !hasTabs && !spacesOnly)
+        if (firstNonSpace <= 0 && txt.length <= lastNonSpace && !hasTabs && !spacesOnly)
             return;
+
         Color color = style.textColor;
         color.addAlpha(0xC0);
         static int[] textSizeBuffer;
         const int charsMeasured = font.measureText(txt, textSizeBuffer, MAX_WIDTH_UNSPECIFIED, tabSize);
+        const lineRect = Rect(lineBox);
+        const visibleRect = Rect(visibleBox);
         for (int i = 0; i < txt.length && i < charsMeasured; i++)
         {
             const ch = txt[i];
-            const bool outsideText = (i < firstNonSpace || i >= lastNonSpace || spacesOnly);
+            const bool outsideText = i < firstNonSpace || lastNonSpace <= i || spacesOnly;
             if ((ch == ' ' && outsideText) || ch == '\t')
             {
                 Rect rc = lineRect;
-                rc.left = lineRect.left + (i > 0 ? textSizeBuffer[i - 1] : 0);
+                rc.left += i > 0 ? textSizeBuffer[i - 1] : 0;
                 rc.right = lineRect.left + textSizeBuffer[i];
                 const int h = rc.height;
                 if (rc.intersects(visibleRect))
@@ -3352,9 +3353,7 @@ class EditBox : EditWidgetBase
                     if (ch == ' ')
                     {
                         // space
-                        int sz = h / 6;
-                        if (sz < 1)
-                            sz = 1;
+                        const int sz = max(h / 6, 1);
                         rc.top += h / 2 - sz / 2;
                         rc.bottom = rc.top + sz;
                         rc.left += rc.width / 2 - sz / 2;
@@ -3364,17 +3363,12 @@ class EditBox : EditWidgetBase
                     else if (ch == '\t')
                     {
                         // tab
-                        Point p1 = Point(rc.left + 1, rc.top + h / 2);
-                        Point p2 = p1;
-                        p2.x = rc.right - 1;
-                        int sz = h / 4;
-                        if (sz < 2)
-                            sz = 2;
-                        if (sz > p2.x - p1.x)
-                            sz = p2.x - p1.x;
+                        const p1 = Point(rc.left + 1, rc.top + h / 2);
+                        const p2 = Point(rc.right - 1, p1.y);
+                        const int sz = clamp(h / 4, 2, p2.x - p1.x);
                         buf.drawLine(p1, p2, color);
-                        buf.drawLine(p2, Point(p2.x - sz, p2.y - sz), color);
-                        buf.drawLine(p2, Point(p2.x - sz, p2.y + sz), color);
+                        buf.drawLine(p2, Point(p2.x - sz, p2.y - sz / 2), color);
+                        buf.drawLine(p2, Point(p2.x - sz, p2.y + sz / 2), color);
                     }
                 }
             }
@@ -3432,37 +3426,26 @@ class EditBox : EditWidgetBase
 
         Font font = font.get;
         const color = style.textColor;
+        const x0 = b.x - scrollPos.x;
         int previousWraps;
         foreach (i; 0 .. cast(int)_visibleLines.length)
         {
             const dstring txt = _visibleLines[i].str;
             const lineIndex = _firstVisibleLine + i;
-            Rect lineRect;
-            lineRect.right = _visibleLines[i].width;
-            lineRect.bottom = _lineHeight;
-            lineRect.translate(b.x - scrollPos.x, b.y + i * _lineHeight);
-            Rect visibleRect = lineRect;
-            visibleRect.left = b.x;
-            visibleRect.right = b.x + b.w;
-            drawLineBackground(buf, lineIndex, lineRect, visibleRect);
+            const lineBox = Box(x0, b.y + i * _lineHeight, _visibleLines[i].width, _lineHeight);
+            const visibleBox = Box(b.x, lineBox.y, b.w, lineBox.h);
+            drawLineBackground(buf, lineIndex, lineBox, visibleBox);
             if (_showTabPositionMarks)
-                drawTabPositionMarks(buf, font, lineIndex, lineRect);
+                drawTabPositionMarks(buf, lineIndex, lineBox);
             if (!txt.length && !_wordWrap)
                 continue;
             if (_showWhiteSpaceMarks)
             {
-                Rect whiteSpaceRc = lineRect;
-                Rect whiteSpaceRcVisible = visibleRect;
-                whiteSpaceRc.translate(0, previousWraps * _lineHeight);
-                whiteSpaceRcVisible.translate(0, previousWraps * _lineHeight);
+                Box whiteSpaceRc = lineBox;
+                Box whiteSpaceRcVisible = visibleBox;
+                whiteSpaceRc.y += previousWraps * _lineHeight;
+                whiteSpaceRcVisible.y += previousWraps * _lineHeight;
                 drawWhiteSpaceMarks(buf, font, txt, _content.tabSize, whiteSpaceRc, whiteSpaceRcVisible);
-            }
-            if (_leftPaneWidth > 0)
-            {
-                Rect leftPaneRect = visibleRect;
-                leftPaneRect.right = leftPaneRect.left;
-                leftPaneRect.left -= _leftPaneWidth;
-                drawLeftPane(buf, leftPaneRect, 0);
             }
             if (txt.length > 0 || _wordWrap)
             {
@@ -3484,27 +3467,25 @@ class EditBox : EditWidgetBase
                     foreach (q, curWrap; wrappedLine)
                     {
                         const int lineOffset = cast(int)q + i + wraps;
-                        const x = b.x - scrollPos.x;
                         const y = b.y + lineOffset * _lineHeight;
                         if (highlight.length > 0)
                         {
                             const wrapProps = highlight[][accumulativeLength .. $];
                             accumulativeLength += curWrap.length;
-                            font.drawColoredText(buf, x, y, curWrap, wrapProps, tabSize);
+                            font.drawColoredText(buf, x0, y, curWrap, wrapProps, tabSize);
                         }
                         else
-                            font.drawText(buf, x, y, curWrap, color, tabSize);
+                            font.drawText(buf, x0, y, curWrap, color, tabSize);
                     }
                     previousWraps += cast(int)wrappedLine.length - 1;
                 }
                 else
                 {
-                    const x = b.x - scrollPos.x;
                     const y = b.y + i * _lineHeight;
                     if (highlight.length > 0)
-                        font.drawColoredText(buf, x, y, txt, highlight[], tabSize);
+                        font.drawColoredText(buf, x0, y, txt, highlight[], tabSize);
                     else
-                        font.drawText(buf, x, y, txt, color, tabSize);
+                        font.drawText(buf, x0, y, txt, color, tabSize);
                 }
             }
         }
