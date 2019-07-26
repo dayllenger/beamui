@@ -324,14 +324,16 @@ class Font : RefCountedObject
     {
         if (text.length == 0)
             return; // nothing to draw - empty text
+
+        const clip = buf.clipRect;
+        if (clip.empty)
+            return; // not visible - clipped out
+        if (y + height < clip.top || clip.bottom <= y)
+            return; // not visible - fully above or below clipping rectangle
+
         if (_textSizeBuffer.length < text.length)
             _textSizeBuffer.length = text.length;
         int charsMeasured = measureText(text, _textSizeBuffer, MAX_WIDTH_UNSPECIFIED, tabSize, tabOffset, textFlags);
-        Rect clip = buf.clipRect; //clipOrFullRect;
-        if (clip.empty)
-            return; // not visible - clipped out
-        if (y + height < clip.top || y >= clip.bottom)
-            return; // not visible - fully above or below clipping rectangle
         bool hotkeys = (textFlags & TextFlag.hotkeys) != 0;
         int _baseline = baseline;
         bool underline = (textFlags & TextFlag.underline) != 0;
@@ -396,14 +398,16 @@ class Font : RefCountedObject
     {
         if (text.length == 0)
             return; // nothing to draw - empty text
+
+        const clip = buf.clipRect;
+        if (clip.empty)
+            return; // not visible - clipped out
+        if (y + height < clip.top || clip.bottom <= y)
+            return; // not visible - fully above or below clipping rectangle
+
         if (_textSizeBuffer.length < text.length)
             _textSizeBuffer.length = text.length;
         int charsMeasured = measureText(text, _textSizeBuffer, MAX_WIDTH_UNSPECIFIED, tabSize, tabOffset, textFlags);
-        Rect clip = buf.clipRect; //clipOrFullRect;
-        if (clip.empty)
-            return; // not visible - clipped out
-        if (y + height < clip.top || y >= clip.bottom)
-            return; // not visible - fully above or below clipping rectangle
         int _baseline = baseline;
         uint customizedTextFlags = (charProps.length ? charProps[0].textFlags : 0) | textFlags;
         bool underline = (customizedTextFlags & TextFlag.underline) != 0;

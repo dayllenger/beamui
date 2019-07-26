@@ -8,6 +8,7 @@ Authors:   Vadim Lopatin
 module beamui.widgets.srcedit;
 
 import beamui.core.units;
+import beamui.text.simple : drawSimpleText;
 import beamui.text.sizetest;
 import beamui.widgets.editors;
 import beamui.widgets.menu;
@@ -366,7 +367,7 @@ class SourceEdit : EditBox
                 color = _leftPaneLineNumColorSaved;
             }
         }
-        fnt.drawText(buf, x, y, s, color);
+        drawSimpleText(buf, s, x, y, fnt, color);
     }
 
     protected void drawLeftPaneIcons(DrawBuf buf, Rect rc, int line)

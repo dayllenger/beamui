@@ -26,6 +26,7 @@ import beamui.core.stdaction;
 import beamui.dialogs.dialog;
 import beamui.layout.linear;
 import beamui.platforms.common.platform;
+import beamui.text.simple : drawSimpleText;
 import beamui.text.sizetest;
 import beamui.widgets.combobox;
 import beamui.widgets.controls;
@@ -575,7 +576,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             Color cl = _fileList.style.textColor;
             if (_entries[row].isDir)
                 cl = currentTheme.getColor("file_dialog_dir_name", cl);
-            _fileList.font.drawText(buf, b.x + offset, b.y + offset, txt, cl);
+            drawSimpleText(buf, txt, b.x + offset, b.y + offset, _fileList.font.get, cl);
             return;
         }
         DrawableRef img = rowIcon(row);

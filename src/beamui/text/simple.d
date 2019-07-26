@@ -10,12 +10,12 @@ Authors:   dayllenger
 module beamui.text.simple;
 
 import std.array : Appender;
-import std.uni : isAlphaNum, toLower, toUpper;
 import beamui.core.collections : Buf;
-import beamui.core.functions : clamp, max, move;
-import beamui.core.geometry : Point, Size;
-import beamui.graphics.drawbuf;
-import beamui.text.fonts;
+import beamui.core.geometry : Point, Size, Rect;
+import beamui.core.math : max;
+import beamui.graphics.colors : Color;
+import beamui.graphics.drawbuf : DrawBuf, GlyphInstance;
+import beamui.text.fonts : Font;
 import beamui.text.glyph : GlyphRef;
 import beamui.text.shaping;
 import beamui.text.style;
@@ -34,7 +34,7 @@ private struct Line
     void measure(ref const TextLayoutStyle style)
     {
         Font font = cast()style.font;
-        assert(font !is null, "Font is mandatory");
+        assert(font, "Font is mandatory");
 
         const size_t len = str.length;
         if (len == 0)
@@ -74,7 +74,7 @@ private struct Line
     }
 
     /// Split line by width
-    void wrap(int boxWidth, ref Buf!Line output)
+    void wrap(int boxWidth, ref Appender!(Line[]) output)
     {
         if (boxWidth <= 0)
             return;
@@ -156,10 +156,16 @@ private struct Line
         assert(font);
 
         const int height = font.height;
+        // check visibility
+        Rect clip = buf.clipRect;
+        clip.translate(-x, -y);
+        if (height < clip.top || clip.bottom <= 0)
+            return; // fully above or below of the clipping rectangle
+
+        // align, if needed
         const int lineWidth = width;
         if (lineWidth < boxWidth)
         {
-            // align
             if (style.alignment == TextAlign.center)
             {
                 x += (boxWidth - lineWidth) / 2;
@@ -169,13 +175,6 @@ private struct Line
                 x += boxWidth - lineWidth;
             }
         }
-        // check visibility
-        Rect clip = buf.clipRect;
-        if (clip.empty)
-            return; // clipped out
-        clip.translate(-x, -y);
-        if (height < clip.top || clip.bottom <= 0)
-            return; // fully above or below of the clipping rectangle
 
         const int baseline = font.baseline;
         const underline = (style.decoration.line & TextDecorLine.under) != 0;
@@ -320,9 +319,11 @@ struct SimpleText
         /// ditto
         void str(dstring s)
         {
+            if (original is s)
+                return;
             original = s;
-            _lines.clear();
-            _wrappedLines.clear();
+            lines.clear();
+            wrappedLines.clear();
             if (s.length > 0)
             {
                 // split by EOL char
@@ -331,11 +332,11 @@ struct SimpleText
                 {
                     if (ch == '\n')
                     {
-                        _lines.put(Line(s[lineStart .. i]));
+                        lines ~= Line(s[lineStart .. i]);
                         lineStart = i + 1;
                     }
                 }
-                _lines.put(Line(s[lineStart .. $]));
+                lines ~= Line(s[lineStart .. $]);
             }
             measured = false;
         }
@@ -358,8 +359,8 @@ struct SimpleText
     private
     {
         dstring original;
-        Appender!(Line[]) _lines;
-        Buf!Line _wrappedLines;
+        Appender!(Line[]) lines;
+        Appender!(Line[]) wrappedLines;
         TextLayoutStyle oldLayoutStyle;
         Size _size;
         Size _sizeAfterWrap;
@@ -380,30 +381,30 @@ struct SimpleText
             return;
 
         oldLayoutStyle = ls;
+        wrappedLines.clear();
 
         int w;
-        foreach (ref line; _lines.data)
+        foreach (ref line; lines.data)
         {
             line.measure(ls);
             w = max(w, line.width);
         }
         _size.w = w;
-        _size.h = ls.font.height * cast(int)_lines.data.length;
-        _wrappedLines.clear();
+        _size.h = ls.font.height * cast(int)lines.data.length;
         measured = true;
     }
 
     /// Wrap lines within a width, setting `sizeAfterWrap`. Measures, if needed
     void wrap(int boxWidth)
     {
-        if (boxWidth == _sizeAfterWrap.w && _wrappedLines.length > 0)
+        if (boxWidth == _sizeAfterWrap.w && wrappedLines.data.length > 0)
             return;
 
         measure();
-        _wrappedLines.clear();
+        wrappedLines.clear();
 
         bool fits = true;
-        foreach (ref line; _lines.data)
+        foreach (ref line; lines.data)
         {
             if (line.width > boxWidth)
             {
@@ -418,24 +419,154 @@ struct SimpleText
         }
         else
         {
-            foreach (ref line; _lines.data)
-                line.wrap(boxWidth, _wrappedLines);
+            foreach (ref line; lines.data)
+                line.wrap(boxWidth, wrappedLines);
             _sizeAfterWrap.w = boxWidth;
-            _sizeAfterWrap.h = style.font.height * _wrappedLines.length;
+            _sizeAfterWrap.h = style.font.height * cast(int)wrappedLines.data.length;
         }
     }
 
     /// Draw text into buffer. Measures, if needed
     void draw(DrawBuf buf, int x, int y, int boxWidth)
     {
+        // skip early if not visible
+        const clip = buf.clipRect;
+        if (clip.empty || clip.bottom <= y || clip.right <= x)
+            return;
+
+        auto lns = wrappedLines.data.length > lines.data.length ? wrappedLines.data : lines.data;
+        const int lineHeight = style.font.height;
+        const int height = lineHeight * cast(int)lns.length;
+        if (y + height < clip.top)
+            return;
+
         measure();
 
-        const int lineHeight = style.font.height;
-        auto lns = _wrappedLines.length > _lines.data.length ? _wrappedLines.unsafe_slice : _lines.data;
         foreach (ref line; lns)
         {
             line.draw(buf, x, y, boxWidth, style);
             y += lineHeight;
         }
     }
+
+    private void drawInternal(DrawBuf buf, int x, int y, int boxWidth, int lineHeight)
+    {
+        auto lns = wrappedLines.data.length > lines.data.length ? wrappedLines.data : lines.data;
+        foreach (ref line; lns)
+        {
+            line.draw(buf, x, y, boxWidth, style);
+            y += lineHeight;
+        }
+    }
+}
+
+private struct SimpleTextPool
+{
+    int[dstring] strToIndex;
+    SimpleText[] list;
+    int engaged;
+
+    SimpleText* get(dstring str)
+    {
+        int i = strToIndex.get(str, -1);
+        if (i == -1)
+        {
+            if (strToIndex.length > 1024)
+            {
+                strToIndex.clear();
+                engaged = 0;
+            }
+            strToIndex[str] = i = engaged;
+            engaged++;
+            if (list.length < engaged)
+                list.length = engaged * 3 / 2 + 1;
+        }
+        SimpleText* txt = &list[i];
+        txt.str = str;
+        return txt;
+    }
+}
+private SimpleTextPool immediate;
+
+package(beamui) void clearSimpleTextPool()
+{
+    immediate = SimpleTextPool.init;
+}
+
+/// Draw simple text immediately. Useful in very dynamic and massive data lists
+void drawSimpleText(DrawBuf buf, dstring str, int x, int y, Font font, Color color)
+{
+    assert(font, "Font is mandatory");
+
+    if (str.length == 0 || color.isFullyTransparent)
+        return;
+    // skip early if not visible
+    const clip = buf.clipRect;
+    if (clip.empty || clip.bottom <= y || clip.right <= x)
+        return;
+
+    const int lineHeight = font.height;
+    if (y < clip.top)
+    {
+        const int maxHeight = lineHeight * cast(int)(str.length + 1);
+        if (y + maxHeight < clip.top)
+            return;
+        const int height = lineHeight * countLines(str);
+        if (y + height < clip.top)
+            return;
+    }
+
+    SimpleText* txt = immediate.get(str);
+    TextStyle st;
+    st.font = font;
+    st.color = color;
+    txt.style = st;
+    txt.measure();
+    txt.drawInternal(buf, x, y, int.max, lineHeight);
+}
+/// ditto
+void drawSimpleText(DrawBuf buf, dstring str, int x, int y, int boxWidth, ref TextStyle style)
+{
+    assert(style.font, "Font is mandatory");
+
+    if (str.length == 0)
+        return;
+    // skip early if not visible
+    const clip = buf.clipRect;
+    if (clip.empty || clip.bottom <= y || clip.right <= x)
+        return;
+
+    const int lineHeight = style.font.height;
+    if (y < clip.top)
+    {
+        const int maxHeight = lineHeight * cast(int)(str.length + 1);
+        if (y + maxHeight < clip.top)
+            return;
+        if (!style.wrap)
+        {
+            const int height = lineHeight * countLines(str);
+            if (y + height < clip.top)
+                return;
+        }
+    }
+
+    SimpleText* txt = immediate.get(str);
+    txt.style = style;
+    txt.measure();
+    if (style.wrap)
+    {
+        txt.wrap(boxWidth);
+        if (y + txt.sizeAfterWrap.h < clip.top)
+            return;
+    }
+    txt.drawInternal(buf, x, y, boxWidth, lineHeight);
+}
+
+private int countLines(dstring str)
+{
+    int count = 1;
+    foreach (ch; str)
+        if (ch == '\n')
+            count++;
+    return count;
 }

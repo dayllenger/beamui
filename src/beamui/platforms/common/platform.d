@@ -998,27 +998,7 @@ class Window : CustomEventTarget
             else
                 buf.resize(pw, ph);
             buf.beforeDrawing();
-            static if (false)
-            {
-                // testing the render
-                buf.fillRect(Rect(100, 100, 200, 200), 0x704020);
-                buf.fillRect(Rect(40, 70, 100, 120), 0x000000);
-                buf.fillRect(Rect(80, 80, 150, 150), 0x80008000); // green
-                auto dr1 = new ImageDrawable(imageCache.get("exit"));
-                auto dr2 = new ImageDrawable(imageCache.get("computer"));
-                auto dr3 = new ImageDrawable(imageCache.get("folder"));
-                auto dr4 = new ImageDrawable(imageCache.get("user-home"));
-                dr1.drawTo(buf, Box(100, 300, 64, 64));
-                dr2.drawTo(buf, Box(200, 300, 64, 64));
-                dr3.drawTo(buf, Box(300, 300, 80, 60));
-                dr4.drawTo(buf, Box(400, 300, 80, 60));
-                FontRef fnt = currentTheme.root.font;
-                fnt.drawText(buf, 40, 40, "Some Text 1234567890 !@#$^*", 0x80FF0000);
-            }
-            else
-            {
-                draw(buf);
-            }
+            draw(buf);
             buf.afterDrawing();
             swapBuffers();
         }

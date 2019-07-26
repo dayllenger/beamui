@@ -43,6 +43,7 @@ module beamui.widgets.grid;
 import std.container.rbtree;
 import beamui.core.config;
 import beamui.core.stdaction;
+import beamui.text.simple : drawSimpleText;
 import beamui.text.sizetest;
 import beamui.widgets.controls;
 import beamui.widgets.menu;
@@ -2104,7 +2105,7 @@ class StringGridWidget : StringGridWidgetBase
 
         dstring txt = cellText(col, row);
         const offset = BACKEND_CONSOLE ? 0 : 1;
-        font.drawText(buf, b.x + offset, b.y + offset, txt, style.textColor);
+        drawSimpleText(buf, txt, b.x + offset, b.y + offset, font.get, style.textColor);
     }
 
     override protected void drawHeaderCell(DrawBuf buf, Box b, int col, int row)
@@ -2131,7 +2132,7 @@ class StringGridWidget : StringGridWidgetBase
         const cb = alignBox(b, sz, ha | Align.vcenter);
         const offset = BACKEND_CONSOLE ? 0 : 1;
         const cl = currentTheme.getColor("grid_cell_text_header", style.textColor);
-        fnt.drawText(buf, cb.x + offset, cb.y + offset, txt, cl);
+        drawSimpleText(buf, txt, cb.x + offset, cb.y + offset, fnt, cl);
     }
 
     override protected void drawHeaderCellBackground(DrawBuf buf, Box b, int c, int r)

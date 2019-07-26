@@ -601,9 +601,12 @@ void releaseResourcesOnAppExit()
     import beamui.graphics.drawbuf;
     import beamui.style.style;
     import beamui.style.theme;
+    import beamui.text.simple : clearSimpleTextPool;
     import beamui.widgets.widget : Widget;
 
     GC.collect();
+
+    clearSimpleTextPool();
 
     debug
     {
