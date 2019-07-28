@@ -7,7 +7,7 @@ Authors:   dayllenger
 */
 module beamui.widgets.text;
 
-import beamui.core.editable : TextChange, TextContent, TextPosition;
+import beamui.core.editable : ListChange, TextContent, TextPosition;
 import beamui.text.line;
 import beamui.text.simple;
 import beamui.text.sizetest;
@@ -259,7 +259,7 @@ class Paragraph : Widget
         /// Replace the whole paragraph text. Does not preserve markup
         override void text(dstring s)
         {
-            _content.replaceAll(s);
+            _content.setStr(s);
             resetAllMarkup();
         }
     }
@@ -300,7 +300,7 @@ class Paragraph : Widget
     {
         assert(content);
         _content = content;
-        _content.onChange ~= &handleChange;
+        _content.afterChange ~= &handleChange;
 
         minSizeTester.str = "aaaaa\na";
         natSizeTester.str =
@@ -316,7 +316,7 @@ class Paragraph : Widget
 
     ~this()
     {
-        _content.onChange -= &handleChange;
+        _content.afterChange -= &handleChange;
     }
 
     /// Set or replace line markup by index. The index must be in range
@@ -485,11 +485,11 @@ class Paragraph : Widget
         return -1;
     }
 
-    private void handleChange(TextChange op, uint i, uint c)
+    private void handleChange(ListChange op, uint i, uint c)
     {
         import std.array : insertInPlace, replaceInPlace;
 
-        if (op == TextChange.replaceAll)
+        if (op == ListChange.replaceAll)
         {
             _lines.length = c;
             foreach (j; 0 .. c)
@@ -498,12 +498,12 @@ class Paragraph : Widget
                 _lines[j].measured = false;
             }
         }
-        else if (op == TextChange.append)
+        else if (op == ListChange.append)
         {
             foreach (j; _content.lineCount - c - 1 .. _content.lineCount)
                 _lines ~= TextLine(_content[j]);
         }
-        else if (op == TextChange.insert)
+        else if (op == ListChange.insert)
         {
             if (c > 1)
             {
@@ -517,7 +517,7 @@ class Paragraph : Widget
                 insertInPlace(_lines, i, TextLine(_content[i]));
             }
         }
-        else if (op == TextChange.replace)
+        else if (op == ListChange.replace)
         {
             foreach (j; i .. i + c)
             {
@@ -525,7 +525,7 @@ class Paragraph : Widget
                 _lines[j].measured = false;
             }
         }
-        else if (op == TextChange.remove)
+        else if (op == ListChange.remove)
         {
             // TODO: delete markup
             TextLine[] dummy;

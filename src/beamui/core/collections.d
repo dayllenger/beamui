@@ -9,8 +9,7 @@ module beamui.core.collections;
 
 import std.traits;
 
-/**
-    Array-based collection, that provides a set of useful operations and handles object ownership.
+/** Array-based collection, that provides a set of useful operations and handles object ownership.
 
     Retains item order during add/remove operations. When instantiated with `ownItems = true`,
     the container will destroy items on its destruction and on shrinking.
@@ -296,6 +295,237 @@ struct Collection(T, bool ownItems = false)
     }
 }
 
+/// List change kind
+enum ListChange
+{
+    replaceAll,
+    append,
+    insert,
+    replace,
+    remove,
+}
+
+/** Array with ability to track its changes via `beforeChange` and `afterChange` signals.
+
+    Example:
+    ---
+    import beamui.core.collections;
+    import beamui.core.logger;
+
+    auto list = new ObservableList!int;
+    list.afterChange ~= (ListChange change, uint index, uint count) {
+        Log.fd("%s at %s with %s items", change, index, count);
+    };
+
+    list.append(1);
+    list.insertItems(0, [1, 2, 3]);
+    ---
+*/
+class ObservableList(T)
+if (is(T == struct) || isScalarType!T || isDynamicArray!T)
+{
+    import std.array : insertInPlace, replaceInPlace;
+    import beamui.core.signals : Signal;
+    static import std.algorithm;
+
+    final @property
+    {
+        const(bool)* isDestroyed() const { return _isDestroyed; }
+
+        /// True when there is no items
+        bool empty() const
+        {
+            return _items.length == 0;
+        }
+
+        /// Total item count
+        int count() const
+        {
+            return cast(int)_items.length;
+        }
+
+        /// Const view on the items
+        const(T[]) items() const { return _items; }
+    }
+
+    /// Triggers before every change in the list and passes needed information about the change
+    Signal!(void delegate(ListChange, uint index, uint count)) beforeChange;
+    /// Triggers after every change in the list and passes needed information about the change
+    Signal!(void delegate(ListChange, uint index, uint count)) afterChange;
+
+    private T[] _items;
+    private bool* _isDestroyed;
+
+    this()
+    {
+        _isDestroyed = new bool;
+    }
+
+    this(uint initialItemCount)
+    {
+        _items.length = initialItemCount;
+        _isDestroyed = new bool;
+    }
+
+    ~this()
+    {
+        if (_isDestroyed !is null)
+            *_isDestroyed = true;
+    }
+
+final:
+
+    /// Replace the whole content
+    void replaceAll(T[] array)
+    {
+        const len = cast(uint)array.length;
+        beforeChange(ListChange.replaceAll, 0, len);
+        _items = array;
+        afterChange(ListChange.replaceAll, 0, len);
+    }
+    /// Remove the whole content
+    void removeAll()
+    {
+        if (_items.length > 0)
+        {
+            beforeChange(ListChange.replaceAll, 0, 0);
+            _items.length = 0;
+            afterChange(ListChange.replaceAll, 0, 0);
+        }
+    }
+
+    /// Append one item to the end
+    void append(T item)
+    {
+        const i = cast(uint)_items.length;
+        beforeChange(ListChange.append, i, 1);
+        _items ~= item;
+        afterChange(ListChange.append, i, 1);
+    }
+    /// Insert one item at `index`. The index must be in range, except it can be == `count` for append
+    void insert(uint index, T item)
+    {
+        assert(index <= _items.length);
+
+        if (index < _items.length)
+        {
+            beforeChange(ListChange.insert, index, 1);
+            insertInPlace(_items, index, item);
+            afterChange(ListChange.insert, index, 1);
+        }
+        else
+        {
+            beforeChange(ListChange.append, index, 1);
+            _items ~= item;
+            afterChange(ListChange.append, index, 1);
+        }
+    }
+    /// Replace one item at `index`. The index must be in range
+    void replace(uint index, T item)
+    {
+        assert(index < _items.length);
+        beforeChange(ListChange.replace, index, 1);
+        _items[index] = item;
+        afterChange(ListChange.replace, index, 1);
+    }
+    /// Remove one item at `index`. The index must be in range
+    void remove(uint index)
+    {
+        assert(index < _items.length);
+        beforeChange(ListChange.remove, index, 1);
+        _items = std.algorithm.remove(_items, index);
+        afterChange(ListChange.remove, index, 1);
+    }
+
+    /// Append several items to the end
+    void appendItems(T[] array)
+    {
+        if (array.length > 0)
+        {
+            const len = cast(uint)array.length;
+            const i = cast(uint)_items.length;
+            beforeChange(ListChange.append, i, len);
+            _items ~= array;
+            afterChange(ListChange.append, i, len);
+        }
+    }
+    /// Insert several items at `index`. The index must be in range, except it can be == `count` for append
+    void insertItems(uint index, T[] array)
+    {
+        assert(index <= _items.length);
+
+        const len = cast(uint)array.length;
+        if (len > 0)
+        {
+            if (index < _items.length)
+            {
+                beforeChange(ListChange.insert, index, len);
+                insertInPlace(_items, index, array);
+                afterChange(ListChange.insert, index, len);
+            }
+            else
+            {
+                beforeChange(ListChange.append, index, len);
+                _items ~= array;
+                afterChange(ListChange.append, index, len);
+            }
+        }
+    }
+    /// Replace `count` items at `index` with items from `array`. The indices must be in range
+    void replaceItems(uint index, uint count, T[] array)
+    {
+        assert(index < _items.length);
+        assert(index + count <= _items.length);
+
+        const len = cast(uint)array.length;
+        if (count > 0 || len > 0)
+        {
+            const replaced = count < len ? count : len;
+            // several items are replaced
+            if (replaced > 0)
+                beforeChange(ListChange.replace, index, replaced);
+            // but also several may be inserted or removed
+            if (count < len)
+                beforeChange(ListChange.insert, index + count, len - count);
+            else if (count > len)
+                beforeChange(ListChange.remove, index + len, count - len);
+
+            replaceInPlace(_items, index, index + count, array);
+
+            if (replaced > 0)
+                afterChange(ListChange.replace, index, replaced);
+            if (count < len)
+                afterChange(ListChange.insert, index + count, len - count);
+            else if (count > len)
+                afterChange(ListChange.remove, index + len, count - len);
+        }
+    }
+    /// Remove `count` items at `index`. The indices must be in range
+    void removeItems(uint index, uint count)
+    {
+        assert(index < _items.length);
+        assert(index + count <= _items.length);
+
+        if (count > 0)
+        {
+            beforeChange(ListChange.remove, index, count);
+            replaceInPlace(_items, index, index + count, cast(T[])null);
+            afterChange(ListChange.remove, index, count);
+        }
+    }
+
+    /// Allows to replace item with `[i]`. The index must be in range
+    void opIndexAssign(T item, uint i)
+    {
+        assert(i < _items.length);
+        beforeChange(ListChange.replace, i, 1);
+        _items[i] = item;
+        afterChange(ListChange.replace, i, 1);
+    }
+
+    alias opDollar = count;
+}
+
 /** Lightweight `@nogc` dynamic array for memory reuse and fast appending.
 
     This is a small specialized container, created to optimize recurring demands
@@ -483,6 +713,51 @@ if (isMutable!T &&
     {
         return _data[0 .. _length];
     }
+}
+
+//===============================================================
+// Tests
+
+unittest
+{
+    static struct Ch
+    {
+        ListChange change;
+        uint index;
+        uint count;
+    }
+    Ch[] changes;
+
+    auto list = new ObservableList!int;
+    list.beforeChange ~= (ListChange ch, uint i, uint c) {
+        changes ~= Ch(ch, i, c);
+    };
+    list.afterChange ~= (ListChange ch, uint i, uint c) {
+        // we do no test replaceItems here, where calls are not consecutive
+        assert(changes[$ - 1] == Ch(ch, i, c));
+    };
+
+    list.append(1);
+    list.appendItems([5, 2]);
+    list.insert(1, 15);
+    list.insertItems(1, [1, 2, 3]);
+    list.replace(0, 100);
+    list[1] = 50;
+    list.remove(5);
+    list.removeItems(1, 2);
+    list.replaceAll([5, 10, 15]);
+    list.removeAll();
+    assert(changes[0] == Ch(ListChange.append, 0, 1));
+    assert(changes[1] == Ch(ListChange.append, 1, 2));
+    assert(changes[2] == Ch(ListChange.insert, 1, 1));
+    assert(changes[3] == Ch(ListChange.insert, 1, 3));
+    assert(changes[4] == Ch(ListChange.replace, 0, 1));
+    assert(changes[5] == Ch(ListChange.replace, 1, 1));
+    assert(changes[6] == Ch(ListChange.remove, 5, 1));
+    assert(changes[7] == Ch(ListChange.remove, 1, 2));
+    assert(changes[8] == Ch(ListChange.replaceAll, 0, 3));
+    assert(changes[9] == Ch(ListChange.replaceAll, 0, 0));
+    assert(changes.length == 10);
 }
 
 unittest
