@@ -530,14 +530,8 @@ class ScrollAreaBase : WidgetGroup
     {
         correctScrollPos();
 
-        bool needHScroll;
-        bool needVScroll;
-        needToShowScrollbars(needHScroll, needVScroll);
-
-        if (needHScroll)
-            updateHScrollBar(_hdata);
-        if (needVScroll)
-            updateVScrollBar(_vdata);
+        updateHScrollBar(_hdata);
+        updateVScrollBar(_vdata);
     }
 
     /** Update horizontal scrollbar data - range, position, etc.
