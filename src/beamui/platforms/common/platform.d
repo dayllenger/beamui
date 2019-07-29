@@ -609,24 +609,30 @@ class Window : CustomEventTarget
         _tooltip.popup.maybe.requestLayout();
     }
 
-    /// Measure and layout main widget, popups and tooltip
+    /// Measure main widget, popups and tooltip
+    void measure()
+    {
+        setupGlobalDPI();
+        // TODO: set minimum window size
+        _mainWidget.measure();
+        foreach (p; _popups)
+            p.measure();
+        if (auto tp = _tooltip.popup)
+            tp.measure();
+    }
+
+    /// Lay out main widget, popups and tooltip
     void layout()
     {
         setupGlobalDPI();
-        {
-            _mainWidget.measure();
-            // TODO: set minimum window size
-            _mainWidget.layout(Box(0, 0, _w, _h));
-        }
+        _mainWidget.layout(Box(0, 0, _w, _h));
         foreach (p; _popups)
         {
-            p.measure();
             const sz = p.natSize;
             p.layout(Box(0, 0, sz.w, sz.h));
         }
         if (auto tp = _tooltip.popup)
         {
-            tp.measure();
             const sz = tp.natSize;
             tp.layout(Box(0, 0, sz.w, sz.h));
         }
@@ -648,6 +654,8 @@ class Window : CustomEventTarget
             const layoutStart = currentTimeMillis;
         }
 
+        // resize changes only window's width and height,
+        // so it is quite legitimate to not measure again
         layout();
 
         debug (resizing)
@@ -1041,6 +1049,7 @@ class Window : CustomEventTarget
             {
                 debug (redraw)
                     const layoutStart = currentTimeMillis;
+                measure();
                 layout();
                 debug (redraw)
                 {
