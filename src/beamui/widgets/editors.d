@@ -15,7 +15,7 @@ import beamui.core.signals;
 import beamui.core.stdaction;
 import beamui.core.streams;
 import beamui.graphics.colors;
-import beamui.text.line : TextLine;
+import beamui.text.line;
 import beamui.text.simple;
 import beamui.text.sizetest;
 import beamui.text.style;
@@ -274,7 +274,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 previousXScrollPos = scrollPos.x;
                 hscrollbarMode = ScrollBarMode.hidden;
                 scrollPos.x = 0;
-                wordWrapRefresh();
             }
             else
             {
@@ -552,178 +551,9 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         clb.w -= _leftPaneWidth;
     }
 
-    //===============================================================
-    // Dynamic word wrap implementation
-
-    /// Override for EditBox
-    void wordWrapRefresh()
-    {
-        return;
-    }
-
-    /// Characters at which content is split for word wrap mode
-    dchar[] splitChars = [' ', '-', '\t'];
-
-    /// Information about line span into several lines - in word wrap mode
-    protected inout(LineSpan[]) lineSpanInfo() inout { return _span; }
-    protected bool wrapped() const { return _wordWrap && _span.length > 0; }
-
-    private LineSpan[] _span;
-
-    /// Divides up a string for word wrapping, sets info in _span
-    dstring[] wrapLine(dstring str, int lineNumber)
-    {
-        const int maxWidth = clientBox.width;
-        dstring[] words = explode(str, splitChars);
-        Buf!dchar buildingStr;
-        dstring[] buildingStrArr;
-        WrapPoint[] wrapPoints;
-        int len, x;
-        foreach (word; words)
-        {
-            if (x + calcLineWidth(word) > maxWidth)
-            {
-                if (x > 0)
-                {
-                    buildingStrArr ~= buildingStr[].idup;
-                    wrapPoints ~= WrapPoint(len, x);
-                    len = 0;
-                    x = 0;
-                    buildingStr.clear();
-                }
-                while (calcLineWidth(word) > maxWidth)
-                {
-                    //For when string still too long
-                    const wrapPoint = findWrapPoint(word);
-                    wrapPoints ~= wrapPoint;
-                    buildingStr ~= word[0 .. wrapPoint.pos];
-                    word = word[wrapPoint.pos .. $];
-                    buildingStrArr ~= buildingStr[].idup;
-                    buildingStr.clear();
-                }
-            }
-            buildingStr ~= word;
-            len += cast(int)word.length;
-            x += calcLineWidth(word);
-        }
-        wrapPoints ~= WrapPoint(len, x);
-        buildingStrArr ~= buildingStr[].idup;
-        _span ~= LineSpan(lineNumber, cast(int)wrapPoints.length, wrapPoints, buildingStrArr);
-        return buildingStrArr;
-    }
-
-    /// Divide (and conquer) text into words
-    dstring[] explode(dstring str, dchar[] splitChars)
-    {
-        import std.ascii : isWhite;
-        import std.string : indexOfAny;
-
-        dstring[] parts;
-        ptrdiff_t startIndex;
-        while (true)
-        {
-            const index = indexOfAny(str, splitChars, startIndex);
-            if (index == -1)
-            {
-                parts ~= str[startIndex .. $];
-                debug (editors)
-                    Log.d("Explode output: ", parts);
-                return parts;
-            }
-
-            dstring word = str[startIndex .. index];
-            dchar nextChar = str[index];
-            if (isWhite(nextChar))
-            {
-                parts ~= word;
-                parts ~= [nextChar];
-            }
-            else
-            {
-                parts ~= word ~ nextChar;
-            }
-            startIndex = index + 1;
-        }
-    }
-
-    /// Finds good visual wrapping point for string
-    WrapPoint findWrapPoint(dstring word)
-    {
-        const int maxWidth = clientBox.width;
-        WrapPoint ret;
-        int pos;
-        while (true)
-        {
-            const w = calcLineWidth(word[0 .. pos]);
-            if (w < maxWidth)
-            {
-                ret.pos = pos;
-                ret.width = w;
-                pos++;
-            }
-            else
-                return ret;
-        }
-    }
-
-    /// Returns number of visible wraps up to a line (not including the first wrapLines themselves)
-    int wrapsUpTo(int line) const
-    {
-        int sum;
-        foreach (ref curSpan; lineSpanInfo)
-        {
-            if (curSpan.start < line)
-                sum += curSpan.len - 1;
-        }
-        return sum;
-    }
-
-    /// Returns LineSpan for line based on actual line number
-    LineSpan getSpan(int lineNumber)
-    {
-        foreach (curSpan; lineSpanInfo)
-        {
-            if (curSpan.start == lineNumber)
-                return curSpan;
-        }
-        return LineSpan(lineNumber, 0, [WrapPoint(0, 0)]);
-    }
-
-    /// Based on a TextPosition, finds the wrap line index it is on for its current line
-    int findWrapLine(TextPosition textPos)
-    {
-        int curWrapLine;
-        int curPosition = textPos.pos;
-        LineSpan curSpan = getSpan(textPos.line);
-        while (true)
-        {
-            if (curWrapLine + 1 == curSpan.wrapPoints.length)
-                return curWrapLine;
-            curPosition -= curSpan.wrapPoints[curWrapLine].pos;
-            if (curPosition < 0)
-                return curWrapLine;
-            curWrapLine++;
-        }
-    }
-
-    //===============================================================
-
-    protected int calcLineWidth(dstring txt)
-    {
-        Font font = font.get;
-        auto st = TextLayoutStyle(font);
-        const sz = computeTextSize(txt, st);
-        return sz.w;
-    }
-
     /// Override to add custom items on left panel
     protected void updateLeftPaneWidth()
     {
-    }
-
-    protected void drawLeftPane(DrawBuf buf, Rect rc, int line)
-    {
-        // override for custom drawn left pane
     }
 
     override bool canShowPopupMenu(int x, int y)
@@ -740,6 +570,8 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     {
         return x < box.x + _leftPaneWidth ? CursorType.arrow : CursorType.ibeam;
     }
+
+    //===============================================================
 
     protected void processSmartIndent(EditOperation operation)
     {
@@ -942,38 +774,24 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     private int caretHeightOffset;
 
     /// Returns cursor rectangle
-    protected Rect caretRect()
+    protected Rect caretRect() const
     {
-        Rect caretRc = Rect(textPosToClient(_caretPos));
+        Box caret = textPosToClient(_caretPos);
         if (_replaceMode)
         {
+            caret.w = _spaceWidth;
             if (_caretPos.pos < _content.lineLength(_caretPos.line))
             {
                 const nextPos = TextPosition(_caretPos.line, _caretPos.pos + 1);
                 const nextBox = textPosToClient(nextPos);
-                caretRc.right = nextBox.x;
-            }
-            else
-            {
-                caretRc.right = caretRc.left + _spaceWidth;
+                // if it is not a line break
+                if (caret.x < nextBox.x)
+                    caret.w = nextBox.x - caret.x;
             }
         }
-        if (wrapped)
-        {
-            const int wrapLine = findWrapLine(_caretPos);
-            int xOffset;
-            if (wrapLine > 0)
-            {
-                LineSpan curSpan = getSpan(_caretPos.line);
-                xOffset = curSpan.accumulation(wrapLine, WrapPoint.Field.width);
-            }
-            const int yOffset = -1 * _lineHeight * (wrapsUpTo(_caretPos.line) + wrapLine);
-            caretHeightOffset = yOffset;
-            caretRc.translate(clientBox.x - xOffset, clientBox.y - yOffset);
-        }
-        else
-            caretRc.translate(clientBox.x, clientBox.y);
-        return caretRc;
+        caret.x += clientBox.x;
+        caret.y += clientBox.y;
+        return Rect(caret);
     }
 
     /// Draw caret
@@ -1891,6 +1709,11 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     {
         // override to do something useful on Ctrl + Left mouse click in text
     }
+
+    protected void drawLeftPane(DrawBuf buf, Rect rc, int line)
+    {
+        // override for custom drawn left pane
+    }
 }
 
 /// Single line editor
@@ -1971,17 +1794,8 @@ class EditLine : EditWidgetBase
     override protected TextPosition clientToTextPos(Point pt) const
     {
         pt.x += scrollPos.x;
-        const gs = _txtline.glyphs;
-        int x0, x1;
-        foreach (i; 0 .. _txtline.glyphCount)
-        {
-            x1 += gs[i].width;
-            const int mx = (x0 + x1) / 2;
-            if (pt.x <= mx)
-                return TextPosition(0, i);
-            x0 = x1;
-        }
-        return TextPosition(0, _txtline.glyphCount);
+        const col = findClosestGlyphInRow(_txtline.glyphs, 0, pt.x);
+        return TextPosition(0, col != -1 ? col : _txtline.glyphCount);
     }
 
     override protected void ensureCaretVisible(bool center = false)
@@ -2108,7 +1922,7 @@ class EditLine : EditWidgetBase
                 ph.draw(buf, b.x - scrollPos.x, b.y, b.w);
         }
         else
-            _txtline.draw(buf, Point(b.x - scrollPos.x, b.y), b.w, _txtStyle);
+            _txtline.draw(buf, b.x - scrollPos.x, b.y, b.w, _txtStyle);
 
         drawCaret(buf);
     }
@@ -2171,20 +1985,10 @@ class EditBox : EditWidgetBase
         int _maxLineWidth; // computed in `measureVisibleText`
         int _lastMeasureLineCount;
 
-        static struct VisibleLine
-        {
-            dstring str;
-            int[] positions; /// Char positions
-            int width; /// Width (in pixels)
-            LineMarkup* markup;
-
-            size_t length() const
-            {
-                return str.length;
-            }
-        }
         /// Lines, visible in the client area
-        VisibleLine[] _visibleLines;
+        TextLine[] _visibleLines;
+        /// Local positions of the lines
+        Point[] _visibleLinePositions;
         // a stupid pool for markup
         LineMarkup[] _markup;
         uint _markupEngaged;
@@ -2206,19 +2010,6 @@ class EditBox : EditWidgetBase
     ~this()
     {
         eliminate(_findPanel);
-    }
-
-    override void handleStyleChange(StyleProperty ptype)
-    {
-        super.handleStyleChange(ptype);
-
-        if (ptype == StyleProperty.fontSize)
-            _needRewrap = true;
-    }
-
-    override void wordWrapRefresh()
-    {
-        _needRewrap = true;
     }
 
     override protected void updateVScrollBar(ScrollData data)
@@ -2279,89 +2070,12 @@ class EditBox : EditWidgetBase
 
     protected void moveCursorByLine(bool up, bool select)
     {
-        const TextPosition oldCaretPos = _caretPos;
-        bool done;
+        int line = _caretPos.line;
         if (up)
-        {
-            if (wrapped)
-            {
-                LineSpan curSpan = getSpan(_caretPos.line);
-                int curWrap = findWrapLine(_caretPos);
-                if (curWrap > 0)
-                {
-                    _caretPos.pos -= curSpan.wrapPoints[curWrap - 1].pos;
-                }
-                else
-                {
-                    const int previousPos = _caretPos.pos;
-                    curSpan = getSpan(_caretPos.line - 1);
-                    curWrap = curSpan.len - 1;
-                    if (curWrap > 0)
-                    {
-                        const int accumPoint = curSpan.accumulation(curSpan.len - 1,
-                                WrapPoint.Field.position);
-                        _caretPos.line--;
-                        _caretPos.pos = accumPoint + previousPos;
-                    }
-                    else
-                    {
-                        _caretPos.line--;
-                    }
-                }
-                done = true;
-            }
-            else if (_caretPos.line > 0)
-            {
-                _caretPos.line--;
-                done = true;
-            }
-        }
+            line--;
         else
-        {
-            if (_caretPos.line < _content.lineCount - 1)
-            {
-                if (wrapped)
-                {
-                    const LineSpan curSpan = getSpan(_caretPos.line);
-                    const int curWrap = findWrapLine(_caretPos);
-                    if (curWrap < curSpan.len - 1)
-                    {
-                        const int previousPos = _caretPos.pos;
-                        _caretPos.pos += curSpan.wrapPoints[curWrap].pos;
-                        correctCaretPos();
-                        if (_caretPos.pos == previousPos)
-                        {
-                            _caretPos.pos = 0;
-                            _caretPos.line++;
-                        }
-                    }
-                    else if (curSpan.len > 1)
-                    {
-                        const int previousPos = _caretPos.pos;
-                        const int accumPoint = curSpan.accumulation(curSpan.len - 1,
-                                WrapPoint.Field.position);
-                        _caretPos.line++;
-                        _caretPos.pos = previousPos - accumPoint;
-                    }
-                    else
-                    {
-                        _caretPos.line++;
-                    }
-                    done = true;
-                }
-                else
-                {
-                    _caretPos.line++;
-                    done = true;
-                }
-            }
-        }
-        if (done)
-        {
-            correctCaretPos();
-            updateSelectionAfterCursorMovement(oldCaretPos, select);
-            ensureCaretVisible();
-        }
+            line++;
+        jumpTo(line, _caretPos.pos, select);
     }
 
     override bool handleWheelEvent(WheelEvent event)
@@ -2482,102 +2196,108 @@ class EditBox : EditWidgetBase
         handleEditorStateChange();
     }
 
-    override protected Box textPosToClient(TextPosition p) const
-    {
-        Box res;
-        const int lineIndex = p.line - _firstVisibleLine;
-        res.y = lineIndex * _lineHeight;
-        res.h = _lineHeight;
-        // if visible
-        if (0 <= lineIndex && lineIndex < _visibleLines.length)
-        {
-            const VisibleLine* line = &_visibleLines[lineIndex];
-            if (p.pos == 0)
-                res.x = 0;
-            else if (p.pos >= line.positions.length)
-                res.x = line.width;
-            else
-                res.x = line.positions[p.pos - 1];
-        }
-        res.x -= scrollPos.x;
-        res.w = 1;
-        return res;
-    }
+    override protected Box textPosToClient(TextPosition pos) const
+    {   // similar to the method in Paragraph
+        const first = _firstVisibleLine;
+        const lines = _visibleLines;
+        const positions = _visibleLinePositions;
 
-    override protected TextPosition clientToTextPos(Point pt) const
-    {
-        if (wrapped)
-            pt = adjustCoordsInWrapMode(pt);
+        if (lines.length == 0 || pos.line < first || first + cast(int)lines.length <= pos.line)
+            return Box.init;
 
-        TextPosition res;
-        pt.x += scrollPos.x;
-        const int lineIndex = max(pt.y / _lineHeight, 0);
-        if (lineIndex < _visibleLines.length)
+        Box b;
+        b.w = 1;
+        b.h = _lineHeight;
+        b.pos = positions[pos.line - first];
+
+        const TextLine* line = &lines[pos.line - first];
+        const glyphs = line.glyphs;
+        if (line.wrapped)
         {
-            const VisibleLine* line = &_visibleLines[lineIndex];
-            res.line = lineIndex + _firstVisibleLine;
-            foreach (i; 0 .. line.length)
+            foreach (ref span; line.wrapSpans)
             {
-                const int x0 = i > 0 ? line.positions[i - 1] : 0;
-                const int x1 = line.positions[i];
-                const int mx = (x0 + x1) / 2;
-                if (pt.x <= mx)
+                if (pos.pos <= span.end)
                 {
-                    res.pos = cast(int)i;
-                    return res;
+                    b.x = span.offset;
+                    foreach (i; span.start .. pos.pos)
+                        b.x += glyphs[i].width;
+                    break;
                 }
+                b.y += span.height;
             }
-            res.pos = cast(int)line.length;
-        }
-        else if (_visibleLines.length > 0)
-        {
-            res.line = _firstVisibleLine + cast(int)_visibleLines.length - 1;
-            res.pos = cast(int)_visibleLines[$ - 1].length;
         }
         else
         {
-            res.line = 0;
-            res.pos = 0;
+            if (pos.pos < line.glyphCount)
+            {
+                foreach (i; 0 .. pos.pos)
+                    b.x += glyphs[i].width;
+            }
+            else
+                b.x += line.size.w;
         }
-        return res;
+        b.x -= scrollPos.x;
+        return b;
     }
 
-    /// Used in `clientToTextPos` when in word wrap mode
-    private Point adjustCoordsInWrapMode(Point pt) const
-    {
-        assert(wrapped);
+    override protected TextPosition clientToTextPos(Point pt) const
+    {   // similar to the method in Paragraph
+        const first = _firstVisibleLine;
+        const lines = _visibleLines;
+        const positions = _visibleLinePositions;
 
-        const int selectedVisibleLine = pt.y / _lineHeight;
-        int wrapLine;
-        int curLine;
-        bool foundWrap;
-        int accumulativeWidths;
-        int curWrapOfSpan;
-        foreach (ref curSpan; lineSpanInfo)
+        if (lines.length == 0)
+            return TextPosition(0, 0);
+
+        // find the line first
+        const(TextLine)* line = &lines[$ - 1]; // default as if it is lower
+        int index = first + cast(int)lines.length - 1;
+        if (pt.y < positions[0].y) // upper
         {
-            while (!foundWrap)
+            line = &lines[0];
+            index = first;
+        }
+        else if (pt.y < positions[$ - 1].y + line.height) // inside
+        {
+            foreach (i, ref ln; lines)
             {
-                if (wrapLine == selectedVisibleLine)
+                const p = positions[i];
+                if (p.y <= pt.y && pt.y < p.y + ln.height)
                 {
-                    foundWrap = true;
+                    line = &ln;
+                    index = first + cast(int)i;
                     break;
                 }
-                accumulativeWidths += curSpan.wrapPoints[curWrapOfSpan].width;
-                wrapLine++;
-                curWrapOfSpan++;
-                if (curWrapOfSpan >= curSpan.len)
-                    break;
             }
-            if (!foundWrap)
-            {
-                accumulativeWidths = 0;
-                curLine++;
-            }
-            curWrapOfSpan = 0;
         }
-
-        const int fakeLineHeight = curLine * _lineHeight;
-        return Point(pt.x + accumulativeWidths, fakeLineHeight);
+        // then find the column
+        pt.x += scrollPos.x;
+        const p = positions[index - first];
+        const glyphs = line.glyphs;
+        if (line.wrapped)
+        {
+            int y = p.y;
+            foreach (ref span; line.wrapSpans)
+            {
+                if (y <= pt.y && pt.y < y + span.height)
+                {
+                    int col = findClosestGlyphInRow(glyphs[span.start .. span.end], span.offset, pt.x);
+                    if (col != -1)
+                        col += span.start;
+                    else
+                        col = span.end;
+                    return TextPosition(index, col);
+                }
+                y += span.height;
+            }
+        }
+        else
+        {
+            const col = findClosestGlyphInRow(glyphs, p.x, pt.x);
+            if (col != -1)
+                return TextPosition(index, col);
+        }
+        return TextPosition(index, line.glyphCount);
     }
 
     //===============================================================
@@ -2866,10 +2586,11 @@ class EditBox : EditWidgetBase
             start += pos;
             if (!wholeWords || isWholeWord(lineText, start, start + pattern.length))
             {
-                const r = TextRange(TextPosition(lineIndex, cast(int)start),
-                        TextPosition(lineIndex, cast(int)(start + pattern.length)));
-                const color = r.isInsideOrNext(caretPos) ? _searchHighlightColorCurrent : _searchHighlightColorOther;
-                highlightLineRange(buf, lineBox, color, r);
+                const a = cast(int)start;
+                const b = a + cast(int)pattern.length;
+                const caretInside = _caretPos.line == lineIndex && a <= _caretPos.pos && _caretPos.pos <= b;
+                const color = caretInside ? _searchHighlightColorCurrent : _searchHighlightColorOther;
+                highlightLineRange(buf, lineBox, color, lineIndex, a, b);
             }
             start += pattern.length;
         }
@@ -2920,9 +2641,8 @@ class EditBox : EditWidgetBase
                 start += pos;
                 if (!wholeWords || isWholeWord(lineText, start, start + pattern.length))
                 {
-                    const r = TextRange(TextPosition(i, cast(int)start), TextPosition(i,
-                            cast(int)(start + pattern.length)));
-                    res ~= r;
+                    const p = TextPosition(i, cast(int)start);
+                    res ~= TextRange(p, p.offset(cast(int)pattern.length));
                 }
                 start += _textToHighlight.length;
             }
@@ -2980,41 +2700,6 @@ class EditBox : EditWidgetBase
         return true;
     }
 
-    protected void highlightLineRange(DrawBuf buf, Box lineBox, Color color, TextRange r)
-    {
-        const Box start = textPosToClient(r.start);
-        const Box end = textPosToClient(r.end);
-        Rect rc = lineBox;
-        rc.left = clientBox.x + start.x;
-        rc.right = clientBox.x + end.x + end.w;
-        if (!rc.empty)
-        {
-            if (wrapped)
-                wordWrapFillRect(buf, r.start.line, rc, color);
-            else
-                // draw selection rect for matching bracket
-                buf.fillRect(rc, color);
-        }
-    }
-
-    /// Used in place of directly calling buf.fillRect in word wrap mode
-    protected void wordWrapFillRect(DrawBuf buf, int line, Rect lineToDivide, Color color)
-    {
-        assert(wrapped);
-        Rect rc = lineToDivide;
-        const LineSpan curSpan = getSpan(line);
-        const yOffset = _lineHeight * (wrapsUpTo(line));
-        rc.translate(0, yOffset);
-        foreach (i; 0 .. curSpan.len)
-        {
-            const startingDiff = rc.left - clientBox.x;
-            Rect r = rc;
-            r.translate(-curSpan.accumulation(i, WrapPoint.Field.width), i * _lineHeight);
-            r.right = min(r.right, rc.left + curSpan.wrapPoints[i].width - startingDiff);
-            buf.fillRect(r, color);
-        }
-    }
-
     override protected void adjustBoundaries(ref Boundaries bs)
     {
         measureVisibleText();
@@ -3042,10 +2727,10 @@ class EditBox : EditWidgetBase
         }
 
         super.layout(content);
+
         if (_contentChanged)
         {
             measureVisibleText();
-            _needRewrap = true;
             _contentChanged = false;
         }
 
@@ -3069,20 +2754,22 @@ class EditBox : EditWidgetBase
             numVisibleLines = max(_content.lineCount - _firstVisibleLine, 1);
 
         _visibleLines.length = numVisibleLines;
+        _visibleLinePositions.length = numVisibleLines;
         _markupEngaged = 0;
 
         Size sz;
         foreach (i, ref line; _visibleLines)
         {
             line.str = _content[_firstVisibleLine + cast(int)i];
-            const len = line.str.length;
-            if (line.positions.length < len)
-                line.positions.length = len;
             line.markup = handleCustomLineMarkup(_firstVisibleLine + cast(int)i, line.str);
-            const int charsMeasured = font.measureText(line.str, line.positions, int.max, tabSize);
-            line.width = charsMeasured > 0 ? line.positions[charsMeasured - 1] : 0;
+            line.measured = false;
+            auto tlstyle = TextLayoutStyle(_txtStyle);
+            line.measure(tlstyle);
             // width - max from visible lines
-            sz.w = max(sz.w, line.width);
+            sz.w = max(sz.w, line.size.w);
+            // wrap now, because we may need this information without drawing
+            if (_wordWrap)
+                line.wrap(clientBox.w);
         }
         sz.h = _lineHeight * _content.lineCount; // height - for all lines
         // we use max width of the viewed lines as content width
@@ -3097,6 +2784,46 @@ class EditBox : EditWidgetBase
         return sz;
     }
 
+    protected void highlightLineRange(DrawBuf buf, Box lineBox, Color color,
+        int line, int start, int end, bool extend = false)
+    {
+        const TextLine* ln = &_visibleLines[line - _firstVisibleLine];
+        if (ln.wrapped)
+        {
+            int y = lineBox.y;
+            foreach (ref span; ln.wrapSpans)
+            {
+                if (span.end <= start)
+                {
+                    y += span.height;
+                    continue;
+                }
+                if (end <= span.start)
+                    break;
+
+                const i1 = max(span.start, start);
+                const i2 = min(span.end, end);
+                const ext = extend && i2 == ln.glyphCount;
+                highlightLineRangeImpl(buf, y, span.height, color, line, i1, i2, ext);
+                y += span.height;
+            }
+        }
+        else
+            highlightLineRangeImpl(buf, lineBox.y, lineBox.h, color, line, start, end, extend);
+    }
+
+    private void highlightLineRangeImpl(DrawBuf buf, int y, int h, Color color,
+        int line, int start, int end, bool extend)
+    {
+        const Box a = textPosToClient(TextPosition(line, start));
+        const Box b = textPosToClient(TextPosition(line, end));
+        Rect rc = Rect(clientBox.x + a.x, y, clientBox.x + b.x, y + h);
+        if (extend)
+            rc.right += _spaceWidth;
+        if (!rc.empty)
+            buf.fillRect(rc, color);
+    }
+
     /// Override to custom highlight of line background
     protected void drawLineBackground(DrawBuf buf, int lineIndex, Box lineBox, Box visibleBox)
     {
@@ -3108,46 +2835,40 @@ class EditBox : EditWidgetBase
         if (!sel.empty && sel.start.line <= lineIndex && lineIndex <= sel.end.line)
         {
             // line is inside selection
-            const int selStart = textPosToClient(sel.start).x;
-            const int selEnd = textPosToClient(sel.end).x;
-            Rect rc = lineBox;
+            int start;
+            int end = int.max;
+            bool extend;
             if (lineIndex == sel.start.line)
-                rc.left = selStart + clientBox.x;
-            if (lineIndex == sel.end.line)
-                rc.right = selEnd + clientBox.x;
-            else
-                rc.right += _spaceWidth;
-            if (!rc.empty)
             {
-                const c = focused ? _selectionColorFocused : _selectionColorNormal;
-                // draw selection rect for line
-                if (wrapped)
-                    wordWrapFillRect(buf, lineIndex, rc, c);
-                else
-                    buf.fillRect(rc, c);
+                start = sel.start.pos;
             }
+            if (lineIndex == sel.end.line)
+            {
+                end = sel.end.pos;
+            }
+            else
+                extend = true;
+            // draw selection rect for the line
+            const c = focused ? _selectionColorFocused : _selectionColorNormal;
+            highlightLineRange(buf, lineBox, c, lineIndex, start, end, extend);
         }
 
         highlightTextPattern(buf, lineIndex, lineBox, visibleBox);
 
-        if (_matchingBraces.start.line == lineIndex)
+        const br = _matchingBraces;
+        const brcolor = _matchingBracketHighlightColor;
+        if (br.start.line == lineIndex)
         {
-            const r = TextRange(_matchingBraces.start, _matchingBraces.start.offset(1));
-            highlightLineRange(buf, lineBox, _matchingBracketHighlightColor, r);
+            highlightLineRange(buf, lineBox, brcolor, lineIndex, br.start.pos, br.start.pos + 1);
         }
-        if (_matchingBraces.end.line == lineIndex)
+        if (br.end.line == lineIndex)
         {
-            const r = TextRange(_matchingBraces.end, _matchingBraces.end.offset(1));
-            highlightLineRange(buf, lineBox, _matchingBracketHighlightColor, r);
+            highlightLineRange(buf, lineBox, brcolor, lineIndex, br.end.pos, br.end.pos + 1);
         }
 
         // frame around current line
-        if (focused && lineIndex == _caretPos.line && _selectionRange.singleLine &&
-                _selectionRange.start.line == _caretPos.line)
+        if (focused && lineIndex == _caretPos.line && sel.singleLine && sel.start.line == _caretPos.line)
         {
-            //TODO: Figure out why a little slow to catch up
-            if (wrapped)
-                visibleBox.y -= caretHeightOffset;
             buf.drawFrame(Rect(visibleBox), Color(0xA0808080), Insets(1));
         }
     }
@@ -3159,28 +2880,21 @@ class EditBox : EditWidgetBase
 
         const int lineCount = _content.lineCount;
         const cb = clientBox;
-        Box b = Box(cb.x - _leftPaneWidth, cb.y, _leftPaneWidth, _lineHeight);
+        Box b = Box(cb.x - _leftPaneWidth, cb.y, _leftPaneWidth, 0);
         int i = _firstVisibleLine;
         while (b.y < cb.y + cb.h)
         {
-            drawLeftPane(buf, Rect(b), i < lineCount ? i : -1);
-            b.y += _lineHeight;
-            if (wrapped)
+            if (i < lineCount)
             {
-                int currentWrap = 1;
-                while (true)
-                {
-                    LineSpan curSpan = getSpan(i);
-                    if (currentWrap > curSpan.len - 1)
-                        break;
-                    if (b.y > cb.y + cb.h)
-                        break;
-                    drawLeftPane(buf, Rect(b), -1);
-                    b.y += _lineHeight;
-
-                    currentWrap++;
-                }
+                b.h = _visibleLines[i - _firstVisibleLine].height;
+                drawLeftPane(buf, Rect(b), i);
             }
+            else
+            {
+                b.h = _lineHeight;
+                drawLeftPane(buf, Rect(b), -1);
+            }
+            b.y += b.h;
             i++;
         }
     }
@@ -3297,6 +3011,7 @@ class EditBox : EditWidgetBase
         if (maxCol > 0)
         {
             const int spaceWidth = _spaceWidth;
+            lineBox.h = _visibleLines[lineIndex - _firstVisibleLine].wrapSpans[0].height;
             Rect rc = lineBox;
             Color color = style.textColor;
             color.addAlpha(0xC0);
@@ -3309,8 +3024,10 @@ class EditBox : EditWidgetBase
         }
     }
 
-    protected void drawWhiteSpaceMarks(DrawBuf buf, Font font, dstring txt, TabSize tabSize, Box lineBox, Box visibleBox)
+    protected void drawWhiteSpaceMarks(DrawBuf buf, int lineIndex, Box lineBox, Box visibleBox)
     {
+        const TextLine* line = &_visibleLines[lineIndex - _firstVisibleLine];
+        const txt = line.str;
         int firstNonSpace = -1;
         int lastNonSpace = -1;
         bool hasTabs;
@@ -3327,63 +3044,61 @@ class EditBox : EditWidgetBase
                 lastNonSpace = i + 1;
             }
         }
-        const bool spacesOnly = txt.length > 0 && firstNonSpace < 0;
-        if (firstNonSpace <= 0 && txt.length <= lastNonSpace && !hasTabs && !spacesOnly)
+        if (txt.length > 0 && firstNonSpace == -1)
+            firstNonSpace = cast(int)txt.length;
+        if (firstNonSpace <= 0 && txt.length <= lastNonSpace && !hasTabs)
             return;
 
         Color color = style.textColor;
         color.addAlpha(0xC0);
-        static int[] textSizeBuffer;
-        const int charsMeasured = font.measureText(txt, textSizeBuffer, MAX_WIDTH_UNSPECIFIED, tabSize);
-        const lineRect = Rect(lineBox);
+
+        const FragmentGlyph[] glyphs = line.glyphs;
         const visibleRect = Rect(visibleBox);
-        for (int i = 0; i < txt.length && i < charsMeasured; i++)
+        Box b = lineBox;
+        foreach (ref span; line.wrapSpans)
         {
-            const ch = txt[i];
-            const bool outsideText = i < firstNonSpace || lastNonSpace <= i || spacesOnly;
-            if ((ch == ' ' && outsideText) || ch == '\t')
+            const i1 = span.start;
+            const i2 = span.end;
+            b.x = lineBox.x + span.offset;
+            foreach (i; i1 .. i2)
             {
-                Rect rc = lineRect;
-                rc.left += i > 0 ? textSizeBuffer[i - 1] : 0;
-                rc.right = lineRect.left + textSizeBuffer[i];
-                const int h = rc.height;
-                if (rc.intersects(visibleRect))
+                const fg = &glyphs[i];
+                const ch = txt[i];
+                const bool outsideText = i < firstNonSpace || lastNonSpace <= i;
+                if ((ch == ' ' && outsideText) || ch == '\t')
                 {
-                    // draw space mark
-                    if (ch == ' ')
+                    b.w = fg.width;
+                    b.h = fg.height;
+                    if (Rect(b).intersects(visibleRect))
                     {
-                        // space
-                        const int sz = max(h / 6, 1);
-                        rc.top += h / 2 - sz / 2;
-                        rc.bottom = rc.top + sz;
-                        rc.left += rc.width / 2 - sz / 2;
-                        rc.right = rc.left + sz;
-                        buf.fillRect(rc, color);
-                    }
-                    else if (ch == '\t')
-                    {
-                        // tab
-                        const p1 = Point(rc.left + 1, rc.top + h / 2);
-                        const p2 = Point(rc.right - 1, p1.y);
-                        const int sz = clamp(h / 4, 2, p2.x - p1.x);
-                        buf.drawLine(p1, p2, color);
-                        buf.drawLine(p2, Point(p2.x - sz, p2.y - sz / 2), color);
-                        buf.drawLine(p2, Point(p2.x - sz, p2.y + sz / 2), color);
+                        if (ch == ' ')
+                            drawSpaceMark(buf, b, color);
+                        else if (ch == '\t')
+                            drawTabMark(buf, b, color);
                     }
                 }
+                b.x += fg.width;
             }
+            b.y += span.height;
         }
     }
 
-    /// Clear _span
-    void resetVisibleSpans()
+    private void drawSpaceMark(DrawBuf buf, Box g, Color color)
     {
-        //TODO: Don't erase spans which have not been modified, cache them
-        _span = [];
+        const int sz = max(g.h / 6, 1);
+        const b = Box(g.x + g.w / 2 - sz / 2, g.y + g.h / 2 - sz / 2, sz, sz);
+        buf.fillRect(Rect(b), color);
     }
 
-    private bool _needRewrap = true;
-    private int lastStartingLine;
+    private void drawTabMark(DrawBuf buf, Box g, Color color)
+    {
+        const p1 = Point(g.x + 1, g.y + g.h / 2);
+        const p2 = Point(g.x + g.w - 1, p1.y);
+        const int sz = clamp(g.h / 4, 2, p2.x - p1.x);
+        buf.drawLine(p1, p2, color);
+        buf.drawLine(p2, Point(p2.x - sz, p2.y - sz / 2), color);
+        buf.drawLine(p2, Point(p2.x - sz, p2.y + sz / 2), color);
+    }
 
     override protected void drawClient(DrawBuf buf)
     {
@@ -3396,26 +3111,6 @@ class EditBox : EditWidgetBase
 
         const b = clientBox;
 
-        if (_contentChanged)
-            _needRewrap = true;
-        if (lastStartingLine != _firstVisibleLine)
-        {
-            _needRewrap = true;
-            lastStartingLine = _firstVisibleLine;
-        }
-        if (b.width <= 0 && _wordWrap)
-        {
-            //Prevent drawClient from getting stuck in loop
-            return;
-        }
-        bool doRewrap;
-        if (_needRewrap && _wordWrap)
-        {
-            resetVisibleSpans();
-            _needRewrap = false;
-            doRewrap = true;
-        }
-
         if (auto ph = _placeholder)
         {
             // draw the placeholder when no text
@@ -3424,70 +3119,24 @@ class EditBox : EditWidgetBase
                 ph.draw(buf, b.x - scrollPos.x, b.y, b.w);
         }
 
-        Font font = font.get;
-        const color = style.textColor;
-        const x0 = b.x - scrollPos.x;
-        int previousWraps;
-        foreach (i; 0 .. cast(int)_visibleLines.length)
+        const px = b.x - scrollPos.x;
+        int y;
+        foreach (i, ref line; _visibleLines)
         {
-            const dstring txt = _visibleLines[i].str;
-            const lineIndex = _firstVisibleLine + i;
-            const lineBox = Box(x0, b.y + i * _lineHeight, _visibleLines[i].width, _lineHeight);
+            const py = b.y + y;
+            const h = line.height;
+            const lineIndex = _firstVisibleLine + cast(int)i;
+            const lineBox = Box(px, py, line.size.w, h);
             const visibleBox = Box(b.x, lineBox.y, b.w, lineBox.h);
             drawLineBackground(buf, lineIndex, lineBox, visibleBox);
             if (_showTabPositionMarks)
                 drawTabPositionMarks(buf, lineIndex, lineBox);
-            if (!txt.length && !_wordWrap)
-                continue;
             if (_showWhiteSpaceMarks)
-            {
-                Box whiteSpaceRc = lineBox;
-                Box whiteSpaceRcVisible = visibleBox;
-                whiteSpaceRc.y += previousWraps * _lineHeight;
-                whiteSpaceRcVisible.y += previousWraps * _lineHeight;
-                drawWhiteSpaceMarks(buf, font, txt, _content.tabSize, whiteSpaceRc, whiteSpaceRcVisible);
-            }
-            if (txt.length > 0 || _wordWrap)
-            {
-                static Buf!CustomCharProps highlight;
-                if (auto mk = _visibleLines[i].markup)
-                {
-                    convertMarkupToCustomCharProps(cast(uint)txt.length, CustomCharProps(color),
-                        *mk, highlight);
-                }
-                if (_wordWrap)
-                {
-                    dstring[] wrappedLine;
-                    if (doRewrap)
-                        wrappedLine = wrapLine(txt, lineIndex);
-                    else if (i < _span.length)
-                        wrappedLine = _span[i].wrappedContent;
-                    int accumulativeLength;
-                    const wraps = wrapsUpTo(lineIndex);
-                    foreach (q, curWrap; wrappedLine)
-                    {
-                        const int lineOffset = cast(int)q + i + wraps;
-                        const y = b.y + lineOffset * _lineHeight;
-                        if (highlight.length > 0)
-                        {
-                            const wrapProps = highlight[][accumulativeLength .. $];
-                            accumulativeLength += curWrap.length;
-                            font.drawColoredText(buf, x0, y, curWrap, wrapProps, tabSize);
-                        }
-                        else
-                            font.drawText(buf, x0, y, curWrap, color, tabSize);
-                    }
-                    previousWraps += cast(int)wrappedLine.length - 1;
-                }
-                else
-                {
-                    const y = b.y + i * _lineHeight;
-                    if (highlight.length > 0)
-                        font.drawColoredText(buf, x0, y, txt, highlight[], tabSize);
-                    else
-                        font.drawText(buf, x0, y, txt, color, tabSize);
-                }
-            }
+                drawWhiteSpaceMarks(buf, lineIndex, lineBox, visibleBox);
+
+            const x = line.draw(buf, px, py, b.w, _txtStyle);
+            _visibleLinePositions[i] = Point(x, y);
+            y += h;
         }
 
         drawCaret(buf);
@@ -3646,7 +3295,6 @@ class LogWidget : EditBox
             range.end.line = _content.lineCount - _maxLines;
             auto op = new EditOperation(EditAction.replace, range, [""d]);
             _content.performOperation(op, this);
-            _contentChanged = true;
         }
         updateScrollBars();
         if (_scrollLock)
@@ -3862,7 +3510,7 @@ class FindPanel : Panel
         const bool res = _editor.findNextPattern(pos, currentText, makeSearchOptions(), back ? -1 : 1);
         if (res)
         {
-            _editor.selectionRange = TextRange(pos, TextPosition(pos.line, pos.pos + cast(int)currentText.length));
+            _editor.selectionRange = TextRange(pos, pos.offset(cast(int)currentText.length));
             _editor.ensureCaretVisible();
         }
         return res;
@@ -3881,9 +3529,9 @@ class FindPanel : Panel
         const bool res = _editor.findNextPattern(pos, currentText, makeSearchOptions(), 0);
         if (res)
         {
-            _editor.selectionRange = TextRange(pos, TextPosition(pos.line, pos.pos + cast(int)currentText.length));
+            _editor.selectionRange = TextRange(pos, pos.offset(cast(int)currentText.length));
             _editor.replaceSelectionText(newText);
-            _editor.selectionRange = TextRange(pos, TextPosition(pos.line, pos.pos + cast(int)newText.length));
+            _editor.selectionRange = TextRange(pos, pos.offset(cast(int)newText.length));
             _editor.ensureCaretVisible();
         }
         return res;

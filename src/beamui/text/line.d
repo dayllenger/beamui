@@ -24,6 +24,20 @@ struct FragmentGlyph
     int baseline;
 }
 
+int findClosestGlyphInRow(const FragmentGlyph[] row, int x0, int x)
+{
+    int x1 = x0;
+    foreach (i; 0 .. row.length)
+    {
+        x1 += row[i].width;
+        const int mx = (x0 + x1) / 2;
+        if (x <= mx)
+            return cast(int)i;
+        x0 = x1;
+    }
+    return -1;
+}
+
 struct LineSpan
 {
     uint start;
@@ -39,14 +53,17 @@ struct TextLine
     {
         int glyphCount() const
         {
-            return cast(int)glyphs.length;
+            return cast(int)_glyphs.length;
         }
 
-        Size size() const { return _size; }
+        Size size() const
+        {
+            return Size(_defaultSpan.width, _defaultSpan.height);
+        }
 
         int height() const
         {
-            return _wrapSpans.length > 0 ? _sizeAfterWrap.h : size.h;
+            return _wrapSpans.length > 0 ? _sizeAfterWrap.h : _defaultSpan.height;
         }
 
         bool wrapped() const
@@ -61,7 +78,7 @@ struct TextLine
 
         const(LineSpan[]) wrapSpans() const
         {
-            return _wrapSpans.length > 0 ? (&_wrapSpans.front())[0 .. _wrapSpans.length] : null;
+            return _wrapSpans.length > 0 ? (&_wrapSpans.front())[0 .. _wrapSpans.length] : (&_defaultSpan)[0 .. 1];
         }
     }
 
@@ -71,15 +88,12 @@ struct TextLine
 
     private
     {
-        Size _size;
+        LineSpan _defaultSpan;
         Size _sizeAfterWrap;
 
         Array!FragmentGlyph _glyphs;
         Array!LineSpan _wrapSpans;
     }
-
-    version (DigitalMars)
-        static assert(__traits(isZeroInit, TextLine));
 
     this(dstring str)
     {
@@ -96,13 +110,13 @@ struct TextLine
         if (measured)
             return;
 
+        const len = cast(uint)str.length;
         const height = style.font.height;
-        _size = Size(0, height);
+        _defaultSpan = LineSpan(0, len, 0, height, 0);
         _sizeAfterWrap = Size(0, 0);
         _glyphs.length = 0;
         _wrapSpans.length = 0;
 
-        const len = cast(uint)str.length;
         if (len == 0)
         {
             measured = true;
@@ -169,39 +183,29 @@ struct TextLine
 
         const height = font.height;
         const baseline = font.baseline;
-        int x = _size.w;
-        if (!style.wrap)
+        const int spaceWidth = font.spaceWidth;
+        const int tabSize = style.tabSize;
+        int x = _defaultSpan.width;
+        foreach (i, ch; str[start .. end])
         {
-            // calculate tab stops, if necessary
-            const int spaceWidth = font.spaceWidth;
-            const int tabSize = style.tabSize;
-            foreach (i, ch; str[start .. end])
+            if (ch == '\t')
             {
-                if (ch == '\t')
-                {
-                    const n = x / (spaceWidth * tabSize) + 1;
-                    const w = spaceWidth * tabSize * n - x;
-                    _glyphs ~= FragmentGlyph(null, cast(ushort)w, height, baseline);
-                    x += w;
-                }
-                else
-                {
-                    ComputedGlyph* g = shapingBuf.unsafe_ptr + i;
-                    _glyphs ~= FragmentGlyph(g.glyph, g.width, height, baseline);
-                    x += g.width;
-                }
+                // calculate tab stops
+                // TODO: turn off when text is aligned?
+                const n = x / (spaceWidth * tabSize) + 1;
+                const w = spaceWidth * tabSize * n - x;
+                _glyphs ~= FragmentGlyph(null, cast(ushort)w, height, baseline);
+                x += w;
             }
-        }
-        else
-        {
-            foreach (ref g; shapingBuf)
+            else
             {
+                ComputedGlyph* g = shapingBuf.unsafe_ptr + i;
                 _glyphs ~= FragmentGlyph(g.glyph, g.width, height, baseline);
                 x += g.width;
             }
         }
-        _size.w = x;
-        _size.h = max(_size.h, height);
+        _defaultSpan.width = x;
+        _defaultSpan.height = max(_defaultSpan.height, height);
     }
 
     int wrap(int boxWidth)
@@ -216,11 +220,11 @@ struct TextLine
 
         const len = cast(uint)str.length;
         if (len == 0)
-            return _size.h;
+            return _defaultSpan.height;
         if (boxWidth <= 0)
-            return _size.h;
-        if (_size.w <= boxWidth)
-            return _size.h;
+            return _defaultSpan.height;
+        if (_defaultSpan.width <= boxWidth)
+            return _defaultSpan.height;
 
         import std.ascii : isWhite;
 
@@ -233,7 +237,7 @@ struct TextLine
         for (uint i; i < len; i++)
         {
             const dchar ch = pstr[i];
-            lineWidth += _glyphs[i].width;
+            lineHeight = max(lineHeight, _glyphs[i].height);
             // split by whitespace characters
             if (isWhite(ch))
             {
@@ -242,12 +246,13 @@ struct TextLine
                 {
                     lastWordEnd = i;
                     lastWordEndX = lineWidth;
+                    whitespace = true;
                 }
-                whitespace = true;
+                lineWidth += _glyphs[i].width;
                 continue;
             }
             whitespace = false;
-            lineHeight = max(lineHeight, _glyphs[i].height);
+            lineWidth += _glyphs[i].width;
             // split if doesn't fit
             if (i > lineStart && lineWidth > boxWidth)
             {
@@ -282,7 +287,7 @@ struct TextLine
         return _sizeAfterWrap.h;
     }
 
-    int draw(DrawBuf buf, Point pos, int boxWidth, ref TextStyle style)
+    int draw(DrawBuf buf, int x, int y, int boxWidth, ref TextStyle style)
     {
         assert(measured);
 
@@ -290,6 +295,7 @@ struct TextLine
         if (len == 0)
             return 0; // nothing to draw
 
+        const pos = Point(x, y);
         const al = markup && markup.alignmentSet ? markup.alignment : style.alignment;
         int startingOffset;
 
@@ -300,7 +306,7 @@ struct TextLine
                 span.offset = alignHor(span.width, boxWidth, al);
             startingOffset = _wrapSpans[0].offset;
 
-            const(LineSpan)[] wraps = wrapSpans;
+            const(LineSpan)[] wraps = (&_wrapSpans.front())[0 .. _wrapSpans.length];
             Point offset = Point(startingOffset, 0);
             if (!markup || markup.empty)
             {
@@ -314,7 +320,8 @@ struct TextLine
         }
         else // single line
         {
-            int offset = startingOffset = alignHor(_size.w, boxWidth, al);
+            startingOffset = alignHor(_defaultSpan.width, boxWidth, al);
+            int offset = _defaultSpan.offset = startingOffset;
             if (!markup || markup.empty)
             {
                 drawSimpleFragmentNonWrapped(buf, pos, boxWidth, offset, 0, len, style);
@@ -406,7 +413,7 @@ struct TextLine
         static Buf!GlyphInstance buffer;
         buffer.clear();
 
-        auto ellipsis = Ellipsis(boxWidth, _size.w, style.overflow, style.font);
+        auto ellipsis = Ellipsis(boxWidth, _defaultSpan.width, style.overflow, style.font);
 
         SimpleLine line;
         line.dx = offset;

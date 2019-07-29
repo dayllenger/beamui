@@ -240,7 +240,7 @@ struct TextPosition
     }
 
     /// Adds `deltaPos` to position and returns result
-    TextPosition offset(int deltaPos)
+    TextPosition offset(int deltaPos) const
     {
         return TextPosition(line, pos + deltaPos);
     }
@@ -667,47 +667,6 @@ alias MarksChangeHandler = void delegate(LineIcon[] movedMarks, LineIcon[] remov
 alias TokenProp = ubyte;
 /// TokenCategory string
 alias TokenPropString = TokenProp[];
-
-struct LineSpan
-{
-    /// Start index of line
-    int start;
-    /// Number of lines it spans
-    int len;
-    /// The wrapping points
-    WrapPoint[] wrapPoints;
-    /// The wrapped text
-    dstring[] wrappedContent;
-
-    ///Adds up either positions or widths to a wrapLine
-    int accumulation(int wrapLine, WrapPoint.Field field) const
-    {
-        int total;
-        foreach (i; 0 .. wrapLine)
-        {
-            if (i + 1 < wrapPoints.length)
-            {
-                total += field ? wrapPoints[i].width : wrapPoints[i].pos;
-            }
-        }
-        return total;
-    }
-}
-
-///Holds info about a word wrapping point
-struct WrapPoint
-{
-    ///The relative wrapping position (related to TextPosition.pos)
-    int pos;
-    ///The associated calculated width of the wrapLine
-    int width;
-
-    enum Field : bool
-    {
-        position,
-        width,
-    }
-}
 
 /// Interface for custom syntax highlight, comments toggling, smart indents,
 /// and other language dependent features for source code editors

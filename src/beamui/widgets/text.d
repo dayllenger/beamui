@@ -390,6 +390,7 @@ class Paragraph : Widget
 
         const VisibleLine ln = _visibleLines[pos.line - first.index];
         const TextLine* line = &_lines[ln.index];
+        const glyphs = line.glyphs;
         int x = ln.x;
         int y = ln.y;
         if (line.wrapped)
@@ -400,7 +401,7 @@ class Paragraph : Widget
                 {
                     x = span.offset;
                     foreach (i; span.start .. pos.pos)
-                        x += line.glyphs[i].width;
+                        x += glyphs[i].width;
                     break;
                 }
                 y += span.height;
@@ -411,7 +412,7 @@ class Paragraph : Widget
             if (pos.pos < line.glyphCount)
             {
                 foreach (i; 0 .. pos.pos)
-                    x += line.glyphs[i].width;
+                    x += glyphs[i].width;
             }
             else
                 x += line.size.w;
@@ -429,60 +430,51 @@ class Paragraph : Widget
         if (_visibleLines.length == 0)
             return TextPosition(0, 0);
 
+        // find the line first
+        VisibleLine vline = _visibleLines[$ - 1]; // default as if it is lower
         const VisibleLine first = _visibleLines[0];
-        if (pt.y < first.y)
-            return TextPosition(first.index, 0);
-
-        const VisibleLine last = _visibleLines[$ - 1];
-        if (pt.y >= last.y + _lines[last.index].height)
-            return TextPosition(last.index, _lines[last.index].glyphCount);
-
-        foreach (ln; _visibleLines)
+        if (pt.y < first.y) // upper
         {
-            const TextLine* line = &_lines[ln.index];
-            if (ln.y <= pt.y && pt.y < ln.y + line.height)
+            vline = first;
+        }
+        else if (pt.y < vline.y + _lines[vline.index].height) // inside
+        {
+            foreach (ln; _visibleLines)
             {
-                if (line.wrapped)
+                if (ln.y <= pt.y && pt.y < ln.y + _lines[ln.index].height)
                 {
-                    int y = ln.y;
-                    foreach (ref span; line.wrapSpans)
-                    {
-                        if (y <= pt.y && pt.y < y + span.height)
-                        {
-                            int col = findInRow(line.glyphs[span.start .. span.end], pt.x, span.offset);
-                            if (col != -1)
-                                col += span.start;
-                            else
-                                col = span.end;
-                            return TextPosition(ln.index, col);
-                        }
-                        y += span.height;
-                    }
+                    vline = ln;
+                    break;
                 }
-                else
-                {
-                    const col = findInRow(line.glyphs, pt.x, ln.x);
-                    if (col != -1)
-                        return TextPosition(ln.index, col);
-                }
-                return TextPosition(ln.index, line.glyphCount);
             }
         }
-        return TextPosition(last.index, _lines[last.index].glyphCount);
-    }
-
-    private int findInRow(T)(T row, int x, int x0) const
-    {
-        int x1 = x0;
-        foreach (i; 0 .. row.length)
+        const TextLine* line = &_lines[vline.index];
+        // then find the column
+        const glyphs = line.glyphs;
+        if (line.wrapped)
         {
-            x1 += row[i].width;
-            const int mx = (x0 + x1) / 2;
-            if (x <= mx)
-                return cast(int)i;
-            x0 = x1;
+            int y = vline.y;
+            foreach (ref span; line.wrapSpans)
+            {
+                if (y <= pt.y && pt.y < y + span.height)
+                {
+                    int col = findClosestGlyphInRow(glyphs[span.start .. span.end], span.offset, pt.x);
+                    if (col != -1)
+                        col += span.start;
+                    else
+                        col = span.end;
+                    return TextPosition(vline.index, col);
+                }
+                y += span.height;
+            }
         }
-        return -1;
+        else
+        {
+            const col = findClosestGlyphInRow(glyphs, vline.x, pt.x);
+            if (col != -1)
+                return TextPosition(vline.index, col);
+        }
+        return TextPosition(vline.index, line.glyphCount);
     }
 
     private void handleChange(ListChange op, uint i, uint c)
@@ -677,17 +669,17 @@ class Paragraph : Widget
         int y;
         foreach (i, ref line; _lines)
         {
-            const p = Point(b.x, b.y + y);
+            const py = b.y + y;
             const h = line.height;
-            if (p.y + h < clip.top)
+            if (py + h < clip.top)
             {
                 y += h;
                 continue; // line is fully above the clipping rectangle
             }
-            if (clip.bottom <= p.y)
+            if (clip.bottom <= py)
                 break; // or below
 
-            const x = line.draw(buf, p, _sizeAfterWrap.w, _txtStyle);
+            const x = line.draw(buf, b.x, py, _sizeAfterWrap.w, _txtStyle);
             _visibleLines ~= VisibleLine(cast(uint)i, x, y);
             y += h;
         }
