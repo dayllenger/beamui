@@ -1,9 +1,9 @@
 /**
 Implementation of Xlib based backend for the UI.
 
-Copyright: Vadim Lopatin 2014-2017, Roman Chistokhodov 2017, Andrzej Kilijański 2017-2018, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, Roman Chistokhodov 2017, Andrzej Kilijański 2017-2018, dayllenger 2018-2019
 License:   Boost License 1.0
-Authors:   Vadim Lopatin, Roman Chistokhodov
+Authors:   Vadim Lopatin, Roman Chistokhodov, dayllenger
 */
 module beamui.platforms.x11.x11app;
 
@@ -11,7 +11,7 @@ import beamui.core.config;
 
 static if (BACKEND_X11):
 import core.stdc.config : c_ulong, c_long;
-import std.string : fromStringz, toStringz;
+import std.string : format, fromStringz, toStringz;
 import std.utf : toUTF32;
 import x11.X;
 import x11.Xatom;
@@ -26,6 +26,7 @@ import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
+import beamui.widgets.widget : CursorType;
 static if (USE_OPENGL)
 {
     import derelict.opengl3.glx;
@@ -425,10 +426,9 @@ final class X11Window : DWindow
                         glXDestroyContext(x11display, _glc);
                         _glc = null;
                     }
-                    else
+                    else // working
                     {
-                        // TODO: find the extension, deactivate vsync
-                        //glXSwapIntervalEXT(x11display, cast(uint)_win, 0);
+                        disableVSync();
                     }
                 }
             }
@@ -743,6 +743,23 @@ final class X11Window : DWindow
 
     static if (USE_OPENGL)
     {
+        private void disableVSync()
+        {
+            if (glXSwapIntervalEXT)
+            {
+                glXSwapIntervalEXT(x11display, cast(uint)_win, 0);
+            }
+            else if (void* proc = glXGetProcAddress("glXSwapIntervalMESA"))
+            {
+                alias func = int function(uint);
+                (cast(func)proc)(0);
+            }
+            else if (glXSwapIntervalSGI)
+            {
+                glXSwapIntervalSGI(0);
+            }
+        }
+
         override void bindContext()
         {
             glXMakeCurrent(x11display, cast(uint)_win, _glc);
