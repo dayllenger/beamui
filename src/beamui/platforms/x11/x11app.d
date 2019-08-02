@@ -18,6 +18,7 @@ import x11.Xatom;
 import x11.Xlib;
 import x11.Xtos;
 import x11.Xutil;
+import xsync;
 import beamui.core.events;
 import beamui.core.files;
 import beamui.core.functions : eliminate;
@@ -97,6 +98,9 @@ private struct Atoms
 
     Atom WM_PROTOCOLS;
     Atom WM_DELETE_WINDOW;
+    Atom _NET_WM_SYNC_REQUEST;
+
+    Atom _NET_WM_SYNC_REQUEST_COUNTER;
 
     Atom _NET_WM_ICON;
     Atom _NET_WM_NAME;
@@ -129,6 +133,8 @@ private struct Atoms
             AtomRequest("TARGETS"),
             AtomRequest("WM_PROTOCOLS", true),
             AtomRequest("WM_DELETE_WINDOW", true),
+            AtomRequest("_NET_WM_SYNC_REQUEST", true),
+            AtomRequest("_NET_WM_SYNC_REQUEST_COUNTER", true),
             AtomRequest("_NET_WM_ICON"),
             AtomRequest("_NET_WM_NAME"),
             AtomRequest("_NET_WM_ICON_NAME"),
@@ -151,7 +157,7 @@ private struct Atoms
 
     Atom[] protocols()
     {
-        return (&WM_DELETE_WINDOW)[0 .. 1];
+        return (&WM_DELETE_WINDOW)[0 .. 2];
     }
 }
 
@@ -300,6 +306,10 @@ final class X11Window : DWindow
         dstring _title;
         DrawBuf _drawbuf;
 
+        // sync counter is needed to gain smooth window resize
+        XSyncCounter syncCounter;
+        XSyncValue syncValue;
+
         SizeI _cachedSize;
     }
 
@@ -325,6 +335,8 @@ final class X11Window : DWindow
 
     ~this()
     {
+        XSyncDestroyCounter(x11display, syncCounter);
+
         static if (USE_OPENGL)
         {
             if (_glc)
@@ -383,6 +395,10 @@ final class X11Window : DWindow
 
         auto protocols = atoms.protocols;
         XSetWMProtocols(x11display, _win, protocols.ptr, cast(int)protocols.length);
+        // TODO: handle possible XSync errors
+        syncCounter = XSyncCreateCounter(x11display, syncValue);
+        XChangeProperty(x11display, _win, atoms._NET_WM_SYNC_REQUEST_COUNTER, XA_CARDINAL, 32,
+            PropModeReplace, cast(ubyte*)&syncCounter, 1);
 
         auto classHint = XAllocClassHint();
         if (classHint)
@@ -1294,6 +1310,14 @@ final class X11Platform : Platform
                 Log.fd("X11: ConfigureNotify - pos: %dx%d, size: %dx%d", pos.x, pos.y, sz.w, sz.h);
             w._cachedSize = sz;
             w.handleWindowStateChange(WindowState.unspecified, BoxI(pos, sz));
+            if (!w.syncValue.isZero)
+            {
+                debug (x11)
+                    Log.d("X11: synchronized");
+                XSyncSetCounter(x11display, w.syncCounter, w.syncValue);
+                w.syncValue.lo = 0;
+                w.syncValue.hi = 0;
+            }
             break;
         case PropertyNotify:
             if (event.xproperty.atom == atoms._NET_WM_STATE && event.xproperty.state == PropertyNewValue)
@@ -1661,6 +1685,11 @@ final class X11Platform : Platform
                     {
                         if (w.canClose)
                             windows.remove(w);
+                    }
+                    if (event.xclient.data.l[0] == atoms._NET_WM_SYNC_REQUEST)
+                    {
+                        w.syncValue.lo = cast(uint)event.xclient.data.l[2];
+                        w.syncValue.hi = cast(int)event.xclient.data.l[3];
                     }
                 }
             }

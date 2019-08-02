@@ -14,13 +14,11 @@ stringImportPaths "res"
 
 sourceFiles "$PACKAGE_DIR/src/win_app.def" platform="windows-x86-dmd"
 excludedSourceFiles "3rdparty/fontconfig/*" platform="windows"
+excludedSourceFiles "3rdparty/xsync.d"
 
 libs "z" platform="linux"
 
-x:ddoxFilterArgs "--min-protection=Protected" \
-    "--ex" "dimage" \
-    "--ex" "fontconfig" \
-    "--ex" "isfreedesktop"
+x:ddoxFilterArgs "--min-protection=Protected" "--in" "beamui" "--ex" ""
 
 subPackage "./examples/basic/"
 subPackage "./examples/css/"
@@ -68,6 +66,8 @@ configuration "sdl" {
 configuration "x11" {
     platforms "posix"
     versions "X11" "EmbedStandardResources"
+    libs "Xext"
+    sourceFiles "3rdparty/xsync.d"
     dependency "derelict-ft" version="==1.1.2"
     dependency "derelict-gl3" version="~>1.0.18"
     dependency "x11" version="~>1.0.17"
