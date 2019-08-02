@@ -38,7 +38,7 @@ class SliderDataBase
         double range() const { return _maxValue - _minValue; }
     }
 
-    Signal!(void delegate()) onChanged;
+    Signal!(void delegate()) onChange;
 
     private
     {
@@ -65,7 +65,7 @@ class SliderDataBase
             _maxValue = max;
             _step = step;
             adjustValue();
-            onChanged();
+            onChange();
         }
     }
 
@@ -86,7 +86,7 @@ class SliderData : SliderDataBase
             if (_value != v)
             {
                 _value = v;
-                onChanged();
+                onChange();
             }
         }
     }
@@ -127,7 +127,7 @@ class RangeSliderData : SliderDataBase
             if (_first != v)
             {
                 _first = v;
-                onChanged();
+                onChange();
             }
         }
         /// The second value. Setting this value won't adjust another one
@@ -139,7 +139,7 @@ class RangeSliderData : SliderDataBase
             if (_second != v)
             {
                 _second = v;
-                onChanged();
+                onChange();
             }
         }
         /// Difference between `second` and `first`. Always >= 0
@@ -266,7 +266,7 @@ abstract class AbstractSlider : WidgetGroup
     this(Orientation orient, scope SliderDataBase data)
     {
         assert(data);
-        data.onChanged ~= &handleDataChange;
+        data.onChange ~= &handleDataChange;
         isolateStyle();
         _orient = orient;
         setAttribute(orient == Orientation.horizontal ? "horizontal" : "vertical");
