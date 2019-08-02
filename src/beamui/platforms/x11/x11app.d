@@ -1245,261 +1245,287 @@ final class X11Platform : Platform
         switch (event.type)
         {
         case ConfigureNotify:
-            if (auto w = windows[event.xconfigure.window])
+            X11Window w = windows[event.xconfigure.window];
+            if (!w)
             {
-                const pos = PointI(event.xconfigure.x, event.xconfigure.y);
-                const sz = SizeI(event.xconfigure.width, event.xconfigure.height);
-                w._cachedSize = sz;
-                debug (x11)
-                    Log.fd("X11: ConfigureNotify - pos: %dx%d, size: %dx%d", pos.x, pos.y, sz.w, sz.h);
-                w.handleWindowStateChange(WindowState.unspecified, BoxI(pos, sz));
+                Log.e("X11: ConfigureNotify - unknown window");
+                break;
             }
-            else
-                Log.e("ConfigureNotify: Window not found");
+            const pos = PointI(event.xconfigure.x, event.xconfigure.y);
+            const sz = SizeI(event.xconfigure.width, event.xconfigure.height);
+            debug (x11)
+                Log.fd("X11: ConfigureNotify - pos: %dx%d, size: %dx%d", pos.x, pos.y, sz.w, sz.h);
+            w._cachedSize = sz;
+            w.handleWindowStateChange(WindowState.unspecified, BoxI(pos, sz));
             break;
         case PropertyNotify:
-            debug (x11)
-                Log.d("X11: PropertyNotify");
             if (event.xproperty.atom == atoms._NET_WM_STATE && event.xproperty.state == PropertyNewValue)
             {
-                if (auto w = windows[event.xproperty.window])
+                X11Window w = windows[event.xproperty.window];
+                if (!w)
                 {
-                    Atom type;
-                    int format;
-                    ubyte* properties;
-                    c_ulong dataLength, overflow;
-                    if (XGetWindowProperty(x11display, event.xproperty.window, atoms._NET_WM_STATE,
-                            0, int.max / 4, False, AnyPropertyType, &type, &format, &dataLength,
-                            &overflow, &properties) == 0)
+                    Log.e("X11: PropertyNotify - unknown window");
+                    break;
+                }
+                debug (x11)
+                    Log.d("X11: PropertyNotify");
+                Atom type;
+                int format;
+                ubyte* properties;
+                c_ulong dataLength, overflow;
+                if (XGetWindowProperty(x11display, event.xproperty.window, atoms._NET_WM_STATE,
+                        0, int.max / 4, False, AnyPropertyType, &type,
+                        &format, &dataLength, &overflow, &properties) == 0)
+                {
+                    scope (exit)
+                        XFree(properties);
+                    // check for minimized
+                    bool minimized;
+                    foreach (i; 0 .. dataLength)
                     {
-                        scope (exit)
-                            XFree(properties);
-                        // check for minimized
-                        bool minimized;
+                        if ((cast(c_ulong*)properties)[i] == atoms._NET_WM_STATE_HIDDEN)
+                        {
+                            w.handleWindowStateChange(WindowState.minimized);
+                            minimized = true;
+                        }
+                    }
+                    if (!minimized)
+                    {
+                        bool maximizedH;
+                        bool maximizedV;
                         foreach (i; 0 .. dataLength)
                         {
-                            if ((cast(c_ulong*)properties)[i] == atoms._NET_WM_STATE_HIDDEN)
-                            {
-                                w.handleWindowStateChange(WindowState.minimized);
-                                minimized = true;
-                            }
+                            if ((cast(c_ulong*)properties)[i] == atoms._NET_WM_STATE_MAXIMIZED_VERT)
+                                maximizedV = true;
+                            if ((cast(c_ulong*)properties)[i] == atoms._NET_WM_STATE_MAXIMIZED_HORZ)
+                                maximizedH = true;
                         }
-                        if (!minimized)
-                        {
-                            bool maximizedH;
-                            bool maximizedV;
-                            foreach (i; 0 .. dataLength)
-                            {
-                                if ((cast(c_ulong*)properties)[i] == atoms._NET_WM_STATE_MAXIMIZED_VERT)
-                                    maximizedV = true;
-                                if ((cast(c_ulong*)properties)[i] == atoms._NET_WM_STATE_MAXIMIZED_HORZ)
-                                    maximizedH = true;
-                            }
 
-                            if (maximizedV && maximizedH)
-                                w.handleWindowStateChange(WindowState.maximized);
-                            else
-                                w.handleWindowStateChange(WindowState.normal);
-                        }
+                        if (maximizedV && maximizedH)
+                            w.handleWindowStateChange(WindowState.maximized);
+                        else
+                            w.handleWindowStateChange(WindowState.normal);
                     }
                 }
             }
             break;
         case MapNotify:
+            X11Window w = windows[event.xmap.window];
+            if (!w)
+            {
+                Log.e("X11: MapNotify - unknown window");
+                break;
+            }
             debug (x11)
                 Log.d("X11: MapNotify");
-            if (auto w = windows[event.xmap.window])
-            {
-                w.handleWindowStateChange(WindowState.normal);
-            }
-            break;
+            w.handleWindowStateChange(WindowState.normal);
+            return;
         case UnmapNotify:
+            X11Window w = windows[event.xunmap.window];
+            if (!w)
+            {
+                Log.e("X11: UnmapNotify - unknown window");
+                break;
+            }
             debug (x11)
                 Log.d("X11: UnmapNotify");
-            if (auto w = windows[event.xunmap.window])
-            {
-                w.handleWindowStateChange(WindowState.hidden);
-            }
+            w.handleWindowStateChange(WindowState.hidden);
             break;
         case Expose:
             if (event.xexpose.count == 0) // the last expose event
             {
+                X11Window w = windows[event.xexpose.window];
+                if (!w)
+                {
+                    Log.e("X11: Expose - unknown window");
+                    break;
+                }
                 debug (x11)
                     Log.d("X11: Expose");
-                if (auto w = windows[event.xexpose.window])
-                {
-                    w.invalidate();
-                }
-                else
-                    Log.e("Expose: Window not found");
+                w.invalidate();
             }
             break;
         case KeyPress:
-            debug (x11)
-                Log.d("X11: KeyPress");
-            if (auto w = windows[event.xkey.window])
+            X11Window w = windows[event.xkey.window];
+            if (!w)
             {
+                Log.e("X11: KeyPress - unknown window");
+                break;
+            }
+
+            if (!w.xic)
+            {
+                w.xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
+                        XNClientWindow, w._win, 0);
                 if (!w.xic)
-                {
-                    w.xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-                            XNClientWindow, w._win, 0);
-                    if (!w.xic)
-                    {
-                        Log.e("Cannot create input context");
-                    }
-                }
+                    Log.e("Cannot create input context");
+            }
 
-                enum len = 100;
-                char[len] buf;
-                KeySym ks;
-                XComposeStatus compose;
-                if (w.xic)
-                {
-                    Status s;
-                    Xutf8LookupString(w.xic, &event.xkey, buf.ptr, len - 1, &ks, &s);
-                    if (s != XLookupChars && s != XLookupBoth)
-                        XLookupString(&event.xkey, buf.ptr, len - 1, &ks, &compose);
-                }
-                else
+            enum len = 100;
+            char[len] buf;
+            KeySym ks;
+            XComposeStatus compose;
+            if (w.xic)
+            {
+                Status s;
+                Xutf8LookupString(w.xic, &event.xkey, buf.ptr, len - 1, &ks, &s);
+                if (s != XLookupChars && s != XLookupBoth)
                     XLookupString(&event.xkey, buf.ptr, len - 1, &ks, &compose);
+            }
+            else
+                XLookupString(&event.xkey, buf.ptr, len - 1, &ks, &compose);
 
-                foreach (ref ch; buf)
-                {
-                    if (ch == 255 || ch < 32 || ch == 127)
-                        ch = 0;
-                }
+            foreach (ref ch; buf)
+            {
+                if (ch == 255 || ch < 32 || ch == 127)
+                    ch = 0;
+            }
 
-                string txt = fromStringz(buf.ptr).idup;
-                dstring dtext;
-                import std.utf : UTFException;
-                try
-                {
-                    if (txt.length)
-                        dtext = toUTF32(txt);
-                }
-                catch (UTFException e)
-                {
-                    // ignore, invalid text
-                }
+            import std.utf : UTFException;
+
+            string txt = fromStringz(buf.ptr).idup;
+            dstring dtext;
+            try
+            {
+                if (txt.length)
+                    dtext = toUTF32(txt);
+            }
+            catch (UTFException e)
+            {
+                // ignore, invalid text
+            }
+            if (dtext.length)
+            {
                 debug (x11)
                     Log.d("X11: KeyPress - bytes: ", txt.length, ", text: ", txt, ", dtext: ", dtext);
-                if (dtext.length)
-                {
-                    w.processTextInput(dtext, event.xkey.state);
-                }
-                else
-                {
-                    w.processKeyEvent(KeyAction.keyDown, cast(uint)ks, //event.xkey.keycode,
-                            event.xkey.state);
-                }
+                w.processTextInput(dtext, event.xkey.state);
             }
             else
-                Log.e("KeyPress: Window not found");
+            {
+                debug (x11)
+                    Log.d("X11: KeyPress");
+                w.processKeyEvent(KeyAction.keyDown, cast(uint)ks, event.xkey.state);
+            }
             break;
         case KeyRelease:
+            X11Window w = windows[event.xkey.window];
+            if (!w)
+            {
+                Log.e("X11: KeyRelease - unknown window");
+                break;
+            }
             debug (x11)
                 Log.d("X11: KeyRelease");
-            if (auto w = windows[event.xkey.window])
-            {
-                enum len = 100;
-                char[len] buf;
-                KeySym ks;
-                XComposeStatus compose;
-                XLookupString(&event.xkey, buf.ptr, len - 1, &ks, &compose);
-                w.processKeyEvent(KeyAction.keyUp, cast(uint)ks, //event.xkey.keycode,
-                        event.xkey.state);
-            }
-            else
-                Log.e("KeyRelease: Window not found");
+            enum len = 100;
+            char[len] buf;
+            KeySym ks;
+            XComposeStatus compose;
+            XLookupString(&event.xkey, buf.ptr, len - 1, &ks, &compose);
+            w.processKeyEvent(KeyAction.keyUp, cast(uint)ks, event.xkey.state);
             break;
         case ButtonPress:
+            X11Window w = windows[event.xbutton.window];
+            if (!w)
+            {
+                Log.e("X11: ButtonPress - unknown window");
+                break;
+            }
             debug (x11)
                 Log.d("X11: ButtonPress");
-            if (auto w = windows[event.xbutton.window])
+            if (event.xbutton.button == 4 || event.xbutton.button == 5)
             {
-                if (event.xbutton.button == 4 || event.xbutton.button == 5)
-                {
-                    w.processWheelEvent(0, event.xbutton.button == 4 ? -1 : 1);
-                }
-                else
-                {
-                    w.processMouseEvent(MouseAction.buttonDown, event.xbutton.button,
-                            event.xbutton.state, event.xbutton.x, event.xbutton.y);
-                }
+                w.processWheelEvent(0, event.xbutton.button == 4 ? -1 : 1);
             }
             else
-                Log.e("ButtonPress: Window not found");
-            break;
-        case ButtonRelease:
-            debug (x11)
-                Log.d("X11: ButtonRelease");
-            if (auto w = windows[event.xbutton.window])
             {
-                w.processMouseEvent(MouseAction.buttonUp, event.xbutton.button,
+                w.processMouseEvent(MouseAction.buttonDown, event.xbutton.button,
                         event.xbutton.state, event.xbutton.x, event.xbutton.y);
             }
-            else
-                Log.e("ButtonRelease: Window not found");
+            break;
+        case ButtonRelease:
+            X11Window w = windows[event.xbutton.window];
+            if (!w)
+            {
+                Log.e("X11: ButtonRelease - unknown window");
+                break;
+            }
+            debug (x11)
+                Log.d("X11: ButtonRelease");
+            w.processMouseEvent(MouseAction.buttonUp, event.xbutton.button,
+                    event.xbutton.state, event.xbutton.x, event.xbutton.y);
             break;
         case MotionNotify:
-            if (auto w = windows[event.xmotion.window])
+            X11Window w = windows[event.xmotion.window];
+            if (!w)
             {
-                w.processMouseEvent(MouseAction.move, 0, event.xmotion.state, event.xmotion.x, event.xmotion.y);
+                Log.e("X11: MotionNotify - unknown window");
+                break;
             }
-            else
-                Log.e("MotionNotify: Window not found");
+            w.processMouseEvent(MouseAction.move, 0, event.xmotion.state, event.xmotion.x, event.xmotion.y);
             break;
         case EnterNotify:
-            if (auto w = windows[event.xcrossing.window])
+            X11Window w = windows[event.xcrossing.window];
+            if (!w)
             {
-                w.processMouseEvent(MouseAction.move, 0, event.xmotion.state, event.xcrossing.x, event.xcrossing.y);
+                Log.e("X11: EnterNotify - unknown window");
+                break;
             }
-            else
-            {
-                Log.e("EnterNotify: Window not found");
-            }
+            w.processMouseEvent(MouseAction.move, 0, event.xmotion.state, event.xcrossing.x, event.xcrossing.y);
             break;
         case LeaveNotify:
-            if (auto w = windows[event.xcrossing.window])
+            X11Window w = windows[event.xcrossing.window];
+            if (!w)
             {
-                w.processMouseEvent(MouseAction.leave, 0, event.xcrossing.state, event.xcrossing.x, event.xcrossing.y);
+                Log.e("X11: LeaveNotify - unknown window");
+                break;
             }
-            else
-                Log.e("LeaveNotify: Window not found");
+            w.processMouseEvent(MouseAction.leave, 0, event.xcrossing.state, event.xcrossing.x, event.xcrossing.y);
             break;
         case CreateNotify:
-            debug (x11)
-                Log.d("X11: CreateNotify");
             X11Window w = windows[event.xcreatewindow.window];
             if (!w)
-                Log.e("CreateNotify: Window not found");
+            {
+                Log.e("X11: CreateNotify - unknown window");
+                break;
+            }
+            debug (x11)
+                Log.d("X11: CreateNotify");
             break;
         case DestroyNotify:
             debug (x11)
                 Log.d("X11: DestroyNotify");
             break;
         case ResizeRequest:
-            debug (x11)
-                Log.d("X11: ResizeRequest");
             X11Window w = windows[event.xresizerequest.window];
             if (!w)
-                Log.e("ResizeRequest: Window not found");
+            {
+                Log.e("X11: ResizeRequest - unknown window");
+                break;
+            }
+            debug (x11)
+                Log.d("X11: ResizeRequest");
             break;
         case FocusIn:
+            X11Window w = windows[event.xfocus.window];
+            if (!w)
+            {
+                Log.e("X11: FocusIn - unknown window");
+                break;
+            }
             debug (x11)
                 Log.d("X11: FocusIn");
-            if (auto w = windows[event.xfocus.window])
-                w.handleWindowActivityChange(true);
-            else
-                Log.e("FocusIn: Window not found");
+            w.handleWindowActivityChange(true);
             break;
         case FocusOut:
+            X11Window w = windows[event.xfocus.window];
+            if (!w)
+            {
+                Log.e("X11: FocusOut - unknown window");
+                break;
+            }
             debug (x11)
                 Log.d("X11: FocusOut");
-            if (auto w = windows[event.xfocus.window])
-                w.handleWindowActivityChange(false);
-            else
-                Log.e("FocusOut: Window not found");
+            w.handleWindowActivityChange(false);
             break;
         case KeymapNotify:
             debug (x11)
@@ -1513,101 +1539,101 @@ final class X11Platform : Platform
         case SelectionRequest:
             debug (x11)
                 Log.d("X11: SelectionRequest");
-            if (event.xselectionrequest.owner in windows)
+            if (event.xselectionrequest.owner !in windows)
+                break;
+
+            XSelectionRequestEvent* request = &event.xselectionrequest;
+
+            XEvent e;
+            e.xselection = XSelectionEvent.init;
+            e.xselection.type = SelectionNotify;
+            e.xselection.selection = request.selection;
+            e.xselection.target = request.target;
+            e.xselection.property = None;
+            e.xselection.requestor = request.requestor;
+            e.xselection.time = request.time;
+
+            if (request.target == XA_STRING || request.target == atoms.UTF8_STRING)
             {
-                XSelectionRequestEvent* selectionRequest = &event.xselectionrequest;
-
-                XEvent selectionEvent;
-                selectionEvent.xselection = XSelectionEvent.init;
-                selectionEvent.xselection.type = SelectionNotify;
-                selectionEvent.xselection.selection = selectionRequest.selection;
-                selectionEvent.xselection.target = selectionRequest.target;
-                selectionEvent.xselection.property = None;
-                selectionEvent.xselection.requestor = selectionRequest.requestor;
-                selectionEvent.xselection.time = selectionRequest.time;
-
-                if (selectionRequest.target == XA_STRING || selectionRequest.target == atoms.UTF8_STRING)
+                int currentSelectionFormat;
+                Atom currentSelectionType;
+                c_ulong selectionDataLength, overflow;
+                ubyte* selectionDataPtr;
+                if (XGetWindowProperty(x11display, DefaultRootWindow(x11display),
+                        atoms.beamui_CLIPBOARD_BUFFER, 0, int.max / 4, False,
+                        request.target, &currentSelectionType, &currentSelectionFormat,
+                        &selectionDataLength, &overflow, &selectionDataPtr) == 0)
                 {
-                    int currentSelectionFormat;
-                    Atom currentSelectionType;
-                    c_ulong selectionDataLength, overflow;
-                    ubyte* selectionDataPtr;
-                    if (XGetWindowProperty(x11display, DefaultRootWindow(x11display),
-                            atoms.beamui_CLIPBOARD_BUFFER, 0, int.max / 4,
-                            False, selectionRequest.target, &currentSelectionType, &currentSelectionFormat,
-                            &selectionDataLength, &overflow, &selectionDataPtr) == 0)
-                    {
-                        scope (exit)
-                            XFree(selectionDataPtr);
-                        XChangeProperty(x11display, selectionRequest.requestor, selectionRequest.property,
-                                selectionRequest.target, 8, PropModeReplace, selectionDataPtr,
-                                cast(int)selectionDataLength);
-                    }
-                    selectionEvent.xselection.property = selectionRequest.property;
+                    scope (exit)
+                        XFree(selectionDataPtr);
+                    XChangeProperty(x11display, request.requestor, request.property, request.target, 8,
+                            PropModeReplace, selectionDataPtr, cast(int)selectionDataLength);
                 }
-                else if (selectionRequest.target == atoms.TARGETS)
-                {
-                    Atom[3] supportedFormats = [atoms.UTF8_STRING, XA_STRING, atoms.TARGETS];
-                    XChangeProperty(x11display, selectionRequest.requestor, selectionRequest.property, XA_ATOM, 32,
-                            PropModeReplace, cast(ubyte*)supportedFormats.ptr, cast(int)supportedFormats.length);
-                    selectionEvent.xselection.property = selectionRequest.property;
-                }
-                XSendEvent(x11display, selectionRequest.requestor, False, 0, &selectionEvent);
+                e.xselection.property = request.property;
             }
+            else if (request.target == atoms.TARGETS)
+            {
+                Atom[3] supportedFormats = [atoms.UTF8_STRING, XA_STRING, atoms.TARGETS];
+                XChangeProperty(x11display, request.requestor, request.property, XA_ATOM, 32,
+                    PropModeReplace, cast(ubyte*)supportedFormats.ptr, cast(int)supportedFormats.length);
+                e.xselection.property = request.property;
+            }
+            XSendEvent(x11display, request.requestor, False, 0, &e);
             break;
         case SelectionNotify:
             debug (x11)
                 Log.d("X11: SelectionNotify");
-            if (auto w = windows[event.xselection.requestor])
+            if (event.xselection.requestor in windows)
             {
                 waitingForSelection = false;
             }
             break;
         case ClientMessage:
-            if (auto w = windows[event.xclient.window])
+            X11Window w = windows[event.xclient.window];
+            if (!w)
             {
-                if (event.xclient.message_type == atoms.beamui_TASK_EVENT)
+                Log.e("X11: ClientMessage - unknown window");
+                break;
+            }
+            if (event.xclient.message_type == atoms.beamui_TASK_EVENT)
+            {
+                debug (x11)
+                    Log.d("X11: ClientMessage - task");
+                w.handlePostedEvent(cast(uint)event.xclient.data.l[0]);
+            }
+            else if (event.xclient.message_type == atoms.beamui_TIMER_EVENT)
+            {
+                debug (x11)
+                    Log.d("X11: ClientMessage - timer");
+                w.handleTimer();
+            }
+            else if (event.xclient.message_type == atoms.beamui_REDRAW_EVENT)
+            {
+                debug (x11)
+                    Log.d("X11: ClientMessage - redraw");
+                if (event.xclient.data.l[0] == w._lastRedrawEventCode)
+                    w.redraw();
+            }
+            else if (event.xclient.message_type == atoms.WM_PROTOCOLS)
+            {
+                debug (x11)
+                    Log.d("X11: ClientMessage - WM_PROTOCOLS");
+                if (event.xclient.format == 32)
                 {
-                    debug (x11)
-                        Log.d("X11: ClientMessage - task");
-                    w.handlePostedEvent(cast(uint)event.xclient.data.l[0]);
-                }
-                else if (event.xclient.message_type == atoms.beamui_TIMER_EVENT)
-                {
-                    debug (x11)
-                        Log.d("X11: ClientMessage - timer");
-                    w.handleTimer();
-                }
-                else if (event.xclient.message_type == atoms.beamui_REDRAW_EVENT)
-                {
-                    debug (x11)
-                        Log.d("X11: ClientMessage - redraw");
-                    if (event.xclient.data.l[0] == w._lastRedrawEventCode)
-                        w.redraw();
-                }
-                else if (event.xclient.message_type == atoms.WM_PROTOCOLS)
-                {
-                    debug (x11)
-                        Log.d("X11: ClientMessage - WM_PROTOCOLS");
-                    if (event.xclient.format == 32)
+                    if (event.xclient.data.l[0] == atoms.WM_DELETE_WINDOW)
                     {
-                        if (event.xclient.data.l[0] == atoms.WM_DELETE_WINDOW)
-                        {
-                            if (w.canClose)
-                                windows.remove(w);
-                        }
+                        if (w.canClose)
+                            windows.remove(w);
                     }
                 }
-                else if (event.xclient.message_type == atoms.beamui_CLOSE_WINDOW_EVENT)
-                {
-                    debug (x11)
-                        Log.d("X11: ClientMessage - close");
-                    if (w.canClose)
-                        windows.remove(w);
-                }
             }
-            else
-                Log.e("ClientMessage: Window not found");
+            else if (event.xclient.message_type == atoms.beamui_CLOSE_WINDOW_EVENT)
+            {
+                debug (x11)
+                    Log.d("X11: ClientMessage - close");
+                if (w.canClose)
+                    windows.remove(w);
+            }
             break;
         default:
             break;
@@ -1624,67 +1650,64 @@ final class X11Platform : Platform
     override dstring getClipboardText(bool mouseBuffer = false)
     {
         const selectionType = mouseBuffer ? XA_PRIMARY : atoms.CLIPBOARD;
-        auto owner = XGetSelectionOwner(x11display, selectionType);
+        XWindow owner = XGetSelectionOwner(x11display, selectionType);
         if (owner == None)
         {
             Log.d("Selection owner is none");
             return null;
         }
-        else
-        {
-            // Find any top-level window
-            XWindow xwindow;
-            foreach (w; windows)
-            {
-                if (w.parentWindow is null && w._win != None)
-                {
-                    xwindow = w._win;
-                    break;
-                }
-            }
-            if (xwindow != None)
-            {
-                import std.datetime;
 
-                waitingForSelection = true;
-                XConvertSelection(x11display, selectionType, atoms.UTF8_STRING,
-                        atoms.beamui_CLIPBOARD_BUFFER, xwindow, CurrentTime);
-                auto stopWaiting = Clock.currTime() + dur!"msecs"(500);
-                while (waitingForSelection)
-                {
-                    if (stopWaiting <= Clock.currTime())
-                    {
-                        waitingForSelection = false;
-                        setClipboardText(null);
-                        Log.e("Waiting for clipboard contents timeout");
-                        return null;
-                    }
-                    pumpEvents();
-                }
-                Atom selectionTarget;
-                int selectionFormat;
-                c_ulong selectionDataLength, overflow;
-                ubyte* selectionDataPtr;
-                if (XGetWindowProperty(x11display, xwindow, atoms.beamui_CLIPBOARD_BUFFER, 0, int.max / 4,
-                        False, 0, &selectionTarget, &selectionFormat, &selectionDataLength,
-                        &overflow, &selectionDataPtr) == 0)
-                {
-                    scope (exit)
-                        XFree(selectionDataPtr);
-                    if (selectionTarget == XA_STRING || selectionTarget == atoms.UTF8_STRING)
-                    {
-                        char[] selectionText = cast(char[])selectionDataPtr[0 .. selectionDataLength];
-                        return toUTF32(selectionText);
-                    }
-                    else
-                    {
-                        Log.d("Selection type is not a string!");
-                    }
-                }
+        // find any top-level window
+        XWindow xwindow;
+        foreach (w; windows)
+        {
+            if (w.parentWindow is null && w._win != None)
+            {
+                xwindow = w._win;
+                break;
+            }
+        }
+        if (xwindow == None)
+        {
+            Log.d("Could not find any window to get selection");
+            return null;
+        }
+
+        import std.datetime;
+
+        waitingForSelection = true;
+        XConvertSelection(x11display, selectionType, atoms.UTF8_STRING,
+                atoms.beamui_CLIPBOARD_BUFFER, xwindow, CurrentTime);
+        auto stopWaiting = Clock.currTime() + dur!"msecs"(500);
+        while (waitingForSelection)
+        {
+            if (stopWaiting <= Clock.currTime())
+            {
+                waitingForSelection = false;
+                setClipboardText(null);
+                Log.e("Waiting for clipboard contents timeout");
+                return null;
+            }
+            pumpEvents();
+        }
+        Atom selectionTarget;
+        int selectionFormat;
+        c_ulong selectionDataLength, overflow;
+        ubyte* selectionDataPtr;
+        if (XGetWindowProperty(x11display, xwindow, atoms.beamui_CLIPBOARD_BUFFER, 0, int.max / 4,
+                False, 0, &selectionTarget, &selectionFormat, &selectionDataLength,
+                &overflow, &selectionDataPtr) == 0)
+        {
+            scope (exit)
+                XFree(selectionDataPtr);
+            if (selectionTarget == XA_STRING || selectionTarget == atoms.UTF8_STRING)
+            {
+                char[] selectionText = cast(char[])selectionDataPtr[0 .. selectionDataLength];
+                return toUTF32(selectionText);
             }
             else
             {
-                Log.d("Could not find any window to get selection");
+                Log.d("Selection type is not a string!");
             }
         }
         return null;
@@ -1699,7 +1722,7 @@ final class X11Platform : Platform
         }
         auto selection = mouseBuffer ? XA_PRIMARY : atoms.CLIPBOARD;
         XWindow xwindow = None;
-        // Find any top-level window
+        // find any top-level window
         foreach (w; windows)
         {
             if (w.parentWindow is null && w._win != None)
