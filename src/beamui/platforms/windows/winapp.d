@@ -523,6 +523,8 @@ final class Win32Window : Window
         return res;
     }
 
+    // TODO: handleSizeHintsChange - update interactively after Window.show()
+
     override @property bool isActive() const
     {
         return _hwnd == GetForegroundWindow();
@@ -1307,6 +1309,16 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             }
         }
         return 0;
+    case WM_GETMINMAXINFO:
+        if (window)
+        {
+            MINMAXINFO* info = cast(MINMAXINFO*)lParam;
+            info.ptMinTrackSize.x = window.minSize.w;
+            info.ptMinTrackSize.y = window.minSize.h;
+            info.ptMaxTrackSize.x = window.maxSize.w;
+            info.ptMaxTrackSize.y = window.maxSize.h;
+        }
+        return 0;
     case WM_ACTIVATE:
         if (window)
         {
@@ -1468,7 +1480,6 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         // default handler inside DefWindowProc will close the window
         break;
-    case WM_GETMINMAXINFO:
     case WM_NCCREATE:
     case WM_NCCALCSIZE:
     default:

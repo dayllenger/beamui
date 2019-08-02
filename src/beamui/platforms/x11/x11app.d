@@ -22,6 +22,7 @@ import beamui.core.events;
 import beamui.core.files;
 import beamui.core.functions : eliminate;
 import beamui.core.logger;
+import beamui.core.math;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
 import beamui.platforms.common.platform;
@@ -610,6 +611,24 @@ final class X11Window : DWindow
             handleWindowStateChange(newState, BoxI.none);
 
         return result;
+    }
+
+    override protected void handleSizeHintsChange()
+    {
+        SizeI mn = minSize;
+        SizeI mx = maxSize;
+        if (!(options & WindowOptions.resizable))
+        {
+            mx.w = mn.w = clamp(width, mn.w, mx.w);
+            mx.h = mn.h = clamp(height, mn.h, mx.h);
+        }
+        XSizeHints sizeHints;
+        sizeHints.flags = PMinSize | PMaxSize;
+        sizeHints.min_width = mn.w;
+        sizeHints.min_height = mn.h;
+        sizeHints.max_width = mx.w;
+        sizeHints.max_height = mx.h;
+        XSetWMNormalHints(x11display, _win, &sizeHints);
     }
 
     private bool _isActive;

@@ -329,14 +329,17 @@ final class SDLWindow : Window
         return res;
     }
 
-    override void setMinimumSize(int w, int h)
+    override protected void handleSizeHintsChange()
     {
-        SDL_SetWindowMinimumSize(_win, max(w, 0), max(h, 0));
-    }
-
-    override void setMaximumSize(int w, int h)
-    {
-        SDL_SetWindowMaximumSize(_win, max(w, 0), max(h, 0));
+        const mn = minSize;
+        SizeI mx = maxSize;
+        // FIXME: SDL does not allow equal sizes for some reason
+        if (mn.w == mx.w)
+            mx.w++;
+        if (mn.h == mx.h)
+            mx.h++;
+        SDL_SetWindowMinimumSize(_win, mn.w, mn.h);
+        SDL_SetWindowMaximumSize(_win, mx.w, mx.h);
     }
 
     override @property bool isActive() const

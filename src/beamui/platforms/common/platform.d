@@ -168,6 +168,11 @@ class Window : CustomEventTarget
         /// Assign current window height
         protected void height(int value) { _h = value; }
 
+        /// Minimum window size, use `setMinMaxSizes` to set
+        SizeI minSize() const { return _minSize; }
+        /// Maximum window size, use `setMinMaxSizes` to set
+        SizeI maxSize() const { return _maxSize; }
+
         /// Current window DPI (dots per inch) value
         float screenDPI() const { return _screenDPI; }
         /// Current window ratio between physical and logical (device-independent) pixels
@@ -245,10 +250,10 @@ class Window : CustomEventTarget
         EventList _eventList;
         WindowOptions _options;
 
-        /// Minimal content size
-        SizeI _minContentSize;
+        SizeI _minSize;
+        SizeI _maxSize = SizeI(10_000, 10_000);
         /// Minimal good looking content size
-        SizeI _goodContentSize;
+        SizeI _natSize;
 
         Window[] _children;
         Window _parent;
@@ -520,14 +525,28 @@ class Window : CustomEventTarget
             tw.minimize();
     }
 
-    /// Set or override the window minimum size
-    void setMinimumSize(int w, int h) // TODO x11 win32
+    /// Set or override the window minimum and maximum sizes. Use a negative value to left it unchanged
+    final void setMinMaxSizes(int minW, int minH, int maxW, int maxH)
     {
-        // override to support
+        if (minW < 0)
+            minW = _minSize.w;
+        if (minH < 0)
+            minH = _minSize.h;
+        if (maxW < 0)
+            maxW = _maxSize.w;
+        if (maxH < 0)
+            maxH = _maxSize.h;
+        const newmin = SizeI(minW, minH);
+        const newmax = SizeI(max(maxW, minW), max(maxH, minH));
+        if (_minSize != newmin || _maxSize != newmax)
+        {
+            _minSize = newmin;
+            _maxSize = newmax;
+            handleSizeHintsChange();
+        }
     }
 
-    /// Set or override the window maximum size
-    void setMaximumSize(int w, int h) // TODO x11 win32
+    protected void handleSizeHintsChange()
     {
         // override to support
     }
@@ -560,23 +579,22 @@ class Window : CustomEventTarget
         _mainWidget.measure();
         const bs = _mainWidget.boundaries;
         // some sane constraints
-        const min = SizeI(clamp(cast(int)bs.min.w, 0, 10_000), clamp(cast(int)bs.min.h, 0, 10_000));
-        const nat = SizeI(clamp(cast(int)bs.nat.w, 0, 10_000), clamp(cast(int)bs.nat.h, 0, 10_000));
-        _minContentSize = min;
-        _goodContentSize = nat;
-        setMaximumSize(10_000, 10_000);
-        // set minimum and then resize
-        setMinimumSize(min.w, min.h);
+        _minSize.w = clamp(cast(int)bs.min.w, _minSize.w, _maxSize.w);
+        _minSize.h = clamp(cast(int)bs.min.h, _minSize.h, _maxSize.h);
+        _natSize.w = clamp(cast(int)bs.nat.w, _minSize.w, _maxSize.w);
+        _natSize.h = clamp(cast(int)bs.nat.h, _minSize.h, _maxSize.h);
+        handleSizeHintsChange();
+        // expand
         int w, h;
         if (options & WindowOptions.expanded)
         {
-            w = max(_windowRect.w, nat.w);
-            h = max(_windowRect.h, nat.h);
+            w = max(_windowRect.w, _natSize.w);
+            h = max(_windowRect.h, _natSize.h);
         }
         else
         {
-            w = max(_windowRect.w, min.w);
-            h = max(_windowRect.h, min.h);
+            w = max(_windowRect.w, _minSize.w);
+            h = max(_windowRect.h, _minSize.h);
         }
         resize(w, h);
     }
