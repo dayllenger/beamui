@@ -142,6 +142,7 @@ static if (USE_OPENGL)
     struct SharedGLContext
     {
         import derelict.opengl3.wgl;
+        import derelict.opengl3.wglext;
 
         HGLRC _context; // opengl context
         HPALETTE _palette;
@@ -171,10 +172,15 @@ static if (USE_OPENGL)
                 if (_context)
                 {
                     bind(device);
-                    bool initialized = initGLBackend();
-                    unbind(device);
-                    if (!initialized)
+                    const success = initGLBackend();
+                    if (success)
                     {
+                        disableVSync();
+                        unbind(device);
+                    }
+                    else
+                    {
+                        unbind(device);
                         uninit();
                         Log.e("Failed to init OpenGL shaders");
                         _error = true;
@@ -224,6 +230,12 @@ static if (USE_OPENGL)
         void swapBuffers(HDC device)
         {
             SwapBuffers(device);
+        }
+
+        private void disableVSync()
+        {
+            if (WGL_EXT_swap_control)
+                wglSwapIntervalEXT(0);
         }
     }
 
