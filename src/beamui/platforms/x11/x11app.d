@@ -1093,6 +1093,24 @@ final class X11Window : DWindow
 
     //===============================================================
 
+    override protected void captureMouse(bool enabled)
+    {
+        debug (mouse)
+            Log.d(enabled ? "Setting capture" : "Releasing capture");
+        if (enabled)
+        {
+            const mask = ButtonPressMask | ButtonReleaseMask | PointerMotionMask | FocusChangeMask;
+            const ret = XGrabPointer(x11display, _win, False, mask,
+                GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+            if (ret != GrabSuccess)
+                return;
+        }
+        else
+            XUngrabPointer(x11display, CurrentTime);
+
+        XSync(x11display, False);
+    }
+
     override void postEvent(CustomEvent event)
     {
         super.postEvent(event);
