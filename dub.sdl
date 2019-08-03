@@ -14,7 +14,7 @@ stringImportPaths "res"
 
 sourceFiles "$PACKAGE_DIR/src/win_app.def" platform="windows-x86-dmd"
 excludedSourceFiles "3rdparty/fontconfig/*" platform="windows"
-excludedSourceFiles "3rdparty/xsync.d"
+excludedSourceFiles "3rdparty/wgl.d" "3rdparty/xsync.d"
 
 libs "z" platform="linux"
 
@@ -28,16 +28,17 @@ subPackage "./examples/overview/"
 versions "FT_28" "SDL_205"
 
 dependency "mofile" version="~>0.2.1"
-// platform here is not supported, but should
-dependency "icontheme" version="~>1.2.2" platform="posix"
-dependency "inilike" version="~>1.1.0" platform="posix"
-dependency "xdgpaths" version="~>0.2.5" platform="posix"
+dependency "icontheme" version="~>1.2.2"  // Posix only
+dependency "inilike" version="~>1.1.0"    // Posix only
+dependency "xdgpaths" version="~>0.2.5"   // Posix only
 
 configuration "library" {
     versions "EmbedStandardResources"
+    sourceFiles "3rdparty/wgl.d" platform="windows"
     dependency "derelict-gl3" version="~>1.0.18"
-    dependency "bindbc-sdl" version="~>0.10.0" platform="posix"
-    dependency "bindbc-freetype" version="~>0.6.0" platform="posix"
+    dependency "bindbc-loader" version="~>0.2.1"
+    dependency "bindbc-freetype" version="~>0.6.0" // Posix only
+    dependency "bindbc-sdl" version="~>0.10.0"     // Posix only
 }
 configuration "console" {
     versions "CONSOLE" "EmbedStandardResources"
@@ -45,18 +46,19 @@ configuration "console" {
 }
 configuration "external" {
     versions "EXTERNAL"
-    dependency "bindbc-sdl" version="~>0.10.0" platform="posix"
-    dependency "bindbc-freetype" version="~>0.6.0" platform="posix"
+    dependency "bindbc-freetype" version="~>0.6.0" // Posix only
 }
 configuration "minimal" {
     versions "NO_OPENGL" "EmbedStandardResources"
-    dependency "bindbc-sdl" version="~>0.10.0" platform="posix"
-    dependency "bindbc-freetype" version="~>0.6.0" platform="posix"
+    sourceFiles "3rdparty/wgl.d" platform="windows"
+    dependency "bindbc-loader" version="~>0.2.1"
+    dependency "bindbc-freetype" version="~>0.6.0" // Posix only
+    dependency "bindbc-sdl" version="~>0.10.0"     // Posix only
 }
 configuration "sdl" {
     versions "SDL" "FREETYPE" "EmbedStandardResources"
-    dependency "bindbc-sdl" version="~>0.10.0"
     dependency "bindbc-freetype" version="~>0.6.0"
+    dependency "bindbc-sdl" version="~>0.10.0"
     dependency "derelict-gl3" version="~>1.0.18"
     copyFiles "libs/windows-x86_64/freetype.dll" "libs/windows-x86_64/SDL2.dll" platform="windows-x86_64"
     copyFiles "libs/windows-x86/freetype.dll" "libs/windows-x86/SDL2.dll" platform="windows-x86"

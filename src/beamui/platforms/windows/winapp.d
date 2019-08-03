@@ -15,7 +15,11 @@ import beamui.core.config;
 
 static if (BACKEND_WIN32):
 import core.runtime;
-import core.sys.windows.windows;
+import core.sys.windows.shellapi;
+import core.sys.windows.winbase;
+import core.sys.windows.windef;
+import core.sys.windows.wingdi;
+import core.sys.windows.winuser;
 import std.string : toStringz;
 import std.utf : toUTF16, toUTF16z;
 import beamui.core.events;
@@ -43,35 +47,27 @@ static if (USE_OPENGL)
     bool setupPixelFormat(HDC device)
     {
         PIXELFORMATDESCRIPTOR pfd = {
-            PIXELFORMATDESCRIPTOR.sizeof, /* size */
-                1, /* version */
-                PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER, /* support double-buffering */
-                PFD_TYPE_RGBA, /* color type */
-                16, /* prefered color depth */
-                0, 0, 0, 0, 0, 0, /* color bits (ignored) */
-                0, /* no alpha buffer */
-                0, /* alpha bits (ignored) */
-                0, /* no accumulation buffer */
-                0, 0, 0, 0, /* accum bits (ignored) */
-                16, /* depth buffer */
-                0, /* no stencil buffer */
-                0, /* no auxiliary buffers */
-                0, /* main layer PFD_MAIN_PLANE */
-                0, /* reserved */
-                0, 0, 0, /* no layer, visible, damage masks */
+            PIXELFORMATDESCRIPTOR.sizeof, // size
+            1,  // version
+            PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER, // support double-buffering
+            PFD_TYPE_RGBA, // color type
+            16, // prefered color depth
+            0, 0, 0, 0, 0, 0, // color bits (ignored)
+            0,  // no alpha buffer
+            0,  // alpha bits (ignored)
+            0,  // no accumulation buffer
+            0, 0, 0, 0, // accum bits (ignored)
+            16, // depth buffer
+            0,  // no stencil buffer
+            0,  // no auxiliary buffers
+            0,  // main layer PFD_MAIN_PLANE
+            0,  // reserved
+            0, 0, 0, // no layer, visible, damage masks
         };
-        int pixelFormat;
 
-        pixelFormat = ChoosePixelFormat(device, &pfd);
-        if (pixelFormat == 0)
+        if (!SetPixelFormat(device, ChoosePixelFormat(device, &pfd), &pfd))
         {
-            Log.e("ChoosePixelFormat failed.");
-            return false;
-        }
-
-        if (SetPixelFormat(device, pixelFormat, &pfd) != TRUE)
-        {
-            Log.e("SetPixelFormat failed.");
+            Log.e("WGL: Failed to set pixel format");
             return false;
         }
         return true;
@@ -79,37 +75,29 @@ static if (USE_OPENGL)
 
     HPALETTE setupPalette(HDC device)
     {
-        import core.stdc.stdlib;
+        import core.stdc.stdlib : malloc, free;
 
-        HPALETTE palette = NULL;
-        int pixelFormat = GetPixelFormat(device);
         PIXELFORMATDESCRIPTOR pfd;
-        LOGPALETTE* pPal;
+        DescribePixelFormat(device, GetPixelFormat(device), pfd.sizeof, &pfd);
+
         int paletteSize;
-
-        DescribePixelFormat(device, pixelFormat, PIXELFORMATDESCRIPTOR.sizeof, &pfd);
-
         if (pfd.dwFlags & PFD_NEED_PALETTE)
         {
             paletteSize = 1 << pfd.cColorBits;
         }
         else
-        {
             return null;
-        }
 
-        pPal = cast(LOGPALETTE*)malloc(LOGPALETTE.sizeof + paletteSize * PALETTEENTRY.sizeof);
+        LOGPALETTE* pPal = cast(LOGPALETTE*)malloc(LOGPALETTE.sizeof + paletteSize * PALETTEENTRY.sizeof);
         pPal.palVersion = 0x300;
         pPal.palNumEntries = cast(ushort)paletteSize;
 
-        /* build a simple RGB color palette */
+        // build a simple RGB color palette
         {
-            int redMask = (1 << pfd.cRedBits) - 1;
-            int greenMask = (1 << pfd.cGreenBits) - 1;
-            int blueMask = (1 << pfd.cBlueBits) - 1;
-            int i;
-
-            for (i = 0; i < paletteSize; ++i)
+            const redMask = (1 << pfd.cRedBits) - 1;
+            const greenMask = (1 << pfd.cGreenBits) - 1;
+            const blueMask = (1 << pfd.cBlueBits) - 1;
+            foreach (i; 0 .. paletteSize)
             {
                 pPal.palPalEntry[i].peRed = cast(ubyte)((((i >> pfd.cRedShift) & redMask) * 255) / redMask);
                 pPal.palPalEntry[i].peGreen = cast(ubyte)((((i >> pfd.cGreenShift) & greenMask) * 255) / greenMask);
@@ -118,7 +106,7 @@ static if (USE_OPENGL)
             }
         }
 
-        palette = CreatePalette(pPal);
+        HPALETTE palette = CreatePalette(pPal);
         free(pPal);
 
         if (palette)
@@ -130,48 +118,36 @@ static if (USE_OPENGL)
         return palette;
     }
 
-    private __gshared bool DERELICT_GL3_RELOADED = false;
-}
-
-const uint CUSTOM_MESSAGE = WM_USER + 1;
-const uint TIMER_MESSAGE = WM_USER + 2;
-
-static if (USE_OPENGL)
-{
     /// Shared opengl context helper
     struct SharedGLContext
     {
-        import derelict.opengl3.wgl;
-        import derelict.opengl3.wglext;
+        import wgl;
 
-        HGLRC _context; // opengl context
-        HPALETTE _palette;
-        bool _error;
+        private HGLRC _context;
+        private HPALETTE _palette;
+        private bool _error;
+
+        bool initialized() const { return _context && !_error; }
+
         /// Init OpenGL context, if not yet initialized
-        bool init(HDC device)
+        void initialize(HDC device)
         {
-            if (_context)
-            {
-                // just setup pixel format
-                if (setupPixelFormat(device))
-                {
-                    Log.i("OpenGL context already exists. Setting pixel format.");
-                }
-                else
-                {
-                    Log.e("Cannot setup pixel format");
-                }
-                return true;
-            }
             if (_error)
-                return false;
-            if (setupPixelFormat(device))
+                return;
+            if (!setupPixelFormat(device))
+            {
+                Log.e("WGL: cannot setup pixel format");
+                _error = true;
+                return;
+            }
+            if (!_context) // first initialization
             {
                 _palette = setupPalette(device);
                 _context = wglCreateContext(device);
                 if (_context)
                 {
                     bind(device);
+                    loadWGLExtensions();
                     const success = initGLBackend();
                     if (success)
                     {
@@ -182,23 +158,15 @@ static if (USE_OPENGL)
                     {
                         unbind(device);
                         uninit();
-                        Log.e("Failed to init OpenGL shaders");
+                        Log.e("Failed to initialize OpenGL");
                         _error = true;
-                        return false;
                     }
-                    return true;
                 }
                 else
                 {
+                    Log.e("WGL: failed to create OpenGL context");
                     _error = true;
-                    return false;
                 }
-            }
-            else
-            {
-                Log.e("Cannot setup pixel format");
-                _error = true;
-                return false;
             }
         }
 
@@ -210,21 +178,19 @@ static if (USE_OPENGL)
                 _context = null;
             }
         }
+
         /// Make this context current for DC
         void bind(HDC device)
         {
             if (!wglMakeCurrent(device, _context))
             {
-                import std.string : format;
-
-                Log.e("wglMakeCurrent is failed. GetLastError=%x".format(GetLastError()));
+                Log.fe("WGL: failed to make context current, err: %x", GetLastError());
             }
         }
         /// Make null context current for DC
         void unbind(HDC device)
         {
-            //wglMakeCurrent(device, null);
-            wglMakeCurrent(null, null);
+            wglMakeCurrent(device, null);
         }
 
         void swapBuffers(HDC device)
@@ -242,6 +208,9 @@ static if (USE_OPENGL)
     /// OpenGL context to share between windows
     __gshared SharedGLContext sharedGLContext;
 }
+
+const uint CUSTOM_MESSAGE = WM_USER + 1;
+const uint TIMER_MESSAGE = WM_USER + 2;
 
 /// Returns true if message is handled, put return value into result
 alias UnknownWindowMessageHandler =
@@ -261,7 +230,6 @@ final class Win32Window : Window
         dstring _title;
         DrawBuf _drawbuf;
 
-        bool useOpengl;
         bool _destroying;
     }
 
@@ -321,12 +289,11 @@ final class Win32Window : Window
 
         static if (USE_OPENGL)
         {
-            // initialize OpenGL rendering
-            HDC device = GetDC(_hwnd);
-
             if (openglEnabled)
             {
-                useOpengl = sharedGLContext.init(device);
+                // initialize OpenGL rendering
+                HDC device = GetDC(_hwnd);
+                sharedGLContext.initialize(device);
             }
         }
 
@@ -715,26 +682,23 @@ final class Win32Window : Window
     private void paint()
     {
         debug (redraw)
-            Log.d("paint");
-        long paintStart = currentTimeMillis;
+            const paintStart = currentTimeMillis;
+
         static if (USE_OPENGL)
         {
-            if (useOpengl && sharedGLContext._context)
-            {
+            if (sharedGLContext.initialized)
                 paintUsingOpenGL();
-            }
             else
-            {
                 paintUsingGDI();
-            }
         }
         else
-        {
             paintUsingGDI();
-        }
-        long paintEnd = currentTimeMillis;
+
         debug (redraw)
+        {
+            const paintEnd = currentTimeMillis;
             Log.d("WM_PAINT handling took ", paintEnd - paintStart, " ms");
+        }
     }
 
     private void paintUsingGDI()
@@ -1074,7 +1038,7 @@ final class Win32Platform : Platform
     ~this()
     {
         destroy(windows);
-        unregisterWndClass();
+        deinitializeWin32Backend();
     }
 
     override int enterMessageLoop()
@@ -1203,15 +1167,6 @@ private bool registerWndClass()
 
 private __gshared bool windowClassRegistered;
 
-private void unregisterWndClass()
-{
-    if (windowClassRegistered)
-    {
-        UnregisterClassW(toUTF16z(WIN_CLASS_NAME), GetModuleHandle(null));
-        windowClassRegistered = false;
-    }
-}
-
 extern (C) Platform initPlatform(AppConf conf)
 {
     DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
@@ -1227,11 +1182,28 @@ extern (C) Platform initPlatform(AppConf conf)
 
     static if (USE_OPENGL)
     {
-        if (!initBasicOpenGL())
+        static import wgl;
+
+        const loaded = initBasicOpenGL() && wgl.loadWGL();
+        if (!loaded)
             disableOpenGL();
     }
 
     return new Win32Platform(conf);
+}
+
+private void deinitializeWin32Backend()
+{
+    static if (USE_OPENGL)
+    {
+        sharedGLContext.uninit();
+    }
+
+    if (windowClassRegistered)
+    {
+        UnregisterClassW(toUTF16z(WIN_CLASS_NAME), GetModuleHandle(null));
+        windowClassRegistered = false;
+    }
 }
 
 extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
