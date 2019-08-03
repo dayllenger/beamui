@@ -14,7 +14,7 @@ stringImportPaths "res"
 
 sourceFiles "$PACKAGE_DIR/src/win_app.def" platform="windows-x86-dmd"
 excludedSourceFiles "3rdparty/fontconfig/*" platform="windows"
-excludedSourceFiles "3rdparty/wgl.d" "3rdparty/xsync.d"
+excludedSourceFiles "3rdparty/glx.d" "3rdparty/wgl.d" "3rdparty/xsync.d"
 
 libs "z" platform="linux"
 
@@ -67,7 +67,8 @@ configuration "x11" {
     platforms "posix"
     versions "X11" "EmbedStandardResources"
     libs "Xext"
-    sourceFiles "3rdparty/xsync.d"
+    sourceFiles "3rdparty/glx.d" "3rdparty/xsync.d"
+    dependency "bindbc-loader" version="~>0.2.1"
     dependency "bindbc-freetype" version="~>0.6.0"
     dependency "derelict-gl3" version="~>1.0.18"
     dependency "x11" version="~>1.0.17"

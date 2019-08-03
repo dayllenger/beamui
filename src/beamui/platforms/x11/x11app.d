@@ -31,12 +31,11 @@ import beamui.platforms.common.startup;
 import beamui.widgets.widget : CursorType;
 static if (USE_OPENGL)
 {
-    import derelict.opengl3.glx;
-    import derelict.opengl3.glxext;
+    import glx;
     import beamui.graphics.gl.api : GLint, GL_TRUE;
     import beamui.graphics.glsupport;
 
-    private __gshared derelict.util.xtypes.XVisualInfo* x11visual;
+    private __gshared XVisualInfo* x11visual;
     private __gshared Colormap x11cmap;
 }
 
@@ -488,6 +487,7 @@ final class X11Window : DWindow
                     }
                     else // working
                     {
+                        loadGLXExtensions();
                         disableVSync();
                     }
                 }
@@ -817,16 +817,15 @@ final class X11Window : DWindow
     {
         private void disableVSync()
         {
-            if (glXSwapIntervalEXT)
+            if (GLX_EXT_swap_control)
             {
                 glXSwapIntervalEXT(x11display, cast(uint)_win, 0);
             }
-            else if (void* proc = glXGetProcAddress("glXSwapIntervalMESA"))
+            else if (GLX_MESA_swap_control)
             {
-                alias func = int function(uint);
-                (cast(func)proc)(0);
+                glXSwapIntervalMESA(0);
             }
-            else if (glXSwapIntervalSGI)
+            else if (GLX_SGI_swap_control)
             {
                 glXSwapIntervalSGI(0);
             }
@@ -1852,7 +1851,7 @@ extern (C) Platform initPlatform(AppConf conf)
 
     static if (USE_OPENGL)
     {
-        if (initBasicOpenGL())
+        if (initBasicOpenGL() && loadGLX())
         {
             GLint[] att = [GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None];
             XWindow root = DefaultRootWindow(x11display);
