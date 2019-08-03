@@ -12,7 +12,7 @@ import beamui.core.config;
 static if (USE_FREETYPE):
 import std.file;
 import std.string;
-import derelict.freetype.ft;
+import bindbc.freetype;
 import beamui.core.collections;
 import beamui.core.functions;
 import beamui.core.logger;
@@ -555,21 +555,6 @@ class FreeTypeFont : Font
     }
 }
 
-private derelict.util.exception.ShouldThrow missingSymFunc(string symName)
-{
-    import std.algorithm : equal;
-    static import derelict.util.exception;
-
-    foreach (s; ["FT_New_Face", "FT_Attach_File", "FT_Set_Pixel_Sizes", "FT_Get_Char_Index",
-            "FT_Load_Glyph", "FT_Done_Face", "FT_Init_FreeType", "FT_Done_FreeType", "FT_Get_Kerning"])
-    {
-        if (symName.equal(s)) // Symbol is used
-            return derelict.util.exception.ShouldThrow.Yes;
-    }
-    // Don't throw for unused symbol
-    return derelict.util.exception.ShouldThrow.No;
-}
-
 /// FreeType based font manager.
 class FreeTypeFontManager : FontManager
 {
@@ -678,40 +663,28 @@ class FreeTypeFontManager : FontManager
 
     this()
     {
-        // load dynamic library
-        try
+        import std.string : strip;
+        import loader = bindbc.loader.sharedlib;
+
+        Log.v("Loading FreeType library");
+        loader.resetErrors();
+        const support = loadFreeType();
+        if (support != ftSupport)
         {
-            Log.v("DerelictFT: Loading FreeType library");
-            if (!DerelictFT)
+            Log.e("Errors when loading FreeType:");
+            foreach (e; loader.errors())
             {
-                Log.w("DerelictFT is null. Compiler bug? Applying workaround to fix it.");
-                version (Android)
-                {
-                    //DerelictFT = new DerelictFTLoader("libft2.so");
-                    DerelictFT = new DerelictFTLoader;
-                }
-                else
-                {
-                    DerelictFT = new DerelictFTLoader;
-                }
+                Log.e(strip(fromStringz(e.error)), " - ", strip(fromStringz(e.message)));
             }
-            DerelictFT.missingSymbolCallback = &missingSymFunc;
-            Log.v("DerelictFT: Missing symbols callback is registered");
-            DerelictFT.load();
-            Log.v("DerelictFT: Loaded");
+            throw new Exception("Cannot load FreeType library");
         }
-        catch (Exception e)
-        {
-            Log.e("Derelict: cannot load freetype shared library: ", e.msg);
-            throw new Exception("Cannot load freetype library");
-        }
+
         Log.v("Initializing FreeType library");
-        // init library
-        int error = FT_Init_FreeType(&_library);
+        const int error = FT_Init_FreeType(&_library);
         if (error)
         {
-            Log.e("Cannot init freetype library, error=", error);
-            throw new Exception("Cannot init freetype library");
+            Log.e("FreeType error code: ", error);
+            throw new Exception("Cannot init FreeType library");
         }
         //FT_Library_SetLcdFilter(_library, FT_LCD_FILTER_DEFAULT);
     }
