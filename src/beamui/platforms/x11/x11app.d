@@ -1261,7 +1261,6 @@ final class X11Platform : Platform
             }
             else if (selectResult == 1)
             {
-                //Log.d("X11: XPending");
                 eventsInQueue = XPending(x11display);
             }
         }
@@ -1272,9 +1271,13 @@ final class X11Platform : Platform
     {
         Log.d("entering message loop");
 
+        // Note: only events we set the mask for are detected!
+        XEvent event;
         while (windows.count > 0)
         {
-            pumpEvents();
+            XNextEvent(x11display, &event);
+            processXEvent(event);
+            XFlush(x11display);
             windows.purge();
         }
         return 0;
@@ -1283,7 +1286,6 @@ final class X11Platform : Platform
     private void pumpEvents()
     {
         XFlush(x11display);
-        // Note: only events we set the mask for are detected!
         while (numberOfPendingEvents())
         {
             if (windows.count == 0)
