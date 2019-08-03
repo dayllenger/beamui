@@ -852,20 +852,15 @@ version (Posix)
     {
         import fontconfig;
 
-        try
-        {
-            DerelictFC.load();
-        }
-        catch (Exception e)
+        const loaded = loadFontConfig();
+        if (!loaded)
         {
             Log.w("Cannot load FontConfig shared library");
             return false;
         }
 
         Log.i("Getting list of fonts using FontConfig");
-        long startts = currentTimeMillis();
-
-        FcFontSet* fontset;
+        const long startts = currentTimeMillis();
 
         FcObjectSet* os = FcObjectSetBuild(FC_FILE.toStringz, FC_WEIGHT.toStringz, FC_FAMILY.toStringz,
                 FC_SLANT.toStringz, FC_SPACING.toStringz, FC_INDEX.toStringz, FC_STYLE.toStringz, null);
@@ -873,7 +868,7 @@ version (Posix)
 
         FcPatternAddBool(pat, FC_SCALABLE.toStringz, 1);
 
-        fontset = FcFontList(null, pat, os);
+        FcFontSet* fontset = FcFontList(null, pat, os);
 
         FcPatternDestroy(pat);
         FcObjectSetDestroy(os);
@@ -930,7 +925,7 @@ version (Posix)
             else if (st.indexOf("extralight") >= 0)
                 face ~= " Extra Light";
 
-            bool italic = fcslant != FC_SLANT_ROMAN;
+            const bool italic = fcslant != FC_SLANT_ROMAN;
 
             ushort weight = 400;
             switch (fcweight)
@@ -975,8 +970,10 @@ version (Posix)
 
         FcFontSetDestroy(fontset);
 
-        long elapsed = currentTimeMillis - startts;
+        const long elapsed = currentTimeMillis - startts;
         Log.i("FontConfig: ", facesFound, " font files registered in ", elapsed, "ms");
+
+        unloadFontConfig();
 
         return facesFound > 0;
     }
