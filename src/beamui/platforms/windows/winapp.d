@@ -159,12 +159,14 @@ static if (USE_OPENGL)
                         unbind(device);
                         uninit();
                         Log.e("Failed to initialize OpenGL");
+                        disableOpenGL();
                         _error = true;
                     }
                 }
                 else
                 {
                     Log.e("WGL: failed to create OpenGL context");
+                    disableOpenGL();
                     _error = true;
                 }
             }
@@ -1184,8 +1186,7 @@ extern (C) Platform initPlatform(AppConf conf)
     {
         static import wgl;
 
-        const loaded = initBasicOpenGL() && wgl.loadWGL();
-        if (!loaded)
+        if (!wgl.loadWGL())
             disableOpenGL();
     }
 

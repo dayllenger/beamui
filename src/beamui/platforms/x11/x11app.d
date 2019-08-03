@@ -473,23 +473,25 @@ final class X11Window : DWindow
                 GLXContext topLevelContext = w._glc;
                 // create context
                 _glc = glXCreateContext(x11display, x11visual, topLevelContext, GL_TRUE);
-                if (!_glc)
-                    disableOpenGL();
-                else
+                bool success;
+                if (_glc)
                 {
                     bindContext();
-                    if (!initGLBackend())
-                        disableOpenGL();
-                    if (!openglEnabled && _glc)
+                    success = initGLBackend();
+                }
+                if (success)
+                {
+                    loadGLXExtensions();
+                    disableVSync();
+                }
+                else
+                {
+                    if (_glc)
                     {
                         glXDestroyContext(x11display, _glc);
                         _glc = null;
                     }
-                    else // working
-                    {
-                        loadGLXExtensions();
-                        disableVSync();
-                    }
+                    disableOpenGL();
                 }
             }
         }
@@ -1851,7 +1853,7 @@ extern (C) Platform initPlatform(AppConf conf)
 
     static if (USE_OPENGL)
     {
-        if (initBasicOpenGL() && loadGLX())
+        if (loadGLX())
         {
             GLint[] att = [GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None];
             XWindow root = DefaultRootWindow(x11display);

@@ -152,58 +152,39 @@ private __gshared GLBackend _glBackend;
 /// Returns GL backend instance. Null if GL is not loaded.
 @property GLBackend glSupport() { return _glBackend; }
 
-/// Load OpenGL 1.0 and 1.1 functions
-bool initBasicOpenGL()
-{
-    if (_glBackend)
-        return true;
-    glNoContext = false;
-    try
-    {
-        DerelictGL3.load();
-        return true;
-    }
-    catch (Exception e)
-    {
-        Log.e("Cannot load GL library: ", e);
-        return false;
-    }
-}
-
 /// Initialize OpenGL backend (call only when current OpenGL context is initialized)
 bool initGLBackend()
 {
+    import std.string : fromStringz, strip;
+    import bindbc.opengl.gl : loadOpenGL;
+    import loader = bindbc.loader.sharedlib;
+    import bindbc.opengl.config : configured = glSupport;
+
     if (_glBackend)
         return true;
+    glNoContext = false;
+
+    // load bindings first
     version (Android)
     {
         Log.d("initGLBackend");
     }
     else
     {
-        // at first reload DerelictGL
-        static bool triedToReloadDerelict;
-        static bool reloaded;
-        if (!triedToReloadDerelict)
+        loader.resetErrors();
+        const support = loadOpenGL();
+        if (support != configured)
         {
-            triedToReloadDerelict = true;
-            try
+            Log.e("Errors when loading OpenGL:");
+            foreach (e; loader.errors())
             {
-                Log.v("Reloading DerelictGL3");
-                DerelictGL3.reload();
-                reloaded = true;
+                Log.e(strip(fromStringz(e.error)), " - ", strip(fromStringz(e.message)));
             }
-            catch (Exception e)
-            {
-                Log.e("Exception while reloading DerelictGL3: ", e);
-            }
-        }
-        if (!reloaded)
-        {
-            Log.e("DerelictGL3 was not reloaded");
+            Log.e("Cannot load GL library");
             return false;
         }
     }
+    // the version must be >= 3.0
     const char major = glGetString(GL_VERSION)[0];
     if (major >= '3')
     {

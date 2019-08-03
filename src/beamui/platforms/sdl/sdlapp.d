@@ -177,16 +177,12 @@ final class SDLWindow : Window
                     success = success || createContext(3, 2);
                     success = success || createContext(3, 1);
                     success = success || createContext(3, 0);
-                    if (!success)
-                    {
-                        disableOpenGL();
-                        _platform.setGLVersions(0, 0);
-                    }
                 }
-                if (success)
+                success = success && initGLBackend();
+                if (!success)
                 {
-                    if (!initGLBackend())
-                        disableOpenGL();
+                    disableOpenGL();
+                    _platform.setGLVersions(0, 0);
                 }
             }
         }
@@ -1348,12 +1344,6 @@ extern (C) Platform initPlatform(AppConf conf)
         else
             Log.e("The version of the SDL library is too low, must be at least 2.0.4");
         return null;
-    }
-
-    static if (USE_OPENGL)
-    {
-        if (!initBasicOpenGL())
-            disableOpenGL();
     }
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)

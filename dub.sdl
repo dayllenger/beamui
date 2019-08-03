@@ -25,7 +25,7 @@ subPackage "./examples/css/"
 subPackage "./examples/opengl/"
 subPackage "./examples/overview/"
 
-versions "FT_28" "SDL_205"
+versions "FT_28" "GL_30" "SDL_205"
 
 dependency "mofile" version="~>0.2.1"
 dependency "icontheme" version="~>1.2.2"  // Posix only
@@ -35,9 +35,9 @@ dependency "xdgpaths" version="~>0.2.5"   // Posix only
 configuration "library" {
     versions "EmbedStandardResources"
     sourceFiles "3rdparty/wgl.d" platform="windows"
-    dependency "derelict-gl3" version="~>1.0.18"
     dependency "bindbc-loader" version="~>0.2.1"
     dependency "bindbc-freetype" version="~>0.6.0" // Posix only
+    dependency "bindbc-opengl" version="~>0.9.0"
     dependency "bindbc-sdl" version="~>0.10.0"     // Posix only
 }
 configuration "console" {
@@ -58,8 +58,8 @@ configuration "minimal" {
 configuration "sdl" {
     versions "SDL" "FREETYPE" "EmbedStandardResources"
     dependency "bindbc-freetype" version="~>0.6.0"
+    dependency "bindbc-opengl" version="~>0.9.0"
     dependency "bindbc-sdl" version="~>0.10.0"
-    dependency "derelict-gl3" version="~>1.0.18"
     copyFiles "libs/windows-x86_64/freetype.dll" "libs/windows-x86_64/SDL2.dll" platform="windows-x86_64"
     copyFiles "libs/windows-x86/freetype.dll" "libs/windows-x86/SDL2.dll" platform="windows-x86"
 }
@@ -70,6 +70,6 @@ configuration "x11" {
     sourceFiles "3rdparty/glx.d" "3rdparty/xsync.d"
     dependency "bindbc-loader" version="~>0.2.1"
     dependency "bindbc-freetype" version="~>0.6.0"
-    dependency "derelict-gl3" version="~>1.0.18"
+    dependency "bindbc-opengl" version="~>0.9.0"
     dependency "x11" version="~>1.0.17"
 }
