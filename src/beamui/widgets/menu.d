@@ -431,8 +431,12 @@ class Menu : ListWidget
         ch = toUpper(ch);
         foreach (i; 0 .. itemCount)
         {
-            if (menuItem(i)._label.hotkey == ch)
-                return i;
+            const item = menuItem(i);
+            if (!item.isSeparator)
+            {
+                if (item._label.hotkey == ch)
+                    return i;
+            }
         }
         return -1;
     }
