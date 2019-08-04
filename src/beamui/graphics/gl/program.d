@@ -67,22 +67,39 @@ class GLProgram
     private string preprocess(string code, ShaderStage stage)
     {
         char[] buf;
-        buf = "#version " ~ glslVersionString ~ "\n" ~ code;
+        buf.reserve(code.length);
+        buf ~= "#version ";
+        buf ~= glslVersionString;
+        buf ~= '\n';
+
+        bool detab;
+        foreach (ch; code)
+        {
+            if (ch != ' ' && ch != '\t')
+                detab = false;
+            if (!detab)
+            {
+                buf ~= ch;
+                if (ch == '\n')
+                    detab = true;
+            }
+        }
 
         // compatibility fixes
         if (glslVersionInt < 150)
             buf = replace(buf, " texture(", " texture2D(");
         if (glslVersionInt < 140)
         {
+            buf = replace(buf, "\nconst ", "\n");
             if (stage == ShaderStage.vertex)
             {
-                buf = replace(buf, "in ", "attribute ");
-                buf = replace(buf, "out ", "varying ");
+                buf = replace(buf, "\nin ", "\nattribute ");
+                buf = replace(buf, "\nout ", "\nvarying ");
             }
             else
             {
-                buf = replace(buf, "in ", "varying ");
-                buf = replace(buf, "out vec4 outColor;", "");
+                buf = replace(buf, "\nin ", "\nvarying ");
+                buf = replace(buf, "\nout vec4 outColor;", "\n");
                 buf = replace(buf, "outColor", "gl_FragColor");
             }
         }
