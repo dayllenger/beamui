@@ -189,10 +189,10 @@ bool initGLBackend()
     if (major >= '3')
     {
         if (GLProgram.determineGLSLVersion())
-            Log.v("GLSL version: ", GLProgram.glslVersionInt);
+            Log.v("GL: GLSL version is ", GLProgram.glslVersionInt);
         else
         {
-            Log.e("Cannot determine GLSL version");
+            Log.e("GL: cannot determine GLSL version");
             return false;
         }
 
@@ -200,7 +200,7 @@ bool initGLBackend()
         if (bak.valid)
         {
             _glBackend = bak;
-            Log.v("OpenGL initialized successfully");
+            Log.v("GL: initialized successfully");
             return true;
         }
         else
@@ -245,17 +245,15 @@ final class GLBackend
 
     this()
     {
-        Log.d("Creating GL backend");
+        Log.d("GL: creating backend");
         _queue = new OpenGLQueue;
-        if (initShaders())
-            Log.d("Shaders compiled successfully");
-        else
-            Log.e("Failed to compile shaders");
+        if (!initShaders())
+            Log.e("GL: failed to create shader programs");
     }
 
     ~this()
     {
-        Log.d("Uniniting shaders");
+        Log.d("GL: uniniting shaders");
         eliminate(_solidFillProgram);
         eliminate(_textureProgram);
         eliminate(_queue);
@@ -263,14 +261,20 @@ final class GLBackend
 
     private bool initShaders()
     {
-        Log.v("Compiling solid fill program");
         _solidFillProgram = new SolidFillProgram;
         if (!_solidFillProgram.valid)
+        {
+            destroy(_solidFillProgram);
+            _solidFillProgram = null;
             return false;
-        Log.v("Compiling texture program");
+        }
         _textureProgram = new TextureProgram;
         if (!_textureProgram.valid)
+        {
+            destroy(_textureProgram);
+            _textureProgram = null;
             return false;
+        }
         return true;
     }
 
@@ -409,7 +413,7 @@ final class GLBackend
         checkgl!glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dx, dy, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
         if (checkError("updateTexture - glTexImage2D"))
         {
-            Log.e("Cannot set image for texture");
+            Log.e("GL: cannot set image for texture");
             return false;
         }
         if (mipmapLevels > 1)
@@ -442,7 +446,7 @@ final class GLBackend
         glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, dx, dy, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
         if (checkError("setTextureImageAlpha - glTexImage2D"))
         {
-            Log.e("Cannot set image for texture");
+            Log.e("GL: cannot set image for texture");
             return false;
         }
         Tex2D.unbind();

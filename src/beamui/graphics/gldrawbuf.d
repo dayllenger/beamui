@@ -280,7 +280,7 @@ private abstract class GLCache
                 Tex2D.bind(_texture);
                 if (_texture == 0)
                     return;
-                Log.d("updateTexture - new texture id: ", _texture);
+                Log.d("GL: updateTexture - new texture id: ", _texture);
             }
             uint* pixels = _drawbuf.scanLine(0);
             if (!glSupport.setTextureImage(_texture, _drawbuf.width, _drawbuf.height, cast(ubyte*)pixels))
@@ -444,7 +444,7 @@ private class GLImageCache : GLCache
         this(GLImageCache cache, int dx, int dy)
         {
             super(cache, dx, dy);
-            Log.v("created image cache page ", dx, "x", dy);
+            Log.v("GL: created image cache page ", dx, "x", dy);
         }
 
         void convertPixelFormat(GLCacheItem item)
@@ -534,7 +534,7 @@ private class GLGlyphCache : GLCache
         this(GLGlyphCache cache, int dx, int dy)
         {
             super(cache, dx, dy);
-            Log.v("created glyph cache page ", dx, "x", dy);
+            Log.v("GL: created glyph cache page ", dx, "x", dy);
         }
 
         GLCacheItem addItem(GlyphRef glyph)

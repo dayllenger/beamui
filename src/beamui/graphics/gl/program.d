@@ -11,6 +11,7 @@ import beamui.core.config;
 static if (USE_OPENGL):
 import std.array : replace;
 import std.string : toStringz;
+import beamui.core.functions : getShortClassName;
 import beamui.core.logger;
 import beamui.graphics.gl.api;
 import beamui.graphics.gl.compiler;
@@ -34,6 +35,8 @@ class GLProgram
     {
         assert(glslVersionInt != 0 && glslVersionString.length > 0);
 
+        Log.v("GL: compiling ", getShortClassName(this));
+
         string vsrc = preprocess(vertexSource, ShaderStage.vertex);
         string fsrc = preprocess(fragmentSource, ShaderStage.fragment);
         const vs = compileShader(vsrc, ShaderStage.vertex);
@@ -47,14 +50,14 @@ class GLProgram
 
         if (!initLocations())
         {
-            Log.e("Some of program locations were not found");
+            Log.e("GL: some of program locations were not found");
             programID = 0;
             return;
         }
 
         relinkProgram(programID);
-        if (programID != 0)
-            Log.v("Program initialized successfully");
+        if (programID == 0)
+            Log.e("GL: cannot relink program");
     }
 
     ~this()
