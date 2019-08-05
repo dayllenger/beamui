@@ -925,131 +925,127 @@ final class X11Window : DWindow
         }
     }
 
-    private Key convertKeyCode(uint x11Key)
+    private Key convertKeyCode(KeySym x11Key, bool numlock)
     {
         import x11.keysymdef;
 
-        alias KeyCode = beamui.core.events.Key;
         switch (x11Key)
         {
-        case XK_0: return KeyCode.alpha0;
-        case XK_1: return KeyCode.alpha1;
-        case XK_2: return KeyCode.alpha2;
-        case XK_3: return KeyCode.alpha3;
-        case XK_4: return KeyCode.alpha4;
-        case XK_5: return KeyCode.alpha5;
-        case XK_6: return KeyCode.alpha6;
-        case XK_7: return KeyCode.alpha7;
-        case XK_8: return KeyCode.alpha8;
-        case XK_9: return KeyCode.alpha9;
-        case XK_A: case XK_a: return KeyCode.A;
-        case XK_B: case XK_b: return KeyCode.B;
-        case XK_C: case XK_c: return KeyCode.C;
-        case XK_D: case XK_d: return KeyCode.D;
-        case XK_E: case XK_e: return KeyCode.E;
-        case XK_F: case XK_f: return KeyCode.F;
-        case XK_G: case XK_g: return KeyCode.G;
-        case XK_H: case XK_h: return KeyCode.H;
-        case XK_I: case XK_i: return KeyCode.I;
-        case XK_J: case XK_j: return KeyCode.J;
-        case XK_K: case XK_k: return KeyCode.K;
-        case XK_L: case XK_l: return KeyCode.L;
-        case XK_M: case XK_m: return KeyCode.M;
-        case XK_N: case XK_n: return KeyCode.N;
-        case XK_O: case XK_o: return KeyCode.O;
-        case XK_P: case XK_p: return KeyCode.P;
-        case XK_Q: case XK_q: return KeyCode.Q;
-        case XK_R: case XK_r: return KeyCode.R;
-        case XK_S: case XK_s: return KeyCode.S;
-        case XK_T: case XK_t: return KeyCode.T;
-        case XK_U: case XK_u: return KeyCode.U;
-        case XK_V: case XK_v: return KeyCode.V;
-        case XK_W: case XK_w: return KeyCode.W;
-        case XK_X: case XK_x: return KeyCode.X;
-        case XK_Y: case XK_y: return KeyCode.Y;
-        case XK_Z: case XK_z: return KeyCode.Z;
-        case XK_F1: return KeyCode.F1;
-        case XK_F2: return KeyCode.F2;
-        case XK_F3: return KeyCode.F3;
-        case XK_F4: return KeyCode.F4;
-        case XK_F5: return KeyCode.F5;
-        case XK_F6: return KeyCode.F6;
-        case XK_F7: return KeyCode.F7;
-        case XK_F8: return KeyCode.F8;
-        case XK_F9: return KeyCode.F9;
-        case XK_F10: return KeyCode.F10;
-        case XK_F11: return KeyCode.F11;
-        case XK_F12: return KeyCode.F12;
-        case XK_F13: return KeyCode.F13;
-        case XK_F14: return KeyCode.F14;
-        case XK_F15: return KeyCode.F15;
-        case XK_F16: return KeyCode.F16;
-        case XK_F17: return KeyCode.F17;
-        case XK_F18: return KeyCode.F18;
-        case XK_F19: return KeyCode.F19;
-        case XK_F20: return KeyCode.F20;
-        case XK_F21: return KeyCode.F21;
-        case XK_F22: return KeyCode.F22;
-        case XK_F23: return KeyCode.F23;
-        case XK_F24: return KeyCode.F24;
-        case XK_BackSpace:
-            return KeyCode.backspace;
-        case XK_space:
-            return KeyCode.space;
-        case XK_Tab:
-            return KeyCode.tab;
-        case XK_Return:
-        case XK_KP_Enter:
-            return KeyCode.enter;
-        case XK_Escape:
-            return KeyCode.escape;
-        case XK_KP_Delete:
-        case XK_Delete:
-            return KeyCode.del;
-        case XK_Insert:
-        case XK_KP_Insert:
-            return KeyCode.ins;
-        case XK_KP_Home:
-        case XK_Home:
-            return KeyCode.home;
-        case XK_KP_Page_Up:
-        case XK_Page_Up:
-            return KeyCode.pageUp;
-        case XK_KP_End:
-        case XK_End:
-            return KeyCode.end;
-        case XK_KP_Page_Down:
-        case XK_Page_Down:
-            return KeyCode.pageDown;
-        case XK_KP_Left:
-        case XK_Left:
-            return KeyCode.left;
-        case XK_KP_Right:
-        case XK_Right:
-            return KeyCode.right;
-        case XK_KP_Up:
-        case XK_Up:
-            return KeyCode.up;
-        case XK_KP_Down:
-        case XK_Down:
-            return KeyCode.down;
-        case XK_Control_L:
-            return KeyCode.lcontrol;
-        case XK_Shift_L:
-            return KeyCode.lshift;
-        case XK_Alt_L:
-            return KeyCode.lalt;
-        case XK_Control_R:
-            return KeyCode.rcontrol;
-        case XK_Shift_R:
-            return KeyCode.rshift;
-        case XK_Alt_R:
-            return KeyCode.ralt;
-        case XK_slash:
-        case XK_KP_Divide:
-            return KeyCode.divide;
-        default:
-            return KeyCode.none;
+            case XK_BackSpace: return Key.backspace;
+            case XK_Tab:    return Key.tab;
+            case XK_Return: return Key.enter;
+            case XK_Pause:  return Key.pause;
+            case XK_Caps_Lock: return Key.caps;
+            case XK_Escape: return Key.escape;
+            case XK_space:  return Key.space;
+            case XK_Page_Up:   return Key.pageUp;
+            case XK_Page_Down: return Key.pageDown;
+            case XK_Home:   return Key.end;
+            case XK_End:    return Key.home;
+            case XK_Left:   return Key.left;
+            case XK_Up:     return Key.up;
+            case XK_Right:  return Key.right;
+            case XK_Down:   return Key.down;
+            case XK_Insert: return Key.ins;
+            case XK_Delete: return Key.del;
+            case XK_KP_Enter:     return Key.enter;
+            case XK_KP_Page_Up:   return numlock ? Key.num9 : Key.pageUp;
+            case XK_KP_Page_Down: return numlock ? Key.num3 : Key.pageDown;
+            case XK_KP_Home:      return numlock ? Key.num7 : Key.end;
+            case XK_KP_End:       return numlock ? Key.num1 : Key.home;
+            case XK_KP_Left:      return numlock ? Key.num4 : Key.left;
+            case XK_KP_Up:        return numlock ? Key.num8 : Key.up;
+            case XK_KP_Right:     return numlock ? Key.num6 : Key.right;
+            case XK_KP_Down:      return numlock ? Key.num2 : Key.down;
+            case XK_KP_Insert:    return numlock ? Key.num0 : Key.ins;
+            case XK_KP_Delete:    return numlock ? Key.numPeriod : Key.del;
+            case XK_KP_Begin:     return numlock ? Key.num5 : Key.none;
+            case XK_KP_Add:       return Key.numAdd;
+            case XK_KP_Subtract:  return Key.numSub;
+            case XK_KP_Multiply:  return Key.numMul;
+            case XK_KP_Divide:    return Key.numDiv;
+            case XK_0: return Key.alpha0;
+            case XK_1: return Key.alpha1;
+            case XK_2: return Key.alpha2;
+            case XK_3: return Key.alpha3;
+            case XK_4: return Key.alpha4;
+            case XK_5: return Key.alpha5;
+            case XK_6: return Key.alpha6;
+            case XK_7: return Key.alpha7;
+            case XK_8: return Key.alpha8;
+            case XK_9: return Key.alpha9;
+            case XK_a: return Key.A;
+            case XK_b: return Key.B;
+            case XK_c: return Key.C;
+            case XK_d: return Key.D;
+            case XK_e: return Key.E;
+            case XK_f: return Key.F;
+            case XK_g: return Key.G;
+            case XK_h: return Key.H;
+            case XK_i: return Key.I;
+            case XK_j: return Key.J;
+            case XK_k: return Key.K;
+            case XK_l: return Key.L;
+            case XK_m: return Key.M;
+            case XK_n: return Key.N;
+            case XK_o: return Key.O;
+            case XK_p: return Key.P;
+            case XK_q: return Key.Q;
+            case XK_r: return Key.R;
+            case XK_s: return Key.S;
+            case XK_t: return Key.T;
+            case XK_u: return Key.U;
+            case XK_v: return Key.V;
+            case XK_w: return Key.W;
+            case XK_x: return Key.X;
+            case XK_y: return Key.Y;
+            case XK_z: return Key.Z;
+            case XK_bracketleft: return Key.bracketOpen;
+            case XK_bracketright: return Key.bracketClose;
+            case XK_minus: return Key.subtract;
+            case XK_comma: return Key.comma;
+            case XK_period: return Key.period;
+            case XK_Super_L: return Key.lwin;
+            case XK_Super_R: return Key.rwin;
+            case XK_F1: return Key.F1;
+            case XK_F2: return Key.F2;
+            case XK_F3: return Key.F3;
+            case XK_F4: return Key.F4;
+            case XK_F5: return Key.F5;
+            case XK_F6: return Key.F6;
+            case XK_F7: return Key.F7;
+            case XK_F8: return Key.F8;
+            case XK_F9: return Key.F9;
+            case XK_F10: return Key.F10;
+            case XK_F11: return Key.F11;
+            case XK_F12: return Key.F12;
+            case XK_F13: return Key.F13;
+            case XK_F14: return Key.F14;
+            case XK_F15: return Key.F15;
+            case XK_F16: return Key.F16;
+            case XK_F17: return Key.F17;
+            case XK_F18: return Key.F18;
+            case XK_F19: return Key.F19;
+            case XK_F20: return Key.F20;
+            case XK_F21: return Key.F21;
+            case XK_F22: return Key.F22;
+            case XK_F23: return Key.F23;
+            case XK_F24: return Key.F24;
+            case XK_Num_Lock: return Key.numlock;
+            case XK_Scroll_Lock: return Key.scroll;
+            case XK_Shift_L: return Key.lshift;
+            case XK_Shift_R: return Key.rshift;
+            case XK_Control_L: return Key.lcontrol;
+            case XK_Control_R: return Key.rcontrol;
+            case XK_Alt_L: return Key.lalt;
+            case XK_Alt_R: return Key.ralt;
+            case XK_semicolon: return Key.semicolon;
+            case XK_grave: return Key.tilde;
+            case XK_apostrophe: return Key.quote;
+            case XK_slash: return Key.slash;
+            case XK_backslash: return Key.backslash;
+            case XK_equal: return Key.equal;
+            default: return Key.none;
         }
     }
 
@@ -1058,59 +1054,54 @@ final class X11Window : DWindow
         KeyMods mods;
         if (x11Keymod & ControlMask)
             mods |= KeyMods.control;
-        if (x11Keymod & LockMask)
-            mods |= KeyMods.alt;
         if (x11Keymod & ShiftMask)
             mods |= KeyMods.shift;
+        if (x11Keymod & Mod1Mask)
+            mods |= KeyMods.alt;
+        if (x11Keymod & Mod4Mask)
+            mods |= KeyMods.meta;
         return mods;
     }
 
-    private void processKeyEvent(KeyAction action, uint x11Key, uint x11Keymod)
+    private void processKeyEvent(KeyAction action, KeySym x11Key, uint x11Keymod)
     {
         debug (keys)
-            Log.fd("processKeyEvent %s, X11 key: 0x%08x, X11 flags: 0x%08x", action, keyCode, flags);
+            Log.fd("processKeyEvent %s, X11 key: 0x%08x, X11 flags: 0x%08x", action, x11Key, x11Keymod);
 
-        const key = convertKeyCode(x11Key);
+        const key = convertKeyCode(x11Key, (x11Keymod & Mod2Mask) != 0);
         KeyMods mods = convertKeyMods(x11Keymod);
         if (action == KeyAction.keyDown)
-        {
             switch (key)
             {
-            case Key.shift:
-                mods |= KeyMods.shift;
-                break;
-            case Key.control:
-                mods |= KeyMods.control;
-                break;
-            case Key.alt:
-                mods |= KeyMods.alt;
-                break;
-            case Key.lshift:
-                mods |= KeyMods.lshift;
-                break;
-            case Key.lcontrol:
-                mods |= KeyMods.lcontrol;
-                break;
-            case Key.lalt:
-                mods |= KeyMods.lalt;
-                break;
-            case Key.rshift:
-                mods |= KeyMods.rshift;
-                break;
-            case Key.rcontrol:
-                mods |= KeyMods.rcontrol;
-                break;
-            case Key.ralt:
-                mods |= KeyMods.ralt;
-                break;
-            case Key.lwin:
-            case Key.rwin:
-                mods |= KeyMods.meta;
-                break;
-            default:
-                break;
+                case Key.shift:    mods |= KeyMods.shift; break;
+                case Key.control:  mods |= KeyMods.control; break;
+                case Key.alt:      mods |= KeyMods.alt; break;
+                case Key.lshift:   mods |= KeyMods.lshift; break;
+                case Key.lcontrol: mods |= KeyMods.lcontrol; break;
+                case Key.lalt:     mods |= KeyMods.lalt; break;
+                case Key.rshift:   mods |= KeyMods.rshift; break;
+                case Key.rcontrol: mods |= KeyMods.rcontrol; break;
+                case Key.ralt:     mods |= KeyMods.ralt; break;
+                case Key.lwin:     mods |= KeyMods.lmeta; break;
+                case Key.rwin:     mods |= KeyMods.rmeta; break;
+                default: break;
             }
-        }
+        else
+            switch (key)
+            {
+                case Key.shift:    mods &= ~KeyMods.shift; break;
+                case Key.control:  mods &= ~KeyMods.control; break;
+                case Key.alt:      mods &= ~KeyMods.alt; break;
+                case Key.lshift:   mods &= ~KeyMods.lshift; break;
+                case Key.lcontrol: mods &= ~KeyMods.lcontrol; break;
+                case Key.lalt:     mods &= ~KeyMods.lalt; break;
+                case Key.rshift:   mods &= ~KeyMods.rshift; break;
+                case Key.rcontrol: mods &= ~KeyMods.rcontrol; break;
+                case Key.ralt:     mods &= ~KeyMods.ralt; break;
+                case Key.lwin:     mods &= ~KeyMods.lmeta; break;
+                case Key.rwin:     mods &= ~KeyMods.rmeta; break;
+                default: break;
+            }
         _keyMods = mods;
 
         debug (keys)
@@ -1439,6 +1430,9 @@ final class X11Platform : Platform
             else
                 XLookupString(&event.xkey, buf.ptr, len - 1, &ks, &compose);
 
+            // convert KeyCode in ubyte range to understandable KeySym
+            ks = XKeycodeToKeysym(x11display, cast(ubyte)event.xkey.keycode, 0);
+
             foreach (ref ch; buf)
             {
                 if (ch == 255 || ch < 32 || ch == 127)
@@ -1462,13 +1456,14 @@ final class X11Platform : Platform
             {
                 debug (x11)
                     Log.d("X11: KeyPress - bytes: ", txt.length, ", text: ", txt, ", dtext: ", dtext);
+                w.processKeyEvent(KeyAction.keyDown, ks, event.xkey.state);
                 w.processTextInput(dtext, event.xkey.state);
             }
             else
             {
                 debug (x11)
                     Log.d("X11: KeyPress");
-                w.processKeyEvent(KeyAction.keyDown, cast(uint)ks, event.xkey.state);
+                w.processKeyEvent(KeyAction.keyDown, ks, event.xkey.state);
             }
             break;
         case KeyRelease:
@@ -1480,12 +1475,15 @@ final class X11Platform : Platform
             }
             debug (x11)
                 Log.d("X11: KeyRelease");
+            /+ not needed for now
             enum len = 100;
             char[len] buf;
             KeySym ks;
             XComposeStatus compose;
             XLookupString(&event.xkey, buf.ptr, len - 1, &ks, &compose);
-            w.processKeyEvent(KeyAction.keyUp, cast(uint)ks, event.xkey.state);
+            +/
+            const ks = XKeycodeToKeysym(x11display, cast(ubyte)event.xkey.keycode, 0);
+            w.processKeyEvent(KeyAction.keyUp, ks, event.xkey.state);
             break;
         case ButtonPress:
             X11Window w = windows[event.xbutton.window];
