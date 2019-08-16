@@ -414,523 +414,515 @@ private:
             DWORD dwFlags, HANDLE hToken, wchar** ppszPath) nothrow @nogc @system;
 
     enum KNOWNFOLDERID FOLDERID_Links = {
-        0xbfb9d5e0,
-        0xc6a9,
-        0x404c,
-        [0xb2,
-        0xb2,
-        0xae,
-        0x6d,
-        0xb6,
-        0xaf,
-        0x49,
-        0x68]
-        };
-    }
+        0xbfb9d5e0, 0xc6a9, 0x404c,
+        [0xb2, 0xb2, 0xae, 0x6d, 0xb6, 0xaf, 0x49, 0x68]
+    };
+}
 
-    /// Returns array of user bookmarked directories
-    RootEntry[] getBookmarkPaths()
+/// Returns array of user bookmarked directories
+RootEntry[] getBookmarkPaths()
+{
+    RootEntry[] res;
+    version (OSX)
     {
-        RootEntry[] res;
-        version (OSX)
+
+    }
+    else version (Android)
+    {
+
+    }
+    else version (Posix)
+    {
+        // Probably we should follow https://www.freedesktop.org/wiki/Specifications/desktop-bookmark-spec/ but it requires XML library.
+        // So for now just try to read GTK3 bookmarks. Should be compatible with GTK file dialogs, Nautilus and other GTK file managers.
+
+        import std.string : startsWith;
+        import std.stdio : File;
+        import std.exception : collectException;
+        import std.uri : decode;
+
+        try
         {
-
-        }
-        else version (Android)
-        {
-
-        }
-        else version (Posix)
-        {
-            // Probably we should follow https://www.freedesktop.org/wiki/Specifications/desktop-bookmark-spec/ but it requires XML library.
-            // So for now just try to read GTK3 bookmarks. Should be compatible with GTK file dialogs, Nautilus and other GTK file managers.
-
-            import std.string : startsWith;
-            import std.stdio : File;
-            import std.exception : collectException;
-            import std.uri : decode;
-
-            try
+            enum fileProtocol = "file://";
+            auto configPath = environment.get("XDG_CONFIG_HOME");
+            if (!configPath.length)
             {
-                enum fileProtocol = "file://";
-                auto configPath = environment.get("XDG_CONFIG_HOME");
-                if (!configPath.length)
+                configPath = buildPath(homePath(), ".config");
+            }
+            auto bookmarksFile = buildPath(configPath, "gtk-3.0/bookmarks");
+            foreach (line; File(bookmarksFile, "r").byLineCopy())
+            {
+                if (line.startsWith(fileProtocol))
                 {
-                    configPath = buildPath(homePath(), ".config");
-                }
-                auto bookmarksFile = buildPath(configPath, "gtk-3.0/bookmarks");
-                foreach (line; File(bookmarksFile, "r").byLineCopy())
-                {
-                    if (line.startsWith(fileProtocol))
+                    auto splitted = line.findSplit(" ");
+                    string path;
+                    if (splitted[1].length)
                     {
-                        auto splitted = line.findSplit(" ");
-                        string path;
-                        if (splitted[1].length)
+                        path = splitted[0][fileProtocol.length .. $];
+                    }
+                    else
+                    {
+                        path = line[fileProtocol.length .. $];
+                    }
+                    path = decode(path);
+                    if (path.isAbsolute)
+                    {
+                        // Note: GTK supports regular files in bookmarks too, but we allow directories only.
+                        bool dirExists;
+                        collectException(path.isDir, dirExists);
+                        if (dirExists)
                         {
-                            path = splitted[0][fileProtocol.length .. $];
-                        }
-                        else
-                        {
-                            path = line[fileProtocol.length .. $];
-                        }
-                        path = decode(path);
-                        if (path.isAbsolute)
-                        {
-                            // Note: GTK supports regular files in bookmarks too, but we allow directories only.
-                            bool dirExists;
-                            collectException(path.isDir, dirExists);
-                            if (dirExists)
+                            dstring label;
+                            if (splitted[1].length)
                             {
-                                dstring label;
-                                if (splitted[1].length)
-                                {
-                                    label = splitted[2].toUTF32;
-                                }
-                                else
-                                {
-                                    label = path.baseName.toUTF32;
-                                }
-                                res ~= RootEntry(RootEntryType.BOOKMARK, path, label);
+                                label = splitted[2].toUTF32;
                             }
+                            else
+                            {
+                                label = path.baseName.toUTF32;
+                            }
+                            res ~= RootEntry(RootEntryType.BOOKMARK, path, label);
                         }
                     }
                 }
             }
-            catch (Exception e)
-            {
-
-            }
         }
-        else version (Windows)
+        catch (Exception e)
         {
-            // This will not include bookmarks of special items and virtual folders like Recent Files or Recycle bin.
 
-            import core.stdc.wchar_ : wcslen;
-            import std.exception : enforce;
-            import std.utf : toUTF16z;
-            import std.file : dirEntries, SpanMode;
-            import std.string : endsWith;
+        }
+    }
+    else version (Windows)
+    {
+        // This will not include bookmarks of special items and virtual folders like Recent Files or Recycle bin.
 
-            try
+        import core.stdc.wchar_ : wcslen;
+        import std.exception : enforce;
+        import std.utf : toUTF16z;
+        import std.file : dirEntries, SpanMode;
+        import std.string : endsWith;
+
+        try
+        {
+            auto shell = enforce(LoadLibraryA("Shell32"));
+            scope (exit)
+                FreeLibrary(shell);
+
+            auto ptrSHGetKnownFolderPath = cast(typeof(&_dummy_SHGetKnownFolderPath))enforce(GetProcAddress(shell,
+                    "SHGetKnownFolderPath"));
+
+            wchar* linksFolderZ;
+            const linksGuid = FOLDERID_Links;
+            enforce(ptrSHGetKnownFolderPath(&linksGuid, 0, null, &linksFolderZ) == S_OK);
+            scope (exit)
+                CoTaskMemFree(linksFolderZ);
+
+            string linksFolder = linksFolderZ[0 .. wcslen(linksFolderZ)].toUTF8;
+
+            enforce(SUCCEEDED(CoInitialize(null)));
+            scope (exit)
+                CoUninitialize();
+
+            HRESULT hres;
+            IShellLink psl;
+
+            auto clsidShellLink = CLSID_ShellLink;
+            auto iidShellLink = IID_IShellLinkW;
+            hres = CoCreateInstance(&clsidShellLink, null, CLSCTX.CLSCTX_INPROC_SERVER,
+                    &iidShellLink, cast(LPVOID*)&psl);
+            enforce(SUCCEEDED(hres), "Failed to create IShellLink instance");
+            scope (exit)
+                psl.Release();
+
+            IPersistFile ppf;
+            auto iidPersistFile = IID_IPersistFile;
+            hres = psl.QueryInterface(cast(GUID*)&iidPersistFile, cast(void**)&ppf);
+            enforce(SUCCEEDED(hres), "Failed to query IPersistFile interface");
+            scope (exit)
+                ppf.Release();
+
+            foreach (linkFile; dirEntries(linksFolder, SpanMode.shallow))
             {
-                auto shell = enforce(LoadLibraryA("Shell32"));
-                scope (exit)
-                    FreeLibrary(shell);
-
-                auto ptrSHGetKnownFolderPath = cast(typeof(&_dummy_SHGetKnownFolderPath))enforce(GetProcAddress(shell,
-                        "SHGetKnownFolderPath"));
-
-                wchar* linksFolderZ;
-                const linksGuid = FOLDERID_Links;
-                enforce(ptrSHGetKnownFolderPath(&linksGuid, 0, null, &linksFolderZ) == S_OK);
-                scope (exit)
-                    CoTaskMemFree(linksFolderZ);
-
-                string linksFolder = linksFolderZ[0 .. wcslen(linksFolderZ)].toUTF8;
-
-                enforce(SUCCEEDED(CoInitialize(null)));
-                scope (exit)
-                    CoUninitialize();
-
-                HRESULT hres;
-                IShellLink psl;
-
-                auto clsidShellLink = CLSID_ShellLink;
-                auto iidShellLink = IID_IShellLinkW;
-                hres = CoCreateInstance(&clsidShellLink, null, CLSCTX.CLSCTX_INPROC_SERVER,
-                        &iidShellLink, cast(LPVOID*)&psl);
-                enforce(SUCCEEDED(hres), "Failed to create IShellLink instance");
-                scope (exit)
-                    psl.Release();
-
-                IPersistFile ppf;
-                auto iidPersistFile = IID_IPersistFile;
-                hres = psl.QueryInterface(cast(GUID*)&iidPersistFile, cast(void**)&ppf);
-                enforce(SUCCEEDED(hres), "Failed to query IPersistFile interface");
-                scope (exit)
-                    ppf.Release();
-
-                foreach (linkFile; dirEntries(linksFolder, SpanMode.shallow))
+                if (!linkFile.name.endsWith(".lnk"))
                 {
-                    if (!linkFile.name.endsWith(".lnk"))
+                    continue;
+                }
+                try
+                {
+                    wchar[MAX_PATH] szGotPath;
+                    WIN32_FIND_DATA wfd;
+
+                    hres = ppf.Load(linkFile.name.toUTF16z, STGM_READ);
+                    enforce(SUCCEEDED(hres), "Failed to load link file");
+
+                    hres = psl.Resolve(null, SLR_FLAGS.SLR_NO_UI);
+                    enforce(SUCCEEDED(hres), "Failed to resolve link");
+
+                    hres = psl.GetPath(szGotPath.ptr, szGotPath.length, &wfd, 0);
+                    enforce(SUCCEEDED(hres), "Failed to get path of link target");
+
+                    auto path = szGotPath[0 .. wcslen(szGotPath.ptr)];
+
+                    if (path.length && path.toUTF8.isDir)
                     {
-                        continue;
-                    }
-                    try
-                    {
-                        wchar[MAX_PATH] szGotPath;
-                        WIN32_FIND_DATA wfd;
-
-                        hres = ppf.Load(linkFile.name.toUTF16z, STGM_READ);
-                        enforce(SUCCEEDED(hres), "Failed to load link file");
-
-                        hres = psl.Resolve(null, SLR_FLAGS.SLR_NO_UI);
-                        enforce(SUCCEEDED(hres), "Failed to resolve link");
-
-                        hres = psl.GetPath(szGotPath.ptr, szGotPath.length, &wfd, 0);
-                        enforce(SUCCEEDED(hres), "Failed to get path of link target");
-
-                        auto path = szGotPath[0 .. wcslen(szGotPath.ptr)];
-
-                        if (path.length && path.toUTF8.isDir)
-                        {
-                            res ~= RootEntry(RootEntryType.BOOKMARK, path.toUTF8,
-                                    linkFile.name.baseName.stripExtension.toUTF32);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-
+                        res ~= RootEntry(RootEntryType.BOOKMARK, path.toUTF8,
+                                linkFile.name.baseName.stripExtension.toUTF32);
                     }
                 }
-            }
-            catch (Exception e)
-            {
+                catch (Exception e)
+                {
 
+                }
             }
         }
-        return res;
-    }
+        catch (Exception e)
+        {
 
-    /// Returns true if directory is root directory (e.g. / or C:\)
-    bool isRoot(in string path)
+        }
+    }
+    return res;
+}
+
+/// Returns true if directory is root directory (e.g. / or C:\)
+bool isRoot(in string path)
+{
+    string root = rootName(path);
+    if (path.equal(root))
+        return true;
+    return false;
+}
+
+/**
+    Check if path is hidden.
+*/
+bool isHidden(in string path)
+{
+    version (Windows)
     {
-        string root = rootName(path);
-        if (path.equal(root))
-            return true;
+        import core.sys.windows.winnt : FILE_ATTRIBUTE_HIDDEN;
+        import std.exception : collectException;
+
+        uint attrs;
+        if (collectException(path.getAttributes(), attrs) is null)
+        {
+            return (attrs & FILE_ATTRIBUTE_HIDDEN) != 0;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else version (Posix)
+    {
+        //TODO: check for hidden attribute on macOS
+        return path.baseName.startsWith(".");
+    }
+    else
+    {
         return false;
     }
+}
 
-    /**
-        Check if path is hidden.
-    */
-    bool isHidden(in string path)
+///
+unittest
+{
+    version (Posix)
     {
-        version (Windows)
-        {
-            import core.sys.windows.winnt : FILE_ATTRIBUTE_HIDDEN;
-            import std.exception : collectException;
-
-            uint attrs;
-            if (collectException(path.getAttributes(), attrs) is null)
-            {
-                return (attrs & FILE_ATTRIBUTE_HIDDEN) != 0;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else version (Posix)
-        {
-            //TODO: check for hidden attribute on macOS
-            return path.baseName.startsWith(".");
-        }
-        else
-        {
-            return false;
-        }
+        assert(!"path/to/normal_file".isHidden());
+        assert("path/to/.hidden_file".isHidden());
     }
+}
 
-    ///
-    unittest
+private bool isReadable(in string filePath)
+{
+    version (Posix)
     {
-        version (Posix)
-        {
-            assert(!"path/to/normal_file".isHidden());
-            assert("path/to/.hidden_file".isHidden());
-        }
+        import core.sys.posix.unistd : access, R_OK;
+        import std.string : toStringz;
+
+        return access(toStringz(filePath), R_OK) == 0;
     }
-
-    private bool isReadable(in string filePath)
+    else
     {
-        version (Posix)
-        {
-            import core.sys.posix.unistd : access, R_OK;
-            import std.string : toStringz;
-
-            return access(toStringz(filePath), R_OK) == 0;
-        }
-        else
-        {
-            // TODO: Windows version
-            return true;
-        }
+        // TODO: Windows version
+        return true;
     }
+}
 
-    private bool isWritable(in string filePath)
+private bool isWritable(in string filePath)
+{
+    version (Posix)
     {
-        version (Posix)
-        {
-            import core.sys.posix.unistd : access, W_OK;
-            import std.string : toStringz;
+        import core.sys.posix.unistd : access, W_OK;
+        import std.string : toStringz;
 
-            return access(toStringz(filePath), W_OK) == 0;
-        }
-        else
-        {
-            // TODO: Windows version
-            return true;
-        }
+        return access(toStringz(filePath), W_OK) == 0;
     }
-
-    private bool isExecutable(in string filePath)
+    else
     {
-        version (Windows)
-        {
-            //TODO: Use GetEffectiveRightsFromAclW? For now just check extension
-            string extension = filePath.extension;
-            foreach (ext; [".exe", ".com", ".bat", ".cmd"])
-            {
-                if (filenameCmp(extension, ext) == 0)
-                    return true;
-            }
-            return false;
-        }
-        else version (Posix)
-        {
-            import core.sys.posix.unistd : access, X_OK;
-            import std.string : toStringz;
-
-            return access(toStringz(filePath), X_OK) == 0;
-        }
-        else
-        {
-            return false;
-        }
+        // TODO: Windows version
+        return true;
     }
+}
 
-    /// Returns parent directory for specified path
-    string parentDir(in string path)
+private bool isExecutable(in string filePath)
+{
+    version (Windows)
     {
-        return buildNormalizedPath(path, "..");
-    }
-
-    /// Check filename with pattern
-    bool filterFilename(in string filename, in string pattern)
-    {
-        return globMatch(filename.baseName, pattern);
-    }
-    /// Filters file name by pattern list
-    bool filterFilename(in string filename, in string[] filters)
-    {
-        if (filters.length == 0)
-            return true; // no filters - show all
-        foreach (pattern; filters)
+        //TODO: Use GetEffectiveRightsFromAclW? For now just check extension
+        string extension = filePath.extension;
+        foreach (ext; [".exe", ".com", ".bat", ".cmd"])
         {
-            if (filterFilename(filename, pattern))
+            if (filenameCmp(extension, ext) == 0)
                 return true;
         }
         return false;
     }
-
-    enum AttrFilter
+    else version (Posix)
     {
-        none = 0,
-        files = 1 << 0, /// Include regular files that match the filters.
-        dirs = 1 << 1, /// Include directories.
-        hidden = 1 << 2, /// Include hidden files and directoroies.
-        parent = 1 << 3, /// Include parent directory (..). Takes effect only with includeDirs.
-        thisDir = 1 << 4, /// Include this directory (.). Takes effect only with  includeDirs.
-        special = 1 << 5, /// Include special files (On Unix: socket and device files, FIFO) that match the filters.
-        readable = 1 << 6, /// Listing only readable files and directories.
-        writable = 1 << 7, /// Listing only writable files and directories.
-        executable = 1 << 8, /// Include only executable files. This filter does not affect directories.
-        allVisible = AttrFilter.files | AttrFilter.dirs, /// Include all non-hidden files and directories without parent directory, this directory and special files.
-        all = AttrFilter.allVisible | AttrFilter.hidden /// Include all files and directories including hidden ones but without parent directory, this directory and special files.
-    }
+        import core.sys.posix.unistd : access, X_OK;
+        import std.string : toStringz;
 
-    /** List directory content
+        return access(toStringz(filePath), X_OK) == 0;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+/// Returns parent directory for specified path
+string parentDir(in string path)
+{
+    return buildNormalizedPath(path, "..");
+}
+
+/// Check filename with pattern
+bool filterFilename(in string filename, in string pattern)
+{
+    return globMatch(filename.baseName, pattern);
+}
+/// Filters file name by pattern list
+bool filterFilename(in string filename, in string[] filters)
+{
+    if (filters.length == 0)
+        return true; // no filters - show all
+    foreach (pattern; filters)
+    {
+        if (filterFilename(filename, pattern))
+            return true;
+    }
+    return false;
+}
+
+enum AttrFilter
+{
+    none = 0,
+    files = 1 << 0, /// Include regular files that match the filters.
+    dirs = 1 << 1, /// Include directories.
+    hidden = 1 << 2, /// Include hidden files and directoroies.
+    parent = 1 << 3, /// Include parent directory (..). Takes effect only with includeDirs.
+    thisDir = 1 << 4, /// Include this directory (.). Takes effect only with  includeDirs.
+    special = 1 << 5, /// Include special files (On Unix: socket and device files, FIFO) that match the filters.
+    readable = 1 << 6, /// Listing only readable files and directories.
+    writable = 1 << 7, /// Listing only writable files and directories.
+    executable = 1 << 8, /// Include only executable files. This filter does not affect directories.
+    allVisible = AttrFilter.files | AttrFilter.dirs, /// Include all non-hidden files and directories without parent directory, this directory and special files.
+    all = AttrFilter.allVisible | AttrFilter.hidden /// Include all files and directories including hidden ones but without parent directory, this directory and special files.
+}
+
+/** List directory content.
 
     Optionally filters file names by filter (not applied to directories).
 
     Returns true if directory exists and listed successfully, false otherwise.
     Throws: Exception if $(D dir) is not directory or some error occured during directory listing.
- */
-    DirEntry[] listDirectory(in string dir, AttrFilter attrFilter = AttrFilter.all, in string[] filters = [])
-    {
-        DirEntry[] entries;
-
-        DirEntry[] dirs;
-        DirEntry[] files;
-        foreach (DirEntry e; dirEntries(dir, SpanMode.shallow))
-        {
-            if (!(attrFilter & AttrFilter.hidden) && e.name.isHidden())
-                continue;
-            if ((attrFilter & AttrFilter.readable) && !e.name.isReadable())
-                continue;
-            if ((attrFilter & AttrFilter.writable) && !e.name.isWritable())
-                continue;
-            if (!e.isDir && (attrFilter & AttrFilter.executable) && !e.name.isExecutable())
-                continue;
-            if (e.isDir && (attrFilter & AttrFilter.dirs))
-            {
-                dirs ~= e;
-            }
-            else if ((attrFilter & AttrFilter.files) && filterFilename(e.name, filters))
-            {
-                if (e.isFile)
-                {
-                    files ~= e;
-                }
-                else if (attrFilter & AttrFilter.special)
-                {
-                    files ~= e;
-                }
-            }
-        }
-        if ((attrFilter & AttrFilter.dirs) && (attrFilter & AttrFilter.thisDir))
-        {
-            entries ~= DirEntry(appendPath(dir, ".")) ~ entries;
-        }
-        if (!isRoot(dir) && (attrFilter & AttrFilter.dirs) && (attrFilter & AttrFilter.parent))
-        {
-            entries ~= DirEntry(appendPath(dir, ".."));
-        }
-        dirs.sort!((a, b) => filenameCmp!(std.path.CaseSensitive.no)(a.name, b.name) < 0);
-        files.sort!((a, b) => filenameCmp!(std.path.CaseSensitive.no)(a.name, b.name) < 0);
-        entries ~= dirs;
-        entries ~= files;
-        return entries;
-    }
-
-    /// Returns true if char ch is / or \ slash
-    bool isPathDelimiter(in char ch)
-    {
-        return ch == '/' || ch == '\\';
-    }
-
-    /// Returns current directory
-    alias currentDir = std.file.getcwd;
-
-    /// Returns current executable path only, including last path delimiter - removes executable name from result of std.file.thisExePath()
-    @property string exePath()
-    {
-        string path = thisExePath();
-        int lastSlash = 0;
-        for (int i = cast(int)path.length - 1; i >= 0; i--)
-            if (path[i] == PATH_DELIMITER)
-            {
-                lastSlash = i;
-                break;
-            }
-        return path[0 .. lastSlash + 1];
-    }
-
-    /// Returns current executable path and file name
-    @property string exeFilename()
-    {
-        return thisExePath();
-    }
-
-    /**
-    Returns application data directory
-
-    On unix, it will return path to subdirectory in home directory - e.g. /home/user/.subdir if ".subdir" is passed as a paramter.
-
-    On windows, it will return path to subdir in APPDATA directory - e.g. C:\Users\User\AppData\Roaming\.subdir.
 */
-    string appDataPath(string subdir = null)
-    {
-        string path;
-        version (Windows)
-        {
-            path = environment.get("APPDATA");
-        }
-        if (path is null)
-            path = homePath;
-        if (subdir !is null)
-        {
-            path ~= PATH_DELIMITER;
-            path ~= subdir;
-        }
-        return path;
-    }
+DirEntry[] listDirectory(in string dir, AttrFilter attrFilter = AttrFilter.all, in string[] filters = [])
+{
+    DirEntry[] entries;
 
-    /// Converts path delimiters to standard for platform inplace in buffer(e.g. / to \ on windows, \ to / on posix), returns buf
-    char[] convertPathDelimiters(char[] buf)
+    DirEntry[] dirs;
+    DirEntry[] files;
+    foreach (DirEntry e; dirEntries(dir, SpanMode.shallow))
     {
-        foreach (ref ch; buf)
+        if (!(attrFilter & AttrFilter.hidden) && e.name.isHidden())
+            continue;
+        if ((attrFilter & AttrFilter.readable) && !e.name.isReadable())
+            continue;
+        if ((attrFilter & AttrFilter.writable) && !e.name.isWritable())
+            continue;
+        if (!e.isDir && (attrFilter & AttrFilter.executable) && !e.name.isExecutable())
+            continue;
+        if (e.isDir && (attrFilter & AttrFilter.dirs))
         {
-            version (Windows)
+            dirs ~= e;
+        }
+        else if ((attrFilter & AttrFilter.files) && filterFilename(e.name, filters))
+        {
+            if (e.isFile)
             {
-                if (ch == '/')
-                    ch = '\\';
+                files ~= e;
             }
-            else
+            else if (attrFilter & AttrFilter.special)
             {
-                if (ch == '\\')
-                    ch = '/';
+                files ~= e;
             }
         }
-        return buf;
     }
-
-    /// Converts path delimiters to standard for platform (e.g. / to \ on windows, \ to / on posix)
-    string convertPathDelimiters(in string src)
+    if ((attrFilter & AttrFilter.dirs) && (attrFilter & AttrFilter.thisDir))
     {
-        char[] buf = src.dup;
-        return cast(string)convertPathDelimiters(buf);
+        entries ~= DirEntry(appendPath(dir, ".")) ~ entries;
     }
-
-    /// Appends file path parts with proper delimiters e.g. appendPath("/home/user", ".myapp", "config") => "/home/user/.myapp/config"
-    string appendPath(string[] pathItems...)
+    if (!isRoot(dir) && (attrFilter & AttrFilter.dirs) && (attrFilter & AttrFilter.parent))
     {
-        char[] buf;
-        foreach (s; pathItems)
+        entries ~= DirEntry(appendPath(dir, ".."));
+    }
+    dirs.sort!((a, b) => filenameCmp!(std.path.CaseSensitive.no)(a.name, b.name) < 0);
+    files.sort!((a, b) => filenameCmp!(std.path.CaseSensitive.no)(a.name, b.name) < 0);
+    entries ~= dirs;
+    entries ~= files;
+    return entries;
+}
+
+/// Returns true if char ch is / or \ slash
+bool isPathDelimiter(in char ch)
+{
+    return ch == '/' || ch == '\\';
+}
+
+/// Returns current directory
+alias currentDir = std.file.getcwd;
+
+/// Returns current executable path only, including last path delimiter - removes executable name from result of std.file.thisExePath()
+@property string exePath()
+{
+    string path = thisExePath();
+    int lastSlash = 0;
+    for (int i = cast(int)path.length - 1; i >= 0; i--)
+        if (path[i] == PATH_DELIMITER)
         {
-            if (buf.length && !isPathDelimiter(buf[$ - 1]))
-                buf ~= PATH_DELIMITER;
-            buf ~= s;
+            lastSlash = i;
+            break;
         }
-        return convertPathDelimiters(buf).dup;
-    }
+    return path[0 .. lastSlash + 1];
+}
 
-    ///  Appends file path parts with proper delimiters (as well converts delimiters inside path to system) to buffer e.g. appendPath("/home/user", ".myapp", "config") => "/home/user/.myapp/config"
-    char[] appendPath(char[] buf, string[] pathItems...)
+/// Returns current executable path and file name
+@property string exeFilename()
+{
+    return thisExePath();
+}
+
+/** Returns application data directory.
+
+    On unix, it will return path to subdirectory in home directory -
+    e.g. /home/user/.subdir if ".subdir" is passed as a parameter.
+
+    On windows, it will return path to subdir in APPDATA directory -
+    e.g. C:\Users\User\AppData\Roaming\.subdir.
+*/
+string appDataPath(string subdir = null)
+{
+    string path;
+    version (Windows)
     {
-        foreach (s; pathItems)
-        {
-            if (buf.length && !isPathDelimiter(buf[$ - 1]))
-                buf ~= PATH_DELIMITER;
-            buf ~= s;
-        }
-        return convertPathDelimiters(buf);
+        path = environment.get("APPDATA");
     }
-
-    /// If pathName is not absolute path, convert it to absolute (assuming it is relative to current directory)
-    string toAbsolutePath(string pathName)
+    if (path is null)
+        path = homePath;
+    if (subdir !is null)
     {
-        import std.path : isAbsolute, absolutePath, buildNormalizedPath;
-
-        if (pathName.isAbsolute)
-            return pathName;
-        return pathName.absolutePath.buildNormalizedPath;
+        path ~= PATH_DELIMITER;
+        path ~= subdir;
     }
+    return path;
+}
 
-    /// For executable name w/o path, find absolute path to executable
-    string findExecutablePath(string executableName)
+/// Converts path delimiters to standard for platform inplace in buffer(e.g. / to \ on windows, \ to / on posix), returns buf
+char[] convertPathDelimiters(char[] buf)
+{
+    foreach (ref ch; buf)
     {
-        import std.string : split;
-
         version (Windows)
         {
-            if (!executableName.endsWith(".exe"))
-                executableName = executableName ~ ".exe";
+            if (ch == '/')
+                ch = '\\';
         }
-        string currentExeDir = dirName(thisExePath());
-        string inCurrentExeDir = absolutePath(buildNormalizedPath(currentExeDir, executableName));
-        if (exists(inCurrentExeDir) && isFile(inCurrentExeDir))
-            return inCurrentExeDir; // found in current directory
-        string pathVariable = environment.get("PATH");
-        if (!pathVariable)
-            return null;
-        string[] paths = pathVariable.split(pathSeparator);
-        foreach (path; paths)
+        else
         {
-            string pathname = absolutePath(buildNormalizedPath(path, executableName));
-            if (exists(pathname) && isFile(pathname))
-                return pathname;
+            if (ch == '\\')
+                ch = '/';
         }
+    }
+    return buf;
+}
+
+/// Converts path delimiters to standard for platform (e.g. / to \ on windows, \ to / on posix)
+string convertPathDelimiters(in string src)
+{
+    char[] buf = src.dup;
+    return cast(string)convertPathDelimiters(buf);
+}
+
+/// Appends file path parts with proper delimiters e.g. appendPath("/home/user", ".myapp", "config") => "/home/user/.myapp/config"
+string appendPath(string[] pathItems...)
+{
+    char[] buf;
+    foreach (s; pathItems)
+    {
+        if (buf.length && !isPathDelimiter(buf[$ - 1]))
+            buf ~= PATH_DELIMITER;
+        buf ~= s;
+    }
+    return convertPathDelimiters(buf).dup;
+}
+
+///  Appends file path parts with proper delimiters (as well converts delimiters inside path to system) to buffer e.g. appendPath("/home/user", ".myapp", "config") => "/home/user/.myapp/config"
+char[] appendPath(char[] buf, string[] pathItems...)
+{
+    foreach (s; pathItems)
+    {
+        if (buf.length && !isPathDelimiter(buf[$ - 1]))
+            buf ~= PATH_DELIMITER;
+        buf ~= s;
+    }
+    return convertPathDelimiters(buf);
+}
+
+/// If pathName is not absolute path, convert it to absolute (assuming it is relative to current directory)
+string toAbsolutePath(string pathName)
+{
+    import std.path : isAbsolute, absolutePath, buildNormalizedPath;
+
+    if (pathName.isAbsolute)
+        return pathName;
+    return pathName.absolutePath.buildNormalizedPath;
+}
+
+/// For executable name w/o path, find absolute path to executable
+string findExecutablePath(string executableName)
+{
+    import std.string : split;
+
+    version (Windows)
+    {
+        if (!executableName.endsWith(".exe"))
+            executableName = executableName ~ ".exe";
+    }
+    string currentExeDir = dirName(thisExePath());
+    string inCurrentExeDir = absolutePath(buildNormalizedPath(currentExeDir, executableName));
+    if (exists(inCurrentExeDir) && isFile(inCurrentExeDir))
+        return inCurrentExeDir; // found in current directory
+    string pathVariable = environment.get("PATH");
+    if (!pathVariable)
         return null;
+    string[] paths = pathVariable.split(pathSeparator);
+    foreach (path; paths)
+    {
+        string pathname = absolutePath(buildNormalizedPath(path, executableName));
+        if (exists(pathname) && isFile(pathname))
+            return pathname;
     }
+    return null;
+}
