@@ -29,30 +29,24 @@ class Win32ColorDrawBuf : ColorDrawBufBase
     private HBITMAP _drawbmp;
 
     /// Returns handle of win32 device context
-    @property HDC dc()
-    {
-        return _drawdc;
-    }
+    @property HDC dc() { return _drawdc; }
     /// Returns handle of win32 bitmap
-    @property HBITMAP bmp()
-    {
-        return _drawdc;
-    }
+    @property HBITMAP bmp() { return _drawdc; }
 
     this(int width, int height)
     {
         resize(width, height);
     }
     /// Create resized copy of ColorDrawBuf
-    this(ColorDrawBuf v, int w, int h)
+    this(ColorDrawBuf src, int width, int height)
     {
-        this(w, h);
+        resize(width, height);
         resetClipping();
         fill(Color.transparent);
-        if (_w == w && _h == h)
-            drawImage(0, 0, v);
+        if (src.width == width && src.height == height)
+            drawImage(0, 0, src);
         else
-            drawRescaled(Rect(0, 0, w, h), v, Rect(0, 0, v.width, v.height));
+            drawRescaled(Rect(0, 0, width, height), src, Rect(0, 0, src.width, src.height));
     }
 
     ~this()
@@ -109,7 +103,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         return res;
     }
 
-    override uint* scanLine(int y)
+    override inout(uint*) scanLine(int y) inout
     {
         if (y >= 0 && y < _h)
             return _pixels + _w * (_h - 1 - y);

@@ -235,9 +235,6 @@ alias Vec2i = Vector!(int, 2);
 alias Vec3i = Vector!(int, 3);
 alias Vec4i = Vector!(int, 4);
 
-/// Alias for 2d float point
-alias PointF = Vec2;
-
 /** Row-major 2x3 floating point matrix, used for 2D affine transformations. Zero by default.
 
     Multiplication and inversion are performed as 3x3 with implicit (0,0,1) last row.
@@ -1165,6 +1162,30 @@ Vec3 triangleNormal(ref float[3] p1, ref float[3] p2, ref float[3] p3)
     return crossProduct(Vec3(p2) - Vec3(p1), Vec3(p3) - Vec3(p2)).normalized();
 }
 
+/** Find intersection point for two vectors with start points `p1`, `p2` and normalized directions `dir1`, `dir2`.
+
+    Returns `p1` if vectors are parallel.
+*/
+Vec2 intersectVectors(Vec2 p1, Vec2 dir1, Vec2 p2, Vec2 dir2)
+{
+    /*
+    L1 = P1 + a * V1
+    L2 = P2 + b * V2
+    P1 + a * V1 = P2 + b * V2
+    a * V1 = (P2 - P1) + b * V2
+    a * (V1 x V2) = (P2 - P1) x V2
+    a = ((P2 - P1) x V2) / (V1 x V2)
+    return P1 + a * V1
+    */
+    const float d1 = crossProduct(p2 - p1, dir2);
+    const float d2 = crossProduct(dir1, dir2);
+    // a * d2 = d1
+    if (!fzero1(d2))
+        return p1 + dir1 * d1 / d2;
+    else
+        return p1; // parallel
+}
+
 //===============================================================
 // Tests
 
@@ -1302,7 +1323,7 @@ unittest
 
 // this form can be used within shaders
 /// Cubic bezier curve
-PointF bezierCubic(const PointF[] cp, float t)
+Vec2 bezierCubic(const Vec2[] cp, float t)
 in
 {
     assert(cp.length > 3);
@@ -1323,12 +1344,12 @@ do
     float b1 = 3.0 * t * u1 * u1;
     float b0 = u1 * u1 * u1;
     // cubic bezier interpolation
-    PointF p = p0 * b0 + p1 * b1 + p2 * b2 + p3 * b3;
+    Vec2 p = p0 * b0 + p1 * b1 + p2 * b2 + p3 * b3;
     return p;
 }
 
 /// Quadratic bezier curve (not tested)
-PointF bezierQuadratic(const PointF[] cp, float t)
+Vec2 bezierQuadratic(const Vec2[] cp, float t)
 in
 {
     assert(cp.length > 2);
@@ -1346,12 +1367,12 @@ do
     float b1 = 2.0 * u1 * t;
     float b0 = u2;
 
-    PointF p = p0 * b0 + p1 * b1 + p2 * b2;
+    Vec2 p = p0 * b0 + p1 * b1 + p2 * b2;
     return p;
 }
 
 /// Cubic bezier (first) derivative
-PointF bezierCubicDerivative(const PointF[] cp, float t)
+Vec2 bezierCubicDerivative(const Vec2[] cp, float t)
 in
 {
     assert(cp.length > 3);
@@ -1368,12 +1389,12 @@ do
     float u3 = 6 * (u1) * t;
     float d0 = 3 * u1 * u1;
     // -3*P0*(1-t)^2 + P1*(3*(1-t)^2 - 6*(1-t)*t) + P2*(6*(1-t)*t - 3*t^2) + 3*P3*t^2
-    PointF d = p0 * (-d0) + p1 * (d0 - u3) + p2 * (u3 - 3 * u2) + (p3 * 3) * u2;
+    Vec2 d = p0 * (-d0) + p1 * (d0 - u3) + p2 * (u3 - 3 * u2) + (p3 * 3) * u2;
     return d;
 }
 
 /// Quadratic bezier (first) derivative
-PointF bezierQuadraticDerivative(const PointF[] cp, float t)
+Vec2 bezierQuadraticDerivative(const Vec2[] cp, float t)
 in
 {
     assert(cp.length > 2);
@@ -1386,39 +1407,39 @@ do
 
     float u1 = (1.0 - t);
     // -2*(1-t)*(p1-p0) + 2*t*(p2-p1);
-    PointF d = (p0 - p1) * -2 * u1 + (p2 - p1) * 2 * t;
+    Vec2 d = (p0 - p1) * -2 * u1 + (p2 - p1) * 2 * t;
     return d;
 }
 
 /// Evaluates cubic bezier direction(tangent) at point t
-PointF bezierCubicDirection(const PointF[] cp, float t)
+Vec2 bezierCubicDirection(const Vec2[] cp, float t)
 {
     auto d = bezierCubicDerivative(cp, t);
     d.normalize();
-    return PointF(tan(d.x), tan(d.y));
+    return Vec2(tan(d.x), tan(d.y));
 }
 
 /// Evaluates quadratic bezier direction(tangent) at point t
-PointF bezierQuadraticDirection(const PointF[] cp, float t)
+Vec2 bezierQuadraticDirection(const Vec2[] cp, float t)
 {
     auto d = bezierQuadraticDerivative(cp, t);
     d.normalize();
-    return PointF(tan(d.x), tan(d.y));
+    return Vec2(tan(d.x), tan(d.y));
 }
 
 /// Templated version of bezier flatten curve function, allocates temporary buffer
-PointF[] flattenBezier(alias BezierFunc)(const PointF[] cp, int segmentCountInclusive)
+Vec2[] flattenBezier(alias BezierFunc)(const Vec2[] cp, int segmentCountInclusive)
         if (is(typeof(BezierFunc) == function))
 {
     if (segmentCountInclusive < 2)
-        return PointF[].init;
-    PointF[] coords = new PointF[segmentCountInclusive + 1];
+        return Vec2[].init;
+    Vec2[] coords = new Vec2[segmentCountInclusive + 1];
     flattenBezier!BezierFunc(cp, segmentCountInclusive, coords);
     return coords;
 }
 
 /// Flatten bezier curve function, writes to provided buffer instead of allocation
-void flattenBezier(alias BezierFunc)(const PointF[] cp, int segmentCountInclusive, PointF[] outSegments)
+void flattenBezier(alias BezierFunc)(const Vec2[] cp, int segmentCountInclusive, Vec2[] outSegments)
         if (is(typeof(BezierFunc) == function))
 {
     if (segmentCountInclusive < 2)
@@ -1432,27 +1453,27 @@ void flattenBezier(alias BezierFunc)(const PointF[] cp, int segmentCountInclusiv
     outSegments[segmentCountInclusive] = BezierFunc(cp, 1f);
 }
 
-/// Flattens cubic bezier curve, returns PointF[segmentCount+1] array or empty array if <1 segments
-PointF[] flattenBezierCubic(const PointF[] cp, int segmentCount)
+/// Flattens cubic bezier curve, returns Vec2[segmentCount+1] array or empty array if <1 segments
+Vec2[] flattenBezierCubic(const Vec2[] cp, int segmentCount)
 {
     return flattenBezier!bezierCubic(cp, segmentCount);
 }
 
-/// Flattens quadratic bezier curve, returns PointF[segmentCount+1] array or empty array if <1 segments
-PointF[] flattenBezierQuadratic(const PointF[] cp, int segmentCount)
+/// Flattens quadratic bezier curve, returns Vec2[segmentCount+1] array or empty array if <1 segments
+Vec2[] flattenBezierQuadratic(const Vec2[] cp, int segmentCount)
 {
     return flattenBezier!bezierQuadratic(cp, segmentCount);
 }
 
 /// Calculates normal vector at point t using direction
-PointF bezierCubicNormal(const PointF[] cp, float t)
+Vec2 bezierCubicNormal(const Vec2[] cp, float t)
 {
     auto d = bezierCubicDirection(cp, t);
     return d.rotated90ccw;
 }
 
 /// Calculates normal vector at point t using direction
-PointF bezierQuadraticNormal(const PointF[] cp, float t)
+Vec2 bezierQuadraticNormal(const Vec2[] cp, float t)
 {
     auto d = bezierQuadraticDerivative(cp, t);
     return d.rotated90ccw;

@@ -602,7 +602,7 @@ private final class OpenGLQueue
     }
 
     /// Add triangle to queue
-    void addTriangle(PointF p1, PointF p2, PointF p3, Color color1, Color color2, Color color3)
+    void addTriangle(Vec2 p1, Vec2 p2, Vec2 p3, Color color1, Color color2, Color color3)
     {
         if (batches.length == 0 || batches[$ - 1].type != OpenGLBatch.BatchType.triangle)
         {
@@ -629,7 +629,7 @@ private final class OpenGLQueue
     }
 
     /// Add line to queue
-    void addLine(PointF p1, PointF p2, Color color1, Color color2)
+    void addLine(Vec2 p1, Vec2 p2, Color color1, Color color2)
     {
         if (batches.length == 0 || batches[$ - 1].type != OpenGLBatch.BatchType.line)
         {

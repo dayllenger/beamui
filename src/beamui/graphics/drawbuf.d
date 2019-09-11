@@ -9,15 +9,17 @@ module beamui.graphics.drawbuf;
 
 public import beamui.core.geometry;
 public import beamui.core.types;
+import std.math;
 import beamui.core.collections : Buf;
 import beamui.core.config;
 import beamui.core.functions;
 import beamui.core.linalg;
 import beamui.core.logger;
+import beamui.core.math;
 import beamui.graphics.colors;
 import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
 
-/// 9-patch image scaling information
+/// 9-patch image scaling information (unscaled frame and scaled middle parts)
 struct NinePatch
 {
     /// Frame (non-scalable) part size for left, top, right, bottom edges.
@@ -51,6 +53,29 @@ alias DrawHandler = void delegate(Rect windowRect, Rect rc);
 /// Drawing buffer - image container which allows to perform some drawing operations
 class DrawBuf : RefCountedObject
 {
+    @property
+    {
+        /// Image buffer bits per pixel value
+        abstract int bpp() const;
+        /// Image width
+        abstract int width() const;
+        /// Image height
+        abstract int height() const;
+
+        /// Nine-patch info pointer, `null` if this is not a nine patch image buffer
+        const(NinePatch)* ninePatch() const { return _ninePatch; }
+        /// ditto
+        void ninePatch(NinePatch* ninePatch)
+        {
+            _ninePatch = ninePatch;
+        }
+        /// Check whether there is nine-patch information available
+        bool hasNinePatch() const
+        {
+            return _ninePatch !is null;
+        }
+    }
+
     private Rect _clipRect;
     private NinePatch* _ninePatch;
     private uint _alpha;
@@ -59,10 +84,13 @@ class DrawBuf : RefCountedObject
     {
         private uint _id;
         /// Unique ID of drawbuf instance, for using with hardware accelerated rendering for caching
-        @property uint id()
-        {
-            return _id;
-        }
+        @property uint id() const { return _id; }
+    }
+
+    debug static
+    {
+        private __gshared int _instanceCount;
+        int instanceCount() { return _instanceCount; }
     }
 
     this()
@@ -72,12 +100,6 @@ class DrawBuf : RefCountedObject
             _id = drawBufIDGenerator++;
         }
         debug _instanceCount++;
-    }
-
-    debug private static __gshared int _instanceCount;
-    debug @property static int instanceCount()
-    {
-        return _instanceCount;
     }
 
     ~this()
@@ -108,11 +130,16 @@ class DrawBuf : RefCountedObject
         }
     }
 
-    /// Current alpha setting (applied to all drawing operations)
-    @property uint alpha() const
+    /// Resize the image buffer, invalidating its content
+    abstract void resize(int width, int height);
+
+    void clear()
     {
-        return _alpha;
+        resetClipping();
     }
+
+    /// Current alpha setting (applied to all drawing operations)
+    @property uint alpha() const { return _alpha; }
     /// ditto
     @property void alpha(uint alpha)
     {
@@ -131,39 +158,11 @@ class DrawBuf : RefCountedObject
         c.addAlpha(_alpha);
     }
 
-    //===============================================================
-    // 9-patch functions (image scaling using 9-patch markup - unscaled frame and scaled middle parts)
-
-    /// Get nine patch information pointer, null if this is not a nine patch image buffer
-    @property const(NinePatch)* ninePatch() const
-    {
-        return _ninePatch;
-    }
-    /// Set nine patch information pointer, null if this is not a nine patch image buffer
-    @property void ninePatch(NinePatch* ninePatch)
-    {
-        _ninePatch = ninePatch;
-    }
-    /// Check whether there is nine-patch information available for drawing buffer
-    @property bool hasNinePatch() const
-    {
-        return _ninePatch !is null;
-    }
-    /// Override to detect nine patch using image 1-pixel border; returns true if 9-patch markup is found in image.
+    /// Detect nine patch using image 1-pixel border. Returns true if 9-patch markup is found in the image
     bool detectNinePatch()
     {
+        // override
         return false;
-    }
-
-    /// Returns current width
-    @property int width() const
-    {
-        return 0;
-    }
-    /// Returns current height
-    @property int height() const
-    {
-        return 0;
     }
 
     //===============================================================
@@ -179,28 +178,25 @@ class DrawBuf : RefCountedObject
     {
         return _clipRect.left != 0 || _clipRect.top != 0 || _clipRect.right != width || _clipRect.bottom != height;
     }
-    /// Returns clipping rectangle
-    @property ref Rect clipRect()
+    /// Clipping rectangle
+    @property ref const(Rect) clipRect() const { return _clipRect; }
+    /// ditto
+    @property void clipRect(const ref Rect rc)
     {
-        return _clipRect;
-    }
-    /// Set new clipping rectangle
-    @property void clipRect(const ref Rect rect)
-    {
-        _clipRect = rect;
+        _clipRect = rc;
         _clipRect.intersect(Rect(0, 0, width, height));
     }
     /// Set new clipping rectangle, intersect with previous one
-    @property void intersectClipRect(const ref Rect rect)
+    void intersectClipRect(const ref Rect rc)
     {
-        _clipRect.intersect(rect);
+        _clipRect.intersect(rc);
     }
     /// Returns true if rectangle is completely clipped out and cannot be drawn.
-    @property bool isClippedOut(const ref Rect rect) const
+    @property bool isClippedOut(const ref Rect rc) const
     {
-        return !_clipRect.intersects(rect);
+        return !_clipRect.intersects(rc);
     }
-    /// Apply clipRect and buffer bounds clipping to rectangle
+    /// Apply `clipRect` and buffer bounds clipping to rectangle
     bool applyClipping(ref Rect rc) const
     {
         rc.intersect(_clipRect);
@@ -214,7 +210,7 @@ class DrawBuf : RefCountedObject
             rc.bottom = height;
         return !rc.empty;
     }
-    /// Apply clipRect and buffer bounds clipping to rectangle
+    /// Apply `clipRect` and buffer bounds clipping to rectangle
     /// If clipping applied to first rectangle, reduce second rectangle bounds proportionally
     bool applyClipping(ref Rect rc, ref Rect rc2) const
     {
@@ -325,14 +321,6 @@ class DrawBuf : RefCountedObject
     void afterDrawing()
     {
     }
-    /// Returns buffer bits per pixel
-    @property int bpp() const
-    {
-        return 0;
-    }
-
-    /// Resize buffer
-    abstract void resize(int width, int height);
 
     //========================================================
     // Drawing methods
@@ -557,130 +545,132 @@ class DrawBuf : RefCountedObject
         }
     }
 
-    /// Draw focus rectangle; vertical gradient supported - colors[0] is top color, colors[1] is bottom color
-    void drawFocusRect(Rect rc, const Color[] colors)
+    /// Draw focus rectangle; vertical gradient is supported - `color1` is top color, `color2` is bottom color
+    void drawFocusRect(Rect rc, Color color1, Color color2 = Color.none)
     {
         // override for faster performance when using OpenGL
-        if (colors.length < 1)
+        if (rc.empty)
             return;
-        Color color1 = colors[0];
-        Color color2 = colors.length > 1 ? colors[1] : color1;
+        if (color2 == Color.none)
+            color2 = color1;
         if (color1.isFullyTransparent && color2.isFullyTransparent)
             return;
         // draw horizontal lines
         foreach (int x; rc.left .. rc.right)
         {
             if ((x ^ rc.top) & 1)
-                fillRect(Rect(x, rc.top, x + 1, rc.top + 1), color1);
+                drawPixel(x, rc.top, color1);
             if ((x ^ (rc.bottom - 1)) & 1)
-                fillRect(Rect(x, rc.bottom - 1, x + 1, rc.bottom), color2);
+                drawPixel(x, rc.bottom - 1, color2);
         }
         // draw vertical lines
         foreach (int y; rc.top + 1 .. rc.bottom - 1)
         {
-            Color color = color1 == color2 ? color1 : Color.blend(color2, color1, 255 / (rc.bottom - rc.top));
+            Color c = color1;
+            if (color1 != color2)
+                c = Color.mix(color1, color2, (y - rc.top) / cast(double)rc.height);
             if ((y ^ rc.left) & 1)
-                fillRect(Rect(rc.left, y, rc.left + 1, y + 1), color);
+                drawPixel(rc.left, y, c);
             if ((y ^ (rc.right - 1)) & 1)
-                fillRect(Rect(rc.right - 1, y, rc.right, y + 1), color);
+                drawPixel(rc.right - 1, y, c);
         }
     }
 
     /// Draw filled triangle in float coordinates; clipping is already applied
-    protected void fillTriangleFClipped(PointF p1, PointF p2, PointF p3, Color color)
+    protected void fillTriangleFClipped(Vec2 p1, Vec2 p2, Vec2 p3, Color color)
     {
         // override and implement it
     }
 
     /// Find intersection of line p1..p2 with clip rectangle
-    protected bool intersectClipF(ref PointF p1, ref PointF p2, ref bool p1moved, ref bool p2moved)
+    protected bool intersectClipF(ref Vec2 p1, ref Vec2 p2, ref bool p1moved, ref bool p2moved)
     {
-        if (p1.x < _clipRect.left && p2.x < _clipRect.left)
+        const cr = RectF.from(_clipRect);
+        if (p1.x < cr.left && p2.x < cr.left)
             return true;
-        if (p1.x >= _clipRect.right && p2.x >= _clipRect.right)
+        if (p1.x >= cr.right && p2.x >= cr.right)
             return true;
-        if (p1.y < _clipRect.top && p2.y < _clipRect.top)
+        if (p1.y < cr.top && p2.y < cr.top)
             return true;
-        if (p1.y >= _clipRect.bottom && p2.y >= _clipRect.bottom)
+        if (p1.y >= cr.bottom && p2.y >= cr.bottom)
             return true;
         // horizontal clip
-        if (p1.x < _clipRect.left && p2.x >= _clipRect.left)
+        if (p1.x < cr.left && p2.x >= cr.left)
         {
             // move p1 to clip left
-            p1 += (p2 - p1) * ((_clipRect.left - p1.x) / (p2.x - p1.x));
+            p1 += (p2 - p1) * ((cr.left - p1.x) / (p2.x - p1.x));
             p1moved = true;
         }
-        if (p2.x < _clipRect.left && p1.x >= _clipRect.left)
+        if (p2.x < cr.left && p1.x >= cr.left)
         {
             // move p2 to clip left
-            p2 += (p1 - p2) * ((_clipRect.left - p2.x) / (p1.x - p2.x));
+            p2 += (p1 - p2) * ((cr.left - p2.x) / (p1.x - p2.x));
             p2moved = true;
         }
-        if (p1.x > _clipRect.right && p2.x < _clipRect.right)
+        if (p1.x > cr.right && p2.x < cr.right)
         {
             // move p1 to clip right
-            p1 += (p2 - p1) * ((_clipRect.right - p1.x) / (p2.x - p1.x));
+            p1 += (p2 - p1) * ((cr.right - p1.x) / (p2.x - p1.x));
             p1moved = true;
         }
-        if (p2.x > _clipRect.right && p1.x < _clipRect.right)
+        if (p2.x > cr.right && p1.x < cr.right)
         {
             // move p1 to clip right
-            p2 += (p1 - p2) * ((_clipRect.right - p2.x) / (p1.x - p2.x));
+            p2 += (p1 - p2) * ((cr.right - p2.x) / (p1.x - p2.x));
             p2moved = true;
         }
         // vertical clip
-        if (p1.y < _clipRect.top && p2.y >= _clipRect.top)
+        if (p1.y < cr.top && p2.y >= cr.top)
         {
             // move p1 to clip left
-            p1 += (p2 - p1) * ((_clipRect.top - p1.y) / (p2.y - p1.y));
+            p1 += (p2 - p1) * ((cr.top - p1.y) / (p2.y - p1.y));
             p1moved = true;
         }
-        if (p2.y < _clipRect.top && p1.y >= _clipRect.top)
+        if (p2.y < cr.top && p1.y >= cr.top)
         {
             // move p2 to clip left
-            p2 += (p1 - p2) * ((_clipRect.top - p2.y) / (p1.y - p2.y));
+            p2 += (p1 - p2) * ((cr.top - p2.y) / (p1.y - p2.y));
             p2moved = true;
         }
-        if (p1.y > _clipRect.bottom && p2.y < _clipRect.bottom)
+        if (p1.y > cr.bottom && p2.y < cr.bottom)
         {
             // move p1 to clip right             <0              <0
-            p1 += (p2 - p1) * ((_clipRect.bottom - p1.y) / (p2.y - p1.y));
+            p1 += (p2 - p1) * ((cr.bottom - p1.y) / (p2.y - p1.y));
             p1moved = true;
         }
-        if (p2.y > _clipRect.bottom && p1.y < _clipRect.bottom)
+        if (p2.y > cr.bottom && p1.y < cr.bottom)
         {
             // move p1 to clip right
-            p2 += (p1 - p2) * ((_clipRect.bottom - p2.y) / (p1.y - p2.y));
+            p2 += (p1 - p2) * ((cr.bottom - p2.y) / (p1.y - p2.y));
             p2moved = true;
         }
         return false;
     }
 
     /// Draw filled triangle in float coordinates
-    void fillTriangleF(PointF p1, PointF p2, PointF p3, Color color)
+    void fillTriangleF(Vec2 p1, Vec2 p2, Vec2 p3, Color color)
     {
         if (_clipRect.empty) // clip rectangle is empty - all drawables are clipped out
             return;
         // apply clipping
-        bool p1insideClip = (p1.x >= _clipRect.left && p1.x < _clipRect.right && p1.y >= _clipRect.top &&
-                p1.y < _clipRect.bottom);
-        bool p2insideClip = (p2.x >= _clipRect.left && p2.x < _clipRect.right && p2.y >= _clipRect.top &&
-                p2.y < _clipRect.bottom);
-        bool p3insideClip = (p3.x >= _clipRect.left && p3.x < _clipRect.right && p3.y >= _clipRect.top &&
-                p3.y < _clipRect.bottom);
-        if (p1insideClip && p2insideClip && p3insideClip)
+        const cr = RectF.from(_clipRect);
+        if (cr.contains(p1) && cr.contains(p2) && cr.contains(p3))
         {
             // all points inside clipping area - no clipping required
             fillTriangleFClipped(p1, p2, p3, color);
             return;
         }
-        // do triangle clipping
         // check if all points outside the same bound
-        if ((p1.x < _clipRect.left && p2.x < _clipRect.left && p3.x < _clipRect.left) ||
-                (p1.x >= _clipRect.right && p2.x >= _clipRect.right && p3.x >= _clipRect.bottom) ||
-                (p1.y < _clipRect.top && p2.y < _clipRect.top && p3.y < _clipRect.top) ||
-                (p1.y >= _clipRect.bottom && p2.y >= _clipRect.bottom && p3.y >= _clipRect.bottom))
+        if (p1.x < cr.left && p2.x < cr.left && p3.x < cr.left)
             return;
+        if (p1.x >= cr.right && p2.x >= cr.right && p3.x >= cr.bottom)
+            return;
+        if (p1.y < cr.top && p2.y < cr.top && p3.y < cr.top)
+            return;
+        if (p1.y >= cr.bottom && p2.y >= cr.bottom && p3.y >= cr.bottom)
+            return;
+
+        // do triangle clipping
         /++
          +                   side 1
          +  p1-------p11------------p21--------------p2
@@ -706,12 +696,12 @@ class DrawBuf : RefCountedObject
          +                      \ /
          +                      p3
          +/
-        PointF p11 = p1;
-        PointF p13 = p1;
-        PointF p21 = p2;
-        PointF p22 = p2;
-        PointF p32 = p3;
-        PointF p33 = p3;
+        Vec2 p11 = p1;
+        Vec2 p13 = p1;
+        Vec2 p21 = p2;
+        Vec2 p22 = p2;
+        Vec2 p32 = p3;
+        Vec2 p33 = p3;
         bool p1moved = false;
         bool p2moved = false;
         bool p3moved = false;
@@ -793,20 +783,20 @@ class DrawBuf : RefCountedObject
     }
 
     /// Draw filled quad in float coordinates
-    void fillQuadF(PointF p1, PointF p2, PointF p3, PointF p4, Color color)
+    void fillQuadF(Vec2 p1, Vec2 p2, Vec2 p3, Vec2 p4, Color color)
     {
         fillTriangleF(p1, p2, p3, color);
         fillTriangleF(p3, p4, p1, color);
     }
 
     /// Draw line of arbitrary width in float coordinates
-    void drawLineF(PointF p1, PointF p2, float width, Color color)
+    void drawLineF(Vec2 p1, Vec2 p2, float width, Color color)
     {
         // direction vector
-        PointF v = (p2 - p1).normalized;
+        Vec2 v = (p2 - p1).normalized;
         // calculate normal vector
         // calculate normal vector : rotate CCW 90 degrees
-        PointF n = v.rotated90ccw();
+        Vec2 n = v.rotated90ccw();
         // rotate CCW 90 degrees
         n.y = v.x;
         n.x = -v.y;
@@ -816,67 +806,38 @@ class DrawBuf : RefCountedObject
         fillQuadF(p1 - n, p2 - n, p2 + n, p1 + n, color);
     }
 
-    // find intersection point for two vectors with start points p1, p2 and normalized directions dir1, dir2
-    protected static PointF intersectVectors(PointF p1, PointF dir1, PointF p2, PointF dir2)
-    {
-        /*
-        L1 = P1 + a * V1
-        L2 = P2 + b * V2
-        P1 + a * V1 = P2 + b * V2
-        a * V1 = (P2 - P1) + b * V2
-        a * (V1 X V2) = (P2 - P1) X V2
-        a = (P2 - P1) * V2 / (V1*V2)
-        return P1 + a * V1
-        */
-        // just return middle point
-        PointF p2p1 = (p2 - p1); //.normalized;
-        float d1 = crossProduct(p2p1, dir2);
-        float d2 = crossProduct(dir1, dir2);
-        // a * d1 = d2
-        if (d2 >= -0.1f && d2 <= 0.1f)
-        {
-            return p1; //PointF((p1.x + p2.x)/2, (p1.y + p2.y)/2);
-        }
-        float a = d1 / d2;
-        return p1 + dir1 * a;
-    }
-
-    protected void calcLineSegmentQuad(PointF p0, PointF p1, PointF p2, PointF p3, float width, ref PointF[4] quad)
+    protected void calcLineSegmentQuad(Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3, float width, ref Vec2[4] quad)
     {
         // direction vector
-        PointF v = (p2 - p1).normalized;
+        Vec2 v = (p2 - p1).normalized;
         // calculate normal vector : rotate CCW 90 degrees
-        PointF n = v.rotated90ccw();
+        Vec2 n = v.rotated90ccw();
         // offset by normal * half_width
         n *= width / 2;
         // draw line using quad
-        PointF pp10 = p1 - n;
-        PointF pp20 = p2 - n;
-        PointF pp11 = p1 + n;
-        PointF pp21 = p2 + n;
-        if ((p1 - p0).length > 0.1f)
+        Vec2 pp10 = p1 - n;
+        Vec2 pp20 = p2 - n;
+        Vec2 pp11 = p1 + n;
+        Vec2 pp21 = p2 + n;
+        if ((p1 - p0).magnitudeSquared > 0.1f)
         {
             // has prev segment
-            PointF prevv = (p1 - p0).normalized;
-            PointF prevn = prevv.rotated90ccw();
-            PointF prev10 = p1 - prevn * width / 2;
-            PointF prev11 = p1 + prevn * width / 2;
-            PointF intersect0 = intersectVectors(pp10, -v, prev10, prevv);
-            PointF intersect1 = intersectVectors(pp11, -v, prev11, prevv);
-            pp10 = intersect0;
-            pp11 = intersect1;
+            Vec2 prevv = (p1 - p0).normalized;
+            Vec2 prevn = prevv.rotated90ccw();
+            Vec2 prev10 = p1 - prevn * width / 2;
+            Vec2 prev11 = p1 + prevn * width / 2;
+            pp10 = intersectVectors(pp10, -v, prev10, prevv);
+            pp11 = intersectVectors(pp11, -v, prev11, prevv);
         }
-        if ((p3 - p2).length > 0.1f)
+        if ((p3 - p2).magnitudeSquared > 0.1f)
         {
             // has next segment
-            PointF nextv = (p3 - p2).normalized;
-            PointF nextn = nextv.rotated90ccw();
-            PointF next20 = p2 - nextn * width / 2;
-            PointF next21 = p2 + nextn * width / 2;
-            PointF intersect0 = intersectVectors(pp20, v, next20, -nextv);
-            PointF intersect1 = intersectVectors(pp21, v, next21, -nextv);
-            pp20 = intersect0;
-            pp21 = intersect1;
+            Vec2 nextv = (p3 - p2).normalized;
+            Vec2 nextn = nextv.rotated90ccw();
+            Vec2 next20 = p2 - nextn * width / 2;
+            Vec2 next21 = p2 + nextn * width / 2;
+            pp20 = intersectVectors(pp20, v, next20, -nextv);
+            pp21 = intersectVectors(pp21, v, next21, -nextv);
         }
         quad[0] = pp10;
         quad[1] = pp20;
@@ -885,16 +846,16 @@ class DrawBuf : RefCountedObject
     }
     /// Draw line of arbitrary width in float coordinates p1..p2 with angle based on
     /// Previous (p0..p1) and next (p2..p3) segments
-    void drawLineSegmentF(PointF p0, PointF p1, PointF p2, PointF p3, float width, Color color)
+    void drawLineSegmentF(Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3, float width, Color color)
     {
-        PointF[4] quad;
+        Vec2[4] quad;
         calcLineSegmentQuad(p0, p1, p2, p3, width, quad);
         fillQuadF(quad[0], quad[1], quad[2], quad[3], color);
     }
 
     /// Draw poly line of arbitrary width in float coordinates;
     /// When cycled is true, connect first and last point (optionally fill inner area)
-    void polyLineF(PointF[] points, float width, Color color, bool cycled = false,
+    void polyLineF(const Vec2[] points, float width, Color color, bool cycled = false,
             Color innerAreaColor = Color.transparent)
     {
         if (points.length < 2)
@@ -909,12 +870,10 @@ class DrawBuf : RefCountedObject
         int len = cast(int)points.length;
         if (hasInnerArea)
         {
-            PointF[] innerArea;
-            innerArea.assumeSafeAppend;
-            //Log.d("fill poly inner: ", points);
+            Buf!Vec2 innerArea;
             for (int i = 0; i < len; i++)
             {
-                PointF[4] quad;
+                Vec2[4] quad;
                 int index0 = i - 1;
                 int index1 = i;
                 int index2 = i + 1;
@@ -937,11 +896,10 @@ class DrawBuf : RefCountedObject
                         index3 = len - 1;
                     }
                 }
-                //Log.d("lineSegment - inner ", index0, ", ", index1, ", ", index2, ", ", index3);
                 calcLineSegmentQuad(points[index0], points[index1], points[index2], points[index3], width, quad);
                 innerArea ~= quad[3];
             }
-            fillPolyF(innerArea, innerAreaColor);
+            fillPolyF(innerArea[], innerAreaColor);
         }
         if (!color.isFullyTransparent)
         {
@@ -969,7 +927,6 @@ class DrawBuf : RefCountedObject
                         index3 = len - 1;
                     }
                 }
-                //Log.d("lineSegment - outer ", index0, ", ", index1, ", ", index2, ", ", index3);
                 if (cycled || i + 1 < len)
                     drawLineSegmentF(points[index0], points[index1], points[index2], points[index3], width, color);
             }
@@ -977,27 +934,26 @@ class DrawBuf : RefCountedObject
     }
 
     /// Draw filled polyline (vertexes must be in clockwise order)
-    void fillPolyF(PointF[] points, Color color)
+    void fillPolyF(const Vec2[] points, Color color)
     {
         if (points.length < 3)
-        {
             return;
-        }
         if (points.length == 3)
         {
             fillTriangleF(points[0], points[1], points[2], color);
             return;
         }
-        PointF[] list = points.dup;
+
+        Vec2[] list = points.dup;
         bool moved;
         while (list.length > 3)
         {
             moved = false;
             for (int i = 0; i < list.length; i++)
             {
-                PointF p1 = list[i + 0];
-                PointF p2 = list[(i + 1) % list.length];
-                PointF p3 = list[(i + 2) % list.length];
+                Vec2 p1 = list[i + 0];
+                Vec2 p2 = list[(i + 1) % list.length];
+                Vec2 p3 = list[(i + 2) % list.length];
                 float cross = crossProduct(p2 - p1, p3 - p2);
                 if (cross > 0)
                 {
@@ -1026,8 +982,6 @@ class DrawBuf : RefCountedObject
     void drawEllipseF(float centerX, float centerY, float xRadius, float yRadius, float lineWidth,
             Color lineColor, Color fillColor = Color.transparent)
     {
-        import std.math : sin, cos, PI;
-
         if (xRadius < 0)
             xRadius = -xRadius;
         if (yRadius < 0)
@@ -1037,24 +991,21 @@ class DrawBuf : RefCountedObject
             numLines = 4;
         float step = PI * 2 / numLines;
         float angle = 0;
-        PointF[] points;
-        points.assumeSafeAppend;
-        for (int i = 0; i < numLines; i++)
+        Buf!Vec2 points;
+        foreach (i; 0 .. numLines)
         {
             float x = centerX + cos(angle) * xRadius;
             float y = centerY + sin(angle) * yRadius;
             angle += step;
-            points ~= PointF(x, y);
+            points ~= Vec2(x, y);
         }
-        polyLineF(points, lineWidth, lineColor, true, fillColor);
+        polyLineF(points[], lineWidth, lineColor, true, fillColor);
     }
 
     /// Draw ellipse arc or filled ellipse arc
     void drawEllipseArcF(float centerX, float centerY, float xRadius, float yRadius, float startAngle,
             float endAngle, float lineWidth, Color lineColor, Color fillColor = Color.transparent)
     {
-        import std.math : sin, cos, PI;
-
         if (xRadius < 0)
             xRadius = -xRadius;
         if (yRadius < 0)
@@ -1071,21 +1022,20 @@ class DrawBuf : RefCountedObject
             numLines = 4;
         float step = angleDiff / numLines;
         float angle = startAngle;
-        PointF[] points;
-        points.assumeSafeAppend;
-        points ~= PointF(centerX, centerY);
+        Buf!Vec2 points;
+        points ~= Vec2(centerX, centerY);
         for (int i = 0; i < numLines; i++)
         {
             float x = centerX + cos(angle) * xRadius;
             float y = centerY + sin(angle) * yRadius;
             angle += step;
-            points ~= PointF(x, y);
+            points ~= Vec2(x, y);
         }
-        polyLineF(points, lineWidth, lineColor, true, fillColor);
+        polyLineF(points[], lineWidth, lineColor, true, fillColor);
     }
 
     /// Draw poly line of width == 1px; when cycled is true, connect first and last point
-    void polyLine(Point[] points, Color color, bool cycled)
+    void polyLine(const Point[] points, Color color, bool cycled)
     {
         if (points.length < 2)
             return;
@@ -1102,22 +1052,21 @@ class DrawBuf : RefCountedObject
     {
         if (!clipLine(_clipRect, p1, p2))
             return;
-        // from rosettacode.org
-        import std.math : abs;
 
-        immutable int dx = p2.x - p1.x;
-        immutable int ix = (dx > 0) - (dx < 0);
-        immutable int dx2 = abs(dx) * 2;
-        int dy = p2.y - p1.y;
-        immutable int iy = (dy > 0) - (dy < 0);
-        immutable int dy2 = abs(dy) * 2;
+        // from rosettacode.org
+        const int dx = p2.x - p1.x;
+        const int ix = (dx > 0) - (dx < 0);
+        const int dx2 = abs(dx) * 2;
+        const int dy = p2.y - p1.y;
+        const int iy = (dy > 0) - (dy < 0);
+        const int dy2 = abs(dy) * 2;
         drawPixel(p1.x, p1.y, color);
         if (dx2 >= dy2)
         {
-            int error = dy2 - (dx2 / 2);
+            int error = dy2 - dx2 / 2;
             while (p1.x != p2.x)
             {
-                if (error >= 0 && (error || (ix > 0)))
+                if (error >= 0 && (error || ix > 0))
                 {
                     error -= dx2;
                     p1.y += iy;
@@ -1129,10 +1078,10 @@ class DrawBuf : RefCountedObject
         }
         else
         {
-            int error = dx2 - (dy2 / 2);
+            int error = dx2 - dy2 / 2;
             while (p1.y != p2.y)
             {
-                if (error >= 0 && (error || (iy > 0)))
+                if (error >= 0 && (error || iy > 0))
                 {
                     error -= dy2;
                     p1.x += ix;
@@ -1145,12 +1094,10 @@ class DrawBuf : RefCountedObject
     }
 
     // basically a modified drawEllipseArcF that doesn't draw but gives you the lines instead!
-    static PointF[] makeArcPath(PointF center, float radiusX, float radiusY, float startAngle, float endAngle)
+    static Vec2[] makeArcPath(Vec2 center, float radiusX, float radiusY, float startAngle, float endAngle)
     {
-        import std.math : sin, cos, PI, abs, sqrt;
-
-        radiusX = abs(radiusX);
-        radiusY = abs(radiusY);
+        radiusX = fabs(radiusX);
+        radiusY = fabs(radiusY);
         startAngle = startAngle * 2 * PI / 360;
         endAngle = endAngle * 2 * PI / 360;
         if (endAngle < startAngle)
@@ -1163,28 +1110,26 @@ class DrawBuf : RefCountedObject
             numLines = 4;
         float step = angleDiff / numLines;
         float angle = startAngle;
-        PointF[] points;
+        Vec2[] points;
         points.assumeSafeAppend;
-        if (radiusX == 0)
+        if (!fzero6(radiusX))
         {
-            points ~= PointF(center.x, center.y);
-        }
-        else
-            for (int i; i < numLines + 1; i++)
+            foreach (i; 0 .. numLines + 1)
             {
                 float x = center.x + cos(angle) * radiusX;
                 float y = center.y + sin(angle) * radiusY;
                 angle += step;
-                points ~= PointF(x, y);
+                points ~= Vec2(x, y);
             }
+        }
+        else
+            points ~= Vec2(center.x, center.y);
         return points;
     }
 
     // calculates inwards XY offsets from rect corners
-    static PointF[4] calcRectRoundedCornerRadius(Vec4 corners, float w, float h, bool keepSquareXY)
+    static Vec2[4] calcRectRoundedCornerRadius(Vec4 corners, float w, float h, bool keepSquareXY)
     {
-        import std.algorithm.comparison : min;
-
         // clamps radius to corner
         static float clampRadius(float r, float len)
         {
@@ -1194,31 +1139,29 @@ class DrawBuf : RefCountedObject
         }
 
         if (keepSquareXY)
-        {
-            auto minSize = min(w, h);
-            w = h = minSize;
-        }
-        PointF[4] cornerRad;
-        cornerRad[0] = PointF(clampRadius(corners.x, w), clampRadius(corners.x, h));
-        cornerRad[1] = PointF(-clampRadius(corners.y, w), clampRadius(corners.y, h));
-        cornerRad[2] = PointF(clampRadius(corners.z, w), -clampRadius(corners.z, h));
-        cornerRad[3] = PointF(-clampRadius(corners.w, w), -clampRadius(corners.w, h));
+            w = h = min(w, h);
+
+        Vec2[4] cornerRad;
+        cornerRad[0] = Vec2(clampRadius(corners.x, w), clampRadius(corners.x, h));
+        cornerRad[1] = Vec2(-clampRadius(corners.y, w), clampRadius(corners.y, h));
+        cornerRad[2] = Vec2(clampRadius(corners.z, w), -clampRadius(corners.z, h));
+        cornerRad[3] = Vec2(-clampRadius(corners.w, w), -clampRadius(corners.w, h));
         return cornerRad;
     }
 
     /// Builds outer rounded rect path
     /// The last parameter optionally writes out indices of first segment of corners excluding top-left
-    static PointF[] makeRoundedRectPath(Rect rect, Vec4 corners, bool keepSquareXY,
+    static Vec2[] makeRoundedRectPath(Rect rect, Vec4 corners, bool keepSquareXY,
             size_t[] outCornerSegmentsStart = null)
     {
         import std.range : chain;
         import std.array : array;
 
-        PointF[4] cornerRad = calcRectRoundedCornerRadius(corners, rect.width, rect.height, keepSquareXY);
-        PointF topLeftC = PointF(rect.left, rect.top) + cornerRad[0];
-        PointF topRightC = PointF(rect.left, rect.top) + cornerRad[1] + PointF(rect.width, 0);
-        PointF botLeftC = PointF(rect.left, rect.top) + cornerRad[2] + PointF(0, rect.height);
-        PointF botRightC = PointF(rect.left, rect.top) + cornerRad[3] + PointF(rect.width, rect.height);
+        Vec2[4] cornerRad = calcRectRoundedCornerRadius(corners, rect.width, rect.height, keepSquareXY);
+        Vec2 topLeftC = Vec2(rect.left, rect.top) + cornerRad[0];
+        Vec2 topRightC = Vec2(rect.left, rect.top) + cornerRad[1] + Vec2(rect.width, 0);
+        Vec2 botLeftC = Vec2(rect.left, rect.top) + cornerRad[2] + Vec2(0, rect.height);
+        Vec2 botRightC = Vec2(rect.left, rect.top) + cornerRad[3] + Vec2(rect.width, rect.height);
         auto lt = makeArcPath(topLeftC, cornerRad[0].x, cornerRad[0].y, 180, 270);
         auto rt = makeArcPath(topRightC, cornerRad[1].x, cornerRad[1].y, 270, 0);
         auto lb = makeArcPath(botLeftC, cornerRad[2].x, cornerRad[2].y, 90, 180);
@@ -1241,17 +1184,17 @@ class DrawBuf : RefCountedObject
         // fill inner area, doing this manually by sectors to reduce flickering artifacts
         if (!fillColor.isFullyTransparent)
         {
-            PointF center = PointF(rect.middleX, rect.middleY);
-            for (int i = 0; i < fullPath.length - 1; i++)
+            const center = Vec2(rect.middleX, rect.middleY);
+            foreach (i; 1 .. fullPath.length)
             {
-                fillTriangleF(center, fullPath[i], fullPath[i + 1], fillColor);
+                fillTriangleF(center, fullPath[i - 1], fullPath[i], fillColor);
             }
         }
         if (!frameColor.isFullyTransparent && frameWidth > 0)
         {
-            for (int i = 0; i < fullPath.length - 1; i++)
+            foreach (i; 1 .. fullPath.length)
             {
-                drawLineF(fullPath[i], fullPath[i + 1], frameWidth, frameColor);
+                drawLineF(fullPath[i - 1], fullPath[i], frameWidth, frameColor);
             }
         }
     }
@@ -1261,11 +1204,6 @@ class DrawBuf : RefCountedObject
     {
         // override it for OpenGL draw buffer
         Log.w("drawCustomOpenGLScene is called for non-OpenGL DrawBuf");
-    }
-
-    void clear()
-    {
-        resetClipping();
     }
 }
 
@@ -1307,77 +1245,69 @@ struct ClipRectSaver
 
 class ColorDrawBufBase : DrawBuf
 {
+    override @property
+    {
+        int bpp() const { return 32; }
+        int width() const { return _w; }
+        int height() const { return _h; }
+    }
+
     protected int _w;
     protected int _h;
 
-    override @property int bpp() const
-    {
-        return 32;
-    }
-    override @property int width() const
-    {
-        return _w;
-    }
-    override @property int height() const
-    {
-        return _h;
-    }
-
-    /// Returns pointer to ARGB scanline, null if y is out of range or buffer doesn't provide access to its memory
-    uint* scanLine(int y)
+    /// Returns pointer to ARGB scanline, `null` if `y` is out of range or buffer doesn't provide access to its memory
+    inout(uint*) scanLine(int y) inout
     {
         return null;
     }
 
     override void drawFragment(int x, int y, DrawBuf src, Rect srcrect)
     {
+        auto img = cast(ColorDrawBufBase)src;
+        if (!img)
+            return;
         Rect dstrect = Rect(x, y, x + srcrect.width, y + srcrect.height);
         if (applyClipping(dstrect, srcrect))
         {
             if (src.applyClipping(srcrect, dstrect))
             {
-                int dx = srcrect.width;
-                int dy = srcrect.height;
-                ColorDrawBufBase colorDrawBuf = cast(ColorDrawBufBase)src;
-                if (colorDrawBuf !is null)
+                const int dx = srcrect.width;
+                const int dy = srcrect.height;
+                foreach (yy; 0 .. dy)
                 {
-                    foreach (yy; 0 .. dy)
+                    uint* srcrow = img.scanLine(srcrect.top + yy) + srcrect.left;
+                    uint* dstrow = scanLine(dstrect.top + yy) + dstrect.left;
+                    if (!_alpha)
                     {
-                        uint* srcrow = colorDrawBuf.scanLine(srcrect.top + yy) + srcrect.left;
-                        uint* dstrow = scanLine(dstrect.top + yy) + dstrect.left;
-                        if (!_alpha)
+                        // simplified version - no alpha blending
+                        foreach (i; 0 .. dx)
                         {
-                            // simplified version - no alpha blending
-                            foreach (i; 0 .. dx)
+                            uint pixel = srcrow[i];
+                            uint alpha = pixel >> 24;
+                            if (!alpha)
+                                dstrow[i] = pixel;
+                            else if (alpha < 254)
                             {
-                                uint pixel = srcrow[i];
-                                uint alpha = pixel >> 24;
-                                if (!alpha)
-                                    dstrow[i] = pixel;
-                                else if (alpha < 254)
-                                {
-                                    // apply blending
-                                    dstrow[i] = blendARGB(dstrow[i], pixel, alpha);
-                                }
+                                // apply blending
+                                dstrow[i] = blendARGB(dstrow[i], pixel, alpha);
                             }
                         }
-                        else
+                    }
+                    else
+                    {
+                        // combine two alphas
+                        foreach (i; 0 .. dx)
                         {
-                            // combine two alphas
-                            foreach (i; 0 .. dx)
+                            uint pixel = srcrow[i];
+                            uint alpha = blendAlpha(_alpha, pixel >> 24);
+                            if (!alpha)
+                                dstrow[i] = pixel;
+                            else if (alpha < 254)
                             {
-                                uint pixel = srcrow[i];
-                                uint alpha = blendAlpha(_alpha, pixel >> 24);
-                                if (!alpha)
-                                    dstrow[i] = pixel;
-                                else if (alpha < 254)
-                                {
-                                    // apply blending
-                                    dstrow[i] = blendARGB(dstrow[i], pixel, alpha);
-                                }
+                                // apply blending
+                                dstrow[i] = blendARGB(dstrow[i], pixel, alpha);
                             }
                         }
-
                     }
                 }
             }
@@ -1398,9 +1328,11 @@ class ColorDrawBufBase : DrawBuf
 
     override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
     {
-        //Log.d("drawRescaled ", dstrect, " <- ", srcrect);
         if (_alpha >= 254)
             return; // fully transparent - don't draw
+        auto img = cast(ColorDrawBufBase)src;
+        if (!img)
+            return;
         double kx = cast(double)srcrect.width / dstrect.width;
         double ky = cast(double)srcrect.height / dstrect.height;
         if (applyClipping(dstrect, srcrect))
@@ -1410,48 +1342,44 @@ class ColorDrawBufBase : DrawBuf
             int* xmap = xmapArray.unsafe_ptr;
             int* ymap = ymapArray.unsafe_ptr;
 
-            int dx = dstrect.width;
-            int dy = dstrect.height;
-            ColorDrawBufBase colorDrawBuf = cast(ColorDrawBufBase)src;
-            if (colorDrawBuf !is null)
+            const int dx = dstrect.width;
+            const int dy = dstrect.height;
+            foreach (y; 0 .. dy)
             {
-                foreach (y; 0 .. dy)
+                uint* srcrow = img.scanLine(ymap[y]);
+                uint* dstrow = scanLine(dstrect.top + y) + dstrect.left;
+                if (!_alpha)
                 {
-                    uint* srcrow = colorDrawBuf.scanLine(ymap[y]);
-                    uint* dstrow = scanLine(dstrect.top + y) + dstrect.left;
-                    if (!_alpha)
+                    // simplified alpha calculation
+                    foreach (x; 0 .. dx)
                     {
-                        // simplified alpha calculation
-                        foreach (x; 0 .. dx)
+                        uint srcpixel = srcrow[xmap[x]];
+                        uint dstpixel = dstrow[x];
+                        uint alpha = srcpixel >> 24;
+                        if (!alpha)
+                            dstrow[x] = srcpixel;
+                        else if (alpha < 255)
                         {
-                            uint srcpixel = srcrow[xmap[x]];
-                            uint dstpixel = dstrow[x];
-                            uint alpha = srcpixel >> 24;
-                            if (!alpha)
-                                dstrow[x] = srcpixel;
-                            else if (alpha < 255)
-                            {
-                                // apply blending
-                                dstrow[x] = blendARGB(dstpixel, srcpixel, alpha);
-                            }
+                            // apply blending
+                            dstrow[x] = blendARGB(dstpixel, srcpixel, alpha);
                         }
                     }
-                    else
+                }
+                else
+                {
+                    // blending two alphas
+                    foreach (x; 0 .. dx)
                     {
-                        // blending two alphas
-                        foreach (x; 0 .. dx)
+                        uint srcpixel = srcrow[xmap[x]];
+                        uint dstpixel = dstrow[x];
+                        uint srca = srcpixel >> 24;
+                        uint alpha = !srca ? _alpha : blendAlpha(_alpha, srca);
+                        if (!alpha)
+                            dstrow[x] = srcpixel;
+                        else if (alpha < 255)
                         {
-                            uint srcpixel = srcrow[xmap[x]];
-                            uint dstpixel = dstrow[x];
-                            uint srca = srcpixel >> 24;
-                            uint alpha = !srca ? _alpha : blendAlpha(_alpha, srca);
-                            if (!alpha)
-                                dstrow[x] = srcpixel;
-                            else if (alpha < 255)
-                            {
-                                // apply blending
-                                dstrow[x] = blendARGB(dstpixel, srcpixel, alpha);
-                            }
+                            // apply blending
+                            dstrow[x] = blendARGB(dstpixel, srcpixel, alpha);
                         }
                     }
                 }
@@ -1497,7 +1425,7 @@ class ColorDrawBufBase : DrawBuf
     /// Detect position of black pixels in column for 9-patch markup
     private bool detectVLine(int x, ref int y0, ref int y1)
     {
-        bool foundUsed = false;
+        bool foundUsed;
         y0 = 0;
         y1 = 0;
         foreach (int y; 1 .. _h - 1)
@@ -1538,7 +1466,6 @@ class ColorDrawBufBase : DrawBuf
         p.padding.top = y10 - 1;
         p.padding.bottom = _h - y11 - 1;
         _ninePatch = p;
-        //Log.d("NinePatch detected: frame=", p.frame, " padding=", p.padding, " left+right=", p.frame.left + p.frame.right, " dx=", _w);
         return true;
     }
 
@@ -1632,7 +1559,8 @@ class ColorDrawBufBase : DrawBuf
 
     override void fillRect(Rect rc, Color color)
     {
-        if (applyClipping(rc))
+        applyAlpha(color);
+        if (!color.isFullyTransparent && applyClipping(rc))
         {
             uint c = color.hex;
             uint alpha = color.a;
@@ -1699,23 +1627,16 @@ class ColorDrawBufBase : DrawBuf
 
 class GrayDrawBuf : DrawBuf
 {
-    protected int _w;
-    protected int _h;
-
-    override @property int bpp() const
+    override @property
     {
-        return 8;
-    }
-    override @property int width() const
-    {
-        return _w;
-    }
-    override @property int height() const
-    {
-        return _h;
+        int bpp() const { return 8; }
+        int width() const { return _w; }
+        int height() const { return _h; }
     }
 
-    protected Buf!ubyte _buf;
+    private int _w;
+    private int _h;
+    private Buf!ubyte _buf;
 
     this(int width, int height)
     {
@@ -1742,39 +1663,28 @@ class GrayDrawBuf : DrawBuf
     override void fill(Color color)
     {
         if (hasClipping)
-        {
-            fillRect(_clipRect, color);
-            return;
-        }
-        int len = _w * _h;
-        ubyte* p = _buf.unsafe_ptr;
-        ubyte cl = color.toGray;
-        foreach (i; 0 .. len)
-            p[i] = cl;
+            fillRect(Rect(0, 0, _w, _h), color);
+        else
+            _buf.unsafe_slice[] = color.toGray;
     }
 
     override void drawFragment(int x, int y, DrawBuf src, Rect srcrect)
     {
+        auto img = cast(GrayDrawBuf)src;
+        if (!img)
+            return;
         Rect dstrect = Rect(x, y, x + srcrect.width, y + srcrect.height);
         if (applyClipping(dstrect, srcrect))
         {
             if (src.applyClipping(srcrect, dstrect))
             {
-                int dx = srcrect.width;
-                int dy = srcrect.height;
-                GrayDrawBuf grayDrawBuf = cast(GrayDrawBuf)src;
-                if (grayDrawBuf !is null)
+                const int dx = srcrect.width;
+                const int dy = srcrect.height;
+                foreach (yy; 0 .. dy)
                 {
-                    foreach (yy; 0 .. dy)
-                    {
-                        ubyte* srcrow = grayDrawBuf.scanLine(srcrect.top + yy) + srcrect.left;
-                        ubyte* dstrow = scanLine(dstrect.top + yy) + dstrect.left;
-                        foreach (i; 0 .. dx)
-                        {
-                            ubyte pixel = srcrow[i];
-                            dstrow[i] = pixel;
-                        }
-                    }
+                    ubyte* srcrow = img.scanLine(srcrect.top + yy) + srcrect.left;
+                    ubyte* dstrow = scanLine(dstrect.top + yy) + dstrect.left;
+                    dstrow[0 .. dx] = srcrow[0 .. dx];
                 }
             }
         }
@@ -1794,7 +1704,9 @@ class GrayDrawBuf : DrawBuf
 
     override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
     {
-        //Log.d("drawRescaled ", dstrect, " <- ", srcrect);
+        auto img = cast(GrayDrawBuf)src;
+        if (!img)
+            return;
         if (applyClipping(dstrect, srcrect))
         {
             auto xmapArray = createMap(dstrect.left, dstrect.right, srcrect.left, srcrect.right);
@@ -1802,21 +1714,17 @@ class GrayDrawBuf : DrawBuf
             int* xmap = xmapArray.unsafe_ptr;
             int* ymap = ymapArray.unsafe_ptr;
 
-            int dx = dstrect.width;
-            int dy = dstrect.height;
-            GrayDrawBuf grayDrawBuf = cast(GrayDrawBuf)src;
-            if (grayDrawBuf !is null)
+            const int dx = dstrect.width;
+            const int dy = dstrect.height;
+            foreach (y; 0 .. dy)
             {
-                foreach (y; 0 .. dy)
+                ubyte* srcrow = img.scanLine(ymap[y]);
+                ubyte* dstrow = scanLine(dstrect.top + y) + dstrect.left;
+                foreach (x; 0 .. dx)
                 {
-                    ubyte* srcrow = grayDrawBuf.scanLine(ymap[y]);
-                    ubyte* dstrow = scanLine(dstrect.top + y) + dstrect.left;
-                    foreach (x; 0 .. dx)
-                    {
-                        ubyte srcpixel = srcrow[xmap[x]];
-                        ubyte dstpixel = dstrow[x];
-                        dstrow[x] = srcpixel;
-                    }
+                    ubyte srcpixel = srcrow[xmap[x]];
+                    ubyte dstpixel = dstrow[x];
+                    dstrow[x] = srcpixel;
                 }
             }
         }
@@ -1930,21 +1838,22 @@ class GrayDrawBuf : DrawBuf
 
     override void fillRect(Rect rc, Color color)
     {
-        if (applyClipping(rc))
+        applyAlpha(color);
+        if (!color.isFullyTransparent && applyClipping(rc))
         {
+            ubyte c = color.toGray;
             uint alpha = color.a;
-            ubyte cl = color.toGray;
             foreach (y; rc.top .. rc.bottom)
             {
                 ubyte* row = scanLine(y);
                 foreach (x; rc.left .. rc.right)
                 {
                     if (!alpha)
-                        row[x] = cl;
+                        row[x] = c;
                     else if (alpha < 255)
                     {
                         // apply blending
-                        row[x] = blendGray(row[x], cl, alpha);
+                        row[x] = blendGray(row[x], c, alpha);
                     }
                 }
             }
@@ -1999,26 +1908,25 @@ class GrayDrawBuf : DrawBuf
 
 class ColorDrawBuf : ColorDrawBufBase
 {
-    protected Buf!uint _buf;
+    private Buf!uint _buf;
 
     /// Create ARGB8888 draw buf of specified width and height
     this(int width, int height)
     {
         resize(width, height);
     }
-    /// Create copy of ColorDrawBuf
-    this(ColorDrawBuf v)
+    /// Create copy of `ColorDrawBuf`
+    this(ColorDrawBuf src)
     {
-        this(v.width, v.height);
+        resize(src.width, src.height);
         if (auto len = _buf.length)
-            _buf.unsafe_ptr[0 .. len] = v._buf.unsafe_ptr[0 .. len];
+            _buf.unsafe_ptr[0 .. len] = src._buf.unsafe_ptr[0 .. len];
     }
-    /// Create resized copy of ColorDrawBuf
-    this(ColorDrawBuf v, int dx, int dy)
+    /// Create resized copy of `ColorDrawBuf`
+    this(ColorDrawBuf src, int width, int height)
     {
-        this(dx, dy);
-        fill(Color.transparent);
-        drawRescaled(Rect(0, 0, dx, dy), v, Rect(0, 0, v.width, v.height));
+        resize(width, height); // fills with transparent
+        drawRescaled(Rect(0, 0, width, height), src, Rect(0, 0, src.width, src.height));
     }
 
     void invertAndPreMultiplyAlpha()
@@ -2064,7 +1972,7 @@ class ColorDrawBuf : ColorDrawBufBase
         }
     }
 
-    override uint* scanLine(int y)
+    override inout(uint*) scanLine(int y) inout
     {
         if (y >= 0 && y < _h)
             return _buf.unsafe_ptr + _w * y;
@@ -2084,14 +1992,9 @@ class ColorDrawBuf : ColorDrawBufBase
     override void fill(Color color)
     {
         if (hasClipping)
-        {
-            fillRect(_clipRect, color);
-            return;
-        }
-        int len = _w * _h;
-        uint* p = _buf.unsafe_ptr;
-        foreach (i; 0 .. len)
-            p[i] = color.hex;
+            fillRect(Rect(0, 0, _w, _h), color);
+        else
+            _buf.unsafe_slice[] = color.hex;
     }
 
     /// Apply Gaussian blur to the image
@@ -2168,7 +2071,7 @@ DrawBuf makeTemporaryImage(uint width, uint height)
     return new ColorDrawBuf(width, height);
 }
 
-package bool clipLine(ref Rect clipRect, ref Point p1, ref Point p2)
+package bool clipLine(Rect clipRect, ref Point p1, ref Point p2)
 {
     float x0 = p1.x;
     float y0 = p1.y;
@@ -2189,7 +2092,7 @@ package bool clipLine(ref Rect clipRect, ref Point p1, ref Point p2)
 // P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with
 // diagonal from (xmin, ymin) to (xmax, ymax).
 // https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
-private bool CohenSutherlandLineClipAndDraw(ref Rect clipRect, ref float x0, ref float y0, ref float x1, ref float y1)
+private bool CohenSutherlandLineClipAndDraw(ref const Rect clipRect, ref float x0, ref float y0, ref float x1, ref float y1)
 {
     enum OutCode : ubyte
     {
@@ -2202,7 +2105,7 @@ private bool CohenSutherlandLineClipAndDraw(ref Rect clipRect, ref float x0, ref
 
     // Compute the bit code for a point (x, y) using the clip rectangle
     // bounded diagonally by (xmin, ymin), and (xmax, ymax)
-    static OutCode computeOutCode(Rect clipRect, float x, float y)
+    static OutCode computeOutCode(ref const Rect clipRect, float x, float y)
     {
         OutCode code; // initialised as being inside of clip window
 

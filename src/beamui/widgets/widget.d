@@ -1886,12 +1886,12 @@ public:
     /// Draw focus rectangle, if enabled in styles
     void drawFocusRect(DrawBuf buf)
     {
-        Color[1] cs = [style.focusRectColor];
-        if (cs[0] != Color.transparent)
+        const Color c = style.focusRectColor;
+        if (!c.isFullyTransparent)
         {
             Box b = _box;
             b.shrink(Insets(FOCUS_RECT_PADDING));
-            buf.drawFocusRect(Rect(b), cs);
+            buf.drawFocusRect(Rect(b), c);
         }
     }
 

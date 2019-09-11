@@ -32,14 +32,9 @@ class GLDrawBuf : DrawBuf
         resize(dx, dy);
     }
 
-    override @property int width() const
-    {
-        return _w;
-    }
-    override @property int height() const
-    {
-        return _h;
-    }
+    override @property int bpp() const { return 0; }
+    override @property int width() const { return _w; }
+    override @property int height() const { return _h; }
 
     override void beforeDrawing()
     {
@@ -156,10 +151,10 @@ class GLDrawBuf : DrawBuf
             return;
         applyAlpha(color);
         if (!color.isFullyTransparent)
-            glSupport.queue.addLine(PointF(p1.x, p1.y), PointF(p2.x, p2.y), color, color);
+            glSupport.queue.addLine(Vec2(p1.x, p1.y), Vec2(p2.x, p2.y), color, color);
     }
 
-    override protected void fillTriangleFClipped(PointF p1, PointF p2, PointF p3, Color color)
+    override protected void fillTriangleFClipped(Vec2 p1, Vec2 p2, Vec2 p3, Color color)
     {
         glSupport.queue.addTriangle(p1, p2, p3, color, color, color);
     }

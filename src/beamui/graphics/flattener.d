@@ -13,7 +13,7 @@ import beamui.core.linalg : Vec2;
 import beamui.core.math : fequal1, fzero6;
 
 // Bezier flattening is based on Maxim Shemanarev article
-// http://www.antigrain.com/research/adaptive_bezier/index.html
+// https://web.archive.org/web/20190309181735/http://antigrain.com/research/adaptive_bezier/index.html
 // It works, but requires further development
 
 /// Convert cubic bezier curve into a list of points
