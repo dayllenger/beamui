@@ -395,25 +395,16 @@ class FileDialog : Dialog, CustomGridCellAdapter
     protected string formatTimestamp(ref DirEntry f)
     {
         import std.datetime : SysTime;
-        import std.typecons : Nullable;
 
-        Nullable!SysTime ts;
         try
         {
-            ts = f.timeLastModified;
+            const SysTime t = f.timeLastModified;
+            return format("%04d.%02d.%02d %02d:%02d", t.year, t.month, t.day, t.hour, t.minute);
         }
         catch (Exception e)
         {
             Log.w(e.msg);
-        }
-        if (ts.isNull)
-        {
             return "----.--.-- --:--";
-        }
-        else
-        {
-            //date = "%04d.%02d.%02d %02d:%02d:%02d".format(ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second);
-            return "%04d.%02d.%02d %02d:%02d".format(ts.year, ts.month, ts.day, ts.hour, ts.minute);
         }
     }
 

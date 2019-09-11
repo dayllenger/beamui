@@ -1199,6 +1199,22 @@ final class Setting
 
     private void applyJSON(ref JSONValue value)
     {
+        static if (is(JSONType))
+        {
+            enum JSON_TYPE : JSONType
+            {
+                NULL = JSONType.null_,
+                STRING = JSONType.string,
+                INTEGER = JSONType.integer,
+                UINTEGER = JSONType.uinteger,
+                FLOAT = JSONType.float_,
+                ARRAY = JSONType.array,
+                OBJECT = JSONType.object,
+                TRUE = JSONType.true_,
+                FALSE = JSONType.false_,
+            }
+        }
+
         switch (value.type)
         {
         case JSON_TYPE.NULL:
