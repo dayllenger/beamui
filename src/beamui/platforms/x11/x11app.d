@@ -33,8 +33,8 @@ static if (USE_OPENGL)
 {
     import glx;
     import beamui.graphics.gl.api : GLint, GL_TRUE;
-    import beamui.graphics.glsupport;
 
+    private __gshared GLXFBConfig fbConfig;
     private __gshared XVisualInfo* x11visual;
     private __gshared Colormap x11cmap;
 }
@@ -336,14 +336,6 @@ final class X11Window : DWindow
     {
         XSyncDestroyCounter(x11display, syncCounter);
 
-        static if (USE_OPENGL)
-        {
-            if (_glc)
-            {
-                glXDestroyContext(x11display, _glc);
-                _glc = null;
-            }
-        }
         eliminate(_drawbuf);
         if (_gc)
         {
@@ -462,40 +454,8 @@ final class X11Window : DWindow
 
         static if (USE_OPENGL)
         {
-            if (openglEnabled)
-            {
-                // find top level GL context to share objects
-                X11Window w = this;
-                while (w.parentWindow !is null)
-                {
-                    w = cast(X11Window)w.parentWindow;
-                }
-                GLXContext topLevelContext = w._glc;
-                // create context
-                _glc = glXCreateContext(x11display, x11visual, topLevelContext, GL_TRUE);
-                bool success;
-                if (_glc)
-                {
-                    bindContext();
-                    success = initGLBackend();
-                }
-                if (success)
-                {
-                    loadGLXExtensions();
-                    disableVSync();
-                }
-                else
-                {
-                    if (_glc)
-                    {
-                        glXDestroyContext(x11display, _glc);
-                        _glc = null;
-                    }
-                    disableOpenGL();
-                }
-            }
+            _platform.createGLContext(this);
         }
-        Log.i(openglEnabled ? "OpenGL is enabled" : "OpenGL is disabled");
 
         handleWindowStateChange(WindowState.unspecified, BoxI(0, 0, width, height));
     }
@@ -817,6 +777,68 @@ final class X11Window : DWindow
 
     static if (USE_OPENGL)
     {
+        override protected bool createContext(int major, int minor)
+        {
+            static bool errorOccurred;
+            extern (C) static int errorHandler(Display*, XErrorEvent*)
+            {
+                errorOccurred = true;
+                return 0;
+            }
+
+            // install an X error handler so the application won't exit
+            // if context allocation fails
+            errorOccurred = false;
+            auto oldHandler = XSetErrorHandler(&errorHandler);
+
+            // find top level GL context to share objects
+            X11Window w = this;
+            while (w.parentWindow !is null)
+            {
+                w = cast(X11Window)w.parentWindow;
+            }
+            GLXContext topLevelContext = w._glc;
+
+            // create context
+            if (GLX_ARB_create_context)
+            {
+                int[] attribs = [
+                    GLX_CONTEXT_MAJOR_VERSION_ARB, major,
+                    GLX_CONTEXT_MINOR_VERSION_ARB, minor,
+                    None // end
+                ];
+                _glc = glXCreateContextAttribsARB(x11display, fbConfig, topLevelContext, True, attribs.ptr);
+            }
+            else
+            {
+                // old style
+                _glc = glXCreateContext(x11display, x11visual, topLevelContext, True);
+            }
+            // sync to ensure any errors generated are processed
+            XSync(x11display, False);
+            // restore the original error handler, if any
+            XSetErrorHandler(oldHandler);
+
+            if (errorOccurred)
+                _glc = null;
+            return _glc !is null;
+        }
+
+        override protected void destroyContext()
+        {
+            if (_glc)
+            {
+                glXMakeCurrent(x11display, 0, null);
+                glXDestroyContext(x11display, _glc);
+                _glc = null;
+            }
+        }
+
+        override protected void handleGLReadiness()
+        {
+            disableVSync();
+        }
+
         private void disableVSync()
         {
             if (GLX_EXT_swap_control)
@@ -833,12 +855,12 @@ final class X11Window : DWindow
             }
         }
 
-        override void bindContext()
+        override protected void bindContext()
         {
             glXMakeCurrent(x11display, cast(uint)_win, _glc);
         }
 
-        override void swapBuffers()
+        override protected void swapBuffers()
         {
             glXSwapBuffers(x11display, cast(uint)_win);
         }
@@ -1853,22 +1875,7 @@ extern (C) Platform initPlatform(AppConf conf)
 
     static if (USE_OPENGL)
     {
-        if (loadGLX())
-        {
-            GLint[] att = [GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None];
-            XWindow root = DefaultRootWindow(x11display);
-            x11visual = glXChooseVisual(x11display, 0, cast(int*)att.ptr);
-            if (x11visual)
-            {
-                x11cmap = XCreateColormap(x11display, root, cast(Visual*)x11visual.visual, AllocNone);
-            }
-            else
-            {
-                Log.e("Cannot find suitable Visual for using of OpenGL");
-                disableOpenGL();
-            }
-        }
-        else
+        if (!initializeGLX())
             disableOpenGL();
     }
 
@@ -1886,10 +1893,75 @@ extern (C) Platform initPlatform(AppConf conf)
     return new X11Platform(conf);
 }
 
+static if (USE_OPENGL)
+private bool initializeGLX()
+{
+    if (!loadGLX())
+    {
+        Log.e("GLX: failed to load library");
+        return false;
+    }
+    if (!glXQueryExtension(x11display, null, null))
+    {
+        Log.e("GLX: no extensions");
+        return false;
+    }
+
+    int glx_major, glx_minor;
+    if (!glXQueryVersion(x11display, &glx_major, &glx_minor) ||
+        glx_major == 1 && glx_minor < 4 || glx_major < 1)
+    {
+        Log.e("GLX: version 1.4 is required");
+        return false;
+    }
+
+    int[] attribs = [
+        GLX_X_RENDERABLE   , True,
+        GLX_DRAWABLE_TYPE  , GLX_WINDOW_BIT,
+        GLX_RENDER_TYPE    , GLX_RGBA_BIT,
+        GLX_X_VISUAL_TYPE  , GLX_TRUE_COLOR,
+        GLX_RED_SIZE       , 8,
+        GLX_GREEN_SIZE     , 8,
+        GLX_BLUE_SIZE      , 8,
+        GLX_ALPHA_SIZE     , 8,
+        GLX_DEPTH_SIZE     , 24,
+        GLX_STENCIL_SIZE   , 8,
+        GLX_DOUBLEBUFFER   , True,
+        GLX_SAMPLE_BUFFERS , 0,
+        GLX_SAMPLES        , 0,
+        None // end
+    ];
+    int fbcount;
+    GLXFBConfig* fbcList = glXChooseFBConfig(x11display, defaultScreenNum, attribs.ptr, &fbcount);
+    if (!fbcList)
+    {
+        Log.e("GLX: failed to retrieve a framebuffer config");
+        return false;
+    }
+    // just take the first
+    fbConfig = fbcList[0];
+    XFree(fbcList);
+
+    XWindow root = DefaultRootWindow(x11display);
+    x11visual = glXGetVisualFromFBConfig(x11display, fbConfig);
+    if (!x11visual)
+    {
+        Log.e("GLX: cannot find suitable visual");
+        return false;
+    }
+    x11cmap = XCreateColormap(x11display, root, cast(Visual*)x11visual.visual, AllocNone);
+
+    // we can and we must load extensions before context creation
+    loadGLXExtensions(x11display);
+    return true;
+}
+
 private void deinitializeX11()
 {
     static if (USE_OPENGL)
     {
+        if (x11visual)
+            XFree(x11visual);
         if (x11cmap)
             XFreeColormap(x11display, x11cmap);
     }

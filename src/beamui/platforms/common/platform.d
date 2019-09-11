@@ -296,6 +296,9 @@ class Window : CustomEventTarget
         eliminate(_mainWidget);
         eliminate(_timerQueue);
         eliminate(_eventList);
+
+        static if (USE_OPENGL)
+            destroyContext();
     }
 
     import beamui.core.settings;
@@ -998,10 +1001,19 @@ class Window : CustomEventTarget
     /// OpenGL-specific routines
     static if (USE_OPENGL)
     {
+        /// Try to create an OpenGL context with specified version
+        abstract protected bool createContext(int major, int minor);
+        /// Destroy OpenGL context, if exists
+        abstract protected void destroyContext();
         /// Make window OpenGL context to be current
         abstract protected void bindContext();
         /// Swap buffers at the end of frame
         abstract protected void swapBuffers();
+
+        /// Override to perform some actions after GL context and backend creation
+        protected void handleGLReadiness()
+        {
+        }
 
         protected void drawUsingOpenGL(ref DrawBuf buf) // TODO: move drawbufs to the base class?
         {
@@ -2241,12 +2253,6 @@ class Platform
         }
     }
 
-    protected void setGLVersions(int major, int minor)
-    {
-        _conf.GLVersionMajor = major;
-        _conf.GLVersionMinor = minor;
-    }
-
     private string setupTheme(string name)
     {
         Theme theme = loadTheme(name);
@@ -2265,6 +2271,74 @@ class Platform
         assert(theme);
         currentTheme = theme;
         return theme.name;
+    }
+
+    static if (USE_OPENGL)
+    {
+        import beamui.graphics.glsupport : glSupport, initGLBackend;
+
+        void createGLContext(Window window)
+        {
+            if (!openglEnabled)
+                return;
+
+            if (glSupport)
+            {
+                if (window.createContext(_conf.GLVersionMajor, _conf.GLVersionMinor))
+                {
+                    window.bindContext();
+                    window.handleGLReadiness();
+                }
+                else
+                    assert(0, "GL: failed to create context");
+                return;
+            }
+            // the first initialization
+            const major = clamp(_conf.GLVersionMajor, 3, 4);
+            const minor = clamp(_conf.GLVersionMinor, 0, major == 3 ? 3 : 6);
+            bool success = createGLContext(window, major, minor);
+            if (!success)
+            {
+                Log.w("GL: trying other versions");
+                // lazy conditions
+                if (major == 4)
+                {
+                    success = success || createGLContext(window, 4, 3);
+                    success = success || createGLContext(window, 4, 0);
+                }
+                success = success || createGLContext(window, 3, 3);
+                success = success || createGLContext(window, 3, 2);
+                success = success || createGLContext(window, 3, 1);
+                success = success || createGLContext(window, 3, 0);
+            }
+            if (success)
+            {
+                window.bindContext();
+                success = initGLBackend();
+                if (success)
+                    window.handleGLReadiness();
+            }
+            if (!success)
+            {
+                disableOpenGL();
+                _conf.GLVersionMajor = 0;
+                _conf.GLVersionMinor = 0;
+            }
+        }
+
+        private bool createGLContext(Window w, int major, int minor)
+        {
+            Log.i("GL: trying to create ", major, ".", minor, " context");
+            const success = w.createContext(major, minor);
+            if (success)
+            {
+                Log.i("GL: created successfully");
+                // set final version
+                _conf.GLVersionMajor = major;
+                _conf.GLVersionMinor = minor;
+            }
+            return success;
+        }
     }
 }
 

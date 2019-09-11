@@ -23,10 +23,6 @@ import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 import beamui.text.fonts;
 import beamui.text.ftfonts;
-static if (USE_OPENGL)
-{
-    import beamui.graphics.glsupport;
-}
 version (Windows)
 {
     import core.sys.windows.windows;
@@ -80,44 +76,9 @@ final class SDLWindow : Window
     {
         if (_renderer)
             SDL_DestroyRenderer(_renderer);
-        static if (USE_OPENGL)
-        {
-            if (_context)
-                SDL_GL_DeleteContext(_context);
-        }
         if (_win)
             SDL_DestroyWindow(_win);
         eliminate(_drawbuf);
-    }
-
-    static if (USE_OPENGL)
-    {
-        private SDL_GLContext _context;
-
-        private bool createContext(int versionMajor, int versionMinor)
-        {
-            Log.i("Trying to create OpenGL ", versionMajor, ".", versionMinor, " context");
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, versionMajor);
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, versionMinor);
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-            // create the actual context and make it current
-            _context = SDL_GL_CreateContext(_win);
-            if (!_context)
-                Log.e("SDL_GL_CreateContext failed: ", fromStringz(SDL_GetError()));
-            else
-            {
-                Log.i("Created successfully");
-                // adjust GL version in platform
-                _platform.setGLVersions(versionMajor, versionMinor);
-                bindContext();
-                // trying to activate adaptive vsync
-                int res = SDL_GL_SetSwapInterval(-1);
-                // if it's not supported, work without vsync
-                if (res == -1)
-                    SDL_GL_SetSwapInterval(0);
-            }
-            return _context !is null;
-        }
     }
 
     private bool create()
@@ -159,32 +120,7 @@ final class SDLWindow : Window
 
         static if (USE_OPENGL)
         {
-            if (openglEnabled)
-            {
-                const major = clamp(_platform.GLVersionMajor, 3, 4);
-                const minor = clamp(_platform.GLVersionMinor, 0, major == 3 ? 3 : 6);
-                bool success = createContext(major, minor);
-                if (!success)
-                {
-                    Log.w("trying other versions of OpenGL");
-                    // lazy conditions
-                    if (major == 4)
-                    {
-                        success = success || createContext(4, 3);
-                        success = success || createContext(4, 0);
-                    }
-                    success = success || createContext(3, 3);
-                    success = success || createContext(3, 2);
-                    success = success || createContext(3, 1);
-                    success = success || createContext(3, 0);
-                }
-                success = success && initGLBackend();
-                if (!success)
-                {
-                    disableOpenGL();
-                    _platform.setGLVersions(0, 0);
-                }
-            }
+            _platform.createGLContext(this);
         }
         if (!openglEnabled)
         {
@@ -199,7 +135,6 @@ final class SDLWindow : Window
                 }
             }
         }
-        Log.i(openglEnabled ? "OpenGL is enabled" : "OpenGL is disabled");
 
         updateDPI();
         fixSize();
@@ -593,6 +528,44 @@ final class SDLWindow : Window
 
     static if (USE_OPENGL)
     {
+        private SDL_GLContext _context;
+
+        override protected bool createContext(int major, int minor)
+        {
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major);
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor);
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+            // create the actual context and make it current
+            _context = SDL_GL_CreateContext(_win);
+            const success = _context !is null;
+            if (!success)
+                Log.e("GL: ", fromStringz(SDL_GetError()));
+            return success;
+        }
+
+        override protected void destroyContext()
+        {
+            if (_context)
+            {
+                SDL_GL_DeleteContext(_context);
+                _context = null;
+            }
+        }
+
+        override protected void handleGLReadiness()
+        {
+            disableVSync();
+        }
+
+        private void disableVSync()
+        {
+            // try to activate adaptive vsync
+            const int res = SDL_GL_SetSwapInterval(-1);
+            // if it's not supported, work without vsync
+            if (res == -1)
+                SDL_GL_SetSwapInterval(0);
+        }
+
         override protected void bindContext()
         {
             SDL_GL_MakeCurrent(_win, _context);
@@ -984,11 +957,6 @@ final class SDLPlatform : Platform
         SDL_Quit();
     }
 
-    package void setGLVersions(int major, int minor)
-    {
-        super.setGLVersions(major, minor);
-    }
-
     override void closeWindow(Window w)
     {
         // send a close event for SDLWindow
@@ -1361,6 +1329,7 @@ extern (C) Platform initPlatform(AppConf conf)
         // Set OpenGL attributes
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
         // Share textures between contexts
         SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
     }

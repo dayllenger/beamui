@@ -32,10 +32,6 @@ import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 import beamui.platforms.windows.win32drawbuf;
 import beamui.platforms.windows.win32fonts;
-static if (USE_OPENGL)
-{
-    import beamui.graphics.glsupport;
-}
 
 pragma(lib, "gdi32.lib");
 pragma(lib, "user32.lib");
@@ -57,20 +53,14 @@ static if (USE_OPENGL)
             0,  // alpha bits (ignored)
             0,  // no accumulation buffer
             0, 0, 0, 0, // accum bits (ignored)
-            16, // depth buffer
-            0,  // no stencil buffer
+            24, // depth buffer
+            8,  // stencil buffer
             0,  // no auxiliary buffers
             0,  // main layer PFD_MAIN_PLANE
             0,  // reserved
             0, 0, 0, // no layer, visible, damage masks
         };
-
-        if (!SetPixelFormat(device, ChoosePixelFormat(device, &pfd), &pfd))
-        {
-            Log.e("WGL: Failed to set pixel format");
-            return false;
-        }
-        return true;
+        return SetPixelFormat(device, ChoosePixelFormat(device, &pfd), &pfd) == TRUE;
     }
 
     HPALETTE setupPalette(HDC device)
@@ -125,51 +115,40 @@ static if (USE_OPENGL)
 
         private HGLRC _context;
         private HPALETTE _palette;
-        private bool _error;
-
-        bool initialized() const { return _context && !_error; }
 
         /// Init OpenGL context, if not yet initialized
-        void initialize(HDC device)
+        bool initialize(HDC device, int major, int minor)
         {
-            if (_error)
-                return;
             if (!setupPixelFormat(device))
             {
-                Log.e("WGL: cannot setup pixel format");
-                _error = true;
-                return;
+                Log.e("WGL: failed to setup pixel format");
+                return false;
             }
-            if (!_context) // first initialization
+            if (_context)
+                return true;
+
+            // first initialization
+            _palette = setupPalette(device);
+            HGLRC dummy = wglCreateContext(device);
+            if (dummy)
             {
-                _palette = setupPalette(device);
-                _context = wglCreateContext(device);
-                if (_context)
+                if (wglMakeCurrent(device, dummy))
                 {
-                    bind(device);
                     loadWGLExtensions();
-                    const success = initGLBackend();
-                    if (success)
+                    if (WGL_ARB_create_context)
                     {
-                        disableVSync();
-                        unbind(device);
+                        const int[] attribs = [
+                            WGL_CONTEXT_MAJOR_VERSION_ARB, major,
+                            WGL_CONTEXT_MINOR_VERSION_ARB, minor,
+                            0 // end
+                        ];
+                        _context = wglCreateContextAttribsARB(device, null, attribs.ptr);
                     }
-                    else
-                    {
-                        unbind(device);
-                        uninit();
-                        Log.e("Failed to initialize OpenGL");
-                        disableOpenGL();
-                        _error = true;
-                    }
+                    wglMakeCurrent(device, null);
                 }
-                else
-                {
-                    Log.e("WGL: failed to create OpenGL context");
-                    disableOpenGL();
-                    _error = true;
-                }
+                wglDeleteContext(dummy);
             }
+            return _context !is null;
         }
 
         void uninit()
@@ -193,17 +172,6 @@ static if (USE_OPENGL)
         void unbind(HDC device)
         {
             wglMakeCurrent(device, null);
-        }
-
-        void swapBuffers(HDC device)
-        {
-            SwapBuffers(device);
-        }
-
-        private void disableVSync()
-        {
-            if (WGL_EXT_swap_control)
-                wglSwapIntervalEXT(0);
         }
     }
 
@@ -291,12 +259,7 @@ final class Win32Window : Window
 
         static if (USE_OPENGL)
         {
-            if (openglEnabled)
-            {
-                // initialize OpenGL rendering
-                HDC device = GetDC(_hwnd);
-                sharedGLContext.initialize(device);
-            }
+            _platform.createGLContext(this);
         }
 
         updateDPI();
@@ -676,8 +639,8 @@ final class Win32Window : Window
 
     private void updateDPI()
     {
-        HDC hdc = GetDC(_hwnd);
-        const dpi = GetDeviceCaps(hdc, LOGPIXELSY);
+        HDC device = GetDC(_hwnd);
+        const dpi = GetDeviceCaps(device, LOGPIXELSY);
         setDPI(dpi, 1); // TODO
     }
 
@@ -686,12 +649,10 @@ final class Win32Window : Window
         debug (redraw)
             const paintStart = currentTimeMillis;
 
-        static if (USE_OPENGL)
+        if (openglEnabled)
         {
-            if (sharedGLContext.initialized)
+            static if (USE_OPENGL)
                 paintUsingOpenGL();
-            else
-                paintUsingGDI();
         }
         else
             paintUsingGDI();
@@ -706,7 +667,7 @@ final class Win32Window : Window
     private void paintUsingGDI()
     {
         PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(_hwnd, &ps);
+        HDC device = BeginPaint(_hwnd, &ps);
         scope (exit)
             EndPaint(_hwnd, &ps);
 
@@ -720,21 +681,45 @@ final class Win32Window : Window
 
         _drawbuf.fill(backgroundColor);
         draw(_drawbuf);
-        (cast(Win32ColorDrawBuf)_drawbuf).drawTo(hdc, 0, 0);
+        (cast(Win32ColorDrawBuf)_drawbuf).drawTo(device, 0, 0);
     }
 
     static if (USE_OPENGL)
     {
+        import wgl;
+
+        override protected bool createContext(int major, int minor)
+        {
+            HDC device = GetDC(_hwnd);
+            return sharedGLContext.initialize(device, major, minor);
+        }
+
+        override protected void destroyContext()
+        {
+            // no action needed
+        }
+
+        override protected void handleGLReadiness()
+        {
+            disableVSync();
+        }
+
+        private void disableVSync()
+        {
+            if (WGL_EXT_swap_control)
+                wglSwapIntervalEXT(0);
+        }
+
         override protected void bindContext()
         {
-            HDC hdc = GetDC(_hwnd);
-            sharedGLContext.bind(hdc);
+            HDC device = GetDC(_hwnd);
+            sharedGLContext.bind(device);
         }
 
         override protected void swapBuffers()
         {
-            HDC hdc = GetDC(_hwnd);
-            sharedGLContext.swapBuffers(hdc);
+            HDC device = GetDC(_hwnd);
+            SwapBuffers(device);
         }
 
         private void paintUsingOpenGL()

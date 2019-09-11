@@ -82,24 +82,9 @@ bool loadGLX()
     return errorCount() == errCount;
 }
 
-/// A context must be activated in order to load extensions
-void loadGLXExtensions()
+void loadGLXExtensions(Display* display)
 {
-    if (!glXGetCurrentContext || glXGetCurrentContext() is null)
-        return;
-
-    // glXGetCurrentDisplayEXT is needed to properly load the other extensions, so attempt
-    // to load GLX_EXT_import_context first.
-    _GLX_EXT_import_context =
-        bindGLXFunc(cast(void**)&glXGetCurrentDisplayEXT, "glXGetCurrentDisplayEXT") &&
-        bindGLXFunc(cast(void**)&glXQueryContextInfoEXT, "glXQueryContextInfoEXT") &&
-        bindGLXFunc(cast(void**)&glXGetContextIDEXT, "glXGetContextIDEXT") &&
-        bindGLXFunc(cast(void**)&glXImportContextEXT, "glXImportContextEXT") &&
-        bindGLXFunc(cast(void**)&glXFreeContextEXT, "glXFreeContextEXT");
-    if (!_GLX_EXT_import_context)
-        return;
-
-    const char* extensions = glXQueryExtensionsString(glXGetCurrentDisplayEXT(), 0);
+    const char* extensions = glXQueryExtensionsString(display, DefaultScreen(display));
     if (!extensions)
         return;
 
@@ -112,6 +97,15 @@ void loadGLXExtensions()
     {
         _GLX_ARB_get_proc_address =
             bindGLXFunc(cast(void**)&glXGetProcAddressARB, "glXGetProcAddressARB");
+    }
+    if (hasExtension(extensions, "GLX_EXT_import_context"))
+    {
+        _GLX_EXT_import_context =
+            bindGLXFunc(cast(void**)&glXGetCurrentDisplayEXT, "glXGetCurrentDisplayEXT") &&
+            bindGLXFunc(cast(void**)&glXQueryContextInfoEXT, "glXQueryContextInfoEXT") &&
+            bindGLXFunc(cast(void**)&glXGetContextIDEXT, "glXGetContextIDEXT") &&
+            bindGLXFunc(cast(void**)&glXImportContextEXT, "glXImportContextEXT") &&
+            bindGLXFunc(cast(void**)&glXFreeContextEXT, "glXFreeContextEXT");
     }
     if (hasExtension(extensions, "GLX_EXT_swap_control"))
     {
@@ -305,7 +299,7 @@ private bool hasExtension(const(char)* extensions, const(char)* name)
 
 import core.stdc.config : c_ulong;
 import x11.X : Colormap, Font, Pixmap, VisualID, Window, XID;
-import x11.Xlib : Bool, Display, Status, Visual, XExtData, XPointer;
+import x11.Xlib : Bool, Display, Status, Visual, XExtData, XPointer, DefaultScreen;
 import x11.Xutil : XVisualInfo;
 
 private
