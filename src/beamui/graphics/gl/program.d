@@ -89,11 +89,12 @@ class GLProgram
         }
 
         // compatibility fixes
+        if (glslVersionInt < 420)
+            buf = replace(buf, "\nconst ", "\n");
         if (glslVersionInt < 150)
             buf = replace(buf, " texture(", " texture2D(");
         if (glslVersionInt < 140)
         {
-            buf = replace(buf, "\nconst ", "\n");
             if (stage == ShaderStage.vertex)
             {
                 buf = replace(buf, "\nin ", "\nattribute ");
