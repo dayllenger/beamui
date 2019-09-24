@@ -7,6 +7,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.linalg;
 
+nothrow:
+
 import std.math : cos, sin, sqrt, tan, PI;
 import std.string : format;
 import beamui.core.math;
@@ -14,6 +16,8 @@ import beamui.core.math;
 /// 2-4-dimensional vector
 struct Vector(T, int N) if (2 <= N && N <= 4)
 {
+    nothrow:
+
     union
     {
         T[N] vec = 0;
@@ -195,12 +199,19 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
 
     string toString() const
     {
-        static if (N == 2)
-            return "(%s, %s)".format(x, y);
-        static if (N == 3)
-            return "(%s, %s, %s)".format(x, y, z);
-        static if (N == 4)
-            return "(%s, %s, %s, %s)".format(x, y, z, w);
+        try
+        {
+            static if (N == 2)
+                return format("(%s, %s)", x, y);
+            static if (N == 3)
+                return format("(%s, %s, %s)", x, y, z);
+            static if (N == 4)
+                return format("(%s, %s, %s, %s)", x, y, z, w);
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
     }
 }
 
@@ -241,6 +252,8 @@ alias Vec4i = Vector!(int, 4);
 */
 struct Mat2x3
 {
+    nothrow:
+
     float[3][2] store = [[0.0f, 0.0f, 0.0f], [0.0f, 0.0f, 0.0f]];
 
     /** Returns the pointer to the stored values array.
@@ -457,14 +470,23 @@ struct Mat2x3
 
     string toString() const
     {
-        return "[%s %s %s] [%s %s %s]".format(
-            store[0][0], store[0][1], store[0][2],
-            store[1][0], store[1][1], store[1][2]);
+        try
+        {
+            return format("[%s %s %s] [%s %s %s]",
+                store[0][0], store[0][1], store[0][2],
+                store[1][0], store[1][1], store[1][2]);
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
     }
 }
 
 struct mat4
 {
+    nothrow:
+
     float[16] m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 
     this(float v)

@@ -20,6 +20,8 @@ import beamui.graphics.gl.errors;
 /// Base class for GUI shader programs
 class GLProgram
 {
+    nothrow:
+
     abstract @property string vertexSource() const;
     abstract @property string fragmentSource() const;
 

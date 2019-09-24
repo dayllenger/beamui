@@ -7,6 +7,8 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.core.geometry;
 
+nothrow:
+
 import std.math : isFinite;
 import std.traits;
 import beamui.core.linalg : Vector;
@@ -43,6 +45,8 @@ enum int SIZE_UNSPECIFIED(T : int) = 1 << 29; // not too much to safely sum two 
 /// 2D size
 struct SizeOf(T) if (is(T == float) || is(T == int))
 {
+    nothrow:
+
     T width = 0;
     T height = 0;
     alias w = width;
@@ -92,6 +96,8 @@ struct SizeOf(T) if (is(T == float) || is(T == int))
 /// Holds minimum, maximum and natural (preferred) size for widget
 struct Boundaries
 {
+    nothrow:
+
     Size min;
     Size nat;
     Size max = Size.none;
@@ -150,6 +156,8 @@ struct Boundaries
 /// 2D box
 struct BoxOf(T) if (is(T == float) || is(T == int))
 {
+    nothrow:
+
     /// x coordinate of the top left corner
     T x = 0;
     /// y coordinate of the top left corner
@@ -325,6 +333,8 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
 */
 struct RectOf(T) if (is(T == float) || is(T == int))
 {
+    nothrow:
+
     /// x coordinate of top left corner
     T left = 0;
     /// y coordinate of top left corner
@@ -509,6 +519,8 @@ struct RectOf(T) if (is(T == float) || is(T == int))
 /// Represents area around rectangle. Used for margin, border and padding
 struct InsetsOf(T) if (is(T == float) || is(T == int))
 {
+    nothrow:
+
     T top = 0, right = 0, bottom = 0, left = 0;
 
     /// Create equal offset on all sides

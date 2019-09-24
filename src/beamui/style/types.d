@@ -31,6 +31,8 @@ enum TextFlag : uint
 
 struct BgPositionRaw
 {
+    nothrow:
+
     Length x = Length.percent(50);
     Length y = Length.percent(50);
 
@@ -44,6 +46,8 @@ struct BgPositionRaw
 
 struct BgSizeRaw
 {
+    nothrow:
+
     BgSizeType type;
     Length x;
     Length y;
@@ -64,7 +68,8 @@ struct BgSizeRaw
 /// CSS element selector
 struct Selector
 {
-    import std.algorithm.searching : canFind;
+    nothrow:
+
     import std.ascii : isWhite;
     import std.string : indexOf;
 
@@ -161,7 +166,18 @@ struct Selector
         {
             if (a.pattern == include)
             {
-                if (a.str.length == 0 || canFind!(ch => isWhite(ch))(a.str))
+                if (a.str.length > 0)
+                {
+                    foreach (ch; a.str)
+                    {
+                        if (isWhite(ch))
+                        {
+                            a.pattern = invalid;
+                            break;
+                        }
+                    }
+                }
+                else
                     a.pattern = invalid;
             }
             if (a.pattern == prefix || a.pattern == suffix || a.pattern == substring)

@@ -7,6 +7,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.parseutils;
 
+nothrow:
+
 import std.uni : isAlpha, isLower, isNumber, isUpper;
 
 /// Returns true whether `ch` is an alphabetic unicode char or `_`
@@ -73,6 +75,8 @@ bool isClosingBracket(dchar ch)
 /// Basic stack to count matching brackets
 struct BracketStack
 {
+    nothrow:
+
     import beamui.core.collections : Buf;
 
     enum Match

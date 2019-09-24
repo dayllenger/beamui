@@ -6,6 +6,8 @@ Authors:   dayllenger
 */
 module beamui.layout.alignment;
 
+nothrow:
+
 import beamui.core.geometry : Box, Point, Size;
 
 /// Box alignment options

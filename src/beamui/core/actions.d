@@ -17,6 +17,8 @@ import beamui.widgets.widget : Widget;
 /// Keyboard shortcut (key + modifiers)
 struct Shortcut
 {
+    nothrow:
+
     /// Key code from `Key` enum
     Key key;
     /// Key modifiers bit set
@@ -142,7 +144,7 @@ struct Shortcut
 
         key = Key.none;
         modifiers = KeyMods.none;
-        s = s.strip;
+        collectException(strip(s), s);
         while (true)
         {
             bool found;
@@ -220,7 +222,7 @@ struct Shortcut
             }
             if (!found)
                 break;
-            s = s.strip;
+            collectException(strip(s), s);
         }
         key = parseKeyName(s);
         return key != Key.none;

@@ -7,6 +7,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.events;
 
+nothrow:
+
 import beamui.widgets.widget;
 
 /// Mouse action codes for `MouseEvent`
@@ -71,6 +73,8 @@ __gshared long DOUBLE_CLICK_THRESHOLD_MS = 400;
 /// Mouse button state details for `MouseEvent`
 struct ButtonDetails
 {
+    nothrow:
+
     private
     {
         /// Timestamp of the button press (0 if the button is up)
@@ -110,7 +114,8 @@ struct ButtonDetails
                 return 0;
             if (_downTs != 0 && _upTs != 0)
                 return cast(int)(_upTs - _downTs);
-            long ts = std.datetime.Clock.currStdTime;
+            long ts;
+            collectException(std.datetime.Clock.currStdTime, ts);
             return cast(int)(ts - _downTs);
         }
         /// X coordinate of the point where button was pressed down last time
@@ -138,7 +143,7 @@ struct ButtonDetails
         static import std.datetime;
 
         const oldDownTs = _downTs;
-        _downTs = std.datetime.Clock.currStdTime;
+        collectException(std.datetime.Clock.currStdTime, _downTs);
         _upTs = 0;
         // allow only slight cursor movements when generating double/triple clicks
         if (_downTs - oldDownTs < DOUBLE_CLICK_THRESHOLD_MS * 10_000 &&
@@ -165,7 +170,7 @@ struct ButtonDetails
 
         _doubleClick = false;
         _tripleClick = false;
-        _upTs = std.datetime.Clock.currStdTime;
+        collectException(std.datetime.Clock.currStdTime, _upTs);
     }
 }
 
@@ -174,6 +179,8 @@ struct ButtonDetails
 */
 final class MouseEvent
 {
+    nothrow:
+
     private
     {
         MouseAction _action;
@@ -313,13 +320,19 @@ final class MouseEvent
 
     override string toString() const
     {
-        return format("MouseEvent(%s, %s, %s, %s, (%s, %s))", _action, _button, _mouseMods, _keyMods, _x, _y);
+        try
+            return format("MouseEvent(%s, %s, %s, %s, (%s, %s))",
+                _action, _button, _mouseMods, _keyMods, _x, _y);
+        catch (Exception)
+            return null;
     }
 }
 
 /// Mouse/touchpad scroll event
 final class WheelEvent
 {
+    nothrow:
+
     @property
     {
         /// Positive when scrolling right, negative when scrolling left
@@ -401,8 +414,11 @@ final class WheelEvent
 
     override string toString() const
     {
-        return format("WheelEvent(%s, %s, %s, (%s, %s), %s, %s)",
-            _deltaX, _deltaY, _deltaZ, _x, _y, _mouseMods, _keyMods);
+        try
+            return format("WheelEvent(%s, %s, %s, (%s, %s), %s, %s)",
+                _deltaX, _deltaY, _deltaZ, _x, _y, _mouseMods, _keyMods);
+        catch (Exception)
+            return null;
     }
 }
 
@@ -584,6 +600,8 @@ enum Key : uint
 /// Keyboard event
 final class KeyEvent
 {
+    nothrow:
+
     private
     {
         KeyAction _action;
@@ -631,7 +649,10 @@ final class KeyEvent
 
     override string toString() const
     {
-        return format("KeyEvent(%s, %s, %s, %s)", _action, _key, _mods, _text);
+        try
+            return format("KeyEvent(%s, %s, %s, %s)", _action, _key, _mods, _text);
+        catch (Exception)
+            return null;
     }
 }
 
@@ -843,7 +864,10 @@ string keyName(Key key)
         case KeyCode.numlock: return "NumLock";
         case KeyCode.scroll: return "ScrollLock";
         default:
-            return format("0x%08x", key);
+            try
+                return format("0x%08x", key);
+            catch (Exception)
+                assert(0);
     }
 }
 

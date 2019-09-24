@@ -9,6 +9,8 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.core.types;
 
+nothrow:
+
 import beamui.core.config;
 
 struct Tup(T...)

@@ -21,6 +21,8 @@ struct SubPath
 /// Represents vector shape as one or more subpaths, which contain series of segments
 struct Path
 {
+    nothrow:
+
     @property
     {
         /// True if no points and contours
@@ -290,7 +292,7 @@ struct Path
         posx = posy = 0;
     }
 
-    int opApply(scope int delegate(ref const SubPath) callback) const
+    int opApply(scope int delegate(ref const SubPath) nothrow callback) const
     {
         if (points.length == 0)
             return 0;

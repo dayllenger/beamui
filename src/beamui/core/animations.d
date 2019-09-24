@@ -61,6 +61,8 @@ struct Transition
 
 interface TimingFunction
 {
+    nothrow:
+
     static const
     {
         TimingFunction linear = new LinearTimingFunction;
@@ -76,6 +78,8 @@ interface TimingFunction
 
 class LinearTimingFunction : TimingFunction
 {
+    nothrow:
+
     double get(double t) const
     {
         return t;
@@ -84,6 +88,8 @@ class LinearTimingFunction : TimingFunction
 
 class CubicBezierTimingFunction : TimingFunction
 {
+    nothrow:
+
     private
     {
         // coefficients

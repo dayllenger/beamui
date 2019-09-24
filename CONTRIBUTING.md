@@ -67,7 +67,7 @@ The lefthand attributes and qualifiers should have such order:
 abstract/final/override public/protected/package/private static @property
 ```
 
-I don't use `pure nothrow @nogc @system/@trusted/@safe` attributes in the library. I decided to not bother with them until they'll be properly implemented.
+I don't use `pure @nogc @system/@trusted/@safe` attributes in the library. I decided to not bother with them until they'll be properly implemented.
 
 `@property` is needed only to split properties from other methods in documentation.
 

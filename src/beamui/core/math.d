@@ -7,6 +7,8 @@ Authors:   dayllenger
 */
 module beamui.core.math;
 
+nothrow:
+
 import std.math : fabs;
 
 /// Check that a `float` number is equal to zero in first 6 signs after point

@@ -9,6 +9,9 @@ Authors:   dayllenger
 */
 module beamui.css.parser;
 
+nothrow:
+
+import std.typecons : Nullable, nullable;
 import beamui.core.logger;
 import beamui.css.tokenizer;
 
@@ -89,7 +92,7 @@ struct Property
 
 struct Parser
 {
-    import std.typecons : Nullable, nullable;
+    nothrow:
 
     /// Range of tokens
     private TokenRange r;

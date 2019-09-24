@@ -12,6 +12,8 @@ Authors:   dayllenger
 */
 module beamui.css.tokenizer;
 
+nothrow:
+
 /// Transform a CSS source code into a token range
 TokenRange tokenizeCSS(string source)
 {
@@ -21,6 +23,8 @@ TokenRange tokenizeCSS(string source)
 /// Lazy input range of CSS tokens
 struct TokenRange
 {
+    nothrow:
+
     private Tokenizer* tokenizer;
     private Token _front;
 
@@ -62,6 +66,8 @@ struct TokenRange
 /// CSS token
 struct Token
 {
+    nothrow:
+
     TokenType type;
     string text;
     string dimensionUnit;
@@ -165,6 +171,8 @@ private dstring preprocessInput(string src)
 // Parsing order was slightly changed.
 private struct Tokenizer
 {
+    nothrow:
+
     import std.ascii;
     import std.uni : icmp, isSurrogate;
     import std.utf : toUTF8;

@@ -10,6 +10,8 @@ module beamui.graphics.gl.errors;
 import beamui.core.config;
 
 static if (USE_OPENGL):
+nothrow:
+
 import std.conv : to;
 import beamui.core.logger;
 import beamui.graphics.gl.api : GLenum, glGetError, GL_NO_ERROR;

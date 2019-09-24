@@ -7,6 +7,8 @@ Authors:   dayllenger
 */
 module beamui.css.css;
 
+nothrow:
+
 public import beamui.css.parser;
 public import beamui.css.tokenizer;
 

@@ -9,10 +9,13 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.core.functions;
 
+nothrow:
+
 // some useful imports from Phobos
 public import std.algorithm : move, remove, sort, startsWith, endsWith;
 public import std.conv : to;
 public import std.format : format;
+public import std.exception : collectException;
 public import std.utf : toUTF8, toUTF32;
 public import beamui.core.math : clamp, max, min;
 import std.traits;
@@ -136,12 +139,27 @@ unittest
     assert(res.length == 1 && res[0].i == 10);
 }
 
+static if (__VERSION__ < 2088)
+{
+    private void destr(T)(auto ref T val)
+    {
+        try
+            destroy(val);
+        catch (Exception)
+            assert(0);
+    }
+}
+else
+{
+    private alias destr = destroy;
+}
+
 /// Destroys object and nullifies its reference. Does nothing if `value` is null.
 void eliminate(T)(ref T value) if (is(T == class) || is(T == interface))
 {
     if (value !is null)
     {
-        destroy(value);
+        destr(value);
         value = null;
     }
 }
@@ -150,7 +168,7 @@ void eliminate(T)(ref T* value) if (is(T == struct))
 {
     if (value !is null)
     {
-        destroy(*value);
+        destr(*value);
         value = null;
     }
 }
@@ -161,7 +179,7 @@ void eliminate(T)(ref T[] values) if (__traits(compiles, eliminate(values[0])))
     {
         foreach (item; values)
             eliminate(item);
-        destroy(values);
+        destr(values);
         values = null;
     }
 }
@@ -170,13 +188,22 @@ void eliminate(T, S)(ref T[S] values) if (__traits(compiles, eliminate(values[S.
 {
     if (values !is null)
     {
-        foreach (k, v; values)
+        try
         {
-            static if (__traits(compiles, eliminate(k)))
-                eliminate(k);
-            eliminate(v);
+            foreach (k, v; values)
+            {
+                static if (__traits(compiles, eliminate(k)))
+                    eliminate(k);
+                eliminate(v);
+            }
         }
-        destroy(values);
+        catch (Exception e)
+        {
+            import core.stdc.stdio : printf;
+
+            printf("An exception during associative array iteration: %.*s\n", e.msg.length, e.msg.ptr);
+        }
+        destr(values);
         values = null;
     }
 }
@@ -225,8 +252,21 @@ unittest
     A.dtorCalls = 0;
 }
 
-/// Call some method for several objects.
-/// Limitations: return values are not supported currently; `super` cannot be passed as a parameter.
+/** Call some method for several objects.
+
+    Example:
+    ---
+    bunch(a, b, c, d).render();
+    // same as:
+    // a.render();
+    // b.render();
+    // c.render();
+    // d.render();
+    ---
+
+    Limitations: return values are not supported currently;
+    `super` cannot be passed as a parameter.
+*/
 auto bunch(TS...)(TS vars) if (TS.length > 0)
 {
     static struct Result
@@ -254,11 +294,13 @@ auto bunch(TS...)(TS vars) if (TS.length > 0)
     }
     return Result(vars);
 }
-///
+
 unittest
 {
     class C
     {
+        nothrow:
+
         static int count = 0;
         int i;
 
@@ -275,6 +317,8 @@ unittest
 
     class D : C
     {
+        nothrow:
+
         this(int i)
         {
             super(i);
@@ -285,18 +329,22 @@ unittest
     C b = new C(2);
     C c = new C(3);
     D d = new D(4);
-    /*
-    same as:
-    a.render(true);
-    b.render(true);
-    c.render(true);
-    d.render(true);
-    */
     bunch(a, b, c, d).render(true);
     assert(C.count == 10);
 }
 
-/// Do not evaluate a method if object is null, return .init value in this case
+/** Do not evaluate a method if object is null, return .init value in this case.
+
+    Example:
+    ---
+    C a;
+    C b = new C;
+    a.maybe.render(); // does nothing
+    b.maybe.render();
+    // you may do it also this way
+    bunch(a.maybe, b.maybe).render();
+    ---
+*/
 auto maybe(T)(T var) if (isReferenceType!T)
 {
     static struct Result
@@ -337,11 +385,13 @@ auto maybe(T)(T var) if (isReferenceType!T)
     }
     return Result(var);
 }
-///
+
 unittest
 {
     class C
     {
+        nothrow:
+
         static int count;
         int i = 5;
 
@@ -353,14 +403,12 @@ unittest
 
     C a;
     C b = new C;
-    a.maybe.render(true); // does nothing
+    a.maybe.render(true);
     b.maybe.render(true);
     assert(C.count == 1);
 
-    // you may do it also this way
     bunch(a.maybe, b.maybe).render(true);
     assert(C.count == 2);
-
     assert(a.maybe.i == 0);
     assert(b.maybe.i == 5);
 }

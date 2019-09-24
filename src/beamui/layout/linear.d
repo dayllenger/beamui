@@ -7,6 +7,8 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.layout.linear;
 
+nothrow:
+
 import std.container.array;
 import beamui.widgets.widget;
 

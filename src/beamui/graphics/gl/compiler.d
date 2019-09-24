@@ -10,8 +10,10 @@ module beamui.graphics.gl.compiler;
 import beamui.core.config;
 
 static if (USE_OPENGL):
+nothrow:
+
 import std.string : stripRight;
-import beamui.core.functions : min;
+import beamui.core.functions : collectException, min;
 import beamui.core.logger;
 import beamui.graphics.gl.api;
 
@@ -104,7 +106,8 @@ private bool checkCompilation(const GLuint shaderID, const ShaderStage stage)
         char[logMaxLen + 1] infobuffer = 0;
         glGetShaderInfoLog(shaderID, logMaxLen, null, infobuffer.ptr);
         infolen = min(infolen - 1, logMaxLen);
-        char[] s = stripRight(infobuffer[0 .. infolen]);
+        char[] s;
+        collectException(stripRight(infobuffer[0 .. infolen]), s);
         // it can be some warning
         if (!ok)
         {
@@ -130,7 +133,8 @@ private bool checkLinking(const GLuint programID)
         char[logMaxLen + 1] infobuffer = 0;
         glGetProgramInfoLog(programID, logMaxLen, null, infobuffer.ptr);
         infolen = min(infolen - 1, logMaxLen);
-        char[] s = stripRight(infobuffer[0 .. infolen]);
+        char[] s;
+        collectException(stripRight(infobuffer[0 .. infolen]), s);
         // it can be some warning
         if (!ok)
         {

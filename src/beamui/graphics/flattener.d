@@ -7,6 +7,8 @@ Authors:   dayllenger
 */
 module beamui.graphics.flattener;
 
+nothrow:
+
 import std.math : fabs, cos, sin, sqrt, PI, PI_2;
 import beamui.core.collections : Buf;
 import beamui.core.linalg : Vec2;

@@ -19,9 +19,10 @@ package(beamui) __gshared bool glNoContext;
 /// Buffer objects facility
 struct Buffer(GLuint target_)
 {
+    static nothrow:
+
     alias target = target_;
 
-static:
     void bind(ref GLuint id)
     {
         if (id == 0)
@@ -75,7 +76,8 @@ alias EBO = Buffer!GL_ELEMENT_ARRAY_BUFFER;
 /// Vertex array object facility
 struct VAO
 {
-static:
+    static nothrow:
+
     void bind(ref GLuint id)
     {
         if (id == 0)
@@ -102,7 +104,8 @@ static:
 /// 2D texture facility
 struct Tex2D
 {
-static:
+    static nothrow:
+
     void bind(ref GLuint id)
     {
         if (id == 0)
@@ -156,7 +159,8 @@ static:
 /// Framebuffer object facility
 struct FBO
 {
-static:
+    static nothrow:
+
     void bind(ref GLuint id)
     {
         if (id == 0)

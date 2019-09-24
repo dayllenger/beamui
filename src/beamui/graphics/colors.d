@@ -7,9 +7,11 @@ Authors:   Vadim Lopatin
 */
 module beamui.graphics.colors;
 
+nothrow:
+
 import std.string : strip;
 import std.traits : isIntegral;
-import beamui.core.functions : clamp, to;
+import beamui.core.functions : clamp, collectException, to;
 import beamui.core.logger;
 import beamui.core.parseutils;
 import beamui.core.types;
@@ -20,7 +22,8 @@ alias ARGB8 = uint;
 /// Represents RGBA color with one byte per channel
 struct Color
 {
-align(1):
+    align(1) nothrow:
+
     ubyte r, g, b;
     ubyte a; /// 0 - opaque, 255 - transparent
 
@@ -159,6 +162,8 @@ align(1):
 /// Represents RGBA color with floating point channels in [0, 1] range
 struct ColorF
 {
+    nothrow:
+
     float r = 0;
     float g = 0;
     float b = 0;
@@ -342,7 +347,7 @@ uint makeRGBA(T)(T r, T g, T b, T a)
 /// Decode color string in one of formats: #RGB #ARGB #RRGGBB #AARRGGBB
 Result!Color decodeHexColor(string s)
 {
-    s = strip(s);
+    collectException(strip(s), s);
     if (s.length != 4 && s.length != 5 && s.length != 7 && s.length != 9)
         return Err!Color;
     if (s[0] != '#')
@@ -364,7 +369,7 @@ Result!Color decodeHexColor(string s)
 /// Decode named color either from `NamedColor` enum, `@null`, `none`, or `transparent`
 Result!Color decodeTextColor(string s)
 {
-    s = strip(s);
+    collectException(strip(s), s);
     if (s == "@null" || s == "none" || s == "transparent")
         return Ok(Color.transparent);
 

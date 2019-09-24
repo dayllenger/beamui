@@ -7,6 +7,8 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.units;
 
+nothrow:
+
 import beamui.core.geometry : isDefinedSize, isValidSize, SIZE_UNSPECIFIED;
 
 /// Supported types of distance measurement unit
@@ -29,6 +31,8 @@ enum LengthUnit
 /// Represents length with specified measurement unit
 struct Length
 {
+    nothrow:
+
     private float value = SIZE_UNSPECIFIED!float;
     private LengthUnit type = LengthUnit.device;
 
@@ -209,6 +213,8 @@ struct Length
 /// Layout length can be either in device-independent pixels or in percents
 struct LayoutLength
 {
+    nothrow:
+
     private float value = SIZE_UNSPECIFIED!float;
     private bool percentage;
 

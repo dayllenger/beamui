@@ -281,7 +281,7 @@ struct FontList
         foreach (ref item; _list)
             if (item.refCount <= 1)
                 item.clear();
-        _list = efilter!(a => !a.isNull)(_list);
+        _list = remove!(a => a.isNull)(_list);
         foreach (ref item; _list)
             item.cleanup();
     }

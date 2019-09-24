@@ -2428,6 +2428,8 @@ class Panel : WidgetGroup
 /// Helper for locating items in list, tree, table or other controls by typing their name
 struct TextTypingShortcutHelper
 {
+    nothrow:
+
     /// Expiration time for entered text; after timeout collected text will be cleared
     int timeoutMillis = 800;
     private long _lastUpdateTimeStamp;
@@ -2491,6 +2493,8 @@ struct TextTypingShortcutHelper
 /// NOT USED
 struct AnimationHelper
 {
+    nothrow:
+
     private long _timeElapsed;
     private long _maxInterval;
     private int _maxProgress;
