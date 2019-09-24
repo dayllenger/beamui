@@ -482,11 +482,24 @@ void initLogs()
 {
     static import std.stdio;
 
+    static std.stdio.File* openLogFile()
+    {
+        try
+        {
+            return new std.stdio.File("ui.log", "w");
+        }
+        catch (Exception e)
+        {
+            std.stdio.printf("%.*s\n", e.msg.length, e.msg.ptr);
+            return null;
+        }
+    }
+
     static if (BACKEND_CONSOLE)
     {
         debug
         {
-            Log.setFileLogger(new std.stdio.File("ui.log", "w"));
+            Log.setFileLogger(openLogFile());
             Log.setLogLevel(LogLevel.trace);
         }
         else
@@ -494,7 +507,7 @@ void initLogs()
             // no logging unless version ForceLogs is set
             version (ForceLogs)
             {
-                Log.setFileLogger(new std.stdio.File("ui.log", "w"));
+                Log.setFileLogger(openLogFile());
             }
         }
     }
@@ -504,14 +517,14 @@ void initLogs()
         {
             debug
             {
-                Log.setFileLogger(new std.stdio.File("ui.log", "w"));
+                Log.setFileLogger(openLogFile());
             }
             else
             {
                 // no logging unless version ForceLogs is set
                 version (ForceLogs)
                 {
-                    Log.setFileLogger(new std.stdio.File("ui.log", "w"));
+                    Log.setFileLogger(openLogFile());
                 }
             }
         }
