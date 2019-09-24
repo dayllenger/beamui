@@ -200,7 +200,7 @@ unittest
     const s3 = "The quick brown   fox jumps over the lazy dog "d;
 
     assert(splitDString(s1).length == 9);
-    assert(concatDStrings(splitDString(s1)) == s2);
+    assert(concatDStrings(splitDString(s1), "\n") == s2);
     assert(replaceEOLsWithSpaces(s1) == s3);
     assert(replaceEOLsWithSpaces(s2) == s3);
 

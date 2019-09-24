@@ -112,33 +112,6 @@ unittest
     assert(ires.equal([ 5, 10 ]));
 }
 
-/// Simple eager filter
-S[] efilter(alias pred, S)(S[] s)
-{
-    S[] arr;
-    foreach (elem; s)
-        if (pred(elem))
-            arr ~= elem;
-    return arr;
-}
-///
-unittest
-{
-    // similar to std.algorithm.filter, but returns dynamic array
-    assert("stuff".efilter!(c => c == 'f') == "ff");
-
-    struct C
-    {
-        int i;
-        bool ok;
-    }
-
-    C*[] cs = [ new C(5, false), new C(10, true) ];
-    C*[] res = cs.efilter!(a => a.ok);
-
-    assert(res.length == 1 && res[0].i == 10);
-}
-
 static if (__VERSION__ < 2088)
 {
     private void destr(T)(auto ref T val)
