@@ -1,0 +1,11 @@
+name "ext"
+description "Extension pack"
+license "BSL-1.0"
+authors "dayllenger" "Vadim Lopatin" "Roman Chistokhodov"
+
+dependency "beamui" path="../"
+importPath "src"
+sourcePaths "src"
+targetName "beamui-ext"
+targetPath "../lib"
+targetType "staticLibrary"

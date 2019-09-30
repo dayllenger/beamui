@@ -20,10 +20,11 @@ libs "z" platform="linux"
 
 x:ddoxFilterArgs "--min-protection=Protected" "--in" "beamui" "--ex" ""
 
-subPackage "./examples/basic/"
-subPackage "./examples/css/"
-subPackage "./examples/opengl/"
-subPackage "./examples/overview/"
+subPackage "ext"
+subPackage "examples/basic"
+subPackage "examples/css"
+subPackage "examples/opengl"
+subPackage "examples/overview"
 
 versions "FT_28" "GL_30" "SDL_205"
 
@@ -72,4 +73,12 @@ configuration "x11" {
     dependency "bindbc-freetype" version="~>0.6.0"
     dependency "bindbc-opengl" version="~>0.9.0"
     dependency "x11" version="~>1.0.17"
+}
+
+configuration "ddox" {
+    sourcePaths "ext/src"
+    dependency "bindbc-loader" version="~>0.2.1"
+    dependency "bindbc-freetype" version="~>0.6.0" // Posix only
+    dependency "bindbc-opengl" version="~>0.9.0"
+    dependency "bindbc-sdl" version="~>0.10.0"     // Posix only
 }

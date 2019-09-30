@@ -13,6 +13,6 @@ then
     patch $parser ./ddox/jsonparser.diff
 fi
 
-dub build -b ddox
+dub build -b ddox -c ddox
 cp ./ddox/ddox.css ./docs/styles/ddox.css
 cp ./ddox/prettify.css ./docs/prettify/prettify.css
