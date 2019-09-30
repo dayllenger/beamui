@@ -26,7 +26,6 @@ static import dimage.stream;
 import beamui.core.logger;
 import beamui.core.types : Tup, tup;
 import beamui.graphics.drawbuf;
-import beamui.graphics.xpm.reader;
 
 alias ImageLoader = ColorDrawBuf function(const ubyte[]);
 
@@ -74,9 +73,6 @@ ColorDrawBuf loadImage(immutable ubyte[] data, string filename)
                 }
             }
         }
-        // try XPM
-        if (isXPM(filename))
-            return parseXPM(data);
         // try dlib
         SuperImage image;
         auto stream = new dimage.stream.ArrayStream(cast(ubyte[])data, data.length);
@@ -128,10 +124,4 @@ bool isJPEG(string filename)
 {
     return filename.endsWith(".jpg") || filename.endsWith(".jpeg") ||
            filename.endsWith(".JPG") || filename.endsWith(".JPEG");
-}
-
-/// Is it a XPM filename?
-bool isXPM(string filename)
-{
-    return filename.endsWith(".xpm") || filename.endsWith(".XPM");
 }

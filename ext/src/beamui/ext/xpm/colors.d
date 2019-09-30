@@ -5,7 +5,7 @@ Copyright: Roman Chistokhodov 2015
 License:   Boost License 1.0
 Authors:   Roman Chistokhodov
 */
-module beamui.graphics.xpm.xpmcolors;
+module beamui.ext.xpm.colors;
 
 import std.algorithm : cmp;
 

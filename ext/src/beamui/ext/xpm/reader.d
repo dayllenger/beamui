@@ -5,7 +5,7 @@ Copyright: Roman Chistokhodov 2015
 License:   Boost License 1.0
 Authors:   Roman Chistokhodov
 */
-module beamui.graphics.xpm.reader;
+module beamui.ext.xpm.reader;
 
 import std.algorithm : startsWith, splitter, find;
 import std.array;
@@ -15,7 +15,7 @@ import std.range;
 import std.string;
 import beamui.graphics.colors;
 import beamui.graphics.drawbuf;
-import beamui.graphics.xpm.xpmcolors;
+import beamui.ext.xpm.colors;
 
 ColorDrawBuf parseXPM(const(ubyte)[] data)
 {
