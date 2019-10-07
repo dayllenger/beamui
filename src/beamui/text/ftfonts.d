@@ -32,33 +32,10 @@ private int stdFontFacePriority(string face)
 
 private struct FontDef
 {
-    immutable FontFamily family;
-    immutable string face;
-    immutable bool italic;
-    immutable ushort weight;
-
-    this(FontFamily family, string face, bool italic, ushort weight)
-    {
-        this.family = family;
-        this.face = face;
-        this.italic = italic;
-        this.weight = weight;
-    }
-
-    bool opEquals(ref const FontDef v) const
-    {
-        return family == v.family && italic == v.italic && weight == v.weight && face == v.face;
-    }
-
-    hash_t toHash() const nothrow @safe
-    {
-        hash_t res = 123;
-        res = res * 31 + cast(hash_t)italic;
-        res = res * 31 + cast(hash_t)weight;
-        res = res * 31 + cast(hash_t)family;
-        res = res * 31 + typeid(face).getHash(&face);
-        return res;
-    }
+    FontFamily family;
+    string face;
+    bool italic;
+    ushort weight;
 }
 
 private class FontFileItem
@@ -560,14 +537,7 @@ class FreeTypeFontManager : FontManager
 {
     private FT_Library _library;
     private FontFileItem[] _fontFiles;
-
-    private FontFileItem findFileItem(ref FontDef def)
-    {
-        foreach (FontFileItem item; _fontFiles)
-            if (item.def == def)
-                return item;
-        return null;
-    }
+    private FontFileItem[FontDef] _fontFileMap;
 
     /// Return list of available font faces
     override FontFaceProps[] getFaces()
@@ -695,6 +665,7 @@ class FreeTypeFontManager : FontManager
             Log.d("FreeTypeFontManager ~this()");
         //_activeFonts.clear();
         eliminate(_fontFiles);
+        eliminate(_fontFileMap);
         debug (FontResources)
             Log.d("Destroyed all fonts. Freeing library.");
         // uninit library
@@ -822,11 +793,12 @@ class FreeTypeFontManager : FontManager
         }
 
         FontDef def = FontDef(family, face, italic, weight);
-        FontFileItem item = findFileItem(def);
+        FontFileItem item = _fontFileMap.get(def, null);
         if (item is null)
         {
             item = new FontFileItem(_library, def);
             _fontFiles ~= item;
+            _fontFileMap[def] = item;
         }
         item.addFile(filename);
 
@@ -862,11 +834,13 @@ version (Posix)
         Log.i("Getting list of fonts using FontConfig");
         const long startts = currentTimeMillis();
 
-        FcObjectSet* os = FcObjectSetBuild(FC_FILE.toStringz, FC_WEIGHT.toStringz, FC_FAMILY.toStringz,
-                FC_SLANT.toStringz, FC_SPACING.toStringz, FC_INDEX.toStringz, FC_STYLE.toStringz, null);
+        FcObjectSet* os = FcObjectSetBuild(
+            FC_FILE, FC_WEIGHT, FC_FAMILY,
+            FC_SLANT, FC_SPACING, FC_INDEX, FC_STYLE,
+            null);
         FcPattern* pat = FcPatternCreate();
 
-        FcPatternAddBool(pat, FC_SCALABLE.toStringz, 1);
+        FcPatternAddBool(pat, FC_SCALABLE, 1);
 
         FcFontSet* fontset = FcFontList(null, pat, os);
 
@@ -879,7 +853,7 @@ version (Posix)
         foreach (i; 0 .. fontset.nfont)
         {
             FcChar8* fcfile;
-            if (FcPatternGetString(fontset.fonts[i], FC_FILE.toStringz, 0, &fcfile) != FcResultMatch)
+            if (FcPatternGetString(fontset.fonts[i], FC_FILE, 0, &fcfile) != FcResultMatch)
                 continue;
             string filename = fcfile.fromStringz.idup;
             char[] fn = fromStringz(fcfile).dup;
@@ -895,12 +869,12 @@ version (Posix)
             int fcslant = FC_SLANT_ROMAN;
             int fcspacing;
             int fcweight = FC_WEIGHT_MEDIUM;
-            if (FcPatternGetString(fontset.fonts[i], FC_FAMILY.toStringz, 0, &fcfamily) != FcResultMatch)
+            if (FcPatternGetString(fontset.fonts[i], FC_FAMILY, 0, &fcfamily) != FcResultMatch)
                 continue;
-            FcPatternGetString(fontset.fonts[i], FC_STYLE.toStringz, 0, &fcstyle);
-            FcPatternGetInteger(fontset.fonts[i], FC_SLANT.toStringz, 0, &fcslant);
-            FcPatternGetInteger(fontset.fonts[i], FC_SPACING.toStringz, 0, &fcspacing);
-            FcPatternGetInteger(fontset.fonts[i], FC_WEIGHT.toStringz, 0, &fcweight);
+            FcPatternGetString(fontset.fonts[i], FC_STYLE, 0, &fcstyle);
+            FcPatternGetInteger(fontset.fonts[i], FC_SLANT, 0, &fcslant);
+            FcPatternGetInteger(fontset.fonts[i], FC_SPACING, 0, &fcspacing);
+            FcPatternGetInteger(fontset.fonts[i], FC_WEIGHT, 0, &fcweight);
 
             FontFamily family;
             if (fcspacing == FC_MONO)
