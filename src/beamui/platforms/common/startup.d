@@ -9,259 +9,46 @@ module beamui.platforms.common.startup;
 
 import beamui.core.config;
 import beamui.core.logger;
+import beamui.graphics.drawables;
+import beamui.graphics.drawbuf;
+import beamui.graphics.gldrawbuf;
 import beamui.graphics.resources;
 import beamui.text.fonts;
+import beamui.text.ftfonts;
 
-static if (BACKEND_GUI)
+/** Initialize font manager - default implementation.
+
+    On win32 - first it tries to init freetype (if compiled with), and falls back to win32 fonts.
+    On linux/mac - tries to init freetype with fontconfig, and falls back to hardcoded font paths.
+    On console - simply uses console font manager.
+
+*/
+bool initFontManager()
 {
-    version (Windows)
+    static if (BACKEND_GUI)
     {
-        /// Initialize font manager - default implementation
-        /// On win32 - first it tries to init freetype, and falls back to win32 fonts.
-        /// On linux/mac - tries to init freetype with some hardcoded font paths
-        bool initFontManager()
+        version (Windows)
         {
-            import core.sys.windows.windows;
-            import std.utf;
             import beamui.platforms.windows.win32fonts;
 
             /// Testing freetype font manager
             static if (USE_FREETYPE)
             try
             {
-                import core.sys.windows.shlobj;
-                import beamui.text.ftfonts;
-
                 Log.v("Trying to init FreeType font manager");
 
-                auto ftfontMan = new FreeTypeFontManager;
+                auto ft = new FreeTypeFontManager;
 
-                string fontsPath = "c:\\Windows\\Fonts\\";
-                static if (false)
-                { // SHGetFolderPathW not found in shell32.lib
-                    WCHAR[MAX_PATH] szPath;
-                    static if (false)
-                    {
-                        const CSIDL_FLAG_NO_ALIAS = 0x1000;
-                        const CSIDL_FLAG_DONT_UNEXPAND = 0x2000;
-                        if (SUCCEEDED(SHGetFolderPathW(NULL,
-                                CSIDL_FONTS | CSIDL_FLAG_NO_ALIAS | CSIDL_FLAG_DONT_UNEXPAND, NULL, 0, szPath.ptr)))
-                        {
-                            fontsPath = toUTF8(fromWStringz(szPath)); // FIXME: compile error
-                        }
-                    }
-                    else
-                    {
-                        if (GetWindowsDirectory(szPath.ptr, MAX_PATH - 1))
-                        {
-                            fontsPath = toUTF8(fromWStringz(szPath));
-                            Log.i("Windows directory: ", fontsPath);
-                            fontsPath ~= "\\Fonts\\";
-                            Log.i("Fonts directory: ", fontsPath);
-                        }
-                    }
-                }
-                Log.v("Registering fonts");
-                // arial
-                ftfontMan.registerFont(fontsPath ~ "arial.ttf", FontFamily.sans_serif, "Arial",
-                        false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "arialbd.ttf", FontFamily.sans_serif, "Arial",
-                        false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "arialbi.ttf", FontFamily.sans_serif, "Arial",
-                        true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "ariali.ttf", FontFamily.sans_serif, "Arial",
-                        true, FontWeight.normal);
-                // arial unicode ms
-                ftfontMan.registerFont(fontsPath ~ "arialni.ttf", FontFamily.sans_serif,
-                        "Arial Unicode MS", false, FontWeight.normal);
-                // arial narrow
-                ftfontMan.registerFont(fontsPath ~ "arialn.ttf", FontFamily.sans_serif,
-                        "Arial Narrow", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "arialnb.ttf", FontFamily.sans_serif,
-                        "Arial Narrow", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "arialnbi.ttf", FontFamily.sans_serif,
-                        "Arial Narrow", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "arialni.ttf", FontFamily.sans_serif,
-                        "Arial Narrow", true, FontWeight.normal);
-                // calibri
-                ftfontMan.registerFont(fontsPath ~ "calibri.ttf", FontFamily.sans_serif,
-                        "Calibri", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "calibrib.ttf", FontFamily.sans_serif,
-                        "Calibri", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "calibriz.ttf", FontFamily.sans_serif,
-                        "Calibri", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "calibrii.ttf", FontFamily.sans_serif,
-                        "Calibri", true, FontWeight.normal);
-                // cambria
-                ftfontMan.registerFont(fontsPath ~ "cambria.ttc", FontFamily.sans_serif,
-                        "Cambria", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "cambriab.ttf", FontFamily.sans_serif,
-                        "Cambria", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "cambriaz.ttf", FontFamily.sans_serif,
-                        "Cambria", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "cambriai.ttf", FontFamily.sans_serif,
-                        "Cambria", true, FontWeight.normal);
-                // candara
-                ftfontMan.registerFont(fontsPath ~ "Candara.ttf", FontFamily.sans_serif,
-                        "Candara", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "Candarab.ttf", FontFamily.sans_serif,
-                        "Candara", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "Candaraz.ttf", FontFamily.sans_serif,
-                        "Candara", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "Candarai.ttf", FontFamily.sans_serif,
-                        "Candara", true, FontWeight.normal);
-                // century
-                ftfontMan.registerFont(fontsPath ~ "CENTURY.TTF", FontFamily.serif, "Century",
-                        false, FontWeight.normal);
-                // comic sans ms
-                ftfontMan.registerFont(fontsPath ~ "comic.ttf", FontFamily.serif,
-                        "Comic Sans MS", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "comicbd.ttf", FontFamily.serif,
-                        "Comic Sans MS", false, FontWeight.bold);
-                // constantia
-                ftfontMan.registerFont(fontsPath ~ "constan.ttf", FontFamily.serif,
-                        "Constantia", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "constanb.ttf", FontFamily.serif,
-                        "Constantia", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "constanz.ttf", FontFamily.serif,
-                        "Constantia", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "constani.ttf", FontFamily.serif,
-                        "Constantia", true, FontWeight.normal);
-                // corbel
-                ftfontMan.registerFont(fontsPath ~ "corbel.ttf", FontFamily.sans_serif, "Corbel",
-                        false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "corbelb.ttf", FontFamily.sans_serif,
-                        "Corbel", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "corbelz.ttf", FontFamily.sans_serif,
-                        "Corbel", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "corbeli.ttf", FontFamily.sans_serif,
-                        "Corbel", true, FontWeight.normal);
-                // courier new
-                ftfontMan.registerFont(fontsPath ~ "cour.ttf", FontFamily.monospace,
-                        "Courier New", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "courbd.ttf", FontFamily.monospace,
-                        "Courier New", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "courbi.ttf", FontFamily.monospace,
-                        "Courier New", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "couri.ttf", FontFamily.monospace,
-                        "Courier New", true, FontWeight.normal);
-                // franklin gothic book
-                ftfontMan.registerFont(fontsPath ~ "frank.ttf", FontFamily.sans_serif,
-                        "Franklin Gothic Book", false, FontWeight.normal);
-                // times new roman
-                ftfontMan.registerFont(fontsPath ~ "times.ttf", FontFamily.serif,
-                        "Times New Roman", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "timesbd.ttf", FontFamily.serif,
-                        "Times New Roman", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "timesbi.ttf", FontFamily.serif,
-                        "Times New Roman", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "timesi.ttf", FontFamily.serif,
-                        "Times New Roman", true, FontWeight.normal);
-                // consolas
-                ftfontMan.registerFont(fontsPath ~ "consola.ttf", FontFamily.monospace,
-                        "Consolas", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "consolab.ttf", FontFamily.monospace,
-                        "Consolas", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "consolai.ttf", FontFamily.monospace,
-                        "Consolas", true, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "consolaz.ttf", FontFamily.monospace,
-                        "Consolas", true, FontWeight.bold);
-                // garamond
-                ftfontMan.registerFont(fontsPath ~ "GARA.TTF", FontFamily.serif, "Garamond",
-                        false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "GARABD.TTF", FontFamily.serif, "Garamond",
-                        false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "GARAIT.TTF", FontFamily.serif, "Garamond",
-                        true, FontWeight.normal);
-                // georgia
-                ftfontMan.registerFont(fontsPath ~ "georgia.ttf", FontFamily.sans_serif,
-                        "Georgia", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "georgiab.ttf", FontFamily.sans_serif,
-                        "Georgia", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "georgiaz.ttf", FontFamily.sans_serif,
-                        "Georgia", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "georgiai.ttf", FontFamily.sans_serif,
-                        "Georgia", true, FontWeight.normal);
-                // KaiTi
-                ftfontMan.registerFont(fontsPath ~ "kaiu.ttf", FontFamily.sans_serif, "KaiTi",
-                        false, FontWeight.normal);
-                // Lucida Console
-                ftfontMan.registerFont(fontsPath ~ "lucon.ttf", FontFamily.monospace,
-                        "Lucida Console", false, FontWeight.normal);
-                // malgun gothic
-                ftfontMan.registerFont(fontsPath ~ "malgun.ttf", FontFamily.serif,
-                        "Malgun Gothic", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "malgunbd.ttf", FontFamily.serif,
-                        "Malgun Gothic", false, FontWeight.bold);
-                // meiryo
-                ftfontMan.registerFont(fontsPath ~ "meiryo.ttc", FontFamily.serif, "Meiryo",
-                        false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "meiryob.ttc", FontFamily.serif, "Meiryo",
-                        false, FontWeight.bold);
-                // ms mhei
-                ftfontMan.registerFont(fontsPath ~ "MSMHei.ttf", FontFamily.serif,
-                        "Microsoft MHei", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "MSMHei-Bold.ttf", FontFamily.serif,
-                        "Microsoft MHei", false, FontWeight.bold);
-                // ms neo gothic
-                ftfontMan.registerFont(fontsPath ~ "MSNeoGothic.ttf", FontFamily.serif,
-                        "Microsoft NeoGothic", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "MSNeoGothic-Bold.ttf", FontFamily.serif,
-                        "Microsoft NeoGothic", false, FontWeight.bold);
-                // palatino linotype
-                ftfontMan.registerFont(fontsPath ~ "pala.ttf", FontFamily.serif,
-                        "Palatino Linotype", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "palab.ttf", FontFamily.serif,
-                        "Palatino Linotype", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "palabi.ttf", FontFamily.serif,
-                        "Palatino Linotype", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "palai.ttf", FontFamily.serif,
-                        "Palatino Linotype", true, FontWeight.normal);
-                // segoeui
-                ftfontMan.registerFont(fontsPath ~ "segoeui.ttf", FontFamily.sans_serif,
-                        "Segoe UI", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "segoeuib.ttf", FontFamily.sans_serif,
-                        "Segoe UI", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "segoeuiz.ttf", FontFamily.sans_serif,
-                        "Segoe UI", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "segoeuii.ttf", FontFamily.sans_serif,
-                        "Segoe UI", true, FontWeight.normal);
-                // SimSun
-                ftfontMan.registerFont(fontsPath ~ "simsun.ttc", FontFamily.sans_serif, "SimSun",
-                        false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "simsunb.ttf", FontFamily.sans_serif,
-                        "SimSun", false, FontWeight.bold);
-                // tahoma
-                ftfontMan.registerFont(fontsPath ~ "tahoma.ttf", FontFamily.sans_serif, "Tahoma",
-                        false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "tahomabd.ttf", FontFamily.sans_serif,
-                        "Tahoma", false, FontWeight.bold);
-                // trebuchet ms
-                ftfontMan.registerFont(fontsPath ~ "trebuc.ttf", FontFamily.sans_serif,
-                        "Trebuchet MS", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "trebucbd.ttf", FontFamily.sans_serif,
-                        "Trebuchet MS", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "trebucbi.ttf", FontFamily.sans_serif,
-                        "Trebuchet MS", true, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "trebucit.ttf", FontFamily.sans_serif,
-                        "Trebuchet MS", true, FontWeight.normal);
-                // verdana
-                ftfontMan.registerFont(fontsPath ~ "verdana.ttf", FontFamily.sans_serif,
-                        "Verdana", false, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "verdanab.ttf", FontFamily.sans_serif,
-                        "Verdana", false, FontWeight.bold);
-                ftfontMan.registerFont(fontsPath ~ "verdanai.ttf", FontFamily.sans_serif,
-                        "Verdana", true, FontWeight.normal);
-                ftfontMan.registerFont(fontsPath ~ "verdanaz.ttf", FontFamily.sans_serif,
-                        "Verdana", true, FontWeight.bold);
-                if (ftfontMan.registeredFontCount())
+                tryHardcodedFontPaths(ft);
+
+                if (ft.registeredFontCount > 0)
                 {
-                    FontManager.instance = ftfontMan;
+                    FontManager.instance = ft;
                 }
                 else
                 {
                     Log.w("No fonts registered in FreeType font manager. Disabling FreeType.");
-                    destroy(ftfontMan);
+                    destroy(ft);
                 }
             }
             catch (Exception e)
@@ -276,183 +63,14 @@ static if (BACKEND_GUI)
             }
             return true;
         }
-    }
-    else
-    {
-        import beamui.text.ftfonts;
-
-        bool registerFonts(FreeTypeFontManager ft, string path)
-        {
-            import std.file;
-
-            if (!exists(path) || !isDir(path))
-                return false;
-            ft.registerFont(path ~ "DejaVuSans.ttf", FontFamily.sans_serif, "DejaVuSans", false, FontWeight.normal);
-            ft.registerFont(path ~ "DejaVuSans-Bold.ttf", FontFamily.sans_serif, "DejaVuSans", false, FontWeight.bold);
-            ft.registerFont(path ~ "DejaVuSans-Oblique.ttf", FontFamily.sans_serif, "DejaVuSans",
-                    true, FontWeight.normal);
-            ft.registerFont(path ~ "DejaVuSans-BoldOblique.ttf", FontFamily.sans_serif, "DejaVuSans",
-                    true, FontWeight.bold);
-            ft.registerFont(path ~ "DejaVuSansMono.ttf", FontFamily.monospace, "DejaVuSansMono",
-                    false, FontWeight.normal);
-            ft.registerFont(path ~ "DejaVuSansMono-Bold.ttf", FontFamily.monospace,
-                    "DejaVuSansMono", false, FontWeight.bold);
-            ft.registerFont(path ~ "DejaVuSansMono-Oblique.ttf", FontFamily.monospace,
-                    "DejaVuSansMono", true, FontWeight.normal);
-            ft.registerFont(path ~ "DejaVuSansMono-BoldOblique.ttf", FontFamily.monospace,
-                    "DejaVuSansMono", true, FontWeight.bold);
-            return true;
-        }
-
-        string[] findFontsInDirectory(string dir)
-        {
-            import std.file : DirEntry;
-            import beamui.core.files;
-
-            DirEntry[] entries;
-            try
-            {
-                entries = listDirectory(dir, AttrFilter.files, ["*.ttf"]);
-            }
-            catch (Exception e)
-            {
-                return null;
-            }
-
-            string[] res;
-            foreach (entry; entries)
-            {
-                res ~= entry.name;
-            }
-            return res;
-        }
-
-        void registerFontsFromDirectory(FreeTypeFontManager ft, string dir)
-        {
-            string[] fontFiles = findFontsInDirectory(dir);
-            Log.d("Fonts in ", dir, " : ", fontFiles);
-            foreach (file; fontFiles)
-                ft.registerFont(file);
-        }
-
-        /// Initialize font manager - default implementation
-        /// On win32 - first it tries to init freetype, and falls back to win32 fonts.
-        /// On linux/mac - tries to init freetype with some hardcoded font paths
-        bool initFontManager()
+        else
         {
             auto ft = new FreeTypeFontManager;
 
             if (!registerFontConfigFonts(ft))
             {
-                // TODO: use FontConfig
                 Log.w("No fonts found using FontConfig. Trying hardcoded paths.");
-                version (Android)
-                {
-                    ft.registerFontsFromDirectory("/system/fonts");
-                }
-                else
-                {
-                    ft.registerFonts("/usr/share/fonts/truetype/dejavu/");
-                    ft.registerFonts("/usr/share/fonts/TTF/");
-                    ft.registerFonts("/usr/share/fonts/dejavu/");
-                    ft.registerFonts("/usr/share/fonts/truetype/ttf-dejavu/"); // let it compile on Debian Wheezy
-                }
-                version (OSX)
-                {
-                    ft.registerFont("/Library/Fonts/Arial.ttf", FontFamily.sans_serif, "Arial",
-                            false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Arial Bold.ttf", FontFamily.sans_serif, "Arial",
-                            false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Arial Italic.ttf", FontFamily.sans_serif,
-                            "Arial", true, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Arial Bold Italic.ttf", FontFamily.sans_serif,
-                            "Arial", true, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Arial.ttf", FontFamily.sans_serif, "Arial",
-                            false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Arial Bold.ttf", FontFamily.sans_serif, "Arial",
-                            false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Arial Italic.ttf", FontFamily.sans_serif,
-                            "Arial", true, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Arial Bold Italic.ttf", FontFamily.sans_serif,
-                            "Arial", true, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Arial Narrow.ttf", FontFamily.sans_serif,
-                            "Arial Narrow", false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Arial Narrow Bold.ttf", FontFamily.sans_serif,
-                            "Arial Narrow", false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Arial Narrow Italic.ttf", FontFamily.sans_serif,
-                            "Arial Narrow", true, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Arial Narrow Bold Italic.ttf",
-                            FontFamily.sans_serif, "Arial Narrow", true, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Courier New.ttf", FontFamily.monospace,
-                            "Courier New", false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Courier New Bold.ttf", FontFamily.monospace,
-                            "Courier New", false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Courier New Italic.ttf", FontFamily.monospace,
-                            "Courier New", true, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Courier New Bold Italic.ttf",
-                            FontFamily.monospace, "Courier New", true, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Georgia.ttf", FontFamily.serif, "Georgia",
-                            false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Georgia Bold.ttf", FontFamily.serif, "Georgia",
-                            false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Georgia Italic.ttf", FontFamily.serif,
-                            "Georgia", true, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Georgia Bold Italic.ttf", FontFamily.serif,
-                            "Georgia", true, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Comic Sans MS.ttf", FontFamily.sans_serif,
-                            "Comic Sans", false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Comic Sans MS Bold.ttf", FontFamily.sans_serif,
-                            "Comic Sans", false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Tahoma.ttf", FontFamily.sans_serif, "Tahoma",
-                            false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Tahoma Bold.ttf", FontFamily.sans_serif,
-                            "Tahoma", false, FontWeight.bold, true);
-
-                    ft.registerFont("/Library/Fonts/Microsoft/Arial.ttf", FontFamily.sans_serif,
-                            "Arial", false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Arial Bold.ttf",
-                            FontFamily.sans_serif, "Arial", false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Arial Italic.ttf",
-                            FontFamily.sans_serif, "Arial", true, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Arial Bold Italic.ttf",
-                            FontFamily.sans_serif, "Arial", true, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Calibri.ttf", FontFamily.sans_serif,
-                            "Calibri", false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Calibri Bold.ttf",
-                            FontFamily.sans_serif, "Calibri", false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Calibri Italic.ttf",
-                            FontFamily.sans_serif, "Calibri", true, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Calibri Bold Italic.ttf",
-                            FontFamily.sans_serif, "Calibri", true, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Times New Roman.ttf",
-                            FontFamily.serif, "Times New Roman", false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Times New Roman Bold.ttf",
-                            FontFamily.serif, "Times New Roman", false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Times New Roman Italic.ttf",
-                            FontFamily.serif, "Times New Roman", true, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Times New Roman Bold Italic.ttf",
-                            FontFamily.serif, "Times New Roman", true, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Verdana.ttf", FontFamily.sans_serif,
-                            "Verdana", false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Verdana Bold.ttf",
-                            FontFamily.sans_serif, "Verdana", false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Verdana Italic.ttf",
-                            FontFamily.sans_serif, "Verdana", true, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Verdana Bold Italic.ttf",
-                            FontFamily.sans_serif, "Verdana", true, FontWeight.bold, true);
-
-                    ft.registerFont("/Library/Fonts/Microsoft/Consolas.ttf", FontFamily.monospace,
-                            "Consolas", false, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Consolas Bold.ttf",
-                            FontFamily.monospace, "Consolas", false, FontWeight.bold, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Consolas Italic.ttf",
-                            FontFamily.monospace, "Consolas", true, FontWeight.normal, true);
-                    ft.registerFont("/Library/Fonts/Microsoft/Consolas Bold Italic.ttf",
-                            FontFamily.monospace, "Consolas", true, FontWeight.bold, true);
-
-                    ft.registerFont("/System/Library/Fonts/Menlo.ttc", FontFamily.monospace,
-                            "Menlo", false, FontWeight.normal, true);
-                }
+                tryHardcodedFontPaths(ft);
             }
 
             if (!ft.registeredFontCount)
@@ -462,15 +80,280 @@ static if (BACKEND_GUI)
             return true;
         }
     }
-}
-else
-{
-    import beamui.platforms.ansi_console.consolefont;
-
-    bool initFontManager()
+    else
     {
+        import beamui.platforms.ansi_console.consolefont;
+
         FontManager.instance = new ConsoleFontManager;
         return true;
+    }
+}
+
+version (Windows)
+static if (USE_FREETYPE)
+private void tryHardcodedFontPaths(FreeTypeFontManager ft)
+{
+    import core.sys.windows.shlobj;
+    import core.sys.windows.windows;
+    import std.utf;
+
+    alias FF = FontFamily;
+    alias FW = FontWeight;
+
+    string path = "c:\\Windows\\Fonts\\";
+    static if (false)
+    { // SHGetFolderPathW not found in shell32.lib
+        WCHAR[MAX_PATH] szPath;
+        static if (false)
+        {
+            const CSIDL_FLAG_NO_ALIAS = 0x1000;
+            const CSIDL_FLAG_DONT_UNEXPAND = 0x2000;
+            if (SUCCEEDED(SHGetFolderPathW(NULL,
+                    CSIDL_FONTS | CSIDL_FLAG_NO_ALIAS | CSIDL_FLAG_DONT_UNEXPAND, NULL, 0, szPath.ptr)))
+            {
+                path = toUTF8(fromWStringz(szPath)); // FIXME: compile error
+            }
+        }
+        else
+        {
+            if (GetWindowsDirectory(szPath.ptr, MAX_PATH - 1))
+            {
+                path = toUTF8(fromWStringz(szPath));
+                Log.i("Windows directory: ", path);
+                path ~= "\\Fonts\\";
+                Log.i("Fonts directory: ", path);
+            }
+        }
+    }
+    Log.v("Registering fonts");
+    // arial
+    ft.registerFont(path ~ "arial.ttf", FF.sans_serif, "Arial", false, FW.normal);
+    ft.registerFont(path ~ "arialbd.ttf", FF.sans_serif, "Arial", false, FW.bold);
+    ft.registerFont(path ~ "arialbi.ttf", FF.sans_serif, "Arial", true, FW.bold);
+    ft.registerFont(path ~ "ariali.ttf", FF.sans_serif, "Arial", true, FW.normal);
+    // arial unicode ms
+    ft.registerFont(path ~ "arialni.ttf", FF.sans_serif, "Arial Unicode MS", false, FW.normal);
+    // arial narrow
+    ft.registerFont(path ~ "arialn.ttf", FF.sans_serif, "Arial Narrow", false, FW.normal);
+    ft.registerFont(path ~ "arialnb.ttf", FF.sans_serif, "Arial Narrow", false, FW.bold);
+    ft.registerFont(path ~ "arialnbi.ttf", FF.sans_serif, "Arial Narrow", true, FW.bold);
+    ft.registerFont(path ~ "arialni.ttf", FF.sans_serif, "Arial Narrow", true, FW.normal);
+    // calibri
+    ft.registerFont(path ~ "calibri.ttf", FF.sans_serif, "Calibri", false, FW.normal);
+    ft.registerFont(path ~ "calibrib.ttf", FF.sans_serif, "Calibri", false, FW.bold);
+    ft.registerFont(path ~ "calibriz.ttf", FF.sans_serif, "Calibri", true, FW.bold);
+    ft.registerFont(path ~ "calibrii.ttf", FF.sans_serif, "Calibri", true, FW.normal);
+    // cambria
+    ft.registerFont(path ~ "cambria.ttc", FF.sans_serif, "Cambria", false, FW.normal);
+    ft.registerFont(path ~ "cambriab.ttf", FF.sans_serif, "Cambria", false, FW.bold);
+    ft.registerFont(path ~ "cambriaz.ttf", FF.sans_serif, "Cambria", true, FW.bold);
+    ft.registerFont(path ~ "cambriai.ttf", FF.sans_serif, "Cambria", true, FW.normal);
+    // candara
+    ft.registerFont(path ~ "Candara.ttf", FF.sans_serif, "Candara", false, FW.normal);
+    ft.registerFont(path ~ "Candarab.ttf", FF.sans_serif, "Candara", false, FW.bold);
+    ft.registerFont(path ~ "Candaraz.ttf", FF.sans_serif, "Candara", true, FW.bold);
+    ft.registerFont(path ~ "Candarai.ttf", FF.sans_serif, "Candara", true, FW.normal);
+    // century
+    ft.registerFont(path ~ "CENTURY.TTF", FF.serif, "Century", false, FW.normal);
+    // comic sans ms
+    ft.registerFont(path ~ "comic.ttf", FF.serif, "Comic Sans MS", false, FW.normal);
+    ft.registerFont(path ~ "comicbd.ttf", FF.serif, "Comic Sans MS", false, FW.bold);
+    // constantia
+    ft.registerFont(path ~ "constan.ttf", FF.serif, "Constantia", false, FW.normal);
+    ft.registerFont(path ~ "constanb.ttf", FF.serif, "Constantia", false, FW.bold);
+    ft.registerFont(path ~ "constanz.ttf", FF.serif, "Constantia", true, FW.bold);
+    ft.registerFont(path ~ "constani.ttf", FF.serif, "Constantia", true, FW.normal);
+    // corbel
+    ft.registerFont(path ~ "corbel.ttf", FF.sans_serif, "Corbel", false, FW.normal);
+    ft.registerFont(path ~ "corbelb.ttf", FF.sans_serif, "Corbel", false, FW.bold);
+    ft.registerFont(path ~ "corbelz.ttf", FF.sans_serif, "Corbel", true, FW.bold);
+    ft.registerFont(path ~ "corbeli.ttf", FF.sans_serif, "Corbel", true, FW.normal);
+    // courier new
+    ft.registerFont(path ~ "cour.ttf", FF.monospace, "Courier New", false, FW.normal);
+    ft.registerFont(path ~ "courbd.ttf", FF.monospace, "Courier New", false, FW.bold);
+    ft.registerFont(path ~ "courbi.ttf", FF.monospace, "Courier New", true, FW.bold);
+    ft.registerFont(path ~ "couri.ttf", FF.monospace, "Courier New", true, FW.normal);
+    // franklin gothic book
+    ft.registerFont(path ~ "frank.ttf", FF.sans_serif, "Franklin Gothic Book", false, FW.normal);
+    // times new roman
+    ft.registerFont(path ~ "times.ttf", FF.serif, "Times New Roman", false, FW.normal);
+    ft.registerFont(path ~ "timesbd.ttf", FF.serif, "Times New Roman", false, FW.bold);
+    ft.registerFont(path ~ "timesbi.ttf", FF.serif, "Times New Roman", true, FW.bold);
+    ft.registerFont(path ~ "timesi.ttf", FF.serif, "Times New Roman", true, FW.normal);
+    // consolas
+    ft.registerFont(path ~ "consola.ttf", FF.monospace, "Consolas", false, FW.normal);
+    ft.registerFont(path ~ "consolab.ttf", FF.monospace, "Consolas", false, FW.bold);
+    ft.registerFont(path ~ "consolai.ttf", FF.monospace, "Consolas", true, FW.normal);
+    ft.registerFont(path ~ "consolaz.ttf", FF.monospace, "Consolas", true, FW.bold);
+    // garamond
+    ft.registerFont(path ~ "GARA.TTF", FF.serif, "Garamond", false, FW.normal);
+    ft.registerFont(path ~ "GARABD.TTF", FF.serif, "Garamond", false, FW.bold);
+    ft.registerFont(path ~ "GARAIT.TTF", FF.serif, "Garamond", true, FW.normal);
+    // georgia
+    ft.registerFont(path ~ "georgia.ttf", FF.sans_serif, "Georgia", false, FW.normal);
+    ft.registerFont(path ~ "georgiab.ttf", FF.sans_serif, "Georgia", false, FW.bold);
+    ft.registerFont(path ~ "georgiaz.ttf", FF.sans_serif, "Georgia", true, FW.bold);
+    ft.registerFont(path ~ "georgiai.ttf", FF.sans_serif, "Georgia", true, FW.normal);
+    // KaiTi
+    ft.registerFont(path ~ "kaiu.ttf", FF.sans_serif, "KaiTi", false, FW.normal);
+    // Lucida Console
+    ft.registerFont(path ~ "lucon.ttf", FF.monospace, "Lucida Console", false, FW.normal);
+    // malgun gothic
+    ft.registerFont(path ~ "malgun.ttf", FF.serif, "Malgun Gothic", false, FW.normal);
+    ft.registerFont(path ~ "malgunbd.ttf", FF.serif, "Malgun Gothic", false, FW.bold);
+    // meiryo
+    ft.registerFont(path ~ "meiryo.ttc", FF.serif, "Meiryo", false, FW.normal);
+    ft.registerFont(path ~ "meiryob.ttc", FF.serif, "Meiryo", false, FW.bold);
+    // ms mhei
+    ft.registerFont(path ~ "MSMHei.ttf", FF.serif, "Microsoft MHei", false, FW.normal);
+    ft.registerFont(path ~ "MSMHei-Bold.ttf", FF.serif, "Microsoft MHei", false, FW.bold);
+    // ms neo gothic
+    ft.registerFont(path ~ "MSNeoGothic.ttf", FF.serif, "Microsoft NeoGothic", false, FW.normal);
+    ft.registerFont(path ~ "MSNeoGothic-Bold.ttf", FF.serif, "Microsoft NeoGothic", false, FW.bold);
+    // palatino linotype
+    ft.registerFont(path ~ "pala.ttf", FF.serif, "Palatino Linotype", false, FW.normal);
+    ft.registerFont(path ~ "palab.ttf", FF.serif, "Palatino Linotype", false, FW.bold);
+    ft.registerFont(path ~ "palabi.ttf", FF.serif, "Palatino Linotype", true, FW.bold);
+    ft.registerFont(path ~ "palai.ttf", FF.serif, "Palatino Linotype", true, FW.normal);
+    // segoeui
+    ft.registerFont(path ~ "segoeui.ttf", FF.sans_serif, "Segoe UI", false, FW.normal);
+    ft.registerFont(path ~ "segoeuib.ttf", FF.sans_serif, "Segoe UI", false, FW.bold);
+    ft.registerFont(path ~ "segoeuiz.ttf", FF.sans_serif, "Segoe UI", true, FW.bold);
+    ft.registerFont(path ~ "segoeuii.ttf", FF.sans_serif, "Segoe UI", true, FW.normal);
+    // SimSun
+    ft.registerFont(path ~ "simsun.ttc", FF.sans_serif, "SimSun", false, FW.normal);
+    ft.registerFont(path ~ "simsunb.ttf", FF.sans_serif, "SimSun", false, FW.bold);
+    // tahoma
+    ft.registerFont(path ~ "tahoma.ttf", FF.sans_serif, "Tahoma", false, FW.normal);
+    ft.registerFont(path ~ "tahomabd.ttf", FF.sans_serif, "Tahoma", false, FW.bold);
+    // trebuchet ms
+    ft.registerFont(path ~ "trebuc.ttf", FF.sans_serif, "Trebuchet MS", false, FW.normal);
+    ft.registerFont(path ~ "trebucbd.ttf", FF.sans_serif, "Trebuchet MS", false, FW.bold);
+    ft.registerFont(path ~ "trebucbi.ttf", FF.sans_serif, "Trebuchet MS", true, FW.bold);
+    ft.registerFont(path ~ "trebucit.ttf", FF.sans_serif, "Trebuchet MS", true, FW.normal);
+    // verdana
+    ft.registerFont(path ~ "verdana.ttf", FF.sans_serif, "Verdana", false, FW.normal);
+    ft.registerFont(path ~ "verdanab.ttf", FF.sans_serif, "Verdana", false, FW.bold);
+    ft.registerFont(path ~ "verdanai.ttf", FF.sans_serif, "Verdana", true, FW.normal);
+    ft.registerFont(path ~ "verdanaz.ttf", FF.sans_serif, "Verdana", true, FW.bold);
+}
+
+version (Posix)
+static if (USE_FREETYPE)
+private void tryHardcodedFontPaths(FreeTypeFontManager ft)
+{
+    import std.file : DirEntry, exists, isDir;
+    import beamui.core.files : AttrFilter, listDirectory;
+
+    alias FF = FontFamily;
+    alias FW = FontWeight;
+
+    static bool registerFonts(FreeTypeFontManager ft, string path)
+    {
+        if (!exists(path) || !isDir(path))
+            return false;
+        ft.registerFont(path ~ "DejaVuSans.ttf", FF.sans_serif, "DejaVuSans", false, FW.normal);
+        ft.registerFont(path ~ "DejaVuSans-Bold.ttf", FF.sans_serif, "DejaVuSans", false, FW.bold);
+        ft.registerFont(path ~ "DejaVuSans-Oblique.ttf", FF.sans_serif, "DejaVuSans", true, FW.normal);
+        ft.registerFont(path ~ "DejaVuSans-BoldOblique.ttf", FF.sans_serif, "DejaVuSans", true, FW.bold);
+        ft.registerFont(path ~ "DejaVuSansMono.ttf", FF.monospace, "DejaVuSansMono", false, FW.normal);
+        ft.registerFont(path ~ "DejaVuSansMono-Bold.ttf", FF.monospace, "DejaVuSansMono", false, FW.bold);
+        ft.registerFont(path ~ "DejaVuSansMono-Oblique.ttf", FF.monospace, "DejaVuSansMono", true, FW.normal);
+        ft.registerFont(path ~ "DejaVuSansMono-BoldOblique.ttf", FF.monospace, "DejaVuSansMono", true, FW.bold);
+        return true;
+    }
+
+    static string[] findFontsInDirectory(string dir)
+    {
+        DirEntry[] entries;
+        try
+        {
+            entries = listDirectory(dir, AttrFilter.files, ["*.ttf"]);
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+
+        string[] res;
+        foreach (entry; entries)
+        {
+            res ~= entry.name;
+        }
+        return res;
+    }
+
+    static void registerFontsFromDirectory(FreeTypeFontManager ft, string dir)
+    {
+        string[] fontFiles = findFontsInDirectory(dir);
+        Log.d("Fonts in ", dir, " : ", fontFiles);
+        foreach (file; fontFiles)
+            ft.registerFont(file);
+    }
+
+    version (Android)
+    {
+        registerFontsFromDirectory(ft, "/system/fonts/");
+    }
+    else
+    {
+        registerFonts(ft, "/usr/share/fonts/truetype/dejavu/");
+        registerFonts(ft, "/usr/share/fonts/TTF/");
+        registerFonts(ft, "/usr/share/fonts/dejavu/");
+        registerFonts(ft, "/usr/share/fonts/truetype/ttf-dejavu/"); // let it compile on Debian Wheezy
+    }
+    version (OSX)
+    {
+        enum lib = "/Library/Fonts/";
+
+        ft.registerFont(lib ~ "Arial.ttf", FF.sans_serif, "Arial", false, FW.normal, true);
+        ft.registerFont(lib ~ "Arial Bold.ttf", FF.sans_serif, "Arial", false, FW.bold, true);
+        ft.registerFont(lib ~ "Arial Italic.ttf", FF.sans_serif, "Arial", true, FW.normal, true);
+        ft.registerFont(lib ~ "Arial Bold Italic.ttf", FF.sans_serif, "Arial", true, FW.bold, true);
+        ft.registerFont(lib ~ "Arial.ttf", FF.sans_serif, "Arial", false, FW.normal, true);
+        ft.registerFont(lib ~ "Arial Bold.ttf", FF.sans_serif, "Arial", false, FW.bold, true);
+        ft.registerFont(lib ~ "Arial Italic.ttf", FF.sans_serif, "Arial", true, FW.normal, true);
+        ft.registerFont(lib ~ "Arial Bold Italic.ttf", FF.sans_serif, "Arial", true, FW.bold, true);
+        ft.registerFont(lib ~ "Arial Narrow.ttf", FF.sans_serif, "Arial Narrow", false, FW.normal, true);
+        ft.registerFont(lib ~ "Arial Narrow Bold.ttf", FF.sans_serif, "Arial Narrow", false, FW.bold, true);
+        ft.registerFont(lib ~ "Arial Narrow Italic.ttf", FF.sans_serif, "Arial Narrow", true, FW.normal, true);
+        ft.registerFont(lib ~ "Arial Narrow Bold Italic.ttf", FF.sans_serif, "Arial Narrow", true, FW.bold, true);
+        ft.registerFont(lib ~ "Courier New.ttf", FF.monospace, "Courier New", false, FW.normal, true);
+        ft.registerFont(lib ~ "Courier New Bold.ttf", FF.monospace, "Courier New", false, FW.bold, true);
+        ft.registerFont(lib ~ "Courier New Italic.ttf", FF.monospace, "Courier New", true, FW.normal, true);
+        ft.registerFont(lib ~ "Courier New Bold Italic.ttf", FF.monospace, "Courier New", true, FW.bold, true);
+        ft.registerFont(lib ~ "Georgia.ttf", FF.serif, "Georgia", false, FW.normal, true);
+        ft.registerFont(lib ~ "Georgia Bold.ttf", FF.serif, "Georgia", false, FW.bold, true);
+        ft.registerFont(lib ~ "Georgia Italic.ttf", FF.serif, "Georgia", true, FW.normal, true);
+        ft.registerFont(lib ~ "Georgia Bold Italic.ttf", FF.serif, "Georgia", true, FW.bold, true);
+        ft.registerFont(lib ~ "Comic Sans MS.ttf", FF.sans_serif, "Comic Sans", false, FW.normal, true);
+        ft.registerFont(lib ~ "Comic Sans MS Bold.ttf", FF.sans_serif, "Comic Sans", false, FW.bold, true);
+        ft.registerFont(lib ~ "Tahoma.ttf", FF.sans_serif, "Tahoma", false, FW.normal, true);
+        ft.registerFont(lib ~ "Tahoma Bold.ttf", FF.sans_serif, "Tahoma", false, FW.bold, true);
+
+        ft.registerFont(lib ~ "Microsoft/Arial.ttf", FF.sans_serif, "Arial", false, FW.normal, true);
+        ft.registerFont(lib ~ "Microsoft/Arial Bold.ttf", FF.sans_serif, "Arial", false, FW.bold, true);
+        ft.registerFont(lib ~ "Microsoft/Arial Italic.ttf", FF.sans_serif, "Arial", true, FW.normal, true);
+        ft.registerFont(lib ~ "Microsoft/Arial Bold Italic.ttf", FF.sans_serif, "Arial", true, FW.bold, true);
+        ft.registerFont(lib ~ "Microsoft/Calibri.ttf", FF.sans_serif, "Calibri", false, FW.normal, true);
+        ft.registerFont(lib ~ "Microsoft/Calibri Bold.ttf", FF.sans_serif, "Calibri", false, FW.bold, true);
+        ft.registerFont(lib ~ "Microsoft/Calibri Italic.ttf", FF.sans_serif, "Calibri", true, FW.normal, true);
+        ft.registerFont(lib ~ "Microsoft/Calibri Bold Italic.ttf", FF.sans_serif, "Calibri", true, FW.bold, true);
+        ft.registerFont(lib ~ "Microsoft/Times New Roman.ttf", FF.serif, "Times New Roman", false, FW.normal, true);
+        ft.registerFont(lib ~ "Microsoft/Times New Roman Bold.ttf", FF.serif, "Times New Roman", false, FW.bold, true);
+        ft.registerFont(lib ~ "Microsoft/Times New Roman Italic.ttf", FF.serif, "Times New Roman", true, FW.normal, true);
+        ft.registerFont(lib ~ "Microsoft/Times New Roman Bold Italic.ttf", FF.serif, "Times New Roman", true, FW.bold, true);
+        ft.registerFont(lib ~ "Microsoft/Verdana.ttf", FF.sans_serif, "Verdana", false, FW.normal, true);
+        ft.registerFont(lib ~ "Microsoft/Verdana Bold.ttf", FF.sans_serif, "Verdana", false, FW.bold, true);
+        ft.registerFont(lib ~ "Microsoft/Verdana Italic.ttf", FF.sans_serif, "Verdana", true, FW.normal, true);
+        ft.registerFont(lib ~ "Microsoft/Verdana Bold Italic.ttf", FF.sans_serif, "Verdana", true, FW.bold, true);
+
+        ft.registerFont(lib ~ "Microsoft/Consolas.ttf", FF.monospace, "Consolas", false, FW.normal, true);
+        ft.registerFont(lib ~ "Microsoft/Consolas Bold.ttf", FF.monospace, "Consolas", false, FW.bold, true);
+        ft.registerFont(lib ~ "Microsoft/Consolas Italic.ttf", FF.monospace, "Consolas", true, FW.normal, true);
+        ft.registerFont(lib ~ "Microsoft/Consolas Bold Italic.ttf", FF.monospace, "Consolas", true, FW.bold, true);
+
+        ft.registerFont("/System/Library/Fonts/Menlo.ttc", FF.monospace, "Menlo", false, FW.normal, true);
     }
 }
 
@@ -559,17 +442,12 @@ void initLogs()
 /// Call this on application initialization
 void initResourceManagers()
 {
-    import beamui.graphics.resources;
-    import beamui.text.fonts;
-
     Log.d("Initializing resource managers");
 
     debug APP_IS_SHUTTING_DOWN = false;
 
     static if (USE_FREETYPE)
     {
-        import beamui.text.ftfonts : STD_FONT_FACES;
-
         STD_FONT_FACES = [
             "Arial" : 12,
             "Consolas" : 12,
@@ -598,15 +476,11 @@ void initResourceManagers()
 
     static if (BACKEND_GUI)
     {
-        import beamui.graphics.drawables;
-
         imageCache = new ImageCache;
     }
 
     static if (USE_OPENGL)
     {
-        import beamui.graphics.gldrawbuf;
-
         initGLCaches();
     }
 
@@ -617,8 +491,6 @@ void initResourceManagers()
 void releaseResourcesOnAppExit()
 {
     import core.memory : GC;
-    import beamui.graphics.drawables;
-    import beamui.graphics.drawbuf;
     import beamui.style.style;
     import beamui.style.theme;
     import beamui.text.simple : clearSimpleTextPool;
@@ -636,7 +508,7 @@ void releaseResourcesOnAppExit()
         }
     }
 
-    destroy(resourceList);
+    resourceList = ResourceList.init;
 
     currentTheme = null;
 
@@ -654,10 +526,9 @@ void releaseResourcesOnAppExit()
     }
 
     FontManager.instance = null;
+
     static if (USE_OPENGL)
     {
-        import beamui.graphics.gldrawbuf;
-
         destroyGLCaches();
     }
 
@@ -681,8 +552,6 @@ void releaseResourcesOnAppExit()
         }
         static if (USE_FREETYPE)
         {
-            import beamui.text.ftfonts;
-
             if (FreeTypeFontFile.instanceCount > 0)
             {
                 Log.e("Non-zero FreeTypeFontFile instance count when exiting: ", FreeTypeFontFile.instanceCount);
