@@ -11,7 +11,7 @@ import beamui.core.collections : Buf;
 import beamui.core.geometry : Point, Rect, Size;
 import beamui.core.math;
 import beamui.graphics.drawbuf : DrawBuf, GlyphInstance;
-import beamui.text.fonts : Font;
+import beamui.text.fonts : Font, FontManager, FontStyle;
 import beamui.text.glyph : GlyphRef;
 import beamui.text.shaping;
 import beamui.text.style;
@@ -145,18 +145,41 @@ struct TextLine
                 break;
             i++;
             // filter relevant attributes and make a fragment style
-            const t = mu.attribute.type;
-            if (t == TextAttr.Type.fontSize)
+            const Font f = prevStyle.font;
+            switch (mu.attribute.type) with (TextAttr.Type)
             {
+            case fontFace:
                 nextStyle = prevStyle;
-            }
-            else if (t == TextAttr.Type.transform)
-            {
+                nextStyle.font = FontManager.instance.getFont(
+                    f.size, f.weight, f.italic, f.family, mu.attribute.data.fontFace);
+                break;
+            case fontFamily:
+                nextStyle = prevStyle;
+                nextStyle.font = FontManager.instance.getFont(
+                    f.size, f.weight, f.italic, mu.attribute.data.fontFamily, f.face);
+                break;
+            case fontSize:
+                nextStyle = prevStyle;
+                nextStyle.font = FontManager.instance.getFont(
+                    mu.attribute.data.fontSize, f.weight, f.italic, f.family, f.face);
+                break;
+            case fontStyle:
+                nextStyle = prevStyle;
+                nextStyle.font = FontManager.instance.getFont(
+                    f.size, f.weight, mu.attribute.data.fontStyle == FontStyle.italic, f.family, f.face);
+                break;
+            case fontWeight:
+                nextStyle = prevStyle;
+                nextStyle.font = FontManager.instance.getFont(
+                    f.size, mu.attribute.data.fontWeight, f.italic, f.family, f.face);
+                break;
+            case transform:
                 nextStyle = prevStyle;
                 nextStyle.transform = mu.attribute.data.transform;
-            }
-            else
+                break;
+            default:
                 continue;
+            }
             // before
             if (start < mu.start)
                 measureSimpleFragment(start, mu.start, prevStyle);
