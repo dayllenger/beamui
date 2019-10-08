@@ -566,17 +566,30 @@ void initResourceManagers()
 
     debug APP_IS_SHUTTING_DOWN = false;
 
-    _gamma65 = new GlyphGammaTable!65(1.0);
-    _gamma256 = new GlyphGammaTable!256(1.0);
     static if (USE_FREETYPE)
     {
-        import beamui.text.ftfonts;
+        import beamui.text.ftfonts : STD_FONT_FACES;
 
-        STD_FONT_FACES = ["Arial" : 12, "Times New Roman" : 12, "Courier New" : 10, "DejaVu Serif" : 10,
-            "DejaVu Sans" : 10, "DejaVu Sans Mono" : 10, "Liberation Serif" : 11, "Liberation Sans" : 11,
-            "Liberation Mono" : 11, "Verdana" : 10, "Menlo" : 13, "Consolas" : 12, "DejaVuSansMono"
-            : 10, "Lucida Sans Typewriter" : 10, "Lucida Console" : 12, "FreeMono" : 8,
-            "FreeSans" : 8, "FreeSerif" : 8,];
+        STD_FONT_FACES = [
+            "Arial" : 12,
+            "Consolas" : 12,
+            "Courier New" : 10,
+            "DejaVu Sans Mono" : 10,
+            "DejaVu Sans" : 10,
+            "DejaVu Serif" : 10,
+            "DejaVuSansMono" : 10,
+            "FreeMono" : 8,
+            "FreeSans" : 8,
+            "FreeSerif" : 8,
+            "Liberation Mono" : 11,
+            "Liberation Sans" : 11,
+            "Liberation Serif" : 11,
+            "Lucida Console" : 12,
+            "Lucida Sans Typewriter" : 10,
+            "Menlo" : 13,
+            "Times New Roman" : 12,
+            "Verdana" : 10,
+        ];
     }
 
     resourceList.embedOne!"themes/default.css";
@@ -587,12 +600,6 @@ void initResourceManagers()
     {
         import beamui.graphics.drawables;
 
-        version (Windows)
-        {
-            import beamui.platforms.windows.win32fonts;
-
-            initWin32FontsTables();
-        }
         imageCache = new ImageCache;
     }
 

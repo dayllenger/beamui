@@ -46,9 +46,9 @@ void shape(dstring str, Font font, TextTransform transform, ref Buf!ComputedGlyp
         return;
 
     const bool fixed = font.isFixed;
-    const fixedCharWidth = cast(ushort)font.charWidth('M');
+    const fixedCharWidth = cast(ushort)font.getCharWidth('M');
     const spaceWidth = fixed ? fixedCharWidth : cast(ushort)font.spaceWidth;
-    const bool useKerning = !fixed && font.allowKerning;
+    const bool useKerning = !fixed && font.hasKerning;
 
     buffer.resize(len);
 

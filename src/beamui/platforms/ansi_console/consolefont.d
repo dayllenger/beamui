@@ -20,13 +20,6 @@ class ConsoleFont : Font
 {
     override @property const
     {
-        int size() { return 1; }
-        int height() { return 1; }
-        ushort weight() { return 400; }
-        int baseline() { return 0; }
-        bool italic() { return false; }
-        string face() { return "console"; }
-        FontFamily family() { return FontFamily.monospace; }
         bool isNull() { return false; }
         bool antialiased() { return false; }
         bool isFixed() { return true; }
@@ -37,6 +30,13 @@ class ConsoleFont : Font
 
     this()
     {
+        _desc.face = "console";
+        _desc.family = FontFamily.monospace;
+        _desc.style = FontStyle.normal;
+        _desc.weight = 400;
+        _desc.size = 1;
+        _desc.height = 1;
+
         immutable(Glyph) g = {
             blackBoxX: 1,
             blackBoxY: 1,
@@ -50,7 +50,7 @@ class ConsoleFont : Font
         _glyph = g;
     }
 
-    override int charWidth(dchar ch) const { return 1; }
+    override int getCharWidth(dchar ch) const { return 1; }
 
     override int measureText(const dchar[] text, ref int[] widths, int maxWidth = MAX_WIDTH_UNSPECIFIED,
             int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
@@ -274,7 +274,7 @@ class ConsoleFontManager : FontManager
 
     private FontRef _font;
 
-    override protected ref FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)
+    override protected FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)
     {
         return _font;
     }

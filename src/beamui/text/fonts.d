@@ -23,7 +23,7 @@ Synopsis:
 FontRef font = FontManager.instance.getFont(25, FontWeight.normal, false, FontFamily.sans_serif, "Arial");
 ---
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2017
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2019
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -31,14 +31,9 @@ module beamui.text.fonts;
 
 public import beamui.core.geometry : Size;
 public import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
-import beamui.core.config;
-import beamui.core.functions;
+import beamui.core.functions : caching, eliminate, remove, clamp;
 import beamui.core.logger;
 import beamui.core.types;
-import beamui.graphics.colors : Color;
-import beamui.graphics.drawbuf;
-import beamui.style.types;
-import beamui.text.glyph;
 
 /// Font families enum
 enum FontFamily : ubyte
@@ -57,8 +52,8 @@ enum FontFamily : ubyte
     monospace
 }
 
-/// Font weight constants (0..1000)
-enum FontWeight : uint
+/// Font weight constants (100..900)
+enum FontWeight : ushort
 {
     /// Normal font weight
     normal = 400,
@@ -73,57 +68,52 @@ enum FontStyle : ubyte
     italic
 }
 
-/// Custom character properties - for char-by-char drawing of text string with different character color and style
-struct CustomCharProps
+/// Contains all needed font properties
+struct FontDescription
 {
-    Color color;
-    TextFlag textFlags = TextFlag.unspecified;
+    string face;
+    FontFamily family;
+    FontStyle style;
+    ushort weight;
 
-    this(Color color, bool underline = false, bool strikeThrough = false)
-    {
-        this.color = color;
-        if (underline)
-            this.textFlags |= TextFlag.underline;
-        if (strikeThrough)
-            this.textFlags |= TextFlag.strikeThrough;
-    }
+    int size;
+    int height;
+    int baseline;
+    bool hasKerning;
 }
 
-/// Constant for measureText maxWidth paramenter - to tell that all characters of text string should be measured.
-enum int MAX_WIDTH_UNSPECIFIED = int.max;
+/** Font instance with specific size, weight, face, etc.
 
-/**
-    Instance of font with specific size, weight, face, etc.
-
-    Allows to measure text string and draw it on `DrawBuf`.
-
-    Use `FontManager.instance.getFont()` to retrieve font instance.
+    Use `FontManager.instance.getFont()` to retrieve it.
 */
 class Font : RefCountedObject
 {
     @property
     {
-        /// Returns font size (as requested from font engine)
-        abstract int size() const;
-        /// Returns actual font height including interline space
-        abstract int height() const;
-        /// Returns font weight
-        abstract ushort weight() const;
-        /// Returns baseline offset
-        abstract int baseline() const;
-        /// Returns true if font is italic
-        abstract bool italic() const;
-        /// Returns font face name
-        abstract string face() const;
-        /// Returns font family
-        abstract FontFamily family() const;
+        /// Font size (as requested from font engine)
+        final int size() const { return _desc.size; }
+        /// Actual font height including interline space
+        final int height() const { return _desc.height; }
+        /// Font weight (100..900)
+        final ushort weight() const { return _desc.weight; }
+        /// Baseline offset
+        final int baseline() const { return _desc.baseline; }
+        /// True if the font style is italic
+        final bool italic() const { return _desc.style == FontStyle.italic; }
+        /// Font face name
+        final string face() const { return _desc.face; }
+        /// Font family
+        final FontFamily family() const { return _desc.family; }
+        /// Does this font have kerning?
+        final bool hasKerning() const { return _desc.hasKerning; }
+
         /// Returns true if font object is not yet initialized / loaded
         abstract bool isNull() const;
 
         /// Returns true if antialiasing is enabled, false if not enabled
         bool antialiased() const
         {
-            return size >= FontManager.instance.minAntialiasedFontSize;
+            return size >= FontManager.minAntialiasedFontSize;
         }
 
         /// Returns true if font has fixed pitch (all characters have equal width)
@@ -133,7 +123,7 @@ class Font : RefCountedObject
             {
                 with (caching(this))
                 {
-                    if (charWidth('i') == charWidth(' ') && charWidth('M') == charWidth('i'))
+                    if (getCharWidth('i') == getCharWidth(' ') && getCharWidth('M') == getCharWidth('i'))
                         _fixedFontDetection = 1;
                     else
                         _fixedFontDetection = 0;
@@ -149,39 +139,45 @@ class Font : RefCountedObject
             {
                 with (caching(this))
                 {
-                    _spaceWidth = charWidth(' ');
+                    _spaceWidth = getCharWidth(' ');
                     if (_spaceWidth <= 0)
-                        _spaceWidth = charWidth('0');
+                        _spaceWidth = getCharWidth('0');
                     if (_spaceWidth <= 0)
                         _spaceWidth = size;
                 }
             }
             return _spaceWidth;
         }
-
-        /// Does this font allow kerning?
-        bool allowKerning() const { return _allowKerning; }
-        /// ditto
-        protected void allowKerning(bool allow)
-        {
-            _allowKerning = allow;
-        }
     }
 
+    /// Properties as detected after opening of file
+    protected FontDescription _desc;
     private int _fixedFontDetection = -1;
     private int _spaceWidth = -1;
-    private bool _allowKerning;
+
+    this()
+    {
+        debug _instanceCount++;
+        debug (resalloc)
+            Log.d("Created font, count: ", _instanceCount);
+    }
+
+    debug private __gshared int _instanceCount;
+    debug static @property int instanceCount() { return _instanceCount; }
 
     ~this()
     {
+        debug _instanceCount--;
+        debug (resalloc)
+            Log.d("Destroyed font, count: ", _instanceCount);
         clear();
     }
 
     /// Returns character width
-    int charWidth(dchar ch)
+    int getCharWidth(dchar ch)
     {
         GlyphRef g = getCharGlyph(ch);
-        return !g ? 0 : g.widthPixels;
+        return g ? g.widthPixels : 0;
     }
 
     /// Override to implement kerning offset calculation
@@ -405,8 +401,8 @@ class FontManager
             if (_fontGamma != gamma)
             {
                 _fontGamma = gamma;
-                _gamma65.gamma = gamma;
-                _gamma256.gamma = gamma;
+                _gamma65 = GlyphGammaTable!65(gamma);
+                _gamma256 = GlyphGammaTable!256(gamma);
                 if (_instance)
                     _instance.clearGlyphCaches();
             }
@@ -441,7 +437,7 @@ class FontManager
         return res;
     }
     /// Non-caching implementation of `getFont()`
-    abstract protected ref FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face);
+    abstract protected FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face);
 
     /// Override to return list of font faces available
     FontFaceProps[] getFaces()
@@ -467,41 +463,33 @@ class FontManager
     }
 }
 
-package(beamui) __gshared GlyphGammaTable!65 _gamma65;
-package(beamui) __gshared GlyphGammaTable!256 _gamma256;
-
-/**
-    Support for font glyph gamma correction.
+/** Support for font glyph gamma correction.
 
     Table to correct gamma and translate to output range 0..255.
     `maxv` is 65 for Win32 fonts and 256 for FreeType.
 */
-final class GlyphGammaTable(int maxv)
+struct GlyphGammaTable(int maxv) if (maxv <= 256)
 {
+    import std.math : pow, round;
+
     private ubyte[maxv] _map;
     private double _gamma = 1.0;
 
-    this(double gammaValue = 1.0)
+    @disable this();
+
+    this(double gammaValue)
     {
-        gamma(gammaValue);
+        _gamma = gammaValue;
+        foreach (int i; 0 .. maxv)
+        {
+            const double v1 = (maxv - 1.0 - i) / maxv;
+            const double v2 = pow(v1, gammaValue);
+            const int n = 255 - cast(int)round(v2 * 255);
+            _map[i] = cast(ubyte)clamp(n, 0, 255);
+        }
     }
 
     @property double gamma() const { return _gamma; }
-
-    @property void gamma(double g)
-    {
-        import std.math : pow, round;
-
-        _gamma = g;
-        foreach (int i; 0 .. maxv)
-        {
-            double v = (maxv - 1.0 - i) / maxv;
-            v = pow(v, g);
-            int n = 255 - cast(int)round(v * 255);
-            ubyte n_clamp = cast(ubyte)clamp(n, 0, 255);
-            _map[i] = n_clamp;
-        }
-    }
 
     /// Correct byte value from source range to 0..255 applying gamma
     ubyte correct(ubyte src) const
@@ -511,6 +499,9 @@ final class GlyphGammaTable(int maxv)
         return _map[src];
     }
 }
+
+package(beamui) __gshared GlyphGammaTable!65  _gamma65  = GlyphGammaTable!65(1.0);
+package(beamui) __gshared GlyphGammaTable!256 _gamma256 = GlyphGammaTable!256(1.0);
 
 enum dchar UNICODE_SOFT_HYPHEN_CODE = 0x00ad;
 enum dchar UNICODE_ZERO_WIDTH_SPACE = 0x200b;

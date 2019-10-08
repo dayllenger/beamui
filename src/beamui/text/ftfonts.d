@@ -1,7 +1,7 @@
 /**
 FontManager implementation based on FreeType library.
 
-Copyright: Vadim Lopatin 2014-2017
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2019
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -24,10 +24,7 @@ package(beamui) __gshared int[string] STD_FONT_FACES;
 
 private int stdFontFacePriority(string face)
 {
-    if (auto p = face in STD_FONT_FACES)
-        return *p;
-    else
-        return 0;
+    return STD_FONT_FACES.get(face, 0);
 }
 
 private struct FontDef
@@ -38,7 +35,7 @@ private struct FontDef
     ushort weight;
 }
 
-private class FontFileItem
+private final class FontFileItem
 {
     @property ref inout(FontDef) def() inout { return _def; }
     @property string[] filenames() { return _filenames; }
@@ -64,8 +61,7 @@ private class FontFileItem
         _filenames ~= fn;
     }
 
-    private FontRef _nullFontRef;
-    ref FontRef get(int size)
+    FontRef get(int size)
     {
         ptrdiff_t index = _activeFonts.find(size);
         if (index >= 0)
@@ -74,7 +70,7 @@ private class FontFileItem
         if (!font.create())
         {
             destroy(font);
-            return _nullFontRef;
+            return FontRef.init;
         }
         return _activeFonts.add(font);
     }
@@ -95,24 +91,21 @@ private class FontFileItem
     }
 }
 
-class FreeTypeFontFile
+final class FreeTypeFontFile
 {
+    @property
+    {
+        FT_Library library() { return _library; }
+        string filename() const { return _filename; }
+    }
+
     private
     {
         string _filename;
-        string _faceName;
         FT_Library _library;
         FT_Face _face;
         FT_GlyphSlot _slot;
         FT_Matrix _matrix; // transformation matrix
-
-        int _height;
-        int _size;
-        int _baseline;
-        ushort _weight;
-        bool _italic;
-
-        bool _allowKerning = true;
     }
 
     this(FT_Library library, string filename)
@@ -139,25 +132,10 @@ class FreeTypeFontFile
             Log.d("Destroyed FreeTypeFontFile, count: ", _instanceCount);
     }
 
-    @property
-    {
-        FT_Library library() { return _library; }
-
-        string filename() const { return _filename; }
-
-        // properties as detected after opening of file
-        string face() const { return _faceName; }
-        int height() const { return _height; }
-        int size() const { return _size; }
-        int baseline() const { return _baseline; }
-        ushort weight() const { return _weight; }
-        bool italic() const { return _italic; }
-    }
-
     private static string familyName(FT_Face face)
     {
         string faceName = fromStringz(face.family_name).dup;
-        string styleName = fromStringz(face.style_name).dup;
+        char[] styleName = fromStringz(face.style_name);
         if (faceName == "Arial" && styleName == "Narrow")
             faceName ~= " Narrow";
         else if (styleName == "Condensed")
@@ -166,11 +144,13 @@ class FreeTypeFontFile
     }
 
     /// Open face with specified size
-    bool open(int size, int index = 0)
+    bool open(int size, int index, ref FontDescription desc)
     {
-        int error = FT_New_Face(_library, _filename.toStringz, index, &_face); /* create face object */
+        // create face object
+        int error = FT_New_Face(_library, toStringz(_filename), index, &_face);
         if (error)
             return false;
+
         if (_filename.endsWith(".pfb") || _filename.endsWith(".pfa"))
         {
             string kernFile = _filename[0 .. $ - 4];
@@ -184,31 +164,43 @@ class FreeTypeFontFile
             }
             else
             {
-                destroy(kernFile);
+                kernFile = null;
             }
             if (kernFile.length > 0)
-                error = FT_Attach_File(_face, kernFile.toStringz);
+            {
+                error = FT_Attach_File(_face, toStringz(kernFile));
+                if (error)
+                {
+                    clear();
+                    return false;
+                }
+            }
         }
-        debug (FontResources)
-            Log.d("Font file opened successfully");
         _slot = _face.glyph;
-        _faceName = familyName(_face);
-        error = FT_Set_Pixel_Sizes(_face, /* handle to face object */
-                0, /* pixel_width           */
-                size); /* pixel_height          */
+
+        error = FT_Set_Pixel_Sizes(_face, 0, size);
         if (error)
         {
             clear();
             return false;
         }
-        _height = cast(int)((_face.size.metrics.height + 63) >> 6);
-        _size = size;
-        _baseline = _height + cast(int)(_face.size.metrics.descender >> 6);
-        _weight = _face.style_flags & FT_STYLE_FLAG_BOLD ? FontWeight.bold : FontWeight.normal;
-        _italic = _face.style_flags & FT_STYLE_FLAG_ITALIC ? true : false;
+
+        // overwrite existing description
+        // TODO: test multiple files
+        desc.face = familyName(_face);
+        desc.style = _face.style_flags & FT_STYLE_FLAG_ITALIC ? FontStyle.italic : FontStyle.normal;
+        desc.weight = _face.style_flags & FT_STYLE_FLAG_BOLD ? FontWeight.bold : FontWeight.normal;
+
+        desc.size = size;
+        desc.height = cast(int)((_face.size.metrics.height + 63) >> 6);
+        desc.baseline = desc.height + cast(int)(_face.size.metrics.descender >> 6);
+        desc.hasKerning = FT_HAS_KERNING(_face);
+
         debug (FontResources)
-            Log.d("Opened font face=", _faceName, " height=", _height, " size=", size, " weight=",
-                    weight, " italic=", italic);
+        {
+            Log.fd("Opened font, face: %s, size: %d, height: %d, weight: %d, style: %s",
+                desc.face, size, desc.height, desc.weight, desc.style);
+        }
         return true; // successfully opened
     }
 
@@ -239,34 +231,37 @@ class FreeTypeFontFile
         return index;
     }
 
-    /// Allow kerning
-    @property bool allowKerning()
-    {
-        return FT_HAS_KERNING(_face);
-    }
-
     /// Retrieve glyph information, filling glyph struct; returns `Err` if glyph is not found
-    Result!GlyphRef getGlyphInfo(dchar code, dchar def_char, bool withImage = true)
+    Result!GlyphRef getGlyphInfo(dchar code, dchar def_char, bool antialiased, bool withImage = true)
     {
+        alias FM = FontManager;
+
         const int glyph_index = getCharIndex(code, def_char);
         int flags = FT_LOAD_DEFAULT;
-        const bool _drawMonochrome = _size < FontManager.minAntialiasedFontSize;
-        const subpixel = _drawMonochrome ? SubpixelRenderingMode.none : FontManager.subpixelRenderingMode;
-        flags |= (!_drawMonochrome ? (subpixel ? FT_LOAD_TARGET_LCD
-                : (FontManager.instance.hintingMode == HintingMode.light ?
-                FT_LOAD_TARGET_LIGHT : FT_LOAD_TARGET_NORMAL)) : FT_LOAD_TARGET_MONO);
+        if (antialiased)
+        {
+            if (FM.subpixelRenderingMode)
+                flags |= FT_LOAD_TARGET_LCD;
+            else if (FM.hintingMode == HintingMode.light)
+                flags |= FT_LOAD_TARGET_LIGHT;
+            else
+                flags |= FT_LOAD_TARGET_NORMAL;
+        }
+        else
+        {
+            flags |= FT_LOAD_TARGET_MONO;
+        }
         if (withImage)
             flags |= FT_LOAD_RENDER;
-        if (FontManager.instance.hintingMode == HintingMode.autohint ||
-                FontManager.instance.hintingMode == HintingMode.light)
+        if (FM.hintingMode == HintingMode.autohint || FM.hintingMode == HintingMode.light)
             flags |= FT_LOAD_FORCE_AUTOHINT;
-        else if (FontManager.instance.hintingMode == HintingMode.disabled)
+        else if (FM.hintingMode == HintingMode.disabled)
             flags |= FT_LOAD_NO_AUTOHINT | FT_LOAD_NO_HINTING;
-        int error = FT_Load_Glyph(_face, /* handle to face object */
-                glyph_index, /* glyph index           */
-                flags); /* load flags, see below */
+
+        const int error = FT_Load_Glyph(_face, glyph_index, flags);
         if (error)
             return Err!GlyphRef;
+
         auto glyph = new Glyph;
         glyph.blackBoxX = cast(ushort)((_slot.metrics.width + 32) >> 6);
         glyph.blackBoxY = cast(ubyte)((_slot.metrics.height + 32) >> 6);
@@ -274,7 +269,7 @@ class FreeTypeFontFile
         glyph.originY = cast(byte)((_slot.metrics.horiBearingY + 32) >> 6);
         glyph.widthScaled = cast(ushort)(myabs(cast(int)(_slot.metrics.horiAdvance)));
         glyph.widthPixels = cast(ubyte)(myabs(cast(int)(_slot.metrics.horiAdvance + 32)) >> 6);
-        glyph.subpixelMode = subpixel;
+        glyph.subpixelMode = antialiased ? FM.subpixelRenderingMode : SubpixelRenderingMode.none;
         //glyph.glyphIndex = cast(ushort)code;
         if (withImage)
         {
@@ -289,7 +284,7 @@ class FreeTypeFontFile
             if (sz > 0)
             {
                 glyph.glyph = new ubyte[sz];
-                if (_drawMonochrome)
+                if (!antialiased)
                 {
                     // monochrome bitmap
                     ubyte mask = 0x80;
@@ -311,7 +306,6 @@ class FreeTypeFontFile
                         }
                         ptr += bitmap.pitch;
                     }
-
                 }
                 else
                 {
@@ -340,20 +334,23 @@ class FreeTypeFontFile
 
     void clear()
     {
-        if (_face !is null)
+        if (_face)
+        {
             FT_Done_Face(_face);
-        _face = null;
+            _face = null;
+        }
     }
 
     int getKerningOffset(FT_UInt prevCharIndex, FT_UInt nextCharIndex)
     {
         const FT_KERNING_DEFAULT = 0;
         FT_Vector delta;
-        int error = FT_Get_Kerning(_face, /* handle to face object */
-                prevCharIndex, /* left glyph index      */
-                nextCharIndex, /* right glyph index     */
-                FT_KERNING_DEFAULT, /* kerning mode          */
-                &delta); /* target vector         */
+        const int error = FT_Get_Kerning(
+            _face,              // handle to face object
+            prevCharIndex,      // left glyph index
+            nextCharIndex,      // right glyph index
+            FT_KERNING_DEFAULT, // kerning mode
+            &delta);            // target vector
         const RSHIFT = 0;
         if (!error)
             return cast(int)((delta.x) >> RSHIFT);
@@ -361,76 +358,33 @@ class FreeTypeFontFile
     }
 }
 
-/**
-    Font implementation based on FreeType.
-*/
-class FreeTypeFont : Font
+/// Font implementation based on FreeType
+final class FreeTypeFont : Font
 {
-    override @property const
-    {
-        int size() { return _size; }
-
-        int height()
-        {
-            return _files.count > 0 ? _files[0].height : _size;
-        }
-        ushort weight()
-        {
-            return _fontItem.def.weight;
-        }
-        int baseline()
-        {
-            return _files.count > 0 ? _files[0].baseline : 0;
-        }
-        bool italic()
-        {
-            return _fontItem.def.italic;
-        }
-        string face()
-        {
-            return _fontItem.def.face;
-        }
-        FontFamily family()
-        {
-            return _fontItem.def.family;
-        }
-        bool isNull()
-        {
-            return _files.empty;
-        }
-    }
+    override @property bool isNull() const { return _files.empty; }
 
     private
     {
         FontFileItem _fontItem;
         Collection!(FreeTypeFontFile, true) _files;
 
-        int _size;
-        int _height;
-
         GlyphCache _glyphCache;
     }
-
-    debug private static __gshared int _instanceCount;
-    debug @property static int instanceCount() { return _instanceCount; }
 
     this(FontFileItem item, int size)
     {
         _fontItem = item;
-        _size = size;
-        _height = size;
-        allowKerning = true;
-        debug _instanceCount++;
-        debug (resalloc)
-            Log.d("Created font, count: ", _instanceCount);
+        _desc.face = item.def.face;
+        _desc.family = item.def.family;
+        _desc.style = item.def.italic ? FontStyle.italic : FontStyle.normal;
+        _desc.weight = item.def.weight;
+        _desc.size = size;
+        _desc.height = size;
     }
 
     ~this()
     {
         clear();
-        debug _instanceCount--;
-        debug (resalloc)
-            Log.d("Destroyed font, count: ", _instanceCount);
     }
 
     override void clear()
@@ -456,7 +410,7 @@ class FreeTypeFont : Font
     /// Get kerning between two chars
     override int getKerningOffset(dchar prevChar, dchar currentChar)
     {
-        if (!allowKerning || !prevChar || !currentChar)
+        if (!_desc.hasKerning || !prevChar || !currentChar)
             return 0;
         FT_UInt index1;
         FreeTypeFontFile file1;
@@ -485,7 +439,7 @@ class FreeTypeFont : Font
             if (!findGlyph(ch, '?', index, file))
                 return null;
         }
-        if (auto glyph = file.getGlyphInfo(ch, 0, withImage))
+        if (auto glyph = file.getGlyphInfo(ch, 0, antialiased, withImage))
         {
             if (withImage)
                 return _glyphCache.put(ch, glyph.val);
@@ -501,10 +455,11 @@ class FreeTypeFont : Font
     {
         if (!isNull())
             clear();
+
         foreach (string filename; _fontItem.filenames)
         {
             auto file = new FreeTypeFontFile(_fontItem.library, filename);
-            if (file.open(_size, 0))
+            if (file.open(_desc.size, 0, _desc))
             {
                 _files.append(file);
             }
@@ -532,8 +487,8 @@ class FreeTypeFont : Font
     }
 }
 
-/// FreeType based font manager.
-class FreeTypeFontManager : FontManager
+/// FreeType-based font manager
+final class FreeTypeFontManager : FontManager
 {
     private FT_Library _library;
     private FontFileItem[] _fontFiles;
@@ -587,16 +542,16 @@ class FreeTypeFontManager : FontManager
         return stdFontFacePriority(existing) * 10;
     }
 
-    private FontFileItem findBestMatch(ushort weight, bool italic, FontFamily family, string face)
+    private FontFileItem findBestMatch(FontDef def)
     {
-        FontFileItem best = null;
-        int bestScore = 0;
-        string[] faces = face ? split(face, ",") : null;
+        FontFileItem best;
+        int bestScore;
+        string[] faces = def.face.length ? split(def.face, ",") : null;
         foreach (FontFileItem item; _fontFiles)
         {
-            int score = 0;
-            int bestFaceMatch = 0;
-            if (faces && face.length)
+            int score;
+            int bestFaceMatch;
+            if (faces.length && def.face.length)
             {
                 foreach (i; 0 .. faces.length)
                 {
@@ -606,17 +561,15 @@ class FreeTypeFontManager : FontManager
                         score += 3000 - i;
                         break;
                     }
-                    int match = faceMatch(f, item.def.face);
-                    if (match > bestFaceMatch)
-                        bestFaceMatch = match;
+                    bestFaceMatch = max(bestFaceMatch, faceMatch(f, item.def.face));
                 }
             }
             score += bestFaceMatch;
-            if (family == item.def.family)
+            if (def.family == item.def.family)
                 score += 1000; // family match
-            if (italic == item.def.italic)
+            if (def.italic == item.def.italic)
                 score += 50; // italic match
-            int weightDiff = myabs(weight - item.def.weight);
+            const int weightDiff = myabs(def.weight - item.def.weight);
             score += 30 - weightDiff / 30; // weight match
             if (score > bestScore)
             {
@@ -626,10 +579,6 @@ class FreeTypeFontManager : FontManager
         }
         return best;
     }
-
-    //private FontList _activeFonts;
-
-    private static __gshared FontRef _nullFontRef;
 
     this()
     {
@@ -663,7 +612,6 @@ class FreeTypeFontManager : FontManager
     {
         debug (FontResources)
             Log.d("FreeTypeFontManager ~this()");
-        //_activeFonts.clear();
         eliminate(_fontFiles);
         eliminate(_fontFileMap);
         debug (FontResources)
@@ -673,12 +621,10 @@ class FreeTypeFontManager : FontManager
             FT_Done_FreeType(_library);
     }
 
-    override protected ref FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)
+    override protected FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)
     {
-        FontFileItem f = findBestMatch(weight, italic, family, face);
-        if (f is null)
-            return _nullFontRef;
-        return f.get(size);
+        FontFileItem f = findBestMatch(FontDef(family, face, italic, weight));
+        return f ? f.get(size) : FontRef.init;
     }
 
     override void checkpoint()
@@ -713,8 +659,7 @@ class FreeTypeFontManager : FontManager
         string face;
         bool italic;
         ushort weight;
-        string name = filename.baseName;
-        switch (name)
+        switch (baseName(filename))
         {
         case "DroidSans.ttf":
             face = "Droid Sans";
@@ -750,6 +695,7 @@ class FreeTypeFontManager : FontManager
         default:
             if (skipUnknown)
                 return false;
+            break;
         }
         return registerFont(filename, FontFamily.sans_serif, face, italic, weight);
     }
@@ -761,8 +707,8 @@ class FreeTypeFontManager : FontManager
         if (_library is null)
             return false;
         debug (FontResources)
-            Log.v("FreeTypeFontManager.registerFont ", filename, " ", family, " ", face,
-                  " italic=", italic, " weight=", weight);
+            Log.fv("registerFont(%s, %s, %s, italic: %s, weight: %s)",
+                filename, family, face, italic, weight);
         if (!exists(filename) || !isFile(filename))
         {
             Log.d("Font file ", filename, " not found");
@@ -772,22 +718,26 @@ class FreeTypeFontManager : FontManager
         if (!dontLoadFile)
         {
             auto font = new FreeTypeFontFile(_library, filename);
-            if (!font.open(24))
+            FontDescription desc;
+            if (!font.open(24, 0, desc))
             {
                 Log.e("Failed to open font ", filename);
                 destroy(font);
                 return false;
             }
 
-            if (face == null || weight == 0)
+            if (face is null || weight == 0)
             {
                 // properties are not set by caller
                 // get properties from loaded font
-                face = font.face;
-                italic = font.italic;
-                weight = font.weight;
+                face = desc.face;
+                italic = desc.style == FontStyle.italic;
+                weight = desc.weight;
                 debug (FontResources)
-                    Log.d("Using properties from font file: face=", face, " weight=", weight, " italic=", italic);
+                {
+                    Log.fd("Using properties from font file; face: %s, weight: %s, italic: %s",
+                        face, weight, italic);
+                }
             }
             destroy(font);
         }
