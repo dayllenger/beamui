@@ -86,7 +86,7 @@ struct Path
         return this;
     }
     /// Move the current position by a vector. Closes current subpath, if one exists
-    ref Path relMoveTo(float dx, float dy)
+    ref Path moveBy(float dx, float dy)
     {
         posx += dx;
         posy += dy;
@@ -104,48 +104,12 @@ struct Path
         insertLastPoint();
         return this;
     }
-    /// Add a horizontal line segment to specified `x` coordinate
-    ref Path lineToHor(float x)
-    {
-        startSubpath();
-        if (fequal1(x, posx)) return this;
-        posx = x;
-        insertLastPoint();
-        return this;
-    }
-    /// Add a vertical line segment to specified `y` coordinate
-    ref Path lineToVert(float y)
-    {
-        startSubpath();
-        if (fequal1(y, posy)) return this;
-        posy = y;
-        insertLastPoint();
-        return this;
-    }
-    /// Relative version of `lineTo`
-    ref Path relLineTo(float dx, float dy)
+    /// Add a line segment to a point, relative to the current position
+    ref Path lineBy(float dx, float dy)
     {
         startSubpath();
         if (fzero1(dx) && fzero1(dy)) return this;
         posx += dx;
-        posy += dy;
-        insertLastPoint();
-        return this;
-    }
-    /// Relative version of `lineToHor`
-    ref Path relLineToHor(float dx)
-    {
-        startSubpath();
-        if (fzero1(dx)) return this;
-        posx += dx;
-        insertLastPoint();
-        return this;
-    }
-    /// Relative version of `lineToVert`
-    ref Path relLineToVert(float dy)
-    {
-        startSubpath();
-        if (fzero1(dy)) return this;
         posy += dy;
         insertLastPoint();
         return this;
@@ -165,8 +129,8 @@ struct Path
         insertLastPoint();
         return this;
     }
-    /// Relative version of `quadraticTo`
-    ref Path relQuadraticTo(float p1dx, float p1dy, float p2dx, float p2dy)
+    /// Add a quadratic Bézier curve with one control point and endpoint, relative to the current position
+    ref Path quadraticBy(float p1dx, float p1dy, float p2dx, float p2dy)
     {
         return quadraticTo(posx + p1dx, posy + p1dy, posx + p2dx, posy + p2dy);
     }
@@ -184,8 +148,8 @@ struct Path
         insertLastPoint();
         return this;
     }
-    /// Relative version of `cubicTo`
-    ref Path relCubicTo(float p1dx, float p1dy, float p2dx, float p2dy, float p3dx, float p3dy)
+    /// Add a cubic Bézier curve with two control points and endpoint, relative to the current position
+    ref Path cubicBy(float p1dx, float p1dy, float p2dx, float p2dy, float p3dx, float p3dy)
     {
         return cubicTo(posx + p1dx, posy + p1dy, posx + p2dx, posy + p2dy, posx + p3dx, posy + p3dy);
     }
@@ -223,8 +187,8 @@ struct Path
         insertLastPoint();
         return this;
     }
-    /// Relative version of `arcTo`
-    ref Path relArcTo(float dx, float dy, float angle, bool clockwise)
+    /// Add an circular arc extending to a point, relative to the current position
+    ref Path arcBy(float dx, float dy, float angle, bool clockwise)
     {
         return arcTo(posx + dx, posy + dy, angle, clockwise);
     }
