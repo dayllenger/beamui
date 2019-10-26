@@ -12,7 +12,7 @@ nothrow:
 import std.math : fabs, cos, sin, sqrt, PI, PI_2;
 import beamui.core.collections : Buf;
 import beamui.core.linalg : Vec2;
-import beamui.core.math : fequal1, fzero6;
+import beamui.core.math : fequal2, fzero6;
 
 // Bezier flattening is based on Maxim Shemanarev article
 // https://web.archive.org/web/20190309181735/http://antigrain.com/research/adaptive_bezier/index.html
@@ -144,13 +144,13 @@ void flattenArc(Vec2 center, float radius, float startAngle, float angleOffset,
         const int dir = angleOffset > 0 ? 1 : -1;
         const rx1 = radius * cos(startAngle + dir * FULL / 3);
         const ry1 = radius * sin(startAngle + dir * FULL / 3);
-        if (!fequal1(rx, rx1) || !fequal1(ry, ry1))
+        if (!fequal2(rx, rx1) || !fequal2(ry, ry1))
         {
             if (offset > FULL * 2 / 3)
             {
                 const rx2 = radius * cos(startAngle + dir * FULL * 2 / 3);
                 const ry2 = radius * sin(startAngle + dir * FULL * 2 / 3);
-                if (!fequal1(rx, rx2) || !fequal1(ry, ry2))
+                if (!fequal2(rx, rx2) || !fequal2(ry, ry2))
                 {
                     flattenArcPart(center.x, center.y, rx0, ry0, rx1, ry1, true, output);
                     flattenArcPart(center.x, center.y, rx1, ry1, rx2, ry2, true, output);

@@ -1221,7 +1221,7 @@ Vec2 intersectVectors(Vec2 p1, Vec2 dir1, Vec2 p2, Vec2 dir2)
     const float d1 = crossProduct(p2 - p1, dir2);
     const float d2 = crossProduct(dir1, dir2);
     // a * d2 = d1
-    if (!fzero1(d2))
+    if (!fzero2(d2))
         return p1 + dir1 * d1 / d2;
     else
         return p1; // parallel
@@ -1309,7 +1309,7 @@ unittest
     assert(fequal6(ib.x, -5) && fequal6(ib.y, -4));
     assert(fequal6(ta.x, 11) && fequal6(ta.y,  7));
     assert(fequal6(tb.x, -4) && fequal6(tb.y, -5));
-    assert(fequal1(rc.x, -1.83) && fequal1(rc.y, 6.83));
+    assert(fequal2(rc.x, -1.83) && fequal2(rc.y, 6.83));
     assert(fequal6(sa.x,  20) && fequal6(sa.y,  24));
     assert(fequal6(sb.x, -10) && fequal6(sb.y, -12));
 
@@ -1317,7 +1317,7 @@ unittest
     const m2 = Mat2x3.identity.translate(Vec2(1, -1)).rotate(PI / 3).scale(Vec2(2, 3));
     const d1 = m1 * Vec2(15, 10);
     const d2 = m2 * Vec2(15, 10);
-    assert(fequal1(d1.x, -9.98) && fequal1(d1.y, 39.98));
+    assert(fequal2(d1.x, -9.98) && fequal2(d1.y, 39.98));
     assert(fequal6(d1.x, d2.x) && fequal6(d1.y, d2.y));
 
     assert(i * i.inverted == Mat2x3.identity);

@@ -9,7 +9,7 @@ module beamui.graphics.path;
 
 import beamui.core.collections : Buf;
 import beamui.core.linalg : Vec2;
-import beamui.core.math : fequal1, fequal6, fzero1;
+import beamui.core.math : fequal2, fequal6, fzero2;
 import beamui.graphics.flattener;
 
 struct SubPath
@@ -98,7 +98,7 @@ struct Path
     ref Path lineTo(float x, float y)
     {
         startSubpath();
-        if (fequal1(x, posx) && fequal1(y, posy)) return this;
+        if (fequal2(x, posx) && fequal2(y, posy)) return this;
         posx = x;
         posy = y;
         insertLastPoint();
@@ -108,7 +108,7 @@ struct Path
     ref Path lineBy(float dx, float dy)
     {
         startSubpath();
-        if (fzero1(dx) && fzero1(dy)) return this;
+        if (fzero2(dx) && fzero2(dy)) return this;
         posx += dx;
         posy += dy;
         insertLastPoint();
@@ -160,8 +160,8 @@ struct Path
         import std.math : asin, cos, sqrt, PI;
 
         startSubpath();
-        if (angle < 0 || 360 < angle || fzero1(angle) || fequal1(angle, 360) ||
-            fequal1(x, posx) && fequal1(y, posy)) return this;
+        if (angle < 0 || 360 < angle || fzero2(angle) || fequal2(angle, 360) ||
+            fequal2(x, posx) && fequal2(y, posy)) return this;
 
         angle = angle * PI / 180;
         const cosine_2 = cos(angle / 2);
