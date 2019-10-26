@@ -9,7 +9,7 @@ module beamui.core.linalg;
 
 nothrow:
 
-import std.math : cos, sin, sqrt, tan, PI;
+import std.math : cos, sin, sqrt, tan, isFinite, PI;
 import std.string : format;
 import beamui.core.math;
 
@@ -293,6 +293,7 @@ struct Mat2x3
 
     /// Add or subtract a matrix
     ref Mat2x3 opOpAssign(string op)(Mat2x3 mat) if (op == "+" || op == "-")
+        in(isFinite(), msgNotFinite)
     {
         mixin("store[0] "~op~"= mat.store[0];");
         mixin("store[1] "~op~"= mat.store[1];");
@@ -300,6 +301,7 @@ struct Mat2x3
     }
     /// ditto
     Mat2x3 opBinary(string op)(Mat2x3 mat) const if (op == "+" || op == "-")
+        in(isFinite(), msgNotFinite)
     {
         Mat2x3 ret = this;
         mixin("ret.store[0] "~op~"= mat.store[0];");
@@ -308,6 +310,7 @@ struct Mat2x3
     }
     /// Multiply this matrix by another one, as they were 3x3 with (0,0,1) last row
     ref Mat2x3 opOpAssign(string op: "*")(Mat2x3 mat)
+        in(isFinite(), msgNotFinite)
     {
         const a00 = store[0][0];
         const a01 = store[0][1];
@@ -323,6 +326,7 @@ struct Mat2x3
     }
     /// ditto
     Mat2x3 opBinary(string op : "*")(Mat2x3 mat) const
+        in(isFinite(), msgNotFinite)
     {
         Mat2x3 ret = void;
         ret.store[0][0] = store[0][0] * mat.store[0][0] + store[0][1] * mat.store[1][0];
@@ -336,6 +340,7 @@ struct Mat2x3
 
     /// Transform a vector by this matrix
     Vec2 opBinary(string op : "*")(Vec2 vec) const
+        out(v; .isFinite(v.x) && .isFinite(v.y), "Transformed vector is not finite")
     {
         return Vec2(
             store[0][0] * vec.x + store[0][1] * vec.y + store[0][2],
@@ -388,6 +393,7 @@ struct Mat2x3
 
     /// Apply translation to this matrix
     ref Mat2x3 translate(Vec2 offset)
+        in(isFinite(), msgNotFinite)
     {
         store[0][2] += store[0][0] * offset.x + store[0][1] * offset.y;
         store[1][2] += store[1][0] * offset.x + store[1][1] * offset.y;
@@ -395,6 +401,7 @@ struct Mat2x3
     }
     /// Make a translation matrix
     static Mat2x3 translation(Vec2 offset)
+        out(m; m.isFinite(), msgNotFinite)
     {
         Mat2x3 m = identity;
         m.store[0][2] = offset.x;
@@ -404,6 +411,7 @@ struct Mat2x3
 
     /// Apply rotation to this matrix
     ref Mat2x3 rotate(float radians)
+        in(isFinite(), msgNotFinite)
     {
         const c = cos(radians);
         const s = sin(radians);
@@ -417,6 +425,7 @@ struct Mat2x3
     }
     /// Make a rotation matrix
     static Mat2x3 rotation(float radians)
+        out(m; m.isFinite(), msgNotFinite)
     {
         Mat2x3 m;
         const c = cos(radians);
@@ -430,6 +439,7 @@ struct Mat2x3
 
     /// Apply scaling to this matrix
     ref Mat2x3 scale(Vec2 factor)
+        in(isFinite(), msgNotFinite)
     {
         store[0][0] *= factor.x;
         store[1][0] *= factor.x;
@@ -439,6 +449,7 @@ struct Mat2x3
     }
     /// Make a scaling matrix
     static Mat2x3 scaling(Vec2 factor)
+        out(m; m.isFinite(), msgNotFinite)
     {
         Mat2x3 m;
         m.store[0][0] = factor.x;
@@ -448,6 +459,7 @@ struct Mat2x3
 
     /// Apply skewing to this matrix
     ref Mat2x3 skew(Vec2 factor)
+        in(isFinite(), msgNotFinite)
     {
         const a = tan(factor.x);
         const b = tan(factor.y);
@@ -461,6 +473,7 @@ struct Mat2x3
     }
     /// Make a skewing matrix
     static Mat2x3 skewing(Vec2 factor)
+        out(m; m.isFinite(), msgNotFinite)
     {
         Mat2x3 m = identity;
         m.store[0][1] = tan(factor.x);
@@ -481,6 +494,12 @@ struct Mat2x3
             return null;
         }
     }
+
+    private bool isFinite() const
+    {
+        return .isFinite((this * Vec2(1, 1)).magnitudeSquared);
+    }
+    private static immutable msgNotFinite = "Transformation is not finite anymore";
 }
 
 struct mat4
