@@ -477,17 +477,18 @@ ActiveEdgeAA* new_active_aa(Hheap* hh, const Edge* e, float start_point)
 // directly AA rasterize edges w/o supersampling
 void rasterize_sorted_edges_aa(Edge* e, int n, RastParams params, Plotter plotter)
 {
+    const int width = params.clip.w;
     Hheap hh;
     ActiveEdgeAA* active;
     float[512 + 1] scanline_data = void;
     float* scanline, scanline2;
 
-    if (params.clip.w > 256)
-        scanline = cast(float*)malloc((params.clip.w * 2 + 1) * float.sizeof);
+    if (width > 256)
+        scanline = cast(float*)malloc((width * 2 + 1) * float.sizeof);
     else
         scanline = scanline_data.ptr;
 
-    scanline2 = scanline + params.clip.w;
+    scanline2 = scanline + width;
 
     e[n].y0 = params.clip.h + 1;
 
@@ -497,8 +498,6 @@ void rasterize_sorted_edges_aa(Edge* e, int n, RastParams params, Plotter plotte
         const float scan_y_top = y;
         const float scan_y_bottom = y + 1;
         ActiveEdgeAA** step = &active;
-
-        scanline[0 .. params.clip.w * 2 + 1] = 0;
 
         // update all active edges;
         // remove all active edges that terminate before the top of this scanline
@@ -537,35 +536,36 @@ void rasterize_sorted_edges_aa(Edge* e, int n, RastParams params, Plotter plotte
         // now process all active edges
         if (active)
         {
-            fill_active_edges_aa(scanline, scanline2 + 1, params.clip.w, active, scan_y_top);
+            scanline[0 .. width * 2 + 1] = 0;
 
-            const int len = params.clip.w;
+            const span = fill_active_edges_aa(scanline, scanline2 + 1, width, active, scan_y_top);
+
             const int xx = params.clip.x;
             const int yy = params.clip.y + y;
             final switch (params.rule) with (RastFillRule)
             {
             case nonzero:
                 alias cov = w => fabs(w);
-                draw_scanline_aa!cov(scanline, len, xx, yy, plotter);
+                draw_scanline_aa!cov(scanline, width, span, xx, yy, plotter);
                 break;
             case odd:
                 alias cov = w => w == 0 ? 0 : fabs(w - quantize(w, 2.0f));
-                draw_scanline_aa!cov(scanline, len, xx, yy, plotter);
+                draw_scanline_aa!cov(scanline, width, span, xx, yy, plotter);
                 break;
             case zero:
                 alias cov = w => w == 0 ? 1 : (1 - min(fabs(w), 1));
-                draw_scanline_aa!cov(scanline, len, xx, yy, plotter);
+                draw_scanline_aa!cov(scanline, width, [0, width], xx, yy, plotter);
                 break;
             case even:
                 alias cov = w => w == 0 ? 1 : (1 - fabs(w - quantize(w, 2.0f)));
-                draw_scanline_aa!cov(scanline, len, xx, yy, plotter);
+                draw_scanline_aa!cov(scanline, width, [0, width], xx, yy, plotter);
                 break;
             }
         }
         else if (isComplementary(params.rule))
         {
             // fill outer areas
-            plotter.setScanLine(params.clip.x, params.clip.x + params.clip.w, params.clip.y + y);
+            plotter.setScanLine(params.clip.x, params.clip.x + width, params.clip.y + y);
         }
 
         // advance all the edges
@@ -584,9 +584,11 @@ void rasterize_sorted_edges_aa(Edge* e, int n, RastParams params, Plotter plotte
         free(scanline);
 }
 
-void fill_active_edges_aa(float* scanline, float* scanline_fill, int len, const(ActiveEdgeAA)* e, float y_top)
+// returns filled scanline boundaries
+int[2] fill_active_edges_aa(float* scanline, float* scanline_fill, int len, const(ActiveEdgeAA)* e, float y_top)
 {
     const float y_bottom = y_top + 1;
+    float fx0 = len, fx1 = 0;
 
     while (e)
     {
@@ -703,18 +705,24 @@ void fill_active_edges_aa(float* scanline, float* scanline_fill, int len, const(
             scanline[x] += e.direction * (1 - (x0 - x)) * height;
             scanline_fill[x] += e.direction * height;
         }
+
+        // find line boundaries for optimization
+        fx0 = min(fx0, e.fx, e.fx + e.fdx);
+        fx1 = max(fx1, e.fx, e.fx + e.fdx);
+
         e = e.next;
     }
+    return [max(ifloor(fx0), 0), min(iceil(fx1), len)];
 }
 
-void draw_scanline_aa(alias calcCoverage)(
-    const float* scanline, const int len, const int x, const int y, Plotter plotter)
+void draw_scanline_aa(alias calcCoverage)(const float* scanline, const int width,
+    const int[2] span, const int x, const int y, Plotter plotter)
 {
-    const float* scanline2 = scanline + len;
+    const float* scanline2 = scanline + width;
     int prev = x;
     bool run;
     float sum = 0;
-    foreach (i; 0 .. len)
+    foreach (i; span[0] .. span[1])
     {
         sum += scanline2[i];
         const cov = calcCoverage(scanline[i] + sum);
@@ -739,7 +747,7 @@ void draw_scanline_aa(alias calcCoverage)(
         }
     }
     if (run)
-        plotter.setScanLine(prev, x + len, y);
+        plotter.setScanLine(prev, x + span[1], y);
 }
 
 // non-antialiased part
