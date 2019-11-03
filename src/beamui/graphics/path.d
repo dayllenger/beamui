@@ -8,14 +8,16 @@ Authors:   dayllenger
 module beamui.graphics.path;
 
 import beamui.core.collections : Buf;
+import beamui.core.geometry : RectF;
 import beamui.core.linalg : Vec2;
-import beamui.core.math : fequal2, fequal6, fzero2;
+import beamui.core.math : fequal2, fequal6, fzero2, max, min;
 import beamui.graphics.flattener;
 
 struct SubPath
 {
     Vec2[] points;
     bool closed;
+    RectF bounds;
 }
 
 /// Represents vector shape as one or more subpaths, which contain series of segments
@@ -43,7 +45,8 @@ struct Path
 
             const end = subpaths.length > 1 ? subpaths[1].start : points.length;
             const pts = points[][0 .. end];
-            return const(SubPath)(pts, subpaths[0].closed);
+            const bounds = subpaths.length > 1 ? subpaths[0].bounds : currentContourBounds;
+            return const(SubPath)(pts, subpaths[0].closed, bounds);
         }
     }
 
@@ -53,6 +56,7 @@ struct Path
         {
             uint start;
             bool closed;
+            RectF bounds;
         }
 
         Buf!Vec2 points;
@@ -60,21 +64,37 @@ struct Path
         bool closed = true;
         float posx = 0;
         float posy = 0;
+        RectF currentContourBounds;
     }
 
-    private void startSubpath()
+    private void ensureContourStarted()
     {
         if (closed)
         {
+            if (subpaths.length > 0)
+                subpaths.unsafe_ref(-1).bounds = currentContourBounds;
+            currentContourBounds = RectF(posx, posy, posx, posy);
+
             const i = points.length;
             points ~= Vec2(posx, posy);
             subpaths ~= SubPathInternal(i);
             closed = false;
         }
     }
+
     private void insertLastPoint()
     {
         points ~= Vec2(posx, posy);
+        expandBounds(posx, posy);
+    }
+
+    private void expandBounds(float px, float py)
+    {
+        alias r = currentContourBounds;
+        r.left = min(r.left, px);
+        r.top = min(r.top, py);
+        r.right = max(r.right, px);
+        r.bottom = max(r.bottom, py);
     }
 
     /// Set the current pen position. Closes current subpath, if one exists
@@ -97,7 +117,7 @@ struct Path
     /// Add a line segment to a point
     ref Path lineTo(float x, float y)
     {
-        startSubpath();
+        ensureContourStarted();
         if (fequal2(x, posx) && fequal2(y, posy)) return this;
         posx = x;
         posy = y;
@@ -107,7 +127,7 @@ struct Path
     /// Add a line segment to a point, relative to the current position
     ref Path lineBy(float dx, float dy)
     {
-        startSubpath();
+        ensureContourStarted();
         if (fzero2(dx) && fzero2(dy)) return this;
         posx += dx;
         posy += dy;
@@ -118,7 +138,7 @@ struct Path
     /// Add a quadratic Bézier curve with one control point and endpoint
     ref Path quadraticTo(float p1x, float p1y, float p2x, float p2y)
     {
-        startSubpath();
+        ensureContourStarted();
         flattenQuadraticBezier(
             Vec2(posx, posy),
             Vec2(p1x, p1y),
@@ -127,6 +147,7 @@ struct Path
         posx = p2x;
         posy = p2y;
         insertLastPoint();
+        expandBounds(p1x, p1y);
         return this;
     }
     /// Add a quadratic Bézier curve with one control point and endpoint, relative to the current position
@@ -138,7 +159,7 @@ struct Path
     /// Add a cubic Bézier curve with two control points and endpoint
     ref Path cubicTo(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y)
     {
-        startSubpath();
+        ensureContourStarted();
         flattenCubicBezier(
             Vec2(posx, posy), Vec2(p1x, p1y),
             Vec2(p2x,  p2y),  Vec2(p3x, p3y),
@@ -146,6 +167,8 @@ struct Path
         posx = p3x;
         posy = p3y;
         insertLastPoint();
+        expandBounds(p1x, p1y);
+        expandBounds(p2x, p2y);
         return this;
     }
     /// Add a cubic Bézier curve with two control points and endpoint, relative to the current position
@@ -159,7 +182,7 @@ struct Path
     {
         import std.math : asin, cos, sqrt, PI;
 
-        startSubpath();
+        ensureContourStarted();
         if (angle < 0 || 360 < angle || fzero2(angle) || fequal2(angle, 360) ||
             fequal2(x, posx) && fequal2(y, posy)) return this;
 
@@ -185,6 +208,8 @@ struct Path
         posx = x;
         posy = y;
         insertLastPoint();
+        expandBounds(center.x - r, center.y - r);
+        expandBounds(center.x + r, center.y + r);
         return this;
     }
     /// Add an circular arc extending to a point, relative to the current position
@@ -204,14 +229,17 @@ struct Path
             if (!closed)
                 points ~= p0;
             else
-                startSubpath();
+                ensureContourStarted();
 
             foreach (i; 1 .. array.length)
             {
                 const a = array[i - 1];
                 const b = array[i];
                 if (!fequal6(a.x, b.x) || !fequal6(a.y, b.y))
+                {
                     points ~= b;
+                    expandBounds(b.x, b.y);
+                }
             }
         }
         return this;
@@ -244,6 +272,11 @@ struct Path
             p.x += dx;
             p.y += dy;
         }
+        foreach (ref subpath; subpaths.unsafe_slice)
+        {
+            subpath.bounds.translate(dx, dy);
+        }
+        currentContourBounds.translate(dx, dy);
         return this;
     }
 
@@ -267,14 +300,16 @@ struct Path
         {
             const start = subpaths[i].start;
             const end = (i + 1 < subpaths.length) ? subpaths[i + 1].start : pts.length;
-            const subpath = const(SubPath)(pts[start .. end], subpaths[i].closed);
+            const bounds = (i + 1 < subpaths.length) ? subpaths[i].bounds : currentContourBounds;
+            const subpath = const(SubPath)(pts[start .. end], subpaths[i].closed, bounds);
 
             // the contour must not contain coincident adjacent points
             debug foreach (j; 1 .. subpath.points.length)
+            {
                 if (fequal6(subpath.points[j - 1].x, subpath.points[j].x) &&
                     fequal6(subpath.points[j - 1].y, subpath.points[j].y))
                     assert(0, "Path has coincident adjacent points");
-
+            }
             const int result = callback(subpath);
             if (result != 0)
                 return result;
