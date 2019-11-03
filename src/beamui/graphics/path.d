@@ -177,16 +177,19 @@ struct Path
         return cubicTo(posx + p1dx, posy + p1dy, posx + p2dx, posy + p2dy, posx + p3dx, posy + p3dy);
     }
 
-    /// Add an circular arc extending to a specified point
-    ref Path arcTo(float x, float y, float angle, bool clockwise)
+    /** Add an circular arc extending to a specified point.
+
+        Positive angle draws clockwise.
+    */
+    ref Path arcTo(float x, float y, float angle)
     {
-        import std.math : asin, cos, sqrt, PI;
+        import std.math : abs, asin, cos, sqrt, PI;
 
         ensureContourStarted();
-        if (angle < 0 || 360 < angle || fzero2(angle) || fequal2(angle, 360) ||
-            fequal2(x, posx) && fequal2(y, posy)) return this;
+        if (fzero2(angle) || (fequal2(x, posx) && fequal2(y, posy))) return this;
 
-        angle = angle * PI / 180;
+        const bool clockwise = angle > 0;
+        angle = min(abs(angle), 360) * PI / 180;
         const cosine_2 = cos(angle / 2);
         const cosine = 2 * cosine_2 * cosine_2 - 1;
         // find radius using cosine formula
@@ -212,10 +215,13 @@ struct Path
         expandBounds(center.x + r, center.y + r);
         return this;
     }
-    /// Add an circular arc extending to a point, relative to the current position
-    ref Path arcBy(float dx, float dy, float angle, bool clockwise)
+    /** Add an circular arc extending to a point, relative to the current position.
+
+        Positive angle draws clockwise.
+    */
+    ref Path arcBy(float dx, float dy, float angle)
     {
-        return arcTo(posx + dx, posy + dy, angle, clockwise);
+        return arcTo(posx + dx, posy + dy, angle);
     }
 
     /// Add a polyline to the path; equivalent to multiple `lineTo` calls with optional `moveTo` beforehand
