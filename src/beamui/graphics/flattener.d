@@ -19,18 +19,17 @@ import beamui.core.math : fequal2, fzero6;
 // It works, but requires further development
 
 /// Convert cubic bezier curve into a list of points
-void flattenCubicBezier(Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3,
-    bool endpointsToo, ref Buf!Vec2 output)
+void flattenCubicBezier(ref Buf!Vec2 output, Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3, bool endpointsToo)
 {
     if (endpointsToo)
         output ~= p0;
-    recursiveCubicBezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, 0, output);
+    recursiveCubicBezier(output, p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, 0);
     if (endpointsToo)
         output ~= p3;
 }
 
-private void recursiveCubicBezier(float x1, float y1, float x2, float y2,
-    float x3, float y3, float x4, float y4, int level, ref Buf!Vec2 output)
+private void recursiveCubicBezier(ref Buf!Vec2 output,
+    float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, int level)
 {
     if (level > 10) return;
 
@@ -63,24 +62,23 @@ private void recursiveCubicBezier(float x1, float y1, float x2, float y2,
     }
     else
     {
-       recursiveCubicBezier(x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1, output);
-       recursiveCubicBezier(x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1, output);
+       recursiveCubicBezier(output, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
+       recursiveCubicBezier(output, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
     }
 }
 
 /// Convert quadratic bezier curve into a list of points
-void flattenQuadraticBezier(Vec2 p0, Vec2 p1, Vec2 p2,
-    bool endpointsToo, ref Buf!Vec2 output)
+void flattenQuadraticBezier(ref Buf!Vec2 output, Vec2 p0, Vec2 p1, Vec2 p2, bool endpointsToo)
 {
     if (endpointsToo)
         output ~= p0;
-    recursiveQuadraticBezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, 0, output);
+    recursiveQuadraticBezier(output, p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, 0);
     if (endpointsToo)
         output ~= p2;
 }
 
-private void recursiveQuadraticBezier(float x1, float y1, float x2, float y2, float x3, float y3,
-    int level, ref Buf!Vec2 output)
+private void recursiveQuadraticBezier(ref Buf!Vec2 output,
+    float x1, float y1, float x2, float y2, float x3, float y3, int level)
 {
     if (level > 10) return;
 
@@ -106,14 +104,14 @@ private void recursiveQuadraticBezier(float x1, float y1, float x2, float y2, fl
     }
     else
     {
-        recursiveQuadraticBezier(x1, y1, x12, y12, x123, y123, level + 1, output);
-        recursiveQuadraticBezier(x123, y123, x23, y23, x3, y3, level + 1, output);
+        recursiveQuadraticBezier(output, x1, y1, x12, y12, x123, y123, level + 1);
+        recursiveQuadraticBezier(output, x123, y123, x23, y23, x3, y3, level + 1);
     }
 }
 
 /// Convert circular arc into a list of points
-void flattenArc(Vec2 center, float radius, float startAngle, float angleOffset,
-    bool endpointsToo, ref Buf!Vec2 output)
+void flattenArc(ref Buf!Vec2 output, Vec2 center, float radius,
+    float startAngle, float angleOffset, bool endpointsToo)
 {
     if (radius < 0)
         return;
@@ -152,22 +150,22 @@ void flattenArc(Vec2 center, float radius, float startAngle, float angleOffset,
                 const ry2 = radius * sin(startAngle + dir * FULL * 2 / 3);
                 if (!fequal2(rx, rx2) || !fequal2(ry, ry2))
                 {
-                    flattenArcPart(center.x, center.y, rx0, ry0, rx1, ry1, true, output);
-                    flattenArcPart(center.x, center.y, rx1, ry1, rx2, ry2, true, output);
-                    flattenArcPart(center.x, center.y, rx2, ry2, rx, ry, endpointsToo, output);
+                    flattenArcPart(output, center.x, center.y, rx0, ry0, rx1, ry1, true);
+                    flattenArcPart(output, center.x, center.y, rx1, ry1, rx2, ry2, true);
+                    flattenArcPart(output, center.x, center.y, rx2, ry2, rx, ry, endpointsToo);
                     return;
                 }
             }
-            flattenArcPart(center.x, center.y, rx0, ry0, rx1, ry1, true, output);
-            flattenArcPart(center.x, center.y, rx1, ry1, rx, ry, endpointsToo, output);
+            flattenArcPart(output, center.x, center.y, rx0, ry0, rx1, ry1, true);
+            flattenArcPart(output, center.x, center.y, rx1, ry1, rx, ry, endpointsToo);
             return;
         }
     }
-    flattenArcPart(center.x, center.y, rx0, ry0, rx, ry, endpointsToo, output);
+    flattenArcPart(output, center.x, center.y, rx0, ry0, rx, ry, endpointsToo);
 }
 
-private void flattenArcPart(float cx, float cy, float ax, float ay, float bx, float by,
-    bool lastToo, ref Buf!Vec2 output)
+private void flattenArcPart(ref Buf!Vec2 output,
+    float cx, float cy, float ax, float ay, float bx, float by, bool lastToo)
 {
     const q1 = ax * ax + ay * ay;
     const q2 = q1 + ax * bx + ay * by;
@@ -182,7 +180,7 @@ private void flattenArcPart(float cx, float cy, float ax, float ay, float bx, fl
     const x3 = cx + bx;
     const y3 = cy - by;
 
-    recursiveCubicBezier(x0, y0, x1, y1, x2, y2, x3, y3, 0, output);
+    recursiveCubicBezier(output, x0, y0, x1, y1, x2, y2, x3, y3, 0);
     if (lastToo)
         output ~= Vec2(x3, y3);
 }

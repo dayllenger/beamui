@@ -45,7 +45,7 @@ private struct Line
         }
 
         static Buf!ComputedGlyph shapingBuf;
-        shape(str, font, style.transform, shapingBuf);
+        shape(str, shapingBuf, font, style.transform);
 
         const int spaceWidth = font.spaceWidth;
 

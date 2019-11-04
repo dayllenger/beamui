@@ -202,7 +202,7 @@ struct TextLine
         Font font = style.font;
 
         static Buf!ComputedGlyph shapingBuf;
-        shape(str[start .. end], font, style.transform, shapingBuf);
+        shape(str[start .. end], shapingBuf, font, style.transform);
 
         const height = font.height;
         const baseline = font.baseline;

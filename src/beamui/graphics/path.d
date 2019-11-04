@@ -140,10 +140,12 @@ struct Path
     {
         ensureContourStarted();
         flattenQuadraticBezier(
+            points,
             Vec2(posx, posy),
             Vec2(p1x, p1y),
             Vec2(p2x, p2y),
-            false, points);
+            false,
+        );
         posx = p2x;
         posy = p2y;
         insertLastPoint();
@@ -161,9 +163,11 @@ struct Path
     {
         ensureContourStarted();
         flattenCubicBezier(
+            points,
             Vec2(posx, posy), Vec2(p1x, p1y),
             Vec2(p2x,  p2y),  Vec2(p3x, p3y),
-            false, points);
+            false,
+        );
         posx = p3x;
         posy = p3y;
         insertLastPoint();
@@ -207,7 +211,7 @@ struct Path
         const beta = asin(dy);
         const startAngle = (center.x < x ? beta : PI - beta) - angle * dir;
 
-        flattenArc(center, r, startAngle, angle * dir, false, points);
+        flattenArc(points, center, r, startAngle, angle * dir, false);
         posx = x;
         posy = y;
         insertLastPoint();

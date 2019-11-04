@@ -77,7 +77,7 @@ Size computeTextSize(dstring str, ref TextLayoutStyle style)
 
     // compute freshly if not found
     static Buf!ComputedGlyph shapingBuf;
-    shape(str, style.font, style.transform, shapingBuf);
+    shape(str, shapingBuf, style.font, style.transform);
 
     const int spaceWidth = style.font.spaceWidth;
     const int height = style.font.height;

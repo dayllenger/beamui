@@ -36,11 +36,11 @@ struct ComputedGlyph
     Its resulting length is always same as the length of the passed string.
     Glyphs for non-printable characters are set to `null`.
 */
-void shape(dstring str, Font font, TextTransform transform, ref Buf!ComputedGlyph buffer)
+void shape(dstring str, ref Buf!ComputedGlyph output, Font font, TextTransform transform)
 {
     assert(font, "Font is mandatory");
 
-    buffer.clear();
+    output.clear();
     const len = cast(uint)str.length;
     if (len == 0)  // trivial case; do not resize the buffer
         return;
@@ -50,9 +50,9 @@ void shape(dstring str, Font font, TextTransform transform, ref Buf!ComputedGlyp
     const spaceWidth = fixed ? fixedCharWidth : cast(ushort)font.spaceWidth;
     const bool useKerning = !fixed && font.hasKerning;
 
-    buffer.resize(len);
+    output.resize(len);
 
-    auto pglyphs = buffer.unsafe_ptr;
+    auto pglyphs = output.unsafe_ptr;
     dchar prevChar = 0;
     foreach (i, ch; str)
     {
