@@ -38,7 +38,7 @@ class GLDrawBuf : DrawBuf
 
     override void beforeDrawing()
     {
-        alpha = 0;
+        alpha = 255;
         glSupport.setOrthoProjection(Rect(0, 0, _w, _h), Rect(0, 0, _w, _h));
         glSupport.beforeRenderGUI();
     }
@@ -459,8 +459,6 @@ private class GLImageCache : GLCache
                 for (int x = rc.left; x < rc.right; x++)
                 {
                     uint cl = row[x];
-                    // invert A
-                    cl ^= 0xFF000000;
                     // swap R and B
                     uint r = (cl & 0x00FF0000) >> 16;
                     uint b = (cl & 0x000000FF) << 16;

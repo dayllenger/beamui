@@ -122,17 +122,17 @@ class GradientDrawable : Drawable
             if (c >= 0)
             {
                 // 0-90 degrees
-                _color1 = Color.blend(color1, color2, cast(uint)(255 * c));
+                _color1 = Color.mix(color2, color1, c);
                 _color2 = color2;
                 _color3 = color1;
-                _color4 = Color.blend(color1, color2, cast(uint)(255 * s));
+                _color4 = Color.mix(color2, color1, s);
             }
             else
             {
                 // 90-180 degrees
                 _color1 = color2;
-                _color2 = Color.blend(color1, color2, cast(uint)(255 * -c));
-                _color3 = Color.blend(color1, color2, cast(uint)(255 * s));
+                _color2 = Color.mix(color2, color1, -c);
+                _color3 = Color.mix(color2, color1, s);
                 _color4 = color1;
             }
         }
@@ -141,17 +141,17 @@ class GradientDrawable : Drawable
             if (c < 0)
             {
                 // 180-270 degrees
-                _color1 = Color.blend(color1, color2, cast(uint)(255 * -s));
+                _color1 = Color.mix(color2, color1, -s);
                 _color2 = color1;
                 _color3 = color2;
-                _color4 = Color.blend(color1, color2, cast(uint)(255 * -c));
+                _color4 = Color.mix(color2, color1, -c);
             }
             else
             {
                 // 270-360 degrees
                 _color1 = color1;
-                _color2 = Color.blend(color1, color2, cast(uint)(255 * -s));
-                _color3 = Color.blend(color1, color2, cast(uint)(255 * c));
+                _color2 = Color.mix(color2, color1, -s);
+                _color3 = Color.mix(color2, color1, c);
                 _color4 = color2;
             }
         }
@@ -189,18 +189,16 @@ class BoxShadowDrawable : Drawable
         _blurSize = blurSize;
         _color = color;
         // now create a texture which will contain the shadow
-        uint size = 4 * blurSize + 1;
+        const size = 4 * blurSize + 1;
         texture = new ColorDrawBuf(size, size); // TODO: get from/put to cache
         // clear
-        Color cc = color;
-        cc.a = 0xFF;
-        texture.fill(cc);
+        texture.fill(color.withAlpha(0));
         // draw a square in center of the texture
         texture.fillRect(Rect(blurSize, blurSize, size - blurSize, size - blurSize), color);
         // blur the square
         texture.blur(blurSize);
         // set 9-patch frame
-        uint sz = _blurSize * 2;
+        const sz = _blurSize * 2;
         texture.ninePatch = new NinePatch(InsetsI(sz), InsetsI(sz));
     }
 
@@ -217,7 +215,7 @@ class BoxShadowDrawable : Drawable
         b.expand(Insets(_blurSize));
 
         // apply new clipping to the DrawBuf to draw outside of the widget
-        auto saver = ClipRectSaver(buf, Rect(b), 0, false);
+        auto saver = ClipRectSaver(buf, Rect(b), 255, false);
 
         // now draw
         if (_blurSize > 0)

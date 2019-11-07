@@ -1945,7 +1945,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                     clippedCellBox.x += clientBox.x;
                     clippedCellBox.y += clientBox.y;
 
-                    auto cellSaver = ClipRectSaver(buf, clippedCellBox, 0);
+                    auto cellSaver = ClipRectSaver(buf, clippedCellBox);
                     bool isHeader = x < _headerCols || y < _headerRows;
                     if (phase == 0)
                     {

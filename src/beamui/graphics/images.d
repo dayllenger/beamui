@@ -96,17 +96,15 @@ ColorDrawBuf loadImage(immutable ubyte[] data, string filename)
 
 private ColorDrawBuf importImage(SuperImage image)
 {
-    int w = image.width;
-    int h = image.height;
+    const int w = image.width;
+    const int h = image.height;
+    const(uint)[] data = image.data;
     auto buf = new ColorDrawBuf(w, h);
     foreach (y; 0 .. h)
     {
         uint* dstLine = buf.scanLine(y);
-        foreach (x; 0 .. w)
-        {
-            uint pixel = image[x, y];
-            dstLine[x] = pixel ^ 0xFF000000;
-        }
+        dstLine[0 .. w] = data[0 .. w];
+        data = data[w .. $];
     }
     return buf;
 }

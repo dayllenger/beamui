@@ -78,7 +78,7 @@ class DrawBuf : RefCountedObject
 
     private Rect _clipRect;
     private NinePatch* _ninePatch;
-    private uint _alpha;
+    private uint _alpha = 255;
 
     static if (USE_OPENGL)
     {
@@ -315,7 +315,7 @@ class DrawBuf : RefCountedObject
     /// Reserved for hardware-accelerated drawing - begins drawing batch
     void beforeDrawing()
     {
-        _alpha = 0;
+        _alpha = 255;
     }
     /// Reserved for hardware-accelerated drawing - ends drawing batch
     void afterDrawing()
@@ -1218,7 +1218,7 @@ struct ClipRectSaver
 
     /// Apply (intersect) new clip rectangle and alpha to draw buf
     /// Set `intersect` parameter to `false`, if you want to draw something outside of the widget
-    this(DrawBuf buf, Rect newClipRect, uint newAlpha = 0, bool intersect = true)
+    this(DrawBuf buf, Rect newClipRect, uint newAlpha = 255, bool intersect = true)
     {
         _buf = buf;
         _oldClipRect = buf.clipRect;
@@ -1227,11 +1227,11 @@ struct ClipRectSaver
             buf.intersectClipRect(newClipRect);
         else
             buf.clipRect = newClipRect;
-        if (newAlpha)
+        if (newAlpha < 255)
             buf.addAlpha(newAlpha);
     }
     /// ditto
-    this(DrawBuf buf, Box newClipBox, uint newAlpha = 0, bool intersect = true)
+    this(DrawBuf buf, Box newClipBox, uint newAlpha = 255, bool intersect = true)
     {
         this(buf, Rect(newClipBox), newAlpha, intersect);
     }
@@ -1277,19 +1277,21 @@ class ColorDrawBufBase : DrawBuf
                 {
                     uint* srcrow = img.scanLine(srcrect.top + yy) + srcrect.left;
                     uint* dstrow = scanLine(dstrect.top + yy) + dstrect.left;
-                    if (!_alpha)
+                    if (_alpha == 255)
                     {
                         // simplified version - no alpha blending
                         foreach (i; 0 .. dx)
                         {
-                            uint pixel = srcrow[i];
-                            uint alpha = pixel >> 24;
-                            if (!alpha)
+                            const uint pixel = srcrow[i];
+                            const uint alpha = pixel >> 24;
+                            if (alpha == 255)
+                            {
                                 dstrow[i] = pixel;
-                            else if (alpha < 254)
+                            }
+                            else if (alpha > 0)
                             {
                                 // apply blending
-                                dstrow[i] = blendARGB(dstrow[i], pixel, alpha);
+                                blendARGB(dstrow[i], pixel, alpha);
                             }
                         }
                     }
@@ -1298,14 +1300,16 @@ class ColorDrawBufBase : DrawBuf
                         // combine two alphas
                         foreach (i; 0 .. dx)
                         {
-                            uint pixel = srcrow[i];
-                            uint alpha = blendAlpha(_alpha, pixel >> 24);
-                            if (!alpha)
+                            const uint pixel = srcrow[i];
+                            const uint alpha = blendAlpha(_alpha, pixel >> 24);
+                            if (alpha == 255)
+                            {
                                 dstrow[i] = pixel;
-                            else if (alpha < 254)
+                            }
+                            else if (alpha > 0)
                             {
                                 // apply blending
-                                dstrow[i] = blendARGB(dstrow[i], pixel, alpha);
+                                blendARGB(dstrow[i], pixel, alpha);
                             }
                         }
                     }
@@ -1328,7 +1332,7 @@ class ColorDrawBufBase : DrawBuf
 
     override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
     {
-        if (_alpha >= 254)
+        if (_alpha == 0)
             return; // fully transparent - don't draw
         auto img = cast(ColorDrawBufBase)src;
         if (!img)
@@ -1348,20 +1352,21 @@ class ColorDrawBufBase : DrawBuf
             {
                 uint* srcrow = img.scanLine(ymap[y]);
                 uint* dstrow = scanLine(dstrect.top + y) + dstrect.left;
-                if (!_alpha)
+                if (_alpha == 255)
                 {
                     // simplified alpha calculation
                     foreach (x; 0 .. dx)
                     {
-                        uint srcpixel = srcrow[xmap[x]];
-                        uint dstpixel = dstrow[x];
-                        uint alpha = srcpixel >> 24;
-                        if (!alpha)
+                        const uint srcpixel = srcrow[xmap[x]];
+                        const uint alpha = srcpixel >> 24;
+                        if (alpha == 255)
+                        {
                             dstrow[x] = srcpixel;
-                        else if (alpha < 255)
+                        }
+                        else if (alpha > 0)
                         {
                             // apply blending
-                            dstrow[x] = blendARGB(dstpixel, srcpixel, alpha);
+                            blendARGB(dstrow[x], srcpixel, alpha);
                         }
                     }
                 }
@@ -1370,16 +1375,16 @@ class ColorDrawBufBase : DrawBuf
                     // blending two alphas
                     foreach (x; 0 .. dx)
                     {
-                        uint srcpixel = srcrow[xmap[x]];
-                        uint dstpixel = dstrow[x];
-                        uint srca = srcpixel >> 24;
-                        uint alpha = !srca ? _alpha : blendAlpha(_alpha, srca);
-                        if (!alpha)
+                        const uint srcpixel = srcrow[xmap[x]];
+                        const uint alpha = blendAlpha(_alpha, srcpixel >> 24);
+                        if (alpha == 255)
+                        {
                             dstrow[x] = srcpixel;
-                        else if (alpha < 255)
+                        }
+                        else if (alpha > 0)
                         {
                             // apply blending
-                            dstrow[x] = blendARGB(dstpixel, srcpixel, alpha);
+                            blendARGB(dstrow[x], srcpixel, alpha);
                         }
                     }
                 }
@@ -1409,17 +1414,10 @@ class ColorDrawBufBase : DrawBuf
         return x1 > x0;
     }
 
-    static bool isBlackPixel(uint c)
+    static bool isBlackPixel(uint pixel)
     {
-        if (((c >> 24) & 255) > 10)
-            return false;
-        if (((c >> 16) & 255) > 10)
-            return false;
-        if (((c >> 8) & 255) > 10)
-            return false;
-        if (((c >> 0) & 255) > 10)
-            return false;
-        return true;
+        const c = Color.fromPacked(pixel);
+        return c.r < 10 && c.g < 10 && c.b < 10 && c.a > 245;
     }
 
     /// Detect position of black pixels in column for 9-patch markup
@@ -1471,19 +1469,21 @@ class ColorDrawBufBase : DrawBuf
 
     override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
     {
-        immutable(ubyte[]) src = glyph.glyph;
-        int srcdx = glyph.blackBoxX;
-        int srcdy = glyph.blackBoxY;
-        bool clipping = true; //!_clipRect.empty();
         applyAlpha(color);
-        bool subpixel = glyph.subpixelMode != SubpixelRenderingMode.none;
+        const uint rgb = color.rgb;
+        immutable(ubyte[]) src = glyph.glyph;
+        const int srcdx = glyph.blackBoxX;
+        const int srcdy = glyph.blackBoxY;
+        const bool clipping = true; //!_clipRect.empty();
+        const bool subpixel = glyph.subpixelMode != SubpixelRenderingMode.none;
         foreach (int yy; 0 .. srcdy)
         {
-            int liney = y + yy;
+            const int liney = y + yy;
             if (clipping && (liney < _clipRect.top || liney >= _clipRect.bottom))
                 continue;
             if (liney < 0 || liney >= _h)
                 continue;
+
             uint* row = scanLine(liney);
             immutable(ubyte*) srcrow = src.ptr + yy * srcdx;
             foreach (int xx; 0 .. srcdx)
@@ -1493,28 +1493,22 @@ class ColorDrawBufBase : DrawBuf
                     continue;
                 if (colx < 0 || colx >= _w)
                     continue;
-                uint alpha2 = color.a;
-                uint alpha1 = srcrow[xx] ^ 255;
-                uint alpha = ((((alpha1 ^ 255) * (alpha2 ^ 255)) >> 8) ^ 255) & 255;
+
+                const uint alpha = blendAlpha(color.a, srcrow[xx]);
                 if (subpixel)
                 {
-                    int x0 = xx % 3;
-                    ubyte* dst = cast(ubyte*)(row + colx);
-                    ubyte* pcolor = cast(ubyte*)(&color);
-                    blendSubpixel(dst, pcolor, alpha, x0, glyph.subpixelMode);
+                    blendSubpixel(row[colx], rgb, alpha, xx % 3, glyph.subpixelMode);
                 }
                 else
                 {
-                    uint pixel = row[colx];
-                    if (alpha < 255)
+                    if (alpha == 255)
                     {
-                        if (!alpha)
-                            row[colx] = pixel;
-                        else
-                        {
-                            // apply blending
-                            row[colx] = blendARGB(pixel, color.hex, alpha);
-                        }
+                        row[colx] = rgb;
+                    }
+                    else if (alpha > 0)
+                    {
+                        // apply blending
+                        blendARGB(row[colx], rgb, alpha);
                     }
                 }
             }
@@ -1562,21 +1556,21 @@ class ColorDrawBufBase : DrawBuf
         applyAlpha(color);
         if (!color.isFullyTransparent && applyClipping(rc))
         {
-            uint c = color.hex;
-            uint alpha = color.a;
+            const bool opaque = color.isOpaque;
+            const uint rgb = color.rgb;
             foreach (y; rc.top .. rc.bottom)
             {
                 uint* row = scanLine(y);
-                if (!alpha)
+                if (opaque)
                 {
-                    row[rc.left .. rc.right] = c;
+                    row[rc.left .. rc.right] = rgb;
                 }
-                else if (alpha < 254)
+                else
                 {
                     foreach (x; rc.left .. rc.right)
                     {
                         // apply blending
-                        row[x] = blendARGB(row[x], c, alpha);
+                        blendARGB(row[x], rgb, color.a);
                     }
                 }
             }
@@ -1590,16 +1584,16 @@ class ColorDrawBufBase : DrawBuf
             foreach (y; rc.top .. rc.bottom)
             {
                 // interpolate vertically at the side edges
-                uint ay = (255 * (y - rc.top)) / (rc.bottom - rc.top);
-                Color cl = Color.blend(color2, color1, ay);
-                Color cr = Color.blend(color4, color3, ay);
+                const double ay = (y - rc.top) / cast(double)(rc.bottom - rc.top);
+                const cl = Color.mix(color1, color2, ay);
+                const cr = Color.mix(color3, color4, ay);
 
                 uint* row = scanLine(y);
                 foreach (x; rc.left .. rc.right)
                 {
                     // interpolate horizontally
-                    uint ax = (255 * (x - rc.left)) / (rc.right - rc.left);
-                    row[x] = Color.blend(cr, cl, ax).hex;
+                    const double ax = (x - rc.left) / cast(double)(rc.right - rc.left);
+                    row[x] = Color.mix(cl, cr, ax).rgba;
                 }
             }
         }
@@ -1609,18 +1603,17 @@ class ColorDrawBufBase : DrawBuf
     {
         if (!_clipRect.contains(x, y))
             return;
+
         applyAlpha(color);
-        uint c = color.hex;
-        uint alpha = color.a;
         uint* row = scanLine(y);
-        if (!alpha)
+        if (color.isOpaque)
         {
-            row[x] = c;
+            row[x] = color.rgba;
         }
-        else if (alpha < 254)
+        else if (!color.isFullyTransparent)
         {
             // apply blending
-            row[x] = blendARGB(row[x], c, alpha);
+            blendARGB(row[x], color.rgb, color.a);
         }
     }
 }
@@ -1739,7 +1732,7 @@ class GrayDrawBuf : DrawBuf
         x1 = 0;
         foreach (int x; 1 .. _w - 1)
         {
-            if (line[x] == 0x00000000)
+            if (line[x] < 5)
             { // opaque black pixel
                 if (!foundUsed)
                 {
@@ -1761,7 +1754,7 @@ class GrayDrawBuf : DrawBuf
         foreach (int y; 1 .. _h - 1)
         {
             ubyte* line = scanLine(y);
-            if (line[x] == 0x00000000)
+            if (line[x] < 5)
             { // opaque black pixel
                 if (!foundUsed)
                 {
@@ -1801,10 +1794,11 @@ class GrayDrawBuf : DrawBuf
 
     override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
     {
+        const ubyte c = color.toGray;
         immutable(ubyte[]) src = glyph.glyph;
-        int srcdx = glyph.blackBoxX;
-        int srcdy = glyph.blackBoxY;
-        bool clipping = true; //!_clipRect.empty();
+        const int srcdx = glyph.blackBoxX;
+        const int srcdy = glyph.blackBoxY;
+        const bool clipping = true; //!_clipRect.empty();
         foreach (int yy; 0 .. srcdy)
         {
             int liney = y + yy;
@@ -1821,16 +1815,16 @@ class GrayDrawBuf : DrawBuf
                     continue;
                 if (colx < 0 || colx >= _w)
                     continue;
-                uint alpha1 = srcrow[xx] ^ 255;
-                uint alpha2 = color.a;
-                uint alpha = ((((alpha1 ^ 255) * (alpha2 ^ 255)) >> 8) ^ 255) & 255;
-                uint pixel = row[colx];
-                if (!alpha)
-                    row[colx] = cast(ubyte)pixel;
-                else if (alpha < 255)
+
+                const uint alpha = blendAlpha(color.a, srcrow[xx]);
+                if (alpha == 255)
+                {
+                    row[colx] = c;
+                }
+                else if (alpha > 0)
                 {
                     // apply blending
-                    row[colx] = cast(ubyte)blendARGB(pixel, color.hex, alpha);
+                    row[colx] = blendGray(row[colx], c, alpha);
                 }
             }
         }
@@ -1841,19 +1835,22 @@ class GrayDrawBuf : DrawBuf
         applyAlpha(color);
         if (!color.isFullyTransparent && applyClipping(rc))
         {
-            ubyte c = color.toGray;
-            uint alpha = color.a;
+            const ubyte c = color.toGray;
+            const ubyte a = color.a;
+            const bool opaque = color.isOpaque;
             foreach (y; rc.top .. rc.bottom)
             {
                 ubyte* row = scanLine(y);
                 foreach (x; rc.left .. rc.right)
                 {
-                    if (!alpha)
+                    if (opaque)
+                    {
                         row[x] = c;
-                    else if (alpha < 255)
+                    }
+                    else
                     {
                         // apply blending
-                        row[x] = blendGray(row[x], c, alpha);
+                        row[x] = blendGray(row[x], c, a);
                     }
                 }
             }
@@ -1890,18 +1887,17 @@ class GrayDrawBuf : DrawBuf
     {
         if (!_clipRect.contains(x, y))
             return;
+
         applyAlpha(color);
-        ubyte cl = color.toGray;
-        uint alpha = color.a;
         ubyte* row = scanLine(y);
-        if (!alpha)
+        if (color.isOpaque)
         {
-            row[x] = cl;
+            row[x] = color.toGray;
         }
-        else if (alpha < 254)
+        else if (!color.isFullyTransparent)
         {
             // apply blending
-            row[x] = blendGray(row[x], cl, alpha);
+            row[x] = blendGray(row[x], color.toGray, color.a);
         }
     }
 }
@@ -1929,22 +1925,15 @@ class ColorDrawBuf : ColorDrawBufBase
         drawRescaled(Rect(0, 0, width, height), src, Rect(0, 0, src.width, src.height));
     }
 
-    void invertAndPreMultiplyAlpha()
+    void preMultiplyAlpha()
     {
         foreach (ref pixel; _buf.unsafe_slice)
         {
-            uint a = (pixel >> 24) & 0xFF;
-            uint r = (pixel >> 16) & 0xFF;
-            uint g = (pixel >> 8) & 0xFF;
-            uint b = (pixel >> 0) & 0xFF;
-            a ^= 0xFF;
-            if (a > 0xFC)
-            {
-                r = ((r * a) >> 8) & 0xFF;
-                g = ((g * a) >> 8) & 0xFF;
-                b = ((b * a) >> 8) & 0xFF;
-            }
-            pixel = (a << 24) | (r << 16) | (g << 8) | (b << 0);
+            Color c = Color.fromPacked(pixel);
+            c.r = ((c.r * c.a) >> 8) & 0xFF;
+            c.g = ((c.g * c.a) >> 8) & 0xFF;
+            c.b = ((c.b * c.a) >> 8) & 0xFF;
+            pixel = c.rgba;
         }
     }
 
@@ -1994,7 +1983,7 @@ class ColorDrawBuf : ColorDrawBufBase
         if (hasClipping)
             fillRect(Rect(0, 0, _w, _h), color);
         else
-            _buf.unsafe_slice[] = color.hex;
+            _buf.unsafe_slice[] = color.rgba;
     }
 
     /// Apply Gaussian blur to the image

@@ -843,7 +843,7 @@ struct ComputedStyle
             setProperty!"wordSpacing" = Length.px(px);
         }
 
-        /// Widget drawing opacity (0 = opaque .. 255 = transparent)
+        /// Widget opacity (0 - invisible, 255 - normal)
         ubyte alpha() const { return _alpha; }
         /// ditto
         void alpha(ubyte value) { setProperty!"alpha" = value; }
@@ -862,7 +862,7 @@ struct ComputedStyle
                     .val;
         }
 
-        /// Get color to draw focus rectangle, Color.transparent if no focus rect
+        /// Get color to draw focus rectangle, `Color.transparent` if no focus rect
         Color focusRectColor() const { return _focusRectColor; }
     }
 
@@ -943,7 +943,7 @@ struct ComputedStyle
         TextTransform _textTransform = TextTransform.none;
         Length _wordSpacing = Length.zero;
         // colors
-        ubyte _alpha = 0;
+        ubyte _alpha = 255;
         Color _textColor = Color.black;
         Color _focusRectColor = Color.transparent;
         // depend on text color

@@ -166,7 +166,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
             return;
         }
         int len = _w * _h;
-        _pixels[0 .. len] = color.hex;
+        _pixels[0 .. len] = color.rgba;
     }
 
     /// Draw to win32 device context

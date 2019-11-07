@@ -581,14 +581,14 @@ class ScrollAreaBase : WidgetGroup
         _vscrollbar.maybe.draw(buf);
         {
             // apply clipping
-            auto saver2 = ClipRectSaver(buf, _clientBox, 0);
+            auto saver2 = ClipRectSaver(buf, _clientBox);
             drawClient(buf);
         }
         {
             // no clipping for drawing of extended area
             Box clipb = innerBox;
             clipb.h = _clientBox.h;
-            auto saver3 = ClipRectSaver(buf, clipb, 0);
+            auto saver3 = ClipRectSaver(buf, clipb);
             drawExtendedArea(buf);
         }
     }

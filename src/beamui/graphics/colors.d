@@ -24,8 +24,10 @@ struct Color
 {
     align(1) nothrow:
 
-    ubyte r, g, b;
-    ubyte a; /// 0 - opaque, 255 - transparent
+    ubyte r;
+    ubyte g;
+    ubyte b;
+    ubyte a; /// 0 - fully transparent, 255 - fully opaque
 
     /// Special color constant to identify value as not a color (to use default/parent value instead)
     enum none = Color(0x0DEAD0, 0);
@@ -46,7 +48,7 @@ struct Color
         r = (rgb >> 16) & 0xFF;
         g = (rgb >> 8) & 0xFF;
         b = (rgb >> 0) & 0xFF;
-        a = 255 - alpha;
+        a = alpha;
     }
     /// Make an opaque color from 3 integer components
     this(T)(T red, T green, T blue) if (isIntegral!T)
@@ -54,6 +56,7 @@ struct Color
         r = cast(ubyte)(red & 0xFF);
         g = cast(ubyte)(green & 0xFF);
         b = cast(ubyte)(blue & 0xFF);
+        a = 255;
     }
     /// Make a color from 4 integer components
     this(T)(T red, T green, T blue, T alpha) if (isIntegral!T)
@@ -107,8 +110,14 @@ struct Color
 
     @property
     {
-        /// Get the "hexadecimal" 32-bit 0xAARRGGBB representation
-        ARGB8 hex() const
+        /// Pack the color into `ARGB8` with full opacity
+        ARGB8 rgb() const
+        {
+            pragma(inline, true);
+            return 0xFF000000 | (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
+        }
+        /// Pack the color into `ARGB8`
+        ARGB8 rgba() const
         {
             pragma(inline, true);
             return (cast(uint)a << 24) | (cast(uint)r << 16) | (cast(uint)g << 8) | (cast(uint)b);
@@ -118,13 +127,13 @@ struct Color
         bool isOpaque() const
         {
             pragma(inline, true);
-            return a == 0;
+            return a == 0xFF;
         }
         /// True if the color has the alpha value meaning complete transparency
         bool isFullyTransparent() const
         {
             pragma(inline, true);
-            return a == 0xFF;
+            return a == 0;
         }
     }
 
@@ -148,17 +157,32 @@ struct Color
         a = cast(ubyte)blendAlpha(a, alpha);
     }
 
-    /// Blend two colors using alpha
-    static Color blend(Color dst, Color src, uint alpha)
+    /// Blend one color over another, as in simple alpha compositing
+    static Color blend(Color src, Color dst)
     {
-        const dstalpha = dst.a;
-        if (dstalpha > 0x80)
-            return src;
-        const ialpha = 255 - alpha;
-        const r = ((src.r * ialpha + dst.r * alpha) >> 8) & 0xFF;
-        const g = ((src.g * ialpha + dst.g * alpha) >> 8) & 0xFF;
-        const b = ((src.b * ialpha + dst.b * alpha) >> 8) & 0xFF;
-        return Color(r, g, b);
+        if (src.a == 0)
+            return dst;
+
+        const invAlpha = 255 - src.a;
+        if (dst.a == 255)
+        {
+            return Color(
+                (src.r * src.a + dst.r * invAlpha) >> 8,
+                (src.g * src.a + dst.g * invAlpha) >> 8,
+                (src.b * src.a + dst.b * invAlpha) >> 8,
+            );
+        }
+        else
+        {
+            const dstAlpha = ((dst.a * invAlpha) >> 8) & 0xFF;
+            const a = src.a + dstAlpha;
+            return Color(
+                (src.r * src.a + dst.r * dstAlpha) / a,
+                (src.g * src.a + dst.g * dstAlpha) / a,
+                (src.b * src.a + dst.b * dstAlpha) / a,
+                a,
+            );
+        }
     }
 
     /// Linearly interpolate between two colors
@@ -169,12 +193,13 @@ struct Color
             return c1;
 
         const alpha = cast(uint)(factor * 255);
-        const ialpha = 255 - alpha;
-        const r = ((c1.r * ialpha + c2.r * alpha) >> 8) & 0xFF;
-        const g = ((c1.g * ialpha + c2.g * alpha) >> 8) & 0xFF;
-        const b = ((c1.b * ialpha + c2.b * alpha) >> 8) & 0xFF;
-        const a = ((c1.a * ialpha + c2.a * alpha) >> 8) & 0xFF;
-        return Color(r, g, b, a);
+        const invAlpha = 255 - alpha;
+        return Color(
+            (c1.r * invAlpha + c2.r * alpha) >> 8,
+            (c1.g * invAlpha + c2.g * alpha) >> 8,
+            (c1.b * invAlpha + c2.b * alpha) >> 8,
+            (c1.a * invAlpha + c2.a * alpha) >> 8,
+        );
     }
 }
 
@@ -192,7 +217,7 @@ struct ColorF
     enum black = ColorF(0, 0, 0, 1);
     enum white = ColorF(1, 1, 1, 1);
 
-    this(float r, float g, float b, float a = 255.0f)
+    this(float r, float g, float b, float a = 1.0f)
     {
         this.r = r;
         this.g = g;
@@ -205,7 +230,7 @@ struct ColorF
         r = ucolor.r / 255.0f;
         g = ucolor.g / 255.0f;
         b = ucolor.b / 255.0f;
-        a = (255 - ucolor.a) / 255.0f;
+        a = ucolor.a / 255.0f;
     }
 }
 
@@ -382,7 +407,9 @@ Result!Color decodeHexColor(string s)
         if (s.length < 7) // double the same digit for short forms
             value = (value << 4) | digit;
     }
-    return Ok(Color.fromPacked(value));
+    // assume full opacity when alpha is not specified
+    const ubyte alpha = s.length == 4 || s.length == 7 ? 0xFF : (value >> 24) & 0xFF;
+    return Ok(Color(value & 0xFFFFFF, alpha));
 }
 
 /// Decode named color either from `NamedColor` enum, `@null`, `none`, or `transparent`
@@ -404,77 +431,52 @@ Result!Color decodeTextColor(string s)
     }
 }
 
-/// Convert opacity [0.0, 1.0] color to [0, 255] alpha color (0 - opaque, 255 - transparent)
+/// Convert opacity [0, 1] color to [0, 255] alpha color (0 - fully transparent, 255 - fully opaque)
 ubyte opacityToAlpha(float a)
 {
-    return 255 - cast(ubyte)(clamp(a, 0.0, 1.0) * 255);
+    return cast(ubyte)(clamp(a, 0, 1) * 255);
 }
 
-/// Blend two RGB pixels using alpha
-uint blendARGB(uint dst, uint src, uint alpha)
+/// Blend two ARGB8 pixels and overwrite `dst`
+void blendARGB(ref uint dst, uint src, uint alpha)
 {
-    uint dstalpha = dst >> 24;
-    if (dstalpha > 0x80)
-        return src;
-    uint srcr = (src >> 16) & 0xFF;
-    uint srcg = (src >> 8) & 0xFF;
-    uint srcb = (src >> 0) & 0xFF;
-    uint dstr = (dst >> 16) & 0xFF;
-    uint dstg = (dst >> 8) & 0xFF;
-    uint dstb = (dst >> 0) & 0xFF;
-    uint ialpha = 255 - alpha;
-    uint r = ((srcr * ialpha + dstr * alpha) >> 8) & 0xFF;
-    uint g = ((srcg * ialpha + dstg * alpha) >> 8) & 0xFF;
-    uint b = ((srcb * ialpha + dstb * alpha) >> 8) & 0xFF;
-    return (r << 16) | (g << 8) | b;
+    const c1 = Color(src >> 16, src >> 8, src, alpha);
+    const c2 = Color(dst >> 16, dst >> 8, dst, dst >> 24);
+    dst = Color.blend(c1, c2).rgba;
 }
 
-immutable int[3] COMPONENT_OFFSET_BGR = [2, 1, 0];
-immutable int[3] COMPONENT_OFFSET_RGB = [0, 1, 2];
-immutable int COMPONENT_OFFSET_ALPHA = 3;
-int subpixelComponentIndex(int x0, SubpixelRenderingMode mode)
+private immutable uint[3] SHIFT_RGB = [16, 8, 0];
+private immutable uint[3] SHIFT_BGR = [0, 8, 16];
+
+private uint getSubpixelShift(int x0, SubpixelRenderingMode mode)
 {
     switch (mode) with (SubpixelRenderingMode)
     {
-    case rgb:
-        return COMPONENT_OFFSET_BGR[x0];
-    case bgr:
-    default:
-        return COMPONENT_OFFSET_BGR[x0];
+        case rgb: return SHIFT_RGB[x0];
+        case bgr:
+        default:  return SHIFT_BGR[x0];
     }
 }
 
 /// Blend subpixel using alpha
-void blendSubpixel(ubyte* dst, ubyte* src, uint alpha, int x0, SubpixelRenderingMode mode)
+void blendSubpixel(ref uint dst, uint src, uint alpha, int x0, SubpixelRenderingMode mode)
 {
-    uint dstalpha = dst[COMPONENT_OFFSET_ALPHA];
-    int offset = subpixelComponentIndex(x0, mode);
-    uint srcr = src[offset];
-    dst[COMPONENT_OFFSET_ALPHA] = 0;
-    if (dstalpha > 0x80)
-    {
-        dst[offset] = cast(ubyte)srcr;
-        return;
-    }
-    uint dstr = dst[offset];
-    uint ialpha = 256 - alpha;
-    uint r = ((srcr * ialpha + dstr * alpha) >> 8) & 0xFF;
-    dst[offset] = cast(ubyte)r;
+    const uint shift = getSubpixelShift(x0, mode);
+    const ubyte c1 = (src >> shift) & 0xFF;
+    const ubyte c2 = (dst >> shift) & 0xFF;
+    const uint ialpha = 255 - alpha;
+    const ubyte c = ((c1 * alpha + c2 * ialpha) >> 8) & 0xFF;
+    dst = (dst & ~(0xFF << shift)) | (c << shift) | 0xFF000000;
 }
 
-/// Blend two alpha values 0..255 (255 is fully transparent, 0 is opaque)
+/// Blend two alpha values in [0, 255] range (0 - fully transparent, 255 - fully opaque)
 uint blendAlpha(uint a1, uint a2)
 {
-    if (!a1)
-        return a2;
-    if (!a2)
-        return a1;
-    return (((a1 ^ 0xFF) * (a2 ^ 0xFF)) >> 8) ^ 0xFF;
+    return ((a1 + 1) * a2) >> 8;
 }
 
-/// Blend two RGB pixels using alpha
+/// Blend two grayscale pixels using alpha
 ubyte blendGray(ubyte dst, ubyte src, uint alpha)
 {
-    uint ialpha = 256 - alpha;
-    return cast(ubyte)(((src * ialpha + dst * alpha) >> 8) & 0xFF);
+    return ((src * (255 - alpha) + dst * alpha) >> 8) & 0xFF;
 }
