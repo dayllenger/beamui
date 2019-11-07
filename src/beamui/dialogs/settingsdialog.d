@@ -237,11 +237,11 @@ class NumberEditItem : SettingsItem
                 if (_minValue <= v && v <= _maxValue)
                 {
                     setting.integer = v;
-                    ed.style.textColor = 0x000000;
+                    ed.style.textColor = Color(0x000000);
                 }
                 else
                 {
-                    ed.style.textColor = 0xFF0000;
+                    ed.style.textColor = Color(0xFF0000);
                 }
             }
         };

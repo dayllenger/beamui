@@ -245,7 +245,7 @@ class Window : CustomEventTarget
         float _screenDPI = 96;
         float _devicePixelRatio = 1;
 
-        Color _backgroundColor = Color(0xFFFFFF);
+        Color _backgroundColor = Color.white;
         Widget _mainWidget;
         EventList _eventList;
         WindowOptions _options;
@@ -275,7 +275,7 @@ class Window : CustomEventTarget
         _eventList = new EventList;
         _timerQueue = new TimerQueue;
         if (currentTheme)
-            _backgroundColor = currentTheme.getColor("window_background");
+            _backgroundColor = currentTheme.getColor("window_background", Color.white);
     }
 
     ~this()
@@ -1102,7 +1102,7 @@ class Window : CustomEventTarget
                 if (p is modal)
                 {
                     // TODO: get shadow color from theme
-                    buf.fillRect(Rect(0, 0, buf.width, buf.height), Color(0xD0404040));
+                    buf.fillRect(Rect(0, 0, buf.width, buf.height), Color(0, 0x20));
                 }
                 p.draw(buf);
             }
@@ -1712,7 +1712,7 @@ class Window : CustomEventTarget
         _tooltip.popup.maybe.handleThemeChange();
         if (currentTheme)
         {
-            _backgroundColor = currentTheme.getColor("window_background");
+            _backgroundColor = currentTheme.getColor("window_background", Color.white);
         }
         invalidate();
     }

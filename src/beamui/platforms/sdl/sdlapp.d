@@ -308,7 +308,7 @@ final class SDLWindow : Window
         auto iconDraw = new ColorDrawBuf(iconw, iconh);
         scope (exit)
             destroy(iconDraw);
-        iconDraw.fill(Color(0xFF000000));
+        iconDraw.fill(Color.transparent);
         iconDraw.drawRescaled(Rect(0, 0, iconw, iconh), ic, Rect(0, 0, ic.width, ic.height));
         iconDraw.invertAndPreMultiplyAlpha();
         SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(iconDraw.scanLine(0), iconDraw.width,

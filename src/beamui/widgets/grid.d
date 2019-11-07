@@ -511,14 +511,14 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
         bool _allowColResizing = true;
 
-        Color _selectionColor = Color(0x804040FF);
-        Color _selectionColorRowSelect = Color(0xC0A0B0FF);
-        Color _fixedCellBackgroundColor = Color(0xC0E0E0E0);
-        Color _fixedCellBorderColor = Color(0xC0C0C0C0);
-        Color _cellBorderColor = Color(0xC0C0C0C0);
-        Color _cellHeaderBorderColor = Color(0xC0202020);
-        Color _cellHeaderBackgroundColor = Color(0xC0909090);
-        Color _cellHeaderSelectedBackgroundColor = Color(0x80FFC040);
+        Color _selectionColor = Color(0x4040FF, 0x80);
+        Color _selectionColorRowSelect = Color(0xA0B0FF, 0x40);
+        Color _fixedCellBackgroundColor = Color(0xE0E0E0, 0x40);
+        Color _fixedCellBorderColor = Color(0xC0C0C0, 0x40);
+        Color _cellBorderColor = Color(0xC0C0C0, 0x40);
+        Color _cellHeaderBorderColor = Color(0x202020, 0x40);
+        Color _cellHeaderBackgroundColor = Color(0x909090, 0x40);
+        Color _cellHeaderSelectedBackgroundColor = Color(0xFFC040, 0x80);
         DrawableRef _cellHeaderBackgroundDrawable;
         DrawableRef _cellHeaderSelectedBackgroundDrawable;
         DrawableRef _cellRowHeaderBackgroundDrawable;
@@ -2226,14 +2226,14 @@ class StringGridWidget : StringGridWidgetBase
     override void handleThemeChange()
     {
         super.handleThemeChange();
-        _selectionColor = currentTheme.getColor("grid_selection", Color(0x804040FF));
-        _selectionColorRowSelect = currentTheme.getColor("grid_selection_row", Color(0xC0A0B0FF));
-        _fixedCellBackgroundColor = currentTheme.getColor("grid_cell_background_fixed", Color(0xC0E0E0E0));
-        _cellBorderColor = currentTheme.getColor("grid_cell_border", Color(0xC0C0C0C0));
+        _selectionColor = currentTheme.getColor("grid_selection", Color(0x4040FF, 0x80));
+        _selectionColorRowSelect = currentTheme.getColor("grid_selection_row", Color(0xA0B0FF, 0x40));
+        _fixedCellBackgroundColor = currentTheme.getColor("grid_cell_background_fixed", Color(0xE0E0E0, 0x40));
+        _cellBorderColor = currentTheme.getColor("grid_cell_border", Color(0xC0C0C0, 0x40));
         _fixedCellBorderColor = currentTheme.getColor("grid_cell_border_fixed", _cellBorderColor);
-        _cellHeaderBorderColor = currentTheme.getColor("grid_cell_border_header", Color(0xC0202020));
-        _cellHeaderBackgroundColor = currentTheme.getColor("grid_cell_background_header", Color(0xC0909090));
-        _cellHeaderSelectedBackgroundColor = currentTheme.getColor("grid_cell_background_header_selected", Color(0x80FFC040));
+        _cellHeaderBorderColor = currentTheme.getColor("grid_cell_border_header", Color(0x202020, 0x40));
+        _cellHeaderBackgroundColor = currentTheme.getColor("grid_cell_background_header", Color(0x909090, 0x40));
+        _cellHeaderSelectedBackgroundColor = currentTheme.getColor("grid_cell_background_header_selected", Color(0xFFC040, 0x80));
         _cellHeaderBackgroundDrawable = currentTheme.getDrawable("grid_cell_background_header");
         _cellHeaderSelectedBackgroundDrawable = currentTheme.getDrawable("grid_cell_background_header_selected");
         _cellRowHeaderBackgroundDrawable = currentTheme.getDrawable("grid_cell_background_row_header");

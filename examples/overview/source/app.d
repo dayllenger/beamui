@@ -240,7 +240,7 @@ int main()
                         auto l1 = new Label("Red text"d);
                         auto l2 = new Label("Italic text"d);
                         l1.style.fontSize = 18;
-                        l1.style.textColor = 0xFF0000;
+                        l1.style.textColor = Color(0xFF0000);
                         l2.style.fontSize = 18;
                         l2.style.fontItalic = true;
                         add(l1, l2);
@@ -296,7 +296,7 @@ int main()
                     add(tabs1);
                     with (tabs1) {
                         tabHost.style.padding = 10;
-                        tabHost.style.backgroundColor = 0xE0E0E0;
+                        tabHost.style.backgroundColor = Color(0xE0E0E0);
                         auto tab1 = new Label("Label on tab page\nLabels can be\nMultiline"d);
                         auto tab2 = new ImageWidget("beamui-logo");
                         addTab(tab1.setID("tab1"), "Tab 1"d);

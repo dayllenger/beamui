@@ -522,8 +522,6 @@ struct ComputedStyle
         Color backgroundColor() const { return _bgColor; }
         /// ditto
         void backgroundColor(Color value) { setProperty!"bgColor" = value; }
-        /// Set background color as ARGB 32 bit value
-        void backgroundColor(uint hex) { setProperty!"bgColor" = Color(hex); }
         /// Set background color from string like "#5599CC" or "white"
         void backgroundColor(string str)
         {
@@ -854,8 +852,6 @@ struct ComputedStyle
         Color textColor() const { return _textColor; }
         /// ditto
         void textColor(Color value) { setProperty!"textColor" = value; }
-        /// Set text color as ARGB 32 bit value
-        void textColor(uint hex) { setProperty!"textColor" = Color(hex); }
         /// Set text color from string like "#5599CC" or "white"
         void textColor(string str)
         {
@@ -948,14 +944,14 @@ struct ComputedStyle
         Length _wordSpacing = Length.zero;
         // colors
         ubyte _alpha = 0;
-        Color _textColor = Color(0x000000);
+        Color _textColor = Color.black;
         Color _focusRectColor = Color.transparent;
         // depend on text color
         Color _borderTopColor = Color.transparent;
         Color _borderRightColor = Color.transparent;
         Color _borderBottomColor = Color.transparent;
         Color _borderLeftColor = Color.transparent;
-        Color _textDecorColor = Color(0x000000);
+        Color _textDecorColor = Color.black;
         // transitions and animations
         string _transitionProperty;
         TimingFunction _transitionTimingFunction;

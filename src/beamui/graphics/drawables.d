@@ -182,7 +182,7 @@ class BoxShadowDrawable : Drawable
     private Color _color;
     private ColorDrawBuf texture;
 
-    this(int offsetX, int offsetY, uint blurSize = 0, Color color = Color(0x0))
+    this(int offsetX, int offsetY, uint blurSize = 0, Color color = Color.black)
     {
         _offsetX = offsetX;
         _offsetY = offsetY;
@@ -459,7 +459,7 @@ static if (BACKEND_CONSOLE)
             for (int k = 1; k <= _width * _height; k++)
             {
                 if (_textColors.length < k)
-                    _textColors ~= _textColors.length ? _textColors[$ - 1] : Color(0x0);
+                    _textColors ~= _textColors.length ? _textColors[$ - 1] : Color.black;
                 if (_bgColors.length < k)
                     _bgColors ~= _bgColors.length ? _bgColors[$ - 1] : Color.transparent;
             }

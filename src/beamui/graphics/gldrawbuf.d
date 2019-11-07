@@ -127,7 +127,7 @@ class GLDrawBuf : DrawBuf
         {
             if (!glImageCache.isInCache(src.id))
                 glImageCache.put(src);
-            Color color = Color(0xFFFFFF);
+            Color color = Color.white;
             applyAlpha(color);
             glImageCache.drawItem(src.id, dstrect, srcrect, color);
         }
@@ -139,7 +139,7 @@ class GLDrawBuf : DrawBuf
         {
             if (!glImageCache.isInCache(src.id))
                 glImageCache.put(src);
-            Color color = Color(0xFFFFFF);
+            Color color = Color.white;
             applyAlpha(color);
             glImageCache.drawItem(src.id, dstrect, srcrect, color);
         }
@@ -317,7 +317,7 @@ private abstract class GLCache
                 if (!_drawbuf)
                 {
                     _drawbuf = new ColorDrawBuf(_tdx, _tdy);
-                    _drawbuf.fill(Color(0xFF000000));
+                    _drawbuf.fill(Color.transparent);
                 }
                 _x += width + spacer;
                 _needUpdateTexture = true;

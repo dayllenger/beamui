@@ -103,7 +103,7 @@ class StatusLineBackgroundOperationPanel : StatusLineTextAndIconPanel
             uint a = animationProgress;
             if (a >= 256)
                 a = 512 - a;
-            _icon.style.backgroundColor = (a << 24) | 0x00FF00;
+            _icon.style.backgroundColor = Color(0x00FF00, cast(ubyte)a);
         }
         else
         {

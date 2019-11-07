@@ -362,14 +362,14 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
         bool _replaceMode;
 
-        Color _selectionColorFocused = Color(0xB060A0FF);
-        Color _selectionColorNormal = Color(0xD060A0FF);
-        Color _searchHighlightColorCurrent = Color(0x808080FF);
-        Color _searchHighlightColorOther = Color(0xC08080FF);
+        Color _selectionColorFocused = Color(0x60A0FF, 0x50);
+        Color _selectionColorNormal = Color(0x60A0FF, 0x30);
+        Color _searchHighlightColorCurrent = Color(0x8080FF, 0x80);
+        Color _searchHighlightColorOther = Color(0x8080FF, 0x40);
 
         Color _caretColor = Color(0x0);
-        Color _caretColorReplace = Color(0x808080FF);
-        Color _matchingBracketHighlightColor = Color(0x60FFE0B0);
+        Color _caretColorReplace = Color(0x8080FF, 0x80);
+        Color _matchingBracketHighlightColor = Color(0xFFE0B0, 0xA0);
 
         /// When true, call `measureVisibleText` on next layout
         bool _contentChanged = true;
@@ -445,12 +445,12 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     {
         super.handleThemeChange();
         _caretColor = currentTheme.getColor("edit_caret", Color(0x0));
-        _caretColorReplace = currentTheme.getColor("edit_caret_replace", Color(0x808080FF));
-        _selectionColorFocused = currentTheme.getColor("editor_selection_focused", Color(0xB060A0FF));
-        _selectionColorNormal = currentTheme.getColor("editor_selection_normal", Color(0xD060A0FF));
-        _searchHighlightColorCurrent = currentTheme.getColor("editor_search_highlight_current", Color(0x808080FF));
-        _searchHighlightColorOther = currentTheme.getColor("editor_search_highlight_other", Color(0xC08080FF));
-        _matchingBracketHighlightColor = currentTheme.getColor("editor_matching_bracket_highlight", Color(0x60FFE0B0));
+        _caretColorReplace = currentTheme.getColor("edit_caret_replace", Color(0x8080FF, 0x80));
+        _selectionColorFocused = currentTheme.getColor("editor_selection_focused", Color(0x60A0FF, 0x50));
+        _selectionColorNormal = currentTheme.getColor("editor_selection_normal", Color(0x60A0FF, 0x30));
+        _searchHighlightColorCurrent = currentTheme.getColor("editor_search_highlight_current", Color(0x8080FF, 0x80));
+        _searchHighlightColorOther = currentTheme.getColor("editor_search_highlight_other", Color(0x8080FF, 0x40));
+        _matchingBracketHighlightColor = currentTheme.getColor("editor_matching_bracket_highlight", Color(0xFFE0B0, 0xA0));
     }
 
     override void handleStyleChange(StyleProperty ptype)
@@ -2869,7 +2869,7 @@ class EditBox : EditWidgetBase
         // frame around current line
         if (focused && lineIndex == _caretPos.line && sel.singleLine && sel.start.line == _caretPos.line)
         {
-            buf.drawFrame(Rect(visibleBox), Color(0xA0808080), Insets(1));
+            buf.drawFrame(Rect(visibleBox), Color(0x808080, 0x60), Insets(1));
         }
     }
 

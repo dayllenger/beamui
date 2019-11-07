@@ -99,11 +99,11 @@ class SourceEdit : EditBox
         Color _leftPaneLineNumColorEdited = Color(0xC0C000);
         Color _leftPaneLineNumColorSaved = Color(0x00C000);
         Color _leftPaneLineNumColorCurrentLine = Color.transparent;
-        Color _leftPaneLineNumBgColorCurrLine = Color(0xC08080FF);
+        Color _leftPaneLineNumBgColorCurrLine = Color(0x8080FF, 0x40);
         Color _leftPaneLineNumBgColor = Color(0xF4F4F4);
         Color _colorIconBreakpoint = Color(0xFF0000);
         Color _colorIconBookmark = Color(0x0000FF);
-        Color _colorIconError = Color(0x80FF0000);
+        Color _colorIconError = Color(0xFF0000, 0x80);
 
         string _filename;
     }
@@ -157,11 +157,11 @@ class SourceEdit : EditBox
         _leftPaneLineNumColorSaved = currentTheme.getColor("editor_left_pane_line_number_text_saved", Color(0x00C000));
         _leftPaneLineNumColorCurrentLine = currentTheme.getColor("editor_left_pane_line_number_text_current_line");
         _leftPaneLineNumBgColorCurrLine = currentTheme.getColor(
-                "editor_left_pane_line_number_background_current_line", Color(0xC08080FF));
+                "editor_left_pane_line_number_background_current_line", Color(0x8080FF, 0x40));
         _leftPaneLineNumBgColor = currentTheme.getColor("editor_left_pane_line_number_background", Color(0xF4F4F4));
         _colorIconBreakpoint = currentTheme.getColor("editor_left_pane_line_icon_breakpoint", Color(0xFF0000));
         _colorIconBookmark = currentTheme.getColor("editor_left_pane_line_icon_bookmark", Color(0x0000FF));
-        _colorIconError = currentTheme.getColor("editor_left_pane_line_icon_error", Color(0x80FF0000));
+        _colorIconError = currentTheme.getColor("editor_left_pane_line_icon_error", Color(0xFF0000, 0x80));
     }
 
     override protected bool handleLeftPaneMouseClick(MouseEvent event)

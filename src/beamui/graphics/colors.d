@@ -28,19 +28,25 @@ struct Color
     ubyte a; /// 0 - opaque, 255 - transparent
 
     /// Special color constant to identify value as not a color (to use default/parent value instead)
-    enum none = Color(0xFFDEADFF);
-
-    enum transparent = Color(0xFFFFFFFF);
+    enum none = Color(0x0DEAD0, 0);
+    /// Fully transparent black
+    enum transparent = Color(0, 0);
+    /// Fully opaque black
     enum black = Color(0x000000);
+    /// Fully opaque white
     enum white = Color(0xFFFFFF);
 
-    /// Make a color from hex value
-    this(ARGB8 hex)
+    /** Make a color separately from RGB and Alpha, e.g. `Color(0x7FFFD4, 0xA0)`.
+
+        The most significant byte of `rgb` must be zero.
+    */
+    this(uint rgb, ubyte alpha = 255)
+        in((rgb & 0xFF000000) == 0, "The most significant byte must be zero")
     {
-        r = (hex >> 16) & 0xFF;
-        g = (hex >> 8) & 0xFF;
-        b = (hex >> 0) & 0xFF;
-        a = (hex >> 24) & 0xFF;
+        r = (rgb >> 16) & 0xFF;
+        g = (rgb >> 8) & 0xFF;
+        b = (rgb >> 0) & 0xFF;
+        a = 255 - alpha;
     }
     /// Make an opaque color from 3 integer components
     this(T)(T red, T green, T blue) if (isIntegral!T)
@@ -58,6 +64,11 @@ struct Color
         a = cast(ubyte)(alpha & 0xFF);
     }
 
+    /// Make a color from "hexadecimal" 32-bit 0xAARRGGBB representation
+    static Color fromPacked(uint argb)
+    {
+        return Color(argb >> 16, argb >> 8, argb >> 0, argb >> 24);
+    }
     /// Make a color from HSL representation. `h`, `s`, and `l` must be in [0, 1] range
     static Color fromHSLA(float h, float s, float l, uint a)
     {
@@ -121,6 +132,14 @@ struct Color
     ubyte toGray() const
     {
         return ((r + g * 2 + b) >> 2) & 0xFF;
+    }
+
+    /// Returns the same color with replaced alpha channel value
+    Color withAlpha(uint alpha) const
+    {
+        Color c = this;
+        c.a = cast(ubyte)(alpha & 0xFF);
+        return c;
     }
 
     /// Apply additional alpha to the color
@@ -353,7 +372,7 @@ Result!Color decodeHexColor(string s)
     if (s[0] != '#')
         return Err!Color;
 
-    uint value = 0;
+    uint value;
     foreach (i; 1 .. s.length)
     {
         const digit = parseHexDigit(s[i]);
@@ -363,7 +382,7 @@ Result!Color decodeHexColor(string s)
         if (s.length < 7) // double the same digit for short forms
             value = (value << 4) | digit;
     }
-    return Ok(Color(value));
+    return Ok(Color.fromPacked(value));
 }
 
 /// Decode named color either from `NamedColor` enum, `@null`, `none`, or `transparent`
