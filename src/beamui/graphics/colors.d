@@ -131,7 +131,7 @@ struct Color
     /// Convert to 1-byte grayscale color
     ubyte toGray() const
     {
-        return ((r + g * 2 + b) >> 2) & 0xFF;
+        return ((r * 11 + g * 16 + b * 5) >> 5) & 0xFF;
     }
 
     /// Returns the same color with replaced alpha channel value
