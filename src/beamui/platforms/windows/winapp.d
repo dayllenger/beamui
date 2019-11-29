@@ -140,6 +140,7 @@ static if (USE_OPENGL)
                         const int[] attribs = [
                             WGL_CONTEXT_MAJOR_VERSION_ARB, major,
                             WGL_CONTEXT_MINOR_VERSION_ARB, minor,
+                            WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
                             0 // end
                         ];
                         _context = wglCreateContextAttribsARB(device, null, attribs.ptr);

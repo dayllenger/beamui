@@ -805,6 +805,7 @@ final class X11Window : DWindow
                 int[] attribs = [
                     GLX_CONTEXT_MAJOR_VERSION_ARB, major,
                     GLX_CONTEXT_MINOR_VERSION_ARB, minor,
+                    GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
                     None // end
                 ];
                 _glc = glXCreateContextAttribsARB(x11display, fbConfig, topLevelContext, True, attribs.ptr);
