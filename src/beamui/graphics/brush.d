@@ -13,6 +13,7 @@ import beamui.core.math : clamp, fequal6, fzero6;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf : ColorDrawBuf;
 
+/// Enumerates supported brush types
 enum BrushType
 {
     solid,
@@ -21,24 +22,29 @@ enum BrushType
     pattern,
 }
 
-private enum PaintOpacity
-{
-    opaque,
-    hidden,
-    translucent,
-}
+private enum Opaque { hidden, no, yes }
 
+/** Brush is either a color, a gradient, or an image pattern.
+
+    Brush also allows to add some transparency to these fill types.
+*/
 struct Brush
 {
     @property
     {
+        /// The brush type. Once brush constructed, it cannot change
         BrushType type() const { return _type; }
 
+        /// Underlying data. The `type` must match in order to get it
         Color solid() const { assert(type == BrushType.solid); return _solid; }
+        /// ditto
         ref const(LinearGradient) linear() const { assert(type == BrushType.linear); return _linear; }
+        /// ditto
         ref const(RadialGradient) radial() const { assert(type == BrushType.radial); return _radial; }
-        ref const(Pattern) pattern() const { assert(type == BrushType.pattern); return _pattern; }
+        /// ditto
+        ref const(ImagePattern) pattern() const { assert(type == BrushType.pattern); return _pattern; }
 
+        /// Paint opacity, in [0, 1] range
         float opacity() const { return _opacity; }
         /// ditto
         void opacity(float value)
@@ -46,47 +52,54 @@ struct Brush
             _opacity = clamp(value, 0, 1);
         }
 
+        /// True if a painter doesn't need to handle alpha values using this brush
         bool isOpaque() const
         {
-            return _paintOpacity == PaintOpacity.opaque && fequal6(_opacity, 1);
+            return _opq == Opaque.yes && fequal6(_opacity, 1);
         }
+        /// True if this brush does not contribute any color
         bool isFullyTransparent() const
         {
-            return _paintOpacity == PaintOpacity.hidden || fzero6(_opacity);
+            return _opq == Opaque.hidden || fzero6(_opacity);
         }
     }
 
-    private BrushType _type;
-    private union
+    private
     {
-        Color _solid;
-        LinearGradient _linear;
-        RadialGradient _radial;
-        Pattern _pattern;
+        BrushType _type;
+        union
+        {
+            Color _solid;
+            LinearGradient _linear;
+            RadialGradient _radial;
+            ImagePattern _pattern;
+        }
+        float _opacity = 1;
+        Opaque _opq = Opaque.hidden; // because the default color is fully transparent black
     }
-    private float _opacity = 1;
-    private PaintOpacity _paintOpacity;
 
+    /// Create a brush for solid color fill
     static Brush fromSolid(Color color)
     {
         Brush br;
         br._type = BrushType.solid;
         br._solid = color;
-        br._paintOpacity = color.isOpaque ? PaintOpacity.opaque :
-            color.isFullyTransparent ? PaintOpacity.hidden : PaintOpacity.translucent;
+        br._opq = color.isOpaque ? Opaque.yes : color.isFullyTransparent ? Opaque.hidden : Opaque.no;
         return br;
     }
 
+    /// Create a brush with an image pattern
     static Brush fromPattern(ColorDrawBuf image, Mat2x3 transform = Mat2x3.identity)
     {
         Brush br;
         br._type = BrushType.pattern;
-        br._pattern = Pattern(image, transform);
-        br._paintOpacity = image ? PaintOpacity.opaque : PaintOpacity.hidden;
+        br._pattern = ImagePattern(image, transform);
+        br._opq = image ? Opaque.yes : Opaque.hidden;
         return br;
     }
 }
 
+/// Gradient builder is a utility struct for making different gradient brushes
 struct GradientBuilder
 {
     private struct ColorStop
@@ -96,6 +109,7 @@ struct GradientBuilder
     }
     private ColorStop[] _stops;
 
+    /// Add a colorstop. The method clamps `offset` to [0, 1] range
     ref GradientBuilder addStop(float offset, Color color)
     {
         offset = clamp(offset, 0, 1);
@@ -112,6 +126,7 @@ struct GradientBuilder
         return this;
     }
 
+    /// Make a brush for a linear gradient between two 2D endpoints
     Brush makeLinear(float startX, float startY, float endX, float endY)
     {
         bool success;
@@ -125,6 +140,7 @@ struct GradientBuilder
         return br;
     }
 
+    /// Make a brush for a radial gradient with some center and radius
     Brush makeRadial(float centerX, float centerY, float radius)
     {
         bool success;
@@ -145,26 +161,26 @@ struct GradientBuilder
         if (_stops.length == 1)
             return Brush.fromSolid(_stops[0].color);
 
-        PaintOpacity op = _stops[0].color.isOpaque ? PaintOpacity.opaque :
-            _stops[0].color.isFullyTransparent ? PaintOpacity.hidden : PaintOpacity.translucent;
+        Opaque op = _stops[0].color.isOpaque ? Opaque.yes :
+                    _stops[0].color.isFullyTransparent ? Opaque.hidden : Opaque.no;
         bool singleColor = true;
 
         foreach (i; 1 .. _stops.length)
         {
             if (singleColor && _stops[i].color != _stops[i - 1].color)
                 singleColor = false;
-            if (op == PaintOpacity.opaque)
+            if (op == Opaque.yes)
             {
                 if (!_stops[i].color.isOpaque)
-                    op = PaintOpacity.translucent;
+                    op = Opaque.no;
             }
-            else if (op == PaintOpacity.hidden)
+            else if (op == Opaque.hidden)
             {
                 if (!_stops[i].color.isFullyTransparent)
-                    op = PaintOpacity.translucent;
+                    op = Opaque.no;
             }
         }
-        if (op == PaintOpacity.hidden)
+        if (op == Opaque.hidden)
             return Brush.fromSolid(Color.transparent);
         if (singleColor)
             return Brush.fromSolid(_stops[0].color);
@@ -183,7 +199,7 @@ struct GradientBuilder
         // hack: all gradients have the same first fields
         br._linear.stops = stops;
         br._linear.colors = colors;
-        br._paintOpacity = op;
+        br._opq = op;
         success = true;
         return br;
     }
@@ -205,7 +221,7 @@ struct RadialGradient
     float radius = 0;
 }
 
-struct Pattern
+struct ImagePattern
 {
     ColorDrawBuf image;
     Mat2x3 transform;
