@@ -30,6 +30,7 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui;
 
+// the imports should be selective, but DCD doesn't care about them
 public
 {
     import beamui.core.actions;
@@ -45,9 +46,15 @@ public
     import beamui.dialogs.filedialog;
     import beamui.dialogs.messagebox;
     import beamui.dialogs.settingsdialog;
-    import beamui.graphics.colors;
+    import beamui.graphics.brush; // : Brush, GradientBuilder;
+    import beamui.graphics.colors; // : Color, NamedColor;
+    import beamui.graphics.compositing; // : BlendMode, CompositeMode;
     import beamui.graphics.drawbuf;
     import beamui.graphics.images;
+    import beamui.graphics.painter; // : Painter, PaintSaver;
+    import beamui.graphics.path; // : Path;
+    import beamui.graphics.pen; // : LineCap, LineJoin, Pen;
+    import beamui.graphics.polygons; // : FillRule;
     import beamui.graphics.resources;
     import beamui.layout.alignment;
     import beamui.layout.free;
