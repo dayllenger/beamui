@@ -514,6 +514,19 @@ struct RectOf(T) if (is(T == float) || is(T == int))
     {
         return rc.left < right && rc.top < bottom && rc.right > left && rc.bottom > top;
     }
+
+    /// Expand this rectangle to include `rc`
+    void include(RectOf rc)
+    {
+        if (left > rc.left)
+            left = rc.left;
+        if (top > rc.top)
+            top = rc.top;
+        if (right < rc.right)
+            right = rc.right;
+        if (bottom < rc.bottom)
+            bottom = rc.bottom;
+    }
 }
 
 /// Represents area around rectangle. Used for margin, border and padding
