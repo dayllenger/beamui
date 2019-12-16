@@ -347,14 +347,13 @@ final class GLBackend
         checkgl!glDrawElements(GL_TRIANGLES, length, GL_UNSIGNED_INT, cast(void*)(start * 4));
     }
 
-    private void drawColorAndTextureTriangles(GLuint texture, bool linear, int length, int start)
+    private void drawColorAndTextureTriangles(GLuint texture, int length, int start)
     {
         assert(_textureProgram);
 
         _textureProgram.beforeExecute();
 
         Tex2D.setup(texture, 0);
-        Tex2D.setFiltering(linear, false);
 
         checkgl!glDrawElements(GL_TRIANGLES, length, GL_UNSIGNED_INT, cast(void*)(start * 4));
 
@@ -400,12 +399,12 @@ final class GLBackend
         return true;
     }
 
-    bool setTextureImage(GLuint texture, int dx, int dy, ubyte* pixels, int mipmapLevels = 0)
+    bool setTextureImage(GLuint texture, int dx, int dy, ubyte* pixels, bool smooth, int mipmapLevels = 0)
     {
         checkError("before setTextureImage");
         Tex2D.bind(texture);
         checkgl!glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        Tex2D.setFiltering(true, mipmapLevels > 1);
+        Tex2D.setFiltering(smooth, mipmapLevels > 1);
         Tex2D.setRepeating(false);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
@@ -430,24 +429,6 @@ final class GLBackend
                 ndy /= 2;
                 src = buffer.ptr;
             }
-        }
-        Tex2D.unbind();
-        return true;
-    }
-
-    bool setTextureImageAlpha(GLuint texture, int dx, int dy, ubyte* pixels)
-    {
-        checkError("before setTextureImageAlpha");
-        Tex2D.bind(texture);
-        checkgl!glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        Tex2D.setFiltering(true, false);
-        Tex2D.setRepeating(false);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, dx, dy, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
-        if (checkError("setTextureImageAlpha - glTexImage2D"))
-        {
-            Log.e("GL: cannot set image for texture");
-            return false;
         }
         Tex2D.unbind();
         return true;
@@ -486,7 +467,6 @@ private final class OpenGLQueue
         GLuint texture;
         int textureDx;
         int textureDy;
-        bool textureLinear;
 
         // length of batch in indices
         int length;
@@ -521,7 +501,7 @@ private final class OpenGLQueue
                 glSupport.drawSolidFillTriangles(b.length, b.start);
                 break;
             case texturedRect:
-                glSupport.drawColorAndTextureTriangles(b.texture, b.textureLinear, b.length, b.start);
+                glSupport.drawColorAndTextureTriangles(b.texture, b.length, b.start);
                 break;
             }
         }
@@ -538,14 +518,14 @@ private final class OpenGLQueue
 
     /// Add textured rectangle to queue
     void addTexturedRect(GLuint texture, int textureDx, int textureDy, Color color1, Color color2,
-            Color color3, Color color4, Rect srcrc, Rect dstrc, bool linear)
+            Color color3, Color color4, Rect srcrc, Rect dstrc)
     {
         if (texture == 0)
             return;
         if (batches.length == 0 || batches[$ - 1].type != OpenGLBatch.BatchType.texturedRect ||
-                batches[$ - 1].texture != texture || batches[$ - 1].textureLinear != linear)
+                batches[$ - 1].texture != texture)
         {
-            batches ~= OpenGLBatch(OpenGLBatch.BatchType.texturedRect, texture, textureDx, textureDy, linear);
+            batches ~= OpenGLBatch(OpenGLBatch.BatchType.texturedRect, texture, textureDx, textureDy);
             if (batches.length > 1)
                 batches.unsafe_ref(-1).start = batches[$ - 2].start + batches[$ - 2].length;
         }

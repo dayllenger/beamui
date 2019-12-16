@@ -278,7 +278,7 @@ private abstract class GLCache
                 Log.d("GL: updateTexture - new texture id: ", _texture);
             }
             uint* pixels = _drawbuf.scanLine(0);
-            if (!glSupport.setTextureImage(_texture, _drawbuf.width, _drawbuf.height, cast(ubyte*)pixels))
+            if (!glSupport.setTextureImage(_texture, _drawbuf.width, _drawbuf.height, cast(ubyte*)pixels, _cache.smoothResize))
             {
                 Tex2D.del(_texture);
                 return;
@@ -339,7 +339,7 @@ private abstract class GLCache
                 updateTexture();
         }
 
-        final void drawItem(GLCacheItem item, Rect dstrc, Rect srcrc, Color color, bool smooth)
+        final void drawItem(GLCacheItem item, Rect dstrc, Rect srcrc, Color color)
         {
             if (_needUpdateTexture)
                 updateTexture();
@@ -348,8 +348,7 @@ private abstract class GLCache
                 // convert coordinates to cached texture
                 srcrc.translate(item._rc.left, item._rc.top);
                 if (!dstrc.empty)
-                    glSupport.queue.addTexturedRect(_texture, _tdx, _tdy, color, color, color, color,
-                            srcrc, dstrc, smooth);
+                    glSupport.queue.addTexturedRect(_texture, _tdx, _tdy, color, color, color, color, srcrc, dstrc);
             }
         }
     }
@@ -359,6 +358,8 @@ private abstract class GLCache
     GLCachePage _activePage;
     int tdx;
     int tdy;
+
+    abstract @property bool smoothResize() const;
 
     final void removePage(GLCachePage page)
     {
@@ -480,6 +481,8 @@ private class GLImageCache : GLCache
         }
     }
 
+    override @property bool smoothResize() const { return true; }
+
     /// Put new object to cache
     void put(DrawBuf img)
     {
@@ -516,7 +519,7 @@ private class GLImageCache : GLCache
     void drawItem(uint objectID, Rect dstrc, Rect srcrc, Color color)
     {
         if (auto item = objectID in _map)
-            item.page.drawItem(*item, dstrc, srcrc, color, true);
+            item.page.drawItem(*item, dstrc, srcrc, color);
     }
 }
 
@@ -541,6 +544,8 @@ private class GLGlyphCache : GLCache
         }
     }
 
+    override @property bool smoothResize() const { return false; }
+
     /// Put new item to cache
     void put(GlyphRef glyph)
     {
@@ -564,6 +569,6 @@ private class GLGlyphCache : GLCache
     void drawItem(uint objectID, Rect dstrc, Rect srcrc, Color color)
     {
         if (auto item = objectID in _map)
-            item.page.drawItem(*item, dstrc, srcrc, color, false);
+            item.page.drawItem(*item, dstrc, srcrc, color);
     }
 }
