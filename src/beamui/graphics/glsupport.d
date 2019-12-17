@@ -72,13 +72,15 @@ class SolidFillProgram : GLProgram
         VAO.bind(vao);
     }
 
-    void createVAO(size_t verticesBufferLength)
+    void createVAO(GLuint vboPos, GLuint vboCol, GLuint ebo)
     {
         VAO.bind(vao);
 
+        EBO.bind(ebo);
+        VBO.bind(vboPos);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0,
-                cast(void*)(verticesBufferLength * float.sizeof));
+        VBO.bind(vboCol);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
 
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
@@ -132,15 +134,17 @@ class TextureProgram : SolidFillProgram
         return super.initLocations();
     }
 
-    protected void createVAO(size_t verticesBufferLength, size_t colorsBufferLength)
+    protected void createVAO(GLuint vboPos, GLuint vboCol, GLuint vboUVs, GLuint ebo)
     {
         VAO.bind(vao);
 
+        EBO.bind(ebo);
+        VBO.bind(vboPos);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0,
-                cast(void*)(verticesBufferLength * float.sizeof));
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0,
-                cast(void*)((verticesBufferLength + colorsBufferLength) * float.sizeof));
+        VBO.bind(vboCol);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
+        VBO.bind(vboUVs);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
 
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
@@ -239,7 +243,9 @@ final class GLBackend
         SolidFillProgram _solidFillProgram;
         TextureProgram _textureProgram;
 
-        GLuint vbo;
+        GLuint vboPos;
+        GLuint vboCol;
+        GLuint vboUVs;
         GLuint ebo;
     }
 
@@ -293,19 +299,19 @@ final class GLBackend
 
         resetBindings();
 
-        VBO.bind(vbo);
-        VBO.fill(vertices, colors, texcoords);
+        VBO.bind(vboPos);
+        VBO.fill(vertices);
+        VBO.bind(vboCol);
+        VBO.fill(colors);
+        VBO.bind(vboUVs);
+        VBO.fill(texcoords);
 
         EBO.bind(ebo);
         EBO.fill(indices);
 
         // create vertex array objects and bind vertex buffers to them
-        _solidFillProgram.createVAO(vertices.length);
-        VBO.bind(vbo);
-        EBO.bind(ebo);
-        _textureProgram.createVAO(vertices.length, colors.length);
-        VBO.bind(vbo);
-        EBO.bind(ebo);
+        _solidFillProgram.createVAO(vboPos, vboCol, ebo);
+        _textureProgram.createVAO(vboPos, vboCol, vboUVs, ebo);
     }
 
     private void destroyBuffers()
@@ -317,7 +323,9 @@ final class GLBackend
         _solidFillProgram.destroyVAO();
         _textureProgram.destroyVAO();
 
-        VBO.del(vbo);
+        VBO.del(vboPos);
+        VBO.del(vboCol);
+        VBO.del(vboUVs);
         EBO.del(ebo);
     }
 
