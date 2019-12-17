@@ -18,7 +18,7 @@ import beamui.core.logger;
 import beamui.graphics.colors;
 import beamui.graphics.drawbuf;
 import beamui.graphics.glsupport;
-import beamui.graphics.gl.objects : GLuint, Tex2D;
+import beamui.graphics.gl.objects : Tex2D, TexId;
 import beamui.text.glyph : GlyphRef;
 
 /// Drawing buffer - image container which allows to perform some drawing operations
@@ -248,7 +248,7 @@ private abstract class GLCache
             int _x;
             bool _closed;
             bool _needUpdateTexture;
-            GLuint _texture;
+            TexId _texture;
             int _itemCount;
         }
 
@@ -270,13 +270,12 @@ private abstract class GLCache
         {
             if (_drawbuf is null)
                 return; // no draw buffer!!!
-            if (_texture == 0)
-            {
-                Tex2D.bind(_texture);
-                if (_texture == 0)
-                    return;
-                Log.d("GL: updateTexture - new texture id: ", _texture);
-            }
+
+            const bool none = _texture == TexId.init;
+            Tex2D.bind(_texture);
+            if (none)
+                Log.d("GL: updateTexture - new texture id: ", _texture.handle);
+
             uint* pixels = _drawbuf.scanLine(0);
             if (!glSupport.setTextureImage(_texture, _drawbuf.width, _drawbuf.height, cast(ubyte*)pixels, _cache.smoothResize))
             {
@@ -343,7 +342,7 @@ private abstract class GLCache
         {
             if (_needUpdateTexture)
                 updateTexture();
-            if (_texture != 0)
+            if (_texture.handle)
             {
                 // convert coordinates to cached texture
                 srcrc.translate(item._rc.left, item._rc.top);

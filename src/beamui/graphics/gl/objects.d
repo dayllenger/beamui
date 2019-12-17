@@ -1,7 +1,7 @@
 /**
-Sugar for basic OpenGL objects - buffers, vertex array objects, textures, and so on.
+Sugar for basic shareable OpenGL objects - buffers, textures, renderbuffers.
 
-Copyright: dayllenger 2017-2018
+Copyright: dayllenger 2017-2019
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -10,24 +10,39 @@ module beamui.graphics.gl.objects;
 import beamui.core.config;
 
 static if (USE_OPENGL):
-public import beamui.graphics.gl.api : GLuint;
+import beamui.core.geometry : BoxI, SizeI;
 import beamui.graphics.gl.api;
 import beamui.graphics.gl.errors;
 
-package(beamui) __gshared bool glNoContext;
+package(beamui.graphics):
+
+struct BufferId
+{
+    GLuint handle;
+}
+
+struct TexId
+{
+    GLuint handle;
+}
+
+struct RbId
+{
+    GLuint handle;
+}
 
 /// Buffer objects facility
-struct Buffer(GLuint target_)
+struct Buffer(GLenum target_)
 {
     static nothrow:
 
     alias target = target_;
 
-    void bind(ref GLuint id)
+    void bind(ref BufferId id)
     {
-        if (id == 0)
-            glGenBuffers(1, &id);
-        checkgl!glBindBuffer(target, id);
+        if (id.handle == 0)
+            glGenBuffers(1, &id.handle);
+        checkgl!glBindBuffer(target, id.handle);
     }
 
     void unbind()
@@ -35,90 +50,42 @@ struct Buffer(GLuint target_)
         glBindBuffer(target, 0);
     }
 
-    void del(ref GLuint id)
+    void del(ref BufferId id)
     {
-        if (!glNoContext)
-        {
-            glBindBuffer(target, 0);
-            glDeleteBuffers(1, &id);
-        }
-        id = 0;
+        glDeleteBuffers(1, &id.handle);
+        id.handle = 0;
     }
 
-    static if (target != GL_ELEMENT_ARRAY_BUFFER)
+    void upload(T)(const T[] data, GLenum usage)
     {
-        void fill(const float[][] buffs...)
-        {
-            size_t length;
-            foreach (b; buffs)
-                length += b.length;
-            checkgl!glBufferData(target, length * float.sizeof, null, GL_STATIC_DRAW);
-            int offset;
-            foreach (b; buffs)
-            {
-                checkgl!glBufferSubData(target, offset, b.length * float.sizeof, b.ptr);
-                offset += b.length * float.sizeof;
-            }
-        }
-    }
-    else
-    {
-        void fill(const int[] indexes)
-        {
-            checkgl!glBufferData(target, indexes.length * int.sizeof, indexes.ptr, GL_STATIC_DRAW);
-        }
+        checkgl!glBufferData(target, data.length * T.sizeof, data.ptr, usage);
     }
 }
 
 alias VBO = Buffer!GL_ARRAY_BUFFER;
 alias EBO = Buffer!GL_ELEMENT_ARRAY_BUFFER;
 
-/// Vertex array object facility
-struct VAO
-{
-    static nothrow:
-
-    void bind(ref GLuint id)
-    {
-        if (id == 0)
-            glGenVertexArrays(1, &id);
-        checkgl!glBindVertexArray(id);
-    }
-
-    void unbind()
-    {
-        glBindVertexArray(0);
-    }
-
-    void del(ref GLuint id)
-    {
-        if (!glNoContext)
-        {
-            glBindVertexArray(0);
-            glDeleteVertexArrays(1, &id);
-        }
-        id = 0;
-    }
-}
+enum TexFiltering : ubyte { sharp, smooth }
+enum TexMipmaps : bool { no, yes }
+enum TexWrap : ubyte { clamp, repeat }
 
 /// 2D texture facility
 struct Tex2D
 {
     static nothrow:
 
-    void bind(ref GLuint id)
+    void bind(ref TexId id)
     {
-        if (id == 0)
-            glGenTextures(1, &id);
-        checkgl!glBindTexture(GL_TEXTURE_2D, id);
+        if (id.handle == 0)
+            glGenTextures(1, &id.handle);
+        checkgl!glBindTexture(GL_TEXTURE_2D, id.handle);
     }
 
-    void setup(GLuint id, GLuint binding)
+    void setup(TexId id, GLuint binding)
     {
-        assert(id > 0);
+        assert(id.handle > 0);
         glActiveTexture(GL_TEXTURE0 + binding);
-        glBindTexture(GL_TEXTURE_2D, id);
-        checkError("setup texture");
+        checkgl!glBindTexture(GL_TEXTURE_2D, id.handle);
     }
 
     void unbind()
@@ -126,60 +93,88 @@ struct Tex2D
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    void del(ref GLuint id)
+    void del(ref TexId id)
     {
-        if (!glNoContext)
-        {
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glDeleteTextures(1, &id);
-        }
-        id = 0;
+        glDeleteTextures(1, &id.handle);
+        id.handle = 0;
     }
 
-    void setFiltering(bool linear, bool mipmap)
+    void setBasicParams(TexFiltering filter, TexMipmaps mipmap, TexWrap wrap)
     {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ?
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter == TexFiltering.smooth ? GL_LINEAR : GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter == TexFiltering.smooth ?
             (!mipmap ? GL_LINEAR : GL_LINEAR_MIPMAP_LINEAR) :
             (!mipmap ? GL_NEAREST : GL_NEAREST_MIPMAP_NEAREST));
-        checkError("filtering - glTexParameteri");
-    }
 
-    void setRepeating(bool repeat)
-    {
-        if (!repeat)
+        if (wrap == TexWrap.clamp)
         {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            checkError("clamp - glTexParameteri");
         }
+        checkError("filtering");
+    }
+
+    void resize(SizeI size, GLint level, GLint internalFormat, GLenum format, GLenum type)
+        in(size.w > 0 && size.h > 0)
+    {
+        checkgl!glTexImage2D(GL_TEXTURE_2D, level, internalFormat, size.w, size.h, 0, format, type, null);
+    }
+
+    void copy(TexId oldTex, SizeI oldSize)
+        in(oldTex.handle)
+        in(oldSize.w > 0 && oldSize.h > 0)
+    {
+        // create a framebuffer
+        GLuint fbo;
+        glGenFramebuffers(1, &fbo);
+        GLint prevDrawFbo, prevReadFbo;
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prevDrawFbo);
+        glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &prevReadFbo);
+        // attach the old texture to it, set it for reading
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+        checkgl!glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, oldTex.handle, 0);
+        checkgl!glReadBuffer(GL_COLOR_ATTACHMENT0);
+        checkFramebuffer();
+        // copy pixels
+        checkgl!glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, oldSize.w, oldSize.h);
+        // delete the framebuffer and the texture
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prevDrawFbo);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, prevReadFbo);
+        checkgl!glDeleteFramebuffers(1, &fbo);
+    }
+
+    void uploadSubImage(BoxI box, GLint level, GLenum format, GLenum type, const void* data)
+    {
+        checkgl!glTexSubImage2D(GL_TEXTURE_2D, level, box.x, box.y, box.w, box.h, format, type, data);
     }
 }
 
-/// Framebuffer object facility
-struct FBO
+/// Depth-stencil renderbuffer facility
+struct DepthStencilRB
 {
     static nothrow:
 
-    void bind(ref GLuint id)
+    void bind(ref RbId id)
     {
-        if (id == 0)
-            glGenFramebuffers(1, &id);
-        checkgl!glBindFramebuffer(GL_FRAMEBUFFER, id);
+        if (id.handle == 0)
+            glGenRenderbuffers(1, &id.handle);
+        checkgl!glBindRenderbuffer(GL_RENDERBUFFER, id.handle);
     }
 
     void unbind()
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
     }
 
-    void del(ref GLuint id)
+    void del(ref RbId id)
     {
-        if (!glNoContext)
-        {
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glDeleteFramebuffers(1, &id);
-        }
-        id = 0;
+        glDeleteRenderbuffers(1, &id.handle);
+        id.handle = 0;
+    }
+
+    void resize(SizeI size)
+        in(size.w > 0 && size.h > 0)
+    {
+        checkgl!glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.w, size.h);
     }
 }
