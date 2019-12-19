@@ -157,6 +157,15 @@ struct Color
         a = cast(ubyte)blendAlpha(a, alpha);
     }
 
+    Color premultiplied() const
+    {
+        Color c = this;
+        c.r = cast(ubyte)(c.r * a / 255);
+        c.g = cast(ubyte)(c.g * a / 255);
+        c.b = cast(ubyte)(c.b * a / 255);
+        return c;
+    }
+
     /// Blend one color over another, as in simple alpha compositing
     static Color blend(Color src, Color dst)
     {
@@ -225,12 +234,21 @@ struct ColorF
         this.a = a;
     }
 
-    this(Color ucolor)
+    this(Color cu)
     {
-        r = ucolor.r / 255.0f;
-        g = ucolor.g / 255.0f;
-        b = ucolor.b / 255.0f;
-        a = ucolor.a / 255.0f;
+        r = cu.r / 255.0f;
+        g = cu.g / 255.0f;
+        b = cu.b / 255.0f;
+        a = cu.a / 255.0f;
+    }
+
+    ColorF premultiplied() const
+    {
+        ColorF c = this;
+        c.r *= a;
+        c.g *= a;
+        c.b *= a;
+        return c;
     }
 }
 

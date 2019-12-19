@@ -10,7 +10,7 @@ targetType "staticLibrary"
 
 sourcePaths "3rdparty" "src"
 importPaths "3rdparty" "src"
-stringImportPaths "res"
+stringImportPaths "res" "res/shaders"
 
 sourceFiles "$PACKAGE_DIR/src/win_app.def" platform="windows-x86-dmd"
 excludedSourceFiles "3rdparty/fontconfig.d" platform="windows"
