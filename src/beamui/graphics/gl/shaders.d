@@ -10,6 +10,7 @@ module beamui.graphics.gl.shaders;
 import beamui.core.config;
 
 static if (USE_OPENGL):
+import beamui.core.functions : eliminate;
 import beamui.core.geometry : BoxI, SizeI;
 import beamui.core.linalg : Mat2x3, Vec2;
 import beamui.graphics.colors : ColorF;
@@ -55,10 +56,7 @@ struct StdShaders
     ~this()
     {
         static foreach (sh; typeof(this).tupleof)
-        {
-            if (sh)
-                destroy(sh);
-        }
+            eliminate(sh);
     }
 }
 
