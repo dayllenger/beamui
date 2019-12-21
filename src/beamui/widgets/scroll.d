@@ -5,7 +5,24 @@ Synopsis:
 ---
 // Scroll view example
 
+// Assume we have some parent widget
+auto frame = new Panel;
+
+// We create a scroll area with no horizontal scrollbar and with
+// an automatically visible/hidden vertical scrollbar.
+auto scroll = new ScrollArea(ScrollBarMode.hidden, ScrollBarMode.automatic);
+
+// ScrollArea may have only one child. To put a single widget (e.g. an image)
+// into the scroll, you can assign it to `contentWidget` directly. Otherwise,
+// you will need a container.
 auto scrollContent = new Panel;
+
+// The widget hierarchy should be like:
+// frame -> ScrollArea -> contents
+frame.add(scroll);
+scroll.contentWidget = scrollContent;
+
+// Now, add some content
 with (scrollContent) {
     style.display = "column";
     style.padding = 10;
@@ -17,12 +34,9 @@ with (scrollContent) {
         new CheckBox("CheckBox 2"d),
         new CheckBox("CheckBox 3"d),
         new CheckBox("CheckBox 4"d).setChecked(true),
-        new CheckBox("CheckBox 5"d).setChecked(true));
+        new CheckBox("CheckBox 5"d).setChecked(true),
+    );
 }
-// create a scroll view with invisible horizontal and automatic vertical scrollbars
-auto scroll = new ScrollArea(ScrollBarMode.hidden, ScrollBarMode.automatic);
-// assign
-scroll.contentWidget = scrollContent;
 ---
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
