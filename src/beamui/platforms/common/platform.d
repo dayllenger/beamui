@@ -1530,6 +1530,8 @@ class Window : CustomEventTarget
     private WeakRef!Widget[] _mouseTrackingWidgets;
     private void addTracking(WeakRef!Widget w)
     {
+        if (w.isNull)
+            return;
         foreach (mtw; _mouseTrackingWidgets)
             if (w is mtw)
                 return;
@@ -1571,6 +1573,8 @@ class Window : CustomEventTarget
 
     protected void setCaptureWidget(WeakRef!Widget w, MouseEvent event)
     {
+        if (w.isNull)
+            return;
         _mouseCaptureWidget = w;
         _mouseCaptureButtons = event.mouseMods;
         captureMouse(true);
