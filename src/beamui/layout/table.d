@@ -132,8 +132,11 @@ class TableLayout : ILayout
             row.bs.addWidth(cell.bs);
             row.bs.maximizeHeight(cell.bs);
             row.result.h = row.bs.nat.h;
-//             if (cell.wt)
-//                 row.fill |= cell.wt.fillsHeight;
+            if (cell.wt)
+            {
+                const stretch = cell.wt.style.stretch;
+                row.fill |= stretch == Stretch.cross || stretch == Stretch.both;
+            }
         }
 
         static void applyCellToCol(ref LayoutItem column, ref LayoutItem cell)
@@ -141,8 +144,11 @@ class TableLayout : ILayout
             column.bs.maximizeWidth(cell.bs);
             column.bs.addHeight(cell.bs);
             column.result.w = column.bs.nat.w;
-//             if (cell.wt)
-//                 column.fill |= cell.wt.fillsWidth;
+            if (cell.wt)
+            {
+                const stretch = cell.wt.style.stretch;
+                column.fill |= stretch == Stretch.main || stretch == Stretch.both;
+            }
         }
 
         Boundaries bs;
