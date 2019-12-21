@@ -1967,27 +1967,34 @@ public:
     {
         return null;
     }
-    /// Add child, returns added item
-    Widget addChild(Widget item)
+
+    /// Add a child. Returns the added item with its original type
+    T addChild(T)(T item) if (is(T : Widget))
     {
-        assert(false, "addChild: this widget does not support having children");
+        addChildImpl(item);
+        return item;
     }
     /// Append several children
     final void add(Widget first, Widget[] next...)
     {
-        addChild(first);
+        addChildImpl(first);
         foreach (item; next)
-            addChild(item);
+            addChildImpl(item);
     }
     /// Append several children, skipping `null` widgets
     final void addSome(Widget first, Widget[] next...)
     {
         if (first)
-            addChild(first);
+            addChildImpl(first);
         foreach (item; next)
             if (item)
-                addChild(item);
+                addChildImpl(item);
     }
+    protected void addChildImpl(Widget item)
+    {
+        assert(false, "addChild: this widget does not support having children");
+    }
+
     /// Insert child before given index, returns inserted item
     Widget insertChild(int index, Widget item)
     {
@@ -2166,12 +2173,11 @@ class WidgetGroup : Widget
         return _children[index];
     }
 
-    override Widget addChild(Widget item)
+    override protected void addChildImpl(Widget item)
     {
         assert(item !is null, "Widget must exist");
         _children.append(item);
         item.parent = this;
-        return item;
     }
 
     override Widget insertChild(int index, Widget item)
