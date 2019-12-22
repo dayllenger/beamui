@@ -275,20 +275,6 @@ class SwitchButton : Widget
         const sz = Size(bg.width, bg.height);
         setBoundaries(Boundaries(sz, sz, sz));
     }
-
-    override void draw(DrawBuf buf)
-    {
-        if (visibility != Visibility.visible)
-            return;
-
-        Box b = box;
-        auto saver = ClipRectSaver(buf, b, style.alpha);
-
-        auto bg = background;
-        bg.drawTo(buf, b);
-
-        drawn();
-    }
 }
 
 /// Check button that can be toggled on or off

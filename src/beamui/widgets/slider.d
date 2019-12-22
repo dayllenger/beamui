@@ -393,32 +393,11 @@ abstract class AbstractSlider : WidgetGroup
         if (visibility != Visibility.visible)
             return;
 
-        Box b = box;
-        const saver = ClipRectSaver(buf, b, style.alpha);
-
-        auto bg = background;
-        if (_orient == Orientation.horizontal)
-        {
-            const dh = bg.height;
-            b.y += (b.h - dh) / 2;
-            b.h = dh;
-        }
-        else
-        {
-            const dw = bg.width;
-            b.x += (b.w - dw) / 2;
-            b.w = dw;
-        }
-        bg.drawTo(buf, b);
+        super.draw(buf);
 
         _rangeBefore.draw(buf);
         _rangeAfter.draw(buf);
         drawInner(buf);
-
-        if (state & State.focused)
-            drawFocusRect(buf);
-
-        drawn();
     }
 
     protected void drawInner(DrawBuf buf);
