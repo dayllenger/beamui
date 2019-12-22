@@ -215,6 +215,32 @@ final class Painter
         state.mat.setIdentity();
     }
 
+    /** Quickly (and inaccurately) determine that `box` is outside the clip.
+
+        Use it to skip drawing complex elements when they aren't visible.
+    */
+    bool quickReject(BoxI box) const
+    {
+        const Mat2x3 m = state.mat;
+        const Vec2 v0 = m * Vec2(box.x, box.y);
+        const Vec2 v1 = m * Vec2(box.x + box.w, box.y);
+        const Vec2 v2 = m * Vec2(box.x, box.y + box.h);
+        const Vec2 v3 = m * Vec2(box.x + box.w, box.y + box.h);
+        const tr = RectF(
+            min(v0.x, v1.x, v2.x, v3.x),
+            min(v0.y, v1.y, v2.y, v3.y),
+            max(v0.x, v1.x, v2.x, v3.x),
+            max(v0.y, v1.y, v2.y, v3.y),
+        );
+        const r = RectI(
+            cast(int)floor(tr.left),
+            cast(int)floor(tr.top),
+            cast(int)ceil(tr.right),
+            cast(int)ceil(tr.bottom),
+        );
+        return !r.intersects(state.clipRect);
+    }
+
     /** Save matrix, clip, and anti-aliasing setting into internal stack.
 
         Returns: Depth of the saved stack.
@@ -540,9 +566,9 @@ final class Painter
             RectF r = subpath.bounds;
             r.expand(padding, padding);
             const Vec2 v0 = m * Vec2(r.left, r.top);
-            const Vec2 v3 = m * Vec2(r.right, r.bottom);
             const Vec2 v1 = m * Vec2(r.right, r.top);
             const Vec2 v2 = m * Vec2(r.left, r.bottom);
+            const Vec2 v3 = m * Vec2(r.right, r.bottom);
             const tr = RectF(
                 min(v0.x, v1.x, v2.x, v3.x),
                 min(v0.y, v1.y, v2.y, v3.y),
