@@ -1224,7 +1224,7 @@ class ListWidget : WidgetGroup
     override protected void drawContent(DrawBuf buf)
     {
         const b = innerBox;
-        const saver = ClipRectSaver(buf, b, style.alpha);
+        const sv = ClipRectSaver(buf, b);
 
         // draw scrollbar
         if (_needScrollbar)

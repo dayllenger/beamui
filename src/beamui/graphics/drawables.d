@@ -214,9 +214,6 @@ class BoxShadowDrawable : Drawable
         b.y += _offsetY;
         b.expand(Insets(_blurSize));
 
-        // apply new clipping to the DrawBuf to draw outside of the widget
-        auto saver = ClipRectSaver(buf, Rect(b), 255, false);
-
         // now draw
         if (_blurSize > 0)
         {

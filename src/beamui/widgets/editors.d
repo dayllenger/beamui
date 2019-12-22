@@ -1906,10 +1906,9 @@ class EditLine : EditWidgetBase
 
     override protected void drawClient(DrawBuf buf)
     {
-        const b = innerBox;
-        const saver = ClipRectSaver(buf, b, style.alpha);
-
-        drawLineBackground(buf, clientBox, clientBox);
+        // already clipped by the client box
+        const b = clientBox;
+        drawLineBackground(buf, b, b);
 
         if (_txtline.glyphCount == 0)
         {

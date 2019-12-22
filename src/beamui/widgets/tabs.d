@@ -563,7 +563,6 @@ class TabControl : WidgetGroup
 
     override protected void drawContent(DrawBuf buf)
     {
-        const saver = ClipRectSaver(buf, innerBox);
         // draw all items except selected
         int selected = -1;
         for (int i = childCount - 1; i >= 0; i--)

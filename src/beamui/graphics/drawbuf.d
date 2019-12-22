@@ -1216,24 +1216,21 @@ struct ClipRectSaver
     private Rect _oldClipRect;
     private uint _oldAlpha;
 
-    /// Apply (intersect) new clip rectangle and alpha to draw buf
-    /// Set `intersect` parameter to `false`, if you want to draw something outside of the widget
-    this(DrawBuf buf, Rect newClipRect, uint newAlpha = 255, bool intersect = true)
+    /// Intersect new clip rectangle and apply alpha to draw buf
+    this(DrawBuf buf, Rect newClipRect, uint newAlpha = 255)
     {
         _buf = buf;
         _oldClipRect = buf.clipRect;
         _oldAlpha = buf.alpha;
-        if (intersect)
-            buf.intersectClipRect(newClipRect);
-        else
-            buf.clipRect = newClipRect;
+
+        buf.intersectClipRect(newClipRect);
         if (newAlpha < 255)
             buf.addAlpha(newAlpha);
     }
     /// ditto
-    this(DrawBuf buf, Box newClipBox, uint newAlpha = 255, bool intersect = true)
+    this(DrawBuf buf, Box newClipBox, uint newAlpha = 255)
     {
-        this(buf, Rect(newClipBox), newAlpha, intersect);
+        this(buf, Rect(newClipBox), newAlpha);
     }
     /// Restore previous clip rectangle
     ~this()

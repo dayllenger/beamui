@@ -177,8 +177,8 @@ class Label : Widget
 
     override protected void drawContent(DrawBuf buf)
     {
-        Box b = innerBox;
-        const saver = ClipRectSaver(buf, b, style.alpha);
+        const b = innerBox;
+        const sv = ClipRectSaver(buf, b);
 
         textobj.style.underlinedCharIndex = textHotkey == TextHotkey.underline ? hotkeyIndex : -1;
 
@@ -654,7 +654,7 @@ class Paragraph : Widget
             return;
 
         const b = innerBox;
-        const saver = ClipRectSaver(buf, b, style.alpha);
+        const sv = ClipRectSaver(buf, b);
 
         const clip = buf.clipRect;
         if (clip.empty)

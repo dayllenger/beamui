@@ -360,7 +360,6 @@ class SimpleBarChart : Widget
     override protected void drawContent(DrawBuf buf)
     {
         const b = innerBox;
-        auto saver = ClipRectSaver(buf, b, style.alpha);
 
         int x1 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength;
         int x2 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength + _axisY.thickness +

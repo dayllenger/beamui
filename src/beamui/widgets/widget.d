@@ -1865,9 +1865,10 @@ public:
         if (visibility != Visibility.visible)
             return;
 
-        const b = _box;
-        const saver = ClipRectSaver(buf, b, style.alpha);
+        // apply opacity only
+        const sv = ClipRectSaver(buf, buf.clipRect, style.alpha);
 
+        const b = _box;
         background.drawTo(buf, b);
 
         drawContent(buf);
@@ -1910,8 +1911,6 @@ public:
         if (count == 0 || visibility != Visibility.visible)
             return;
 
-        const b = _innerBox;
-        const saver = ClipRectSaver(buf, b, style.alpha);
         foreach (i; 0 .. count)
             child(i).draw(buf);
     }
@@ -2392,13 +2391,8 @@ class Panel : WidgetGroup
 
     override protected void drawContent(DrawBuf buf)
     {
-        if (preparedItems.length > 0)
-        {
-            const b = _innerBox;
-            const saver = ClipRectSaver(buf, b, style.alpha);
-            foreach (item; preparedItems.unsafe_slice)
-                item.draw(buf);
-        }
+        foreach (item; preparedItems.unsafe_slice)
+            item.draw(buf);
     }
 
     /// Make one child (with specified ID) visible, set `othersVisibility` to the rest
