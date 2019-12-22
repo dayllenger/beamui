@@ -1904,12 +1904,8 @@ class EditLine : EditWidgetBase
         }
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawClient(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
         const b = innerBox;
         const saver = ClipRectSaver(buf, b, style.alpha);
 
@@ -2717,16 +2713,15 @@ class EditBox : EditWidgetBase
         if (geom != box)
             _contentChanged = true;
 
-        Box content = geom;
+        super.layout(geom);
+
         if (_findPanel && _findPanel.visibility != Visibility.gone)
         {
             _findPanel.measure();
-            Size sz = _findPanel.natSize;
-            _findPanel.layout(Box(geom.x, geom.y + geom.h - sz.h, geom.w, sz.h));
-            content.h -= sz.h;
+            const sz = _findPanel.natSize;
+            const cb = clientBox;
+            _findPanel.layout(Box(cb.x, cb.y + cb.h - sz.h, cb.w, sz.h));
         }
-
-        super.layout(content);
 
         if (_contentChanged)
         {
@@ -3140,6 +3135,8 @@ class EditBox : EditWidgetBase
         }
 
         drawCaret(buf);
+
+        _findPanel.maybe.draw(buf);
     }
 
     private FindPanel _findPanel;
@@ -3226,17 +3223,6 @@ class EditBox : EditWidgetBase
                 destroy(_findPanel);
                 _findPanel = null;
             }
-        }
-    }
-
-    override void draw(DrawBuf buf)
-    {
-        if (visibility != Visibility.visible)
-            return;
-        super.draw(buf);
-        if (_findPanel && _findPanel.visibility == Visibility.visible)
-        {
-            _findPanel.draw(buf);
         }
     }
 }

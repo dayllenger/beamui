@@ -464,12 +464,8 @@ class ScrollBar : WidgetGroup
         layoutButtons();
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
         const saver = ClipRectSaver(buf, innerBox, style.alpha);
         bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).draw(buf);
     }

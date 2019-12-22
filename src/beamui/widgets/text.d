@@ -175,12 +175,8 @@ class Label : Widget
         // textobj.wrap(geom.w - padding.width);
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
         Box b = innerBox;
         const saver = ClipRectSaver(buf, b, style.alpha);
 
@@ -649,15 +645,14 @@ class Paragraph : Widget
         _sizeAfterWrap.w = boxWidth;
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
         assert(_lines.length == _content.lineCount);
 
         _visibleLines.clear();
-        if (_lines.length == 0 || visibility != Visibility.visible)
+        if (_lines.length == 0)
             return;
 
-        super.draw(buf);
         const b = innerBox;
         const saver = ClipRectSaver(buf, b, style.alpha);
 

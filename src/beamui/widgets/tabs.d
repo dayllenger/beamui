@@ -561,12 +561,8 @@ class TabControl : WidgetGroup
         }
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
         const saver = ClipRectSaver(buf, innerBox);
         // draw all items except selected
         int selected = -1;

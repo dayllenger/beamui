@@ -1221,12 +1221,8 @@ class ListWidget : WidgetGroup
         }
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
         const b = innerBox;
         const saver = ClipRectSaver(buf, b, style.alpha);
 

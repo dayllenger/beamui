@@ -570,26 +570,8 @@ class ScrollAreaBase : WidgetGroup
         data.position = _scrollPos.y;
     }
 
-    protected void drawClient(DrawBuf buf)
+    final override protected void drawContent(DrawBuf buf)
     {
-        // override it
-    }
-
-    protected void drawExtendedArea(DrawBuf buf)
-    {
-    }
-
-    override void draw(DrawBuf buf)
-    {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
-        Box b = box;
-        auto saver = ClipRectSaver(buf, b, style.alpha);
-        auto bg = background;
-        bg.drawTo(buf, b);
-
         // draw scrollbars
         _hscrollbar.maybe.draw(buf);
         _vscrollbar.maybe.draw(buf);
@@ -605,6 +587,16 @@ class ScrollAreaBase : WidgetGroup
             auto saver3 = ClipRectSaver(buf, clipb);
             drawExtendedArea(buf);
         }
+    }
+
+    protected void drawClient(DrawBuf buf)
+    {
+        // override it
+    }
+
+    protected void drawExtendedArea(DrawBuf buf)
+    {
+        // override it
     }
 }
 

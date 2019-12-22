@@ -129,12 +129,10 @@ class GroupBox : Panel
         _caption.layout(b);
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
+        super.drawContent(buf);
 
-        super.draw(buf);
         Box b = box;
 
         _caption.draw(buf);

@@ -166,12 +166,8 @@ class ProgressBar : Widget
         setBoundaries(bs);
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
         const b = innerBox;
         DrawableRef animDrawable;
         if (_data.progress >= 0)

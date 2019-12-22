@@ -357,14 +357,9 @@ class SimpleBarChart : Widget
             (_showTitle ? _title.size.h + _marginAfterTitle : 0);
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-        super.draw(buf);
-
         const b = innerBox;
-
         auto saver = ClipRectSaver(buf, b, style.alpha);
 
         int x1 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength;

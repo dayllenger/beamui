@@ -388,13 +388,8 @@ abstract class AbstractSlider : WidgetGroup
             return space / 2;
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
-
         _rangeBefore.draw(buf);
         _rangeAfter.draw(buf);
         drawInner(buf);

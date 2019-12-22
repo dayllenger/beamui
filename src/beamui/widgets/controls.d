@@ -63,13 +63,8 @@ class ImageWidget : Widget
         setBoundaries(Boundaries(sz, sz));
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
-        const saver = ClipRectSaver(buf, box, style.alpha);
         DrawableRef img = _drawable;
         if (!img.isNull)
         {
@@ -363,13 +358,8 @@ class CanvasWidget : Widget
             onDraw(buf, area);
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
-        const saver = ClipRectSaver(buf, box, style.alpha);
         doDraw(buf, innerBox);
     }
 }

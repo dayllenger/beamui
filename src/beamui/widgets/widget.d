@@ -1742,11 +1742,6 @@ public:
         _needDraw = true;
         needUpdate();
     }
-    /// Indicate that drawing is done
-    protected void drawn()
-    {
-        _needDraw = false;
-    }
 
     /** Measure widget - compute minimal, natural and maximal sizes for the widget
 
@@ -1865,26 +1860,30 @@ public:
     }
 
     /// Draw widget at its position to a buffer
-    void draw(DrawBuf buf)
+    final void draw(DrawBuf buf)
     {
         if (visibility != Visibility.visible)
             return;
 
-        Box b = _box;
-        auto saver = ClipRectSaver(buf, b, style.alpha);
+        const b = _box;
+        const saver = ClipRectSaver(buf, b, style.alpha);
 
-        auto bg = background;
-        bg.drawTo(buf, b);
+        background.drawTo(buf, b);
+
+        drawContent(buf);
 
         if (state & State.focused)
-        {
             drawFocusRect(buf);
-        }
+
         _needDraw = false;
     }
 
+    protected void drawContent(DrawBuf buf)
+    {
+    }
+
     /// Draw focus rectangle, if enabled in styles
-    void drawFocusRect(DrawBuf buf)
+    protected void drawFocusRect(DrawBuf buf)
     {
         const Color c = style.focusRectColor;
         if (!c.isFullyTransparent)
@@ -1899,14 +1898,13 @@ public:
 
         Example:
         ---
-        override void draw(DrawBuf buf)
+        override protected void drawContent(DrawBuf buf)
         {
-            super.draw(buf);
             drawAllChildren(buf);
         }
         ---
     */
-    void drawAllChildren(DrawBuf buf)
+    protected void drawAllChildren(DrawBuf buf)
     {
         const count = childCount;
         if (count == 0 || visibility != Visibility.visible)
@@ -2392,13 +2390,8 @@ class Panel : WidgetGroup
         }
     }
 
-    override void draw(DrawBuf buf)
+    override protected void drawContent(DrawBuf buf)
     {
-        if (visibility != Visibility.visible)
-            return;
-
-        super.draw(buf);
-
         if (preparedItems.length > 0)
         {
             const b = _innerBox;
