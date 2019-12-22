@@ -728,17 +728,18 @@ LogWidget {
 
 FindPanel {
     padding: 4px;
+    background-color: white;
+    box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.25);
 }
 
 FindPanel > Panel {
     stretch: both;
 }
 
-FindPanel > Button {
+FindPanel > Button.close {
     padding: 0;
     stretch: none;
     background: none;
-    border: none;
 }
 
 FindPanel EditLine {

@@ -3412,6 +3412,9 @@ class FindPanel : Panel
                 add(_edReplace, btnReplace, btnReplaceAndFind, btnReplaceAll);
             }
         }
+        with (closeBtn) {
+            setAttribute("close");
+        }
         add(main, closeBtn);
 
         _edFind.onEnterKeyPress ~= { findNext(_backDirection); return true; };
