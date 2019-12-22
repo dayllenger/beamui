@@ -90,7 +90,7 @@ enum StyleProperty
     textTransform,
     wordSpacing,
     // colors
-    alpha,
+    opacity,
     textColor,
     focusRectColor,
     // depend on text color, so must be computed after
@@ -843,10 +843,10 @@ struct ComputedStyle
             setProperty!"wordSpacing" = Length.px(px);
         }
 
-        /// Widget opacity (0 - invisible, 255 - normal)
-        ubyte alpha() const { return _alpha; }
+        /// Opacity of the whole widget, always clamped to [0..1] range, where 0.0 - invisible, 1.0 - normal
+        float opacity() const { return _opacity; }
         /// ditto
-        void alpha(ubyte value) { setProperty!"alpha" = value; }
+        void opacity(float value) { setProperty!"opacity" = clamp(value, 0, 1); }
 
         /// Text color
         Color textColor() const { return _textColor; }
@@ -943,7 +943,7 @@ struct ComputedStyle
         TextTransform _textTransform = TextTransform.none;
         Length _wordSpacing = Length.zero;
         // colors
-        ubyte _alpha = 255;
+        float _opacity = 1;
         Color _textColor = Color.black;
         Color _focusRectColor = Color.transparent;
         // depend on text color
@@ -1451,7 +1451,7 @@ string getCSSName(StyleProperty ptype)
         case textOverflow:  return "text-overflow";
         case textTransform: return "text-transform";
         case wordSpacing:   return "word-spacing";
-        case alpha:      return "opacity";
+        case opacity:    return "opacity";
         case textColor:  return "color";
         case focusRectColor: return "focus-rect-color";
         case transitionProperty:       return "transition-property";
@@ -1468,7 +1468,7 @@ private SpecialCSSType getSpecialCSSType(StyleProperty ptype)
         case zIndex:     return SpecialCSSType.zIndex;
         case bgImage:    return SpecialCSSType.image;
         case fontWeight: return SpecialCSSType.fontWeight;
-        case alpha:      return SpecialCSSType.opacity;
+        case opacity:    return SpecialCSSType.opacity;
         case transitionProperty: return SpecialCSSType.transitionProperty;
         case transitionDuration: return SpecialCSSType.time;
         case transitionDelay:    return SpecialCSSType.time;
@@ -1491,7 +1491,7 @@ bool isAnimatable(StyleProperty ptype)
         case letterSpacing:
         case lineHeight:
         case wordSpacing:
-        case alpha:
+        case opacity:
         case textColor:
         case focusRectColor:
         case borderTopColor: .. case borderLeftColor:

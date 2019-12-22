@@ -86,7 +86,7 @@ Result!float decode(T : float)(const Token[] tokens)
     else
     {
         Log.fe("CSS(%s): expected number, not '%s'", t.line, t.type);
-        return Err(0);
+        return Err!float;
     }
 }
 
@@ -1186,12 +1186,15 @@ Result!Color decode(T : Color)(ref const(Token)[] tokens)
     return Err!Color;
 }
 
-/// Decode opacity
-Result!ubyte decode(SpecialCSSType t : SpecialCSSType.opacity)(const Token[] tokens)
+/// Decode opacity in [0..1] range
+Result!float decode(SpecialCSSType t : SpecialCSSType.opacity)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
-    return Ok(opacityToAlpha(to!float(tokens[0].text)));
+    auto f = decode!float(tokens);
+    if (f)
+        f.val = clamp(f.val, 0, 1);
+    return f;
 }
 
 /// Decode seconds or milliseconds in CSS. Returns time in msecs.

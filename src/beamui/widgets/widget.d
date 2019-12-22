@@ -817,7 +817,7 @@ public:
         case textDecorColor:
         case textDecorLine:
         case textDecorStyle:
-        case alpha:
+        case opacity:
         case textColor:
         case focusRectColor:
             invalidate();
@@ -1866,7 +1866,7 @@ public:
             return;
 
         // apply opacity only
-        const sv = ClipRectSaver(buf, buf.clipRect, style.alpha);
+        const sv = ClipRectSaver(buf, buf.clipRect, opacityToAlpha(style.opacity));
 
         const b = _box;
         background.drawTo(buf, b);

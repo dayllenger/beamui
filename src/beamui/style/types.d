@@ -256,7 +256,7 @@ enum SpecialCSSType
     none,
     fontWeight, /// ushort
     image, /// Drawable
-    opacity, /// ubyte
+    opacity, /// float
     time, /// uint
     transitionProperty, /// string
     zIndex, /// int
