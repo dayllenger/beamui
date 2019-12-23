@@ -45,12 +45,10 @@ final class Painter
         Buf!(PaintEngine.Contour) bufContours;
     }
 
-    this(ref PainterHead head, PaintEngine engine)
+    this(ref PainterHead head)
         in(!head.painter)
-        in(engine)
     {
         head.painter = this;
-        this.engine = engine;
     }
 
     /// True whether antialiasing is enabled for subsequent drawings
@@ -600,23 +598,28 @@ final class Painter
     }
 }
 
-/// Controls and guards `Painter`'s frame cycle
+/** Controls and guards `Painter`'s frame cycle.
+
+    Note: One who constructs painter and paint engine owns them.
+*/
 struct PainterHead
 {
     private Painter painter;
 
-    void beginFrame(int width, int height, Color background)
+    void beginFrame(PaintEngine paintEngine, int width, int height, Color background)
         in(painter && !painter.active)
+        in(paintEngine)
         in(0 < width && width < MAX_DIMENSION)
         in(0 < height && height < MAX_DIMENSION)
     {
         with (painter)
         {
+            active = true;
+            engine = paintEngine;
             state = PaintEngine.State.init;
             state.clipRect = RectI(0, 0, width, height);
             mainStack.clear();
             bufContours.clear();
-            active = true;
             engine.begin(&state, width, height, background);
         }
     }
@@ -634,7 +637,7 @@ struct PainterHead
     }
 
     void repaint()
-        in(painter && !painter.active)
+        in(painter && !painter.active && painter.engine)
     {
         with (painter)
         {
