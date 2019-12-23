@@ -598,7 +598,7 @@ class ImageDrawable : Drawable
         else
         {
             // rescaled or normal
-            if (b.width != _image.width || b.height != _image.height)
+            if (b.w != _image.width || b.h != _image.height)
                 buf.drawRescaled(Rect(b), _image.get, Rect(0, 0, _image.width, _image.height));
             else
                 buf.drawImage(b.x, b.y, _image);

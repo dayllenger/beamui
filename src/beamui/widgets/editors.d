@@ -1787,7 +1787,7 @@ class EditLine : EditWidgetBase
         }
         b.x -= scrollPos.x;
         b.w = 1;
-        b.h = clientBox.height;
+        b.h = clientBox.h;
         return b;
     }
 
@@ -1805,12 +1805,12 @@ class EditLine : EditWidgetBase
         if (b.x < 0)
         {
             // scroll left
-            scrollPos.x = max(scrollPos.x + b.x - clientBox.width / 10, 0);
+            scrollPos.x = max(scrollPos.x + b.x - clientBox.w / 10, 0);
         }
-        else if (b.x >= clientBox.width - 10)
+        else if (b.x >= clientBox.w - 10)
         {
             // scroll right
-            scrollPos.x += (b.x - clientBox.width) + _spaceWidth * 4;
+            scrollPos.x += (b.x - clientBox.w) + _spaceWidth * 4;
         }
         if (oldpos != scrollPos.x)
             invalidate();
@@ -1958,7 +1958,7 @@ class EditBox : EditWidgetBase
 
         final protected int linesOnScreen() const
         {
-            return (clientBox.height + _lineHeight - 1) / _lineHeight;
+            return (clientBox.h + _lineHeight - 1) / _lineHeight;
         }
 
         override Size fullContentSize() const
@@ -2175,13 +2175,13 @@ class EditBox : EditWidgetBase
         if (b.x < 0)
         {
             // scroll left
-            scrollPos.x = max(scrollPos.x + b.x - clientBox.width / 4, 0);
+            scrollPos.x = max(scrollPos.x + b.x - clientBox.w / 4, 0);
         }
-        else if (b.x >= clientBox.width - 10)
+        else if (b.x >= clientBox.w - 10)
         {
             // scroll right
             if (!_wordWrap)
-                scrollPos.x += (b.x - clientBox.width) + clientBox.width / 4;
+                scrollPos.x += (b.x - clientBox.w) + clientBox.w / 4;
             else
                 scrollPos.x = 0;
         }

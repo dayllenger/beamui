@@ -749,7 +749,7 @@ class ListWidget : WidgetGroup
         if (itemIndex < 0 || itemIndex >= itemCount)
             return; // no selection
 
-        Rect viewrc = Rect(0, 0, _clientBox.width, _clientBox.height);
+        Rect viewrc = Rect(0, 0, _clientBox.w, _clientBox.h);
         Rect scrolledrc = Rect(itemBox(itemIndex));
         if (viewrc.contains(scrolledrc)) // completely visible
             return;

@@ -174,7 +174,7 @@ class ProgressBar : Widget
         {
             DrawableRef gaugeDrawable = currentTheme.getDrawable("progress_bar_gauge");
             animDrawable = currentTheme.getDrawable("progress_bar_gauge_animation");
-            int w = _data.progress * b.width / PROGRESS_MAX;
+            int w = _data.progress * b.w / PROGRESS_MAX;
             if (!gaugeDrawable.isNull)
             {
                 gaugeDrawable.drawTo(buf, Box(b.x, b.y, w, b.h));

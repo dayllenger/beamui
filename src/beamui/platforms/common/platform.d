@@ -314,12 +314,12 @@ class Window : CustomEventTarget
                 state == WindowState.maximized || state == WindowState.normal)
         {
             setting.add("windowState").integer = state;
-            if (rect.width > 0 && rect.height > 0)
+            if (rect.w > 0 && rect.h > 0)
             {
                 setting.add("windowPositionX").integer = rect.x;
                 setting.add("windowPositionY").integer = rect.y;
-                setting.add("windowWidth").integer = rect.width;
-                setting.add("windowHeight").integer = rect.height;
+                setting.add("windowWidth").integer = rect.w;
+                setting.add("windowHeight").integer = rect.h;
             }
         }
     }
@@ -337,8 +337,8 @@ class Window : CustomEventTarget
         const h = cast(int)setting["windowHeight"].integer;
         if (w <= 0 || h <= 0)
             return false;
-        rect.width = w;
-        rect.height = h;
+        rect.w = w;
+        rect.h = h;
         if (correctWindowPositionOnScreen(rect) && (state == WindowState.fullscreen ||
                 state == WindowState.minimized || state == WindowState.maximized || state == WindowState.normal))
         {
@@ -615,8 +615,8 @@ class Window : CustomEventTarget
         if (parentWindow)
         {
             const BoxI parentRect = parentWindow.windowRect;
-            const int newx = parentRect.x + (parentRect.width - _windowRect.width) / 2;
-            const int newy = parentRect.y + (parentRect.height - _windowRect.height) / 2;
+            const int newx = parentRect.x + (parentRect.w - _windowRect.w) / 2;
+            const int newy = parentRect.y + (parentRect.h - _windowRect.h) / 2;
             move(newx, newy);
         }
     }
@@ -666,8 +666,8 @@ class Window : CustomEventTarget
         _w = width;
         _h = height;
         // fix window rect for platforms that don't set it yet
-        _windowRect.width = width;
-        _windowRect.height = height;
+        _windowRect.w = width;
+        _windowRect.h = height;
 
         debug (resizing)
         {

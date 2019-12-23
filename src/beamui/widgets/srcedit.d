@@ -187,7 +187,7 @@ class SourceEdit : EditBox
 
     protected bool handleLeftPaneMouseClick(MouseEvent event, Box b, int line)
     {
-        b.width -= 3;
+        b.w -= 3;
         if (_foldingWidth)
         {
             b.w -= _foldingWidth;

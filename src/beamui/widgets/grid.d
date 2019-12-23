@@ -617,14 +617,14 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         if (i < nscols)
         {
             // non-scrollable
-            return _colCumulativeWidths[i - 1] < clientBox.width;
+            return _colCumulativeWidths[i - 1] < clientBox.w;
         }
         else
         {
             // scrollable
             int start = _colCumulativeWidths[i - 1] - scrollPos.x;
             int end = _colCumulativeWidths[i] - scrollPos.x;
-            if (start >= clientBox.width)
+            if (start >= clientBox.w)
                 return false; // at right
             if (end <= (nscols ? _colCumulativeWidths[nscols - 1] : 0))
                 return false; // at left
@@ -644,14 +644,14 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         if (j < nsrows)
         {
             // non-scrollable
-            return _rowCumulativeHeights[j - 1] < clientBox.height;
+            return _rowCumulativeHeights[j - 1] < clientBox.h;
         }
         else
         {
             // scrollable
             int start = _rowCumulativeHeights[j - 1] - scrollPos.y;
             int end = _rowCumulativeHeights[j] - scrollPos.y;
-            if (start >= clientBox.height)
+            if (start >= clientBox.h)
                 return false; // at right
             if (end <= (nsrows ? _rowCumulativeHeights[nsrows - 1] : 0))
                 return false; // at left
@@ -1897,7 +1897,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     /// Extend specified column width to fit client area. Should be used after autofit and layout
     void fillColumnWidth(int i)
     {
-        int w = clientBox.width;
+        int w = clientBox.w;
         int totalw;
         foreach (k; 0 .. _cols)
             totalw += _colWidths[k];
@@ -1915,8 +1915,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         int nscols = nonScrollCols;
         int nsrows = nonScrollRows;
         Size nspixels = nonScrollAreaPixels;
-        int maxVisibleCol = colByAbsoluteX(clientBox.width + scrollPos.x);
-        int maxVisibleRow = rowByAbsoluteY(clientBox.height + scrollPos.y);
+        int maxVisibleCol = colByAbsoluteX(clientBox.w + scrollPos.x);
+        int maxVisibleRow = rowByAbsoluteY(clientBox.h + scrollPos.y);
         for (int phase = 0; phase < 2; phase++)
         { // phase0 == background, phase1 == foreground
             for (int y = 0; y <= maxVisibleRow; y++)
@@ -1930,7 +1930,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                     Box cellBox = cellBox(x, y);
                     if (BACKEND_CONSOLE && phase == 1)
                     {
-                        cellBox.width--;
+                        cellBox.w--;
                     }
                     Box clippedCellBox = cellBox;
                     if (x >= nscols && cellBox.x < nspixels.w)

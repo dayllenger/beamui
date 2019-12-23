@@ -463,7 +463,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             _fileList.setCellText(2, i, toUTF32(sz));
             _fileList.setCellText(3, i, toUTF32(date));
         }
-        if (_fileList.box.height > 0)
+        if (_fileList.box.h > 0)
             _fileList.scrollTo(0, 0);
 
         if (selectionIndex >= 0)
@@ -561,7 +561,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             if (BACKEND_GUI)
                 b.shrink(Insets(1, 2));
             else
-                b.width--;
+                b.w--;
             dstring txt = _fileList.cellText(col, row);
             const offset = BACKEND_CONSOLE ? 0 : 1;
             Color cl = _fileList.style.textColor;

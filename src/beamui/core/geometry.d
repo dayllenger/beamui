@@ -49,10 +49,8 @@ struct SizeOf(T) if (is(T == float) || is(T == int))
 {
     nothrow:
 
-    T width = 0;
-    T height = 0;
-    alias w = width;
-    alias h = height;
+    T w = 0;
+    T h = 0;
 
     enum none = SizeOf(SIZE_UNSPECIFIED!T, SIZE_UNSPECIFIED!T);
 
@@ -185,11 +183,9 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
     /// y coordinate of the top left corner
     T y = 0;
     /// Rectangle width
-    T width = 0;
+    T w = 0;
     /// Rectangle height
-    T height = 0;
-    alias w = width;
-    alias h = height;
+    T h = 0;
 
     static if (is(T == int))
     {
@@ -198,12 +194,12 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
     }
 
     /// Construct a box using x, y, width and height
-    this(T x, T y, T width, T height)
+    this(T x, T y, T w, T h)
     {
         this.x = x;
         this.y = y;
-        this.w = width;
-        this.h = height;
+        this.w = w;
+        this.h = h;
     }
     /// Construct a box using position and size
     this(PointOf!T p, SizeOf!T sz)

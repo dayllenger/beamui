@@ -226,7 +226,7 @@ final class Win32Window : Window
         else
             ws |= WS_OVERLAPPED | WS_CAPTION | WS_CAPTION | WS_BORDER | WS_SYSMENU;
 
-        BoxI screenRc = getScreenDimensions();
+        const BoxI screenRc = getScreenDimensions();
         Log.d("Screen dimensions: ", screenRc);
 
         int x = CW_USEDEFAULT;
@@ -237,8 +237,8 @@ final class Win32Window : Window
             // fullscreen
             x = screenRc.x;
             y = screenRc.y;
-            width = screenRc.width;
-            height = screenRc.height;
+            width = screenRc.w;
+            height = screenRc.h;
             ws = WS_POPUP;
         }
         if (options & WindowOptions.borderless)
@@ -536,8 +536,8 @@ final class Win32Window : Window
 
         if (options & WindowOptions.fullscreen)
         {
-            BoxI rc = getScreenDimensions();
-            SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, rc.width, rc.height, SWP_SHOWWINDOW);
+            const BoxI rc = getScreenDimensions();
+            SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, rc.w, rc.h, SWP_SHOWWINDOW);
             _windowState = WindowState.fullscreen;
         }
         else

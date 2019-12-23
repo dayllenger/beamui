@@ -555,10 +555,10 @@ final class X11Window : DWindow
                 if (!(options & WindowOptions.resizable))
                 {
                     XSizeHints sizeHints;
-                    sizeHints.min_width = newWindowRect.width;
-                    sizeHints.min_height = newWindowRect.height;
-                    sizeHints.max_width = newWindowRect.width;
-                    sizeHints.max_height = newWindowRect.height;
+                    sizeHints.min_width = newWindowRect.w;
+                    sizeHints.min_height = newWindowRect.h;
+                    sizeHints.max_width = newWindowRect.w;
+                    sizeHints.max_height = newWindowRect.h;
                     sizeHints.flags = PMaxSize | PMinSize;
                     XSetWMNormalHints(x11display, _win, &sizeHints);
                 }
