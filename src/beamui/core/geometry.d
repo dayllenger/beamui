@@ -9,6 +9,8 @@ module beamui.core.geometry;
 
 nothrow:
 
+import std.conv : to;
+import std.format : format;
 import std.math : isFinite;
 import std.traits;
 import beamui.core.linalg : Vector;
@@ -91,6 +93,14 @@ struct SizeOf(T) if (is(T == float) || is(T == int))
         w /= n;
         h /= n;
     }
+
+    string toString() const
+    {
+        try
+            return format("[%s, %s]", w, h);
+        catch (Exception e)
+            return null;
+    }
 }
 
 /// Holds minimum, maximum and natural (preferred) size for widget
@@ -150,6 +160,18 @@ struct Boundaries
         max.h = .max(max.h, from.max.h);
         nat.h = .max(nat.h, from.nat.h);
         min.h = .max(min.h, from.min.h);
+    }
+
+    string toString() const
+    {
+        try
+            return format("{[%s, %s], [%s, %s], [%s, %s]}",
+                min.w, min.h, nat.w, nat.h,
+                isDefinedSize(max.w) ? to!string(max.w) : "max",
+                isDefinedSize(max.h) ? to!string(max.h) : "max",
+            );
+        catch (Exception e)
+            return null;
     }
 }
 
@@ -320,6 +342,14 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
             x = b.x;
         if (y < b.y)
             y = b.y;
+    }
+
+    string toString() const
+    {
+        try
+            return format("{(%s, %s), [%s, %s]}", x, y, w, h);
+        catch (Exception e)
+            return null;
     }
 }
 
@@ -527,6 +557,14 @@ struct RectOf(T) if (is(T == float) || is(T == int))
         if (bottom < rc.bottom)
             bottom = rc.bottom;
     }
+
+    string toString() const
+    {
+        try
+            return format("{(%s, %s), (%s, %s)}", left, top, right, bottom);
+        catch (Exception e)
+            return null;
+    }
 }
 
 /// Represents area around rectangle. Used for margin, border and padding
@@ -606,6 +644,14 @@ struct InsetsOf(T) if (is(T == float) || is(T == int))
         right += ins.right;
         bottom += ins.bottom;
         left += ins.left;
+    }
+
+    string toString() const
+    {
+        try
+            return format("{%s, %s, %s, %s}", top, right, bottom, left);
+        catch (Exception e)
+            return null;
     }
 }
 
