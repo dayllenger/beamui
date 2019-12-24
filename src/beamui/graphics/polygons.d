@@ -13,7 +13,7 @@ import std.algorithm : sort, swap;
 import beamui.core.collections : Buf;
 import beamui.core.geometry : RectF;
 import beamui.core.linalg : Vec2, crossProduct;
-import beamui.core.math : fzero6;
+import beamui.core.math : fequal2, fzero6;
 import beamui.graphics.swrast : HorizEdge;
 
 /** Determines the interior part of a filled path shape.
@@ -308,7 +308,15 @@ bool splitIntoTrapezoids(const Vec2[] poly, ref Buf!HorizEdge output)
         }
         // locate trapezoid bottom edge
         const HorizEdge top = bot;
-        if (fseg[1].y <= bseg[1].y)
+        if (fequal2(fseg[1].y, bseg[1].y)) // at the same height
+        {
+            bot.l = fseg[1].x;
+            bot.r = bseg[1].x;
+            bot.y = fseg[1].y;
+            f = fnext;
+            b = bnext;
+        }
+        else if (fseg[1].y < bseg[1].y)
         {
             bot.r = fseg[1].x;
             bot.y = fseg[1].y;
