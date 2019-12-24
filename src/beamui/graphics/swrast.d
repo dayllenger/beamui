@@ -1233,7 +1233,7 @@ struct Accumulator
         if (x_ll < x_lr)
         {
             const int len = x_lr - x_ll;
-            if (slope_l <= 1 || len == 2)
+            if (slope_l / height <= 1 || len == 2)
             {
                 const int next = x_ll + 1;
                 const int last = x_lr - 1;
@@ -1257,14 +1257,16 @@ struct Accumulator
                 {
                     const a = xf_lr - last;
                     b = height - b;
-                    this[last] += height - a * b / 2;
+                    this[last] += a * (height - b / 2);
                 }
             }
             else
             {
                 assert(len == 1);
-                this[x_ll] += height * (x_lr - (xf_ll + xf_lr) / 2);
+                this[x_ll] += (xf_lr - xf_ll) * height / 2;
             }
+            // there may be a small rectangle between
+            this[x_lr - 1] += (min(xf_rl, x_lr) - xf_lr) * height;
         }
 
         float[] middle = this[x_lr .. x_rl];
@@ -1273,8 +1275,10 @@ struct Accumulator
 
         if (x_rl < x_rr)
         {
+            this[x_rl] += (xf_rl - max(xf_lr, x_rl)) * height;
+
             const int len = x_rr - x_rl;
-            if (slope_r <= 1 || len == 2)
+            if (slope_r / height <= 1 || len == 2)
             {
                 const int next = x_rl + 1;
                 const int last = x_rr - 1;
@@ -1283,7 +1287,7 @@ struct Accumulator
                     const a0 = next - xf_rl;
                     const b0 = a0 * slope_r;
                     b = height - b0;
-                    this[x_rl] += height - a0 * b0 / 2;
+                    this[x_rl] += a0 * (height - b0 / 2);
                 }
                 if (len > 2)
                 {
@@ -1303,7 +1307,7 @@ struct Accumulator
             else
             {
                 assert(len == 1);
-                this[x_rl] += height * ((xf_rl + xf_rr) / 2 - x_rl);
+                this[x_rl] += (xf_rr - xf_rl) * height / 2;
             }
         }
     }
