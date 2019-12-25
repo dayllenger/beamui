@@ -261,7 +261,6 @@ final class Painter
     {
         saver.painter = this;
         saver.depth = mainStack.length;
-        saver.layer = false;
         mainStack ~= state;
         return mainStack.length;
     }
@@ -322,7 +321,6 @@ final class Painter
         // save state
         sv.painter = this;
         sv.depth = mainStack.length;
-        sv.layer = false;
         mainStack ~= state;
 
         // on certain modes we cannot skip transparent geometry and also must use a full-sized layer
@@ -354,7 +352,7 @@ final class Painter
         state.clipRect.translate(-clip.x, -clip.y);
         state.mat = Mat2x3.translation(Vec2(-clip.x, -clip.y)) * state.mat;
 
-        sv.layer = true;
+        mainStack.unsafe_ref(-1).layer = true;
         state.passTransparent = transparentPartsMatter; // doesn't propagate to sub-layers
         engine.beginLayer(clip, transparentPartsMatter, op);
     }
@@ -365,18 +363,18 @@ final class Painter
     }
 
     /// Restore matrix and clip state to `depth` call of `save`, compose layer
-    private void restore(uint depth, bool layer)
+    private void restore(uint depth)
     {
         if (depth < mainStack.length)
         {
-            state = mainStack[depth];
-            mainStack.shrink(mainStack.length - depth);
-
-            if (layer)
+            foreach_reverse (i; depth .. mainStack.length)
             {
-                engine.composeLayer();
+                state = mainStack[i];
+                engine.restore(i);
+                if (state.layer)
+                    engine.composeLayer();
             }
-            engine.restore(depth);
+            mainStack.shrink(mainStack.length - depth);
         }
     }
 
@@ -630,7 +628,7 @@ struct PainterHead
         with (painter)
         {
             active = false;
-            engine.restore(0);
+            restore(0);
             engine.end();
             engine.paint();
         }
@@ -654,7 +652,6 @@ struct PaintSaver
 {
     private Painter painter;
     private uint depth;
-    private bool layer;
 
     private this(int);
     @disable this(this);
@@ -663,7 +660,7 @@ struct PaintSaver
     {
         if (painter)
         {
-            painter.restore(depth, layer);
+            painter.restore(depth);
             painter = null;
         }
     }
@@ -680,6 +677,7 @@ protected:
         RectI clipRect = RectI(-MAX_DIMENSION, -MAX_DIMENSION, MAX_DIMENSION, MAX_DIMENSION);
         Mat2x3 mat = Mat2x3.identity;
 
+        bool layer;
         bool discard;
         bool passTransparent;
     }
