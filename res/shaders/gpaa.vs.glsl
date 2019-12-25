@@ -16,9 +16,13 @@ uniform sampler2D layerOffsets;
 
 void fetchData(in int index, out mat3 transform, out float depth, out vec4 clip, out vec4 color);
 
-vec2 fetchLayerOffset(in int index)
+vec2 fetchLayerOffset()
 {
-    return texelFetch(layerOffsets, ivec2(index, 0), 0).xy;
+    int i = int(v_layerIndex);
+    if (i > 0)
+        return texelFetch(layerOffsets, ivec2(i, 0), 0).xy;
+    else
+        return vec2(0);
 }
 
 void main()
@@ -29,9 +33,7 @@ void main()
     vec4 color;
     fetchData(int(v_dataIndex), transform, depth, clip, color);
 
-    vec2 layerOffset = vec2(0);
-    if (v_layerIndex > 0)
-        layerOffset = fetchLayerOffset(int(v_layerIndex));
+    vec2 layerOffset = fetchLayerOffset();
 
     const vec2 pos0 = (transform * vec3(v_point0, 1)).xy + layerOffset;
     const vec2 cpos = (transform * vec3(v_point1, 1)).xy;
