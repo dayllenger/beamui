@@ -20,37 +20,44 @@ import beamui.graphics.gl.program;
 
 package:
 
+/// Contains all standard shaders. They are compiled on demand, so every getter may return `null`
 struct StdShaders
 {
+    private
+    {
+        ShaderEmpty _empty;
+        ShaderSolid _solid;
+        ShaderLinear _linear;
+        ShaderRadial _radial;
+        ShaderPattern _pattern;
+        ShaderImage _image;
+        ShaderText _text;
+        ShaderCompose _compose;
+        ShaderBlend _blend;
+        ShaderGPAA _gpaa;
+    }
+
     nothrow:
-
-    ShaderEmpty empty;
-    ShaderSolid solid;
-    ShaderLinear linear;
-    ShaderRadial radial;
-    ShaderPattern pattern;
-    ShaderImage image;
-    ShaderText text;
-    ShaderCompose compose;
-    ShaderBlend blend;
-    ShaderGPAA gpaa;
-
     @disable this(this);
 
-    bool initialize()
+    ShaderEmpty     empty() { return take(_empty); }
+    ShaderSolid     solid() { return take(_solid); }
+    ShaderLinear   linear() { return take(_linear); }
+    ShaderRadial   radial() { return take(_radial); }
+    ShaderPattern pattern() { return take(_pattern); }
+    ShaderImage     image() { return take(_image); }
+    ShaderText       text() { return take(_text); }
+    ShaderCompose compose() { return take(_compose); }
+    ShaderBlend     blend() { return take(_blend); }
+    ShaderGPAA       gpaa() { return take(_gpaa); }
+
+    // non-cached compilation of all the shaders may take 200 ms or more,
+    // so we won't compile until it's really needed
+    private T take(T : GLProgram)(ref T prog)
     {
-        bool success = true;
-        success = success && (empty = new ShaderEmpty).valid;
-        success = success && (solid = new ShaderSolid).valid;
-        success = success && (linear = new ShaderLinear).valid;
-        success = success && (radial = new ShaderRadial).valid;
-        success = success && (pattern = new ShaderPattern).valid;
-        success = success && (image = new ShaderImage).valid;
-        success = success && (text = new ShaderText).valid;
-        success = success && (compose = new ShaderCompose).valid;
-        success = success && (blend = new ShaderBlend).valid;
-        success = success && (gpaa = new ShaderGPAA).valid;
-        return success;
+        if (!prog)
+            prog = new T;
+        return prog.valid ? prog : null;
     }
 
     ~this()
