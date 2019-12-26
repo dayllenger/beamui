@@ -1,0 +1,354 @@
+/**
+Base utilities for the GL rendering.
+
+Copyright: dayllenger 2019
+License:   Boost License 1.0
+Authors:   dayllenger
+*/
+module beamui.graphics.gl.gl;
+
+import beamui.core.config;
+
+static if (USE_OPENGL):
+import beamui.core.geometry : BoxI;
+import beamui.graphics.colors : ColorF;
+import beamui.graphics.compositing;
+import beamui.graphics.gl.api;
+import beamui.graphics.gl.errors;
+import beamui.graphics.gl.objects : RbId, TexId;
+
+package nothrow:
+
+struct VaoId
+{
+    GLuint handle;
+}
+
+struct FboId
+{
+    GLuint handle;
+}
+
+enum DrawFlags : uint
+{
+    none           = 0,
+    blending       = 1 << 0,
+    clippingPlanes = 1 << 1,
+    depthTest      = 1 << 3,
+    noColorWrite   = 1 << 2,
+    noDepthWrite   = 1 << 4,
+    stencilTest    = 1 << 5,
+    all            = 0xFFFFFFFF,
+}
+
+struct Device
+{
+    nothrow:
+
+    // they save various expensive GL state changes
+    FboManager fboman;
+    VaoManager vaoman;
+    private DrawFlags currentFlags;
+
+    @disable this(this);
+
+    bool hasExtension(const(char)* name)
+    {
+        import core.stdc.string : strcmp;
+
+        int count;
+        glGetIntegerv(GL_NUM_EXTENSIONS, &count);
+
+        foreach (i; 0 .. cast(uint)count)
+        {
+            const(char)* ext = glGetStringi(GL_EXTENSIONS, i);
+            if (ext && strcmp(ext, name) == 0)
+                return true;
+        }
+        return false;
+    }
+
+    /// Set some GL state to defaults before rendering
+    void initialize(DrawFlags initialFlags)
+    {
+        fboman = FboManager.init;
+        vaoman = VaoManager.init;
+        currentFlags = ~initialFlags;
+        setDrawFlags(initialFlags);
+        resetBlending();
+    }
+
+    void reset()
+    {
+        setDrawFlags(DrawFlags.none);
+        fboman.bind(FboId.init);
+        vaoman.unbind();
+    }
+
+    void setDrawFlags(DrawFlags f)
+    {
+        const diff = currentFlags ^ f;
+        currentFlags = f;
+
+        if (diff & DrawFlags.blending)
+        {
+            if (f & DrawFlags.blending)
+                glEnable(GL_BLEND);
+            else
+                glDisable(GL_BLEND);
+        }
+        if (diff & DrawFlags.clippingPlanes)
+        {
+            if (f & DrawFlags.clippingPlanes)
+            {
+                foreach (i; 0 .. 4)
+                    glEnable(GL_CLIP_DISTANCE0 + i);
+            }
+            else
+            {
+                foreach (i; 0 .. 4)
+                    glDisable(GL_CLIP_DISTANCE0 + i);
+            }
+        }
+        if (diff & DrawFlags.noColorWrite)
+        {
+            if (f & DrawFlags.noColorWrite)
+                glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+            else
+                glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        }
+        if (diff & DrawFlags.depthTest)
+        {
+            if (f & DrawFlags.depthTest)
+                glEnable(GL_DEPTH_TEST);
+            else
+                glDisable(GL_DEPTH_TEST);
+        }
+        if (diff & DrawFlags.noDepthWrite)
+        {
+            if (f & DrawFlags.noDepthWrite)
+                glDepthMask(GL_FALSE);
+            else
+                glDepthMask(GL_TRUE);
+        }
+        if (diff & DrawFlags.stencilTest)
+        {
+            if (f & DrawFlags.stencilTest)
+                glEnable(GL_STENCIL_TEST);
+            else
+                glDisable(GL_STENCIL_TEST);
+        }
+    }
+
+    void setBlending(CompositeOperation op)
+    {
+        const src = convertBlendFactor(op.src);
+        const dst = convertBlendFactor(op.dst);
+        glBlendFunc(src, dst);
+    }
+
+    void setAdvancedBlending(BlendMode mode)
+    {
+        glBlendEquation(convertAdvancedBlendMode(mode));
+    }
+
+    void resetBlending()
+    {
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    //===============================================================
+
+    void clear(BoxI box, ColorF color)
+    {
+        // ensure full write
+        if (currentFlags & DrawFlags.noColorWrite)
+        {
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        }
+        if (currentFlags & DrawFlags.noDepthWrite)
+        {
+            glDepthMask(GL_TRUE);
+        }
+        currentFlags &= ~(DrawFlags.noColorWrite | DrawFlags.noDepthWrite);
+
+        // TODO: optimization: do not clear color if something opaque covers entire layer
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(box.x, box.y, box.w, box.h);
+        glClearColor(color.r, color.g, color.b, color.a);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glDisable(GL_SCISSOR_TEST);
+    }
+
+    void drawTriangles(VaoId vao, DrawFlags flags, int start, int count)
+        in(count > 0)
+    {
+        vaoman.bind(vao);
+        setDrawFlags(flags);
+
+        glDrawElements(
+            GL_TRIANGLES,
+            count,
+            GL_UNSIGNED_INT,
+            cast(void*)(start * uint.sizeof),
+        );
+        checkError("draw triangles");
+    }
+
+    void drawLines(VaoId vao, DrawFlags flags, int start, int count)
+        in(count > 0)
+    {
+        vaoman.bind(vao);
+        setDrawFlags(flags);
+
+        glDrawElements(
+            GL_LINES,
+            count,
+            GL_UNSIGNED_INT,
+            cast(void*)(start * uint.sizeof),
+        );
+        checkError("draw lines");
+    }
+}
+
+private GLenum convertBlendFactor(AlphaBlendFactor factor)
+{
+    final switch (factor) with (AlphaBlendFactor)
+    {
+        case zero: return GL_ZERO;
+        case one:  return GL_ONE;
+        case src:  return GL_SRC_ALPHA;
+        case dst:  return GL_DST_ALPHA;
+        case oneMinusSrc: return GL_ONE_MINUS_SRC_ALPHA;
+        case oneMinusDst: return GL_ONE_MINUS_DST_ALPHA;
+    }
+}
+
+private GLenum convertAdvancedBlendMode(BlendMode mode)
+{
+    enum : GLenum
+    {
+        MULTIPLY_KHR       = 0x9294,
+        SCREEN_KHR         = 0x9295,
+        OVERLAY_KHR        = 0x9296,
+        DARKEN_KHR         = 0x9297,
+        LIGHTEN_KHR        = 0x9298,
+        COLORDODGE_KHR     = 0x9299,
+        COLORBURN_KHR      = 0x929A,
+        HARDLIGHT_KHR      = 0x929B,
+        SOFTLIGHT_KHR      = 0x929C,
+        DIFFERENCE_KHR     = 0x929E,
+        EXCLUSION_KHR      = 0x92A0,
+
+        HSL_HUE_KHR        = 0x92AD,
+        HSL_SATURATION_KHR = 0x92AE,
+        HSL_COLOR_KHR      = 0x92AF,
+        HSL_LUMINOSITY_KHR = 0x92B0,
+    }
+
+    final switch (mode) with (BlendMode)
+    {
+        case normal:     return GL_FUNC_ADD;
+        case multiply:   return MULTIPLY_KHR;
+        case screen:     return SCREEN_KHR;
+        case overlay:    return OVERLAY_KHR;
+        case darken:     return DARKEN_KHR;
+        case lighten:    return LIGHTEN_KHR;
+        case colorDodge: return COLORDODGE_KHR;
+        case colorBurn:  return COLORBURN_KHR;
+        case hardLight:  return HARDLIGHT_KHR;
+        case softLight:  return SOFTLIGHT_KHR;
+        case difference: return DIFFERENCE_KHR;
+        case exclusion:  return EXCLUSION_KHR;
+        case hue:        return HSL_HUE_KHR;
+        case saturation: return HSL_SATURATION_KHR;
+        case color:      return HSL_COLOR_KHR;
+        case luminosity: return HSL_LUMINOSITY_KHR;
+    }
+}
+
+struct FboManager
+{
+    nothrow:
+
+    private FboId current = FboId(GLuint.max);
+
+    FboId create()
+    {
+        GLuint id;
+        glGenFramebuffers(1, &id);
+        return FboId(id);
+    }
+
+    void bind(FboId id)
+    {
+        if (current != id)
+        {
+            checkgl!glBindFramebuffer(GL_DRAW_FRAMEBUFFER, id.handle);
+            current = id;
+        }
+    }
+
+    void del(ref FboId id)
+    {
+        glDeleteFramebuffers(1, &id.handle);
+        id.handle = 0;
+    }
+
+    void attachColorTex2D(TexId tex, GLuint num)
+    {
+        checkgl!glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + num, GL_TEXTURE_2D, tex.handle, 0);
+    }
+
+    void attachDepthStencilRB(RbId rb)
+    {
+        checkgl!glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rb.handle);
+    }
+}
+
+struct VaoManager
+{
+    nothrow:
+
+    private VaoId current = VaoId(GLuint.max);
+
+    void bind(ref VaoId id)
+    {
+        if (id.handle == 0)
+            glGenVertexArrays(1, &id.handle);
+
+        if (current != id)
+        {
+            checkgl!glBindVertexArray(id.handle);
+            current = id;
+        }
+    }
+
+    void unbind()
+    {
+        if (current.handle != 0)
+        {
+            glBindVertexArray(0);
+            current.handle = 0;
+        }
+    }
+
+    void del(ref VaoId id)
+    {
+        glDeleteVertexArrays(1, &id.handle);
+        id.handle = 0;
+    }
+
+    void addAttribF(GLuint index, GLint components, GLsizei stride = 0, GLsizei offset = 0)
+    {
+        glVertexAttribPointer(index, components, GL_FLOAT, GL_FALSE, stride, cast(void*)offset);
+        glEnableVertexAttribArray(index);
+    }
+
+    void addAttribU16(GLuint index, GLint components, GLsizei stride = 0, GLsizei offset = 0)
+    {
+        glVertexAttribIPointer(index, components, GL_UNSIGNED_SHORT, stride, cast(void*)offset);
+        glEnableVertexAttribArray(index);
+    }
+}
