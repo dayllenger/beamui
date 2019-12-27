@@ -12,11 +12,11 @@ sourcePaths "3rdparty" "src"
 importPaths "3rdparty" "src"
 stringImportPaths "res" "res/shaders"
 
-sourceFiles "$PACKAGE_DIR/src/win_app.def" platform="windows-x86-dmd"
 excludedSourceFiles "3rdparty/fontconfig.d" platform="windows"
 excludedSourceFiles "3rdparty/glx.d" "3rdparty/wgl.d" "3rdparty/xsync.d"
 
 libs "z" platform="linux"
+lflags "/SUBSYSTEM:WINDOWS" "/ENTRY:mainCRTStartup" platform="windows"
 
 x:ddoxFilterArgs "--min-protection=Protected" "--in" "beamui" "--ex" ""
 
