@@ -42,7 +42,7 @@ addons:
     - libevent-dev
 
 script:
-- dub test --compiler=${DC} --arch=${ARCH} --config=${CONFIG}
+- dub test --compiler=${DC} --arch=${ARCH} --config=${CONFIG} --DRT-gcopt=parallel:0
 
 jobs:
   include:
