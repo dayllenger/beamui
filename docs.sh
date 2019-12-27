@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-dub fetch ddox
+dub fetch ddox --DRT-gcopt=parallel:0
 cp ./ddox/ddox.inc.composite.dt ~/.dub/packages/ddox-*/ddox/views/ddox.inc.composite.dt
 cp ./ddox/ddox.module.dt ~/.dub/packages/ddox-*/ddox/views/ddox.module.dt
 
@@ -13,6 +13,6 @@ then
     patch $parser ./ddox/jsonparser.diff
 fi
 
-dub build -b ddox -c ddox
+dub build -b ddox -c ddox --DRT-gcopt=parallel:0
 cp ./ddox/ddox.css ./docs/styles/ddox.css
 cp ./ddox/prettify.css ./docs/prettify/prettify.css
