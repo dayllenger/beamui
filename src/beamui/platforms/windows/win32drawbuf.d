@@ -106,7 +106,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
     override inout(uint*) scanLine(int y) inout
     {
         if (y >= 0 && y < _h)
-            return _pixels + _w * (_h - 1 - y);
+            return _pixels + _w * y;
         return null;
     }
 
@@ -143,7 +143,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
             //memset( &bmi, 0, sizeof(bmi) );
             bmi.bmiHeader.biSize = (bmi.bmiHeader.sizeof);
             bmi.bmiHeader.biWidth = _w;
-            bmi.bmiHeader.biHeight = _h;
+            bmi.bmiHeader.biHeight = -_h; // top-down
             bmi.bmiHeader.biPlanes = 1;
             bmi.bmiHeader.biBitCount = 32;
             bmi.bmiHeader.biCompression = BI_RGB;
