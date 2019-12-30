@@ -1520,8 +1520,8 @@ void rasterize_trapezoid_i(SpanI clip, TrapezoidI trap, float step_l, float step
 {
     foreach (y; trap.ty .. trap.by)
     {
-        const int x0 = max(iround(trap.tl), clip.start);
-        const int x1 = min(iround(trap.tr), clip.end);
+        const int x0 = max(iroundFast(trap.tl), clip.start);
+        const int x1 = min(iroundFast(trap.tr), clip.end);
         if (x0 < x1)
             plotter.setScanLine(x0, x1, y);
         trap.tl += step_l;
@@ -1842,6 +1842,11 @@ int iceil(float x)
 }
 
 int iround(float x)
+{
+    return cast(int)round(x);
+}
+
+int iroundFast(float x)
 {
     return cast(int)lrint(x);
 }
