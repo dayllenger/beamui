@@ -2303,17 +2303,15 @@ class Platform
             bool success = createGLContext(window, major, minor);
             if (!success)
             {
-                Log.w("GL: trying other versions");
-                // lazy conditions
-                if (major == 4)
-                {
-                    success = success || createGLContext(window, 4, 3);
-                    success = success || createGLContext(window, 4, 0);
-                }
-                success = success || createGLContext(window, 3, 3);
-                success = success || createGLContext(window, 3, 2);
-                success = success || createGLContext(window, 3, 1);
-                success = success || createGLContext(window, 3, 0);
+                const ver = major * 10 + minor;
+                if (ver > 43)
+                    success = createGLContext(window, 4, 3);
+                if (!success && ver > 40)
+                    success = createGLContext(window, 4, 0);
+                if (!success && ver > 32)
+                    success = createGLContext(window, 3, 2);
+                if (!success && ver > 30)
+                    success = createGLContext(window, 3, 0);
             }
             if (success)
             {
@@ -2322,6 +2320,9 @@ class Platform
                 if (success)
                     window.handleGLReadiness();
             }
+            else
+                Log.e("GL: failed to create a context");
+
             if (!success)
             {
                 disableOpenGL();
