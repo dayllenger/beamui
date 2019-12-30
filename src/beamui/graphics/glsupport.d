@@ -187,58 +187,12 @@ private __gshared GLBackend _glBackend;
 /// Initialize OpenGL backend (call only when current OpenGL context is initialized)
 bool initGLBackend()
 {
-    import std.string : fromStringz, strip;
-    import bindbc.opengl.gl : loadOpenGL;
-    import loader = bindbc.loader.sharedlib;
-    import bindbc.opengl.config : configured = glSupport;
-
     if (_glBackend)
         return true;
     glNoContext = false;
 
-    // load bindings first
-    version (Android)
-    {
-        Log.d("initGLBackend");
-    }
-    else
-    {
-        loader.resetErrors();
-        const support = loadOpenGL();
-        if (support != configured)
-        {
-            Log.e("Errors when loading OpenGL:");
-            foreach (e; loader.errors())
-            {
-                Log.e(strip(fromStringz(e.error)), " - ", strip(fromStringz(e.message)));
-            }
-            Log.e("Cannot load GL library");
-            return false;
-        }
-    }
-    // the version must be >= 3.0
-    const char major = glGetString(GL_VERSION)[0];
-    if (major >= '3')
-    {
-        if (GLProgram.determineGLSLVersion())
-            Log.v("GL: GLSL version is ", GLProgram.glslVersionInt);
-        else
-        {
-            Log.e("GL: cannot determine GLSL version");
-            return false;
-        }
-
-        auto bak = new GLBackend;
-        if (bak.valid)
-        {
-            _glBackend = bak;
-            Log.v("GL: initialized successfully");
-            return true;
-        }
-        else
-            destroy(bak);
-    }
-    return false;
+    _glBackend = GLBackend.create();
+    return _glBackend !is null;
 }
 
 /// Deinitialize GLBackend, destroy all internal shaders, buffers, etc.
@@ -277,12 +231,23 @@ final class GLBackend
         BufferId ebo;
     }
 
-    this()
+    static GLBackend create()
     {
         Log.d("GL: creating backend");
+        auto bak = new GLBackend;
+        if (bak.initShaders())
+        {
+            Log.v("GL: created successfully");
+            return bak;
+        }
+        destroy(bak);
+        Log.e("GL: failed to create shader programs");
+        return null;
+    }
+
+    private this()
+    {
         _queue = new OpenGLQueue;
-        if (!initShaders())
-            Log.e("GL: failed to create shader programs");
     }
 
     ~this()

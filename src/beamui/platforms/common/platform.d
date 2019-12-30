@@ -2279,6 +2279,7 @@ class Platform
 
     static if (USE_OPENGL)
     {
+        import beamui.graphics.gl.gl : loadGLAPI;
         import beamui.graphics.glsupport : glSupport, initGLBackend;
 
         void createGLContext(Window window)
@@ -2316,7 +2317,7 @@ class Platform
             if (success)
             {
                 window.bindContext();
-                success = initGLBackend();
+                success = loadGLAPI() && initGLBackend();
                 if (success)
                     window.handleGLReadiness();
             }

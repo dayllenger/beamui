@@ -19,6 +19,63 @@ import beamui.graphics.gl.objects : RbId, TexId;
 
 package nothrow:
 
+/// Load and check OpenGL bindings (call only after an OpenGL context is made current)
+package(beamui) bool loadGLAPI()
+{
+    import std.exception : assertNotThrown;
+    import std.string : fromStringz, strip;
+    import beamui.core.logger : Log;
+    import beamui.graphics.gl.program : GLProgram;
+    static import bindbc.loader.sharedlib;
+    static import bindbc.opengl.config;
+    static import bindbc.opengl.gl;
+
+    // bindings are __gshared
+    static shared bool tried;
+    static shared bool loaded;
+    if (tried)
+        return loaded;
+    tried = true;
+
+    version (Android)
+    {
+        Log.e("GL: unimplemented");
+        return false;
+    }
+    else
+    {
+        bindbc.loader.sharedlib.resetErrors();
+        const support = bindbc.opengl.gl.loadOpenGL();
+        if (support != bindbc.opengl.config.glSupport)
+        {
+            Log.e("GL: errors when loading:");
+            foreach (e; bindbc.loader.sharedlib.errors())
+            {
+                const err = assertNotThrown(strip(fromStringz(e.error)));
+                const msg = assertNotThrown(strip(fromStringz(e.message)));
+                Log.e(err, " - ", msg);
+            }
+            Log.e("GL: cannot load the library");
+            bindbc.opengl.gl.unloadOpenGL();
+            return false;
+        }
+    }
+    const char major = glGetString(GL_VERSION)[0];
+    if (major < '3')
+    {
+        Log.e("GL: the version must be at least 3.0"); // the same on GLES
+        return false;
+    }
+    if (!GLProgram.determineGLSLVersion())
+    {
+        Log.e("GL: cannot determine GLSL version");
+        return false;
+    }
+    Log.v("GL: GLSL version is ", GLProgram.glslVersionInt);
+    loaded = true;
+    return true;
+}
+
 struct VaoId
 {
     GLuint handle;
