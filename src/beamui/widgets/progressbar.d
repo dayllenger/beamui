@@ -169,6 +169,7 @@ class ProgressBar : Widget
     override protected void drawContent(DrawBuf buf)
     {
         const b = innerBox;
+        const sv = ClipRectSaver(buf, b);
         DrawableRef animDrawable;
         if (_data.progress >= 0)
         {

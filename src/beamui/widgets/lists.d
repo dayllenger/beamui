@@ -1223,9 +1223,6 @@ class ListWidget : WidgetGroup
 
     override protected void drawContent(DrawBuf buf)
     {
-        const b = innerBox;
-        const sv = ClipRectSaver(buf, b);
-
         // draw scrollbar
         if (_needScrollbar)
             _scrollbar.draw(buf);
@@ -1234,6 +1231,8 @@ class ListWidget : WidgetGroup
             return;
 
         // draw items
+        const sv = ClipRectSaver(buf, _clientBox);
+        const b = innerBox;
         const bool vert = _orientation == Orientation.vertical;
         const int scrollOffset = scrollPosition;
         const int start = findViewportIndex();
