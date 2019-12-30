@@ -20,7 +20,7 @@ import std.math : abs, ceil, floor, lrint, quantize, round;
 import beamui.core.collections : Buf;
 import beamui.core.geometry : BoxI, RectI;
 import beamui.core.linalg : Vec2, crossProduct;
-import beamui.core.math : fequal2, fzero2, clamp, max, min;
+import beamui.core.math : fequal2, clamp, max, min;
 import beamui.graphics.polygons : computeBoundingBox;
 
 public interface Plotter
@@ -1549,9 +1549,9 @@ public void rasterizeLine(Vec2 p0, Vec2 p1, ref const RastParams params, Plotter
         const ax = abs(dx);
         const ay = abs(dy);
         if (ax > ay)
-            rasterize_line_hori_aa(p0.x, p0.y, p1.x, p1.y, ay < eps && fzero2(p0.x - round(p0.x)), plotter);
+            rasterize_line_hori_aa(p0.x, p0.y, p1.x, p1.y, ay < eps, plotter);
         else
-            rasterize_line_vert_aa(p0.x, p0.y, p1.x, p1.y, ax < eps && fzero2(p0.y - round(p0.y)), plotter);
+            rasterize_line_vert_aa(p0.x, p0.y, p1.x, p1.y, ax < eps, plotter);
     }
     else
     {
@@ -1664,7 +1664,7 @@ bool clip_line(RectI clip, ref float x0, ref float y0, ref float x1, ref float y
     return accept;
 }
 
-void rasterize_line_hori_aa(float x0, float y0, float x1, float y1, bool fast, Plotter plotter)
+void rasterize_line_hori_aa(float x0, float y0, float x1, float y1, bool aligned, Plotter plotter)
 {
     const dx = x1 - x0;
     const dy = y1 - y0;
@@ -1696,10 +1696,21 @@ void rasterize_line_hori_aa(float x0, float y0, float x1, float y1, bool fast, P
     plotter.mixPixel(x1i, y1i + 1, fpart(yEnd) * xGap);
 
     // main loop
-    if (fast)
+    if (aligned)
     {
-        const y = iround(y0);
-        plotter.setScanLine(x0i + 1, x1i, y);
+        const y = round(y0);
+        if (fequal2(y, y0))
+        {
+            plotter.setScanLine(x0i + 1, x1i, cast(int)y);
+        }
+        else
+        {
+            const top = floor(y0);
+            const topi = cast(int)top;
+            const fract = y0 - top;
+            plotter.mixScanLine(x0i + 1, x1i, topi, 1 - fract); // rfpart
+            plotter.mixScanLine(x0i + 1, x1i, topi + 1, fract); // fpart
+        }
     }
     else
     {
@@ -1713,7 +1724,7 @@ void rasterize_line_hori_aa(float x0, float y0, float x1, float y1, bool fast, P
     }
 }
 
-void rasterize_line_vert_aa(float x0, float y0, float x1, float y1, bool fast, Plotter plotter)
+void rasterize_line_vert_aa(float x0, float y0, float x1, float y1, bool aligned, Plotter plotter)
 {
     const dx = x1 - x0;
     const dy = y1 - y0;
@@ -1745,13 +1756,12 @@ void rasterize_line_vert_aa(float x0, float y0, float x1, float y1, bool fast, P
     plotter.mixPixel(x1i + 1, y1i, fpart(xEnd) * yGap);
 
     // main loop
-    if (fast)
+    const x0rnd = round(x0);
+    if (aligned && fequal2(x0rnd, x0))
     {
-        const x = iround(x0);
+        const x = cast(int)x0rnd;
         foreach (y; y0i + 1 .. y1i)
-        {
-            plotter.mixPixel(x, y, 1);
-        }
+            plotter.setPixel(x, y);
     }
     else
     {
