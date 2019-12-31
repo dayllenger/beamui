@@ -18,7 +18,7 @@ import core.stdc.stdlib : malloc, free;
 import std.algorithm.mutation : swap;
 import std.math : abs, ceil, floor, lrint, quantize, round;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : BoxI, RectI;
+import beamui.core.geometry : BoxI, RectF, RectI;
 import beamui.core.linalg : Vec2, crossProduct;
 import beamui.core.math : fequal2, clamp, max, min;
 import beamui.graphics.polygons : computeBoundingBox;
@@ -1536,7 +1536,11 @@ public void rasterizeLine(Vec2 p0, Vec2 p1, ref const RastParams params, Plotter
     in(!params.clip.empty)
     in(plotter)
 {
-    const visible = clip_line(RectI(params.clip), p0.x, p0.y, p1.x, p1.y);
+    // TODO: the line must not touch the right and bottom clip borders.
+    // this is a quick fix for this issue, but not a correct one
+    const margin = (params.antialias ? 1.5f : 0.5f) + eps;
+    const b = params.clip;
+    const visible = clip_line(RectF(b.x, b.y, b.x + b.w - margin, b.y + b.h - margin), p0.x, p0.y, p1.x, p1.y);
     if (!visible)
         return;
 
@@ -1563,7 +1567,7 @@ public void rasterizeLine(Vec2 p0, Vec2 p1, ref const RastParams params, Plotter
     }
 }
 
-bool clip_line(RectI clip, ref float x0, ref float y0, ref float x1, ref float y1)
+bool clip_line(RectF clip, ref float x0, ref float y0, ref float x1, ref float y1)
 {
     // Cohen–Sutherland clipping algorithm clips a line from
     // P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with
@@ -1581,7 +1585,7 @@ bool clip_line(RectI clip, ref float x0, ref float y0, ref float x1, ref float y
 
     // Compute the bit code for a point (x, y) using the clip rectangle
     // bounded diagonally by (xmin, ymin), and (xmax, ymax)
-    static OutCode computeOutCode(ref const RectI clip, float x, float y)
+    static OutCode computeOutCode(ref const RectF clip, float x, float y)
     {
         OutCode code; // initialised as being inside of clip window
 
@@ -1696,7 +1700,7 @@ void rasterize_line_hori_aa(float x0, float y0, float x1, float y1, bool aligned
     plotter.mixPixel(x1i, y1i + 1, fpart(yEnd) * xGap);
 
     // main loop
-    if (aligned)
+    if (aligned && x0i + 1 < x1i)
     {
         const y = round(y0);
         if (fequal2(y, y0))
@@ -1757,7 +1761,7 @@ void rasterize_line_vert_aa(float x0, float y0, float x1, float y1, bool aligned
 
     // main loop
     const x0rnd = round(x0);
-    if (aligned && fequal2(x0rnd, x0))
+    if (aligned && y0i + 1 < y1i && fequal2(x0rnd, x0))
     {
         const x = cast(int)x0rnd;
         foreach (y; y0i + 1 .. y1i)
@@ -1782,7 +1786,7 @@ void rasterize_line(int x0, int y0, int x1, int y1, Plotter plotter)
     {
         if (x0 > x1)
             swap(x0, x1);
-        plotter.setScanLine(x0, x1 + 1, y0);
+        plotter.setScanLine(x0, x1, y0);
         return;
     }
     // fast path - vertical
@@ -1790,7 +1794,7 @@ void rasterize_line(int x0, int y0, int x1, int y1, Plotter plotter)
     {
         if (y0 > y1)
             swap(y0, y1);
-        foreach (y; y0 .. y1 + 1)
+        foreach (y; y0 .. y1)
             plotter.setPixel(x0, y);
         return;
     }
