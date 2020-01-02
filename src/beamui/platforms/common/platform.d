@@ -726,14 +726,15 @@ class Window : CustomEventTarget
         debug (tooltips)
             Log.d("tooltip timer");
         _tooltip.timerID = 0;
-        if (_tooltip.ownerWidget)
+        if (Widget owner = _tooltip.ownerWidget.get)
         {
-            debug (tooltips)
-                Log.d("create tooltip");
-            Widget w = _tooltip.ownerWidget.createTooltip(_lastMouseX, _lastMouseY,
-                    _tooltip.alignment, _tooltip.x, _tooltip.y);
+            const x = _tooltip.x == int.min ? _lastMouseX : _tooltip.x;
+            const y = _tooltip.y == int.min ? _lastMouseY : _tooltip.y;
+            Widget w = owner.createTooltip(x, y);
             if (w)
-                showTooltip(w, _tooltip.ownerWidget, _tooltip.alignment, _tooltip.x, _tooltip.y);
+                showTooltip(w, _tooltip.ownerWidget, _tooltip.alignment, x, y);
+            else
+                _tooltip.ownerWidget.nullify();
         }
         return false;
     }

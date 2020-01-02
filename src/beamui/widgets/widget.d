@@ -1063,14 +1063,17 @@ public:
 
     /** Will be called from window once tooltip request timer expired.
 
-        If `null` is returned, popup will not be shown; you can change alignment and position of popup here.
+        May return `null` if no tooltip to show.
+        It's up to widget, to show tooltips outside or not.
     */
-    Widget createTooltip(int mouseX, int mouseY, ref PopupAlign alignment, ref int x, ref int y)
+    Widget createTooltip(int x, int y)
     {
         // default implementation supports tooltips when tooltipText property is set
-        import beamui.widgets.text;
+        import beamui.widgets.text : Label;
 
-        return _tooltipText ? new Label(_tooltipText).setID("tooltip") : null;
+        if (_tooltipText && contains(x, y))
+            return new Label(_tooltipText).setID("tooltip");
+        return null;
     }
 
     /// Schedule tooltip

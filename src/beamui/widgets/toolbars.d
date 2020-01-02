@@ -38,9 +38,12 @@ class ToolBarButton : Button
         return action && action.label;
     }
 
-    override Widget createTooltip(int mouseX, int mouseY, ref PopupAlign alignment, ref int x, ref int y)
+    override Widget createTooltip(int x, int y)
     {
-        return new Label(action.tooltipText).setID("tooltip");
+        const txt = action ? action.tooltipText : null;
+        if (txt && contains(x, y))
+            return new Label(txt).setID("tooltip");
+        return null;
     }
 }
 
