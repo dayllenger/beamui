@@ -467,7 +467,12 @@ final class Win32Window : Window
         return SizeI(w, h);
     }
 
-    // TODO: handleSizeHintsChange - update interactively after Window.show()
+    override protected void handleSizeHintsChange()
+    {
+        const r = windowRect;
+        const flags = SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER;
+        SetWindowPos(_hwnd, NULL, 0, 0, r.w, r.h, flags);
+    }
 
     override @property bool isActive() const
     {
@@ -1282,11 +1287,12 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_GETMINMAXINFO:
         if (window)
         {
+            const bsz = window.getBorderSize();
             MINMAXINFO* info = cast(MINMAXINFO*)lParam;
-            info.ptMinTrackSize.x = window.minSize.w;
-            info.ptMinTrackSize.y = window.minSize.h;
-            info.ptMaxTrackSize.x = window.maxSize.w;
-            info.ptMaxTrackSize.y = window.maxSize.h;
+            info.ptMinTrackSize.x = window.minSize.w + bsz.w;
+            info.ptMinTrackSize.y = window.minSize.h + bsz.h;
+            info.ptMaxTrackSize.x = window.maxSize.w + bsz.w;
+            info.ptMaxTrackSize.y = window.maxSize.h + bsz.h;
         }
         return 0;
     case WM_ACTIVATE:
