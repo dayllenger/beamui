@@ -413,9 +413,10 @@ final class Win32Window : Window
                 if (newWindowRect.w != int.min && newWindowRect.h != int.min)
                 {
                     // change size only
-                    SetWindowPos(_hwnd, NULL, 0, 0, newWindowRect.w + 2 * GetSystemMetrics(SM_CXDLGFRAME),
-                            newWindowRect.h + GetSystemMetrics(SM_CYCAPTION) + 2 * GetSystemMetrics(SM_CYDLGFRAME),
-                            flags | SWP_NOMOVE);
+                    const bsz = getBorderSize();
+                    const w = newWindowRect.w + bsz.w;
+                    const h = newWindowRect.h + bsz.h;
+                    SetWindowPos(_hwnd, NULL, 0, 0, w, h, flags | SWP_NOMOVE);
                     rectChanged = true;
                     res = true;
                 }
@@ -425,10 +426,10 @@ final class Win32Window : Window
                 if (newWindowRect.w != int.min && newWindowRect.h != int.min)
                 {
                     // change size and position
-                    SetWindowPos(_hwnd, NULL, newWindowRect.x, newWindowRect.y,
-                            newWindowRect.w + 2 * GetSystemMetrics(SM_CXDLGFRAME),
-                            newWindowRect.h + GetSystemMetrics(SM_CYCAPTION) + 2 * GetSystemMetrics(SM_CYDLGFRAME),
-                            flags);
+                    const bsz = getBorderSize();
+                    const w = newWindowRect.w + bsz.w;
+                    const h = newWindowRect.h + bsz.h;
+                    SetWindowPos(_hwnd, NULL, newWindowRect.x, newWindowRect.y, w, h, flags);
                     rectChanged = true;
                     res = true;
                 }
@@ -454,6 +455,16 @@ final class Win32Window : Window
             handleWindowStateChange(newState, BoxI.none);
 
         return res;
+    }
+
+    private SizeI getBorderSize()
+    {
+        RECT wr, cr;
+        GetWindowRect(_hwnd, &wr);
+        GetClientRect(_hwnd, &cr);
+        const w = (wr.right - wr.left) - (cr.right - cr.left);
+        const h = (wr.bottom - wr.top) - (cr.bottom - cr.top);
+        return SizeI(w, h);
     }
 
     // TODO: handleSizeHintsChange - update interactively after Window.show()
