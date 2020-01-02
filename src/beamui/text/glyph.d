@@ -51,7 +51,7 @@ align(1) struct Glyph
 
     // --- 20/32 bytes ---
 
-    @property ushort correctedBlackBoxX() const
+    @property ushort correctedBlackBoxX() const nothrow
     {
         return subpixelMode ? (blackBoxX + 2) / 3 : blackBoxX;
     }
