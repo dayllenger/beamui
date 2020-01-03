@@ -9,7 +9,7 @@ module beamui.graphics.painter;
 
 import std.math : ceil, floor, sqrt, isFinite, PI;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : BoxI, RectF, RectI;
+import beamui.core.geometry : Box, BoxI, RectF, RectI;
 import beamui.core.linalg : Mat2x3, Vec2;
 import beamui.core.math;
 import beamui.graphics.brush : Brush;
@@ -217,26 +217,68 @@ final class Painter
 
         Use it to skip drawing complex elements when they aren't visible.
     */
-    bool quickReject(BoxI box) const
+    bool quickReject(Box box) const
     {
-        const Mat2x3 m = state.mat;
-        const Vec2 v0 = m * Vec2(box.x, box.y);
-        const Vec2 v1 = m * Vec2(box.x + box.w, box.y);
-        const Vec2 v2 = m * Vec2(box.x, box.y + box.h);
-        const Vec2 v3 = m * Vec2(box.x + box.w, box.y + box.h);
-        const tr = RectF(
-            min(v0.x, v1.x, v2.x, v3.x),
-            min(v0.y, v1.y, v2.y, v3.y),
-            max(v0.x, v1.x, v2.x, v3.x),
-            max(v0.y, v1.y, v2.y, v3.y),
-        );
-        const r = RectI(
-            cast(int)floor(tr.left),
-            cast(int)floor(tr.top),
-            cast(int)ceil(tr.right),
-            cast(int)ceil(tr.bottom),
-        );
-        return !r.intersects(state.clipRect);
+        RectF tr = RectF(box.x, box.y, box.x + box.w, box.y + box.h);
+        if (state.mat.store[0][0] == 1 && state.mat.store[0][1] == 0 &&
+            state.mat.store[1][0] == 0 && state.mat.store[1][1] == 1)
+        {
+            // translation only, fast path
+            const tx = state.mat.store[0][2];
+            const ty = state.mat.store[1][2];
+            tr.translate(tx, ty);
+        }
+        else
+        {
+            const Vec2 v0 = state.mat * Vec2(tr.left, tr.top);
+            const Vec2 v1 = state.mat * Vec2(tr.right, tr.top);
+            const Vec2 v2 = state.mat * Vec2(tr.left, tr.bottom);
+            const Vec2 v3 = state.mat * Vec2(tr.right, tr.bottom);
+            tr = RectF(
+                min(v0.x, v1.x, v2.x, v3.x),
+                min(v0.y, v1.y, v2.y, v3.y),
+                max(v0.x, v1.x, v2.x, v3.x),
+                max(v0.y, v1.y, v2.y, v3.y),
+            );
+        }
+        return !tr.intersects(RectF.from(state.clipRect));
+    }
+
+    /** Get bounds of clip, transformed into the local coordinate system.
+
+        Use it to skip drawing complex elements when they aren't visible.
+    */
+    RectF getLocalClipBounds() const
+    {
+        if (state.clipRect.empty)
+            return RectF.init;
+
+        RectF r = RectF.from(state.clipRect);
+        r.expand(1, 1); // antialiased fringe
+
+        if (state.mat.store[0][0] == 1 && state.mat.store[0][1] == 0 &&
+            state.mat.store[1][0] == 0 && state.mat.store[1][1] == 1)
+        {
+            // translation only, fast path
+            const tx = state.mat.store[0][2];
+            const ty = state.mat.store[1][2];
+            r.translate(-tx, -ty);
+            return r;
+        }
+        else
+        {
+            const m = state.mat.inverted;
+            const Vec2 v0 = m * Vec2(r.left, r.top);
+            const Vec2 v1 = m * Vec2(r.right, r.top);
+            const Vec2 v2 = m * Vec2(r.left, r.bottom);
+            const Vec2 v3 = m * Vec2(r.right, r.bottom);
+            return RectF(
+                min(v0.x, v1.x, v2.x, v3.x),
+                min(v0.y, v1.y, v2.y, v3.y),
+                max(v0.x, v1.x, v2.x, v3.x),
+                max(v0.y, v1.y, v2.y, v3.y),
+            );
+        }
     }
 
     /** Save matrix, clip, and anti-aliasing setting into internal stack.
