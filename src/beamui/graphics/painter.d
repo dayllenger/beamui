@@ -371,8 +371,12 @@ final class Painter
             {
                 state = mainStack[i];
                 engine.restore(i);
+
                 if (state.layer)
+                {
                     engine.composeLayer();
+                    state.layer = false;
+                }
             }
             mainStack.shrink(mainStack.length - depth);
         }
@@ -658,9 +662,21 @@ struct PaintSaver
 
     ~this()
     {
+        import core.stdc.stdlib : abort;
+        import std.stdio : writeln;
+
         if (painter)
         {
-            painter.restore(depth);
+            // FIXME: due to whatever cause, throwing an error inside a destructor may cause segfault
+            try
+            {
+                painter.restore(depth);
+            }
+            catch (Error e)
+            {
+                writeln(e);
+                abort();
+            }
             painter = null;
         }
     }
