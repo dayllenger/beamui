@@ -16,15 +16,19 @@ import std.string;
 import beamui.core.config;
 import beamui.core.functions;
 import beamui.core.logger;
+import beamui.core.math;
 import beamui.core.types;
 import beamui.core.units;
+import beamui.graphics.brush;
 import beamui.graphics.colors;
 import beamui.graphics.drawbuf;
+import beamui.graphics.painter : Painter;
+import beamui.graphics.path;
+import beamui.graphics.resources;
 static if (BACKEND_GUI)
 {
     import beamui.graphics.images;
 }
-import beamui.graphics.resources;
 
 /// Base abstract class for all drawables
 class Drawable : RefCountedObject
@@ -768,6 +772,71 @@ class Background
         // border
         if (border.left.style != BorderStyle.none)
             buf.drawFrame(Rect(b), border.left.color, bs);
+    }
+
+    private alias SizeF = SizeOf!float;
+    private alias InsetsF = InsetsOf!float;
+
+    private void drawBorder(Painter pr, Size sz)
+    {
+        InsetsF th;
+        if (border.top.style != BorderStyle.none)
+            th.top = border.top.thickness;
+        if (border.right.style != BorderStyle.none)
+            th.right = border.right.thickness;
+        if (border.bottom.style != BorderStyle.none)
+            th.bottom = border.bottom.thickness;
+        if (border.left.style != BorderStyle.none)
+            th.left = border.left.thickness;
+
+        static Path path;
+
+        if (!fzero2(th.top) && !border.top.color.isFullyTransparent)
+        {
+            path.reset();
+            path.lineTo(sz.w, 0)
+                .lineBy(-th.right, th.top)
+                .lineTo(th.left, th.top)
+                .close();
+
+            const br = Brush.fromSolid(border.top.color);
+            pr.fill(path, br);
+        }
+        if (!fzero2(th.right) && !border.right.color.isFullyTransparent)
+        {
+            path.reset();
+            path.moveTo(sz.w, 0)
+                .lineBy(0, sz.h)
+                .lineBy(-th.right, -th.bottom)
+                .lineTo(sz.w - th.right, th.top)
+                .close();
+
+            const br = Brush.fromSolid(border.right.color);
+            pr.fill(path, br);
+        }
+        if (!fzero2(th.bottom) && !border.bottom.color.isFullyTransparent)
+        {
+            path.reset();
+            path.moveTo(0, sz.h)
+                .lineBy(sz.w, 0)
+                .lineBy(-th.right, -th.bottom)
+                .lineTo(th.left, sz.h - th.bottom)
+                .close();
+
+            const br = Brush.fromSolid(border.bottom.color);
+            pr.fill(path, br);
+        }
+        if (!fzero2(th.left) && !border.left.color.isFullyTransparent)
+        {
+            path.reset();
+            path.lineBy(0, sz.h)
+                .lineBy(th.left, -th.bottom)
+                .lineTo(th.left, th.top)
+                .close();
+
+            const br = Brush.fromSolid(border.left.color);
+            pr.fill(path, br);
+        }
     }
 }
 
