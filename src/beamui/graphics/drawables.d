@@ -15,6 +15,7 @@ module beamui.graphics.drawables;
 import std.string;
 import beamui.core.config;
 import beamui.core.functions;
+import beamui.core.linalg : Vec2;
 import beamui.core.logger;
 import beamui.core.math;
 import beamui.core.types;
@@ -174,6 +175,60 @@ class GradientDrawable : Drawable
     override @property int height() const
     {
         return 1;
+    }
+}
+
+private Vec2[2] computeGradientLine(float w, float h, float angle)
+{
+    // see the illustration at https://www.w3.org/TR/css-images-3/#linear-gradients
+
+    import std.math : isFinite, sin, cos, PI, PI_2;
+
+    angle = angle % (PI * 2);
+    if (angle < 0)
+        angle += PI * 2;
+
+    if (fequal6(angle, 0))
+        return [Vec2(w / 2, 0), Vec2(w / 2, h)];
+    if (fequal6(angle, PI_2))
+        return [Vec2(0, h / 2), Vec2(w, h / 2)];
+    if (fequal6(angle, PI))
+        return [Vec2(w / 2, h), Vec2(w / 2, 0)];
+    if (fequal6(angle, 3 * PI_2))
+        return [Vec2(w, h / 2), Vec2(0, h / 2)];
+
+    const sin_a = sin(angle);
+    const cos_a = cos(angle);
+    const tan_a = sin_a / cos_a;
+    assert(isFinite(tan_a));
+
+    if ((0 <= angle && angle < PI_2) || (PI <= angle && angle < 3 * PI_2))
+    {
+        const a = h / 2 * tan_a;
+        const b = (w / 2 - a) * sin_a;
+        const c = b * sin_a;
+        const d = b * cos_a;
+        const ac = a + c;
+        const s = Vec2(w / 2 - ac, h + d);
+        const e = Vec2(w / 2 + ac, -d);
+        if (angle < PI_2)
+            return [s, e];
+        else
+            return [e, s];
+    }
+    else
+    {
+        const a = h / 2 * -tan_a;
+        const b = (w / 2 - a) * -sin_a;
+        const c = b * -sin_a;
+        const d = b * cos_a;
+        const ac = a + c;
+        const s = Vec2(w / 2 - ac, -d);
+        const e = Vec2(w / 2 + ac, h + d);
+        if (angle < PI)
+            return [s, e];
+        else
+            return [e, s];
     }
 }
 
