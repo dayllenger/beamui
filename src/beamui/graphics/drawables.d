@@ -895,6 +895,36 @@ class Background
     }
 }
 
+package(beamui) void drawDottedLineH(Painter pr, int x0, int x1, int y, Color color)
+{
+    if (x0 >= x1 || color.isFullyTransparent)
+        return;
+
+    const oldAA = pr.antialias;
+    pr.antialias = false;
+    foreach (int x; x0 .. x1)
+    {
+        if ((x ^ y) & 1)
+            pr.fillRect(x, y, 1, 1, color);
+    }
+    pr.antialias = oldAA;
+}
+
+package(beamui) void drawDottedLineV(Painter pr, int x, int y0, int y1, Color color)
+{
+    if (y0 >= y1 || color.isFullyTransparent)
+        return;
+
+    const oldAA = pr.antialias;
+    pr.antialias = false;
+    foreach (int y; y0 .. y1)
+    {
+        if ((y ^ x) & 1)
+            pr.fillRect(x, y, 1, 1, color);
+    }
+    pr.antialias = oldAA;
+}
+
 private __gshared ImageCache _imageCache;
 /// Image cache singleton
 @property ImageCache imageCache()
