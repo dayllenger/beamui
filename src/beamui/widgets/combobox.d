@@ -156,13 +156,21 @@ abstract class ComboBoxBase : Panel
             handlePopupClose();
         };
         setAttribute("opened");
-        _popupList.onSelect ~= (int index) {
+        _popupList.onItemClick ~= (int index) {
             selectedItemIndex = index;
             if (_popup)
-            {
                 _popup.close();
-                _popup = null;
+        };
+        _popupList.onKeyEvent ~= (KeyEvent e) {
+            if (e.action == KeyAction.keyDown && e.key == Key.escape && e.noModifiers)
+            {
+                if (_popup)
+                {
+                    _popup.close();
+                    return true;
+                }
             }
+            return false;
         };
         _popupList.setFocus();
     }
@@ -186,8 +194,11 @@ abstract class ComboBoxBase : Panel
             return false;
         const delta = event.deltaY > 0 ? 1 : -1;
         const oldIndex = selectedItemIndex;
-        selectedItemIndex = clamp(selectedItemIndex + delta, 0, _adapter.itemCount - 1);
-        return oldIndex != selectedItemIndex;
+        const newIndex = clamp(selectedItemIndex + delta, 0, _adapter.itemCount - 1);
+        selectedItemIndex = newIndex;
+        if (_popupList)
+            _popupList.selectItem(newIndex);
+        return oldIndex != newIndex;
     }
 
     override void handleThemeChange()

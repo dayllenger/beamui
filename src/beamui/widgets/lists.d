@@ -1015,15 +1015,6 @@ class ListWidget : WidgetGroup
         {
             return _scrollbar.handleWheelEvent(event);
         }
-        else
-        {
-            if (event.deltaX != 0 || event.deltaY != 0)
-            {
-                const down = event.deltaX > 0 || event.deltaY > 0;
-                _scrollbar.triggerAction(down ? ScrollAction.lineDown : ScrollAction.lineUp);
-                return true;
-            }
-        }
         return super.handleWheelEvent(event);
     }
 

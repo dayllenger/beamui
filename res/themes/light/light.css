@@ -123,6 +123,8 @@ ComboBoxBase { min-width: 40px; padding: 3px 4px; border: 1px solid #aaa; backgr
 
 ComboBoxBase:hovered { border-color: #417fbf; }
 
+ComboBoxBase:focused { border-color: #4e93da; }
+
 ComboBoxBase:pressed { border-color: #4e93da; background: linear(180deg, #eeeeee, #dddddd); }
 
 ComboBoxBase.opened { border-color: #4e93da; }
@@ -146,8 +148,6 @@ ComboBoxBase::list:focused { border: 1px solid rgba(32, 64, 255, 0.75); }
 ComboBoxBase::list:not(enabled) { background-color: #f0f0f0; }
 
 ComboEdit { background: none; }
-
-ComboEdit:focused { border-color: #4e93da; }
 
 ComboEdit::body:hovered, ComboEdit::body:pressed { color: #404040; }
 

@@ -307,6 +307,10 @@ ComboBoxBase {
         border-color: $secondary-color;
     }
 
+    &:focused {
+        border-color: $main-color;
+    }
+
     &:pressed {
         border-color: $main-color;
         background: linear(180deg, #eeeeee, #dddddd);
@@ -366,16 +370,14 @@ ComboBoxBase {
 ComboEdit {
     background: none;
 
-    &:focused {
-        border-color: $main-color;
-    }
+    &::body {
+        &:hovered, &:pressed {
+            color: $text-color;
+        }
 
-    &::body:hovered, &::body:pressed {
-        color: $text-color;
-    }
-
-    &::body:focused {
-        color: initial;
+        &:focused {
+            color: initial;
+        }
     }
 }
 
