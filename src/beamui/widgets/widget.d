@@ -31,6 +31,7 @@ public
     import beamui.graphics.colors;
     import beamui.graphics.drawables;
     import beamui.graphics.drawbuf;
+    import beamui.graphics.painter;
 
     import beamui.layout.alignment;
 
@@ -1862,39 +1863,54 @@ public:
         _innerBox = b.shrinked(p);
     }
 
-    /// Draw widget at its position to a buffer
-    final void draw(DrawBuf buf)
+    /// Draw widget at its position
+    final void draw(Painter pr)
     {
+        _needDraw = false;
         if (visibility != Visibility.visible)
             return;
 
-        // apply opacity only
-        const sv = ClipRectSaver(buf, buf.clipRect, opacityToAlpha(style.opacity));
-
         const b = _box;
-        background.drawTo(buf, b);
+        if (pr.quickReject(b))
+            return; // clipped out
 
-        drawContent(buf);
+        const opacity = style.opacity;
+        if (opacity < 0.001f)
+            return;
+        // begin a layer if some transparency is required
+        PaintSaver lsv;
+        if (opacity < 0.999f)
+            pr.beginLayer(lsv, opacity);
 
+        // draw the background first
+        background.drawTo(pr, b);
+        // draw contents
+        {
+            PaintSaver sv;
+            pr.save(sv);
+            drawContent(pr);
+        }
+        // draw an additional frame
         if (state & State.focused)
-            drawFocusRect(buf);
-
-        _needDraw = false;
+            drawFocusRect(pr);
     }
 
-    protected void drawContent(DrawBuf buf)
+    protected void drawContent(Painter pr)
     {
     }
 
     /// Draw focus rectangle, if enabled in styles
-    protected void drawFocusRect(DrawBuf buf)
+    protected void drawFocusRect(Painter pr)
     {
         const Color c = style.focusRectColor;
         if (!c.isFullyTransparent)
         {
-            Box b = _box;
-            b.shrink(Insets(FOCUS_RECT_PADDING));
-            buf.drawFocusRect(Rect(b), c);
+            RectI rc = _box;
+            rc.shrink(FOCUS_RECT_PADDING, FOCUS_RECT_PADDING);
+            drawDottedLineH(pr, rc.left, rc.right, rc.top, c);
+            drawDottedLineH(pr, rc.left, rc.right, rc.bottom - 1, c);
+            drawDottedLineV(pr, rc.left, rc.top + 1, rc.bottom - 1, c);
+            drawDottedLineV(pr, rc.right - 1, rc.top + 1, rc.bottom - 1, c);
         }
     }
 
@@ -1902,20 +1918,20 @@ public:
 
         Example:
         ---
-        override protected void drawContent(DrawBuf buf)
+        override protected void drawContent(Painter pr)
         {
-            drawAllChildren(buf);
+            drawAllChildren(pr);
         }
         ---
     */
-    protected void drawAllChildren(DrawBuf buf)
+    protected void drawAllChildren(Painter pr)
     {
         const count = childCount;
         if (count == 0 || visibility != Visibility.visible)
             return;
 
         foreach (i; 0 .. count)
-            child(i).draw(buf);
+            child(i).draw(pr);
     }
 
     //===============================================================
@@ -2392,10 +2408,10 @@ class Panel : WidgetGroup
         }
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
         foreach (item; preparedItems.unsafe_slice)
-            item.draw(buf);
+            item.draw(pr);
     }
 
     /// Make one child (with specified ID) visible, set `othersVisibility` to the rest

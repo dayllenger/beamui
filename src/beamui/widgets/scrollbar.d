@@ -464,9 +464,9 @@ class ScrollBar : WidgetGroup
         layoutButtons();
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
-        bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).draw(buf);
+        bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).draw(pr);
     }
 
     class ScrollIndicator : ImageWidget

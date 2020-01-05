@@ -388,14 +388,14 @@ abstract class AbstractSlider : WidgetGroup
             return space / 2;
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
-        _rangeBefore.draw(buf);
-        _rangeAfter.draw(buf);
-        drawInner(buf);
+        _rangeBefore.draw(pr);
+        _rangeAfter.draw(pr);
+        drawInner(pr);
     }
 
-    protected void drawInner(DrawBuf buf);
+    protected void drawInner(Painter pr);
 
     class SliderHandle : ImageWidget
     {
@@ -692,9 +692,9 @@ class Slider : AbstractSlider
         _handle.layout(innerArea);
     }
 
-    override protected void drawInner(DrawBuf buf)
+    override protected void drawInner(Painter pr)
     {
-        _handle.draw(buf);
+        _handle.draw(pr);
     }
 }
 
@@ -929,10 +929,10 @@ class RangeSlider : AbstractSlider
         _2ndHandle.layout(b2);
     }
 
-    override protected void drawInner(DrawBuf buf)
+    override protected void drawInner(Painter pr)
     {
-        _rangeBetween.draw(buf);
-        _1stHandle.draw(buf);
-        _2ndHandle.draw(buf);
+        _rangeBetween.draw(pr);
+        _1stHandle.draw(pr);
+        _2ndHandle.draw(pr);
     }
 }

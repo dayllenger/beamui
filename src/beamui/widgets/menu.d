@@ -320,9 +320,9 @@ class MenuItem : WidgetGroup, ActionHolder
         b.x += b.w;
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
-        drawAllChildren(buf);
+        drawAllChildren(pr);
     }
 }
 

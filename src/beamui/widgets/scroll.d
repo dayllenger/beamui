@@ -570,31 +570,33 @@ class ScrollAreaBase : WidgetGroup
         data.position = _scrollPos.y;
     }
 
-    final override protected void drawContent(DrawBuf buf)
+    final override protected void drawContent(Painter pr)
     {
         // draw scrollbars
-        _hscrollbar.maybe.draw(buf);
-        _vscrollbar.maybe.draw(buf);
+        _hscrollbar.maybe.draw(pr);
+        _vscrollbar.maybe.draw(pr);
         {
+            PaintSaver sv;
+            pr.save(sv);
             // apply clipping
-            const sv = ClipRectSaver(buf, _clientBox);
-            drawClient(buf);
+            pr.clipIn(_clientBox);
+            drawClient(pr);
         }
         {
             // add the client box to the extended area clip
             Box clipb = innerBox;
             clipb.h = _clientBox.h;
-            const sv = ClipRectSaver(buf, clipb);
-            drawExtendedArea(buf);
+            pr.clipIn(clipb);
+            drawExtendedArea(pr);
         }
     }
 
-    protected void drawClient(DrawBuf buf)
+    protected void drawClient(Painter pr)
     {
         // override it
     }
 
-    protected void drawExtendedArea(DrawBuf buf)
+    protected void drawExtendedArea(Painter pr)
     {
         // override it
     }
@@ -729,8 +731,8 @@ class ScrollArea : ScrollAreaBase
         }
     }
 
-    override protected void drawClient(DrawBuf buf)
+    override protected void drawClient(Painter pr)
     {
-        _contentWidget.maybe.draw(buf);
+        _contentWidget.maybe.draw(pr);
     }
 }

@@ -106,6 +106,7 @@ private ColorDrawBuf importImage(SuperImage image)
         dstLine[0 .. w] = data[0 .. w];
         data = data[w .. $];
     }
+    buf.preMultiplyAlpha();
     return buf;
 }
 

@@ -10,7 +10,8 @@ import std.container.array;
 import beamui.core.collections : Buf;
 import beamui.core.geometry : Point, Rect, Size;
 import beamui.core.math;
-import beamui.graphics.drawbuf : DrawBuf, GlyphInstance;
+import beamui.graphics.drawbuf : GlyphInstance;
+import beamui.graphics.painter : Painter;
 import beamui.text.fonts : Font, FontManager, FontStyle;
 import beamui.text.glyph : GlyphRef;
 import beamui.text.shaping;
@@ -310,7 +311,7 @@ struct TextLine
         return _sizeAfterWrap.h;
     }
 
-    int draw(DrawBuf buf, int x, int y, int boxWidth, ref TextStyle style)
+    int draw(Painter pr, int x, int y, int boxWidth, ref TextStyle style)
     {
         assert(measured);
 
@@ -333,12 +334,12 @@ struct TextLine
             Point offset = Point(startingOffset, 0);
             if (!markup || markup.empty)
             {
-                drawSimpleFragmentWrapped(buf, pos, offset, wraps, 0, len, style);
+                drawSimpleFragmentWrapped(pr, pos, offset, wraps, 0, len, style);
             }
             else
             {
                 uint i, start;
-                drawFragmentWrapped(buf, pos, offset, wraps, i, start, len, style);
+                drawFragmentWrapped(pr, pos, offset, wraps, i, start, len, style);
             }
         }
         else // single line
@@ -347,12 +348,12 @@ struct TextLine
             int offset = _defaultSpan.offset = startingOffset;
             if (!markup || markup.empty)
             {
-                drawSimpleFragmentNonWrapped(buf, pos, boxWidth, offset, 0, len, style);
+                drawSimpleFragmentNonWrapped(pr, pos, boxWidth, offset, 0, len, style);
             }
             else
             {
                 uint i, start;
-                drawFragmentNonWrapped(buf, pos, boxWidth, offset, i, start, len, style);
+                drawFragmentNonWrapped(pr, pos, boxWidth, offset, i, start, len, style);
             }
         }
         return startingOffset;
@@ -395,7 +396,7 @@ struct TextLine
         return false;
     }
 
-    private bool drawFragmentNonWrapped(DrawBuf buf, Point linePos, int boxWidth,
+    private bool drawFragmentNonWrapped(Painter pr, Point linePos, int boxWidth,
         ref int offset, ref uint i, ref uint start, uint end, TextStyle prevStyle)
     {
         TextStyle nextStyle = void;
@@ -410,25 +411,25 @@ struct TextLine
                 continue;
             // before
             if (start < mu.start)
-                if (drawSimpleFragmentNonWrapped(buf, linePos, boxWidth, offset, start, mu.start, prevStyle))
+                if (drawSimpleFragmentNonWrapped(pr, linePos, boxWidth, offset, start, mu.start, prevStyle))
                     return true;
             // inside
             start = mu.start;
             const end2 = min(mu.start + mu.count, end);
-            if (drawFragmentNonWrapped(buf, linePos, boxWidth, offset, i, start, end2, nextStyle))
+            if (drawFragmentNonWrapped(pr, linePos, boxWidth, offset, i, start, end2, nextStyle))
                 return true;
         }
         // after
         if (start < end)
         {
-            if (drawSimpleFragmentNonWrapped(buf, linePos, boxWidth, offset, start, end, prevStyle))
+            if (drawSimpleFragmentNonWrapped(pr, linePos, boxWidth, offset, start, end, prevStyle))
                 return true;
             start = end;
         }
         return false;
     }
 
-    private bool drawSimpleFragmentNonWrapped(DrawBuf buf, Point linePos, int boxWidth,
+    private bool drawSimpleFragmentNonWrapped(Painter pr, Point linePos, int boxWidth,
         ref int offset, uint start, uint end, ref TextStyle style)
     {
         assert(start < end);
@@ -461,7 +462,7 @@ struct TextLine
                 if (auto g = fg.glyph)
                 {
                     const p = Point(pen + g.originX, fg.baseline - g.originY);
-                    buffer ~= GlyphInstance(g, p);
+                    buffer ~= GlyphInstance(g, linePos + p);
                 }
                 pen += fg.width;
             }
@@ -470,16 +471,16 @@ struct TextLine
         {
             const g = ellipsis.glyph;
             const p = Point(ellipsis.pos + g.originX, line.baseline - g.originY);
-            buffer ~= GlyphInstance(g, p);
+            buffer ~= GlyphInstance(g, linePos + p);
         }
         line.width = pen - offset;
-        line.draw(buf, linePos, buffer[], style);
+        line.draw(pr, linePos, buffer[], style);
         offset = pen;
 
         return ellipsis.shouldDraw;
     }
 
-    private void drawFragmentWrapped(DrawBuf buf, Point linePos, ref Point offset,
+    private void drawFragmentWrapped(Painter pr, Point linePos, ref Point offset,
         ref const(LineSpan)[] wraps, ref uint i, ref uint start, uint end, TextStyle prevStyle)
     {
         TextStyle nextStyle = void;
@@ -494,20 +495,20 @@ struct TextLine
                 continue;
             // before
             if (start < mu.start)
-                drawSimpleFragmentWrapped(buf, linePos, offset, wraps, start, mu.start, prevStyle);
+                drawSimpleFragmentWrapped(pr, linePos, offset, wraps, start, mu.start, prevStyle);
             // inside
             start = mu.start;
-            drawFragmentWrapped(buf, linePos, offset, wraps, i, start, min(mu.start + mu.count, end), nextStyle);
+            drawFragmentWrapped(pr, linePos, offset, wraps, i, start, min(mu.start + mu.count, end), nextStyle);
         }
         // after
         if (start < end)
         {
-            drawSimpleFragmentWrapped(buf, linePos, offset, wraps, start, end, prevStyle);
+            drawSimpleFragmentWrapped(pr, linePos, offset, wraps, start, end, prevStyle);
             start = end;
         }
     }
 
-    private void drawSimpleFragmentWrapped(DrawBuf buf, Point linePos, ref Point offset,
+    private void drawSimpleFragmentWrapped(Painter pr, Point linePos, ref Point offset,
         ref const(LineSpan)[] wraps, uint start, uint end, ref TextStyle style)
     {
         assert(start < end);
@@ -547,12 +548,12 @@ struct TextLine
                 if (auto g = fg.glyph)
                 {
                     const p = Point(xpen + g.originX, ypen + fg.baseline - g.originY);
-                    buffer ~= GlyphInstance(g, p);
+                    buffer ~= GlyphInstance(g, linePos + p);
                 }
                 xpen += fg.width;
             }
             line.width = xpen - line.dx;
-            line.draw(buf, linePos, buffer[], style);
+            line.draw(pr, linePos, buffer[], style);
             buffer.clear();
         }
         if (passed > 0)
@@ -589,7 +590,7 @@ private struct SimpleLine
     int height;
     int baseline;
 
-    void draw(DrawBuf buf, const Point pos, const GlyphInstance[] glyphs, ref TextStyle style)
+    void draw(Painter pr, const Point pos, const GlyphInstance[] glyphs, ref TextStyle style)
     {
         // preform actual drawing
         const x = pos.x + dx;
@@ -597,8 +598,7 @@ private struct SimpleLine
         // background
         if (!style.background.isFullyTransparent)
         {
-            const r = Rect(x, y, x + width, y + height);
-            buf.fillRect(r, style.background);
+            pr.fillRect(x, y, width, height, style.background);
         }
         // decorations
         const decorThickness = 1 + height / 24;
@@ -606,24 +606,21 @@ private struct SimpleLine
         if (style.decoration.line & TextDecorLine.under)
         {
             const int underlineY = y + baseline + decorThickness;
-            const r = Rect(x, underlineY, x + width, underlineY + decorThickness);
-            buf.fillRect(r, decorColor);
+            pr.fillRect(x, underlineY, width, decorThickness, decorColor);
         }
         if (style.decoration.line & TextDecorLine.over)
         {
             const int overlineY = y;
-            const r = Rect(x, overlineY, x + width, overlineY + decorThickness);
-            buf.fillRect(r, decorColor);
+            pr.fillRect(x, overlineY, width, decorThickness, decorColor);
         }
         // text goes after overline and underline
-        buf.drawText(pos.x, pos.y, glyphs, style.color);
+        pr.drawText(glyphs, style.color);
         // line-through goes over the text
         if (style.decoration.line & TextDecorLine.through)
         {
             const xheight = style.font.getCharGlyph('x').blackBoxY;
             const lineThroughY = y + baseline - xheight / 2 - decorThickness;
-            const r = Rect(x, lineThroughY, x + width, lineThroughY + decorThickness);
-            buf.fillRect(r, decorColor);
+            pr.fillRect(x, lineThroughY, width, decorThickness, decorColor);
         }
     }
 }

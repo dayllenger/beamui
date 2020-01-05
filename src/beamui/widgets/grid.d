@@ -43,6 +43,9 @@ module beamui.widgets.grid;
 import std.container.rbtree;
 import beamui.core.config;
 import beamui.core.stdaction;
+import beamui.graphics.brush : Brush;
+import beamui.graphics.path : Path;
+import beamui.graphics.pen : Pen;
 import beamui.text.simple : drawSimpleText;
 import beamui.text.sizetest;
 import beamui.widgets.controls;
@@ -167,7 +170,7 @@ interface CustomGridCellAdapter
     /// Returns cell size
     Size measureCell(int col, int row) const;
     /// Draw data cell content
-    void drawCell(DrawBuf buf, Box b, int col, int row);
+    void drawCell(Painter pr, Box b, int col, int row);
 }
 
 interface GridModelAdapter
@@ -1907,7 +1910,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         invalidate();
     }
 
-    override protected void drawClient(DrawBuf buf)
+    override protected void drawClient(Painter pr)
     {
         if (!_cols || !_rows)
             return; // no cells
@@ -1932,34 +1935,37 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                     {
                         cellBox.w--;
                     }
-                    Box clippedCellBox = cellBox;
+                    Box clipped = cellBox;
                     if (x >= nscols && cellBox.x < nspixels.w)
-                        clippedCellBox.x = nspixels.w; // clip scrolled left
+                        clipped.x = nspixels.w; // clip scrolled left
                     if (y >= nsrows && cellBox.y < nspixels.h)
-                        clippedCellBox.y = nspixels.h; // clip scrolled left
-                    if (clippedCellBox.empty)
+                        clipped.y = nspixels.h; // clip scrolled left
+                    if (clipped.empty)
                         continue; // completely clipped out
 
                     cellBox.x += clientBox.x;
                     cellBox.y += clientBox.y;
-                    clippedCellBox.x += clientBox.x;
-                    clippedCellBox.y += clientBox.y;
+                    clipped.x += clientBox.x;
+                    clipped.y += clientBox.y;
 
-                    auto cellSaver = ClipRectSaver(buf, clippedCellBox);
-                    bool isHeader = x < _headerCols || y < _headerRows;
+                    PaintSaver sv;
+                    pr.save(sv);
+                    pr.clipIn(clipped);
+
+                    const bool isHeader = x < _headerCols || y < _headerRows;
                     if (phase == 0)
                     {
                         if (isHeader)
-                            drawHeaderCellBackground(buf, cellBox, x - _headerCols, y - _headerRows);
+                            drawHeaderCellBackground(pr, cellBox, x - _headerCols, y - _headerRows);
                         else
-                            drawCellBackground(buf, cellBox, x - _headerCols, y - _headerRows);
+                            drawCellBackground(pr, cellBox, x - _headerCols, y - _headerRows);
                     }
                     else
                     {
                         if (isHeader)
-                            drawHeaderCell(buf, cellBox, x - _headerCols, y - _headerRows);
+                            drawHeaderCell(pr, cellBox, x - _headerCols, y - _headerRows);
                         else
-                            drawCell(buf, cellBox, x - _headerCols, y - _headerRows);
+                            drawCell(pr, cellBox, x - _headerCols, y - _headerRows);
                     }
                 }
             }
@@ -1967,25 +1973,25 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Draw data cell content
-    protected void drawCell(DrawBuf buf, Box b, int col, int row)
+    protected void drawCell(Painter pr, Box b, int col, int row)
     {
         // override it
     }
 
     /// Draw header cell content
-    protected void drawHeaderCell(DrawBuf buf, Box b, int col, int row)
+    protected void drawHeaderCell(Painter pr, Box b, int col, int row)
     {
         // override it
     }
 
     /// Draw data cell background
-    protected void drawCellBackground(DrawBuf buf, Box b, int col, int row)
+    protected void drawCellBackground(Painter pr, Box b, int col, int row)
     {
         // override it
     }
 
     /// Draw header cell background
-    protected void drawHeaderCellBackground(DrawBuf buf, Box b, int col, int row)
+    protected void drawHeaderCellBackground(Painter pr, Box b, int col, int row)
     {
         // override it
     }
@@ -2093,10 +2099,10 @@ class StringGridWidget : StringGridWidgetBase
         return sz;
     }
 
-    override protected void drawCell(DrawBuf buf, Box b, int col, int row)
+    override protected void drawCell(Painter pr, Box b, int col, int row)
     {
         if (_customCellAdapter && _customCellAdapter.isCustomCell(col, row))
-            return _customCellAdapter.drawCell(buf, b, col, row);
+            return _customCellAdapter.drawCell(pr, b, col, row);
 
         static if (BACKEND_GUI)
             b.shrink(Insets(1, 2));
@@ -2105,10 +2111,10 @@ class StringGridWidget : StringGridWidgetBase
 
         dstring txt = cellText(col, row);
         const offset = BACKEND_CONSOLE ? 0 : 1;
-        drawSimpleText(buf, txt, b.x + offset, b.y + offset, font.get, style.textColor);
+        drawSimpleText(pr, txt, b.x + offset, b.y + offset, font.get, style.textColor);
     }
 
-    override protected void drawHeaderCell(DrawBuf buf, Box b, int col, int row)
+    override protected void drawHeaderCell(Painter pr, Box b, int col, int row)
     {
         static if (BACKEND_GUI)
             b.shrink(Insets(1, 2));
@@ -2132,10 +2138,10 @@ class StringGridWidget : StringGridWidgetBase
         const cb = alignBox(b, sz, ha | Align.vcenter);
         const offset = BACKEND_CONSOLE ? 0 : 1;
         const cl = currentTheme.getColor("grid_cell_text_header", style.textColor);
-        drawSimpleText(buf, txt, cb.x + offset, cb.y + offset, fnt, cl);
+        drawSimpleText(pr, txt, cb.x + offset, cb.y + offset, fnt, cl);
     }
 
-    override protected void drawHeaderCellBackground(DrawBuf buf, Box b, int c, int r)
+    override protected void drawHeaderCellBackground(Painter pr, Box b, int c, int r)
     {
         bool selectedCol = (c == col) && !_rowSelect;
         bool selectedRow = r == row;
@@ -2162,22 +2168,22 @@ class StringGridWidget : StringGridWidgetBase
                 dw = _cellHeaderSelectedBackgroundDrawable;
             }
         }
-        Rect rc = b;
         if (!dw.isNull)
-            dw.drawTo(buf, b);
+            dw.drawTo(pr, b);
         else
-            buf.fillRect(rc, cl);
+            pr.fillRect(b.x, b.y, b.w, b.h, cl);
         static if (BACKEND_GUI)
         {
-            Color borderColor = _cellHeaderBorderColor;
+            const Rect rc = b;
+            const borderColor = _cellHeaderBorderColor;
             // vertical
-            buf.drawLine(Point(rc.right, rc.bottom), Point(rc.right, rc.top), borderColor);
+            pr.drawLine(rc.right, rc.bottom, rc.right, rc.top, borderColor);
             // horizontal
-            buf.drawLine(Point(rc.left, rc.bottom), Point(rc.right, rc.bottom), borderColor);
+            pr.drawLine(rc.left, rc.bottom, rc.right, rc.bottom, borderColor);
         }
     }
 
-    override protected void drawCellBackground(DrawBuf buf, Box b, int c, int r)
+    override protected void drawCellBackground(Painter pr, Box b, int c, int r)
     {
         bool selectedCol = c == col;
         bool selectedRow = r == row;
@@ -2189,36 +2195,55 @@ class StringGridWidget : StringGridWidgetBase
             selectedCell = PointI(c, r) in _selection || (_rowSelect && PointI(0, r) in _selection);
         }
 
-        Rect rc = b;
         Color borderColor = _cellBorderColor;
         if (c < fixedCols || r < fixedRows)
         {
             // fixed cell background
-            buf.fillRect(rc, _fixedCellBackgroundColor);
+            pr.fillRect(b.x, b.y, b.w, b.h, _fixedCellBackgroundColor);
             borderColor = _fixedCellBorderColor;
         }
         static if (BACKEND_GUI)
         {
+            const Rect rc = b;
             // vertical
-            buf.drawLine(Point(rc.right, rc.bottom), Point(rc.right, rc.top), borderColor);
+            pr.drawLine(rc.right, rc.bottom, rc.right, rc.top, borderColor);
             // horizontal
-            buf.drawLine(Point(rc.left, rc.bottom), Point(rc.right, rc.bottom), borderColor);
-        }
-        if (selectedCell)
-        {
-            static if (BACKEND_GUI)
+            pr.drawLine(rc.left, rc.bottom, rc.right, rc.bottom, borderColor);
+
+            if (selectedCell)
             {
+                static Path path;
+                path.reset();
                 if (_rowSelect)
-                    buf.drawFrame(rc, _selectionColorRowSelect, Insets(1, 0), _cellBorderColor);
+                {
+                    const border = Brush.fromSolid(_selectionColorRowSelect);
+                    pr.fillRect(b.x, b.y, b.w, b.h, _cellBorderColor);
+                    path.moveTo(rc.left, rc.top).lineTo(rc.right, rc.top);
+                    pr.stroke(path, border, Pen(2));
+                    path.translate(0, rc.height);
+                    pr.stroke(path, border, Pen(2));
+                }
                 else
-                    buf.drawFrame(rc, _selectionColor, Insets(1), _cellBorderColor);
+                {
+                    const border = Brush.fromSolid(_selectionColor);
+                    pr.fillRect(b.x, b.y, b.w, b.h, _cellBorderColor);
+                    path.moveTo(rc.left, rc.top)
+                        .lineTo(rc.right, rc.top)
+                        .lineTo(rc.right, rc.bottom)
+                        .lineTo(rc.left, rc.bottom)
+                        .close();
+                    pr.stroke(path, border, Pen(2));
+                }
             }
-            else
+        }
+        else
+        {
+            if (selectedCell)
             {
                 if (_rowSelect)
-                    buf.fillRect(rc, _selectionColorRowSelect);
+                    pr.fillRect(b.x, b.y, b.w, b.h, _selectionColorRowSelect);
                 else
-                    buf.fillRect(rc, _selectionColor);
+                    pr.fillRect(b.x, b.y, b.w, b.h, _selectionColor);
             }
         }
     }

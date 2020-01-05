@@ -63,14 +63,14 @@ class ImageWidget : Widget
         setBoundaries(Boundaries(sz, sz));
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
         DrawableRef img = _drawable;
         if (!img.isNull)
         {
             const sz = Size(img.width, img.height);
             const ib = alignBox(innerBox, sz, Align.center);
-            img.drawTo(buf, ib);
+            img.drawTo(pr, ib);
         }
     }
 }
@@ -350,16 +350,19 @@ class RadioButton : CheckBox
 /// Canvas widget - draw arbitrary graphics on it either by overriding of `doDraw()` or by setting `onDraw`
 class CanvasWidget : Widget
 {
-    Listener!(void delegate(DrawBuf buf, Box area)) onDraw;
+    Listener!(void delegate(Painter painter, Size size)) onDraw;
 
-    void doDraw(DrawBuf buf, Box area)
+    void doDraw(Painter pr, Size size)
     {
         if (onDraw.assigned)
-            onDraw(buf, area);
+            onDraw(pr, size);
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
-        doDraw(buf, innerBox);
+        const b = innerBox;
+        pr.clipIn(b);
+        pr.translate(b.x, b.y);
+        doDraw(pr, b.size);
     }
 }

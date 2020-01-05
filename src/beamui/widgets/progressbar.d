@@ -166,10 +166,11 @@ class ProgressBar : Widget
         setBoundaries(bs);
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
         const b = innerBox;
-        const sv = ClipRectSaver(buf, b);
+        pr.clipIn(b);
+
         DrawableRef animDrawable;
         if (_data.progress >= 0)
         {
@@ -178,7 +179,7 @@ class ProgressBar : Widget
             int w = _data.progress * b.w / PROGRESS_MAX;
             if (!gaugeDrawable.isNull)
             {
-                gaugeDrawable.drawTo(buf, Box(b.x, b.y, w, b.h));
+                gaugeDrawable.drawTo(pr, Box(b.x, b.y, w, b.h));
             }
         }
         else
@@ -186,7 +187,7 @@ class ProgressBar : Widget
             DrawableRef indeterminateDrawable = currentTheme.getDrawable("progress_bar_indeterminate");
             if (!indeterminateDrawable.isNull)
             {
-                indeterminateDrawable.drawTo(buf, b);
+                indeterminateDrawable.drawTo(pr, b);
             }
             animDrawable = currentTheme.getDrawable("progress_bar_indeterminate_animation");
         }
@@ -196,7 +197,7 @@ class ProgressBar : Widget
                 scheduleAnimation();
             int w = animDrawable.width;
             _animationPhase %= w * 1000;
-            animDrawable.drawTo(buf, b, cast(int)(_animationPhase * _animationSpeedPixelsPerSecond / 1000), 0);
+            animDrawable.drawTo(pr, b, cast(int)(_animationPhase * _animationSpeedPixelsPerSecond / 1000), 0);
         }
     }
 }

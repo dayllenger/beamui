@@ -26,6 +26,8 @@ import beamui.core.logger;
 import beamui.core.math;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
+import beamui.graphics.painter : PaintEngine;
+import beamui.graphics.swpainter;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 import beamui.widgets.widget : CursorType;
@@ -303,7 +305,9 @@ final class X11Window : DWindow
             GLXContext _glc;
 
         dstring _title;
-        DrawBuf _drawbuf;
+
+        PaintEngine _paintEngine;
+        ColorDrawBuf _backbuffer;
 
         // sync counter is needed to gain smooth window resize
         XSyncCounter syncCounter;
@@ -336,7 +340,8 @@ final class X11Window : DWindow
     {
         XSyncDestroyCounter(x11display, syncCounter);
 
-        eliminate(_drawbuf);
+        eliminate(_paintEngine);
+        eliminate(_backbuffer);
         if (_gc)
         {
             XFreeGC(x11display, _gc);
@@ -734,45 +739,41 @@ final class X11Window : DWindow
         if (openglEnabled)
         {
             static if (USE_OPENGL)
-                drawUsingOpenGL(_drawbuf);
+                drawUsingOpenGL(_paintEngine);
         }
         else
             drawUsingBitmap();
     }
 
     private void drawUsingBitmap()
+        in(width > 0 && height > 0)
     {
-        if (width > 0 && height > 0)
+        if (!_paintEngine)
         {
-            // prepare drawbuf
-            if (!_drawbuf)
-                _drawbuf = new ColorDrawBuf(width, height);
-            else
-                _drawbuf.resize(width, height);
-            _drawbuf.resetClipping();
-            // draw widgets into buffer
-            _drawbuf.fill(backgroundColor);
-            draw(_drawbuf);
-            // draw buffer on X11 window
-            XImage img;
-            img.width = _drawbuf.width;
-            img.height = _drawbuf.height;
-            img.xoffset = 0;
-            img.format = ZPixmap;
-            img.data = cast(char*)(cast(ColorDrawBuf)_drawbuf).scanLine(0);
-            img.bitmap_unit = 32;
-            img.bitmap_pad = 32;
-            img.bitmap_bit_order = LSBFirst;
-            img.depth = 24;
-            img.chars_per_line = _drawbuf.width * 4;
-            img.bits_per_pixel = 32;
-            img.red_mask = 0xFF0000;
-            img.green_mask = 0x00FF00;
-            img.blue_mask = 0x0000FF;
-            XInitImage(&img);
-            XPutImage(x11display, _win, _gc, &img, 0, 0, 0, 0, _drawbuf.width, _drawbuf.height);
-            // no need to flush since it will be called in event loop
+            // create stuff on the first run
+            _backbuffer = new ColorDrawBuf(1, 1);
+            _paintEngine = new SWPaintEngine(_backbuffer);
         }
+        draw(_paintEngine);
+        // draw buffer on X11 window
+        XImage img;
+        img.width = _backbuffer.width;
+        img.height = _backbuffer.height;
+        img.xoffset = 0;
+        img.format = ZPixmap;
+        img.data = cast(char*)_backbuffer.scanLine(0);
+        img.bitmap_unit = 32;
+        img.bitmap_pad = 32;
+        img.bitmap_bit_order = LSBFirst;
+        img.depth = 24;
+        img.chars_per_line = _backbuffer.width * 4;
+        img.bits_per_pixel = 32;
+        img.red_mask = 0xFF0000;
+        img.green_mask = 0x00FF00;
+        img.blue_mask = 0x0000FF;
+        XInitImage(&img);
+        XPutImage(x11display, _win, _gc, &img, 0, 0, 0, 0, _backbuffer.width, _backbuffer.height);
+        // no need to flush since it will be called in event loop
     }
 
     static if (USE_OPENGL)

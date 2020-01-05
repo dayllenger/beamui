@@ -18,7 +18,8 @@ import beamui.core.functions;
 import beamui.core.logger;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf;
-import beamui.graphics.resources;
+import beamui.graphics.painter : PaintEngine;
+import beamui.graphics.swpainter;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 import beamui.text.fonts;
@@ -50,7 +51,9 @@ final class SDLWindow : Window
         SDL_Renderer* _renderer;
 
         dstring _title;
-        DrawBuf _drawbuf;
+
+        PaintEngine _paintEngine;
+        ColorDrawBuf _backbuffer;
     }
 
     this(SDLPlatform platform, dstring caption, Window parent, WindowOptions options, uint w = 0, uint h = 0)
@@ -78,7 +81,8 @@ final class SDLWindow : Window
             SDL_DestroyRenderer(_renderer);
         if (_win)
             SDL_DestroyWindow(_win);
-        eliminate(_drawbuf);
+        eliminate(_paintEngine);
+        eliminate(_backbuffer);
     }
 
     private bool create()
@@ -497,30 +501,23 @@ final class SDLWindow : Window
         if (openglEnabled)
         {
             static if (USE_OPENGL)
-                drawUsingOpenGL(_drawbuf);
+                drawUsingOpenGL(_paintEngine);
         }
         else
         {
-            Color c = backgroundColor;
-            SDL_SetRenderDrawColor(_renderer, c.r, c.g, c.b, 255);
-            SDL_RenderClear(_renderer);
-
-            const pw = physicalWidth;
-            const ph = physicalHeight;
-            if (!_drawbuf)
-                _drawbuf = new ColorDrawBuf(pw, ph);
-            else
-                _drawbuf.resize(pw, ph);
-            _drawbuf.fill(c);
-
-            draw(_drawbuf);
+            if (!_paintEngine)
+            {
+                // create stuff on the first run
+                _backbuffer = new ColorDrawBuf(1, 1);
+                _paintEngine = new SWPaintEngine(_backbuffer);
+            }
+            draw(_paintEngine);
 
             SDL_Rect rect;
-            rect.w = _drawbuf.width;
-            rect.h = _drawbuf.height;
+            rect.w = _backbuffer.width;
+            rect.h = _backbuffer.height;
             updateTextureSize(rect.w, rect.h);
-            SDL_UpdateTexture(_texture, &rect, cast(const void*)(cast(ColorDrawBuf)_drawbuf).scanLine(0),
-                _drawbuf.width * cast(int)uint.sizeof);
+            SDL_UpdateTexture(_texture, &rect, cast(const void*)_backbuffer.scanLine(0), _backbuffer.width * 4);
             SDL_RenderCopy(_renderer, _texture, &rect, &rect);
             SDL_RenderPresent(_renderer);
         }

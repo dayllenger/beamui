@@ -561,7 +561,7 @@ class TabControl : WidgetGroup
         }
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
         // draw all items except selected
         int selected = -1;
@@ -575,11 +575,11 @@ class TabControl : WidgetGroup
                 selected = i;
                 continue;
             }
-            item.draw(buf);
+            item.draw(pr);
         }
         // draw selected item
         if (selected >= 0)
-            child(selected).draw(buf);
+            child(selected).draw(pr);
     }
 }
 

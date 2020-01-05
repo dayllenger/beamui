@@ -14,9 +14,6 @@ beamui.platforms.ansi_console.consolefont - console font manager (with single fo
 
 beamui.platforms.windows.win32fonts - Win32 API based font manager.
 
-
-See_Also: $(LINK2 $(DDOX_ROOT_DIR)beamui/graphics/drawbuf.html, DrawBuf)
-
 Synopsis:
 ---
 // find suitable font of size 25, normal, preferrable Arial, or, if not available, any SansSerif font

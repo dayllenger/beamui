@@ -282,42 +282,42 @@ class SourceEdit : EditBox
             _leftPaneWidth += BACKEND_CONSOLE ? 1 : 3;
     }
 
-    override protected void drawLeftPane(DrawBuf buf, Rect rc, int line)
+    override protected void drawLeftPane(Painter pr, Rect rc, int line)
     {
-        buf.fillRect(rc, _leftPaneBgColor);
+        pr.fillRect(rc.left, rc.top, rc.width, rc.height, _leftPaneBgColor);
         rc.right -= BACKEND_CONSOLE ? 1 : 3;
         if (_foldingWidth)
         {
             Rect rc2 = rc;
             rc.right = rc2.left = rc2.right - _foldingWidth;
-            drawLeftPaneFolding(buf, rc2, line);
+            drawLeftPaneFolding(pr, rc2, line);
         }
         if (_modificationMarksWidth)
         {
             Rect rc2 = rc;
             rc.right = rc2.left = rc2.right - _modificationMarksWidth;
-            drawLeftPaneModificationMarks(buf, rc2, line);
+            drawLeftPaneModificationMarks(pr, rc2, line);
         }
         if (_lineNumbersWidth)
         {
             Rect rc2 = rc;
             rc.right = rc2.left = rc2.right - _lineNumbersWidth;
-            drawLeftPaneLineNumbers(buf, rc2, line);
+            drawLeftPaneLineNumbers(pr, rc2, line);
         }
         if (_iconsWidth)
         {
             Rect rc2 = rc;
             rc.right = rc2.left = rc2.right - _iconsWidth;
-            drawLeftPaneIcons(buf, rc2, line);
+            drawLeftPaneIcons(pr, rc2, line);
         }
     }
 
-    protected void drawLeftPaneFolding(DrawBuf buf, Rect rc, int line)
+    protected void drawLeftPaneFolding(Painter pr, Rect rc, int line)
     {
-        buf.fillRect(rc, _leftPaneBgColor2);
+        pr.fillRect(rc.left, rc.top, rc.width, rc.height, _leftPaneBgColor2);
     }
 
-    protected void drawLeftPaneModificationMarks(DrawBuf buf, Rect rc, int line)
+    protected void drawLeftPaneModificationMarks(Painter pr, Rect rc, int line)
     {
         if (0 <= line && line < content.lineCount)
         {
@@ -325,22 +325,22 @@ class SourceEdit : EditBox
             if (m == EditStateMark.changed)
             {
                 // modified, not saved
-                buf.fillRect(rc, Color(0xFFD040));
+                pr.fillRect(rc.left, rc.top, rc.width, rc.height, Color(0xFFD040));
             }
             else if (m == EditStateMark.saved)
             {
                 // modified, saved
-                buf.fillRect(rc, Color(0x20C020));
+                pr.fillRect(rc.left, rc.top, rc.width, rc.height, Color(0x20C020));
             }
         }
     }
 
-    protected void drawLeftPaneLineNumbers(DrawBuf buf, Rect rc, int line)
+    protected void drawLeftPaneLineNumbers(Painter pr, Rect rc, int line)
     {
         Color bgcolor = _leftPaneLineNumBgColor;
         if (line == caretPos.line && !_leftPaneLineNumBgColorCurrLine.isFullyTransparent)
             bgcolor = _leftPaneLineNumBgColorCurrLine;
-        buf.fillRect(rc, bgcolor);
+        pr.fillRect(rc.left, rc.top, rc.width, rc.height, bgcolor);
         if (line < 0)
             return;
 
@@ -365,31 +365,31 @@ class SourceEdit : EditBox
                 st.color = _leftPaneLineNumColorSaved;
             }
         }
-        drawSimpleText(buf, s, rc.left, rc.top, rc.width, st);
+        drawSimpleText(pr, s, rc.left, rc.top, rc.width, st);
     }
 
-    protected void drawLeftPaneIcons(DrawBuf buf, Rect rc, int line)
+    protected void drawLeftPaneIcons(Painter pr, Rect rc, int line)
     {
-        buf.fillRect(rc, _leftPaneBgColor3);
-        drawLeftPaneIcon(buf, rc, content.lineIcons.findByLineAndType(line, LineIconType.error));
-        drawLeftPaneIcon(buf, rc, content.lineIcons.findByLineAndType(line, LineIconType.bookmark));
-        drawLeftPaneIcon(buf, rc, content.lineIcons.findByLineAndType(line, LineIconType.breakpoint));
+        pr.fillRect(rc.left, rc.top, rc.width, rc.height, _leftPaneBgColor3);
+        drawLeftPaneIcon(pr, rc, content.lineIcons.findByLineAndType(line, LineIconType.error));
+        drawLeftPaneIcon(pr, rc, content.lineIcons.findByLineAndType(line, LineIconType.bookmark));
+        drawLeftPaneIcon(pr, rc, content.lineIcons.findByLineAndType(line, LineIconType.breakpoint));
     }
 
-    protected void drawLeftPaneIcon(DrawBuf buf, Rect rc, LineIcon icon)
+    protected void drawLeftPaneIcon(Painter pr, Rect rc, LineIcon icon)
     {
         if (!icon)
             return;
         if (icon.type == LineIconType.error)
         {
-            buf.fillRect(rc, _colorIconError);
+            pr.fillRect(rc.left, rc.top, rc.width, rc.height, _colorIconError);
         }
         else if (icon.type == LineIconType.bookmark)
         {
             int dh = rc.height / 4;
             rc.top += dh;
             rc.bottom -= dh;
-            buf.fillRect(rc, _colorIconBookmark);
+            pr.fillRect(rc.left, rc.top, rc.width, rc.height, _colorIconBookmark);
         }
         else if (icon.type == LineIconType.breakpoint)
         {
@@ -411,7 +411,7 @@ class SourceEdit : EditBox
             int dw = rc.width / 5;
             rc.left += dw;
             rc.right -= dw;
-            buf.fillRect(rc, _colorIconBreakpoint);
+            pr.fillRect(rc.left, rc.top, rc.width, rc.height, _colorIconBreakpoint);
         }
     }
 }

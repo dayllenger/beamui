@@ -28,6 +28,8 @@ import beamui.core.logger;
 import beamui.core.signals;
 import beamui.graphics.drawbuf;
 import beamui.graphics.images;
+import beamui.graphics.painter : PaintEngine;
+import beamui.graphics.swpainter;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 import beamui.platforms.windows.win32drawbuf;
@@ -199,7 +201,9 @@ final class Win32Window : Window
         HWND _hwnd;
 
         dstring _title;
-        DrawBuf _drawbuf;
+
+        PaintEngine _paintEngine;
+        Win32ColorDrawBuf _backbuffer;
 
         bool _destroying;
     }
@@ -276,7 +280,8 @@ final class Win32Window : Window
     ~this()
     {
         _destroying = true;
-        eliminate(_drawbuf);
+        eliminate(_paintEngine);
+        eliminate(_backbuffer);
 
         if (_hwnd)
             DestroyWindow(_hwnd);
@@ -688,17 +693,15 @@ final class Win32Window : Window
         scope (exit)
             EndPaint(_hwnd, &ps);
 
-        const pw = physicalWidth;
-        const ph = physicalHeight;
-        if (!_drawbuf)
-            _drawbuf = new Win32ColorDrawBuf(pw, ph);
-        else
-            _drawbuf.resize(pw, ph);
-        _drawbuf.resetClipping();
+        if (!_paintEngine)
+        {
+            // create stuff on the first run
+            _backbuffer = new Win32ColorDrawBuf(1, 1);
+            _paintEngine = new SWPaintEngine(_backbuffer);
+        }
+        draw(_paintEngine);
 
-        _drawbuf.fill(backgroundColor);
-        draw(_drawbuf);
-        (cast(Win32ColorDrawBuf)_drawbuf).drawTo(device, 0, 0);
+        _backbuffer.drawTo(device, 0, 0);
     }
 
     static if (USE_OPENGL)
@@ -746,7 +749,7 @@ final class Win32Window : Window
             HDC hdc2 = BeginPaint(_hwnd, &ps);
             EndPaint(_hwnd, &ps); // FIXME: scope(exit)?
 
-            drawUsingOpenGL(_drawbuf);
+            drawUsingOpenGL(_paintEngine);
         }
     }
 

@@ -315,9 +315,9 @@ class DockHost : WidgetGroup
         _bodyWidget.maybe.layout(inner.shrinked(sp));
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
-        drawAllChildren(buf);
+        drawAllChildren(pr);
     }
 }
 

@@ -357,7 +357,7 @@ class SimpleBarChart : Widget
             (_showTitle ? _title.size.h + _marginAfterTitle : 0);
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
         const b = innerBox;
 
@@ -374,23 +374,19 @@ class SimpleBarChart : Widget
             // align to the center of chart view
             _title.style.color = style.textColor;
             _title.style.alignment = TextAlign.center;
-            _title.draw(buf, x1, b.y, x2 - x1);
+            _title.draw(pr, x1, b.y, x2 - x1);
         }
 
         // draw axes
-        buf.fillRect(Rect(x1, y1, x2, y2), _backgroundColor);
-
+        pr.fillRect(x1, y1, x2 - x1, y2 - y1, _backgroundColor);
         // y axis
-        buf.drawLine(Point(x1, y1), Point(x1, y2), _axisColor);
-
+        pr.drawLine(x1, y1, x1, y2, _axisColor);
         // x axis
-        buf.drawLine(Point(x1, y2 - 1), Point(x2, y2 - 1), _axisColor);
-
+        pr.drawLine(x1, y2, x2, y2, _axisColor);
         // top line - will be optional in the future
-        buf.drawLine(Point(x1, y1), Point(x2, y1), _axisColor);
-
+        pr.drawLine(x1, y1, x2, y1, _axisColor);
         // right line - will be optional in the future
-        buf.drawLine(Point(x2 - 1, y1), Point(x2 - 1, y2), _axisColor);
+        pr.drawLine(x2, y1, x2, y2, _axisColor);
 
         // draw bars
 
@@ -400,18 +396,21 @@ class SimpleBarChart : Widget
         foreach (ref bar; _bars)
         {
             // draw bar
-            buf.fillRect(Rect(firstBarX, firstBarY - barYValueToPixels(_axisY.lengthFromZeroToArrow,
-                    bar.y), firstBarX + _barWidth, firstBarY), bar.color);
+            const h = barYValueToPixels(_axisY.lengthFromZeroToArrow, bar.y);
+            pr.fillRect(firstBarX, firstBarY - h, _barWidth, h, bar.color);
 
             // draw x axis segment under bar
-            buf.drawLine(Point(firstBarX + _barWidth / 2, y2), Point(firstBarX + _barWidth / 2,
-                    y2 + _axisX.segmentTagLength), _segmentTagColor);
+            pr.drawLine(
+                firstBarX + _barWidth / 2, y2,
+                firstBarX + _barWidth / 2, y2 + _axisX.segmentTagLength,
+                _segmentTagColor,
+            );
 
             // draw x axis description
             bar.title.style.color = style.textColor;
             bar.title.style.alignment = TextAlign.center;
             int yoffset = (_axisX.maxDescriptionSize.h + bar.title.size.h) / 2;
-            bar.title.draw(buf, firstBarX, b.y + b.h - yoffset, _barWidth);
+            bar.title.draw(pr, firstBarX, b.y + b.h - yoffset, _barWidth);
 
             firstBarX += _barWidth + _barSpacing;
         }
@@ -425,15 +424,15 @@ class SimpleBarChart : Widget
         int axisYWidth = _axisY.maxDescriptionSize.w;
         int horTagStart = b.x + axisYWidth;
 
-        buf.drawLine(Point(horTagStart, yMax), Point(horTagStart + _axisY.segmentTagLength, yMax), _segmentTagColor);
-        buf.drawLine(Point(horTagStart, yAvg), Point(horTagStart + _axisY.segmentTagLength, yAvg), _segmentTagColor);
+        pr.drawLine(horTagStart, yMax, horTagStart + _axisY.segmentTagLength, yMax, _segmentTagColor);
+        pr.drawLine(horTagStart, yAvg, horTagStart + _axisY.segmentTagLength, yAvg, _segmentTagColor);
 
         _axisYMaxValueDesc.style.color = style.textColor;
         _axisYAvgValueDesc.style.color = style.textColor;
         _axisYMaxValueDesc.style.alignment = TextAlign.end;
         _axisYAvgValueDesc.style.alignment = TextAlign.end;
-        _axisYMaxValueDesc.draw(buf, b.x, yMax - _axisY.maxDescriptionSize.h / 2, axisYWidth);
-        _axisYAvgValueDesc.draw(buf, b.x, yAvg - _axisY.maxDescriptionSize.h / 2, axisYWidth);
+        _axisYMaxValueDesc.draw(pr, b.x, yMax - _axisY.maxDescriptionSize.h / 2, axisYWidth);
+        _axisYAvgValueDesc.draw(pr, b.x, yAvg - _axisY.maxDescriptionSize.h / 2, axisYWidth);
     }
 
     protected int barYValueToPixels(int axisInPixels, double barYValue)

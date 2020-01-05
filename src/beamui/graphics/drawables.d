@@ -15,7 +15,7 @@ module beamui.graphics.drawables;
 import std.string;
 import beamui.core.config;
 import beamui.core.functions;
-import beamui.core.linalg : Vec2;
+import beamui.core.linalg : Vec2, Mat2x3;
 import beamui.core.logger;
 import beamui.core.math;
 import beamui.core.types;
@@ -23,7 +23,7 @@ import beamui.core.units;
 import beamui.graphics.brush;
 import beamui.graphics.colors;
 import beamui.graphics.drawbuf;
-import beamui.graphics.painter : Painter;
+import beamui.graphics.painter : Painter, PaintSaver;
 import beamui.graphics.path;
 import beamui.graphics.resources;
 static if (BACKEND_GUI)
@@ -54,7 +54,8 @@ class Drawable : RefCountedObject
             Log.d("Destroyed drawable ", getShortClassName(this), ", count: ", _instanceCount);
     }
 
-    abstract void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0);
+    abstract void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0);
+
     abstract @property int width() const;
     abstract @property int height() const;
     @property Insets padding() const
@@ -67,7 +68,7 @@ alias DrawableRef = Ref!Drawable;
 
 class EmptyDrawable : Drawable
 {
-    override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
     {
     }
 
@@ -91,10 +92,9 @@ class SolidFillDrawable : Drawable
         _color = color;
     }
 
-    override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
     {
-        if (!_color.isFullyTransparent)
-            buf.fillRect(Rect(b), _color);
+        pr.fillRect(b.x, b.y, b.w, b.h, _color);
     }
 
     override @property int width() const
@@ -110,61 +110,27 @@ class SolidFillDrawable : Drawable
 
 class GradientDrawable : Drawable
 {
-    private Color _color1; // top left
-    private Color _color2; // bottom left
-    private Color _color3; // top right
-    private Color _color4; // bottom right
+    // angle goes clockwise
+    private float _angle = 0;
+    private GradientBuilder _builder;
 
     this(float angle, Color color1, Color color2)
     {
-        // rotate a gradient; angle goes clockwise
-        import std.math;
-
-        float c = cos(angle);
-        float s = sin(angle);
-        if (s >= 0)
-        {
-            if (c >= 0)
-            {
-                // 0-90 degrees
-                _color1 = Color.mix(color2, color1, c);
-                _color2 = color2;
-                _color3 = color1;
-                _color4 = Color.mix(color2, color1, s);
-            }
-            else
-            {
-                // 90-180 degrees
-                _color1 = color2;
-                _color2 = Color.mix(color2, color1, -c);
-                _color3 = Color.mix(color2, color1, s);
-                _color4 = color1;
-            }
-        }
-        else
-        {
-            if (c < 0)
-            {
-                // 180-270 degrees
-                _color1 = Color.mix(color2, color1, -s);
-                _color2 = color1;
-                _color3 = color2;
-                _color4 = Color.mix(color2, color1, -c);
-            }
-            else
-            {
-                // 270-360 degrees
-                _color1 = color1;
-                _color2 = Color.mix(color2, color1, -s);
-                _color3 = Color.mix(color2, color1, c);
-                _color4 = color2;
-            }
-        }
+        _angle = angle;
+        _builder.addStop(0, color1).addStop(1, color2);
     }
 
-    override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
     {
-        buf.fillGradientRect(Rect(b), _color1, _color2, _color3, _color4);
+        static Path path;
+        path.reset();
+        path.lineBy(b.w, 0).lineBy(0, b.h).lineBy(-b.w, 0).close();
+
+        const points = computeGradientLine(b.w, b.h, _angle);
+        const brush = _builder.makeLinear(points[0].x, points[0].y, points[1].x, points[1].y);
+        pr.translate(b.x, b.y);
+        pr.fill(path, brush);
+        pr.translate(-b.x, -b.y);
     }
 
     override @property int width() const
@@ -256,6 +222,7 @@ class BoxShadowDrawable : Drawable
         texture.fillRect(Rect(blurSize, blurSize, size - blurSize, size - blurSize), color);
         // blur the square
         texture.blur(blurSize);
+        texture.preMultiplyAlpha();
         // set 9-patch frame
         const sz = _blurSize * 2;
         texture.ninePatch = new NinePatch(InsetsI(sz), InsetsI(sz));
@@ -266,7 +233,7 @@ class BoxShadowDrawable : Drawable
         eliminate(texture);
     }
 
-    override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
     {
         // move and expand the shadow
         b.x += _offsetX;
@@ -276,13 +243,13 @@ class BoxShadowDrawable : Drawable
         // now draw
         if (_blurSize > 0)
         {
-            buf.drawNinePatch(Rect(b), texture, Rect(0, 0, texture.width, texture.height));
+            pr.drawNinePatch(texture, RectI(0, 0, texture.width, texture.height), RectF.from(Rect(b)), 1);
             // debug
-            // buf.drawFragment(b.x, b.y, texture, Rect(0, 0, texture.width, texture.height));
+            // pr.drawImage(texture, b.x, b.y, 1);
         }
         else
         {
-            buf.fillRect(Rect(b), _color);
+            pr.fillRect(b.x, b.y, b.w, b.h, _color);
         }
     }
 
@@ -553,7 +520,7 @@ static if (BACKEND_CONSOLE)
             return left + (ninewidth - left - right) * (v - left) / (width - left - right);
         }
 
-        override void drawTo(DrawBuf drawbuf, Box b, int tilex0 = 0, int tiley0 = 0)
+        private void drawTo(DrawBuf drawbuf, Box b, int tilex0 = 0, int tiley0 = 0)
         {
             if (!_width || !_height)
                 return; // empty image
@@ -582,6 +549,10 @@ static if (BACKEND_CONSOLE)
                     }
                 }
             }
+        }
+
+        override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
+        {
         }
     }
 }
@@ -641,26 +612,37 @@ class ImageDrawable : Drawable
             return Insets(0);
     }
 
-    override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
     {
         if (_image.isNull)
             return;
-        if (_image.hasNinePatch)
+
+        ColorDrawBuf img = cast(ColorDrawBuf)_image;
+        if (!img)
+            return;
+        assert(img.width > 0 && img.height > 0);
+
+        if (img.hasNinePatch)
         {
-            // draw nine patch
-            buf.drawNinePatch(Rect(b), _image.get, Rect(1, 1, width + 1, height + 1));
+            pr.drawNinePatch(img, RectI(1, 1, img.width - 1, img.height - 1), RectF.from(Rect(b)), 1);
         }
         else if (_tiled)
         {
-            buf.drawTiledImage(Rect(b), _image.get, tilex0, tiley0);
+            static Path path;
+            path.reset();
+            path.lineBy(b.w, 0).lineBy(0, b.h).lineBy(-b.w, 0).close();
+            const brush = Brush.fromPattern(img, Mat2x3.translation(Vec2(tilex0, tiley0)));
+            pr.translate(b.x, b.y);
+            pr.fill(path, brush);
+            pr.translate(-b.x, -b.y);
         }
         else
         {
-            // rescaled or normal
-            if (b.w != _image.width || b.h != _image.height)
-                buf.drawRescaled(Rect(b), _image.get, Rect(0, 0, _image.width, _image.height));
-            else
-                buf.drawImage(b.x, b.y, _image);
+            PaintSaver sv;
+            pr.save(sv);
+            pr.translate(b.x, b.y);
+            pr.scale(b.w / cast(float)img.width, b.h / cast(float)img.height);
+            pr.drawImage(img, 0, 0, 1);
         }
     }
 }
@@ -684,9 +666,9 @@ static if (USE_OPENGL)
                 onDraw(windowRect, rc);
         }
 
-        override void drawTo(DrawBuf buf, Box b, int tilex0 = 0, int tiley0 = 0)
+        override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
         {
-            buf.drawCustomOpenGLScene(Rect(b), &doDraw);
+            // buf.drawCustomOpenGLScene(Rect(b), &doDraw);
         }
 
         override @property int width() const
@@ -811,22 +793,22 @@ class Background
         return image ? image.padding + bs : bs;
     }
 
-    void drawTo(DrawBuf buf, Box b)
+    void drawTo(Painter pr, Box b)
     {
         // shadow
-        shadow.maybe.drawTo(buf, b);
+        shadow.maybe.drawTo(pr, b);
         // make background image smaller to fit borders
-        const bs = border.getSize;
+        const bs = border.getSize();
         Box back = b;
         back.shrink(bs);
         // color
-        if (!color.isFullyTransparent)
-            buf.fillRect(Rect(back), color);
+        pr.fillRect(back.x, back.y, back.w, back.h, color);
         // image
-        image.maybe.drawTo(buf, back);
+        image.maybe.drawTo(pr, back);
         // border
-        if (border.left.style != BorderStyle.none)
-            buf.drawFrame(Rect(b), border.left.color, bs);
+        pr.translate(b.x, b.y);
+        drawBorder(pr, b.size);
+        pr.translate(-b.x, -b.y);
     }
 
     private alias SizeF = SizeOf!float;

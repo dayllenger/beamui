@@ -129,35 +129,34 @@ class GroupBox : Panel
         _caption.layout(b);
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
-        super.drawContent(buf);
+        super.drawContent(pr);
 
-        Box b = box;
-
-        _caption.draw(buf);
+        _caption.draw(pr);
 
         // correct top of the frame to be exactly at the center of the caption
-        int dh = 0;
+        int dh;
         if (_topFrameHeight < _captionHeight)
             dh = (_captionHeight - _topFrameHeight) / 2;
 
+        const b = box;
         DrawableRef upLeftDrawable = currentTheme.getDrawable("group_box_frame_up_left");
         if (!upLeftDrawable.isNull)
         {
-            upLeftDrawable.drawTo(buf, Box(b.x, b.y + dh, _topFrameLeft, _topHeight - dh));
+            upLeftDrawable.drawTo(pr, Box(b.x, b.y + dh, _topFrameLeft, _topHeight - dh));
         }
         DrawableRef upRightDrawable = currentTheme.getDrawable("group_box_frame_up_right");
         if (!upRightDrawable.isNull)
         {
             int cw = _caption.box.w;
-            upRightDrawable.drawTo(buf, Box(b.x + _topFrameLeft + cw, b.y + dh, b.w - _topFrameLeft - cw, _topHeight - dh));
+            upRightDrawable.drawTo(pr, Box(b.x + _topFrameLeft + cw, b.y + dh, b.w - _topFrameLeft - cw, _topHeight - dh));
         }
 
         DrawableRef bottomDrawable = currentTheme.getDrawable("group_box_frame_bottom");
         if (!bottomDrawable.isNull)
         {
-            bottomDrawable.drawTo(buf, Box(b.x, b.y + _topHeight, b.w, b.h - _topHeight));
+            bottomDrawable.drawTo(pr, Box(b.x, b.y + _topHeight, b.w, b.h - _topHeight));
         }
     }
 }

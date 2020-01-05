@@ -554,7 +554,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         }
     }
 
-    override void drawCell(DrawBuf buf, Box b, int col, int row)
+    override void drawCell(Painter pr, Box b, int col, int row)
     {
         if (col == 1)
         {
@@ -567,7 +567,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             Color cl = _fileList.style.textColor;
             if (_entries[row].isDir)
                 cl = currentTheme.getColor("file_dialog_dir_name", cl);
-            drawSimpleText(buf, txt, b.x + offset, b.y + offset, _fileList.font.get, cl);
+            drawSimpleText(pr, txt, b.x + offset, b.y + offset, _fileList.font.get, cl);
             return;
         }
         DrawableRef img = rowIcon(row);
@@ -575,7 +575,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         {
             const sz = Size(img.width, img.height);
             const ib = alignBox(b, sz, Align.center);
-            img.drawTo(buf, ib);
+            img.drawTo(pr, ib);
         }
     }
 
@@ -1078,9 +1078,9 @@ class FilePathPanelButtons : WidgetGroup
         }
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
-        drawAllChildren(buf);
+        drawAllChildren(pr);
     }
 }
 

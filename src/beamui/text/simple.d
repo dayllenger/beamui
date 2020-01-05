@@ -11,10 +11,11 @@ module beamui.text.simple;
 
 import std.array : Appender;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : Point, Size, Rect;
+import beamui.core.geometry : Point, Size, RectF;
 import beamui.core.math : max;
 import beamui.graphics.colors : Color;
-import beamui.graphics.drawbuf : DrawBuf, GlyphInstance;
+import beamui.graphics.drawbuf : GlyphInstance;
+import beamui.graphics.painter : Painter;
 import beamui.text.fonts : Font;
 import beamui.text.glyph : GlyphRef;
 import beamui.text.shaping;
@@ -147,7 +148,7 @@ private struct Line
     }
 
     /// Draw measured line at the position, applying alignment
-    void draw(DrawBuf buf, int x, int y, int boxWidth, ref const TextStyle style)
+    void draw(Painter pr, int x, int y, const int boxWidth, ref const TextStyle style)
     {
         if (str.length == 0)
             return; // nothing to draw - empty text
@@ -157,7 +158,7 @@ private struct Line
 
         const int height = font.height;
         // check visibility
-        Rect clip = buf.clipRect;
+        RectF clip = pr.getLocalClipBounds();
         clip.translate(-x, -y);
         if (height < clip.top || clip.bottom <= 0)
             return; // fully above or below of the clipping rectangle
@@ -256,13 +257,13 @@ private struct Line
             GlyphRef glyph = pglyphs[i].glyph;
             if (glyph && glyph.blackBoxX && glyph.blackBoxY) // null if space or tab
             {
-                const p = Point(current + glyph.originX, baseline - glyph.originY);
+                const p = Point(x + current + glyph.originX, y + baseline - glyph.originY);
                 buffer ~= GlyphInstance(glyph, p);
             }
         }
         if (drawEllipsis)
         {
-            const p = Point(ellipsisPos, baseline - ellipsis.originY);
+            const p = Point(x + ellipsisPos, y + baseline - ellipsis.originY);
             buffer ~= GlyphInstance(ellipsis, p);
         }
 
@@ -274,33 +275,22 @@ private struct Line
         if (underline || charUnderlineW > 0)
         {
             const int underlineY = y + baseline + decorThickness;
-            Rect r = Rect(x, underlineY, x, underlineY + decorThickness);
-            if (underline)
-            {
-                r.right += lineWidth;
-            }
-            else if (charUnderlineW > 0)
-            {
-                r.left += charUnderlinePos;
-                r.right += charUnderlinePos + charUnderlineW;
-            }
-            buf.fillRect(r, decorColor);
+            const int w = underline ? lineWidth : charUnderlineW;
+            pr.fillRect(x, underlineY, w, decorThickness, decorColor);
         }
         if (overline)
         {
             const int overlineY = y;
-            const r = Rect(x, overlineY, x + lineWidth, overlineY + decorThickness);
-            buf.fillRect(r, decorColor);
+            pr.fillRect(x, overlineY, lineWidth, decorThickness, decorColor);
         }
         // text goes after overline and underline
-        buf.drawText(x, y, buffer[], style.color);
+        pr.drawText(buffer[], style.color);
         // line-through goes over the text
         if (lineThrough)
         {
             const xheight = font.getCharGlyph('x').blackBoxY;
             const lineThroughY = y + baseline - xheight / 2 - decorThickness;
-            const r = Rect(x, lineThroughY, x + lineWidth, lineThroughY + decorThickness);
-            buf.fillRect(r, decorColor);
+            pr.fillRect(x, lineThroughY, lineWidth, decorThickness, decorColor);
         }
     }
 }
@@ -427,10 +417,10 @@ struct SimpleText
     }
 
     /// Draw text into buffer. Measures, if needed
-    void draw(DrawBuf buf, int x, int y, int boxWidth)
+    void draw(Painter pr, int x, int y, int boxWidth)
     {
         // skip early if not visible
-        const clip = buf.clipRect;
+        const clip = pr.getLocalClipBounds();
         if (clip.empty || clip.bottom <= y || clip.right <= x)
             return;
 
@@ -444,17 +434,17 @@ struct SimpleText
 
         foreach (ref line; lns)
         {
-            line.draw(buf, x, y, boxWidth, style);
+            line.draw(pr, x, y, boxWidth, style);
             y += lineHeight;
         }
     }
 
-    private void drawInternal(DrawBuf buf, int x, int y, int boxWidth, int lineHeight)
+    private void drawInternal(Painter pr, int x, int y, int boxWidth, int lineHeight)
     {
         auto lns = wrappedLines.data.length > lines.data.length ? wrappedLines.data : lines.data;
         foreach (ref line; lns)
         {
-            line.draw(buf, x, y, boxWidth, style);
+            line.draw(pr, x, y, boxWidth, style);
             y += lineHeight;
         }
     }
@@ -494,14 +484,14 @@ package(beamui) void clearSimpleTextPool()
 }
 
 /// Draw simple text immediately. Useful in very dynamic and massive data lists
-void drawSimpleText(DrawBuf buf, dstring str, int x, int y, Font font, Color color)
+void drawSimpleText(Painter pr, dstring str, int x, int y, Font font, Color color)
 {
     assert(font, "Font is mandatory");
 
     if (str.length == 0 || color.isFullyTransparent)
         return;
     // skip early if not visible
-    const clip = buf.clipRect;
+    const clip = pr.getLocalClipBounds();
     if (clip.empty || clip.bottom <= y || clip.right <= x)
         return;
 
@@ -522,17 +512,17 @@ void drawSimpleText(DrawBuf buf, dstring str, int x, int y, Font font, Color col
     st.color = color;
     txt.style = st;
     txt.measure();
-    txt.drawInternal(buf, x, y, int.max, lineHeight);
+    txt.drawInternal(pr, x, y, int.max, lineHeight);
 }
 /// ditto
-void drawSimpleText(DrawBuf buf, dstring str, int x, int y, int boxWidth, ref TextStyle style)
+void drawSimpleText(Painter pr, dstring str, int x, int y, int boxWidth, ref TextStyle style)
 {
     assert(style.font, "Font is mandatory");
 
     if (str.length == 0)
         return;
     // skip early if not visible
-    const clip = buf.clipRect;
+    const clip = pr.getLocalClipBounds();
     if (clip.empty || clip.bottom <= y || clip.right <= x)
         return;
 
@@ -559,7 +549,7 @@ void drawSimpleText(DrawBuf buf, dstring str, int x, int y, int boxWidth, ref Te
         if (y + txt.sizeAfterWrap.h < clip.top)
             return;
     }
-    txt.drawInternal(buf, x, y, boxWidth, lineHeight);
+    txt.drawInternal(pr, x, y, boxWidth, lineHeight);
 }
 
 private int countLines(dstring str)

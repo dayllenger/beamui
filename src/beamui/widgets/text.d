@@ -175,15 +175,15 @@ class Label : Widget
         // textobj.wrap(geom.w - padding.width);
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
         const b = innerBox;
-        const sv = ClipRectSaver(buf, b);
+        pr.clipIn(b);
 
         textobj.style.underlinedCharIndex = textHotkey == TextHotkey.underline ? hotkeyIndex : -1;
 
         // TODO: align vertically?
-        textobj.draw(buf, b.x, b.y, b.w);
+        textobj.draw(pr, b.x, b.y, b.w);
     }
 }
 
@@ -645,7 +645,7 @@ class Paragraph : Widget
         _sizeAfterWrap.w = boxWidth;
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
         assert(_lines.length == _content.lineCount);
 
@@ -654,9 +654,9 @@ class Paragraph : Widget
             return;
 
         const b = innerBox;
-        const sv = ClipRectSaver(buf, b);
+        pr.clipIn(b);
 
-        const clip = buf.clipRect;
+        const clip = pr.getLocalClipBounds();
         if (clip.empty)
             return; // clipped out
 
@@ -674,7 +674,7 @@ class Paragraph : Widget
             if (clip.bottom <= py)
                 break; // or below
 
-            const x = line.draw(buf, b.x, py, _sizeAfterWrap.w, _txtStyle);
+            const x = line.draw(pr, b.x, py, _sizeAfterWrap.w, _txtStyle);
             _visibleLines ~= VisibleLine(cast(uint)i, x, y);
             y += h;
         }

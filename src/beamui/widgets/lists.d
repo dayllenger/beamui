@@ -1212,17 +1212,17 @@ class ListWidget : WidgetGroup
         }
     }
 
-    override protected void drawContent(DrawBuf buf)
+    override protected void drawContent(Painter pr)
     {
         // draw scrollbar
         if (_needScrollbar)
-            _scrollbar.draw(buf);
+            _scrollbar.draw(pr);
 
         if (itemCount == 0)
             return;
 
         // draw items
-        const sv = ClipRectSaver(buf, _clientBox);
+        pr.clipIn(_clientBox);
         const b = innerBox;
         const bool vert = _orientation == Orientation.vertical;
         const int scrollOffset = scrollPosition;
@@ -1240,7 +1240,7 @@ class ListWidget : WidgetGroup
                 if (w is null || w.visibility != Visibility.visible)
                     continue;
                 w.layout(ib);
-                w.draw(buf);
+                w.draw(pr);
                 started = true;
             }
             else if (started)

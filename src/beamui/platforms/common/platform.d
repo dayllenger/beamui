@@ -15,6 +15,7 @@ import beamui.core.animations;
 import beamui.core.asyncsocket;
 import beamui.core.stdaction;
 import beamui.graphics.iconprovider;
+import beamui.graphics.painter;
 import beamui.graphics.resources;
 import beamui.platforms.common.timer;
 import beamui.style.theme;
@@ -265,6 +266,9 @@ class Window : CustomEventTarget
 
         Animation[] animations;
         ulong animationUpdateTimerID;
+
+        Painter _painter;
+        PainterHead _painterHead;
     }
 
     this(Window parent, WindowOptions options)
@@ -274,6 +278,7 @@ class Window : CustomEventTarget
         _children.reserve(10);
         _eventList = new EventList;
         _timerQueue = new TimerQueue;
+        _painter = new Painter(_painterHead);
         if (currentTheme)
             _backgroundColor = currentTheme.getColor("window_background", Color.white);
     }
@@ -296,6 +301,7 @@ class Window : CustomEventTarget
         eliminate(_mainWidget);
         eliminate(_timerQueue);
         eliminate(_eventList);
+        eliminate(_painter);
 
         static if (USE_OPENGL)
             destroyContext();
@@ -1016,29 +1022,14 @@ class Window : CustomEventTarget
         {
         }
 
-        protected void drawUsingOpenGL(ref DrawBuf buf) // TODO: move drawbufs to the base class?
+        final protected void drawUsingOpenGL(ref PaintEngine engine)
         {
-            import beamui.graphics.gl.api;
-            import beamui.graphics.gldrawbuf;
-
-            const pw = physicalWidth;
-            const ph = physicalHeight;
+            import beamui.graphics.gl.glpainter : GLPaintEngine;
 
             bindContext();
-            glDisable(GL_DEPTH_TEST);
-            glViewport(0, 0, pw, ph);
-            const r = _backgroundColor.r / 255.0f;
-            const g = _backgroundColor.g / 255.0f;
-            const b = _backgroundColor.b / 255.0f;
-            glClearColor(r, g, b, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
-            if (!buf)
-                buf = new GLDrawBuf(pw, ph);
-            else
-                buf.resize(pw, ph);
-            buf.beforeDrawing();
-            draw(buf);
-            buf.afterDrawing();
+            if (!engine)
+                engine = new GLPaintEngine(platform._glSharedData);
+            draw(engine);
             swapBuffers();
         }
     }
@@ -1049,13 +1040,16 @@ class Window : CustomEventTarget
     private bool _firstDrawCalled;
     private long lastDrawTs;
 
-    void draw(DrawBuf buf)
+    final protected void draw(PaintEngine engine)
+        in(engine)
     {
         _firstDrawCalled = true;
-        static import std.datetime;
 
+        _painterHead.beginFrame(engine, physicalWidth, physicalHeight, _backgroundColor);
         try
         {
+            static import std.datetime;
+
             setupGlobalDPI();
 
             // check if we need to relayout
@@ -1094,8 +1088,7 @@ class Window : CustomEventTarget
                 const drawStart = currentTimeMillis;
 
             // draw main widget
-            _mainWidget.draw(buf);
-
+            _mainWidget.draw(_painter);
             // draw popups
             const modal = modalPopup();
             foreach (p; _popups)
@@ -1103,13 +1096,12 @@ class Window : CustomEventTarget
                 if (p is modal)
                 {
                     // TODO: get shadow color from theme
-                    buf.fillRect(Rect(0, 0, buf.width, buf.height), Color(0, 0x20));
+                    _painter.fillRect(0, 0, width, height, Color(0, 0x20));
                 }
-                p.draw(buf);
+                p.draw(_painter);
             }
-
             // and draw tooltip
-            _tooltip.popup.maybe.draw(buf);
+            _tooltip.popup.maybe.draw(_painter);
 
             debug (redraw)
             {
@@ -1130,6 +1122,7 @@ class Window : CustomEventTarget
         {
             Log.e("Exception inside window.draw: ", e);
         }
+        _painterHead.endFrame();
     }
 
     //===============================================================
@@ -2163,6 +2156,8 @@ class Platform
     ~this()
     {
         eliminate(_iconProvider);
+        static if (USE_OPENGL)
+            eliminate(_glSharedData);
     }
 
     /** Starts application message loop.
@@ -2281,14 +2276,16 @@ class Platform
     static if (USE_OPENGL)
     {
         import beamui.graphics.gl.gl : loadGLAPI;
-        import beamui.graphics.glsupport : glSupport, initGLBackend;
+        import beamui.graphics.gl.glpainter : GLSharedData;
+
+        private GLSharedData _glSharedData;
 
         void createGLContext(Window window)
         {
             if (!openglEnabled)
                 return;
 
-            if (glSupport)
+            if (_glSharedData)
             {
                 if (window.createContext(_conf.GLVersionMajor, _conf.GLVersionMinor))
                 {
@@ -2318,14 +2315,17 @@ class Platform
             if (success)
             {
                 window.bindContext();
-                success = loadGLAPI() && initGLBackend();
-                if (success)
-                    window.handleGLReadiness();
+                success = loadGLAPI();
             }
             else
                 Log.e("GL: failed to create a context");
 
-            if (!success)
+            if (success)
+            {
+                _glSharedData = new GLSharedData;
+                window.handleGLReadiness();
+            }
+            else
             {
                 disableOpenGL();
                 _conf.GLVersionMajor = 0;
