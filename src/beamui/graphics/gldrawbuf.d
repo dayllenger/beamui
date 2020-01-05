@@ -207,8 +207,8 @@ private abstract class GLCache
             {
                 // convert coordinates to cached texture
                 srcrc.translate(item._rc.left, item._rc.top);
-                if (!dstrc.empty)
-                    glSupport.queue.addTexturedRect(_texture, _tdx, _tdy, color, color, color, color, srcrc, dstrc);
+                // if (!dstrc.empty)
+                //     glSupport.queue.addTexturedRect(_texture, _tdx, _tdy, color, color, color, color, srcrc, dstrc);
             }
         }
     }
