@@ -22,164 +22,6 @@ import beamui.graphics.gl.errors;
 import beamui.graphics.gl.objects;
 import beamui.graphics.gl.program;
 
-package(beamui) __gshared bool glNoContext;
-
-private struct VAO
-{
-    static nothrow:
-
-    void bind(ref GLuint id)
-    {
-        if (id == 0)
-            glGenVertexArrays(1, &id);
-        checkgl!glBindVertexArray(id);
-    }
-
-    void unbind()
-    {
-        glBindVertexArray(0);
-    }
-
-    void del(ref GLuint id)
-    {
-        if (!glNoContext)
-        {
-            glBindVertexArray(0);
-            glDeleteVertexArrays(1, &id);
-        }
-        id = 0;
-    }
-}
-
-class SolidFillProgram : GLProgram
-{
-    override @property string vertexSource() const
-    {
-        return q{
-            in vec3 vertexPosition;
-            in vec4 vertexColor;
-            out vec4 color;
-            uniform mat4 MVP;
-
-            void main()
-            {
-                gl_Position = MVP * vec4(vertexPosition, 1);
-                color = vertexColor;
-            }
-        };
-    }
-
-    override @property string fragmentSource() const
-    {
-        return q{
-            in vec4 color;
-            out vec4 outColor;
-
-            void main()
-            {
-                outColor = color;
-            }
-        };
-    }
-
-    protected GLuint vao;
-    protected GLint matrixLocation;
-
-    override bool initLocations()
-    {
-        matrixLocation = getUniformLocation("MVP");
-        bindAttribLocation("vertexPosition", 0);
-        bindAttribLocation("vertexColor", 1);
-        return matrixLocation >= 0;
-    }
-
-    void beforeExecute()
-    {
-        bind();
-        checkgl!glUniformMatrix4fv(matrixLocation, 1, false, glSupport.projectionMatrix.m.ptr);
-        VAO.bind(vao);
-    }
-
-    void createVAO(BufferId vboPos, BufferId vboCol, BufferId ebo)
-    {
-        VAO.bind(vao);
-
-        EBO.bind(ebo);
-        VBO.bind(vboPos);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
-        VBO.bind(vboCol);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
-
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-    }
-
-    void destroyVAO()
-    {
-        VAO.del(vao);
-    }
-}
-
-class TextureProgram : SolidFillProgram
-{
-    override @property string vertexSource() const
-    {
-        return q{
-            in vec3 vertexPosition;
-            in vec4 vertexColor;
-            in vec2 vertexUV;
-            out vec4 color;
-            out vec2 UV;
-            uniform mat4 MVP;
-
-            void main()
-            {
-                gl_Position = MVP * vec4(vertexPosition, 1);
-                color = vertexColor;
-                UV = vertexUV;
-            }
-        };
-    }
-
-    override @property string fragmentSource() const
-    {
-        return q{
-            in vec4 color;
-            in vec2 UV;
-            out vec4 outColor;
-            uniform sampler2D tex;
-
-            void main()
-            {
-                outColor = texture(tex, UV) * color;
-            }
-        };
-    }
-
-    override bool initLocations()
-    {
-        bindAttribLocation("vertexUV", 2);
-        return super.initLocations();
-    }
-
-    protected void createVAO(BufferId vboPos, BufferId vboCol, BufferId vboUVs, BufferId ebo)
-    {
-        VAO.bind(vao);
-
-        EBO.bind(ebo);
-        VBO.bind(vboPos);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
-        VBO.bind(vboCol);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
-        VBO.bind(vboUVs);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, cast(void*)0);
-
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glEnableVertexAttribArray(2);
-    }
-}
-
 private __gshared GLBackend _glBackend;
 /// Returns GL backend instance. Null if GL is not loaded.
 @property GLBackend glSupport() { return _glBackend; }
@@ -189,7 +31,6 @@ bool initGLBackend()
 {
     if (_glBackend)
         return true;
-    glNoContext = false;
 
     _glBackend = GLBackend.create();
     return _glBackend !is null;
@@ -199,19 +40,12 @@ bool initGLBackend()
 void uninitGLSupport()
 {
     eliminate(_glBackend);
-    glNoContext = true;
 }
 
 /// Drawing backend on OpenGL 3.0+
 final class GLBackend
 {
-    @property bool valid() const
-    {
-        return _solidFillProgram && _textureProgram;
-    }
     @property OpenGLQueue queue() { return _queue; }
-    /// Projection matrix
-    @property ref mat4 projectionMatrix() { return _projectionMatrix; }
 
     private
     {
@@ -220,24 +54,12 @@ final class GLBackend
         int bufferDx;
         /// Current gl buffer height
         int bufferDy;
-        mat4 _projectionMatrix;
-
-        SolidFillProgram _solidFillProgram;
-        TextureProgram _textureProgram;
     }
 
     static GLBackend create()
     {
         Log.d("GL: creating backend");
-        auto bak = new GLBackend;
-        if (bak.initShaders())
-        {
-            Log.v("GL: created successfully");
-            return bak;
-        }
-        destroy(bak);
-        Log.e("GL: failed to create shader programs");
-        return null;
+        return new GLBackend;
     }
 
     private this()
@@ -247,29 +69,7 @@ final class GLBackend
 
     ~this()
     {
-        Log.d("GL: uniniting shaders");
-        eliminate(_solidFillProgram);
-        eliminate(_textureProgram);
         eliminate(_queue);
-    }
-
-    private bool initShaders()
-    {
-        _solidFillProgram = new SolidFillProgram;
-        if (!_solidFillProgram.valid)
-        {
-            destroy(_solidFillProgram);
-            _solidFillProgram = null;
-            return false;
-        }
-        _textureProgram = new TextureProgram;
-        if (!_textureProgram.valid)
-        {
-            destroy(_textureProgram);
-            _textureProgram = null;
-            return false;
-        }
-        return true;
     }
 
     private bool generateMipmap(int dx, int dy, ubyte* pixels, int level, ref ubyte[] dst)
