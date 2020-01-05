@@ -26,7 +26,6 @@ import beamui.graphics.painter : PaintEngine;
 import beamui.graphics.pen;
 import beamui.graphics.polygons;
 import beamui.graphics.gl.renderer;
-import beamui.graphics.gl.objects : TexId;
 import beamui.graphics.gl.shaders;
 import beamui.graphics.gl.textures;
 
@@ -781,7 +780,7 @@ protected:
 
         ShParams params;
         params.kind = PaintKind.text;
-        params.text = ParamsText(TexId.init, ColorF(c));
+        params.text = ParamsText(null, ColorF(c));
 
         bool firstGlyph = true;
         foreach (gi; run)
@@ -825,7 +824,7 @@ protected:
             uvs_textured ~= uvs[];
             addStrip(triangles, v, 4);
         }
-        if (params.text.tex != TexId.init)
+        if (params.text.tex)
         {
             bt.common.params = params;
             bt.common.triangles.end = triangles.length;

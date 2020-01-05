@@ -94,7 +94,7 @@ struct ParamsRG
 
 struct ParamsPattern
 {
-    TexId tex;
+    const(TexId)* tex;
     SizeI texSize;
     BoxI patRect;
     Mat2x3 matrix;
@@ -103,13 +103,13 @@ struct ParamsPattern
 
 struct ParamsImage
 {
-    TexId tex;
+    const(TexId)* tex;
     float opacity = 0;
 }
 
 struct ParamsText
 {
-    TexId tex;
+    const(TexId)* tex;
     ColorF color;
 }
 
@@ -307,6 +307,7 @@ final class ShaderPattern : ShaderBase
     }
 
     void setup(ref const ParamsBase pbase, ref const ParamsPattern p)
+        in(p.tex)
     {
         super.setup(pbase);
         glUniform1i(loc.viewportHeight, pbase.viewportHeight);
@@ -323,7 +324,7 @@ final class ShaderPattern : ShaderBase
         glUniform1f(loc.opacity, p.opacity);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
-        Tex2D.setup(p.tex, SamplerIndex.texture);
+        Tex2D.setup(*p.tex, SamplerIndex.texture);
     }
 
     private Locations!([
@@ -351,12 +352,13 @@ final class ShaderImage : ShaderBase
     }
 
     void setup(ref const ParamsBase pbase, ref const ParamsImage p)
+        in(p.tex)
     {
         super.setup(pbase);
         glUniform1f(loc.opacity, p.opacity);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
-        Tex2D.setup(p.tex, SamplerIndex.texture);
+        Tex2D.setup(*p.tex, SamplerIndex.texture);
     }
 
     private Locations!([
@@ -384,13 +386,14 @@ final class ShaderText : ShaderBase
     }
 
     void setup(ref const ParamsBase pbase, ref const ParamsText p)
+        in(p.tex)
     {
         super.setup(pbase);
         const ColorF c = p.color.premultiplied;
         glUniform4f(loc.textRunColor, c.r, c.g, c.b, c.a);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
-        Tex2D.setup(p.tex, SamplerIndex.texture);
+        Tex2D.setup(*p.tex, SamplerIndex.texture);
     }
 
     private Locations!([

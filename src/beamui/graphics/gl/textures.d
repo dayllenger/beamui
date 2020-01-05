@@ -22,13 +22,15 @@ package:
 
 struct TextureView
 {
-    TexId tex;
+    /// Points inside a cache page. It is not a value type
+    /// because the texture ID may change during painting
+    const(TexId)* tex;
     SizeI texSize;
     BoxI box;
 
     bool empty() const nothrow
     {
-        return box.empty;
+        return !tex;
     }
 }
 
@@ -79,7 +81,7 @@ struct TextureCache
             resize(*page, res.pageSize);
             upload(page.tex, res.box, image.scanLine(0));
         }
-        return TextureView(page.tex, page.texSize, res.box);
+        return TextureView(&page.tex, page.texSize, res.box);
     }
 
     private static void resize(ref CachePage page, SizeI size)
@@ -152,7 +154,7 @@ struct GlyphCache
             resize(*page, res.pageSize);
             upload(page.tex, res.box, glyph.glyph);
         }
-        return TextureView(page.tex, page.texSize, res.box);
+        return TextureView(&page.tex, page.texSize, res.box);
     }
 
     private static void resize(ref CachePage page, SizeI size)
