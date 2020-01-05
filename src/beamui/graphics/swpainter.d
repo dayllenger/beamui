@@ -10,7 +10,7 @@ module beamui.graphics.swpainter;
 private nothrow:
 
 import std.algorithm.mutation : swap;
-import std.math : ceil, floor;
+import std.math : ceil, floor, round;
 import std.typecons : scoped;
 import pixman;
 import beamui.core.collections : Buf;
@@ -441,16 +441,17 @@ protected:
 
     void drawImage(const ColorDrawBufBase img, Vec2 pos, float opacity)
     {
+        const rect = RectF(pos.x, pos.y, pos.x + img.width, pos.y + img.height);
+        const BoxI clip = clipByRect(transformBounds(rect));
+        if (clip.empty)
+            return;
+
         PM_Image mask_img = PM_Image.fromOpacity(opacity);
         if (!mask_img)
             return;
 
         PM_Image src_img = PM_Image.fromImage(img, Repeat.no, Filtering.yes);
         if (!src_img)
-            return;
-
-        const BoxI clip = clipByRect(transformBounds(RectF(pos.x, pos.y, pos.x + img.width, pos.y + img.height)));
-        if (clip.empty)
             return;
 
         Mat2x3 mat = st.mat;
@@ -464,6 +465,120 @@ protected:
             0, 0,
             clip.x, clip.y,
             clip.w, clip.h,
+        );
+    }
+
+    void drawNinePatch(const ColorDrawBufBase img, ref const NinePatchInfo info, float opacity)
+    {
+        const rect = RectF(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
+        const BoxI clip = clipByRect(transformBounds(rect));
+        if (clip.empty)
+            return;
+
+        PM_Image mask_img = PM_Image.fromOpacity(opacity);
+        if (!mask_img)
+            return;
+
+        // for proper filtering, we blit the image to a temporary layer first,
+        // then compose it using the matrix
+        const tmpsz = SizeI(cast(int)ceil(rect.width), cast(int)ceil(rect.height));
+        PM_Image tmp_img = PM_Image(layerPool.take(tmpsz));
+        if (!tmp_img)
+            return;
+        pixman_image_set_filter(tmp_img, pixman_filter_t.good, null, 0);
+
+        PM_Image src_img = PM_Image.fromImage(img, Repeat.no, Filtering.no);
+        if (!src_img)
+            return;
+
+        drawNinePatchImpl(src_img, tmp_img, info);
+
+        Mat2x3 mat = st.mat;
+        mat.translate(rect.topLeft).invert().translate(Vec2(clip.x, clip.y));
+        tmp_img.setTransform(mat);
+
+        pixman_image_composite32(
+            pixman_op_t.over,
+            tmp_img, mask_img, layer,
+            0, 0,
+            0, 0,
+            clip.x, clip.y,
+            clip.w, clip.h,
+        );
+    }
+
+    private void drawNinePatchImpl(PM_ImageView src, PM_ImageView dest, ref const NinePatchInfo info)
+    {
+        with (info)
+        {
+            // shift to the origin and round
+            const int dst_x1i = cast(int)round(dst_x1 - dst_x0);
+            const int dst_x2i = cast(int)round(dst_x2 - dst_x0);
+            const int dst_x3i = cast(int)round(dst_x3 - dst_x0);
+            const int dst_y1i = cast(int)round(dst_y1 - dst_y0);
+            const int dst_y2i = cast(int)round(dst_y2 - dst_y0);
+            const int dst_y3i = cast(int)round(dst_y3 - dst_y0);
+            // top row
+            if (y0 < y1 && 0 < dst_y1i)
+            {
+                // top left
+                if (x0 < x1 && 0 < dst_x1i)
+                    drawPatch(src, dest, RectI(x0, y0, x1, y1), RectI(0, 0, 0, 0));
+                // top center
+                if (x1 < x2 && dst_x1i < dst_x2i)
+                    drawPatch(src, dest, RectI(x1, y0, x2, y1), RectI(dst_x1i, 0, dst_x2i, dst_y1i));
+                // top right
+                if (x2 < x3 && dst_x2i < dst_x3i)
+                    drawPatch(src, dest, RectI(x2, y0, x3, y1), RectI(dst_x2i, 0, 0, 0));
+            }
+            // middle row
+            if (y1 < y2 && dst_y1i < dst_y2i)
+            {
+                // middle left
+                if (x0 < x1 && 0 < dst_x1i)
+                    drawPatch(src, dest, RectI(x0, y1, x1, y2), RectI(0, dst_y1i, dst_x1i, dst_y2i));
+                // center
+                if (x1 < x2 && dst_x1i < dst_x2i)
+                    drawPatch(src, dest, RectI(x1, y1, x2, y2), RectI(dst_x1i, dst_y1i, dst_x2i, dst_y2i));
+                // middle right
+                if (x2 < x3 && dst_x2i < dst_x3i)
+                    drawPatch(src, dest, RectI(x2, y1, x3, y2), RectI(dst_x2i, dst_y1i, dst_x3i, dst_y2i));
+            }
+            // bottom row
+            if (y2 < y3 && dst_y2i < dst_y3i)
+            {
+                // bottom left
+                if (x0 < x1 && 0 < dst_x1i)
+                    drawPatch(src, dest, RectI(x0, y2, x1, y3), RectI(0, dst_y2i, 0, 0));
+                // bottom center
+                if (x1 < x2 && dst_x1i < dst_x2i)
+                    drawPatch(src, dest, RectI(x1, y2, x2, y3), RectI(dst_x1i, dst_y2i, dst_x2i, dst_y3i));
+                // bottom right
+                if (x2 < x3 && dst_x2i < dst_x3i)
+                    drawPatch(src, dest, RectI(x2, y2, x3, y3), RectI(dst_x2i, dst_y2i, 0, 0));
+            }
+        }
+    }
+
+    private void drawPatch(PM_ImageView src_img, PM_ImageView dest_img, RectI srcRect, RectI dstRect)
+    {
+        const from = BoxI(srcRect);
+        BoxI to = BoxI(dstRect);
+
+        Mat2x3 mat = Mat2x3.translation(Vec2(from.x, from.y));
+        if (to.empty)
+            to.size = from.size;
+        else
+            mat.scale(Vec2(from.w / cast(float)to.w, from.h / cast(float)to.h));
+        src_img.setTransform(mat);
+
+        pixman_image_composite32(
+            pixman_op_t.src,
+            src_img, null, dest_img,
+            0, 0,
+            0, 0,
+            to.x, to.y,
+            to.w, to.h,
         );
     }
 

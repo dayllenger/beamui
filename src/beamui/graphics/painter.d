@@ -558,11 +558,12 @@ final class Painter
 
     /// Draw an image at some position with some opacity
     void drawImage(const ColorDrawBufBase image, float x, float y, float opacity)
+        in(image)
         in(isFinite(x) && isFinite(y))
         in(isFinite(opacity))
         in(active)
     {
-        if (!image || state.discard)
+        if (state.discard)
             return;
 
         const w = image.width;
@@ -580,8 +581,54 @@ final class Painter
             }
             return;
         }
-
         engine.drawImage(image, Vec2(x, y), opacity);
+    }
+
+    /// Draw a rescaled nine-patch image with some opacity
+    void drawNinePatch(const ColorDrawBufBase image, RectI srcRect, RectF dstRect, float opacity)
+        in(image)
+        in(image.hasNinePatch)
+        in(isFinite(dstRect.width) && isFinite(dstRect.height))
+        in(isFinite(opacity))
+        in(active)
+    {
+        if (srcRect.empty || dstRect.empty || state.discard)
+            return;
+        if (fzero6(dstRect.width) || fzero6(dstRect.height))
+            return;
+
+        opacity = clamp(opacity, 0, 1);
+        if (fzero6(opacity))
+        {
+            if (state.passTransparent)
+            {
+                // draw a transparent rectangle instead
+                engine.fillRect(dstRect, Color.transparent);
+            }
+            return;
+        }
+
+        static void correctFrameBounds(ref int n1, ref int n2, ref float n3, ref float n4)
+        {
+            if (n1 > n2)
+            {
+                const int middledist = (n1 + n2) / 2 - n1;
+                n1 = n2 = n1 + middledist;
+                n3 = n4 = n3 + middledist;
+            }
+        }
+
+        const np = image.ninePatch;
+        PaintEngine.NinePatchInfo info = {
+            srcRect.left, srcRect.left + np.frame.left, srcRect.right - np.frame.right, srcRect.right,
+            srcRect.top, srcRect.top + np.frame.top, srcRect.bottom - np.frame.bottom, srcRect.bottom,
+            dstRect.left, dstRect.left + np.frame.left, dstRect.right - np.frame.right, dstRect.right,
+            dstRect.top, dstRect.top + np.frame.top, dstRect.bottom - np.frame.bottom, dstRect.bottom,
+        };
+        correctFrameBounds(info.x1, info.x2, info.dst_x1, info.dst_x2);
+        correctFrameBounds(info.y1, info.y2, info.dst_y1, info.dst_y2);
+
+        engine.drawNinePatch(image, info, opacity);
     }
 
     /// Draw a text run at some position with some color
@@ -784,6 +831,13 @@ protected:
             return hasElements;
         }
     }
+    struct NinePatchInfo
+    {
+        int x0, x1, x2, x3;
+        int y0, y1, y2, y3;
+        float dst_x0, dst_x1, dst_x2, dst_x3;
+        float dst_y0, dst_y1, dst_y2, dst_y3;
+    }
 
     const(State)* st() nothrow;
 
@@ -808,6 +862,7 @@ protected:
     void fillCircle(float, float, float, Color);
 
     void drawImage(const ColorDrawBufBase, Vec2, float);
+    void drawNinePatch(const ColorDrawBufBase, ref const NinePatchInfo, float);
     void drawText(const GlyphInstance[], Color);
 
     final RectF transformBounds(RectF untr) nothrow

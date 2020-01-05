@@ -621,18 +621,125 @@ protected:
             Vec2(rp.right, rp.top),
             Vec2(rp.right, rp.bottom),
         ];
-        const r = RectF(view.box.x, view.box.y, view.box.x + w, view.box.y + h);
-        const Vec2[4] uvs = [
-            Vec2(r.left / view.texSize.w, r.top / view.texSize.h),
-            Vec2(r.left / view.texSize.w, r.bottom / view.texSize.h),
-            Vec2(r.right / view.texSize.w, r.top / view.texSize.h),
-            Vec2(r.right / view.texSize.w, r.bottom / view.texSize.h),
-        ];
+        Vec2[4] uvs = [Vec2(0, 0), Vec2(0, h), Vec2(w, 0), Vec2(w, h)];
+        foreach (ref uv; uvs)
+        {
+            uv.x = (uv.x + view.box.x) / view.texSize.w;
+            uv.y = (uv.y + view.box.y) / view.texSize.h;
+        }
         const v = positions_textured.length;
         const t = triangles.length;
         positions_textured ~= vs[];
         uvs_textured ~= uvs[];
         addStrip(triangles, v, 4);
+
+        if (st.aa)
+        {
+            const Vec2[4] silhouette = [
+                Vec2(rp.left, rp.top),
+                Vec2(rp.left, rp.bottom),
+                Vec2(rp.right, rp.bottom),
+                Vec2(rp.right, rp.top),
+            ];
+            gpaa.add(silhouette[]);
+            gpaa.finish(dataStore.length);
+        }
+
+        ShParams params;
+        params.kind = PaintKind.image;
+        params.image = ParamsImage(view.tex, opacity);
+
+        Batch bt;
+        bt.type = BatchType.simple;
+        // bt.common.opaque = fequal6(opacity, 1);
+        bt.common.clip = RectI(clip);
+        bt.common.params = params;
+        bt.common.triangles = Span(t, triangles.length);
+        bt.simple.hasUV = true;
+        batches ~= bt;
+
+        dataIndices_textured.resize(positions_textured.length, cast(ushort)dataStore.length);
+        dataStore ~= prepareDataChunk();
+
+        advanceDepth();
+    }
+
+    void drawNinePatch(const ColorDrawBufBase img, ref const NinePatchInfo info, float opacity)
+    {
+        const rp = RectF(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
+        const BoxI clip = clipByRect(transformBounds(rp));
+        if (clip.empty)
+            return;
+
+        const TextureView view = textureCache.getTexture(img);
+        if (view.empty)
+            return;
+        assert(view.box.w == img.width && view.box.h == img.height);
+
+        const Vec2[16] vs = [
+            Vec2(info.dst_x0, info.dst_y0),
+            Vec2(info.dst_x0, info.dst_y1),
+            Vec2(info.dst_x1, info.dst_y0),
+            Vec2(info.dst_x1, info.dst_y1),
+            Vec2(info.dst_x2, info.dst_y0),
+            Vec2(info.dst_x2, info.dst_y1),
+            Vec2(info.dst_x3, info.dst_y0),
+            Vec2(info.dst_x3, info.dst_y1),
+            Vec2(info.dst_x0, info.dst_y2),
+            Vec2(info.dst_x0, info.dst_y3),
+            Vec2(info.dst_x1, info.dst_y2),
+            Vec2(info.dst_x1, info.dst_y3),
+            Vec2(info.dst_x2, info.dst_y2),
+            Vec2(info.dst_x2, info.dst_y3),
+            Vec2(info.dst_x3, info.dst_y2),
+            Vec2(info.dst_x3, info.dst_y3),
+        ];
+        Vec2[16] uvs = [
+            Vec2(info.x0, info.y0),
+            Vec2(info.x0, info.y1),
+            Vec2(info.x1, info.y0),
+            Vec2(info.x1, info.y1),
+            Vec2(info.x2, info.y0),
+            Vec2(info.x2, info.y1),
+            Vec2(info.x3, info.y0),
+            Vec2(info.x3, info.y1),
+            Vec2(info.x0, info.y2),
+            Vec2(info.x0, info.y3),
+            Vec2(info.x1, info.y2),
+            Vec2(info.x1, info.y3),
+            Vec2(info.x2, info.y2),
+            Vec2(info.x2, info.y3),
+            Vec2(info.x3, info.y2),
+            Vec2(info.x3, info.y3),
+        ];
+        foreach (ref uv; uvs)
+        {
+            uv.x = (uv.x + view.box.x) / view.texSize.w;
+            uv.y = (uv.y + view.box.y) / view.texSize.h;
+        }
+        const v = positions_textured.length;
+        positions_textured ~= vs[];
+        uvs_textured ~= uvs[];
+
+        Tri[18] tris = [
+            Tri(0, 1, 2), Tri(1, 2, 3),
+            Tri(2, 3, 4), Tri(3, 4, 5),
+            Tri(4, 5, 6), Tri(5, 6, 7),
+            Tri(1, 8, 3), Tri(8, 3, 10),
+            Tri(3, 10, 5), Tri(10, 5, 12),
+            Tri(5, 12, 7), Tri(12, 7, 14),
+            Tri(8, 9, 10), Tri(9, 10, 11),
+            Tri(10, 11, 12), Tri(11, 12, 13),
+            Tri(12, 13, 14), Tri(13, 14, 15),
+        ];
+        foreach (ref tri; tris)
+        {
+            tri.v0 += v;
+            tri.v1 += v;
+            tri.v2 += v;
+        }
+        const t = triangles.length;
+        triangles ~= tris[];
 
         if (st.aa)
         {
