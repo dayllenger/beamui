@@ -224,11 +224,6 @@ final class GLBackend
 
         SolidFillProgram _solidFillProgram;
         TextureProgram _textureProgram;
-
-        BufferId vboPos;
-        BufferId vboCol;
-        BufferId vboUVs;
-        BufferId ebo;
     }
 
     static GLBackend create()
@@ -275,96 +270,6 @@ final class GLBackend
             return false;
         }
         return true;
-    }
-
-    void beforeRenderGUI()
-    {
-        glEnable(GL_BLEND);
-        checkgl!glDisable(GL_CULL_FACE);
-        checkgl!glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    }
-
-    private void fillBuffers(
-        const float[] vertices, const float[] colors,
-        const float[] texcoords, const int[] indices)
-    {
-        assert(_solidFillProgram && _textureProgram);
-
-        resetBindings();
-
-        VBO.bind(vboPos);
-        VBO.upload(vertices, GL_DYNAMIC_DRAW);
-        VBO.bind(vboCol);
-        VBO.upload(colors, GL_DYNAMIC_DRAW);
-        VBO.bind(vboUVs);
-        VBO.upload(texcoords, GL_DYNAMIC_DRAW);
-
-        EBO.bind(ebo);
-        EBO.upload(indices, GL_DYNAMIC_DRAW);
-
-        // create vertex array objects and bind vertex buffers to them
-        _solidFillProgram.createVAO(vboPos, vboCol, ebo);
-        _textureProgram.createVAO(vboPos, vboCol, vboUVs, ebo);
-    }
-
-    private void destroyBuffers()
-    {
-        assert(_solidFillProgram && _textureProgram);
-
-        resetBindings();
-
-        _solidFillProgram.destroyVAO();
-        _textureProgram.destroyVAO();
-
-        VBO.del(vboPos);
-        VBO.del(vboCol);
-        VBO.del(vboUVs);
-        EBO.del(ebo);
-    }
-
-    /// This function is needed to draw custom OpenGL scene correctly
-    private static void resetBindings()
-    {
-        GLProgram.unbind();
-        VAO.unbind();
-        VBO.unbind();
-    }
-
-    private void drawLines(int length, int start)
-    {
-        assert(_solidFillProgram);
-
-        _solidFillProgram.beforeExecute();
-
-        checkgl!glDrawElements(GL_LINES, length, GL_UNSIGNED_INT, cast(void*)(start * 4));
-    }
-
-    private void drawSolidFillTriangles(int length, int start)
-    {
-        assert(_solidFillProgram);
-
-        _solidFillProgram.beforeExecute();
-
-        checkgl!glDrawElements(GL_TRIANGLES, length, GL_UNSIGNED_INT, cast(void*)(start * 4));
-    }
-
-    private void drawColorAndTextureTriangles(TexId texture, int length, int start)
-    {
-        assert(_textureProgram);
-
-        _textureProgram.beforeExecute();
-
-        Tex2D.setup(texture, 0);
-
-        checkgl!glDrawElements(GL_TRIANGLES, length, GL_UNSIGNED_INT, cast(void*)(start * 4));
-
-        Tex2D.unbind();
-    }
-
-    /// Call glFlush
-    void flushGL()
-    {
-        checkgl!glFlush();
     }
 
     private bool generateMipmap(int dx, int dy, ubyte* pixels, int level, ref ubyte[] dst)
@@ -437,20 +342,6 @@ final class GLBackend
         Tex2D.unbind();
         return true;
     }
-
-    void clearDepthBuffer()
-    {
-        glClear(GL_DEPTH_BUFFER_BIT);
-    }
-
-    void setOrthoProjection(Rect windowRect, Rect view)
-    {
-        bufferDx = windowRect.width;
-        bufferDy = windowRect.height;
-        _projectionMatrix.setOrtho(view.left, view.right, view.top, view.bottom, 0.5f, 50.0f);
-
-        checkgl!glViewport(view.left, windowRect.height - view.bottom, view.width, view.height);
-    }
 }
 
 /// OpenGL GUI rendering queue. It collects gui draw calls, fills a big buffer for vertex data and draws everything
@@ -486,37 +377,6 @@ private final class OpenGLQueue
     Buf!float _colors;
     Buf!float _texCoords;
     Buf!int _indices;
-
-    /// Draw all
-    void flush()
-    {
-        glSupport.fillBuffers(_vertices[], _colors[], _texCoords[], _indices[]);
-        foreach (b; batches)
-        {
-            final switch (b.type) with (OpenGLBatch.BatchType)
-            {
-            case line:
-                glSupport.drawLines(b.length, b.start);
-                break;
-            case rect:
-                glSupport.drawSolidFillTriangles(b.length, b.start);
-                break;
-            case triangle:
-                glSupport.drawSolidFillTriangles(b.length, b.start);
-                break;
-            case texturedRect:
-                glSupport.drawColorAndTextureTriangles(b.texture, b.length, b.start);
-                break;
-            }
-        }
-        //Log.d(batches.length, " ", _vertices.length, " ", _colors.length, " ", _texCoords.length, " ", _indices.length);
-        glSupport.destroyBuffers();
-        batches.clear();
-        _vertices.clear();
-        _colors.clear();
-        _texCoords.clear();
-        _indices.clear();
-    }
 
     static immutable float Z_2D = -2.0f;
 
