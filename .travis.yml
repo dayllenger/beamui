@@ -35,11 +35,14 @@ addons:
   apt:
     packages:
     - gcc-multilib
+    - libpixman-1-dev
     - libx11-dev
-    - libx11-dev:i386
+    - libxext-dev
     - zlib1g-dev
+    - libpixman-1-dev:i386
+    - libx11-dev:i386
+    - libxext-dev:i386
     - zlib1g-dev:i386
-    - libevent-dev
 
 script:
 - dub test --compiler=${DC} --arch=${ARCH} --config=${CONFIG} --DRT-gcopt=parallel:0

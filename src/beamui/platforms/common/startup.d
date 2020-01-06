@@ -568,3 +568,11 @@ void releaseResourcesOnAppExit()
     GC.collect();
     GC.minimize();
 }
+
+// a workaround for segfaults in travis-ci builds.
+// see investigation: https://github.com/dlang/dub/issues/1812
+version (unittest)
+{
+    static if (__VERSION__ >= 2087)
+        extern (C) __gshared string[] rt_options = ["gcopt=parallel:0"];
+}

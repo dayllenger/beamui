@@ -270,11 +270,13 @@ struct Mat2x3
     }
     this(ref const float[6] array)
     {
-        store = array;
+        store[0] = array[0 .. 3];
+        store[1] = array[3 .. 6];
     }
     this(const float[] array)
     {
-        store = array[0 .. 6];
+        store[0] = array[0 .. 3];
+        store[1] = array[3 .. 6];
     }
 
     /// Identity matrix
