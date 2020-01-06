@@ -3,7 +3,7 @@ Utilities for software rasterization.
 
 Polygon rasterizer is a rework of stb_truetype.h rasterizers by Sean Barrett.
 
-Clipping and line rasterization is partly from $(LINK rosettacode.org).
+Clipping and line rasterization is partly from $(LINK2 http://rosettacode.org/wiki/Rosetta_Code, Rosetta Code).
 
 Copyright: dayllenger 2019
 License:   Boost License 1.0
