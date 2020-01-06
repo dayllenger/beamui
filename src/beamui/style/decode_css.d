@@ -18,6 +18,7 @@ import beamui.core.types : Result, Ok, Err, Tup, tup;
 import beamui.core.units;
 import beamui.css.tokenizer : Token, TokenType;
 import beamui.graphics.colors;
+import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
 import beamui.layout.alignment;
 import beamui.style.types : BgPositionRaw, BgSizeRaw, SpecialCSSType;
@@ -1195,6 +1196,45 @@ Result!float decode(SpecialCSSType t : SpecialCSSType.opacity)(const Token[] tok
     if (f)
         f.val = clamp(f.val, 0, 1);
     return f;
+}
+
+/// Decode blend mode
+Result!BlendMode decode(T : BlendMode)(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "blend mode";
+    const t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        shouldbe(what, "an identifier", t);
+        return Err!BlendMode;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+
+    switch (t.text) with (BlendMode)
+    {
+        case "normal":      return Ok(normal);
+        case "multiply":    return Ok(multiply);
+        case "screen":      return Ok(screen);
+        case "overlay":     return Ok(overlay);
+        case "darken":      return Ok(darken);
+        case "lighten":     return Ok(lighten);
+        case "color-dodge": return Ok(colorDodge);
+        case "color-burn":  return Ok(colorBurn);
+        case "hard-light":  return Ok(hardLight);
+        case "soft-light":  return Ok(softLight);
+        case "difference":  return Ok(difference);
+        case "exclusion":   return Ok(exclusion);
+        case "hue":         return Ok(hue);
+        case "saturation":  return Ok(saturation);
+        case "color":       return Ok(color);
+        case "luminosity":  return Ok(luminosity);
+        default:
+            unknown(what, t);
+            return Err!BlendMode;
+    }
 }
 
 /// Decode seconds or milliseconds in CSS. Returns time in msecs.

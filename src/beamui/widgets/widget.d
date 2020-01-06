@@ -43,6 +43,7 @@ public
 }
 package import beamui.style.computed_style;
 import beamui.core.animations;
+import beamui.graphics.compositing : BlendMode;
 import beamui.platforms.common.platform;
 import beamui.style.style;
 import beamui.style.types : Selector, TextFlag;
@@ -818,9 +819,10 @@ public:
         case textDecorColor:
         case textDecorLine:
         case textDecorStyle:
-        case opacity:
         case textColor:
         case focusRectColor:
+        case opacity:
+        case mixBlendMode:
             invalidate();
             break;
         case fontFace: .. case fontWeight:
@@ -1874,13 +1876,15 @@ public:
         if (pr.quickReject(b))
             return; // clipped out
 
-        const opacity = style.opacity;
+        updateStyles();
+        const opacity = _style.opacity;
+        const blendMode = _style.mixBlendMode;
         if (opacity < 0.001f)
             return;
-        // begin a layer if some transparency is required
+        // begin a layer if needed
         PaintSaver lsv;
-        if (opacity < 0.999f)
-            pr.beginLayer(lsv, opacity);
+        if (opacity < 0.999f || blendMode != BlendMode.normal)
+            pr.beginLayer(lsv, opacity, blendMode);
 
         // draw the background first
         background.drawTo(pr, b);

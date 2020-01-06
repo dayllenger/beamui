@@ -13,6 +13,7 @@ import beamui.core.geometry : Insets, isDefinedSize;
 import beamui.core.types : Result, Ok;
 import beamui.core.units : Length, LayoutLength;
 import beamui.graphics.colors : Color, decodeHexColor, decodeTextColor;
+import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
 import beamui.layout.alignment;
 import beamui.style.style;
@@ -90,7 +91,6 @@ enum StyleProperty
     textTransform,
     wordSpacing,
     // colors
-    opacity,
     textColor,
     focusRectColor,
     // depend on text color, so must be computed after
@@ -99,6 +99,9 @@ enum StyleProperty
     borderBottomColor,
     borderLeftColor,
     textDecorColor,
+    // effects
+    opacity,
+    mixBlendMode,
     // transitions and animations
     transitionProperty,
     transitionTimingFunction,
@@ -843,11 +846,6 @@ struct ComputedStyle
             setProperty!"wordSpacing" = Length.px(px);
         }
 
-        /// Opacity of the whole widget, always clamped to [0..1] range, where 0.0 - invisible, 1.0 - normal
-        float opacity() const { return _opacity; }
-        /// ditto
-        void opacity(float value) { setProperty!"opacity" = clamp(value, 0, 1); }
-
         /// Text color
         Color textColor() const { return _textColor; }
         /// ditto
@@ -864,6 +862,16 @@ struct ComputedStyle
 
         /// Get color to draw focus rectangle, `Color.transparent` if no focus rect
         Color focusRectColor() const { return _focusRectColor; }
+
+        /// Opacity of the whole widget, always clamped to [0..1] range, where 0.0 - invisible, 1.0 - normal
+        float opacity() const { return _opacity; }
+        /// ditto
+        void opacity(float value) { setProperty!"opacity" = clamp(value, 0, 1); }
+
+        /// Specifies how widget blends with a backdrop
+        BlendMode mixBlendMode() const { return _mixBlendMode; }
+        /// ditto
+        void mixBlendMode(BlendMode value) { setProperty!"mixBlendMode" = value; }
     }
 
     package(beamui) Widget widget;
@@ -943,7 +951,6 @@ struct ComputedStyle
         TextTransform _textTransform = TextTransform.none;
         Length _wordSpacing = Length.zero;
         // colors
-        float _opacity = 1;
         Color _textColor = Color.black;
         Color _focusRectColor = Color.transparent;
         // depend on text color
@@ -952,6 +959,9 @@ struct ComputedStyle
         Color _borderBottomColor = Color.transparent;
         Color _borderLeftColor = Color.transparent;
         Color _textDecorColor = Color.black;
+        // effects
+        float _opacity = 1;
+        BlendMode _mixBlendMode = BlendMode.normal;
         // transitions and animations
         string _transitionProperty;
         TimingFunction _transitionTimingFunction;
@@ -1451,9 +1461,10 @@ string getCSSName(StyleProperty ptype)
         case textOverflow:  return "text-overflow";
         case textTransform: return "text-transform";
         case wordSpacing:   return "word-spacing";
-        case opacity:    return "opacity";
-        case textColor:  return "color";
+        case textColor:      return "color";
         case focusRectColor: return "focus-rect-color";
+        case opacity:        return "opacity";
+        case mixBlendMode:   return "mix-blend-mode";
         case transitionProperty:       return "transition-property";
         case transitionTimingFunction: return "transition-timing-function";
         case transitionDuration:       return "transition-duration";
@@ -1491,11 +1502,11 @@ bool isAnimatable(StyleProperty ptype)
         case letterSpacing:
         case lineHeight:
         case wordSpacing:
-        case opacity:
         case textColor:
         case focusRectColor:
         case borderTopColor: .. case borderLeftColor:
         case textDecorColor:
+        case opacity:
             return true;
         default:
             return false;
