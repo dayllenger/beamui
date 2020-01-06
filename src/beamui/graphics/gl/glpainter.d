@@ -25,6 +25,7 @@ import beamui.graphics.flattener : flattenCubicBezier;
 import beamui.graphics.painter : PaintEngine;
 import beamui.graphics.pen;
 import beamui.graphics.polygons;
+import beamui.graphics.gl.objects : TexId;
 import beamui.graphics.gl.renderer;
 import beamui.graphics.gl.shaders;
 import beamui.graphics.gl.textures;
@@ -776,11 +777,11 @@ protected:
         Batch bt;
         bt.type = BatchType.simple;
         bt.common.triangles = Span(triangles.length, triangles.length);
+        bt.common.params.kind = PaintKind.text;
         bt.simple.hasUV = true;
 
-        ShParams params;
-        params.kind = PaintKind.text;
-
+        Batch* similar;
+        ParamsText params;
         bool firstGlyph = true;
         foreach (gi; run)
         {
@@ -790,53 +791,67 @@ protected:
 
             if (firstGlyph)
             {
-                params.text.tex = view.tex;
                 firstGlyph = false;
+                params.tex = view.tex;
+                similar = hasSimilarTextBatch(view.tex);
             }
-            if (params.text.tex != view.tex)
+            else if (params.tex !is view.tex)
             {
-                bt.common.params = params;
-                bt.common.triangles.end = triangles.length;
-                batches ~= bt;
-
+                if (similar)
+                {
+                    similar.common.triangles.end = triangles.length;
+                    similar = null;
+                }
+                else
+                {
+                    bt.common.params.text = params;
+                    bt.common.triangles.end = triangles.length;
+                    batches ~= bt;
+                }
                 bt.common.triangles.start = triangles.length;
-                params.text.tex = view.tex;
+                params.tex = view.tex;
             }
-
-            const x = gi.position.x;
-            const y = gi.position.y;
-            const Vec2[4] vs = [
-                Vec2(x, y),
-                Vec2(x, y + view.box.h),
-                Vec2(x + view.box.w, y),
-                Vec2(x + view.box.w, y + view.box.h),
-            ];
-            const r = RectF(view.box.x, view.box.y, view.box.x + view.box.w, view.box.y + view.box.h);
-            const Vec2[4] uvs = [
-                Vec2(r.left / view.texSize.w, r.top / view.texSize.h),
-                Vec2(r.left / view.texSize.w, r.bottom / view.texSize.h),
-                Vec2(r.right / view.texSize.w, r.top / view.texSize.h),
-                Vec2(r.right / view.texSize.w, r.bottom / view.texSize.h),
-            ];
-            const v = positions_textured.length;
-            positions_textured ~= vs[];
-            uvs_textured ~= uvs[];
-            addStrip(triangles, v, 4);
+            addGlyph(gi, view);
         }
-        if (params.text.tex)
+        if (!params.tex)
+            return;
+
+        assert(bt.common.triangles.start < triangles.length);
+        if (similar)
         {
-            bt.common.params = params;
+            similar.common.triangles.end = triangles.length;
+        }
+        else
+        {
+            bt.common.params.text = params;
             bt.common.triangles.end = triangles.length;
             batches ~= bt;
         }
-
         dataIndices_textured.resize(positions_textured.length, cast(ushort)dataStore.length);
         dataStore ~= prepareDataChunk(null, c);
-
         advanceDepth();
     }
 
 private:
+
+    void addGlyph(GlyphInstance gi, ref const TextureView view)
+    {
+        const float x = gi.position.x;
+        const float y = gi.position.y;
+        const float w = view.box.w;
+        const float h = view.box.h;
+        const Vec2[4] vs = [Vec2(x, y), Vec2(x, y + h), Vec2(x + w, y), Vec2(x + w, y + h)];
+        Vec2[4] uvs = [Vec2(0, 0), Vec2(0, h), Vec2(w, 0), Vec2(w, h)];
+        foreach (ref uv; uvs)
+        {
+            uv.x = (uv.x + view.box.x) / view.texSize.w;
+            uv.y = (uv.y + view.box.y) / view.texSize.h;
+        }
+        const v = positions_textured.length;
+        positions_textured ~= vs[];
+        uvs_textured ~= uvs[];
+        addStrip(triangles, v, 4);
+    }
 
     bool fillRectImpl(RectF r, Color* c)
     {
@@ -1035,6 +1050,25 @@ private:
             Batch* last = &batches.unsafe_ref(-1);
             if (last.type == BatchType.simple && last.common.opaque == opaque && last.common.params.kind == kind)
                 return last;
+        }
+        return null;
+    }
+
+    Batch* hasSimilarTextBatch(const TexId* tex)
+        in(sets.length)
+    {
+        if (tex && batches.length > sets[$ - 1].batches.start)
+        {
+            Batch* last = &batches.unsafe_ref(-1);
+            if (last.type == BatchType.simple)
+            {
+                const params = &last.common.params;
+                if (params.kind == PaintKind.text && params.text.tex is tex)
+                {
+                    assert(!last.common.opaque);
+                    return last;
+                }
+            }
         }
         return null;
     }
