@@ -774,14 +774,18 @@ protected:
 
     void drawText(const GlyphInstance[] run, Color c)
     {
+        const clip = RectI(clipByRect(transformBounds(computeTextRunBounds(run))));
+        if (clip.empty)
+            return;
+
         Batch bt;
         bt.type = BatchType.simple;
-        bt.common.triangles = Span(triangles.length, triangles.length);
+        bt.common.clip = clip;
         bt.common.params.kind = PaintKind.text;
+        bt.common.triangles = Span(triangles.length, triangles.length);
         bt.simple.hasUV = true;
 
         Batch* similar;
-        RectF bounds = MIN_RECT_F;
         ParamsText params;
         bool firstGlyph = true;
         foreach (gi; run)
@@ -798,9 +802,6 @@ protected:
             }
             else if (params.tex !is view.tex)
             {
-                const clip = RectI(clipByRect(transformBounds(bounds)));
-                if (clip.empty)
-                    continue;
                 if (similar)
                 {
                     similar.common.clip.include(clip);
@@ -809,7 +810,6 @@ protected:
                 }
                 else
                 {
-                    bt.common.clip = clip;
                     bt.common.params.text = params;
                     bt.common.triangles.end = triangles.length;
                     batches ~= bt;
@@ -817,13 +817,9 @@ protected:
                 bt.common.triangles.start = triangles.length;
                 params.tex = view.tex;
             }
-            addGlyph(gi, view, bounds);
+            addGlyph(gi, view);
         }
         if (!params.tex)
-            return;
-
-        const clip = RectI(clipByRect(transformBounds(bounds)));
-        if (clip.empty)
             return;
 
         assert(bt.common.triangles.start < triangles.length);
@@ -834,7 +830,6 @@ protected:
         }
         else
         {
-            bt.common.clip = clip;
             bt.common.params.text = params;
             bt.common.triangles.end = triangles.length;
             batches ~= bt;
@@ -846,14 +841,25 @@ protected:
 
 private:
 
-    void addGlyph(GlyphInstance gi, ref const TextureView view, ref RectF bounds)
+    static RectF computeTextRunBounds(const GlyphInstance[] run)
+    {
+        RectF r = MIN_RECT_F;
+        foreach (ref gi; run)
+        {
+            r.left = min(r.left, gi.position.x);
+            r.top = min(r.top, gi.position.y);
+            r.right = max(r.right, gi.position.x + gi.glyph.correctedBlackBoxX);
+            r.bottom = max(r.bottom, gi.position.y + gi.glyph.blackBoxY);
+        }
+        return r;
+    }
+
+    void addGlyph(GlyphInstance gi, ref const TextureView view)
     {
         const float x = gi.position.x;
         const float y = gi.position.y;
         const float w = view.box.w;
         const float h = view.box.h;
-        bounds.include(RectF(x, y, x + w, y + h));
-
         const Vec2[4] vs = [Vec2(x, y), Vec2(x, y + h), Vec2(x + w, y), Vec2(x + w, y + h)];
         Vec2[4] uvs = [Vec2(0, 0), Vec2(0, h), Vec2(w, 0), Vec2(w, h)];
         foreach (ref uv; uvs)
