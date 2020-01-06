@@ -118,16 +118,16 @@ Result!Align decode(T : Align)(const Token[] tokens)
             shouldbe("alignment", "an identifier", t);
             return Err!Align;
         }
-        switch (t.text)
+        switch (t.text) with (Align)
         {
-            case "center": result |= Align.center; break;
-            case "left": result |= Align.left; break;
-            case "right": result |= Align.right; break;
-            case "top": result |= Align.top; break;
-            case "bottom": result |= Align.bottom; break;
-            case "hcenter": result |= Align.hcenter; break;
-            case "vcenter": result |= Align.vcenter; break;
-            case "top-left": result |= Align.topleft; break;
+            case "center":   result |= center; break;
+            case "left":     result |= left; break;
+            case "right":    result |= right; break;
+            case "top":      result |= top; break;
+            case "bottom":   result |= bottom; break;
+            case "hcenter":  result |= hcenter; break;
+            case "vcenter":  result |= vcenter; break;
+            case "top-left": result |= topleft; break;
             default:
                 unknown("alignment", t);
                 return Err!Align;
@@ -150,12 +150,13 @@ Result!Stretch decode(T : Stretch)(const(Token)[] tokens)
     }
     if (tokens.length > 1)
         toomany(what, t.line);
-    switch (t.text)
+
+    switch (t.text) with (Stretch)
     {
-        case "main":  return Ok(Stretch.main);
-        case "cross": return Ok(Stretch.cross);
-        case "both":  return Ok(Stretch.both);
-        case "none":  return Ok(Stretch.none);
+        case "main":  return Ok(main);
+        case "cross": return Ok(cross);
+        case "both":  return Ok(both);
+        case "none":  return Ok(none);
         default:
             unknown(what, t);
             return Err!Stretch;
@@ -608,12 +609,12 @@ private Result!Tiling decodeTiling(ref const Token t)
         shouldbe("repeat style", "an identifier", t);
         return Err!Tiling;
     }
-    switch (t.text)
+    switch (t.text) with (Tiling)
     {
-        case "repeat":    return Ok(Tiling.repeat);
-        case "no-repeat": return Ok(Tiling.none);
-        case "space": return Ok(Tiling.space);
-        case "round": return Ok(Tiling.round);
+        case "repeat":    return Ok(repeat);
+        case "no-repeat": return Ok(none);
+        case "space": return Ok(space);
+        case "round": return Ok(round);
         default:
             unknown("tiling", t);
             return Err!Tiling;
@@ -634,11 +635,12 @@ Result!BoxType decode(T : BoxType)(const(Token)[] tokens)
     }
     if (tokens.length > 1)
         toomany(what, t.line);
-    switch (t.text)
+
+    switch (t.text) with (BoxType)
     {
-        case "border-box":  return Ok(BoxType.border);
-        case "padding-box": return Ok(BoxType.padding);
-        case "content-box": return Ok(BoxType.content);
+        case "border-box":  return Ok(border);
+        case "padding-box": return Ok(padding);
+        case "content-box": return Ok(content);
         default:
             unknown(what, t);
             return Err!BoxType;
@@ -659,13 +661,14 @@ Result!BorderStyle decode(T : BorderStyle)(const(Token)[] tokens)
     }
     if (tokens.length > 1)
         toomany(what, t.line);
-    switch (t.text)
+
+    switch (t.text) with (BorderStyle)
     {
-        case "solid":  return Ok(BorderStyle.solid);
-        case "none":   return Ok(BorderStyle.none);
-        case "dotted": return Ok(BorderStyle.dotted);
-        case "dashed": return Ok(BorderStyle.dashed);
-        case "double": return Ok(BorderStyle.doubled);
+        case "solid":  return Ok(solid);
+        case "none":   return Ok(none);
+        case "dotted": return Ok(dotted);
+        case "dashed": return Ok(dashed);
+        case "double": return Ok(doubled);
         default:
             unknown(what, t);
             return Err!BorderStyle;
@@ -800,14 +803,14 @@ Result!FontFamily decode(T : FontFamily)(const Token[] tokens)
         shouldbe(what, "an identifier", t);
         return Err!FontFamily;
     }
-    switch (t.text)
+    switch (t.text) with (FontFamily)
     {
-        case "sans-serif": return Ok(FontFamily.sans_serif);
-        case "serif": return Ok(FontFamily.serif);
-        case "cursive": return Ok(FontFamily.cursive);
-        case "fantasy": return Ok(FontFamily.fantasy);
-        case "monospace": return Ok(FontFamily.monospace);
-        case "none": return Ok(FontFamily.unspecified);
+        case "sans-serif": return Ok(sans_serif);
+        case "serif":      return Ok(serif);
+        case "cursive":    return Ok(cursive);
+        case "fantasy":    return Ok(fantasy);
+        case "monospace":  return Ok(monospace);
+        case "none":       return Ok(unspecified);
         default:
             unknown(what, t);
             return Err!FontFamily;
@@ -896,12 +899,13 @@ Result!TextAlign decode(T : TextAlign)(const Token[] tokens)
     }
     if (tokens.length > 1)
         toomany(what, t.line);
-    switch (t.text)
+
+    switch (t.text) with (TextAlign)
     {
-        case "start": return Ok(TextAlign.start);
-        case "center": return Ok(TextAlign.center);
-        case "end": return Ok(TextAlign.end);
-        case "justify": return Ok(TextAlign.justify);
+        case "start":   return Ok(start);
+        case "center":  return Ok(center);
+        case "end":     return Ok(end);
+        case "justify": return Ok(justify);
         default:
             unknown(what, t);
             return Err!TextAlign;
@@ -922,11 +926,11 @@ Result!TextDecorLine decode(T : TextDecorLine)(const Token[] tokens)
             shouldbe(what, "an identifier", t);
             return Err!TextDecorLine;
         }
-        switch (t.text)
+        switch (t.text) with (TextDecorLine)
         {
-            case "overline": result |= TextDecorLine.over; break;
-            case "underline": result |= TextDecorLine.under; break;
-            case "line-through": result |= TextDecorLine.through; break;
+            case "overline":     result |= over; break;
+            case "underline":    result |= under; break;
+            case "line-through": result |= through; break;
             case "none": break;
             default:
                 unknown(what, t);
@@ -949,13 +953,14 @@ Result!TextDecorStyle decode(T : TextDecorStyle)(const Token[] tokens)
     }
     if (tokens.length > 1)
         toomany(what, t.line);
-    switch (t.text)
+
+    switch (t.text) with (TextDecorStyle)
     {
-        case "solid": return Ok(TextDecorStyle.solid);
-        case "double": return Ok(TextDecorStyle.doubled);
-        case "dotted": return Ok(TextDecorStyle.dotted);
-        case "dashed": return Ok(TextDecorStyle.dashed);
-        case "wavy": return Ok(TextDecorStyle.wavy);
+        case "solid":  return Ok(solid);
+        case "double": return Ok(doubled);
+        case "dotted": return Ok(dotted);
+        case "dashed": return Ok(dashed);
+        case "wavy":   return Ok(wavy);
         default:
             unknown(what, t);
             return Err!TextDecorStyle;
@@ -1013,12 +1018,13 @@ Result!TextHotkey decode(T : TextHotkey)(const Token[] tokens)
     }
     if (tokens.length > 1)
         toomany(what, t.line);
-    switch (t.text)
+
+    switch (t.text) with (TextHotkey)
     {
-        case "ignore": return Ok(TextHotkey.ignore);
-        case "hidden": return Ok(TextHotkey.hidden);
-        case "underline": return Ok(TextHotkey.underline);
-        case "underline-on-alt": return Ok(TextHotkey.underlineOnAlt);
+        case "ignore": return Ok(ignore);
+        case "hidden": return Ok(hidden);
+        case "underline": return Ok(underline);
+        case "underline-on-alt": return Ok(underlineOnAlt);
         default:
             unknown(what, t);
             return Err!TextHotkey;
@@ -1039,11 +1045,12 @@ Result!TextOverflow decode(T : TextOverflow)(const Token[] tokens)
     }
     if (tokens.length > 1)
         toomany(what, t.line);
-    switch (t.text)
+
+    switch (t.text) with (TextOverflow)
     {
-        case "clip": return Ok(TextOverflow.clip);
-        case "ellipsis": return Ok(TextOverflow.ellipsis);
-        case "ellipsis-middle": return Ok(TextOverflow.ellipsisMiddle);
+        case "clip": return Ok(clip);
+        case "ellipsis": return Ok(ellipsis);
+        case "ellipsis-middle": return Ok(ellipsisMiddle);
         default:
             unknown(what, t);
             return Err!TextOverflow;
@@ -1064,12 +1071,13 @@ Result!TextTransform decode(T : TextTransform)(const Token[] tokens)
     }
     if (tokens.length > 1)
         toomany(what, t.line);
-    switch (t.text)
+
+    switch (t.text) with (TextTransform)
     {
-        case "none": return Ok(TextTransform.none);
-        case "capitalize": return Ok(TextTransform.capitalize);
-        case "uppercase": return Ok(TextTransform.uppercase);
-        case "lowercase": return Ok(TextTransform.lowercase);
+        case "none":       return Ok(none);
+        case "capitalize": return Ok(capitalize);
+        case "uppercase":  return Ok(uppercase);
+        case "lowercase":  return Ok(lowercase);
         default:
             unknown(what, t);
             return Err!TextTransform;
@@ -1290,13 +1298,14 @@ Result!TimingFunction decode(T : TimingFunction)(const Token[] tokens)
     }
     if (tokens.length > 1)
         toomany(what, t.line);
-    switch (t.text)
+
+    switch (t.text) with (TimingFunction)
     {
-        case "linear": return Ok(cast(TimingFunction)TimingFunction.linear);
-        case "ease": return Ok(cast(TimingFunction)TimingFunction.ease);
-        case "ease-in": return Ok(cast(TimingFunction)TimingFunction.easeIn);
-        case "ease-out": return Ok(cast(TimingFunction)TimingFunction.easeOut);
-        case "ease-in-out": return Ok(cast(TimingFunction)TimingFunction.easeInOut);
+        case "linear": return Ok(cast()linear);
+        case "ease": return Ok(cast()ease);
+        case "ease-in": return Ok(cast()easeIn);
+        case "ease-out": return Ok(cast()easeOut);
+        case "ease-in-out": return Ok(cast()easeInOut);
         default:
             unknown(what, t);
             return Err!TimingFunction;
