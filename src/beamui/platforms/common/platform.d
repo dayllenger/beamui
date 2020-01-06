@@ -2465,14 +2465,6 @@ struct GuiApp
     ~this()
     {
         Platform.instance = null;
-
-        static if (USE_OPENGL)
-        {
-            import beamui.graphics.glsupport;
-            if (openglEnabled)
-                uninitGLSupport();
-        }
-
         releaseResourcesOnAppExit();
     }
 }

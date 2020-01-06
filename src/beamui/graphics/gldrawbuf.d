@@ -1,7 +1,4 @@
 /**
-This module contains OpenGL based drawing buffer implementation.
-
-OpenGL support is enabled by default, build with version = NO_OPENGL to disable it.
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2018
 License:   Boost License 1.0
@@ -17,7 +14,6 @@ import beamui.core.linalg;
 import beamui.core.logger;
 import beamui.graphics.colors;
 import beamui.graphics.drawbuf;
-import beamui.graphics.glsupport;
 import beamui.graphics.gl.objects : Tex2D, TexId;
 import beamui.text.glyph : GlyphRef;
 
@@ -138,11 +134,11 @@ private abstract class GLCache
                 Log.d("GL: updateTexture - new texture id: ", _texture.handle);
 
             uint* pixels = _drawbuf.scanLine(0);
-            if (!glSupport.setTextureImage(_texture, _drawbuf.width, _drawbuf.height, cast(ubyte*)pixels, _cache.smoothResize))
-            {
-                Tex2D.del(_texture);
-                return;
-            }
+            // if (!glSupport.setTextureImage(_texture, _drawbuf.width, _drawbuf.height, cast(ubyte*)pixels, _cache.smoothResize))
+            // {
+            //     Tex2D.del(_texture);
+            //     return;
+            // }
             _needUpdateTexture = false;
             if (_closed)
                 eliminate(_drawbuf);
