@@ -23,6 +23,7 @@ x:ddoxFilterArgs "--min-protection=Protected" "--in" "beamui" "--ex" ""
 
 subPackage "ext"
 subPackage "examples/basic"
+subPackage "examples/canvas"
 subPackage "examples/css"
 subPackage "examples/opengl"
 subPackage "examples/overview"

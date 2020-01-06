@@ -1,0 +1,22 @@
+name "canvas"
+description "2D graphics example for beamui"
+homepage "https://github.com/dayllenger/beamui"
+license "BSL-1.0"
+authors "dayllenger"
+
+targetName "canvas"
+targetPath "bin"
+targetType "executable"
+
+dependency "beamui" path="../../"
+
+configuration "application" {
+    subConfiguration "beamui" "x11"
+}
+configuration "win-application" {
+    platforms "windows"
+    subConfiguration "beamui" "library"
+}
+configuration "sw" {
+    subConfiguration "beamui" "minimal"
+}
