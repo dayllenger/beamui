@@ -304,7 +304,6 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
     this(Console console)
     {
         _console = console;
-        resetClipping();
     }
 
     ~this()
@@ -322,14 +321,6 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         return _console.height;
     }
 
-    override void beforeDrawing()
-    {
-        // TODO?
-    }
-    override void afterDrawing()
-    {
-        // TODO?
-    }
     override @property int bpp() const
     {
         return 4;
@@ -340,7 +331,6 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
     override void resize(int width, int height)
     {
         // IGNORE
-        resetClipping();
     }
 
     //===============================================================
@@ -504,7 +494,6 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
 
     override void clear()
     {
-        resetClipping();
     }
 }
 

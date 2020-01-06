@@ -41,7 +41,6 @@ class Win32ColorDrawBuf : ColorDrawBufBase
     this(ColorDrawBuf src, int width, int height)
     {
         resize(width, height);
-        resetClipping();
         fill(Color.transparent);
         if (src.width == width && src.height == height)
             drawImage(0, 0, src);
@@ -160,11 +159,6 @@ class Win32ColorDrawBuf : ColorDrawBufBase
 
     override void fill(Color color)
     {
-        if (hasClipping)
-        {
-            fillRect(clipRect, color);
-            return;
-        }
         int len = _w * _h;
         _pixels[0 .. len] = color.rgba;
     }

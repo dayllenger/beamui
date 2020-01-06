@@ -76,9 +76,7 @@ class DrawBuf : RefCountedObject
         }
     }
 
-    private Rect _clipRect;
     private NinePatch* _ninePatch;
-    private uint _alpha = 255;
 
     static if (USE_OPENGL)
     {
@@ -135,27 +133,6 @@ class DrawBuf : RefCountedObject
 
     void clear()
     {
-        resetClipping();
-    }
-
-    /// Current alpha setting (applied to all drawing operations)
-    @property uint alpha() const { return _alpha; }
-    /// ditto
-    @property void alpha(uint alpha)
-    {
-        _alpha = min(alpha, 0xFF);
-    }
-
-    /// Apply additional transparency to current drawbuf alpha value
-    void addAlpha(uint alpha)
-    {
-        _alpha = blendAlpha(_alpha, alpha);
-    }
-
-    /// Applies current drawbuf alpha to color
-    void applyAlpha(ref Color c)
-    {
-        c.addAlpha(_alpha);
     }
 
     /// Detect nine patch using image 1-pixel border. Returns true if 9-patch markup is found in the image
@@ -165,90 +142,28 @@ class DrawBuf : RefCountedObject
         return false;
     }
 
-    //===============================================================
-    // Clipping rectangle functions
-
-    /// Init clip rectangle to full buffer size
-    void resetClipping()
-    {
-        _clipRect = Rect(0, 0, width, height);
-    }
-
-    @property bool hasClipping() const
-    {
-        return _clipRect.left != 0 || _clipRect.top != 0 || _clipRect.right != width || _clipRect.bottom != height;
-    }
-    /// Clipping rectangle
-    @property ref const(Rect) clipRect() const { return _clipRect; }
-    /// ditto
-    @property void clipRect(const ref Rect rc)
-    {
-        _clipRect = rc;
-        _clipRect.intersect(Rect(0, 0, width, height));
-    }
-    /// Set new clipping rectangle, intersect with previous one
-    void intersectClipRect(const ref Rect rc)
-    {
-        _clipRect.intersect(rc);
-    }
-    /// Returns true if rectangle is completely clipped out and cannot be drawn.
-    @property bool isClippedOut(const ref Rect rc) const
-    {
-        return !_clipRect.intersects(rc);
-    }
-    /// Apply `clipRect` and buffer bounds clipping to rectangle
+    /// Apply buffer bounds clipping to rectangle
     bool applyClipping(ref Rect rc) const
     {
-        rc.intersect(_clipRect);
-        if (rc.left < 0)
-            rc.left = 0;
-        if (rc.top < 0)
-            rc.top = 0;
-        if (rc.right > width)
-            rc.right = width;
-        if (rc.bottom > height)
-            rc.bottom = height;
-        return !rc.empty;
+        return rc.intersect(Rect(0, 0, width, height));
     }
-    /// Apply `clipRect` and buffer bounds clipping to rectangle
+    /// Apply buffer bounds clipping to rectangle.
     /// If clipping applied to first rectangle, reduce second rectangle bounds proportionally
     bool applyClipping(ref Rect rc, ref Rect rc2) const
     {
         if (rc.empty || rc2.empty)
             return false;
-        if (!rc.intersects(_clipRect))
-            return false;
         if (rc.width == rc2.width && rc.height == rc2.height)
         {
             // unscaled
-            if (rc.left < _clipRect.left)
-            {
-                rc2.left += _clipRect.left - rc.left;
-                rc.left = _clipRect.left;
-            }
-            if (rc.top < _clipRect.top)
-            {
-                rc2.top += _clipRect.top - rc.top;
-                rc.top = _clipRect.top;
-            }
-            if (rc.right > _clipRect.right)
-            {
-                rc2.right -= rc.right - _clipRect.right;
-                rc.right = _clipRect.right;
-            }
-            if (rc.bottom > _clipRect.bottom)
-            {
-                rc2.bottom -= rc.bottom - _clipRect.bottom;
-                rc.bottom = _clipRect.bottom;
-            }
             if (rc.left < 0)
             {
-                rc2.left += -rc.left;
+                rc2.left -= rc.left;
                 rc.left = 0;
             }
             if (rc.top < 0)
             {
-                rc2.top += -rc.top;
+                rc2.top -= rc.top;
                 rc.top = 0;
             }
             if (rc.right > width)
@@ -269,26 +184,6 @@ class DrawBuf : RefCountedObject
             int dstdy = rc.height;
             int srcdx = rc2.width;
             int srcdy = rc2.height;
-            if (rc.left < _clipRect.left)
-            {
-                rc2.left += (_clipRect.left - rc.left) * srcdx / dstdx;
-                rc.left = _clipRect.left;
-            }
-            if (rc.top < _clipRect.top)
-            {
-                rc2.top += (_clipRect.top - rc.top) * srcdy / dstdy;
-                rc.top = _clipRect.top;
-            }
-            if (rc.right > _clipRect.right)
-            {
-                rc2.right -= (rc.right - _clipRect.right) * srcdx / dstdx;
-                rc.right = _clipRect.right;
-            }
-            if (rc.bottom > _clipRect.bottom)
-            {
-                rc2.bottom -= (rc.bottom - _clipRect.bottom) * srcdy / dstdy;
-                rc.bottom = _clipRect.bottom;
-            }
             if (rc.left < 0)
             {
                 rc2.left -= (rc.left) * srcdx / dstdx;
@@ -311,15 +206,6 @@ class DrawBuf : RefCountedObject
             }
         }
         return !rc.empty && !rc2.empty;
-    }
-    /// Reserved for hardware-accelerated drawing - begins drawing batch
-    void beforeDrawing()
-    {
-        _alpha = 255;
-    }
-    /// Reserved for hardware-accelerated drawing - ends drawing batch
-    void afterDrawing()
-    {
     }
 
     //========================================================
@@ -361,37 +247,6 @@ class DrawBuf : RefCountedObject
 
 alias DrawBufRef = Ref!DrawBuf;
 
-/// RAII setting/restoring of a DrawBuf clip rectangle
-struct ClipRectSaver
-{
-    private DrawBuf _buf;
-    private Rect _oldClipRect;
-    private uint _oldAlpha;
-
-    /// Intersect new clip rectangle and apply alpha to draw buf
-    this(DrawBuf buf, Rect newClipRect, uint newAlpha = 255)
-    {
-        _buf = buf;
-        _oldClipRect = buf.clipRect;
-        _oldAlpha = buf.alpha;
-
-        buf.intersectClipRect(newClipRect);
-        if (newAlpha < 255)
-            buf.addAlpha(newAlpha);
-    }
-    /// ditto
-    this(DrawBuf buf, Box newClipBox, uint newAlpha = 255)
-    {
-        this(buf, Rect(newClipBox), newAlpha);
-    }
-    /// Restore previous clip rectangle
-    ~this()
-    {
-        _buf.clipRect = _oldClipRect;
-        _buf.alpha = _oldAlpha;
-    }
-}
-
 class ColorDrawBufBase : DrawBuf
 {
     override @property
@@ -426,31 +281,12 @@ class ColorDrawBufBase : DrawBuf
                 {
                     uint* srcrow = img.scanLine(srcrect.top + yy) + srcrect.left;
                     uint* dstrow = scanLine(dstrect.top + yy) + dstrect.left;
-                    if (_alpha == 255)
+                    if (255 == 255)
                     {
-                        // simplified version - no alpha blending
                         foreach (i; 0 .. dx)
                         {
                             const uint pixel = srcrow[i];
                             const uint alpha = pixel >> 24;
-                            if (alpha == 255)
-                            {
-                                dstrow[i] = pixel;
-                            }
-                            else if (alpha > 0)
-                            {
-                                // apply blending
-                                blendARGB(dstrow[i], pixel, alpha);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // combine two alphas
-                        foreach (i; 0 .. dx)
-                        {
-                            const uint pixel = srcrow[i];
-                            const uint alpha = blendAlpha(_alpha, pixel >> 24);
                             if (alpha == 255)
                             {
                                 dstrow[i] = pixel;
@@ -481,8 +317,6 @@ class ColorDrawBufBase : DrawBuf
 
     override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
     {
-        if (_alpha == 0)
-            return; // fully transparent - don't draw
         auto img = cast(ColorDrawBufBase)src;
         if (!img)
             return;
@@ -501,31 +335,12 @@ class ColorDrawBufBase : DrawBuf
             {
                 uint* srcrow = img.scanLine(ymap[y]);
                 uint* dstrow = scanLine(dstrect.top + y) + dstrect.left;
-                if (_alpha == 255)
+                if (255 == 255)
                 {
-                    // simplified alpha calculation
                     foreach (x; 0 .. dx)
                     {
                         const uint srcpixel = srcrow[xmap[x]];
                         const uint alpha = srcpixel >> 24;
-                        if (alpha == 255)
-                        {
-                            dstrow[x] = srcpixel;
-                        }
-                        else if (alpha > 0)
-                        {
-                            // apply blending
-                            blendARGB(dstrow[x], srcpixel, alpha);
-                        }
-                    }
-                }
-                else
-                {
-                    // blending two alphas
-                    foreach (x; 0 .. dx)
-                    {
-                        const uint srcpixel = srcrow[xmap[x]];
-                        const uint alpha = blendAlpha(_alpha, srcpixel >> 24);
                         if (alpha == 255)
                         {
                             dstrow[x] = srcpixel;
@@ -618,18 +433,14 @@ class ColorDrawBufBase : DrawBuf
 
     override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
     {
-        applyAlpha(color);
         const uint rgb = color.rgb;
         immutable(ubyte[]) src = glyph.glyph;
         const int srcdx = glyph.blackBoxX;
         const int srcdy = glyph.blackBoxY;
-        const bool clipping = true; //!_clipRect.empty();
         const bool subpixel = glyph.subpixelMode != SubpixelRenderingMode.none;
         foreach (int yy; 0 .. srcdy)
         {
             const int liney = y + yy;
-            if (clipping && (liney < _clipRect.top || liney >= _clipRect.bottom))
-                continue;
             if (liney < 0 || liney >= _h)
                 continue;
 
@@ -638,8 +449,6 @@ class ColorDrawBufBase : DrawBuf
             foreach (int xx; 0 .. srcdx)
             {
                 int colx = x + (subpixel ? xx / 3 : xx);
-                if (clipping && (colx < _clipRect.left || colx >= _clipRect.right))
-                    continue;
                 if (colx < 0 || colx >= _w)
                     continue;
 
@@ -702,7 +511,6 @@ class ColorDrawBufBase : DrawBuf
 
     override void fillRect(Rect rc, Color color)
     {
-        applyAlpha(color);
         if (!color.isFullyTransparent && applyClipping(rc))
         {
             const bool opaque = color.isOpaque;
@@ -750,10 +558,9 @@ class ColorDrawBufBase : DrawBuf
 
     override void drawPixel(int x, int y, Color color)
     {
-        if (!_clipRect.contains(x, y))
+        if (x < 0 || width <= x || y < 0 || height <= y)
             return;
 
-        applyAlpha(color);
         uint* row = scanLine(y);
         if (color.isOpaque)
         {
@@ -799,15 +606,11 @@ class GrayDrawBuf : DrawBuf
         _w = width;
         _h = height;
         _buf.resize(_w * _h);
-        resetClipping();
     }
 
     override void fill(Color color)
     {
-        if (hasClipping)
-            fillRect(Rect(0, 0, _w, _h), color);
-        else
-            _buf.unsafe_slice[] = color.toGray;
+        _buf.unsafe_slice[] = color.toGray;
     }
 
     override void drawFragment(int x, int y, DrawBuf src, Rect srcrect)
@@ -947,12 +750,9 @@ class GrayDrawBuf : DrawBuf
         immutable(ubyte[]) src = glyph.glyph;
         const int srcdx = glyph.blackBoxX;
         const int srcdy = glyph.blackBoxY;
-        const bool clipping = true; //!_clipRect.empty();
         foreach (int yy; 0 .. srcdy)
         {
             int liney = y + yy;
-            if (clipping && (liney < _clipRect.top || liney >= _clipRect.bottom))
-                continue;
             if (liney < 0 || liney >= _h)
                 continue;
             ubyte* row = scanLine(liney);
@@ -960,8 +760,6 @@ class GrayDrawBuf : DrawBuf
             foreach (int xx; 0 .. srcdx)
             {
                 int colx = xx + x;
-                if (clipping && (colx < _clipRect.left || colx >= _clipRect.right))
-                    continue;
                 if (colx < 0 || colx >= _w)
                     continue;
 
@@ -981,7 +779,6 @@ class GrayDrawBuf : DrawBuf
 
     override void fillRect(Rect rc, Color color)
     {
-        applyAlpha(color);
         if (!color.isFullyTransparent && applyClipping(rc))
         {
             const ubyte c = color.toGray;
@@ -1034,10 +831,9 @@ class GrayDrawBuf : DrawBuf
 
     override void drawPixel(int x, int y, Color color)
     {
-        if (!_clipRect.contains(x, y))
+        if (x < 0 || width <= x || y < 0 || height <= y)
             return;
 
-        applyAlpha(color);
         ubyte* row = scanLine(y);
         if (color.isOpaque)
         {
@@ -1124,15 +920,11 @@ class ColorDrawBuf : ColorDrawBufBase
         _w = width;
         _h = height;
         _buf.resize(_w * _h);
-        resetClipping();
     }
 
     override void fill(Color color)
     {
-        if (hasClipping)
-            fillRect(Rect(0, 0, _w, _h), color);
-        else
-            _buf.unsafe_slice[] = color.rgba;
+        _buf.unsafe_slice[] = color.rgba;
     }
 
     /// Apply Gaussian blur to the image
