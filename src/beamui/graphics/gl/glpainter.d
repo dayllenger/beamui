@@ -22,7 +22,7 @@ import beamui.graphics.colors : Color, ColorF;
 import beamui.graphics.compositing : getBlendFactors;
 import beamui.graphics.drawbuf : ColorDrawBufBase, GlyphInstance;
 import beamui.graphics.flattener : flattenCubicBezier;
-import beamui.graphics.painter : PaintEngine;
+import beamui.graphics.painter : PaintEngine, MIN_RECT_F;
 import beamui.graphics.pen;
 import beamui.graphics.polygons;
 import beamui.graphics.gl.objects : TexId;
@@ -781,6 +781,7 @@ protected:
         bt.simple.hasUV = true;
 
         Batch* similar;
+        RectF bounds = MIN_RECT_F;
         ParamsText params;
         bool firstGlyph = true;
         foreach (gi; run)
@@ -797,13 +798,18 @@ protected:
             }
             else if (params.tex !is view.tex)
             {
+                const clip = RectI(clipByRect(transformBounds(bounds)));
+                if (clip.empty)
+                    continue;
                 if (similar)
                 {
+                    similar.common.clip.include(clip);
                     similar.common.triangles.end = triangles.length;
                     similar = null;
                 }
                 else
                 {
+                    bt.common.clip = clip;
                     bt.common.params.text = params;
                     bt.common.triangles.end = triangles.length;
                     batches ~= bt;
@@ -811,18 +817,24 @@ protected:
                 bt.common.triangles.start = triangles.length;
                 params.tex = view.tex;
             }
-            addGlyph(gi, view);
+            addGlyph(gi, view, bounds);
         }
         if (!params.tex)
+            return;
+
+        const clip = RectI(clipByRect(transformBounds(bounds)));
+        if (clip.empty)
             return;
 
         assert(bt.common.triangles.start < triangles.length);
         if (similar)
         {
+            similar.common.clip.include(clip);
             similar.common.triangles.end = triangles.length;
         }
         else
         {
+            bt.common.clip = clip;
             bt.common.params.text = params;
             bt.common.triangles.end = triangles.length;
             batches ~= bt;
@@ -834,12 +846,14 @@ protected:
 
 private:
 
-    void addGlyph(GlyphInstance gi, ref const TextureView view)
+    void addGlyph(GlyphInstance gi, ref const TextureView view, ref RectF bounds)
     {
         const float x = gi.position.x;
         const float y = gi.position.y;
         const float w = view.box.w;
         const float h = view.box.h;
+        bounds.include(RectF(x, y, x + w, y + h));
+
         const Vec2[4] vs = [Vec2(x, y), Vec2(x, y + h), Vec2(x + w, y), Vec2(x + w, y + h)];
         Vec2[4] uvs = [Vec2(0, 0), Vec2(0, h), Vec2(w, 0), Vec2(w, h)];
         foreach (ref uv; uvs)
