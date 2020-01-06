@@ -780,7 +780,6 @@ protected:
 
         ShParams params;
         params.kind = PaintKind.text;
-        params.text = ParamsText(null, ColorF(c));
 
         bool firstGlyph = true;
         foreach (gi; run)
@@ -832,7 +831,7 @@ protected:
         }
 
         dataIndices_textured.resize(positions_textured.length, cast(ushort)dataStore.length);
-        dataStore ~= prepareDataChunk();
+        dataStore ~= prepareDataChunk(null, c);
 
         advanceDepth();
     }

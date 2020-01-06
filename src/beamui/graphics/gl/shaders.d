@@ -110,7 +110,6 @@ struct ParamsImage
 struct ParamsText
 {
     const(TexId)* tex;
-    ColorF color;
 }
 
 struct ParamsComposition
@@ -372,7 +371,7 @@ final class ShaderText : ShaderBase
 
     override @property string vertexSource() const
     {
-        return "#define UV\n" ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        return "#define DATA_COLOR\n" ~ "#define UV\n" ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
     }
     override @property string fragmentSource() const
     {
@@ -389,15 +388,13 @@ final class ShaderText : ShaderBase
         in(p.tex)
     {
         super.setup(pbase);
-        const ColorF c = p.color.premultiplied;
-        glUniform4f(loc.textRunColor, c.r, c.g, c.b, c.a);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
         Tex2D.setup(*p.tex, SamplerIndex.texture);
     }
 
     private Locations!([
-        "tex", "textRunColor"
+        "tex"
     ]) loc;
 }
 
