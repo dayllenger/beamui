@@ -4,36 +4,36 @@ Tree widgets.
 Synopsis:
 ---
 // tree example
-auto treePane = new Panel;
+auto panel = new Panel;
     auto treeItemLabel = new Label;
     auto tree = new TreeWidget;
-treePane.add(treeItemLabel, tree);
+panel.add(treeItemLabel, tree);
 
-treePane.display = "column";
+panel.style.display = "column";
 treeItemLabel.style.textAlign = TextAlign.center;
 tree.style.stretch = Stretch.both;
 
-TreeItem tree1 = tree.items.newChild("group1", "Group 1"d, "folder");
+TreeItem tree1 = tree.items.newChild("g1", "Group 1"d, "folder");
 tree1.newChild("g1_1", "item 1"d, "text-plain");
 tree1.newChild("g1_2", "item 2"d, "text-plain");
 tree1.newChild("g1_3", "item 3"d, "text-plain");
-TreeItem tree2 = tree.items.newChild("group2", "Group 2"d);
+TreeItem tree2 = tree.items.newChild("g2", "Group 2"d);
 tree2.newChild("g2_1", "item 1"d);
 tree2.newChild("g2_2", "item 2"d);
 tree2.newChild("g2_3", "item 3"d);
-TreeItem tree22 = tree2.newChild("group2_1", "Group 2.1"d);
-tree22.newChild("group3_2_1", "item 1"d);
-tree22.newChild("group3_2_2", "item 2"d);
-tree22.newChild("group3_2_3", "item 3"d);
-tree22.newChild("group3_2_4", "item 4"d);
-tree22.newChild("group3_2_5", "item 5"d);
-tree2.newChild("g2_4", "item 4"d);
+TreeItem tree2_4 = tree2.newChild("g2_4", "Group 2.1"d);
+tree2_4.newChild("g2_4_1", "item 1"d);
+tree2_4.newChild("g2_4_2", "item 2"d);
+tree2_4.newChild("g2_4_3", "item 3"d);
+tree2_4.newChild("g2_4_4", "item 4"d);
+tree2_4.newChild("g2_4_5", "item 5"d);
+tree2.newChild("g2_5", "item 4"d);
 
 tree.onSelect ~= (TreeItem selectedItem, bool activated) {
     dstring label = "Selected item: "d ~ toUTF32(selectedItem.id) ~ (activated ? " selected + activated"d : " selected"d);
     treeItemLabel.text = label;
 };
-tree.selectItem("group1");
+tree.selectItem("g1");
 ---
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
@@ -56,8 +56,9 @@ class TreeItem
 {
     @property
     {
-        /// Returns topmost item
+        /// Returns topmost item. Tree items are not supposed to be used without root
         inout(RootTreeItem) root() inout
+            out(r; r, "No tree root item")
         {
             TreeItem p = cast()this;
             while (p._parent)
@@ -102,19 +103,19 @@ class TreeItem
         }
 
         /// Nesting level of this item
-        int level() const { return _level; }
+        uint level() const { return _level; }
         /// ditto
-        protected void level(int level)
+        protected void level(uint value)
         {
-            _level = level;
+            _level = value;
             foreach (i; 0 .. childCount)
                 child(i).level = _level + 1;
         }
 
         /// Returns true if item has subitems and can collapse or expand itself
-        bool canCollapse() const
+        bool canExpandOrCollapse() const
         {
-            return root.canCollapseItem(this);
+            return root.canExpandOrCollapseItem(this);
         }
 
         /// True if this item is expanded
@@ -138,12 +139,12 @@ class TreeItem
             return _parent ? _parent.isFullyExpanded : false;
         }
 
-        /// Get selected item in the tree
+        /// Get selected item in the tree, possibly `null`. The root cannot be selected
         TreeItem selectedItem()
         {
             return root.selectedItem;
         }
-        /// Get default item in the tree
+        /// Get default item in the tree, possibly `null`. The root cannot be default
         TreeItem defaultItem()
         {
             return root.defaultItem;
@@ -171,7 +172,7 @@ class TreeItem
         string _id;
         dstring _text;
         string _iconID;
-        int _level;
+        uint _level;
         Collection!(TreeItem, true) _children;
         bool _expanded;
 
@@ -213,7 +214,7 @@ class TreeItem
     {
         foreach (c; _children)
         {
-            if (!c._expanded && c.canCollapse)
+            if (!c._expanded && c.canExpandOrCollapse)
                 c.expandAll();
         }
         if (!expanded)
@@ -224,7 +225,7 @@ class TreeItem
     {
         foreach (c; _children)
         {
-            if (c._expanded && c.canCollapse)
+            if (c._expanded && c.canExpandOrCollapse)
                 c.collapseAll();
         }
         if (expanded)
@@ -269,6 +270,7 @@ class TreeItem
     }
     /// Adds child, returns added item
     TreeItem addChild(TreeItem item, int index = -1)
+        in(item)
     {
         if (index >= 0)
             _children.insert(index, item);
@@ -282,23 +284,25 @@ class TreeItem
     /// Removes child, returns removed item
     TreeItem removeChild(int index)
     {
-        if (index < 0 || _children.count <= index)
+        const count = _children.count;
+        if (index < 0 || count <= index)
             return null;
+
+        RootTreeItem root = this.root;
         TreeItem res = _children.remove(index);
+        assert(res);
         TreeItem newSelection;
-        if (res)
+        if (root.selectedItem is res)
         {
-            res.parent = null;
-            if (root && root.selectedItem is res)
-            {
-                if (index < _children.count)
-                    newSelection = _children[index];
-                else if (index > 0)
-                    newSelection = _children[index - 1];
-                else
-                    newSelection = this;
-            }
+            if (index < _children.count)
+                newSelection = _children[index];
+            else if (index != 0)
+                newSelection = _children[index - 1];
+            else
+                newSelection = res.parent;
         }
+        res.parent = null;
+        res.level = 0;
         root.selectItem(newSelection);
         root.handleUpdate();
         return res;
@@ -350,8 +354,7 @@ class TreeItem
             return this;
         foreach (i; 0 .. childCount)
         {
-            TreeItem res = child(i).nextVisible(item, found);
-            if (res)
+            if (auto res = child(i).nextVisible(item, found))
                 return res;
         }
         return null;
@@ -365,29 +368,27 @@ class TreeItem
             prevFoundVisible = this;
         foreach (i; 0 .. childCount)
         {
-            TreeItem res = child(i).prevVisible(item, prevFoundVisible);
-            if (res)
+            if (auto res = child(i).prevVisible(item, prevFoundVisible))
                 return res;
         }
         return null;
     }
 
-    /// Returns item by id, `null` if not found
+    /// Get an item of this sub-tree by id, `null` if not found
     TreeItem findItemByID(string id)
     {
         if (_id == id)
             return this;
-        for (int i = 0; i < childCount; i++)
+        foreach (i; 0 .. childCount)
         {
-            TreeItem res = child(i).findItemByID(id);
-            if (res)
+            if (auto res = child(i).findItemByID(id))
                 return res;
         }
         return null;
     }
 }
 
-/// Fake tree root item
+/// Invisible root item
 class RootTreeItem : TreeItem
 {
     override @property TreeItem selectedItem() { return _selectedItem; }
@@ -403,7 +404,7 @@ class RootTreeItem : TreeItem
     Listener!(void delegate(TreeItem)) onToggleExpand;
     Listener!(void delegate(TreeItem, bool activated)) onSelect;
 
-    bool canCollapseTopLevel = true;
+    bool canExpandOrCollapseTopLevel = true;
 
     private TreeItem _selectedItem;
     private TreeItem _defaultItem;
@@ -413,12 +414,14 @@ class RootTreeItem : TreeItem
         super("root");
     }
 
-    bool canCollapseItem(const(TreeItem) item) const
+    bool canExpandOrCollapseItem(const(TreeItem) item) const
     {
-        if (item.level == 1)
-            return canCollapseTopLevel && item.hasChildren;
-        else
-            return item.hasChildren;
+        if (item.level > 0)
+        {
+            if (item.level > 1 || canExpandOrCollapseTopLevel)
+                return item.hasChildren;
+        }
+        return false;
     }
 
     override protected void handleUpdate()
@@ -431,7 +434,7 @@ class RootTreeItem : TreeItem
         bool changed;
         if (item.expanded)
         {
-            if (item.canCollapse)
+            if (item.canExpandOrCollapse)
             {
                 item.collapse();
                 changed = true;
@@ -451,25 +454,33 @@ class RootTreeItem : TreeItem
     {
         if (_selectedItem is item)
             return;
+        if (item is this)
+            item = null;
+        if (_selectedItem is _defaultItem)
+            _defaultItem = null;
         _selectedItem = item;
         onStateChange();
-        onSelect(_selectedItem, false);
+        onSelect(item, false);
     }
 
     void setDefaultItem(TreeItem item)
     {
+        if (item is this)
+            item = null;
         _defaultItem = item;
         onStateChange();
     }
 
     override void activateItem(TreeItem item)
     {
-        if (!(_selectedItem is item))
+        if (item is this)
+            item = null;
+        if (_selectedItem !is item)
         {
             _selectedItem = item;
             onStateChange();
         }
-        onSelect(_selectedItem, true);
+        onSelect(item, true);
     }
 
     void selectNext()
@@ -524,16 +535,16 @@ class TreeItemWidget : Panel
         allowsHover = true;
 
         int icount = _item.level - 1;
-        if (!_item.root.canCollapseTopLevel)
+        if (!_item.root.canExpandOrCollapseTopLevel)
             icount--;
         if (icount > 0)
         {
             _indent = new Widget("tree-item-indent");
-            int w = icount * font.size * 2;
+            const w = icount * font.size * 2;
             _indent.style.minWidth = w;
             _indent.style.maxWidth = w;
         }
-        if (_item.canCollapse)
+        if (_item.canExpandOrCollapse)
         {
             _expander = new ImageWidget;
             _expander.id = "tree-item-expander";
@@ -869,4 +880,112 @@ class TreeWidget : TreeWidgetBase
     {
         super(hscrollbarMode, vscrollbarMode);
     }
+}
+
+//===============================================================
+// Tests
+
+unittest
+{
+    auto item = new TreeItem("root");
+    assert(!item.parent);
+    assert(item.level == 0);
+    assert(item.isFullyExpanded);
+    assert(!item.isVisible);
+    assert(!item.findItemByID("123"));
+    assert(item.findItemByID("root") is item);
+}
+
+unittest
+{
+    auto root = new RootTreeItem;
+    assert(root.root is root);
+    assert(!root.parent);
+    assert(root.level == 0);
+    assert(!root.canExpandOrCollapse);
+    assert(root.expanded);
+    root.expandAll();
+    root.collapseAll();
+    assert(root.expanded);
+    assert(root.isFullyExpanded);
+    assert(!root.isVisible);
+    assert(!root.selectedItem);
+    assert(!root.defaultItem);
+    root.selectItem(root);
+    root.setDefaultItem(root);
+    assert(!root.selectedItem);
+    assert(!root.defaultItem);
+    assert(!root.findItemByID("123"));
+    assert(root.findItemByID("root") is root);
+}
+
+unittest
+{
+    auto root = new RootTreeItem;
+    auto item = root.newChild("id", null);
+    assert(root.childCount == 1);
+    assert(root.child(0) is item);
+    assert(root.childIndex(item) == 0);
+    assert(item.root is root);
+    assert(item.parent is root);
+    assert(item.level == 1);
+    assert(!item.canExpandOrCollapse);
+    assert(!root.canExpandOrCollapse);
+    root.collapseAll();
+    assert(root.expanded);
+    assert(item.expanded);
+    assert(item.isFullyExpanded);
+    assert(item.isVisible);
+    root.selectItem(item);
+    assert(root.selectedItem is item);
+    root.setDefaultItem(item);
+    assert(root.defaultItem is item);
+
+    root.removeChild(item);
+    assert(!item.parent);
+    assert(item.level == 0);
+    assert(root.childCount == 0);
+    assert(!root.selectedItem);
+    assert(!root.defaultItem);
+
+    root.addChild(item);
+    assert(root.hasChildren);
+    assert(root.findItemByID("id") is item);
+    root.selectItem(item);
+    root.setDefaultItem(item);
+    root.clear();
+    assert(!root.hasChildren);
+    assert(!root.selectedItem);
+    assert(!root.defaultItem);
+}
+
+unittest
+{
+    auto root = new RootTreeItem;
+    TreeItem tree1 = root.newChild("1", null);
+    tree1.newChild("1_1", null);
+    tree1.newChild("1_2", null);
+    tree1.newChild("1_3", null);
+    TreeItem tree1_1 = tree1.newChild("1_4", null);
+    tree1_1.newChild("1_4_1", null);
+    tree1_1.newChild("1_4_2", null);
+
+    assert(tree1.childCount == 4);
+    assert(tree1.canExpandOrCollapse);
+    assert(tree1.isFullyExpanded);
+    tree1.collapseAll();
+    assert(!tree1.isFullyExpanded);
+    assert(tree1.isVisible);
+    assert(!tree1_1.expanded);
+    assert(!tree1_1.isFullyExpanded);
+    assert(!tree1_1.isVisible);
+
+    assert(root.findItemByID("1_4_2") is tree1_1.child(1));
+
+    root.selectItem(tree1_1);
+    root.setDefaultItem(tree1_1);
+    root.removeChild(tree1);
+    assert(!root.hasChildren);
+    assert(!root.selectedItem);
+    assert(!root.defaultItem);
 }

@@ -394,12 +394,11 @@ int main()
             dstring label = newTreeItemEd.text;
             string id = format("item%d", uniform(1000000, 9999999));
             TreeItem item = tree.items.selectedItem;
-            if (item)
-            {
-                Log.d("Creating new tree item `", label, "` with id: ", id);
-                TreeItem newItem = new TreeItem(id, label);
-                item.addChild(newItem);
-            }
+            if (!item)
+                item = tree.items;
+            Log.d("Creating new tree item `", label, "` with id: ", id);
+            TreeItem newItem = new TreeItem(id, label);
+            item.addChild(newItem);
         };
         btnRemoveItem.onClick ~= {
             TreeItem item = tree.items.selectedItem;
@@ -408,6 +407,9 @@ int main()
                 Log.d("Removing tree item `", item.text, "` with id: ", item.id);
                 item.parent.removeChild(item);
             }
+        };
+        tree.onSelect ~= (TreeItem item, bool) {
+            btnRemoveItem.enabled = item !is null;
         };
 
         tabs.addTab(controls.setID("CONTROLS"), "Controls");
