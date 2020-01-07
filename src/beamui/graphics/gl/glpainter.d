@@ -93,7 +93,7 @@ public final class GLPaintEngine : PaintEngine
         Buf!ushort dataIndices;
         Buf!Vec2 positions_textured;
         Buf!ushort dataIndices_textured;
-        Buf!Vec2 uvs_textured;
+        Buf!Vec2 uvs_textured; // actually in 0..texSize range
 
         Buf!Cover covers;
         Buf!DepthTask depthTasks;
@@ -624,8 +624,8 @@ protected:
         Vec2[4] uvs = [Vec2(0, 0), Vec2(0, h), Vec2(w, 0), Vec2(w, h)];
         foreach (ref uv; uvs)
         {
-            uv.x = (uv.x + view.box.x) / view.texSize.w;
-            uv.y = (uv.y + view.box.y) / view.texSize.h;
+            uv.x += view.box.x;
+            uv.y += view.box.y;
         }
         const v = positions_textured.length;
         const t = triangles.length;
@@ -647,7 +647,7 @@ protected:
 
         ShParams params;
         params.kind = PaintKind.image;
-        params.image = ParamsImage(view.tex, opacity);
+        params.image = ParamsImage(view.tex, view.texSize, opacity);
 
         Batch bt;
         bt.type = BatchType.simple;
@@ -714,8 +714,8 @@ protected:
         ];
         foreach (ref uv; uvs)
         {
-            uv.x = (uv.x + view.box.x) / view.texSize.w;
-            uv.y = (uv.y + view.box.y) / view.texSize.h;
+            uv.x += view.box.x;
+            uv.y += view.box.y;
         }
         const v = positions_textured.length;
         positions_textured ~= vs[];
@@ -755,7 +755,7 @@ protected:
 
         ShParams params;
         params.kind = PaintKind.image;
-        params.image = ParamsImage(view.tex, opacity);
+        params.image = ParamsImage(view.tex, view.texSize, opacity);
 
         Batch bt;
         bt.type = BatchType.simple;
@@ -797,7 +797,7 @@ protected:
             if (firstGlyph)
             {
                 firstGlyph = false;
-                params.tex = view.tex;
+                params = ParamsText(view.tex, view.texSize);
                 similar = hasSimilarTextBatch(view.tex);
             }
             else if (params.tex !is view.tex)
@@ -815,7 +815,7 @@ protected:
                     batches ~= bt;
                 }
                 bt.common.triangles.start = triangles.length;
-                params.tex = view.tex;
+                params = ParamsText(view.tex, view.texSize);
             }
             addGlyph(gi, view);
         }
@@ -864,8 +864,8 @@ private:
         Vec2[4] uvs = [Vec2(0, 0), Vec2(0, h), Vec2(w, 0), Vec2(w, h)];
         foreach (ref uv; uvs)
         {
-            uv.x = (uv.x + view.box.x) / view.texSize.w;
-            uv.y = (uv.y + view.box.y) / view.texSize.h;
+            uv.x += view.box.x;
+            uv.y += view.box.y;
         }
         const v = positions_textured.length;
         positions_textured ~= vs[];

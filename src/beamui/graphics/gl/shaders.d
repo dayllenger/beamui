@@ -95,7 +95,7 @@ struct ParamsRG
 struct ParamsPattern
 {
     const(TexId)* tex;
-    SizeI texSize;
+    const(SizeI)* texSize;
     BoxI patRect;
     Mat2x3 matrix;
     float opacity = 0;
@@ -104,12 +104,14 @@ struct ParamsPattern
 struct ParamsImage
 {
     const(TexId)* tex;
+    const(SizeI)* texSize;
     float opacity = 0;
 }
 
 struct ParamsText
 {
     const(TexId)* tex;
+    const(SizeI)* texSize;
 }
 
 struct ParamsComposition
@@ -306,11 +308,11 @@ final class ShaderPattern : ShaderBase
     }
 
     void setup(ref const ParamsBase pbase, ref const ParamsPattern p)
-        in(p.tex)
+        in(p.tex && p.texSize)
     {
         super.setup(pbase);
         glUniform1i(loc.viewportHeight, pbase.viewportHeight);
-        const sz = p.texSize;
+        const sz = *p.texSize;
         const b = p.patRect;
         const x = b.x / cast(float)sz.w;
         const y = b.y / cast(float)sz.h;
@@ -346,14 +348,15 @@ final class ShaderImage : ShaderBase
 
     override protected bool initLocations()
     {
-        bindAttribLocation("v_uv", 2);
+        bindAttribLocation("v_texCoord", 2);
         return super.initLocations() && loc.initialize(this);
     }
 
     void setup(ref const ParamsBase pbase, ref const ParamsImage p)
-        in(p.tex)
+        in(p.tex && p.texSize)
     {
         super.setup(pbase);
+        glUniform2f(loc.texPixelSize, 1.0f / p.texSize.w, 1.0f / p.texSize.h);
         glUniform1f(loc.opacity, p.opacity);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
@@ -361,7 +364,7 @@ final class ShaderImage : ShaderBase
     }
 
     private Locations!([
-        "tex", "opacity"
+        "texPixelSize", "tex", "opacity"
     ]) loc;
 }
 
@@ -380,21 +383,22 @@ final class ShaderText : ShaderBase
 
     override protected bool initLocations()
     {
-        bindAttribLocation("v_uv", 2);
+        bindAttribLocation("v_texCoord", 2);
         return super.initLocations() && loc.initialize(this);
     }
 
     void setup(ref const ParamsBase pbase, ref const ParamsText p)
-        in(p.tex)
+        in(p.tex && p.texSize)
     {
         super.setup(pbase);
+        glUniform2f(loc.texPixelSize, 1.0f / p.texSize.w, 1.0f / p.texSize.h);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
         Tex2D.setup(*p.tex, SamplerIndex.texture);
     }
 
     private Locations!([
-        "tex"
+        "texPixelSize", "tex"
     ]) loc;
 }
 

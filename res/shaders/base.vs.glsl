@@ -2,8 +2,9 @@ in vec2 v_position;
 in uint v_dataIndex;
 
 #ifdef UV
-in vec2 v_uv;
+in vec2 v_texCoord;
 out vec2 uv;
+uniform vec2 texPixelSize;
 #endif
 
 #ifdef DATA_COLOR
@@ -45,7 +46,7 @@ void main()
     gl_ClipDistance[3] =  pos.x - clip.x;
 
 #ifdef UV
-    uv = v_uv;
+    uv = v_texCoord * texPixelSize;
 #endif
 #ifdef COMPOSITION
     texCoord = vec2(texPos.x + v_position.x, texHeight - texPos.y - v_position.y);
