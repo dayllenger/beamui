@@ -334,13 +334,11 @@ int main()
         };
 
         sb.onScroll ~= (ScrollEvent event) { Log.d("scrollbar: ", event.action); };
-        sl.onScroll ~= (SliderEvent event) { Log.d("slider: ", event.value); };
-        rsl.onScroll1 ~= (SliderEvent event) { Log.d("range-slider 1st: ", event.value); };
-        rsl.onScroll2 ~= (SliderEvent event) { Log.d("range-slider 2nd: ", event.value); };
+        sl.data.onChange ~= { Log.d("slider: ", sl.data.value); };
+        rsl.data.onChange ~= { Log.fd("range-slider: (%s, %s)", rsl.data.first, rsl.data.second); };
         sl.data.setRange(-0.75, 0.75, 0.1);
         rsl.data.setRange(0, 10, 0.01);
-        rsl.data.second = 4;
-        rsl.data.first = 2;
+        rsl.data.setValues(2, 4);
         rsl.pageStep = 100;
 
         import std.random : uniform;

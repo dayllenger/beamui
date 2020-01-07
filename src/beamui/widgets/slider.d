@@ -69,7 +69,7 @@ class SliderDataBase
         }
     }
 
-    void adjustValue() {}
+    protected void adjustValue() {}
 }
 
 /// Component for slider data
@@ -93,12 +93,12 @@ class SliderData : SliderDataBase
 
     private double _value = 0;
 
-    override void adjustValue()
+    override protected void adjustValue()
     {
         adjustValue(_value);
     }
 
-    final void adjustValue(ref double v)
+    final void adjustValue(ref double v) const
     {
         assert(isFinite(v));
 
@@ -118,30 +118,10 @@ class RangeSliderData : SliderDataBase
 {
     final @property
     {
-        /// The first value. Setting this value won't adjust another one
+        /// The first value
         double first() const { return _first; }
-        /// ditto
-        void first(double v)
-        {
-            adjustFirst(v);
-            if (_first != v)
-            {
-                _first = v;
-                onChange();
-            }
-        }
-        /// The second value. Setting this value won't adjust another one
+        /// The second value
         double second() const { return _second; }
-        /// ditto
-        void second(double v)
-        {
-            adjustSecond(v);
-            if (_second != v)
-            {
-                _second = v;
-                onChange();
-            }
-        }
         /// Difference between `second` and `first`. Always >= 0
         double innerRange() const { return _second - _first; }
     }
@@ -149,13 +129,29 @@ class RangeSliderData : SliderDataBase
     private double _first = 0;
     private double _second = 0;
 
-    override void adjustValue()
+    /// Set two slider values together. If `fst` > `snd`, the first value will push the second
+    final void setValues(double fst, double snd)
     {
+        const oldFst = _first;
+        const oldSnd = _second;
+        _second = _maxValue;
+        adjustFirst(fst);
+        _first = fst;
+        adjustSecond(snd);
+        _second = snd;
+        if (oldFst != fst || oldSnd != snd)
+            onChange();
+    }
+
+    override protected void adjustValue()
+    {
+        _first = max(_first, _minValue);
+        _second = min(_second, _maxValue);
         adjustFirst(_first);
         adjustSecond(_second);
     }
 
-    final void adjustFirst(ref double v)
+    final void adjustFirst(ref double v) const
     {
         assert(isFinite(v));
 
@@ -169,7 +165,7 @@ class RangeSliderData : SliderDataBase
             v = min(quantize(v - mn, _step) + mn, mx);
     }
 
-    final void adjustSecond(ref double v)
+    final void adjustSecond(ref double v) const
     {
         assert(isFinite(v));
 
@@ -783,11 +779,11 @@ class RangeSlider : AbstractSlider
             insideHandler = false;
             if (isFinite(event.amendment))
             {
-                _data.first = event.amendment;
+                _data.setValues(event.amendment, _data.second);
                 return;
             }
         }
-        _data.first = v;
+        _data.setValues(v, _data.second);
     }
 
     private void sendEvent2(SliderAction a, double v)
@@ -802,11 +798,11 @@ class RangeSlider : AbstractSlider
             insideHandler = false;
             if (isFinite(event.amendment))
             {
-                _data.second = event.amendment;
+                _data.setValues(_data.first, event.amendment);
                 return;
             }
         }
-        _data.second = v;
+        _data.setValues(_data.first, v);
     }
 
     protected void handleDragging1(double computedValue)
@@ -935,4 +931,75 @@ class RangeSlider : AbstractSlider
         _1stHandle.draw(pr);
         _2ndHandle.draw(pr);
     }
+}
+
+//===============================================================
+// Tests
+
+unittest
+{
+    static import std.math;
+
+    double last;
+    bool check(double v)
+    {
+        return std.math.approxEqual(last, v);
+    }
+
+    auto data = new SliderData;
+    data.onChange ~= { last = data.value; };
+
+    data.setRange(-10, 10, 0.1);
+    assert(check(0));
+    data.value = 5;
+    assert(check(5));
+    data.value = -50;
+    assert(check(-10));
+    data.value = 50;
+    assert(check(10));
+    data.value = 7.86;
+    assert(check(7.9));
+
+    data.setRange(-200, -100);
+    assert(check(-100));
+}
+
+unittest
+{
+    static import std.math;
+
+    double[2] last;
+    bool check(double fst, double snd)
+    {
+        return std.math.approxEqual(last[0], fst) && std.math.approxEqual(last[1], snd);
+    }
+
+    auto data = new RangeSliderData;
+    data.onChange ~= { last = [data.first, data.second]; };
+
+    data.setRange(-10, 10, 0.1);
+    assert(check(0, 0));
+    data.setValues(2, 4);
+    assert(check(2, 4));
+    data.setValues(14, 12);
+    assert(check(10, 10));
+    data.setValues(11, 12);
+    assert(check(10, 10));
+    data.setValues(5, 12);
+    assert(check(5, 10));
+    data.setValues(0, 12);
+    assert(check(0, 10));
+    data.setValues(-15, 12);
+    assert(check(-10, 10));
+    data.setValues(5, 0);
+    assert(check(5, 5));
+    data.setValues(5, -12);
+    assert(check(5, 5));
+    data.setValues(-11, -12);
+    assert(check(-10, -10));
+    data.setValues(-14, -12);
+    assert(check(-10, -10));
+
+    data.setRange(-200, -100);
+    assert(check(-100, -100));
 }
