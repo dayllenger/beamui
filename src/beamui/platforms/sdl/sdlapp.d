@@ -81,6 +81,12 @@ final class SDLWindow : Window
             SDL_DestroyRenderer(_renderer);
         if (_win)
             SDL_DestroyWindow(_win);
+    }
+
+    override protected void cleanup()
+    {
+        static if (USE_OPENGL)
+            bindContext(); // required to correctly destroy GL objects
         eliminate(_paintEngine);
         eliminate(_backbuffer);
     }

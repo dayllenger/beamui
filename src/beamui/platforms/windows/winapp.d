@@ -279,13 +279,21 @@ final class Win32Window : Window
 
     ~this()
     {
+        if (_hwnd)
+        {
+            DestroyWindow(_hwnd);
+            _hwnd = null;
+        }
+    }
+
+    override protected void cleanup()
+    {
         _destroying = true;
+
+        static if (USE_OPENGL)
+            bindContext(); // required to correctly destroy GL objects
         eliminate(_paintEngine);
         eliminate(_backbuffer);
-
-        if (_hwnd)
-            DestroyWindow(_hwnd);
-        _hwnd = null;
     }
 
     private BoxI getScreenDimensions()

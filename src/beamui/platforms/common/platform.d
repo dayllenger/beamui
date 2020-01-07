@@ -13,6 +13,7 @@ public import beamui.graphics.drawables : imageCache;
 public import beamui.widgets.widget : CursorType, Widget;
 import beamui.core.animations;
 import beamui.core.asyncsocket;
+import beamui.core.settings;
 import beamui.core.stdaction;
 import beamui.graphics.iconprovider;
 import beamui.graphics.painter;
@@ -307,8 +308,6 @@ class Window : CustomEventTarget
             destroyContext();
     }
 
-    import beamui.core.settings;
-
     /// Save window state to setting object
     void saveWindowState(Setting setting)
     {
@@ -377,6 +376,8 @@ class Window : CustomEventTarget
     abstract void invalidate();
     /// Close window
     abstract void close();
+    /// Destroy all the resources after close message
+    abstract protected void cleanup();
 
     //===============================================================
 
@@ -1986,6 +1987,7 @@ struct WindowMap(W : Window, ID)
             map.remove(*id);
             list = list.remove!(a => a is w);
             toDestroy ~= w;
+            (cast(Window)w).cleanup();
         }
     }
 

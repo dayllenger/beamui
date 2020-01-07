@@ -340,8 +340,6 @@ final class X11Window : DWindow
     {
         XSyncDestroyCounter(x11display, syncCounter);
 
-        eliminate(_paintEngine);
-        eliminate(_backbuffer);
         if (_gc)
         {
             XFreeGC(x11display, _gc);
@@ -352,6 +350,14 @@ final class X11Window : DWindow
             XDestroyWindow(x11display, _win);
             _win = 0;
         }
+    }
+
+    override protected void cleanup()
+    {
+        static if (USE_OPENGL)
+            bindContext(); // required to correctly destroy GL objects
+        eliminate(_paintEngine);
+        eliminate(_backbuffer);
     }
 
     private void create()
