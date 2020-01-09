@@ -54,10 +54,10 @@ class Drawable : RefCountedObject
             Log.d("Destroyed drawable ", getShortClassName(this), ", count: ", _instanceCount);
     }
 
-    abstract void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0);
+    abstract void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0);
 
-    abstract @property int width() const;
-    abstract @property int height() const;
+    abstract @property float width() const;
+    abstract @property float height() const;
     @property Insets padding() const
     {
         return Insets(0);
@@ -68,16 +68,16 @@ alias DrawableRef = Ref!Drawable;
 
 class EmptyDrawable : Drawable
 {
-    override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
     {
     }
 
-    override @property int width() const
+    override @property float width() const
     {
         return 0;
     }
 
-    override @property int height() const
+    override @property float height() const
     {
         return 0;
     }
@@ -92,17 +92,17 @@ class SolidFillDrawable : Drawable
         _color = color;
     }
 
-    override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
     {
         pr.fillRect(b.x, b.y, b.w, b.h, _color);
     }
 
-    override @property int width() const
+    override @property float width() const
     {
         return 1;
     }
 
-    override @property int height() const
+    override @property float height() const
     {
         return 1;
     }
@@ -120,7 +120,7 @@ class GradientDrawable : Drawable
         _builder.addStop(0, color1).addStop(1, color2);
     }
 
-    override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
     {
         static Path path;
         path.reset();
@@ -133,12 +133,12 @@ class GradientDrawable : Drawable
         pr.translate(-b.x, -b.y);
     }
 
-    override @property int width() const
+    override @property float width() const
     {
         return 1;
     }
 
-    override @property int height() const
+    override @property float height() const
     {
         return 1;
     }
@@ -233,7 +233,7 @@ class BoxShadowDrawable : Drawable
         eliminate(texture);
     }
 
-    override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
     {
         // move and expand the shadow
         b.x += _offsetX;
@@ -253,12 +253,12 @@ class BoxShadowDrawable : Drawable
         }
     }
 
-    override @property int width() const
+    override @property float width() const
     {
         return 1;
     }
 
-    override @property int height() const
+    override @property float height() const
     {
         return 1;
     }
@@ -486,12 +486,12 @@ static if (BACKEND_CONSOLE)
             }
         }
 
-        override @property int width() const
+        override @property float width() const
         {
             return _width;
         }
 
-        override @property int height() const
+        override @property float height() const
         {
             return _height;
         }
@@ -520,7 +520,7 @@ static if (BACKEND_CONSOLE)
             return left + (ninewidth - left - right) * (v - left) / (width - left - right);
         }
 
-        private void drawTo(DrawBuf drawbuf, Box b, int tilex0 = 0, int tiley0 = 0)
+        private void drawTo(DrawBuf drawbuf, Box b, float tilex0 = 0, float tiley0 = 0)
         {
             if (!_width || !_height)
                 return; // empty image
@@ -551,7 +551,7 @@ static if (BACKEND_CONSOLE)
             }
         }
 
-        override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
+        override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
         {
         }
     }
@@ -586,7 +586,7 @@ class ImageDrawable : Drawable
             Log.d("Destroyed ImageDrawable, count: ", _instanceCount);
     }
 
-    override @property int width() const
+    override @property float width() const
     {
         if (_image.isNull)
             return 0;
@@ -595,7 +595,7 @@ class ImageDrawable : Drawable
         return _image.width;
     }
 
-    override @property int height() const
+    override @property float height() const
     {
         if (_image.isNull)
             return 0;
@@ -612,7 +612,7 @@ class ImageDrawable : Drawable
             return Insets(0);
     }
 
-    override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
+    override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
     {
         if (_image.isNull)
             return;
@@ -659,24 +659,24 @@ static if (USE_OPENGL)
             onDraw = drawHandler;
         }
 
-        void doDraw(Rect windowRect, Rect rc)
+        void doDraw(RectI windowRect, RectI rc)
         {
             // either override this method or assign draw handler
             if (onDraw)
                 onDraw(windowRect, rc);
         }
 
-        override void drawTo(Painter pr, Box b, int tilex0 = 0, int tiley0 = 0)
+        override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
         {
             // buf.drawCustomOpenGLScene(Rect(b), &doDraw);
         }
 
-        override @property int width() const
+        override @property float width() const
         {
             return 20; // dummy size
         }
 
-        override @property int height() const
+        override @property float height() const
         {
             return 20; // dummy size
         }
@@ -737,7 +737,7 @@ enum BorderStyle
 
 struct BorderSide
 {
-    int thickness; /// Thickness in pixels
+    float thickness = 0; /// Thickness in device-independent pixels
     BorderStyle style;
     Color color = Color.transparent;
 }
@@ -756,13 +756,13 @@ struct Border
     }
 }
 
-/// 8 border radii in pixels
+/// 8 border radii in device-independent pixels
 struct BorderRadii
 {
-    int[2] topLeft;
-    int[2] topRight;
-    int[2] bottomLeft;
-    int[2] bottomRight;
+    float[2] topLeft = 0;
+    float[2] topRight = 0;
+    float[2] bottomLeft = 0;
+    float[2] bottomRight = 0;
 }
 
 /// Standard widget background. It can combine together background color,
@@ -775,13 +775,13 @@ class Background
     BorderRadii radii;
     BoxShadowDrawable shadow;
 
-    @property int width() const
+    @property float width() const
     {
         const th = border.left.thickness + border.right.thickness;
         return image ? image.width + th : th;
     }
 
-    @property int height() const
+    @property float height() const
     {
         const th = border.top.thickness + border.bottom.thickness;
         return image ? image.height + th : th;

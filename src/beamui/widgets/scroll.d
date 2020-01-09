@@ -579,14 +579,14 @@ class ScrollAreaBase : WidgetGroup
             PaintSaver sv;
             pr.save(sv);
             // apply clipping
-            pr.clipIn(_clientBox);
+            pr.clipIn(BoxI.from(_clientBox));
             drawClient(pr);
         }
         {
             // add the client box to the extended area clip
             Box clipb = innerBox;
             clipb.h = _clientBox.h;
-            pr.clipIn(clipb);
+            pr.clipIn(BoxI.from(clipb));
             drawExtendedArea(pr);
         }
     }

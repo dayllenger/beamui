@@ -101,7 +101,7 @@ struct DockSpace
         _docks = docks;
         if (docks.length)
         {
-            int baseSize = _resizer.orientation == Orientation.horizontal ? box.w : box.h;
+            const baseSize = cast(int)(_resizer.orientation == Orientation.horizontal ? box.w : box.h);
             _space = clamp(_space, baseSize * 1 / 10, baseSize * 4 / 10);
             _resizer.visibility = Visibility.visible;
         }
@@ -119,7 +119,7 @@ struct DockSpace
             Box b = geom;
 
             Box rb = geom;
-            int rsz = 3; // resizer width or height
+            const rsz = 3; // resizer width or height
             final switch (_alignment) with (DockAlignment)
             {
             case top:

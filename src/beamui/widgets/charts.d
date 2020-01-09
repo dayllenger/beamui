@@ -137,11 +137,11 @@ class SimpleBarChart : Widget
     struct AxisData
     {
         Size maxDescriptionSize = Size(30, 20);
-        int thickness = 1;
-        int segmentTagLength = 4;
-        int zeroValueDist = 3;
-        int lengthFromZeroToArrow = 200;
-        int arrowSize = 20;
+        float thickness = 1;
+        float segmentTagLength = 4;
+        float zeroValueDist = 3;
+        float lengthFromZeroToArrow = 200;
+        float arrowSize = 20;
     }
 
     AxisData _axisX;
@@ -308,15 +308,15 @@ class SimpleBarChart : Widget
 
     override void measure()
     {
-        int extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
-        int extraSizeY = _axisX.thickness + _axisX.segmentTagLength + _axisY.zeroValueDist + _axisY.arrowSize;
+        const extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
+        const extraSizeY = _axisX.thickness + _axisX.segmentTagLength + _axisY.zeroValueDist + _axisY.arrowSize;
 
         _axisY.maxDescriptionSize = measureAxisYDesc();
 
-        int currentMinBarWidth = max(_minBarWidth, _minDescSizeTester.getSize().w);
+        const currentMinBarWidth = max(_minBarWidth, _minDescSizeTester.getSize().w);
 
-        int minAxisXLength = max(cast(int)barCount * (currentMinBarWidth + _barSpacing), _axisXMinWfromZero);
-        int minAxixYLength = cast(int)round(_axisRatio * minAxisXLength);
+        const minAxisXLength = max(barCount * (currentMinBarWidth + _barSpacing), _axisXMinWfromZero);
+        const minAxixYLength = round(_axisRatio * minAxisXLength);
 
         Boundaries bs;
         bs.min.w = _axisY.maxDescriptionSize.w + minAxisXLength + extraSizeX;
@@ -339,8 +339,8 @@ class SimpleBarChart : Widget
         setBox(geom);
         const inner = innerBox;
 
-        int extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
-        int extraSizeY = _axisX.thickness + _axisX.segmentTagLength + _axisY.zeroValueDist + _axisY.arrowSize;
+        const extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
+        const extraSizeY = _axisX.thickness + _axisX.segmentTagLength + _axisY.zeroValueDist + _axisY.arrowSize;
 
         // X axis length
         _axisX.lengthFromZeroToArrow = inner.w - _axisY.maxDescriptionSize.w - extraSizeX;
@@ -361,12 +361,12 @@ class SimpleBarChart : Widget
     {
         const b = innerBox;
 
-        int x1 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength;
-        int x2 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength + _axisY.thickness +
+        const x1 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength;
+        const x2 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength + _axisY.thickness +
             _axisX.zeroValueDist + _axisX.lengthFromZeroToArrow + _axisX.arrowSize;
-        int y1 = b.y + b.h - _axisX.maxDescriptionSize.h - _axisX.segmentTagLength - _axisX.thickness -
+        const y1 = b.y + b.h - _axisX.maxDescriptionSize.h - _axisX.segmentTagLength - _axisX.thickness -
             _axisY.zeroValueDist - _axisY.lengthFromZeroToArrow - _axisY.arrowSize;
-        int y2 = b.y + b.h - _axisX.maxDescriptionSize.h - _axisX.segmentTagLength;
+        const y2 = b.y + b.h - _axisX.maxDescriptionSize.h - _axisX.segmentTagLength;
 
         // draw title first
         if (_showTitle)
@@ -390,8 +390,8 @@ class SimpleBarChart : Widget
 
         // draw bars
 
-        int firstBarX = x1 + _axisY.thickness + _axisX.zeroValueDist;
-        int firstBarY = y2 - _axisX.thickness - _axisY.zeroValueDist;
+        float firstBarX = x1 + _axisY.thickness + _axisX.zeroValueDist;
+        const firstBarY = y2 - _axisX.thickness - _axisY.zeroValueDist;
 
         foreach (ref bar; _bars)
         {
@@ -409,7 +409,7 @@ class SimpleBarChart : Widget
             // draw x axis description
             bar.title.style.color = style.textColor;
             bar.title.style.alignment = TextAlign.center;
-            int yoffset = (_axisX.maxDescriptionSize.h + bar.title.size.h) / 2;
+            const yoffset = (_axisX.maxDescriptionSize.h + bar.title.size.h) / 2;
             bar.title.draw(pr, firstBarX, b.y + b.h - yoffset, _barWidth);
 
             firstBarX += _barWidth + _barSpacing;
@@ -417,12 +417,12 @@ class SimpleBarChart : Widget
 
         // draw segments on y axis and values (now only max and max/2)
 
-        int yZero = b.y + b.h - _axisX.maxDescriptionSize.h - _axisX.segmentTagLength -
+        const yZero = b.y + b.h - _axisX.maxDescriptionSize.h - _axisX.segmentTagLength -
             _axisX.thickness - _axisY.zeroValueDist;
-        int yMax = yZero - _axisY.lengthFromZeroToArrow;
-        int yAvg = (yZero + yMax) / 2;
-        int axisYWidth = _axisY.maxDescriptionSize.w;
-        int horTagStart = b.x + axisYWidth;
+        const yMax = yZero - _axisY.lengthFromZeroToArrow;
+        const yAvg = (yZero + yMax) / 2;
+        const axisYWidth = _axisY.maxDescriptionSize.w;
+        const horTagStart = b.x + axisYWidth;
 
         pr.drawLine(horTagStart, yMax, horTagStart + _axisY.segmentTagLength, yMax, _segmentTagColor);
         pr.drawLine(horTagStart, yAvg, horTagStart + _axisY.segmentTagLength, yAvg, _segmentTagColor);
@@ -435,13 +435,13 @@ class SimpleBarChart : Widget
         _axisYAvgValueDesc.draw(pr, b.x, yAvg - _axisY.maxDescriptionSize.h / 2, axisYWidth);
     }
 
-    protected int barYValueToPixels(int axisInPixels, double barYValue)
+    protected float barYValueToPixels(float axisInPixels, double barYValue)
     {
         double currentMaxValue = _maxY;
         if (approxEqual(_maxY, 0, 0.0000001, 0.0000001))
             currentMaxValue = 100;
 
         double pixValue = axisInPixels / currentMaxValue;
-        return cast(int)round(barYValue * pixValue);
+        return cast(float)round(barYValue * pixValue);
     }
 }

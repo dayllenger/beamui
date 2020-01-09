@@ -19,7 +19,7 @@ struct LayoutItem
 
     Boundaries bs;
     bool fill;
-    Size result;
+    SizeF result;
 }
 
 /// Arranges items either vertically or horizontally
@@ -174,10 +174,10 @@ class LinearLayout : ILayout
             }
         }
         static if (horiz)
-            const int spacing = host.style.columnGap.applyPercent(geom.w);
+            const spacing = host.style.columnGap.applyPercent(geom.w);
         else
-            const int spacing = host.style.rowGap.applyPercent(geom.h);
-        int gaps = spacing * (cast(int)items.length - 1);
+            const spacing = host.style.rowGap.applyPercent(geom.h);
+        float gaps = spacing * (cast(int)items.length - 1);
         allocateSpace!dim(items, geom.pick!dim - gaps);
         // apply resizers
         foreach (i; 1 .. items.length - 1)
@@ -194,7 +194,7 @@ class LinearLayout : ILayout
                 const lresult = left.result.pick!dim;
                 const rresult = right.result.pick!dim;
                 const delta = clamp(resizer.delta, -(lresult - lmin), rresult - rmin);
-                resizer._delta = delta;
+                resizer._delta = cast(int)delta;
                 left.result.pick!dim  = lresult + delta;
                 right.result.pick!dim = rresult - delta;
             }
@@ -204,7 +204,7 @@ class LinearLayout : ILayout
         if (auto resizer = cast(Resizer)items.back.wt)
             resizer._orientation = _orientation;
         // lay out items
-        int pen;
+        float pen = 0;
         foreach (ref item; items)
         {
             const wstyle = item.wt.style;
@@ -234,10 +234,10 @@ private ref auto pick(string dim, T)(ref T s)
     return __traits(getMember, s, dim);
 }
 
-void allocateSpace(string dim)(ref Array!LayoutItem items, int totalSize)
+void allocateSpace(string dim)(ref Array!LayoutItem items, float totalSize)
 {
-    int min;
-    int nat;
+    float min = 0;
+    float nat = 0;
     foreach (const ref item; items)
     {
         min += item.bs.min.pick!dim;
@@ -263,11 +263,12 @@ void allocateSpace(string dim)(ref Array!LayoutItem items, int totalSize)
 private struct Item
 {
     size_t index;
-    int bound, base;
+    float bound = 0;
+    float base = 0;
 }
 private Item[] storage;
 
-private void expand(string dim)(ref Array!LayoutItem items, const int extraSize)
+private void expand(string dim)(ref Array!LayoutItem items, const float extraSize)
 {
     assert(extraSize > 0);
 
@@ -301,7 +302,7 @@ private void expand(string dim)(ref Array!LayoutItem items, const int extraSize)
     }
 }
 
-private void expandImpl(Item[] filling, int extraSize)
+private void expandImpl(Item[] filling, float extraSize)
 {
     // check the simplest case
     if (filling.length == 1)
@@ -313,11 +314,11 @@ private void expandImpl(Item[] filling, int extraSize)
     // sort items by their natural size
     sort!((a, b) => a.base < b.base)(filling);
     // we add space to the smallest first, so last items may get nothing
-    int volume;
+    float volume = 0;
     int end;
     for (end = 1; end < filling.length; end++)
     {
-        int v;
+        float v = 0;
         foreach (j; 0 .. end)
         {
             v += min(filling[end].base, filling[j].bound) - filling[j].base;
@@ -345,7 +346,7 @@ private void expandImpl(Item[] filling, int extraSize)
     }
 }
 
-private void addSpaceToItems(Item[] items, const int skip, int extraSize)
+private void addSpaceToItems(Item[] items, const int skip, float extraSize)
 {
     assert(extraSize > 0);
     assert(items.length > 0);
@@ -373,7 +374,7 @@ private void addSpaceToItems(Item[] items, const int skip, int extraSize)
     addSpaceEvenly(items[start .. end], extraSize);
 }
 
-private void addSpaceEvenly(Item[] items, const int extraSize)
+private void addSpaceEvenly(Item[] items, const float extraSize)
 {
     assert(extraSize > 0);
 
@@ -382,23 +383,13 @@ private void addSpaceEvenly(Item[] items, const int extraSize)
         return;
 
     const perItemSize = extraSize / divisor;
-    // correction for perfect results
-    const error = extraSize - perItemSize * divisor;
-    const front = error / 2;
-    const rear = divisor - error + front;
-    int i;
     foreach (ref item; items)
     {
-        // apply correction
-        int sz = perItemSize;
-        if (i < front || i >= rear)
-            sz++;
-        i++;
-        item.base += sz;
+        item.base += perItemSize;
     }
 }
 
-private void shrink(string dim)(ref Array!LayoutItem items, int available)
+private void shrink(string dim)(ref Array!LayoutItem items, const float available)
 {
     assert(available > 0);
 
@@ -469,7 +460,7 @@ class Resizer : Widget
         allowsHover = true;
     }
 
-    override CursorType getCursorType(int x, int y) const
+    override CursorType getCursorType(float x, float y) const
     {
         if (_orientation == Orientation.vertical)
             return CursorType.sizeNS;

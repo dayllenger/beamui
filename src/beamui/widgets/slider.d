@@ -318,7 +318,8 @@ abstract class AbstractSlider : WidgetGroup
         const b = innerBox;
         Box innerArea = b;
         // lay out bars before and after handles
-        int spaceBefore, spaceAfter;
+        float spaceBefore = 0;
+        float spaceAfter = 0;
         if (_orient == Orientation.horizontal)
         {
             calcSpace(b.w, spaceBefore, spaceAfter);
@@ -365,10 +366,10 @@ abstract class AbstractSlider : WidgetGroup
         layoutInner(b, innerArea);
     }
 
-    protected void calcSpace(int availableSize, out int spaceBefore, out int spaceAfter);
+    protected void calcSpace(float availableSize, out float spaceBefore, out float spaceAfter);
     protected void layoutInner(Box scrollArea, Box innerArea);
 
-    final protected int offsetAt(int space, double value) const
+    final protected float offsetAt(float space, double value) const
     {
         if (space <= 0) // no place
             return 0;
@@ -378,7 +379,7 @@ abstract class AbstractSlider : WidgetGroup
         {
             const fr = (value - data.minValue) / r;
             const dist = space * fr;
-            return cast(int)dist;
+            return cast(float)dist;
         }
         else // empty range
             return space / 2;
@@ -402,10 +403,10 @@ abstract class AbstractSlider : WidgetGroup
         {
             bool _dragging;
             int _dragStartEventPos;
-            int _dragStartPos;
+            float _dragStartPos = 0;
 
-            int _start;
-            int _span;
+            float _start = 0;
+            float _span = 0;
         }
 
         this()
@@ -415,7 +416,7 @@ abstract class AbstractSlider : WidgetGroup
             allowsHover = true;
         }
 
-        void setScrollRange(int start, int span)
+        void setScrollRange(float start, float span)
         {
             _start = start;
             _span = span;
@@ -649,7 +650,7 @@ class Slider : AbstractSlider
         return super.handleWheelEvent(event);
     }
 
-    private int handleSize;
+    private float handleSize = 0;
     override void measure()
     {
         _handle.measure();
@@ -669,7 +670,7 @@ class Slider : AbstractSlider
         setBoundaries(bs);
     }
 
-    override protected void calcSpace(int availableSize, out int spaceBefore, out int spaceAfter)
+    override protected void calcSpace(float availableSize, out float spaceBefore, out float spaceAfter)
     {
         const space = availableSize - handleSize;
         if (space <= 0)
@@ -822,7 +823,7 @@ class RangeSlider : AbstractSlider
         {
             const a = delta > 0 ? SliderAction.increase : SliderAction.decrease;
             // move the closest
-            int diff1, diff2;
+            float diff1 = 0, diff2 = 0;
             if (_orient == Orientation.horizontal)
             {
                 diff1 = event.x - (_1stHandle.box.x + _1stHandle.box.w / 2);
@@ -842,7 +843,7 @@ class RangeSlider : AbstractSlider
         return super.handleWheelEvent(event);
     }
 
-    private int[2] handleSizes;
+    private float[2] handleSizes = 0;
     override void measure()
     {
         Boundaries bs;
@@ -875,7 +876,7 @@ class RangeSlider : AbstractSlider
         setBoundaries(bs);
     }
 
-    override protected void calcSpace(int availableSize, out int spaceBefore, out int spaceAfter)
+    override protected void calcSpace(float availableSize, out float spaceBefore, out float spaceAfter)
     {
         const space = availableSize - handleSizes[0] - handleSizes[1];
         if (space <= 0)

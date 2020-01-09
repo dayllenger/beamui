@@ -257,16 +257,16 @@ struct LayoutLength
     }
 
     /// If this is percent, return % of `base`, otherwise return stored pixel value
-    int applyPercent(int base) const
+    float applyPercent(float base) const
     {
         assert(isDefinedSize(base));
 
         if (value == SIZE_UNSPECIFIED!float)
-            return SIZE_UNSPECIFIED!int;
+            return SIZE_UNSPECIFIED!float;
         if (percentage)
-            return cast(int)(value * base / 100);
+            return value * base / 100;
         else
-            return cast(int)value;
+            return value;
     }
 }
 

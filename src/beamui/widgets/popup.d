@@ -34,8 +34,8 @@ enum PopupAlign : uint
 struct PopupAnchor
 {
     WeakRef!Widget widget;
-    int x;
-    int y;
+    float x = 0;
+    float y = 0;
     PopupAlign alignment = PopupAlign.center;
 }
 

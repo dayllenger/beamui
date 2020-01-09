@@ -7,6 +7,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.scrollbar;
 
+import std.math : isFinite;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
@@ -16,9 +17,9 @@ class ScrollData
     final @property
     {
         /// Current scroll position, between 0 and `range - page`
-        int position() const { return _pos; }
+        float position() const { return _pos; }
         /// ditto
-        void position(int v)
+        void position(float v)
         {
             adjustPos(v);
             if (_pos != v)
@@ -28,22 +29,22 @@ class ScrollData
             }
         }
         /// Scroll length (max `position` + `page`). Always >= 0
-        int range() const { return _range; }
+        float range() const { return _range; }
         /// Page (visible area) size. Always >= 0, may be > `range`
-        int page() const { return _page; }
+        float page() const { return _page; }
     }
 
     Signal!(void delegate()) onChange;
 
     private
     {
-        int _pos;
-        int _range = 100;
-        int _page = 10;
+        float _pos = 0;
+        float _range = 100;
+        float _page = 10;
     }
 
     /// Set new `range` and `page` values for scrolling. They must be >= 0
-    final void setRange(int range, int page)
+    final void setRange(float range, float page)
     {
         assert(range >= 0);
         assert(page >= 0);
@@ -57,7 +58,8 @@ class ScrollData
         }
     }
 
-    private void adjustPos(ref int v)
+    private void adjustPos(ref float v)
+        in(isFinite(v))
     {
         v = max(0, min(v, _range - _page));
     }
@@ -81,10 +83,10 @@ final class ScrollEvent
     const ScrollAction action;
     const ScrollData data;
     /// Position after default event handling
-    const int position;
-    private int amendment = int.min;
+    const float position;
+    private float amendment = -float.max;
 
-    this(ScrollAction a, ScrollData d, int p)
+    this(ScrollAction a, ScrollData d, float p)
     {
         action = a;
         data = d;
@@ -92,7 +94,7 @@ final class ScrollEvent
     }
 
     /// Set a new scroll position in an event handler
-    void amend(int position)
+    void amend(float position)
     {
         amendment = position;
     }
@@ -100,7 +102,7 @@ final class ScrollEvent
     /// Set that the scroll position should not be updated to `position` after the event
     void discard()
     {
-        amendment = int.min - 1;
+        amendment = float.max;
     }
 }
 
@@ -136,7 +138,7 @@ class ScrollBar : WidgetGroup
     Signal!(void delegate(ScrollEvent event)) onScroll;
 
     /// Jump length on lineUp/lineDown events
-    uint lineStep;
+    float lineStep = 0;
 
     private
     {
@@ -152,8 +154,8 @@ class ScrollBar : WidgetGroup
         Button _btnForward;
 
         Box _scrollArea;
-        int _minIndicatorSize;
-        int _btnSize;
+        float _minIndicatorSize = 0;
+        float _btnSize = 0;
     }
 
     this(Orientation orient = Orientation.vertical, ScrollData data = null)
@@ -199,12 +201,12 @@ class ScrollBar : WidgetGroup
 
     final void triggerAction(ScrollAction action)
     {
-        int pos = _data.position + getDefaultOffset(action);
+        float pos = _data.position + getDefaultOffset(action);
         _data.adjustPos(pos);
         sendEvent(action, pos);
     }
 
-    final void moveTo(int position)
+    final void moveTo(float position)
     {
         _data.adjustPos(position);
         if (_data.position != position)
@@ -212,7 +214,7 @@ class ScrollBar : WidgetGroup
     }
 
     private bool insideHandler;
-    private void sendEvent(ScrollAction a, int pos)
+    private void sendEvent(ScrollAction a, float pos)
     {
         assert(!insideHandler, "Cannot trigger a scrollbar action inside the event handler");
 
@@ -223,7 +225,7 @@ class ScrollBar : WidgetGroup
             onScroll(event);
             insideHandler = false;
 
-            if (event.amendment == int.min - 1)
+            if (event.amendment == float.max)
                 return;
             if (event.amendment >= 0)
             {
@@ -235,30 +237,30 @@ class ScrollBar : WidgetGroup
     }
 
     /// Default slider offset on pageUp/pageDown, lineUp/lineDown actions
-    protected int getDefaultOffset(ScrollAction action) const
+    protected float getDefaultOffset(ScrollAction action) const
     {
-        double delta = 0;
+        float delta = 0;
         switch (action) with (ScrollAction)
         {
         case lineUp:
         case lineDown:
-            delta = lineStep > 0 ? lineStep : max(_data.page * 0.1, 1);
+            delta = lineStep > 0 ? lineStep : max(_data.page * 0.1f, 1);
             if (action == lineUp)
                 delta *= -1;
             break;
         case pageUp:
         case pageDown:
-            delta = max(_data.page * 0.75, lineStep, 1);
+            delta = max(_data.page * 0.75f, lineStep, 1);
             if (action == pageUp)
                 delta *= -1;
             break;
         default:
             break;
         }
-        return cast(int)delta;
+        return delta;
     }
 
-    protected void handleIndicatorDragging(int initialValue, int currentValue)
+    protected void handleIndicatorDragging(float initialValue, float currentValue)
     {
         moveTo(currentValue);
     }
@@ -283,8 +285,8 @@ class ScrollBar : WidgetGroup
         return super.handleWheelEvent(event);
     }
 
-    protected bool calcButtonSizes(int availableSize, ref int spaceBackSize, ref int spaceForwardSize,
-            ref int indicatorSize)
+    protected bool calcButtonSizes(float availableSize, ref float spaceBackSize, ref float spaceForwardSize,
+            ref float indicatorSize)
     {
         const r = _data.range;
         if (_data.page >= r)
@@ -304,10 +306,10 @@ class ScrollBar : WidgetGroup
             return false;
         }
         const spaceLeft = availableSize - indicatorSize;
-        const double before = _data.position;
-        const double after = r - before - _data.page;
+        const before = _data.position;
+        const after = r - before - _data.page;
         assert(before + after > 0);
-        spaceBackSize = cast(int)(spaceLeft * before / (before + after));
+        spaceBackSize = spaceLeft * before / (before + after);
         spaceForwardSize = spaceLeft - spaceBackSize;
         return true;
     }
@@ -317,14 +319,14 @@ class ScrollBar : WidgetGroup
         Box ibox = _scrollArea;
         if (_orient == Orientation.vertical)
         {
-            int spaceBackSize, spaceForwardSize, indicatorSize;
+            float spaceBackSize = 0, spaceForwardSize = 0, indicatorSize = 0;
             bool indicatorVisible = calcButtonSizes(_scrollArea.h, spaceBackSize, spaceForwardSize, indicatorSize);
             ibox.y += spaceBackSize;
             ibox.h -= spaceBackSize + spaceForwardSize;
         }
         else // horizontal
         {
-            int spaceBackSize, spaceForwardSize, indicatorSize;
+            float spaceBackSize = 0, spaceForwardSize = 0, indicatorSize = 0;
             bool indicatorVisible = calcButtonSizes(_scrollArea.w, spaceBackSize, spaceForwardSize, indicatorSize);
             ibox.x += spaceBackSize;
             ibox.w -= spaceBackSize + spaceForwardSize;
@@ -342,8 +344,8 @@ class ScrollBar : WidgetGroup
         const Box b = _scrollArea;
         if (_orient == Orientation.vertical)
         {
-            int top = ibox.y - b.y;
-            int bottom = b.y + b.h - (ibox.y + ibox.h);
+            const top = ibox.y - b.y;
+            const bottom = b.y + b.h - (ibox.y + ibox.h);
             if (top > 0)
             {
                 _pageUp.visibility = Visibility.visible;
@@ -361,8 +363,8 @@ class ScrollBar : WidgetGroup
         }
         else
         {
-            int left = ibox.x - b.x;
-            int right = b.x + b.w - (ibox.x + ibox.w);
+            const left = ibox.x - b.x;
+            const right = b.x + b.w - (ibox.x + ibox.w);
             if (left > 0)
             {
                 _pageUp.visibility = Visibility.visible;
@@ -480,7 +482,7 @@ class ScrollBar : WidgetGroup
         {
             bool _dragging;
             Point _dragStart;
-            int _dragStartPos;
+            float _dragStartPos = 0;
             Box _dragStartBox;
 
             Box _scrollArea;
@@ -519,13 +521,13 @@ class ScrollBar : WidgetGroup
             }
             if (event.action == MouseAction.move && _dragging)
             {
-                int delta = _orient == Orientation.vertical ?
+                const delta = _orient == Orientation.vertical ?
                         event.y - _dragStart.y : event.x - _dragStart.x;
                 debug (scrollbars)
                     Log.d("ScrollIndicator: dragging, move delta: ", delta);
                 Box b = _dragStartBox;
-                long offset;
-                long space;
+                float offset = 0;
+                float space = 0;
                 if (_orient == Orientation.vertical)
                 {
                     b.y = clamp(b.y + delta, _scrollArea.y, _scrollArea.y + _scrollArea.h - b.h);
@@ -538,10 +540,10 @@ class ScrollBar : WidgetGroup
                     offset = b.x - _scrollArea.x;
                     space = _scrollArea.w - b.w;
                 }
-                long v;
+                float v = 0;
                 if (space > 0)
                     v = offset * max(_data.range - _data.page, 0) / space;
-                handleIndicatorDragging(_dragStartPos, cast(int)v);
+                handleIndicatorDragging(_dragStartPos, v);
                 return true;
             }
             if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)

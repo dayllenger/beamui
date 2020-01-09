@@ -110,28 +110,16 @@ struct Boundaries
     Size nat;
     Size max = Size.none;
 
-    /// Special add operator: it clamps result between 0 and SIZE_UNSPECIFIED
-    static int clampingAdd(int a, int b)
-    {
-        return .clamp(a + b, 0, SIZE_UNSPECIFIED!int);
-    }
-
-    /// Special subtract operator: it clamps result between 0 and SIZE_UNSPECIFIED
-    static int clampingSub(int a, int b)
-    {
-        return .clamp(a - b, 0, SIZE_UNSPECIFIED!int);
-    }
-
     void addWidth(ref const Boundaries from)
     {
-        max.w = clampingAdd(max.w, from.max.w);
+        max.w += from.max.w;
         nat.w += from.nat.w;
         min.w += from.min.w;
     }
 
     void addHeight(ref const Boundaries from)
     {
-        max.h = clampingAdd(max.h, from.max.h);
+        max.h += from.max.h;
         nat.h += from.nat.h;
         min.h += from.min.h;
     }
@@ -658,13 +646,13 @@ alias BoxF = BoxOf!float;
 alias RectF = RectOf!float;
 alias InsetsF = InsetsOf!float;
 
-alias Point = PointOf!int;
+alias Point = PointOf!float;
 alias PointI = PointOf!int;
-alias Size = SizeOf!int;
+alias Size = SizeOf!float;
 alias SizeI = SizeOf!int;
-alias Box = BoxOf!int;
+alias Box = BoxOf!float;
 alias BoxI = BoxOf!int;
-alias Rect = RectOf!int;
+alias Rect = RectOf!float;
 alias RectI = RectOf!int;
-alias Insets = InsetsOf!int;
+alias Insets = InsetsOf!float;
 alias InsetsI = InsetsOf!int;

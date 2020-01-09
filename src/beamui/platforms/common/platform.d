@@ -704,8 +704,8 @@ class Window : CustomEventTarget
         Popup popup;
         ulong timerID;
         WeakRef!Widget ownerWidget;
-        int x;
-        int y;
+        float x = float.max;
+        float y = float.max;
         PopupAlign alignment;
     }
 
@@ -713,7 +713,7 @@ class Window : CustomEventTarget
 
     /// Schedule tooltip for widget be shown with specified delay
     void scheduleTooltip(WeakRef!Widget ownerWidget, long delay, PopupAlign alignment = PopupAlign.point,
-                         int x = int.min, int y = int.min)
+                         float x = float.max, float y = float.max)
     {
         if (_tooltip.ownerWidget.get !is ownerWidget.get)
         {
@@ -735,8 +735,8 @@ class Window : CustomEventTarget
         _tooltip.timerID = 0;
         if (Widget owner = _tooltip.ownerWidget.get)
         {
-            const x = _tooltip.x == int.min ? _lastMouseX : _tooltip.x;
-            const y = _tooltip.y == int.min ? _lastMouseY : _tooltip.y;
+            const x = _tooltip.x == float.max ? _lastMouseX : _tooltip.x;
+            const y = _tooltip.y == float.max ? _lastMouseY : _tooltip.y;
             Widget w = owner.createTooltip(x, y);
             if (w)
                 showTooltip(w, _tooltip.ownerWidget, _tooltip.alignment, x, y);
@@ -748,7 +748,7 @@ class Window : CustomEventTarget
 
     /// Show tooltip immediately
     Popup showTooltip(Widget content, WeakRef!Widget anchor = null,
-            PopupAlign alignment = PopupAlign.center, int x = int.min, int y = int.min)
+            PopupAlign alignment = PopupAlign.center, float x = float.max, float y = float.max)
     {
         const noTooltipBefore = _tooltip.popup is null;
         hideTooltip();
@@ -760,9 +760,9 @@ class Window : CustomEventTarget
         auto res = new Popup(content, this);
         res.id = "tooltip-popup";
         // default behaviour is to place tooltip under the mouse cursor
-        if (x == int.min)
+        if (x == float.max)
             x = _lastMouseX;
-        if (y == int.min)
+        if (y == float.max)
             y = _lastMouseY;
         res.anchor = PopupAnchor(anchor, x, y, alignment);
 
@@ -807,7 +807,7 @@ class Window : CustomEventTarget
 
     /// Show new popup
     Popup showPopup(Widget content, WeakRef!Widget anchor = null,
-            PopupAlign alignment = PopupAlign.center, int x = 0, int y = 0)
+            PopupAlign alignment = PopupAlign.center, float x = 0, float y = 0)
     {
         auto res = new Popup(content, this);
         res.anchor = PopupAnchor(anchor, x, y, alignment);

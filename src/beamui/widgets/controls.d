@@ -243,7 +243,7 @@ class LinkButton : Button
         action = a;
     }
 
-    override CursorType getCursorType(int x, int y) const // doesn't work for actual text, FIXME!
+    override CursorType getCursorType(float x, float y) const // doesn't work for actual text, FIXME!
     {
         return CursorType.hand;
     }
@@ -361,7 +361,7 @@ class CanvasWidget : Widget
     override protected void drawContent(Painter pr)
     {
         const b = innerBox;
-        pr.clipIn(b);
+        pr.clipIn(BoxI.from(b));
         pr.translate(b.x, b.y);
         doDraw(pr, b.size);
     }

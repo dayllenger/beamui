@@ -77,12 +77,12 @@ class MenuItem : WidgetGroup, ActionHolder
         Label _label;
         Label _shortcut;
         ImageWidget _arrow;
-        int _checkboxWidth;
-        int _iconWidth;
-        int _labelWidth;
-        int _shortcutWidth;
-        int _arrowWidth;
-        int _height;
+        float _checkboxWidth = 0;
+        float _iconWidth = 0;
+        float _labelWidth = 0;
+        float _shortcutWidth = 0;
+        float _arrowWidth = 0;
+        float _height = 0;
     }
 
     this(Action action, bool fromMenuBar = false)
@@ -199,8 +199,8 @@ class MenuItem : WidgetGroup, ActionHolder
         visibility = _action.visible ? Visibility.visible : Visibility.gone;
     }
 
-    void measureSubitems(ref int maxHeight, ref int maxCheckBoxWidth, ref int maxLabelWidth,
-                         ref int maxIconWidth, ref int maxShortcutWidth, ref int maxMoreBtnWidth)
+    void measureSubitems(ref float maxHeight, ref float maxCheckBoxWidth, ref float maxLabelWidth,
+                         ref float maxIconWidth, ref float maxShortcutWidth, ref float maxMoreBtnWidth)
     {
         if (isSeparator)
             return;
@@ -241,8 +241,8 @@ class MenuItem : WidgetGroup, ActionHolder
         }
     }
 
-    void setSubitemSizes(int maxHeight, int maxCheckBoxWidth, int maxLabelWidth,
-                         int maxIconWidth, int maxShortcutWidth, int maxMoreBtnWidth)
+    void setSubitemSizes(float maxHeight, float maxCheckBoxWidth, float maxLabelWidth,
+                         float maxIconWidth, float maxShortcutWidth, float maxMoreBtnWidth)
     {
         _checkboxWidth = maxCheckBoxWidth;
         _iconWidth = maxIconWidth;
@@ -818,12 +818,12 @@ class Menu : ListWidget
         // align items for vertical menu
         if (orientation == Orientation.vertical)
         {
-            int maxHeight;
-            int maxCheckBoxWidth;
-            int maxLabelWidth;
-            int maxIconWidth;
-            int maxShortcutWidth;
-            int maxMoreBtnWidth;
+            float maxHeight = 0;
+            float maxCheckBoxWidth = 0;
+            float maxLabelWidth = 0;
+            float maxIconWidth = 0;
+            float maxShortcutWidth = 0;
+            float maxMoreBtnWidth = 0;
             // find max dimensions for item subwidgets
             foreach (i; 0 .. itemCount)
             {

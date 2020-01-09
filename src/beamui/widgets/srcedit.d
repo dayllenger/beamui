@@ -83,10 +83,10 @@ class SourceEdit : EditBox
         bool _showIcons = false; /// show icons in left pane
         bool _showFolding = false; /// show folding controls in left pane
 
-        int _lineNumbersWidth = 0;
-        int _modificationMarksWidth = 0;
-        int _iconsWidth = 0;
-        int _foldingWidth = 0;
+        float _lineNumbersWidth = 0;
+        float _modificationMarksWidth = 0;
+        float _iconsWidth = 0;
+        float _foldingWidth = 0;
 
         uint _iconsPaneWidth = BACKEND_CONSOLE ? 1 : 16;
         uint _foldingPaneWidth = BACKEND_CONSOLE ? 1 : 12;
@@ -386,7 +386,7 @@ class SourceEdit : EditBox
         }
         else if (icon.type == LineIconType.bookmark)
         {
-            int dh = rc.height / 4;
+            const dh = rc.height / 4;
             rc.top += dh;
             rc.bottom -= dh;
             pr.fillRect(rc.left, rc.top, rc.width, rc.height, _colorIconBookmark);
@@ -395,20 +395,20 @@ class SourceEdit : EditBox
         {
             if (rc.height > rc.width)
             {
-                int delta = rc.height - rc.width;
+                const delta = rc.height - rc.width;
                 rc.top += delta / 2;
                 rc.bottom -= (delta + 1) / 2;
             }
             else
             {
-                int delta = rc.width - rc.height;
+                const delta = rc.width - rc.height;
                 rc.left += delta / 2;
                 rc.right -= (delta + 1) / 2;
             }
-            int dh = rc.height / 5;
+            const dh = rc.height / 5;
             rc.top += dh;
             rc.bottom -= dh;
-            int dw = rc.width / 5;
+            const dw = rc.width / 5;
             rc.left += dw;
             rc.right -= dw;
             pr.fillRect(rc.left, rc.top, rc.width, rc.height, _colorIconBreakpoint);

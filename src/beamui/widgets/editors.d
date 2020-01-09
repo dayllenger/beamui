@@ -261,7 +261,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
 
         /// To hold _scrollpos.x toggling between normal and word wrap mode
-        private int previousXScrollPos;
+        private float previousXScrollPos = 0;
         private ScrollBarMode previousHScrollbarMode;
         /// True if word wrap mode is set
         bool wordWrap() const { return _wordWrap; }
@@ -349,7 +349,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     Signal!(void delegate(ref EditorStateInfo editorState)) onStateChange;
 
     // left pane - can be used to show line numbers, collapse controls, bookmarks, breakpoints, custom icons
-    protected int _leftPaneWidth;
+    protected float _leftPaneWidth = 0;
 
     private
     {
@@ -559,7 +559,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     {
     }
 
-    override bool canShowPopupMenu(int x, int y)
+    override bool canShowPopupMenu(float x, float y)
     {
         if (popupMenu is null)
             return false;
@@ -569,7 +569,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         return true;
     }
 
-    override CursorType getCursorType(int x, int y) const
+    override CursorType getCursorType(float x, float y) const
     {
         return x < box.x + _leftPaneWidth ? CursorType.arrow : CursorType.ibeam;
     }
@@ -893,7 +893,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         invalidate();
     }
 
-    protected void selectWordByMouse(int x, int y)
+    protected void selectWordByMouse(float x, float y)
     {
         const TextPosition oldCaretPos = _caretPos;
         const TextPosition newPos = clientToTextPos(Point(x, y));
@@ -913,7 +913,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         handleEditorStateChange();
     }
 
-    protected void selectLineByMouse(int x, int y)
+    protected void selectLineByMouse(float x, float y)
     {
         const TextPosition oldCaretPos = _caretPos;
         const TextPosition newPos = clientToTextPos(Point(x, y));
@@ -933,7 +933,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         handleEditorStateChange();
     }
 
-    protected void updateCaretPositionByMouse(int x, int y, bool selecting)
+    protected void updateCaretPositionByMouse(float x, float y, bool selecting)
     {
         const TextPosition pos = clientToTextPos(Point(x, y));
         setCaretPos(pos.line, pos.pos, selecting);
@@ -1887,8 +1887,8 @@ class EditLine : EditWidgetBase
         if (!_selectionRange.empty)
         {
             // line inside selection
-            const int start = textPosToClient(_selectionRange.start).x;
-            const int end = textPosToClient(_selectionRange.end).x;
+            const start = textPosToClient(_selectionRange.start).x;
+            const end = textPosToClient(_selectionRange.end).x;
             Box b = lineBox;
             b.x = start + clientBox.x;
             b.w = end - start;
@@ -1962,7 +1962,9 @@ class EditBox : EditWidgetBase
 
         final protected int linesOnScreen() const
         {
-            return (clientBox.h + _lineHeight - 1) / _lineHeight;
+            import std.math : ceil;
+
+            return cast(int)ceil(clientBox.h / _lineHeight);
         }
 
         override Size fullContentSize() const
@@ -1981,7 +1983,7 @@ class EditBox : EditWidgetBase
         bool _showWhiteSpaceMarks;
 
         int _firstVisibleLine;
-        int _maxLineWidth; // computed in `measureVisibleText`
+        float _maxLineWidth = 0; // computed in `measureVisibleText`
         int _lastMeasureLineCount;
 
         /// Lines, visible in the client area
@@ -2028,9 +2030,10 @@ class EditBox : EditWidgetBase
 
     override protected void handleVScroll(ScrollEvent event)
     {
-        if (_firstVisibleLine != event.position)
+        const pos = cast(int)event.position;
+        if (_firstVisibleLine != pos)
         {
-            _firstVisibleLine = event.position;
+            _firstVisibleLine = pos;
             event.discard();
             measureVisibleText();
             updateScrollBars();
@@ -3007,14 +3010,14 @@ class EditBox : EditWidgetBase
         const int maxCol = findMaxTabMarkColumn(lineIndex);
         if (maxCol > 0)
         {
-            const int spaceWidth = cast(int)_spaceWidth;
-            lineBox.h = cast(int)_visibleLines[lineIndex - _firstVisibleLine].wrapSpans[0].height;
+            const spaceWidth = _spaceWidth;
+            lineBox.h = _visibleLines[lineIndex - _firstVisibleLine].wrapSpans[0].height;
             Rect rc = lineBox;
             Color color = style.textColor;
             color.addAlpha(0x40);
             for (int i = 0; i < maxCol; i += tabSize)
             {
-                drawDottedLineV(pr, rc.left + i * spaceWidth, rc.top, rc.bottom, color);
+                drawDottedLineV(pr, cast(int)(rc.left + i * spaceWidth), cast(int)rc.top, cast(int)rc.bottom, color);
             }
         }
     }
@@ -3084,7 +3087,7 @@ class EditBox : EditWidgetBase
 
     private void drawSpaceMark(Painter pr, Box g, Color color)
     {
-        const int sz = max(g.h / 6, 1);
+        const float sz = max(cast(int)g.h / 6, 1);
         const b = Box(g.x + g.w / 2 - sz / 2, g.y + g.h / 2 - sz / 2, sz, sz);
         pr.fillRect(b.x, b.y, b.w, b.h, color);
     }
@@ -3094,7 +3097,7 @@ class EditBox : EditWidgetBase
         static Path path;
         path.reset();
 
-        const int sz = g.h / 5;
+        const float sz = cast(int)g.h / 5;
         path.moveTo(g.x + g.w - sz * 2 - 1, g.y + g.h / 2 - sz)
             .lineBy( sz, sz)
             .lineBy(-sz, sz)

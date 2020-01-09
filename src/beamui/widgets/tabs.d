@@ -510,9 +510,9 @@ class TabControl : WidgetGroup
         setBox(geom);
         geom = innerBox;
 
-        int spaceForItems = geom.w;
+        float spaceForItems = geom.w;
         bool needMoreButton;
-        int w;
+        float w = 0;
         foreach (i; 1 .. itemSizes.length)
         {
             w += itemSizes[i].w;
@@ -548,7 +548,7 @@ class TabControl : WidgetGroup
         else
             _moreButton.visibility = Visibility.gone;
         // layout visible items
-        int pen;
+        float pen = 0;
         foreach (i; 1 .. childCount)
         {
             Widget tab = child(i);

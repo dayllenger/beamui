@@ -45,13 +45,13 @@ class TableLayout : ILayout
         Array!LayoutItem _cols;
     }
 
-    protected int rowSpace(int gap) const
+    protected float rowSpace(float gap) const
     {
         const c = rowCount;
         return c > 1 ? gap * (c - 1) : 0;
     }
 
-    protected int colSpace(int gap) const
+    protected float colSpace(float gap) const
     {
         const c = colCount;
         return c > 1 ? gap * (c - 1) : 0;
@@ -189,11 +189,11 @@ class TableLayout : ILayout
         allocateSpace!`w`(_cols, box.w - colSpace(colgap));
         allocateSpace!`h`(_rows, box.h - rowSpace(rowgap));
 
-        int ypen;
+        float ypen = 0;
         foreach (y; 0 .. rowCount)
         {
             const h = row(y).result.h;
-            int xpen;
+            float xpen = 0;
             foreach (x; 0 .. colCount)
             {
                 const w = col(x).result.w;

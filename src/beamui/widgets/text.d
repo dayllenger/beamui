@@ -157,7 +157,7 @@ class Label : Widget
         setBoundaries(bs);
     }
 
-    override int heightForWidth(int width)
+    override float heightForWidth(float width)
     {
         Size p = padding.size;
         textobj.wrap(width - p.w);
@@ -178,7 +178,7 @@ class Label : Widget
     override protected void drawContent(Painter pr)
     {
         const b = innerBox;
-        pr.clipIn(b);
+        pr.clipIn(BoxI.from(b));
 
         textobj.style.underlinedCharIndex = textHotkey == TextHotkey.underline ? hotkeyIndex : -1;
 
@@ -611,7 +611,7 @@ class Paragraph : Widget
         setBoundaries(bs);
     }
 
-    override int heightForWidth(int width)
+    override float heightForWidth(float width)
     {
         Size p = padding.size;
         wrap(width - p.w);
@@ -630,7 +630,7 @@ class Paragraph : Widget
     }
 
     /// Wrap lines within a width
-    private void wrap(int boxWidth)
+    private void wrap(float boxWidth)
     {
         if (boxWidth == _sizeAfterWrap.w)
             return;
@@ -640,7 +640,7 @@ class Paragraph : Widget
             float h = 0;
             foreach (ref line; _lines)
                 h += line.wrap(boxWidth);
-            _sizeAfterWrap.h = cast(int)h;
+            _sizeAfterWrap.h = h;
         }
         _sizeAfterWrap.w = boxWidth;
     }
@@ -654,7 +654,7 @@ class Paragraph : Widget
             return;
 
         const b = innerBox;
-        pr.clipIn(b);
+        pr.clipIn(BoxI.from(b));
 
         const clip = pr.getLocalClipBounds();
         if (clip.empty)

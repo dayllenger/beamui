@@ -38,7 +38,7 @@ class ToolBarButton : Button
         return action && action.label;
     }
 
-    override Widget createTooltip(int x, int y)
+    override Widget createTooltip(float x, float y)
     {
         const txt = action ? action.tooltipText : null;
         if (txt && contains(x, y))

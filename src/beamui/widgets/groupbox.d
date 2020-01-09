@@ -64,14 +64,14 @@ class GroupBox : Panel
 
     private
     {
-        int _topFrameHeight;
-        int _topFrameLeft;
-        int _topFrameRight;
-        int _captionHeight;
-        int _topHeight;
-        int _frameLeft;
-        int _frameRight;
-        int _frameBottom;
+        float _topFrameHeight = 0;
+        float _topFrameLeft = 0;
+        float _topFrameRight = 0;
+        float _captionHeight = 0;
+        float _topHeight = 0;
+        float _frameLeft = 0;
+        float _frameRight = 0;
+        float _frameBottom = 0;
     }
 
     protected void calcFrame()
@@ -82,10 +82,10 @@ class GroupBox : Panel
 
         const upLeftDrawable = currentTheme.getDrawable("group_box_frame_up_left");
         const upRightDrawable = currentTheme.getDrawable("group_box_frame_up_right");
-        const int upLeftW = !upLeftDrawable.isNull ? upLeftDrawable.width : 0;
-        const int upLeftH = !upLeftDrawable.isNull ? upLeftDrawable.height : 0;
-        const int upRightW = !upRightDrawable.isNull ? upRightDrawable.width : 0;
-        const int upRightH = !upRightDrawable.isNull ? upRightDrawable.height : 0;
+        const upLeftW = !upLeftDrawable.isNull ? upLeftDrawable.width : 0;
+        const upLeftH = !upLeftDrawable.isNull ? upLeftDrawable.height : 0;
+        const upRightW = !upRightDrawable.isNull ? upRightDrawable.width : 0;
+        const upRightH = !upRightDrawable.isNull ? upRightDrawable.height : 0;
         _topFrameHeight = max(upLeftH, upRightH);
         _topFrameLeft = upLeftW;
         _topFrameRight = upRightW;
@@ -103,8 +103,8 @@ class GroupBox : Panel
         _caption.measure();
         // expand if the caption is bigger than the content
         // frame is already calculated
-        const int cw = _caption.natSize.w;
-        const int w = cw + _topFrameLeft + _topFrameRight - _frameLeft - _frameRight;
+        const cw = _caption.natSize.w;
+        const w = cw + _topFrameLeft + _topFrameRight - _frameLeft - _frameRight;
         bs.nat.w = max(bs.nat.w, w);
     }
 
@@ -115,8 +115,8 @@ class GroupBox : Panel
 
         super.layout(geom);
         // layout the caption
-        const int cw = _caption.natSize.w;
-        const int cwinv = geom.w - _topFrameLeft - _topFrameRight;
+        const cw = _caption.natSize.w;
+        const cwinv = geom.w - _topFrameLeft - _topFrameRight;
         Box b = Box(geom.x + _topFrameLeft, geom.y, min(cw, cwinv), _captionHeight);
         _caption.layout(b);
     }
@@ -128,9 +128,9 @@ class GroupBox : Panel
         _caption.draw(pr);
 
         // correct top of the frame to be exactly at the center of the caption
-        int dh;
+        float dh = 0;
         if (_topFrameHeight < _captionHeight)
-            dh = (_captionHeight - _topFrameHeight) / 2;
+            dh = snapToDevicePixels((_captionHeight - _topFrameHeight) / 2);
 
         const b = box;
         DrawableRef upLeftDrawable = currentTheme.getDrawable("group_box_frame_up_left");
@@ -141,7 +141,7 @@ class GroupBox : Panel
         DrawableRef upRightDrawable = currentTheme.getDrawable("group_box_frame_up_right");
         if (!upRightDrawable.isNull)
         {
-            int cw = _caption.box.w;
+            const cw = _caption.box.w;
             upRightDrawable.drawTo(pr, Box(b.x + _topFrameLeft + cw, b.y + dh, b.w - _topFrameLeft - cw, _topHeight - dh));
         }
 

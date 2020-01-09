@@ -205,7 +205,7 @@ struct ComputedStyle
         /// ditto
         void padding(float px) { padding = Length.px(px); }
         /// Top padding value
-        int paddingTop() const { return applyOnlyEM(_paddingTop); }
+        float paddingTop() const { return applyOnlyEM(_paddingTop); }
         /// ditto
         void paddingTop(Length len)
         {
@@ -219,7 +219,7 @@ struct ComputedStyle
             paddingTop = Length.px(px);
         }
         /// Right padding value
-        int paddingRight() const { return applyOnlyEM(_paddingRight); }
+        float paddingRight() const { return applyOnlyEM(_paddingRight); }
         /// ditto
         void paddingRight(Length len)
         {
@@ -233,7 +233,7 @@ struct ComputedStyle
             paddingRight = Length.px(px);
         }
         /// Bottom padding value
-        int paddingBottom() const { return applyOnlyEM(_paddingBottom); }
+        float paddingBottom() const { return applyOnlyEM(_paddingBottom); }
         /// ditto
         void paddingBottom(Length len)
         {
@@ -247,7 +247,7 @@ struct ComputedStyle
             paddingBottom = Length.px(px);
         }
         /// Left padding value
-        int paddingLeft() const { return applyOnlyEM(_paddingLeft); }
+        float paddingLeft() const { return applyOnlyEM(_paddingLeft); }
         /// ditto
         void paddingLeft(Length len)
         {
@@ -290,7 +290,7 @@ struct ComputedStyle
         /// ditto
         void borderWidth(float px) { borderWidth = Length.px(px); }
 
-        int borderTopWidth() const { return applyOnlyEM(_borderTopWidth); }
+        float borderTopWidth() const { return applyOnlyEM(_borderTopWidth); }
         /// ditto
         void borderTopWidth(Length len)
         {
@@ -304,7 +304,7 @@ struct ComputedStyle
             setProperty!"borderTopWidth" = Length.px(px);
         }
 
-        int borderRightWidth() const { return applyOnlyEM(_borderRightWidth); }
+        float borderRightWidth() const { return applyOnlyEM(_borderRightWidth); }
         /// ditto
         void borderRightWidth(Length len)
         {
@@ -318,7 +318,7 @@ struct ComputedStyle
             setProperty!"borderRightWidth" = Length.px(px);
         }
 
-        int borderBottomWidth() const { return applyOnlyEM(_borderBottomWidth); }
+        float borderBottomWidth() const { return applyOnlyEM(_borderBottomWidth); }
         /// ditto
         void borderBottomWidth(Length len)
         {
@@ -332,7 +332,7 @@ struct ComputedStyle
             setProperty!"borderBottomWidth" = Length.px(px);
         }
 
-        int borderLeftWidth() const { return applyOnlyEM(_borderLeftWidth); }
+        float borderLeftWidth() const { return applyOnlyEM(_borderLeftWidth); }
         /// ditto
         void borderLeftWidth(Length len)
         {
@@ -376,7 +376,7 @@ struct ComputedStyle
         /// ditto
         void margins(float px) { margins = Length.px(px); }
         /// Top margin value
-        int marginTop() const { return applyOnlyEM(_marginTop); }
+        float marginTop() const { return applyOnlyEM(_marginTop); }
         /// ditto
         void marginTop(Length len)
         {
@@ -390,7 +390,7 @@ struct ComputedStyle
             setProperty!"marginTop" = Length.px(px);
         }
         /// Right margin value
-        int marginRight() const { return applyOnlyEM(_marginRight); }
+        float marginRight() const { return applyOnlyEM(_marginRight); }
         /// ditto
         void marginRight(Length len)
         {
@@ -404,7 +404,7 @@ struct ComputedStyle
             setProperty!"marginRight" = Length.px(px);
         }
         /// Bottom margin value
-        int marginBottom() const { return applyOnlyEM(_marginBottom); }
+        float marginBottom() const { return applyOnlyEM(_marginBottom); }
         /// ditto
         void marginBottom(Length len)
         {
@@ -418,7 +418,7 @@ struct ComputedStyle
             setProperty!"marginBottom" = Length.px(px);
         }
         /// Left margin value
-        int marginLeft() const { return applyOnlyEM(_marginLeft); }
+        float marginLeft() const { return applyOnlyEM(_marginLeft); }
         /// ditto
         void marginLeft(Length len)
         {
@@ -721,7 +721,7 @@ struct ComputedStyle
                 return def;
             const LayoutLength ll = fs.toLayout;
             const int base = p && !fs.is_rem ? p.style.fontSize : def;
-            return ll.applyPercent(base);
+            return cast(int)ll.applyPercent(base);
         }
         /// ditto
         void fontSize(Length len)
@@ -790,7 +790,7 @@ struct ComputedStyle
         /// ditto
         void textTransform(TextTransform value) { setProperty!"textTransform" = value; }
 
-        int letterSpacing() const { return applyOnlyEM(_letterSpacing); }
+        float letterSpacing() const { return applyOnlyEM(_letterSpacing); }
         /// ditto
         void letterSpacing(Length len)
         {
@@ -804,7 +804,7 @@ struct ComputedStyle
             setProperty!"letterSpacing" = Length.px(px);
         }
 
-        int lineHeight() const { return applyOnlyEM(_lineHeight); }
+        float lineHeight() const { return applyOnlyEM(_lineHeight); }
         /// ditto
         void lineHeight(Length len)
         {
@@ -832,7 +832,7 @@ struct ComputedStyle
             setProperty!"textIndent" = Length.px(px);
         }
 
-        int wordSpacing() const { return applyOnlyEM(_wordSpacing); }
+        float wordSpacing() const { return applyOnlyEM(_wordSpacing); }
         /// ditto
         void wordSpacing(Length len)
         {
@@ -992,7 +992,7 @@ struct ComputedStyle
     }
 
     /// ...without percent
-    private int applyOnlyEM(Length value) const
+    private float applyOnlyEM(Length value) const
     {
         const LayoutLength ll = value.toLayout;
         if (value.is_rem)

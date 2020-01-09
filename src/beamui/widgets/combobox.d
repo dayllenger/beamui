@@ -310,7 +310,7 @@ class ComboBox : ComboBoxBase
     {
         auto label = new Label;
         label.allowsClick = true;
-        int minItemWidth;
+        float minItemWidth = 0;
         foreach (i; 0 .. _adapter.itemCount)
         {
             Widget item = _adapter.itemWidget(i);
@@ -403,7 +403,7 @@ class IconTextComboBox : ComboBoxBase
     {
         auto label = new Label;
         label.allowsClick = true;
-        int minItemWidth;
+        float minItemWidth = 0;
         foreach (i; 0 .. _adapter.itemCount)
         {
             Widget item = _adapter.itemWidget(i);

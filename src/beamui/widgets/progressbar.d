@@ -169,14 +169,14 @@ class ProgressBar : Widget
     override protected void drawContent(Painter pr)
     {
         const b = innerBox;
-        pr.clipIn(b);
+        pr.clipIn(BoxI.from(b));
 
         DrawableRef animDrawable;
         if (_data.progress >= 0)
         {
             DrawableRef gaugeDrawable = currentTheme.getDrawable("progress_bar_gauge");
             animDrawable = currentTheme.getDrawable("progress_bar_gauge_animation");
-            int w = _data.progress * b.w / PROGRESS_MAX;
+            const w = _data.progress * b.w / PROGRESS_MAX;
             if (!gaugeDrawable.isNull)
             {
                 gaugeDrawable.drawTo(pr, Box(b.x, b.y, w, b.h));
@@ -195,9 +195,9 @@ class ProgressBar : Widget
         {
             if (!_animationTimerID)
                 scheduleAnimation();
-            int w = animDrawable.width;
-            _animationPhase %= w * 1000;
-            animDrawable.drawTo(pr, b, cast(int)(_animationPhase * _animationSpeedPixelsPerSecond / 1000), 0);
+            const w = animDrawable.width;
+            _animationPhase %= cast(long)(w * 1000);
+            animDrawable.drawTo(pr, b, _animationPhase * _animationSpeedPixelsPerSecond / 1000.0f, 0);
         }
     }
 }

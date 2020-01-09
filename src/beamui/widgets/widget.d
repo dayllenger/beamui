@@ -1040,7 +1040,7 @@ public:
     }
 
     /// Returns mouse cursor type for widget
-    CursorType getCursorType(int x, int y) const
+    CursorType getCursorType(float x, float y) const
     {
         return CursorType.arrow;
     }
@@ -1070,7 +1070,7 @@ public:
         May return `null` if no tooltip to show.
         It's up to widget, to show tooltips outside or not.
     */
-    Widget createTooltip(int x, int y)
+    Widget createTooltip(float x, float y)
     {
         // default implementation supports tooltips when tooltipText property is set
         import beamui.widgets.text : Label;
@@ -1082,7 +1082,7 @@ public:
 
     /// Schedule tooltip
     void scheduleTooltip(long delay = 300, PopupAlign alignment = PopupAlign.point,
-                         int x = int.min, int y = int.min)
+                         float x = float.max, float y = float.max)
     {
         if (auto w = window)
             w.scheduleTooltip(weakRef(this), delay, alignment, x, y);
@@ -1718,7 +1718,7 @@ public:
     }
 
     /// Returns true if the point is inside of this widget
-    bool contains(int x, int y) const
+    bool contains(float x, float y) const
     {
         return _box.contains(x, y);
     }
@@ -1792,12 +1792,12 @@ public:
     }
 
     /// Returns natural height for the given width
-    int heightForWidth(int width)
+    float heightForWidth(float width)
     {
         return _boundaries.nat.h;
     }
     /// Returns natural width for the given height
-    int widthForHeight(int height)
+    float widthForHeight(float height)
     {
         return _boundaries.nat.w;
     }
@@ -1859,8 +1859,8 @@ public:
                 }
             }
         }
-        _box = b;
-        _innerBox = b.shrinked(p);
+        _box = snapToDevicePixels(b);
+        _innerBox = snapToDevicePixels(b.shrinked(p));
     }
 
     /// Draw widget at its position
@@ -1907,7 +1907,7 @@ public:
         const Color c = style.focusRectColor;
         if (!c.isFullyTransparent)
         {
-            RectI rc = _box;
+            RectI rc = RectI(BoxI.from(_box));
             rc.shrink(FOCUS_RECT_PADDING, FOCUS_RECT_PADDING);
             drawDottedLineH(pr, rc.left, rc.right, rc.top, c);
             drawDottedLineH(pr, rc.left, rc.right, rc.bottom - 1, c);
@@ -1948,7 +1948,7 @@ public:
     }
 
     /// Returns true if widget can show popup menu (e.g. by mouse right click at point x,y)
-    bool canShowPopupMenu(int x, int y)
+    bool canShowPopupMenu(float x, float y)
     {
         if (_popupMenu is null)
             return false;
@@ -1958,7 +1958,7 @@ public:
         return true;
     }
     /// Shows popup menu at (x,y)
-    void showPopupMenu(int x, int y)
+    void showPopupMenu(float x, float y)
     {
         // if preparation signal handler assigned, call it; don't show popup if false is returned from handler
         if (_popupMenu.openingSubmenu.assigned)

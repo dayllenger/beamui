@@ -1007,7 +1007,7 @@ class FilePathPanelButtons : WidgetGroup
         return onPathSelection.assigned ? onPathSelection(path) : false;
     }
 
-    private int[] itemSizes;
+    private float[] itemSizes;
     override void measure()
     {
         Boundaries bs;
@@ -1038,7 +1038,7 @@ class FilePathPanelButtons : WidgetGroup
 
         const inner = innerBox;
         const maxw = inner.w;
-        int totalw;
+        float totalw = 0;
         int visibleItems;
         bool exceeded;
         // update visibility

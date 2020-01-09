@@ -363,8 +363,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             if (_changedSize)
                 caching(this).updateCumulativeSizes();
-            int w = _cols ? _colCumulativeWidths[_cols - 1] : 0;
-            int h = _rows ? _rowCumulativeHeights[_rows - 1] : 0;
+            const w = _cols ? _colCumulativeWidths[_cols - 1] : 0;
+            const h = _rows ? _rowCumulativeHeights[_rows - 1] : 0;
             return Size(w, h);
         }
         /// Non-scrollable area size in pixels
@@ -372,10 +372,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             if (_changedSize)
                 caching(this).updateCumulativeSizes();
-            int nscols = nonScrollCols;
-            int nsrows = nonScrollRows;
-            int w = nscols ? _colCumulativeWidths[nscols - 1] : 0;
-            int h = nsrows ? _rowCumulativeHeights[nsrows - 1] : 0;
+            const int nscols = nonScrollCols;
+            const int nsrows = nonScrollRows;
+            const w = nscols ? _colCumulativeWidths[nscols - 1] : 0;
+            const h = nsrows ? _rowCumulativeHeights[nsrows - 1] : 0;
             return Size(w, h);
         }
         /// Scrollable area size in pixels
@@ -454,7 +454,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     /// Callback to handle cell double click or Enter key press
     Listener!(void delegate(int col, int row)) onActivateCell;
     /// Callback for handling of view scroll (top left visible cell change)
-    Listener!(void delegate(int col, int row)) onViewScroll;
+    Listener!(void delegate(float x, float y)) onViewScroll;
     /// Callback for handling header cell click
     Listener!(void delegate(int col, int row)) onHeaderCellClick;
 
@@ -466,17 +466,17 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         int _rows;
 
         /// Column widths before expanding and resizing
-        Buf!int _colUntouchedWidths;
+        Buf!float _colUntouchedWidths;
         /// Column widths
-        Buf!int _colWidths;
+        Buf!float _colWidths;
         /// Total width from the left of the first column to the right of specified column
-        Buf!int _colCumulativeWidths;
+        Buf!float _colCumulativeWidths;
         /// Row heights before expanding and resizing
-        Buf!int _rowUntouchedHeights;
+        Buf!float _rowUntouchedHeights;
         /// Row heights
-        Buf!int _rowHeights;
+        Buf!float _rowHeights;
         /// Total height from the top of the first row to the bottom of specified row
-        Buf!int _rowCumulativeHeights;
+        Buf!float _rowCumulativeHeights;
 
         /// When true, shows col headers row
         bool _showColHeaders;
@@ -567,7 +567,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         _changedSize = false;
         _colCumulativeWidths.resize(_colWidths.length);
         _rowCumulativeHeights.resize(_rowHeights.length);
-        int accum;
+        float accum = 0;
         foreach (i; 0 .. _colWidths.length)
         {
             accum += _colWidths[i];
@@ -625,8 +625,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         else
         {
             // scrollable
-            int start = _colCumulativeWidths[i - 1] - scrollPos.x;
-            int end = _colCumulativeWidths[i] - scrollPos.x;
+            const start = _colCumulativeWidths[i - 1] - scrollPos.x;
+            const end = _colCumulativeWidths[i] - scrollPos.x;
             if (start >= clientBox.w)
                 return false; // at right
             if (end <= (nscols ? _colCumulativeWidths[nscols - 1] : 0))
@@ -652,8 +652,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         else
         {
             // scrollable
-            int start = _rowCumulativeHeights[j - 1] - scrollPos.y;
-            int end = _rowCumulativeHeights[j] - scrollPos.y;
+            const start = _rowCumulativeHeights[j - 1] - scrollPos.y;
+            const end = _rowCumulativeHeights[j] - scrollPos.y;
             if (start >= clientBox.h)
                 return false; // at right
             if (end <= (nsrows ? _rowCumulativeHeights[nsrows - 1] : 0))
@@ -685,20 +685,20 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return b;
     }
 
-    void setColWidth(int i, int w)
+    void setColWidth(int i, float w)
     {
         _colWidths[i] = w;
         _changedSize = true;
     }
 
-    void setRowHeight(int j, int h)
+    void setRowHeight(int j, float h)
     {
         _rowHeights[j] = h;
         _changedSize = true;
     }
 
     /// Get column width, 0 is header column
-    int colWidth(int i) const
+    float colWidth(int i) const
     {
         if (i < 0 || _colWidths.length <= i)
             return 0;
@@ -706,7 +706,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Get row height, 0 is header row
-    int rowHeight(int j) const
+    float rowHeight(int j) const
     {
         if (j < 0 || _rowHeights.length <= j)
             return 0;
@@ -714,12 +714,12 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Converts client rect relative coordinates to cell coordinates
-    bool pointToCell(int x, int y, ref int col, ref int row, ref Box cellb) const
+    bool pointToCell(float x, float y, ref int col, ref int row, ref Box cellb) const
     {
         if (_changedSize)
             caching(this).updateCumulativeSizes();
-        int nscols = nonScrollCols;
-        int nsrows = nonScrollRows;
+        const int nscols = nonScrollCols;
+        const int nsrows = nonScrollRows;
         Size ns = nonScrollAreaPixels;
         col = colByAbsoluteX(x < ns.w ? x : x + scrollPos.x);
         row = rowByAbsoluteY(y < ns.h ? y : y + scrollPos.y);
@@ -735,7 +735,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Search for index of position inside cumulative sizes array
-    protected static int findPosIndex(const(int[]) cumulativeSizes, int pos)
+    protected static int findPosIndex(const float[] cumulativeSizes, float pos)
     {
         // binary search
         if (pos < 0 || !cumulativeSizes.length)
@@ -751,9 +751,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                 return a; // single point
             // middle point
             // always inside range
-            int c = (a + b) >> 1;
-            int start = c ? w[c - 1] : 0;
-            int end = w[c];
+            const int c = (a + b) >> 1;
+            const start = c ? w[c - 1] : 0;
+            const end = w[c];
             if (pos < start)
             {
                 // left
@@ -773,7 +773,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Column by X, ignoring scroll position
-    protected int colByAbsoluteX(int x) const
+    protected int colByAbsoluteX(float x) const
     {
         if (_changedSize)
             caching(this).updateCumulativeSizes();
@@ -781,7 +781,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Row by Y, ignoring scroll position
-    protected int rowByAbsoluteY(int y) const
+    protected int rowByAbsoluteY(float y) const
     {
         if (_changedSize)
             caching(this).updateCumulativeSizes();
@@ -793,10 +793,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (_changedSize)
             caching(this).updateCumulativeSizes();
-        int x = nonScrollAreaPixels.w + scrollPos.x;
-        int col = colByAbsoluteX(x);
-        int start = col ? _colCumulativeWidths[col - 1] : 0;
-        int end = _colCumulativeWidths[col];
+        const x = nonScrollAreaPixels.w + scrollPos.x;
+        const int col = colByAbsoluteX(x);
+        const start = col ? _colCumulativeWidths[col - 1] : 0;
+        const end = _colCumulativeWidths[col];
         if (x <= start)
             return col;
         // align to next col
@@ -808,10 +808,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (_changedSize)
             caching(this).updateCumulativeSizes();
-        int x = scrollPos.x + clientBox.w - 1;
+        const x = scrollPos.x + clientBox.w - 1;
         int col = colByAbsoluteX(x);
-        int start = col ? _colCumulativeWidths[col - 1] : 0;
-        int end = _colCumulativeWidths[col];
+        const start = col ? _colCumulativeWidths[col - 1] : 0;
+        const end = _colCumulativeWidths[col];
         // not fully visible
         if (x < end - 1 && col > nonScrollCols && col > scrollCol)
             col--;
@@ -823,10 +823,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (_changedSize)
             caching(this).updateCumulativeSizes();
-        int y = nonScrollAreaPixels.h + scrollPos.y;
-        int row = rowByAbsoluteY(y);
-        int start = row ? _rowCumulativeHeights[row - 1] : 0;
-        int end = _rowCumulativeHeights[row];
+        const y = nonScrollAreaPixels.h + scrollPos.y;
+        const int row = rowByAbsoluteY(y);
+        const start = row ? _rowCumulativeHeights[row - 1] : 0;
+        const end = _rowCumulativeHeights[row];
         if (y <= start)
             return row;
         // align to next col
@@ -838,10 +838,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (_changedSize)
             caching(this).updateCumulativeSizes();
-        int y = scrollPos.y + clientBox.h - 1;
+        const y = scrollPos.y + clientBox.h - 1;
         int row = rowByAbsoluteY(y);
-        int start = row ? _rowCumulativeHeights[row - 1] : 0;
-        int end = _rowCumulativeHeights[row];
+        const start = row ? _rowCumulativeHeights[row - 1] : 0;
+        const end = _rowCumulativeHeights[row];
         // not fully visible
         if (y < end - 1 && row > nonScrollRows && row > scrollRow)
             row--;
@@ -853,8 +853,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (_changedSize)
             updateCumulativeSizes();
-        int col = clamp(scrollCol + dx, nonScrollCols, _cols - 1);
-        int row = clamp(scrollRow + dy, nonScrollRows, _rows - 1);
+        const int col = clamp(scrollCol + dx, nonScrollCols, _cols - 1);
+        const int row = clamp(scrollRow + dy, nonScrollRows, _rows - 1);
         Box b = cellBoxNoScroll(col, row);
         Size ns = nonScrollAreaPixels;
         return scrollTo(b.x - ns.w, b.y - ns.h);
@@ -862,16 +862,16 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
     override protected void correctScrollPos()
     {
-        Size csz = fullContentSize;
+        const Size csz = fullContentSize;
         Size extra;
         // extending scroll area if necessary
         if (_fullRowOnTop || _fullColumnOnLeft)
         {
-            Size nonscrollPixels = nonScrollAreaPixels;
-            int maxscrollx = clientBox.x + csz.w - clientBox.w;
-            int maxscrolly = clientBox.y + csz.h - clientBox.h;
-            int col = colByAbsoluteX(maxscrollx);
-            int row = rowByAbsoluteY(maxscrolly);
+            const Size nonscrollPixels = nonScrollAreaPixels;
+            const maxscrollx = clientBox.x + csz.w - clientBox.w;
+            const maxscrolly = clientBox.y + csz.h - clientBox.h;
+            const int col = colByAbsoluteX(maxscrollx);
+            const int row = rowByAbsoluteY(maxscrolly);
             Box b = cellBoxNoScroll(col, row);
 
             // extend scroll area to show full column at left when scrolled to rightmost column
@@ -888,7 +888,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Set scroll position to show specified cell as top left in scrollable area. Returns true if scrolled
-    bool scrollTo(int x, int y)
+    bool scrollTo(float x, float y)
     {
         if (_changedSize)
             updateCumulativeSizes();
@@ -973,7 +973,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
         if (i >= nonScrollCols) // can scroll X
         {
-            int ldiff = visibleRc.left - rc.left; // TODO: consider text direction?
+            const ldiff = visibleRc.left - rc.left; // TODO: consider text direction?
             if (ldiff > 0)
             {
                 // scroll left
@@ -988,7 +988,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
         if (j >= nonScrollRows) // can scroll Y
         {
-            int tdiff = visibleRc.top - rc.top;
+            const tdiff = visibleRc.top - rc.top;
             if (tdiff > 0)
             {
                 // scroll up
@@ -1111,7 +1111,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Returns true if widget can show popup menu (e.g. by mouse right click at point x,y)
-    override bool canShowPopupMenu(int x, int y)
+    override bool canShowPopupMenu(float x, float y)
     {
         int col, row;
         Box b;
@@ -1124,12 +1124,12 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return result;
     }
 
-    override void showPopupMenu(int x, int y)
+    override void showPopupMenu(float x, float y)
     {
         int col, row;
         Box b;
-        int xx = x - clientBox.x;
-        int yy = y - clientBox.y;
+        const xx = x - clientBox.x;
+        const yy = y - clientBox.y;
         pointToCell(xx, yy, col, row, b);
         if (auto menu = getCellPopupMenu(col - _headerCols, row - _headerRows))
         {
@@ -1140,7 +1140,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
     }
 
-    override CursorType getCursorType(int x, int y) const
+    override CursorType getCursorType(float x, float y) const
     {
         if (_allowColResizing)
         {
@@ -1154,8 +1154,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     private int _colResizingIndex = -1;
-    private int _colResizingStartX = -1;
-    private int _colResizingStartWidth = -1;
+    private float _colResizingStartX = -1;
+    private float _colResizingStartWidth = -1;
 
     protected void startColResize(int i, int x)
     {
@@ -1168,7 +1168,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     {
         if (_colResizingIndex < 0 || _cols <= _colResizingIndex)
             return;
-        int newWidth = max(_colResizingStartWidth + x - _colResizingStartX, 0);
+        const newWidth = max(_colResizingStartWidth + x - _colResizingStartX, 0);
         _colWidths[_colResizingIndex] = newWidth;
         _changedSize = true;
         updateScrollBars();
@@ -1181,7 +1181,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Returns column index to resize if point is in column resize area in header row, -1 if outside resize area
-    int isColumnResizingPoint(int x, int y) const
+    int isColumnResizingPoint(float x, float y) const
     {
         if (_changedSize)
             caching(this).updateCumulativeSizes();
@@ -1192,12 +1192,12 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         if (y >= _rowCumulativeHeights[_headerRows - 1])
             return -1; // not in header row
         // point is somewhere in header row
-        int resizeRange = BACKEND_GUI ? 5 : 1;
+        const resizeRange = BACKEND_GUI ? 5 : 1;
         if (x >= nonScrollAreaPixels.w)
             x += scrollPos.x;
-        int col = colByAbsoluteX(x);
-        int start = col > 0 ? _colCumulativeWidths[col - 1] : 0;
-        int end = (col < _cols ? _colCumulativeWidths[col] : _colCumulativeWidths[$ - 1]) - 1;
+        const int col = colByAbsoluteX(x);
+        const start = col > 0 ? _colCumulativeWidths[col - 1] : 0;
+        const end = (col < _cols ? _colCumulativeWidths[col] : _colCumulativeWidths[$ - 1]) - 1;
         if (x >= end - resizeRange / 2)
             return col; // resize this column
         if (x <= start + resizeRange / 2)
@@ -1679,8 +1679,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         if (event.action == MouseAction.buttonUp || event.action == MouseAction.buttonDown ||
                 event.action == MouseAction.move)
         {
-            int x = event.x - clientBox.x;
-            int y = event.y - clientBox.y;
+            const x = event.x - clientBox.x;
+            const y = event.y - clientBox.y;
             if (_headerRows)
                 insideHeaderRow = y < _rowCumulativeHeights[_headerRows - 1];
             if (_headerCols)
@@ -1811,11 +1811,11 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return Size(BACKEND_CONSOLE ? 5 : 80, BACKEND_CONSOLE ? 1 : 20);
     }
 
-    protected int measureColWidth(int x) const
+    protected float measureColWidth(int x) const
     {
         if (!_showRowHeaders && x < _headerCols)
             return 0;
-        int w;
+        float w = 0;
         foreach (i; 0 .. _rows)
         {
             Size sz = measureCell(x - _headerCols, i - _headerRows);
@@ -1828,9 +1828,9 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         return w;
     }
 
-    protected int measureRowHeight(int y) const
+    protected float measureRowHeight(int y) const
     {
-        int h;
+        float h = 0;
         foreach (i; 0 .. _cols)
         {
             Size sz = measureCell(i - _headerCols, y - _headerRows);
@@ -1900,8 +1900,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     /// Extend specified column width to fit client area. Should be used after autofit and layout
     void fillColumnWidth(int i)
     {
-        int w = clientBox.w;
-        int totalw;
+        const w = clientBox.w;
+        float totalw = 0;
         foreach (k; 0 .. _cols)
             totalw += _colWidths[k];
         if (w > totalw)
@@ -1950,7 +1950,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
                     PaintSaver sv;
                     pr.save(sv);
-                    pr.clipIn(clipped);
+                    pr.clipIn(BoxI.from(clipped));
 
                     const bool isHeader = x < _headerCols || y < _headerRows;
                     if (phase == 0)

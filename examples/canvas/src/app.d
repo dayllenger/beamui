@@ -317,14 +317,14 @@ void text(Painter pr, Size sz)
         shape(str2, shapingBuf, font1, TextTransform.none);
 
         const baseline = font1.baseline;
-        int x;
+        float x = 0;
         foreach (g; shapingBuf)
         {
             run ~= GlyphInstance(g.glyph, Point(x + g.glyph.originX, baseline - g.glyph.originY));
             x += g.width;
         }
 
-        pr.translate((sz.w - x) / 2, 150);
+        pr.translate(snapToDevicePixels((sz.w - x) / 2), 150);
         pr.drawText(run[], Color(0x444444));
     }
 }

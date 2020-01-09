@@ -566,12 +566,12 @@ class ListWidget : WidgetGroup
             selectItem(index);
         }
 
-        final protected int scrollPosition() const
+        final protected float scrollPosition() const
         {
             return _scrollbar.data.position;
         }
 
-        final protected void scrollPosition(int v)
+        final protected void scrollPosition(float v)
         {
             _scrollbar.data.position = v;
         }
@@ -594,7 +594,7 @@ class ListWidget : WidgetGroup
         /// Client area (without scrollbar and padding)
         Box _clientBox;
         /// Total height of all items for vertical orientation, or width for horizontal
-        int _totalSize;
+        float _totalSize = 0;
         /// Item with `hovered` state, -1 if no such item
         int _hoverItemIndex = -1;
         /// Item with `selected` state, -1 if no such item
@@ -755,7 +755,7 @@ class ListWidget : WidgetGroup
         if (viewrc.contains(scrolledrc)) // completely visible
             return;
 
-        int delta;
+        float delta = 0;
         if (_orientation == Orientation.vertical)
         {
             if (scrolledrc.top < viewrc.top)
@@ -944,7 +944,7 @@ class ListWidget : WidgetGroup
         const b = innerBox;
         // same as in `draw()`
         const bool vert = _orientation == Orientation.vertical;
-        const int scrollOffset = scrollPosition;
+        const scrollOffset = scrollPosition;
         const int start = findViewportIndex();
         foreach (i; start .. itemCount)
         {
@@ -1034,7 +1034,7 @@ class ListWidget : WidgetGroup
 
         Boundaries bs;
         // measure children
-        int p;
+        float p = 0;
         foreach (i; 0 .. itemCount)
         {
             Widget wt = itemWidget(i);
@@ -1080,7 +1080,7 @@ class ListWidget : WidgetGroup
         _needScrollbar = false;
 
         const vertical = _orientation == Orientation.vertical;
-        int p;
+        float p = 0;
         foreach (i; 0 .. itemCount)
         {
             Widget wt = itemWidget(i);
@@ -1114,7 +1114,7 @@ class ListWidget : WidgetGroup
                 }
             }
         }
-        int sbsz; // scrollbar size
+        float sbsz = 0; // scrollbar size
         if (_needScrollbar)
         {
             _scrollbar.visibility = Visibility.visible;
@@ -1222,10 +1222,10 @@ class ListWidget : WidgetGroup
             return;
 
         // draw items
-        pr.clipIn(_clientBox);
+        pr.clipIn(BoxI.from(_clientBox));
         const b = innerBox;
         const bool vert = _orientation == Orientation.vertical;
-        const int scrollOffset = scrollPosition;
+        const scrollOffset = scrollPosition;
         const int start = findViewportIndex();
         bool started;
         foreach (i; start .. itemCount)
@@ -1268,7 +1268,7 @@ class ListWidget : WidgetGroup
         int start = 0;
         int end = itemCount - 1;
         const bool vert = _orientation == Orientation.vertical;
-        const int offset = scrollPosition;
+        const offset = scrollPosition;
         while (true)
         {
             const Box ib1 = _itemBoxes[start];
