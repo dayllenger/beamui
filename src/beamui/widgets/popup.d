@@ -53,7 +53,7 @@ enum PopupClosePolicy : uint // TODO: on(Press|Release)OutsideParent, onEscapeKe
 }
 
 /// Popup widget container
-class Popup : Panel
+class Popup : Widget
 {
     PopupAnchor anchor;
     PopupClosePolicy closePolicy = PopupClosePolicy.onPressOutside;
@@ -66,9 +66,12 @@ class Popup : Panel
     Signal!(void delegate(bool byEvent)) onPopupClose;
 
     this(Widget content, Window window)
+        in(content)
+        in(window)
     {
         this.window = window;
-        addChild(content);
+        content.parent = this;
+        _hiddenChildren.append(content);
     }
 
     /// Close and destroy popup
@@ -76,7 +79,10 @@ class Popup : Panel
     {
         onPopupClose(closedByEvent);
         if (!ownContent)
-            removeChild(0);
+        {
+            contentWidget.parent = null;
+            _hiddenChildren.remove(0);
+        }
         window.removePopup(this);
     }
 
@@ -104,6 +110,17 @@ class Popup : Panel
             }
         }
         return false;
+    }
+
+    protected @property inout(Widget) contentWidget() inout
+    {
+        return _hiddenChildren[0];
+    }
+
+    override protected void adjustBoundaries(ref Boundaries bs)
+    {
+        contentWidget.measure();
+        bs.maximize(contentWidget.boundaries);
     }
 
     override void layout(Box geom)
@@ -176,6 +193,13 @@ class Popup : Panel
         }
         geom.pos = p;
         geom.moveToFit(windowBox);
+
         super.layout(geom);
+        contentWidget.layout(innerBox);
+    }
+
+    override protected void drawContent(Painter pr)
+    {
+        contentWidget.draw(pr);
     }
 }

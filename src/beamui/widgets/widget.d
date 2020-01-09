@@ -170,6 +170,9 @@ private:
 
     Animation[string] animations; // key is a property name
 
+protected:
+    WidgetList _hiddenChildren;
+
 public:
 
     /// Empty parameter list constructor - for usage by factory
@@ -634,18 +637,16 @@ public:
     private void invalidateStylesRecursively()
     {
         _needToRecomputeStyle = true;
-        foreach (i; 0 .. childCount)
-        {
-            child(i).invalidateStylesRecursively();
-        }
+        foreach (Widget w; this)
+            w.invalidateStylesRecursively();
     }
 
     /// Handle theme change: e.g. reload some themed resources
     void handleThemeChange()
     {
         // default implementation: call recursive for children
-        foreach (i; 0 .. childCount)
-            child(i).handleThemeChange();
+        foreach (Widget w; this)
+            w.handleThemeChange();
 
         _needToRecomputeStyle = true;
     }
@@ -1251,10 +1252,8 @@ public:
             return;
         }
         rc.intersect(clipRect);
-        foreach (i; 0 .. childCount)
-        {
-            child(i).findFocusableChildren(results, rc, currentWidget);
-        }
+        foreach (Widget w; this)
+            w.findFocusableChildren(results, rc, currentWidget);
     }
 
     /// Find all focusables belonging to the same `focusGroup` as this widget (does not include current widget).
@@ -1433,9 +1432,8 @@ public:
     /// Search children for first focusable item, returns `null` if not found
     Widget findFocusableChild(bool defaultOnly)
     {
-        foreach (i; 0 .. childCount)
+        foreach (Widget w; this)
         {
-            Widget w = child(i);
             if (w.canFocus && (!defaultOnly || (w.state & State.default_) != 0))
                 return w;
             w = w.findFocusableChild(defaultOnly);
@@ -1930,11 +1928,10 @@ public:
     */
     protected void drawAllChildren(Painter pr)
     {
-        const count = childCount;
-        if (count == 0 || visibility != Visibility.visible)
+        if (visibility != Visibility.visible)
             return;
 
-        foreach (i; 0 .. count)
+        foreach (i; 0 .. childCount)
             child(i).draw(pr);
     }
 
@@ -2063,18 +2060,18 @@ public:
             // this widget or some widget inside children tree
             if (item is this)
                 return true;
-            foreach (i; 0 .. childCount)
+            foreach (w; this)
             {
-                if (child(i).isChild(item))
+                if (w.isChild(item))
                     return true;
             }
         }
         else
         {
             // only one of children
-            foreach (i; 0 .. childCount)
+            foreach (w; this)
             {
-                if (item is child(i))
+                if (item is w)
                     return true;
             }
         }
@@ -2121,6 +2118,21 @@ public:
         }
         // not found
         return null;
+    }
+
+    final int opApply(scope int delegate(Widget) callback)
+    {
+        foreach (i; 0 .. childCount)
+        {
+            if (const result = callback(child(i)))
+                return result;
+        }
+        foreach (w; _hiddenChildren.data)
+        {
+            if (const result = callback(w))
+                return result;
+        }
+        return 0;
     }
 
     /// Parent widget, `null` for top level widget

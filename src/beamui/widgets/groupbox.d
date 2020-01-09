@@ -20,20 +20,19 @@ class GroupBox : Panel
     {
         _caption = new Label(caption);
         _caption.bindSubItem(this, "caption");
+        _caption.state = State.parent;
         _caption.parent = this;
+        _hiddenChildren.append(_caption);
     }
 
     this(dstring caption, Orientation orientation)
     {
-        style.display = orientation == Orientation.vertical ? "column" : "row";
         _caption = new Label(caption);
         _caption.bindSubItem(this, "caption");
+        _caption.state = State.parent;
         _caption.parent = this;
-    }
-
-    ~this()
-    {
-        eliminate(_caption);
+        _hiddenChildren.append(_caption);
+        style.display = orientation == Orientation.vertical ? "column" : "row";
     }
 
     override @property
@@ -47,7 +46,6 @@ class GroupBox : Panel
         void text(dstring s)
         {
             _caption.text = s;
-            requestLayout();
         }
 
         Insets padding() const
@@ -98,12 +96,6 @@ class GroupBox : Panel
         _frameLeft = dp.left;
         _frameRight = dp.right;
         _frameBottom = dp.bottom;
-    }
-
-    override void handleThemeChange()
-    {
-        super.handleThemeChange();
-        _caption.handleThemeChange();
     }
 
     override protected void adjustBoundaries(ref Boundaries bs)

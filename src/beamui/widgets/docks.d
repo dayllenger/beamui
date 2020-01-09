@@ -176,17 +176,20 @@ class DockHost : WidgetGroup
 {
     @property
     {
-        Widget bodyWidget() { return _bodyWidget; }
+        inout(Widget) bodyWidget() inout { return _bodyWidget; }
         /// ditto
         void bodyWidget(Widget widget)
+            in(widget)
         {
+            if (_bodyWidget is widget)
+                return;
             if (_bodyWidget)
             {
-                replaceChild(_bodyWidget, widget);
+                assert(_hiddenChildren.removeValue(_bodyWidget));
                 destroy(_bodyWidget);
             }
-            else
-                addChild(widget);
+            widget.parent = this;
+            _hiddenChildren.append(widget);
             _bodyWidget = widget;
         }
 
@@ -318,6 +321,7 @@ class DockHost : WidgetGroup
     override protected void drawContent(Painter pr)
     {
         drawAllChildren(pr);
+        _bodyWidget.draw(pr);
     }
 }
 

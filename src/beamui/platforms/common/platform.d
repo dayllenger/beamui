@@ -992,8 +992,8 @@ class Window : CustomEventTarget
         if (root.visibility != Visibility.visible)
             return;
 
-        foreach (i; 0 .. root.childCount)
-            animate(root.child(i), interval);
+        foreach (Widget w; root)
+            animate(w, interval);
         if (root.animating)
             root.animate(interval);
     }
@@ -1303,9 +1303,8 @@ class Window : CustomEventTarget
             if (handleKeyEvent(weakRef(root), event))
                 return true;
         }
-        foreach (i; 0 .. root.childCount)
+        foreach (Widget w; root)
         {
-            Widget w = root.child(i);
             if (dispatchKeyEvent(w, event))
                 return true;
         }
@@ -1485,10 +1484,9 @@ class Window : CustomEventTarget
         if (!root.contains(event.x, event.y))
             return false;
         // offer event to children first
-        foreach (i; 0 .. root.childCount)
+        foreach (Widget w; root.get)
         {
-            Widget child = root.child(i);
-            if (dispatchMouseEvent(weakRef(child), event, cursorIsSet))
+            if (dispatchMouseEvent(weakRef(w), event, cursorIsSet))
                 return true;
         }
 
@@ -1659,10 +1657,9 @@ class Window : CustomEventTarget
             return false;
 
         // offer event to children first
-        foreach (i; 0 .. root.childCount)
+        foreach (Widget w; root.get)
         {
-            Widget child = root.child(i);
-            if (dispatchWheelEvent(weakRef(child), event))
+            if (dispatchWheelEvent(weakRef(w), event))
                 return true;
         }
         // if not processed by children, offer event to the root
@@ -1848,8 +1845,8 @@ class Window : CustomEventTarget
         if (needDraw && needLayout && animationActive)
             return;
         // check recursively
-        foreach (i; 0 .. root.childCount)
-            checkUpdateNeeded(root.child(i), needDraw, needLayout, animationActive);
+        foreach (Widget w; root)
+            checkUpdateNeeded(w, needDraw, needLayout, animationActive);
     }
 
     private bool _animationActive;

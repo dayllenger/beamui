@@ -618,14 +618,17 @@ class ScrollArea : ScrollAreaBase
             return;
         if (_contentWidget)
         {
-            removeChild(_contentWidget);
+            assert(_hiddenChildren.removeValue(_contentWidget));
             destroy(_contentWidget);
         }
         if (widget)
         {
+            widget.parent = this;
+            _hiddenChildren.append(widget);
             _contentWidget = widget;
-            addChild(widget);
         }
+        else
+            requestLayout();
     }
 
     override @property Size fullContentSize() const { return _fullContentSize; }

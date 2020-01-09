@@ -618,7 +618,8 @@ class ListWidget : WidgetGroup
         allowsFocus = true;
         _scrollbar = new ScrollBar(orientation);
         _scrollbar.visibility = Visibility.gone;
-        addChild(_scrollbar);
+        _scrollbar.parent = this;
+        _hiddenChildren.append(_scrollbar);
     }
 
     ~this()
@@ -850,7 +851,6 @@ class ListWidget : WidgetGroup
     override void handleThemeChange()
     {
         super.handleThemeChange();
-        _scrollbar.handleThemeChange();
         foreach (i; 0 .. itemCount)
         {
             Widget w = itemWidget(i);
