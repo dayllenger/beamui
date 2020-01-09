@@ -80,7 +80,7 @@ private abstract class GLCache
 
         uint _objectID;
         // image size
-        Rect _rc;
+        RectI _rc;
         bool _deleted;
 
         this(GLCachePage page, uint objectID)
@@ -165,7 +165,7 @@ private abstract class GLCache
                 _closed = true;
                 return null;
             }
-            cacheItem._rc = Rect(_x + spacer, _currentLine + spacer, _x + width + spacer, _currentLine + height + spacer);
+            cacheItem._rc = RectI(_x + spacer, _currentLine + spacer, _x + width + spacer, _currentLine + height + spacer);
             if (height && width)
             {
                 if (_nextLine < _currentLine + height + 2 * spacer)
@@ -195,7 +195,7 @@ private abstract class GLCache
                 updateTexture();
         }
 
-        final void drawItem(GLCacheItem item, Rect dstrc, Rect srcrc, Color color)
+        final void drawItem(GLCacheItem item, RectI dstrc, RectI srcrc, Color color)
         {
             if (_needUpdateTexture)
                 updateTexture();
@@ -301,7 +301,7 @@ private class GLImageCache : GLCache
 
         void convertPixelFormat(GLCacheItem item)
         {
-            Rect rc = item._rc;
+            RectI rc = item._rc;
             if (rc.top > 0)
                 rc.top--;
             if (rc.left > 0)
@@ -372,7 +372,7 @@ private class GLImageCache : GLCache
         _map[img.id] = res;
     }
     /// Draw cached item
-    void drawItem(uint objectID, Rect dstrc, Rect srcrc, Color color)
+    void drawItem(uint objectID, RectI dstrc, RectI srcrc, Color color)
     {
         if (auto item = objectID in _map)
             item.page.drawItem(*item, dstrc, srcrc, color);
@@ -422,7 +422,7 @@ private class GLGlyphCache : GLCache
         _map[glyph.id] = res;
     }
     /// Draw cached item
-    void drawItem(uint objectID, Rect dstrc, Rect srcrc, Color color)
+    void drawItem(uint objectID, RectI dstrc, RectI srcrc, Color color)
     {
         if (auto item = objectID in _map)
             item.page.drawItem(*item, dstrc, srcrc, color);

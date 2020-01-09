@@ -211,7 +211,7 @@ class ConsolePlatform : Platform
         {
             if (w.visible)
             {
-                _drawBuf.fillRect(Rect(0, 0, w.width, w.height), w.backgroundColor);
+                _drawBuf.fillRect(RectI(0, 0, w.width, w.height), w.backgroundColor);
                 w.draw(_drawBuf);
                 auto caretRect = w.caretRect;
                 if (w is activeWindow)
@@ -339,7 +339,7 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
     override void fill(Color color)
     {
         // TODO
-        fillRect(Rect(0, 0, width, height), color);
+        fillRect(RectI(0, 0, width, height), color);
     }
 
     private struct RGB
@@ -430,7 +430,7 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
 
     static immutable dchar[512] SPACE_STRING = ' ';
 
-    override void fillRect(Rect rc, Color color)
+    override void fillRect(RectI rc, Color color)
     {
         if (color.a < 128)
             return; // transparent
@@ -446,13 +446,13 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         }
     }
 
-    override void fillGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4)
+    override void fillGradientRect(RectI rc, Color color1, Color color2, Color color3, Color color4)
     {
         // TODO
         fillRect(rc, color1);
     }
 
-    override void fillRectPattern(Rect rc, Color color, PatternType pattern)
+    override void fillRectPattern(RectI rc, Color color, PatternType pattern)
     {
         // default implementation: does not support patterns
         fillRect(rc, color);
@@ -482,12 +482,12 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         // TODO
     }
 
-    override void drawFragment(int x, int y, DrawBuf src, Rect srcrect)
+    override void drawFragment(int x, int y, DrawBuf src, RectI srcrect)
     {
         // not supported
     }
 
-    override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
+    override void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect)
     {
         // not supported
     }

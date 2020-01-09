@@ -219,7 +219,7 @@ class BoxShadowDrawable : Drawable
         // clear
         texture.fill(color.withAlpha(0));
         // draw a square in center of the texture
-        texture.fillRect(Rect(blurSize, blurSize, size - blurSize, size - blurSize), color);
+        texture.fillRect(RectI(blurSize, blurSize, size - blurSize, size - blurSize), color);
         // blur the square
         texture.blur(blurSize);
         texture.preMultiplyAlpha();

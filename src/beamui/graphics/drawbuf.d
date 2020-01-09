@@ -48,7 +48,7 @@ static if (USE_OPENGL)
 }
 
 /// Custom draw delegate for OpenGL direct drawing
-alias DrawHandler = void delegate(Rect windowRect, Rect rc);
+alias DrawHandler = void delegate(RectI windowRect, RectI rc);
 
 /// Drawing buffer - image container which allows to perform some drawing operations
 class DrawBuf : RefCountedObject
@@ -143,13 +143,13 @@ class DrawBuf : RefCountedObject
     }
 
     /// Apply buffer bounds clipping to rectangle
-    bool applyClipping(ref Rect rc) const
+    bool applyClipping(ref RectI rc) const
     {
-        return rc.intersect(Rect(0, 0, width, height));
+        return rc.intersect(RectI(0, 0, width, height));
     }
     /// Apply buffer bounds clipping to rectangle.
     /// If clipping applied to first rectangle, reduce second rectangle bounds proportionally
-    bool applyClipping(ref Rect rc, ref Rect rc2) const
+    bool applyClipping(ref RectI rc, ref RectI rc2) const
     {
         if (rc.empty || rc2.empty)
             return false;
@@ -214,12 +214,12 @@ class DrawBuf : RefCountedObject
     /// Fill the whole buffer with solid color (no clipping applied)
     abstract void fill(Color color);
     /// Fill rectangle with solid color (clipping is applied)
-    abstract void fillRect(Rect rc, Color color);
+    abstract void fillRect(RectI rc, Color color);
     /// Fill rectangle with a gradient (clipping is applied)
-    abstract void fillGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4);
+    abstract void fillGradientRect(RectI rc, Color color1, Color color2, Color color3, Color color4);
 
     /// Fill rectangle with solid color and pattern (clipping is applied)
-    void fillRectPattern(Rect rc, Color color, PatternType pattern)
+    void fillRectPattern(RectI rc, Color color, PatternType pattern)
     {
     }
     /// Draw pixel at (x, y) with specified color (clipping is applied)
@@ -227,18 +227,18 @@ class DrawBuf : RefCountedObject
     /// Draw 8bit alpha image - usually font glyph using specified color (clipping is applied)
     abstract void drawGlyph(int x, int y, GlyphRef glyph, Color color);
     /// Draw source buffer rectangle contents to destination buffer (clipping is applied)
-    abstract void drawFragment(int x, int y, DrawBuf src, Rect srcrect);
+    abstract void drawFragment(int x, int y, DrawBuf src, RectI srcrect);
     /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
-    abstract void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect);
+    abstract void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect);
 
     /// Draw unscaled image at specified coordinates
     void drawImage(int x, int y, DrawBuf src)
     {
-        drawFragment(x, y, src, Rect(0, 0, src.width, src.height));
+        drawFragment(x, y, src, RectI(0, 0, src.width, src.height));
     }
 
     /// Draw custom OpenGL scene
-    void drawCustomOpenGLScene(Rect rc, DrawHandler handler)
+    void drawCustomOpenGLScene(RectI rc, DrawHandler handler)
     {
         // override it for OpenGL draw buffer
         Log.w("drawCustomOpenGLScene is called for non-OpenGL DrawBuf");
@@ -265,12 +265,12 @@ class ColorDrawBufBase : DrawBuf
         return null;
     }
 
-    override void drawFragment(int x, int y, DrawBuf src, Rect srcrect)
+    override void drawFragment(int x, int y, DrawBuf src, RectI srcrect)
     {
         auto img = cast(ColorDrawBufBase)src;
         if (!img)
             return;
-        Rect dstrect = Rect(x, y, x + srcrect.width, y + srcrect.height);
+        RectI dstrect = RectI(x, y, x + srcrect.width, y + srcrect.height);
         if (applyClipping(dstrect, srcrect))
         {
             if (src.applyClipping(srcrect, dstrect))
@@ -315,7 +315,7 @@ class ColorDrawBufBase : DrawBuf
         return ret;
     }
 
-    override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
+    override void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect)
     {
         auto img = cast(ColorDrawBufBase)src;
         if (!img)
@@ -509,7 +509,7 @@ class ColorDrawBufBase : DrawBuf
         }
     }
 
-    override void fillRect(Rect rc, Color color)
+    override void fillRect(RectI rc, Color color)
     {
         if (!color.isFullyTransparent && applyClipping(rc))
         {
@@ -534,7 +534,7 @@ class ColorDrawBufBase : DrawBuf
         }
     }
 
-    override void fillGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4)
+    override void fillGradientRect(RectI rc, Color color1, Color color2, Color color3, Color color4)
     {
         if (applyClipping(rc))
         {
@@ -613,12 +613,12 @@ class GrayDrawBuf : DrawBuf
         _buf.unsafe_slice[] = color.toGray;
     }
 
-    override void drawFragment(int x, int y, DrawBuf src, Rect srcrect)
+    override void drawFragment(int x, int y, DrawBuf src, RectI srcrect)
     {
         auto img = cast(GrayDrawBuf)src;
         if (!img)
             return;
-        Rect dstrect = Rect(x, y, x + srcrect.width, y + srcrect.height);
+        RectI dstrect = RectI(x, y, x + srcrect.width, y + srcrect.height);
         if (applyClipping(dstrect, srcrect))
         {
             if (src.applyClipping(srcrect, dstrect))
@@ -647,7 +647,7 @@ class GrayDrawBuf : DrawBuf
         return ret;
     }
 
-    override void drawRescaled(Rect dstrect, DrawBuf src, Rect srcrect)
+    override void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect)
     {
         auto img = cast(GrayDrawBuf)src;
         if (!img)
@@ -777,7 +777,7 @@ class GrayDrawBuf : DrawBuf
         }
     }
 
-    override void fillRect(Rect rc, Color color)
+    override void fillRect(RectI rc, Color color)
     {
         if (!color.isFullyTransparent && applyClipping(rc))
         {
@@ -803,7 +803,7 @@ class GrayDrawBuf : DrawBuf
         }
     }
 
-    override void fillGradientRect(Rect rc, Color color1, Color color2, Color color3, Color color4)
+    override void fillGradientRect(RectI rc, Color color1, Color color2, Color color3, Color color4)
     {
         if (applyClipping(rc))
         {
@@ -867,7 +867,7 @@ class ColorDrawBuf : ColorDrawBufBase
     this(ColorDrawBuf src, int width, int height)
     {
         resize(width, height); // fills with transparent
-        drawRescaled(Rect(0, 0, width, height), src, Rect(0, 0, src.width, src.height));
+        drawRescaled(RectI(0, 0, width, height), src, RectI(0, 0, src.width, src.height));
     }
 
     void preMultiplyAlpha()

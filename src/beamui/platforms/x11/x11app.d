@@ -664,7 +664,7 @@ final class X11Window : DWindow
         scope (exit)
             destroy(iconDraw);
         iconDraw.fill(Color.transparent);
-        iconDraw.drawRescaled(Rect(0, 0, iconw, iconh), ic, Rect(0, 0, ic.width, ic.height));
+        iconDraw.drawRescaled(RectI(0, 0, iconw, iconh), ic, RectI(0, 0, ic.width, ic.height));
         iconDraw.preMultiplyAlpha();
         c_long[] propData = new c_long[2 + iconw * iconh];
         propData[0] = iconw;

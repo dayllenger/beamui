@@ -45,7 +45,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         if (src.width == width && src.height == height)
             drawImage(0, 0, src);
         else
-            drawRescaled(Rect(0, 0, width, height), src, Rect(0, 0, src.width, src.height));
+            drawRescaled(RectI(0, 0, width, height), src, RectI(0, 0, src.width, src.height));
     }
 
     ~this()
