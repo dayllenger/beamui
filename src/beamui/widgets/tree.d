@@ -92,14 +92,22 @@ class TreeItem
         /// ditto
         void text(dstring s)
         {
-            _text = s;
+            if (_text != s)
+            {
+                _text = s;
+                handleUpdate();
+            }
         }
         /// Tree item icon
         string iconID() const { return _iconID; }
         /// ditto
         void iconID(string res)
         {
-            _iconID = res;
+            if (_iconID != res)
+            {
+                _iconID = res;
+                handleUpdate();
+            }
         }
 
         /// Nesting level of this item
@@ -243,11 +251,15 @@ class TreeItem
     /// Delete all subitems
     void clear()
     {
+        RootTreeItem root = this.root;
+        if (hasDescendant(root.selectedItem))
+            root.selectItem(null);
+        if (hasDescendant(root.defaultItem))
+            root.setDefaultItem(null);
         foreach (c; _children)
         {
             c.parent = null;
-            if (c is root.selectedItem)
-                root.selectItem(null);
+            c.level = 0;
         }
         _children.clear();
         root.handleUpdate();
@@ -301,9 +313,11 @@ class TreeItem
             else
                 newSelection = res.parent;
         }
+        root.selectItem(newSelection);
+        if (root.defaultItem is res || res.hasDescendant(root.defaultItem))
+            root.setDefaultItem(null);
         res.parent = null;
         res.level = 0;
-        root.selectItem(newSelection);
         root.handleUpdate();
         return res;
     }
@@ -323,6 +337,18 @@ class TreeItem
     int childIndex(TreeItem item)
     {
         return cast(int)_children.indexOf(item);
+    }
+
+    private bool hasDescendant(TreeItem item)
+    {
+        if (!item)
+            return false;
+        foreach (c; _children)
+        {
+            if (c is item || c.hasDescendant(item))
+                return true;
+        }
+        return false;
     }
 
     /// Notify listeners
@@ -424,6 +450,19 @@ class RootTreeItem : TreeItem
         return false;
     }
 
+    override void clear()
+    {
+        selectItem(null);
+        setDefaultItem(null);
+        foreach (c; _children)
+        {
+            c.parent = null;
+            c.level = 0;
+        }
+        _children.clear();
+        handleUpdate();
+    }
+
     override protected void handleUpdate()
     {
         onContentChange();
@@ -456,8 +495,6 @@ class RootTreeItem : TreeItem
             return;
         if (item is this)
             item = null;
-        if (_selectedItem is _defaultItem)
-            _defaultItem = null;
         _selectedItem = item;
         onStateChange();
         onSelect(item, false);
@@ -939,6 +976,8 @@ unittest
     root.selectItem(item);
     assert(root.selectedItem is item);
     root.setDefaultItem(item);
+    assert(root.defaultItem is item);
+    root.selectItem(null);
     assert(root.defaultItem is item);
 
     root.removeChild(item);
