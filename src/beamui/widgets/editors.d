@@ -358,7 +358,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         bool _ownContent = true;
 
         int _lineHeight = 1;
-        int _spaceWidth;
+        float _spaceWidth;
 
         bool _selectAllWhenFocusedWithTab;
         bool _deselectAllWhenUnfocused;
@@ -782,7 +782,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         Box caret = textPosToClient(_caretPos);
         if (_replaceMode)
         {
-            caret.w = _spaceWidth;
+            caret.w = cast(int)_spaceWidth;
             if (_caretPos.pos < _content.lineLength(_caretPos.line))
             {
                 const nextPos = TextPosition(_caretPos.line, _caretPos.pos + 1);
@@ -1778,7 +1778,7 @@ class EditLine : EditWidgetBase
 
     override protected Box textPosToClient(TextPosition p) const
     {
-        Box b;
+        BoxF b;
         if (p.pos <= 0)
             b.x = 0;
         else if (p.pos >= _txtline.glyphCount)
@@ -1791,7 +1791,7 @@ class EditLine : EditWidgetBase
         b.x -= scrollPos.x;
         b.w = 1;
         b.h = clientBox.h;
-        return b;
+        return Box.from(b);
     }
 
     override protected TextPosition clientToTextPos(Point pt) const
@@ -1813,7 +1813,7 @@ class EditLine : EditWidgetBase
         else if (b.x >= clientBox.w - 10)
         {
             // scroll right
-            scrollPos.x += (b.x - clientBox.w) + _spaceWidth * 4;
+            scrollPos.x += (b.x - clientBox.w) + cast(int)_spaceWidth * 4;
         }
         if (oldpos != scrollPos.x)
             invalidate();
@@ -1987,7 +1987,7 @@ class EditBox : EditWidgetBase
         /// Lines, visible in the client area
         TextLine[] _visibleLines;
         /// Local positions of the lines
-        Point[] _visibleLinePositions;
+        PointF[] _visibleLinePositions;
         // a stupid pool for markup
         LineMarkup[] _markup;
         uint _markupEngaged;
@@ -2204,7 +2204,7 @@ class EditBox : EditWidgetBase
         if (lines.length == 0 || pos.line < first || first + cast(int)lines.length <= pos.line)
             return Box.init;
 
-        Box b;
+        BoxF b;
         b.w = 1;
         b.h = _lineHeight;
         b.pos = positions[pos.line - first];
@@ -2236,7 +2236,7 @@ class EditBox : EditWidgetBase
                 b.x += line.size.w;
         }
         b.x -= scrollPos.x;
-        return b;
+        return Box.from(b);
     }
 
     override protected TextPosition clientToTextPos(Point pt) const
@@ -2275,7 +2275,7 @@ class EditBox : EditWidgetBase
         const glyphs = line.glyphs;
         if (line.wrapped)
         {
-            int y = p.y;
+            float y = p.y;
             foreach (ref span; line.wrapSpans)
             {
                 if (y <= pt.y && pt.y < y + span.height)
@@ -2788,7 +2788,7 @@ class EditBox : EditWidgetBase
         const TextLine* ln = &_visibleLines[line - _firstVisibleLine];
         if (ln.wrapped)
         {
-            int y = lineBox.y;
+            float y = lineBox.y;
             foreach (ref span; ln.wrapSpans)
             {
                 if (span.end <= start)
@@ -2810,7 +2810,7 @@ class EditBox : EditWidgetBase
             highlightLineRangeImpl(pr, lineBox.y, lineBox.h, color, line, start, end, extend);
     }
 
-    private void highlightLineRangeImpl(Painter pr, int y, int h, Color color,
+    private void highlightLineRangeImpl(Painter pr, float y, float h, Color color,
         int line, int start, int end, bool extend)
     {
         const Box a = textPosToClient(TextPosition(line, start));
@@ -2883,7 +2883,7 @@ class EditBox : EditWidgetBase
         {
             if (i < lineCount)
             {
-                b.h = _visibleLines[i - _firstVisibleLine].height;
+                b.h = cast(int)_visibleLines[i - _firstVisibleLine].height;
                 drawLeftPane(pr, Rect(b), i);
             }
             else
@@ -3007,8 +3007,8 @@ class EditBox : EditWidgetBase
         const int maxCol = findMaxTabMarkColumn(lineIndex);
         if (maxCol > 0)
         {
-            const int spaceWidth = _spaceWidth;
-            lineBox.h = _visibleLines[lineIndex - _firstVisibleLine].wrapSpans[0].height;
+            const int spaceWidth = cast(int)_spaceWidth;
+            lineBox.h = cast(int)_visibleLines[lineIndex - _firstVisibleLine].wrapSpans[0].height;
             Rect rc = lineBox;
             Color color = style.textColor;
             color.addAlpha(0x40);
@@ -3057,7 +3057,7 @@ class EditBox : EditWidgetBase
         {
             const i1 = span.start;
             const i2 = span.end;
-            b.x = lineBox.x + span.offset;
+            b.x = lineBox.x + cast(int)span.offset;
             foreach (i; i1 .. i2)
             {
                 const fg = &glyphs[i];
@@ -3065,7 +3065,7 @@ class EditBox : EditWidgetBase
                 const bool outsideText = i < firstNonSpace || lastNonSpace <= i;
                 if ((ch == ' ' && outsideText) || ch == '\t')
                 {
-                    b.w = fg.width;
+                    b.w = cast(int)fg.width;
                     b.h = fg.height;
                     if (Rect(b).intersects(visibleRect))
                     {
@@ -3075,9 +3075,9 @@ class EditBox : EditWidgetBase
                             drawTabMark(pr, b, color);
                     }
                 }
-                b.x += fg.width;
+                b.x += cast(int)fg.width;
             }
-            b.y += span.height;
+            b.y += cast(int)span.height;
         }
         pr.antialias = oldAA;
     }
@@ -3130,9 +3130,9 @@ class EditBox : EditWidgetBase
         foreach (i, ref line; _visibleLines)
         {
             const py = b.y + y;
-            const h = line.height;
+            const h = cast(int)line.height;
             const lineIndex = _firstVisibleLine + cast(int)i;
-            const lineBox = Box(px, py, line.size.w, h);
+            const lineBox = Box(px, py, cast(int)line.size.w, h);
             const visibleBox = Box(b.x, lineBox.y, b.w, lineBox.h);
             drawLineBackground(pr, lineIndex, lineBox, visibleBox);
             if (_showTabPositionMarks)
@@ -3141,7 +3141,7 @@ class EditBox : EditWidgetBase
                 drawWhiteSpaceMarks(pr, lineIndex, lineBox, visibleBox);
 
             const x = line.draw(pr, px, py, b.w, _txtStyle);
-            _visibleLinePositions[i] = Point(x, y);
+            _visibleLinePositions[i] = PointF(x, y);
             y += h;
         }
 

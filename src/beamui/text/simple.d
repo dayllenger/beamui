@@ -11,7 +11,7 @@ module beamui.text.simple;
 
 import std.array : Appender;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : Point, Size, RectF;
+import beamui.core.geometry : PointF, Size, RectF;
 import beamui.core.math : max;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf : GlyphInstance;
@@ -26,7 +26,7 @@ private struct Line
 {
     dstring str;
     ComputedGlyph[] glyphs;
-    int width;
+    float width = 0;
 
     /** Measure text string to calculate char sizes and total text size.
 
@@ -48,10 +48,10 @@ private struct Line
         static Buf!ComputedGlyph shapingBuf;
         shape(str, shapingBuf, font, style.transform);
 
-        const int spaceWidth = font.spaceWidth;
+        const spaceWidth = font.spaceWidth;
 
         auto pglyphs = shapingBuf.unsafe_ptr;
-        int x;
+        float x = 0;
         foreach (i, ch; str)
         {
             if (ch == '\t')
@@ -59,7 +59,7 @@ private struct Line
                 // calculate tab stop
                 const n = x / (spaceWidth * style.tabSize) + 1;
                 const tabPosition = spaceWidth * style.tabSize * n;
-                pglyphs[i].width = cast(ushort)(tabPosition - x);
+                pglyphs[i].width = tabPosition - x;
                 pglyphs[i].glyph = null;
                 x = tabPosition;
                 continue;
@@ -75,7 +75,7 @@ private struct Line
     }
 
     /// Split line by width
-    void wrap(int boxWidth, ref Appender!(Line[]) output)
+    void wrap(float boxWidth, ref Appender!(Line[]) output)
     {
         if (boxWidth <= 0)
             return;
@@ -92,8 +92,8 @@ private struct Line
         const pglyphs = glyphs.ptr;
         size_t lineStart;
         size_t lastWordEnd;
-        int lastWordEndX;
-        int lineWidth;
+        float lastWordEndX = 0;
+        float lineWidth = 0;
         bool whitespace;
         for (size_t i; i < len; i++)
         {
@@ -148,7 +148,7 @@ private struct Line
     }
 
     /// Draw measured line at the position, applying alignment
-    void draw(Painter pr, int x, int y, const int boxWidth, ref const TextStyle style)
+    void draw(Painter pr, float x, float y, const float boxWidth, ref const TextStyle style)
     {
         if (str.length == 0)
             return; // nothing to draw - empty text
@@ -164,7 +164,7 @@ private struct Line
             return; // fully above or below of the clipping rectangle
 
         // align, if needed
-        const int lineWidth = width;
+        const lineWidth = width;
         if (lineWidth < boxWidth)
         {
             if (style.alignment == TextAlign.center)
@@ -178,33 +178,33 @@ private struct Line
         }
 
         const int baseline = font.baseline;
-        const underline = (style.decoration.line & TextDecorLine.under) != 0;
-        int charUnderlinePos;
-        int charUnderlineW;
+        const bool underline = (style.decoration.line & TextDecorLine.under) != 0;
+        float charUnderlinePos = 0;
+        float charUnderlineW = 0;
 
         const bool drawEllipsis = boxWidth < lineWidth && style.overflow != TextOverflow.clip;
         GlyphRef ellipsis = drawEllipsis ? font.getCharGlyph('…') : null;
-        const ushort ellipsisW = drawEllipsis ? ellipsis.widthScaled >> 6 : 0;
+        const ellipsisW = drawEllipsis ? ellipsis.widthPixels : 0;
         const bool ellipsisMiddle = style.overflow == TextOverflow.ellipsisMiddle;
-        const int ellipsisMiddleCorner = (boxWidth + ellipsisW) / 2;
+        const float ellipsisMiddleCorner = (boxWidth + ellipsisW) / 2;
         bool tail;
-        int ellipsisPos;
+        float ellipsisPos = 0;
 
         static Buf!GlyphInstance buffer;
         buffer.clear();
 
         auto pglyphs = glyphs.ptr;
-        int pen;
+        float pen = 0;
         for (uint i; i < cast(uint)str.length; i++) // `i` can mutate
         {
-            const ushort w = pglyphs[i].width;
+            const w = pglyphs[i].width;
             if (w == 0)
                 continue;
 
             // check glyph visibility
             if (pen > clip.right)
                 break;
-            const int current = pen;
+            const current = pen;
             pen += w;
             if (pen + 255 < clip.left)
                 continue; // far at left of clipping region
@@ -225,7 +225,7 @@ private struct Line
                     if (pen + ellipsisW > ellipsisMiddleCorner)
                     {
                         // walk to find tail width
-                        int tailStart = boxWidth;
+                        float tailStart = boxWidth;
                         foreach_reverse (j; i .. cast(uint)str.length)
                         {
                             if (tailStart - pglyphs[j].width < current + ellipsisW)
@@ -257,30 +257,30 @@ private struct Line
             GlyphRef glyph = pglyphs[i].glyph;
             if (glyph && glyph.blackBoxX && glyph.blackBoxY) // null if space or tab
             {
-                const p = Point(x + current + glyph.originX, y + baseline - glyph.originY);
+                const p = PointF(x + current + glyph.originX, y + baseline - glyph.originY);
                 buffer ~= GlyphInstance(glyph, p);
             }
         }
         if (drawEllipsis)
         {
-            const p = Point(x + ellipsisPos, y + baseline - ellipsis.originY);
+            const p = PointF(x + ellipsisPos, y + baseline - ellipsis.originY);
             buffer ~= GlyphInstance(ellipsis, p);
         }
 
         // preform actual drawing
-        const decorThickness = 1 + height / 24;
+        const int decorThickness = 1 + height / 24;
         const decorColor = style.decoration.color;
-        const overline = (style.decoration.line & TextDecorLine.over) != 0;
-        const lineThrough = (style.decoration.line & TextDecorLine.through) != 0;
+        const bool overline = (style.decoration.line & TextDecorLine.over) != 0;
+        const bool lineThrough = (style.decoration.line & TextDecorLine.through) != 0;
         if (underline || charUnderlineW > 0)
         {
-            const int underlineY = y + baseline + decorThickness;
-            const int w = underline ? lineWidth : charUnderlineW;
+            const underlineY = y + baseline + decorThickness;
+            const w = underline ? lineWidth : charUnderlineW;
             pr.fillRect(x, underlineY, w, decorThickness, decorColor);
         }
         if (overline)
         {
-            const int overlineY = y;
+            const overlineY = y;
             pr.fillRect(x, overlineY, lineWidth, decorThickness, decorColor);
         }
         // text goes after overline and underline
@@ -373,19 +373,19 @@ struct SimpleText
         oldLayoutStyle = ls;
         wrappedLines.clear();
 
-        int w;
+        float w = 0;
         foreach (ref line; lines.data)
         {
             line.measure(ls);
             w = max(w, line.width);
         }
-        _size.w = w;
+        _size.w = cast(int)w;
         _size.h = ls.font.height * cast(int)lines.data.length;
         measured = true;
     }
 
     /// Wrap lines within a width, setting `sizeAfterWrap`. Measures, if needed
-    void wrap(int boxWidth)
+    void wrap(float boxWidth)
     {
         if (boxWidth == _sizeAfterWrap.w && wrappedLines.data.length > 0)
             return;
@@ -404,20 +404,20 @@ struct SimpleText
         }
         if (fits)
         {
-            _sizeAfterWrap.w = boxWidth;
+            _sizeAfterWrap.w = cast(int)boxWidth;
             _sizeAfterWrap.h = _size.h;
         }
         else
         {
             foreach (ref line; lines.data)
                 line.wrap(boxWidth, wrappedLines);
-            _sizeAfterWrap.w = boxWidth;
+            _sizeAfterWrap.w = cast(int)boxWidth;
             _sizeAfterWrap.h = style.font.height * cast(int)wrappedLines.data.length;
         }
     }
 
     /// Draw text into buffer. Measures, if needed
-    void draw(Painter pr, int x, int y, int boxWidth)
+    void draw(Painter pr, float x, float y, float boxWidth)
     {
         // skip early if not visible
         const clip = pr.getLocalClipBounds();
@@ -425,8 +425,8 @@ struct SimpleText
             return;
 
         auto lns = wrappedLines.data.length > lines.data.length ? wrappedLines.data : lines.data;
-        const int lineHeight = style.font.height;
-        const int height = lineHeight * cast(int)lns.length;
+        const float lineHeight = style.font.height;
+        const float height = lineHeight * lns.length;
         if (y + height < clip.top)
             return;
 
@@ -439,7 +439,7 @@ struct SimpleText
         }
     }
 
-    private void drawInternal(Painter pr, int x, int y, int boxWidth, int lineHeight)
+    private void drawInternal(Painter pr, float x, float y, float boxWidth, float lineHeight)
     {
         auto lns = wrappedLines.data.length > lines.data.length ? wrappedLines.data : lines.data;
         foreach (ref line; lns)
@@ -484,7 +484,7 @@ package(beamui) void clearSimpleTextPool()
 }
 
 /// Draw simple text immediately. Useful in very dynamic and massive data lists
-void drawSimpleText(Painter pr, dstring str, int x, int y, Font font, Color color)
+void drawSimpleText(Painter pr, dstring str, float x, float y, Font font, Color color)
 {
     assert(font, "Font is mandatory");
 
@@ -512,10 +512,10 @@ void drawSimpleText(Painter pr, dstring str, int x, int y, Font font, Color colo
     st.color = color;
     txt.style = st;
     txt.measure();
-    txt.drawInternal(pr, x, y, int.max, lineHeight);
+    txt.drawInternal(pr, x, y, float.max, lineHeight);
 }
 /// ditto
-void drawSimpleText(Painter pr, dstring str, int x, int y, int boxWidth, ref TextStyle style)
+void drawSimpleText(Painter pr, dstring str, float x, float y, float boxWidth, ref TextStyle style)
 {
     assert(style.font, "Font is mandatory");
 

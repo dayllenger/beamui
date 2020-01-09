@@ -660,8 +660,8 @@ void blitGlyphs(const GlyphInstance[] run, ubyte* mask, uint stride, int x_left,
 {
     foreach (gi; run)
     {
-        const int xx = gi.position.x - x_left;
-        const int yy = gi.position.y - y_top;
+        const int xx = cast(int)gi.position.x - x_left;
+        const int yy = cast(int)gi.position.y - y_top;
         const ubyte[] data = gi.glyph.glyph;
         const uint width = gi.glyph.correctedBlackBoxX;
         ubyte* maskBlock = mask + yy * stride + xx;

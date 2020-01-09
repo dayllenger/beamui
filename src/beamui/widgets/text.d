@@ -280,8 +280,8 @@ class Paragraph : Widget
         static struct VisibleLine
         {
             uint index;
-            int x;
-            int y;
+            float x = 0;
+            float y = 0;
         }
 
         Buf!VisibleLine _visibleLines;
@@ -371,24 +371,24 @@ class Paragraph : Widget
 
         Available after the drawing.
     */
-    Point textualToLocal(TextPosition pos) const
+    PointF textualToLocal(TextPosition pos) const
     {
         if (_visibleLines.length == 0)
-            return Point(0, 0);
+            return PointF(0, 0);
 
         const VisibleLine first = _visibleLines[0];
         if (pos.line < first.index)
-            return Point(first.x, first.y);
+            return PointF(first.x, first.y);
 
         const VisibleLine last = _visibleLines[$ - 1];
         if (pos.line > last.index)
-            return Point(last.x, last.y);
+            return PointF(last.x, last.y);
 
         const VisibleLine ln = _visibleLines[pos.line - first.index];
         const TextLine* line = &_lines[ln.index];
         const glyphs = line.glyphs;
-        int x = ln.x;
-        int y = ln.y;
+        float x = ln.x;
+        float y = ln.y;
         if (line.wrapped)
         {
             foreach (ref span; line.wrapSpans)
@@ -414,7 +414,7 @@ class Paragraph : Widget
                 x += line.size.w;
 
         }
-        return Point(x, y);
+        return PointF(x, y);
     }
 
     /** Find the closest char position by a point in local 2D coordinates.
@@ -449,7 +449,7 @@ class Paragraph : Widget
         const glyphs = line.glyphs;
         if (line.wrapped)
         {
-            int y = vline.y;
+            float y = vline.y;
             foreach (ref span; line.wrapSpans)
             {
                 if (y <= pt.y && pt.y < y + span.height)
@@ -637,10 +637,10 @@ class Paragraph : Widget
 
         if (_txtStyle.wrap)
         {
-            int h;
+            float h = 0;
             foreach (ref line; _lines)
                 h += line.wrap(boxWidth);
-            _sizeAfterWrap.h = h;
+            _sizeAfterWrap.h = cast(int)h;
         }
         _sizeAfterWrap.w = boxWidth;
     }
@@ -661,7 +661,7 @@ class Paragraph : Widget
             return; // clipped out
 
         // draw the paragraph at (b.x, b.y)
-        int y;
+        float y = 0;
         foreach (i, ref line; _lines)
         {
             const py = b.y + y;

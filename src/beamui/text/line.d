@@ -8,7 +8,7 @@ module beamui.text.line;
 
 import std.container.array;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : Point, Rect, Size;
+import beamui.core.geometry : PointF, Rect, Size, SizeF;
 import beamui.core.math;
 import beamui.graphics.drawbuf : GlyphInstance;
 import beamui.graphics.painter : Painter;
@@ -20,18 +20,18 @@ import beamui.text.style;
 struct FragmentGlyph
 {
     GlyphRef glyph;
-    ushort width;
+    float width = 0;
     int height;
     int baseline;
 }
 
-int findClosestGlyphInRow(const FragmentGlyph[] row, int x0, int x)
+int findClosestGlyphInRow(const FragmentGlyph[] row, float x0, float x)
 {
-    int x1 = x0;
+    float x1 = x0;
     foreach (i; 0 .. row.length)
     {
         x1 += row[i].width;
-        const int mx = (x0 + x1) / 2;
+        const mx = (x0 + x1) / 2;
         if (x <= mx)
             return cast(int)i;
         x0 = x1;
@@ -43,11 +43,11 @@ struct LineSpan
 {
     uint start;
     uint end;
-    int width;
-    int height;
-    int offset;
+    float width = 0;
+    float height = 0;
+    float offset = 0;
 }
-
+private alias Point = PointF;
 struct TextLine
 {
     @property
@@ -59,10 +59,10 @@ struct TextLine
 
         Size size() const
         {
-            return Size(_defaultSpan.width, _defaultSpan.height);
+            return Size(cast(int)_defaultSpan.width, cast(int)_defaultSpan.height);
         }
 
-        int height() const
+        float height() const
         {
             return _wrapSpans.length > 0 ? _sizeAfterWrap.h : _defaultSpan.height;
         }
@@ -90,7 +90,7 @@ struct TextLine
     private
     {
         LineSpan _defaultSpan;
-        Size _sizeAfterWrap;
+        SizeF _sizeAfterWrap;
 
         Array!FragmentGlyph _glyphs;
         Array!LineSpan _wrapSpans;
@@ -114,7 +114,7 @@ struct TextLine
         const len = cast(uint)str.length;
         const height = style.font.height;
         _defaultSpan = LineSpan(0, len, 0, height, 0);
-        _sizeAfterWrap = Size(0, 0);
+        _sizeAfterWrap = SizeF(0, 0);
         _glyphs.length = 0;
         _wrapSpans.length = 0;
 
@@ -205,11 +205,11 @@ struct TextLine
         static Buf!ComputedGlyph shapingBuf;
         shape(str[start .. end], shapingBuf, font, style.transform);
 
-        const height = font.height;
+        const int height = font.height;
         const baseline = font.baseline;
-        const int spaceWidth = font.spaceWidth;
+        const spaceWidth = font.spaceWidth;
         const int tabSize = style.tabSize;
-        int x = _defaultSpan.width;
+        float x = _defaultSpan.width;
         foreach (i, ch; str[start .. end])
         {
             if (ch == '\t')
@@ -218,7 +218,7 @@ struct TextLine
                 // TODO: turn off when text is aligned?
                 const n = x / (spaceWidth * tabSize) + 1;
                 const w = spaceWidth * tabSize * n - x;
-                _glyphs ~= FragmentGlyph(null, cast(ushort)w, height, baseline);
+                _glyphs ~= FragmentGlyph(null, w, height, baseline);
                 x += w;
             }
             else
@@ -232,7 +232,7 @@ struct TextLine
         _defaultSpan.height = max(_defaultSpan.height, height);
     }
 
-    int wrap(int boxWidth)
+    float wrap(float boxWidth)
     {
         assert(measured);
 
@@ -240,7 +240,7 @@ struct TextLine
             return _sizeAfterWrap.h;
 
         _wrapSpans.length = 0;
-        _sizeAfterWrap = Size(0, 0);
+        _sizeAfterWrap = SizeF(0, 0);
 
         const len = cast(uint)str.length;
         if (len == 0)
@@ -254,9 +254,10 @@ struct TextLine
 
         const pstr = str.ptr;
         int totalHeight;
-        int lineWidth, lineHeight;
+        float lineWidth = 0;
+        int lineHeight;
         uint lineStart, lastWordEnd;
-        int lastWordEndX;
+        float lastWordEndX = 0;
         bool whitespace;
         for (uint i; i < len; i++)
         {
@@ -307,11 +308,11 @@ struct TextLine
             }
         }
         _wrapSpans ~= LineSpan(lineStart, len, lineWidth, lineHeight);
-        _sizeAfterWrap = Size(boxWidth, totalHeight + lineHeight);
+        _sizeAfterWrap = SizeF(boxWidth, totalHeight + lineHeight);
         return _sizeAfterWrap.h;
     }
 
-    int draw(Painter pr, int x, int y, int boxWidth, ref TextStyle style)
+    float draw(Painter pr, float x, float y, float boxWidth, ref TextStyle style)
     {
         assert(measured);
 
@@ -321,7 +322,7 @@ struct TextLine
 
         const pos = Point(x, y);
         const al = markup && markup.alignmentSet ? markup.alignment : style.alignment;
-        int startingOffset;
+        float startingOffset = 0;
 
         if (_wrapSpans.length > 0)
         {
@@ -345,7 +346,7 @@ struct TextLine
         else // single line
         {
             startingOffset = alignHor(_defaultSpan.width, boxWidth, al);
-            int offset = _defaultSpan.offset = startingOffset;
+            float offset = _defaultSpan.offset = startingOffset;
             if (!markup || markup.empty)
             {
                 drawSimpleFragmentNonWrapped(pr, pos, boxWidth, offset, 0, len, style);
@@ -359,7 +360,7 @@ struct TextLine
         return startingOffset;
     }
 
-    private static int alignHor(int lineWidth, int boxWidth, TextAlign a)
+    private static float alignHor(float lineWidth, float boxWidth, TextAlign a)
     {
         if (lineWidth < boxWidth)
         {
@@ -396,8 +397,8 @@ struct TextLine
         return false;
     }
 
-    private bool drawFragmentNonWrapped(Painter pr, Point linePos, int boxWidth,
-        ref int offset, ref uint i, ref uint start, uint end, TextStyle prevStyle)
+    private bool drawFragmentNonWrapped(Painter pr, Point linePos, float boxWidth,
+        ref float offset, ref uint i, ref uint start, uint end, TextStyle prevStyle)
     {
         TextStyle nextStyle = void;
 
@@ -429,8 +430,8 @@ struct TextLine
         return false;
     }
 
-    private bool drawSimpleFragmentNonWrapped(Painter pr, Point linePos, int boxWidth,
-        ref int offset, uint start, uint end, ref TextStyle style)
+    private bool drawSimpleFragmentNonWrapped(Painter pr, Point linePos, float boxWidth,
+        ref float offset, uint start, uint end, ref TextStyle style)
     {
         assert(start < end);
 
@@ -441,7 +442,7 @@ struct TextLine
 
         SimpleLine line;
         line.dx = offset;
-        int pen = offset;
+        float pen = offset;
         foreach (ref fg; _glyphs[start .. end])
         {
             line.height = max(line.height, fg.height);
@@ -516,8 +517,8 @@ struct TextLine
         static Buf!GlyphInstance buffer;
         buffer.clear();
 
-        int xpen = offset.x;
-        int ypen = offset.y;
+        float xpen = offset.x;
+        float ypen = offset.y;
 
         size_t passed;
         foreach (j, ref span; wraps)
@@ -566,27 +567,27 @@ struct TextLine
 private struct Ellipsis
 {
     const bool needed;
-    const ushort width;
+    const float width = 0;
     GlyphRef glyph;
     bool shouldDraw;
-    int pos;
+    float pos = 0;
 
-    this(int boxWidth, int lineWidth, TextOverflow p, Font f)
+    this(float boxWidth, float lineWidth, TextOverflow p, Font f)
     {
         needed = boxWidth < lineWidth && p == TextOverflow.ellipsis;
         if (needed)
         {
             glyph = f.getCharGlyph('…');
-            width = glyph.widthScaled >> 6;
+            width = glyph.widthPixels;
         }
     }
 }
 
 private struct SimpleLine
 {
-    int dx;
-    int dy;
-    int width;
+    float dx = 0;
+    float dy = 0;
+    float width = 0;
     int height;
     int baseline;
 
@@ -601,16 +602,16 @@ private struct SimpleLine
             pr.fillRect(x, y, width, height, style.background);
         }
         // decorations
-        const decorThickness = 1 + height / 24;
+        const int decorThickness = 1 + height / 24;
         const decorColor = style.decoration.color;
         if (style.decoration.line & TextDecorLine.under)
         {
-            const int underlineY = y + baseline + decorThickness;
+            const underlineY = y + baseline + decorThickness;
             pr.fillRect(x, underlineY, width, decorThickness, decorColor);
         }
         if (style.decoration.line & TextDecorLine.over)
         {
-            const int overlineY = y;
+            const overlineY = y;
             pr.fillRect(x, overlineY, width, decorThickness, decorColor);
         }
         // text goes after overline and underline

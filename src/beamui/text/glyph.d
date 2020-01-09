@@ -30,6 +30,8 @@ align(1) struct Glyph
         uint id;
     }
 
+    /// Full width of the glyph
+    float widthPixels;
     /// Width of the glyph image box
     ushort blackBoxX;
     /// Height of the glyph image box
@@ -39,17 +41,13 @@ align(1) struct Glyph
     /// Y origin for glyph
     byte originY;
 
-    /// Full width of the glyph
-    ubyte widthPixels;
-    /// Full width of the glyph scaled by 64
-    ushort widthScaled;
     /// Subpixel rendering mode - if not `none`, the glyph data contains 3 bytes per pixel instead of 1
     SubpixelRenderingMode subpixelMode;
 
     /// Glyph data, arbitrary size (blackBoxX * blackBoxY)
     ubyte[] glyph;
 
-    // --- 20/32 bytes ---
+    // --- 32 bytes ---
 
     @property ushort correctedBlackBoxX() const nothrow
     {

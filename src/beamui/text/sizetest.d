@@ -79,12 +79,12 @@ Size computeTextSize(dstring str, ref TextLayoutStyle style)
     static Buf!ComputedGlyph shapingBuf;
     shape(str, shapingBuf, style.font, style.transform);
 
-    const int spaceWidth = style.font.spaceWidth;
+    const spaceWidth = style.font.spaceWidth;
     const int height = style.font.height;
 
     auto pglyphs = shapingBuf.unsafe_ptr;
     Size sz = Size(0, height);
-    int w;
+    float w = 0;
     foreach (i, ch; str)
     {
         if (ch == '\t')
@@ -97,12 +97,12 @@ Size computeTextSize(dstring str, ref TextLayoutStyle style)
         w += pglyphs[i].width;
         if (ch == '\n')
         {
-            sz.w = max(sz.w, w);
+            sz.w = max(sz.w, cast(int)w);
             sz.h += height;
             w = 0;
         }
     }
-    sz.w = max(sz.w, w);
+    sz.w = max(sz.w, cast(int)w);
     // memoize
     cache[args] = sz;
     return sz;

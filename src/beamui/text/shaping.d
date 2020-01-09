@@ -24,7 +24,7 @@ import beamui.text.style : TextTransform;
 struct ComputedGlyph
 {
     GlyphRef glyph;
-    ushort width;
+    float width = 0;
 }
 
 /** Transform the string with a uniform set of properties into a list of glyphs.
@@ -46,8 +46,8 @@ void shape(dstring str, ref Buf!ComputedGlyph output, Font font, TextTransform t
         return;
 
     const bool fixed = font.isFixed;
-    const fixedCharWidth = cast(ushort)font.getCharWidth('M');
-    const spaceWidth = fixed ? fixedCharWidth : cast(ushort)font.spaceWidth;
+    const fixedCharWidth = font.getCharWidth('M');
+    const spaceWidth = fixed ? fixedCharWidth : font.spaceWidth;
     const bool useKerning = !fixed && font.hasKerning;
 
     output.resize(len);
@@ -98,10 +98,10 @@ void shape(dstring str, ref Buf!ComputedGlyph output, Font font, TextTransform t
             if (kerningDelta != 0)
             {
                 // shrink the previous glyph (or expand, maybe)
-                pglyphs[i - 1].width += cast(short)(kerningDelta / 64);
+                pglyphs[i - 1].width += kerningDelta;
             }
-            const w = max(glyph.widthScaled >> 6, glyph.originX + glyph.correctedBlackBoxX);
-            pglyphs[i].width = cast(ushort)w;
+            const w = max(glyph.widthPixels, glyph.originX + glyph.correctedBlackBoxX);
+            pglyphs[i].width = w;
         }
         prevChar = trch;
     }

@@ -23,7 +23,7 @@ class ConsoleFont : Font
         bool isNull() { return false; }
         bool antialiased() { return false; }
         bool isFixed() { return true; }
-        int spaceWidth() { return 1; }
+        float spaceWidth() { return 1; }
     }
 
     private immutable(Glyph) _glyph;
@@ -41,7 +41,6 @@ class ConsoleFont : Font
             blackBoxX: 1,
             blackBoxY: 1,
             widthPixels: 1,
-            widthScaled: 1 << 6,
             originX: 0,
             originY: 0,
             subpixelMode: SubpixelRenderingMode.none,
@@ -50,7 +49,7 @@ class ConsoleFont : Font
         _glyph = g;
     }
 
-    override int getCharWidth(dchar ch) const { return 1; }
+    override float getCharWidth(dchar ch) const { return 1; }
 
     override int measureText(const dchar[] text, ref int[] widths, int maxWidth = MAX_WIDTH_UNSPECIFIED,
             int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)

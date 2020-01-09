@@ -11,6 +11,7 @@ import beamui.core.config;
 
 static if (USE_FREETYPE):
 import std.file;
+import std.math : abs;
 import std.string;
 import bindbc.freetype;
 import beamui.core.collections;
@@ -267,8 +268,7 @@ final class FreeTypeFontFile
         glyph.blackBoxY = cast(ubyte)((_slot.metrics.height + 32) >> 6);
         glyph.originX = cast(byte)((_slot.metrics.horiBearingX + 32) >> 6);
         glyph.originY = cast(byte)((_slot.metrics.horiBearingY + 32) >> 6);
-        glyph.widthScaled = cast(ushort)(myabs(cast(int)(_slot.metrics.horiAdvance)));
-        glyph.widthPixels = cast(ubyte)(myabs(cast(int)(_slot.metrics.horiAdvance + 32)) >> 6);
+        glyph.widthPixels = abs(_slot.metrics.horiAdvance) / 64.0f;
         glyph.subpixelMode = antialiased ? FM.subpixelRenderingMode : SubpixelRenderingMode.none;
         //glyph.glyphIndex = cast(ushort)code;
         if (withImage)
@@ -341,7 +341,7 @@ final class FreeTypeFontFile
         }
     }
 
-    int getKerningOffset(FT_UInt prevCharIndex, FT_UInt nextCharIndex)
+    float getKerningOffset(FT_UInt prevCharIndex, FT_UInt nextCharIndex)
     {
         const FT_KERNING_DEFAULT = 0;
         FT_Vector delta;
@@ -351,10 +351,7 @@ final class FreeTypeFontFile
             nextCharIndex,      // right glyph index
             FT_KERNING_DEFAULT, // kerning mode
             &delta);            // target vector
-        const RSHIFT = 0;
-        if (!error)
-            return cast(int)((delta.x) >> RSHIFT);
-        return 0;
+        return !error ? delta.x / 64.0f : 0;
     }
 }
 
@@ -408,7 +405,7 @@ final class FreeTypeFont : Font
     }
 
     /// Get kerning between two chars
-    override int getKerningOffset(dchar prevChar, dchar currentChar)
+    override float getKerningOffset(dchar prevChar, dchar currentChar)
     {
         if (!_desc.hasKerning || !prevChar || !currentChar)
             return 0;
@@ -569,7 +566,7 @@ final class FreeTypeFontManager : FontManager
                 score += 1000; // family match
             if (def.italic == item.def.italic)
                 score += 50; // italic match
-            const int weightDiff = myabs(def.weight - item.def.weight);
+            const int weightDiff = abs(def.weight - item.def.weight);
             score += 30 - weightDiff / 30; // weight match
             if (score > bestScore)
             {
@@ -761,11 +758,6 @@ final class FreeTypeFontManager : FontManager
     {
         return cast(int)_fontFiles.length;
     }
-}
-
-private int myabs(int n)
-{
-    return n >= 0 ? n : -n;
 }
 
 version (Posix)

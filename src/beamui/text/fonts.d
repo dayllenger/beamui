@@ -130,7 +130,7 @@ class Font : RefCountedObject
         }
 
         /// Returns width of the space character
-        int spaceWidth() const
+        float spaceWidth() const
         {
             if (_spaceWidth < 0)
             {
@@ -150,7 +150,7 @@ class Font : RefCountedObject
     /// Properties as detected after opening of file
     protected FontDescription _desc;
     private int _fixedFontDetection = -1;
-    private int _spaceWidth = -1;
+    private float _spaceWidth = -1;
 
     this()
     {
@@ -171,14 +171,14 @@ class Font : RefCountedObject
     }
 
     /// Returns character width
-    int getCharWidth(dchar ch)
+    float getCharWidth(dchar ch)
     {
         GlyphRef g = getCharGlyph(ch);
         return g ? g.widthPixels : 0;
     }
 
     /// Override to implement kerning offset calculation
-    int getKerningOffset(dchar prevChar, dchar currentChar)
+    float getKerningOffset(dchar prevChar, dchar currentChar)
     {
         return 0;
     }
