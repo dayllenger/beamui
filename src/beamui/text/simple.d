@@ -13,6 +13,7 @@ import std.array : Appender;
 import beamui.core.collections : Buf;
 import beamui.core.geometry : PointF, Size, RectF;
 import beamui.core.math : max;
+import beamui.core.units : snapToDevicePixels;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawbuf : GlyphInstance;
 import beamui.graphics.painter : Painter;
@@ -176,6 +177,9 @@ private struct Line
                 x += boxWidth - lineWidth;
             }
         }
+        // snap to the nearest pixel
+        x = snapToDevicePixels(x);
+        y = snapToDevicePixels(y);
 
         const int baseline = font.baseline;
         const bool underline = (style.decoration.line & TextDecorLine.under) != 0;

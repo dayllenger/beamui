@@ -343,6 +343,9 @@ enum long ONE_SECOND = 10_000_000L;
 //===============================================================
 // DPI handling
 
+import std.math : round;
+import beamui.core.geometry : BoxF, PointF, RectF;
+
 /// Called by window
 package(beamui) void setupDPI(float dpi, float dpr)
 {
@@ -375,6 +378,32 @@ void overrideDPI(float dpi, float dpr)
     devicePixelRatio = dpr;
     dipsPerInch = dpi / dpr;
     overriden = true;
+}
+
+float snapToDevicePixels(float f)
+{
+    return round(f * devicePixelRatio) / devicePixelRatio;
+}
+
+PointF snapToDevicePixels(PointF pt)
+{
+    pt.x = round(pt.x * devicePixelRatio) / devicePixelRatio;
+    pt.y = round(pt.y * devicePixelRatio) / devicePixelRatio;
+    return pt;
+}
+
+RectF snapToDevicePixels(RectF r)
+{
+    r.left = round(r.left * devicePixelRatio) / devicePixelRatio;
+    r.top = round(r.top * devicePixelRatio) / devicePixelRatio;
+    r.right = round(r.right * devicePixelRatio) / devicePixelRatio;
+    r.bottom = round(r.bottom * devicePixelRatio) / devicePixelRatio;
+    return r;
+}
+
+BoxF snapToDevicePixels(BoxF box)
+{
+    return BoxF(snapToDevicePixels(RectF(box)));
 }
 
 private bool overriden;

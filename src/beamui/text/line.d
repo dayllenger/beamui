@@ -10,6 +10,7 @@ import std.container.array;
 import beamui.core.collections : Buf;
 import beamui.core.geometry : PointF, Rect, Size, SizeF;
 import beamui.core.math;
+import beamui.core.units : snapToDevicePixels;
 import beamui.graphics.drawbuf : GlyphInstance;
 import beamui.graphics.painter : Painter;
 import beamui.text.fonts : Font, FontManager, FontStyle;
@@ -438,6 +439,9 @@ struct TextLine
         static Buf!GlyphInstance buffer;
         buffer.clear();
 
+        // snap to the nearest pixel
+        linePos = snapToDevicePixels(linePos);
+
         auto ellipsis = Ellipsis(boxWidth, _defaultSpan.width, style.overflow, style.font);
 
         SimpleLine line;
@@ -517,9 +521,11 @@ struct TextLine
         static Buf!GlyphInstance buffer;
         buffer.clear();
 
+        // snap to the nearest pixel
+        linePos = snapToDevicePixels(linePos);
+
         float xpen = offset.x;
         float ypen = offset.y;
-
         size_t passed;
         foreach (j, ref span; wraps)
         {
