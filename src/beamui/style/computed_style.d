@@ -126,13 +126,13 @@ struct ComputedStyle
         /// ditto
         void width(Length len) { setProperty!"width" = len; }
         /// ditto
-        void width(int px) { setProperty!"width" = Length.px(px); }
+        void width(float px) { setProperty!"width" = Length.px(px); }
         /// Widget natural (preferred) height (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength height() const { return applyEM(_height); }
         /// ditto
         void height(Length len) { setProperty!"height" = len; }
         /// ditto
-        void height(int px) { setProperty!"height" = Length.px(px); }
+        void height(float px) { setProperty!"height" = Length.px(px); }
 
         /// Min width style constraint (0 or `Length.zero` to unset)
         LayoutLength minWidth() const { return applyEM(_minWidth); }
@@ -143,7 +143,7 @@ struct ComputedStyle
             setProperty!"minWidth" = len;
         }
         /// ditto
-        void minWidth(int px)
+        void minWidth(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"minWidth" = Length.px(px);
@@ -157,7 +157,7 @@ struct ComputedStyle
             setProperty!"minHeight" = len;
         }
         /// ditto
-        void minHeight(int px)
+        void minHeight(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"minHeight" = Length.px(px);
@@ -167,13 +167,13 @@ struct ComputedStyle
         /// ditto
         void maxWidth(Length len) { setProperty!"maxWidth" = len; }
         /// ditto
-        void maxWidth(int px) { setProperty!"maxWidth" = Length.px(px); }
+        void maxWidth(float px) { setProperty!"maxWidth" = Length.px(px); }
         /// Max height style constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength maxHeight() const { return applyEM(_maxHeight); }
         /// ditto
         void maxHeight(Length len) { setProperty!"maxHeight" = len; }
         /// ditto
-        void maxHeight(int px) { setProperty!"maxHeight" = Length.px(px); }
+        void maxHeight(float px) { setProperty!"maxHeight" = Length.px(px); }
 
         /// Padding (between background bounds and content of widget)
         Insets padding() const
@@ -203,7 +203,7 @@ struct ComputedStyle
             setProperty!"paddingLeft" = len;
         }
         /// ditto
-        void padding(int px) { padding = Length.px(px); }
+        void padding(float px) { padding = Length.px(px); }
         /// Top padding value
         int paddingTop() const { return applyOnlyEM(_paddingTop); }
         /// ditto
@@ -213,7 +213,7 @@ struct ComputedStyle
             setProperty!"paddingTop" = len;
         }
         /// ditto
-        void paddingTop(int px)
+        void paddingTop(float px)
         {
             assert(isDefinedSize(px));
             paddingTop = Length.px(px);
@@ -227,7 +227,7 @@ struct ComputedStyle
             setProperty!"paddingRight" = len;
         }
         /// ditto
-        void paddingRight(int px)
+        void paddingRight(float px)
         {
             assert(isDefinedSize(px));
             paddingRight = Length.px(px);
@@ -241,7 +241,7 @@ struct ComputedStyle
             setProperty!"paddingBottom" = len;
         }
         /// ditto
-        void paddingBottom(int px)
+        void paddingBottom(float px)
         {
             assert(isDefinedSize(px));
             paddingBottom = Length.px(px);
@@ -255,7 +255,7 @@ struct ComputedStyle
             setProperty!"paddingLeft" = len;
         }
         /// ditto
-        void paddingLeft(int px)
+        void paddingLeft(float px)
         {
             assert(isDefinedSize(px));
             paddingLeft = Length.px(px);
@@ -288,7 +288,7 @@ struct ComputedStyle
             setProperty!"borderLeftWidth" = len;
         }
         /// ditto
-        void borderWidth(int px) { borderWidth = Length.px(px); }
+        void borderWidth(float px) { borderWidth = Length.px(px); }
 
         int borderTopWidth() const { return applyOnlyEM(_borderTopWidth); }
         /// ditto
@@ -298,7 +298,7 @@ struct ComputedStyle
             setProperty!"borderTopWidth" = len;
         }
         /// ditto
-        void borderTopWidth(int px)
+        void borderTopWidth(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"borderTopWidth" = Length.px(px);
@@ -312,7 +312,7 @@ struct ComputedStyle
             setProperty!"borderRightWidth" = len;
         }
         /// ditto
-        void borderRightWidth(int px)
+        void borderRightWidth(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"borderRightWidth" = Length.px(px);
@@ -326,7 +326,7 @@ struct ComputedStyle
             setProperty!"borderBottomWidth" = len;
         }
         /// ditto
-        void borderBottomWidth(int px)
+        void borderBottomWidth(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"borderBottomWidth" = Length.px(px);
@@ -340,7 +340,7 @@ struct ComputedStyle
             setProperty!"borderLeftWidth" = len;
         }
         /// ditto
-        void borderLeftWidth(int px)
+        void borderLeftWidth(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"borderLeftWidth" = Length.px(px);
@@ -374,7 +374,7 @@ struct ComputedStyle
             setProperty!"marginLeft" = len;
         }
         /// ditto
-        void margins(int px) { margins = Length.px(px); }
+        void margins(float px) { margins = Length.px(px); }
         /// Top margin value
         int marginTop() const { return applyOnlyEM(_marginTop); }
         /// ditto
@@ -384,7 +384,7 @@ struct ComputedStyle
             setProperty!"marginTop" = len;
         }
         /// ditto
-        void marginTop(int px)
+        void marginTop(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"marginTop" = Length.px(px);
@@ -398,7 +398,7 @@ struct ComputedStyle
             setProperty!"marginRight" = len;
         }
         /// ditto
-        void marginRight(int px)
+        void marginRight(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"marginRight" = Length.px(px);
@@ -412,7 +412,7 @@ struct ComputedStyle
             setProperty!"marginBottom" = len;
         }
         /// ditto
-        void marginBottom(int px)
+        void marginBottom(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"marginBottom" = Length.px(px);
@@ -426,7 +426,7 @@ struct ComputedStyle
             setProperty!"marginLeft" = len;
         }
         /// ditto
-        void marginLeft(int px)
+        void marginLeft(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"marginLeft" = Length.px(px);
@@ -436,25 +436,25 @@ struct ComputedStyle
         /// ditto
         void left(Length len) { setProperty!"left" = len; }
         /// ditto
-        void left(int px) { setProperty!"left" = Length.px(px); }
+        void left(float px) { setProperty!"left" = Length.px(px); }
 
         LayoutLength top() const { return applyEM(_top); }
         /// ditto
         void top(Length len) { setProperty!"top" = len; }
         /// ditto
-        void top(int px) { setProperty!"top" = Length.px(px); }
+        void top(float px) { setProperty!"top" = Length.px(px); }
 
         LayoutLength right() const { return applyEM(_right); }
         /// ditto
         void right(Length len) { setProperty!"right" = len; }
         /// ditto
-        void right(int px) { setProperty!"right" = Length.px(px); }
+        void right(float px) { setProperty!"right" = Length.px(px); }
 
         LayoutLength bottom() const { return applyEM(_bottom); }
         /// ditto
         void bottom(Length len) { setProperty!"bottom" = len; }
         /// ditto
-        void bottom(int px) { setProperty!"bottom" = Length.px(px); }
+        void bottom(float px) { setProperty!"bottom" = Length.px(px); }
 
         /// Alignment (combined vertical and horizontal)
         Align alignment() const { return _alignment; }
@@ -481,7 +481,7 @@ struct ComputedStyle
             setProperty!"columnGap" = len;
         }
         /// ditto
-        void gap(int px)
+        void gap(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"rowGap" = Length.px(px);
@@ -496,7 +496,7 @@ struct ComputedStyle
             setProperty!"rowGap" = len;
         }
         /// ditto
-        void rowGap(int px)
+        void rowGap(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"rowGap" = Length.px(px);
@@ -510,7 +510,7 @@ struct ComputedStyle
             setProperty!"columnGap" = len;
         }
         /// ditto
-        void columnGap(int px)
+        void columnGap(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"columnGap" = Length.px(px);
@@ -637,7 +637,7 @@ struct ComputedStyle
             setProperty!"borderBottomRightRadius" = len;
         }
         /// ditto
-        void borderRadius(int px) { borderRadius = Length.px(px); }
+        void borderRadius(float px) { borderRadius = Length.px(px); }
 
         LayoutLength borderTopLeftRadius() const { return applyEM(_borderTopLeftRadius); }
         /// ditto
@@ -647,7 +647,7 @@ struct ComputedStyle
             setProperty!"borderTopLeftRadius" = len;
         }
         /// ditto
-        void borderTopLeftRadius(int px)
+        void borderTopLeftRadius(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"borderTopLeftRadius" = Length.px(px);
@@ -661,7 +661,7 @@ struct ComputedStyle
             setProperty!"borderTopRightRadius" = len;
         }
         /// ditto
-        void borderTopRightRadius(int px)
+        void borderTopRightRadius(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"borderTopRightRadius" = Length.px(px);
@@ -675,7 +675,7 @@ struct ComputedStyle
             setProperty!"borderBottomLeftRadius" = len;
         }
         /// ditto
-        void borderBottomLeftRadius(int px)
+        void borderBottomLeftRadius(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"borderBottomLeftRadius" = Length.px(px);
@@ -689,7 +689,7 @@ struct ComputedStyle
             setProperty!"borderBottomRightRadius" = len;
         }
         /// ditto
-        void borderBottomRightRadius(int px)
+        void borderBottomRightRadius(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"borderBottomRightRadius" = Length.px(px);
@@ -730,7 +730,7 @@ struct ComputedStyle
             setProperty!"fontSize" = len;
         }
         /// ditto
-        void fontSize(int px)
+        void fontSize(float px)
         {
             assert(isDefinedSize(px));
             fontSize = Length.px(px);
@@ -798,7 +798,7 @@ struct ComputedStyle
             setProperty!"letterSpacing" = len;
         }
         /// ditto
-        void letterSpacing(int px)
+        void letterSpacing(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"letterSpacing" = Length.px(px);
@@ -812,7 +812,7 @@ struct ComputedStyle
             setProperty!"lineHeight" = len;
         }
         /// ditto
-        void lineHeight(int px)
+        void lineHeight(float px)
         {
             assert(isDefinedSize(px));
             lineHeight = Length.px(px);
@@ -826,7 +826,7 @@ struct ComputedStyle
             setProperty!"textIndent" = len;
         }
         /// ditto
-        void textIndent(int px)
+        void textIndent(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"textIndent" = Length.px(px);
@@ -840,7 +840,7 @@ struct ComputedStyle
             setProperty!"wordSpacing" = len;
         }
         /// ditto
-        void wordSpacing(int px)
+        void wordSpacing(float px)
         {
             assert(isDefinedSize(px));
             setProperty!"wordSpacing" = Length.px(px);
