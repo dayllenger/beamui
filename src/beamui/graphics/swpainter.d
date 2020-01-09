@@ -15,7 +15,7 @@ import std.typecons : scoped;
 import pixman;
 import beamui.core.collections : Buf;
 import beamui.core.functions : eliminate;
-import beamui.core.geometry : BoxI, PointI, RectF, RectI, SizeI;
+import beamui.core.geometry : BoxI, PointI, Rect, RectI, SizeI;
 import beamui.core.linalg : Mat2x3, Vec2, dotProduct;
 import beamui.core.math;
 import beamui.core.types : Tup, tup;
@@ -143,7 +143,7 @@ protected:
         );
     }
 
-    void clipOut(uint index, RectF r)
+    void clipOut(uint index, Rect r)
     {
     }
 
@@ -360,12 +360,12 @@ protected:
         rasterizeLine(p, q, rparams, plotter);
     }
 
-    void fillRect(RectF r, Color c)
+    void fillRect(Rect r, Color c)
     {
         fillRectImpl(r, choosePlotterForSolidColor(c));
     }
 
-    private void fillRectImpl(RectF r, lazy Plotter plotter)
+    private void fillRectImpl(Rect r, lazy Plotter plotter)
     {
         Vec2[4] vs = [
             Vec2(r.left, r.top),
@@ -416,7 +416,7 @@ protected:
 
     void fillCircle(float cx, float cy, float r, Color c)
     {
-        const BoxI clip = clipByRect(transformBounds(RectF(cx - r, cy - r, cx + r, cy + r)));
+        const BoxI clip = clipByRect(transformBounds(Rect(cx - r, cy - r, cx + r, cy + r)));
         if (clip.empty)
             return;
 
@@ -441,7 +441,7 @@ protected:
 
     void drawImage(const ColorDrawBufBase img, Vec2 pos, float opacity)
     {
-        const rect = RectF(pos.x, pos.y, pos.x + img.width, pos.y + img.height);
+        const rect = Rect(pos.x, pos.y, pos.x + img.width, pos.y + img.height);
         const BoxI clip = clipByRect(transformBounds(rect));
         if (clip.empty)
             return;
@@ -470,7 +470,7 @@ protected:
 
     void drawNinePatch(const ColorDrawBufBase img, ref const NinePatchInfo info, float opacity)
     {
-        const rect = RectF(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
+        const rect = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
         const BoxI clip = clipByRect(transformBounds(rect));
         if (clip.empty)
             return;
@@ -594,7 +594,7 @@ protected:
         BoxI untrBounds;
         BoxI clip;
         {
-            const RectF r = computeTextRunBounds(run);
+            const Rect r = computeTextRunBounds(run);
             const x = floor(r.left);
             const y = floor(r.top);
             untrBounds.x = cast(int)x;
@@ -643,9 +643,9 @@ protected:
     }
 }
 
-RectF computeTextRunBounds(const GlyphInstance[] run)
+Rect computeTextRunBounds(const GlyphInstance[] run)
 {
-    RectF r = MIN_RECT_F;
+    Rect r = MIN_RECT_F;
     foreach (ref gi; run)
     {
         r.left = min(r.left, gi.position.x);

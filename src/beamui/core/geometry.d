@@ -640,12 +640,6 @@ struct InsetsOf(T) if (is(T == float) || is(T == int))
 }
 
 alias PointOf(T) = Vector!(T, 2);
-alias PointF = PointOf!float;
-alias SizeF = SizeOf!float;
-alias BoxF = BoxOf!float;
-alias RectF = RectOf!float;
-alias InsetsF = InsetsOf!float;
-
 alias Point = PointOf!float;
 alias PointI = PointOf!int;
 alias Size = SizeOf!float;

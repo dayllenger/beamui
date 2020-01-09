@@ -11,7 +11,7 @@ nothrow:
 
 import std.algorithm : sort, swap;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : RectF;
+import beamui.core.geometry : Rect;
 import beamui.core.linalg : Vec2, crossProduct;
 import beamui.core.math : fequal2, fzero6;
 import beamui.graphics.swrast : HorizEdge;
@@ -27,9 +27,9 @@ enum FillRule
 }
 
 /// Compute the smallest enclosing rectangle of a point cloud
-RectF computeBoundingBox(const Vec2[] points, RectF initial = RectF(float.max, float.max, -float.max, -float.max))
+Rect computeBoundingBox(const Vec2[] points, Rect initial = Rect(float.max, float.max, -float.max, -float.max))
 {
-    RectF r = initial;
+    Rect r = initial;
     foreach (p; points)
     {
         if (r.left > p.x)

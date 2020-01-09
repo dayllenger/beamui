@@ -38,7 +38,7 @@ enum PatternType : uint
 struct GlyphInstance
 {
     GlyphRef glyph;
-    PointF position;
+    Point position;
 }
 
 static if (USE_OPENGL)

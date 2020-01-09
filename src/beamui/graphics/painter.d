@@ -9,7 +9,7 @@ module beamui.graphics.painter;
 
 import std.math : ceil, floor, sqrt, isFinite, PI;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : Box, BoxI, RectF, RectI;
+import beamui.core.geometry : Box, BoxI, Rect, RectI;
 import beamui.core.linalg : Mat2x3, Vec2;
 import beamui.core.math;
 import beamui.graphics.brush : Brush;
@@ -22,7 +22,7 @@ import beamui.graphics.pen : PathIter, Pen;
 
 enum MAX_DIMENSION = 2 ^^ 14;
 enum MIN_RECT_I = RectI(MAX_DIMENSION, MAX_DIMENSION, -MAX_DIMENSION, -MAX_DIMENSION);
-enum MIN_RECT_F = RectF(MAX_DIMENSION, MAX_DIMENSION, -MAX_DIMENSION, -MAX_DIMENSION);
+enum MIN_RECT_F = Rect (MAX_DIMENSION, MAX_DIMENSION, -MAX_DIMENSION, -MAX_DIMENSION);
 
 /** Painter draws anti-aliased 2D vector shapes, as well as text and images.
 
@@ -72,7 +72,7 @@ final class Painter
         if (box.empty)
             return discardSubsequent();
 
-        const rect = RectI(box);
+        const rect = Rect.from(RectI(box));
         const lt = Vec2(rect.left, rect.top);
         const rb = Vec2(rect.right, rect.bottom);
         const Vec2 v0 = state.mat * lt;
@@ -82,7 +82,7 @@ final class Painter
         // a pure translation
         if (fequal2(diag0.x, diag1.x) && fequal2(diag0.y, diag1.y))
         {
-            const r = RectI.from(RectF(v0, v3));
+            const r = RectI.from(Rect(v0, v3));
             state.clipRect.intersect(r);
         }
         else
@@ -95,7 +95,7 @@ final class Painter
                             min(v0.y, v1.y, v2.y, v3.y));
             const p1 = Vec2(max(v0.x, v1.x, v2.x, v3.x),
                             max(v0.y, v1.y, v2.y, v3.y));
-            const bbox = RectI.from(RectF(p0, p1));
+            const bbox = RectI.from(Rect(p0, p1));
             state.clipRect.intersect(bbox);
 
             // not axis-aligned
@@ -104,7 +104,7 @@ final class Painter
             {
                 // clip out complement triangles
                 const Vec2[4] vs = [lt, rt, rb, lb];
-                const PaintEngine.Contour contour = {vs, false, RectF.from(rect), state.clipRect};
+                const PaintEngine.Contour contour = {vs, false, rect, state.clipRect};
                 const PaintEngine.Contours contours = {(&contour)[0 .. 1], contour.bounds, contour.trBounds};
                 engine.clipOut(mainStack.length, contours, FillRule.nonzero, true);
             }
@@ -137,7 +137,7 @@ final class Painter
         if (box.empty || state.discard)
             return;
 
-        engine.clipOut(mainStack.length, RectF(box.x, box.y, box.x + box.w, box.y + box.h));
+        engine.clipOut(mainStack.length, Rect(box.x, box.y, box.x + box.w, box.y + box.h));
     }
     /// ditto
     void clipOut(ref const Path path, FillRule rule = FillRule.nonzero)
@@ -219,7 +219,7 @@ final class Painter
     */
     bool quickReject(Box box) const
     {
-        RectF tr = RectF(box.x, box.y, box.x + box.w, box.y + box.h);
+        Rect tr = Rect(box);
         if (state.mat.store[0][0] == 1 && state.mat.store[0][1] == 0 &&
             state.mat.store[1][0] == 0 && state.mat.store[1][1] == 1)
         {
@@ -234,26 +234,26 @@ final class Painter
             const Vec2 v1 = state.mat * Vec2(tr.right, tr.top);
             const Vec2 v2 = state.mat * Vec2(tr.left, tr.bottom);
             const Vec2 v3 = state.mat * Vec2(tr.right, tr.bottom);
-            tr = RectF(
+            tr = Rect(
                 min(v0.x, v1.x, v2.x, v3.x),
                 min(v0.y, v1.y, v2.y, v3.y),
                 max(v0.x, v1.x, v2.x, v3.x),
                 max(v0.y, v1.y, v2.y, v3.y),
             );
         }
-        return !tr.intersects(RectF.from(state.clipRect));
+        return !tr.intersects(Rect.from(state.clipRect));
     }
 
     /** Get bounds of clip, transformed into the local coordinate system.
 
         Use it to skip drawing complex elements when they aren't visible.
     */
-    RectF getLocalClipBounds() const
+    Rect getLocalClipBounds() const
     {
         if (state.clipRect.empty)
-            return RectF.init;
+            return Rect.init;
 
-        RectF r = RectF.from(state.clipRect);
+        Rect r = Rect.from(state.clipRect);
         r.expand(1, 1); // antialiased fringe
 
         if (state.mat.store[0][0] == 1 && state.mat.store[0][1] == 0 &&
@@ -272,7 +272,7 @@ final class Painter
             const Vec2 v1 = m * Vec2(r.right, r.top);
             const Vec2 v2 = m * Vec2(r.left, r.bottom);
             const Vec2 v3 = m * Vec2(r.right, r.bottom);
-            return RectF(
+            return Rect(
                 min(v0.x, v1.x, v2.x, v3.x),
                 min(v0.y, v1.y, v2.y, v3.y),
                 max(v0.x, v1.x, v2.x, v3.x),
@@ -526,7 +526,7 @@ final class Painter
         if (!state.passTransparent && color.isFullyTransparent)
             return;
 
-        engine.fillRect(RectF(x, y, x + width, y + height), color);
+        engine.fillRect(Rect(x, y, x + width, y + height), color);
     }
     /// Fill a triangle. Use it if you need to draw lone solid triangles
     void fillTriangle(Vec2 p0, Vec2 p1, Vec2 p2, Color color)
@@ -577,7 +577,7 @@ final class Painter
             if (state.passTransparent)
             {
                 // draw a transparent rectangle instead
-                engine.fillRect(RectF(x, y, x + w, y + h), Color.transparent);
+                engine.fillRect(Rect(x, y, x + w, y + h), Color.transparent);
             }
             return;
         }
@@ -585,7 +585,7 @@ final class Painter
     }
 
     /// Draw a rescaled nine-patch image with some opacity
-    void drawNinePatch(const ColorDrawBufBase image, RectI srcRect, RectF dstRect, float opacity)
+    void drawNinePatch(const ColorDrawBufBase image, RectI srcRect, Rect dstRect, float opacity)
         in(image)
         in(image.hasNinePatch)
         in(isFinite(dstRect.width) && isFinite(dstRect.height))
@@ -648,17 +648,17 @@ final class Painter
         bufContours.clear();
         const Mat2x3 m = state.mat;
         const RectI clip = state.clipRect;
-        RectF bounds = MIN_RECT_F;
+        Rect bounds = MIN_RECT_F;
         RectI trBounds = MIN_RECT_I;
         foreach (ref subpath; path)
         {
-            RectF r = subpath.bounds;
+            Rect r = subpath.bounds;
             r.expand(padding, padding);
             const Vec2 v0 = m * Vec2(r.left, r.top);
             const Vec2 v1 = m * Vec2(r.right, r.top);
             const Vec2 v2 = m * Vec2(r.left, r.bottom);
             const Vec2 v3 = m * Vec2(r.right, r.bottom);
-            const tr = RectF(
+            const tr = Rect(
                 min(v0.x, v1.x, v2.x, v3.x),
                 min(v0.y, v1.y, v2.y, v3.y),
                 max(v0.x, v1.x, v2.x, v3.x),
@@ -796,13 +796,13 @@ protected:
     {
         const(Vec2)[] points;
         bool closed;
-        RectF bounds;
+        Rect bounds;
         RectI trBounds;
     }
     const struct Contours
     {
         Contour[] list;
-        RectF bounds;
+        Rect bounds;
         RectI trBounds;
 
         bool opCast(To : bool)() const
@@ -848,7 +848,7 @@ protected:
     void beginLayer(BoxI, bool expand, LayerOp);
     void composeLayer();
 
-    void clipOut(uint, RectF);
+    void clipOut(uint, Rect);
     void clipOut(uint, ref Contours, FillRule, bool complement);
     void restore(uint);
 
@@ -857,7 +857,7 @@ protected:
     void strokePath(ref Contours, ref const Brush, ref const Pen, bool hairline);
 
     void drawLine(Vec2, Vec2, Color);
-    void fillRect(RectF, Color);
+    void fillRect(Rect, Color);
     void fillTriangle(Vec2[3], Color);
     void fillCircle(float, float, float, Color);
 
@@ -865,14 +865,14 @@ protected:
     void drawNinePatch(const ColorDrawBufBase, ref const NinePatchInfo, float);
     void drawText(const GlyphInstance[], Color);
 
-    final RectF transformBounds(RectF untr) nothrow
+    final Rect transformBounds(Rect untr) nothrow
     {
         const Mat2x3 m = st.mat;
         const Vec2 v0 = m * Vec2(untr.left, untr.top);
         const Vec2 v1 = m * Vec2(untr.right, untr.top);
         const Vec2 v2 = m * Vec2(untr.left, untr.bottom);
         const Vec2 v3 = m * Vec2(untr.right, untr.bottom);
-        RectF bbox = RectF(
+        Rect bbox = Rect(
             min(v0.x, v1.x, v2.x, v3.x),
             min(v0.y, v1.y, v2.y, v3.y),
             max(v0.x, v1.x, v2.x, v3.x),
@@ -881,7 +881,7 @@ protected:
         return bbox;
     }
 
-    final BoxI clipByRect(RectF tr) nothrow
+    final BoxI clipByRect(Rect tr) nothrow
     {
         if (fzero2(tr.width) || fzero2(tr.height))
             return BoxI.init;

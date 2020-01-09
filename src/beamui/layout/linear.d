@@ -19,7 +19,7 @@ struct LayoutItem
 
     Boundaries bs;
     bool fill;
-    SizeF result;
+    Size result;
 }
 
 /// Arranges items either vertically or horizontally

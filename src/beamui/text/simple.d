@@ -11,7 +11,7 @@ module beamui.text.simple;
 
 import std.array : Appender;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : PointF, Size, RectF;
+import beamui.core.geometry : Point, Size, Rect;
 import beamui.core.math : max;
 import beamui.core.units : snapToDevicePixels;
 import beamui.graphics.colors : Color;
@@ -58,7 +58,7 @@ private struct Line
             if (ch == '\t')
             {
                 // calculate tab stop
-                const n = x / (spaceWidth * style.tabSize) + 1;
+                const n = cast(int)x / cast(int)(spaceWidth * style.tabSize) + 1;
                 const tabPosition = spaceWidth * style.tabSize * n;
                 pglyphs[i].width = tabPosition - x;
                 pglyphs[i].glyph = null;
@@ -159,7 +159,7 @@ private struct Line
 
         const int height = font.height;
         // check visibility
-        RectF clip = pr.getLocalClipBounds();
+        Rect clip = pr.getLocalClipBounds();
         clip.translate(-x, -y);
         if (height < clip.top || clip.bottom <= 0)
             return; // fully above or below of the clipping rectangle
@@ -261,13 +261,13 @@ private struct Line
             GlyphRef glyph = pglyphs[i].glyph;
             if (glyph && glyph.blackBoxX && glyph.blackBoxY) // null if space or tab
             {
-                const p = PointF(x + current + glyph.originX, y + baseline - glyph.originY);
+                const p = Point(x + current + glyph.originX, y + baseline - glyph.originY);
                 buffer ~= GlyphInstance(glyph, p);
             }
         }
         if (drawEllipsis)
         {
-            const p = PointF(x + ellipsisPos, y + baseline - ellipsis.originY);
+            const p = Point(x + ellipsisPos, y + baseline - ellipsis.originY);
             buffer ~= GlyphInstance(ellipsis, p);
         }
 
@@ -383,7 +383,7 @@ struct SimpleText
             line.measure(ls);
             w = max(w, line.width);
         }
-        _size.w = cast(int)w;
+        _size.w = w;
         _size.h = ls.font.height * cast(int)lines.data.length;
         measured = true;
     }
@@ -408,14 +408,14 @@ struct SimpleText
         }
         if (fits)
         {
-            _sizeAfterWrap.w = cast(int)boxWidth;
+            _sizeAfterWrap.w = boxWidth;
             _sizeAfterWrap.h = _size.h;
         }
         else
         {
             foreach (ref line; lines.data)
                 line.wrap(boxWidth, wrappedLines);
-            _sizeAfterWrap.w = cast(int)boxWidth;
+            _sizeAfterWrap.w = boxWidth;
             _sizeAfterWrap.h = style.font.height * cast(int)wrappedLines.data.length;
         }
     }

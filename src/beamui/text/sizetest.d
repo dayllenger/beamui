@@ -97,12 +97,12 @@ Size computeTextSize(dstring str, ref TextLayoutStyle style)
         w += pglyphs[i].width;
         if (ch == '\n')
         {
-            sz.w = max(sz.w, cast(int)w);
+            sz.w = max(sz.w, w);
             sz.h += height;
             w = 0;
         }
     }
-    sz.w = max(sz.w, cast(int)w);
+    sz.w = max(sz.w, w);
     // memoize
     cache[args] = sz;
     return sz;

@@ -11,7 +11,7 @@ import beamui.core.config;
 
 static if (USE_OPENGL):
 import bindbc.opengl.util : loadExtendedGLSymbol;
-import beamui.core.geometry : BoxI, RectF, RectI, SizeI;
+import beamui.core.geometry : BoxI, Rect, RectI, SizeI;
 import beamui.core.linalg : Vec2, Mat2x3;
 import beamui.core.math : max, min;
 import beamui.graphics.colors : ColorF;
@@ -111,7 +111,7 @@ struct DataChunk
     Mat2x3 transform;
     float depth = 0;
     float reserved = 0;
-    RectF clipRect;
+    Rect clipRect;
     ColorF color;
 }
 

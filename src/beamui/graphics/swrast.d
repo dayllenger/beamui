@@ -18,7 +18,7 @@ import core.stdc.stdlib : malloc, free;
 import std.algorithm.mutation : swap;
 import std.math : abs, ceil, floor, lrint, quantize, round;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : BoxI, RectF, RectI;
+import beamui.core.geometry : BoxI, Rect, RectI;
 import beamui.core.linalg : Vec2, crossProduct;
 import beamui.core.math : fequal2, clamp, max, min;
 import beamui.graphics.polygons : computeBoundingBox;
@@ -1540,7 +1540,7 @@ public void rasterizeLine(Vec2 p0, Vec2 p1, ref const RastParams params, Plotter
     // this is a quick fix for this issue, but not a correct one
     const margin = (params.antialias ? 1.5f : 0.5f) + eps;
     const b = params.clip;
-    const visible = clip_line(RectF(b.x, b.y, b.x + b.w - margin, b.y + b.h - margin), p0.x, p0.y, p1.x, p1.y);
+    const visible = clip_line(Rect(b.x, b.y, b.x + b.w - margin, b.y + b.h - margin), p0.x, p0.y, p1.x, p1.y);
     if (!visible)
         return;
 
@@ -1567,7 +1567,7 @@ public void rasterizeLine(Vec2 p0, Vec2 p1, ref const RastParams params, Plotter
     }
 }
 
-bool clip_line(RectF clip, ref float x0, ref float y0, ref float x1, ref float y1)
+bool clip_line(Rect clip, ref float x0, ref float y0, ref float x1, ref float y1)
 {
     // Cohen–Sutherland clipping algorithm clips a line from
     // P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with
@@ -1585,7 +1585,7 @@ bool clip_line(RectF clip, ref float x0, ref float y0, ref float x1, ref float y
 
     // Compute the bit code for a point (x, y) using the clip rectangle
     // bounded diagonally by (xmin, ymin), and (xmax, ymax)
-    static OutCode computeOutCode(ref const RectF clip, float x, float y)
+    static OutCode computeOutCode(ref const Rect clip, float x, float y)
     {
         OutCode code; // initialised as being inside of clip window
 

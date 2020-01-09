@@ -243,7 +243,7 @@ class BoxShadowDrawable : Drawable
         // now draw
         if (_blurSize > 0)
         {
-            pr.drawNinePatch(texture, RectI(0, 0, texture.width, texture.height), RectF.from(Rect(b)), 1);
+            pr.drawNinePatch(texture, RectI(0, 0, texture.width, texture.height), Rect(b), 1);
             // debug
             // pr.drawImage(texture, b.x, b.y, 1);
         }
@@ -624,7 +624,7 @@ class ImageDrawable : Drawable
 
         if (img.hasNinePatch)
         {
-            pr.drawNinePatch(img, RectI(1, 1, img.width - 1, img.height - 1), RectF.from(Rect(b)), 1);
+            pr.drawNinePatch(img, RectI(1, 1, img.width - 1, img.height - 1), Rect(b), 1);
         }
         else if (_tiled)
         {
@@ -811,12 +811,9 @@ class Background
         pr.translate(-b.x, -b.y);
     }
 
-    private alias SizeF = SizeOf!float;
-    private alias InsetsF = InsetsOf!float;
-
     private void drawBorder(Painter pr, Size sz)
     {
-        InsetsF th;
+        Insets th;
         if (border.top.style != BorderStyle.none)
             th.top = border.top.thickness;
         if (border.right.style != BorderStyle.none)

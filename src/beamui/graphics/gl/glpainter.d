@@ -13,7 +13,7 @@ static if (USE_OPENGL):
 import std.algorithm.mutation : reverse;
 import std.typecons : scoped;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : BoxI, RectF, RectI, SizeI;
+import beamui.core.geometry : BoxI, Rect, RectI, SizeI;
 import beamui.core.linalg : Vec2, Mat2x3;
 import beamui.core.logger : Log;
 import beamui.core.math;
@@ -64,7 +64,7 @@ public final class GLSharedData
 
 struct Cover
 {
-    RectF rect; /// Local to batch
+    Rect rect; /// Local to batch
     RectI clip;
     uint dataIndex;
 }
@@ -396,7 +396,7 @@ protected:
         gpaa.setLayerIndex(layer.index);
     }
 
-    void clipOut(uint index, RectF r)
+    void clipOut(uint index, Rect r)
     {
         const set = Set(Span(batches.length), Span(dataStore.length), layer.index);
         const task = DepthTask(index, dataStore.length);
@@ -501,7 +501,7 @@ protected:
         {
             const tp = st.mat * p;
             const tq = st.mat * q;
-            const bbox = RectF(
+            const bbox = Rect(
                 min(tp.x, tq.x) - 0.5f,
                 min(tp.y, tq.y) - 0.5f,
                 max(tp.x, tq.x) + 0.5f,
@@ -545,7 +545,7 @@ protected:
         simpleColorOnly(t, RectI(clip), c);
     }
 
-    void fillRect(RectF r, Color c)
+    void fillRect(Rect r, Color c)
     {
         fillRectImpl(r, &c);
     }
@@ -572,7 +572,7 @@ protected:
 
     void fillCircle(float cx, float cy, float r, Color c)
     {
-        const BoxI clip = clipByRect(transformBounds(RectF(cx - r, cy - r, cx + r, cy + r)));
+        const BoxI clip = clipByRect(transformBounds(Rect(cx - r, cy - r, cx + r, cy + r)));
         if (clip.empty)
             return;
 
@@ -605,7 +605,7 @@ protected:
     {
         const int w = img.width;
         const int h = img.height;
-        const rp = RectF(p.x, p.y, p.x + w, p.y + h);
+        const rp = Rect(p.x, p.y, p.x + w, p.y + h);
         const BoxI clip = clipByRect(transformBounds(rp));
         if (clip.empty)
             return;
@@ -666,7 +666,7 @@ protected:
 
     void drawNinePatch(const ColorDrawBufBase img, ref const NinePatchInfo info, float opacity)
     {
-        const rp = RectF(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
+        const rp = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
         const BoxI clip = clipByRect(transformBounds(rp));
         if (clip.empty)
             return;
@@ -841,9 +841,9 @@ protected:
 
 private:
 
-    static RectF computeTextRunBounds(const GlyphInstance[] run)
+    static Rect computeTextRunBounds(const GlyphInstance[] run)
     {
-        RectF r = MIN_RECT_F;
+        Rect r = MIN_RECT_F;
         foreach (ref gi; run)
         {
             r.left = min(r.left, gi.position.x);
@@ -873,9 +873,9 @@ private:
         addStrip(triangles, v, 4);
     }
 
-    bool fillRectImpl(RectF r, Color* c)
+    bool fillRectImpl(Rect r, Color* c)
     {
-        const RectF tr = transformBounds(r);
+        const Rect tr = transformBounds(r);
         const BoxI clip = clipByRect(tr);
         if (clip.empty)
             return false;
@@ -1021,7 +1021,7 @@ private:
     }
 
     /// Stencil, than cover
-    bool twoPass(uint tstart, Stenciling stenciling, RectF bbox, RectI clip, const Brush* br)
+    bool twoPass(uint tstart, Stenciling stenciling, Rect bbox, RectI clip, const Brush* br)
     {
         ShParams params;
         DataChunk data;
@@ -1135,7 +1135,7 @@ private:
             m ? *m : st.mat,
             layer.depth,
             0,
-            RectF.from(st.clipRect),
+            Rect.from(st.clipRect),
             ColorF(c).premultiplied,
         );
     }

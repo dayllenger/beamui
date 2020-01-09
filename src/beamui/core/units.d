@@ -275,24 +275,24 @@ unittest
     {
         LayoutLength len;
         assert(!len.isPercent);
-        assert(len.applyPercent(50) == SIZE_UNSPECIFIED!int);
+        assert(len.applyPercent(50) == SIZE_UNSPECIFIED!float);
     }
     {
         LayoutLength len = SIZE_UNSPECIFIED!float;
         assert(!len.isPercent);
-        assert(len.applyPercent(50) == SIZE_UNSPECIFIED!int);
+        assert(len.applyPercent(50) == SIZE_UNSPECIFIED!float);
     }
     for (float f = -10; f < 10; f += 0.3)
     {
         LayoutLength len = f;
         assert(!len.isPercent);
-        assert(len.applyPercent(1234) == cast(int)f);
+        assert(len.applyPercent(1234) == f);
     }
     for (float f = -200; f < 200; f += 35)
     {
         auto len = LayoutLength.percent(f);
         assert(len.isPercent);
-        assert(len.applyPercent(50) == cast(int)f / 2);
+        assert(len.applyPercent(50) == f / 2);
     }
 }
 
@@ -344,7 +344,7 @@ enum long ONE_SECOND = 10_000_000L;
 // DPI handling
 
 import std.math : round;
-import beamui.core.geometry : BoxF, PointF, RectF;
+import beamui.core.geometry : Box, Point, Rect;
 
 /// Called by window
 package(beamui) void setupDPI(float dpi, float dpr)
@@ -385,14 +385,14 @@ float snapToDevicePixels(float f)
     return round(f * devicePixelRatio) / devicePixelRatio;
 }
 
-PointF snapToDevicePixels(PointF pt)
+Point snapToDevicePixels(Point pt)
 {
     pt.x = round(pt.x * devicePixelRatio) / devicePixelRatio;
     pt.y = round(pt.y * devicePixelRatio) / devicePixelRatio;
     return pt;
 }
 
-RectF snapToDevicePixels(RectF r)
+Rect snapToDevicePixels(Rect r)
 {
     r.left = round(r.left * devicePixelRatio) / devicePixelRatio;
     r.top = round(r.top * devicePixelRatio) / devicePixelRatio;
@@ -401,9 +401,9 @@ RectF snapToDevicePixels(RectF r)
     return r;
 }
 
-BoxF snapToDevicePixels(BoxF box)
+Box snapToDevicePixels(Box box)
 {
-    return BoxF(snapToDevicePixels(RectF(box)));
+    return Box(snapToDevicePixels(Rect(box)));
 }
 
 private bool overriden;

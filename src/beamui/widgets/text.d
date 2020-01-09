@@ -371,18 +371,18 @@ class Paragraph : Widget
 
         Available after the drawing.
     */
-    PointF textualToLocal(TextPosition pos) const
+    Point textualToLocal(TextPosition pos) const
     {
         if (_visibleLines.length == 0)
-            return PointF(0, 0);
+            return Point(0, 0);
 
         const VisibleLine first = _visibleLines[0];
         if (pos.line < first.index)
-            return PointF(first.x, first.y);
+            return Point(first.x, first.y);
 
         const VisibleLine last = _visibleLines[$ - 1];
         if (pos.line > last.index)
-            return PointF(last.x, last.y);
+            return Point(last.x, last.y);
 
         const VisibleLine ln = _visibleLines[pos.line - first.index];
         const TextLine* line = &_lines[ln.index];
@@ -414,7 +414,7 @@ class Paragraph : Widget
                 x += line.size.w;
 
         }
-        return PointF(x, y);
+        return Point(x, y);
     }
 
     /** Find the closest char position by a point in local 2D coordinates.

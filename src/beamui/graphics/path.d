@@ -8,7 +8,7 @@ Authors:   dayllenger
 module beamui.graphics.path;
 
 import beamui.core.collections : Buf;
-import beamui.core.geometry : RectF;
+import beamui.core.geometry : Rect;
 import beamui.core.linalg : Vec2;
 import beamui.core.math : fequal2, fequal6, fzero2, max, min;
 import beamui.graphics.flattener;
@@ -17,7 +17,7 @@ struct SubPath
 {
     Vec2[] points;
     bool closed;
-    RectF bounds;
+    Rect bounds;
 }
 
 /// Represents vector shape as one or more subpaths, which contain series of segments
@@ -56,7 +56,7 @@ struct Path
         {
             uint start;
             bool closed;
-            RectF bounds;
+            Rect bounds;
         }
 
         Buf!Vec2 points;
@@ -64,7 +64,7 @@ struct Path
         bool closed = true;
         float posx = 0;
         float posy = 0;
-        RectF currentContourBounds;
+        Rect currentContourBounds;
     }
 
     private void ensureContourStarted()
@@ -73,7 +73,7 @@ struct Path
         {
             if (subpaths.length > 0)
                 subpaths.unsafe_ref(-1).bounds = currentContourBounds;
-            currentContourBounds = RectF(posx, posy, posx, posy);
+            currentContourBounds = Rect(posx, posy, posx, posy);
 
             const i = points.length;
             points ~= Vec2(posx, posy);

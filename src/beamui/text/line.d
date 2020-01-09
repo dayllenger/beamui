@@ -8,7 +8,7 @@ module beamui.text.line;
 
 import std.container.array;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : PointF, Rect, Size, SizeF;
+import beamui.core.geometry : Point, Rect, Size;
 import beamui.core.math;
 import beamui.core.units : snapToDevicePixels;
 import beamui.graphics.drawbuf : GlyphInstance;
@@ -48,7 +48,7 @@ struct LineSpan
     float height = 0;
     float offset = 0;
 }
-private alias Point = PointF;
+
 struct TextLine
 {
     @property
@@ -60,7 +60,7 @@ struct TextLine
 
         Size size() const
         {
-            return Size(cast(int)_defaultSpan.width, cast(int)_defaultSpan.height);
+            return Size(_defaultSpan.width, _defaultSpan.height);
         }
 
         float height() const
@@ -91,7 +91,7 @@ struct TextLine
     private
     {
         LineSpan _defaultSpan;
-        SizeF _sizeAfterWrap;
+        Size _sizeAfterWrap;
 
         Array!FragmentGlyph _glyphs;
         Array!LineSpan _wrapSpans;
@@ -115,7 +115,7 @@ struct TextLine
         const len = cast(uint)str.length;
         const height = style.font.height;
         _defaultSpan = LineSpan(0, len, 0, height, 0);
-        _sizeAfterWrap = SizeF(0, 0);
+        _sizeAfterWrap = Size(0, 0);
         _glyphs.length = 0;
         _wrapSpans.length = 0;
 
@@ -217,7 +217,7 @@ struct TextLine
             {
                 // calculate tab stops
                 // TODO: turn off when text is aligned?
-                const n = x / (spaceWidth * tabSize) + 1;
+                const n = cast(int)x / cast(int)(spaceWidth * tabSize) + 1;
                 const w = spaceWidth * tabSize * n - x;
                 _glyphs ~= FragmentGlyph(null, w, height, baseline);
                 x += w;
@@ -241,7 +241,7 @@ struct TextLine
             return _sizeAfterWrap.h;
 
         _wrapSpans.length = 0;
-        _sizeAfterWrap = SizeF(0, 0);
+        _sizeAfterWrap = Size(0, 0);
 
         const len = cast(uint)str.length;
         if (len == 0)
@@ -309,7 +309,7 @@ struct TextLine
             }
         }
         _wrapSpans ~= LineSpan(lineStart, len, lineWidth, lineHeight);
-        _sizeAfterWrap = SizeF(boxWidth, totalHeight + lineHeight);
+        _sizeAfterWrap = Size(boxWidth, totalHeight + lineHeight);
         return _sizeAfterWrap.h;
     }
 
