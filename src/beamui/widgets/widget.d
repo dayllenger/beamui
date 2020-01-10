@@ -2127,7 +2127,7 @@ public:
             if (const result = callback(child(i)))
                 return result;
         }
-        foreach (w; _hiddenChildren.data)
+        foreach (w; _hiddenChildren.unsafe_slice)
         {
             if (const result = callback(w))
                 return result;

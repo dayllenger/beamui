@@ -11,6 +11,8 @@ import std.traits;
 
 /** Array-based collection, that provides a set of useful operations and handles object ownership.
 
+    For class objects only.
+
     Retains item order during add/remove operations. When instantiated with `ownItems = true`,
     the container will destroy items on its destruction and on shrinking.
 
@@ -35,123 +37,57 @@ import std.traits;
     writeln(widgets[0].id);
     ---
 */
-struct Collection(T, bool ownItems = false)
+struct Collection(T, bool ownItems = false) if (is(T == class) || is(T == interface))
 {
-    import beamui.core.ownership : isReferenceType;
-
     private T[] list;
     private size_t len;
 
-    private enum mayNeedToDestroy = isReferenceType!T || hasElaborateDestructor!T;
+    /// Number of items in the collection
+    @property size_t count() const { return len; }
+    /// True if there are no items in the collection
+    @property bool empty() const
+    {
+        return len == 0;
+    }
+    /// Returns currently allocated size (>= `count`)
+    @property size_t capacity() const
+    {
+        return list.length;
+    }
+
+    private this(int);
+    @disable this(this);
 
     ~this()
     {
         clear();
     }
 
-    /// Number of items in collection
-    @property size_t count() const { return len; }
-    /// ditto
-    @property void count(size_t newCount)
+    /// Make sure the capacity is at least `count` items
+    /// (e.g. to reserve big space to avoid multiple reallocations)
+    void reserve(size_t count)
     {
-        if (newCount < len)
-        {
-            // shrink
-            static if (mayNeedToDestroy)
-            {
-                // clear list
-                static if (ownItems)
-                {
-                    foreach (i; newCount .. len)
-                        destroy(list[i]);
-                }
-                // clear references
-                static if (isReferenceType!T)
-                    list[newCount .. len] = null;
-            }
-        }
-        else if (newCount > len)
-        {
-            // expand
-            if (list.length < newCount)
-                list.length = newCount;
-        }
-        len = newCount;
-    }
-    /// ditto
-    size_t opDollar() const { return len; }
-
-    /// Returns true if there are no items in collection
-    @property bool empty() const
-    {
-        return len == 0;
-    }
-
-    /// Returns currently allocated capacity (may be more than length)
-    @property size_t size() const
-    {
-        return list.length;
-    }
-    /// Change capacity (e.g. to reserve big space to avoid multiple reallocations)
-    @property void size(size_t newSize)
-    {
-        if (len > newSize)
-            count = newSize; // shrink
-        list.length = newSize;
-    }
-
-    /// Access item by index
-    ref inout(T) opIndex(size_t index) inout
-    {
-        assert(index < len, "Index is out of range");
-        return list[index];
-    }
-
-    /// Returns index of the first occurrence of item, returns -1 if not found
-    ptrdiff_t indexOf(const(T) item) const
-    {
-        foreach (i; 0 .. len)
-            if (list[i] is item)
-                return i;
-        return -1;
-    }
-    static if (__traits(hasMember, T, "compareID"))
-    {
-        /// Find child index for item by id, returns -1 if not found
-        ptrdiff_t indexOf(string id) const
-        {
-            foreach (i; 0 .. len)
-                if (list[i].compareID(id))
-                    return i;
-            return -1;
-        }
-    }
-    /// True if collection contains such item
-    bool opBinaryRight(string op : "in")(const(T) item) const
-    {
-        foreach (i; 0 .. len)
-            if (list[i] is item)
-                return true;
-        return false;
+        if (list.length < count)
+            list.length = count;
     }
 
     /// Append item to the end of collection
     void append(T item)
     {
-        if (list.length <= len) // need to resize
-            list.length = list.length < 4 ? 4 : list.length * 2;
+        if (list.length == len) // need to resize
+            list.length = list.length * 3 / 2 + 1;
         list[len++] = item;
     }
     /// Insert item before specified position
     void insert(size_t index, T item)
+        in(index <= len, "Index is out of range")
     {
-        assert(index <= len, "Index is out of range");
-        if (list.length <= len) // need to resize
-            list.length = list.length < 4 ? 4 : list.length * 2;
+        if (list.length == len) // need to resize
+            list.length = list.length * 3 / 2 + 1;
         if (index < len)
         {
-            foreach_reverse (i; index .. len + 1)
-                list[i] = list[i - 1];
+            foreach_reverse (i; index .. len)
+                list[i + 1] = list[i];
         }
         list[index] = item;
         len++;
@@ -159,13 +95,12 @@ struct Collection(T, bool ownItems = false)
 
     /// Remove single item and return it
     T remove(size_t index)
+        in(index < len, "Index is out of range")
     {
-        assert(index < len, "Index is out of range");
         T result = list[index];
         foreach (i; index .. len - 1)
             list[i] = list[i + 1];
         len--;
-        list[len] = T.init;
         return result;
     }
     /// Remove single item by value. Returns true if item was found and removed
@@ -177,14 +112,12 @@ struct Collection(T, bool ownItems = false)
             remove(index);
             return true;
         }
-        else
-            return false;
+        return false;
     }
 
     /// Replace one item with another by index. Returns removed item.
     T replace(size_t index, T item)
     {
-        assert(index < len, "Index is out of range");
         T old = list[index];
         list[index] = item;
         return old;
@@ -199,78 +132,132 @@ struct Collection(T, bool ownItems = false)
             append(newItem);
     }
 
+    /// Expand or shrink the collection, possibly destroying items or adding `null` ones
+    void resize(size_t count)
+    {
+        if (count < len)
+        {
+            // shrink
+            // clear list
+            static if (ownItems)
+            {
+                foreach (item; list[count .. len])
+                    destroy(item);
+            }
+            // clear references
+            list[count .. len] = null;
+        }
+        else if (count > len)
+        {
+            // expand
+            if (list.length < count)
+                list.length = count;
+        }
+        len = count;
+    }
+
     /// Remove all items and optionally destroy them
     void clear(bool destroyItems = ownItems)
     {
-        static if (mayNeedToDestroy)
+        if (destroyItems)
         {
-            if (destroyItems)
-            {
-                foreach (i; 0 .. len)
-                    destroy(list[i]);
-            }
-            // clear references
-            static if (isReferenceType!T)
-                list[] = null;
+            foreach (item; list[0 .. len])
+                destroy(item);
         }
-        len = 0;
+        // clear references
+        list[] = null;
         list = null;
+        len = 0;
+    }
+
+    /// Returns index of the first occurrence of item, returns -1 if not found
+    ptrdiff_t indexOf(const T item) const
+    {
+        foreach (i, it; list[0 .. len])
+            if (it is item)
+                return i;
+        return -1;
+    }
+    static if (__traits(hasMember, T, "compareID"))
+    /// Find child index for item by id, returns -1 if not found
+    ptrdiff_t indexOf(string id) const
+    {
+        foreach (i, it; list[0 .. len])
+            if (it.compareID(id))
+                return i;
+        return -1;
     }
 
     /// Support for appending (~=) and removing by value (-=)
-    void opOpAssign(string op : "~")(T item)
-    {
-        append(item);
-    }
+    alias opOpAssign(string op : "~") = append;
     /// ditto
-    void opOpAssign(string op : "-")(T item)
-    {
-        removeValue(item);
-    }
+    alias opOpAssign(string op : "-") = removeValue;
+    alias opDollar = count;
 
-    /// Support of foreach with reference
-    int opApply(scope int delegate(size_t i, ref T) callback)
+    /// Foreach support
+    int opApply(scope int delegate(size_t i, T) callback)
     {
         int result;
-        foreach (i; 0 .. len)
+        foreach (i, item; list[0 .. len])
         {
-            result = callback(i, list[i]);
+            result = callback(i, item);
             if (result)
                 break;
         }
         return result;
     }
     /// ditto
-    int opApply(scope int delegate(ref T) callback)
+    int opApply(scope int delegate(T) callback)
     {
         int result;
-        foreach (i; 0 .. len)
+        foreach (item; list[0 .. len])
         {
-            result = callback(list[i]);
+            result = callback(item);
             if (result)
                 break;
         }
         return result;
     }
 
-    /// Get slice of items. Don't try to resize it!
-    T[] data()
+    inout(T) opIndex(size_t index) inout
     {
-        return len > 0 ? list[0 .. len] : null;
+        return list[index];
+    }
+
+    /// Support for `in` operator (linear search)
+    bool opBinaryRight(string op : "in")(const T item) const
+    {
+        foreach (it; list[0 .. len])
+            if (it is item)
+                return true;
+        return false;
+    }
+
+    const(T[]) opIndex() const
+    {
+        return list[0 .. len];
+    }
+
+    /// Get a mutable slice of items. Don't try to resize it!
+    T[] unsafe_slice()
+    {
+        return list[0 .. len];
     }
 
     //=================================
     // stack/queue-like ops
 
-    /// Pick the first item
-    @property inout(T) front() inout
+    /// Pick the first item. Fails if no items
+    inout(T) front() inout
+        in(len > 0)
     {
-        return len > 0 ? list[0] : T.init;
+        return list[0];
     }
-    /// Remove the first item and return it
-    @property T popFront()
+    /// Remove the first item and return it. Fails if no items
+    T popFront()
+        in(len > 0)
     {
-        return len > 0 ? remove(0) : T.init;
+        return remove(0);
     }
     /// Insert item at the beginning of collection
     void pushFront(T item)
@@ -278,15 +265,17 @@ struct Collection(T, bool ownItems = false)
         insert(0, item);
     }
 
-    /// Pick the last item
-    @property inout(T) back() inout
+    /// Pick the last item. Fails if no items
+    inout(T) back() inout
+        in(len > 0)
     {
-        return len > 0 ? list[len - 1] : T.init;
+        return list[len - 1];
     }
-    /// Remove the last item and return it
-    @property T popBack()
+    /// Remove the last item and return it. Fails if no items
+    T popBack()
+        in(len > 0)
     {
-        return len > 0 ? remove(len - 1) : T.init;
+        return remove(len - 1);
     }
     /// Insert item at the end of collection
     void pushBack(T item)
@@ -717,6 +706,101 @@ if (isMutable!T &&
 
 //===============================================================
 // Tests
+
+unittest
+{
+    Collection!Object c;
+    assert(c.empty);
+    c.reserve(10);
+    assert(c.empty);
+}
+
+unittest
+{
+    Collection!Object c;
+    c.resize(10);
+    assert(c.count == 10);
+    assert(c.capacity >= c.count);
+}
+
+unittest
+{
+    Collection!Object c;
+    c ~= new Object;
+    c ~= null;
+    c ~= new Object;
+    assert(c.count == 3);
+    assert(c.capacity >= 3);
+    assert(c.front);
+    assert(c.back);
+    assert(c.front !is c.back);
+    assert(c[1] is null);
+    assert(c.removeValue(null));
+    assert(c.count == 2);
+    assert(!c.removeValue(null));
+    assert(c.count == 2);
+    assert(c.front);
+    assert(c.back);
+    assert(!c.empty);
+    c.clear();
+    assert(c.empty);
+}
+
+unittest
+{
+    Collection!Object c;
+    auto obj1 = new Object;
+    auto obj2 = new Object;
+    c ~= null;
+    c ~= null;
+    c.insert(1, obj1);
+    c.insert(2, obj2);
+    assert(c.count == 4);
+    assert(c.indexOf(obj1) == 1);
+    assert(c.indexOf(obj2) == 2);
+    assert(c.front is null);
+    assert(c.back is null);
+    assert(c[1] is obj1);
+    assert(c[2] is obj2);
+    assert(c.remove(1) is obj1);
+    assert(c.remove(1) is obj2);
+    assert(c.count == 2);
+
+    c.insert(0, obj1);
+    c.insert(c.count, obj2);
+    assert(c.count == 4);
+    assert(c.indexOf(obj1) == 0);
+    assert(c.indexOf(obj2) == 3);
+    assert(c.popFront() is obj1);
+    assert(c.popBack() is obj2);
+    assert(c.count == 2);
+
+    c.pushFront(obj1);
+    c.pushBack(obj2);
+    assert(c.count == 4);
+    assert(c.indexOf(obj1) == 0);
+    assert(c.indexOf(obj2) == 3);
+    assert(obj1 in c);
+    assert(obj2 in c);
+    assert(c.removeValue(obj1));
+    assert(c.removeValue(obj2));
+    assert(c.front is null);
+    assert(c.back is null);
+}
+
+unittest
+{
+    Collection!Object c;
+    c.resize(10);
+    auto obj1 = new Object;
+    auto obj2 = new Object;
+    assert(c.replace(5, obj1) is null);
+    assert(c.replace(5, obj2) is obj1);
+    c.replace(obj2, obj1);
+    assert(c.indexOf(obj1) == 5);
+    assert(obj2 !in c);
+    assert(c.count == 10);
+}
 
 unittest
 {
