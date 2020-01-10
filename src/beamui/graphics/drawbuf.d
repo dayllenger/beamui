@@ -17,7 +17,6 @@ import beamui.core.linalg;
 import beamui.core.logger;
 import beamui.core.math;
 import beamui.graphics.colors;
-import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
 
 /// 9-patch image scaling information (unscaled frame and scaled middle parts)
 struct NinePatch
@@ -26,13 +25,6 @@ struct NinePatch
     InsetsI frame;
     /// Padding (distance to content area) for left, top, right, bottom edges.
     InsetsI padding;
-}
-
-/// Positioned glyph
-struct GlyphInstance
-{
-    GlyphRef glyph;
-    Point position;
 }
 
 static if (USE_OPENGL)

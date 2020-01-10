@@ -22,7 +22,7 @@ import beamui.core.types : Tup, tup;
 import beamui.graphics.brush;
 import beamui.graphics.colors : Color;
 import beamui.graphics.compositing;
-import beamui.graphics.drawbuf : ColorDrawBufBase, GlyphInstance;
+import beamui.graphics.drawbuf : ColorDrawBufBase;
 import beamui.graphics.flattener;
 import beamui.graphics.painter;
 import beamui.graphics.polygons;

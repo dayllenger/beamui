@@ -9,20 +9,28 @@ module beamui.graphics.painter;
 
 import std.math : ceil, floor, sqrt, isFinite, PI;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : Box, BoxI, Rect, RectI;
+import beamui.core.geometry : Box, BoxI, Point, Rect, RectI;
 import beamui.core.linalg : Mat2x3, Vec2;
 import beamui.core.math;
 import beamui.graphics.brush : Brush;
 import beamui.graphics.colors : Color;
 import beamui.graphics.compositing : BlendMode, CompositeMode;
-import beamui.graphics.drawbuf : ColorDrawBufBase, GlyphInstance;
+import beamui.graphics.drawbuf : ColorDrawBufBase;
 import beamui.graphics.path : Path;
 import beamui.graphics.polygons : FillRule;
 import beamui.graphics.pen : PathIter, Pen;
+import beamui.text.glyph : GlyphRef;
 
 enum MAX_DIMENSION = 2 ^^ 14;
 enum MIN_RECT_I = RectI(MAX_DIMENSION, MAX_DIMENSION, -MAX_DIMENSION, -MAX_DIMENSION);
 enum MIN_RECT_F = Rect (MAX_DIMENSION, MAX_DIMENSION, -MAX_DIMENSION, -MAX_DIMENSION);
+
+/// Positioned glyph
+struct GlyphInstance
+{
+    GlyphRef glyph;
+    Point position;
+}
 
 /** Painter draws anti-aliased 2D vector shapes, as well as text and images.
 
