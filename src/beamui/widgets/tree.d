@@ -339,14 +339,16 @@ class TreeItem
         return cast(int)_children.indexOf(item);
     }
 
-    private bool hasDescendant(TreeItem item)
+    bool hasDescendant(TreeItem item) const
     {
         if (!item)
             return false;
-        foreach (c; _children)
+        TreeItem p = item.parent;
+        while (p)
         {
-            if (c is item || c.hasDescendant(item))
+            if (this is p)
                 return true;
+            p = p.parent;
         }
         return false;
     }
@@ -1020,6 +1022,14 @@ unittest
     assert(!tree1_1.isVisible);
 
     assert(root.findItemByID("1_4_2") is tree1_1.child(1));
+
+    assert(root.hasDescendant(tree1));
+    assert(tree1.hasDescendant(tree1_1.child(0)));
+    assert(tree1_1.hasDescendant(tree1_1.child(1)));
+    assert(!tree1_1.hasDescendant(tree1_1));
+    assert(!tree1_1.hasDescendant(tree1));
+    assert(!tree1_1.hasDescendant(root));
+    assert(!root.hasDescendant(root));
 
     root.selectItem(tree1_1);
     root.setDefaultItem(tree1_1);
