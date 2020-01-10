@@ -565,6 +565,7 @@ class TreeItemWidget : Panel
     }
 
     this(TreeItem item)
+        in(item)
     {
         super(item.id);
         _item = item;
@@ -759,7 +760,12 @@ class TreeWidgetBase : ScrollArea, ActionOperator
     protected void addWidgets(TreeItem item)
     {
         if (item.level > 0)
-            contentWidget.addChild(createItemWidget(item));
+        {
+            Widget w = createItemWidget(item);
+            contentWidget.addChild(w);
+            if (item is _tree.selectedItem)
+                w.setFocus();
+        }
         foreach (i; 0 .. item.childCount)
             addWidgets(item.child(i));
     }
