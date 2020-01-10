@@ -1454,19 +1454,17 @@ struct GpaaAppender
 
 void ensureNotInGC(const Object object)
 {
-    import core.exception : InvalidMemoryOperationError;
     import core.memory : GC;
     import core.stdc.stdio : fprintf, stderr;
     import beamui.core.functions : getShortClassName;
 
-    try
+    // the old way of checking this obliterates assert messages
+    static if (__VERSION__ >= 2090)
     {
-        cast(void)GC.malloc(1);
-    }
-    catch(InvalidMemoryOperationError e)
-    {
-        const name = getShortClassName(object);
-        fprintf(stderr, "Error: %.*s must be destroyed manually.\n", name.length, name.ptr);
-        assert(0);
+        if (GC.inFinalizer())
+        {
+            const name = getShortClassName(object);
+            fprintf(stderr, "Error: %.*s must be destroyed manually.\n", name.length, name.ptr);
+        }
     }
 }
