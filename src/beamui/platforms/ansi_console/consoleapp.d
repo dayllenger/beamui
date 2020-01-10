@@ -446,23 +446,6 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         }
     }
 
-    override void fillGradientRect(RectI rc, Color color1, Color color2, Color color3, Color color4)
-    {
-        // TODO
-        fillRect(rc, color1);
-    }
-
-    override void fillRectPattern(RectI rc, Color color, PatternType pattern)
-    {
-        // default implementation: does not support patterns
-        fillRect(rc, color);
-    }
-
-    override void drawPixel(int x, int y, Color color)
-    {
-        // TODO
-    }
-
     override void drawChar(int x, int y, dchar ch, Color color, Color bgcolor)
     {
         if (!clipRect.contains(x, y))
@@ -475,11 +458,6 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         _console.backgroundColor = bc;
         _console.setCursor(x, y);
         _console.writeText(cast(dstring)text);
-    }
-
-    override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
-    {
-        // TODO
     }
 
     override void drawFragment(int x, int y, DrawBuf src, RectI srcrect)

@@ -394,7 +394,7 @@ private class GLGlyphCache : GLCache
             GLCacheItem cacheItem = reserveSpace(glyph.id, glyph.correctedBlackBoxX, glyph.blackBoxY);
             if (cacheItem is null)
                 return null;
-            _drawbuf.drawGlyphToTexture(cacheItem._rc.left, cacheItem._rc.top, glyph);
+            // _drawbuf.drawGlyphToTexture(cacheItem._rc.left, cacheItem._rc.top, glyph);
             _needUpdateTexture = true;
             return cacheItem;
         }

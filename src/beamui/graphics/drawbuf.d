@@ -28,12 +28,6 @@ struct NinePatch
     InsetsI padding;
 }
 
-enum PatternType : uint
-{
-    solid,
-    dotted,
-}
-
 /// Positioned glyph
 struct GlyphInstance
 {
@@ -46,9 +40,6 @@ static if (USE_OPENGL)
     /// Non thread safe
     private __gshared uint drawBufIDGenerator = 0;
 }
-
-/// Custom draw delegate for OpenGL direct drawing
-alias DrawHandler = void delegate(RectI windowRect, RectI rc);
 
 /// Drawing buffer - image container which allows to perform some drawing operations
 class DrawBuf : RefCountedObject
@@ -211,22 +202,12 @@ class DrawBuf : RefCountedObject
     //========================================================
     // Drawing methods
 
-    /// Fill the whole buffer with solid color (no clipping applied)
+    /// Fill the whole buffer with solid color
     abstract void fill(Color color);
-    /// Fill rectangle with solid color (clipping is applied)
+    /// Fill rectangle with solid color
     abstract void fillRect(RectI rc, Color color);
-    /// Fill rectangle with a gradient (clipping is applied)
-    abstract void fillGradientRect(RectI rc, Color color1, Color color2, Color color3, Color color4);
 
-    /// Fill rectangle with solid color and pattern (clipping is applied)
-    void fillRectPattern(RectI rc, Color color, PatternType pattern)
-    {
-    }
-    /// Draw pixel at (x, y) with specified color (clipping is applied)
-    abstract void drawPixel(int x, int y, Color color);
-    /// Draw 8bit alpha image - usually font glyph using specified color (clipping is applied)
-    abstract void drawGlyph(int x, int y, GlyphRef glyph, Color color);
-    /// Draw source buffer rectangle contents to destination buffer (clipping is applied)
+    /// Draw source buffer rectangle contents to destination buffer
     abstract void drawFragment(int x, int y, DrawBuf src, RectI srcrect);
     /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
     abstract void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect);
@@ -235,13 +216,6 @@ class DrawBuf : RefCountedObject
     void drawImage(int x, int y, DrawBuf src)
     {
         drawFragment(x, y, src, RectI(0, 0, src.width, src.height));
-    }
-
-    /// Draw custom OpenGL scene
-    void drawCustomOpenGLScene(RectI rc, DrawHandler handler)
-    {
-        // override it for OpenGL draw buffer
-        Log.w("drawCustomOpenGLScene is called for non-OpenGL DrawBuf");
     }
 }
 
@@ -431,84 +405,6 @@ class ColorDrawBufBase : DrawBuf
         return true;
     }
 
-    override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
-    {
-        const uint rgb = color.rgb;
-        immutable(ubyte[]) src = glyph.glyph;
-        const int srcdx = glyph.blackBoxX;
-        const int srcdy = glyph.blackBoxY;
-        const bool subpixel = glyph.subpixelMode != SubpixelRenderingMode.none;
-        foreach (int yy; 0 .. srcdy)
-        {
-            const int liney = y + yy;
-            if (liney < 0 || liney >= _h)
-                continue;
-
-            uint* row = scanLine(liney);
-            immutable(ubyte*) srcrow = src.ptr + yy * srcdx;
-            foreach (int xx; 0 .. srcdx)
-            {
-                int colx = x + (subpixel ? xx / 3 : xx);
-                if (colx < 0 || colx >= _w)
-                    continue;
-
-                const uint alpha = blendAlpha(color.a, srcrow[xx]);
-                if (subpixel)
-                {
-                    blendSubpixel(row[colx], rgb, alpha, xx % 3, glyph.subpixelMode);
-                }
-                else
-                {
-                    if (alpha == 255)
-                    {
-                        row[colx] = rgb;
-                    }
-                    else if (alpha > 0)
-                    {
-                        // apply blending
-                        blendARGB(row[colx], rgb, alpha);
-                    }
-                }
-            }
-        }
-    }
-
-    void drawGlyphToTexture(int x, int y, GlyphRef glyph)
-    {
-        immutable(ubyte[]) src = glyph.glyph;
-        int srcdx = glyph.blackBoxX;
-        int srcdy = glyph.blackBoxY;
-        bool subpixel = glyph.subpixelMode != SubpixelRenderingMode.none;
-        foreach (int yy; 0 .. srcdy)
-        {
-            int liney = y + yy;
-            uint* row = scanLine(liney);
-            immutable(ubyte*) srcrow = src.ptr + yy * srcdx;
-            int increment = subpixel ? 3 : 1;
-            for (int xx = 0; xx <= srcdx - increment; xx += increment)
-            {
-                int colx = x + (subpixel ? xx / 3 : xx);
-                if (subpixel)
-                {
-                    uint t1 = srcrow[xx];
-                    uint t2 = srcrow[xx + 1];
-                    uint t3 = srcrow[xx + 2];
-                    //uint pixel = ((t2 ^ 0x00) << 24) | ((t1  ^ 0xFF)<< 16) | ((t2 ^ 0xFF) << 8) | (t3 ^ 0xFF);
-                    uint pixel = ((t2 ^ 0x00) << 24) | 0xFFFFFF;
-                    row[colx] = pixel;
-                }
-                else
-                {
-                    uint alpha1 = srcrow[xx] ^ 0xFF;
-                    //uint pixel = (alpha1 << 24) | 0xFFFFFF; //(alpha1 << 16) || (alpha1 << 8) || alpha1;
-                    //uint pixel = ((alpha1 ^ 0xFF) << 24) | (alpha1 << 16) | (alpha1 << 8) | alpha1;
-                    uint pixel = ((alpha1 ^ 0xFF) << 24) | 0xFFFFFF;
-                    row[colx] = pixel;
-                }
-            }
-        }
-    }
-
     override void fillRect(RectI rc, Color color)
     {
         if (!color.isFullyTransparent && applyClipping(rc))
@@ -531,45 +427,6 @@ class ColorDrawBufBase : DrawBuf
                     }
                 }
             }
-        }
-    }
-
-    override void fillGradientRect(RectI rc, Color color1, Color color2, Color color3, Color color4)
-    {
-        if (applyClipping(rc))
-        {
-            foreach (y; rc.top .. rc.bottom)
-            {
-                // interpolate vertically at the side edges
-                const double ay = (y - rc.top) / cast(double)(rc.bottom - rc.top);
-                const cl = Color.mix(color1, color2, ay);
-                const cr = Color.mix(color3, color4, ay);
-
-                uint* row = scanLine(y);
-                foreach (x; rc.left .. rc.right)
-                {
-                    // interpolate horizontally
-                    const double ax = (x - rc.left) / cast(double)(rc.right - rc.left);
-                    row[x] = Color.mix(cl, cr, ax).rgba;
-                }
-            }
-        }
-    }
-
-    override void drawPixel(int x, int y, Color color)
-    {
-        if (x < 0 || width <= x || y < 0 || height <= y)
-            return;
-
-        uint* row = scanLine(y);
-        if (color.isOpaque)
-        {
-            row[x] = color.rgba;
-        }
-        else if (!color.isFullyTransparent)
-        {
-            // apply blending
-            blendARGB(row[x], color.rgb, color.a);
         }
     }
 }
@@ -744,39 +601,6 @@ class GrayDrawBuf : DrawBuf
         return true;
     }
 
-    override void drawGlyph(int x, int y, GlyphRef glyph, Color color)
-    {
-        const ubyte c = color.toGray;
-        immutable(ubyte[]) src = glyph.glyph;
-        const int srcdx = glyph.blackBoxX;
-        const int srcdy = glyph.blackBoxY;
-        foreach (int yy; 0 .. srcdy)
-        {
-            int liney = y + yy;
-            if (liney < 0 || liney >= _h)
-                continue;
-            ubyte* row = scanLine(liney);
-            immutable(ubyte*) srcrow = src.ptr + yy * srcdx;
-            foreach (int xx; 0 .. srcdx)
-            {
-                int colx = xx + x;
-                if (colx < 0 || colx >= _w)
-                    continue;
-
-                const uint alpha = blendAlpha(color.a, srcrow[xx]);
-                if (alpha == 255)
-                {
-                    row[colx] = c;
-                }
-                else if (alpha > 0)
-                {
-                    // apply blending
-                    row[colx] = blendGray(row[colx], c, alpha);
-                }
-            }
-        }
-    }
-
     override void fillRect(RectI rc, Color color)
     {
         if (!color.isFullyTransparent && applyClipping(rc))
@@ -800,49 +624,6 @@ class GrayDrawBuf : DrawBuf
                     }
                 }
             }
-        }
-    }
-
-    override void fillGradientRect(RectI rc, Color color1, Color color2, Color color3, Color color4)
-    {
-        if (applyClipping(rc))
-        {
-            ubyte c1 = color1.toGray;
-            ubyte c2 = color2.toGray;
-            ubyte c3 = color3.toGray;
-            ubyte c4 = color4.toGray;
-            foreach (y; rc.top .. rc.bottom)
-            {
-                // interpolate vertically at the side edges
-                uint ay = (255 * (y - rc.top)) / (rc.bottom - rc.top);
-                ubyte cl = blendGray(c2, c1, ay);
-                ubyte cr = blendGray(c4, c3, ay);
-
-                ubyte* row = scanLine(y);
-                foreach (x; rc.left .. rc.right)
-                {
-                    // interpolate horizontally
-                    uint ax = (255 * (x - rc.left)) / (rc.right - rc.left);
-                    row[x] = blendGray(cr, cl, ax);
-                }
-            }
-        }
-    }
-
-    override void drawPixel(int x, int y, Color color)
-    {
-        if (x < 0 || width <= x || y < 0 || height <= y)
-            return;
-
-        ubyte* row = scanLine(y);
-        if (color.isOpaque)
-        {
-            row[x] = color.toGray;
-        }
-        else if (!color.isFullyTransparent)
-        {
-            // apply blending
-            row[x] = blendGray(row[x], color.toGray, color.a);
         }
     }
 }

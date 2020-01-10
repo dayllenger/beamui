@@ -649,6 +649,9 @@ class ImageDrawable : Drawable
 
 static if (USE_OPENGL)
 {
+    /// Custom draw delegate for OpenGL direct drawing
+    alias DrawHandler = void delegate(RectI windowRect, RectI rc);
+
     /// Custom OpenGL drawing inside a drawable
     class OpenGLDrawable : Drawable
     {
