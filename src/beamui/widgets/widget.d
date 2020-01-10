@@ -2055,27 +2055,20 @@ public:
     */
     bool isChild(Widget item, bool deepSearch = true)
     {
+        // the contract is that any widget in the tree must have a parent
         if (deepSearch)
         {
-            // this widget or some widget inside children tree
-            if (item is this)
-                return true;
-            foreach (w; this)
+            Widget p = item;
+            while (p)
             {
-                if (w.isChild(item))
+                if (this is p)
                     return true;
+                p = p.parent;
             }
+            return false;
         }
         else
-        {
-            // only one of children
-            foreach (w; this)
-            {
-                if (item is w)
-                    return true;
-            }
-        }
-        return false;
+            return this is item.parent;
     }
 
     /// Find child of specified type `T` by id, returns `null` if not found or cannot be converted to type `T`
