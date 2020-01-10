@@ -3347,7 +3347,7 @@ class FindPanel : Panel
             if (newMode != _replaceMode)
             {
                 _replaceMode = newMode;
-                childByID("rowReplace").visibility = newMode ? Visibility.visible : Visibility.gone;
+                _rowReplace.visibility = newMode ? Visibility.visible : Visibility.gone;
             }
         }
 
@@ -3365,6 +3365,7 @@ class FindPanel : Panel
     private
     {
         EditBox _editor;
+        Panel _rowReplace;
         EditLine _edFind;
         EditLine _edReplace;
         Button _cbCaseSensitive;
@@ -3389,7 +3390,7 @@ class FindPanel : Panel
                     _cbCaseSensitive = new Button(null, "find_case_sensitive");
                     _cbWholeWords = new Button(null, "find_whole_words");
                     _cbSelection = new CheckBox("Sel");
-            auto rowReplace = new Panel(null, "replace");
+            _rowReplace = new Panel(null, "replace");
                 _edReplace = new EditLine(initialText);
                 auto btnReplace = new Button("Replace");
                 auto btnReplaceAndFind = new Button("Replace and find");
@@ -3397,7 +3398,7 @@ class FindPanel : Panel
         auto closeBtn = new Button(null, "close");
 
         with (main) {
-            add(rowFind, rowReplace);
+            add(rowFind, _rowReplace);
             with (rowFind) {
                 add(_edFind, _btnFindNext, _btnFindPrev, findSettings);
                 with (findSettings) {
@@ -3412,7 +3413,7 @@ class FindPanel : Panel
                     }
                 }
             }
-            with (rowReplace) {
+            with (_rowReplace) {
                 add(_edReplace, btnReplace, btnReplaceAndFind, btnReplaceAll);
             }
         }
@@ -3432,7 +3433,7 @@ class FindPanel : Panel
         _cbSelection.onToggle ~= &handleCaseSensitiveToggle;
 
         if (!replace)
-            rowReplace.visibility = Visibility.gone;
+            _rowReplace.visibility = Visibility.gone;
 
         btnReplace.onClick ~= { replaceOne(); };
         btnReplaceAndFind.onClick ~= {

@@ -2079,32 +2079,24 @@ public:
             // search everywhere inside child tree
             if (compareID(id))
             {
-                T found = cast(T)this;
-                if (found)
+                if (T found = cast(T)this)
                     return found;
             }
             // lookup children
-            for (int i = childCount - 1; i >= 0; i--)
+            foreach (Widget w; this)
             {
-                Widget res = child(i).childByID(id);
-                if (res !is null)
-                {
-                    T found = cast(T)res;
-                    if (found)
-                        return found;
-                }
+                if (T found = w.childByID!T(id))
+                    return found;
             }
         }
         else
         {
             // search only across children of this widget
-            for (int i = childCount - 1; i >= 0; i--)
+            foreach (Widget w; this)
             {
-                Widget w = child(i);
-                if (id == w.id)
+                if (w.compareID(id))
                 {
-                    T found = cast(T)w;
-                    if (found)
+                    if (T found = cast(T)w)
                         return found;
                 }
             }
