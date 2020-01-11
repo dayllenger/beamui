@@ -111,7 +111,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
     }
 
     /// Clear buffer contents, set dimension to 0, 0
-    override void clear()
+    private void clear()
     {
         if (_drawbmp !is null || _drawdc !is null)
         {
@@ -127,17 +127,10 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         }
     }
 
-    override void resize(int width, int height)
+    override protected void resizeImpl(int width, int height)
     {
-        width = max(width, 0);
-        height = max(height, 0);
-        if (_w == width && _h == height)
-            return;
-
         clear();
-        _w = width;
-        _h = height;
-        if (_w > 0 && _h > 0)
+        if (width > 0 && height > 0)
         {
             BITMAPINFO bmi;
             //memset( &bmi, 0, sizeof(bmi) );

@@ -9,7 +9,7 @@ module beamui.graphics.bitmap;
 import beamui.core.collections : Buf;
 import beamui.core.config;
 import beamui.core.functions : getShortClassName;
-import beamui.core.geometry : InsetsI, RectI;
+import beamui.core.geometry : InsetsI, RectI, SizeI;
 import beamui.core.logger;
 import beamui.core.types : Ref, RefCountedObject;
 import beamui.graphics.colors;
@@ -33,10 +33,15 @@ class DrawBuf : RefCountedObject
     {
         /// Image buffer bits per pixel value
         abstract int bpp() const;
-        /// Image width
-        abstract int width() const;
-        /// Image height
-        abstract int height() const;
+        /// Bitmap width, in pixels
+        int width() const { return _w; }
+        /// Bitmap height, in pixels
+        int height() const { return _h; }
+        /// Bitmap size, in pixels
+        SizeI size() const
+        {
+            return SizeI(_w, _h);
+        }
 
         /// Nine-patch info pointer, `null` if this is not a nine patch image buffer
         const(NinePatch)* ninePatch() const { return _ninePatch; }
@@ -54,6 +59,8 @@ class DrawBuf : RefCountedObject
         /// Unique ID of bitmap instance, for using with hardware accelerated rendering for caching
         uint id() const { return _id; }
     }
+
+    protected int _w, _h;
 
     private
     {
@@ -82,7 +89,6 @@ class DrawBuf : RefCountedObject
                 onResourceDestroyWhileShutdown("bitmap", getShortClassName(this));
             _instanceCount--;
         }
-        clear();
     }
 
     void function(uint) onDestroyCallback;
@@ -99,12 +105,18 @@ class DrawBuf : RefCountedObject
         }
     }
 
-    /// Resize the image buffer, invalidating its content
-    abstract void resize(int width, int height);
-
-    void clear()
+    /// Resize the bitmap, invalidating its content
+    void resize(int width, int height)
     {
+        if (_w != width || _h != height)
+        {
+            _w = width;
+            _h = height;
+            resizeImpl(width, height);
+        }
     }
+
+    abstract protected void resizeImpl(int width, int height);
 
     /// Detect nine patch using image 1-pixel border. Returns true if 9-patch markup is found in the image
     bool detectNinePatch()
@@ -206,12 +218,7 @@ class ColorDrawBufBase : DrawBuf
     override @property
     {
         int bpp() const { return 32; }
-        int width() const { return _w; }
-        int height() const { return _h; }
     }
-
-    protected int _w;
-    protected int _h;
 
     /// Returns pointer to ARGB scanline, `null` if `y` is out of range or buffer doesn't provide access to its memory
     inout(uint*) scanLine(int y) inout
@@ -416,12 +423,8 @@ class GrayDrawBuf : DrawBuf
     override @property
     {
         int bpp() const { return 8; }
-        int width() const { return _w; }
-        int height() const { return _h; }
     }
 
-    private int _w;
-    private int _h;
     private Buf!ubyte _buf;
 
     this(int width, int height)
@@ -436,12 +439,8 @@ class GrayDrawBuf : DrawBuf
         return null;
     }
 
-    override void resize(int width, int height)
+    override protected void resizeImpl(int width, int height)
     {
-        if (_w == width && _h == height)
-            return;
-        _w = width;
-        _h = height;
         _buf.resize(_w * _h);
     }
 
@@ -674,12 +673,8 @@ class ColorDrawBuf : ColorDrawBufBase
         return null;
     }
 
-    override void resize(int width, int height)
+    override protected void resizeImpl(int width, int height)
     {
-        if (_w == width && _h == height)
-            return;
-        _w = width;
-        _h = height;
         _buf.resize(_w * _h);
     }
 
