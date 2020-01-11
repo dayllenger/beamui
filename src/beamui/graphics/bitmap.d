@@ -23,11 +23,8 @@ struct NinePatch
     InsetsI padding;
 }
 
-static if (USE_OPENGL)
-{
-    /// Non thread safe
-    private __gshared uint drawBufIDGenerator = 0;
-}
+/// Non thread safe
+private __gshared uint drawBufIDGenerator;
 
 /// Drawing buffer - image container which allows to perform some drawing operations
 class DrawBuf : RefCountedObject
@@ -53,29 +50,27 @@ class DrawBuf : RefCountedObject
         {
             return _ninePatch !is null;
         }
-    }
 
-    private NinePatch* _ninePatch;
-
-    static if (USE_OPENGL)
-    {
-        private uint _id;
         /// Unique ID of bitmap instance, for using with hardware accelerated rendering for caching
-        @property uint id() const { return _id; }
+        uint id() const { return _id; }
     }
 
-    debug static
+    private
+    {
+        NinePatch* _ninePatch;
+
+        uint _id;
+    }
+
+    debug
     {
         private __gshared int _instanceCount;
-        int instanceCount() { return _instanceCount; }
+        static int instanceCount() { return _instanceCount; }
     }
 
     this()
     {
-        static if (USE_OPENGL)
-        {
-            _id = drawBufIDGenerator++;
-        }
+        _id = drawBufIDGenerator++;
         debug _instanceCount++;
     }
 
@@ -95,15 +90,12 @@ class DrawBuf : RefCountedObject
     /// Call to remove this image from OpenGL cache when image is updated.
     void invalidate()
     {
-        static if (USE_OPENGL)
+        if (onDestroyCallback)
         {
-            if (onDestroyCallback)
-            {
-                // remove from cache
-                onDestroyCallback(_id);
-                // assign new ID
-                _id = drawBufIDGenerator++;
-            }
+            // remove from cache
+            onDestroyCallback(_id);
+            // assign new ID
+            _id = drawBufIDGenerator++;
         }
     }
 
