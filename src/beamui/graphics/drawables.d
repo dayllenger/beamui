@@ -15,14 +15,15 @@ module beamui.graphics.drawables;
 import std.string;
 import beamui.core.config;
 import beamui.core.functions;
+import beamui.core.geometry;
 import beamui.core.linalg : Vec2, Mat2x3;
 import beamui.core.logger;
 import beamui.core.math;
 import beamui.core.types;
 import beamui.core.units;
+import beamui.graphics.bitmap;
 import beamui.graphics.brush;
 import beamui.graphics.colors;
-import beamui.graphics.drawbuf;
 import beamui.graphics.painter : Painter, PaintSaver;
 import beamui.graphics.path;
 import beamui.graphics.resources;
@@ -953,18 +954,18 @@ final class ImageCache
             if (auto p = imageID in _map)
                 return *p;
 
-            DrawBuf drawbuf;
+            DrawBuf bitmap;
 
             string filename = resourceList.getPathByID(imageID);
             auto data = loadResourceBytes(filename);
             if (data)
             {
-                drawbuf = loadImage(data, filename);
+                bitmap = loadImage(data, filename);
                 if (filename.endsWith(".9.png") || filename.endsWith(".9.PNG"))
-                    drawbuf.detectNinePatch();
+                    bitmap.detectNinePatch();
             }
-            _map[imageID] = drawbuf;
-            return DrawBufRef(drawbuf);
+            _map[imageID] = bitmap;
+            return DrawBufRef(bitmap);
         }
         else
             return DrawBufRef.init;

@@ -340,7 +340,7 @@ Result!Drawable decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)
     assert(tokens.length > 0);
 
     import beamui.core.config : BACKEND_GUI;
-    import beamui.graphics.drawbuf : DrawBufRef;
+    import beamui.graphics.bitmap : DrawBufRef;
 
     const t0 = tokens[0];
     // #0: none

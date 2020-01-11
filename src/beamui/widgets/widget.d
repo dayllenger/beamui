@@ -21,6 +21,7 @@ public
     import beamui.core.collections;
     import beamui.core.config;
     import beamui.core.functions;
+    import beamui.core.geometry;
     import beamui.core.i18n;
     import beamui.core.logger;
     import beamui.core.ownership;
@@ -28,9 +29,9 @@ public
     import beamui.core.types;
     import beamui.core.units;
 
+    import beamui.graphics.bitmap;
     import beamui.graphics.colors;
     import beamui.graphics.drawables;
-    import beamui.graphics.drawbuf;
     import beamui.graphics.painter;
 
     import beamui.layout.alignment;

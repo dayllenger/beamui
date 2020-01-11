@@ -10,10 +10,11 @@ import beamui.core.config;
 
 static if (USE_OPENGL):
 import beamui.core.functions;
+import beamui.core.geometry : RectI;
 import beamui.core.linalg;
 import beamui.core.logger;
+import beamui.graphics.bitmap;
 import beamui.graphics.colors;
-import beamui.graphics.drawbuf;
 import beamui.graphics.gl.objects : Tex2D, TexId;
 import beamui.text.glyph : GlyphRef;
 

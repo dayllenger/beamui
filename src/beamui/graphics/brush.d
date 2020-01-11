@@ -10,8 +10,8 @@ module beamui.graphics.brush;
 import std.algorithm : sort;
 import beamui.core.linalg : Vec2, Mat2x3;
 import beamui.core.math : clamp, fequal6, fzero6;
+import beamui.graphics.bitmap : ColorDrawBuf;
 import beamui.graphics.colors : Color;
-import beamui.graphics.drawbuf : ColorDrawBuf;
 
 /// Enumerates supported brush types
 enum BrushType

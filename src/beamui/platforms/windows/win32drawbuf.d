@@ -17,9 +17,10 @@ import beamui.core.config;
 static if (BACKEND_GUI):
 import core.sys.windows.windows;
 import beamui.core.logger;
+import beamui.core.geometry : RectI;
 import beamui.core.math : max;
+import beamui.graphics.bitmap;
 import beamui.graphics.colors : Color;
-import beamui.graphics.drawbuf;
 
 /// Win32 context ARGB drawing buffer
 class Win32ColorDrawBuf : ColorDrawBufBase

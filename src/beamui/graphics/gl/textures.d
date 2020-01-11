@@ -12,8 +12,8 @@ import beamui.core.config;
 static if (USE_OPENGL):
 import beamui.core.geometry : BoxI, SizeI;
 import beamui.graphics.atlas;
+import beamui.graphics.bitmap : ColorDrawBufBase;
 import beamui.graphics.colors : Color;
-import beamui.graphics.drawbuf : ColorDrawBufBase;
 import beamui.graphics.gl.api;
 import beamui.graphics.gl.objects : Tex2D, TexId, TexFiltering, TexMipmaps, TexWrap;
 import beamui.text.glyph : GlyphRef;

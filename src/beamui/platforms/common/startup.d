@@ -9,8 +9,8 @@ module beamui.platforms.common.startup;
 
 import beamui.core.config;
 import beamui.core.logger;
+import beamui.graphics.bitmap;
 import beamui.graphics.drawables;
-import beamui.graphics.drawbuf;
 import beamui.graphics.gldrawbuf;
 import beamui.graphics.resources;
 import beamui.text.fonts;

@@ -9,7 +9,7 @@ module beamui.graphics.iconprovider;
 
 import beamui.core.config;
 import beamui.core.logger;
-import beamui.graphics.drawbuf;
+import beamui.graphics.bitmap;
 import isfreedesktop;
 
 /// Crossplatform names for some of system icons.

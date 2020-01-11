@@ -1,21 +1,17 @@
 /**
-This module contains drawing buffer implementation.
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2018
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2020
 License:   Boost License 1.0
-Authors:   Vadim Lopatin
+Authors:   Vadim Lopatin, dayllenger
 */
-module beamui.graphics.drawbuf;
+module beamui.graphics.bitmap;
 
-public import beamui.core.geometry;
-public import beamui.core.types;
-import std.math;
 import beamui.core.collections : Buf;
 import beamui.core.config;
-import beamui.core.functions;
-import beamui.core.linalg;
+import beamui.core.functions : getShortClassName;
+import beamui.core.geometry : InsetsI, RectI;
 import beamui.core.logger;
-import beamui.core.math;
+import beamui.core.types : Ref, RefCountedObject;
 import beamui.graphics.colors;
 
 /// 9-patch image scaling information (unscaled frame and scaled middle parts)
@@ -64,7 +60,7 @@ class DrawBuf : RefCountedObject
     static if (USE_OPENGL)
     {
         private uint _id;
-        /// Unique ID of drawbuf instance, for using with hardware accelerated rendering for caching
+        /// Unique ID of bitmap instance, for using with hardware accelerated rendering for caching
         @property uint id() const { return _id; }
     }
 
@@ -88,7 +84,7 @@ class DrawBuf : RefCountedObject
         debug
         {
             if (APP_IS_SHUTTING_DOWN)
-                onResourceDestroyWhileShutdown("drawbuf", getShortClassName(this));
+                onResourceDestroyWhileShutdown("bitmap", getShortClassName(this));
             _instanceCount--;
         }
         clear();

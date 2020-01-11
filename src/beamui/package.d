@@ -46,10 +46,10 @@ public
     import beamui.dialogs.filedialog;
     import beamui.dialogs.messagebox;
     import beamui.dialogs.settingsdialog;
+    import beamui.graphics.bitmap;
     import beamui.graphics.brush; // : Brush, GradientBuilder;
     import beamui.graphics.colors; // : Color, NamedColor;
     import beamui.graphics.compositing; // : BlendMode, CompositeMode;
-    import beamui.graphics.drawbuf;
     import beamui.graphics.images;
     import beamui.graphics.painter; // : Painter, PaintSaver;
     import beamui.graphics.path; // : Path;

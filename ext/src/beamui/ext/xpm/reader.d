@@ -13,8 +13,8 @@ import std.exception;
 import std.format : formattedRead;
 import std.range;
 import std.string;
+import beamui.graphics.bitmap;
 import beamui.graphics.colors;
-import beamui.graphics.drawbuf;
 import beamui.ext.xpm.colors;
 
 ColorDrawBuf parseXPM(const(ubyte)[] data)

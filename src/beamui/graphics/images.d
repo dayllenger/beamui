@@ -25,7 +25,7 @@ static import dimage.stream;
 
 import beamui.core.logger;
 import beamui.core.types : Tup, tup;
-import beamui.graphics.drawbuf;
+import beamui.graphics.bitmap;
 
 alias ImageLoader = ColorDrawBuf function(const ubyte[]);
 
