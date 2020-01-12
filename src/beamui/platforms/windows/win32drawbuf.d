@@ -43,10 +43,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
     {
         resize(width, height);
         fill(Color.transparent);
-        if (src.width == width && src.height == height)
-            drawImage(0, 0, src);
-        else
-            drawRescaled(RectI(0, 0, width, height), src, RectI(0, 0, src.width, src.height));
+        blit(src, RectI(0, 0, src.width, src.height), RectI(0, 0, width, height));
     }
 
     ~this()

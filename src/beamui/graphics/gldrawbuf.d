@@ -331,7 +331,7 @@ private class GLImageCache : GLCache
             if (cacheItem is null)
                 return null;
             buf.onDestroyCallback = &onObjectDestroyedCallback;
-            _drawbuf.drawImage(cacheItem._rc.left, cacheItem._rc.top, buf);
+            // _drawbuf.drawImage(cacheItem._rc.left, cacheItem._rc.top, buf);
             convertPixelFormat(cacheItem);
             _needUpdateTexture = true;
             return cacheItem;

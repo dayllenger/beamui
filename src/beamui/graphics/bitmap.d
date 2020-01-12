@@ -206,21 +206,32 @@ class DrawBuf : RefCountedObject
     //========================================================
     // Drawing methods
 
-    /// Fill the whole buffer with solid color
+    /// Fill the whole bitmap with a solid color
     abstract void fill(Color color);
-    /// Fill rectangle with solid color
+    /// Fill a rectangle with a solid color. The rectangle is clipped against image boundaries
     abstract void fillRect(RectI rc, Color color);
 
-    /// Draw source buffer rectangle contents to destination buffer
-    abstract void drawFragment(int x, int y, DrawBuf src, RectI srcrect);
-    /// Draw source buffer rectangle contents to destination buffer rectangle applying rescaling
-    abstract void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect);
+    /** Copy pixel data from `srcRect` region of `source` bitmap to `dstRect` of this bitmap.
 
-    /// Draw unscaled image at specified coordinates
-    void drawImage(int x, int y, DrawBuf src)
+        Source and destination regions are clipped against image boundaries.
+        Rescales if rectangles have different sizes using "nearest" method.
+
+        Limitations: Bitmaps should have the same pixel format.
+
+        Returns: True if copied something.
+    */
+    bool blit(DrawBuf source, RectI srcRect, RectI dstRect)
+        in(source)
     {
-        drawFragment(x, y, src, RectI(0, 0, src.width, src.height));
+        if (srcRect.size == dstRect.size)
+            drawFragment(dstRect.left, dstRect.top, source, srcRect);
+        else
+            drawRescaled(dstRect, source, srcRect);
+        return true;
     }
+
+    abstract protected void drawFragment(int x, int y, DrawBuf src, RectI srcrect);
+    abstract protected void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect);
 }
 
 alias DrawBufRef = Ref!DrawBuf;
@@ -243,39 +254,35 @@ class ColorDrawBufBase : DrawBuf
         return null;
     }
 
-    override void drawFragment(int x, int y, DrawBuf src, RectI srcrect)
+    override protected void drawFragment(int x, int y, DrawBuf src, RectI srcrect)
     {
         auto img = cast(ColorDrawBufBase)src;
         if (!img)
             return;
         RectI dstrect = RectI(x, y, x + srcrect.width, y + srcrect.height);
-        if (applyClipping(dstrect, srcrect))
+        if (!applyClipping(dstrect, srcrect))
+            return;
+        if (!src.applyClipping(srcrect, dstrect))
+            return;
+
+        const int w = srcrect.width;
+        const int h = srcrect.height;
+        foreach (j; 0 .. h)
         {
-            if (src.applyClipping(srcrect, dstrect))
+            uint* srcrow = img.scanLine(srcrect.top + j) + srcrect.left;
+            uint* dstrow = scanLine(dstrect.top + j) + dstrect.left;
+            foreach (i; 0 .. w)
             {
-                const int dx = srcrect.width;
-                const int dy = srcrect.height;
-                foreach (yy; 0 .. dy)
+                const uint pixel = srcrow[i];
+                const uint alpha = pixel >> 24;
+                if (alpha == 255)
                 {
-                    uint* srcrow = img.scanLine(srcrect.top + yy) + srcrect.left;
-                    uint* dstrow = scanLine(dstrect.top + yy) + dstrect.left;
-                    if (255 == 255)
-                    {
-                        foreach (i; 0 .. dx)
-                        {
-                            const uint pixel = srcrow[i];
-                            const uint alpha = pixel >> 24;
-                            if (alpha == 255)
-                            {
-                                dstrow[i] = pixel;
-                            }
-                            else if (alpha > 0)
-                            {
-                                // apply blending
-                                blendARGB(dstrow[i], pixel, alpha);
-                            }
-                        }
-                    }
+                    dstrow[i] = pixel;
+                }
+                else if (alpha > 0)
+                {
+                    // apply blending
+                    blendARGB(dstrow[i], pixel, alpha);
                 }
             }
         }
@@ -293,42 +300,39 @@ class ColorDrawBufBase : DrawBuf
         return ret;
     }
 
-    override void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect)
+    override protected void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect)
     {
         auto img = cast(ColorDrawBufBase)src;
         if (!img)
             return;
         double kx = cast(double)srcrect.width / dstrect.width;
         double ky = cast(double)srcrect.height / dstrect.height;
-        if (applyClipping(dstrect, srcrect))
-        {
-            auto xmapArray = createMap(dstrect.left, dstrect.right, srcrect.left, srcrect.right, kx);
-            auto ymapArray = createMap(dstrect.top, dstrect.bottom, srcrect.top, srcrect.bottom, ky);
-            int* xmap = xmapArray.unsafe_ptr;
-            int* ymap = ymapArray.unsafe_ptr;
+        if (!applyClipping(dstrect, srcrect))
+            return;
 
-            const int dx = dstrect.width;
-            const int dy = dstrect.height;
-            foreach (y; 0 .. dy)
+        auto xmapArray = createMap(dstrect.left, dstrect.right, srcrect.left, srcrect.right, kx);
+        auto ymapArray = createMap(dstrect.top, dstrect.bottom, srcrect.top, srcrect.bottom, ky);
+        int* xmap = xmapArray.unsafe_ptr;
+        int* ymap = ymapArray.unsafe_ptr;
+
+        const int w = dstrect.width;
+        const int h = dstrect.height;
+        foreach (y; 0 .. h)
+        {
+            uint* srcrow = img.scanLine(ymap[y]);
+            uint* dstrow = scanLine(dstrect.top + y) + dstrect.left;
+            foreach (x; 0 .. w)
             {
-                uint* srcrow = img.scanLine(ymap[y]);
-                uint* dstrow = scanLine(dstrect.top + y) + dstrect.left;
-                if (255 == 255)
+                const uint srcpixel = srcrow[xmap[x]];
+                const uint alpha = srcpixel >> 24;
+                if (alpha == 255)
                 {
-                    foreach (x; 0 .. dx)
-                    {
-                        const uint srcpixel = srcrow[xmap[x]];
-                        const uint alpha = srcpixel >> 24;
-                        if (alpha == 255)
-                        {
-                            dstrow[x] = srcpixel;
-                        }
-                        else if (alpha > 0)
-                        {
-                            // apply blending
-                            blendARGB(dstrow[x], srcpixel, alpha);
-                        }
-                    }
+                    dstrow[x] = srcpixel;
+                }
+                else if (alpha > 0)
+                {
+                    // apply blending
+                    blendARGB(dstrow[x], srcpixel, alpha);
                 }
             }
         }
@@ -474,19 +478,18 @@ class GrayDrawBuf : DrawBuf
         if (!img)
             return;
         RectI dstrect = RectI(x, y, x + srcrect.width, y + srcrect.height);
-        if (applyClipping(dstrect, srcrect))
+        if (!applyClipping(dstrect, srcrect))
+            return;
+        if (!src.applyClipping(srcrect, dstrect))
+            return;
+
+        const int w = srcrect.width;
+        const int h = srcrect.height;
+        foreach (j; 0 .. h)
         {
-            if (src.applyClipping(srcrect, dstrect))
-            {
-                const int dx = srcrect.width;
-                const int dy = srcrect.height;
-                foreach (yy; 0 .. dy)
-                {
-                    ubyte* srcrow = img.scanLine(srcrect.top + yy) + srcrect.left;
-                    ubyte* dstrow = scanLine(dstrect.top + yy) + dstrect.left;
-                    dstrow[0 .. dx] = srcrow[0 .. dx];
-                }
-            }
+            ubyte* srcrow = img.scanLine(srcrect.top + j) + srcrect.left;
+            ubyte* dstrow = scanLine(dstrect.top + j) + dstrect.left;
+            dstrow[0 .. w] = srcrow[0 .. w];
         }
     }
 
@@ -502,30 +505,28 @@ class GrayDrawBuf : DrawBuf
         return ret;
     }
 
-    override void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect)
+    override protected void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect)
     {
         auto img = cast(GrayDrawBuf)src;
         if (!img)
             return;
-        if (applyClipping(dstrect, srcrect))
-        {
-            auto xmapArray = createMap(dstrect.left, dstrect.right, srcrect.left, srcrect.right);
-            auto ymapArray = createMap(dstrect.top, dstrect.bottom, srcrect.top, srcrect.bottom);
-            int* xmap = xmapArray.unsafe_ptr;
-            int* ymap = ymapArray.unsafe_ptr;
+        if (!applyClipping(dstrect, srcrect))
+            return;
 
-            const int dx = dstrect.width;
-            const int dy = dstrect.height;
-            foreach (y; 0 .. dy)
+        auto xmapArray = createMap(dstrect.left, dstrect.right, srcrect.left, srcrect.right);
+        auto ymapArray = createMap(dstrect.top, dstrect.bottom, srcrect.top, srcrect.bottom);
+        int* xmap = xmapArray.unsafe_ptr;
+        int* ymap = ymapArray.unsafe_ptr;
+
+        const int w = dstrect.width;
+        const int h = dstrect.height;
+        foreach (y; 0 .. h)
+        {
+            ubyte* srcrow = img.scanLine(ymap[y]);
+            ubyte* dstrow = scanLine(dstrect.top + y) + dstrect.left;
+            foreach (x; 0 .. w)
             {
-                ubyte* srcrow = img.scanLine(ymap[y]);
-                ubyte* dstrow = scanLine(dstrect.top + y) + dstrect.left;
-                foreach (x; 0 .. dx)
-                {
-                    ubyte srcpixel = srcrow[xmap[x]];
-                    ubyte dstpixel = dstrow[x];
-                    dstrow[x] = srcpixel;
-                }
+                dstrow[x] = srcrow[xmap[x]];
             }
         }
     }
@@ -646,7 +647,7 @@ class ColorDrawBuf : ColorDrawBufBase
     this(ColorDrawBuf src, int width, int height)
     {
         resize(width, height); // fills with transparent
-        drawRescaled(RectI(0, 0, width, height), src, RectI(0, 0, src.width, src.height));
+        blit(src, RectI(0, 0, src.width, src.height), RectI(0, 0, width, height));
     }
 
     void preMultiplyAlpha()
