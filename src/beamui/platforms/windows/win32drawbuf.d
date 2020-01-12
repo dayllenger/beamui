@@ -127,7 +127,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         }
     }
 
-    override protected void resizeImpl(int width, int height)
+    override protected void* resizeImpl(int width, int height)
     {
         clear();
         if (width > 0 && height > 0)
@@ -149,6 +149,7 @@ class Win32ColorDrawBuf : ColorDrawBufBase
             _drawdc = CreateCompatibleDC(NULL);
             SelectObject(_drawdc, _drawbmp);
         }
+        return _pixels;
     }
 
     override void fill(Color color)

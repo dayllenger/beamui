@@ -76,6 +76,8 @@ class DrawBuf : RefCountedObject
         PixelFormat _format;
         NinePatch* _ninePatch;
         uint _id;
+
+        void* _data;
     }
 
     debug
@@ -122,11 +124,11 @@ class DrawBuf : RefCountedObject
         {
             _w = width;
             _h = height;
-            resizeImpl(width, height);
+            _data = resizeImpl(width, height);
         }
     }
 
-    abstract protected void resizeImpl(int width, int height);
+    abstract protected void* resizeImpl(int width, int height);
 
     /// Detect nine patch using image 1-pixel border. Returns true if 9-patch markup is found in the image
     bool detectNinePatch()
@@ -455,9 +457,10 @@ class GrayDrawBuf : DrawBuf
         return null;
     }
 
-    override protected void resizeImpl(int width, int height)
+    override protected void* resizeImpl(int width, int height)
     {
         _buf.resize(_w * _h);
+        return _buf.unsafe_ptr;
     }
 
     override void fill(Color color)
@@ -689,9 +692,10 @@ class ColorDrawBuf : ColorDrawBufBase
         return null;
     }
 
-    override protected void resizeImpl(int width, int height)
+    override protected void* resizeImpl(int width, int height)
     {
         _buf.resize(_w * _h);
+        return _buf.unsafe_ptr;
     }
 
     override void fill(Color color)
