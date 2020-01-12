@@ -98,10 +98,11 @@ ColorDrawBuf parseXPM(const(ubyte)[] data)
     //Read pixels
     ColorDrawBuf colorBuf = new ColorDrawBuf(w, h);
 
+    auto pxRef = colorBuf.mutate!uint;
     for (int y = 0; y < h && !lines.empty; y++)
     {
         auto str = extractXPMString(lines.front);
-        uint* dstLine = colorBuf.scanLine(y);
+        uint* dstLine = pxRef.scanline(y);
         if (str.length)
         {
             enforce(str.length >= w * cpp, "Invalid pixel line");

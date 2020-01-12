@@ -670,7 +670,7 @@ final class X11Window : DWindow
         c_long[] propData = new c_long[2 + iconw * iconh];
         propData[0] = iconw;
         propData[1] = iconh;
-        auto iconData = iconDraw.scanLine(0);
+        const uint* iconData = iconDraw.pixels!uint;
         foreach (i; 0 .. iconw * iconh)
         {
             propData[i + 2] = iconData[i];
@@ -768,7 +768,7 @@ final class X11Window : DWindow
         img.height = _backbuffer.height;
         img.xoffset = 0;
         img.format = ZPixmap;
-        img.data = cast(char*)_backbuffer.scanLine(0);
+        img.data = cast(char*)_backbuffer.pixels!uint;
         img.bitmap_unit = 32;
         img.bitmap_pad = 32;
         img.bitmap_bit_order = LSBFirst;

@@ -78,7 +78,7 @@ struct TextureCache
         if (res.changed)
         {
             resize(*page, res.pageSize);
-            upload(page.tex, res.box, image.scanLine(0));
+            upload(page.tex, res.box, image.pixels!uint);
         }
         return TextureView(&page.tex, &page.texSize, res.box);
     }

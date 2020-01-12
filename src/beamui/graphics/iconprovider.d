@@ -447,10 +447,11 @@ static if (BACKEND_GUI)
 
                 const int lsSrc = width * 3;
                 auto colorDrawBuf = new ColorDrawBuf(width, height);
+                auto pxRef = colorDrawBuf.mutate!uint;
                 for (int y = 0; y < height; y++)
                 {
                     const int linePosSrc = (height - 1 - y) * lsSrc;
-                    auto pixelLine = colorDrawBuf.scanLine(y);
+                    uint* pixelLine = pxRef.scanline(y);
                     for (int x = 0; x < width; x++)
                     {
                         const int currentSrcPos = linePosSrc + x * 3;

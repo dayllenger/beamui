@@ -134,7 +134,7 @@ private abstract class GLCache
             if (none)
                 Log.d("GL: updateTexture - new texture id: ", _texture.handle);
 
-            uint* pixels = _drawbuf.scanLine(0);
+            // uint* pixels = _drawbuf.scanLine(0);
             // if (!glSupport.setTextureImage(_texture, _drawbuf.width, _drawbuf.height, cast(ubyte*)pixels, _cache.smoothResize))
             // {
             //     Tex2D.del(_texture);
@@ -311,9 +311,10 @@ private class GLImageCache : GLCache
                 rc.right++;
             if (rc.bottom < _tdy)
                 rc.bottom++;
+            auto pxRef = _drawbuf.mutate!uint;
             for (int y = rc.top; y < rc.bottom; y++)
             {
-                uint* row = _drawbuf.scanLine(y);
+                uint* row = pxRef.scanline(y);
                 for (int x = rc.left; x < rc.right; x++)
                 {
                     uint cl = row[x];

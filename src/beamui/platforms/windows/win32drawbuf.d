@@ -100,13 +100,6 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         return res;
     }
 
-    override inout(uint*) scanLine(int y) inout
-    {
-        if (y >= 0 && y < _h)
-            return _pixels + _w * y;
-        return null;
-    }
-
     /// Clear buffer contents, set dimension to 0, 0
     private void clear()
     {

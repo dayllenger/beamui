@@ -325,8 +325,6 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
     {
         return 4;
     }
-    // returns pointer to ARGB scanline, null if y is out of range or buffer doesn't provide access to its memory
-    //uint * scanLine(int y) { return null; }
 
     override void resize(int width, int height)
     {

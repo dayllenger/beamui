@@ -1230,7 +1230,7 @@ struct PM_Image
             pixman_format_code_t.a8r8g8b8,
             img.width,
             img.height,
-            cast(uint*)img.scanLine(0),
+            cast(uint*)img.pixels!uint,
             img.width * 4,
         );
         if (repeat)

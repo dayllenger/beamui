@@ -130,6 +130,30 @@ class DrawBuf : RefCountedObject
 
     abstract protected void* resizeImpl(int width, int height);
 
+    /// Get a constant pointer to the beginning of the pixel data. `null` if bitmap has zero size
+    const(T)* pixels(T)() const
+        if (T.sizeof == 1 || T.sizeof == 2 || T.sizeof == 4 ||
+            T.sizeof == 8 || T.sizeof == 12 || T.sizeof == 16)
+    {
+        return cast(const(T)*)_data;
+    }
+    /// Provides a constant view on the pixel data. The bitmap must have non-zero size
+    const(PixelRef!T) look(T)() const
+        if (T.sizeof == 1 || T.sizeof == 2 || T.sizeof == 4 ||
+            T.sizeof == 8 || T.sizeof == 12 || T.sizeof == 16)
+        in(_data)
+    {
+        return const(PixelRef!T)(cast(const(T*))_data, _w, _h);
+    }
+    /// Provides a mutable access to the pixel data. The bitmap must have non-zero size
+    PixelRef!T mutate(T)()
+        if (T.sizeof == 1 || T.sizeof == 2 || T.sizeof == 4 ||
+            T.sizeof == 8 || T.sizeof == 12 || T.sizeof == 16)
+        in(_data)
+    {
+        return PixelRef!T(cast(T*)_data, _w, _h);
+    }
+
     /// Detect nine patch using image 1-pixel border. Returns true if 9-patch markup is found in the image
     bool detectNinePatch()
     {
@@ -234,6 +258,20 @@ class DrawBuf : RefCountedObject
     abstract protected void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect);
 }
 
+struct PixelRef(T)
+{
+    private T* ptr;
+    private uint rowPitch;
+    private uint h;
+
+    /// Returns a pointer to a scanline. `y` must be in bounds
+    inout(T)* scanline(int y) inout
+        in(0 <= y && y < h)
+    {
+        return ptr + y * rowPitch;
+    }
+}
+
 alias DrawBufRef = Ref!DrawBuf;
 
 class ColorDrawBufBase : DrawBuf
@@ -246,12 +284,6 @@ class ColorDrawBufBase : DrawBuf
     this()
     {
         super(PixelFormat.argb8);
-    }
-
-    /// Returns pointer to ARGB scanline, `null` if `y` is out of range or buffer doesn't provide access to its memory
-    inout(uint*) scanLine(int y) inout
-    {
-        return null;
     }
 
     override protected void drawFragment(int x, int y, DrawBuf src, RectI srcrect)
@@ -267,10 +299,12 @@ class ColorDrawBufBase : DrawBuf
 
         const int w = srcrect.width;
         const int h = srcrect.height;
+        const srcRef = src.look!uint;
+        auto dstRef = mutate!uint;
         foreach (j; 0 .. h)
         {
-            uint* srcrow = img.scanLine(srcrect.top + j) + srcrect.left;
-            uint* dstrow = scanLine(dstrect.top + j) + dstrect.left;
+            const srcrow = srcRef.scanline(srcrect.top + j) + srcrect.left;
+            uint* dstrow = dstRef.scanline(dstrect.top + j) + dstrect.left;
             foreach (i; 0 .. w)
             {
                 const uint pixel = srcrow[i];
@@ -317,10 +351,12 @@ class ColorDrawBufBase : DrawBuf
 
         const int w = dstrect.width;
         const int h = dstrect.height;
+        const srcRef = src.look!uint;
+        auto dstRef = mutate!uint;
         foreach (y; 0 .. h)
         {
-            uint* srcrow = img.scanLine(ymap[y]);
-            uint* dstrow = scanLine(dstrect.top + y) + dstrect.left;
+            const srcrow = srcRef.scanline(ymap[y]);
+            uint* dstrow = dstRef.scanline(dstrect.top + y) + dstrect.left;
             foreach (x; 0 .. w)
             {
                 const uint srcpixel = srcrow[xmap[x]];
@@ -341,7 +377,8 @@ class ColorDrawBufBase : DrawBuf
     /// Detect position of black pixels in row for 9-patch markup
     private bool detectHLine(int y, ref int x0, ref int x1)
     {
-        uint* line = scanLine(y);
+        const pxRef = look!uint;
+        const line = pxRef.scanline(y);
         bool foundUsed = false;
         x0 = 0;
         x1 = 0;
@@ -369,12 +406,13 @@ class ColorDrawBufBase : DrawBuf
     /// Detect position of black pixels in column for 9-patch markup
     private bool detectVLine(int x, ref int y0, ref int y1)
     {
+        const pxRef = look!uint;
         bool foundUsed;
         y0 = 0;
         y1 = 0;
         foreach (int y; 1 .. _h - 1)
         {
-            uint* line = scanLine(y);
+            const line = pxRef.scanline(y);
             if (isBlackPixel(line[x]))
             { // opaque black pixel
                 if (!foundUsed)
@@ -419,9 +457,10 @@ class ColorDrawBufBase : DrawBuf
         {
             const bool opaque = color.isOpaque;
             const uint rgb = color.rgb;
+            auto pxRef = mutate!uint;
             foreach (y; rc.top .. rc.bottom)
             {
-                uint* row = scanLine(y);
+                uint* row = pxRef.scanline(y);
                 if (opaque)
                 {
                     row[rc.left .. rc.right] = rgb;
@@ -454,13 +493,6 @@ class GrayDrawBuf : DrawBuf
         resize(width, height);
     }
 
-    ubyte* scanLine(int y)
-    {
-        if (y >= 0 && y < _h)
-            return _buf.unsafe_ptr + _w * y;
-        return null;
-    }
-
     override protected void* resizeImpl(int width, int height)
     {
         _buf.resize(_w * _h);
@@ -485,10 +517,12 @@ class GrayDrawBuf : DrawBuf
 
         const int w = srcrect.width;
         const int h = srcrect.height;
+        const srcRef = src.look!ubyte;
+        auto dstRef = mutate!ubyte;
         foreach (j; 0 .. h)
         {
-            ubyte* srcrow = img.scanLine(srcrect.top + j) + srcrect.left;
-            ubyte* dstrow = scanLine(dstrect.top + j) + dstrect.left;
+            const srcrow = srcRef.scanline(srcrect.top + j) + srcrect.left;
+            ubyte* dstrow = dstRef.scanline(dstrect.top + j) + dstrect.left;
             dstrow[0 .. w] = srcrow[0 .. w];
         }
     }
@@ -520,10 +554,12 @@ class GrayDrawBuf : DrawBuf
 
         const int w = dstrect.width;
         const int h = dstrect.height;
+        const srcRef = src.look!ubyte;
+        auto dstRef = mutate!ubyte;
         foreach (y; 0 .. h)
         {
-            ubyte* srcrow = img.scanLine(ymap[y]);
-            ubyte* dstrow = scanLine(dstrect.top + y) + dstrect.left;
+            const srcrow = srcRef.scanline(ymap[y]);
+            ubyte* dstrow = dstRef.scanline(dstrect.top + y) + dstrect.left;
             foreach (x; 0 .. w)
             {
                 dstrow[x] = srcrow[xmap[x]];
@@ -534,7 +570,8 @@ class GrayDrawBuf : DrawBuf
     /// Detect position of black pixels in row for 9-patch markup
     private bool detectHLine(int y, ref int x0, ref int x1)
     {
-        ubyte* line = scanLine(y);
+        const pxRef = look!ubyte;
+        const line = pxRef.scanline(y);
         bool foundUsed = false;
         x0 = 0;
         x1 = 0;
@@ -556,12 +593,13 @@ class GrayDrawBuf : DrawBuf
     /// Detect position of black pixels in column for 9-patch markup
     private bool detectVLine(int x, ref int y0, ref int y1)
     {
+        const pxRef = look!ubyte;
         bool foundUsed = false;
         y0 = 0;
         y1 = 0;
         foreach (int y; 1 .. _h - 1)
         {
-            ubyte* line = scanLine(y);
+            const line = pxRef.scanline(y);
             if (line[x] < 5)
             { // opaque black pixel
                 if (!foundUsed)
@@ -607,9 +645,10 @@ class GrayDrawBuf : DrawBuf
             const ubyte c = color.toGray;
             const ubyte a = color.a;
             const bool opaque = color.isOpaque;
+            auto pxRef = mutate!ubyte;
             foreach (y; rc.top .. rc.bottom)
             {
-                ubyte* row = scanLine(y);
+                ubyte* row = pxRef.scanline(y);
                 foreach (x; rc.left .. rc.right)
                 {
                     if (opaque)
@@ -684,13 +723,6 @@ class ColorDrawBuf : ColorDrawBufBase
             pixel = ((pixel & 0xFF00FF00) | ((pixel & 0xFF0000) >> 16) | ((pixel & 0xFF) << 16));
             pixel ^= 0xFF000000;
         }
-    }
-
-    override inout(uint*) scanLine(int y) inout
-    {
-        if (y >= 0 && y < _h)
-            return _buf.unsafe_ptr + _w * y;
-        return null;
     }
 
     override protected void* resizeImpl(int width, int height)

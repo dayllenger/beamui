@@ -100,9 +100,10 @@ private ColorDrawBuf importImage(SuperImage image)
     const int h = image.height;
     const(uint)[] data = image.data;
     auto buf = new ColorDrawBuf(w, h);
+    auto pxRef = buf.mutate!uint;
     foreach (y; 0 .. h)
     {
-        uint* dstLine = buf.scanLine(y);
+        uint* dstLine = pxRef.scanline(y);
         dstLine[0 .. w] = data[0 .. w];
         data = data[w .. $];
     }

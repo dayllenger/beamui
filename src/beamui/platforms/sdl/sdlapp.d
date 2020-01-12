@@ -322,8 +322,12 @@ final class SDLWindow : Window
         iconDraw.fill(Color.transparent);
         iconDraw.blit(ic, RectI(0, 0, ic.width, ic.height), RectI(0, 0, iconw, iconh));
         iconDraw.preMultiplyAlpha();
-        SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(iconDraw.scanLine(0), iconDraw.width,
-                iconDraw.height, 32, iconDraw.width * 4, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+        SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(
+            cast(void*)iconDraw.pixels!uint,
+            iconDraw.width, iconDraw.height,
+            32, iconDraw.width * 4,
+            0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000,
+        );
         if (surface)
         {
             // The icon is attached to the window pointer
@@ -524,7 +528,7 @@ final class SDLWindow : Window
             rect.w = _backbuffer.width;
             rect.h = _backbuffer.height;
             updateTextureSize(rect.w, rect.h);
-            SDL_UpdateTexture(_texture, &rect, cast(const void*)_backbuffer.scanLine(0), _backbuffer.width * 4);
+            SDL_UpdateTexture(_texture, &rect, _backbuffer.pixels!uint, _backbuffer.width * 4);
             SDL_RenderCopy(_renderer, _texture, &rect, &rect);
             SDL_RenderPresent(_renderer);
         }
