@@ -14,6 +14,13 @@ import beamui.core.logger;
 import beamui.core.types : Ref, RefCountedObject;
 import beamui.graphics.colors;
 
+/// Describes supported formats of bitmap pixel data
+enum PixelFormat
+{
+    argb8,
+    a8,
+}
+
 /// 9-patch image scaling information (unscaled frame and scaled middle parts)
 struct NinePatch
 {
@@ -42,6 +49,8 @@ class DrawBuf : RefCountedObject
         {
             return SizeI(_w, _h);
         }
+        /// Bitmap pixel format
+        PixelFormat format() const { return _format; }
 
         /// Nine-patch info pointer, `null` if this is not a nine patch image buffer
         const(NinePatch)* ninePatch() const { return _ninePatch; }
@@ -64,8 +73,8 @@ class DrawBuf : RefCountedObject
 
     private
     {
+        PixelFormat _format;
         NinePatch* _ninePatch;
-
         uint _id;
     }
 
@@ -75,8 +84,9 @@ class DrawBuf : RefCountedObject
         static int instanceCount() { return _instanceCount; }
     }
 
-    this()
+    this(PixelFormat format)
     {
+        _format = format;
         _id = drawBufIDGenerator++;
         debug _instanceCount++;
     }
@@ -218,6 +228,11 @@ class ColorDrawBufBase : DrawBuf
     override @property
     {
         int bpp() const { return 32; }
+    }
+
+    this()
+    {
+        super(PixelFormat.argb8);
     }
 
     /// Returns pointer to ARGB scanline, `null` if `y` is out of range or buffer doesn't provide access to its memory
@@ -429,6 +444,7 @@ class GrayDrawBuf : DrawBuf
 
     this(int width, int height)
     {
+        super(PixelFormat.a8);
         resize(width, height);
     }
 
