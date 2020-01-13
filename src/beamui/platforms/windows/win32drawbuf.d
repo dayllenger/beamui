@@ -142,12 +142,6 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         return _pixels;
     }
 
-    override void fill(Color color)
-    {
-        int len = _w * _h;
-        _pixels[0 .. len] = color.rgba;
-    }
-
     /// Draw to win32 device context
     void drawTo(HDC dc, int x, int y)
     {

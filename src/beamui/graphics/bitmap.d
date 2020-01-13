@@ -17,6 +17,7 @@ import beamui.graphics.colors;
 /// Describes supported formats of bitmap pixel data
 enum PixelFormat
 {
+    invalid,
     argb8,
     a8,
 }
@@ -50,7 +51,10 @@ class DrawBuf : RefCountedObject
             return SizeI(_w, _h);
         }
         /// Bitmap pixel format
-        PixelFormat format() const { return _format; }
+        PixelFormat format() const
+        {
+            return impl ? impl.format : PixelFormat.invalid;
+        }
 
         /// Nine-patch info pointer, `null` if this is not a nine patch image buffer
         const(NinePatch)* ninePatch() const { return _ninePatch; }
@@ -69,11 +73,12 @@ class DrawBuf : RefCountedObject
         uint id() const { return _id; }
     }
 
+    private IBitmap impl;
+
     protected int _w, _h;
 
     private
     {
-        PixelFormat _format;
         NinePatch* _ninePatch;
         uint _id;
 
@@ -88,7 +93,7 @@ class DrawBuf : RefCountedObject
 
     this(PixelFormat format)
     {
-        _format = format;
+        impl = getBitmapImpl(format);
         _id = drawBufIDGenerator++;
         debug _instanceCount++;
     }
@@ -231,9 +236,26 @@ class DrawBuf : RefCountedObject
     // Drawing methods
 
     /// Fill the whole bitmap with a solid color
-    abstract void fill(Color color);
+    void fill(Color color)
+        in(format != PixelFormat.invalid)
+    {
+        if (_w <= 0 || _h <= 0)
+            return;
+
+        impl.fill(IBitmap.BitmapView(size, _w * impl.stride, _data), color);
+    }
+
     /// Fill a rectangle with a solid color. The rectangle is clipped against image boundaries
-    abstract void fillRect(RectI rc, Color color);
+    void fillRect(RectI rect, Color color)
+        in(format != PixelFormat.invalid)
+    {
+        if (!applyClipping(rect))
+            return;
+
+        const rowBytes = _w * impl.stride;
+        const byteOffset = rect.top * rowBytes + rect.left * impl.stride;
+        impl.fill(IBitmap.BitmapView(rect.size, rowBytes, _data + byteOffset), color);
+    }
 
     /** Copy pixel data from `srcRect` region of `source` bitmap to `dstRect` of this bitmap.
 
@@ -244,18 +266,26 @@ class DrawBuf : RefCountedObject
 
         Returns: True if copied something.
     */
-    bool blit(DrawBuf source, RectI srcRect, RectI dstRect)
+    bool blit(const DrawBuf source, RectI srcRect, RectI dstRect)
+        in(format != PixelFormat.invalid)
         in(source)
+        in(source.format != PixelFormat.invalid)
     {
-        if (srcRect.size == dstRect.size)
-            drawFragment(dstRect.left, dstRect.top, source, srcRect);
-        else
-            drawRescaled(dstRect, source, srcRect);
-        return true;
-    }
+        if (!source.applyClipping(srcRect, dstRect))
+            return false;
+        if (!applyClipping(dstRect, srcRect))
+            return false;
 
-    abstract protected void drawFragment(int x, int y, DrawBuf src, RectI srcrect);
-    abstract protected void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect);
+        const rowBytes1 = _w * impl.stride;
+        const rowBytes2 = source._w * source.impl.stride;
+        const byteOffset1 = dstRect.top * rowBytes1 + dstRect.left * impl.stride;
+        const byteOffset2 = srcRect.top * rowBytes2 + srcRect.left * source.impl.stride;
+        return impl.blit(
+            IBitmap.BitmapView(dstRect.size, rowBytes1, _data + byteOffset1),
+            const(IBitmap.BitmapView)(srcRect.size, rowBytes2, source._data + byteOffset2),
+            source.format,
+        );
+    }
 }
 
 struct PixelRef(T)
@@ -284,94 +314,6 @@ class ColorDrawBufBase : DrawBuf
     this()
     {
         super(PixelFormat.argb8);
-    }
-
-    override protected void drawFragment(int x, int y, DrawBuf src, RectI srcrect)
-    {
-        auto img = cast(ColorDrawBufBase)src;
-        if (!img)
-            return;
-        RectI dstrect = RectI(x, y, x + srcrect.width, y + srcrect.height);
-        if (!applyClipping(dstrect, srcrect))
-            return;
-        if (!src.applyClipping(srcrect, dstrect))
-            return;
-
-        const int w = srcrect.width;
-        const int h = srcrect.height;
-        const srcRef = src.look!uint;
-        auto dstRef = mutate!uint;
-        foreach (j; 0 .. h)
-        {
-            const srcrow = srcRef.scanline(srcrect.top + j) + srcrect.left;
-            uint* dstrow = dstRef.scanline(dstrect.top + j) + dstrect.left;
-            foreach (i; 0 .. w)
-            {
-                const uint pixel = srcrow[i];
-                const uint alpha = pixel >> 24;
-                if (alpha == 255)
-                {
-                    dstrow[i] = pixel;
-                }
-                else if (alpha > 0)
-                {
-                    // apply blending
-                    blendARGB(dstrow[i], pixel, alpha);
-                }
-            }
-        }
-    }
-
-    /// Create mapping of source coordinates to destination coordinates, for resize.
-    private Buf!int createMap(int dst0, int dst1, int src0, int src1, double k)
-    {
-        const dd = dst1 - dst0;
-        //int sd = src1 - src0;
-        Buf!int ret;
-        ret.reserve(dd);
-        foreach (int i; 0 .. dd)
-            ret ~= src0 + cast(int)(i * k); //sd / dd;
-        return ret;
-    }
-
-    override protected void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect)
-    {
-        auto img = cast(ColorDrawBufBase)src;
-        if (!img)
-            return;
-        double kx = cast(double)srcrect.width / dstrect.width;
-        double ky = cast(double)srcrect.height / dstrect.height;
-        if (!applyClipping(dstrect, srcrect))
-            return;
-
-        auto xmapArray = createMap(dstrect.left, dstrect.right, srcrect.left, srcrect.right, kx);
-        auto ymapArray = createMap(dstrect.top, dstrect.bottom, srcrect.top, srcrect.bottom, ky);
-        int* xmap = xmapArray.unsafe_ptr;
-        int* ymap = ymapArray.unsafe_ptr;
-
-        const int w = dstrect.width;
-        const int h = dstrect.height;
-        const srcRef = src.look!uint;
-        auto dstRef = mutate!uint;
-        foreach (y; 0 .. h)
-        {
-            const srcrow = srcRef.scanline(ymap[y]);
-            uint* dstrow = dstRef.scanline(dstrect.top + y) + dstrect.left;
-            foreach (x; 0 .. w)
-            {
-                const uint srcpixel = srcrow[xmap[x]];
-                const uint alpha = srcpixel >> 24;
-                if (alpha == 255)
-                {
-                    dstrow[x] = srcpixel;
-                }
-                else if (alpha > 0)
-                {
-                    // apply blending
-                    blendARGB(dstrow[x], srcpixel, alpha);
-                }
-            }
-        }
     }
 
     /// Detect position of black pixels in row for 9-patch markup
@@ -450,32 +392,6 @@ class ColorDrawBufBase : DrawBuf
         _ninePatch = p;
         return true;
     }
-
-    override void fillRect(RectI rc, Color color)
-    {
-        if (!color.isFullyTransparent && applyClipping(rc))
-        {
-            const bool opaque = color.isOpaque;
-            const uint rgb = color.rgb;
-            auto pxRef = mutate!uint;
-            foreach (y; rc.top .. rc.bottom)
-            {
-                uint* row = pxRef.scanline(y);
-                if (opaque)
-                {
-                    row[rc.left .. rc.right] = rgb;
-                }
-                else
-                {
-                    foreach (x; rc.left .. rc.right)
-                    {
-                        // apply blending
-                        blendARGB(row[x], rgb, color.a);
-                    }
-                }
-            }
-        }
-    }
 }
 
 class GrayDrawBuf : DrawBuf
@@ -497,74 +413,6 @@ class GrayDrawBuf : DrawBuf
     {
         _buf.resize(_w * _h);
         return _buf.unsafe_ptr;
-    }
-
-    override void fill(Color color)
-    {
-        _buf.unsafe_slice[] = color.toGray;
-    }
-
-    override void drawFragment(int x, int y, DrawBuf src, RectI srcrect)
-    {
-        auto img = cast(GrayDrawBuf)src;
-        if (!img)
-            return;
-        RectI dstrect = RectI(x, y, x + srcrect.width, y + srcrect.height);
-        if (!applyClipping(dstrect, srcrect))
-            return;
-        if (!src.applyClipping(srcrect, dstrect))
-            return;
-
-        const int w = srcrect.width;
-        const int h = srcrect.height;
-        const srcRef = src.look!ubyte;
-        auto dstRef = mutate!ubyte;
-        foreach (j; 0 .. h)
-        {
-            const srcrow = srcRef.scanline(srcrect.top + j) + srcrect.left;
-            ubyte* dstrow = dstRef.scanline(dstrect.top + j) + dstrect.left;
-            dstrow[0 .. w] = srcrow[0 .. w];
-        }
-    }
-
-    /// Create mapping of source coordinates to destination coordinates, for resize.
-    private Buf!int createMap(int dst0, int dst1, int src0, int src1)
-    {
-        const dd = dst1 - dst0;
-        const sd = src1 - src0;
-        Buf!int ret;
-        ret.reserve(dd);
-        foreach (int i; 0 .. dd)
-            ret ~= src0 + i * sd / dd;
-        return ret;
-    }
-
-    override protected void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect)
-    {
-        auto img = cast(GrayDrawBuf)src;
-        if (!img)
-            return;
-        if (!applyClipping(dstrect, srcrect))
-            return;
-
-        auto xmapArray = createMap(dstrect.left, dstrect.right, srcrect.left, srcrect.right);
-        auto ymapArray = createMap(dstrect.top, dstrect.bottom, srcrect.top, srcrect.bottom);
-        int* xmap = xmapArray.unsafe_ptr;
-        int* ymap = ymapArray.unsafe_ptr;
-
-        const int w = dstrect.width;
-        const int h = dstrect.height;
-        const srcRef = src.look!ubyte;
-        auto dstRef = mutate!ubyte;
-        foreach (y; 0 .. h)
-        {
-            const srcrow = srcRef.scanline(ymap[y]);
-            ubyte* dstrow = dstRef.scanline(dstrect.top + y) + dstrect.left;
-            foreach (x; 0 .. w)
-            {
-                dstrow[x] = srcrow[xmap[x]];
-            }
-        }
     }
 
     /// Detect position of black pixels in row for 9-patch markup
@@ -637,33 +485,6 @@ class GrayDrawBuf : DrawBuf
         _ninePatch = p;
         return true;
     }
-
-    override void fillRect(RectI rc, Color color)
-    {
-        if (!color.isFullyTransparent && applyClipping(rc))
-        {
-            const ubyte c = color.toGray;
-            const ubyte a = color.a;
-            const bool opaque = color.isOpaque;
-            auto pxRef = mutate!ubyte;
-            foreach (y; rc.top .. rc.bottom)
-            {
-                ubyte* row = pxRef.scanline(y);
-                foreach (x; rc.left .. rc.right)
-                {
-                    if (opaque)
-                    {
-                        row[x] = c;
-                    }
-                    else
-                    {
-                        // apply blending
-                        row[x] = blendGray(row[x], c, a);
-                    }
-                }
-            }
-        }
-    }
 }
 
 class ColorDrawBuf : ColorDrawBufBase
@@ -731,11 +552,6 @@ class ColorDrawBuf : ColorDrawBufBase
         return _buf.unsafe_ptr;
     }
 
-    override void fill(Color color)
-    {
-        _buf.unsafe_slice[] = color.rgba;
-    }
-
     /// Apply Gaussian blur to the image
     void blur(uint blurSize)
     {
@@ -801,5 +617,146 @@ class ColorDrawBuf : ColorDrawBufBase
         blurOneDimension(_buf[], tmpbuf.unsafe_slice, blurSize, true);
         // then do vertical blur
         blurOneDimension(tmpbuf[], _buf.unsafe_slice, blurSize, false);
+    }
+}
+
+private IBitmap[PixelFormat] implementations;
+
+static this()
+{
+    implementations[PixelFormat.argb8] = new BitmapARGB8;
+    implementations[PixelFormat.a8] = new BitmapA8;
+}
+
+private IBitmap getBitmapImpl(PixelFormat fmt)
+{
+    IBitmap* p = fmt in implementations;
+    assert(p, "Unsupported pixel format");
+    return *p;
+}
+
+interface IBitmap
+{
+    struct BitmapView
+    {
+        const SizeI sz;
+        const uint rowBytes;
+        private void* ptr;
+
+        inout(T*) scanline(T)(int y) inout
+            in(0 <= y && y < sz.h)
+        {
+            return cast(inout(T*))(ptr + y * rowBytes);
+        }
+    }
+
+nothrow:
+    PixelFormat format() const;
+    ubyte stride() const;
+
+    void fill(BitmapView dst, Color color);
+    bool blit(BitmapView dst, const BitmapView src, PixelFormat srcFmt);
+
+static:
+    void fillGeneric(T)(ref BitmapView dst, T value)
+    {
+        const uint w = dst.sz.w;
+        const uint h = dst.sz.h;
+        foreach (y; 0 .. h)
+        {
+            T* row = dst.scanline!T(y);
+            row[0 .. w] = value;
+        }
+    }
+
+    void blitGeneric(T)(ref const BitmapView src, ref BitmapView dst)
+    {
+        if (src.sz == dst.sz)
+        {
+            const uint w = src.sz.w;
+            const uint h = src.sz.h;
+            foreach (y; 0 .. h)
+            {
+                const srcrow = src.scanline!T(y);
+                auto dstrow = dst.scanline!T(y);
+                dstrow[0 .. w] = srcrow[0 .. w];
+            }
+        }
+        else // need to rescale
+        {
+            auto xmapArray = createMap(src.sz.w, dst.sz.w);
+            auto ymapArray = createMap(src.sz.h, dst.sz.h);
+            uint* xmap = xmapArray.unsafe_ptr;
+            uint* ymap = ymapArray.unsafe_ptr;
+
+            const uint w = dst.sz.w;
+            const uint h = dst.sz.h;
+            foreach (y; 0 .. h)
+            {
+                const srcrow = src.scanline!T(ymap[y]);
+                auto dstrow = dst.scanline!T(y);
+                foreach (x; 0 .. w)
+                {
+                    dstrow[x] = srcrow[xmap[x]];
+                }
+            }
+        }
+    }
+
+    /// Create mapping of source coordinates to destination coordinates, for resize
+    private Buf!uint createMap(uint srcLen, uint dstLen)
+    {
+        Buf!uint ret;
+        ret.reserve(dstLen);
+        const k = cast(double)srcLen / dstLen;
+        foreach (i; 0 .. dstLen)
+            ret ~= cast(uint)(i * k);
+        return ret;
+    }
+}
+
+final class BitmapARGB8 : IBitmap
+{
+    PixelFormat format() const { return PixelFormat.argb8; }
+    ubyte stride() const { return 4; }
+
+    void fill(BitmapView dst, Color color)
+    {
+        fillGeneric!uint(dst, color.rgba);
+    }
+
+    bool blit(BitmapView dst, const BitmapView src, PixelFormat srcFmt)
+    {
+        switch (srcFmt) with (PixelFormat)
+        {
+        case argb8:
+            blitGeneric!uint(src, dst);
+            return true;
+        default:
+            return false;
+        }
+    }
+}
+
+final class BitmapA8 : IBitmap
+{
+    PixelFormat format() const { return PixelFormat.a8; }
+    ubyte stride() const { return 1; }
+
+    void fill(BitmapView dst, Color color)
+    {
+        fillGeneric!ubyte(dst, color.toGray);
+    }
+
+    bool blit(BitmapView dst, const BitmapView src, PixelFormat srcFmt)
+    {
+        switch (srcFmt) with (PixelFormat)
+        {
+        case a8:
+            blitGeneric!ubyte(src, dst);
+            return true;
+        default:
+            return false;
+        }
     }
 }
