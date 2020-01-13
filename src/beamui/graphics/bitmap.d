@@ -39,8 +39,6 @@ class DrawBuf : RefCountedObject
 {
     @property
     {
-        /// Image buffer bits per pixel value
-        abstract int bpp() const;
         /// Bitmap width, in pixels
         int width() const { return _w; }
         /// Bitmap height, in pixels
@@ -373,11 +371,6 @@ alias DrawBufRef = Ref!DrawBuf;
 
 class ColorDrawBufBase : DrawBuf
 {
-    override @property
-    {
-        int bpp() const { return 32; }
-    }
-
     this()
     {
         super(PixelFormat.argb8);
@@ -386,11 +379,6 @@ class ColorDrawBufBase : DrawBuf
 
 class GrayDrawBuf : DrawBuf
 {
-    override @property
-    {
-        int bpp() const { return 8; }
-    }
-
     private Buf!ubyte _buf;
 
     this(int width, int height)
