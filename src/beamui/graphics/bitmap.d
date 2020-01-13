@@ -161,9 +161,76 @@ class DrawBuf : RefCountedObject
 
     /// Detect nine patch using image 1-pixel border. Returns true if 9-patch markup is found in the image
     bool detectNinePatch()
+        in(format != PixelFormat.invalid)
     {
-        // override
-        return false;
+        if (_w < 3 || _h < 3)
+            return false; // image is too small
+
+        int x00, x01, x10, x11, y00, y01, y10, y11;
+        bool found = true;
+        found = found && detectHLine(0, x00, x01);
+        found = found && detectHLine(_h - 1, x10, x11);
+        found = found && detectVLine(0, y00, y01);
+        found = found && detectVLine(_w - 1, y10, y11);
+        if (!found)
+            return false; // no black pixels on 1-pixel frame
+
+        NinePatch* p = new NinePatch;
+        p.frame.left = x00 - 1;
+        p.frame.top = y00 - 1;
+        p.frame.right = _w - x01 - 1;
+        p.frame.bottom = _h - y01 - 1;
+        p.padding.left = x10 - 1;
+        p.padding.top = y10 - 1;
+        p.padding.right = _w - x11 - 1;
+        p.padding.bottom = _h - y11 - 1;
+        _ninePatch = p;
+        return true;
+    }
+
+    /// Detect position of black pixels in row for 9-patch markup
+    private bool detectHLine(int y, ref int x0, ref int x1)
+    {
+        const rowBytes = _w * impl.stride;
+        const void* line = _data + y * rowBytes;
+        bool foundUsed;
+        x0 = 0;
+        x1 = 0;
+        foreach (x; 1 .. _w - 1)
+        {
+            if (impl.isBlackPixel(line + x * impl.stride))
+            {
+                if (!foundUsed)
+                {
+                    x0 = x;
+                    foundUsed = true;
+                }
+                x1 = x + 1;
+            }
+        }
+        return x1 > x0;
+    }
+    /// Detect position of black pixels in column for 9-patch markup
+    private bool detectVLine(int x, ref int y0, ref int y1)
+    {
+        const rowBytes = _w * impl.stride;
+        bool foundUsed;
+        y0 = 0;
+        y1 = 0;
+        foreach (y; 1 .. _h - 1)
+        {
+            const void* line = _data + y * rowBytes;
+            if (impl.isBlackPixel(line + x * impl.stride))
+            {
+                if (!foundUsed)
+                {
+                    y0 = y;
+                    foundUsed = true;
+                }
+                y1 = y + 1;
+            }
+        }
+        return y1 > y0;
     }
 
     /// Apply buffer bounds clipping to rectangle
@@ -315,83 +382,6 @@ class ColorDrawBufBase : DrawBuf
     {
         super(PixelFormat.argb8);
     }
-
-    /// Detect position of black pixels in row for 9-patch markup
-    private bool detectHLine(int y, ref int x0, ref int x1)
-    {
-        const pxRef = look!uint;
-        const line = pxRef.scanline(y);
-        bool foundUsed = false;
-        x0 = 0;
-        x1 = 0;
-        foreach (int x; 1 .. _w - 1)
-        {
-            if (isBlackPixel(line[x]))
-            { // opaque black pixel
-                if (!foundUsed)
-                {
-                    x0 = x;
-                    foundUsed = true;
-                }
-                x1 = x + 1;
-            }
-        }
-        return x1 > x0;
-    }
-
-    static bool isBlackPixel(uint pixel)
-    {
-        const c = Color.fromPacked(pixel);
-        return c.r < 10 && c.g < 10 && c.b < 10 && c.a > 245;
-    }
-
-    /// Detect position of black pixels in column for 9-patch markup
-    private bool detectVLine(int x, ref int y0, ref int y1)
-    {
-        const pxRef = look!uint;
-        bool foundUsed;
-        y0 = 0;
-        y1 = 0;
-        foreach (int y; 1 .. _h - 1)
-        {
-            const line = pxRef.scanline(y);
-            if (isBlackPixel(line[x]))
-            { // opaque black pixel
-                if (!foundUsed)
-                {
-                    y0 = y;
-                    foundUsed = true;
-                }
-                y1 = y + 1;
-            }
-        }
-        return y1 > y0;
-    }
-    /// Detect nine patch using image 1-pixel border (see Android documentation)
-    override bool detectNinePatch()
-    {
-        if (_w < 3 || _h < 3)
-            return false; // image is too small
-        int x00, x01, x10, x11, y00, y01, y10, y11;
-        bool found = true;
-        found = found && detectHLine(0, x00, x01);
-        found = found && detectHLine(_h - 1, x10, x11);
-        found = found && detectVLine(0, y00, y01);
-        found = found && detectVLine(_w - 1, y10, y11);
-        if (!found)
-            return false; // no black pixels on 1-pixel frame
-        NinePatch* p = new NinePatch;
-        p.frame.left = x00 - 1;
-        p.frame.right = _w - x01 - 1;
-        p.frame.top = y00 - 1;
-        p.frame.bottom = _h - y01 - 1;
-        p.padding.left = x10 - 1;
-        p.padding.right = _w - x11 - 1;
-        p.padding.top = y10 - 1;
-        p.padding.bottom = _h - y11 - 1;
-        _ninePatch = p;
-        return true;
-    }
 }
 
 class GrayDrawBuf : DrawBuf
@@ -413,77 +403,6 @@ class GrayDrawBuf : DrawBuf
     {
         _buf.resize(_w * _h);
         return _buf.unsafe_ptr;
-    }
-
-    /// Detect position of black pixels in row for 9-patch markup
-    private bool detectHLine(int y, ref int x0, ref int x1)
-    {
-        const pxRef = look!ubyte;
-        const line = pxRef.scanline(y);
-        bool foundUsed = false;
-        x0 = 0;
-        x1 = 0;
-        foreach (int x; 1 .. _w - 1)
-        {
-            if (line[x] < 5)
-            { // opaque black pixel
-                if (!foundUsed)
-                {
-                    x0 = x;
-                    foundUsed = true;
-                }
-                x1 = x + 1;
-            }
-        }
-        return x1 > x0;
-    }
-
-    /// Detect position of black pixels in column for 9-patch markup
-    private bool detectVLine(int x, ref int y0, ref int y1)
-    {
-        const pxRef = look!ubyte;
-        bool foundUsed = false;
-        y0 = 0;
-        y1 = 0;
-        foreach (int y; 1 .. _h - 1)
-        {
-            const line = pxRef.scanline(y);
-            if (line[x] < 5)
-            { // opaque black pixel
-                if (!foundUsed)
-                {
-                    y0 = y;
-                    foundUsed = true;
-                }
-                y1 = y + 1;
-            }
-        }
-        return y1 > y0;
-    }
-    /// Detect nine patch using image 1-pixel border (see Android documentation)
-    override bool detectNinePatch()
-    {
-        if (_w < 3 || _h < 3)
-            return false; // image is too small
-        int x00, x01, x10, x11, y00, y01, y10, y11;
-        bool found = true;
-        found = found && detectHLine(0, x00, x01);
-        found = found && detectHLine(_h - 1, x10, x11);
-        found = found && detectVLine(0, y00, y01);
-        found = found && detectVLine(_w - 1, y10, y11);
-        if (!found)
-            return false; // no black pixels on 1-pixel frame
-        NinePatch* p = new NinePatch;
-        p.frame.left = x00 - 1;
-        p.frame.right = _h - y01 - 1;
-        p.frame.top = y00 - 1;
-        p.frame.bottom = _h - y01 - 1;
-        p.padding.left = x10 - 1;
-        p.padding.right = _h - y11 - 1;
-        p.padding.top = y10 - 1;
-        p.padding.bottom = _h - y11 - 1;
-        _ninePatch = p;
-        return true;
     }
 }
 
@@ -654,6 +573,9 @@ nothrow:
     PixelFormat format() const;
     ubyte stride() const;
 
+    /// Is an opaque black pixel?
+    bool isBlackPixel(const void* pixel) const;
+
     void fill(BitmapView dst, Color color);
     bool blit(BitmapView dst, const BitmapView src, PixelFormat srcFmt);
 
@@ -720,6 +642,13 @@ final class BitmapARGB8 : IBitmap
     PixelFormat format() const { return PixelFormat.argb8; }
     ubyte stride() const { return 4; }
 
+    bool isBlackPixel(const void* pixel) const
+    {
+        const ptr = cast(const uint*)pixel;
+        const c = Color.fromPacked(*ptr);
+        return c.r < 10 && c.g < 10 && c.b < 10 && c.a > 245;
+    }
+
     void fill(BitmapView dst, Color color)
     {
         fillGeneric!uint(dst, color.rgba);
@@ -742,6 +671,12 @@ final class BitmapA8 : IBitmap
 {
     PixelFormat format() const { return PixelFormat.a8; }
     ubyte stride() const { return 1; }
+
+    bool isBlackPixel(const void* pixel) const
+    {
+        const ptr = cast(const ubyte*)pixel;
+        return *ptr < 5;
+    }
 
     void fill(BitmapView dst, Color color)
     {
