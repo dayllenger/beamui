@@ -526,7 +526,6 @@ final class Win32Window : Window
             return;
         }
         auto resizedicon = new Win32ColorDrawBuf(ic, 32, 32);
-        resizedicon.invertAlpha();
         ICONINFO ii;
         HBITMAP mask = resizedicon.createTransparencyBitmap();
         HBITMAP color = resizedicon.destroyLeavingBitmap();

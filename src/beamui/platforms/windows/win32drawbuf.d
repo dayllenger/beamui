@@ -51,12 +51,6 @@ class Win32ColorDrawBuf : ColorDrawBufBase
         clear();
     }
 
-    /// Invert alpha in buffer content
-    void invertAlpha()
-    {
-        for (int i = _w * _h - 1; i >= 0; i--)
-            _pixels[i] ^= 0xFF000000;
-    }
     /// Returns HBITMAP for alpha
     HBITMAP createTransparencyBitmap()
     {

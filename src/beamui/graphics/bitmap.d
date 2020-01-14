@@ -297,8 +297,8 @@ class DrawBuf : RefCountedObject
         return !rc.empty && !rc2.empty;
     }
 
-    //========================================================
-    // Drawing methods
+    //===============================================================
+    // Mutation methods
 
     /// Fill the whole bitmap with a solid color
     void fill(Color color)
@@ -350,6 +350,26 @@ class DrawBuf : RefCountedObject
             const(IBitmap.BitmapView)(srcRect.size, rowBytes2, source._data + byteOffset2),
             source.format,
         );
+    }
+
+    void preMultiplyAlpha()
+    {
+        if (format != PixelFormat.argb8)
+            return;
+
+        auto pxRef = mutate!uint;
+        foreach (y; 0 .. _h)
+        {
+            uint* row = pxRef.scanline(y);
+            foreach (ref pixel; row[0 .. _w])
+            {
+                Color c = Color.fromPacked(pixel);
+                c.r = ((c.r * c.a) >> 8) & 0xFF;
+                c.g = ((c.g * c.a) >> 8) & 0xFF;
+                c.b = ((c.b * c.a) >> 8) & 0xFF;
+                pixel = c.rgba;
+            }
+        }
     }
 }
 
@@ -415,42 +435,6 @@ class ColorDrawBuf : ColorDrawBufBase
     {
         resize(width, height); // fills with transparent
         blit(src, RectI(0, 0, src.width, src.height), RectI(0, 0, width, height));
-    }
-
-    void preMultiplyAlpha()
-    {
-        foreach (ref pixel; _buf.unsafe_slice)
-        {
-            Color c = Color.fromPacked(pixel);
-            c.r = ((c.r * c.a) >> 8) & 0xFF;
-            c.g = ((c.g * c.a) >> 8) & 0xFF;
-            c.b = ((c.b * c.a) >> 8) & 0xFF;
-            pixel = c.rgba;
-        }
-    }
-
-    void invertAlpha()
-    {
-        foreach (ref pixel; _buf.unsafe_slice)
-            pixel ^= 0xFF000000;
-    }
-
-    void invertByteOrder()
-    {
-        foreach (ref pixel; _buf.unsafe_slice)
-        {
-            pixel = (pixel & 0xFF00FF00) | ((pixel & 0xFF0000) >> 16) | ((pixel & 0xFF) << 16);
-        }
-    }
-
-    // for passing of image to OpenGL texture
-    void invertAlphaAndByteOrder()
-    {
-        foreach (ref pixel; _buf.unsafe_slice)
-        {
-            pixel = ((pixel & 0xFF00FF00) | ((pixel & 0xFF0000) >> 16) | ((pixel & 0xFF) << 16));
-            pixel ^= 0xFF000000;
-        }
     }
 
     override protected void* resizeImpl(int width, int height)
