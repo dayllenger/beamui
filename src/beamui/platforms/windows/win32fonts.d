@@ -20,7 +20,6 @@ import std.math;
 import std.string;
 import std.utf;
 import beamui.core.logger;
-import beamui.platforms.windows.win32drawbuf;
 import beamui.text.fonts;
 import beamui.text.glyph;
 
@@ -187,13 +186,13 @@ final class Win32Font : Font
         int _dpi;
 
         LOGFONTA _logfont;
-        Win32ColorDrawBuf _drawbuf;
+        HDC _dc;
         GlyphCache _glyphCache;
     }
 
     override void clear()
     {
-        if (_hfont !is null)
+        if (_hfont)
         {
             DeleteObject(_hfont);
             _hfont = NULL;
@@ -201,16 +200,16 @@ final class Win32Font : Font
             _desc.baseline = 0;
             _desc.size = 0;
         }
-        if (_drawbuf !is null)
+        if (_dc)
         {
-            destroy(_drawbuf);
-            _drawbuf = null;
+            DeleteObject(_dc);
+            _dc = NULL;
         }
     }
 
     uint getGlyphIndex(dchar code)
     {
-        if (_drawbuf is null)
+        if (!_dc)
             return 0;
         wchar[2] s;
         wchar[2] g;
@@ -228,7 +227,7 @@ final class Win32Font : Font
         gcp.nGlyphs = 2;
         gcp.nMaxFit = 2;
 
-        DWORD res = GetCharacterPlacementW(_drawbuf.dc, s.ptr, 1, 1000, &gcp, 0);
+        DWORD res = GetCharacterPlacementW(_dc, s.ptr, 1, 1000, &gcp, 0);
         if (!res)
             return 0;
         return g[0];
@@ -264,7 +263,7 @@ final class Win32Font : Font
         MAT2 scaleMatrix = {{0, 1}, {0, 0}, {0, 0}, {0, 1}};
 
         uint res;
-        res = GetGlyphOutlineW(_drawbuf.dc, cast(wchar)ch, GGO_METRICS, &metrics, 0, null, &scaleMatrix);
+        res = GetGlyphOutlineW(_dc, cast(wchar)ch, GGO_METRICS, &metrics, 0, null, &scaleMatrix);
         if (res == GDI_ERROR)
             return null;
 
@@ -287,7 +286,7 @@ final class Win32Font : Font
 
         const bmp = antialiased ? GGO_GRAY8_BITMAP : GGO_BITMAP;
         // calculate bitmap size
-        int gs = GetGlyphOutlineW(_drawbuf.dc, cast(wchar)ch, bmp, &metrics, 0, NULL, &scaleMatrix);
+        int gs = GetGlyphOutlineW(_dc, cast(wchar)ch, bmp, &metrics, 0, NULL, &scaleMatrix);
         if (gs >= 0x10000 || gs < 0)
             return null;
 
@@ -322,7 +321,7 @@ final class Win32Font : Font
                 {
                     // antialiased glyph
                     ubyte[] glyph = new ubyte[gs];
-                    res = GetGlyphOutlineW(_drawbuf.dc, cast(wchar)ch, GGO_GRAY8_BITMAP, //GGO_METRICS
+                    res = GetGlyphOutlineW(_dc, cast(wchar)ch, GGO_GRAY8_BITMAP, //GGO_METRICS
                             &metrics,
                             gs, glyph.ptr, &scaleMatrix);
                     if (res == GDI_ERROR)
@@ -358,7 +357,7 @@ final class Win32Font : Font
                 {
                     // bitmap glyph
                     ubyte[] glyph = new ubyte[gs];
-                    res = GetGlyphOutlineW(_drawbuf.dc, cast(wchar)ch, GGO_BITMAP, //GGO_METRICS
+                    res = GetGlyphOutlineW(_dc, cast(wchar)ch, GGO_BITMAP, //GGO_METRICS
                             &metrics, gs,
                             glyph.ptr, &scaleMatrix);
                     if (res == GDI_ERROR)
@@ -414,11 +413,11 @@ final class Win32Font : Font
         lf.lfQuality = antialiased ? NONANTIALIASED_QUALITY : ANTIALIASED_QUALITY; //PROOF_QUALITY; //ANTIALIASED_QUALITY; //size < 18 ? NONANTIALIASED_QUALITY : PROOF_QUALITY; //ANTIALIASED_QUALITY;
         lf.lfPitchAndFamily = def.pitchAndFamily;
         _hfont = CreateFontIndirectA(&lf);
-        _drawbuf = new Win32ColorDrawBuf(1, 1);
-        SelectObject(_drawbuf.dc, _hfont);
+        _dc = CreateCompatibleDC(NULL);
+        SelectObject(_dc, _hfont);
 
         TEXTMETRICW tm;
-        GetTextMetricsW(_drawbuf.dc, &tm);
+        GetTextMetricsW(_dc, &tm);
 
         _desc.size = size;
         _desc.height = tm.tmHeight;
@@ -485,18 +484,17 @@ final class Win32FontManager : FontManager
     {
         debug Log.i("Creating Win32FontManager");
         // initialize font manager by enumerating of system fonts
-        auto drawbuf = new Win32ColorDrawBuf(1, 1);
         LOGFONTA lf;
         lf.lfCharSet = ANSI_CHARSET; //DEFAULT_CHARSET;
-        HDC dc = drawbuf.dc;
+        HDC dc = CreateCompatibleDC(NULL);
         const int res = EnumFontFamiliesExA(
-            dc,  // handle to DC
+            dc, // handle to DC
             &lf, // font information
             &fontEnumFontFamProc, // callback function (FONTENUMPROC)
             cast(LPARAM)cast(void*)this, // additional data
             0U, // not used; must be 0
         );
-        destroy(drawbuf);
+        DeleteObject(dc);
         Log.i("Found ", _fontFaces.length, " font faces");
     }
 
