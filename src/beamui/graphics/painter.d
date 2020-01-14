@@ -12,7 +12,7 @@ import beamui.core.collections : Buf;
 import beamui.core.geometry : Box, BoxI, Point, Rect, RectI;
 import beamui.core.linalg : Mat2x3, Vec2;
 import beamui.core.math;
-import beamui.graphics.bitmap : ColorDrawBufBase;
+import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.brush : Brush;
 import beamui.graphics.colors : Color;
 import beamui.graphics.compositing : BlendMode, CompositeMode;
@@ -565,7 +565,7 @@ final class Painter
     }
 
     /// Draw an image at some position with some opacity
-    void drawImage(const ColorDrawBufBase image, float x, float y, float opacity)
+    void drawImage(const Bitmap image, float x, float y, float opacity)
         in(image)
         in(isFinite(x) && isFinite(y))
         in(isFinite(opacity))
@@ -593,7 +593,7 @@ final class Painter
     }
 
     /// Draw a rescaled nine-patch image with some opacity
-    void drawNinePatch(const ColorDrawBufBase image, RectI srcRect, Rect dstRect, float opacity)
+    void drawNinePatch(const Bitmap image, RectI srcRect, Rect dstRect, float opacity)
         in(image)
         in(image.hasNinePatch)
         in(isFinite(dstRect.width) && isFinite(dstRect.height))
@@ -869,8 +869,8 @@ protected:
     void fillTriangle(Vec2[3], Color);
     void fillCircle(float, float, float, Color);
 
-    void drawImage(const ColorDrawBufBase, Vec2, float);
-    void drawNinePatch(const ColorDrawBufBase, ref const NinePatchInfo, float);
+    void drawImage(const Bitmap, Vec2, float);
+    void drawNinePatch(const Bitmap, ref const NinePatchInfo, float);
     void drawText(const GlyphInstance[], Color);
 
     final Rect transformBounds(Rect untr) nothrow

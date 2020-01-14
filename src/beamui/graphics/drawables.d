@@ -1,7 +1,7 @@
 /**
 Drawables and widget background.
 
-imageCache is RAM cache of decoded images (as DrawBuf).
+imageCache is RAM cache of decoded images (as Bitmap).
 
 Supports nine-patch PNG images in .9.png files (like in Android).
 
@@ -385,7 +385,7 @@ static if (BACKEND_CONSOLE)
 
 static if (BACKEND_CONSOLE)
 {
-    abstract class ConsoleDrawBuf : DrawBuf
+    abstract class ConsoleDrawBuf : Bitmap
     {
         abstract void drawChar(int x, int y, dchar ch, Color color, Color bgcolor);
     }
@@ -616,7 +616,7 @@ static if (BACKEND_CONSOLE)
             return left + (ninewidth - left - right) * (v - left) / (width - left - right);
         }
 
-        private void drawTo(DrawBuf drawbuf, Box b, float tilex0 = 0, float tiley0 = 0)
+        private void drawTo(Bitmap drawbuf, Box b, float tilex0 = 0, float tiley0 = 0)
         {
             if (!_width || !_height)
                 return; // empty image
@@ -1049,7 +1049,7 @@ final class ImageCache
             if (auto p = imageID in _map)
                 return *p;
 
-            DrawBuf bitmap;
+            Bitmap bitmap;
 
             string filename = resourceList.getPathByID(imageID);
             auto data = loadResourceBytes(filename);

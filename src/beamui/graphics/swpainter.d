@@ -19,7 +19,7 @@ import beamui.core.geometry : BoxI, PointI, Rect, RectI, SizeI;
 import beamui.core.linalg : Mat2x3, Vec2, dotProduct;
 import beamui.core.math;
 import beamui.core.types : Tup, tup;
-import beamui.graphics.bitmap : ColorDrawBufBase;
+import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.brush;
 import beamui.graphics.colors : Color;
 import beamui.graphics.compositing;
@@ -46,7 +46,7 @@ public final class SWPaintEngine : PaintEngine
         LayerPool layerPool;
         MaskPool maskPool;
 
-        ColorDrawBufBase backbuf;
+        Bitmap backbuf;
         PM_Image base_layer;
         PM_ImageView layer; // points either to base_layer or to some layer img in the stack
         Buf!Layer layerStack;
@@ -64,7 +64,7 @@ public final class SWPaintEngine : PaintEngine
         typeof(scoped!PlotterMask()) plotter_mask;
     }
 
-    this(ColorDrawBufBase backbuffer)
+    this(Bitmap backbuffer)
         in(backbuffer)
         in(backbuffer.width > 0 && backbuffer.height > 0)
     {
@@ -94,7 +94,7 @@ protected:
 
         backbuf.resize(w, h);
         backbuf.fill(bg);
-        base_layer = PM_Image.fromImage(backbuf, Repeat.no, Filtering.no);
+        base_layer = PM_Image.fromBitmap(backbuf, Repeat.no, Filtering.no);
         layer = base_layer.view;
     }
 
@@ -320,7 +320,7 @@ protected:
         }
         else if (br.type == BrushType.pattern)
         {
-            PM_Image src_img = PM_Image.fromImage(br.pattern.image, Repeat.yes, Filtering.yes);
+            PM_Image src_img = PM_Image.fromBitmap(br.pattern.image, Repeat.yes, Filtering.yes);
             if (!src_img)
                 return;
 
@@ -439,9 +439,9 @@ protected:
         rasterizeTrapezoidChain(bufTraps[], rparams, plotter);
     }
 
-    void drawImage(const ColorDrawBufBase img, Vec2 pos, float opacity)
+    void drawImage(const Bitmap bmp, Vec2 pos, float opacity)
     {
-        const rect = Rect(pos.x, pos.y, pos.x + img.width, pos.y + img.height);
+        const rect = Rect(pos.x, pos.y, pos.x + bmp.width, pos.y + bmp.height);
         const BoxI clip = clipByRect(transformBounds(rect));
         if (clip.empty)
             return;
@@ -450,7 +450,7 @@ protected:
         if (!mask_img)
             return;
 
-        PM_Image src_img = PM_Image.fromImage(img, Repeat.no, Filtering.yes);
+        PM_Image src_img = PM_Image.fromBitmap(bmp, Repeat.no, Filtering.yes);
         if (!src_img)
             return;
 
@@ -468,7 +468,7 @@ protected:
         );
     }
 
-    void drawNinePatch(const ColorDrawBufBase img, ref const NinePatchInfo info, float opacity)
+    void drawNinePatch(const Bitmap bmp, ref const NinePatchInfo info, float opacity)
     {
         const rect = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
         const BoxI clip = clipByRect(transformBounds(rect));
@@ -487,7 +487,7 @@ protected:
             return;
         pixman_image_set_filter(tmp_img, pixman_filter_t.good, null, 0);
 
-        PM_Image src_img = PM_Image.fromImage(img, Repeat.no, Filtering.no);
+        PM_Image src_img = PM_Image.fromBitmap(bmp, Repeat.no, Filtering.no);
         if (!src_img)
             return;
 
@@ -1223,15 +1223,15 @@ struct PM_Image
         return PM_Image(PM_ImageView(pixman_image_create_solid_fill(&pxc)));
     }
 
-    static PM_Image fromImage(const ColorDrawBufBase img, Repeat repeat, Filtering filter)
-        in(img)
+    static PM_Image fromBitmap(const Bitmap bmp, Repeat repeat, Filtering filter)
+        in(bmp)
     {
         auto ret = pixman_image_create_bits(
             pixman_format_code_t.a8r8g8b8,
-            img.width,
-            img.height,
-            cast(uint*)img.pixels!uint,
-            img.width * 4,
+            bmp.width,
+            bmp.height,
+            cast(uint*)bmp.pixels!uint,
+            bmp.width * 4,
         );
         if (repeat)
             pixman_image_set_repeat(ret, pixman_repeat_t.normal);

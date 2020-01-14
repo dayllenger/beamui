@@ -17,7 +17,7 @@ import beamui.core.geometry : BoxI, Rect, RectI, SizeI;
 import beamui.core.linalg : Vec2, Mat2x3;
 import beamui.core.logger : Log;
 import beamui.core.math;
-import beamui.graphics.bitmap : ColorDrawBufBase;
+import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.brush;
 import beamui.graphics.colors : Color, ColorF;
 import beamui.graphics.compositing : getBlendFactors;
@@ -601,16 +601,16 @@ protected:
         simpleColorOnly(t, RectI(clip), c);
     }
 
-    void drawImage(const ColorDrawBufBase img, Vec2 p, float opacity)
+    void drawImage(const Bitmap bmp, Vec2 p, float opacity)
     {
-        const int w = img.width;
-        const int h = img.height;
+        const int w = bmp.width;
+        const int h = bmp.height;
         const rp = Rect(p.x, p.y, p.x + w, p.y + h);
         const BoxI clip = clipByRect(transformBounds(rp));
         if (clip.empty)
             return;
 
-        const TextureView view = textureCache.getTexture(img);
+        const TextureView view = textureCache.getTexture(bmp);
         if (view.empty)
             return;
         assert(view.box.w == w && view.box.h == h);
@@ -664,17 +664,17 @@ protected:
         advanceDepth();
     }
 
-    void drawNinePatch(const ColorDrawBufBase img, ref const NinePatchInfo info, float opacity)
+    void drawNinePatch(const Bitmap bmp, ref const NinePatchInfo info, float opacity)
     {
         const rp = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
         const BoxI clip = clipByRect(transformBounds(rp));
         if (clip.empty)
             return;
 
-        const TextureView view = textureCache.getTexture(img);
+        const TextureView view = textureCache.getTexture(bmp);
         if (view.empty)
             return;
-        assert(view.box.w == img.width && view.box.h == img.height);
+        assert(view.box.w == bmp.width && view.box.h == bmp.height);
 
         const Vec2[16] vs = [
             Vec2(info.dst_x0, info.dst_y0),

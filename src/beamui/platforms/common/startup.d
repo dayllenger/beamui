@@ -534,9 +534,9 @@ void releaseResourcesOnAppExit()
 
     debug
     {
-        if (DrawBuf.instanceCount > 0)
+        if (Bitmap.instanceCount > 0)
         {
-            Log.e("Non-zero DrawBuf instance count when exiting: ", DrawBuf.instanceCount);
+            Log.e("Non-zero Bitmap instance count when exiting: ", Bitmap.instanceCount);
         }
         if (Style.instanceCount > 0)
         {

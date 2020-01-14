@@ -12,7 +12,7 @@ import beamui.core.config;
 static if (USE_OPENGL):
 import beamui.core.geometry : BoxI, SizeI;
 import beamui.graphics.atlas;
-import beamui.graphics.bitmap : ColorDrawBufBase;
+import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.colors : Color;
 import beamui.graphics.gl.api;
 import beamui.graphics.gl.objects : Tex2D, TexId, TexFiltering, TexMipmaps, TexWrap;
@@ -65,12 +65,12 @@ struct TextureCache
         }
     }
 
-    /// Get a view onto uploaded image, or upload it if not done yet. The `image` must not be `null`
-    TextureView getTexture(const ColorDrawBufBase image)
-        in(image)
+    /// Get a view onto uploaded bitmap, or upload it if not done yet. The `bitmap` must not be `null`
+    TextureView getTexture(const Bitmap bitmap)
+        in(bitmap)
     {
-        const sz = SizeI(image.width, image.height);
-        const res = atlas.findOrAdd(image.id, &sz);
+        const sz = SizeI(bitmap.width, bitmap.height);
+        const res = atlas.findOrAdd(bitmap.id, &sz);
         if (res.error)
             return TextureView.init;
 
@@ -78,7 +78,7 @@ struct TextureCache
         if (res.changed)
         {
             resize(*page, res.pageSize);
-            upload(page.tex, res.box, image.pixels!uint);
+            upload(page.tex, res.box, bitmap.pixels!uint);
         }
         return TextureView(&page.tex, &page.texSize, res.box);
     }

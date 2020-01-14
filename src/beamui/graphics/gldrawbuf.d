@@ -326,7 +326,7 @@ private class GLImageCache : GLCache
             }
         }
 
-        GLCacheItem addItem(DrawBuf buf)
+        GLCacheItem addItem(Bitmap buf)
         {
             GLCacheItem cacheItem = reserveSpace(buf.id, buf.width, buf.height);
             if (cacheItem is null)
@@ -342,7 +342,7 @@ private class GLImageCache : GLCache
     override @property bool smoothResize() const { return true; }
 
     /// Put new object to cache
-    void put(DrawBuf img)
+    void put(Bitmap img)
     {
         updateTextureSize();
         GLCacheItem res;

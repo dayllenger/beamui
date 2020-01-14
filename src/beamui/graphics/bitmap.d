@@ -34,8 +34,7 @@ struct NinePatch
 /// Non thread safe
 private __gshared uint drawBufIDGenerator;
 
-/// Drawing buffer - image container which allows to perform some drawing operations
-class DrawBuf : RefCountedObject
+class Bitmap : RefCountedObject
 {
     @property
     {
@@ -331,7 +330,7 @@ class DrawBuf : RefCountedObject
 
         Returns: True if copied something.
     */
-    bool blit(const DrawBuf source, RectI srcRect, RectI dstRect)
+    bool blit(const Bitmap source, RectI srcRect, RectI dstRect)
         in(format != PixelFormat.invalid)
         in(source)
         in(source.format != PixelFormat.invalid)
@@ -387,45 +386,22 @@ struct PixelRef(T)
     }
 }
 
-alias DrawBufRef = Ref!DrawBuf;
+alias DrawBufRef = Ref!Bitmap;
 
-class ColorDrawBufBase : DrawBuf
-{
-    this()
-    {
-        super(PixelFormat.argb8);
-    }
-}
-
-class GrayDrawBuf : DrawBuf
-{
-    private Buf!ubyte _buf;
-
-    this(int width, int height)
-    {
-        super(PixelFormat.a8);
-        resize(width, height);
-    }
-
-    override protected void* resizeImpl(int width, int height)
-    {
-        _buf.resize(_w * _h);
-        return _buf.unsafe_ptr;
-    }
-}
-
-class ColorDrawBuf : ColorDrawBufBase
+class ColorDrawBuf : Bitmap
 {
     private Buf!uint _buf;
 
     /// Create ARGB8888 draw buf of specified width and height
     this(int width, int height)
     {
+        super(PixelFormat.argb8);
         resize(width, height);
     }
     /// Create copy of `ColorDrawBuf`
     this(ColorDrawBuf src)
     {
+        super(PixelFormat.argb8);
         resize(src.width, src.height);
         if (auto len = _buf.length)
             _buf.unsafe_ptr[0 .. len] = src._buf.unsafe_ptr[0 .. len];
@@ -433,6 +409,7 @@ class ColorDrawBuf : ColorDrawBufBase
     /// Create resized copy of `ColorDrawBuf`
     this(ColorDrawBuf src, int width, int height)
     {
+        super(PixelFormat.argb8);
         resize(width, height); // fills with transparent
         blit(src, RectI(0, 0, src.width, src.height), RectI(0, 0, width, height));
     }

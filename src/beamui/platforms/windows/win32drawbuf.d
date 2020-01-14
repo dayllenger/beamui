@@ -23,7 +23,7 @@ import beamui.graphics.bitmap;
 import beamui.graphics.colors : Color;
 
 /// Win32 context ARGB drawing buffer
-class Win32ColorDrawBuf : ColorDrawBufBase
+class Win32ColorDrawBuf : Bitmap
 {
     private uint* _pixels;
     private HDC _drawdc;
@@ -36,11 +36,13 @@ class Win32ColorDrawBuf : ColorDrawBufBase
 
     this(int width, int height)
     {
+        super(PixelFormat.argb8);
         resize(width, height);
     }
     /// Create resized copy of ColorDrawBuf
     this(ColorDrawBuf src, int width, int height)
     {
+        super(PixelFormat.argb8);
         resize(width, height);
         fill(Color.transparent);
         blit(src, RectI(0, 0, src.width, src.height), RectI(0, 0, width, height));
