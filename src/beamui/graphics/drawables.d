@@ -206,7 +206,7 @@ class BoxShadowDrawable : Drawable
     private int _offsetY;
     private int _blurSize;
     private Color _color;
-    private ColorDrawBuf texture;
+    private ColorDrawBuf _bitmap;
 
     this(int offsetX, int offsetY, uint blurSize = 0, Color color = Color.black)
     {
@@ -214,24 +214,25 @@ class BoxShadowDrawable : Drawable
         _offsetY = offsetY;
         _blurSize = blurSize;
         _color = color;
-        // now create a texture which will contain the shadow
+        if (blurSize == 0)
+            return;
+
+        // now create a bitmap that will contain the shadow
         const size = 4 * blurSize + 1;
-        texture = new ColorDrawBuf(size, size); // TODO: get from/put to cache
-        // clear
-        texture.fill(color.withAlpha(0));
-        // draw a square in center of the texture
-        texture.fillRect(RectI(blurSize, blurSize, size - blurSize, size - blurSize), color);
+        _bitmap = new ColorDrawBuf(size, size);
+        // draw a square in center of the bitmap
+        _bitmap.fillRect(RectI(blurSize, blurSize, size - blurSize, size - blurSize), color);
         // blur the square
-        texture.blur(blurSize);
-        texture.preMultiplyAlpha();
+        blurBitmapARGB8(_bitmap, blurSize);
+        _bitmap.preMultiplyAlpha();
         // set 9-patch frame
         const sz = _blurSize * 2;
-        texture.ninePatch = new NinePatch(InsetsI(sz), InsetsI(sz));
+        _bitmap.ninePatch = new NinePatch(InsetsI(sz), InsetsI(sz));
     }
 
     ~this()
     {
-        eliminate(texture);
+        eliminate(_bitmap);
     }
 
     override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
@@ -244,9 +245,9 @@ class BoxShadowDrawable : Drawable
         // now draw
         if (_blurSize > 0)
         {
-            pr.drawNinePatch(texture, RectI(0, 0, texture.width, texture.height), Rect(b), 1);
+            pr.drawNinePatch(_bitmap, RectI(0, 0, _bitmap.width, _bitmap.height), Rect(b), 1);
             // debug
-            // pr.drawImage(texture, b.x, b.y, 1);
+            // pr.drawImage(_bitmap, b.x, b.y, 1);
         }
         else
         {
@@ -263,6 +264,100 @@ class BoxShadowDrawable : Drawable
     {
         return 1;
     }
+}
+
+/// Apply Gaussian blur to the bitmap. This is a slow function, but it's fine for box shadows for now
+private void blurBitmapARGB8(ColorDrawBuf bitmap, uint blurSize)
+    in(bitmap.format == PixelFormat.argb8)
+{
+    if (blurSize == 0)
+        return; // trivial case
+
+    import std.math : exp, sqrt, PI;
+    import beamui.core.collections : Buf;
+
+    // precompute weights
+    Buf!float weights;
+    weights.reserve(blurSize + 1);
+    weights ~= 0;
+    const float sigma = blurSize > 2 ? blurSize / 3.0f : blurSize / 2.0f;
+    float centerWeight = 1;
+    foreach (float x; 1 .. blurSize + 1)
+    {
+        // Gaussian function
+        enum inv_sqrt_2pi = 1 / sqrt(2 * PI);
+        const wgh = exp(-x * x / (2 * sigma * sigma)) * inv_sqrt_2pi / sigma;
+        weights ~= wgh;
+        centerWeight -= 2 * wgh;
+    }
+
+    static float[4] conv(uint c)
+    {
+        const float a = (c >> 24);
+        const float r = (c >> 16) & 0xFF;
+        const float g = (c >> 8) & 0xFF;
+        const float b = (c >> 0) & 0xFF;
+        return [r, g, b, a];
+    }
+
+    const float* pweights = weights[].ptr;
+    const w = bitmap.width;
+    const h = bitmap.height;
+
+    // blur horizontally
+    void blurH(PixelRef!uint pixels)
+    {
+        // small intermediate buffer
+        Buf!(float[4]) row;
+        row.resize(w);
+        const float[4]* line = row[].ptr;
+        foreach (y; 0 .. h)
+        {
+            uint* scanline = pixels.scanline(y);
+            foreach (x; 0 .. w)
+                row[x] = conv(scanline[x]);
+            foreach (x; 0 .. w)
+            {
+                float[4] c = 0;
+                foreach (int i; 1 .. blurSize + 1)
+                {
+                    const float[4] c1 = line[(x + i) % w];
+                    const float[4] c2 = line[(x - i + w) % w];
+                    c[] += (c1[] + c2[]) * pweights[i];
+                }
+                c[] += line[x][] * centerWeight;
+                scanline[x] = makeRGBA(c[0], c[1], c[2], c[3]);
+            }
+        }
+    }
+    // blur vertically
+    void blurV(PixelRef!uint pixels)
+    {
+        // small intermediate buffer
+        Buf!(float[4]) col;
+        col.resize(h);
+        const float[4]* line = col[].ptr;
+        foreach (x; 0 .. w)
+        {
+            foreach (y; 0 .. h)
+                col[y] = conv(pixels.scanline(y)[x]);
+            foreach (y; 0 .. h)
+            {
+                uint* scanline = pixels.scanline(y);
+                float[4] c = 0;
+                foreach (int i; 1 .. blurSize + 1)
+                {
+                    const float[4] c1 = line[(y + i) % h];
+                    const float[4] c2 = line[(y - i + h) % h];
+                    c[] += (c1[] + c2[]) * pweights[i];
+                }
+                c[] += line[y][] * centerWeight;
+                scanline[x] = makeRGBA(c[0], c[1], c[2], c[3]);
+            }
+        }
+    }
+    blurH(bitmap.mutate!uint);
+    blurV(bitmap.mutate!uint);
 }
 
 static if (BACKEND_CONSOLE)
