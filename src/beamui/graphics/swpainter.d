@@ -1231,7 +1231,7 @@ struct PM_Image
             bmp.width,
             bmp.height,
             cast(uint*)bmp.pixels!uint,
-            bmp.width * 4,
+            cast(int)bmp.rowBytes,
         );
         if (repeat)
             pixman_image_set_repeat(ret, pixman_repeat_t.normal);

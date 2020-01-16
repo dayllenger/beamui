@@ -32,77 +32,80 @@ struct NinePatch
 }
 
 /// Non thread safe
-private __gshared uint drawBufIDGenerator;
+private __gshared uint bitmapIdGenerator;
 
 class Bitmap : RefCountedObject
 {
     @property
     {
         /// Bitmap width, in pixels
-        int width() const { return _w; }
+        int width() const
+        {
+            return data ? data.w : 0;
+        }
         /// Bitmap height, in pixels
-        int height() const { return _h; }
+        int height() const
+        {
+            return data ? data.h : 0;
+        }
         /// Bitmap size, in pixels
         SizeI size() const
         {
-            return SizeI(_w, _h);
+            return data ? SizeI(data.w, data.h) : SizeI.init;
         }
-        /// Bitmap pixel format
+        /// Bitmap pixel format. `PixelFormat.invalid` on uninitialized bitmap
         PixelFormat format() const
         {
             return impl ? impl.format : PixelFormat.invalid;
         }
+        /// Length of one bitmap row in bytes
+        size_t rowBytes() const
+        {
+            return data ? data.rowBytes : 0;
+        }
 
         /// Nine-patch info pointer, `null` if this is not a nine patch image buffer
-        const(NinePatch)* ninePatch() const { return _ninePatch; }
+        const(NinePatch)* ninePatch() const
+        {
+            return data ? data.ninePatch : null;
+        }
         /// ditto
         void ninePatch(NinePatch* ninePatch)
         {
-            _ninePatch = ninePatch;
+            if (data)
+                data.ninePatch = ninePatch;
         }
         /// Check whether there is nine-patch information available
         bool hasNinePatch() const
         {
-            return _ninePatch !is null;
+            return data && data.ninePatch;
         }
 
         /// Unique ID of bitmap instance, for using with hardware accelerated rendering for caching
-        uint id() const { return _id; }
+        uint id() const
+        {
+            return data ? data.id : 0;
+        }
     }
 
+    private BitmapData data;
     private IBitmap impl;
 
-    protected int _w, _h;
-
-    private
-    {
-        NinePatch* _ninePatch;
-        uint _id;
-
-        void* _data;
-    }
-
-    debug
-    {
-        private __gshared int _instanceCount;
-        static int instanceCount() { return _instanceCount; }
-    }
-
-    this(PixelFormat format)
+    this(int width, int height, PixelFormat format)
+        in(width > 0 && height > 0)
     {
         impl = getBitmapImpl(format);
-        _id = drawBufIDGenerator++;
-        debug _instanceCount++;
+        data = new DefaultBitmapData(width, height, impl.stride, format);
+        data.handleResize();
     }
 
-    ~this()
+    this(BitmapData data)
+        in(data)
     {
-        debug
-        {
-            if (APP_IS_SHUTTING_DOWN)
-                onResourceDestroyWhileShutdown("bitmap", getShortClassName(this));
-            _instanceCount--;
-        }
+        impl = getBitmapImpl(data.format);
+        this.data = data;
+        data.handleResize();
+        assert(data.stride == impl.stride);
     }
 
     void function(uint) onDestroyCallback;
@@ -110,92 +113,91 @@ class Bitmap : RefCountedObject
     /// Call to remove this image from OpenGL cache when image is updated.
     void invalidate()
     {
-        if (onDestroyCallback)
+        if (onDestroyCallback && data)
         {
             // remove from cache
-            onDestroyCallback(_id);
+            onDestroyCallback(data.id);
             // assign new ID
-            _id = drawBufIDGenerator++;
+            data.id = bitmapIdGenerator++;
         }
     }
 
     /// Resize the bitmap, invalidating its content
     void resize(int width, int height)
+        in(width > 0 && height > 0)
+        in(format != PixelFormat.invalid)
     {
-        if (_w != width || _h != height)
+        if (data.w != width || data.h != height)
         {
-            _w = width;
-            _h = height;
-            _data = resizeImpl(width, height);
+            data.w = width;
+            data.h = height;
+            data.handleResize();
         }
     }
-
-    abstract protected void* resizeImpl(int width, int height);
 
     /// Get a constant pointer to the beginning of the pixel data. `null` if bitmap has zero size
     const(T)* pixels(T)() const
         if (T.sizeof == 1 || T.sizeof == 2 || T.sizeof == 4 ||
             T.sizeof == 8 || T.sizeof == 12 || T.sizeof == 16)
     {
-        return cast(const(T)*)_data;
+        return data ? cast(const(T)*)&data.pixels[0] : null;
     }
     /// Provides a constant view on the pixel data. The bitmap must have non-zero size
     const(PixelRef!T) look(T)() const
         if (T.sizeof == 1 || T.sizeof == 2 || T.sizeof == 4 ||
             T.sizeof == 8 || T.sizeof == 12 || T.sizeof == 16)
-        in(_data)
+        in(data)
     {
-        return const(PixelRef!T)(cast(const(T*))_data, _w, _h);
+        return const(PixelRef!T)(data.pixels, data.rowBytes);
     }
     /// Provides a mutable access to the pixel data. The bitmap must have non-zero size
     PixelRef!T mutate(T)()
         if (T.sizeof == 1 || T.sizeof == 2 || T.sizeof == 4 ||
             T.sizeof == 8 || T.sizeof == 12 || T.sizeof == 16)
-        in(_data)
+        in(data)
     {
-        return PixelRef!T(cast(T*)_data, _w, _h);
+        return PixelRef!T(data.pixels, data.rowBytes);
     }
 
     /// Detect nine patch using image 1-pixel border. Returns true if 9-patch markup is found in the image
     bool detectNinePatch()
         in(format != PixelFormat.invalid)
     {
-        if (_w < 3 || _h < 3)
+        if (data.w < 3 || data.h < 3)
             return false; // image is too small
 
         int x00, x01, x10, x11, y00, y01, y10, y11;
         bool found = true;
         found = found && detectHLine(0, x00, x01);
-        found = found && detectHLine(_h - 1, x10, x11);
+        found = found && detectHLine(data.h - 1, x10, x11);
         found = found && detectVLine(0, y00, y01);
-        found = found && detectVLine(_w - 1, y10, y11);
+        found = found && detectVLine(data.w - 1, y10, y11);
         if (!found)
             return false; // no black pixels on 1-pixel frame
 
         NinePatch* p = new NinePatch;
         p.frame.left = x00 - 1;
         p.frame.top = y00 - 1;
-        p.frame.right = _w - x01 - 1;
-        p.frame.bottom = _h - y01 - 1;
+        p.frame.right = data.w - x01 - 1;
+        p.frame.bottom = data.h - y01 - 1;
         p.padding.left = x10 - 1;
         p.padding.top = y10 - 1;
-        p.padding.right = _w - x11 - 1;
-        p.padding.bottom = _h - y11 - 1;
-        _ninePatch = p;
+        p.padding.right = data.w - x11 - 1;
+        p.padding.bottom = data.h - y11 - 1;
+        data.ninePatch = p;
         return true;
     }
 
     /// Detect position of black pixels in row for 9-patch markup
     private bool detectHLine(int y, ref int x0, ref int x1)
     {
-        const rowBytes = _w * impl.stride;
-        const void* line = _data + y * rowBytes;
+        const void[] line = data.pixels[y * data.rowBytes .. (y + 1) * data.rowBytes];
         bool foundUsed;
         x0 = 0;
         x1 = 0;
-        foreach (x; 1 .. _w - 1)
+        foreach (x; 1 .. data.w - 1)
         {
-            if (impl.isBlackPixel(line + x * impl.stride))
+            if (impl.isBlackPixel(&line[x * impl.stride]))
             {
                 if (!foundUsed)
                 {
@@ -210,14 +212,13 @@ class Bitmap : RefCountedObject
     /// Detect position of black pixels in column for 9-patch markup
     private bool detectVLine(int x, ref int y0, ref int y1)
     {
-        const rowBytes = _w * impl.stride;
         bool foundUsed;
         y0 = 0;
         y1 = 0;
-        foreach (y; 1 .. _h - 1)
+        foreach (y; 1 .. data.h - 1)
         {
-            const void* line = _data + y * rowBytes;
-            if (impl.isBlackPixel(line + x * impl.stride))
+            const void[] line = data.pixels[y * data.rowBytes .. (y + 1) * data.rowBytes];
+            if (impl.isBlackPixel(&line[x * impl.stride]))
             {
                 if (!foundUsed)
                 {
@@ -303,10 +304,10 @@ class Bitmap : RefCountedObject
     void fill(Color color)
         in(format != PixelFormat.invalid)
     {
-        if (_w <= 0 || _h <= 0)
+        if (data.w <= 0 || data.h <= 0)
             return;
 
-        impl.fill(IBitmap.BitmapView(size, _w * impl.stride, _data), color);
+        impl.fill(IBitmap.BitmapView(size, data.rowBytes, &data.pixels[0]), color);
     }
 
     /// Fill a rectangle with a solid color. The rectangle is clipped against image boundaries
@@ -316,9 +317,8 @@ class Bitmap : RefCountedObject
         if (!applyClipping(rect))
             return;
 
-        const rowBytes = _w * impl.stride;
-        const byteOffset = rect.top * rowBytes + rect.left * impl.stride;
-        impl.fill(IBitmap.BitmapView(rect.size, rowBytes, _data + byteOffset), color);
+        const byteOffset = rect.top * data.rowBytes + rect.left * impl.stride;
+        impl.fill(IBitmap.BitmapView(rect.size, data.rowBytes, &data.pixels[byteOffset]), color);
     }
 
     /** Copy pixel data from `srcRect` region of `source` bitmap to `dstRect` of this bitmap.
@@ -340,13 +340,11 @@ class Bitmap : RefCountedObject
         if (!applyClipping(dstRect, srcRect))
             return false;
 
-        const rowBytes1 = _w * impl.stride;
-        const rowBytes2 = source._w * source.impl.stride;
-        const byteOffset1 = dstRect.top * rowBytes1 + dstRect.left * impl.stride;
-        const byteOffset2 = srcRect.top * rowBytes2 + srcRect.left * source.impl.stride;
+        const byteOffset1 = dstRect.top * data.rowBytes + dstRect.left * impl.stride;
+        const byteOffset2 = srcRect.top * source.data.rowBytes + srcRect.left * source.impl.stride;
         return impl.blit(
-            IBitmap.BitmapView(dstRect.size, rowBytes1, _data + byteOffset1),
-            const(IBitmap.BitmapView)(srcRect.size, rowBytes2, source._data + byteOffset2),
+            IBitmap.BitmapView(dstRect.size, data.rowBytes, &data.pixels[byteOffset1]),
+            const(IBitmap.BitmapView)(srcRect.size, source.data.rowBytes, &source.data.pixels[byteOffset2]),
             source.format,
         );
     }
@@ -357,10 +355,10 @@ class Bitmap : RefCountedObject
             return;
 
         auto pxRef = mutate!uint;
-        foreach (y; 0 .. _h)
+        foreach (y; 0 .. data.h)
         {
             uint* row = pxRef.scanline(y);
-            foreach (ref pixel; row[0 .. _w])
+            foreach (ref pixel; row[0 .. data.w])
             {
                 Color c = Color.fromPacked(pixel);
                 c.r = ((c.r * c.a) >> 8) & 0xFF;
@@ -374,15 +372,114 @@ class Bitmap : RefCountedObject
 
 struct PixelRef(T)
 {
-    private T* ptr;
-    private uint rowPitch;
-    private uint h;
+    private void[] pixels;
+    private size_t rowBytes;
 
     /// Returns a pointer to a scanline. `y` must be in bounds
     inout(T)* scanline(int y) inout
-        in(0 <= y && y < h)
     {
-        return ptr + y * rowPitch;
+        return cast(inout(T)*)&pixels[y * rowBytes];
+    }
+}
+
+abstract class BitmapData
+{
+    final @property
+    {
+        int width() const { return w; }
+        int height() const { return h; }
+    }
+
+    private
+    {
+        uint refCount = 1;
+        uint id;
+
+        int w, h;
+        NinePatch* ninePatch;
+    }
+    protected size_t rowBytes;
+    const ubyte stride;
+    const PixelFormat format;
+
+    debug
+    {
+        private __gshared int _instanceCount;
+        static int instanceCount() { return _instanceCount; }
+    }
+
+    this(uint w, uint h, ubyte stride, PixelFormat format)
+        in(w > 0 && h > 0)
+        in(stride > 0)
+        in(format != PixelFormat.invalid)
+    {
+        this.w = w;
+        this.h = h;
+        this.stride = stride;
+        this.format = format;
+
+        id = bitmapIdGenerator++;
+        debug _instanceCount++;
+    }
+
+    protected this(BitmapData src)
+        in(src)
+    {
+        w = src.w;
+        h = src.h;
+        rowBytes = src.rowBytes;
+        stride = src.stride;
+        format = src.format;
+        ninePatch = src.ninePatch;
+
+        id = bitmapIdGenerator++;
+        debug _instanceCount++;
+    }
+
+    ~this()
+    {
+        debug
+        {
+            if (APP_IS_SHUTTING_DOWN)
+                onResourceDestroyWhileShutdown("bitmap", getShortClassName(this));
+            _instanceCount--;
+        }
+    }
+
+    inout(void[]) pixels() inout;
+    void handleResize() out(; rowBytes >= w * stride);
+    BitmapData clone() out(bmp; bmp && bmp !is this);
+}
+
+final class DefaultBitmapData : BitmapData
+{
+    private Buf!ubyte buf;
+
+    this(uint w, uint h, ubyte stride, PixelFormat format)
+    {
+        super(w, h, stride, format);
+    }
+
+    this(DefaultBitmapData src)
+    {
+        super(src);
+        buf ~= src.buf[];
+    }
+
+    override inout(void[]) pixels() inout
+    {
+        return buf.unsafe_slice;
+    }
+
+    override void handleResize()
+    {
+        rowBytes = w * stride;
+        buf.resize(w * h * stride);
+    }
+
+    override BitmapData clone()
+    {
+        return new DefaultBitmapData(this);
     }
 }
 
@@ -395,29 +492,20 @@ class ColorDrawBuf : Bitmap
     /// Create ARGB8888 draw buf of specified width and height
     this(int width, int height)
     {
-        super(PixelFormat.argb8);
-        resize(width, height);
+        super(width, height, PixelFormat.argb8);
     }
     /// Create copy of `ColorDrawBuf`
     this(ColorDrawBuf src)
     {
-        super(PixelFormat.argb8);
-        resize(src.width, src.height);
+        super(src.width, src.height, PixelFormat.argb8);
         if (auto len = _buf.length)
             _buf.unsafe_ptr[0 .. len] = src._buf.unsafe_ptr[0 .. len];
     }
     /// Create resized copy of `ColorDrawBuf`
     this(ColorDrawBuf src, int width, int height)
     {
-        super(PixelFormat.argb8);
-        resize(width, height); // fills with transparent
+        super(width, height, PixelFormat.argb8);
         blit(src, RectI(0, 0, src.width, src.height), RectI(0, 0, width, height));
-    }
-
-    override protected void* resizeImpl(int width, int height)
-    {
-        _buf.resize(_w * _h);
-        return _buf.unsafe_ptr;
     }
 }
 
@@ -441,7 +529,7 @@ interface IBitmap
     struct BitmapView
     {
         const SizeI sz;
-        const uint rowBytes;
+        const size_t rowBytes;
         private void* ptr;
 
         inout(T*) scanline(T)(int y) inout

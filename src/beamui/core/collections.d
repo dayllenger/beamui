@@ -698,7 +698,7 @@ if (isMutable!T &&
         return _data[i >= 0 ? i : l + i];
     }
     /// Get the mutable slice of the buffer
-    T[] unsafe_slice()
+    inout(T[]) unsafe_slice() inout
     {
         return _data[0 .. _length];
     }

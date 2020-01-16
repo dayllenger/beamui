@@ -1,5 +1,5 @@
 /**
-This module contains drawing buffer implementation for Win32 platform
+Win32 bitmap.
 
 Part of Win32 platform support.
 
@@ -9,23 +9,19 @@ Copyright: Vadim Lopatin 2014-2016
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
-module beamui.platforms.windows.win32drawbuf;
+module beamui.platforms.windows.win32bitmap;
 
 version (Windows):
 import beamui.core.config;
 
 static if (BACKEND_GUI):
 import core.sys.windows.windows;
-import beamui.core.logger;
-import beamui.core.geometry : RectI;
-import beamui.core.math : max;
-import beamui.graphics.bitmap;
-import beamui.graphics.colors : Color;
+import beamui.graphics.bitmap : BitmapData, PixelFormat;
 
-/// Win32 context ARGB drawing buffer
-class Win32ColorDrawBuf : Bitmap
+/// Win32 context ARGB8 bitmap container
+final class Win32BitmapData : BitmapData
 {
-    private uint* _pixels;
+    private void* _pixels;
     private HDC _drawdc;
     private HBITMAP _drawbmp;
 
@@ -34,18 +30,16 @@ class Win32ColorDrawBuf : Bitmap
     /// Returns handle of win32 bitmap
     @property HBITMAP bmp() { return _drawdc; }
 
-    this(int width, int height)
+    this(uint width, uint height)
     {
-        super(PixelFormat.argb8);
-        resize(width, height);
+        super(width, height, 4, PixelFormat.argb8);
     }
-    /// Create resized copy of ColorDrawBuf
-    this(ColorDrawBuf src, int width, int height)
+
+    this(Win32BitmapData src)
     {
-        super(PixelFormat.argb8);
-        resize(width, height);
-        fill(Color.transparent);
-        blit(src, RectI(0, 0, src.width, src.height), RectI(0, 0, width, height));
+        super(src);
+        handleResize();
+        pixels[] = src.pixels[];
     }
 
     ~this()
@@ -53,17 +47,33 @@ class Win32ColorDrawBuf : Bitmap
         clear();
     }
 
+    /// Clear bitmap contents
+    private void clear()
+    {
+        if (_drawbmp)
+        {
+            DeleteObject(_drawbmp);
+            _drawbmp = null;
+        }
+        if (_drawdc)
+        {
+            DeleteObject(_drawdc);
+            _drawdc = null;
+        }
+        _pixels = null;
+    }
+
     /// Returns HBITMAP for alpha
     HBITMAP createTransparencyBitmap()
     {
-        int hbytes = (((_w + 7) / 8) + 1) & 0xFFFFFFFE;
+        int hbytes = (((width + 7) / 8) + 1) & 0xFFFFFFFE;
         static __gshared ubyte[] buf;
-        buf.length = hbytes * _h * 2;
-        //for (int y = 0; y < _h; y++) {
+        buf.length = hbytes * height * 2;
+        //for (int y = 0; y < height; y++) {
         //    uint * src = scanLine(y);
-        //    ubyte * dst1 = buf.ptr + (_h - 1 - y) * hbytes;
-        //    ubyte * dst2 = buf.ptr + (_h - 1 - y) * hbytes + hbytes * _h;
-        //    for (int x = 0; x < _w; x++) {
+        //    ubyte * dst1 = buf.ptr + (height - 1 - y) * hbytes;
+        //    ubyte * dst2 = buf.ptr + (height - 1 - y) * hbytes + hbytes * height;
+        //    for (int x = 0; x < width; x++) {
         //        ubyte pixel1 = 0x80; //(src[x] >> 24) > 0x80 ? 0 : 0x80;
         //        ubyte pixel2 = (src[x] >> 24) < 0x80 ? 0 : 0x80;
         //        int xi = x >> 3;
@@ -72,22 +82,23 @@ class Win32ColorDrawBuf : Bitmap
         //    }
         //}
         // debug
-        for (int i = 0; i < hbytes * _h; i++)
+        for (int i = 0; i < hbytes * height; i++)
             buf[i] = 0xFF;
-        for (int i = hbytes * _h; i < buf.length; i++)
+        for (int i = hbytes * height; i < buf.length; i++)
             buf[i] = 0; //0xFF;
 
         BITMAP b;
-        b.bmWidth = _w;
-        b.bmHeight = _h;
+        b.bmWidth = width;
+        b.bmHeight = height;
         b.bmWidthBytes = hbytes;
         b.bmPlanes = 1;
         b.bmBitsPixel = 1;
         b.bmBits = buf.ptr;
         return CreateBitmapIndirect(&b);
-        //return CreateBitmap(_w, _h, 1, 1, buf.ptr);
+        //return CreateBitmap(width, height, 1, 1, buf.ptr);
     }
-    /// Destroy object, but leave bitmap as is
+
+    /// Destroy object, but leave HBITMAP as is
     HBITMAP destroyLeavingBitmap()
     {
         HBITMAP res = _drawbmp;
@@ -96,51 +107,42 @@ class Win32ColorDrawBuf : Bitmap
         return res;
     }
 
-    /// Clear buffer contents, set dimension to 0, 0
-    private void clear()
+    /// Draw to win32 device context
+    void drawTo(HDC dc)
     {
-        if (_drawbmp !is null || _drawdc !is null)
-        {
-            if (_drawbmp)
-                DeleteObject(_drawbmp);
-            if (_drawdc)
-                DeleteObject(_drawdc);
-            _drawbmp = null;
-            _drawdc = null;
-            _pixels = null;
-            _w = 0;
-            _h = 0;
-        }
+        BitBlt(dc, 0, 0, width, height, _drawdc, 0, 0, SRCCOPY);
     }
 
-    override protected void* resizeImpl(int width, int height)
+    override inout(void[]) pixels() inout
+    {
+        return _pixels[0 .. height * rowBytes];
+    }
+
+    override void handleResize()
     {
         clear();
-        if (width > 0 && height > 0)
-        {
-            BITMAPINFO bmi;
-            //memset( &bmi, 0, sizeof(bmi) );
-            bmi.bmiHeader.biSize = (bmi.bmiHeader.sizeof);
-            bmi.bmiHeader.biWidth = _w;
-            bmi.bmiHeader.biHeight = -_h; // top-down
-            bmi.bmiHeader.biPlanes = 1;
-            bmi.bmiHeader.biBitCount = 32;
-            bmi.bmiHeader.biCompression = BI_RGB;
-            bmi.bmiHeader.biSizeImage = 0;
-            bmi.bmiHeader.biXPelsPerMeter = 1024;
-            bmi.bmiHeader.biYPelsPerMeter = 1024;
-            bmi.bmiHeader.biClrUsed = 0;
-            bmi.bmiHeader.biClrImportant = 0;
-            _drawbmp = CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, cast(void**)(&_pixels), NULL, 0);
-            _drawdc = CreateCompatibleDC(NULL);
-            SelectObject(_drawdc, _drawbmp);
-        }
-        return _pixels;
+
+        BITMAPINFO bmi;
+        bmi.bmiHeader.biSize = bmi.bmiHeader.sizeof;
+        bmi.bmiHeader.biWidth = width;
+        bmi.bmiHeader.biHeight = -height; // top-down
+        bmi.bmiHeader.biPlanes = 1;
+        bmi.bmiHeader.biBitCount = 32;
+        bmi.bmiHeader.biCompression = BI_RGB;
+        bmi.bmiHeader.biSizeImage = 0;
+        bmi.bmiHeader.biXPelsPerMeter = 1024;
+        bmi.bmiHeader.biYPelsPerMeter = 1024;
+        bmi.bmiHeader.biClrUsed = 0;
+        bmi.bmiHeader.biClrImportant = 0;
+        _drawbmp = CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, &_pixels, NULL, 0);
+        _drawdc = CreateCompatibleDC(NULL);
+        SelectObject(_drawdc, _drawbmp);
+
+        rowBytes = width * stride;
     }
 
-    /// Draw to win32 device context
-    void drawTo(HDC dc, int x, int y)
+    override BitmapData clone()
     {
-        BitBlt(dc, x, y, _w, _h, _drawdc, 0, 0, SRCCOPY);
+        return new Win32BitmapData(this);
     }
 }

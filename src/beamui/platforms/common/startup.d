@@ -534,9 +534,9 @@ void releaseResourcesOnAppExit()
 
     debug
     {
-        if (Bitmap.instanceCount > 0)
+        if (BitmapData.instanceCount > 0)
         {
-            Log.e("Non-zero Bitmap instance count when exiting: ", Bitmap.instanceCount);
+            Log.e("Non-zero BitmapData instance count when exiting: ", BitmapData.instanceCount);
         }
         if (Style.instanceCount > 0)
         {

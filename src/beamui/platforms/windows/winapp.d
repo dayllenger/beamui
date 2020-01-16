@@ -33,7 +33,7 @@ import beamui.graphics.painter : PaintEngine;
 import beamui.graphics.swpainter;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
-import beamui.platforms.windows.win32drawbuf;
+import beamui.platforms.windows.win32bitmap;
 import beamui.platforms.windows.win32fonts;
 
 pragma(lib, "gdi32.lib");
@@ -204,7 +204,7 @@ final class Win32Window : Window
         dstring _title;
 
         PaintEngine _paintEngine;
-        Win32ColorDrawBuf _backbuffer;
+        Win32BitmapData _backbuffer;
 
         bool _destroying;
     }
@@ -525,7 +525,12 @@ final class Win32Window : Window
             Log.e("Trying to set null icon for window");
             return;
         }
-        auto resizedicon = new Win32ColorDrawBuf(ic, 32, 32);
+        auto resizedicon = new Win32BitmapData(32, 32);
+        {
+            auto bmp = new Bitmap(resizedicon);
+            bmp.blit(ic, RectI(0, 0, ic.width, ic.height), RectI(0, 0, 32, 32));
+            destroy(bmp);
+        }
         ICONINFO ii;
         HBITMAP mask = resizedicon.createTransparencyBitmap();
         HBITMAP color = resizedicon.destroyLeavingBitmap();
@@ -704,12 +709,12 @@ final class Win32Window : Window
         if (!_paintEngine)
         {
             // create stuff on the first run
-            _backbuffer = new Win32ColorDrawBuf(1, 1);
-            _paintEngine = new SWPaintEngine(_backbuffer);
+            _backbuffer = new Win32BitmapData(1, 1);
+            _paintEngine = new SWPaintEngine(new Bitmap(_backbuffer));
         }
         draw(_paintEngine);
 
-        _backbuffer.drawTo(device, 0, 0);
+        _backbuffer.drawTo(device);
     }
 
     static if (USE_OPENGL)
