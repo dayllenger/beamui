@@ -11,7 +11,6 @@ import beamui.core.config;
 import beamui.core.logger;
 import beamui.graphics.bitmap;
 import beamui.graphics.drawables;
-import beamui.graphics.gldrawbuf;
 import beamui.graphics.resources;
 import beamui.text.fonts;
 import beamui.text.ftfonts;
@@ -479,11 +478,6 @@ void initResourceManagers()
         imageCache = new ImageCache;
     }
 
-    static if (USE_OPENGL)
-    {
-        initGLCaches();
-    }
-
     Log.d("initResourceManagers() -- finished");
 }
 
@@ -526,11 +520,6 @@ void releaseResourcesOnAppExit()
     }
 
     FontManager.instance = null;
-
-    static if (USE_OPENGL)
-    {
-        destroyGLCaches();
-    }
 
     debug
     {
