@@ -11,6 +11,7 @@ import beamui.core.config;
 import beamui.core.functions : getShortClassName;
 import beamui.core.geometry : InsetsI, RectI, SizeI;
 import beamui.core.logger;
+import beamui.core.signals : Signal;
 import beamui.graphics.colors;
 
 /// Describes supported formats of bitmap pixel data
@@ -32,6 +33,8 @@ struct NinePatch
 
 /// Non thread safe
 private __gshared uint bitmapIdGenerator;
+
+__gshared Signal!(void delegate(uint id)) onBitmapDestruction;
 
 struct Bitmap
 {
@@ -140,15 +143,13 @@ struct Bitmap
         }
     }
 
-    void function(uint) onDestroyCallback;
-
-    /// Call to remove this image from OpenGL cache when image is updated.
+    /// Call to remove this image from OpenGL cache when image is updated
     void invalidate()
     {
-        if (onDestroyCallback && data)
+        if (data)
         {
             // remove from cache
-            onDestroyCallback(data.id);
+            onBitmapDestruction(data.id);
             // assign new ID
             data.id = bitmapIdGenerator++;
         }
@@ -480,6 +481,7 @@ abstract class BitmapData
 
     ~this()
     {
+        onBitmapDestruction(id);
         debug
         {
             if (APP_IS_SHUTTING_DOWN)

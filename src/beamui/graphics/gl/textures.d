@@ -114,6 +114,11 @@ struct TextureCache
         glGenerateMipmap(GL_TEXTURE_2D);
         Tex2D.unbind();
     }
+
+    void remove(uint id)
+    {
+        atlas.remove(id);
+    }
 }
 
 /// Glyph cache is the same thing as `TextureCache`, but for glyph images
@@ -184,6 +189,11 @@ struct GlyphCache
         Tex2D.uploadSubImage(box, 0, GL_RED, GL_UNSIGNED_BYTE, data.ptr);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         Tex2D.unbind();
+    }
+
+    void remove(uint id)
+    {
+        atlas.remove(id);
     }
 }
 

@@ -9,6 +9,7 @@ module beamui.text.glyph;
 
 import beamui.core.config : USE_OPENGL;
 import beamui.core.functions : eliminate;
+import beamui.core.signals : Signal;
 
 /// Subpixel rendering mode for fonts (aka ClearType)
 enum SubpixelRenderingMode : ubyte
@@ -24,11 +25,8 @@ enum SubpixelRenderingMode : ubyte
 */
 align(1) struct Glyph
 {
-    static if (USE_OPENGL)
-    {
-        /// Unique id of glyph (for drawing in hardware accelerated scenes)
-        uint id;
-    }
+    /// Unique id of glyph (for drawing in hardware accelerated scenes)
+    uint id;
 
     /// Full width of the glyph
     float widthPixels;
@@ -100,23 +98,17 @@ struct GlyphCache
         return glyph;
     }
 
-    /// Removes entries not used after last call of `checkpoint()` or `cleanup()`
+    /// Removes entries not used after the `checkpoint` calls (notifies about glyph destruction)
     void cleanup()
     {
         foreach (part; _glyphs)
         {
-            if (!part)
-                continue;
-            foreach (item; part)
+            foreach (ref item; part)
             {
                 if (!item.glyph || item.inUse)
                     continue;
-                static if (USE_OPENGL)
-                {
-                    // notify about destroyed glyphs
-                    if (_glyphDestroyCallback)
-                        _glyphDestroyCallback(item.glyph.id);
-                }
+                // notify about destroyed glyphs
+                onGlyphDestruction(item.glyph.id);
                 eliminate(item.glyph);
             }
         }
@@ -127,30 +119,22 @@ struct GlyphCache
     {
         foreach (part; _glyphs)
         {
-            if (!part)
-                continue;
             foreach (ref item; part)
                 item.inUse = false;
         }
     }
 
-    /// Removes all entries (when built with `USE_OPENGL` version, notify OpenGL cache about removed glyphs)
+    /// Removes all entries (notifies about glyph destruction)
     void clear()
     {
         foreach (part; _glyphs)
         {
-            if (!part)
-                continue;
-            foreach (item; part)
+            foreach (ref item; part)
             {
                 if (!item.glyph)
                     continue;
-                static if (USE_OPENGL)
-                {
-                    // notify about destroyed glyphs
-                    if (_glyphDestroyCallback)
-                        _glyphDestroyCallback(item.glyph.id);
-                }
+                // notify about destroyed glyphs
+                onGlyphDestruction(item.glyph.id);
                 eliminate(item.glyph);
             }
         }
@@ -162,31 +146,19 @@ struct GlyphCache
     }
 }
 
-static if (USE_OPENGL)
+/** Glyph destruction signal (to tell GPU glyph cache that the glyph with `id` can be removed).
+
+    Used for resource management. Usually you don't have to call it manually.
+*/
+__gshared Signal!(void delegate(uint id)) onGlyphDestruction;
+
+private __gshared uint _nextGlyphID;
+
+/** Generates a unique glyph ID to control the lifetime of GPU glyph cache items.
+
+    Used for resource management. Usually you don't have to call it manually.
+*/
+uint nextGlyphID()
 {
-    private __gshared void function(uint id) _glyphDestroyCallback;
-    private __gshared uint _nextGlyphID;
-
-    /** Glyph destroy callback (to cleanup OpenGL caches).
-
-        This callback is used to tell OpenGL glyph cache that the glyph is
-        not more used - to let the cache cleanup its textures.
-
-        Used for resource management. Usually you don't have to call it manually.
-    */
-    void function(uint id) glyphDestroyCallback() { return _glyphDestroyCallback; }
-    /// ditto
-    void glyphDestroyCallback(void function(uint id) callback)
-    {
-        _glyphDestroyCallback = callback;
-    }
-
-    /** Generates a unique glyph ID to control the lifetime of OpenGL glyph cache items.
-
-        Used for resource management. Usually you don't have to call it manually.
-    */
-    uint nextGlyphID()
-    {
-        return _nextGlyphID++;
-    }
+    return _nextGlyphID++;
 }

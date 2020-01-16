@@ -17,7 +17,7 @@ import beamui.core.geometry : BoxI, Rect, RectI, SizeI;
 import beamui.core.linalg : Vec2, Mat2x3;
 import beamui.core.logger : Log;
 import beamui.core.math;
-import beamui.graphics.bitmap : Bitmap;
+import beamui.graphics.bitmap : Bitmap, onBitmapDestruction;
 import beamui.graphics.brush;
 import beamui.graphics.colors : Color, ColorF;
 import beamui.graphics.compositing : getBlendFactors;
@@ -29,6 +29,7 @@ import beamui.graphics.gl.objects : TexId;
 import beamui.graphics.gl.renderer;
 import beamui.graphics.gl.shaders;
 import beamui.graphics.gl.textures;
+import beamui.text.glyph : onGlyphDestruction;
 
 private nothrow:
 
@@ -54,10 +55,14 @@ public final class GLSharedData
     this()
     {
         colorStopAtlas.initialize();
+        onBitmapDestruction ~= &textureCache.remove;
+        onGlyphDestruction ~= &glyphCache.remove;
     }
 
     ~this()
     {
+        onBitmapDestruction -= &textureCache.remove;
+        onGlyphDestruction -= &glyphCache.remove;
         debug ensureNotInGC(this);
     }
 }
