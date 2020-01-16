@@ -27,7 +27,7 @@ import beamui.core.logger;
 import beamui.core.types : Tup, tup;
 import beamui.graphics.bitmap;
 
-alias ImageLoader = ColorDrawBuf function(const ubyte[]);
+alias ImageLoader = Bitmap function(const ubyte[]);
 
 private Tup!(string, ImageLoader)[] customLoaders;
 
@@ -37,8 +37,8 @@ void registerImageType(string extension, ImageLoader loader)
     customLoaders ~= tup(toLower(extension), loader);
 }
 
-/// Load and decode image from file to `ColorDrawBuf`, returns `null` if loading or decoding is failed
-ColorDrawBuf loadImage(string filename)
+/// Load and decode image from file to `Bitmap`, returns empty bitmap if loading or decoding failed
+Bitmap loadImage(string filename)
 {
     Log.d("Loading image from file " ~ filename);
 
@@ -51,12 +51,12 @@ ColorDrawBuf loadImage(string filename)
     {
         Log.e("Exception while loading image from file ", filename);
         Log.e(to!string(e));
-        return null;
+        return Bitmap.init;
     }
 }
 
-/// Decode image from the byte array to `ColorDrawBuf`, returns `null` if decoding is failed
-ColorDrawBuf loadImage(immutable ubyte[] data, string filename)
+/// Decode image from the byte array to `Bitmap`, returns empty bitmap if decoding failed
+Bitmap loadImage(immutable ubyte[] data, string filename)
 {
     try
     {
@@ -81,34 +81,34 @@ ColorDrawBuf loadImage(immutable ubyte[] data, string filename)
         if (isPNG(filename))
             image = dimage.png.loadPNG(stream);
         if (!image)
-            return null;
-        ColorDrawBuf buf = importImage(image);
+            return Bitmap.init;
+        Bitmap bm = importImage(image);
         destroy(image);
-        return buf;
+        return bm;
     }
     catch (Exception e)
     {
         Log.e("Failed to decode image from file ", filename);
         Log.e(to!string(e));
-        return null;
+        return Bitmap.init;
     }
 }
 
-private ColorDrawBuf importImage(SuperImage image)
+private Bitmap importImage(SuperImage image)
 {
     const int w = image.width;
     const int h = image.height;
     const(uint)[] data = image.data;
-    auto buf = new ColorDrawBuf(w, h);
-    auto pxRef = buf.mutate!uint;
+    auto bitmap = Bitmap(w, h, PixelFormat.argb8);
+    auto pxRef = bitmap.mutate!uint;
     foreach (y; 0 .. h)
     {
         uint* dstLine = pxRef.scanline(y);
         dstLine[0 .. w] = data[0 .. w];
         data = data[w .. $];
     }
-    buf.preMultiplyAlpha();
-    return buf;
+    bitmap.preMultiplyAlpha();
+    return bitmap;
 }
 
 import std.algorithm : endsWith;

@@ -54,7 +54,7 @@ final class SDLWindow : Window
         dstring _title;
 
         PaintEngine _paintEngine;
-        ColorDrawBuf _backbuffer;
+        Bitmap _backbuffer;
     }
 
     this(SDLPlatform platform, dstring caption, Window parent, WindowOptions options, uint w = 0, uint h = 0)
@@ -89,7 +89,7 @@ final class SDLWindow : Window
         static if (USE_OPENGL)
             bindContext(); // required to correctly destroy GL objects
         eliminate(_paintEngine);
-        eliminate(_backbuffer);
+        _backbuffer = Bitmap.init;
     }
 
     private bool create()
@@ -306,26 +306,22 @@ final class SDLWindow : Window
             SDL_SetWindowTitle(_win, toUTF8(caption).toStringz);
     }
 
-    override @property void icon(DrawBufRef buf)
+    override @property void icon(Bitmap ic)
     {
-        auto ic = cast(ColorDrawBuf)buf.get;
         if (!ic)
         {
             Log.e("Trying to set null icon for window");
             return;
         }
-        int iconw = 32;
-        int iconh = 32;
-        auto iconDraw = new ColorDrawBuf(iconw, iconh);
-        scope (exit)
-            destroy(iconDraw);
-        iconDraw.fill(Color.transparent);
+        const int iconw = 32;
+        const int iconh = 32;
+        auto iconDraw = Bitmap(iconw, iconh, PixelFormat.argb8);
         iconDraw.blit(ic, RectI(0, 0, ic.width, ic.height), RectI(0, 0, iconw, iconh));
         iconDraw.preMultiplyAlpha();
         SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(
             cast(void*)iconDraw.pixels!uint,
             iconDraw.width, iconDraw.height,
-            32, iconDraw.width * 4,
+            32, cast(int)iconDraw.rowBytes,
             0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000,
         );
         if (surface)
@@ -519,7 +515,7 @@ final class SDLWindow : Window
             if (!_paintEngine)
             {
                 // create stuff on the first run
-                _backbuffer = new ColorDrawBuf(1, 1);
+                _backbuffer = Bitmap(1, 1, PixelFormat.argb8);
                 _paintEngine = new SWPaintEngine(_backbuffer);
             }
             draw(_paintEngine);
@@ -528,7 +524,7 @@ final class SDLWindow : Window
             rect.w = _backbuffer.width;
             rect.h = _backbuffer.height;
             updateTextureSize(rect.w, rect.h);
-            SDL_UpdateTexture(_texture, &rect, _backbuffer.pixels!uint, _backbuffer.width * 4);
+            SDL_UpdateTexture(_texture, &rect, _backbuffer.pixels!uint, cast(int)_backbuffer.rowBytes);
             SDL_RenderCopy(_renderer, _texture, &rect, &rect);
             SDL_RenderPresent(_renderer);
         }

@@ -368,7 +368,7 @@ class Window : CustomEventTarget
     /// Set window title
     abstract @property void title(dstring caption);
     /// Set window icon
-    abstract @property void icon(DrawBufRef icon);
+    abstract @property void icon(Bitmap icon);
 
     /// Show window
     abstract void show();

@@ -17,7 +17,7 @@ import beamui.graphics.bitmap;
 import beamui.graphics.colors;
 import beamui.ext.xpm.colors;
 
-ColorDrawBuf parseXPM(const(ubyte)[] data)
+Bitmap parseXPM(const(ubyte)[] data)
 {
     auto buf = cast(const(char)[])(data);
     auto lines = buf.splitter('\n');
@@ -95,10 +95,10 @@ ColorDrawBuf parseXPM(const(ubyte)[] data)
 
     enforce(colorsRead == ncols, "Could not load color table");
 
-    //Read pixels
-    ColorDrawBuf colorBuf = new ColorDrawBuf(w, h);
+    // read pixels
+    auto bitmap = Bitmap(w, h, PixelFormat.argb8);
 
-    auto pxRef = colorBuf.mutate!uint;
+    auto pxRef = bitmap.mutate!uint;
     for (int y = 0; y < h && !lines.empty; y++)
     {
         auto str = extractXPMString(lines.front);
@@ -117,7 +117,7 @@ ColorDrawBuf parseXPM(const(ubyte)[] data)
         lines.popFront();
     }
 
-    return colorBuf;
+    return bitmap;
 }
 
 private const(char)[] extractXPMString(const(char)[] str)

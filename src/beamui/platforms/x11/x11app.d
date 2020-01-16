@@ -308,7 +308,7 @@ final class X11Window : DWindow
         dstring _title;
 
         PaintEngine _paintEngine;
-        ColorDrawBuf _backbuffer;
+        Bitmap _backbuffer;
 
         // sync counter is needed to gain smooth window resize
         XSyncCounter syncCounter;
@@ -358,7 +358,7 @@ final class X11Window : DWindow
         static if (USE_OPENGL)
             bindContext(); // required to correctly destroy GL objects
         eliminate(_paintEngine);
-        eliminate(_backbuffer);
+        _backbuffer = Bitmap.init;
     }
 
     private void create()
@@ -651,9 +651,8 @@ final class X11Window : DWindow
         //XFlush(x11display); //TODO: not sure if XFlush is required
     }
 
-    override @property void icon(DrawBufRef buf)
+    override @property void icon(Bitmap ic)
     {
-        ColorDrawBuf ic = cast(ColorDrawBuf)buf.get;
         if (!ic)
         {
             Log.e("Trying to set null icon for window");
@@ -661,10 +660,7 @@ final class X11Window : DWindow
         }
         const int iconw = 32;
         const int iconh = 32;
-        auto iconDraw = new ColorDrawBuf(iconw, iconh);
-        scope (exit)
-            destroy(iconDraw);
-        iconDraw.fill(Color.transparent);
+        auto iconDraw = Bitmap(iconw, iconh, PixelFormat.argb8);
         iconDraw.blit(ic, RectI(0, 0, ic.width, ic.height), RectI(0, 0, iconw, iconh));
         iconDraw.preMultiplyAlpha();
         c_long[] propData = new c_long[2 + iconw * iconh];
@@ -758,7 +754,7 @@ final class X11Window : DWindow
         if (!_paintEngine)
         {
             // create stuff on the first run
-            _backbuffer = new ColorDrawBuf(1, 1);
+            _backbuffer = Bitmap(1, 1, PixelFormat.argb8);
             _paintEngine = new SWPaintEngine(_backbuffer);
         }
         draw(_paintEngine);
@@ -773,7 +769,7 @@ final class X11Window : DWindow
         img.bitmap_pad = 32;
         img.bitmap_bit_order = LSBFirst;
         img.depth = 24;
-        img.chars_per_line = _backbuffer.width * 4;
+        img.chars_per_line = cast(int)_backbuffer.rowBytes;
         img.bits_per_pixel = 32;
         img.red_mask = 0xFF0000;
         img.green_mask = 0x00FF00;

@@ -340,7 +340,7 @@ Result!Drawable decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)
     assert(tokens.length > 0);
 
     import beamui.core.config : BACKEND_GUI;
-    import beamui.graphics.bitmap : DrawBufRef;
+    import beamui.graphics.bitmap : Bitmap;
 
     const t0 = tokens[0];
     // #0: none
@@ -368,9 +368,8 @@ Result!Drawable decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)
                 tiled = true;
             }
             // PNG/JPEG image
-            DrawBufRef image = imageCache.get(id);
-            if (!image.isNull)
-                return Ok!Drawable(new ImageDrawable(image, tiled));
+            if (Bitmap bm = imageCache.get(id))
+                return Ok!Drawable(new ImageDrawable(bm, tiled));
         }
         return Err!Drawable;
     }

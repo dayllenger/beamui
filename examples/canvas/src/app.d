@@ -75,9 +75,11 @@ int main()
     canvasCompositing.onDraw = toDelegate(&compositing);
     canvasBlending.onDraw = toDelegate(&blending);
 
-    data.duck = cast(ColorDrawBuf)imageCache.get("ducky").get;
-    data.icon = cast(ColorDrawBuf)imageCache.get("fileclose").get;
+    data.duck = imageCache.get("ducky");
+    data.icon = imageCache.get("fileclose");
     assert(data.duck && data.icon);
+    scope (exit)
+        destroy(data);
 
     window.mainWidget = frame;
     window.show();
@@ -126,8 +128,8 @@ TabHost {
 struct AppData
 {
     bool antialiasing;
-    ColorDrawBuf duck;
-    ColorDrawBuf icon;
+    Bitmap duck;
+    Bitmap icon;
     BlendMode blendMode;
 }
 AppData data;

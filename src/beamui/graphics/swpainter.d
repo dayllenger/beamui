@@ -46,7 +46,7 @@ public final class SWPaintEngine : PaintEngine
         LayerPool layerPool;
         MaskPool maskPool;
 
-        Bitmap backbuf;
+        Bitmap* backbuf;
         PM_Image base_layer;
         PM_ImageView layer; // points either to base_layer or to some layer img in the stack
         Buf!Layer layerStack;
@@ -64,11 +64,10 @@ public final class SWPaintEngine : PaintEngine
         typeof(scoped!PlotterMask()) plotter_mask;
     }
 
-    this(Bitmap backbuffer)
+    this(ref Bitmap backbuffer)
         in(backbuffer)
-        in(backbuffer.width > 0 && backbuffer.height > 0)
     {
-        backbuf = backbuffer;
+        backbuf = &backbuffer;
         plotter_solid_op = scoped!(PlotterSolid!false)();
         plotter_solid_tr = scoped!(PlotterSolid!true)();
         plotter_linear_op = scoped!(PlotterLinear!false)();
@@ -94,7 +93,7 @@ protected:
 
         backbuf.resize(w, h);
         backbuf.fill(bg);
-        base_layer = PM_Image.fromBitmap(backbuf, Repeat.no, Filtering.no);
+        base_layer = PM_Image.fromBitmap(*backbuf, Repeat.no, Filtering.no);
         layer = base_layer.view;
     }
 
@@ -320,7 +319,7 @@ protected:
         }
         else if (br.type == BrushType.pattern)
         {
-            PM_Image src_img = PM_Image.fromBitmap(br.pattern.image, Repeat.yes, Filtering.yes);
+            PM_Image src_img = PM_Image.fromBitmap(*br.pattern.image, Repeat.yes, Filtering.yes);
             if (!src_img)
                 return;
 
@@ -439,7 +438,7 @@ protected:
         rasterizeTrapezoidChain(bufTraps[], rparams, plotter);
     }
 
-    void drawImage(const Bitmap bmp, Vec2 pos, float opacity)
+    void drawImage(ref const Bitmap bmp, Vec2 pos, float opacity)
     {
         const rect = Rect(pos.x, pos.y, pos.x + bmp.width, pos.y + bmp.height);
         const BoxI clip = clipByRect(transformBounds(rect));
@@ -468,7 +467,7 @@ protected:
         );
     }
 
-    void drawNinePatch(const Bitmap bmp, ref const NinePatchInfo info, float opacity)
+    void drawNinePatch(ref const Bitmap bmp, ref const NinePatchInfo info, float opacity)
     {
         const rect = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
         const BoxI clip = clipByRect(transformBounds(rect));
@@ -1223,7 +1222,7 @@ struct PM_Image
         return PM_Image(PM_ImageView(pixman_image_create_solid_fill(&pxc)));
     }
 
-    static PM_Image fromBitmap(const Bitmap bmp, Repeat repeat, Filtering filter)
+    static PM_Image fromBitmap(ref const Bitmap bmp, Repeat repeat, Filtering filter)
         in(bmp)
     {
         auto ret = pixman_image_create_bits(

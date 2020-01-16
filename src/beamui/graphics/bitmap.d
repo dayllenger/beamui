@@ -11,7 +11,6 @@ import beamui.core.config;
 import beamui.core.functions : getShortClassName;
 import beamui.core.geometry : InsetsI, RectI, SizeI;
 import beamui.core.logger;
-import beamui.core.types : Ref, RefCountedObject;
 import beamui.graphics.colors;
 
 /// Describes supported formats of bitmap pixel data
@@ -34,7 +33,7 @@ struct NinePatch
 /// Non thread safe
 private __gshared uint bitmapIdGenerator;
 
-class Bitmap : RefCountedObject
+struct Bitmap
 {
     @property
     {
@@ -53,7 +52,7 @@ class Bitmap : RefCountedObject
         {
             return data ? SizeI(data.w, data.h) : SizeI.init;
         }
-        /// Bitmap pixel format. `PixelFormat.invalid` on uninitialized bitmap
+        /// Bitmap pixel format. `PixelFormat.invalid` on empty bitmap
         PixelFormat format() const
         {
             return impl ? impl.format : PixelFormat.invalid;
@@ -108,6 +107,39 @@ class Bitmap : RefCountedObject
         assert(data.stride == impl.stride);
     }
 
+    this(ref Bitmap bm)
+    {
+        if (bm.data)
+        {
+            data = bm.data;
+            impl = bm.impl;
+            data.refCount++;
+        }
+    }
+
+    ~this()
+    {
+        // decrease counter and destroy the data if no more references left
+        if (data)
+        {
+            if (data.refCount > 1)
+                data.refCount--;
+            else
+                destroy(data);
+            data = null;
+        }
+    }
+
+    /// Copy the shared data right before it is modified
+    private void detach()
+    {
+        if (data.refCount > 1)
+        {
+            data.refCount--;
+            data = data.clone();
+        }
+    }
+
     void function(uint) onDestroyCallback;
 
     /// Call to remove this image from OpenGL cache when image is updated.
@@ -129,6 +161,7 @@ class Bitmap : RefCountedObject
     {
         if (data.w != width || data.h != height)
         {
+            detach();
             data.w = width;
             data.h = height;
             data.handleResize();
@@ -156,7 +189,13 @@ class Bitmap : RefCountedObject
             T.sizeof == 8 || T.sizeof == 12 || T.sizeof == 16)
         in(data)
     {
+        detach();
         return PixelRef!T(data.pixels, data.rowBytes);
+    }
+
+    bool opCast(To : bool)() const
+    {
+        return data !is null;
     }
 
     /// Detect nine patch using image 1-pixel border. Returns true if 9-patch markup is found in the image
@@ -307,6 +346,7 @@ class Bitmap : RefCountedObject
         if (data.w <= 0 || data.h <= 0)
             return;
 
+        detach();
         impl.fill(IBitmap.BitmapView(size, data.rowBytes, &data.pixels[0]), color);
     }
 
@@ -317,6 +357,7 @@ class Bitmap : RefCountedObject
         if (!applyClipping(rect))
             return;
 
+        detach();
         const byteOffset = rect.top * data.rowBytes + rect.left * impl.stride;
         impl.fill(IBitmap.BitmapView(rect.size, data.rowBytes, &data.pixels[byteOffset]), color);
     }
@@ -340,6 +381,7 @@ class Bitmap : RefCountedObject
         if (!applyClipping(dstRect, srcRect))
             return false;
 
+        detach();
         const byteOffset1 = dstRect.top * data.rowBytes + dstRect.left * impl.stride;
         const byteOffset2 = srcRect.top * source.data.rowBytes + srcRect.left * source.impl.stride;
         return impl.blit(
@@ -480,32 +522,6 @@ final class DefaultBitmapData : BitmapData
     override BitmapData clone()
     {
         return new DefaultBitmapData(this);
-    }
-}
-
-alias DrawBufRef = Ref!Bitmap;
-
-class ColorDrawBuf : Bitmap
-{
-    private Buf!uint _buf;
-
-    /// Create ARGB8888 draw buf of specified width and height
-    this(int width, int height)
-    {
-        super(width, height, PixelFormat.argb8);
-    }
-    /// Create copy of `ColorDrawBuf`
-    this(ColorDrawBuf src)
-    {
-        super(src.width, src.height, PixelFormat.argb8);
-        if (auto len = _buf.length)
-            _buf.unsafe_ptr[0 .. len] = src._buf.unsafe_ptr[0 .. len];
-    }
-    /// Create resized copy of `ColorDrawBuf`
-    this(ColorDrawBuf src, int width, int height)
-    {
-        super(width, height, PixelFormat.argb8);
-        blit(src, RectI(0, 0, src.width, src.height), RectI(0, 0, width, height));
     }
 }
 

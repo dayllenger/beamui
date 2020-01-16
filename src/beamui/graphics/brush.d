@@ -10,7 +10,7 @@ module beamui.graphics.brush;
 import std.algorithm : sort;
 import beamui.core.linalg : Vec2, Mat2x3;
 import beamui.core.math : clamp, fequal6, fzero6;
-import beamui.graphics.bitmap : ColorDrawBuf;
+import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.colors : Color;
 
 /// Enumerates supported brush types
@@ -89,11 +89,11 @@ struct Brush
     }
 
     /// Create a brush with an image pattern
-    static Brush fromPattern(ColorDrawBuf image, Mat2x3 transform = Mat2x3.identity)
+    static Brush fromPattern(ref const Bitmap image, Mat2x3 transform = Mat2x3.identity)
     {
         Brush br;
         br._type = BrushType.pattern;
-        br._pattern = ImagePattern(image, transform);
+        br._pattern = ImagePattern(&image, transform);
         br._opq = image ? Opaque.yes : Opaque.hidden;
         return br;
     }
@@ -223,6 +223,6 @@ struct RadialGradient
 
 struct ImagePattern
 {
-    ColorDrawBuf image;
+    const(Bitmap)* image;
     Mat2x3 transform;
 }

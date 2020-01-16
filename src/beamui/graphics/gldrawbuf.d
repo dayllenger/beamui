@@ -100,7 +100,7 @@ private abstract class GLCache
             GLCache _cache;
             int _tdx;
             int _tdy;
-            ColorDrawBuf _drawbuf;
+            Bitmap _drawbuf;
             int _currentLine;
             int _nextLine;
             int _x;
@@ -120,13 +120,12 @@ private abstract class GLCache
 
         ~this()
         {
-            eliminate(_drawbuf);
             Tex2D.del(_texture);
         }
 
         final void updateTexture()
         {
-            if (_drawbuf is null)
+            if (!_drawbuf)
                 return; // no draw buffer!!!
 
             const bool none = _texture == TexId.init;
@@ -142,7 +141,7 @@ private abstract class GLCache
             // }
             _needUpdateTexture = false;
             if (_closed)
-                eliminate(_drawbuf);
+                _drawbuf = Bitmap.init;
         }
 
         final GLCacheItem reserveSpace(uint objectID, int width, int height)
@@ -173,7 +172,7 @@ private abstract class GLCache
                     _nextLine = _currentLine + height + 2 * spacer;
                 if (!_drawbuf)
                 {
-                    _drawbuf = new ColorDrawBuf(_tdx, _tdy);
+                    _drawbuf = Bitmap(_tdx, _tdy, PixelFormat.argb8);
                     _drawbuf.fill(Color.transparent);
                 }
                 _x += width + spacer;
@@ -289,7 +288,6 @@ private abstract class GLCache
     }
 }
 
-/// OpenGL texture cache for ColorDrawBuf objects
 private class GLImageCache : GLCache
 {
     static class GLImageCachePage : GLCachePage

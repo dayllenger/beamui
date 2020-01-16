@@ -576,8 +576,6 @@ final class Painter
 
         const w = image.width;
         const h = image.height;
-        if (w <= 0 || h <= 0)
-            return;
 
         opacity = clamp(opacity, 0, 1);
         if (fzero6(opacity))
@@ -869,8 +867,8 @@ protected:
     void fillTriangle(Vec2[3], Color);
     void fillCircle(float, float, float, Color);
 
-    void drawImage(const Bitmap, Vec2, float);
-    void drawNinePatch(const Bitmap, ref const NinePatchInfo, float);
+    void drawImage(ref const Bitmap, Vec2, float);
+    void drawNinePatch(ref const Bitmap, ref const NinePatchInfo, float);
     void drawText(const GlyphInstance[], Color);
 
     final Rect transformBounds(Rect untr) nothrow

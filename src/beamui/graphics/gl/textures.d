@@ -65,8 +65,8 @@ struct TextureCache
         }
     }
 
-    /// Get a view onto uploaded bitmap, or upload it if not done yet. The `bitmap` must not be `null`
-    TextureView getTexture(const Bitmap bitmap)
+    /// Get a view onto uploaded bitmap, or upload it if not done yet. The `bitmap` must not be empty
+    TextureView getTexture(ref const Bitmap bitmap)
         in(bitmap)
     {
         const sz = SizeI(bitmap.width, bitmap.height);

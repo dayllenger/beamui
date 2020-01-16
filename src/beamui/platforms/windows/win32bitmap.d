@@ -98,12 +98,11 @@ final class Win32BitmapData : BitmapData
         //return CreateBitmap(width, height, 1, 1, buf.ptr);
     }
 
-    /// Destroy object, but leave HBITMAP as is
-    HBITMAP destroyLeavingBitmap()
+    /// Take HBITMAP out of this object
+    HBITMAP extractBitmap()
     {
         HBITMAP res = _drawbmp;
         _drawbmp = null;
-        destroy(this);
         return res;
     }
 

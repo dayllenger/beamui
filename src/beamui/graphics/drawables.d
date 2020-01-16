@@ -206,7 +206,7 @@ class BoxShadowDrawable : Drawable
     private int _offsetY;
     private int _blurSize;
     private Color _color;
-    private ColorDrawBuf _bitmap;
+    private Bitmap _bitmap;
 
     this(int offsetX, int offsetY, uint blurSize = 0, Color color = Color.black)
     {
@@ -219,7 +219,7 @@ class BoxShadowDrawable : Drawable
 
         // now create a bitmap that will contain the shadow
         const size = 4 * blurSize + 1;
-        _bitmap = new ColorDrawBuf(size, size);
+        _bitmap = Bitmap(size, size, PixelFormat.argb8);
         // draw a square in center of the bitmap
         _bitmap.fillRect(RectI(blurSize, blurSize, size - blurSize, size - blurSize), color);
         // blur the square
@@ -228,11 +228,6 @@ class BoxShadowDrawable : Drawable
         // set 9-patch frame
         const sz = _blurSize * 2;
         _bitmap.ninePatch = new NinePatch(InsetsI(sz), InsetsI(sz));
-    }
-
-    ~this()
-    {
-        eliminate(_bitmap);
     }
 
     override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
@@ -267,7 +262,7 @@ class BoxShadowDrawable : Drawable
 }
 
 /// Apply Gaussian blur to the bitmap. This is a slow function, but it's fine for box shadows for now
-private void blurBitmapARGB8(ColorDrawBuf bitmap, uint blurSize)
+private void blurBitmapARGB8(ref Bitmap bitmap, uint blurSize)
     in(bitmap.format == PixelFormat.argb8)
 {
     if (blurSize == 0)
@@ -656,7 +651,7 @@ static if (BACKEND_CONSOLE)
 /// Drawable which just draws images
 class ImageDrawable : Drawable
 {
-    private DrawBufRef _image;
+    private Bitmap _bitmap;
     private bool _tiled;
 
     debug static __gshared int _instanceCount;
@@ -665,9 +660,9 @@ class ImageDrawable : Drawable
         return _instanceCount;
     }
 
-    this(DrawBufRef image, bool tiled = false)
+    this(Bitmap bitmap, bool tiled = false)
     {
-        _image = image;
+        _bitmap = bitmap;
         _tiled = tiled;
         debug _instanceCount++;
         debug (resalloc)
@@ -676,7 +671,6 @@ class ImageDrawable : Drawable
 
     ~this()
     {
-        _image.clear();
         debug _instanceCount--;
         debug (resalloc)
             Log.d("Destroyed ImageDrawable, count: ", _instanceCount);
@@ -684,50 +678,49 @@ class ImageDrawable : Drawable
 
     override @property float width() const
     {
-        if (_image.isNull)
-            return 0;
-        if (_image.hasNinePatch)
-            return _image.width - 2;
-        return _image.width;
+        if (_bitmap)
+        {
+            if (_bitmap.hasNinePatch)
+                return _bitmap.width - 2;
+            return _bitmap.width;
+        }
+        return 0;
     }
 
     override @property float height() const
     {
-        if (_image.isNull)
-            return 0;
-        if (_image.hasNinePatch)
-            return _image.height - 2;
-        return _image.height;
+        if (_bitmap)
+        {
+            if (_bitmap.hasNinePatch)
+                return _bitmap.height - 2;
+            return _bitmap.height;
+        }
+        return 0;
     }
 
     override @property Insets padding() const
     {
-        if (!_image.isNull && _image.hasNinePatch)
-            return Insets.from(_image.ninePatch.padding);
+        if (_bitmap && _bitmap.hasNinePatch)
+            return Insets.from(_bitmap.ninePatch.padding);
         else
             return Insets(0);
     }
 
     override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
     {
-        if (_image.isNull)
+        if (!_bitmap)
             return;
 
-        ColorDrawBuf img = cast(ColorDrawBuf)_image;
-        if (!img)
-            return;
-        assert(img.width > 0 && img.height > 0);
-
-        if (img.hasNinePatch)
+        if (_bitmap.hasNinePatch)
         {
-            pr.drawNinePatch(img, RectI(1, 1, img.width - 1, img.height - 1), Rect(b), 1);
+            pr.drawNinePatch(_bitmap, RectI(1, 1, _bitmap.width - 1, _bitmap.height - 1), Rect(b), 1);
         }
         else if (_tiled)
         {
             static Path path;
             path.reset();
             path.lineBy(b.w, 0).lineBy(0, b.h).lineBy(-b.w, 0).close();
-            const brush = Brush.fromPattern(img, Mat2x3.translation(Vec2(tilex0, tiley0)));
+            const brush = Brush.fromPattern(_bitmap, Mat2x3.translation(Vec2(tilex0, tiley0)));
             pr.translate(b.x, b.y);
             pr.fill(path, brush);
             pr.translate(-b.x, -b.y);
@@ -737,8 +730,8 @@ class ImageDrawable : Drawable
             PaintSaver sv;
             pr.save(sv);
             pr.translate(b.x, b.y);
-            pr.scale(b.w / cast(float)img.width, b.h / cast(float)img.height);
-            pr.drawImage(img, 0, 0, 1);
+            pr.scale(b.w / cast(float)_bitmap.width, b.h / cast(float)_bitmap.height);
+            pr.drawImage(_bitmap, 0, 0, 1);
         }
     }
 }
@@ -1019,7 +1012,7 @@ private __gshared ImageCache _imageCache;
 /// Decoded raster images cache - access by filenames
 final class ImageCache
 {
-    private DrawBufRef[string] _map;
+    private Bitmap[string] _map;
 
     this()
     {
@@ -1036,12 +1029,12 @@ final class ImageCache
     void clear()
     {
         foreach (ref item; _map)
-            item.clear();
+            item = Bitmap.init;
         destroy(_map);
     }
 
     /// Find an image by resource ID, load and cache it
-    DrawBufRef get(string imageID)
+    Bitmap get(string imageID)
     {
         // console images are not supported for now in any way
         static if (BACKEND_GUI)
@@ -1060,10 +1053,10 @@ final class ImageCache
                     bitmap.detectNinePatch();
             }
             _map[imageID] = bitmap;
-            return DrawBufRef(bitmap);
+            return bitmap;
         }
         else
-            return DrawBufRef.init;
+            return Bitmap.init;
     }
 
     /// Remove an image with resource ID `imageID` from the cache

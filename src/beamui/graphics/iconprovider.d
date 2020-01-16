@@ -59,26 +59,28 @@ enum StandardIcon
 abstract class IconProviderBase
 {
     /// Get image of standard icon. If icon was not found use fallback.
-    final DrawBufRef getStandardIcon(StandardIcon icon, lazy DrawBufRef fallback)
+    final Bitmap getStandardIcon(StandardIcon icon, lazy Bitmap fallback)
     {
-        auto image = getStandardIcon(icon);
-        return image.isNull() ? fallback() : image;
+        if (Bitmap bm = getStandardIcon(icon))
+            return bm;
+        return fallback;
     }
     /// Get image of icon associated with file path. If icon was not found use fallback.
-    final DrawBufRef getIconForFilePath(string filePath, lazy DrawBufRef fallback)
+    final Bitmap getIconForFilePath(string filePath, lazy Bitmap fallback)
     {
-        auto image = getIconForFilePath(filePath);
-        return image.isNull() ? fallback() : image;
+        if (Bitmap bm = getIconForFilePath(filePath))
+            return bm;
+        return fallback;
     }
 
     /// Get image of standard icon. Return the null image if icon was not found in the system.
-    DrawBufRef getStandardIcon(StandardIcon icon);
+    Bitmap getStandardIcon(StandardIcon icon);
 
     /**
     Get image of icon associated with file path. Return null image if icon was not found in the system.
     Default implementation detects icon for a directory and for a file using the list of hardcoded extensions.
     */
-    DrawBufRef getIconForFilePath(string filePath)
+    Bitmap getIconForFilePath(string filePath)
     {
         // TODO: implement specifically for different platforms
         import std.path : extension;
@@ -119,7 +121,7 @@ abstract class IconProviderBase
         case ".gz":
             return getStandardIcon(fileZip);
         default:
-            return DrawBufRef(null);
+            return Bitmap.init;
         }
     }
 }
@@ -127,14 +129,14 @@ abstract class IconProviderBase
 /// Dummy icon provider. Always returns null images or fallbacks. Available on all platforms.
 class DummyIconProvider : IconProviderBase
 {
-    override DrawBufRef getStandardIcon(StandardIcon icon)
+    override Bitmap getStandardIcon(StandardIcon icon)
     {
-        return DrawBufRef(null);
+        return Bitmap.init;
     }
 
-    override DrawBufRef getIconForFilePath(string filePath)
+    override Bitmap getIconForFilePath(string filePath)
     {
-        return DrawBufRef(null);
+        return Bitmap.init;
     }
 }
 
@@ -271,13 +273,11 @@ static if (BACKEND_GUI)
                 {
                     FreeLibrary(_shell);
                 }
-                foreach (ref buf; _cache)
-                {
-                    buf.clear();
-                }
+                foreach (ref bm; _cache)
+                    bm = Bitmap.init;
             }
 
-            DrawBufRef getIconFromStock(SHSTOCKICONID id)
+            Bitmap getIconFromStock(SHSTOCKICONID id)
             {
                 if (_SHGetStockIconInfo)
                 {
@@ -291,25 +291,25 @@ static if (BACKEND_GUI)
                     {
                         scope (exit)
                             DestroyIcon(icon);
-                        auto image = DrawBufRef(iconToImage(icon));
+                        auto image = iconToImage(icon);
                         _cache[id] = image;
                         return image;
                     }
                     else
                     {
-                        _cache[id] = DrawBufRef(null); // save the fact that the icon was not found
+                        _cache[id] = Bitmap.init; // save the fact that the icon was not found
                     }
                 }
-                return DrawBufRef(null);
+                return Bitmap.init;
             }
 
-            override DrawBufRef getStandardIcon(StandardIcon icon)
+            override Bitmap getStandardIcon(StandardIcon icon)
             {
                 if (_SHGetStockIconInfo)
                 {
                     return getIconFromStock(standardIconToStockID(icon));
                 }
-                return DrawBufRef(null);
+                return Bitmap.init;
             }
 
         private:
@@ -410,7 +410,7 @@ static if (BACKEND_GUI)
                 return null;
             }
 
-            ColorDrawBuf iconToImage(HICON hIcon)
+            Bitmap iconToImage(HICON hIcon)
             {
                 BITMAP bm;
                 ICONINFO iconInfo;
@@ -438,21 +438,21 @@ static if (BACKEND_GUI)
                 HBITMAP hBmpOld = cast(HBITMAP)SelectObject(hDC, cast(HGDIOBJ)(iconInfo.hbmColor));
                 if (!GetDIBits(hDC, iconInfo.hbmColor, 0, height, cast(LPVOID)pixelsIconRGB.ptr,
                         &infoheader, DIB_RGB_COLORS))
-                    return null;
+                    return Bitmap.init;
                 SelectObject(hDC, hBmpOld);
 
                 if (!GetDIBits(hDC, iconInfo.hbmMask, 0, height, cast(LPVOID)alphaPixels.ptr,
                         &infoheader, DIB_RGB_COLORS))
-                    return null;
+                    return Bitmap.init;
 
                 const int lsSrc = width * 3;
-                auto colorDrawBuf = new ColorDrawBuf(width, height);
-                auto pxRef = colorDrawBuf.mutate!uint;
-                for (int y = 0; y < height; y++)
+                auto bitmap = Bitmap(width, height, PixelFormat.argb8);
+                auto pxRef = bitmap.mutate!uint;
+                foreach (y; 0 .. height)
                 {
                     const int linePosSrc = (height - 1 - y) * lsSrc;
                     uint* pixelLine = pxRef.scanline(y);
-                    for (int x = 0; x < width; x++)
+                    foreach (x; 0 .. width)
                     {
                         const int currentSrcPos = linePosSrc + x * 3;
                         // BGR -> ARGB
@@ -464,10 +464,10 @@ static if (BACKEND_GUI)
                         pixelLine[x] = color;
                     }
                 }
-                return colorDrawBuf;
+                return bitmap;
             }
 
-            DrawBufRef[SHSTOCKICONID] _cache;
+            Bitmap[SHSTOCKICONID] _cache;
             HANDLE _shell;
             typeof(&_dummy_SHGetStockIconInfo) _SHGetStockIconInfo;
         }
@@ -500,13 +500,11 @@ static if (BACKEND_GUI)
 
             ~this()
             {
-                foreach (ref buf; _cache)
-                {
-                    buf.clear();
-                }
+                foreach (ref bm; _cache)
+                    bm = Bitmap.init;
             }
 
-            DrawBufRef getIconFromTheme(string name, string context = null)
+            Bitmap getIconFromTheme(string name, string context = null)
             {
                 auto found = name in _cache;
                 if (found)
@@ -534,18 +532,18 @@ static if (BACKEND_GUI)
 
                 if (iconPath.length)
                 {
-                    auto image = DrawBufRef(loadImage(iconPath));
+                    auto image = loadImage(iconPath);
                     _cache[name] = image;
                     return image;
                 }
                 else
                 {
-                    _cache[name] = DrawBufRef(null);
+                    _cache[name] = Bitmap.init;
                 }
-                return DrawBufRef(null);
+                return Bitmap.init;
             }
 
-            override DrawBufRef getStandardIcon(StandardIcon icon)
+            override Bitmap getStandardIcon(StandardIcon icon)
             {
                 auto t = standardIconToNameAndContext(icon);
                 return getIconFromTheme(t[0], t[1]);
@@ -635,7 +633,7 @@ static if (BACKEND_GUI)
                 }
             }
 
-            DrawBufRef[string] _cache;
+            Bitmap[string] _cache;
             string[] _baseIconDirs;
             IconThemeFile[] _iconThemes;
         }

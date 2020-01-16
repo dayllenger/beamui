@@ -204,7 +204,8 @@ final class Win32Window : Window
         dstring _title;
 
         PaintEngine _paintEngine;
-        Win32BitmapData _backbuffer;
+        Bitmap _backbuffer;
+        Win32BitmapData _backbufferData;
 
         bool _destroying;
     }
@@ -294,7 +295,8 @@ final class Win32Window : Window
         static if (USE_OPENGL)
             bindContext(); // required to correctly destroy GL objects
         eliminate(_paintEngine);
-        eliminate(_backbuffer);
+        _backbufferData = null;
+        _backbuffer = Bitmap.init;
     }
 
     private BoxI getScreenDimensions()
@@ -514,26 +516,22 @@ final class Win32Window : Window
 
     private HICON _icon;
 
-    override @property void icon(DrawBufRef buf)
+    override @property void icon(Bitmap ic)
     {
         if (_icon)
             DestroyIcon(_icon);
         _icon = null;
-        auto ic = cast(ColorDrawBuf)buf.get;
         if (!ic)
         {
             Log.e("Trying to set null icon for window");
             return;
         }
         auto resizedicon = new Win32BitmapData(32, 32);
-        {
-            auto bmp = new Bitmap(resizedicon);
-            bmp.blit(ic, RectI(0, 0, ic.width, ic.height), RectI(0, 0, 32, 32));
-            destroy(bmp);
-        }
+        auto bm = Bitmap(resizedicon);
+        bm.blit(ic, RectI(0, 0, ic.width, ic.height), RectI(0, 0, 32, 32));
         ICONINFO ii;
         HBITMAP mask = resizedicon.createTransparencyBitmap();
-        HBITMAP color = resizedicon.destroyLeavingBitmap();
+        HBITMAP color = resizedicon.extractBitmap();
         ii.fIcon = TRUE;
         ii.xHotspot = 0;
         ii.yHotspot = 0;
@@ -709,12 +707,13 @@ final class Win32Window : Window
         if (!_paintEngine)
         {
             // create stuff on the first run
-            _backbuffer = new Win32BitmapData(1, 1);
-            _paintEngine = new SWPaintEngine(new Bitmap(_backbuffer));
+            _backbufferData = new Win32BitmapData(1, 1);
+            _backbuffer = Bitmap(_backbufferData);
+            _paintEngine = new SWPaintEngine(_backbuffer);
         }
         draw(_paintEngine);
 
-        _backbuffer.drawTo(device);
+        _backbufferData.drawTo(device);
     }
 
     static if (USE_OPENGL)

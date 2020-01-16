@@ -25,9 +25,8 @@ class ImageWidget : Widget
             _drawable.clear();
             if (id.length)
             {
-                auto img = imageCache.get(id);
-                if (!img.isNull)
-                    _drawable = new ImageDrawable(img);
+                if (Bitmap bm = imageCache.get(id))
+                    _drawable = new ImageDrawable(bm);
             }
             requestLayout();
         }

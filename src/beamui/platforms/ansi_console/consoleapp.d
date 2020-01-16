@@ -47,7 +47,7 @@ class ConsoleWindow : Window
         _title = caption;
     }
 
-    override @property void icon(DrawBufRef icon)
+    override @property void icon(Bitmap icon)
     {
         // ignore
     }

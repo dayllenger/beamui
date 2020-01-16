@@ -530,9 +530,8 @@ class FileDialog : Dialog, CustomGridCellAdapter
         DrawableRef res;
         if (iconID.length)
         {
-            auto img = imageCache.get(iconID);
-            if (!img.isNull)
-                res = new ImageDrawable(img); // TODO: reduce allocations
+            if (Bitmap bm = imageCache.get(iconID))
+                res = new ImageDrawable(bm); // TODO: reduce allocations
         }
         return cast(inout)res;
     }

@@ -601,7 +601,7 @@ protected:
         simpleColorOnly(t, RectI(clip), c);
     }
 
-    void drawImage(const Bitmap bmp, Vec2 p, float opacity)
+    void drawImage(ref const Bitmap bmp, Vec2 p, float opacity)
     {
         const int w = bmp.width;
         const int h = bmp.height;
@@ -664,7 +664,7 @@ protected:
         advanceDepth();
     }
 
-    void drawNinePatch(const Bitmap bmp, ref const NinePatchInfo info, float opacity)
+    void drawNinePatch(ref const Bitmap bmp, ref const NinePatchInfo info, float opacity)
     {
         const rp = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
         const BoxI clip = clipByRect(transformBounds(rp));
@@ -1217,7 +1217,7 @@ private:
     bool convertPattern(ref const ImagePattern pat, float opacity, ref ShParams params, ref DataChunk data)
         in(pat.image)
     {
-        const TextureView view = textureCache.getTexture(pat.image);
+        const TextureView view = textureCache.getTexture(*pat.image);
         if (view.empty)
             return false; // skip rendering
 
