@@ -1771,24 +1771,41 @@ public:
     {
         const Size p = padding.size; // updates style
         adjustBoundaries(bs);
-        bs.min.w = max(bs.min.w, _style.minWidth.applyPercent(0));
-        bs.min.h = max(bs.min.h, _style.minHeight.applyPercent(0));
-        bs.max.w = max(min(bs.max.w + p.w, _style.maxWidth.applyPercent(0)), bs.min.w);
-        bs.max.h = max(min(bs.max.h + p.h, _style.maxHeight.applyPercent(0)), bs.min.h);
-        const w = _style.width.applyPercent(0);
-        const h = _style.height.applyPercent(0);
-        if (isDefinedSize(w))
-            bs.nat.w = w;
+        // ignore percentages here - the parent layout will compute them itself
+        const minw = _style.minWidth;
+        const minh = _style.minHeight;
+        const maxw = _style.maxWidth;
+        const maxh = _style.maxHeight;
+        const w = _style.width;
+        const h = _style.height;
+        // the content-based min size doesn't need to include padding.
+        // if the size is specified in styles, use it
+        if (minw.isDefined)
+            bs.min.w = minw.applyPercent(0);
+        if (minh.isDefined)
+            bs.min.h = minh.applyPercent(0);
+        // use the smallest of content-based and specified max sizes
+        bs.max.w += p.w;
+        bs.max.h += p.h;
+        if (!maxw.isPercent)
+            bs.max.w = min(bs.max.w, maxw.applyPercent(0));
+        if (!maxh.isPercent)
+            bs.max.h = min(bs.max.h, maxh.applyPercent(0));
+        // min size is more important
+        bs.max.w = max(bs.max.w, bs.min.w);
+        bs.max.h = max(bs.max.h, bs.min.h);
+        // if the preferred size is specified in styles, use it
+        if (w.isDefined && !w.isPercent)
+            bs.nat.w = w.applyPercent(0);
         else
             bs.nat.w += p.w;
-        if (isDefinedSize(h))
-            bs.nat.h = h;
+        if (h.isDefined && !h.isPercent)
+            bs.nat.h = h.applyPercent(0);
         else
             bs.nat.h += p.h;
         bs.nat.w = clamp(bs.nat.w, bs.min.w, bs.max.w);
         bs.nat.h = clamp(bs.nat.h, bs.min.h, bs.max.h);
-        assert(bs.max.w >= bs.nat.w && bs.nat.w >= bs.min.w);
-        assert(bs.max.h >= bs.nat.h && bs.nat.h >= bs.min.h);
+        // done
         _boundaries = bs;
     }
 
