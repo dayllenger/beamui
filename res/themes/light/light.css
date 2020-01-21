@@ -106,7 +106,7 @@ GroupBox::caption { align: left vcenter; padding: 1px; color: #504840; text-over
   group_box_frame_bottom: url(group_box_frame_bottom); }
 
 /* lists */
-ListWidget { min-width: 100px; min-height: 100px; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
+ListWidget { border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
 
 ListWidget:focused { border-color: #2e93fa; }
 
@@ -119,7 +119,7 @@ StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { backgroun
 StringListAdapter::item:focused, StringListAdapter::item:selected, IconStringListAdapter::item:focused, IconStringListAdapter::item:selected { background-color: #4e93da; color: #f0f0f0; }
 
 /* combobox */
-ComboBoxBase { min-width: 40px; padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
+ComboBoxBase { padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
 
 ComboBoxBase:hovered { border-color: #417fbf; }
 
@@ -141,7 +141,7 @@ ComboBoxBase::button { align: center; padding: 3px 2px; }
 
 ComboBoxBase::body:not(enabled), ComboBoxBase::button:not(enabled) { opacity: 0.4; }
 
-ComboBoxBase::list { min-width: 0; min-height: 0; border: 1px solid #aaa; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); background-color: white; }
+ComboBoxBase::list { border: 1px solid #aaa; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); background-color: white; }
 
 ComboBoxBase::list:focused { border: 1px solid rgba(32, 64, 255, 0.75); }
 
@@ -154,7 +154,7 @@ ComboEdit::body:hovered, ComboEdit::body:pressed { color: #404040; }
 ComboEdit::body:focused { color: initial; }
 
 /* menu */
-Menu { width: none; height: none; min-width: 0; min-height: 0; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; }
+Menu { width: auto; height: auto; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; }
 
 MenuBar { weight: 0; margin: 0; padding-left: 3px; box-shadow: 0 0 5px #888; background-color: #f3f4f5; }
 
@@ -183,7 +183,7 @@ MenuItem::label:focused, MenuItem::label:selected, MenuItem::shortcut:focused, M
 MenuItem::label:not(enabled), MenuItem::shortcut:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 /* tree */
-TreeItemWidget { min-width: 100px; min-height: 14px; gap: 0; }
+TreeItemWidget { min-width: 100px; min-height: 1em; gap: 0; }
 
 TreeItemWidget::body { padding: 2px 4px; gap: 0; }
 

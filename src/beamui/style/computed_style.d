@@ -134,41 +134,26 @@ struct ComputedStyle
         /// ditto
         void height(float px) { setProperty!"height" = Length.px(px); }
 
-        /// Min width style constraint (0 or `Length.zero` to unset)
+        /// Widget min width constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength minWidth() const { return applyEM(_minWidth); }
         /// ditto
-        void minWidth(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"minWidth" = len;
-        }
+        void minWidth(Length len) { setProperty!"minWidth" = len; }
         /// ditto
-        void minWidth(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"minWidth" = Length.px(px);
-        }
-        /// Min height style constraint (0 or `Length.zero` to unset)
+        void minWidth(float px) { setProperty!"minWidth" = Length.px(px); }
+        /// Widget min height constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength minHeight() const { return applyEM(_minHeight); }
         /// ditto
-        void minHeight(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"minHeight" = len;
-        }
+        void minHeight(Length len) { setProperty!"minHeight" = len; }
         /// ditto
-        void minHeight(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"minHeight" = Length.px(px);
-        }
-        /// Max width style constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
+        void minHeight(float px) { setProperty!"minHeight" = Length.px(px); }
+
+        /// Widget max width constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength maxWidth() const { return applyEM(_maxWidth); }
         /// ditto
         void maxWidth(Length len) { setProperty!"maxWidth" = len; }
         /// ditto
         void maxWidth(float px) { setProperty!"maxWidth" = Length.px(px); }
-        /// Max height style constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
+        /// Widget max height constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength maxHeight() const { return applyEM(_maxHeight); }
         /// ditto
         void maxHeight(Length len) { setProperty!"maxHeight" = len; }
@@ -346,7 +331,7 @@ struct ComputedStyle
             setProperty!"borderLeftWidth" = Length.px(px);
         }
 
-        /// Margins (between widget bounds and its background)
+        /// Margins around widget (`SIZE_UNSPECIFIED` or `Length.none` for `auto`)
         Insets margins() const
         {
             return Insets(applyOnlyEM(_marginTop), applyOnlyEM(_marginRight),
@@ -355,19 +340,14 @@ struct ComputedStyle
         /// ditto
         void margins(Insets px4)
         {
-            if (isDefinedSize(px4.top))
-                setProperty!"marginTop" = Length.px(px4.top);
-            if (isDefinedSize(px4.right))
-                setProperty!"marginRight" = Length.px(px4.right);
-            if (isDefinedSize(px4.bottom))
-                setProperty!"marginBottom" = Length.px(px4.bottom);
-            if (isDefinedSize(px4.left))
-                setProperty!"marginLeft" = Length.px(px4.left);
+            setProperty!"marginTop" = Length.px(px4.top);
+            setProperty!"marginRight" = Length.px(px4.right);
+            setProperty!"marginBottom" = Length.px(px4.bottom);
+            setProperty!"marginLeft" = Length.px(px4.left);
         }
         /// ditto
         void margins(Length len)
         {
-            assert(len != Length.none);
             setProperty!"marginTop" = len;
             setProperty!"marginRight" = len;
             setProperty!"marginBottom" = len;
@@ -375,62 +355,30 @@ struct ComputedStyle
         }
         /// ditto
         void margins(float px) { margins = Length.px(px); }
-        /// Top margin value
+        /// Top margin value (`SIZE_UNSPECIFIED` or `Length.none` for `auto`)
         float marginTop() const { return applyOnlyEM(_marginTop); }
         /// ditto
-        void marginTop(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"marginTop" = len;
-        }
+        void marginTop(Length len) { setProperty!"marginTop" = len; }
         /// ditto
-        void marginTop(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"marginTop" = Length.px(px);
-        }
-        /// Right margin value
+        void marginTop(float px) { setProperty!"marginTop" = Length.px(px); }
+        /// Right margin value (`SIZE_UNSPECIFIED` or `Length.none` for `auto`)
         float marginRight() const { return applyOnlyEM(_marginRight); }
         /// ditto
-        void marginRight(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"marginRight" = len;
-        }
+        void marginRight(Length len) { setProperty!"marginRight" = len; }
         /// ditto
-        void marginRight(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"marginRight" = Length.px(px);
-        }
-        /// Bottom margin value
+        void marginRight(float px) { setProperty!"marginRight" = Length.px(px); }
+        /// Bottom margin value (`SIZE_UNSPECIFIED` or `Length.none` for `auto`)
         float marginBottom() const { return applyOnlyEM(_marginBottom); }
         /// ditto
-        void marginBottom(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"marginBottom" = len;
-        }
+        void marginBottom(Length len) { setProperty!"marginBottom" = len; }
         /// ditto
-        void marginBottom(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"marginBottom" = Length.px(px);
-        }
-        /// Left margin value
+        void marginBottom(float px) { setProperty!"marginBottom" = Length.px(px); }
+        /// Left margin value (`SIZE_UNSPECIFIED` or `Length.none` for `auto`)
         float marginLeft() const { return applyOnlyEM(_marginLeft); }
         /// ditto
-        void marginLeft(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"marginLeft" = len;
-        }
+        void marginLeft(Length len) { setProperty!"marginLeft" = len; }
         /// ditto
-        void marginLeft(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"marginLeft" = Length.px(px);
-        }
+        void marginLeft(float px) { setProperty!"marginLeft" = Length.px(px); }
 
         LayoutLength left() const { return applyEM(_left); }
         /// ditto
@@ -891,9 +839,9 @@ struct ComputedStyle
         string _display;
         Length _width = Length.none;
         Length _height = Length.none;
-        Length _minWidth = Length.zero;
+        Length _minWidth = Length.none;
         Length _maxWidth = Length.none;
-        Length _minHeight = Length.zero;
+        Length _minHeight = Length.none;
         Length _maxHeight = Length.none;
         Length _paddingTop = Length.zero;
         Length _paddingRight = Length.zero;

@@ -266,8 +266,6 @@ GroupBox::caption {
 /* lists */
 
 ListWidget {
-    min-width: 100px;
-    min-height: 100px;
     border: 1px solid #aaa;
     background-color: #fff;
     transition: border-color 100ms ease;
@@ -297,7 +295,6 @@ StringListAdapter::item, IconStringListAdapter::item {
 /* combobox */
 
 ComboBoxBase {
-    min-width: 40px;
     padding: 3px 4px;
     border: 1px solid #aaa;
     background: linear(0deg, #eeeeee, #dddddd);
@@ -351,8 +348,6 @@ ComboBoxBase {
     }
 
     &::list {
-        min-width: 0;
-        min-height: 0;
         border: 1px solid #aaa;
         box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
         background-color: white;
@@ -384,10 +379,8 @@ ComboEdit {
 /* menu */
 
 Menu {
-    width: none;
-    height: none;
-    min-width: 0;
-    min-height: 0;
+    width: auto;
+    height: auto;
     border: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     background-color: #f4f4f4;
@@ -461,7 +454,7 @@ MenuItem {
 
 TreeItemWidget {
     min-width: 100px;
-    min-height: 14px;
+    min-height: 1em;
     gap: 0;
 
     &::expander {
