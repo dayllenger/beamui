@@ -79,3 +79,108 @@ Box alignBox(Box room, Size sz, Align a)
         p.y += room.h - sz.h;
     return Box(p, sz);
 }
+
+void stretchItems(float[] sizes, const float freeSpace)
+    in(sizes.length > 0)
+{
+    if (freeSpace > 0)
+    {
+        const perItemSize = freeSpace / sizes.length;
+        foreach (ref sz; sizes)
+            sz += perItemSize;
+    }
+}
+
+void placeFromStart(const float[] sizes, float[] positions, const float initialPos)
+    in(sizes.length > 0)
+    in(sizes.length == positions.length)
+{
+    float pen = initialPos;
+    foreach (i, sz; sizes)
+    {
+        positions[i] = pen;
+        pen += sz;
+    }
+}
+
+void placeFromEnd(const float[] sizes, float[] positions, const float initialPos)
+    in(sizes.length > 0)
+    in(sizes.length == positions.length)
+{
+    float pen = initialPos;
+    foreach (i, sz; sizes)
+    {
+        pen -= sz;
+        positions[i] = pen;
+    }
+}
+
+void placeToCenter(const float[] sizes, float[] positions, const float initialPos, const float freeSpace)
+    in(sizes.length > 0)
+    in(sizes.length == positions.length)
+{
+    float pen = initialPos + freeSpace / 2;
+    foreach (i, sz; sizes)
+    {
+        positions[i] = pen;
+        pen += sz;
+    }
+}
+
+void placeWithSpaceBetween(const float[] sizes, float[] positions, const float initialPos, const float freeSpace)
+    in(sizes.length > 0)
+    in(sizes.length == positions.length)
+{
+    if (freeSpace <= 0 || sizes.length == 1)
+    {
+        placeFromStart(sizes, positions, initialPos);
+        return;
+    }
+    const perItemSpace = freeSpace / (cast(int)sizes.length - 1);
+    float pen = initialPos + sizes[0];
+    positions[0] = initialPos;
+    foreach (i; 1 .. sizes.length)
+    {
+        pen += perItemSpace;
+        positions[i] = pen;
+        pen += sizes[i];
+    }
+}
+
+void placeWithSpaceAround(const float[] sizes, float[] positions, const float initialPos, const float freeSpace)
+    in(sizes.length > 0)
+    in(sizes.length == positions.length)
+{
+    if (freeSpace <= 0 || sizes.length == 1)
+    {
+        placeToCenter(sizes, positions, initialPos, freeSpace);
+        return;
+    }
+    const perItemSpace_2 = freeSpace / (sizes.length * 2);
+    float pen = initialPos;
+    foreach (i, sz; sizes)
+    {
+        pen += perItemSpace_2;
+        positions[i] = pen;
+        pen += sz + perItemSpace_2;
+    }
+}
+
+void placeWithSpaceAroundEvenly(const float[] sizes, float[] positions, const float initialPos, const float freeSpace)
+    in(sizes.length > 0)
+    in(sizes.length == positions.length)
+{
+    if (freeSpace <= 0 || sizes.length == 1)
+    {
+        placeToCenter(sizes, positions, initialPos, freeSpace);
+        return;
+    }
+    const perItemSpace = freeSpace / (sizes.length + 1);
+    float pen = initialPos;
+    foreach (i, sz; sizes)
+    {
+        pen += perItemSpace;
+        positions[i] = pen;
+        pen += sz;
+    }
+}
