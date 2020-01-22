@@ -21,6 +21,7 @@ import beamui.graphics.colors;
 import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
 import beamui.layout.alignment;
+import beamui.layout.flex : FlexDirection, FlexWrap;
 import beamui.style.types : BgPositionRaw, BgSizeRaw, SpecialCSSType;
 import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.text.style;
@@ -163,6 +164,64 @@ Result!Stretch decode(T : Stretch)(const(Token)[] tokens)
     }
 }
 
+/// Decode item alignment property
+Result!AlignItem decode(T : AlignItem)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "item alignment";
+    const t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        shouldbe(what, "an identifier", t);
+        return Err!AlignItem;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+
+    switch (t.text) with (AlignItem)
+    {
+        case "auto":    return Ok(unspecified);
+        case "stretch": return Ok(stretch);
+        case "start":   return Ok(start);
+        case "end":     return Ok(end);
+        case "center":  return Ok(center);
+        default:
+            unknown(what, t);
+            return Err!AlignItem;
+    }
+}
+
+/// Decode content distribution property
+Result!Distribution decode(T : Distribution)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "distribution";
+    const t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        shouldbe(what, "an identifier", t);
+        return Err!Distribution;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+
+    switch (t.text) with (Distribution)
+    {
+        case "stretch": return Ok(stretch);
+        case "start":   return Ok(start);
+        case "end":     return Ok(end);
+        case "center":  return Ok(center);
+        case "spaceBetween": return Ok(spaceBetween);
+        case "spaceAround":  return Ok(spaceAround);
+        case "spaceEvenly":  return Ok(spaceEvenly);
+        default:
+            unknown(what, t);
+            return Err!Distribution;
+    }
+}
+
 /// Decode CSS rectangle declaration to `Length[]`
 Length[] decodeInsets(const Token[] tokens)
 {
@@ -291,6 +350,59 @@ Result!int decode(SpecialCSSType t : SpecialCSSType.zIndex)(const Token[] tokens
     }
     else
         return decode!int(tokens);
+}
+
+/// Decode flexbox direction property
+Result!FlexDirection decode(T : FlexDirection)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "flex direction";
+    const t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        shouldbe(what, "an identifier", t);
+        return Err!FlexDirection;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+
+    switch (t.text) with (FlexDirection)
+    {
+        case "row": return Ok(row);
+        case "row-reverse": return Ok(rowReverse);
+        case "column": return Ok(column);
+        case "column-reverse": return Ok(columnReverse);
+        default:
+            unknown(what, t);
+            return Err!FlexDirection;
+    }
+}
+
+/// Decode flexbox wrap property
+Result!FlexWrap decode(T : FlexWrap)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "flex wrap";
+    const t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        shouldbe(what, "an identifier", t);
+        return Err!FlexWrap;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+
+    switch (t.text) with (FlexWrap)
+    {
+        case "nowrap": return Ok(off);
+        case "wrap": return Ok(on);
+        case "wrap-reverse": return Ok(reverse);
+        default:
+            unknown(what, t);
+            return Err!FlexWrap;
+    }
 }
 
 //===============================================================

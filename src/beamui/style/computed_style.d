@@ -1,6 +1,6 @@
 /**
 
-Copyright: dayllenger 2018-2019
+Copyright: dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -16,6 +16,7 @@ import beamui.graphics.colors : Color, decodeHexColor, decodeTextColor;
 import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
 import beamui.layout.alignment;
+import beamui.layout.flex : FlexDirection, FlexWrap;
 import beamui.style.style;
 import beamui.style.types;
 import beamui.text.fonts;
@@ -29,6 +30,7 @@ enum StyleProperty
 {
     // layout
     display,
+    // box model
     width,
     height,
     minWidth,
@@ -47,15 +49,29 @@ enum StyleProperty
     marginRight,
     marginBottom,
     marginLeft,
+    // placement
     left,
     top,
     right,
     bottom,
     alignment,
     stretch,
+    justifyContent,
+    justifyItems,
+    justifySelf,
+    alignContent,
+    alignItems,
+    alignSelf,
     rowGap,
     columnGap,
+    order,
     zIndex,
+    // flexbox-specific
+    flexDirection,
+    flexWrap,
+    flexGrow,
+    flexShrink,
+    flexBasis,
     // background
     bgColor,
     bgImage,
@@ -421,6 +437,35 @@ struct ComputedStyle
         /// ditto
         void stretch(Stretch value) { setProperty!"stretch" = value; }
 
+        /// Content distribution by main and cross axes
+        Distribution[2] placeContent() const { return [_justifyContent, _alignContent]; }
+        /// ditto
+        void placeContent(Distribution[2] value)
+        {
+            setProperty!"justifyContent" = value[0];
+            setProperty!"alignContent" = value[1];
+        }
+
+        /// Default alignment by main and cross axes for all layout items
+        AlignItem[2] placeItems() const { return [_justifyItems, _alignItems]; }
+        /// ditto
+        void placeItems(AlignItem[2] value)
+            in(value[0] != AlignItem.unspecified)
+            in(value[1] != AlignItem.unspecified)
+        {
+            setProperty!"justifyItems" = value[0];
+            setProperty!"alignItems" = value[1];
+        }
+
+        /// Item alignment by main and cross axes
+        AlignItem[2] placeSelf() const { return [_justifySelf, _alignSelf]; }
+        /// ditto
+        void placeSelf(AlignItem[2] value)
+        {
+            setProperty!"justifySelf" = value[0];
+            setProperty!"alignSelf" = value[1];
+        }
+
         /// Set one value for row and column gaps
         void gap(Length len)
         {
@@ -464,10 +509,39 @@ struct ComputedStyle
             setProperty!"columnGap" = Length.px(px);
         }
 
+        /// Controls item reordering in some layouts
+        int order() const { return _order; }
+        /// ditto
+        void order(int i) { setProperty!"order" = i; }
+
         /// Widget stack order (`int.min` if unspecified)
         int zIndex() const { return _zIndex; }
         /// ditto
         void zIndex(int z) { setProperty!"zIndex" = z; }
+
+        /// Specifies flexbox main axis and its start and end sides
+        FlexDirection flexDirection() const { return _flexDirection; }
+        /// ditto
+        void flexDirection(FlexDirection value) { setProperty!"flexDirection" = value; }
+        /// Controls whether flexbox breaks items across several lines
+        FlexWrap flexWrap() const { return _flexWrap; }
+        /// ditto
+        void flexWrap(FlexWrap value) { setProperty!"flexWrap" = value; }
+
+        /// Sets how much flex item will grow relative to other flexible items in the container
+        float flexGrow() const { return _flexGrow; }
+        /// ditto
+        void flexGrow(float value) { setProperty!"flexGrow" = value; }
+        /// Sets how much flex item will shrink relative to other flexible items in the container
+        float flexShrink() const { return _flexShrink; }
+        /// ditto
+        void flexShrink(float value) { setProperty!"flexShrink" = value; }
+        /// The initial size by main axis of the flexible item
+        LayoutLength flexBasis() const { return applyEM(_flexBasis); }
+        /// ditto
+        void flexBasis(Length len) { setProperty!"flexBasis" = len; }
+        /// ditto
+        void flexBasis(float px) { setProperty!"flexBasis" = Length.px(px); }
 
         /// Background color of the widget
         Color backgroundColor() const { return _bgColor; }
@@ -837,6 +911,7 @@ struct ComputedStyle
 
         // layout
         string _display;
+        // box model
         Length _width = Length.none;
         Length _height = Length.none;
         Length _minWidth = Length.none;
@@ -855,15 +930,29 @@ struct ComputedStyle
         Length _marginRight = Length.zero;
         Length _marginBottom = Length.zero;
         Length _marginLeft = Length.zero;
+        // placement
         Length _left = Length.none;
         Length _top = Length.none;
         Length _right = Length.none;
         Length _bottom = Length.none;
         Align _alignment;
         Stretch _stretch = Stretch.cross;
+        Distribution _justifyContent = Distribution.stretch;
+        AlignItem _justifyItems = AlignItem.stretch;
+        AlignItem _justifySelf = AlignItem.unspecified;
+        Distribution _alignContent = Distribution.stretch;
+        AlignItem _alignItems = AlignItem.stretch;
+        AlignItem _alignSelf = AlignItem.unspecified;
         Length _rowGap = Length.zero;
         Length _columnGap = Length.zero;
+        int _order = 0;
         int _zIndex = int.min;
+        // flexbox-specific
+        FlexDirection _flexDirection = FlexDirection.row;
+        FlexWrap _flexWrap = FlexWrap.off;
+        float _flexGrow = 0;
+        float _flexShrink = 1;
+        Length _flexBasis = Length.none;
         // background
         Color _bgColor = Color.transparent;
         Drawable _bgImage;
@@ -1102,6 +1191,11 @@ struct ComputedStyle
                 ptype == lineHeight
             )
                 return value.toLayout.applyPercent(100) >= 0;
+            else static if (
+                ptype == justifyItems ||
+                ptype == alignItems
+            )
+                return value != AlignItem.unspecified;
             else
                 return true;
         }
@@ -1365,9 +1459,21 @@ string getCSSName(StyleProperty ptype)
         case bottom: return "bottom";
         case alignment: return "align";
         case stretch:   return "stretch";
+        case justifyContent: return "justify-content";
+        case justifyItems:   return "justify-items";
+        case justifySelf:    return "justify-self";
+        case alignContent:   return "align-content";
+        case alignItems:     return "align-items";
+        case alignSelf:      return "align-self";
         case rowGap:    return "row-gap";
         case columnGap: return "column-gap";
+        case order:  return "order";
         case zIndex: return "z-index";
+        case flexDirection: return "flex-direction";
+        case flexWrap:      return "flex-wrap";
+        case flexGrow:      return "flex-grow";
+        case flexShrink:    return "flex-shrink";
+        case flexBasis:     return "flex-basis";
         case bgColor:    return "background-color";
         case bgImage:    return "background-image";
         case bgPosition: return "background-position";

@@ -34,7 +34,7 @@ enum Align : uint
 }
 
 /// Controls whether widget occupies all available width/height in a linear layout
-enum Stretch
+enum Stretch : ubyte
 {
     none,
     /// Applies along main axis, i.e. by width in horizontal layouts and by height in vertical ones
@@ -42,6 +42,27 @@ enum Stretch
     /// Applies along secondary axis, i.e. by height in horizontal layouts and by width in vertical ones
     cross,
     both,
+}
+
+enum AlignItem : ubyte
+{
+    unspecified,
+    stretch,
+    start,
+    end,
+    center,
+    // TODO: baseline
+}
+
+enum Distribution : ubyte
+{
+    stretch,
+    start,
+    end,
+    center,
+    spaceBetween,
+    spaceAround,
+    spaceEvenly,
 }
 
 /// Applies alignment to a box for content of size `sz`

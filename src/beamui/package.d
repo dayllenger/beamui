@@ -57,6 +57,7 @@ public
     import beamui.graphics.polygons; // : FillRule;
     import beamui.graphics.resources;
     import beamui.layout.alignment;
+    import beamui.layout.flex;
     import beamui.layout.free;
     import beamui.layout.linear;
     import beamui.layout.table;
