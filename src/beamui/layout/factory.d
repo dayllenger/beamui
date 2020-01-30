@@ -6,6 +6,7 @@ Authors:   dayllenger
 */
 module beamui.layout.factory;
 
+import beamui.layout.flex;
 import beamui.layout.free;
 import beamui.layout.linear;
 import beamui.layout.table;
@@ -21,7 +22,7 @@ ILayout createLayout(string name)
         return null;
 }
 
-void addLayoutType(string name, LayoutInstantiator func)
+void registerLayoutType(string name, LayoutInstantiator func)
 {
     assert(name.length && func);
     factory[name] = func;
@@ -35,6 +36,7 @@ static this()
         "free": &free,
         "row": &row,
         "column": &column,
+        "flex": &flex,
         "table": &table,
     ];
 }
@@ -52,6 +54,11 @@ private ILayout row()
 private ILayout column()
 {
     return new LinearLayout(Orientation.vertical);
+}
+
+private ILayout flex()
+{
+    return new FlexLayout;
 }
 
 private ILayout table()
