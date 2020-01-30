@@ -1183,6 +1183,7 @@ struct ComputedStyle
                 ptype == borderBottomWidth ||
                 ptype == rowGap ||
                 ptype == columnGap ||
+                ptype == flexBasis ||
                 ptype == borderLeftWidth ||
                 ptype == borderTopLeftRadius ||
                 ptype == borderTopRightRadius ||
@@ -1191,6 +1192,11 @@ struct ComputedStyle
                 ptype == lineHeight
             )
                 return value.toLayout.applyPercent(100) >= 0;
+            else static if (
+                ptype == flexGrow ||
+                ptype == flexShrink
+            )
+                return value >= 0;
             else static if (
                 ptype == justifyItems ||
                 ptype == alignItems
@@ -1343,6 +1349,15 @@ private void explodeShorthands(Style st)
         StrHash("gap"),
         StrHash("row-gap"),
         StrHash("column-gap"));
+    static immutable flexFlow = ShorthandFlexFlow(
+        StrHash("flex-flow"),
+        StrHash("flex-direction"),
+        StrHash("flex-wrap"));
+    static immutable flex = ShorthandFlex(
+        StrHash("flex"),
+        StrHash("flex-grow"),
+        StrHash("flex-shrink"),
+        StrHash("flex-basis"));
     static immutable bg = ShorthandDrawable(
         StrHash("background"),
         StrHash("background-color"),
@@ -1419,6 +1434,8 @@ private void explodeShorthands(Style st)
     st.explode(margin);
     st.explode(padding);
     st.explode(gap);
+    st.explode(flexFlow);
+    st.explode(flex);
     st.explode(bg);
     st.explode(border);
     st.explode(borderWidth);

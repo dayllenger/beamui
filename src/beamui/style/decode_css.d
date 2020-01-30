@@ -213,9 +213,9 @@ Result!Distribution decode(T : Distribution)(const(Token)[] tokens)
         case "start":   return Ok(start);
         case "end":     return Ok(end);
         case "center":  return Ok(center);
-        case "spaceBetween": return Ok(spaceBetween);
-        case "spaceAround":  return Ok(spaceAround);
-        case "spaceEvenly":  return Ok(spaceEvenly);
+        case "space-between": return Ok(spaceBetween);
+        case "space-around":  return Ok(spaceAround);
+        case "space-evenly":  return Ok(spaceEvenly);
         default:
             unknown(what, t);
             return Err!Distribution;
@@ -403,6 +403,84 @@ Result!FlexWrap decode(T : FlexWrap)(const(Token)[] tokens)
             unknown(what, t);
             return Err!FlexWrap;
     }
+}
+
+alias FlexFlowHere = Tup!(Result!FlexDirection, Result!FlexWrap);
+alias FlexHere = Tup!(float, float, Length);
+/// Decode shortcut flex-flow property
+Result!FlexFlowHere decodeFlexFlow(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    FlexFlowHere result;
+
+    if (isFlexDirection(tokens[0]))
+        result[0] = decode!FlexDirection(tokens[0 .. 1]);
+    else
+        result[1] = decode!FlexWrap(tokens[0 .. 1]);
+
+    if (tokens.length > 1)
+    {
+        if (isFlexWrap(tokens[1]))
+            result[1] = decode!FlexWrap(tokens[1 .. 2]);
+        else
+            result[0] = decode!FlexDirection(tokens[1 .. 2]);
+    }
+
+    if (result[0] || result[1])
+    {
+        if (tokens.length > 2)
+            toomany("flex-flow", tokens[0].line);
+        return Ok(result);
+    }
+    else
+    {
+        Log.fe("CSS(%s): malformed flex-flow shorthand", tokens[0].line);
+        return Err!FlexFlowHere();
+    }
+}
+/// Decode shortcut flex property
+Result!FlexHere decodeFlex(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    alias E = Err!FlexHere;
+
+    const t0 = tokens[0];
+    if (tokens.length == 1)
+    {
+        if (t0.type == TokenType.ident)
+        {
+            if (t0.text == "auto")
+                return Ok(FlexHere(1, 1, Length.none));
+            if (t0.text == "none")
+                return Ok(FlexHere(0, 0, Length.none));
+        }
+        if (t0.type == TokenType.number)
+        {
+            const grow = decode!float(tokens).val;
+            return Ok(FlexHere(grow, 1, Length.zero));
+        }
+        unknown("flex", t0);
+    }
+    else if (tokens.length == 3)
+    {
+        if (t0.type == TokenType.number && tokens[1].type == TokenType.number)
+        {
+            if (startsWithLength(tokens[2 .. 3]))
+            {
+                const grow = decode!float(tokens[0 .. 1]).val;
+                const shrink = decode!float(tokens[1 .. 2]).val;
+                const basis = decode!Length(tokens[2 .. 3]).val;
+                return Ok(FlexHere(grow, shrink, basis));
+            }
+        }
+        unknown("flex", t0);
+    }
+    else
+        toomany("flex", t0.line);
+
+    return E();
 }
 
 //===============================================================
@@ -1479,7 +1557,7 @@ Result!TransitionHere decodeTransition(const(Token)[] tokens)
 }
 
 //===============================================================
-// `startsWith` functions, needed to decode shorthands
+// `startsWithXYZ` and `isXYZ` functions, needed to decode shorthands
 
 /// True if token sequence starts with `<length>` value
 bool startsWithLength(const Token[] tokens)
@@ -1499,6 +1577,21 @@ bool startsWithLength(const Token[] tokens)
     return false;
 }
 
+/// True if the token has `<flex-direction>` value
+bool isFlexDirection(ref const Token t)
+{
+    if (t.type == TokenType.ident)
+        return isOneOf!(["row", "row-reverse", "column", "column-reverse"])(t.text);
+    return false;
+}
+/// True if the token has `<flex-wrap>` value
+bool isFlexWrap(ref const Token t)
+{
+    if (t.type == TokenType.ident)
+        return isOneOf!(["nowrap", "wrap", "wrap-reverse"])(t.text);
+    return false;
+}
+
 /// True if token sequence starts with `<color>` value
 bool startsWithColor(const Token[] tokens)
 {
@@ -1509,11 +1602,7 @@ bool startsWithColor(const Token[] tokens)
     if (t.type == TokenType.hash || t.type == TokenType.ident)
         return true;
     if (t.type == TokenType.func)
-    {
-        string fn = t.text;
-        if (fn == "rgb" || fn == "rgba" || fn == "hsl" || fn == "hsla")
-            return true;
-    }
+        return isOneOf!(["rgb", "rgba", "hsl", "hsla"])(t.text);
     return false;
 }
 
@@ -1541,20 +1630,7 @@ bool startsWithFontFamily(const Token[] tokens)
 
     const t = tokens[0];
     if (t.type == TokenType.ident)
-    {
-        switch (t.text)
-        {
-            case "sans-serif":
-            case "serif":
-            case "cursive":
-            case "fantasy":
-            case "monospace":
-            case "none":
-                return true;
-            default:
-                return false;
-        }
-    }
+        return isOneOf!(["sans-serif", "serif", "cursive", "fantasy", "monospace", "none"])(t.text);
     return false;
 }
 /// True if token sequence starts with `<font-style>` value
@@ -1576,8 +1652,7 @@ bool startsWithFontWeight(const Token[] tokens)
 
     const t = tokens[0];
     if (t.type == TokenType.ident)
-        return t.text == "lighter" || t.text == "normal" ||
-               t.text == "bold" || t.text == "bolder";
+        return isOneOf!(["lighter", "normal", "bold", "bolder"])(t.text);
     if (t.type == TokenType.number)
     {
         if (t.text.length == 3 && t.text[1 .. 3] == "00")
@@ -1599,19 +1674,7 @@ bool startsWithTextDecorStyle(const Token[] tokens)
 
     const t = tokens[0];
     if (t.type == TokenType.ident)
-    {
-        switch (t.text)
-        {
-            case "solid":
-            case "double":
-            case "dotted":
-            case "dashed":
-            case "wavy":
-                return true;
-            default:
-                return false;
-        }
-    }
+        return isOneOf!(["solid", "double", "dotted", "dashed", "wavy"])(t.text);
     return false;
 }
 
@@ -1647,18 +1710,20 @@ bool startsWithTimingFunction(const Token[] tokens)
 
     const t = tokens[0];
     if (t.type == TokenType.ident)
-    {
-        switch (t.text)
-        {
-            case "linear":
-            case "ease":
-            case "ease-in":
-            case "ease-out":
-            case "ease-in-out":
-                return true;
-            default:
-                return false;
-        }
-    }
+        return isOneOf!(["linear", "ease", "ease-in", "ease-out", "ease-in-out"])(t.text);
     return false;
+}
+
+private bool isOneOf(string[] list)(string str)
+{
+    switch (str)
+    {
+        static foreach (s; list)
+        {
+            case s:
+                return true;
+        }
+        default:
+            return false;
+    }
 }

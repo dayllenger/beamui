@@ -138,7 +138,7 @@ final class Style
         }
     }
 
-    /// Find a shorthand color property, split it into components and decode
+    /// Find a shorthand property, split it into components and decode
     void explode(ref immutable ShorthandColors sh)
     {
         if (auto p = sh.name in rawProperties)
@@ -162,7 +162,7 @@ final class Style
             metaProperties.remove(sh.name);
         }
     }
-    /// Find a shorthand drawable (background, usually) property, split it into components and decode
+    /// ditto
     void explode(ref immutable ShorthandDrawable sh)
     {
         if (auto p = sh.name in rawProperties)
@@ -183,7 +183,7 @@ final class Style
             metaProperties.remove(sh.name);
         }
     }
-    /// Find a shorthand insets (margin, padding, border-width) property, split it into components and decode
+    /// ditto
     void explode(ref immutable ShorthandInsets sh)
     {
         if (auto p = sh.name in rawProperties)
@@ -208,7 +208,7 @@ final class Style
             metaProperties.remove(sh.name);
         }
     }
-    /// Find a shorthand property with two length values, split it into components and decode
+    /// ditto
     void explode(ref immutable ShorthandLengthPair sh)
     {
         if (auto p = sh.name in rawProperties)
@@ -227,7 +227,47 @@ final class Style
             metaProperties.remove(sh.name);
         }
     }
-    /// Find a shorthand border property, split it into components and decode
+    /// ditto
+    void explode(ref immutable ShorthandFlexFlow sh)
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            if (auto res = decodeFlexFlow(*p))
+            {
+                tryToSetShorthandPart(sh.dir, res.val[0].err, Variant(res.val[0].val));
+                tryToSetShorthandPart(sh.wrap, res.val[1].err, Variant(res.val[1].val));
+            }
+            rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.dir] = *p;
+            metaProperties[sh.wrap] = *p;
+            metaProperties.remove(sh.name);
+        }
+    }
+    /// ditto
+    void explode(ref immutable ShorthandFlex sh)
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            if (auto res = decodeFlex(*p))
+            {
+                tryToSetShorthandPart(sh.grow, false, Variant(res.val[0]));
+                tryToSetShorthandPart(sh.shrink, false, Variant(res.val[1]));
+                tryToSetShorthandPart(sh.basis, false, Variant(res.val[2]));
+            }
+            rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.grow] = *p;
+            metaProperties[sh.shrink] = *p;
+            metaProperties[sh.basis] = *p;
+            metaProperties.remove(sh.name);
+        }
+    }
+    /// ditto
     void explode(ref immutable ShorthandBorder sh)
     {
         if (auto p = sh.name in rawProperties)
@@ -271,7 +311,7 @@ final class Style
             metaProperties.remove(sh.name);
         }
     }
-    /// Find a shorthand border style property, split it into components and decode
+    /// ditto
     void explode(ref immutable ShorthandBorderStyle sh)
     {
         if (auto p = sh.name in rawProperties)
@@ -295,7 +335,7 @@ final class Style
             metaProperties.remove(sh.name);
         }
     }
-    /// Find a shorthand border side property, split it into components and decode
+    /// ditto
     void explode(ref immutable ShorthandBorderSide sh)
     {
         if (auto p = sh.name in rawProperties)
@@ -316,7 +356,7 @@ final class Style
             metaProperties.remove(sh.name);
         }
     }
-    /// Find a shorthand text decoration property, split it into components and decode
+    /// ditto
     void explode(ref immutable ShorthandTextDecor sh)
     {
         if (auto p = sh.name in rawProperties)
@@ -340,7 +380,7 @@ final class Style
             metaProperties.remove(sh.name);
         }
     }
-    /// Find a shorthand transition property, split it into components and decode
+    /// ditto
     void explode(ref immutable ShorthandTransition sh)
     {
         if (auto p = sh.name in rawProperties)

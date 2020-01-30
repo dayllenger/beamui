@@ -262,6 +262,7 @@ enum SpecialCSSType
     zIndex, /// int
 }
 
+/// margin, padding, border-width
 struct ShorthandInsets
 {
     size_t name;
@@ -278,6 +279,22 @@ struct ShorthandLengthPair
     size_t second;
 }
 
+struct ShorthandFlexFlow
+{
+    size_t name;
+    size_t dir;
+    size_t wrap;
+}
+
+struct ShorthandFlex
+{
+    size_t name;
+    size_t grow;
+    size_t shrink;
+    size_t basis;
+}
+
+/// background, usually
 struct ShorthandDrawable
 {
     size_t name;
