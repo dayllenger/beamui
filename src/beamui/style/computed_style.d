@@ -17,6 +17,7 @@ import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
 import beamui.layout.alignment;
 import beamui.layout.flex : FlexDirection, FlexWrap;
+import beamui.layout.grid : GridFlow, TrackSize;
 import beamui.style.style;
 import beamui.style.types;
 import beamui.text.fonts;
@@ -72,6 +73,10 @@ enum StyleProperty
     flexGrow,
     flexShrink,
     flexBasis,
+    // grid-specific
+    gridAutoFlow,
+    gridAutoRows,
+    gridAutoColumns,
     // background
     bgColor,
     bgImage,
@@ -543,6 +548,19 @@ struct ComputedStyle
         /// ditto
         void flexBasis(float px) { setProperty!"flexBasis" = Length.px(px); }
 
+        /// Specifies how auto-placed items get inserted in the grid
+        GridFlow gridAutoFlow() const { return _gridAutoFlow; }
+        /// ditto
+        void gridAutoFlow(GridFlow value) { setProperty!"gridAutoFlow" = value; }
+        /// Default size for grid rows
+        TrackSize gridAutoRows() const { return _gridAutoRows; }
+        /// ditto
+        void gridAutoRows(TrackSize sz) { return setProperty!"gridAutoRows" = sz; }
+        /// Default size for grid columns
+        TrackSize gridAutoColumns() const { return _gridAutoColumns; }
+        /// ditto
+        void gridAutoColumns(TrackSize sz) { return setProperty!"gridAutoColumns" = sz; }
+
         /// Background color of the widget
         Color backgroundColor() const { return _bgColor; }
         /// ditto
@@ -953,6 +971,10 @@ struct ComputedStyle
         float _flexGrow = 0;
         float _flexShrink = 1;
         Length _flexBasis = Length.none;
+        // grid-specific
+        GridFlow _gridAutoFlow = GridFlow.row;
+        TrackSize _gridAutoRows = TrackSize.automatic;
+        TrackSize _gridAutoColumns = TrackSize.automatic;
         // background
         Color _bgColor = Color.transparent;
         Drawable _bgImage;
@@ -1491,6 +1513,9 @@ string getCSSName(StyleProperty ptype)
         case flexGrow:      return "flex-grow";
         case flexShrink:    return "flex-shrink";
         case flexBasis:     return "flex-basis";
+        case gridAutoFlow:    return "grid-auto-flow";
+        case gridAutoRows:    return "grid-auto-rows";
+        case gridAutoColumns: return "grid-auto-columns";
         case bgColor:    return "background-color";
         case bgImage:    return "background-image";
         case bgPosition: return "background-position";

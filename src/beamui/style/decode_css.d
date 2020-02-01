@@ -22,6 +22,7 @@ import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
 import beamui.layout.alignment;
 import beamui.layout.flex : FlexDirection, FlexWrap;
+import beamui.layout.grid : GridFlow, TrackSize;
 import beamui.style.types : BgPositionRaw, BgSizeRaw, SpecialCSSType;
 import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.text.style;
@@ -481,6 +482,66 @@ Result!FlexHere decodeFlex(const(Token)[] tokens)
         toomany("flex", t0.line);
 
     return E();
+}
+
+/// Decode grid automatic flow property
+Result!GridFlow decode(T : GridFlow)(const(Token)[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "grid flow";
+    const t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        shouldbe(what, "an identifier", t);
+        return Err!GridFlow;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+
+    switch (t.text) with (GridFlow)
+    {
+        case "row": return Ok(row);
+        case "column": return Ok(column);
+        default:
+            unknown(what, t);
+            return Err!GridFlow;
+    }
+}
+
+/// Decode grid tracks size, e.g. 50px, 20%, 1fr, 'min-content', 'max-content', `auto`
+Result!TrackSize decode(T : TrackSize)(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const t0 = tokens[0];
+    if (t0.type == TokenType.ident)
+    {
+        if (t0.text == "auto")
+            return Ok(TrackSize.automatic);
+        if (t0.text == "min-content")
+            return Ok(TrackSize.minContent);
+        if (t0.text == "max-content")
+            return Ok(TrackSize.maxContent);
+    }
+    else if (t0.type == TokenType.dimension && t0.dimensionUnit == "fr")
+    {
+        const fr = assertNotThrown(to!float(t0.text));
+        if (fr < 0)
+        {
+            Log.fe("CSS(%s): fraction cannot be negative", t0.line);
+            return Err!TrackSize;
+        }
+        return Ok(TrackSize.fromFraction(fr));
+    }
+    else if (startsWithLength(tokens))
+    {
+        const len = decode!Length(tokens).val;
+        return Ok(TrackSize.fromLength(len));
+    }
+
+    unknown("track size", t0);
+    return Err!TrackSize;
 }
 
 //===============================================================
