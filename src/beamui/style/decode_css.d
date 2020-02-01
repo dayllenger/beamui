@@ -49,6 +49,30 @@ private void toomany(string what, size_t line)
     Log.fw("CSS(%s): too many values for %s", line, what);
 }
 
+private Result!T decodeSimpleEnum(T)(const Token[] tokens, string what, const Tup!(string, T)[] map)
+    if (is(T == enum))
+{
+    const t = tokens[0];
+    if (t.type != TokenType.ident)
+    {
+        shouldbe(what, "an identifier", t);
+        return Err!T;
+    }
+    if (tokens.length > 1)
+        toomany(what, t.line);
+
+    foreach (pair; map)
+    {
+        if (pair[0] == t.text)
+        {
+            T v = pair[1]; // remove constness
+            return Ok(v);
+        }
+    }
+    unknown(what, t);
+    return Err!T;
+}
+
 /// Decode `<integer>` value
 Result!int decode(T : int)(const Token[] tokens)
 {
@@ -139,87 +163,51 @@ Result!Align decode(T : Align)(const Token[] tokens)
 }
 
 /// Decode stretch property
-Result!Stretch decode(T : Stretch)(const(Token)[] tokens)
+Result!Stretch decode(T : Stretch)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "stretch";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (Stretch)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!Stretch;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (Stretch)
-    {
-        case "main":  return Ok(main);
-        case "cross": return Ok(cross);
-        case "both":  return Ok(both);
-        case "none":  return Ok(none);
-        default:
-            unknown(what, t);
-            return Err!Stretch;
+        immutable map = [
+            tup("main", main),
+            tup("cross", cross),
+            tup("both", both),
+            tup("none", none),
+        ];
+        return decodeSimpleEnum(tokens, "stretch", map);
     }
 }
 
 /// Decode item alignment property
-Result!AlignItem decode(T : AlignItem)(const(Token)[] tokens)
+Result!AlignItem decode(T : AlignItem)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "item alignment";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (AlignItem)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!AlignItem;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (AlignItem)
-    {
-        case "auto":    return Ok(unspecified);
-        case "stretch": return Ok(stretch);
-        case "start":   return Ok(start);
-        case "end":     return Ok(end);
-        case "center":  return Ok(center);
-        default:
-            unknown(what, t);
-            return Err!AlignItem;
+        immutable map = [
+            tup("auto", unspecified),
+            tup("stretch", stretch),
+            tup("start", start),
+            tup("end", end),
+            tup("center", center),
+        ];
+        return decodeSimpleEnum(tokens, "item alignment", map);
     }
 }
 
 /// Decode content distribution property
-Result!Distribution decode(T : Distribution)(const(Token)[] tokens)
+Result!Distribution decode(T : Distribution)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "distribution";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (Distribution)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!Distribution;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (Distribution)
-    {
-        case "stretch": return Ok(stretch);
-        case "start":   return Ok(start);
-        case "end":     return Ok(end);
-        case "center":  return Ok(center);
-        case "space-between": return Ok(spaceBetween);
-        case "space-around":  return Ok(spaceAround);
-        case "space-evenly":  return Ok(spaceEvenly);
-        default:
-            unknown(what, t);
-            return Err!Distribution;
+        immutable map = [
+            tup("stretch", stretch),
+            tup("start", start),
+            tup("end", end),
+            tup("center", center),
+            tup("space-between", spaceBetween),
+            tup("space-around", spaceAround),
+            tup("space-evenly", spaceEvenly),
+        ];
+        return decodeSimpleEnum(tokens, "distribution", map);
     }
 }
 
@@ -354,55 +342,31 @@ Result!int decode(SpecialCSSType t : SpecialCSSType.zIndex)(const Token[] tokens
 }
 
 /// Decode flexbox direction property
-Result!FlexDirection decode(T : FlexDirection)(const(Token)[] tokens)
+Result!FlexDirection decode(T : FlexDirection)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "flex direction";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (FlexDirection)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!FlexDirection;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (FlexDirection)
-    {
-        case "row": return Ok(row);
-        case "row-reverse": return Ok(rowReverse);
-        case "column": return Ok(column);
-        case "column-reverse": return Ok(columnReverse);
-        default:
-            unknown(what, t);
-            return Err!FlexDirection;
+        immutable map = [
+            tup("row", row),
+            tup("row-reverse", rowReverse),
+            tup("column", column),
+            tup("column-reverse", columnReverse),
+        ];
+        return decodeSimpleEnum(tokens, "flex direction", map);
     }
 }
 
 /// Decode flexbox wrap property
-Result!FlexWrap decode(T : FlexWrap)(const(Token)[] tokens)
+Result!FlexWrap decode(T : FlexWrap)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "flex wrap";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (FlexWrap)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!FlexWrap;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (FlexWrap)
-    {
-        case "nowrap": return Ok(off);
-        case "wrap": return Ok(on);
-        case "wrap-reverse": return Ok(reverse);
-        default:
-            unknown(what, t);
-            return Err!FlexWrap;
+        immutable map = [
+            tup("nowrap", off),
+            tup("wrap", on),
+            tup("wrap-reverse", reverse),
+        ];
+        return decodeSimpleEnum(tokens, "flex wrap", map);
     }
 }
 
@@ -485,27 +449,15 @@ Result!FlexHere decodeFlex(const(Token)[] tokens)
 }
 
 /// Decode grid automatic flow property
-Result!GridFlow decode(T : GridFlow)(const(Token)[] tokens)
+Result!GridFlow decode(T : GridFlow)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "grid flow";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (GridFlow)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!GridFlow;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (GridFlow)
-    {
-        case "row": return Ok(row);
-        case "column": return Ok(column);
-        default:
-            unknown(what, t);
-            return Err!GridFlow;
+        immutable map = [
+            tup("row", row),
+            tup("column", column),
+        ];
+        return decodeSimpleEnum(tokens, "grid flow", map);
     }
 }
 
@@ -872,56 +824,32 @@ private Result!Tiling decodeTiling(ref const Token t)
 }
 
 /// Decode box property ('border-box', 'padding-box', 'content-box')
-Result!BoxType decode(T : BoxType)(const(Token)[] tokens)
+Result!BoxType decode(T : BoxType)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "box";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (BoxType)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!BoxType;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (BoxType)
-    {
-        case "border-box":  return Ok(border);
-        case "padding-box": return Ok(padding);
-        case "content-box": return Ok(content);
-        default:
-            unknown(what, t);
-            return Err!BoxType;
+        immutable map = [
+            tup("border-box", border),
+            tup("padding-box", padding),
+            tup("content-box", content),
+        ];
+        return decodeSimpleEnum(tokens, "box", map);
     }
 }
 
 /// Decode border style property
-Result!BorderStyle decode(T : BorderStyle)(const(Token)[] tokens)
+Result!BorderStyle decode(T : BorderStyle)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "border style";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (BorderStyle)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!BorderStyle;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (BorderStyle)
-    {
-        case "solid":  return Ok(solid);
-        case "none":   return Ok(none);
-        case "dotted": return Ok(dotted);
-        case "dashed": return Ok(dashed);
-        case "double": return Ok(doubled);
-        default:
-            unknown(what, t);
-            return Err!BorderStyle;
+        immutable map = [
+            tup("solid", solid),
+            tup("none", none),
+            tup("dotted", dotted),
+            tup("dashed", dashed),
+            tup("double", doubled),
+        ];
+        return decodeSimpleEnum(tokens, "border style", map);
     }
 }
 
@@ -1069,24 +997,13 @@ Result!FontFamily decode(T : FontFamily)(const Token[] tokens)
 /// Decode font style
 Result!FontStyle decode(T : FontStyle)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "font style";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (FontStyle)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!FontStyle;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-    switch (t.text)
-    {
-        case "normal": return Ok(FontStyle.normal);
-        case "italic": return Ok(FontStyle.italic);
-        default:
-            unknown(what, t);
-            return Err!FontStyle;
+        immutable map = [
+            tup("normal", normal),
+            tup("italic", italic),
+        ];
+        return decodeSimpleEnum(tokens, "font style", map);
     }
 }
 /// Decode font weight
@@ -1138,27 +1055,15 @@ Result!TabSize decode(T : TabSize)(const Token[] tokens)
 /// Decode text alignment
 Result!TextAlign decode(T : TextAlign)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "text alignment";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (TextAlign)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!TextAlign;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (TextAlign)
-    {
-        case "start":   return Ok(start);
-        case "center":  return Ok(center);
-        case "end":     return Ok(end);
-        case "justify": return Ok(justify);
-        default:
-            unknown(what, t);
-            return Err!TextAlign;
+        immutable map = [
+            tup("start", start),
+            tup("center", center),
+            tup("end", end),
+            tup("justify", justify),
+        ];
+        return decodeSimpleEnum(tokens, "text alignment", map);
     }
 }
 
@@ -1192,28 +1097,16 @@ Result!TextDecorLine decode(T : TextDecorLine)(const Token[] tokens)
 /// Decode text decoration style
 Result!TextDecorStyle decode(T : TextDecorStyle)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "text decoration style";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (TextDecorStyle)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!TextDecorStyle;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (TextDecorStyle)
-    {
-        case "solid":  return Ok(solid);
-        case "double": return Ok(doubled);
-        case "dotted": return Ok(dotted);
-        case "dashed": return Ok(dashed);
-        case "wavy":   return Ok(wavy);
-        default:
-            unknown(what, t);
-            return Err!TextDecorStyle;
+        immutable map = [
+            tup("solid", solid),
+            tup("double", doubled),
+            tup("dotted", dotted),
+            tup("dashed", dashed),
+            tup("wavy", wavy),
+        ];
+        return decodeSimpleEnum(tokens, "text decoration style", map);
     }
 }
 alias TextDecorHere = Tup!(TextDecorLine, Result!Color, Result!TextDecorStyle);
@@ -1257,80 +1150,44 @@ Result!TextDecorHere decodeTextDecor(const(Token)[] tokens)
 /// Decode text hotkey option
 Result!TextHotkey decode(T : TextHotkey)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "text hotkey option";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (TextHotkey)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!TextHotkey;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (TextHotkey)
-    {
-        case "ignore": return Ok(ignore);
-        case "hidden": return Ok(hidden);
-        case "underline": return Ok(underline);
-        case "underline-on-alt": return Ok(underlineOnAlt);
-        default:
-            unknown(what, t);
-            return Err!TextHotkey;
+        immutable map = [
+            tup("ignore", ignore),
+            tup("hidden", hidden),
+            tup("underline", underline),
+            tup("underline-on-alt", underlineOnAlt),
+        ];
+        return decodeSimpleEnum(tokens, "text hotkey option", map);
     }
 }
 
 /// Decode text overflow
 Result!TextOverflow decode(T : TextOverflow)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "text overflow";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (TextOverflow)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!TextOverflow;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (TextOverflow)
-    {
-        case "clip": return Ok(clip);
-        case "ellipsis": return Ok(ellipsis);
-        case "ellipsis-middle": return Ok(ellipsisMiddle);
-        default:
-            unknown(what, t);
-            return Err!TextOverflow;
+        immutable map = [
+            tup("clip", clip),
+            tup("ellipsis", ellipsis),
+            tup("ellipsis-middle", ellipsisMiddle),
+        ];
+        return decodeSimpleEnum(tokens, "text overflow", map);
     }
 }
 
 /// Decode text transform
 Result!TextTransform decode(T : TextTransform)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "text transform";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (TextTransform)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!TextTransform;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (TextTransform)
-    {
-        case "none":       return Ok(none);
-        case "capitalize": return Ok(capitalize);
-        case "uppercase":  return Ok(uppercase);
-        case "lowercase":  return Ok(lowercase);
-        default:
-            unknown(what, t);
-            return Err!TextTransform;
+        immutable map = [
+            tup("none", none),
+            tup("uppercase", uppercase),
+            tup("lowercase", lowercase),
+            tup("capitalize", capitalize),
+        ];
+        return decodeSimpleEnum(tokens, "text transform", map);
     }
 }
 
@@ -1459,39 +1316,27 @@ Result!float decode(SpecialCSSType t : SpecialCSSType.opacity)(const Token[] tok
 /// Decode blend mode
 Result!BlendMode decode(T : BlendMode)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    const what = "blend mode";
-    const t = tokens[0];
-    if (t.type != TokenType.ident)
+    with (BlendMode)
     {
-        shouldbe(what, "an identifier", t);
-        return Err!BlendMode;
-    }
-    if (tokens.length > 1)
-        toomany(what, t.line);
-
-    switch (t.text) with (BlendMode)
-    {
-        case "normal":      return Ok(normal);
-        case "multiply":    return Ok(multiply);
-        case "screen":      return Ok(screen);
-        case "overlay":     return Ok(overlay);
-        case "darken":      return Ok(darken);
-        case "lighten":     return Ok(lighten);
-        case "color-dodge": return Ok(colorDodge);
-        case "color-burn":  return Ok(colorBurn);
-        case "hard-light":  return Ok(hardLight);
-        case "soft-light":  return Ok(softLight);
-        case "difference":  return Ok(difference);
-        case "exclusion":   return Ok(exclusion);
-        case "hue":         return Ok(hue);
-        case "saturation":  return Ok(saturation);
-        case "color":       return Ok(color);
-        case "luminosity":  return Ok(luminosity);
-        default:
-            unknown(what, t);
-            return Err!BlendMode;
+        immutable map = [
+            tup("normal", normal),
+            tup("multiply", multiply),
+            tup("screen", screen),
+            tup("overlay", overlay),
+            tup("darken", darken),
+            tup("lighten", lighten),
+            tup("color-dodge", colorDodge),
+            tup("color-burn", colorBurn),
+            tup("hard-light", hardLight),
+            tup("soft-light", softLight),
+            tup("difference", difference),
+            tup("exclusion", exclusion),
+            tup("hue", hue),
+            tup("saturation", saturation),
+            tup("color", color),
+            tup("luminosity", luminosity),
+        ];
+        return decodeSimpleEnum(tokens, "blend mode", map);
     }
 }
 
