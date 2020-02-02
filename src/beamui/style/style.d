@@ -153,14 +153,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.top] = *p;
-            metaProperties[sh.right] = *p;
-            metaProperties[sh.bottom] = *p;
-            metaProperties[sh.left] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandDrawable sh)
@@ -176,12 +169,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.color] = *p;
-            metaProperties[sh.image] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandInsets sh)
@@ -199,14 +187,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.top] = *p;
-            metaProperties[sh.right] = *p;
-            metaProperties[sh.bottom] = *p;
-            metaProperties[sh.left] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandLengthPair sh)
@@ -220,12 +201,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.first] = *p;
-            metaProperties[sh.second] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandFlexFlow sh)
@@ -239,12 +215,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.dir] = *p;
-            metaProperties[sh.wrap] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandFlex sh)
@@ -259,13 +230,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.grow] = *p;
-            metaProperties[sh.shrink] = *p;
-            metaProperties[sh.basis] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandGridArea sh)
@@ -282,14 +247,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.rowStart] = *p;
-            metaProperties[sh.rowEnd] = *p;
-            metaProperties[sh.columnStart] = *p;
-            metaProperties[sh.columnEnd] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandGridLine sh)
@@ -304,12 +262,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.start] = *p;
-            metaProperties[sh.end] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandBorder sh)
@@ -338,22 +291,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.topWidth] = *p;
-            metaProperties[sh.topStyle] = *p;
-            metaProperties[sh.topColor] = *p;
-            metaProperties[sh.rightWidth] = *p;
-            metaProperties[sh.rightStyle] = *p;
-            metaProperties[sh.rightColor] = *p;
-            metaProperties[sh.bottomWidth] = *p;
-            metaProperties[sh.bottomStyle] = *p;
-            metaProperties[sh.bottomColor] = *p;
-            metaProperties[sh.leftWidth] = *p;
-            metaProperties[sh.leftStyle] = *p;
-            metaProperties[sh.leftColor] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandBorderStyle sh)
@@ -370,14 +308,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.top] = *p;
-            metaProperties[sh.right] = *p;
-            metaProperties[sh.bottom] = *p;
-            metaProperties[sh.left] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandBorderSide sh)
@@ -392,13 +323,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.width] = *p;
-            metaProperties[sh.style] = *p;
-            metaProperties[sh.color] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandTextDecor sh)
@@ -416,13 +341,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.line] = *p;
-            metaProperties[sh.color] = *p;
-            metaProperties[sh.style] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
     /// ditto
     void explode(ref immutable ShorthandTransition sh)
@@ -442,14 +361,7 @@ final class Style
             }
             rawProperties.remove(sh.name);
         }
-        if (auto p = sh.name in metaProperties)
-        {
-            metaProperties[sh.property] = *p;
-            metaProperties[sh.timingFunction] = *p;
-            metaProperties[sh.duration] = *p;
-            metaProperties[sh.delay] = *p;
-            metaProperties.remove(sh.name);
-        }
+        setMetaProperties(sh);
     }
 
     private void tryToSetShorthandPart(size_t hash, bool initial, lazy Variant v)
@@ -461,6 +373,16 @@ final class Style
         }
         else if (hash !in rawProperties)
             properties[hash] = v;
+    }
+
+    private void setMetaProperties(S)(ref const S sh) if (__traits(identifier, S.tupleof[0]) == "name")
+    {
+        if (auto p = sh.name in metaProperties)
+        {
+            foreach (hash; sh.tupleof[1 .. $])
+                metaProperties[hash] = *p;
+            metaProperties.remove(sh.name);
+        }
     }
 
     package void setRawProperty(string name, const CSS.Token[] tokens)
