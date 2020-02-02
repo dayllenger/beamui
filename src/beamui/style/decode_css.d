@@ -22,7 +22,7 @@ import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
 import beamui.layout.alignment;
 import beamui.layout.flex : FlexDirection, FlexWrap;
-import beamui.layout.grid : GridFlow, TrackSize;
+import beamui.layout.grid : GridFlow, GridLineName, TrackSize;
 import beamui.style.types : BgPositionRaw, BgSizeRaw, SpecialCSSType;
 import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.text.style;
@@ -31,22 +31,27 @@ void logInvalidValue(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
-    Log.fe("CSS(%s): invalid value", tokens[0].line);
+    Log.fe("CSS(%d): invalid value", tokens[0].line);
 }
 
 private void shouldbe(string what, string types, ref const Token t)
 {
-    Log.fe("CSS(%s): %s should be %s, not '%s'", t.line, what, types, t.type);
+    Log.fe("CSS(%d): %s should be %s, not '%s'", t.line, what, types, t.type);
 }
 
 private void unknown(string what, ref const Token t)
 {
-    Log.fe("CSS(%s): unknown %s: %s", t.line, what, t.text);
+    Log.fe("CSS(%d): unknown %s: %s%s", t.line, what, t.text, t.dimensionUnit);
+}
+
+private void expected(string what, ref const Token t)
+{
+    Log.fe("CSS(%d): expected %s, got '%s'", t.line, what, t.type);
 }
 
 private void toomany(string what, size_t line)
 {
-    Log.fw("CSS(%s): too many values for %s", line, what);
+    Log.fw("CSS(%d): too many values for %s", line, what);
 }
 
 private Result!T decodeSimpleEnum(T)(const Token[] tokens, string what, const Tup!(string, T)[] map)
@@ -94,7 +99,7 @@ Result!int decode(T : int)(const Token[] tokens)
     }
     else
     {
-        Log.fe("CSS(%s): expected integer, not '%s'", t.line, t.type);
+        expected("integer", t);
         return Err(0);
     }
 }
@@ -112,7 +117,7 @@ Result!float decode(T : float)(const Token[] tokens)
     }
     else
     {
-        Log.fe("CSS(%s): expected number, not '%s'", t.line, t.type);
+        expected("number", t);
         return Err!float;
     }
 }
@@ -372,7 +377,7 @@ Result!FlexWrap decode(T : FlexWrap)(const Token[] tokens)
 
 alias FlexFlowHere = Tup!(Result!FlexDirection, Result!FlexWrap);
 alias FlexHere = Tup!(float, float, Length);
-/// Decode shortcut flex-flow property
+/// Decode shorthand flex-flow property
 Result!FlexFlowHere decodeFlexFlow(const Token[] tokens)
 {
     assert(tokens.length > 0);
@@ -404,7 +409,7 @@ Result!FlexFlowHere decodeFlexFlow(const Token[] tokens)
         return Err!FlexFlowHere();
     }
 }
-/// Decode shortcut flex property
+/// Decode shorthand flex property
 Result!FlexHere decodeFlex(const(Token)[] tokens)
 {
     assert(tokens.length > 0);
@@ -496,11 +501,91 @@ Result!TrackSize decode(T : TrackSize)(const Token[] tokens)
     return Err!TrackSize;
 }
 
+/// Decode grid line name, e.g. -1, 'span 3', 'header', `auto`
+Result!GridLineName decode(T : GridLineName)(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const what = "grid line";
+    GridLineName ret;
+    Token t = tokens[0];
+    if (t.type == TokenType.ident)
+    {
+        if (t.text == "span")
+        {
+            if (tokens.length > 1)
+            {
+                ret.span = true;
+                t = tokens[1];
+            }
+            else
+            {
+                Log.fe("CSS(%s): grid line or area can't have name 'span'", t.line);
+                return Err(ret);
+            }
+        }
+        else
+        {
+            if (tokens.length > 1)
+                toomany(what, t.line);
+
+            if (t.text != "auto")
+                ret.str = t.text;
+            return Ok(ret);
+        }
+    }
+    if (!ret.span && tokens.length > 1 || tokens.length > 2)
+        toomany(what, t.line);
+
+    if (t.type == TokenType.number && t.integer)
+    {
+        const i = assertNotThrown(to!int(t.text));
+        if (ret.span && i <= 0)
+        {
+            Log.fe("CSS(%s): invalid grid span: %d", t.line, i);
+            return Err(ret);
+        }
+        if (i == 0)
+        {
+            Log.fe("CSS(%s): invalid grid line number: %d", t.line, i);
+            return Err(ret);
+        }
+        ret.num = i;
+        return Ok(ret);
+    }
+    else if (!ret.span)
+        expected("integer or identifier", t);
+    else
+        expected("integer", t);
+
+    return Err(ret);
+}
+
+/// Decode grid area name, that expands to two or four grid line names
+Result!GridLineName decodeGridArea(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    const t = tokens[0];
+    if (t.type == TokenType.ident)
+    {
+        GridLineName ln;
+        if (t.text != "auto")
+            ln.str = t.text;
+        return Ok(ln);
+    }
+    else
+    {
+        shouldbe("grid area name", "an identifier", t);
+        return Err!GridLineName;
+    }
+}
+
 //===============================================================
 // Background, border, and box shadow
 
 alias BackgroundHere = Tup!(Result!Color, Result!Drawable);
-/// Decode shortcut background property
+/// Decode shorthand background property
 Result!BackgroundHere decodeBackground(const(Token)[] tokens)
 {
     assert(tokens.length > 0);
@@ -854,7 +939,7 @@ Result!BorderStyle decode(T : BorderStyle)(const Token[] tokens)
 }
 
 alias BorderHere = Tup!(Result!Length, BorderStyle, Result!Color);
-/// Decode shortcut border property
+/// Decode shorthand border property
 Result!BorderHere decodeBorder(const(Token)[] tokens)
 {
     assert(tokens.length > 0);

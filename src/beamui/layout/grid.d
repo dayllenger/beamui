@@ -65,3 +65,10 @@ struct TrackSize
         return ts;
     }
 }
+
+struct GridLineName
+{
+    bool span;
+    int num;
+    string str;
+}

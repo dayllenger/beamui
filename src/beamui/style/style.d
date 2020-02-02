@@ -268,6 +268,50 @@ final class Style
         }
     }
     /// ditto
+    void explode(ref immutable ShorthandGridArea sh)
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            if (auto res = decodeGridArea(*p))
+            {
+                const ln = Variant(res.val);
+                tryToSetShorthandPart(sh.rowStart, false, ln);
+                tryToSetShorthandPart(sh.rowEnd, false, ln);
+                tryToSetShorthandPart(sh.columnStart, false, ln);
+                tryToSetShorthandPart(sh.columnEnd, false, ln);
+            }
+            rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.rowStart] = *p;
+            metaProperties[sh.rowEnd] = *p;
+            metaProperties[sh.columnStart] = *p;
+            metaProperties[sh.columnEnd] = *p;
+            metaProperties.remove(sh.name);
+        }
+    }
+    /// ditto
+    void explode(ref immutable ShorthandGridLine sh)
+    {
+        if (auto p = sh.name in rawProperties)
+        {
+            if (auto res = decodeGridArea(*p))
+            {
+                const ln = Variant(res.val);
+                tryToSetShorthandPart(sh.start, false, ln);
+                tryToSetShorthandPart(sh.end, false, ln);
+            }
+            rawProperties.remove(sh.name);
+        }
+        if (auto p = sh.name in metaProperties)
+        {
+            metaProperties[sh.start] = *p;
+            metaProperties[sh.end] = *p;
+            metaProperties.remove(sh.name);
+        }
+    }
+    /// ditto
     void explode(ref immutable ShorthandBorder sh)
     {
         if (auto p = sh.name in rawProperties)

@@ -17,7 +17,7 @@ import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
 import beamui.layout.alignment;
 import beamui.layout.flex : FlexDirection, FlexWrap;
-import beamui.layout.grid : GridFlow, TrackSize;
+import beamui.layout.grid : GridFlow, GridLineName, TrackSize;
 import beamui.style.style;
 import beamui.style.types;
 import beamui.text.fonts;
@@ -77,6 +77,10 @@ enum StyleProperty
     gridAutoFlow,
     gridAutoRows,
     gridAutoColumns,
+    gridRowStart,
+    gridRowEnd,
+    gridColumnStart,
+    gridColumnEnd,
     // background
     bgColor,
     bgImage,
@@ -561,6 +565,14 @@ struct ComputedStyle
         /// ditto
         void gridAutoColumns(TrackSize sz) { return setProperty!"gridAutoColumns" = sz; }
 
+        /// (row-start, row-end, column-start, column-end)
+        GridLineName[4] gridArea() const { return [_gridRowStart, _gridRowEnd, _gridColumnStart, _gridColumnEnd]; }
+
+        void gridRowStart(GridLineName value) { setProperty!"gridRowStart" = value; }
+        void gridRowEnd(GridLineName value) { setProperty!"gridRowEnd" = value; }
+        void gridColumnStart(GridLineName value) { setProperty!"gridColumnStart" = value; }
+        void gridColumnEnd(GridLineName value) { setProperty!"gridColumnEnd" = value; }
+
         /// Background color of the widget
         Color backgroundColor() const { return _bgColor; }
         /// ditto
@@ -975,6 +987,10 @@ struct ComputedStyle
         GridFlow _gridAutoFlow = GridFlow.row;
         TrackSize _gridAutoRows = TrackSize.automatic;
         TrackSize _gridAutoColumns = TrackSize.automatic;
+        GridLineName _gridRowStart;
+        GridLineName _gridRowEnd;
+        GridLineName _gridColumnStart;
+        GridLineName _gridColumnEnd;
         // background
         Color _bgColor = Color.transparent;
         Drawable _bgImage;
@@ -1380,6 +1396,20 @@ private void explodeShorthands(Style st)
         StrHash("flex-grow"),
         StrHash("flex-shrink"),
         StrHash("flex-basis"));
+    static immutable gridArea = ShorthandGridArea(
+        StrHash("grid-area"),
+        StrHash("grid-row-start"),
+        StrHash("grid-row-end"),
+        StrHash("grid-column-start"),
+        StrHash("grid-column-end"));
+    static immutable gridRow = ShorthandGridLine(
+        StrHash("grid-row"),
+        StrHash("grid-row-start"),
+        StrHash("grid-row-end"));
+    static immutable gridColumn = ShorthandGridLine(
+        StrHash("grid-column"),
+        StrHash("grid-column-start"),
+        StrHash("grid-column-end"));
     static immutable bg = ShorthandDrawable(
         StrHash("background"),
         StrHash("background-color"),
@@ -1458,6 +1488,9 @@ private void explodeShorthands(Style st)
     st.explode(gap);
     st.explode(flexFlow);
     st.explode(flex);
+    st.explode(gridArea);
+    st.explode(gridRow);
+    st.explode(gridColumn);
     st.explode(bg);
     st.explode(border);
     st.explode(borderWidth);
@@ -1516,6 +1549,10 @@ string getCSSName(StyleProperty ptype)
         case gridAutoFlow:    return "grid-auto-flow";
         case gridAutoRows:    return "grid-auto-rows";
         case gridAutoColumns: return "grid-auto-columns";
+        case gridRowStart:    return "grid-row-start";
+        case gridRowEnd:      return "grid-row-end";
+        case gridColumnStart: return "grid-column-start";
+        case gridColumnEnd:   return "grid-column-end";
         case bgColor:    return "background-color";
         case bgImage:    return "background-image";
         case bgPosition: return "background-position";

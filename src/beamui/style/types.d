@@ -294,6 +294,22 @@ struct ShorthandFlex
     size_t basis;
 }
 
+struct ShorthandGridArea
+{
+    size_t name;
+    size_t rowStart;
+    size_t rowEnd;
+    size_t columnStart;
+    size_t columnEnd;
+}
+
+struct ShorthandGridLine
+{
+    size_t name;
+    size_t start;
+    size_t end;
+}
+
 /// background, usually
 struct ShorthandDrawable
 {
