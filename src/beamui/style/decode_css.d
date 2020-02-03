@@ -221,33 +221,22 @@ Length[] decodeInsets(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
-    Length[] result;
-    result.reserve(4);
-    foreach (ref t; tokens)
+    if (tokens.length > 4)
     {
-        if (t.type == TokenType.number || t.type == TokenType.dimension)
-        {
-            if (const dm = decode!Length((&t)[0 .. 1]))
-                result ~= dm.val;
-        }
-        else
-        {
-            shouldbe("rectangle value", "numeric", t);
-            return null;
-        }
-        if (result.length > 4)
-        {
-            toomany("rectangle", t.line);
-            return null;
-        }
-    }
-    if (result.length > 0)
-        return result;
-    else
-    {
-        Log.fe("CSS(%s): empty rectangle", tokens[0].line);
+        toomany("rectangle", tokens[0].line);
         return null;
     }
+
+    Length[] list;
+    list.reserve(4);
+    foreach (i; 0 .. tokens.length)
+    {
+        if (const len = decode!Length(tokens[i .. i + 1]))
+            list ~= len.val;
+        else
+            return null;
+    }
+    return list;
 }
 
 /// Decode CSS length pair, e.g. `gap` property
@@ -1558,7 +1547,7 @@ bool startsWithLength(const Token[] tokens)
 
     const t = tokens[0];
     if (t.type == TokenType.ident)
-        return t.text == "none";
+        return t.text == "auto" || t.text == "none";
     if (t.type == TokenType.number)
         return t.text == "0";
     if (t.type == TokenType.dimension)
