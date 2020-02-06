@@ -572,8 +572,8 @@ struct ComputedStyle
         /// ditto
         void gridAutoColumns(TrackSize sz) { return setProperty!"gridAutoColumns" = sz; }
 
-        /// (row-start, row-end, column-start, column-end)
-        GridLineName[4] gridArea() const { return [_gridRowStart, _gridRowEnd, _gridColumnStart, _gridColumnEnd]; }
+        /// (row-start, column-start, row-end, column-end)
+        GridLineName[4] gridArea() const { return [_gridRowStart, _gridColumnStart, _gridRowEnd, _gridColumnEnd]; }
 
         void gridRowStart(GridLineName value) { setProperty!"gridRowStart" = value; }
         void gridRowEnd(GridLineName value) { setProperty!"gridRowEnd" = value; }

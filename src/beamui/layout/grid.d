@@ -24,9 +24,22 @@ struct GridNamedAreas
 
 struct GridLineName
 {
-    bool span;
-    int num;
-    string str;
+    private bool span;
+    private int num;
+    private string name;
+
+    this(bool span, int num)
+        in(num > 0)
+        in(num < 10_000)
+    {
+        this.span = span;
+        this.num = num;
+    }
+
+    this(string name)
+    {
+        this.name = name;
+    }
 }
 
 struct TrackSize

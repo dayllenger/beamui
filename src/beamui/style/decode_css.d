@@ -461,6 +461,7 @@ Result!TrackSize decode(T : TrackSize)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    // it's simpler to check for invalid lengths here
     const t0 = tokens[0];
     if (t0.type == TokenType.ident)
     {
@@ -483,8 +484,14 @@ Result!TrackSize decode(T : TrackSize)(const Token[] tokens)
     }
     else if (startsWithLength(tokens))
     {
-        const len = decode!Length(tokens).val;
-        return Ok(TrackSize.fromLength(len));
+        if (const len = decode!Length(tokens))
+        {
+            const v = len.val;
+            if (v.toLayout.applyPercent(100) >= 0)
+                return Ok(TrackSize.fromLength(v));
+        }
+        Log.fe("CSS(%s): bad track size", t0.line);
+        return Err!TrackSize;
     }
 
     unknown("track size", t0);
@@ -671,13 +678,15 @@ private bool appendGridRow(string[] row, size_t i, ref RectI[string] areas)
     return add();
 }
 
-/// Decode grid line name, e.g. -1, 'span 3', 'header', `auto`
+/// Decode grid line name, e.g. 1, 'span 3', 'header', `auto`
 Result!GridLineName decode(T : GridLineName)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
+    alias E = Err!GridLineName;
     const what = "grid line";
-    GridLineName ret;
+
+    bool span;
     Token t = tokens[0];
     if (t.type == TokenType.ident)
     {
@@ -685,13 +694,13 @@ Result!GridLineName decode(T : GridLineName)(const Token[] tokens)
         {
             if (tokens.length > 1)
             {
-                ret.span = true;
+                span = true;
                 t = tokens[1];
             }
             else
             {
                 Log.fe("CSS(%s): grid line or area can't have name 'span'", t.line);
-                return Err(ret);
+                return E();
             }
         }
         else
@@ -700,35 +709,43 @@ Result!GridLineName decode(T : GridLineName)(const Token[] tokens)
                 toomany(what, t.line);
 
             if (t.text != "auto")
-                ret.str = t.text;
-            return Ok(ret);
+                return Ok(GridLineName(t.text));
+            else
+                return Ok(GridLineName.init);
         }
     }
-    if (!ret.span && tokens.length > 1 || tokens.length > 2)
+    if (!span && tokens.length > 1 || tokens.length > 2)
         toomany(what, t.line);
 
     if (t.type == TokenType.number && t.integer)
     {
         const i = assertNotThrown(to!int(t.text));
-        if (ret.span && i <= 0)
+        if (i <= 0 || i >= 10_000)
         {
-            Log.fe("CSS(%s): invalid grid span: %d", t.line, i);
-            return Err(ret);
+            if (span)
+            {
+                Log.fe("CSS(%d): invalid grid span: %d", t.line, i);
+                return E();
+            }
+            if (i < 0)
+            {
+                Log.fe("CSS(%d): negative grid line numbers aren't supported", t.line);
+                return E();
+            }
+            else
+            {
+                Log.fe("CSS(%d): invalid grid line number: %d", t.line, i);
+                return E();
+            }
         }
-        if (i == 0)
-        {
-            Log.fe("CSS(%s): invalid grid line number: %d", t.line, i);
-            return Err(ret);
-        }
-        ret.num = i;
-        return Ok(ret);
+        return Ok(GridLineName(span, i));
     }
-    else if (!ret.span)
+    else if (!span)
         expected("integer or identifier", t);
     else
         expected("integer", t);
 
-    return Err(ret);
+    return E();
 }
 
 /// Decode grid area name, that expands to two or four grid line names
@@ -739,10 +756,10 @@ Result!GridLineName decodeGridArea(const Token[] tokens)
     const t = tokens[0];
     if (t.type == TokenType.ident)
     {
-        GridLineName ln;
         if (t.text != "auto")
-            ln.str = t.text;
-        return Ok(ln);
+            return Ok(GridLineName(t.text));
+        else
+            return Ok(GridLineName.init);
     }
     else
     {
