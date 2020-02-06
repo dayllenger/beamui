@@ -16,6 +16,19 @@ enum GridFlow : ubyte
     column,
 }
 
+struct GridNamedAreas
+{
+    SizeI size;
+    RectI[string] map; /// Counts from zero (unlike grid lines)
+}
+
+struct GridLineName
+{
+    bool span;
+    int num;
+    string str;
+}
+
 struct TrackSize
 {
     private enum Type : ubyte
@@ -64,11 +77,4 @@ struct TrackSize
         ts.type = Type.maxContent;
         return ts;
     }
-}
-
-struct GridLineName
-{
-    bool span;
-    int num;
-    string str;
 }

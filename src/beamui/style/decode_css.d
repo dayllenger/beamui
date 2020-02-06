@@ -13,7 +13,8 @@ import std.exception : assertNotThrown;
 import beamui.core.animations : TimingFunction;
 import beamui.core.editable : TabSize;
 import beamui.core.functions;
-import beamui.core.logger;
+import beamui.core.geometry : RectI, SizeI;
+import beamui.core.logger : Log;
 import beamui.core.types : Result, Ok, Err, Tup, tup;
 import beamui.core.units;
 import beamui.css.tokenizer : Token, TokenType;
@@ -22,7 +23,7 @@ import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
 import beamui.layout.alignment;
 import beamui.layout.flex : FlexDirection, FlexWrap;
-import beamui.layout.grid : GridFlow, GridLineName, TrackSize;
+import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
 import beamui.style.types : BgPositionRaw, BgSizeRaw, SpecialCSSType;
 import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.text.style;
@@ -488,6 +489,186 @@ Result!TrackSize decode(T : TrackSize)(const Token[] tokens)
 
     unknown("track size", t0);
     return Err!TrackSize;
+}
+
+/// Decode grid row or column template sizes
+Result!(TrackSize[]) decode(T : TrackSize[])(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    if (tokens[0].type == TokenType.ident && tokens[0].text == "none")
+    {
+        if (tokens.length > 1)
+            toomany("grid template", tokens[0].line);
+        return Ok!(TrackSize[])(null);
+    }
+
+    TrackSize[] list = new TrackSize[tokens.length];
+    foreach (i; 0 .. tokens.length)
+    {
+        if (const sz = decode!TrackSize(tokens[i .. i + 1]))
+            list[i] = sz.val;
+        else
+            return Err!(TrackSize[]);
+    }
+    return Ok(list);
+}
+
+/// Decode grid template with area names
+Result!GridNamedAreas decode(T : GridNamedAreas)(const Token[] tokens)
+{
+    assert(tokens.length > 0);
+
+    alias E = Err!GridNamedAreas;
+
+    if (tokens[0].type == TokenType.ident && tokens[0].text == "none")
+    {
+        if (tokens.length > 1)
+            toomany("grid template", tokens[0].line);
+        return Ok(GridNamedAreas.init);
+    }
+
+    RectI[string] map;
+    size_t columns;
+    foreach (i, ref tok; tokens)
+    {
+        if (tok.type == TokenType.str)
+        {
+            auto row = parseGridTemplateString(tok.text);
+            if (!row.length)
+            {
+                Log.fe("CSS(%d): grid row is empty or malformed", tok.line);
+                return E();
+            }
+            if (columns != row.length)
+            {
+                if (columns > 0)
+                {
+                    Log.fe("CSS(%d): grid must be rectangular", tok.line);
+                    return E();
+                }
+                columns = row.length;
+            }
+            if (!appendGridRow(row, i, map))
+            {
+                Log.fe("CSS(%d): grid areas must be rectangular", tok.line);
+                return E();
+            }
+        }
+        else
+        {
+            expected("a quoted string", tok);
+            return E();
+        }
+    }
+    return Ok(GridNamedAreas(SizeI(cast(int)columns, cast(int)tokens.length), map));
+}
+
+private string[] parseGridTemplateString(string txt)
+{
+    import std.ascii : isAlpha, isDigit, isWhite;
+    import std.uni : byCodePoint;
+
+    enum State
+    {
+        outside,
+        name,
+        dots,
+    }
+    State state;
+
+    string[] row;
+    string cell;
+    foreach (dchar c; byCodePoint(txt))
+    {
+        if (isAlpha(c) || c >= 0x80 || c == '_') // name start
+        {
+            if (state == State.dots)
+                row ~= cell;
+            cell ~= c;
+            state = State.name;
+        }
+        else if (isDigit(c) || c == '-') // inside a name only
+        {
+            if (state == State.name)
+                cell ~= c;
+            else
+                return null;
+        }
+        else if (c == '.') // empty cell
+        {
+            if (state == State.name)
+            {
+                row ~= cell;
+                cell = null;
+            }
+            state = State.dots;
+        }
+        else if (isWhite(c)) // delimiters
+        {
+            if (state != State.outside)
+            {
+                row ~= cell;
+                cell = null;
+                state = State.outside;
+            }
+        }
+        else // trash tokens
+            return null;
+    }
+    if (state != State.outside)
+        row ~= cell;
+    return row;
+}
+
+private bool appendGridRow(string[] row, size_t i, ref RectI[string] areas)
+    in(row.length)
+{
+    const y = cast(int)i;
+    string prev;
+    int left, right;
+
+    bool add()
+    {
+        if (!prev.length) // empty cells don't create a named area
+            return true;
+        if (RectI* rc = prev in areas)
+        {
+            assert(rc.bottom <= y);
+            // 1. disconnected by vertical axis
+            if (rc.bottom < y)
+                return false;
+            // 2. disconnected by horizontal axis
+            if (rc.left != left || rc.right != right)
+                return false;
+            // 3. fits
+            rc.bottom++;
+        }
+        else // not added yet
+        {
+            areas[prev] = RectI(left, y, right, y + 1);
+        }
+        return true;
+    }
+    foreach (j, curr; row)
+    {
+        if (curr == prev)
+        {
+            right++;
+            continue;
+        }
+        if (add())
+        {
+            left = cast(int)j;
+            right = left + 1;
+            prev = curr;
+        }
+        else
+            return false;
+    }
+    // add the last cells
+    assert(left < right);
+    return add();
 }
 
 /// Decode grid line name, e.g. -1, 'span 3', 'header', `auto`
@@ -1706,4 +1887,35 @@ private bool isOneOf(string[] list)(string str)
         default:
             return false;
     }
+}
+
+//===============================================================
+// Tests
+
+unittest
+{
+    assert(parseGridTemplateString("aaa") == ["aaa"]);
+    assert(parseGridTemplateString("a123") == ["a123"]);
+    assert(parseGridTemplateString("a---b-") == ["a---b-"]);
+    assert(parseGridTemplateString("_____") == ["_____"]);
+    assert(parseGridTemplateString("_abc-123") == ["_abc-123"]);
+    assert(parseGridTemplateString("a b c") == ["a", "b", "c"]);
+    assert(parseGridTemplateString("a     b  \t    \t  c") == ["a", "b", "c"]);
+    assert(parseGridTemplateString("     a b     ") == ["a", "b"]);
+
+    assert(parseGridTemplateString(".") == [null]);
+    assert(parseGridTemplateString("...") == [null]);
+    assert(parseGridTemplateString(". . .") == [null, null, null]);
+    assert(parseGridTemplateString("a ... b") == ["a", null, "b"]);
+    assert(parseGridTemplateString(".a..b.") == [null, "a", null, "b", null]);
+
+    assert(!parseGridTemplateString(null));
+    assert(!parseGridTemplateString(""));
+    assert(!parseGridTemplateString("123"));
+    assert(!parseGridTemplateString("1st"));
+    assert(!parseGridTemplateString("1st 2nd 3rd"));
+    assert(!parseGridTemplateString("!@#$"));
+    assert(!parseGridTemplateString("% ^ & *"));
+    assert(!parseGridTemplateString("(abc)"));
+    assert(!parseGridTemplateString("-a"));
 }

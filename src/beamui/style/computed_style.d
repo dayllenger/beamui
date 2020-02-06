@@ -17,7 +17,7 @@ import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
 import beamui.layout.alignment;
 import beamui.layout.flex : FlexDirection, FlexWrap;
-import beamui.layout.grid : GridFlow, GridLineName, TrackSize;
+import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
 import beamui.style.style;
 import beamui.style.types;
 import beamui.text.fonts;
@@ -74,6 +74,9 @@ enum StyleProperty
     flexShrink,
     flexBasis,
     // grid-specific
+    gridTemplateRows,
+    gridTemplateColumns,
+    gridTemplateAreas,
     gridAutoFlow,
     gridAutoRows,
     gridAutoColumns,
@@ -552,6 +555,10 @@ struct ComputedStyle
         /// ditto
         void flexBasis(float px) { setProperty!"flexBasis" = Length.px(px); }
 
+        const(TrackSize[]) gridTemplateRows() const { return _gridTemplateRows; }
+        const(TrackSize[]) gridTemplateColumns() const { return _gridTemplateColumns; }
+        const(GridNamedAreas) gridTemplateAreas() const { return _gridTemplateAreas; }
+
         /// Specifies how auto-placed items get inserted in the grid
         GridFlow gridAutoFlow() const { return _gridAutoFlow; }
         /// ditto
@@ -984,6 +991,9 @@ struct ComputedStyle
         float _flexShrink = 1;
         Length _flexBasis = Length.none;
         // grid-specific
+        TrackSize[] _gridTemplateRows;
+        TrackSize[] _gridTemplateColumns;
+        GridNamedAreas _gridTemplateAreas;
         GridFlow _gridAutoFlow = GridFlow.row;
         TrackSize _gridAutoRows = TrackSize.automatic;
         TrackSize _gridAutoColumns = TrackSize.automatic;
@@ -1546,6 +1556,9 @@ string getCSSName(StyleProperty ptype)
         case flexGrow:      return "flex-grow";
         case flexShrink:    return "flex-shrink";
         case flexBasis:     return "flex-basis";
+        case gridTemplateRows:    return "grid-template-rows";
+        case gridTemplateColumns: return "grid-template-columns";
+        case gridTemplateAreas:   return "grid-template-areas";
         case gridAutoFlow:    return "grid-auto-flow";
         case gridAutoRows:    return "grid-auto-rows";
         case gridAutoColumns: return "grid-auto-columns";
