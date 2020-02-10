@@ -667,19 +667,19 @@ if (isMutable!T &&
         return _data[0 .. _length];
     }
 
-    ref const(T) opIndex(uint i) const
+    ref const(T) opIndex(size_t i) const
     {
         assert(i < _length);
         return _data[i];
     }
 
-    void opIndexAssign(T value, uint i)
+    void opIndexAssign(T value, size_t i)
     {
         assert(i < _length);
         _data[i] = value;
     }
 
-    void opIndexAssign(ref T value, uint i)
+    void opIndexAssign(ref T value, size_t i)
     {
         assert(i < _length);
         _data[i] = value;
@@ -691,11 +691,11 @@ if (isMutable!T &&
         return _data;
     }
     /// Get the mutable reference to i-th element (you can pass negative indices here to start from the end)
-    ref T unsafe_ref(int i)
+    ref T unsafe_ref(ptrdiff_t i)
     {
-        const l = cast(int)_length;
+        const l = cast(ptrdiff_t)_length;
         assert(i < l && -i <= l);
-        return _data[i >= 0 ? i : l + i];
+        return _data[i + (i < 0) * l];
     }
     /// Get the mutable slice of the buffer
     inout(T[]) unsafe_slice() inout
