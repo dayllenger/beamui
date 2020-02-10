@@ -8,7 +8,7 @@ module beamui.layout.alignment;
 
 nothrow:
 
-import beamui.core.geometry : Box, Point, Size;
+import beamui.core.geometry : Box, Insets, Point, Size, isDefinedSize;
 
 /// Box alignment options
 enum Align : uint
@@ -65,6 +65,12 @@ enum Distribution : ubyte
     spaceEvenly,
 }
 
+struct Segment
+{
+    float pos = 0;
+    float size = 0;
+}
+
 /// Applies alignment to a box for content of size `sz`
 Box alignBox(Box room, Size sz, Align a)
 {
@@ -78,6 +84,66 @@ Box alignBox(Box room, Size sz, Align a)
     else if (a & Align.bottom)
         p.y += room.h - sz.h;
     return Box(p, sz);
+}
+
+Insets ignoreAutoMargin(Insets m)
+{
+    if (!isDefinedSize(m.left))
+        m.left = 0;
+    if (!isDefinedSize(m.right))
+        m.right = 0;
+    if (!isDefinedSize(m.top))
+        m.top = 0;
+    if (!isDefinedSize(m.bottom))
+        m.bottom = 0;
+    return m;
+}
+
+Segment alignItem(Segment item, Segment room, AlignItem a)
+{
+    final switch (a) with (AlignItem)
+    {
+    case unspecified:
+        return item;
+    case stretch:
+        return room;
+    case start:
+        return Segment(room.pos, item.size);
+    case end:
+        return Segment(room.pos + room.size - item.size, item.size);
+    case center:
+        return Segment(room.pos + (room.size - item.size) / 2, item.size);
+    }
+}
+
+void placeSegments(float[] sizes, float[] positions, float initialPos, float freeSpace, Distribution mode)
+    in(sizes.length > 0)
+    in(sizes.length == positions.length)
+{
+    final switch (mode) with (Distribution)
+    {
+    case stretch:
+        stretchItems(sizes, freeSpace);
+        goto case start;
+    case start:
+        placeFromStart(sizes, positions, initialPos);
+        break;
+    case end:
+        placeFromStart(sizes, positions, initialPos + freeSpace);
+        break;
+    case center:
+        placeToCenter(sizes, positions, initialPos, freeSpace);
+        break;
+    case spaceBetween:
+        placeWithSpaceBetween(sizes, positions, initialPos, freeSpace);
+        break;
+    case spaceAround:
+        placeWithSpaceAround(sizes, positions, initialPos, freeSpace);
+        break;
+    case spaceEvenly:
+        placeWithSpaceAroundEvenly(sizes, positions, initialPos, freeSpace);
+        break;
+    }
 }
 
 void stretchItems(float[] sizes, const float freeSpace)

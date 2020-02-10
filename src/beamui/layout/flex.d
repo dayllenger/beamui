@@ -265,9 +265,8 @@ class FlexLayout : ILayout
             bufLineSizes.resize(bufLines.length);
 
             // compute line sizes
-            foreach (j; 0 .. bufLines.length)
+            foreach (j, line; bufLines[])
             {
-                const Line line = bufLines[j];
                 float lsz = 0;
                 foreach (ref item; items[][line.start .. line.end])
                 {
@@ -279,11 +278,10 @@ class FlexLayout : ILayout
 
             // arrange lines
             const freeSpace = box.h - sum(bufLineSizes[]);
-            placeLines(bufLineSizes.unsafe_slice, bufLinePos.unsafe_slice, box.y, freeSpace, contentAlignment[1]);
+            placeSegments(bufLineSizes.unsafe_slice, bufLinePos.unsafe_slice, box.y, freeSpace, contentAlignment[1]);
 
-            foreach (j; 0 .. bufLines.length)
+            foreach (line; bufLines[])
             {
-                const Line line = bufLines[j];
                 const lineItems = items[][line.start .. line.end];
                 auto lineSizes = bufSizes.unsafe_slice[line.start .. line.end];
                 resolveFlexibleLengths(lineItems, lineSizes, box.w);
@@ -307,10 +305,10 @@ class FlexLayout : ILayout
             placeMain(bufSizes[], bufPos.unsafe_slice, margins[], Segment(box.x, box.w), contentAlignment[0]);
 
         // pack main axis positions and sizes back
-        foreach (i; 0 .. items.length)
+        foreach (i, ref b; boxes)
         {
-            boxes[i].x = bufPos[i];
-            boxes[i].w = bufSizes[i];
+            b.x = bufPos[i];
+            b.w = bufSizes[i];
         }
 
         // compute cross axis sizes and align items by cross axis
@@ -330,9 +328,9 @@ class FlexLayout : ILayout
             alignItems(boxes, items[], margins[], Segment(box.y, box.h));
 
         // subtract margins
-        foreach (i; 0 .. items.length)
+        foreach (i, ref b; boxes)
         {
-            boxes[i].shrink(ignoreAutoMargin(margins[i]));
+            b.shrink(ignoreAutoMargin(margins[i]));
         }
 
         // transpose back or place items in backward order in case of a vertical or reversed layout
@@ -351,19 +349,6 @@ class FlexLayout : ILayout
 private nothrow:
 
 enum eps = 1e-3;
-
-Insets ignoreAutoMargin(Insets m)
-{
-    if (!isDefinedSize(m.left))
-        m.left = 0;
-    if (!isDefinedSize(m.right))
-        m.right = 0;
-    if (!isDefinedSize(m.top))
-        m.top = 0;
-    if (!isDefinedSize(m.bottom))
-        m.bottom = 0;
-    return m;
-}
 
 void transpose(ref Boundaries bs)
 {
@@ -549,12 +534,6 @@ void fixMinMaxViolations(TmpItem[] items, float[] sizes)
     }
 }
 
-struct Segment
-{
-    float pos = 0;
-    float size = 0;
-}
-
 struct Line
 {
     uint start;
@@ -651,42 +630,13 @@ uint countAutoMargins(const Insets[] margins)
     return count;
 }
 
-void placeLines(float[] sizes, float[] positions, float initialPos, float freeSpace, Distribution mode)
-    in(sizes.length > 0)
-    in(sizes.length == positions.length)
-{
-    final switch (mode) with (Distribution)
-    {
-    case stretch:
-        stretchItems(sizes, freeSpace);
-        goto case start;
-    case start:
-        placeFromStart(sizes, positions, initialPos);
-        break;
-    case end:
-        placeFromStart(sizes, positions, initialPos + freeSpace);
-        break;
-    case center:
-        placeToCenter(sizes, positions, initialPos, freeSpace);
-        break;
-    case spaceBetween:
-        placeWithSpaceBetween(sizes, positions, initialPos, freeSpace);
-        break;
-    case spaceAround:
-        placeWithSpaceAround(sizes, positions, initialPos, freeSpace);
-        break;
-    case spaceEvenly:
-        placeWithSpaceAroundEvenly(sizes, positions, initialPos, freeSpace);
-        break;
-    }
-}
-
-void alignItems(Box[] boxes, const FlexItem[] items, const Insets[] margins, Segment room)
+void alignItems(Box[] boxes, const FlexItem[] items, const Insets[] margins, const Segment room)
 {
     foreach (i, ref b; boxes)
     {
+        const item = &items[i];
         const Insets m = margins[i];
-        AlignItem a = items[i].alignment;
+        AlignItem a = item.alignment;
         if (b.h < room.size)
         {
             if (m.top == SIZE_UNSPECIFIED!float)
@@ -699,24 +649,10 @@ void alignItems(Box[] boxes, const FlexItem[] items, const Insets[] margins, Seg
             else if (m.bottom == SIZE_UNSPECIFIED!float)
                 a = AlignItem.start;
         }
-
-        b.y = room.pos;
-        final switch (a) with (AlignItem)
-        {
-        case stretch:
-            b.h = min(items[i].bs.max.h, room.size);
-            break;
-        case start:
-            break;
-        case end:
-            b.y += room.size - b.h;
-            break;
-        case center:
-            b.y += (room.size - b.h) / 2;
-            break;
-        case unspecified:
-            assert(0);
-        }
+        assert(a != AlignItem.unspecified);
+        const seg = alignItem(Segment(b.y, b.h), room, a);
+        b.y = seg.pos;
+        b.h = min(seg.size, item.bs.max.h);
     }
 }
 
