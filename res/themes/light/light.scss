@@ -973,16 +973,15 @@ InputBox, MessageBox {
 SettingsDialog {
     padding: 4px;
 
-    .content {
-        gap: 2px;
+    &::content {
+        padding: 6px;
+        gap: 3px;
     }
 
     &::tree {
+        width: 150px;
         min-width: 50px;
-        weight: 3;
-        margin: 8px;
         padding: 4px;
-        stretch: both;
         border: 1px solid rgba(0, 0, 0, 0.1);
         background-color: #fff;
         font-size: 16px;
@@ -990,9 +989,6 @@ SettingsDialog {
 
     &::page {
         min-width: 100px;
-        weight: 5;
-        margin: 8px;
-        margin-left: 0;
         padding: 4px;
         stretch: both;
     }

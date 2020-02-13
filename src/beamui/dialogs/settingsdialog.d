@@ -549,34 +549,37 @@ class SettingsDialog : Dialog
         TreeWidget _tree;
         Panel _frame;
         Setting _settings;
-        SettingsPage _layout;
+        SettingsPage _pageTree;
     }
 
-    this(dstring caption, Window parent, Setting settings, SettingsPage layout, bool popup =
+    this(dstring caption, Window parent, Setting settings, SettingsPage pageTree, bool popup =
         (platform.uiDialogDisplayMode & DialogDisplayMode.settingsDialogInPopup) ==
             DialogDisplayMode.settingsDialogInPopup)
     {
         super(caption, parent, DialogFlag.modal | DialogFlag.resizable | (popup ? DialogFlag.popup : 0));
         _settings = settings;
-        _layout = layout;
+        _pageTree = pageTree;
     }
 
     override void initialize()
     {
-        import beamui.widgets.scroll;
-
-        _tree = new TreeWidget(ScrollBarMode.automatic, ScrollBarMode.automatic);
-        _tree.bindSubItem(this, "tree");
-        _tree.onSelect ~= &handleTreeItemSelection;
-        _frame = new Panel;
-        _frame.bindSubItem(this, "page");
-        createControls(_layout, _tree.items);
         auto content = new Panel;
-        content.setAttribute("content");
-        content.add(_tree, new Resizer, _frame);
+            auto treeFrame = new Panel;
+                _tree = new TreeWidget;
+            _frame = new Panel;
+
         add(content, createButtonsPanel([ACTION_APPLY, ACTION_CANCEL], 0, 0));
-        if (_layout.childCount > 0)
-            _tree.selectItem(_layout.child(0).id);
+        content.add(treeFrame, new Resizer, _frame);
+        treeFrame.addChild(_tree);
+        createControls(_pageTree, _tree.items);
+
+        content.bindSubItem(this, "content");
+        treeFrame.bindSubItem(this, "tree");
+        _frame.bindSubItem(this, "page");
+
+        _tree.onSelect ~= &handleTreeItemSelection;
+        if (_pageTree.childCount > 0)
+            _tree.selectItem(_pageTree.child(0).id);
     }
 
     void handleTreeItemSelection(TreeItem selectedItem, bool activated)

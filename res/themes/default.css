@@ -111,7 +111,7 @@ FileNameEditLine {
   display: row;
 }
 
-SettingsDialog .content {
+SettingsDialog::content {
   display: row;
   stretch: both;
 }
