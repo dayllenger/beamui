@@ -100,7 +100,19 @@ FilePathPanelItem, FileNameEditLine {
     display: row;
 }
 
-SettingsDialog .content {
-    display: row;
-    stretch: both;
+SettingsDialog {
+    .content {
+        display: row;
+        stretch: both;
+    }
+
+    .settings-table {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-content: start;
+
+        > .full-row, &::title {
+            grid-column-end: span 2;
+        }
+    }
 }

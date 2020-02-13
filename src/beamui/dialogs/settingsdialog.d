@@ -16,7 +16,6 @@ import beamui.core.settings;
 import beamui.core.stdaction;
 import beamui.dialogs.dialog;
 import beamui.layout.linear : Resizer;
-import beamui.layout.table;
 import beamui.platforms.common.platform;
 import beamui.widgets.combobox;
 import beamui.widgets.controls;
@@ -505,41 +504,30 @@ class SettingsPage
     /// Create page widget (default implementation creates empty page)
     Widget createWidget(Setting settings)
     {
-        auto res = new Panel(_id);
-        res.style.display = "column";
-        if (itemCount > 0)
-        {
-            auto caption = new Label(_label);
-            caption.id = "prop-body-caption-" ~ _id;
-            caption.bindSubItem(this, "title");
-            res.addChild(caption);
-            Panel tbl;
-            foreach (i; 0 .. itemCount)
-            {
-                SettingsItem v = item(i);
-                Widget[] w = v.createWidgets(settings);
-                if (w.length == 1)
-                {
-                    tbl = null;
-                    res.addChild(w[0]);
-                }
-                else if (w.length == 2)
-                {
-                    if (!tbl)
-                    {
-                        tbl = new Panel;
-                        tbl.style.display = "table";
-                        if (TableLayout t = tbl.getLayout!TableLayout)
-                            t.colCount = 2;
-                        res.addChild(tbl);
-                    }
-                    tbl.addChild(w[0]);
-                    tbl.addChild(w[1]);
-                }
+        auto panel = new Panel(_id, "settings-table");
+        if (itemCount == 0)
+            return panel;
 
+        auto title = new Label(_label);
+        title.bindSubItem(panel, "title");
+        panel.addChild(title);
+
+        foreach (i; 0 .. itemCount)
+        {
+            Widget[] wts = item(i).createWidgets(settings);
+            if (wts.length == 1)
+            {
+                panel.addChild(wts[0]);
+                wts[0].setAttribute("full-row");
+            }
+            else
+            {
+                assert(wts.length == 2);
+                panel.addChild(wts[0]);
+                panel.addChild(wts[1]);
             }
         }
-        return res;
+        return panel;
     }
 
     /// Returns true if this page is root page

@@ -996,12 +996,11 @@ SettingsDialog {
         padding: 4px;
         stretch: both;
     }
-}
 
-SettingsPage::title {
-    weight: 0;
-    padding: 4px 4px 12px;
-    font-size: 120%;
+    .settings-table::title {
+        padding: 4px 4px 12px;
+        font-size: 1.6em;
+    }
 }
 
 /* Tooltips */
