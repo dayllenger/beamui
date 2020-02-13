@@ -1393,7 +1393,19 @@ private void explodeShorthands(Style st)
         StrHash("padding-right"),
         StrHash("padding-bottom"),
         StrHash("padding-left"));
-    static immutable gap = ShorthandLengthPair(
+    static immutable placeContent = ShorthandPair!Distribution(
+        StrHash("place-content"),
+        StrHash("align-content"),
+        StrHash("justify-content"));
+    static immutable placeItems = ShorthandPair!AlignItem(
+        StrHash("place-items"),
+        StrHash("align-items"),
+        StrHash("justify-items"));
+    static immutable placeSelf = ShorthandPair!AlignItem(
+        StrHash("place-self"),
+        StrHash("align-self"),
+        StrHash("justify-self"));
+    static immutable gap = ShorthandPair!Length(
         StrHash("gap"),
         StrHash("row-gap"),
         StrHash("column-gap"));
@@ -1495,6 +1507,9 @@ private void explodeShorthands(Style st)
         StrHash("transition-delay"));
     st.explode(margin);
     st.explode(padding);
+    st.explode(placeContent);
+    st.explode(placeItems);
+    st.explode(placeSelf);
     st.explode(gap);
     st.explode(flexFlow);
     st.explode(flex);

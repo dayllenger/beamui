@@ -272,7 +272,7 @@ struct ShorthandInsets
     size_t left;
 }
 
-struct ShorthandLengthPair
+struct ShorthandPair(T)
 {
     size_t name;
     size_t first;

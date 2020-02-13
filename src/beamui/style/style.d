@@ -190,11 +190,11 @@ final class Style
         setMetaProperties(sh);
     }
     /// ditto
-    void explode(ref immutable ShorthandLengthPair sh)
+    void explode(T)(ref immutable ShorthandPair!T sh)
     {
         if (auto p = sh.name in rawProperties)
         {
-            if (auto res = decodeLengthPair(*p))
+            if (auto res = decodePair!T(*p))
             {
                 tryToSetShorthandPart(sh.first, false, Variant(res.val[0]));
                 tryToSetShorthandPart(sh.second, false, Variant(res.val[1]));

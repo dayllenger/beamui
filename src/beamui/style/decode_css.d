@@ -79,6 +79,36 @@ private Result!T decodeSimpleEnum(T)(const Token[] tokens, string what, const Tu
     return Err!T;
 }
 
+private Result!(T[2]) decodeSimplePair(T)(const Token[] tokens, string what)
+{
+    alias E = Err!(T[2]);
+
+    T[2] ret;
+    if (tokens.length == 1)
+    {
+        if (const v = decode!T(tokens[0 .. 1]))
+            ret[0] = ret[1] = v.val;
+        else
+            return E();
+    }
+    else
+    {
+        if (tokens.length > 2)
+            toomany(what, tokens[0].line);
+
+        if (const a = decode!T(tokens[0 .. 1]))
+            ret[0] = a.val;
+        else
+            return E();
+
+        if (const b = decode!T(tokens[1 .. 2]))
+            ret[1] = b.val;
+        else
+            return E();
+    }
+    return Ok(ret);
+}
+
 /// Decode `<integer>` value
 Result!int decode(T : int)(const Token[] tokens)
 {
@@ -217,6 +247,18 @@ Result!Distribution decode(T : Distribution)(const Token[] tokens)
     }
 }
 
+/// Decode item alignment pair
+Result!(AlignItem[2]) decodePair(T : AlignItem)(const Token[] tokens)
+{
+    return decodeSimplePair!AlignItem(tokens, "alignment pair");
+}
+
+/// Decode content distribution pair
+Result!(Distribution[2]) decodePair(T : Distribution)(const Token[] tokens)
+{
+    return decodeSimplePair!Distribution(tokens, "distribution pair");
+}
+
 /// Decode CSS rectangle declaration to `Length[]`
 Length[] decodeInsets(const Token[] tokens)
 {
@@ -241,39 +283,9 @@ Length[] decodeInsets(const Token[] tokens)
 }
 
 /// Decode CSS length pair, e.g. `gap` property
-Result!(Length[2]) decodeLengthPair(const Token[] tokens)
+Result!(Length[2]) decodePair(T : Length)(const Token[] tokens)
 {
-    assert(tokens.length > 0);
-
-    alias E = Err!(Length[2]);
-
-    Length[2] ret;
-    if (tokens.length == 1)
-    {
-        const v = decode!Length(tokens[0 .. 1]);
-        if (v)
-            ret[0] = ret[1] = v.val;
-        else
-            return E();
-    }
-    else
-    {
-        if (tokens.length > 2)
-            toomany("length pair", tokens[0].line);
-
-        const v1 = decode!Length(tokens[0 .. 1]);
-        if (v1)
-            ret[0] = v1.val;
-        else
-            return E();
-
-        const v2 = decode!Length(tokens[1 .. 2]);
-        if (v2)
-            ret[1] = v2.val;
-        else
-            return E();
-    }
-    return Ok(ret);
+    return decodeSimplePair!Length(tokens, "length pair");
 }
 
 /// Decode dimension, e.g. 1px, 20%, 1.2em, or 'none'
