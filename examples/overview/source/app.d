@@ -156,10 +156,6 @@ int main()
 
     frame.add(mainMenu);
 
-    // create popup menu for edit widgets
-    auto editorPopupMenu = new Menu;
-    editorPopupMenu.add(ACTION_UNDO, ACTION_REDO, ACTION_CUT, ACTION_COPY, ACTION_PASTE);
-
     //=========================================================================
     // create tabs
 
@@ -515,60 +511,7 @@ int main()
         tabs.addTab(table.setID("TABLE"), "Table layout");
     }
 
-    // editors
-    {
-        dstring sourceCode = q{#!/usr/bin/env rdmd
-void main()
-{
-    import std.stdio : writefln;
-    import std.algorithm.sorting : sort;
-    import std.range : chain;
-
-    int[] arr1 = [4, 9, 7];
-    int[] arr2 = [5, 2, 1, 10];
-    int[] arr3 = [6, 8, 3];
-    // @nogc functions are guaranteed by the compiler
-    // to be without any GC allocation
-    () @nogc {
-        sort(chain(arr1, arr2, arr3));
-    }();
-    writefln("%s\n%s\n%s\n", arr1, arr2, arr3);
-}
-}d;
-        auto editors = new Panel;
-            auto editLineLabel = new Label("EditLine: Single line editor"d);
-            auto editLine = new EditLine("Single line editor sample text");
-            auto editorLabel1 = new Label("SourceEdit: multiline editor, for source code editing"d);
-            auto sourceEditor1 = new SourceEdit;
-            auto editorLabel2 = new Label("SourceEdit: additional view for the same content"d);
-            auto sourceEditor2 = new SourceEdit;
-
-            auto editLineControl = createBaseEditorSettingsControl(editLine); // see after UIAppMain
-            auto editorControl = createBaseEditorSettingsControl(sourceEditor1)
-                .addSourceEditorControls(sourceEditor1);
-
-        with (editors) {
-            style.display = "column";
-            add(editLineLabel, editLineControl, editLine);
-            add(editorLabel1, editorControl, sourceEditor1);
-            add(editorLabel2, sourceEditor2);
-            with (editLine) {
-                popupMenu = editorPopupMenu;
-            }
-            with (sourceEditor1) {
-                style.stretch = Stretch.both;
-                text = sourceCode;
-                popupMenu = editorPopupMenu;
-                showIcons = true;
-            }
-            with (sourceEditor2) {
-                style.stretch = Stretch.both;
-                content = sourceEditor1.content; // view the same content as first editbox
-            }
-        }
-
-        tabs.addTab(editors.setID("EDITORS"), "Editors");
-    }
+    tabs.addTab(createEditorsTab(), "Editors");
 
     // string grid
     {
@@ -645,6 +588,67 @@ void main()
     window.show();
 
     return platform.enterMessageLoop();
+}
+
+Widget createEditorsTab()
+{
+    const dstring sourceCode = q{#!/usr/bin/env rdmd
+void main()
+{
+    import std.stdio : writefln;
+    import std.algorithm.sorting : sort;
+    import std.range : chain;
+
+    int[] arr1 = [4, 9, 7];
+    int[] arr2 = [5, 2, 1, 10];
+    int[] arr3 = [6, 8, 3];
+    // @nogc functions are guaranteed by the compiler
+    // to be without any GC allocation
+    () @nogc {
+        sort(chain(arr1, arr2, arr3));
+    }();
+    writefln("%s\n%s\n%s\n", arr1, arr2, arr3);
+}
+}d;
+
+    // create popup menu for edit widgets
+    auto editorPopupMenu = new Menu;
+    editorPopupMenu.add(ACTION_UNDO, ACTION_REDO, ACTION_CUT, ACTION_COPY, ACTION_PASTE);
+
+    auto frame = new Panel("EDITORS");
+        auto editLineLabel = new Label("EditLine: Single line editor"d);
+        auto editorLabel1 = new Label("SourceEdit: multiline editor, for source code editing"d);
+        auto editorLabel2 = new Label("SourceEdit: additional view on the same content"d);
+
+        auto editLine = new EditLine("Single line editor sample text"d);
+        auto sourceEditor1 = new SourceEdit;
+        auto sourceEditor2 = new SourceEdit;
+
+        auto editLineControl = createBaseEditorSettingsControl(editLine);
+        auto editorControl = createBaseEditorSettingsControl(sourceEditor1)
+            .addSourceEditorControls(sourceEditor1);
+
+    with (frame) {
+        style.display = "column";
+        add(editLineLabel, editLineControl, editLine);
+        add(editorLabel1, editorControl, sourceEditor1);
+        add(editorLabel2, sourceEditor2);
+    }
+    with (editLine) {
+        popupMenu = editorPopupMenu;
+    }
+    with (sourceEditor1) {
+        style.stretch = Stretch.both;
+        text = sourceCode;
+        popupMenu = editorPopupMenu;
+        showIcons = true;
+    }
+    with (sourceEditor2) {
+        style.stretch = Stretch.both;
+        content = sourceEditor1.content; // view the same content as first editbox
+    }
+
+    return frame;
 }
 
 Widget createBaseEditorSettingsControl(EditWidgetBase editor)
