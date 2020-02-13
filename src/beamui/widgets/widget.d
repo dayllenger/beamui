@@ -808,6 +808,7 @@ public:
         case textIndent:
         case textOverflow:
         case textTransform:
+        case whiteSpace:
         case wordSpacing:
             requestLayout();
             break;

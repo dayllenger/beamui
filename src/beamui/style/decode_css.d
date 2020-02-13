@@ -24,7 +24,7 @@ import beamui.graphics.drawables;
 import beamui.layout.alignment;
 import beamui.layout.flex : FlexDirection, FlexWrap;
 import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
-import beamui.style.types : BgPositionRaw, BgSizeRaw, SpecialCSSType;
+import beamui.style.types : BgPositionRaw, BgSizeRaw, WhiteSpace, SpecialCSSType;
 import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.text.style;
 
@@ -1472,6 +1472,19 @@ Result!TextTransform decode(T : TextTransform)(const Token[] tokens)
             tup("capitalize", capitalize),
         ];
         return decodeSimpleEnum(tokens, "text transform", map);
+    }
+}
+
+/// Decode white space collapse and wrapping
+Result!WhiteSpace decode(T : WhiteSpace)(const Token[] tokens)
+{
+    with (WhiteSpace)
+    {
+        immutable map = [
+            tup("pre", pre),
+            tup("pre-wrap", preWrap),
+        ];
+        return decodeSimpleEnum(tokens, "white space", map);
     }
 }
 

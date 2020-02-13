@@ -71,10 +71,10 @@ class Label : Widget
     {
         original = txt;
         textobj.str = txt;
+
+        static immutable dchar[80] str = 'a';
         minSizeTester.str = "aaaaa";
-        // natSizeTester.str =
-        //     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\na";
-        // dependentSize = DependentSize.height;
+        natSizeTester.str = str[];
     }
 
     override void handleStyleChange(StyleProperty ptype)
@@ -127,6 +127,10 @@ class Label : Widget
             minSizeTester.style.transform = tr;
             natSizeTester.style.transform = tr;
             break;
+        case whiteSpace:
+            textobj.style.wrap = style.wordWrap;
+            dependentSize = textobj.style.wrap ? DependentSize.height : DependentSize.none;
+            break;
         default:
             break;
         }
@@ -152,7 +156,7 @@ class Label : Widget
         const tnat = natSizeTester.getSize();
         bs.min.w = min(sz.w, tmin.w);
         bs.min.h = min(sz.h, tmin.h);
-        bs.nat.w = max(sz.w, tnat.w);
+        bs.nat.w = min(sz.w, tnat.w);
         bs.nat.h = max(sz.h, tnat.h);
         setBoundaries(bs);
     }
@@ -298,16 +302,13 @@ class Paragraph : Widget
         _content = content;
         _content.afterChange ~= &handleChange;
 
-        minSizeTester.str = "aaaaa\na";
-        natSizeTester.str =
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\na";
-        dependentSize = DependentSize.height; // TODO: only when wrap is active
+        static immutable dchar[80] str = 'a';
+        minSizeTester.str = "aaaaa";
+        natSizeTester.str = str[];
 
         _lines.length = _content.lineCount;
         foreach (i; 0 .. _content.lineCount)
             _lines[i].str = _content[i];
-
-        _txtStyle.wrap = true;
     }
 
     ~this()
@@ -558,6 +559,10 @@ class Paragraph : Widget
             minSizeTester.style.transform = tr;
             natSizeTester.style.transform = tr;
             break;
+        case whiteSpace:
+            _txtStyle.wrap = style.wordWrap;
+            dependentSize = _txtStyle.wrap ? DependentSize.height : DependentSize.none;
+            break;
         default:
             break;
         }
@@ -606,7 +611,7 @@ class Paragraph : Widget
         const tnat = natSizeTester.getSize();
         bs.min.w = min(tsz.w, tmin.w);
         bs.min.h = min(tsz.h, tmin.h);
-        bs.nat.w = max(tsz.w, tnat.w);
+        bs.nat.w = min(tsz.w, tnat.w);
         bs.nat.h = max(tsz.h, tnat.h);
         setBoundaries(bs);
     }

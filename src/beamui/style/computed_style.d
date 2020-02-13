@@ -117,6 +117,7 @@ enum StyleProperty
     textIndent,
     textOverflow,
     textTransform,
+    whiteSpace,
     wordSpacing,
     // colors
     textColor,
@@ -905,6 +906,11 @@ struct ComputedStyle
             setProperty!"wordSpacing" = Length.px(px);
         }
 
+        /// Controls whether text wrapping is enabled
+        bool wordWrap() const { return _whiteSpace == WhiteSpace.preWrap; }
+        /// ditto
+        void wordWrap(bool value) { setProperty!"whiteSpace" = value ? WhiteSpace.preWrap : WhiteSpace.pre; }
+
         /// Text color
         Color textColor() const { return _textColor; }
         /// ditto
@@ -1034,6 +1040,7 @@ struct ComputedStyle
         Length _textIndent = Length.zero;
         TextOverflow _textOverflow = TextOverflow.clip;
         TextTransform _textTransform = TextTransform.none;
+        WhiteSpace _whiteSpace = WhiteSpace.pre;
         Length _wordSpacing = Length.zero;
         // colors
         Color _textColor = Color.black;
@@ -1621,6 +1628,7 @@ string getCSSName(StyleProperty ptype)
         case textIndent:    return "text-indent";
         case textOverflow:  return "text-overflow";
         case textTransform: return "text-transform";
+        case whiteSpace:    return "white-space";
         case wordSpacing:   return "word-spacing";
         case textColor:      return "color";
         case focusRectColor: return "focus-rect-color";
@@ -1686,6 +1694,7 @@ bool inherited(StyleProperty ptype)
         case textAlign:
         case textIndent:
         case textTransform:
+        case whiteSpace:
         case wordSpacing:
         case textColor:
             return true;

@@ -29,6 +29,12 @@ enum TextFlag : uint
     parent = 32
 }
 
+enum WhiteSpace : ubyte
+{
+    pre,
+    preWrap,
+}
+
 struct BgPositionRaw
 {
     nothrow:

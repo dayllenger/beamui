@@ -260,32 +260,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             }
         }
 
-        /// To hold _scrollpos.x toggling between normal and word wrap mode
-        private float previousXScrollPos = 0;
-        private ScrollBarMode previousHScrollbarMode;
-        /// True if word wrap mode is set
-        bool wordWrap() const { return _wordWrap; }
-        /// ditto
-        void wordWrap(bool v)
-        {
-            _wordWrap = v;
-            _txtStyle.wrap = v;
-            // horizontal scrollbar should not be visible in word wrap mode
-            if (v)
-            {
-                previousHScrollbarMode = hscrollbarMode;
-                previousXScrollPos = scrollPos.x;
-                hscrollbarMode = ScrollBarMode.hidden;
-                scrollPos.x = 0;
-            }
-            else
-            {
-                hscrollbarMode = previousHScrollbarMode;
-                scrollPos.x = previousXScrollPos;
-            }
-            invalidate();
-        }
-
         /// Text in the editor
         override dstring text() const
         {
@@ -508,10 +482,29 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             _txtStyle.transform = style.textTransform;
             _minSizeTester.style.transform = style.textTransform;
             break;
+        case whiteSpace:
+            _txtStyle.wrap = style.wordWrap;
+            // horizontal scrollbar should not be visible in word wrap mode
+            if (_txtStyle.wrap)
+            {
+                previousHScrollbarMode = hscrollbarMode;
+                previousXScrollPos = scrollPos.x;
+                hscrollbarMode = ScrollBarMode.hidden;
+                scrollPos.x = 0;
+            }
+            else
+            {
+                hscrollbarMode = previousHScrollbarMode;
+                scrollPos.x = previousXScrollPos;
+            }
+            break;
         default:
             break;
         }
     }
+    // to hold horizontal scroll position toggling between normal and word wrap mode
+    private float previousXScrollPos = 0;
+    private ScrollBarMode previousHScrollbarMode;
 
     override protected void handleFontChange()
     {
@@ -2149,7 +2142,7 @@ class EditBox : EditWidgetBase
             if (center)
                 line -= visibleLines / 2;
         }
-        else if (_wordWrap && _firstVisibleLine <= maxFirstVisibleLine)
+        else if (_txtStyle.wrap && _firstVisibleLine <= maxFirstVisibleLine)
         {
             // for wordwrap mode, move down sooner
             const int offsetLines = -caretHeightOffset / _lineHeight;
@@ -2187,7 +2180,7 @@ class EditBox : EditWidgetBase
         else if (b.x >= clientBox.w - 10)
         {
             // scroll right
-            if (!_wordWrap)
+            if (!_txtStyle.wrap)
                 scrollPos.x += (b.x - clientBox.w) + clientBox.w / 4;
             else
                 scrollPos.x = 0;
@@ -2769,7 +2762,7 @@ class EditBox : EditWidgetBase
             // width - max from visible lines
             sz.w = max(sz.w, line.size.w);
             // wrap now, because we may need this information without drawing
-            if (_wordWrap)
+            if (_txtStyle.wrap)
                 line.wrap(clientBox.w);
         }
         sz.h = _lineHeight * _content.lineCount; // height - for all lines

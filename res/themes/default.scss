@@ -22,6 +22,10 @@ LinkButton {
     stretch: none;
 }
 
+Paragraph {
+    white-space: pre-wrap;
+}
+
 FindPanel {
     display: grid;
     grid-template-columns: 1fr;
