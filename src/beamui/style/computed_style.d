@@ -1236,8 +1236,6 @@ struct ComputedStyle
                 ptype == borderTopWidth ||
                 ptype == borderRightWidth ||
                 ptype == borderBottomWidth ||
-                ptype == rowGap ||
-                ptype == columnGap ||
                 ptype == flexBasis ||
                 ptype == borderLeftWidth ||
                 ptype == borderTopLeftRadius ||
@@ -1247,6 +1245,11 @@ struct ComputedStyle
                 ptype == lineHeight
             )
                 return value.toLayout.applyPercent(100) >= 0;
+            else static if (
+                ptype == rowGap ||
+                ptype == columnGap
+            )
+                return value !is Length.none && value.toLayout.applyPercent(100) >= 0;
             else static if (
                 ptype == flexGrow ||
                 ptype == flexShrink
