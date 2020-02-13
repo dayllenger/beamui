@@ -297,11 +297,9 @@ LogWidget { font-family: monospace; font-size: 10px; }
 
 FindPanel { padding: 4px; background-color: white; box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.25); }
 
-FindPanel > Panel { stretch: both; }
+FindPanel.find-only { row-gap: 0; }
 
-FindPanel > Button.close { padding: 0; stretch: none; background: none; }
-
-FindPanel EditLine { stretch: both; }
+FindPanel > Button.close { padding: 0; align-self: center; background: none; }
 
 @define-colors { edit_caret: black;
   edit_caret_replace: rgba(128, 128, 255, 0.5);

@@ -727,18 +727,14 @@ FindPanel {
     box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.25);
 }
 
-FindPanel > Panel {
-    stretch: both;
+FindPanel.find-only {
+    row-gap: 0;
 }
 
 FindPanel > Button.close {
     padding: 0;
-    stretch: none;
+    align-self: center;
     background: none;
-}
-
-FindPanel EditLine {
-    stretch: both;
 }
 
 @define-colors {

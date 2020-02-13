@@ -3347,7 +3347,9 @@ class FindPanel : Panel
             if (newMode != _replaceMode)
             {
                 _replaceMode = newMode;
-                _rowReplace.visibility = newMode ? Visibility.visible : Visibility.gone;
+                _edReplace.visibility = newMode ? Visibility.visible : Visibility.gone;
+                _replaceBtns.visibility = newMode ? Visibility.visible : Visibility.gone;
+                toggleAttribute("find-only");
             }
         }
 
@@ -3365,15 +3367,16 @@ class FindPanel : Panel
     private
     {
         EditBox _editor;
-        Panel _rowReplace;
+        bool _replaceMode;
+
         EditLine _edFind;
         EditLine _edReplace;
+        Panel _replaceBtns;
         Button _cbCaseSensitive;
         Button _cbWholeWords;
         CheckBox _cbSelection;
         Button _btnFindNext;
         Button _btnFindPrev;
-        bool _replaceMode;
     }
 
     this(EditBox editor, bool selectionOnly, bool replace, dstring initialText = ""d)
@@ -3381,46 +3384,42 @@ class FindPanel : Panel
         _editor = editor;
         _replaceMode = replace;
 
-        auto main = new Panel(null, "main");
-            auto rowFind = new Panel(null, "find");
-                _edFind = new EditLine(initialText);
-                _btnFindNext = new Button("Find next");
-                _btnFindPrev = new Button("Find previous");
-                auto findSettings = new Panel(null, "settings");
-                    _cbCaseSensitive = new Button(null, "find_case_sensitive");
-                    _cbWholeWords = new Button(null, "find_whole_words");
-                    _cbSelection = new CheckBox("Sel");
-            _rowReplace = new Panel(null, "replace");
-                _edReplace = new EditLine(initialText);
-                auto btnReplace = new Button("Replace");
-                auto btnReplaceAndFind = new Button("Replace and find");
-                auto btnReplaceAll = new Button("Replace all");
+        _edFind = new EditLine(initialText);
+        _edReplace = new EditLine(initialText);
+        auto findBtns = new Panel(null, "find-buttons");
+            _btnFindNext = new Button("Find next");
+            _btnFindPrev = new Button("Find previous");
+            _cbCaseSensitive = new Button(null, "find_case_sensitive");
+            _cbWholeWords = new Button(null, "find_whole_words");
+            _cbSelection = new CheckBox("Sel");
+        _replaceBtns = new Panel(null, "replace-buttons");
+            auto btnReplace = new Button("Replace");
+            auto btnReplaceAndFind = new Button("Replace and find");
+            auto btnReplaceAll = new Button("Replace all");
         auto closeBtn = new Button(null, "close");
 
-        with (main) {
-            add(rowFind, _rowReplace);
-            with (rowFind) {
-                add(_edFind, _btnFindNext, _btnFindPrev, findSettings);
-                with (findSettings) {
-                    add(_cbCaseSensitive, _cbWholeWords, _cbSelection);
-                    with (_cbCaseSensitive) {
-                        allowsToggle = true;
-                        tooltipText = "Case sensitive";
-                    }
-                    with (_cbWholeWords) {
-                        allowsToggle = true;
-                        tooltipText = "Whole words";
-                    }
-                }
-            }
-            with (_rowReplace) {
-                add(_edReplace, btnReplace, btnReplaceAndFind, btnReplaceAll);
-            }
+        add(_edFind, _edReplace, findBtns, _replaceBtns, closeBtn);
+        findBtns.add(_btnFindNext, _btnFindPrev, _cbCaseSensitive, _cbWholeWords, _cbSelection);
+        _replaceBtns.add(btnReplace, btnReplaceAndFind, btnReplaceAll);
+
+        with (_cbCaseSensitive) {
+            allowsToggle = true;
+            tooltipText = "Case sensitive";
         }
-        with (closeBtn) {
-            setAttribute("close");
+        with (_cbWholeWords) {
+            allowsToggle = true;
+            tooltipText = "Whole words";
         }
-        add(main, closeBtn);
+        _edFind.setAttribute("find");
+        _edReplace.setAttribute("replace");
+        closeBtn.setAttribute("close");
+
+        if (!replace)
+        {
+            setAttribute("find-only");
+            _edReplace.visibility = Visibility.gone;
+            _replaceBtns.visibility = Visibility.gone;
+        }
 
         _edFind.onEnterKeyPress ~= { findNext(_backDirection); return true; };
         _edFind.onContentChange ~= &handleFindTextChange;
@@ -3431,9 +3430,6 @@ class FindPanel : Panel
         _cbCaseSensitive.onToggle ~= &handleCaseSensitiveToggle;
         _cbWholeWords.onToggle ~= &handleCaseSensitiveToggle;
         _cbSelection.onToggle ~= &handleCaseSensitiveToggle;
-
-        if (!replace)
-            _rowReplace.visibility = Visibility.gone;
 
         btnReplace.onClick ~= { replaceOne(); };
         btnReplaceAndFind.onClick ~= {

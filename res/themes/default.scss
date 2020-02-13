@@ -23,14 +23,26 @@ LinkButton {
 }
 
 FindPanel {
-    display: row;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas: "fe fb c" "re rb .";
 
-    > .main {
-        display: column;
+    > .find {
+        grid-area: fe;
     }
-
-    .find, .replace, .settings {
+    > .find-buttons {
         display: row;
+        grid-area: fb;
+    }
+    > .replace {
+        grid-area: re;
+    }
+    > .replace-buttons {
+        display: row;
+        grid-area: rb;
+    }
+    > .close {
+        grid-area: c;
     }
 }
 
