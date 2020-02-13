@@ -631,57 +631,7 @@ void main()
         tabs.addTab(gridTab.setID("GRID"), "Grid");
     }
 
-    // charts
-    {
-        auto barChart1 = new SimpleBarChart("SimpleBarChart Example"d);
-        barChart1.addBar(12.0, Color(255, 0, 0), "Red bar"d);
-        barChart1.addBar(24.0, Color(0, 255, 0), "Green bar"d);
-        barChart1.addBar(5.0, Color(0, 0, 255), "Blue bar"d);
-        barChart1.addBar(12.0, Color(230, 126, 34), "Orange bar"d);
-
-        auto barChart2 = new SimpleBarChart("SimpleBarChart Example - long descriptions"d);
-        barChart2.addBar(12.0, Color(255, 0, 0), "Red bar\n(12.0)"d);
-        barChart2.addBar(24.0, Color(0, 255, 0), "Green bar\n(24.0)"d);
-        barChart2.addBar(5.0, Color(0, 0, 255), "Blue bar\n(5.0)"d);
-        barChart2.addBar(12.0, Color(230, 126, 34), "Orange bar\n(12.0)\nlong long long description added here"d);
-
-        auto barChart3 = new SimpleBarChart("SimpleBarChart Example with axis ratio 0.3"d);
-        barChart3.addBar(12.0, Color(255, 0, 0), "Red bar"d);
-        barChart3.addBar(24.0, Color(0, 255, 0), "Green bar"d);
-        barChart3.addBar(5.0, Color(0, 0, 255), "Blue bar"d);
-        barChart3.addBar(12.0, Color(230, 126, 34), "Orange bar"d);
-        barChart3.axisRatio = 0.3;
-
-        auto barChart4 = new SimpleBarChart("SimpleBarChart Example with axis ratio 1.3"d);
-        barChart4.addBar(12.0, Color(255, 0, 0), "Red bar"d);
-        barChart4.addBar(24.0, Color(0, 255, 0), "Green bar"d);
-        barChart4.addBar(5.0, Color(0, 0, 255), "Blue bar"d);
-        barChart4.addBar(12.0, Color(230, 126, 34), "Orange bar"d);
-        barChart4.axisRatio = 1.3;
-
-        auto chartsLayout = new Panel;
-        with (chartsLayout) {
-            style.display = "row";
-            auto col1 = new Panel;
-            auto col2 = new Panel;
-            with (col1) {
-                style.display = "column";
-                add(barChart1, barChart2);
-            }
-            with (col2) {
-                style.display = "column";
-                add(barChart3, barChart4);
-            }
-            add(col1, col2);
-        }
-
-        tabs.addTab(chartsLayout.setID("CHARTS"), "Charts");
-    }
-
-    // animation
-    static if (BACKEND_GUI)
-    {
-    }
+    tabs.addTab(createChartsTab(), "Charts");
 
     //==========================================================================
 
@@ -740,4 +690,55 @@ Widget addSourceEditorControls(Widget base, SourceEdit editor)
     cb1.checked = editor.showLineNumbers;
     cb1.onToggle ~= (checked) { editor.showLineNumbers = checked; };
     return base;
+}
+
+/// Simple charts
+Widget createChartsTab()
+{
+    const c1 = NamedColor.tomato;
+    const c2 = NamedColor.lime_green;
+    const c3 = NamedColor.royal_blue;
+    const c4 = Color(230, 126, 34);
+
+    auto barChart1 = new SimpleBarChart("SimpleBarChart"d);
+    barChart1.addBar(12, c1, "Red bar"d);
+    barChart1.addBar(24, c2, "Green bar"d);
+    barChart1.addBar(5, c3, "Blue bar"d);
+    barChart1.addBar(12, c4, "Orange bar"d);
+
+    auto barChart2 = new SimpleBarChart("SimpleBarChart - long descriptions"d);
+    barChart2.addBar(12, c1, "Red bar\n(12.0)"d);
+    barChart2.addBar(24, c2, "Green bar\n(24.0)"d);
+    barChart2.addBar(5, c3, "Blue bar\n(5.0)"d);
+    barChart2.addBar(12, c4, "Orange bar\n(12.0)\nlong long long description added here"d);
+
+    auto barChart3 = new SimpleBarChart("SimpleBarChart with axis ratio 0.3"d);
+    barChart3.addBar(12, c1, "Red bar"d);
+    barChart3.addBar(24, c2, "Green bar"d);
+    barChart3.addBar(5, c3, "Blue bar"d);
+    barChart3.addBar(12, c4, "Orange bar"d);
+    barChart3.axisRatio = 0.3;
+
+    auto barChart4 = new SimpleBarChart("SimpleBarChart with axis ratio 1.3"d);
+    barChart4.addBar(12, c1, "Red bar"d);
+    barChart4.addBar(24, c2, "Green bar"d);
+    barChart4.addBar(5, c3, "Blue bar"d);
+    barChart4.addBar(12, c4, "Orange bar"d);
+    barChart4.axisRatio = 1.3;
+
+    auto frame = new Panel("CHARTS");
+    frame.add(barChart1, barChart2, barChart3, barChart4);
+
+    setStyleSheet(currentTheme, `
+    TabHost > #CHARTS {
+        display: grid;
+        grid-template-columns: auto auto;
+        grid-template-rows: auto auto;
+        grid-auto-flow: column;
+        justify-items: start;
+        align-items: start;
+    }
+    `);
+
+    return frame;
 }
