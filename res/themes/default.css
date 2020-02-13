@@ -1,1 +1,126 @@
-*{color:#222;font-family:sans-serif;font-size:14px}Spacer{stretch:both}Button,CheckBox,ComboBoxBase{display:row}LinkButton{stretch:none}Paragraph{white-space:pre-wrap}FindPanel{display:grid;grid-template-columns:1fr;grid-template-areas:"fe fb c" "re rb ."}FindPanel>.find{grid-area:fe}FindPanel>.find-buttons{display:row;grid-area:fb}FindPanel>.replace{grid-area:re}FindPanel>.replace-buttons{display:row;grid-area:rb}FindPanel>.close{grid-area:c}GroupBox,Popup{display:column}TabItem{display:row}TabWidget{display:column}IconStringListAdapter::item,TreeItemWidget,TreeItemWidget::body{display:row}TreeWidgetBase>Panel{display:column;gap:0}ToolBar,ToolBarHost,StatusLine,StatusLineTextPanel,StatusLineIconPanel{display:row}AppFrame,WindowFrame{display:column}WindowFrame::caption,WindowFrame::body{display:row}Dialog{display:column}Dialog #buttons{display:row}FileDialog .content{display:row;stretch:both}FileDialog .right-panel{display:column}FilePathPanelItem,FileNameEditLine{display:row}SettingsDialog .content{display:row;stretch:both}SettingsDialog .settings-table{display:grid;grid-template-columns:1fr 1fr;align-content:start}SettingsDialog .settings-table>.full-row,SettingsDialog .settings-table::title{grid-column-end:span 2}
+/* The default stylesheet. Always embedded into binaries and applied before any other CSS. */
+
+* {
+  color: #222;
+  font-family: sans-serif;
+  font-size: 14px;
+}
+
+Spacer {
+  stretch: both;
+}
+
+Button,
+CheckBox,
+ComboBoxBase {
+  display: row;
+}
+
+LinkButton {
+  stretch: none;
+}
+
+Paragraph {
+  white-space: pre-wrap;
+}
+
+FindPanel {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "fe fb c" "re rb .";
+}
+FindPanel > .find {
+  grid-area: fe;
+}
+FindPanel > .find-buttons {
+  display: row;
+  grid-area: fb;
+}
+FindPanel > .replace {
+  grid-area: re;
+}
+FindPanel > .replace-buttons {
+  display: row;
+  grid-area: rb;
+}
+FindPanel > .close {
+  grid-area: c;
+}
+
+GroupBox,
+Popup {
+  display: column;
+}
+
+TabItem {
+  display: row;
+}
+
+TabWidget {
+  display: column;
+}
+
+IconStringListAdapter::item,
+TreeItemWidget,
+TreeItemWidget::body {
+  display: row;
+}
+
+TreeWidgetBase > Panel {
+  display: column;
+  gap: 0;
+}
+
+ToolBar,
+ToolBarHost,
+StatusLine,
+StatusLineTextPanel,
+StatusLineIconPanel {
+  display: row;
+}
+
+AppFrame,
+WindowFrame {
+  display: column;
+}
+
+WindowFrame::caption,
+WindowFrame::body {
+  display: row;
+}
+
+Dialog {
+  display: column;
+}
+
+Dialog #buttons {
+  display: row;
+}
+
+FileDialog .content {
+  display: row;
+  stretch: both;
+}
+
+FileDialog .right-panel {
+  display: column;
+}
+
+FilePathPanelItem,
+FileNameEditLine {
+  display: row;
+}
+
+SettingsDialog .content {
+  display: row;
+  stretch: both;
+}
+SettingsDialog .settings-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-content: start;
+}
+SettingsDialog .settings-table > .full-row,
+SettingsDialog .settings-table::title {
+  grid-column-end: span 2;
+}
