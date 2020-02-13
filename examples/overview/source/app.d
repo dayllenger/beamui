@@ -480,37 +480,7 @@ int main()
         tabs.addTab(longLists.setID("LISTS"), "Long list");
     }
 
-    // form as a table layout
-    {
-        auto table = new Panel;
-        table.style.display = "table";
-        if (TableLayout t = table.getLayout!TableLayout)
-            t.colCount = 2;
-        // headers
-        table.addChild(new Label("Parameter"d));
-        table.addChild(new Label("Field"d));
-        // row 1
-        table.addChild(new Label("First Name"d));
-        table.addChild(new EditLine("John"d));
-        // row 2, disabled
-        table.addChild(new Label("Last Name"d).setEnabled(false));
-        table.addChild(new EditLine("Doe"d).setEnabled(false));
-        // row 3, normal readonly combo box
-        table.addChild(new Label("Country"d));
-        auto combo1 = new ComboBox(["Australia"d, "Canada"d, "France"d, "Germany"d,
-                "Italy"d, "Poland"d, "Russia"d, "Spain"d, "UK"d, "USA"d]);
-        combo1.selectedItemIndex = 3;
-        table.addChild(combo1);
-        // row 4, disabled readonly combo box
-        table.addChild(new Label("City"d));
-        auto combo2 = new ComboBox(["none"d]);
-        combo2.enabled = false;
-        combo2.selectedItemIndex = 0;
-        table.addChild(combo2);
-
-        tabs.addTab(table.setID("TABLE"), "Table layout");
-    }
-
+    tabs.addTab(createFormTab(), "Form");
     tabs.addTab(createEditorsTab(), "Editors");
 
     // string grid
@@ -588,6 +558,44 @@ int main()
     window.show();
 
     return platform.enterMessageLoop();
+}
+
+Widget createFormTab()
+{
+    // form as a grid layout
+    auto form = new Panel("FORM");
+    // headers
+    form.addChild(new Label("Parameter"d));
+    form.addChild(new Label("Field"d));
+    // row 1
+    form.addChild(new Label("First Name"d));
+    form.addChild(new EditLine("John"d));
+    // row 2, disabled
+    form.addChild(new Label("Last Name"d).setEnabled(false));
+    form.addChild(new EditLine("Doe"d).setEnabled(false));
+    // row 3, normal readonly combo box
+    form.addChild(new Label("Country"d));
+    auto combo1 = new ComboBox(["Australia"d, "Canada"d, "France"d, "Germany"d,
+            "Italy"d, "Poland"d, "Russia"d, "Spain"d, "UK"d, "USA"d]);
+    combo1.selectedItemIndex = 3;
+    form.addChild(combo1);
+    // row 4, disabled readonly combo box
+    form.addChild(new Label("City"d));
+    auto combo2 = new ComboBox(["none"d]);
+    combo2.enabled = false;
+    combo2.selectedItemIndex = 0;
+    form.addChild(combo2);
+
+    setStyleSheet(currentTheme, `
+    TabHost > #FORM {
+        display: grid;
+        grid-template-columns: auto 120px;
+        justify-content: start;
+        align-content: start;
+    }
+    `);
+
+    return form;
 }
 
 Widget createEditorsTab()
