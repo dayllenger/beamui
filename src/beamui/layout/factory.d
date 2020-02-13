@@ -8,6 +8,7 @@ module beamui.layout.factory;
 
 import beamui.layout.flex;
 import beamui.layout.free;
+import beamui.layout.grid;
 import beamui.layout.linear;
 import beamui.layout.table;
 import beamui.widgets.widget;
@@ -37,6 +38,7 @@ static this()
         "row": &row,
         "column": &column,
         "flex": &flex,
+        "grid": &grid,
         "table": &table,
     ];
 }
@@ -59,6 +61,11 @@ private ILayout column()
 private ILayout flex()
 {
     return new FlexLayout;
+}
+
+private ILayout grid()
+{
+    return new GridLayout;
 }
 
 private ILayout table()
