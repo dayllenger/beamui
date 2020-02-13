@@ -57,10 +57,9 @@ public
     import beamui.graphics.polygons; // : FillRule;
     import beamui.graphics.resources;
     import beamui.layout.alignment;
-    import beamui.layout.flex;
-    import beamui.layout.free;
+    import beamui.layout.flex; // : FlexDirection, FlexWrap;
+    import beamui.layout.grid; // : GridFlow, GridLineName, GridNamedAreas, TrackSize;
     import beamui.layout.linear;
-    import beamui.layout.table;
     import beamui.style.theme;
     import beamui.text.fonts;
     import beamui.text.style;

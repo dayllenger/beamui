@@ -10,7 +10,6 @@ import beamui.layout.flex;
 import beamui.layout.free;
 import beamui.layout.grid;
 import beamui.layout.linear;
-import beamui.layout.table;
 import beamui.widgets.widget;
 
 alias LayoutInstantiator = ILayout function();
@@ -39,7 +38,6 @@ static this()
         "column": &column,
         "flex": &flex,
         "grid": &grid,
-        "table": &table,
     ];
 }
 
@@ -66,9 +64,4 @@ private ILayout flex()
 private ILayout grid()
 {
     return new GridLayout;
-}
-
-private ILayout table()
-{
-    return new TableLayout;
 }
