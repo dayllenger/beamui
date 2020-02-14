@@ -1575,7 +1575,7 @@ public:
         }
         if (event.action == MouseAction.move && event.noKeyMods && event.noMouseMods && hasTooltip)
         {
-            scheduleTooltip(200);
+            scheduleTooltip(600);
         }
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.right)
         {
