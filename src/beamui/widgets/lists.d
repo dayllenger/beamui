@@ -14,104 +14,73 @@ import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// List widget adapter provides items for list widgets
-interface ListAdapter
+abstract class ListAdapter
 {
+    /// Handles item change
+    private Signal!(void delegate()) onChange;
+
+    ~this()
+    {
+        debug (lists)
+            Log.d("Destroying ", getShortClassName(this));
+    }
+
     /// Returns number of widgets in list
-    @property int itemCount() const;
+    @property int itemCount() const
+    {
+        return 0;
+    }
     /// Returns list item widget by item index
-    inout(Widget) itemWidget(int index) inout;
-    /// Returns list item's state flags
-    State itemState(int index) const;
-    /// Set one or more list item's state flags, returns updated state
-    State setItemState(int index, State flags);
-    /// Reset one or more list item's state flags, returns updated state
-    State resetItemState(int index, State flags);
-    /// Returns integer item id by index (if supported)
-    int itemID(int index) const;
-    /// Returns string item id by index (if supported)
-    string itemStringID(int index) const;
-
-    /// Remove all items
-    void clear();
-
-    /// Connect adapter change handler
-    ListAdapter connect(void delegate() handler);
-    /// Disconnect adapter change handler
-    ListAdapter disconnect(void delegate() handler);
-
-    /// Called when theme is changed
-    void handleThemeChange();
-
-    /// Returns true to receive mouse events
-    @property bool wantMouseEvents();
-    /// Returns true to receive keyboard events
-    @property bool wantKeyEvents();
-}
-
-/// List adapter for simple list of widget instances
-class ListAdapterBase : ListAdapter
-{
-    /// Handle items change
-    private Signal!(void delegate()) onAdapterChange;
-
-    override ListAdapter connect(void delegate() handler)
-    {
-        onAdapterChange.connect(handler);
-        return this;
-    }
-
-    override ListAdapter disconnect(void delegate() handler)
-    {
-        onAdapterChange.disconnect(handler);
-        return this;
-    }
-
-    override int itemID(int index) const
-    {
-        return 0;
-    }
-
-    override string itemStringID(int index) const
-    {
-        return null;
-    }
-
-    override @property int itemCount() const
-    {
-        // override it
-        return 0;
-    }
-
     inout(Widget) itemWidget(int index) inout
     {
-        // override it
+        return null;
+    }
+    /// Returns list item's state flags
+    State itemState(int index) const
+    {
+        return State.normal;
+    }
+    /// Set one or more list item's state flags, returns updated state
+    State setItemState(int index, State flags)
+    {
+        return State.unspecified;
+    }
+    /// Reset one or more list item's state flags, returns updated state
+    State resetItemState(int index, State flags)
+    {
+        return State.unspecified;
+    }
+    /// Returns integer item id by index (if supported)
+    int itemID(int index) const
+    {
+        return 0;
+    }
+    /// Returns string item id by index (if supported)
+    string itemStringID(int index) const
+    {
         return null;
     }
 
-    override State itemState(int index) const
+    /// Remove all items
+    void clear()
     {
-        // override it
-        return State.normal;
     }
 
-    override State setItemState(int index, State flags)
+    /// Connect adapter change handler
+    final void connect(void delegate() handler)
     {
-        return State.unspecified;
+        onChange.connect(handler);
     }
-
-    override State resetItemState(int index, State flags)
+    /// Disconnect adapter change handler
+    final void disconnect(void delegate() handler)
     {
-        return State.unspecified;
-    }
-
-    override void clear()
-    {
+        onChange.disconnect(handler);
     }
 
     /// Notify listeners about list items changes
     void updateViews()
     {
-        onAdapterChange();
+        onChange();
     }
 
     /// Called when theme is changed
@@ -119,24 +88,25 @@ class ListAdapterBase : ListAdapter
     {
     }
 
-    override @property bool wantMouseEvents()
+    /// Returns true to receive mouse events
+    @property bool wantMouseEvents()
     {
         return false;
     }
-
-    override @property bool wantKeyEvents()
+    /// Returns true to receive keyboard events
+    @property bool wantKeyEvents()
     {
         return false;
     }
 }
 
 /// List adapter for simple list of widget instances
-class WidgetListAdapter : ListAdapterBase
+class WidgetListAdapter : ListAdapter
 {
     private WidgetList _widgets;
 
     /// List of widgets to display
-    @property ref const(WidgetList) widgets() { return _widgets; }
+    @property const(Widget[]) widgets() const { return _widgets[]; }
 
     override @property int itemCount() const
     {
@@ -191,12 +161,6 @@ class WidgetListAdapter : ListAdapterBase
             w.handleThemeChange();
     }
 
-    ~this()
-    {
-        debug (lists)
-            Log.d("Destroying WidgetListAdapter");
-    }
-
     override @property bool wantMouseEvents()
     {
         return true;
@@ -204,7 +168,7 @@ class WidgetListAdapter : ListAdapterBase
 }
 
 /// List adapter providing strings only
-class StringListAdapterBase : ListAdapterBase
+class StringListAdapterBase : ListAdapter
 {
     private
     {
