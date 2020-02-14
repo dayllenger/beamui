@@ -100,8 +100,6 @@ class MenuItem : WidgetGroup, ActionHolder
             _action = action;
             action.onChange ~= &updateContent;
             action.onStateChange ~= &updateState;
-            allowsClick = true;
-            allowsHover = true;
 
             updateContent();
             updateState();
@@ -340,8 +338,6 @@ class Menu : ListWidget
         orientation = orient;
         selectOnHover = true;
         sumItemSizes = true;
-
-        ownAdapter = new WidgetListAdapter;
     }
 
     protected @property bool isMenuBar() const
@@ -352,10 +348,7 @@ class Menu : ListWidget
     /// Get menu item by index
     inout(MenuItem) menuItem(int index) inout
     {
-        if (adapter && index >= 0)
-            return cast(inout(MenuItem))adapter.itemWidget(index);
-        else
-            return null;
+        return cast(inout(MenuItem))itemWidget(index);
     }
 
     @property MenuItem selectedMenuItem()
@@ -366,7 +359,7 @@ class Menu : ListWidget
     /// Add menu item
     MenuItem add(MenuItem subitem)
     {
-        (cast(WidgetListAdapter)adapter).add(subitem);
+        addChild(subitem);
         subitem.parent = this;
         return subitem;
     }

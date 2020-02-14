@@ -26,45 +26,22 @@ abstract class ListAdapter
     }
 
     /// Returns number of widgets in list
-    @property int itemCount() const
-    {
-        return 0;
-    }
+    @property int itemCount() const;
     /// Returns list item widget by item index
-    inout(Widget) itemWidget(int index) inout
-    {
-        return null;
-    }
+    inout(Widget) itemWidget(int index) inout;
     /// Returns list item's state flags
-    State itemState(int index) const
-    {
-        return State.normal;
-    }
+    State itemState(int index) const;
     /// Set one or more list item's state flags, returns updated state
-    State setItemState(int index, State flags)
-    {
-        return State.unspecified;
-    }
+    State setItemState(int index, State flags);
     /// Reset one or more list item's state flags, returns updated state
-    State resetItemState(int index, State flags)
-    {
-        return State.unspecified;
-    }
+    State resetItemState(int index, State flags);
     /// Returns integer item id by index (if supported)
-    int itemID(int index) const
-    {
-        return 0;
-    }
+    int itemID(int index) const;
     /// Returns string item id by index (if supported)
-    string itemStringID(int index) const
-    {
-        return null;
-    }
+    string itemStringID(int index) const;
 
     /// Remove all items
-    void clear()
-    {
-    }
+    void clear();
 
     /// Connect adapter change handler
     final void connect(void delegate() handler)
@@ -100,75 +77,8 @@ abstract class ListAdapter
     }
 }
 
-/// List adapter for simple list of widget instances
-class WidgetListAdapter : ListAdapter
-{
-    private WidgetList _widgets;
-
-    /// List of widgets to display
-    @property const(Widget[]) widgets() const { return _widgets[]; }
-
-    override @property int itemCount() const
-    {
-        return cast(int)_widgets.count;
-    }
-
-    override inout(Widget) itemWidget(int index) inout
-    {
-        return _widgets[index];
-    }
-
-    override State itemState(int index) const
-    {
-        return _widgets[index].state;
-    }
-
-    override State setItemState(int index, State flags)
-    {
-        return _widgets[index].setState(flags);
-    }
-
-    override State resetItemState(int index, State flags)
-    {
-        return _widgets[index].resetState(flags);
-    }
-
-    /// Add or insert item
-    void add(Widget item, int index = -1)
-    {
-        if (index >= 0)
-            _widgets.insert(index, item);
-        else
-            _widgets.append(item);
-        updateViews();
-    }
-    /// Remove item and destroy it
-    void remove(int index)
-    {
-        destroy(_widgets.remove(index));
-        updateViews();
-    }
-
-    override void clear()
-    {
-        _widgets.clear();
-        updateViews();
-    }
-
-    override void handleThemeChange()
-    {
-        foreach (w; _widgets)
-            w.handleThemeChange();
-    }
-
-    override @property bool wantMouseEvents()
-    {
-        return true;
-    }
-}
-
 /// List adapter providing strings only
-class StringListAdapterBase : ListAdapter
+abstract class StringListAdapterBase : ListAdapter
 {
     private
     {
@@ -361,7 +271,7 @@ class StringListAdapter : StringListAdapterBase
     override State setItemState(int index, State flags)
     {
         State res = super.setItemState(index, flags);
-        if (_widget !is null && _lastItemIndex == index)
+        if (_widget && _lastItemIndex == index)
             _widget.state = res;
         return res;
     }
@@ -369,7 +279,7 @@ class StringListAdapter : StringListAdapterBase
     override State resetItemState(int index, State flags)
     {
         State res = super.resetItemState(index, flags);
-        if (_widget !is null && _lastItemIndex == index)
+        if (_widget && _lastItemIndex == index)
             _widget.state = res;
         return res;
     }
@@ -442,7 +352,7 @@ class IconStringListAdapter : StringListAdapterBase
     override State setItemState(int index, State flags)
     {
         State res = super.setItemState(index, flags);
-        if (_widget !is null && _lastItemIndex == index)
+        if (_widget && _lastItemIndex == index)
         {
             _widget.state = res;
             _label.state = res;
@@ -453,7 +363,7 @@ class IconStringListAdapter : StringListAdapterBase
     override State resetItemState(int index, State flags)
     {
         State res = super.resetItemState(index, flags);
-        if (_widget !is null && _lastItemIndex == index)
+        if (_widget && _lastItemIndex == index)
         {
             _widget.state = res;
             _label.state = res;
@@ -492,32 +402,32 @@ class ListWidget : WidgetGroup
         {
             if (_adapter is adapter)
                 return; // no changes
-            _adapter.maybe.disconnect(&handleAdapterChange);
-            if (_adapter !is null && _ownAdapter)
+            _adapter.maybe.disconnect(&handleChildListChange);
+            if (_adapter && _ownAdapter)
                 destroy(_adapter);
             _adapter = adapter;
-            _adapter.maybe.connect(&handleAdapterChange);
+            _adapter.maybe.connect(&handleChildListChange);
             _ownAdapter = false;
-            handleAdapterChange();
+            handleChildListChange();
         }
         /// Set adapter, which will be owned by list (destroy will be called for adapter on widget destroy)
         void ownAdapter(ListAdapter adapter)
         {
             if (_adapter is adapter)
                 return; // no changes
-            _adapter.maybe.disconnect(&handleAdapterChange);
-            if (_adapter !is null && _ownAdapter)
+            _adapter.maybe.disconnect(&handleChildListChange);
+            if (_adapter && _ownAdapter)
                 destroy(_adapter);
             _adapter = adapter;
-            _adapter.maybe.connect(&handleAdapterChange);
+            _adapter.maybe.connect(&handleChildListChange);
             _ownAdapter = true;
-            handleAdapterChange();
+            handleChildListChange();
         }
 
         /// Returns number of widgets in list
         int itemCount() const
         {
-            return _adapter ? _adapter.itemCount : 0;
+            return _adapter ? _adapter.itemCount : childCount;
         }
 
         /// Selected item index
@@ -586,10 +496,10 @@ class ListWidget : WidgetGroup
 
     ~this()
     {
-        _adapter.maybe.disconnect(&handleAdapterChange);
+        _adapter.maybe.disconnect(&handleChildListChange);
         debug (lists)
             Log.d("Destroying List ", _id);
-        if (_adapter !is null && _ownAdapter)
+        if (_adapter && _ownAdapter)
             destroy(_adapter);
         _adapter = null;
     }
@@ -622,16 +532,23 @@ class ListWidget : WidgetGroup
     }
 
     /// Returns list item widget by item index
-    Widget itemWidget(int index)
+    inout(Widget) itemWidget(int index) inout
     {
-        return _adapter ? _adapter.itemWidget(index) : null;
+        if (0 <= index && index < itemCount)
+            return _adapter ? _adapter.itemWidget(index) : child(index);
+        return null;
     }
 
     /// Returns true if item with corresponding index is enabled
     bool itemEnabled(int index)
     {
-        if (_adapter !is null && index >= 0 && index < itemCount)
-            return (_adapter.itemState(index) & State.enabled) != 0;
+        if (0 <= index && index < itemCount)
+        {
+            if (_adapter)
+                return (_adapter.itemState(index) & State.enabled) != 0;
+            else
+                return (child(index).state & State.enabled) != 0;
+        }
         return false;
     }
 
@@ -641,19 +558,25 @@ class ListWidget : WidgetGroup
             return;
         if (_hoverItemIndex != -1)
         {
-            _adapter.resetItemState(_hoverItemIndex, State.hovered);
+            if (_adapter)
+                _adapter.resetItemState(_hoverItemIndex, State.hovered);
+            else
+                child(_hoverItemIndex).resetState(State.hovered);
             invalidate();
         }
         _hoverItemIndex = index;
         if (_hoverItemIndex != -1)
         {
-            _adapter.setItemState(_hoverItemIndex, State.hovered);
+            if (_adapter)
+                _adapter.setItemState(_hoverItemIndex, State.hovered);
+            else
+                child(_hoverItemIndex).setState(State.hovered);
             invalidate();
         }
     }
 
     /// Item list has changed
-    protected void handleAdapterChange()
+    override protected void handleChildListChange()
     {
         needToRecalculateSize = true;
         needToRecalculateItemSizes = true;
@@ -679,14 +602,29 @@ class ListWidget : WidgetGroup
 
     protected void updateSelectedItemFocus()
     {
-        if (_selectedItemIndex != -1)
+        const idx = _selectedItemIndex;
+        if (idx == -1)
+            return;
+
+        if (_adapter)
         {
-            if ((_adapter.itemState(_selectedItemIndex) & State.focused) != (state & State.focused))
+            if ((_adapter.itemState(idx) & State.focused) != (state & State.focused))
             {
                 if (state & State.focused)
-                    _adapter.setItemState(_selectedItemIndex, State.focused);
+                    _adapter.setItemState(idx, State.focused);
                 else
-                    _adapter.resetItemState(_selectedItemIndex, State.focused);
+                    _adapter.resetItemState(idx, State.focused);
+                invalidate();
+            }
+        }
+        else
+        {
+            if ((child(idx).state & State.focused) != (state & State.focused))
+            {
+                if (state & State.focused)
+                    child(idx).setState(State.focused);
+                else
+                    child(idx).resetState(State.focused);
                 invalidate();
             }
         }
@@ -797,14 +735,20 @@ class ListWidget : WidgetGroup
             return false;
         if (_selectedItemIndex != -1)
         {
-            _adapter.resetItemState(_selectedItemIndex, State.selected | State.focused);
+            if (_adapter)
+                _adapter.resetItemState(_selectedItemIndex, State.selected | State.focused);
+            else
+                child(_selectedItemIndex).resetState(State.selected | State.focused);
             invalidate();
         }
         _selectedItemIndex = index;
         if (_selectedItemIndex != -1)
         {
             makeSelectionVisible();
-            _adapter.setItemState(_selectedItemIndex, State.selected | (state & State.focused));
+            if (_adapter)
+                _adapter.setItemState(_selectedItemIndex, State.selected | (state & State.focused));
+            else
+                child(_selectedItemIndex).setState(State.selected | (state & State.focused));
             invalidate();
         }
         return true;
@@ -813,11 +757,6 @@ class ListWidget : WidgetGroup
     override void handleThemeChange()
     {
         super.handleThemeChange();
-        foreach (i; 0 .. itemCount)
-        {
-            Widget w = itemWidget(i);
-            w.handleThemeChange();
-        }
         _adapter.maybe.handleThemeChange();
     }
 
@@ -918,22 +857,19 @@ class ListWidget : WidgetGroup
             {
                 if (_adapter && _adapter.wantMouseEvents)
                 {
-                    auto itemWidget = _adapter.itemWidget(i);
-                    if (itemWidget)
+                    if (auto wt = _adapter.itemWidget(i))
                     {
-                        Widget oldParent = itemWidget.parent;
-                        itemWidget.parent = this;
+                        Widget oldParent = wt.parent;
+                        wt.parent = this;
                         if (event.action == MouseAction.move && event.noKeyMods && event.noMouseMods &&
-                            itemWidget.hasTooltip)
+                            wt.hasTooltip)
                         {
-                            itemWidget.scheduleTooltip(200);
+                            wt.scheduleTooltip(600);
                         }
-                        //itemWidget.handleMouseEvent(event);
-                        itemWidget.parent = oldParent;
+                        //wt.handleMouseEvent(event);
+                        wt.parent = oldParent;
                     }
                 }
-                debug (lists)
-                    Log.d("mouse event action=", event.action, " button=", event.button, " flags=", event.flags);
                 if (event.alteredByButton(MouseButton.left) ||
                     event.alteredByButton(MouseButton.right) ||
                     _selectOnHover)

@@ -581,22 +581,21 @@ class FileDialog : Dialog, CustomGridCellAdapter
     protected ListWidget createRootsList()
     {
         auto res = new ListWidget;
-        auto adapter = new WidgetListAdapter;
         foreach (ref RootEntry root; _roots)
         {
             auto btn = new Button(root.label, root.icon);
             btn.style.display = "column";
             btn.setAttribute("flat");
+            btn.allowsClick = false;
             btn.allowsFocus = false;
-            btn.tooltipText = root.path.toUTF32;
-            adapter.add(btn);
+            btn.allowsHover = false;
+            btn.tooltipText = toUTF32(root.path);
+            res.addChild(btn);
         }
-        res.ownAdapter = adapter;
         res.onItemClick ~= (int itemIndex) {
             openDirectory(_roots[itemIndex].path, null);
             res.selectItem(-1);
         };
-        res.allowsFocus = true;
         return res;
     }
 

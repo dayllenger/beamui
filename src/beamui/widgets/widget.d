@@ -2211,24 +2211,27 @@ class WidgetGroup : Widget
 
     override protected void addChildImpl(Widget item)
     {
-        assert(item !is null, "Widget must exist");
+        assert(item, "Widget must exist");
         _children.append(item);
         item.parent = this;
+        handleChildListChange();
     }
 
     override Widget insertChild(int index, Widget item)
     {
-        assert(item !is null, "Widget must exist");
+        assert(item, "Widget must exist");
         _children.insert(index, item);
         item.parent = this;
+        handleChildListChange();
         return item;
     }
 
     override Widget removeChild(int index)
     {
         Widget result = _children.remove(index);
-        assert(result !is null);
+        assert(result);
         result.parent = null;
+        handleChildListChange();
         return result;
     }
 
@@ -2252,6 +2255,7 @@ class WidgetGroup : Widget
     override void removeAllChildren(bool destroyThem = true)
     {
         _children.clear(destroyThem);
+        handleChildListChange();
     }
 
     override int childIndex(string id) const
@@ -2267,10 +2271,15 @@ class WidgetGroup : Widget
     /// Replace one child with another. It DOES NOT destroy the old item
     void replaceChild(Widget oldChild, Widget newChild)
     {
-        assert(newChild !is null && oldChild !is null, "Widgets must exist");
+        assert(newChild && oldChild, "Widgets must exist");
         _children.replace(oldChild, newChild);
         oldChild.parent = null;
         newChild.parent = this;
+        handleChildListChange();
+    }
+
+    protected void handleChildListChange()
+    {
     }
 }
 

@@ -445,9 +445,7 @@ int main()
             }
         }
 
-        auto listAdapter = new WidgetListAdapter;
-        listAdapter.add(new Label("This is a list of widgets"d));
-        list.ownAdapter = listAdapter;
+        list.addChild(new Label("This is a list of widgets"d));
         list.selectItem(0);
 
         auto stringList = new StringListAdapter;
@@ -462,19 +460,19 @@ int main()
         for (int i = 1; i < 1000; i++)
         {
             dstring label = "List item "d ~ to!dstring(i);
-            listAdapter.add(new Label("Widget list - "d ~ label));
+            list.addChild(new Label("Widget list - "d ~ label));
             stringList.add("Simple string - "d ~ label);
         }
-        listAdapter.resetItemState(0, State.enabled);
-        listAdapter.resetItemState(5, State.enabled);
-        listAdapter.resetItemState(7, State.enabled);
-        listAdapter.resetItemState(12, State.enabled);
-        assert(list.itemEnabled(5) == false);
-        assert(list.itemEnabled(6) == true);
+        list.child(0).resetState(State.enabled);
+        list.child(5).resetState(State.enabled);
+        list.child(7).resetState(State.enabled);
+        list.child(12).resetState(State.enabled);
+        assert(!list.itemEnabled(5));
+        assert( list.itemEnabled(6));
 
         addbtn.onClick ~= {
             stringList.add(itemtext.text);
-            listAdapter.add(new Label(itemtext.text));
+            list.addChild(new Label(itemtext.text));
         };
 
         tabs.addTab(longLists.setID("LISTS"), "Long list");
