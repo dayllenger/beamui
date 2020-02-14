@@ -411,7 +411,6 @@ abstract class AbstractSlider : WidgetGroup
 
         this()
         {
-            id = "SLIDER_BUTTON";
             allowsFocus = true;
             allowsHover = true;
         }

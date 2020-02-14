@@ -70,6 +70,6 @@ class WindowFrame : Panel
 
     protected Widget createBodyWidget()
     {
-        return new Widget("DOCK_WINDOW_BODY");
+        return new Widget;
     }
 }

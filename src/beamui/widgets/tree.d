@@ -579,7 +579,7 @@ class TreeItemWidget : Panel
             icount--;
         if (icount > 0)
         {
-            _indent = new Widget("tree-item-indent");
+            _indent = new Widget;
             const w = icount * font.size * 2;
             _indent.style.minWidth = w;
             _indent.style.maxWidth = w;
@@ -587,7 +587,6 @@ class TreeItemWidget : Panel
         if (_item.canExpandOrCollapse)
         {
             _expander = new ImageWidget;
-            _expander.id = "tree-item-expander";
             _expander.bindSubItem(this, "expander");
             _expander.allowsClick = true;
             _expander.allowsHover = true;
@@ -597,19 +596,17 @@ class TreeItemWidget : Panel
                 _item.toggleExpand(_item);
             };
         }
-        _body = new Panel("tree-item-body");
+        _body = new Panel;
         _body.bindSubItem(this, "body");
         _body.setState(State.parent);
         if (_item.iconID.length > 0)
         {
             _icon = new ImageWidget(_item.iconID);
-            _icon.id = "tree-item-icon";
             _icon.bindSubItem(this, "icon");
             _icon.setState(State.parent);
             _body.addChild(_icon);
         }
         _label = new Label(_item.text);
-        _label.id = "tree-item-label";
         _label.bindSubItem(this, "label");
         _label.setState(State.parent);
         _body.add(_label);

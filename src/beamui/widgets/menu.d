@@ -51,7 +51,6 @@ class MenuItem : WidgetGroup, ActionHolder
             if (menu && !_arrow)
             {
                 _arrow = new ImageWidget("scrollbar_btn_right");
-                _arrow.id = "menu-open";
                 _arrow.bindSubItem(this, "open");
                 _arrow.state = State.parent;
                 addChild(_arrow);
@@ -90,16 +89,14 @@ class MenuItem : WidgetGroup, ActionHolder
         _fromMenuBar = fromMenuBar;
         if (action is null)
         {
-            id = "menu-separator";
+            setAttribute("separator");
             _separator = new Widget;
-            _separator.id = "menu-separator";
             _separator.bindSubItem(this, "separator");
             addChild(_separator);
             enabled = false;
         }
         else
         {
-            id = "menu-item";
             _action = action;
             action.onChange ~= &updateContent;
             action.onStateChange ~= &updateState;
@@ -129,7 +126,7 @@ class MenuItem : WidgetGroup, ActionHolder
             allowsToggle = _action.checkable;
             if (allowsToggle && !_checkbox)
             {
-                _checkbox = new Widget("menu-checkbox");
+                _checkbox = new Widget;
                 _checkbox.state = State.parent;
                 addChild(_checkbox);
             }
@@ -147,7 +144,6 @@ class MenuItem : WidgetGroup, ActionHolder
             if (!_icon)
             {
                 _icon = new ImageWidget(iconID);
-                _icon.id = "menu-icon";
                 _icon.bindSubItem(this, "icon");
                 _icon.state = State.parent;
                 addChild(_icon);
@@ -164,7 +160,6 @@ class MenuItem : WidgetGroup, ActionHolder
         if (!_label)
         {
             _label = new Label(_action.label);
-            _label.id = "menu-label";
             _label.bindSubItem(this, "label");
             _label.state = State.parent;
             addChild(_label);
@@ -177,7 +172,6 @@ class MenuItem : WidgetGroup, ActionHolder
             if (!_shortcut)
             {
                 _shortcut = new Label(sc);
-                _shortcut.id = "menu-shortcut";
                 _shortcut.bindSubItem(this, "shortcut");
                 _shortcut.state = State.parent;
                 addChild(_shortcut);

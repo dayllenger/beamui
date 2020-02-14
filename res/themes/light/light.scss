@@ -397,16 +397,16 @@ MenuBar {
 MenuItem {
     padding: 6px 4px;
 
-    &#menu-separator {
-        padding: 4px;
-    }
-
     &:hovered {
         background-color: $hovered-color;
     }
 
     &:focused, &:selected {
         background-color: $main-color;
+    }
+
+    &.separator {
+        padding: 4px;
     }
 
     &::separator {
@@ -528,15 +528,7 @@ ScrollBar {
     background-color: fade-out(black, 0.95);
 }
 
-ScrollBar::button {
-    &:pressed {
-    }
-
-    &:hovered {
-    }
-}
-
-ScrollBar ScrollIndicator {
+ScrollBar > ScrollIndicator {
     padding: 3px;
     background-color: #c2c2c2;
 
@@ -553,7 +545,7 @@ ScrollBar ScrollIndicator {
     }
 }
 
-ScrollBar PageScrollButton {
+ScrollBar > PageScrollButton {
     &:pressed {
         background-color: fade-out(#404080, 0.9);
     }
@@ -563,7 +555,7 @@ ScrollBar PageScrollButton {
     }
 }
 
-AbstractSlider SliderHandle {
+AbstractSlider > SliderHandle {
     padding: 6px;
     border: 1px solid transparent;
     background-color: $main-color;
@@ -965,7 +957,7 @@ FileNameEditLine EditLine {
 InputBox, MessageBox {
     padding: 10px;
 
-    Label {
+    > Label {
         padding: 10px;
     }
 }

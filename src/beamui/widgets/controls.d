@@ -282,7 +282,7 @@ class CheckBox : Panel
 
     this(dstring labelText = null)
     {
-        _icon = new Widget("icon");
+        _icon = new Widget;
         _icon.bindSubItem(this, "icon");
         _icon.state = State.parent;
         _label = new Label(labelText);

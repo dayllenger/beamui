@@ -98,7 +98,6 @@ class ScrollAreaBase : WidgetGroup
                 if (m != Mode.hidden)
                 {
                     _hscrollbar = new ScrollBar(Orientation.horizontal, _hdata);
-                    _hscrollbar.id = "hscrollbar";
                     _hscrollbar.onScroll ~= &handleHScroll;
                     addChild(_hscrollbar);
                 }
@@ -116,7 +115,6 @@ class ScrollAreaBase : WidgetGroup
                 if (m != Mode.hidden)
                 {
                     _vscrollbar = new ScrollBar(Orientation.vertical, _vdata);
-                    _vscrollbar.id = "vscrollbar";
                     _vscrollbar.onScroll ~= &handleVScroll;
                     addChild(_vscrollbar);
                 }

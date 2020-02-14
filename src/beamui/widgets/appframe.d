@@ -284,6 +284,6 @@ class AppFrame : Panel
     /// Create app body widget
     protected Widget createBody()
     {
-        return new Widget("APP_FRAME_BODY");
+        return new Widget;
     }
 }

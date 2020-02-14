@@ -165,13 +165,11 @@ class ScrollBar : WidgetGroup
         _data.onChange ~= &handleDataChange;
         _orient = orient;
         _btnBack = new Button;
-        _btnBack.id = "BACK";
-        _btnBack.bindSubItem(this, "button");
         _btnForward = new Button;
-        _btnForward.id = "FORWARD";
-        _btnForward.bindSubItem(this, "button");
-        _pageUp = new PageScrollButton("PAGE_UP");
-        _pageDown = new PageScrollButton("PAGE_DOWN");
+        _btnBack.bindSubItem(this, "button-back");
+        _btnForward.bindSubItem(this, "button-forward");
+        _pageUp = new PageScrollButton;
+        _pageDown = new PageScrollButton;
         _indicator = new ScrollIndicator;
         updateDrawables();
         add(_btnBack, _btnForward, _indicator, _pageUp, _pageDown);
@@ -490,7 +488,6 @@ class ScrollBar : WidgetGroup
 
         this()
         {
-            id = "SCROLL_INDICATOR";
             allowsHover = true;
         }
 
@@ -596,9 +593,8 @@ class ScrollBar : WidgetGroup
 
     class PageScrollButton : Widget
     {
-        this(string ID)
+        this()
         {
-            super(ID);
             allowsClick = true;
             allowsHover = true;
         }

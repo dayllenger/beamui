@@ -93,7 +93,7 @@ Dialog {
   display: column;
 }
 
-Dialog #buttons {
+Dialog::buttons {
   display: row;
 }
 

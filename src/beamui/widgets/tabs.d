@@ -134,7 +134,6 @@ class TabItem : Panel
         _label.bindSubItem(this, "label");
         _label.state = State.parent;
         _closeButton = new Button(null, "close");
-        _closeButton.id = "CLOSE";
         _closeButton.bindSubItem(this, "close");
         _closeButton.onClick ~= { onTabClose(id); };
         this.enableCloseButton = enableCloseButton;
@@ -217,7 +216,6 @@ class TabControl : WidgetGroup
     {
         tabAlignment = tabAlign;
         _moreButton = new Button(null, "tab_more");
-        _moreButton.id = "MORE";
         _moreButton.bindSubItem(this, "more");
         _moreButton.onMouseEvent ~= &handleMoreBtnMouse;
         addChild(_moreButton); // first child is always MORE button, the rest corresponds to tab list

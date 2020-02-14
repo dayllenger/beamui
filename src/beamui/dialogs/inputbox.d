@@ -57,9 +57,7 @@ class InputBox : Dialog
     override void initialize()
     {
         auto msg = new Label(_message);
-        msg.id = "msg";
         _editor = new EditLine(_text);
-        _editor.id = "inputbox_editor";
         _editor.onEnterKeyPress ~= {
             closeWithDefaultAction();
             return true;

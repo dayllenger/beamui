@@ -413,9 +413,7 @@ class IconStringListAdapter : StringListAdapterBase
                 _widget = new Panel;
                 _widget.bindSubItem(this, "item");
                 _icon = new ImageWidget;
-                _icon.id = "icon";
                 _label = new Label;
-                _label.id = "label";
                 _label.style.stretch = Stretch.both;
                 _widget.add(_icon, _label);
             }

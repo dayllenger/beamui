@@ -97,7 +97,8 @@ class Dialog : Panel
     {
         _defaultButtonIndex = defaultActionIndex;
         _buttonActions = actions;
-        auto res = new Panel("buttons");
+        auto res = new Panel;
+        res.bindSubItem(this, "buttons");
         foreach (i, a; actions)
         {
             if (splitBeforeIndex == i)

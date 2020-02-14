@@ -160,11 +160,11 @@ MenuBar { weight: 0; margin: 0; padding-left: 3px; box-shadow: 0 0 5px #888; bac
 
 MenuItem { padding: 6px 4px; }
 
-MenuItem#menu-separator { padding: 4px; }
-
 MenuItem:hovered { background-color: #e2edf9; }
 
 MenuItem:focused, MenuItem:selected { background-color: #4e93da; }
+
+MenuItem.separator { padding: 4px; }
 
 MenuItem::separator { min-width: 1px; min-height: 1px; background: #ccc; }
 
@@ -218,23 +218,23 @@ ScrollArea { min-width: 200px; min-height: 150px; }
 /* scrollbar */
 ScrollBar { background-color: rgba(0, 0, 0, 0.05); }
 
-ScrollBar ScrollIndicator { padding: 3px; background-color: #c2c2c2; }
+ScrollBar > ScrollIndicator { padding: 3px; background-color: #c2c2c2; }
 
-ScrollBar ScrollIndicator:hovered { background-color: #d2d2d2; }
+ScrollBar > ScrollIndicator:hovered { background-color: #d2d2d2; }
 
-ScrollBar ScrollIndicator:pressed { background-color: #d8d8d8; }
+ScrollBar > ScrollIndicator:pressed { background-color: #d8d8d8; }
 
-ScrollBar ScrollIndicator:not(enabled) { opacity: 0.4; }
+ScrollBar > ScrollIndicator:not(enabled) { opacity: 0.4; }
 
-ScrollBar PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
+ScrollBar > PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
 
-ScrollBar PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
+ScrollBar > PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
 
-AbstractSlider SliderHandle { padding: 6px; border: 1px solid transparent; background-color: #4e93da; }
+AbstractSlider > SliderHandle { padding: 6px; border: 1px solid transparent; background-color: #4e93da; }
 
-AbstractSlider SliderHandle:pressed { background-color: rgba(46, 147, 250, 0.7); }
+AbstractSlider > SliderHandle:pressed { background-color: rgba(46, 147, 250, 0.7); }
 
-AbstractSlider SliderHandle:not(enabled) { opacity: 0.4; }
+AbstractSlider > SliderHandle:not(enabled) { opacity: 0.4; }
 
 AbstractSlider::range-before, AbstractSlider::range-after { border-color: transparent; background-color: #888; }
 
@@ -408,7 +408,7 @@ FileNameEditLine EditLine { stretch: both; }
 
 InputBox, MessageBox { padding: 10px; }
 
-InputBox Label, MessageBox Label { padding: 10px; }
+InputBox > Label, MessageBox > Label { padding: 10px; }
 
 SettingsDialog { padding: 4px; }
 
