@@ -526,9 +526,48 @@ class ListWidget : WidgetGroup
     }
 
     /// Returns item index by 0-based offset from top/left of list content
-    int itemByPosition(int pos) const
+    int itemByPosition(float offset) const
     {
-        return 0;
+        if (_itemBoxes.length == 0)
+            return 0;
+        // binary search
+        int start = 0;
+        int end = cast(int)_itemBoxes.length - 1;
+        if (_orientation == Orientation.vertical)
+        {
+            while (start < end)
+            {
+                const mid = (start + end) / 2;
+                const Box ib = _itemBoxes[mid];
+                if (offset < ib.y + ib.h)
+                {
+                    if (offset < ib.y)
+                        end = mid;
+                    else
+                        return mid;
+                }
+                else
+                    start = mid + 1;
+            }
+        }
+        else
+        {
+            while (start < end)
+            {
+                const mid = (start + end) / 2;
+                const Box ib = _itemBoxes[mid];
+                if (offset < ib.x + ib.w)
+                {
+                    if (offset < ib.x)
+                        end = mid;
+                    else
+                        return mid;
+                }
+                else
+                    start = mid + 1;
+            }
+        }
+        return start;
     }
 
     /// Returns list item widget by item index
@@ -842,12 +881,14 @@ class ListWidget : WidgetGroup
         if (itemCount > _itemBoxes.length)
             return true; // layout not yet called
 
+        // same as in drawContent()
         const b = innerBox;
-        // same as in `draw()`
         const bool vert = _orientation == Orientation.vertical;
         const scrollOffset = scrollPosition;
-        const int start = findViewportIndex();
-        foreach (i; start .. itemCount)
+        const int start = itemByPosition(scrollOffset);
+        const int end = itemByPosition(scrollOffset + (vert ? b.h : b.w));
+        // expand a bit to enable scroll by dragging outside the box
+        foreach (i; max(start - 2, 0) .. min(end + 2, itemCount))
         {
             Box ib = _itemBoxes[i];
             ib.x += b.x;
@@ -1124,25 +1165,21 @@ class ListWidget : WidgetGroup
         const b = innerBox;
         const bool vert = _orientation == Orientation.vertical;
         const scrollOffset = scrollPosition;
-        const int start = findViewportIndex();
-        bool started;
-        foreach (i; start .. itemCount)
+        const int start = itemByPosition(scrollOffset);
+        const int end = itemByPosition(scrollOffset + (vert ? b.h : b.w));
+        foreach (i; start .. end + 1)
         {
+            Widget w = itemWidget(i);
+            if (w is null || w.visibility != Visibility.visible)
+                continue;
+
             Box ib = _itemBoxes[i];
             ib.x += b.x;
             ib.y += b.y;
             (vert ? ib.y : ib.x) -= scrollOffset;
-            if (Rect(ib).intersects(Rect(b)))
-            {
-                Widget w = itemWidget(i);
-                if (w is null || w.visibility != Visibility.visible)
-                    continue;
-                w.layout(ib);
-                w.draw(pr);
-                started = true;
-            }
-            else if (started)
-                break;
+
+            w.layout(ib);
+            w.draw(pr);
         }
     }
 
@@ -1158,45 +1195,6 @@ class ListWidget : WidgetGroup
             }
         }
         return super.isChild(item, deepSearch);
-    }
-
-    /// Fast bisect to find where is the viewport
-    private int findViewportIndex()
-    {
-        int start = 0;
-        int end = itemCount - 1;
-        const bool vert = _orientation == Orientation.vertical;
-        const offset = scrollPosition;
-        while (true)
-        {
-            const Box ib1 = _itemBoxes[start];
-            const Box ib2 = _itemBoxes[end];
-            if (vert)
-            {
-                if (offset - ib1.y < ib2.y + ib2.h - offset)
-                {
-                    end -= (end - start) / 2;
-                }
-                else
-                {
-                    start += (end - start) / 2;
-                }
-            }
-            else
-            {
-                if (offset - ib1.x < ib2.x + ib2.w - offset)
-                {
-                    end -= (end - start) / 2;
-                }
-                else
-                {
-                    start += (end - start) / 2;
-                }
-            }
-            if (end - start < 5)
-                break;
-        }
-        return start;
     }
 }
 
