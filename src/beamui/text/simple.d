@@ -69,8 +69,7 @@ private struct Line
         width = x;
 
         // copy the temporary buffer. this will be removed eventually
-        if (glyphs.length < len)
-            glyphs.length = len;
+        assert(glyphs.length == len);
         glyphs[0 .. len] = pglyphs[0 .. len];
     }
 
@@ -314,23 +313,27 @@ struct SimpleText
         {
             if (original is s)
                 return;
-            original = s;
+
             lines.clear();
             wrappedLines.clear();
+
             if (s.length > 0)
             {
+                if (glyphStorage.length < s.length)
+                    glyphStorage.length = s.length;
                 // split by EOL char
                 size_t lineStart;
                 foreach (i, ch; s)
                 {
                     if (ch == '\n')
                     {
-                        lines ~= Line(s[lineStart .. i]);
+                        lines ~= Line(s[lineStart .. i], glyphStorage[lineStart .. i]);
                         lineStart = i + 1;
                     }
                 }
-                lines ~= Line(s[lineStart .. $]);
+                lines ~= Line(s[lineStart .. $], glyphStorage[lineStart .. s.length]);
             }
+            original = s;
             measured = false;
         }
 
@@ -358,6 +361,7 @@ struct SimpleText
         Size _size;
         Size _sizeAfterWrap;
 
+        ComputedGlyph[] glyphStorage;
         bool measured;
     }
 
