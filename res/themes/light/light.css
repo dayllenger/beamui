@@ -156,7 +156,7 @@ ComboEdit::body:focused { color: initial; }
 /* menu */
 Menu { width: auto; height: auto; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; }
 
-MenuBar { weight: 0; margin: 0; padding-left: 3px; box-shadow: 0 0 5px #888; background-color: #f3f4f5; }
+MenuBar { margin: 0; padding-left: 3px; flex-shrink: 0; box-shadow: 0 0 5px #888; background-color: #f3f4f5; }
 
 MenuItem { padding: 6px 4px; }
 
@@ -326,7 +326,7 @@ SourceEdit:not(enabled) { background-color: #f0f0f0; }
   editor_left_pane_line_icon_error: rgba(242, 24, 24, 0.5); }
 
 /* statusline */
-StatusLine { weight: 0; padding: 1px; background-color: #eceffa; }
+StatusLine { padding: 1px; flex-shrink: 0; background-color: #eceffa; }
 
 StatusLine > Label { stretch: both; }
 
