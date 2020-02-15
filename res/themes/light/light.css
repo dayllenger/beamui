@@ -230,7 +230,7 @@ ScrollBar > PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1);
 
 ScrollBar > PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
 
-AbstractSlider > SliderHandle { padding: 6px; border: 1px solid transparent; background-color: #4e93da; }
+AbstractSlider > SliderHandle { padding: 5px; border: 1px solid transparent; background-color: #4e93da; }
 
 AbstractSlider > SliderHandle:pressed { background-color: rgba(46, 147, 250, 0.7); }
 

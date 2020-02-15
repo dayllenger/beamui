@@ -662,19 +662,18 @@ public:
         Insets padding() const
         {
             updateStyles();
-            // get max padding from style padding and background drawable padding
             Insets p = _style.padding;
-            Insets bp = _background.padding;
-            if (p.left < bp.left)
-                p.left = bp.left;
-            if (p.right < bp.right)
-                p.right = bp.right;
-            if (p.top < bp.top)
-                p.top = bp.top;
-            if (p.bottom < bp.bottom)
-                p.bottom = bp.bottom;
-
-            if (style.focusRectColor != Color.transparent &&
+            p.add(_style.borderWidth);
+            // background image may increase padding
+            if (auto bg = _style.backgroundImage)
+            {
+                const bp = bg.padding;
+                p.top = max(p.top, bp.top);
+                p.right = max(p.right, bp.right);
+                p.bottom = max(p.bottom, bp.bottom);
+                p.left = max(p.left, bp.left);
+            }
+            if (_style.focusRectColor != Color.transparent &&
                 (allowsFocus || ((state & State.parent) && parent.allowsFocus)))
             {
                 // add two pixels to padding when focus rect is required
@@ -684,11 +683,12 @@ public:
             return p;
         }
 
-        /// Get widget standard background. The background object has the same lifetime as the widget.
-        inout(Background) background() inout
+        /// Set the widget background (takes ownership on the object)
+        void background(Background obj)
+            in(obj)
         {
-            updateStyles();
-            return _background;
+            destroy(_background);
+            _background = obj;
         }
 
         /// Text flags (bit set of `TextFlag` enum values)
@@ -744,57 +744,6 @@ public:
     /// Handle changes of style properties (e.g. invalidate)
     void handleStyleChange(StyleProperty p)
     {
-        switch (p) with (StyleProperty)
-        {
-        case bgColor:
-            _background.color = _style.backgroundColor;
-            break;
-        case bgImage:
-            _background.image = _style.backgroundImage;
-            break;
-        case borderTopWidth:
-            _background.border.top.thickness = _style.borderTopWidth;
-            break;
-        case borderRightWidth:
-            _background.border.right.thickness = _style.borderRightWidth;
-            break;
-        case borderBottomWidth:
-            _background.border.bottom.thickness = _style.borderBottomWidth;
-            break;
-        case borderLeftWidth:
-            _background.border.left.thickness = _style.borderLeftWidth;
-            break;
-        case borderTopColor:
-            _background.border.top.color = _style.borderTopColor;
-            break;
-        case borderRightColor:
-            _background.border.right.color = _style.borderRightColor;
-            break;
-        case borderBottomColor:
-            _background.border.bottom.color = _style.borderBottomColor;
-            break;
-        case borderLeftColor:
-            _background.border.left.color = _style.borderLeftColor;
-            break;
-        case borderTopStyle:
-            _background.border.top.style = _style.borderTopStyle;
-            break;
-        case borderRightStyle:
-            _background.border.right.style = _style.borderRightStyle;
-            break;
-        case borderBottomStyle:
-            _background.border.bottom.style = _style.borderBottomStyle;
-            break;
-        case borderLeftStyle:
-            _background.border.left.style = _style.borderLeftStyle;
-            break;
-        case boxShadow:
-            _background.shadow = _style.boxShadow;
-            break;
-        default:
-            break;
-        }
-
         switch (p) with (StyleProperty)
         {
         case width: .. case maxHeight:
@@ -1895,16 +1844,41 @@ public:
 
         updateStyles();
         const opacity = _style.opacity;
-        const blendMode = _style.mixBlendMode;
         if (opacity < 0.001f)
             return;
         // begin a layer if needed
+        const blendMode = _style.mixBlendMode;
         PaintSaver lsv;
         if (opacity < 0.999f || blendMode != BlendMode.normal)
             pr.beginLayer(lsv, opacity, blendMode);
 
         // draw the background first
-        background.drawTo(pr, b);
+        _background.color = _style.backgroundColor;
+        _background.image = _style.backgroundImage;
+        _background.border = Border(
+            BorderSide(
+                _style.borderTopWidth,
+                _style.borderTopStyle,
+                _style.borderTopColor,
+            ),
+            BorderSide(
+                _style.borderRightWidth,
+                _style.borderRightStyle,
+                _style.borderRightColor,
+            ),
+            BorderSide(
+                _style.borderBottomWidth,
+                _style.borderBottomStyle,
+                _style.borderBottomColor,
+            ),
+            BorderSide(
+                _style.borderLeftWidth,
+                _style.borderLeftStyle,
+                _style.borderLeftColor,
+            ),
+        );
+        _background.shadow = _style.boxShadow;
+        _background.drawTo(pr, b);
         // draw contents
         {
             PaintSaver sv;

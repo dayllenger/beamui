@@ -265,8 +265,8 @@ class SwitchButton : Widget
 
     override void measure()
     {
-        const bg = background;
-        const sz = Size(bg.width, bg.height);
+        const Drawable bg = style.backgroundImage;
+        const sz = bg ? Size(bg.width, bg.height) : Size.init;
         setBoundaries(Boundaries(sz, sz, sz));
     }
 }
