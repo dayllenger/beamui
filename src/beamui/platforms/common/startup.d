@@ -443,8 +443,6 @@ void initResourceManagers()
 {
     Log.d("Initializing resource managers");
 
-    debug APP_IS_SHUTTING_DOWN = false;
-
     static if (USE_FREETYPE)
     {
         STD_FONT_FACES = [
@@ -493,65 +491,35 @@ void releaseResourcesOnAppExit()
     GC.collect();
 
     clearSimpleTextPool();
-
-    debug
-    {
-        if (Widget.instanceCount > 0)
-        {
-            Log.e("Non-zero Widget instance count when exiting: ", Widget.instanceCount);
-        }
-    }
-
     resourceList = ResourceList.init;
-
     currentTheme = null;
-
-    debug
-    {
-        if (Drawable.instanceCount > 0)
-        {
-            Log.e("Drawable instance count after theme destruction: ", Drawable.instanceCount);
-        }
-    }
+    FontManager.instance = null;
 
     static if (BACKEND_GUI)
     {
         imageCache = null;
     }
 
-    FontManager.instance = null;
-
     debug
     {
-        if (BitmapData.instanceCount > 0)
+        static void checkInstanceCount(T)()
         {
-            Log.e("Non-zero BitmapData instance count when exiting: ", BitmapData.instanceCount);
+            if (T.instanceCount > 0)
+            {
+                enum msg = "Undestroyed instances of " ~ T.stringof ~ ": ";
+                Log.e(msg, T.instanceCount);
+            }
         }
-        if (Style.instanceCount > 0)
-        {
-            Log.e("Non-zero Style instance count when exiting: ", Style.instanceCount);
-        }
-        if (ImageDrawable.instanceCount > 0)
-        {
-            Log.e("Non-zero ImageDrawable instance count when exiting: ", ImageDrawable.instanceCount);
-        }
-        if (Drawable.instanceCount > 0)
-        {
-            Log.e("Non-zero Drawable instance count when exiting: ", Drawable.instanceCount);
-        }
+        checkInstanceCount!Widget();
+        checkInstanceCount!BitmapData();
+        checkInstanceCount!Style();
+        checkInstanceCount!ImageDrawable();
+        checkInstanceCount!Drawable();
         static if (USE_FREETYPE)
         {
-            if (FreeTypeFontFile.instanceCount > 0)
-            {
-                Log.e("Non-zero FreeTypeFontFile instance count when exiting: ", FreeTypeFontFile.instanceCount);
-            }
-            if (FreeTypeFont.instanceCount > 0)
-            {
-                Log.e("Non-zero FreeTypeFont instance count when exiting: ", FreeTypeFont.instanceCount);
-            }
+            checkInstanceCount!FreeTypeFontFile();
+            checkInstanceCount!FreeTypeFont();
         }
-
-        APP_IS_SHUTTING_DOWN = true;
     }
 
     GC.collect();

@@ -40,16 +40,16 @@ private final class FontFileItem
 {
     @property ref inout(FontDef) def() inout { return _def; }
     @property string[] filenames() { return _filenames; }
-    @property FT_Library library() { return _library; }
+    @property FT_Library* library() { return _library; }
 
     private FontList _activeFonts;
-    private FT_Library _library;
+    private FT_Library* _library;
     private FontDef _def;
     private string[] _filenames;
 
-    this(FT_Library library, ref FontDef def)
+    this(ref FT_Library library, ref FontDef def)
     {
-        _library = library;
+        _library = &library;
         _def = def;
     }
 
@@ -94,24 +94,18 @@ private final class FontFileItem
 
 final class FreeTypeFontFile
 {
-    @property
-    {
-        FT_Library library() { return _library; }
-        string filename() const { return _filename; }
-    }
-
     private
     {
         string _filename;
-        FT_Library _library;
+        FT_Library* _library;
         FT_Face _face;
         FT_GlyphSlot _slot;
         FT_Matrix _matrix; // transformation matrix
     }
 
-    this(FT_Library library, string filename)
+    this(ref FT_Library library, string filename)
     {
-        _library = library;
+        _library = &library;
         _filename = filename;
         _matrix.xx = 0x10000;
         _matrix.yy = 0x10000;
@@ -148,7 +142,7 @@ final class FreeTypeFontFile
     bool open(int size, int index, ref FontDescription desc)
     {
         // create face object
-        int error = FT_New_Face(_library, toStringz(_filename), index, &_face);
+        int error = FT_New_Face(*_library, toStringz(_filename), index, &_face);
         if (error)
             return false;
 
@@ -336,7 +330,8 @@ final class FreeTypeFontFile
     {
         if (_face)
         {
-            FT_Done_Face(_face);
+            if (*_library) // check if library is still open
+                FT_Done_Face(_face);
             _face = null;
         }
     }
@@ -455,7 +450,7 @@ final class FreeTypeFont : Font
 
         foreach (string filename; _fontItem.filenames)
         {
-            auto file = new FreeTypeFontFile(_fontItem.library, filename);
+            auto file = new FreeTypeFontFile(*_fontItem.library, filename);
             if (file.open(_desc.size, 0, _desc))
             {
                 _files.append(file);
@@ -615,7 +610,10 @@ final class FreeTypeFontManager : FontManager
             Log.d("Destroyed all fonts. Freeing library.");
         // uninit library
         if (_library)
+        {
             FT_Done_FreeType(_library);
+            _library = null;
+        }
     }
 
     override protected FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)

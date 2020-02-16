@@ -205,8 +205,6 @@ public:
         debug _instanceCount--;
         debug (resalloc)
             Log.fd("Destroyed widget (count: %s): %s", _instanceCount, dbgname());
-        debug if (APP_IS_SHUTTING_DOWN)
-            onResourceDestroyWhileShutdown("widget", dbgname());
 
         animations.clear();
 

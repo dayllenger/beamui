@@ -482,12 +482,7 @@ abstract class BitmapData
     ~this()
     {
         onBitmapDestruction(id);
-        debug
-        {
-            if (APP_IS_SHUTTING_DOWN)
-                onResourceDestroyWhileShutdown("bitmap", getShortClassName(this));
-            _instanceCount--;
-        }
+        debug _instanceCount--;
     }
 
     inout(void[]) pixels() inout;
