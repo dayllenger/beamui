@@ -143,65 +143,31 @@ void initStandardEditorActions()
     ).context(ActionContext.widgetTree);
 }
 
-/// Base for all editor widgets
+/// Base for all text editor widgets
 class EditWidgetBase : ScrollAreaBase, ActionOperator
 {
     @property
     {
-        /// Editor content object
-        inout(EditableContent) content() inout { return _content; }
-        /// ditto
-        void content(EditableContent content)
-        {
-            if (_content is content)
-                return; // not changed
-            if (_content !is null)
-            {
-                // disconnect old content
-                _content.onContentChange.disconnect(&handleContentChange);
-                if (_ownContent)
-                {
-                    destroy(_content);
-                }
-            }
-            _content = content;
-            _ownContent = false;
-            _content.onContentChange.connect(&handleContentChange);
-            if (_content.readOnly)
-                enabled = false;
-        }
-
         /// Readonly flag (when true, user cannot change content of editor)
         bool readOnly() const
         {
             return !enabled || _content.readOnly;
         }
         /// ditto
-        void readOnly(bool readOnly)
+        void readOnly(bool on)
         {
-            enabled = !readOnly;
+            enabled = !on;
             invalidate();
         }
 
         /// Replace mode flag (when true, entered character replaces character under cursor)
         bool replaceMode() const { return _replaceMode; }
         /// ditto
-        void replaceMode(bool replaceMode)
+        void replaceMode(bool on)
         {
-            _replaceMode = replaceMode;
+            _replaceMode = on;
             handleEditorStateChange();
             invalidate();
-        }
-
-        /// When true, spaces will be inserted instead of tabs on Tab key
-        bool useSpacesForTabs() const
-        {
-            return _content.useSpacesForTabs;
-        }
-        /// ditto
-        void useSpacesForTabs(bool useSpacesForTabs)
-        {
-            _content.useSpacesForTabs = useSpacesForTabs;
         }
 
         /// Tab size (in number of spaces)
@@ -218,45 +184,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 _content.tabSize = ts;
                 _txtStyle.tabSize = ts;
                 requestLayout();
-            }
-        }
-
-        /// True if smart indents are supported
-        bool supportsSmartIndents() const
-        {
-            return _content.supportsSmartIndents;
-        }
-        /// True if smart indents are enabled
-        bool smartIndents() const
-        {
-            return _content.smartIndents;
-        }
-        /// ditto
-        void smartIndents(bool enabled)
-        {
-            _content.smartIndents = enabled;
-        }
-
-        /// True if smart indents are enabled
-        bool smartIndentsAfterPaste() const
-        {
-            return _content.smartIndentsAfterPaste;
-        }
-        /// ditto
-        void smartIndentsAfterPaste(bool enabled)
-        {
-            _content.smartIndentsAfterPaste = enabled;
-        }
-
-        /// When true shows mark on tab positions in beginning of line
-        bool showTabPositionMarks() const { return _showTabPositionMarks; }
-        /// ditto
-        void showTabPositionMarks(bool flag)
-        {
-            if (flag != _showTabPositionMarks)
-            {
-                _showTabPositionMarks = flag;
-                invalidate();
             }
         }
 
@@ -341,19 +268,11 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
         Color _selectionColorFocused = Color(0x60A0FF, 0x50);
         Color _selectionColorNormal = Color(0x60A0FF, 0x30);
-        Color _searchHighlightColorCurrent = Color(0x8080FF, 0x80);
-        Color _searchHighlightColorOther = Color(0x8080FF, 0x40);
-
         Color _caretColor = Color(0x0);
         Color _caretColorReplace = Color(0x8080FF, 0x80);
-        Color _matchingBracketHighlightColor = Color(0xFFE0B0, 0xA0);
 
         /// When true, call `measureVisibleText` on next layout
         bool _contentChanged = true;
-
-        bool _showTabPositionMarks;
-
-        bool _wordWrap;
 
         TextStyle _txtStyle;
         SimpleText* _placeholder;
@@ -425,9 +344,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _caretColorReplace = currentTheme.getColor("edit_caret_replace", Color(0x8080FF, 0x80));
         _selectionColorFocused = currentTheme.getColor("editor_selection_focused", Color(0x60A0FF, 0x50));
         _selectionColorNormal = currentTheme.getColor("editor_selection_normal", Color(0x60A0FF, 0x30));
-        _searchHighlightColorCurrent = currentTheme.getColor("editor_search_highlight_current", Color(0x8080FF, 0x80));
-        _searchHighlightColorOther = currentTheme.getColor("editor_search_highlight_other", Color(0x8080FF, 0x40));
-        _matchingBracketHighlightColor = currentTheme.getColor("editor_matching_bracket_highlight", Color(0xFFE0B0, 0xA0));
     }
 
     override void handleStyleChange(StyleProperty ptype)
@@ -482,29 +398,10 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             _txtStyle.transform = style.textTransform;
             _minSizeTester.style.transform = style.textTransform;
             break;
-        case whiteSpace:
-            _txtStyle.wrap = style.wordWrap;
-            // horizontal scrollbar should not be visible in word wrap mode
-            if (_txtStyle.wrap)
-            {
-                previousHScrollbarMode = hscrollbarMode;
-                previousXScrollPos = scrollPos.x;
-                hscrollbarMode = ScrollBarMode.hidden;
-                scrollPos.x = 0;
-            }
-            else
-            {
-                hscrollbarMode = previousHScrollbarMode;
-                scrollPos.x = previousXScrollPos;
-            }
-            break;
         default:
             break;
         }
     }
-    // to hold horizontal scroll position toggling between normal and word wrap mode
-    private float previousXScrollPos = 0;
-    private ScrollBarMode previousHScrollbarMode;
 
     override protected void handleFontChange()
     {
@@ -571,11 +468,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
 
     protected void processSmartIndent(EditOperation operation)
     {
-        if (!supportsSmartIndents)
-            return;
-        if (!smartIndents && !smartIndentsAfterPaste)
-            return;
-        _content.syntaxSupport.applySmartIndent(operation, this);
     }
 
     protected void handleContentChange(EditOperation operation,
@@ -932,19 +824,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         setCaretPos(pos.line, pos.pos, selecting);
     }
 
-    /// Generate string of spaces, to reach next tab position
-    protected dstring spacesForTab(int currentPos)
-    {
-        const int newPos = (currentPos + tabSize + 1) / tabSize * tabSize;
-        return "                "d[0 .. (newPos - currentPos)];
-    }
-
-    /// Returns true if one or more lines selected fully
-    final protected bool multipleLinesSelected() const
-    {
-        return _selectionRange.end.line > _selectionRange.start.line;
-    }
-
     private bool _camelCasePartsAsWords = true;
 
     void replaceSelectionText(dstring newText)
@@ -1026,9 +905,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         ACTION_ED_DEL_PREV_WORD.bind(this, &DelPrevWord);
         ACTION_ED_DEL_NEXT_WORD.bind(this, &DelNextWord);
 
-        ACTION_ED_INDENT.bind(this, &Tab);
-        ACTION_ED_UNINDENT.bind(this, &BackTab);
-
         ACTION_SELECT_ALL.bind(this, &selectAll);
 
         ACTION_UNDO.bind(this, { _content.undo(this); });
@@ -1038,10 +914,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         ACTION_COPY.bind(this, &copy);
         ACTION_PASTE.bind(this, &paste);
 
-        ACTION_ED_TOGGLE_REPLACE_MODE.bind(this, {
-            replaceMode = !replaceMode;
-            invalidate();
-        });
+        ACTION_ED_TOGGLE_REPLACE_MODE.bind(this, { replaceMode = !replaceMode; });
     }
 
     protected void unbindActions()
@@ -1059,8 +932,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             ACTION_DELETE,
             ACTION_ED_DEL_PREV_WORD,
             ACTION_ED_DEL_NEXT_WORD,
-            ACTION_ED_INDENT,
-            ACTION_ED_UNINDENT,
             ACTION_SELECT_ALL,
             ACTION_UNDO,
             ACTION_REDO,
@@ -1075,9 +946,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
     {
         debug (editors)
             Log.d("Editor `", id, "`: update actions");
-
-        ACTION_ED_INDENT.enabled = enabled && wantTabs;
-        ACTION_ED_UNINDENT.enabled = enabled && wantTabs;
 
         ACTION_UNDO.enabled = enabled && _content.hasUndo;
         ACTION_REDO.enabled = enabled && _content.hasRedo;
@@ -1193,97 +1061,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             removeRangeText(TextRange(_caretPos, newpos));
     }
 
-    protected void Tab()
-    {
-        if (readOnly)
-            return;
-        if (_selectionRange.empty)
-        {
-            const emptyRange = TextRange(_caretPos, _caretPos);
-            if (useSpacesForTabs)
-            {
-                // insert one or more spaces to
-                dstring spaces = spacesForTab(_caretPos.pos);
-                auto op = new EditOperation(EditAction.replace, emptyRange, [spaces]);
-                _content.performOperation(op, this);
-            }
-            else
-            {
-                // just insert tab character
-                auto op = new EditOperation(EditAction.replace, emptyRange, ["\t"d]);
-                _content.performOperation(op, this);
-            }
-        }
-        else
-        {
-            if (multipleLinesSelected)
-            {
-                indentRange(false);
-            }
-            else
-            {
-                // insert tab
-                if (useSpacesForTabs)
-                {
-                    // insert one or more spaces to
-                    dstring spaces = spacesForTab(_selectionRange.start.pos);
-                    auto op = new EditOperation(EditAction.replace, _selectionRange, [spaces]);
-                    _content.performOperation(op, this);
-                }
-                else
-                {
-                    // just insert tab character
-                    auto op = new EditOperation(EditAction.replace, _selectionRange, ["\t"d]);
-                    _content.performOperation(op, this);
-                }
-            }
-
-        }
-    }
-    protected void BackTab()
-    {
-        if (readOnly)
-            return;
-        if (_selectionRange.empty)
-        {
-            // remove spaces before caret
-            const TextRange r = spaceBefore(_caretPos);
-            if (!r.empty)
-            {
-                auto op = new EditOperation(EditAction.replace, r, [""d]);
-                _content.performOperation(op, this);
-            }
-        }
-        else
-        {
-            if (multipleLinesSelected())
-            {
-                indentRange(true);
-            }
-            else
-            {
-                // remove space before selection
-                const TextRange r = spaceBefore(_selectionRange.start);
-                if (!r.empty)
-                {
-                    const int nchars = r.end.pos - r.start.pos;
-                    TextRange saveRange = _selectionRange;
-                    TextPosition saveCursor = _caretPos;
-                    auto op = new EditOperation(EditAction.replace, r, [""d]);
-                    _content.performOperation(op, this);
-                    if (saveCursor.line == saveRange.start.line)
-                        saveCursor.pos -= nchars;
-                    if (saveRange.end.line == saveRange.start.line)
-                        saveRange.end.pos -= nchars;
-                    saveRange.start.pos -= nchars;
-                    _selectionRange = saveRange;
-                    _caretPos = saveCursor;
-                    ensureCaretVisible();
-                }
-            }
-        }
-    }
-
     /// Cut currently selected text into clipboard
     void cut()
     {
@@ -1347,135 +1124,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         ensureCaretVisible();
         invalidate();
         updateActions();
-    }
-
-    protected TextRange spaceBefore(TextPosition pos) const
-    {
-        auto result = TextRange(pos, pos);
-        dstring s = _content[pos.line];
-        int x = 0;
-        int start = -1;
-        for (int i = 0; i < pos.pos; i++)
-        {
-            const ch = s[i];
-            if (ch == ' ')
-            {
-                if (start == -1 || (x % tabSize) == 0)
-                    start = i;
-                x++;
-            }
-            else if (ch == '\t')
-            {
-                if (start == -1 || (x % tabSize) == 0)
-                    start = i;
-                x = (x + tabSize + 1) / tabSize * tabSize;
-            }
-            else
-            {
-                x++;
-                start = -1;
-            }
-        }
-        if (start != -1)
-        {
-            result.start.pos = start;
-        }
-        return result;
-    }
-
-    /// Change line indent
-    protected dstring indentLine(dstring src, bool back, TextPosition* cursorPos)
-    {
-        int firstNonSpace = -1;
-        int x = 0;
-        int unindentPos = -1;
-        int cursor = cursorPos ? cursorPos.pos : 0;
-        for (int i = 0; i < src.length; i++)
-        {
-            const ch = src[i];
-            if (ch == ' ')
-            {
-                x++;
-            }
-            else if (ch == '\t')
-            {
-                x = (x + tabSize + 1) / tabSize * tabSize;
-            }
-            else
-            {
-                firstNonSpace = i;
-                break;
-            }
-            if (x <= tabSize)
-                unindentPos = i + 1;
-        }
-        if (firstNonSpace == -1) // only spaces or empty line -- do not change it
-            return src;
-        if (back)
-        {
-            // unindent
-            if (unindentPos == -1)
-                return src; // no change
-            if (unindentPos == src.length)
-            {
-                if (cursorPos)
-                    cursorPos.pos = 0;
-                return ""d;
-            }
-            if (cursor >= unindentPos)
-                cursorPos.pos -= unindentPos;
-            return src[unindentPos .. $].dup;
-        }
-        else
-        {
-            // indent
-            if (useSpacesForTabs)
-            {
-                if (cursor > 0)
-                    cursorPos.pos += tabSize;
-                return spacesForTab(0) ~ src;
-            }
-            else
-            {
-                if (cursor > 0)
-                    cursorPos.pos++;
-                return "\t"d ~ src;
-            }
-        }
-    }
-
-    /// Indent / unindent range
-    protected void indentRange(bool back)
-    {
-        TextRange r = _selectionRange;
-        r.start.pos = 0;
-        if (r.end.pos > 0)
-            r.end = _content.lineBegin(r.end.line + 1);
-        if (r.end.line <= r.start.line)
-            r = TextRange(_content.lineBegin(_caretPos.line), _content.lineBegin(_caretPos.line + 1));
-        int lineCount = r.end.line - r.start.line;
-        if (r.end.pos > 0)
-            lineCount++;
-        dstring[] newContent = new dstring[lineCount + 1];
-        bool changed;
-        for (int i = 0; i < lineCount; i++)
-        {
-            dstring srcline = _content.line(r.start.line + i);
-            dstring dstline = indentLine(srcline, back, r.start.line + i == _caretPos.line ? &_caretPos : null);
-            newContent[i] = dstline;
-            if (dstline.length != srcline.length)
-                changed = true;
-        }
-        if (changed)
-        {
-            const TextRange saveRange = r;
-            const TextPosition saveCursor = _caretPos;
-            auto op = new EditOperation(EditAction.replace, r, newContent);
-            _content.performOperation(op, this);
-            _selectionRange = saveRange;
-            _caretPos = saveCursor;
-            ensureCaretVisible();
-        }
     }
 
     //===============================================================
@@ -1837,6 +1485,16 @@ class EditLine : EditWidgetBase
                 }
             }
         }
+        if (event.action == KeyAction.keyDown && event.key == Key.tab && event.noModifiers)
+        {
+            if (wantTabs && !readOnly)
+            {
+                // insert a tab character
+                auto op = new EditOperation(EditAction.replace, _selectionRange, ["\t"d]);
+                _content.performOperation(op, this);
+                return true;
+            }
+        }
         return super.handleKeyEvent(event);
     }
 
@@ -1854,7 +1512,7 @@ class EditLine : EditWidgetBase
         _txtline.str = applyPasswordChar(text);
         _txtline.measured = false;
         auto tlstyle = TextLayoutStyle(_txtStyle);
-        tlstyle.wrap = false;
+        assert(!tlstyle.wrap);
         _txtline.measure(tlstyle);
         return _txtline.size;
     }
@@ -1920,11 +1578,70 @@ class EditLine : EditWidgetBase
     }
 }
 
-/// Multiline editor
+/// Multiline editor and base for complex source editors
 class EditBox : EditWidgetBase
 {
     @property
     {
+        /// Editor content object
+        inout(EditableContent) content() inout { return _content; }
+        /// ditto
+        void content(EditableContent content)
+        {
+            if (_content is content)
+                return; // not changed
+            if (_content)
+            {
+                // disconnect from the old content
+                _content.onContentChange -= &handleContentChange;
+                if (_ownContent)
+                    destroy(_content);
+            }
+            _content = content;
+            _ownContent = false;
+            _content.onContentChange ~= &handleContentChange;
+            if (_content.readOnly)
+                enabled = false;
+        }
+
+        /// When true, spaces will be inserted instead of tabs on Tab key
+        bool useSpacesForTabs() const
+        {
+            return _content.useSpacesForTabs;
+        }
+        /// ditto
+        void useSpacesForTabs(bool on)
+        {
+            _content.useSpacesForTabs = on;
+        }
+
+        /// True if smart indents are supported
+        bool supportsSmartIndents() const
+        {
+            return _content.supportsSmartIndents;
+        }
+        /// True if smart indents are enabled
+        bool smartIndents() const
+        {
+            return _content.smartIndents;
+        }
+        /// ditto
+        void smartIndents(bool enabled)
+        {
+            _content.smartIndents = enabled;
+        }
+
+        /// True if smart indents after paste are enabled
+        bool smartIndentsAfterPaste() const
+        {
+            return _content.smartIndentsAfterPaste;
+        }
+        /// ditto
+        void smartIndentsAfterPaste(bool enabled)
+        {
+            _content.smartIndentsAfterPaste = enabled;
+        }
+
         int minFontSize() const { return _minFontSize; }
         /// ditto
         void minFontSize(int size)
@@ -1939,6 +1656,17 @@ class EditBox : EditWidgetBase
             _maxFontSize = size;
         }
 
+        /// When true shows mark on tab positions in beginning of line
+        bool showTabPositionMarks() const { return _showTabPositionMarks; }
+        /// ditto
+        void showTabPositionMarks(bool show)
+        {
+            if (show != _showTabPositionMarks)
+            {
+                _showTabPositionMarks = show;
+                invalidate();
+            }
+        }
         /// When true, show marks for tabs and spaces at beginning and end of line, and tabs inside line
         bool showWhiteSpaceMarks() const { return _showWhiteSpaceMarks; }
         /// ditto
@@ -1973,7 +1701,12 @@ class EditBox : EditWidgetBase
     {
         int _minFontSize = -1; // disable zooming
         int _maxFontSize = -1; // disable zooming
+        bool _showTabPositionMarks;
         bool _showWhiteSpaceMarks;
+
+        Color _searchHighlightColorCurrent = Color(0x8080FF, 0x80);
+        Color _searchHighlightColorOther = Color(0x8080FF, 0x40);
+        Color _matchingBracketHighlightColor = Color(0xFFE0B0, 0xA0);
 
         int _firstVisibleLine;
         float _maxLineWidth = 0; // computed in `measureVisibleText`
@@ -2001,10 +1734,39 @@ class EditBox : EditWidgetBase
         handleThemeChange();
     }
 
-    ~this()
+    override void handleThemeChange()
     {
-        eliminate(_findPanel);
+        super.handleThemeChange();
+        _searchHighlightColorCurrent = currentTheme.getColor("editor_search_highlight_current", Color(0x8080FF, 0x80));
+        _searchHighlightColorOther = currentTheme.getColor("editor_search_highlight_other", Color(0x8080FF, 0x40));
+        _matchingBracketHighlightColor = currentTheme.getColor("editor_matching_bracket_highlight", Color(0xFFE0B0, 0xA0));
     }
+
+    override void handleStyleChange(StyleProperty ptype)
+    {
+        super.handleStyleChange(ptype);
+
+        if (ptype == StyleProperty.whiteSpace)
+        {
+            _txtStyle.wrap = style.wordWrap;
+            // horizontal scrollbar should not be visible in word wrap mode
+            if (_txtStyle.wrap)
+            {
+                previousHScrollbarMode = hscrollbarMode;
+                previousXScrollPos = scrollPos.x;
+                hscrollbarMode = ScrollBarMode.hidden;
+                scrollPos.x = 0;
+            }
+            else
+            {
+                hscrollbarMode = previousHScrollbarMode;
+                scrollPos.x = previousXScrollPos;
+            }
+        }
+    }
+    // to hold horizontal scroll position toggling between normal and word wrap mode
+    private float previousXScrollPos = 0;
+    private ScrollBarMode previousHScrollbarMode;
 
     override protected void updateVScrollBar(ScrollData data)
     {
@@ -2122,6 +1884,18 @@ class EditBox : EditWidgetBase
 
         return super.handleWheelEvent(event);
     }
+
+    override protected void processSmartIndent(EditOperation operation)
+    {
+        if (!supportsSmartIndents)
+            return;
+        if (!smartIndents && !smartIndentsAfterPaste)
+            return;
+        _content.syntaxSupport.applySmartIndent(operation, this);
+    }
+
+    //===============================================================
+    // Coordinate mapping, caret, and selection
 
     private bool _enableScrollAfterText = true;
     override protected void ensureCaretVisible(bool center = false)
@@ -2295,6 +2069,12 @@ class EditBox : EditWidgetBase
         return TextPosition(index, line.glyphCount);
     }
 
+    /// Returns true if one or more lines selected fully
+    final protected bool multipleLinesSelected() const
+    {
+        return _selectionRange.end.line > _selectionRange.start.line;
+    }
+
     //===============================================================
     // Actions
 
@@ -2313,6 +2093,9 @@ class EditBox : EditWidgetBase
 
         ACTION_ZOOM_IN.bind(this, { zoom(true); });
         ACTION_ZOOM_OUT.bind(this, { zoom(false); });
+
+        ACTION_ED_INDENT.bind(this, &Tab);
+        ACTION_ED_UNINDENT.bind(this, &BackTab);
 
         ACTION_ENTER.bind(this, &InsertNewLine);
         ACTION_ED_PREPEND_NEW_LINE.bind(this, &PrependNewLine);
@@ -2359,6 +2142,8 @@ class EditBox : EditWidgetBase
             ACTION_SELECT_PAGE_END,
             ACTION_ZOOM_IN,
             ACTION_ZOOM_OUT,
+            ACTION_ED_INDENT,
+            ACTION_ED_UNINDENT,
             ACTION_ENTER,
             ACTION_ED_TOGGLE_BOOKMARK,
             ACTION_ED_GOTO_NEXT_BOOKMARK,
@@ -2378,6 +2163,9 @@ class EditBox : EditWidgetBase
     override protected void updateActions()
     {
         super.updateActions();
+
+        ACTION_ED_INDENT.enabled = enabled && wantTabs;
+        ACTION_ED_UNINDENT.enabled = enabled && wantTabs;
 
         ACTION_ED_GOTO_NEXT_BOOKMARK.enabled = _content.lineIcons.hasBookmarks;
         ACTION_ED_GOTO_PREVIOUS_BOOKMARK.enabled = _content.lineIcons.hasBookmarks;
@@ -2531,6 +2319,228 @@ class EditBox : EditWidgetBase
             auto op = new EditOperation(EditAction.replace, _content.lineRange(_caretPos.line), [""d]);
             _content.performOperation(op, this);
         }
+    }
+
+    protected void Tab()
+    {
+        if (readOnly)
+            return;
+        if (_selectionRange.empty)
+        {
+            const emptyRange = TextRange(_caretPos, _caretPos);
+            if (useSpacesForTabs)
+            {
+                // insert one or more spaces to
+                dstring spaces = spacesForTab(_caretPos.pos);
+                auto op = new EditOperation(EditAction.replace, emptyRange, [spaces]);
+                _content.performOperation(op, this);
+            }
+            else
+            {
+                // just insert tab character
+                auto op = new EditOperation(EditAction.replace, emptyRange, ["\t"d]);
+                _content.performOperation(op, this);
+            }
+        }
+        else
+        {
+            if (multipleLinesSelected)
+            {
+                indentRange(false);
+                return;
+            }
+            // insert a tab
+            if (useSpacesForTabs)
+            {
+                // insert one or more spaces to
+                dstring spaces = spacesForTab(_selectionRange.start.pos);
+                auto op = new EditOperation(EditAction.replace, _selectionRange, [spaces]);
+                _content.performOperation(op, this);
+            }
+            else
+            {
+                // just insert tab character
+                auto op = new EditOperation(EditAction.replace, _selectionRange, ["\t"d]);
+                _content.performOperation(op, this);
+            }
+        }
+    }
+    protected void BackTab()
+    {
+        if (readOnly)
+            return;
+        if (_selectionRange.empty)
+        {
+            // remove spaces before caret
+            const TextRange r = spaceBefore(_caretPos);
+            if (!r.empty)
+            {
+                auto op = new EditOperation(EditAction.replace, r, [""d]);
+                _content.performOperation(op, this);
+            }
+        }
+        else
+        {
+            if (multipleLinesSelected())
+            {
+                indentRange(true);
+                return;
+            }
+            // remove space before selection
+            const TextRange r = spaceBefore(_selectionRange.start);
+            if (r.empty)
+                return;
+
+            const int nchars = r.end.pos - r.start.pos;
+            TextRange saveRange = _selectionRange;
+            TextPosition saveCursor = _caretPos;
+            auto op = new EditOperation(EditAction.replace, r, [""d]);
+            _content.performOperation(op, this);
+            if (saveCursor.line == saveRange.start.line)
+                saveCursor.pos -= nchars;
+            if (saveRange.end.line == saveRange.start.line)
+                saveRange.end.pos -= nchars;
+            saveRange.start.pos -= nchars;
+            _selectionRange = saveRange;
+            _caretPos = saveCursor;
+            ensureCaretVisible();
+        }
+    }
+
+    /// Generate string of spaces, to reach next tab position
+    protected dstring spacesForTab(int currentPos)
+    {
+        const int newPos = (currentPos + tabSize + 1) / tabSize * tabSize;
+        return "                "d[0 .. (newPos - currentPos)];
+    }
+
+    /// Indent / unindent selected lines
+    protected void indentRange(bool back)
+    {
+        TextRange r = _selectionRange;
+        r.start.pos = 0;
+        if (r.end.pos > 0)
+            r.end = _content.lineBegin(r.end.line + 1);
+        if (r.end.line <= r.start.line)
+            r = TextRange(_content.lineBegin(_caretPos.line), _content.lineBegin(_caretPos.line + 1));
+        int lineCount = r.end.line - r.start.line;
+        if (r.end.pos > 0)
+            lineCount++;
+        dstring[] newContent = new dstring[lineCount + 1];
+        bool changed;
+        for (int i = 0; i < lineCount; i++)
+        {
+            dstring srcline = _content.line(r.start.line + i);
+            dstring dstline = indentLine(srcline, back, r.start.line + i == _caretPos.line ? &_caretPos : null);
+            newContent[i] = dstline;
+            if (dstline.length != srcline.length)
+                changed = true;
+        }
+        if (changed)
+        {
+            const TextRange saveRange = r;
+            const TextPosition saveCursor = _caretPos;
+            auto op = new EditOperation(EditAction.replace, r, newContent);
+            _content.performOperation(op, this);
+            _selectionRange = saveRange;
+            _caretPos = saveCursor;
+            ensureCaretVisible();
+        }
+    }
+
+    /// Change line indentation
+    protected dstring indentLine(dstring src, bool back, TextPosition* cursorPos)
+    {
+        int firstNonSpace = -1;
+        int x = 0;
+        int unindentPos = -1;
+        int cursor = cursorPos ? cursorPos.pos : 0;
+        for (int i = 0; i < src.length; i++)
+        {
+            const ch = src[i];
+            if (ch == ' ')
+            {
+                x++;
+            }
+            else if (ch == '\t')
+            {
+                x = (x + tabSize + 1) / tabSize * tabSize;
+            }
+            else
+            {
+                firstNonSpace = i;
+                break;
+            }
+            if (x <= tabSize)
+                unindentPos = i + 1;
+        }
+        if (firstNonSpace == -1) // only spaces or empty line -- do not change it
+            return src;
+        if (back)
+        {
+            // unindent
+            if (unindentPos == -1)
+                return src; // no change
+            if (unindentPos == src.length)
+            {
+                if (cursorPos)
+                    cursorPos.pos = 0;
+                return ""d;
+            }
+            if (cursor >= unindentPos)
+                cursorPos.pos -= unindentPos;
+            return src[unindentPos .. $].dup;
+        }
+        else
+        {
+            // indent
+            if (useSpacesForTabs)
+            {
+                if (cursor > 0)
+                    cursorPos.pos += tabSize;
+                return spacesForTab(0) ~ src;
+            }
+            else
+            {
+                if (cursor > 0)
+                    cursorPos.pos++;
+                return "\t"d ~ src;
+            }
+        }
+    }
+
+    protected TextRange spaceBefore(TextPosition pos) const
+    {
+        auto result = TextRange(pos, pos);
+        dstring s = _content[pos.line];
+        int x = 0;
+        int start = -1;
+        for (int i = 0; i < pos.pos; i++)
+        {
+            const ch = s[i];
+            if (ch == ' ')
+            {
+                if (start == -1 || (x % tabSize) == 0)
+                    start = i;
+                x++;
+            }
+            else if (ch == '\t')
+            {
+                if (start == -1 || (x % tabSize) == 0)
+                    start = i;
+                x = (x + tabSize + 1) / tabSize * tabSize;
+            }
+            else
+            {
+                x++;
+                start = -1;
+            }
+        }
+        if (start != -1)
+        {
+            result.start.pos = start;
+        }
+        return result;
     }
 
     //===============================================================

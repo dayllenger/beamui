@@ -661,22 +661,19 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
 {
     auto row = new Panel;
     auto cb1 = new CheckBox("Catch tabs");
-    auto cb2 = new CheckBox("Use spaces for indentation");
-    auto cb3 = new CheckBox("Read only");
-    auto cb4 = new CheckBox("Fixed font");
-    auto cb5 = new CheckBox("Tab size 8");
-    row.add(cb1, cb2, cb3, cb4, cb5);
+    auto cb2 = new CheckBox("Read only");
+    auto cb3 = new CheckBox("Fixed font");
+    auto cb4 = new CheckBox("Tab size 8");
+    row.add(cb1, cb2, cb3, cb4);
     row.style.display = "row";
 
     cb1.checked = editor.wantTabs;
-    cb2.checked = editor.useSpacesForTabs;
-    cb3.checked = editor.readOnly;
-    cb4.checked = editor.style.fontFamily == FontFamily.monospace;
-    cb5.checked = editor.tabSize == 8;
+    cb2.checked = editor.readOnly;
+    cb3.checked = editor.style.fontFamily == FontFamily.monospace;
+    cb4.checked = editor.tabSize == 8;
     cb1.onToggle ~= (checked) { editor.wantTabs = checked; };
-    cb2.onToggle ~= (checked) { editor.useSpacesForTabs = checked; };
-    cb3.onToggle ~= (checked) { editor.readOnly = checked; };
-    cb4.onToggle ~= (checked) {
+    cb2.onToggle ~= (checked) { editor.readOnly = checked; };
+    cb3.onToggle ~= (checked) {
         if (checked)
         {
             editor.style.fontFace = "Courier New";
@@ -688,17 +685,20 @@ Widget createBaseEditorSettingsControl(EditWidgetBase editor)
             editor.style.fontFamily = FontFamily.sans_serif;
         }
     };
-    cb5.onToggle ~= (checked) { editor.tabSize(checked ? 8 : 4); };
+    cb4.onToggle ~= (checked) { editor.tabSize(checked ? 8 : 4); };
 
     return row;
 }
 
 Widget addSourceEditorControls(Widget base, SourceEdit editor)
 {
-    auto cb1 = new CheckBox("Show line numbers");
-    base.addChild(cb1);
-    cb1.checked = editor.showLineNumbers;
-    cb1.onToggle ~= (checked) { editor.showLineNumbers = checked; };
+    auto cb1 = new CheckBox("Use spaces for indentation");
+    auto cb2 = new CheckBox("Show line numbers");
+    base.add(cb1, cb2);
+    cb1.checked = editor.useSpacesForTabs;
+    cb2.checked = editor.showLineNumbers;
+    cb1.onToggle ~= (checked) { editor.useSpacesForTabs = checked; };
+    cb2.onToggle ~= (checked) { editor.showLineNumbers = checked; };
     return base;
 }
 
