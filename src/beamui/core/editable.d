@@ -595,13 +595,8 @@ final:
 /// Action performed with editable contents
 enum EditAction
 {
-    /// Insert content into specified position (range.start)
-    //insert,
-    /// Delete content in range
-    //delete,
     /// Replace range content with new content
     replace,
-
     /// Replace whole content
     replaceContent,
     /// Saved content
@@ -619,7 +614,7 @@ enum EditStateMark : ubyte
     saved,
 }
 
-/// Edit operation details for EditableContent
+/// Edit operation details for `EditableContent`
 class EditOperation : UndoOperation
 {
     final @property
@@ -628,29 +623,27 @@ class EditOperation : UndoOperation
         EditAction action() const { return _action; }
 
         /// Source range to replace with new content
+        TextRange rangeBefore() const { return _rangeBefore; }
+        /// New range after operation applied
         TextRange range() const { return _range; }
 
-        /// New range after operation applied
-        TextRange newRange() const { return _newRange; }
-
+        /// Old content for range
+        dstring[] contentBefore() { return _contentBefore; }
         /// New content for range (if required for this action)
         dstring[] content() { return _content; }
 
         /// Line edit marks for old range
-        EditStateMark[] oldEditMarks() { return _oldEditMarks; }
-
-        /// Old content for range
-        dstring[] oldContent() { return _oldContent; }
+        EditStateMark[] editMarksBefore() { return _editMarksBefore; }
     }
 
     private
     {
         EditAction _action;
+        TextRange _rangeBefore;
         TextRange _range;
-        TextRange _newRange;
         dstring[] _content;
-        EditStateMark[] _oldEditMarks;
-        dstring[] _oldContent;
+        EditStateMark[] _editMarksBefore;
+        dstring[] _contentBefore;
     }
 
     this(EditAction action)
@@ -666,26 +659,26 @@ class EditOperation : UndoOperation
     this(EditAction action, TextRange range, dstring text)
     {
         _action = action;
-        _range = range;
+        _rangeBefore = range;
         _content.length = 1;
-        _content[0] = text.dup;
+        _content[0] = text.idup;
     }
 
     this(EditAction action, TextRange range, dstring[] text)
     {
         _action = action;
-        _range = range;
+        _rangeBefore = range;
         _content.length = text.length;
         foreach (i; 0 .. text.length)
-            _content[i] = text[i].dup;
+            _content[i] = text[i].idup;
     }
 
-    void setNewRange(TextRange r, dstring[] oldContent, EditStateMark[] oldEditMarks)
+    void setNewRange(TextRange r, dstring[] contentBefore, EditStateMark[] editMarksBefore)
     {
-        assert(oldContent.length > 0);
-        _newRange = r;
-        _oldContent = oldContent;
-        _oldEditMarks = oldEditMarks;
+        assert(contentBefore.length > 0);
+        _range = r;
+        _contentBefore = contentBefore;
+        _editMarksBefore = editMarksBefore;
     }
 
     /// Try to merge two operations (simple entering of characters in the same line), return true if succeded
@@ -694,34 +687,34 @@ class EditOperation : UndoOperation
         auto op = cast(EditOperation)unop;
         assert(op);
 
-        if (_range.start.line != op._range.start.line) // both ops whould be on the same line
+        if (_rangeBefore.start.line != op._rangeBefore.start.line) // both ops whould be on the same line
             return false;
         if (_content.length != 1 || op._content.length != 1) // both ops should operate the same line
             return false;
         // appending of single character
-        if (_range.empty && op._range.empty && op._content[0].length == 1 && _newRange.end.pos == op._range.start.pos)
+        if (_rangeBefore.empty && op._rangeBefore.empty && op._content[0].length == 1 && _range.end.pos == op._rangeBefore.start.pos)
         {
             _content[0] ~= op._content[0];
-            _newRange.end.pos++;
+            _range.end.pos++;
             return true;
         }
         // removing single character
-        if (_newRange.empty && op._newRange.empty && op._oldContent[0].length == 1)
+        if (_range.empty && op._range.empty && op._contentBefore[0].length == 1)
         {
-            if (_newRange.end.pos == op._range.end.pos)
+            if (_range.end.pos == op._rangeBefore.end.pos)
             {
                 // removed char before
+                _rangeBefore.start.pos--;
                 _range.start.pos--;
-                _newRange.start.pos--;
-                _newRange.end.pos--;
-                _oldContent[0] = (op._oldContent[0].dup ~ _oldContent[0].dup).dup;
+                _range.end.pos--;
+                _contentBefore[0] = op._contentBefore[0].idup ~ _contentBefore[0].idup;
                 return true;
             }
-            else if (_newRange.end.pos == op._range.start.pos)
+            else if (_range.end.pos == op._rangeBefore.start.pos)
             {
                 // removed char after
-                _range.end.pos++;
-                _oldContent[0] = (_oldContent[0].dup ~ op._oldContent[0].dup).dup;
+                _rangeBefore.end.pos++;
+                _contentBefore[0] = _contentBefore[0].idup ~ op._contentBefore[0].idup;
                 return true;
             }
         }
@@ -730,10 +723,10 @@ class EditOperation : UndoOperation
 
     void modified()
     {
-        foreach (i; 0 .. _oldEditMarks.length)
+        foreach (i; 0 .. _editMarksBefore.length)
         {
-            if (_oldEditMarks[i] == EditStateMark.saved)
-                _oldEditMarks[i] = EditStateMark.changed;
+            if (_editMarksBefore[i] == EditStateMark.saved)
+                _editMarksBefore[i] = EditStateMark.changed;
         }
     }
 
@@ -835,7 +828,7 @@ struct TabSize
     }
 }
 
-/// Editable plain text (single/multiline)
+/// Editable multiline text
 class EditableContent : TextContent
 {
     @property
@@ -873,9 +866,6 @@ class EditableContent : TextContent
 
         EditStateMark[] editMarks() { return _editMarks; }
 
-        /// Returns true if miltiline content is supported
-        bool multiline() const { return _multiline; }
-
         /// Returns all lines concatenated by '\n' delimiter
         dstring text() const
         {
@@ -897,19 +887,10 @@ class EditableContent : TextContent
         void text(dstring newContent)
         {
             clearUndo();
-            if (_multiline)
-            {
-                setStr(newContent);
-                if (lineCount == 0)
-                    append(null);
-                updateTokenProps(0, lineCount);
-            }
-            else
-            {
-                removeAll();
-                append(replaceEOLsWithSpaces(newContent));
-                updateTokenProps(0, 1);
-            }
+            setStr(newContent);
+            if (lineCount == 0)
+                append(null);
+            updateTokenProps(0, lineCount);
             notifyContentReplaced();
         }
     }
@@ -935,8 +916,6 @@ class EditableContent : TextContent
         SyntaxSupport _syntaxSupport;
         LineIcons _lineIcons;
 
-        bool _multiline;
-
         /// Token properties by lines - for syntax highlight
         TokenPropString[] _tokenProps;
 
@@ -944,11 +923,10 @@ class EditableContent : TextContent
         EditStateMark[] _editMarks;
     }
 
-    this(bool multiline)
+    this()
     {
         super(1); // initial state: single empty line
         afterChange ~= &handleChange;
-        _multiline = multiline;
         _editMarks.length = 1;
         _undoBuffer = new UndoBuffer;
     }
@@ -1496,15 +1474,14 @@ class EditableContent : TextContent
             throw new Exception("content is readonly");
         if (op.action == EditAction.replace)
         {
-            TextRange rangeBefore = op.range;
+            TextRange rangeBefore = op.rangeBefore;
             assert(rangeBefore.start <= rangeBefore.end);
-            //correctRange(rangeBefore);
             dstring[] oldcontent = rangeText(rangeBefore);
             EditStateMark[] oldmarks = rangeMarks(rangeBefore);
             dstring[] newcontent = op.content;
             if (newcontent.length == 0)
                 newcontent ~= ""d;
-            TextRange rangeAfter = op.range;
+            TextRange rangeAfter = op.rangeBefore;
             rangeAfter.end = rangeAfter.start;
             if (newcontent.length > 1)
             {
@@ -1549,11 +1526,11 @@ class EditableContent : TextContent
         if (readOnly)
             throw new Exception("content is readonly");
         auto op = cast(EditOperation)_undoBuffer.undo();
-        TextRange rangeBefore = op.newRange;
+        TextRange rangeBefore = op.range;
         dstring[] oldcontent = op.content;
-        dstring[] newcontent = op.oldContent;
-        EditStateMark[] newmarks = op.oldEditMarks; //_undoBuffer.savedInUndo() ?  : null;
-        TextRange rangeAfter = op.range;
+        dstring[] newcontent = op.contentBefore;
+        EditStateMark[] newmarks = op.editMarksBefore; //_undoBuffer.savedInUndo() ?  : null;
+        TextRange rangeAfter = op.rangeBefore;
         //Log.d("Undoing op rangeBefore=", rangeBefore, " contentBefore=`", oldcontent, "` rangeAfter=", rangeAfter, " contentAfter=`", newcontent, "`");
         replaceRange(rangeBefore, rangeAfter, newcontent, newmarks);
         handleContentChange(op, rangeBefore, rangeAfter, source ? source : this);
@@ -1567,10 +1544,10 @@ class EditableContent : TextContent
         if (readOnly)
             throw new Exception("content is readonly");
         auto op = cast(EditOperation)_undoBuffer.redo();
-        TextRange rangeBefore = op.range;
-        dstring[] oldcontent = op.oldContent;
+        TextRange rangeBefore = op.rangeBefore;
+        dstring[] oldcontent = op.contentBefore;
         dstring[] newcontent = op.content;
-        TextRange rangeAfter = op.newRange;
+        TextRange rangeAfter = op.range;
         //Log.d("Redoing op rangeBefore=", rangeBefore, " contentBefore=`", oldcontent, "` rangeAfter=", rangeAfter, " contentAfter=`", newcontent, "`");
         replaceRange(rangeBefore, rangeAfter, newcontent);
         handleContentChange(op, rangeBefore, rangeAfter, source ? source : this);

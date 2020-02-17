@@ -2244,15 +2244,7 @@ class EditWidgetBase : ScrollAreaBase, IEditor, ActionOperator
         if (readOnly)
             return;
         dstring selectionText = platform.getClipboardText();
-        dstring[] lines;
-        if (_content.multiline)
-        {
-            lines = splitDString(selectionText);
-        }
-        else
-        {
-            lines = [replaceEOLsWithSpaces(selectionText)];
-        }
+        dstring[] lines = splitDString(selectionText);
         auto op = new EditOperation(EditAction.replace, _selectionRange, lines);
         _content.performOperation(op, this);
     }
@@ -2324,7 +2316,7 @@ class EditWidgetBase : ScrollAreaBase, IEditor, ActionOperator
                     {
                         pos.pos++;
                     }
-                    else if (pos.line < _content.lineCount - 1 && _content.multiline)
+                    else if (pos.line < _content.lineCount - 1)
                     {
                         pos.pos = 0;
                         pos.line++;
@@ -2650,7 +2642,7 @@ class EditBox : EditWidgetBase
          ScrollBarMode vscrollbarMode = ScrollBarMode.automatic)
     {
         super(hscrollbarMode, vscrollbarMode);
-        _content = new EditableContent(true); // multiline
+        _content = new EditableContent;
         _content.onContentChange ~= &handleContentChange;
         text = initialContent;
         _minSizeTester.str = "aaaaa\naaaaa"d;
