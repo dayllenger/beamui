@@ -1223,10 +1223,8 @@ class FileNameEditLine : Panel
         }
     }
 
-    /// Modified state change listener (e.g. content has been saved, or first time modified after save)
-    Signal!(void delegate(bool modified)) onModifiedStateChange;
     /// Editor content is changed
-    Signal!(void delegate(EditableContent)) onContentChange;
+    Signal!(void delegate(dstring)) onChange;
 
     private
     {
@@ -1273,8 +1271,7 @@ class FileNameEditLine : Panel
             }
             dlg.show();
         };
-        _edFileName.onContentChange ~= &onContentChange.emit;
-        _edFileName.onModifiedStateChange ~= &onModifiedStateChange.emit;
+        _edFileName.onChange ~= &onChange.emit;
         add(_edFileName, _btn);
     }
 

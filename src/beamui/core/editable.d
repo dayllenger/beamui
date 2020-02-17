@@ -1,7 +1,7 @@
 /**
 Editable text content and related data structures.
 
-Copyright: Vadim Lopatin 2014-2017, James Johnson 2018
+Copyright: Vadim Lopatin 2014-2017, James Johnson 2018, dayllenger 2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -212,6 +212,101 @@ unittest
     assert(replaceEOLsWithSpaces(null) is null);
 }
 
+/// Line content range
+struct LineRange
+{
+    int start;
+    int end;
+
+    /// Returns true if range is empty
+    @property bool empty() const
+    {
+        return end <= start;
+    }
+}
+
+/// Edit operation details for single-line editors
+class SingleLineEditOperation : UndoOperation
+{
+    final @property
+    {
+        /// Source range to replace with new content
+        LineRange rangeBefore() const { return _rangeBefore; }
+        /// New range after operation applied
+        LineRange range() const { return _range; }
+
+        /// Old content for range
+        dstring contentBefore() { return _contentBefore; }
+        /// New content for range (if required for this action)
+        dstring content() { return _content; }
+    }
+
+    private
+    {
+        LineRange _rangeBefore;
+        LineRange _range;
+        dstring _contentBefore;
+        dstring _content;
+    }
+
+    this(int pos, dstring text)
+    {
+        _rangeBefore = LineRange(pos, pos);
+        _content = text.idup;
+    }
+
+    this(LineRange range, dstring text)
+    {
+        _rangeBefore = range;
+        _content = text.idup;
+    }
+
+    void setNewRange(LineRange r, dstring contentBefore)
+    {
+        _range = r;
+        _contentBefore = contentBefore;
+    }
+
+    bool merge(UndoOperation unop)
+    {
+        auto op = cast(SingleLineEditOperation)unop;
+        assert(op);
+
+        // appending a single character
+        if (_rangeBefore.empty && op._rangeBefore.empty && op._content.length == 1 && _range.end == op._rangeBefore.start)
+        {
+            _content ~= op._content;
+            _range.end++;
+            return true;
+        }
+        // removing a single character
+        if (_range.empty && op._range.empty && op._contentBefore.length == 1)
+        {
+            if (_range.end == op._rangeBefore.end)
+            {
+                // removed char before
+                _rangeBefore.start--;
+                _range.start--;
+                _range.end--;
+                _contentBefore = op._contentBefore ~ _contentBefore.idup;
+                return true;
+            }
+            else if (_range.end == op._rangeBefore.start)
+            {
+                // removed char after
+                _rangeBefore.end++;
+                _contentBefore = _contentBefore.idup ~ op._contentBefore;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void modified()
+    {
+    }
+}
+
 /// Text content position
 struct TextPosition
 {
@@ -295,8 +390,6 @@ struct TextRange
 /// Text content by lines
 class TextContent : ObservableList!dstring
 {
-    import std.array : insertInPlace, replaceInPlace;
-
     final @property
     {
         /// Const list array
@@ -422,7 +515,7 @@ final:
             p.pos = lineLength(p.line) - 1;
         }
     }
-    /// Returns previous character position
+    /// Returns next character position
     TextPosition nextCharPos(TextPosition p) const
     {
         TextPosition eof = end();
@@ -911,20 +1004,11 @@ class EditableContent : TextContent
 
     static alias isAlphaForWordSelection = isAlNum;
 
-    /// Get word bounds by position
-    TextRange wordBounds(TextPosition pos)
+    static LineRange findWordBoundsInLine(dstring s, int p)
     {
-        TextRange res;
-        res.start = pos;
-        res.end = pos;
-        if (pos.line < 0 || lineCount <= pos.line)
-            return res;
-
-        dstring s = line(pos.line);
         const len = s.length;
-        int p = pos.pos;
-        if (p < 0 || p > len || len == 0)
-            return res;
+        if (p < 0 || len < p || len == 0)
+            return LineRange(p, p);
 
         const leftChar = p > 0 ? s[p - 1] : 0;
         const rightChar = p + 1 < len ? s[p + 1] : 0;
@@ -942,18 +1026,29 @@ class EditableContent : TextContent
             p++;
         }
         else
-            return res;
+            return LineRange(p, p);
 
-        int start = p;
-        int end = p;
-        while (start > 0 && isAlphaForWordSelection(s[start - 1]))
-            start--;
-        while (end + 1 < len && isAlphaForWordSelection(s[end + 1]))
-            end++;
-        end++;
-        res.start.pos = start;
-        res.end.pos = end;
-        return res;
+        auto r = LineRange(p, p);
+        while (r.start > 0 && isAlphaForWordSelection(s[r.start - 1]))
+            r.start--;
+        while (r.end + 1 < len && isAlphaForWordSelection(s[r.end + 1]))
+            r.end++;
+        r.end++;
+        return r;
+    }
+
+    /// Get word bounds by position
+    TextRange wordBounds(TextPosition pos)
+    {
+        auto r = TextRange(pos, pos);
+        if (pos.line < 0 || lineCount <= pos.line)
+            return r;
+
+        dstring s = line(pos.line);
+        const lr = findWordBoundsInLine(s, pos.pos);
+        r.start.pos = lr.start;
+        r.end.pos = lr.end;
+        return r;
     }
 
     /// Call listener to say that whole content is replaced e.g. by loading from file
@@ -1191,7 +1286,7 @@ class EditableContent : TextContent
         return true;
     }
 
-    /// Corrent range to cover full lines
+    /// Convert range to cover full lines
     TextRange fullLinesRange(TextRange r) const
     {
         r.start.pos = 0;

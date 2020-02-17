@@ -753,7 +753,6 @@ public:
         case tabSize:
         case textHotkey:
         case textIndent:
-        case textOverflow:
         case textTransform:
         case whiteSpace:
         case wordSpacing:
@@ -770,6 +769,7 @@ public:
         case textDecorLine:
         case textDecorStyle:
         case textColor:
+        case textOverflow:
         case focusRectColor:
         case opacity:
         case mixBlendMode:

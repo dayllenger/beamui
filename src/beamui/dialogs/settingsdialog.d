@@ -229,8 +229,8 @@ class NumberEditItem : SettingsItem
         n = clamp(n, _minValue, _maxValue);
         setting.integer = cast(long)n;
         ed.text = to!dstring(n);
-        ed.onContentChange ~= (EditableContent content) {
-            long v = parseLong(toUTF8(content.text), long.max);
+        ed.onChange ~= (dstring str) {
+            const long v = parseLong(toUTF8(str), long.max);
             if (v != long.max)
             {
                 if (_minValue <= v && v <= _maxValue)
@@ -268,10 +268,7 @@ class StringEditItem : SettingsItem
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
-        ed.onContentChange ~= (EditableContent content) {
-            string value = toUTF8(content.text);
-            setting.str = value;
-        };
+        ed.onChange ~= (dstring str) { setting.str = toUTF8(str); };
         return [lbl, ed];
     }
 }
@@ -298,10 +295,7 @@ class FileNameEditItem : SettingsItem
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
-        ed.onContentChange ~= (EditableContent content) {
-            string value = toUTF8(content.text);
-            setting.str = value;
-        };
+        ed.onChange ~= (dstring str) { setting.str = toUTF8(str); };
         return [lbl, ed];
     }
 }
@@ -329,10 +323,7 @@ class ExecutableFileNameEditItem : SettingsItem
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
-        ed.onContentChange ~= (EditableContent content) {
-            string value = toUTF8(content.text);
-            setting.str = value;
-        };
+        ed.onChange ~= (dstring str) { setting.str = toUTF8(str); };
         return [lbl, ed];
     }
 }
@@ -360,10 +351,7 @@ class PathNameEditItem : SettingsItem
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
-        ed.onContentChange ~= (EditableContent content) {
-            string value = toUTF8(content.text);
-            setting.str = value;
-        };
+        ed.onChange ~= (dstring str) { setting.str = toUTF8(str); };
         return [lbl, ed];
     }
 }

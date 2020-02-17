@@ -1,7 +1,7 @@
 /**
 Single-line and multiline simple text editors.
 
-Copyright: Vadim Lopatin 2014-2017, James Johnson 2017, dayllenger 2019
+Copyright: Vadim Lopatin 2014-2017, James Johnson 2017, dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -14,10 +14,12 @@ import beamui.core.parseutils : isWordChar;
 import beamui.core.signals;
 import beamui.core.stdaction;
 import beamui.core.streams;
+import beamui.core.undo;
 import beamui.graphics.brush : Brush;
 import beamui.graphics.colors;
 import beamui.graphics.path;
 import beamui.graphics.pen : Pen;
+import beamui.style.computed_style : ComputedStyle;
 import beamui.text.line;
 import beamui.text.simple;
 import beamui.text.sizetest;
@@ -196,6 +198,1104 @@ interface IEditor
         auto menu = new Menu;
         menu.add(ACTION_UNDO, ACTION_REDO, ACTION_CUT, ACTION_COPY, ACTION_PASTE);
         return menu;
+    }
+}
+
+/// Single-line text field
+class EditLine : Widget, IEditor, ActionOperator
+{
+    @property
+    {
+        /// Text line string
+        override dstring text() const { return _str; }
+        /// ditto
+        override void text(dstring txt)
+        {
+            clearUndo();
+            _str = replaceEOLsWithSpaces(txt);
+            handleContentChange(0);
+        }
+
+        dstring placeholder() const
+        {
+            return _placeholder ? _placeholder.str : null;
+        }
+        void placeholder(dstring txt)
+        {
+            if (!_placeholder)
+            {
+                if (txt.length > 0)
+                {
+                    _placeholder = new SimpleText(txt);
+                    _placeholder.style.font = font;
+                    _placeholder.style.color = NamedColor.gray;
+                }
+            }
+            else
+                _placeholder.str = txt;
+        }
+
+        dstring minSizeTester() const
+        {
+            return _minSizeTester.str;
+        }
+        void minSizeTester(dstring txt)
+        {
+            _minSizeTester.str = txt;
+            requestLayout();
+        }
+
+        bool readOnly() const
+        {
+            return !enabled;
+        }
+        void readOnly(bool flag)
+        {
+            enabled = !flag;
+            invalidate();
+        }
+
+        bool replaceMode() const { return _replaceMode; }
+        void replaceMode(bool flag)
+        {
+            _replaceMode = flag;
+            invalidate();
+        }
+
+        bool enableCaretBlinking() const { return _caretBlinks; }
+        void enableCaretBlinking(bool flag)
+        {
+            _caretBlinks = flag;
+        }
+
+        /// Password character - 0 for normal editor, some character
+        /// e.g. `*` to hide text by replacing all characters with this char
+        dchar passwordChar() const { return _passwordChar; }
+        /// ditto
+        void passwordChar(dchar ch)
+        {
+            if (_passwordChar != ch)
+            {
+                _passwordChar = ch;
+                requestLayout();
+            }
+        }
+
+        /// Length of the line string
+        int lineLength() const
+        {
+            return cast(int)_str.length;
+        }
+
+        /// True when there is no text
+        bool empty() const
+        {
+            return _str.length == 0;
+        }
+
+        /// Returns true if the line is empty or consists only of spaces and tabs
+        bool isBlank() const
+        {
+            foreach (ch; _str)
+                if (ch != ' ' && ch != '\t')
+                    return false;
+            return true;
+        }
+
+        /// Returns caret position
+        int caretPos() const { return _caretPos; }
+
+        /// Current selection range
+        LineRange selectionRange() const { return _selectionRange; }
+        /// ditto
+        void selectionRange(LineRange range)
+        {
+            correctRange(range);
+            _selectionRange = range;
+            _caretPos = range.end;
+            onCaretPosChange(_caretPos);
+        }
+
+        /// Get full content size in pixels
+        Size fullContentSize() const
+        {
+            Size sz = _txtline.size;
+            sz.w += _spaceWidth;
+            return sz;
+        }
+    }
+
+    /// When true, Tab / Shift+Tab presses are processed internally in widget (e.g. insert tab character) instead of focus change navigation.
+    bool wantTabs;
+    /// When true, allows copy / cut whole current line if there is no selection
+    bool copyCurrentLineWhenNoSelection = true;
+
+    /// Emits when the editor content changes
+    Signal!(void delegate(dstring)) onChange;
+    /// Emits when the editor caret position changes
+    Signal!(void delegate(int)) onCaretPosChange;
+    /// Emits on Enter key press inside the text field
+    Signal!(bool delegate()) onEnterKeyPress; // FIXME: better name
+
+    private
+    {
+        dstring _str;
+        UndoBuffer _undoBuffer;
+
+        bool _selectAllWhenFocusedWithTab = true;
+        bool _deselectAllWhenUnfocused = true;
+        bool _camelCasePartsAsWords = true;
+        bool _replaceMode;
+        dchar _passwordChar = 0;
+
+        int _caretPos;
+        LineRange _selectionRange;
+
+        float _spaceWidth = 0;
+        /// Horizontal offset in pixels
+        float _scrollPos = 0;
+
+        Color _selectionColorFocused = Color(0x60A0FF, 0x50);
+        Color _selectionColorNormal = Color(0x60A0FF, 0x30);
+        Color _caretColor = Color(0x0);
+        Color _caretColorReplace = Color(0x8080FF, 0x80);
+
+        TextStyle _txtStyle;
+        SimpleText* _placeholder;
+        TextSizeTester _minSizeTester;
+        TextLine _txtline;
+    }
+
+    this(dstring initialContent = null)
+    {
+        allowsFocus = true;
+        bindActions();
+        handleFontChange();
+        handleThemeChange();
+
+        _undoBuffer = new UndoBuffer;
+        _minSizeTester.str = "aaaaa"d;
+        text = initialContent;
+    }
+
+    ~this()
+    {
+        unbindActions();
+        eliminate(_undoBuffer);
+    }
+
+    override @property bool canFocus() const
+    {
+        // allow to focus even if not enabled
+        return allowsFocus && visible;
+    }
+
+    override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
+    {
+        if (focused)
+        {
+            updateActions();
+            startCaretBlinking();
+        }
+        else
+        {
+            stopCaretBlinking();
+            if (_deselectAllWhenUnfocused)
+                _selectionRange = LineRange(_caretPos, _caretPos);
+        }
+        if (focused && _selectAllWhenFocusedWithTab && receivedFocusFromKeyboard)
+            selectAll();
+        super.handleFocusChange(focused);
+    }
+
+    override void handleThemeChange()
+    {
+        super.handleThemeChange();
+        _caretColor = currentTheme.getColor("edit_caret", Color(0x0));
+        _caretColorReplace = currentTheme.getColor("edit_caret_replace", Color(0x8080FF, 0x80));
+        _selectionColorFocused = currentTheme.getColor("editor_selection_focused", Color(0x60A0FF, 0x50));
+        _selectionColorNormal = currentTheme.getColor("editor_selection_normal", Color(0x60A0FF, 0x30));
+    }
+
+    override void handleStyleChange(StyleProperty ptype)
+    {
+        super.handleStyleChange(ptype);
+
+        switch (ptype) with (StyleProperty)
+        {
+        case tabSize:
+            const tsz = style.tabSize;
+            _txtStyle.tabSize = tsz;
+            _minSizeTester.style.tabSize = tsz;
+            measureVisibleText();
+            break;
+        case textTransform:
+            _txtStyle.transform = style.textTransform;
+            _minSizeTester.style.transform = style.textTransform;
+            measureVisibleText();
+            break;
+        default:
+            break;
+        }
+    }
+
+    override protected void handleFontChange()
+    {
+        Font font = font();
+        _spaceWidth = font.spaceWidth;
+        _txtStyle.font = font;
+        _minSizeTester.style.font = font;
+        if (auto ph = _placeholder)
+            ph.style.font = font;
+        measureVisibleText();
+    }
+
+    override CursorType getCursorType(float x, float y) const
+    {
+        return CursorType.ibeam;
+    }
+
+    //===============================================================
+
+    /// Edit the content
+    protected void performOperation(SingleLineEditOperation op)
+        in(!readOnly)
+    {
+        LineRange rangeBefore = op.rangeBefore;
+        assert(rangeBefore.start <= rangeBefore.end);
+
+        dstring oldcontent = getRangeText(rangeBefore);
+        dstring newcontent = op.content;
+
+        LineRange rangeAfter = op.rangeBefore;
+        rangeAfter.end = rangeAfter.start + cast(int)newcontent.length;
+        assert(rangeAfter.start <= rangeAfter.end);
+        op.setNewRange(rangeAfter, oldcontent);
+        replaceRange(rangeBefore, newcontent);
+        _undoBuffer.push(op);
+        handleContentChange(rangeAfter.end);
+    }
+
+    final protected void replaceRange(LineRange before, dstring newContent)
+    {
+        const dstring head = 0 < before.start && before.start <= _str.length ? _str[0 .. before.start] : null;
+        const dstring tail = 0 <= before.end && before.end < _str.length ? _str[before.end .. $] : null;
+
+        _str = head ~ newContent ~ tail;
+    }
+
+    protected void handleContentChange(int posAfter)
+    {
+        _caretPos = posAfter;
+        _selectionRange = LineRange(posAfter, posAfter);
+        measureVisibleText();
+        ensureCaretVisible();
+        updateActions();
+        invalidate();
+        onChange(_str);
+        onCaretPosChange(_caretPos);
+        return;
+    }
+
+    final protected dstring applyPasswordChar(dstring s)
+    {
+        if (!s.length || !_passwordChar)
+            return s;
+        dchar[] ss = new dchar[s.length];
+        ss[] = _passwordChar;
+        return cast(dstring)ss;
+    }
+
+    //===============================================================
+    // Coordinate mapping, caret, and selection
+
+    protected Box textPosToClient(int p) const
+    {
+        Box b;
+        if (p <= 0)
+            b.x = 0;
+        else if (p >= _txtline.glyphCount)
+            b.x = _txtline.size.w;
+        else
+        {
+            foreach (ref fg; _txtline.glyphs[0 .. p])
+                b.x += fg.width;
+        }
+        b.x -= _scrollPos;
+        b.w = 1;
+        b.h = innerBox.h;
+        return b;
+    }
+
+    protected int clientToTextPos(Point pt) const
+    {
+        pt.x += _scrollPos;
+        const col = findClosestGlyphInRow(_txtline.glyphs, 0, pt.x);
+        return col != -1 ? col : _txtline.glyphCount;
+    }
+
+    protected void ensureCaretVisible()
+    {
+        const Box b = textPosToClient(_caretPos);
+        const oldpos = _scrollPos;
+        if (b.x < _spaceWidth * 4)
+        {
+            // scroll left
+            _scrollPos = max(_scrollPos + b.x - _spaceWidth * 4, 0);
+        }
+        else if (b.x > innerBox.w - _spaceWidth * 4)
+        {
+            // scroll right
+            _scrollPos += b.x - innerBox.w + _spaceWidth * 4;
+        }
+        _scrollPos = clamp(fullContentSize.w - innerBox.w, 0, _scrollPos);
+        if (oldpos != _scrollPos)
+            invalidate();
+    }
+
+    private
+    {
+        int _caretBlinkingInterval = 800;
+        ulong _caretTimerID;
+        bool _caretBlinkingPhase;
+        long _lastBlinkStartTs;
+        bool _caretBlinks = true;
+    }
+
+    protected void startCaretBlinking()
+    {
+        if (auto win = window)
+        {
+            static if (BACKEND_CONSOLE)
+            {
+                win.caretRect = caretRect;
+                win.caretReplace = _replaceMode;
+            }
+            else
+            {
+                const long ts = currentTimeMillis;
+                if (_caretTimerID)
+                {
+                    if (_lastBlinkStartTs + _caretBlinkingInterval / 4 > ts)
+                        return; // don't update timer too frequently
+                    win.cancelTimer(_caretTimerID);
+                }
+                _caretTimerID = setTimer(_caretBlinkingInterval / 2, {
+                    _caretBlinkingPhase = !_caretBlinkingPhase;
+                    if (!_caretBlinkingPhase)
+                        _lastBlinkStartTs = currentTimeMillis;
+                    invalidate();
+                    const bool repeat = focused;
+                    if (!repeat)
+                        _caretTimerID = 0;
+                    return repeat;
+                });
+                _lastBlinkStartTs = ts;
+                _caretBlinkingPhase = false;
+                invalidate();
+            }
+        }
+    }
+    protected void stopCaretBlinking()
+    {
+        if (auto win = window)
+        {
+            static if (BACKEND_CONSOLE)
+            {
+                win.caretRect = Rect.init;
+            }
+            else
+            {
+                if (_caretTimerID)
+                {
+                    win.cancelTimer(_caretTimerID);
+                    _caretTimerID = 0;
+                }
+            }
+        }
+    }
+
+    /// Returns cursor rectangle
+    protected Rect caretRect() const
+    {
+        assert(0 <= _caretPos && _caretPos <= lineLength);
+        Box caret = textPosToClient(_caretPos);
+        if (_replaceMode)
+        {
+            if (_caretPos < lineLength)
+                caret.w = textPosToClient(_caretPos + 1).x - caret.x;
+            else
+                caret.w = _spaceWidth;
+        }
+        caret.x += innerBox.x;
+        caret.y += innerBox.y;
+        return Rect(caret);
+    }
+    /// Draw caret
+    protected void drawCaret(Painter pr)
+    {
+        if (focused)
+        {
+            if (_caretBlinkingPhase && _caretBlinks)
+                return;
+
+            const Rect r = caretRect();
+            if (r.intersects(Rect(innerBox)))
+            {
+                if (_replaceMode && BACKEND_GUI)
+                    pr.fillRect(r.left, r.top, r.width, r.height, _caretColorReplace);
+                else
+                    pr.fillRect(r.left, r.top, 1, r.height, _caretColor);
+            }
+        }
+    }
+
+    /// When position is out of content bounds, fix it to nearest valid position
+    final void correctPosition(ref int position) const
+    {
+        position = clamp(position, 0, lineLength);
+    }
+    /// When range positions is out of content bounds or swapped, fix them to nearest valid position
+    final void correctRange(ref LineRange range) const
+    {
+        range.start = clamp(range.start, 0, lineLength);
+        range.end = clamp(range.end, range.start, lineLength);
+    }
+
+    /// Change caret position, fixing it to valid bounds, and ensure it is visible
+    void jumpTo(int pos, bool select = false)
+    {
+        correctPosition(pos);
+        if (_caretPos != pos)
+        {
+            const old = _caretPos;
+            _caretPos = pos;
+            updateSelectionAfterCursorMovement(old, select);
+            ensureCaretVisible();
+        }
+    }
+
+    protected void updateSelectionAfterCursorMovement(int oldCaretPos, bool selecting)
+    {
+        if (selecting)
+        {
+            if (oldCaretPos == _selectionRange.start)
+            {
+                if (_caretPos >= _selectionRange.end)
+                {
+                    _selectionRange.start = _selectionRange.end;
+                    _selectionRange.end = _caretPos;
+                }
+                else
+                {
+                    _selectionRange.start = _caretPos;
+                }
+            }
+            else if (oldCaretPos == _selectionRange.end)
+            {
+                if (_caretPos < _selectionRange.start)
+                {
+                    _selectionRange.end = _selectionRange.start;
+                    _selectionRange.start = _caretPos;
+                }
+                else
+                {
+                    _selectionRange.end = _caretPos;
+                }
+            }
+            else
+            {
+                if (oldCaretPos < _caretPos)
+                {
+                    // start selection forward
+                    _selectionRange.start = oldCaretPos;
+                    _selectionRange.end = _caretPos;
+                }
+                else
+                {
+                    // start selection backward
+                    _selectionRange.start = _caretPos;
+                    _selectionRange.end = oldCaretPos;
+                }
+            }
+        }
+        else
+            _selectionRange = LineRange(_caretPos, _caretPos);
+
+        invalidate();
+        updateActions();
+        onCaretPosChange(_caretPos);
+    }
+
+    protected void selectWordByMouse(float x, float y)
+    {
+        const int oldCaretPos = _caretPos;
+        const int newPos = clientToTextPos(Point(x, y));
+        const LineRange r = EditableContent.findWordBoundsInLine(_str, newPos);
+        if (!r.empty)
+        {
+            _selectionRange = r;
+            _caretPos = r.end;
+            invalidate();
+            updateActions();
+            onCaretPosChange(_caretPos);
+        }
+        else
+        {
+            _caretPos = newPos;
+            updateSelectionAfterCursorMovement(oldCaretPos, false);
+        }
+    }
+
+    protected void selectLineByMouse(float x, float y)
+    {
+        const int oldCaretPos = _caretPos;
+        const int newPos = clientToTextPos(Point(x, y));
+        const LineRange r = LineRange(0, lineLength);
+        if (!r.empty)
+        {
+            _selectionRange = r;
+            _caretPos = r.end;
+            invalidate();
+            updateActions();
+            onCaretPosChange(_caretPos);
+        }
+        else
+        {
+            _caretPos = newPos;
+            updateSelectionAfterCursorMovement(oldCaretPos, false);
+        }
+    }
+
+    protected void updateCaretPositionByMouse(float x, float y, bool selecting)
+    {
+        const int pos = clientToTextPos(Point(x, y));
+        jumpTo(pos, selecting);
+    }
+
+    /// Returns current selection text
+    dstring getSelectedText() const
+    {
+        return _selectionRange.start < _selectionRange.end ? _str[_selectionRange.start .. _selectionRange.end] : null;
+    }
+
+    /// Returns text from the specified range
+    dstring getRangeText(LineRange range) const
+    {
+        correctRange(range);
+        return range.start < range.end ? _str[range.start .. range.end] : null;
+    }
+
+    void replaceSelectionText(dstring newText)
+    {
+        performOperation(new SingleLineEditOperation(_selectionRange, newText));
+    }
+
+    protected bool removeSelectionText()
+    {
+        if (_selectionRange.empty)
+            return false;
+        // clear selection
+        performOperation(new SingleLineEditOperation(_selectionRange, null));
+        return true;
+    }
+
+    protected bool removeRangeText(LineRange range)
+    {
+        if (range.empty)
+            return false;
+        _selectionRange = range;
+        _caretPos = _selectionRange.start;
+        performOperation(new SingleLineEditOperation(range, null));
+        return true;
+    }
+
+    /// Change text position `p` to nearest word bound (direction < 0 - back, > 0 - forward)
+    protected int moveByWord(int p, int direction, bool camelCasePartsAsWords) const
+    {
+        import beamui.core.parseutils : isLowerWordChar, isUpperWordChar;
+
+        correctPosition(p);
+        const s = _str;
+        const len = cast(int)s.length;
+        if (direction < 0) // back
+        {
+            int found;
+            for (int i = p - 1; i > 0; i--)
+            {
+                // check if position i + 1 is after word end
+                dchar thischar = i >= 0 && i < len ? s[i] : ' ';
+                dchar nextchar = i - 1 >= 0 && i - 1 < len ? s[i - 1] : ' ';
+                if (thischar == '\t')
+                    thischar = ' ';
+                if (nextchar == '\t')
+                    nextchar = ' ';
+                if (EditableContent.isWordBound(thischar, nextchar) || (camelCasePartsAsWords &&
+                        isUpperWordChar(thischar) && isLowerWordChar(nextchar)))
+                {
+                    found = i;
+                    break;
+                }
+            }
+            p = found;
+        }
+        else if (direction > 0) // forward
+        {
+            int found = len;
+            for (int i = p; i < len; i++)
+            {
+                // check if position i + 1 is after word end
+                dchar thischar = s[i];
+                dchar nextchar = i < len - 1 ? s[i + 1] : ' ';
+                if (thischar == '\t')
+                    thischar = ' ';
+                if (nextchar == '\t')
+                    nextchar = ' ';
+                if (EditableContent.isWordBound(thischar, nextchar) || (camelCasePartsAsWords &&
+                        isLowerWordChar(thischar) && isUpperWordChar(nextchar)))
+                {
+                    found = i + 1;
+                    break;
+                }
+            }
+            p = found;
+        }
+        return p;
+    }
+
+    //===============================================================
+    // Actions
+
+    protected void bindActions()
+    {
+        debug (editors)
+            Log.d("Editor `", id, "`: bind actions");
+
+        ACTION_LINE_BEGIN.bind(this, { jumpTo(0, false); });
+        ACTION_LINE_END.bind(this, { jumpTo(lineLength, false); });
+        ACTION_DOCUMENT_BEGIN.bind(this, { jumpTo(0, false); });
+        ACTION_DOCUMENT_END.bind(this, { jumpTo(lineLength, false); });
+        ACTION_SELECT_LINE_BEGIN.bind(this, { jumpTo(0, true); });
+        ACTION_SELECT_LINE_END.bind(this, { jumpTo(lineLength, true); });
+        ACTION_SELECT_DOCUMENT_BEGIN.bind(this, { jumpTo(0, true); });
+        ACTION_SELECT_DOCUMENT_END.bind(this, { jumpTo(lineLength, true); });
+
+        ACTION_BACKSPACE.bind(this, &delPrevChar);
+        ACTION_DELETE.bind(this, &delNextChar);
+        ACTION_ED_DEL_PREV_WORD.bind(this, &delPrevWord);
+        ACTION_ED_DEL_NEXT_WORD.bind(this, &delNextWord);
+
+        ACTION_SELECT_ALL.bind(this, &selectAll);
+
+        ACTION_UNDO.bind(this, { undo(); });
+        ACTION_REDO.bind(this, { redo(); });
+
+        ACTION_CUT.bind(this, &cut);
+        ACTION_COPY.bind(this, &copy);
+        ACTION_PASTE.bind(this, &paste);
+
+        ACTION_ED_TOGGLE_REPLACE_MODE.bind(this, { replaceMode = !replaceMode; });
+    }
+
+    protected void unbindActions()
+    {
+        bunch(
+            ACTION_LINE_BEGIN,
+            ACTION_LINE_END,
+            ACTION_DOCUMENT_BEGIN,
+            ACTION_DOCUMENT_END,
+            ACTION_SELECT_LINE_BEGIN,
+            ACTION_SELECT_LINE_END,
+            ACTION_SELECT_DOCUMENT_BEGIN,
+            ACTION_SELECT_DOCUMENT_END,
+            ACTION_BACKSPACE,
+            ACTION_DELETE,
+            ACTION_ED_DEL_PREV_WORD,
+            ACTION_ED_DEL_NEXT_WORD,
+            ACTION_SELECT_ALL,
+            ACTION_UNDO,
+            ACTION_REDO,
+            ACTION_CUT,
+            ACTION_COPY,
+            ACTION_PASTE,
+            ACTION_ED_TOGGLE_REPLACE_MODE
+        ).unbind(this);
+    }
+
+    protected void updateActions()
+    {
+        debug (editors)
+            Log.d("Editor `", id, "`: update actions");
+
+        ACTION_UNDO.enabled = enabled && hasUndo;
+        ACTION_REDO.enabled = enabled && hasRedo;
+
+        ACTION_CUT.enabled = enabled && (copyCurrentLineWhenNoSelection || !_selectionRange.empty);
+        ACTION_COPY.enabled = copyCurrentLineWhenNoSelection || !_selectionRange.empty;
+        ACTION_PASTE.enabled = enabled && platform.hasClipboardText();
+    }
+
+    protected void delPrevChar()
+    {
+        if (readOnly)
+            return;
+        if (removeSelectionText())
+            return;
+        if (_caretPos > 0)
+            removeRangeText(LineRange(_caretPos - 1, _caretPos));
+    }
+    protected void delNextChar()
+    {
+        if (readOnly)
+            return;
+        if (removeSelectionText())
+            return;
+        if (_caretPos < lineLength)
+            removeRangeText(LineRange(_caretPos, _caretPos + 1));
+    }
+    protected void delPrevWord()
+    {
+        if (readOnly)
+            return;
+        if (removeSelectionText())
+            return;
+        const int newpos = moveByWord(_caretPos, -1, _camelCasePartsAsWords);
+        if (newpos < _caretPos)
+            removeRangeText(LineRange(newpos, _caretPos));
+    }
+    protected void delNextWord()
+    {
+        if (readOnly)
+            return;
+        if (removeSelectionText())
+            return;
+        const int newpos = moveByWord(_caretPos, 1, _camelCasePartsAsWords);
+        if (newpos > _caretPos)
+            removeRangeText(LineRange(_caretPos, newpos));
+    }
+
+    void cut()
+    {
+        if (readOnly)
+            return;
+        LineRange range = _selectionRange;
+        if (range.empty && copyCurrentLineWhenNoSelection)
+        {
+            range = LineRange(0, lineLength);
+        }
+        if (!range.empty)
+        {
+            dstring selectionText = getRangeText(range);
+            platform.setClipboardText(selectionText);
+            performOperation(new SingleLineEditOperation(range, null));
+        }
+    }
+
+    void copy()
+    {
+        LineRange range = _selectionRange;
+        if (range.empty && copyCurrentLineWhenNoSelection)
+        {
+            range = LineRange(0, lineLength);
+        }
+        if (!range.empty)
+        {
+            dstring selectionText = getRangeText(range);
+            platform.setClipboardText(selectionText);
+        }
+    }
+
+    void paste()
+    {
+        if (readOnly)
+            return;
+        dstring selectionText = platform.getClipboardText();
+        dstring line = replaceEOLsWithSpaces(selectionText);
+        performOperation(new SingleLineEditOperation(_selectionRange, line));
+    }
+
+    void deselect()
+    {
+        _selectionRange = LineRange(_caretPos, _caretPos);
+        invalidate();
+    }
+
+    void selectAll()
+    {
+        const r = LineRange(0, lineLength);
+        if (_selectionRange != r)
+        {
+            _selectionRange = r;
+            invalidate();
+            updateActions();
+        }
+        _caretPos = r.end;
+        ensureCaretVisible();
+    }
+
+    //===============================================================
+    // Undo/redo
+
+    /// Returns true if there is at least one operation in undo buffer
+    final @property bool hasUndo() const
+    {
+        return _undoBuffer.hasUndo;
+    }
+    /// Returns true if there is at least one operation in redo buffer
+    final @property bool hasRedo() const
+    {
+        return _undoBuffer.hasRedo;
+    }
+
+    /// Undoes last change
+    final bool undo()
+    {
+        if (!hasUndo || readOnly)
+            return false;
+
+        auto op = cast(SingleLineEditOperation)_undoBuffer.undo();
+        replaceRange(op.range, op.contentBefore);
+        handleContentChange(op.rangeBefore.end);
+        return true;
+    }
+    /// Redoes last undone change
+    final bool redo()
+    {
+        if (!hasRedo || readOnly)
+            return false;
+
+        auto op = cast(SingleLineEditOperation)_undoBuffer.redo();
+        replaceRange(op.rangeBefore, op.content);
+        handleContentChange(op.range.end);
+        return true;
+    }
+
+    /// Clear undo/redo history
+    final void clearUndo()
+    {
+        _undoBuffer.clear();
+    }
+
+    //===============================================================
+    // Events
+
+    override bool handleKeyEvent(KeyEvent event)
+    {
+        import std.ascii : isAlpha;
+
+        debug (keys)
+            Log.d("handleKeyEvent ", event.action, " ", event.key, ", mods ", event.allModifiers);
+
+        if (focused)
+            startCaretBlinking();
+
+        const bool noOtherModifiers = !event.alteredBy(KeyMods.alt | KeyMods.meta);
+        if (event.action == KeyAction.keyDown && noOtherModifiers)
+        {
+            const bool shiftPressed = event.alteredBy(KeyMods.shift);
+            const bool controlPressed = event.alteredBy(KeyMods.control);
+            if (event.key == Key.left)
+            {
+                int pos = _caretPos;
+                if (!controlPressed)
+                {
+                    // move cursor one char left
+                    if (pos > 0)
+                        pos--;
+                }
+                else
+                {
+                    // move cursor one word left
+                    pos = moveByWord(pos, -1, _camelCasePartsAsWords);
+                }
+                // with selection when Shift is pressed
+                jumpTo(pos, shiftPressed);
+                return true;
+            }
+            if (event.key == Key.right)
+            {
+                int pos = _caretPos;
+                if (!controlPressed)
+                {
+                    // move cursor one char right
+                    if (pos < lineLength)
+                        pos++;
+                }
+                else
+                {
+                    // move cursor one word right
+                    pos = moveByWord(pos, 1, _camelCasePartsAsWords);
+                }
+                // with selection when Shift is pressed
+                jumpTo(pos, shiftPressed);
+                return true;
+            }
+            if (onEnterKeyPress.assigned)
+            {
+                if (event.key == Key.enter && event.noModifiers)
+                {
+                    if (onEnterKeyPress())
+                        return true;
+                }
+            }
+            if (event.key == Key.tab && event.noModifiers)
+            {
+                if (wantTabs && !readOnly)
+                {
+                    // insert a tab character
+                    performOperation(new SingleLineEditOperation(_selectionRange, "\t"d));
+                    return true;
+                }
+            }
+        }
+
+        const bool noCtrlPressed = !event.alteredBy(KeyMods.control);
+        if (event.action == KeyAction.text && event.text.length && noCtrlPressed)
+        {
+            debug (editors)
+                Log.d("text entered: ", event.text);
+            if (readOnly)
+                return true;
+            if (!(event.alteredBy(KeyMods.alt) && event.text.length == 1 && isAlpha(event.text[0])))
+            { // filter out Alt+A..Z
+                if (replaceMode && _selectionRange.empty && lineLength >= _caretPos + event.text.length)
+                {
+                    // replace next char(s)
+                    LineRange range = _selectionRange;
+                    range.end += cast(int)event.text.length;
+                    performOperation(new SingleLineEditOperation(range, event.text));
+                }
+                else
+                {
+                    performOperation(new SingleLineEditOperation(_selectionRange, event.text));
+                }
+                return true;
+            }
+        }
+        return super.handleKeyEvent(event);
+    }
+
+    override bool handleMouseEvent(MouseEvent event)
+    {
+        debug (mouse)
+            Log.d("mouse event: ", id, " ", event.action, "  (", event.x, ",", event.y, ")");
+
+        if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
+        {
+            setFocus();
+            const x = event.x - innerBox.x;
+            const y = event.y - innerBox.y;
+            if (event.tripleClick)
+            {
+                selectLineByMouse(x, y);
+            }
+            else if (event.doubleClick)
+            {
+                selectWordByMouse(x, y);
+            }
+            else
+            {
+                const bool doSelect = event.alteredBy(KeyMods.shift);
+                updateCaretPositionByMouse(x, y, doSelect);
+            }
+            startCaretBlinking();
+            return true;
+        }
+        if (event.action == MouseAction.move && event.alteredByButton(MouseButton.left))
+        {
+            const x = event.x - innerBox.x;
+            const y = event.y - innerBox.y;
+            updateCaretPositionByMouse(x, y, true);
+            return true;
+        }
+        return super.handleMouseEvent(event);
+    }
+
+    //===============================================================
+
+    protected Size measureVisibleText()
+    {
+        _txtline.str = applyPasswordChar(_str);
+        _txtline.measured = false;
+        auto tlstyle = TextLayoutStyle(_txtStyle);
+        assert(!tlstyle.wrap);
+        _txtline.measure(tlstyle);
+        return _txtline.size;
+    }
+
+    override protected void adjustBoundaries(ref Boundaries bs)
+    {
+        const sz = _minSizeTester.getSize();
+        bs.min += sz;
+        bs.nat += sz;
+    }
+
+    override void layout(Box geom)
+    {
+        if (visibility == Visibility.gone)
+            return;
+
+        setBox(geom);
+
+        // ensure that scroll position is inside min/max area,
+        // move back after window or widget resize
+        _scrollPos = clamp(fullContentSize.w - innerBox.w, 0, _scrollPos);
+    }
+
+    final override protected void drawContent(Painter pr)
+    {
+        // apply clipping
+        pr.clipIn(BoxI.from(innerBox));
+
+        const b = innerBox;
+        drawLineBackground(pr, b, b);
+
+        if (_txtline.glyphCount == 0)
+        {
+            // draw the placeholder when no text
+            if (auto ph = _placeholder)
+            {
+                const ComputedStyle* st = style;
+                ph.style.alignment = st.textAlign;
+                ph.style.decoration.line = st.textDecorLine;
+                ph.style.decoration.color = ph.style.color;
+                ph.style.decoration.style = st.textDecorStyle;
+                ph.style.overflow = st.textOverflow;
+                ph.style.tabSize = st.tabSize;
+                ph.style.transform = st.textTransform;
+                ph.draw(pr, b.x - _scrollPos, b.y, b.w);
+            }
+        }
+        else
+        {
+            const ComputedStyle* st = style;
+            _txtStyle.alignment = st.textAlign;
+            _txtStyle.color = st.textColor;
+            _txtStyle.decoration = st.textDecor;
+            _txtStyle.overflow = st.textOverflow;
+            _txtline.draw(pr, b.x - _scrollPos, b.y, b.w, _txtStyle);
+        }
+
+        drawCaret(pr);
+    }
+
+    /// Override for custom highlighting of the line background
+    protected void drawLineBackground(Painter pr, Box lineBox, Box visibleBox)
+    {
+        if (_selectionRange.empty)
+            return;
+
+        // draw selection
+        const start = textPosToClient(_selectionRange.start).x;
+        const end = textPosToClient(_selectionRange.end).x;
+        Box b = lineBox;
+        b.x = start + innerBox.x;
+        b.w = end - start;
+        if (!b.empty)
+        {
+            const color = focused ? _selectionColorFocused : _selectionColorNormal;
+            pr.fillRect(b.x, b.y, b.w, b.h, color);
+        }
     }
 }
 
@@ -1399,216 +2499,6 @@ class EditWidgetBase : ScrollAreaBase, IEditor, ActionOperator
     protected void drawLeftPane(Painter pr, Rect rc, int line)
     {
         // override for custom drawn left pane
-    }
-}
-
-/// Single line editor
-class EditLine : EditWidgetBase
-{
-    @property
-    {
-        /// Password character - 0 for normal editor, some character
-        /// e.g. '*' to hide text by replacing all characters with this char
-        dchar passwordChar() const { return _passwordChar; }
-        /// ditto
-        void passwordChar(dchar ch)
-        {
-            if (_passwordChar != ch)
-            {
-                _passwordChar = ch;
-                requestLayout();
-            }
-        }
-
-        override Size fullContentSize() const
-        {
-            Size sz = _txtline.size;
-            sz.w += clientBox.w / 16;
-            return sz;
-        }
-    }
-
-    /// Handle Enter key press inside line editor
-    Signal!(bool delegate()) onEnterKeyPress; // FIXME: better name
-
-    private
-    {
-        dchar _passwordChar = 0;
-
-        TextLine _txtline;
-    }
-
-    this(dstring initialContent = null)
-    {
-        super(ScrollBarMode.hidden, ScrollBarMode.hidden);
-        _content = new EditableContent(false);
-        _content.onContentChange ~= &handleContentChange;
-        _selectAllWhenFocusedWithTab = true;
-        _deselectAllWhenUnfocused = true;
-        wantTabs = false;
-        text = initialContent;
-        _minSizeTester.str = "aaaaa"d;
-        handleThemeChange();
-    }
-
-    override protected Box textPosToClient(TextPosition p) const
-    {
-        Box b;
-        if (p.pos <= 0)
-            b.x = 0;
-        else if (p.pos >= _txtline.glyphCount)
-            b.x = _txtline.size.w;
-        else
-        {
-            foreach (ref fg; _txtline.glyphs[0 .. p.pos])
-                b.x += fg.width;
-        }
-        b.x -= scrollPos.x;
-        b.w = 1;
-        b.h = clientBox.h;
-        return b;
-    }
-
-    override protected TextPosition clientToTextPos(Point pt) const
-    {
-        pt.x += scrollPos.x;
-        const col = findClosestGlyphInRow(_txtline.glyphs, 0, pt.x);
-        return TextPosition(0, col != -1 ? col : _txtline.glyphCount);
-    }
-
-    override protected void ensureCaretVisible(bool center = false)
-    {
-        const Box b = textPosToClient(_caretPos);
-        const oldpos = scrollPos.x;
-        if (b.x < 0)
-        {
-            // scroll left
-            scrollPos.x = max(scrollPos.x + b.x - clientBox.w / 10, 0);
-        }
-        else if (b.x >= clientBox.w - 10)
-        {
-            // scroll right
-            scrollPos.x += (b.x - clientBox.w) + _spaceWidth * 4;
-        }
-        if (oldpos != scrollPos.x)
-            invalidate();
-        updateScrollBars();
-        handleEditorStateChange();
-    }
-
-    protected dstring applyPasswordChar(dstring s)
-    {
-        if (!_passwordChar || s.length == 0)
-            return s;
-        dchar[] ss = s.dup;
-        foreach (ref ch; ss)
-            ch = _passwordChar;
-        return cast(dstring)ss;
-    }
-
-    override bool handleKeyEvent(KeyEvent event)
-    {
-        if (onEnterKeyPress.assigned)
-        {
-            if (event.key == Key.enter && event.noModifiers)
-            {
-                if (event.action == KeyAction.keyDown)
-                {
-                    if (onEnterKeyPress())
-                        return true;
-                }
-            }
-        }
-        if (event.action == KeyAction.keyDown && event.key == Key.tab && event.noModifiers)
-        {
-            if (wantTabs && !readOnly)
-            {
-                // insert a tab character
-                auto op = new EditOperation(EditAction.replace, _selectionRange, ["\t"d]);
-                _content.performOperation(op, this);
-                return true;
-            }
-        }
-        return super.handleKeyEvent(event);
-    }
-
-    override protected void adjustBoundaries(ref Boundaries bs)
-    {
-        measureVisibleText();
-        _minSizeTester.style.tabSize = _content.tabSize;
-        const sz = _minSizeTester.getSize() + Size(_leftPaneWidth, 0);
-        bs.min += sz;
-        bs.nat += sz;
-    }
-
-    override protected Size measureVisibleText()
-    {
-        _txtline.str = applyPasswordChar(text);
-        _txtline.measured = false;
-        auto tlstyle = TextLayoutStyle(_txtStyle);
-        assert(!tlstyle.wrap);
-        _txtline.measure(tlstyle);
-        return _txtline.size;
-    }
-
-    override void layout(Box geom)
-    {
-        if (visibility == Visibility.gone)
-            return;
-
-        super.layout(geom);
-        clientBox = innerBox;
-
-        if (_contentChanged)
-        {
-            measureVisibleText();
-            _contentChanged = false;
-        }
-    }
-
-    /// Override to custom highlight of line background
-    protected void drawLineBackground(Painter pr, Box lineBox, Box visibleBox)
-    {
-        if (!_selectionRange.empty)
-        {
-            // line inside selection
-            const start = textPosToClient(_selectionRange.start).x;
-            const end = textPosToClient(_selectionRange.end).x;
-            Box b = lineBox;
-            b.x = start + clientBox.x;
-            b.w = end - start;
-            if (!b.empty)
-            {
-                // draw selection rect for line
-                const color = focused ? _selectionColorFocused : _selectionColorNormal;
-                pr.fillRect(b.x, b.y, b.w, b.h, color);
-            }
-            if (_leftPaneWidth > 0)
-            {
-                Rect leftPaneRect = visibleBox;
-                leftPaneRect.right = leftPaneRect.left;
-                leftPaneRect.left -= _leftPaneWidth;
-                drawLeftPane(pr, leftPaneRect, 0);
-            }
-        }
-    }
-
-    override protected void drawClient(Painter pr)
-    {
-        // already clipped by the client box
-        const b = clientBox;
-        drawLineBackground(pr, b, b);
-
-        if (_txtline.glyphCount == 0)
-        {
-            // draw the placeholder when no text
-            if (auto ph = _placeholder)
-                ph.draw(pr, b.x - scrollPos.x, b.y, b.w);
-        }
-        else
-            _txtline.draw(pr, b.x - scrollPos.x, b.y, b.w, _txtStyle);
-
-        drawCaret(pr);
     }
 }
 
@@ -3459,7 +4349,7 @@ class FindPanel : Panel
         }
 
         _edFind.onEnterKeyPress ~= { findNext(_backDirection); return true; };
-        _edFind.onContentChange ~= &handleFindTextChange;
+        _edFind.onChange ~= &handleFindTextChange;
 
         _btnFindNext.onClick ~= { findNext(false); };
         _btnFindPrev.onClick ~= { findNext(true); };
@@ -3486,10 +4376,7 @@ class FindPanel : Panel
     void activate()
     {
         _edFind.setFocus();
-        const currentText = _edFind.text;
-        debug (editors)
-            Log.d("activate.currentText=", currentText);
-        _edFind.jumpTo(0, cast(int)currentText.length);
+        _edFind.jumpTo(_edFind.lineLength);
     }
 
     void close()
@@ -3615,7 +4502,7 @@ class FindPanel : Panel
         _editor.setTextToHighlight(currentText, makeSearchOptions());
     }
 
-    void handleFindTextChange(EditableContent source)
+    void handleFindTextChange(dstring str)
     {
         debug (editors)
             Log.d("handleFindTextChange");

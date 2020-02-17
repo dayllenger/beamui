@@ -630,9 +630,8 @@ void main()
         auto sourceEditor1 = new SourceEdit;
         auto sourceEditor2 = new SourceEdit;
 
-        auto editLineControl = createBaseEditorSettingsControl(editLine);
-        auto editorControl = createBaseEditorSettingsControl(sourceEditor1)
-            .addSourceEditorControls(sourceEditor1);
+        auto editLineControl = createEditLineSettingsControl(editLine);
+        auto editorControl = createSourceEditorSettingsControl(sourceEditor1);
 
     with (frame) {
         style.display = "column";
@@ -657,49 +656,59 @@ void main()
     return frame;
 }
 
-Widget createBaseEditorSettingsControl(EditWidgetBase editor)
+Widget createEditLineSettingsControl(EditLine editor)
 {
     auto row = new Panel;
-    auto cb1 = new CheckBox("Catch tabs");
-    auto cb2 = new CheckBox("Read only");
-    auto cb3 = new CheckBox("Fixed font");
-    auto cb4 = new CheckBox("Tab size 8");
+    auto cb1 = new CheckBox("Read only");
+    auto cb2 = new CheckBox("Catch tabs");
+    auto cb3 = new CheckBox("Tab size 8");
+    auto cb4 = new CheckBox("Fixed font");
     row.add(cb1, cb2, cb3, cb4);
     row.style.display = "row";
 
-    cb1.checked = editor.wantTabs;
-    cb2.checked = editor.readOnly;
-    cb3.checked = editor.style.fontFamily == FontFamily.monospace;
-    cb4.checked = editor.tabSize == 8;
-    cb1.onToggle ~= (checked) { editor.wantTabs = checked; };
-    cb2.onToggle ~= (checked) { editor.readOnly = checked; };
-    cb3.onToggle ~= (checked) {
-        if (checked)
-        {
-            editor.style.fontFace = "Courier New";
-            editor.style.fontFamily = FontFamily.monospace;
-        }
-        else
-        {
-            editor.style.fontFace = "Arial";
-            editor.style.fontFamily = FontFamily.sans_serif;
-        }
+    cb1.checked = editor.readOnly;
+    cb2.checked = editor.wantTabs;
+    cb3.checked = editor.style.tabSize == 8;
+    cb4.checked = editor.style.fontFamily == FontFamily.monospace;
+    cb1.onToggle ~= &editor.readOnly;
+    cb2.onToggle ~= (checked) { editor.wantTabs = checked; };
+    cb3.onToggle ~= (checked) { editor.style.tabSize = checked ? 8 : 4; };
+    cb4.onToggle ~= (checked) {
+        editor.style.fontFace = checked ? "Courier New" : "Arial";
+        editor.style.fontFamily = checked ? FontFamily.monospace : FontFamily.sans_serif;
     };
-    cb4.onToggle ~= (checked) { editor.tabSize(checked ? 8 : 4); };
 
     return row;
 }
 
-Widget addSourceEditorControls(Widget base, SourceEdit editor)
+Widget createSourceEditorSettingsControl(SourceEdit editor)
 {
-    auto cb1 = new CheckBox("Use spaces for indentation");
-    auto cb2 = new CheckBox("Show line numbers");
-    base.add(cb1, cb2);
-    cb1.checked = editor.useSpacesForTabs;
-    cb2.checked = editor.showLineNumbers;
-    cb1.onToggle ~= (checked) { editor.useSpacesForTabs = checked; };
-    cb2.onToggle ~= (checked) { editor.showLineNumbers = checked; };
-    return base;
+    auto row = new Panel;
+    auto cb1 = new CheckBox("Read only");
+    auto cb2 = new CheckBox("Catch tabs");
+    auto cb3 = new CheckBox("Tab size 8");
+    auto cb4 = new CheckBox("Use spaces for indentation");
+    auto cb5 = new CheckBox("Show line numbers");
+    auto cb6 = new CheckBox("Fixed font");
+    row.add(cb1, cb2, cb3, cb4, cb5, cb6);
+    row.style.display = "row";
+
+    cb1.checked = editor.readOnly;
+    cb2.checked = editor.wantTabs;
+    cb3.checked = editor.tabSize == 8;
+    cb4.checked = editor.useSpacesForTabs;
+    cb5.checked = editor.showLineNumbers;
+    cb6.checked = editor.style.fontFamily == FontFamily.monospace;
+    cb1.onToggle ~= &editor.readOnly;
+    cb2.onToggle ~= (checked) { editor.wantTabs = checked; };
+    cb3.onToggle ~= (checked) { editor.tabSize = checked ? 8 : 4; };
+    cb4.onToggle ~= &editor.useSpacesForTabs;
+    cb5.onToggle ~= &editor.showLineNumbers;
+    cb6.onToggle ~= (checked) {
+        editor.style.fontFace = checked ? "Courier New" : "Arial";
+        editor.style.fontFamily = checked ? FontFamily.monospace : FontFamily.sans_serif;
+    };
+    return row;
 }
 
 /// Simple charts

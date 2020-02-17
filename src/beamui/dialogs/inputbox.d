@@ -19,19 +19,19 @@ import beamui.platforms.common.platform;
 /// Input box
 class InputBox : Dialog
 {
-    override @property dstring text() const { return _text; }
+    override @property dstring text() const { return _editor.text; }
 
     override @property void text(dstring txt)
     {
-        _text = txt;
+        _editor.text = txt;
     }
 
     private
     {
         dstring _message;
         Action[] _actions;
+        dstring _initialText;
         EditLine _editor;
-        dstring _text;
     }
 
     this(dstring caption, dstring message, Window parentWindow, dstring initialText,
@@ -42,13 +42,13 @@ class InputBox : Dialog
         _message = message;
         _actions = [ACTION_OK, ACTION_CANCEL];
         _defaultButtonIndex = 0;
-        _text = initialText;
+        _initialText = initialText;
         if (handler)
         {
             onClose ~= (const Action action) {
                 if (action is ACTION_OK)
                 {
-                    handler(_text);
+                    handler(text);
                 }
             };
         }
@@ -57,12 +57,11 @@ class InputBox : Dialog
     override void initialize()
     {
         auto msg = new Label(_message);
-        _editor = new EditLine(_text);
+        _editor = new EditLine(_initialText);
         _editor.onEnterKeyPress ~= {
             closeWithDefaultAction();
             return true;
         };
-        _editor.onContentChange ~= (EditableContent content) { _text = content.text; };
         _editor.popupMenu = EditLine.createDefaultPopupMenu();
         add(msg, _editor, createButtonsPanel(_actions, _defaultButtonIndex, 0));
     }
