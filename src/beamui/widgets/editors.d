@@ -211,9 +211,12 @@ class EditLine : Widget, IEditor, ActionOperator
         /// ditto
         override void text(dstring txt)
         {
-            clearUndo();
-            _str = replaceEOLsWithSpaces(txt);
-            handleContentChange(0);
+            if (_str != txt)
+            {
+                txt = replaceEOLsWithSpaces(txt);
+                const r = LineRange(0, lineLength);
+                performOperation(new SingleLineEditOperation(r, txt));
+            }
         }
 
         dstring placeholder() const
@@ -486,8 +489,8 @@ class EditLine : Widget, IEditor, ActionOperator
 
     protected void handleContentChange(int posAfter)
     {
-        _caretPos = posAfter;
-        _selectionRange = LineRange(posAfter, posAfter);
+        _caretPos = min(posAfter, lineLength);
+        _selectionRange = LineRange(_caretPos, _caretPos);
         measureVisibleText();
         ensureCaretVisible();
         updateActions();
