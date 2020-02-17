@@ -10,7 +10,7 @@ module beamui.graphics.colors;
 nothrow:
 
 import std.string : strip;
-import std.traits : isIntegral;
+import std.traits : EnumMembers, isIntegral;
 import beamui.core.functions : clamp, collectException, to;
 import beamui.core.logger;
 import beamui.core.parseutils;
@@ -430,23 +430,24 @@ Result!Color decodeHexColor(string s)
     return Ok(Color(value & 0xFFFFFF, alpha));
 }
 
-/// Decode named color either from `NamedColor` enum, `@null`, `none`, or `transparent`
+/// Decode a table color (lowercase, without underscores), `none`, or `transparent`
 Result!Color decodeTextColor(string s)
 {
+    import std.array : join, split;
+
     collectException(strip(s), s);
-    if (s == "@null" || s == "none" || s == "transparent")
+    if (s.length == 0)
+        return Err!Color;
+    if (s == "none" || s == "transparent")
         return Ok(Color.transparent);
 
-    try
+    foreach (i, c; EnumMembers!NamedColor)
     {
-        Color c = to!NamedColor(s);
-        return Ok(c);
+        enum name = join(split(__traits(allMembers, NamedColor)[i], '_'));
+        if (s == name)
+            return Ok(cast(Color)c);
     }
-    catch (Exception e) // not a named color
-    {
-        debug Log.e("Unknown color value: ", s);
-        return Err!Color;
-    }
+    return Err!Color;
 }
 
 /// Convert opacity [0, 1] color to [0, 255] alpha color (0 - fully transparent, 255 - fully opaque)
@@ -497,4 +498,30 @@ uint blendAlpha(uint a1, uint a2)
 ubyte blendGray(ubyte dst, ubyte src, uint alpha)
 {
     return ((src * (255 - alpha) + dst * alpha) >> 8) & 0xFF;
+}
+
+//===============================================================
+// Tests
+
+unittest
+{
+    assert(decodeHexColor("#fff").val == Color.white);
+    assert(decodeHexColor("#000").val == Color.black);
+    assert(decodeHexColor("#5ab").val == Color(0x55AABB));
+    assert(decodeHexColor("#aabbcc").val == Color(0xAABBCC));
+    assert(decodeHexColor("#553311").val == Color(0x553311));
+    assert(decodeHexColor("#ff00ff00").val == Color(0x00FF00));
+    assert(decodeHexColor("#00aabbcc").val == Color(0xAABBCC, 0x0));
+}
+
+unittest
+{
+    assert(decodeTextColor("  white  "));
+    assert(decodeTextColor("green"));
+    assert(decodeTextColor("darkseagreen"));
+    assert(decodeTextColor("forestgreen"));
+
+    assert(!decodeTextColor("123"));
+    assert(!decodeTextColor("     "));
+    assert(!decodeTextColor("forest_green"));
 }

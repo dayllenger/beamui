@@ -1499,12 +1499,14 @@ Result!Color decode(T : Color)(ref const(Token)[] tokens)
     if (t.type == TokenType.hash)
     {
         tokens = tokens[1 .. $];
-        return decodeHexColor("#" ~ t.text);
+        if (const res = decodeHexColor("#" ~ t.text))
+            return res;
     }
     if (t.type == TokenType.ident)
     {
         tokens = tokens[1 .. $];
-        return decodeTextColor(t.text);
+        if (const res = decodeTextColor(t.text))
+            return res;
     }
     if (t.type == TokenType.func)
     {
@@ -1528,7 +1530,7 @@ Result!Color decode(T : Color)(ref const(Token)[] tokens)
         }
         if (!closed)
         {
-            Log.fe("CSS(%s): expected closing parenthesis", t.line);
+            Log.fe("CSS(%d): expected closing parenthesis", t.line);
             return Err!Color;
         }
         if (argsCount > 4)
@@ -1596,6 +1598,7 @@ Result!Color decode(T : Color)(ref const(Token)[] tokens)
             return Err!Color;
         }
     }
+    unknown("color", t);
     return Err!Color;
 }
 
