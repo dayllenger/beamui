@@ -143,26 +143,78 @@ void initStandardEditorActions()
     ).context(ActionContext.widgetTree);
 }
 
-/// Base for all text editor widgets
-class EditWidgetBase : ScrollAreaBase, ActionOperator
+/// Common interface for single- and multiline editors
+interface IEditor
 {
     @property
     {
-        /// Readonly flag (when true, user cannot change content of editor)
+        /// Text as a string
+        dstring text() const;
+        /// ditto
+        void text(dstring txt);
+
+        /// Placeholder is a short peace of text that describe expected value in an input field
+        dstring placeholder() const;
+        /// ditto
+        void placeholder(dstring txt);
+
+        dstring minSizeTester() const;
+        /// ditto
+        void minSizeTester(dstring txt);
+
+        /// When true, user cannot change content of the editor
+        bool readOnly() const;
+        /// ditto
+        void readOnly(bool flag);
+
+        /// When true, entered character replaces the character under cursor
+        bool replaceMode() const;
+        /// ditto
+        void replaceMode(bool flag);
+
+        /// When true, enables caret blinking, otherwise it's always visible
+        bool enableCaretBlinking() const;
+        /// ditto
+        void enableCaretBlinking(bool flag);
+    }
+
+    /// Copy currently selected text into clipboard
+    void copy();
+    /// Cut currently selected text into clipboard
+    void cut();
+    /// Replace currently selected text with clipboard content
+    void paste();
+
+    /// Clear selection (doesn't change the text, just deselects)
+    void deselect();
+    /// Select the whole text
+    void selectAll();
+
+    /// Create the default popup menu with undo/redo/cut/copy/paste actions
+    static Menu createDefaultPopupMenu()
+    {
+        auto menu = new Menu;
+        menu.add(ACTION_UNDO, ACTION_REDO, ACTION_CUT, ACTION_COPY, ACTION_PASTE);
+        return menu;
+    }
+}
+
+/// Base for all text editor widgets
+class EditWidgetBase : ScrollAreaBase, IEditor, ActionOperator
+{
+    @property
+    {
         bool readOnly() const
         {
             return !enabled || _content.readOnly;
         }
-        /// ditto
         void readOnly(bool on)
         {
             enabled = !on;
             invalidate();
         }
 
-        /// Replace mode flag (when true, entered character replaces character under cursor)
         bool replaceMode() const { return _replaceMode; }
-        /// ditto
         void replaceMode(bool on)
         {
             _replaceMode = on;
@@ -203,19 +255,16 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         {
             return _minSizeTester.str;
         }
-        /// ditto
         void minSizeTester(dstring txt)
         {
             _minSizeTester.str = txt;
             requestLayout();
         }
 
-        /// Placeholder is a short peace of text that describe expected value in an input field
         dstring placeholder() const
         {
             return _placeholder ? _placeholder.str : null;
         }
-        /// ditto
         void placeholder(dstring txt)
         {
             if (!_placeholder)
@@ -328,7 +377,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             cancelHoverTimer();
 
             if (_deselectAllWhenUnfocused)
-                clearSelectionInternal();
+                deselectInternal();
         }
         if (focused && _selectAllWhenFocusedWithTab && receivedFocusFromKeyboard)
             selectAll();
@@ -483,7 +532,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             {
                 // fully replaced, e.g., loaded from file or text property is assigned
                 _caretPos = rangeAfter.end;
-                clearSelectionInternal();
+                deselectInternal();
                 measureVisibleText();
                 ensureCaretVisible();
                 correctCaretPos();
@@ -498,7 +547,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             {
                 // modified
                 _caretPos = rangeAfter.end;
-                clearSelectionInternal();
+                deselectInternal();
                 measureVisibleText();
                 ensureCaretVisible();
                 updateActions();
@@ -569,10 +618,8 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             handleEditorStateChange();
         }
 
-        /// When true, enables caret blinking, otherwise it's always visible
-        bool showCaretBlinking() const { return _caretBlinks; }
-        /// ditto
-        void showCaretBlinking(bool blinks)
+        bool enableCaretBlinking() const { return _caretBlinks; }
+        void enableCaretBlinking(bool blinks)
         {
             _caretBlinks = blinks;
         }
@@ -620,7 +667,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
                 {
                     if (_lastBlinkStartTs + _caretBlinkingInterval / 4 > ts)
                         return; // don't update timer too frequently
-                    cancelTimer(_caretTimerID);
+                    win.cancelTimer(_caretTimerID);
                 }
                 _caretTimerID = setTimer(_caretBlinkingInterval / 2, {
                     _caretBlinkingPhase = !_caretBlinkingPhase;
@@ -651,7 +698,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             {
                 if (_caretTimerID)
                 {
-                    cancelTimer(_caretTimerID);
+                    win.cancelTimer(_caretTimerID);
                     _caretTimerID = 0;
                 }
             }
@@ -709,7 +756,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _content.correctPosition(_selectionRange.start);
         _content.correctPosition(_selectionRange.end);
         if (_selectionRange.empty)
-            clearSelectionInternal();
+            deselectInternal();
         if (oldCaretPos != _caretPos)
             handleEditorStateChange();
     }
@@ -759,7 +806,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
             }
         }
         else
-            clearSelectionInternal();
+            deselectInternal();
         invalidate();
         updateActions();
         handleEditorStateChange();
@@ -832,7 +879,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _content.performOperation(op, this);
     }
 
-    protected bool removeSelectionTextIfSelected()
+    protected bool removeSelectionText()
     {
         if (_selectionRange.empty)
             return false;
@@ -860,14 +907,13 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         return _content.lineRange(_caretPos.line);
     }
 
-    /// Clear selection (doesn't change text, just deselects)
-    void clearSelection()
+    void deselect()
     {
         _selectionRange = TextRange(_caretPos, _caretPos);
         invalidate();
     }
 
-    private void clearSelectionInternal()
+    private void deselectInternal()
     {
         _selectionRange = TextRange(_caretPos, _caretPos);
     }
@@ -997,7 +1043,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         if (readOnly)
             return;
         correctCaretPos();
-        if (removeSelectionTextIfSelected()) // clear selection
+        if (removeSelectionText())
             return;
         if (_caretPos.pos > 0)
         {
@@ -1020,7 +1066,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         if (readOnly)
             return;
         correctCaretPos();
-        if (removeSelectionTextIfSelected()) // clear selection
+        if (removeSelectionText())
             return;
         if (_caretPos.pos < currentLineLength)
         {
@@ -1043,7 +1089,7 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         if (readOnly)
             return;
         correctCaretPos();
-        if (removeSelectionTextIfSelected()) // clear selection
+        if (removeSelectionText())
             return;
         const TextPosition newpos = _content.moveByWord(_caretPos, -1, _camelCasePartsAsWords);
         if (newpos < _caretPos)
@@ -1054,14 +1100,13 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         if (readOnly)
             return;
         correctCaretPos();
-        if (removeSelectionTextIfSelected()) // clear selection
+        if (removeSelectionText())
             return;
         const TextPosition newpos = _content.moveByWord(_caretPos, 1, _camelCasePartsAsWords);
         if (newpos > _caretPos)
             removeRangeText(TextRange(_caretPos, newpos));
     }
 
-    /// Cut currently selected text into clipboard
     void cut()
     {
         if (readOnly)
@@ -1080,7 +1125,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
     }
 
-    /// Copy currently selected text into clipboard
     void copy()
     {
         TextRange range = _selectionRange;
@@ -1095,7 +1139,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         }
     }
 
-    /// Replace currently selected text with clipboard content
     void paste()
     {
         if (readOnly)
@@ -1114,7 +1157,6 @@ class EditWidgetBase : ScrollAreaBase, ActionOperator
         _content.performOperation(op, this);
     }
 
-    /// Select whole text
     void selectAll()
     {
         _selectionRange.start.line = 0;
@@ -1407,14 +1449,6 @@ class EditLine : EditWidgetBase
         text = initialContent;
         _minSizeTester.str = "aaaaa"d;
         handleThemeChange();
-    }
-
-    /// Set default popup menu with copy/paste/cut/undo/redo
-    EditLine setDefaultPopupMenu()
-    {
-        popupMenu = new Menu;
-        popupMenu.add(ACTION_UNDO, ACTION_REDO, ACTION_CUT, ACTION_COPY, ACTION_PASTE);
-        return this;
     }
 
     override protected Box textPosToClient(TextPosition p) const

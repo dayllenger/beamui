@@ -63,7 +63,7 @@ class InputBox : Dialog
             return true;
         };
         _editor.onContentChange ~= (EditableContent content) { _text = content.text; };
-        _editor.setDefaultPopupMenu();
+        _editor.popupMenu = EditLine.createDefaultPopupMenu();
         add(msg, _editor, createButtonsPanel(_actions, _defaultButtonIndex, 0));
     }
 

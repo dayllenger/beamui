@@ -789,7 +789,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 }
                 with (_edFilename) {
                     setAttribute("filename");
-                    setDefaultPopupMenu();
+                    popupMenu = EditLine.createDefaultPopupMenu();
                 }
             }
         }
@@ -1123,7 +1123,7 @@ class FilePathPanel : Panel
 
     void setDefaultPopupMenu()
     {
-        _edPath.setDefaultPopupMenu();
+        _edPath.popupMenu = EditLine.createDefaultPopupMenu();
     }
 
     protected void handleEditorFocusChanged(bool focused)
@@ -1280,7 +1280,7 @@ class FileNameEditLine : Panel
 
     void setDefaultPopupMenu()
     {
-        _edFileName.setDefaultPopupMenu();
+        _edFileName.popupMenu = EditLine.createDefaultPopupMenu();
     }
 
     /// Add new filter entry
