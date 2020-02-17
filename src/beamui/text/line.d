@@ -445,7 +445,7 @@ struct TextLine
 
         SimpleLine line;
         line.dx = offset;
-        float pen = offset;
+        float pen = snapToDevicePixels(offset);
         foreach (ref fg; _glyphs[start .. end])
         {
             line.height = max(line.height, fg.height);
@@ -523,7 +523,7 @@ struct TextLine
         // snap to the nearest pixel
         linePos = snapToDevicePixels(linePos);
 
-        float xpen = offset.x;
+        float xpen = snapToDevicePixels(offset.x);
         float ypen = offset.y;
         size_t passed;
         foreach (j, ref span; wraps)
@@ -541,19 +541,20 @@ struct TextLine
 
             if (j > 0)
             {
-                xpen = span.offset;
+                xpen = snapToDevicePixels(span.offset);
                 ypen += span.height;
             }
             SimpleLine line;
             line.dx = xpen;
             line.dy = ypen;
+            const rypen = snapToDevicePixels(ypen);
             foreach (ref fg; _glyphs[i1 .. i2])
             {
                 line.height = max(line.height, fg.height);
                 line.baseline = max(line.baseline, fg.baseline);
                 if (auto g = fg.glyph)
                 {
-                    const p = Point(xpen + g.originX, ypen + fg.baseline - g.originY);
+                    const p = Point(xpen + g.originX, rypen + fg.baseline - g.originY);
                     buffer ~= GlyphInstance(g, linePos + p);
                 }
                 xpen += fg.width;
@@ -596,9 +597,9 @@ private struct SimpleLine
     int height;
     int baseline;
 
+    /// Perform actual drawing
     void draw(Painter pr, const Point pos, const GlyphInstance[] glyphs, ref TextStyle style)
     {
-        // preform actual drawing
         const x = pos.x + dx;
         const y = pos.y + dy;
         // background
