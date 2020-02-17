@@ -1258,9 +1258,7 @@ class EditLine : Widget, IEditor, ActionOperator
             {
                 const ComputedStyle* st = style;
                 ph.style.alignment = st.textAlign;
-                ph.style.decoration.line = st.textDecorLine;
-                ph.style.decoration.color = ph.style.color;
-                ph.style.decoration.style = st.textDecorStyle;
+                ph.style.decoration = TextDecor(st.textDecorLine, ph.style.color, st.textDecorStyle);
                 ph.style.overflow = st.textOverflow;
                 ph.style.tabSize = st.tabSize;
                 ph.style.transform = st.textTransform;
@@ -1646,50 +1644,8 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
     {
         super.handleStyleChange(ptype);
 
-        if (auto ph = _placeholder)
-        {
-            switch (ptype) with (StyleProperty)
-            {
-            case textAlign:
-                ph.style.alignment = style.textAlign;
-                break;
-            case textDecorLine:
-                ph.style.decoration.line = style.textDecorLine;
-                break;
-            case textDecorStyle:
-                ph.style.decoration.style = style.textDecorStyle;
-                break;
-            case textOverflow:
-                ph.style.overflow = style.textOverflow;
-                break;
-            case textTransform:
-                ph.style.transform = style.textTransform;
-                break;
-            default:
-                break;
-            }
-        }
-
         switch (ptype) with (StyleProperty)
         {
-        case textAlign:
-            _txtStyle.alignment = style.textAlign;
-            break;
-        case textColor:
-            _txtStyle.color = style.textColor;
-            break;
-        case textDecorColor:
-            _txtStyle.decoration.color = style.textDecorColor;
-            break;
-        case textDecorLine:
-            _txtStyle.decoration.line = style.textDecorLine;
-            break;
-        case textDecorStyle:
-            _txtStyle.decoration.style = style.textDecorStyle;
-            break;
-        case textOverflow:
-            _txtStyle.overflow = style.textOverflow;
-            break;
         case textTransform:
             _txtStyle.transform = style.textTransform;
             _minSizeTester.style.transform = style.textTransform;
@@ -4071,8 +4027,22 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
             // draw the placeholder when no text
             const ls = _content.lines;
             if (ls.length == 0 || (ls.length == 1 && ls[0].length == 0))
+            {
+                const ComputedStyle* st = style;
+                ph.style.alignment = st.textAlign;
+                ph.style.decoration = TextDecor(st.textDecorLine, ph.style.color, st.textDecorStyle);
+                ph.style.overflow = st.textOverflow;
+                ph.style.tabSize = _content.tabSize;
+                ph.style.transform = st.textTransform;
                 ph.draw(pr, b.x - scrollPos.x, b.y, b.w);
+            }
         }
+
+        const ComputedStyle* st = style;
+        _txtStyle.alignment = st.textAlign;
+        _txtStyle.color = st.textColor;
+        _txtStyle.decoration = st.textDecor;
+        _txtStyle.overflow = st.textOverflow;
 
         const px = b.x - scrollPos.x;
         float y = 0;
