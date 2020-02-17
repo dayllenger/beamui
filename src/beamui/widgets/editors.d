@@ -323,6 +323,7 @@ class EditLine : Widget, IEditor, ActionOperator
         Size fullContentSize() const
         {
             Size sz = _txtline.size;
+            // add a little margin for the caret
             sz.w += _spaceWidth;
             return sz;
         }
@@ -367,6 +368,8 @@ class EditLine : Widget, IEditor, ActionOperator
         SimpleText* _placeholder;
         TextSizeTester _minSizeTester;
         TextLine _txtline;
+
+        float _firstGlyphPosX = 0;
     }
 
     this(dstring initialContent = null)
@@ -515,16 +518,16 @@ class EditLine : Widget, IEditor, ActionOperator
     protected Box textPosToClient(int p) const
     {
         Box b;
-        if (p <= 0)
-            b.x = 0;
-        else if (p >= _txtline.glyphCount)
+        if (p >= _txtline.glyphCount)
+        {
             b.x = _txtline.size.w;
-        else
+        }
+        else if (p > 0)
         {
             foreach (ref fg; _txtline.glyphs[0 .. p])
                 b.x += fg.width;
         }
-        b.x -= _scrollPos;
+        b.x += _firstGlyphPosX - _scrollPos;
         b.w = 1;
         b.h = innerBox.h;
         return b;
@@ -533,7 +536,7 @@ class EditLine : Widget, IEditor, ActionOperator
     protected int clientToTextPos(Point pt) const
     {
         pt.x += _scrollPos;
-        const col = findClosestGlyphInRow(_txtline.glyphs, 0, pt.x);
+        const col = findClosestGlyphInRow(_txtline.glyphs, _firstGlyphPosX, pt.x);
         return col != -1 ? col : _txtline.glyphCount;
     }
 
@@ -623,6 +626,7 @@ class EditLine : Widget, IEditor, ActionOperator
     {
         assert(0 <= _caretPos && _caretPos <= lineLength);
         Box caret = textPosToClient(_caretPos);
+        caret.x = snapToDevicePixels(caret.x);
         if (_replaceMode)
         {
             if (_caretPos < lineLength)
@@ -1267,6 +1271,7 @@ class EditLine : Widget, IEditor, ActionOperator
                 ph.style.transform = st.textTransform;
                 ph.draw(pr, b.x - _scrollPos, b.y, b.w);
             }
+            _firstGlyphPosX = 0;
         }
         else
         {
@@ -1275,7 +1280,7 @@ class EditLine : Widget, IEditor, ActionOperator
             _txtStyle.color = st.textColor;
             _txtStyle.decoration = st.textDecor;
             _txtStyle.overflow = st.textOverflow;
-            _txtline.draw(pr, b.x - _scrollPos, b.y, b.w, _txtStyle);
+            _firstGlyphPosX = _txtline.draw(pr, b.x - _scrollPos, b.y, b.w - _spaceWidth, _txtStyle);
         }
 
         drawCaret(pr);
@@ -2527,6 +2532,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
     protected Rect caretRect() const
     {
         Box caret = textPosToClient(_caretPos);
+        caret.x = snapToDevicePixels(caret.x);
         if (_replaceMode)
         {
             caret.w = _spaceWidth;
