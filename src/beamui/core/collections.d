@@ -166,7 +166,6 @@ struct Collection(T, bool ownItems = false) if (is(T == class) || is(T == interf
         }
         // clear references
         list[] = null;
-        list = null;
         len = 0;
     }
 
