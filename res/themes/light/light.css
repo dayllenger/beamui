@@ -40,7 +40,7 @@ CheckBox::label:hovered, RadioButton::label:hovered { color: #46617e; }
 
 CheckBox::label:not(enabled), RadioButton::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
-CheckBox::icon, MenuItem::check { align: center; min-width: 16px; max-height: 16px; background: url(btn_check_off); }
+CheckBox::icon, MenuItem::check { align: center; min-width: 16px; min-height: 16px; background: url(btn_check_off); }
 
 CheckBox::icon:hovered, MenuItem::check:hovered { background: url(btn_check_off_focused); }
 
@@ -56,7 +56,7 @@ CheckBox::icon:checked:pressed, MenuItem::check:checked:pressed { background: ur
 
 CheckBox::icon:checked:not(enabled), MenuItem::check:checked:not(enabled) { background: url(btn_check_on); opacity: 0.4; }
 
-RadioButton::icon, MenuItem::radio { min-width: 16px; max-height: 16px; background: url(btn_radio_off); }
+RadioButton::icon, MenuItem::radio { min-width: 16px; min-height: 16px; background: url(btn_radio_off); }
 
 RadioButton::icon:hovered, MenuItem::radio:hovered { background: url(btn_radio_off_focused); }
 
@@ -230,13 +230,13 @@ ScrollBar > PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1);
 
 ScrollBar > PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
 
-AbstractSlider > SliderHandle { padding: 5px; border: 1px solid transparent; background-color: #4e93da; }
+AbstractSlider > SliderHandle { padding: 5px; border: 1px solid transparent; background-color: #4e93da; background-clip: padding-box; }
 
 AbstractSlider > SliderHandle:pressed { background-color: rgba(46, 147, 250, 0.7); }
 
 AbstractSlider > SliderHandle:not(enabled) { opacity: 0.4; }
 
-AbstractSlider::range-before, AbstractSlider::range-after { border-color: transparent; background-color: #888; }
+AbstractSlider::range-before, AbstractSlider::range-after { border-color: transparent; background-color: #888; background-clip: padding-box; }
 
 AbstractSlider.horizontal::range-before, AbstractSlider.horizontal::range-after { border-top-width: 4px; border-bottom-width: 4px; }
 
@@ -244,7 +244,7 @@ AbstractSlider.vertical::range-before, AbstractSlider.vertical::range-after { bo
 
 Slider::range-before { background-color: #417fbf; }
 
-RangeSlider::range-between { border-color: transparent; background-color: #417fbf; }
+RangeSlider::range-between { border-color: transparent; background-color: #417fbf; background-clip: padding-box; }
 
 RangeSlider.horizontal::range-between { border-top-width: 4px; border-bottom-width: 4px; }
 

@@ -1855,6 +1855,8 @@ public:
         _background.image = _style.backgroundImage;
         _background.position = _style.backgroundPosition;
         _background.size = _style.backgroundSize;
+        _background.origin = _style.backgroundOrigin;
+        _background.clip = _style.backgroundClip;
         _background.border = Border(
             BorderSide(
                 _style.borderTopWidth,
@@ -1878,6 +1880,7 @@ public:
             ),
         );
         _background.shadow = _style.boxShadow;
+        _background.stylePadding = _style.padding;
         _background.drawTo(pr, b);
         // draw contents
         {

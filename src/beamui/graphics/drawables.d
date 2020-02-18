@@ -831,9 +831,13 @@ class Background
     Drawable image;
     BgPosition position;
     BgSize size;
+    BoxType origin;
+    BoxType clip;
     Border border;
     BorderRadii radii;
     BoxShadowDrawable shadow;
+
+    Insets stylePadding;
 
     @property float width() const
     {
@@ -857,15 +861,24 @@ class Background
     {
         // shadow
         shadow.maybe.drawTo(pr, b);
-        // make background image smaller to fit borders
-        const bs = border.getSize();
-        Box back = b;
-        back.shrink(bs);
+        Box bc = b;
+        if (clip != BoxType.border)
+        {
+            // consider clipping
+            bc.shrink(border.getSize());
+            if (clip == BoxType.content)
+                bc.shrink(stylePadding);
+        }
         // color
-        pr.fillRect(back.x, back.y, back.w, back.h, color);
+        pr.fillRect(bc.x, bc.y, bc.w, bc.h, color);
         // image
         if (image)
-            drawImage(pr, back);
+        {
+            PaintSaver sv;
+            pr.save(sv);
+            pr.clipIn(BoxI.from(bc));
+            drawImage(pr, b);
+        }
         // border
         pr.translate(b.x, b.y);
         drawBorder(pr, b.size);
@@ -874,6 +887,13 @@ class Background
 
     private void drawImage(Painter pr, Box b)
     {
+        // find the containing box
+        if (origin != BoxType.border)
+        {
+            b.shrink(border.getSize());
+            if (origin == BoxType.content)
+                b.shrink(stylePadding);
+        }
         // determine the size
         const iw = image.width;
         const ih = image.height;
