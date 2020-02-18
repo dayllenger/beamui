@@ -57,8 +57,14 @@ class Drawable : RefCountedObject
 
     abstract void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0);
 
-    abstract @property float width() const;
-    abstract @property float height() const;
+    @property float width() const
+    {
+        return 0;
+    }
+    @property float height() const
+    {
+        return 0;
+    }
     @property Insets padding() const
     {
         return Insets(0);
@@ -71,16 +77,6 @@ class EmptyDrawable : Drawable
 {
     override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
     {
-    }
-
-    override @property float width() const
-    {
-        return 0;
-    }
-
-    override @property float height() const
-    {
-        return 0;
     }
 }
 
@@ -96,16 +92,6 @@ class SolidFillDrawable : Drawable
     override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
     {
         pr.fillRect(b.x, b.y, b.w, b.h, _color);
-    }
-
-    override @property float width() const
-    {
-        return 1;
-    }
-
-    override @property float height() const
-    {
-        return 1;
     }
 }
 
@@ -132,16 +118,6 @@ class GradientDrawable : Drawable
         pr.translate(b.x, b.y);
         pr.fill(path, brush);
         pr.translate(-b.x, -b.y);
-    }
-
-    override @property float width() const
-    {
-        return 1;
-    }
-
-    override @property float height() const
-    {
-        return 1;
     }
 }
 
@@ -248,16 +224,6 @@ class BoxShadowDrawable : Drawable
         {
             pr.fillRect(b.x, b.y, b.w, b.h, _color);
         }
-    }
-
-    override @property float width() const
-    {
-        return 1;
-    }
-
-    override @property float height() const
-    {
-        return 1;
     }
 }
 
@@ -863,6 +829,8 @@ class Background
 {
     Color color = Color.transparent;
     Drawable image;
+    BgPosition position;
+    BgSize size;
     Border border;
     BorderRadii radii;
     BoxShadowDrawable shadow;
@@ -896,11 +864,79 @@ class Background
         // color
         pr.fillRect(back.x, back.y, back.w, back.h, color);
         // image
-        image.maybe.drawTo(pr, back);
+        if (image)
+            drawImage(pr, back);
         // border
         pr.translate(b.x, b.y);
         drawBorder(pr, b.size);
         pr.translate(-b.x, -b.y);
+    }
+
+    private void drawImage(Painter pr, Box b)
+    {
+        // determine the size
+        const iw = image.width;
+        const ih = image.height;
+        float w = iw, h = ih;
+        if (fzero6(iw) || fzero6(ih))
+        {
+            w = b.w;
+            h = b.h;
+        }
+        else if (size.type == BgSizeType.contain)
+        {
+            if (b.w < w)
+            {
+                w = b.w;
+                h = b.w * ih / iw;
+            }
+            if (b.h < h)
+            {
+                h = b.h;
+                w = b.h * iw / ih;
+            }
+        }
+        else if (size.type == BgSizeType.cover)
+        {
+            if (b.w > w)
+            {
+                w = b.w;
+                h = b.w * ih / iw;
+            }
+            if (b.h > h)
+            {
+                h = b.h;
+                w = b.h * iw / ih;
+            }
+        }
+        else // length
+        {
+            if (!size.x.isDefined || !size.y.isDefined)
+            {
+                if (size.x.isDefined)
+                {
+                    w = size.x.applyPercent(b.w);
+                    h = w * ih / iw;
+                }
+                else if (size.y.isDefined)
+                {
+                    h = size.y.applyPercent(b.h);
+                    w = h * iw / ih;
+                }
+            }
+            else
+            {
+                w = size.x.applyPercent(b.w);
+                h = size.y.applyPercent(b.h);
+            }
+        }
+        // determine the position
+        assert(position.x.isDefined);
+        assert(position.y.isDefined);
+        const x = position.x.applyPercent(b.w - w);
+        const y = position.y.applyPercent(b.h - h);
+        // draw
+        image.drawTo(pr, Box(b.x + x, b.y + y, w, h));
     }
 
     private void drawBorder(Painter pr, Size sz)

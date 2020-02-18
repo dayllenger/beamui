@@ -1222,6 +1222,8 @@ struct ComputedStyle
         {
             static if (ptype == fontSize)
                 return value.toLayout.applyPercent(100) >= 1;
+            else static if (ptype == bgSize)
+                return value.x.toLayout.applyPercent(100) >= 0 && value.y.toLayout.applyPercent(100) >= 0;
             else static if (
                 ptype == width ||
                 ptype == height ||

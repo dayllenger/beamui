@@ -1853,6 +1853,8 @@ public:
         // draw the background first
         _background.color = _style.backgroundColor;
         _background.image = _style.backgroundImage;
+        _background.position = _style.backgroundPosition;
+        _background.size = _style.backgroundSize;
         _background.border = Border(
             BorderSide(
                 _style.borderTopWidth,

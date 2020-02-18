@@ -910,6 +910,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
     if (tokens.length == 1)
     {
         const t = tokens[0];
+        ret.x = ret.y = Length.percent(50); // another value should be 'center'
         if (t.type == TokenType.ident)
         {
             switch (t.text)
@@ -944,7 +945,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
         {
             switch (t1.text)
             {
-                case "center": break;
+                case "center":ret.x = Length.percent(50);  break;
                 case "left":  ret.x = Length.percent(0);   break;
                 case "right": ret.x = Length.percent(100); break;
                 default:
@@ -964,7 +965,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
         {
             switch (t2.text)
             {
-                case "center": break;
+                case "center": ret.y = Length.percent(50);  break;
                 case "top":    ret.y = Length.percent(0);   break;
                 case "bottom": ret.y = Length.percent(100); break;
                 default:

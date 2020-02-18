@@ -39,8 +39,8 @@ struct BgPositionRaw
 {
     nothrow:
 
-    Length x = Length.percent(50);
-    Length y = Length.percent(50);
+    Length x = Length.percent(0);
+    Length y = Length.percent(0);
 
     static BgPositionRaw mix(BgPositionRaw a, BgPositionRaw b, double factor)
     {
