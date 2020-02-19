@@ -110,7 +110,6 @@ CheckBox::label, RadioButton::label {
     stretch: main;
     text-hotkey: underline-on-alt;
     text-overflow: ellipsis;
-    transition: color 100ms ease;
 
     &:hovered {
         color: $hovered-label-color;
@@ -121,22 +120,35 @@ CheckBox::label, RadioButton::label {
     }
 }
 
-CheckBox::icon, MenuItem::check {
+CheckBox::icon, MenuItem::check, RadioButton::icon, MenuItem::radio {
     align: center;
     min-width: 16px;
     min-height: 16px;
-    background: url(btn_check_off);
-
-    &:hovered {
-        background: url(btn_check_off_focused);
-    }
-
-    &:pressed {
-        background: url(btn_check_off_pressed);
-    }
 
     &:not(enabled) {
         opacity: 0.4;
+    }
+
+    &:not(checked) {
+        background-color: white;
+        border-color: #e0e0e0;
+        border-style: solid;
+        border-width: 1px;
+    }
+
+    &:enabled:not(checked):hovered {
+        border-color: #d0d0d0;
+    }
+
+    &:not(checked):pressed {
+        background-color: #f7f7f7;
+        border-color: #d0d0d0;
+    }
+}
+
+CheckBox::icon, MenuItem::check {
+    &:not(checked) {
+        border-radius: 3px;
     }
 
     &:checked {
@@ -150,45 +162,19 @@ CheckBox::icon, MenuItem::check {
     &:checked:pressed {
         background: url(btn_check_on_pressed);
     }
-
-    &:checked:not(enabled) {
-        background: url(btn_check_on);
-        opacity: 0.4;
-    }
 }
 
 RadioButton::icon, MenuItem::radio {
-    min-width: 16px;
-    min-height: 16px;
-    background: url(btn_radio_off);
-
-    &:hovered {
-        background: url(btn_radio_off_focused);
+    &:checked, &:not(checked), &:enabled:not(checked), &:not(enabled):not(checked) {
+        background-image: none;
+        border-radius: 50%;
+        border-style: solid;
     }
 
-    &:pressed {
-        background: url(btn_radio_off_pressed);
-    }
-
-    &:not(enabled) {
-        opacity: 0.4;
-    }
-
-    &:checked {
-        background: url(btn_radio_on);
-    }
-
-    &:checked:hovered {
-        background: url(btn_radio_on_focused);
-    }
-
-    &:checked:pressed {
-        background: url(btn_radio_on_pressed);
-    }
-
-    &:checked:not(enabled) {
-        background: url(btn_radio_on);
-        opacity: 0.4;
+    &:checked, &:not(enabled):checked, &:checked:hovered, &:checked:pressed {
+        background-image: none;
+        border-color: $main-color;
+        border-width: 5px;
     }
 }
 
@@ -202,11 +188,6 @@ SwitchButton {
 
     &:checked {
         background: url(switch_on);
-    }
-
-    &:checked:not(enabled) {
-        background: url(switch_on);
-        opacity: 0.4;
     }
 }
 
