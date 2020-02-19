@@ -967,8 +967,8 @@ final class X11Window : DWindow
             case XK_space:  return Key.space;
             case XK_Page_Up:   return Key.pageUp;
             case XK_Page_Down: return Key.pageDown;
-            case XK_Home:   return Key.end;
-            case XK_End:    return Key.home;
+            case XK_Home:   return Key.home;
+            case XK_End:    return Key.end;
             case XK_Left:   return Key.left;
             case XK_Up:     return Key.up;
             case XK_Right:  return Key.right;
@@ -978,8 +978,8 @@ final class X11Window : DWindow
             case XK_KP_Enter:     return Key.enter;
             case XK_KP_Page_Up:   return numlock ? Key.num9 : Key.pageUp;
             case XK_KP_Page_Down: return numlock ? Key.num3 : Key.pageDown;
-            case XK_KP_Home:      return numlock ? Key.num7 : Key.end;
-            case XK_KP_End:       return numlock ? Key.num1 : Key.home;
+            case XK_KP_Home:      return numlock ? Key.num7 : Key.home;
+            case XK_KP_End:       return numlock ? Key.num1 : Key.end;
             case XK_KP_Left:      return numlock ? Key.num4 : Key.left;
             case XK_KP_Up:        return numlock ? Key.num8 : Key.up;
             case XK_KP_Right:     return numlock ? Key.num6 : Key.right;
