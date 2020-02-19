@@ -9,7 +9,7 @@ module beamui.graphics.flattener;
 
 nothrow:
 
-import std.math : fabs, cos, sin, sqrt, PI, PI_2;
+import std.math : fabs, cos, sin, sqrt, isFinite, PI, PI_2;
 import beamui.core.collections : Buf;
 import beamui.core.linalg : Vec2;
 import beamui.core.math : fequal2, fzero6;
@@ -20,6 +20,10 @@ import beamui.core.math : fequal2, fzero6;
 
 /// Convert cubic bezier curve into a list of points
 void flattenCubicBezier(ref Buf!Vec2 output, Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3, bool endpointsToo)
+    in(isFinite(p0.x) && isFinite(p0.y))
+    in(isFinite(p1.x) && isFinite(p1.y))
+    in(isFinite(p2.x) && isFinite(p2.y))
+    in(isFinite(p3.x) && isFinite(p3.y))
 {
     if (endpointsToo)
         output ~= p0;
@@ -69,6 +73,9 @@ private void recursiveCubicBezier(ref Buf!Vec2 output,
 
 /// Convert quadratic bezier curve into a list of points
 void flattenQuadraticBezier(ref Buf!Vec2 output, Vec2 p0, Vec2 p1, Vec2 p2, bool endpointsToo)
+    in(isFinite(p0.x) && isFinite(p0.y))
+    in(isFinite(p1.x) && isFinite(p1.y))
+    in(isFinite(p2.x) && isFinite(p2.y))
 {
     if (endpointsToo)
         output ~= p0;
@@ -110,8 +117,11 @@ private void recursiveQuadraticBezier(ref Buf!Vec2 output,
 }
 
 /// Convert circular arc into a list of points
-void flattenArc(ref Buf!Vec2 output, Vec2 center, float radius,
-    float startAngle, float angleOffset, bool endpointsToo)
+void flattenArc(ref Buf!Vec2 output, Vec2 center, float radius, float startAngle, float angleOffset, bool endpointsToo)
+    in(isFinite(center.x) && isFinite(center.y))
+    in(isFinite(radius))
+    in(isFinite(startAngle))
+    in(isFinite(angleOffset))
 {
     if (radius < 0)
         return;

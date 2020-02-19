@@ -208,7 +208,7 @@ struct Path
         // find angle to the first arc point
         const dir = clockwise ? -1 : 1;
         const dy = (center.y - y) / r;
-        const beta = asin(dy);
+        const beta = asin(dy * 0.999f); // reduce precision error
         const startAngle = (center.x < x ? beta : PI - beta) - angle * dir;
 
         flattenArc(points, center, r, startAngle, angle * dir, false);
