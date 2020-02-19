@@ -139,6 +139,10 @@ struct Path
     ref Path quadraticTo(float p1x, float p1y, float p2x, float p2y)
     {
         ensureContourStarted();
+        if (fequal2(p1x, posx) && fequal2(p1y, posy) &&
+            fequal2(p2x, posx) && fequal2(p2y, posy))
+            return this;
+
         flattenQuadraticBezier(
             points,
             Vec2(posx, posy),
@@ -162,6 +166,10 @@ struct Path
     ref Path cubicTo(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y)
     {
         ensureContourStarted();
+        if (fequal2(p1x, posx) && fequal2(p1y, posy) && fequal2(p2x, posx) &&
+            fequal2(p2y, posy) && fequal2(p3x, posx) && fequal2(p3y, posy))
+            return this;
+
         flattenCubicBezier(
             points,
             Vec2(posx, posy), Vec2(p1x, p1y),
@@ -190,7 +198,8 @@ struct Path
         import std.math : abs, asin, cos, sqrt, PI;
 
         ensureContourStarted();
-        if (fzero2(angle) || (fequal2(x, posx) && fequal2(y, posy))) return this;
+        if (fzero2(angle) || (fequal2(x, posx) && fequal2(y, posy)))
+            return this;
 
         const bool clockwise = angle > 0;
         angle = min(abs(angle), 360) * PI / 180;

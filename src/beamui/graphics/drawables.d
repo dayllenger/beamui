@@ -817,10 +817,10 @@ struct Border
 /// 8 border radii in device-independent pixels
 struct BorderRadii
 {
-    float[2] topLeft = 0;
-    float[2] topRight = 0;
-    float[2] bottomLeft = 0;
-    float[2] bottomRight = 0;
+    Size tl;
+    Size tr;
+    Size bl;
+    Size br;
 }
 
 /// Standard widget background. It can combine together background color,
@@ -859,16 +859,150 @@ class Background
 
     void drawTo(Painter pr, Box b)
     {
-        // shadow
-        shadow.maybe.drawTo(pr, b);
+        // consider clipping
         Box bc = b;
         if (clip != BoxType.border)
         {
-            // consider clipping
             bc.shrink(border.getSize());
             if (clip == BoxType.content)
                 bc.shrink(stylePadding);
         }
+        // get border thickness
+        Insets th;
+        if (border.top.style != BorderStyle.none)
+            th.top = border.top.thickness;
+        if (border.right.style != BorderStyle.none)
+            th.right = border.right.thickness;
+        if (border.bottom.style != BorderStyle.none)
+            th.bottom = border.bottom.thickness;
+        if (border.left.style != BorderStyle.none)
+            th.left = border.left.thickness;
+
+        if (radii == BorderRadii.init)
+            drawRectangular(pr, b, bc, th);
+        else
+            drawRound(pr, b, bc, th);
+    }
+
+    // we will use cubic curves to make elliptic arcs, like in `flattenArcPart` function
+    private enum k = 0.552285f;
+    private enum k1 = 1 - k;
+
+    private void drawRound(Painter pr, Box b, Box bc, Insets th)
+    {
+        // not yet supported stuff
+        if (shadow || image)
+        {
+            drawRectangular(pr, b, bc, th);
+            return;
+        }
+        if (border.left.color != border.right.color || border.top.color != border.bottom.color)
+        {
+            drawRectangular(pr, b, bc, th);
+            return;
+        }
+        if (border.left.color != border.top.color)
+        {
+            drawRectangular(pr, b, bc, th);
+            return;
+        }
+        // reduce overlapping corners
+        const f = min(
+            b.w / (radii.tl.w + radii.tr.w),
+            b.w / (radii.bl.w + radii.br.w),
+            b.h / (radii.tl.h + radii.bl.h),
+            b.h / (radii.tr.h + radii.br.h),
+        );
+        if (f < 1)
+        {
+            radii.tl *= f;
+            radii.tr *= f;
+            radii.bl *= f;
+            radii.br *= f;
+        }
+
+        static Path borderPath;
+        borderPath.reset();
+        borderPath
+            .moveTo(b.x + radii.tl.w, b.y)
+            .lineBy(b.w - radii.tl.w - radii.tr.w, 0)
+            .cubicBy(k * radii.tr.w, 0, radii.tr.w, k1 * radii.tr.h, radii.tr.w, radii.tr.h)
+            .lineBy(0, b.h - radii.tr.h - radii.br.h)
+            .cubicBy(0, k * radii.br.h, -k1 * radii.br.w, radii.br.h, -radii.br.w, radii.br.h)
+            .lineBy(-b.w + radii.bl.w + radii.br.w, 0)
+            .cubicBy(-k * radii.bl.w, 0, -radii.bl.w, -k1 * radii.bl.h, -radii.bl.w, -radii.bl.h)
+            .lineBy(0, -b.h + radii.bl.h + radii.tl.h)
+            .cubicBy(0, -k * radii.tl.h, k1 * radii.tl.w, -radii.tl.h, radii.tl.w, -radii.tl.h)
+            .close();
+
+        bool hasBorder = !border.top.color.isFullyTransparent;
+        hasBorder = hasBorder || !fzero2(th.top);
+        hasBorder = hasBorder || !fzero2(th.right);
+        hasBorder = hasBorder || !fzero2(th.bottom);
+        hasBorder = hasBorder || !fzero2(th.left);
+
+        // color
+        {
+            PaintSaver sv;
+            // for GL paint engine, it's better to disable AA when there is a border
+            if (hasBorder)
+            {
+                pr.save(sv);
+                pr.antialias = false;
+            }
+            const br = Brush.fromSolid(color);
+            pr.fill(borderPath, br);
+        }
+        // border
+        if (hasBorder)
+        {
+            drawRoundBorder(pr, b, th, border.top.color);
+        }
+    }
+
+    private void drawRoundBorder(Painter pr, Box b, Insets th, Color c)
+    {
+        const bInner = b.shrinked(th);
+        const rInner = BorderRadii(
+            Size(max(radii.tl.w - th.left, 0), max(radii.tl.h - th.top, 0)),
+            Size(max(radii.tr.w - th.right, 0), max(radii.tr.h - th.top, 0)),
+            Size(max(radii.bl.w - th.left, 0), max(radii.bl.h - th.bottom, 0)),
+            Size(max(radii.br.w - th.right, 0), max(radii.br.h - th.bottom, 0)),
+        );
+
+        static Path path;
+        path.reset();
+        // the outer contour goes cw, the inner one goes ccw
+        path.moveTo(b.x + radii.tl.w, b.y)
+            .lineBy(b.w - radii.tl.w - radii.tr.w, 0)
+            .cubicBy(k * radii.tr.w, 0, radii.tr.w, k1 * radii.tr.h, radii.tr.w, radii.tr.h)
+            .lineBy(0, b.h - radii.tr.h - radii.br.h)
+            .cubicBy(0, k * radii.br.h, -k1 * radii.br.w, radii.br.h, -radii.br.w, radii.br.h)
+            .lineBy(-b.w + radii.bl.w + radii.br.w, 0)
+            .cubicBy(-k * radii.bl.w, 0, -radii.bl.w, -k1 * radii.bl.h, -radii.bl.w, -radii.bl.h)
+            .lineBy(0, -b.h + radii.bl.h + radii.tl.h)
+            .cubicBy(0, -k * radii.tl.h, k1 * radii.tl.w, -radii.tl.h, radii.tl.w, -radii.tl.h)
+            .close();
+        path.moveTo(bInner.x + rInner.tl.w, bInner.y)
+            .cubicBy(-k * rInner.tl.w, 0, -rInner.tl.w, k1 * rInner.tl.h, -rInner.tl.w, rInner.tl.h)
+            .lineBy(0, bInner.h - rInner.bl.h - rInner.tl.h)
+            .cubicBy(0, k * rInner.bl.h, k1 * rInner.bl.w, rInner.bl.h, rInner.bl.w, rInner.bl.h)
+            .lineBy(bInner.w - rInner.bl.w - rInner.br.w, 0)
+            .cubicBy(k * rInner.br.w, 0, rInner.br.w, -k1 * rInner.br.h, rInner.br.w, -rInner.br.h)
+            .lineBy(0, -(bInner.h - rInner.br.h - rInner.tr.h))
+            .cubicBy(0, -k * rInner.tr.h, -k1 * rInner.tr.w, -rInner.tr.h, -rInner.tr.w, -rInner.tr.h)
+            .lineBy(-(bInner.w - rInner.tl.w - rInner.tr.w), 0)
+            .close();
+
+        // nonzero fill rule hides any overlaps inside the inner corners
+        const br = Brush.fromSolid(c);
+        pr.fill(path, br);
+    }
+
+    private void drawRectangular(Painter pr, Box b, Box bc, Insets th)
+    {
+        // shadow
+        shadow.maybe.drawTo(pr, b);
         // color
         pr.fillRect(bc.x, bc.y, bc.w, bc.h, color);
         // image
@@ -881,7 +1015,7 @@ class Background
         }
         // border
         pr.translate(b.x, b.y);
-        drawBorder(pr, b.size);
+        drawBorder(pr, b.size, th);
         pr.translate(-b.x, -b.y);
     }
 
@@ -959,18 +1093,8 @@ class Background
         image.drawTo(pr, Box(b.x + x, b.y + y, w, h));
     }
 
-    private void drawBorder(Painter pr, Size sz)
+    private void drawBorder(Painter pr, Size sz, Insets th)
     {
-        Insets th;
-        if (border.top.style != BorderStyle.none)
-            th.top = border.top.thickness;
-        if (border.right.style != BorderStyle.none)
-            th.right = border.right.thickness;
-        if (border.bottom.style != BorderStyle.none)
-            th.bottom = border.bottom.thickness;
-        if (border.left.style != BorderStyle.none)
-            th.left = border.left.thickness;
-
         static Path path;
 
         if (!fzero2(th.top) && !border.top.color.isFullyTransparent)

@@ -713,7 +713,7 @@ struct ComputedStyle
             setProperty!"borderTopLeftRadius" = Length.px(px);
         }
 
-        LayoutLength borderTopRightRadius() const { return applyEM(_borderTopLeftRadius); }
+        LayoutLength borderTopRightRadius() const { return applyEM(_borderTopRightRadius); }
         /// ditto
         void borderTopRightRadius(Length len)
         {
@@ -727,7 +727,7 @@ struct ComputedStyle
             setProperty!"borderTopRightRadius" = Length.px(px);
         }
 
-        LayoutLength borderBottomLeftRadius() const { return applyEM(_borderTopLeftRadius); }
+        LayoutLength borderBottomLeftRadius() const { return applyEM(_borderBottomLeftRadius); }
         /// ditto
         void borderBottomLeftRadius(Length len)
         {
@@ -741,7 +741,7 @@ struct ComputedStyle
             setProperty!"borderBottomLeftRadius" = Length.px(px);
         }
 
-        LayoutLength borderBottomRightRadius() const { return applyEM(_borderTopLeftRadius); }
+        LayoutLength borderBottomRightRadius() const { return applyEM(_borderBottomRightRadius); }
         /// ditto
         void borderBottomRightRadius(Length len)
         {
@@ -1231,6 +1231,11 @@ struct ComputedStyle
                 ptype == maxWidth ||
                 ptype == minHeight ||
                 ptype == maxHeight ||
+                ptype == flexBasis ||
+                ptype == lineHeight
+            )
+                return value.toLayout.applyPercent(100) >= 0;
+            else static if (
                 ptype == paddingTop ||
                 ptype == paddingRight ||
                 ptype == paddingBottom ||
@@ -1238,16 +1243,11 @@ struct ComputedStyle
                 ptype == borderTopWidth ||
                 ptype == borderRightWidth ||
                 ptype == borderBottomWidth ||
-                ptype == flexBasis ||
                 ptype == borderLeftWidth ||
                 ptype == borderTopLeftRadius ||
                 ptype == borderTopRightRadius ||
                 ptype == borderBottomLeftRadius ||
                 ptype == borderBottomRightRadius ||
-                ptype == lineHeight
-            )
-                return value.toLayout.applyPercent(100) >= 0;
-            else static if (
                 ptype == rowGap ||
                 ptype == columnGap
             )

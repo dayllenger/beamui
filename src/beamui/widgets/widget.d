@@ -1879,6 +1879,18 @@ public:
                 _style.borderLeftColor,
             ),
         );
+        {
+            const tl = _style.borderTopLeftRadius;
+            const tr = _style.borderTopRightRadius;
+            const bl = _style.borderBottomLeftRadius;
+            const br = _style.borderBottomRightRadius;
+            _background.radii = BorderRadii(
+                Size(tl.applyPercent(box.w), tl.applyPercent(box.h)),
+                Size(tr.applyPercent(box.w), tr.applyPercent(box.h)),
+                Size(bl.applyPercent(box.w), bl.applyPercent(box.h)),
+                Size(br.applyPercent(box.w), br.applyPercent(box.h)),
+            );
+        }
         _background.shadow = _style.boxShadow;
         _background.stylePadding = _style.padding;
         _background.drawTo(pr, b);
