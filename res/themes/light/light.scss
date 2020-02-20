@@ -101,7 +101,7 @@ LinkButton {
     }
 }
 
-CheckBox {
+CheckBox, RadioButton {
     padding: 2px;
 }
 
@@ -129,13 +129,6 @@ CheckBox::icon, MenuItem::check, RadioButton::icon, MenuItem::radio {
         opacity: 0.4;
     }
 
-    &:not(checked) {
-        background-color: white;
-        border-color: #e0e0e0;
-        border-style: solid;
-        border-width: 1px;
-    }
-
     &:enabled:not(checked):hovered {
         border-color: #d0d0d0;
     }
@@ -148,6 +141,8 @@ CheckBox::icon, MenuItem::check, RadioButton::icon, MenuItem::radio {
 
 CheckBox::icon, MenuItem::check {
     &:not(checked) {
+        background-color: white;
+        border: 1px solid #e0e0e0;
         border-radius: 3px;
     }
 
@@ -165,14 +160,11 @@ CheckBox::icon, MenuItem::check {
 }
 
 RadioButton::icon, MenuItem::radio {
-    &:checked, &:not(checked), &:enabled:not(checked), &:not(enabled):not(checked) {
-        background-image: none;
-        border-radius: 50%;
-        border-style: solid;
-    }
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 50%;
 
-    &:checked, &:not(enabled):checked, &:checked:hovered, &:checked:pressed {
-        background-image: none;
+    &:checked {
         border-color: $main-color;
         border-width: 5px;
     }

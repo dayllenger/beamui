@@ -32,7 +32,7 @@ LinkButton::label:hovered { text-decoration: underline; }
 
 LinkButton::label:not(enabled) { color: rgba(192, 192, 255, 0.7); }
 
-CheckBox { padding: 2px; }
+CheckBox, RadioButton { padding: 2px; }
 
 CheckBox::label, RadioButton::label { align: left vcenter; stretch: main; text-hotkey: underline-on-alt; text-overflow: ellipsis; }
 
@@ -44,13 +44,11 @@ CheckBox::icon, MenuItem::check, RadioButton::icon, MenuItem::radio { align: cen
 
 CheckBox::icon:not(enabled), MenuItem::check:not(enabled), RadioButton::icon:not(enabled), MenuItem::radio:not(enabled) { opacity: 0.4; }
 
-CheckBox::icon:not(checked), MenuItem::check:not(checked), RadioButton::icon:not(checked), MenuItem::radio:not(checked) { background-color: white; border-color: #e0e0e0; border-style: solid; border-width: 1px; }
-
 CheckBox::icon:enabled:not(checked):hovered, MenuItem::check:enabled:not(checked):hovered, RadioButton::icon:enabled:not(checked):hovered, MenuItem::radio:enabled:not(checked):hovered { border-color: #d0d0d0; }
 
 CheckBox::icon:not(checked):pressed, MenuItem::check:not(checked):pressed, RadioButton::icon:not(checked):pressed, MenuItem::radio:not(checked):pressed { background-color: #f7f7f7; border-color: #d0d0d0; }
 
-CheckBox::icon:not(checked), MenuItem::check:not(checked) { border-radius: 3px; }
+CheckBox::icon:not(checked), MenuItem::check:not(checked) { background-color: white; border: 1px solid #e0e0e0; border-radius: 3px; }
 
 CheckBox::icon:checked, MenuItem::check:checked { background: url(btn_check_on); }
 
@@ -58,9 +56,9 @@ CheckBox::icon:checked:hovered, MenuItem::check:checked:hovered { background: ur
 
 CheckBox::icon:checked:pressed, MenuItem::check:checked:pressed { background: url(btn_check_on_pressed); }
 
-RadioButton::icon:checked, RadioButton::icon:not(checked), RadioButton::icon:enabled:not(checked), RadioButton::icon:not(enabled):not(checked), MenuItem::radio:checked, MenuItem::radio:not(checked), MenuItem::radio:enabled:not(checked), MenuItem::radio:not(enabled):not(checked) { background-image: none; border-radius: 50%; border-style: solid; }
+RadioButton::icon, MenuItem::radio { background-color: white; border: 1px solid #e0e0e0; border-radius: 50%; }
 
-RadioButton::icon:checked, RadioButton::icon:not(enabled):checked, RadioButton::icon:checked:hovered, RadioButton::icon:checked:pressed, MenuItem::radio:checked, MenuItem::radio:not(enabled):checked, MenuItem::radio:checked:hovered, MenuItem::radio:checked:pressed { background-image: none; border-color: #4e93da; border-width: 5px; }
+RadioButton::icon:checked, MenuItem::radio:checked { border-color: #4e93da; border-width: 5px; }
 
 SwitchButton { align: center; background: url(switch_off); }
 

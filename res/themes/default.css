@@ -12,6 +12,7 @@ Spacer {
 
 Button,
 CheckBox,
+RadioButton,
 ComboBoxBase {
   display: row;
 }

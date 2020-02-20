@@ -283,10 +283,10 @@ class CheckBox : Panel
     this(dstring labelText = null)
     {
         _icon = new Widget;
-        _icon.bindSubItem(this, "icon");
-        _icon.state = State.parent;
         _label = new Label(labelText);
+        _icon.bindSubItem(this, "icon");
         _label.bindSubItem(this, "label");
+        _icon.state = State.parent;
         _label.state = State.parent;
         add(_icon, _label);
         if (!labelText)
@@ -303,11 +303,28 @@ class CheckBox : Panel
 }
 
 /// Radio button control, which is a mutually exclusive check box
-class RadioButton : CheckBox
+class RadioButton : Panel
 {
+    private
+    {
+        Widget _icon;
+        Label _label;
+    }
+
     this(dstring labelText = null)
     {
-        super(labelText);
+        _icon = new Widget;
+        _label = new Label(labelText);
+        _icon.bindSubItem(this, "icon");
+        _label.bindSubItem(this, "label");
+        _icon.state = State.parent;
+        _label.state = State.parent;
+        add(_icon, _label);
+        if (!labelText)
+            _label.visibility = Visibility.gone;
+        allowsClick = true;
+        allowsFocus = true;
+        allowsHover = true;
     }
 
     override protected void handleClick()
