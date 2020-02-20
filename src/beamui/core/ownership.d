@@ -11,8 +11,8 @@ import std.traits : isImplicitlyConvertible;
 
 enum bool isReferenceType(T) = is(T == class) || is(T == interface) || is(T == U*, U);
 
-enum bool hasMemberLike(T, string member, Y) =
-    isImplicitlyConvertible!(typeof(__traits(getMember, T, member)), const(Y));
+enum bool hasIsDestroyedMember(T) =
+    isImplicitlyConvertible!(typeof(__traits(getMember, T, "isDestroyed")), const(bool*));
 
 /**
 Extremely simple intrusive weak reference implementation.
@@ -26,7 +26,7 @@ Object B must satisfy some requirements, because of intrusive nature of WeakRef.
 Limitations: WeakRef cannot forward custom `opEquals` and `toHash` calls,
 because their results need to be consistent before and after object destruction.
 */
-struct WeakRef(T) if (isReferenceType!T && hasMemberLike!(T, "isDestroyed", bool*))
+struct WeakRef(T) if (isReferenceType!T && hasIsDestroyedMember!T)
 {
     private T data;
     private bool* isDestroyed;
