@@ -10,11 +10,11 @@ Authors:   Vadim Lopatin
 module beamui.platforms.common.platform;
 
 public import beamui.graphics.drawables : imageCache;
-public import beamui.widgets.widget : CursorType, Widget;
+public import beamui.widgets.widget : CursorType, Element, Widget;
 import beamui.core.animations;
 import beamui.core.asyncsocket;
 import beamui.core.settings;
-import beamui.core.stdaction;
+import beamui.core.stdaction : initStandardActions, ACTION_OK;
 import beamui.graphics.iconprovider;
 import beamui.graphics.painter;
 import beamui.graphics.resources;
@@ -703,7 +703,7 @@ class Window : CustomEventTarget
     {
         Popup popup;
         ulong timerID;
-        WeakRef!Widget ownerWidget;
+        WeakRef!Element owner;
         float x = float.max;
         float y = float.max;
         PopupAlign alignment;
@@ -712,17 +712,17 @@ class Window : CustomEventTarget
     private TooltipInfo _tooltip;
 
     /// Schedule tooltip for widget be shown with specified delay
-    void scheduleTooltip(WeakRef!Widget ownerWidget, long delay, PopupAlign alignment = PopupAlign.point,
+    void scheduleTooltip(WeakRef!Element owner, long delay, PopupAlign alignment = PopupAlign.point,
                          float x = float.max, float y = float.max)
     {
-        if (_tooltip.ownerWidget.get !is ownerWidget.get)
+        if (_tooltip.owner.get !is owner.get)
         {
             debug (tooltips)
                 Log.d("schedule tooltip");
             _tooltip.alignment = alignment;
             _tooltip.x = x;
             _tooltip.y = y;
-            _tooltip.ownerWidget = ownerWidget;
+            _tooltip.owner = owner;
             _tooltip.timerID = setTimer(delay, &handleTooltipTimer);
         }
     }
@@ -733,21 +733,21 @@ class Window : CustomEventTarget
         debug (tooltips)
             Log.d("tooltip timer");
         _tooltip.timerID = 0;
-        if (Widget owner = _tooltip.ownerWidget.get)
+        if (Element owner = _tooltip.owner.get)
         {
             const x = _tooltip.x == float.max ? _lastMouseX : _tooltip.x;
             const y = _tooltip.y == float.max ? _lastMouseY : _tooltip.y;
-            Widget w = owner.createTooltip(x, y);
-            if (w)
-                showTooltip(w, _tooltip.ownerWidget, _tooltip.alignment, x, y);
+            Element el = owner.createTooltip(x, y);
+            if (el)
+                showTooltip(el, _tooltip.owner, _tooltip.alignment, x, y);
             else
-                _tooltip.ownerWidget.nullify();
+                _tooltip.owner.nullify();
         }
         return false;
     }
 
     /// Show tooltip immediately
-    Popup showTooltip(Widget content, WeakRef!Widget anchor = null,
+    Popup showTooltip(Element content, WeakRef!Element anchor = null,
             PopupAlign alignment = PopupAlign.center, float x = float.max, float y = float.max)
     {
         const noTooltipBefore = _tooltip.popup is null;
@@ -774,7 +774,7 @@ class Window : CustomEventTarget
             auto popup = weakRef(res);
             popup.style.opacity = 0;
             addAnimation(tr.duration, (double t) {
-                if (Widget p = popup.get)
+                if (Element p = popup.get)
                     p.style.opacity = tr.mix(0.0f, 1.0f, t);
             });
         }
@@ -792,7 +792,7 @@ class Window : CustomEventTarget
                 Log.d("destroy tooltip");
             destroy(_tooltip.popup);
             _tooltip.popup = null;
-            _tooltip.ownerWidget.nullify();
+            _tooltip.owner.nullify();
             _mainWidget.invalidate();
         }
         if (_tooltip.timerID)
@@ -801,12 +801,12 @@ class Window : CustomEventTarget
                 Log.d("cancel tooltip timer");
             cancelTimer(_tooltip.timerID);
             _tooltip.timerID = 0;
-            _tooltip.ownerWidget.nullify();
+            _tooltip.owner.nullify();
         }
     }
 
     /// Show new popup
-    Popup showPopup(Widget content, WeakRef!Widget anchor = null,
+    Popup showPopup(Element content, WeakRef!Element anchor = null,
             PopupAlign alignment = PopupAlign.center, float x = 0, float y = 0)
     {
         auto res = new Popup(content, this);
@@ -818,7 +818,7 @@ class Window : CustomEventTarget
         auto popup = weakRef(res);
         popup.style.opacity = 0;
         addAnimation(tr.duration, (double t) {
-            if (Widget p = popup.get)
+            if (Element p = popup.get)
                 p.style.opacity = tr.mix(0.0f, 1.0f, t);
         });
 
@@ -918,15 +918,15 @@ class Window : CustomEventTarget
         return result;
     }
 
-    /// Returns true if widget is child of either main widget, one of popups or window scrollbar
-    bool isChild(Widget w)
+    /// Returns true if `el` is child of either the main element, one of popups, or the tooltip
+    bool isChild(Element el)
     {
-        if (_mainWidget.isChild(w))
+        if (_mainWidget.isChild(el))
             return true;
         foreach (p; _popups)
-            if (p.isChild(w))
+            if (p.isChild(el))
                 return true;
-        if (_tooltip.popup && _tooltip.popup.isChild(w))
+        if (_tooltip.popup && _tooltip.popup.isChild(el))
             return true;
         return false;
     }
@@ -942,7 +942,7 @@ class Window : CustomEventTarget
 
     This function use internally $(LINK2 $(DDOX_ROOT_DIR)beamui/core/events/QueueDestroyEvent.html, QueueDestroyEvent).
     */
-    void queueWidgetDestroy(Widget widgetToDestroy)
+    void queueWidgetDestroy(Element widgetToDestroy)
     {
         auto ev = new QueueDestroyEvent(widgetToDestroy);
         postEvent(ev);
@@ -985,15 +985,15 @@ class Window : CustomEventTarget
             animate(p, interval);
     }
 
-    private void animate(Widget root, long interval)
+    private void animate(Element root, long interval)
     {
         assert(root);
 
         if (root.visibility != Visibility.visible)
             return;
 
-        foreach (Widget w; root)
-            animate(w, interval);
+        foreach (Element el; root)
+            animate(el, interval);
         if (root.animating)
             root.animate(interval);
     }
@@ -1129,21 +1129,21 @@ class Window : CustomEventTarget
     //===============================================================
     // Focused widget
 
-    private WeakRef!Widget _focusedWidget;
+    private WeakRef!Element _focusedElement;
     private State _focusStateToApply = State.focused;
     /// Returns current focused widget
-    @property inout(WeakRef!Widget) focusedWidget() inout { return _focusedWidget; }
+    @property inout(WeakRef!Element) focusedElement() inout { return _focusedElement; }
 
     /// Change focus to widget
-    Widget setFocus(WeakRef!Widget target, FocusReason reason = FocusReason.unspecified)
+    Element setFocus(WeakRef!Element target, FocusReason reason = FocusReason.unspecified)
     {
         State targetState = State.focused;
         if (reason == FocusReason.tabFocus)
             targetState |= State.keyboardFocused;
         _focusStateToApply = targetState;
 
-        Widget oldFocus = _focusedWidget.get;
-        Widget newFocus = target.get;
+        Element oldFocus = _focusedElement.get;
+        Element newFocus = target.get;
         if (oldFocus is newFocus)
             return oldFocus;
         if (oldFocus)
@@ -1155,37 +1155,37 @@ class Window : CustomEventTarget
         {
             if (newFocus)
             {
-                // when calling setState(focused), window.focusedWidget is still previously focused widget
+                // when calling setState(focused), window.focusedElement is still previously focused widget
                 debug (focus)
                     Log.d("new focus: ", newFocus.dbgname);
                 newFocus.setState(targetState);
             }
-            _focusedWidget = weakRef(newFocus);
+            _focusedElement = weakRef(newFocus);
             newFocus.maybe.focusGroupFocused(true);
             // after focus change, ask for actions update automatically
             //requestActionsUpdate();
         }
-        return _focusedWidget;
+        return _focusedElement;
     }
 
-    protected Widget applyFocus()
+    protected Element applyFocus()
     {
-        if (_focusedWidget)
+        if (_focusedElement)
         {
-            _focusedWidget.setState(_focusStateToApply);
+            _focusedElement.setState(_focusStateToApply);
             update();
         }
-        return _focusedWidget;
+        return _focusedElement;
     }
 
-    protected Widget removeFocus()
+    protected Element removeFocus()
     {
-        if (_focusedWidget)
+        if (_focusedElement)
         {
-            _focusedWidget.resetState(_focusStateToApply);
+            _focusedElement.resetState(_focusStateToApply);
             update();
         }
-        return _focusedWidget;
+        return _focusedElement;
     }
 
     /// Is this window focused?
@@ -1214,22 +1214,22 @@ class Window : CustomEventTarget
             const context = action.context;
             if (context == ActionContext.application)
             {
-                return action.call(wt => true);
+                return action.call(el => true);
             }
             else if (context == ActionContext.window)
             {
-                return action.call(wt => wt && wt.window is this);
+                return action.call(el => el && el.window is this);
             }
             else // widget or widget tree
             {
-                Widget focus = focusedWidget;
-                if (action.call(wt => wt is focus)) // try focused first
+                Element focus = focusedElement;
+                if (action.call(el => el is focus)) // try focused first
                 {
                     return true;
                 }
                 else if (context == ActionContext.widgetTree)
                 {
-                   return action.call(wt => wt && wt.isChild(focus));
+                   return action.call(el => el && el.isChild(focus));
                 }
                 else
                     return false;
@@ -1265,7 +1265,7 @@ class Window : CustomEventTarget
             if (ch < ' ' || ch == 0x7F) // filter out control symbols
                 return res;
         }
-        Widget focus = focusedWidget;
+        Element focus = focusedElement;
         Popup modal = modalPopup();
         if (!modal || modal.isChild(focus))
         {
@@ -1285,7 +1285,7 @@ class Window : CustomEventTarget
                 focus = focus.parent;
             }
         }
-        Widget dest = modal ? modal : _mainWidget;
+        Element dest = modal ? modal : _mainWidget;
         if (dispatchKeyEvent(dest, event))
             return res;
         else
@@ -1293,7 +1293,7 @@ class Window : CustomEventTarget
     }
 
     /// Dispatch key event to widgets which have `wantsKeyTracking == true`
-    protected bool dispatchKeyEvent(Widget root, KeyEvent event)
+    protected bool dispatchKeyEvent(Element root, KeyEvent event)
     {
         // route key events to visible widgets only
         if (root.visibility != Visibility.visible)
@@ -1303,9 +1303,9 @@ class Window : CustomEventTarget
             if (handleKeyEvent(weakRef(root), event))
                 return true;
         }
-        foreach (Widget w; root)
+        foreach (Element el; root)
         {
-            if (dispatchKeyEvent(w, event))
+            if (dispatchKeyEvent(el, event))
                 return true;
         }
         return false;
@@ -1348,14 +1348,14 @@ class Window : CustomEventTarget
 
         bool res;
         const currentButtons = event.mouseMods;
-        if (_mouseCaptureWidget)
+        if (_mouseCapture)
         {
             // try to forward message directly to active widget
             if (event.action == MouseAction.move)
             {
                 debug (mouse)
                     Log.d("dispatchMouseEvent: Move, buttons state: ", currentButtons);
-                if (!_mouseCaptureWidget.contains(event.x, event.y))
+                if (!_mouseCapture.contains(event.x, event.y))
                 {
                     if (currentButtons != _mouseCaptureButtons)
                     {
@@ -1371,13 +1371,13 @@ class Window : CustomEventTarget
                         event.changeAction(MouseAction.focusOut);
                         _mouseCaptureFocusedOut = true;
                         _mouseCaptureButtons = currentButtons;
-                        _mouseCaptureFocusedOutTrackMovements = sendAndCheckOverride(_mouseCaptureWidget, event);
+                        _mouseCaptureFocusedOutTrackMovements = sendAndCheckOverride(_mouseCapture, event);
                         return true;
                     }
                     else if (_mouseCaptureFocusedOutTrackMovements)
                     {
                         // pointer is outside, but we still need to track pointer
-                        return sendAndCheckOverride(_mouseCaptureWidget, event);
+                        return sendAndCheckOverride(_mouseCapture, event);
                     }
                     // don't forward message
                     return true;
@@ -1392,7 +1392,7 @@ class Window : CustomEventTarget
                             return dispatchCancel(event);
                         event.changeAction(MouseAction.focusIn); // back in after focus out
                     }
-                    return sendAndCheckOverride(_mouseCaptureWidget, event);
+                    return sendAndCheckOverride(_mouseCapture, event);
                 }
             }
             else if (event.action == MouseAction.leave)
@@ -1403,7 +1403,7 @@ class Window : CustomEventTarget
                     event.changeAction(MouseAction.focusOut);
                     _mouseCaptureFocusedOut = true;
                     _mouseCaptureButtons = event.mouseMods;
-                    return sendAndCheckOverride(_mouseCaptureWidget, event);
+                    return sendAndCheckOverride(_mouseCapture, event);
                 }
                 else
                 {
@@ -1414,7 +1414,7 @@ class Window : CustomEventTarget
             }
             else if (event.action == MouseAction.buttonDown || event.action == MouseAction.buttonUp)
             {
-                if (!_mouseCaptureWidget.contains(event.x, event.y))
+                if (!_mouseCapture.contains(event.x, event.y))
                 {
                     if (currentButtons != _mouseCaptureButtons)
                     {
@@ -1426,7 +1426,7 @@ class Window : CustomEventTarget
                 }
             }
             // other messages
-            res = sendAndCheckOverride(_mouseCaptureWidget, event);
+            res = sendAndCheckOverride(_mouseCapture, event);
             if (currentButtons == MouseMods.none)
             {
                 // disable capturing - no more buttons pressed
@@ -1461,7 +1461,7 @@ class Window : CustomEventTarget
                     break;
                 if (insideOneOfPopups)
                 {
-                    if (dispatchMouseEvent(WeakRef!Widget(p), event, cursorIsSet))
+                    if (dispatchMouseEvent(WeakRef!Element(p), event, cursorIsSet))
                         return true;
                 }
                 else
@@ -1476,7 +1476,7 @@ class Window : CustomEventTarget
         return res || processed || _mainWidget.needDraw;
     }
 
-    protected bool dispatchMouseEvent(WeakRef!Widget root, MouseEvent event, ref bool cursorIsSet)
+    protected bool dispatchMouseEvent(WeakRef!Element root, MouseEvent event, ref bool cursorIsSet)
     {
         // route mouse events to visible widgets only
         if (root.visibility != Visibility.visible)
@@ -1484,9 +1484,9 @@ class Window : CustomEventTarget
         if (!root.contains(event.x, event.y))
             return false;
         // offer event to children first
-        foreach (Widget w; root.get)
+        foreach (Element el; root.get)
         {
-            if (dispatchMouseEvent(weakRef(w), event, cursorIsSet))
+            if (dispatchMouseEvent(weakRef(el), event, cursorIsSet))
                 return true;
         }
 
@@ -1504,11 +1504,11 @@ class Window : CustomEventTarget
         {
             debug (mouse)
                 Log.d("MouseEvent is processed");
-            if (event.action == MouseAction.buttonDown && _mouseCaptureWidget.isNull && !event.doNotTrackButtonDown)
+            if (event.action == MouseAction.buttonDown && _mouseCapture.isNull && !event.doNotTrackButtonDown)
             {
                 debug (mouse)
                     Log.d("Setting active widget");
-                setCaptureWidget(root, event);
+                setMouseCapture(root, event);
             }
             else if (event.action == MouseAction.move)
             {
@@ -1519,63 +1519,63 @@ class Window : CustomEventTarget
         return false;
     }
 
-    /// Widget which tracks `move` events
-    private WeakRef!Widget[] _mouseTrackingWidgets;
-    private void addTracking(WeakRef!Widget w)
+    /// Elements that track `move` events
+    private WeakRef!Element[] _mouseTrackingElements;
+    private void addTracking(WeakRef!Element element)
     {
-        if (w.isNull)
+        if (element.isNull)
             return;
-        foreach (mtw; _mouseTrackingWidgets)
-            if (w is mtw)
+        foreach (el; _mouseTrackingElements)
+            if (element is el)
                 return;
-        _mouseTrackingWidgets ~= w;
+        _mouseTrackingElements ~= element;
         debug (mouse)
-            Log.d("addTracking: ", w.dbgname, ", items after: ", _mouseTrackingWidgets.length);
+            Log.d("addTracking: ", element.dbgname, ", items after: ", _mouseTrackingElements.length);
     }
 
     private bool checkRemoveTracking(MouseEvent event)
     {
         bool res;
-        foreach_reverse (ref w; _mouseTrackingWidgets)
+        foreach_reverse (ref el; _mouseTrackingElements)
         {
-            if (w.isNull)
+            if (el.isNull)
                 continue;
-            if (event.action == MouseAction.leave || !w.contains(event.x, event.y))
+            if (event.action == MouseAction.leave || !el.contains(event.x, event.y))
             {
                 // send Leave message
                 auto leaveEvent = new MouseEvent(event);
                 leaveEvent.changeAction(MouseAction.leave);
-                res = handleMouseEvent(w, leaveEvent) || res;
+                res = handleMouseEvent(el, leaveEvent) || res;
                 debug (mouse)
-                    Log.d("removeTracking of ", w.dbgname);
-                w.nullify();
+                    Log.d("removeTracking of ", el.dbgname);
+                el.nullify();
             }
         }
-        _mouseTrackingWidgets = _mouseTrackingWidgets.remove!(a => a.isNull);
+        _mouseTrackingElements = _mouseTrackingElements.remove!(a => a.isNull);
         debug (mouse)
-            Log.d("removeTracking, items after: ", _mouseTrackingWidgets.length);
+            Log.d("removeTracking, items after: ", _mouseTrackingElements.length);
         return res;
     }
 
-    /// Widget which tracks all events after processed `buttonDown`
-    private WeakRef!Widget _mouseCaptureWidget;
+    /// Element that tracks all events after processed `buttonDown`
+    private WeakRef!Element _mouseCapture;
     private MouseMods _mouseCaptureButtons;
     private bool _mouseCaptureFocusedOut;
     /// Does current capture widget want to receive move events even if pointer left it
     private bool _mouseCaptureFocusedOutTrackMovements;
 
-    protected void setCaptureWidget(WeakRef!Widget w, MouseEvent event)
+    protected void setMouseCapture(WeakRef!Element el, MouseEvent event)
     {
-        if (w.isNull)
+        if (el.isNull)
             return;
-        _mouseCaptureWidget = w;
+        _mouseCapture = el;
         _mouseCaptureButtons = event.mouseMods;
         captureMouse(true);
     }
 
     protected void clearMouseCapture()
     {
-        _mouseCaptureWidget.nullify();
+        _mouseCapture.nullify();
         _mouseCaptureFocusedOut = false;
         _mouseCaptureFocusedOutTrackMovements = false;
         _mouseCaptureButtons = MouseMods.none;
@@ -1590,19 +1590,19 @@ class Window : CustomEventTarget
     protected bool dispatchCancel(MouseEvent event)
     {
         event.changeAction(MouseAction.cancel);
-        const res = handleMouseEvent(_mouseCaptureWidget, event);
+        const res = handleMouseEvent(_mouseCapture, event);
         clearMouseCapture();
         return res;
     }
 
-    protected bool sendAndCheckOverride(WeakRef!Widget widget, MouseEvent event)
+    protected bool sendAndCheckOverride(WeakRef!Element element, MouseEvent event)
     {
-        if (widget.isNull)
+        if (element.isNull)
             return false;
-        const res = handleMouseEvent(widget, event);
-        if (event.trackingWidget !is null && _mouseCaptureWidget !is event.trackingWidget)
+        const res = handleMouseEvent(element, event);
+        if (event.trackingWidget !is null && _mouseCapture !is event.trackingWidget)
         {
-            setCaptureWidget(event.trackingWidget, event);
+            setMouseCapture(event.trackingWidget, event);
         }
         return res;
     }
@@ -1610,7 +1610,7 @@ class Window : CustomEventTarget
     /// Returns true if mouse is currently captured
     bool isMouseCaptured() const
     {
-        return !_mouseCaptureWidget.isNull;
+        return !_mouseCapture.isNull;
     }
 
     /// Dispatch wheel event to window content widgets
@@ -1621,7 +1621,7 @@ class Window : CustomEventTarget
 
         hideTooltip();
 
-        if (auto active = _mouseCaptureWidget)
+        if (auto active = _mouseCapture)
         {
             // try to forward message directly to active widget
             handleWheelEvent(active, event);
@@ -1634,12 +1634,12 @@ class Window : CustomEventTarget
             }
             return;
         }
-        if (Widget modal = modalPopup())
+        if (Element modal = modalPopup())
         {
             dispatchWheelEvent(weakRef(modal), event);
             return;
         }
-        foreach_reverse (Widget p; _popups)
+        foreach_reverse (Element p; _popups)
         {
             if (p.contains(event.x, event.y))
                 if (dispatchWheelEvent(weakRef(p), event))
@@ -1648,7 +1648,7 @@ class Window : CustomEventTarget
         dispatchWheelEvent(weakRef(_mainWidget), event);
     }
 
-    protected bool dispatchWheelEvent(WeakRef!Widget root, WheelEvent event)
+    protected bool dispatchWheelEvent(WeakRef!Element root, WheelEvent event)
     {
         // route wheel events to visible widgets only
         if (root.visibility != Visibility.visible)
@@ -1657,46 +1657,46 @@ class Window : CustomEventTarget
             return false;
 
         // offer event to children first
-        foreach (Widget w; root.get)
+        foreach (Element el; root.get)
         {
-            if (dispatchWheelEvent(weakRef(w), event))
+            if (dispatchWheelEvent(weakRef(el), event))
                 return true;
         }
         // if not processed by children, offer event to the root
         return handleWheelEvent(root, event);
     }
 
-    private static bool handleKeyEvent(WeakRef!Widget weak, KeyEvent e)
+    private static bool handleKeyEvent(WeakRef!Element weak, KeyEvent e)
     {
-        Widget w = weak.get;
-        if (w.onKeyEvent.assigned && w.onKeyEvent(e))
+        Element el = weak.get;
+        if (el.onKeyEvent.assigned && el.onKeyEvent(e))
             return true;  // processed by external handler
         else if (weak.isNull)
             return false; // destroyed in the handler, but not processed
         else
-            return w.handleKeyEvent(e);
+            return el.handleKeyEvent(e);
     }
 
-    private static bool handleMouseEvent(WeakRef!Widget weak, MouseEvent e)
+    private static bool handleMouseEvent(WeakRef!Element weak, MouseEvent e)
     {
-        Widget w = weak.get;
-        if (w.onMouseEvent.assigned && w.onMouseEvent(e))
+        Element el = weak.get;
+        if (el.onMouseEvent.assigned && el.onMouseEvent(e))
             return true;
         else if (weak.isNull)
             return false;
         else
-            return w.handleMouseEvent(e);
+            return el.handleMouseEvent(e);
     }
 
-    private static bool handleWheelEvent(WeakRef!Widget weak, WheelEvent e)
+    private static bool handleWheelEvent(WeakRef!Element weak, WheelEvent e)
     {
-        Widget w = weak.get;
-        if (w.onWheelEvent.assigned && w.onWheelEvent(e))
+        Element el = weak.get;
+        if (el.onWheelEvent.assigned && el.onWheelEvent(e))
             return true;
         else if (weak.isNull)
             return false;
         else
-            return w.handleWheelEvent(e);
+            return el.handleWheelEvent(e);
     }
 
     /// Handle theme change: e.g. reload some themed resources
@@ -1723,7 +1723,7 @@ class Window : CustomEventTarget
     /// Post task to execute in UI thread (this method can be used from background thread)
     void executeInUiThread(void delegate() runnable)
     {
-        auto event = new RunnableEvent(CUSTOM_RUNNABLE, WeakRef!Widget(null), runnable);
+        auto event = new RunnableEvent(CUSTOM_RUNNABLE, WeakRef!Element(null), runnable);
         postEvent(event);
     }
 
@@ -1824,7 +1824,7 @@ class Window : CustomEventTarget
         return ret;
     }
     /// Check content widgets for necessary redraw and/or layout
-    protected void checkUpdateNeeded(Widget root, ref bool needDraw, ref bool needLayout, ref bool animationActive)
+    protected void checkUpdateNeeded(Element root, ref bool needDraw, ref bool needLayout, ref bool animationActive)
     {
         assert(root);
 
@@ -1845,8 +1845,8 @@ class Window : CustomEventTarget
         if (needDraw && needLayout && animationActive)
             return;
         // check recursively
-        foreach (Widget w; root)
-            checkUpdateNeeded(w, needDraw, needLayout, animationActive);
+        foreach (Element el; root)
+            checkUpdateNeeded(el, needDraw, needLayout, animationActive);
     }
 
     private bool _animationActive;

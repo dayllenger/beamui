@@ -880,7 +880,7 @@ public:
         bool focused() const
         {
             if (auto w = window)
-                return w.focusedWidget is this && (state & State.focused);
+                return w.focusedElement is this && (state & State.focused);
             else
                 return false;
         }
@@ -1333,7 +1333,7 @@ public:
         if (window is null)
             return null;
         if (!visible)
-            return window.focusedWidget;
+            return window.focusedElement;
         invalidate();
         if (!canFocus)
         {
@@ -1343,7 +1343,7 @@ public:
             if (w)
                 return window.setFocus(weakRef(w), reason);
             // try to find focusable child
-            return window.focusedWidget;
+            return window.focusedElement;
         }
         return window.setFocus(weakRef(this), reason);
     }

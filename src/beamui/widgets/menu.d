@@ -611,7 +611,7 @@ class Menu : ListWidget
         if (focused && !_previousFocusedWidget)
         {
             // on activating
-            _previousFocusedWidget = visualParentMenu ? WeakRef!Widget(visualParentMenu) : window.focusedWidget;
+            _previousFocusedWidget = visualParentMenu ? WeakRef!Widget(visualParentMenu) : window.focusedElement;
         }
         super.handleFocusChange(focused);
     }
