@@ -252,7 +252,8 @@ class StringListAdapter : StringListAdapterBase
             if (_widget is null)
             {
                 _widget = new Label;
-                _widget.bindSubItem(this, "item");
+                _widget.isolateThisStyle();
+                _widget.setAttribute("item");
             }
             // update widget
             _widget.text = _items[index].str;
@@ -321,7 +322,8 @@ class IconStringListAdapter : StringListAdapterBase
             if (_widget is null)
             {
                 _widget = new Panel;
-                _widget.bindSubItem(this, "item");
+                _widget.isolateThisStyle();
+                _widget.setAttribute("item");
                 _icon = new ImageWidget;
                 _label = new Label;
                 _label.style.stretch = Stretch.both;

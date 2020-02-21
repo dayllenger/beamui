@@ -497,7 +497,8 @@ class SettingsPage
             return panel;
 
         auto title = new Label(_label);
-        title.bindSubItem(panel, "title");
+        title.isolateThisStyle();
+        title.setAttribute("title");
         panel.addChild(title);
 
         foreach (i; 0 .. itemCount)
@@ -551,19 +552,19 @@ class SettingsDialog : Dialog
 
     override void initialize()
     {
-        auto content = new Panel;
-            auto treeFrame = new Panel;
+        auto content = new Panel(null, "content");
+            auto treeFrame = new Panel(null, "tree");
                 _tree = new TreeWidget;
-            _frame = new Panel;
+            _frame = new Panel(null, "page");
 
         add(content, createButtonsPanel([ACTION_APPLY, ACTION_CANCEL], 0, 0));
         content.add(treeFrame, new Resizer, _frame);
         treeFrame.addChild(_tree);
         createControls(_pageTree, _tree.items);
 
-        content.bindSubItem(this, "content");
-        treeFrame.bindSubItem(this, "tree");
-        _frame.bindSubItem(this, "page");
+        content.isolateThisStyle();
+        treeFrame.isolateThisStyle();
+        _frame.isolateThisStyle();
 
         _tree.onSelect ~= &handleTreeItemSelection;
         if (_pageTree.childCount > 0)

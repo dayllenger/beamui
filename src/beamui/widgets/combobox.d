@@ -102,13 +102,13 @@ abstract class ComboBoxBase : Panel
     protected void initialize()
     {
         _body = createSelectedItemWidget();
-        _body.bindSubItem(this, "body");
+        _body.setAttribute("body");
         _body.state = State.parent;
         _body.allowsFocus = false;
         _body.onClick ~= &handleClick;
 
         _button = createButton();
-        _button.bindSubItem(this, "button");
+        _button.setAttribute("button");
         _button.allowsFocus = false;
         _button.onClick ~= &handleClick;
 
@@ -147,8 +147,9 @@ abstract class ComboBoxBase : Panel
             return; // don't show empty popup
 
         _popupList = createPopup();
-        _popupList.bindSubItem(this, "list");
+        _popupList.isolateThisStyle();
         _popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
+        _popup.setAttribute("combobox");
         _popup.onPopupClose ~= (bool b) {
             _popup = null;
             _popupList = null;

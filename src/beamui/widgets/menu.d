@@ -51,7 +51,7 @@ class MenuItem : WidgetGroup, ActionHolder
             if (menu && !_arrow)
             {
                 _arrow = new ImageWidget("scrollbar_btn_right");
-                _arrow.bindSubItem(this, "open");
+                _arrow.setAttribute("open");
                 _arrow.state = State.parent;
                 addChild(_arrow);
             }
@@ -87,11 +87,11 @@ class MenuItem : WidgetGroup, ActionHolder
     this(Action action, bool fromMenuBar = false)
     {
         _fromMenuBar = fromMenuBar;
+        isolateStyle();
         if (action is null)
         {
             setAttribute("separator");
             _separator = new Widget;
-            _separator.bindSubItem(this, "separator");
             addChild(_separator);
             enabled = false;
         }
@@ -135,14 +135,14 @@ class MenuItem : WidgetGroup, ActionHolder
             }
         }
         if (_checkbox)
-            _checkbox.bindSubItem(this, _action.isRadio ? "radio" : "check");
+            _checkbox.setAttribute(_action.isRadio ? "radio" : "check");
         // icon
         if (auto iconID = _action.iconID)
         {
             if (!_icon)
             {
                 _icon = new ImageWidget(iconID);
-                _icon.bindSubItem(this, "icon");
+                _icon.setAttribute("icon");
                 _icon.state = State.parent;
                 addChild(_icon);
             }
@@ -158,7 +158,7 @@ class MenuItem : WidgetGroup, ActionHolder
         if (!_label)
         {
             _label = new Label(_action.label);
-            _label.bindSubItem(this, "label");
+            _label.setAttribute("label");
             _label.state = State.parent;
             addChild(_label);
         }
@@ -170,7 +170,7 @@ class MenuItem : WidgetGroup, ActionHolder
             if (!_shortcut)
             {
                 _shortcut = new Label(sc);
-                _shortcut.bindSubItem(this, "shortcut");
+                _shortcut.setAttribute("shortcut");
                 _shortcut.state = State.parent;
                 addChild(_shortcut);
             }

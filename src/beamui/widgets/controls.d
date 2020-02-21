@@ -97,7 +97,7 @@ class Button : Panel, ActionHolder
             else if (some)
             {
                 _icon = new ImageWidget(id);
-                _icon.bindSubItem(this, "icon");
+                _icon.setAttribute("icon");
                 _icon.state = State.parent;
                 add(_icon);
             }
@@ -116,7 +116,7 @@ class Button : Panel, ActionHolder
             else if (some)
             {
                 _icon = new ImageWidget;
-                _icon.bindSubItem(this, "icon");
+                _icon.setAttribute("icon");
                 _icon.state = State.parent;
                 _icon.drawable = img;
                 add(_icon);
@@ -164,7 +164,7 @@ class Button : Panel, ActionHolder
             else if (some)
             {
                 _label = new Label(s);
-                _label.bindSubItem(this, "label");
+                _label.setAttribute("label");
                 _label.state = State.parent;
                 add(_label);
             }
@@ -181,6 +181,7 @@ class Button : Panel, ActionHolder
 
     this(dstring caption = null, string iconID = null, bool checkable = false)
     {
+        isolateStyle();
         this.iconID = iconID;
         this.text = caption;
         allowsClick = true;
@@ -282,10 +283,11 @@ class CheckBox : Panel
 
     this(dstring labelText = null)
     {
+        isolateStyle();
         _icon = new Widget;
         _label = new Label(labelText);
-        _icon.bindSubItem(this, "icon");
-        _label.bindSubItem(this, "label");
+        _icon.setAttribute("icon");
+        _label.setAttribute("label");
         _icon.state = State.parent;
         _label.state = State.parent;
         add(_icon, _label);
@@ -313,10 +315,11 @@ class RadioButton : Panel
 
     this(dstring labelText = null)
     {
+        isolateStyle();
         _icon = new Widget;
         _label = new Label(labelText);
-        _icon.bindSubItem(this, "icon");
-        _label.bindSubItem(this, "label");
+        _icon.setAttribute("icon");
+        _label.setAttribute("label");
         _icon.state = State.parent;
         _label.state = State.parent;
         add(_icon, _label);

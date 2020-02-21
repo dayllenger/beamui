@@ -166,8 +166,8 @@ class ScrollBar : WidgetGroup
         _orient = orient;
         _btnBack = new Button;
         _btnForward = new Button;
-        _btnBack.bindSubItem(this, "button-back");
-        _btnForward.bindSubItem(this, "button-forward");
+        _btnBack.setAttribute("button-back");
+        _btnForward.setAttribute("button-forward");
         _pageUp = new PageScrollButton;
         _pageDown = new PageScrollButton;
         _indicator = new ScrollIndicator;

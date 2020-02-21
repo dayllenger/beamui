@@ -61,9 +61,9 @@ TabWidget {
   display: column;
 }
 
-IconStringListAdapter::item,
+ListWidget > .item,
 TreeItemWidget,
-TreeItemWidget::body {
+TreeItemWidget > .body {
   display: row;
 }
 
@@ -85,8 +85,8 @@ WindowFrame {
   display: column;
 }
 
-WindowFrame::caption,
-WindowFrame::body {
+WindowFrame > .caption,
+WindowFrame > .body {
   display: row;
 }
 
@@ -94,7 +94,7 @@ Dialog {
   display: column;
 }
 
-Dialog::buttons {
+Dialog > .buttons {
   display: row;
 }
 
@@ -112,7 +112,7 @@ FileNameEditLine {
   display: row;
 }
 
-SettingsDialog::content {
+SettingsDialog > .content {
   display: row;
   stretch: both;
 }
@@ -122,6 +122,6 @@ SettingsDialog .settings-table {
   align-content: start;
 }
 SettingsDialog .settings-table > .full-row,
-SettingsDialog .settings-table::title {
+SettingsDialog .settings-table > .title {
   grid-column-end: span 2;
 }

@@ -1131,7 +1131,7 @@ struct ComputedStyle
 
         // find that we are not tied, being the root of style scope
         Widget parent = widget.parent;
-        const bool canInherit = parent && !widget.styleIsolated;
+        const bool canInherit = parent && !isolated;
         /// iterate through all properties
         static foreach (name; __traits(allMembers, StyleProperty))
         {{

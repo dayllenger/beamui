@@ -243,7 +243,8 @@ class AppFrame : Panel
         _body = createBody();
         if (_body)
         {
-            _body.bindSubItem(this, "body");
+            _body.isolateThisStyle();
+            _body.setAttribute("body");
             _body.focusGroup = true;
         }
         addSome(_mainMenu, _toolbarHost, _body, _statusLine);

@@ -268,8 +268,8 @@ abstract class AbstractSlider : WidgetGroup
         setAttribute(orient == Orientation.horizontal ? "horizontal" : "vertical");
         _rangeBefore = new SliderBar;
         _rangeAfter = new SliderBar;
-        _rangeBefore.bindSubItem(this, "range-before");
-        _rangeAfter.bindSubItem(this, "range-after");
+        _rangeBefore.setAttribute("range-before");
+        _rangeAfter.setAttribute("range-after");
         addChild(_rangeBefore);
         addChild(_rangeAfter);
     }
@@ -733,7 +733,7 @@ class RangeSlider : AbstractSlider
         _1stHandle.onDragging = &handleDragging1;
         _2ndHandle.onDragging = &handleDragging2;
         _rangeBetween = new SliderBar;
-        _rangeBetween.bindSubItem(this, "range-between");
+        _rangeBetween.setAttribute("range-between");
         addChild(_1stHandle);
         addChild(_2ndHandle);
         addChild(_rangeBetween);

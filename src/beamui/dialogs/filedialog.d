@@ -780,7 +780,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
                     setAttribute("path");
                 }
                 with (_fileList) {
-                    bindSubItem(this, "grid");
+                    setAttribute("grid");
                     fullColumnOnLeft = false;
                     fullRowOnTop = false;
                     showRowHeaders = false;
@@ -916,15 +916,16 @@ class FilePathPanelItem : Panel
 
     this(string path)
     {
+        isolateStyle();
         _path = path;
         string fname = isRoot(path) ? path : baseName(path);
         _text = new Label(toUTF32(fname));
-        _text.bindSubItem(this, "label");
+        _text.setAttribute("label");
         _text.allowsHover = true;
         _text.allowsClick = true;
         _text.onClick ~= &handleTextClick;
         _button = new Button(null, "scrollbar_btn_right");
-        _button.bindSubItem(this, "button");
+        _button.setAttribute("button");
         _button.allowsFocus = false;
         _button.onClick ~= &handleButtonClick;
         allowsHover = true;
@@ -1244,7 +1245,8 @@ class FileNameEditLine : Panel
         _edFileName = new EditLine;
         _edFileName.style.minWidth = BACKEND_CONSOLE ? 16 : 200;
         _btn = new Button("..."d);
-        _btn.bindSubItem(this, "button");
+        _btn.isolateThisStyle();
+        _btn.setAttribute("button");
         _btn.onClick ~= {
             auto dlg = new FileDialog(_caption, window, null, _fileDialogFlags);
             foreach (key, value; _filetypeIcons)

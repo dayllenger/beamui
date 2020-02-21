@@ -12,53 +12,53 @@ Button:pressed, Button:checked { border-color: #4e93da; background: linear(190de
 
 Button:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
-Button::icon, Button::label { align: center; }
+Button > .icon, Button > .label { align: center; }
 
-Button::label { stretch: main; text-align: center; text-hotkey: underline-on-alt; text-overflow: ellipsis; transition: color 75ms ease; }
+Button > .label { stretch: main; text-align: center; text-hotkey: underline-on-alt; text-overflow: ellipsis; transition: color 75ms ease; }
 
-Button::label:hovered { color: #46617e; }
+Button > .label:hovered { color: #46617e; }
 
-Button::label:pressed { color: #417fbf; }
+Button > .label:pressed { color: #417fbf; }
 
-Button::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
+Button > .label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 Button.flat { background: none; focus-rect-color: none; }
 
 LinkButton { padding: 3px; border: none; background: none; }
 
-LinkButton::label { color: #4169e1; text-align: start; text-overflow: ellipsis-middle; }
+LinkButton > .label { color: #4169e1; text-align: start; text-overflow: ellipsis-middle; }
 
-LinkButton::label:hovered { text-decoration: underline; }
+LinkButton > .label:hovered { text-decoration: underline; }
 
-LinkButton::label:not(enabled) { color: rgba(192, 192, 255, 0.7); }
+LinkButton > .label:not(enabled) { color: rgba(192, 192, 255, 0.7); }
 
 CheckBox, RadioButton { padding: 2px; }
 
-CheckBox::label, RadioButton::label { align: left vcenter; stretch: main; text-hotkey: underline-on-alt; text-overflow: ellipsis; }
+CheckBox > .label, RadioButton > .label { align: left vcenter; stretch: main; text-hotkey: underline-on-alt; text-overflow: ellipsis; }
 
-CheckBox::label:hovered, RadioButton::label:hovered { color: #46617e; }
+CheckBox > .label:hovered, RadioButton > .label:hovered { color: #46617e; }
 
-CheckBox::label:not(enabled), RadioButton::label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
+CheckBox > .label:not(enabled), RadioButton > .label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
-CheckBox::icon, MenuItem::check, RadioButton::icon, MenuItem::radio { align: center; min-width: 16px; min-height: 16px; }
+CheckBox > .icon, MenuItem > .check, RadioButton > .icon, MenuItem > .radio { align: center; min-width: 16px; min-height: 16px; }
 
-CheckBox::icon:not(enabled), MenuItem::check:not(enabled), RadioButton::icon:not(enabled), MenuItem::radio:not(enabled) { opacity: 0.4; }
+CheckBox > .icon:not(enabled), MenuItem > .check:not(enabled), RadioButton > .icon:not(enabled), MenuItem > .radio:not(enabled) { opacity: 0.4; }
 
-CheckBox::icon:enabled:not(checked):hovered, MenuItem::check:enabled:not(checked):hovered, RadioButton::icon:enabled:not(checked):hovered, MenuItem::radio:enabled:not(checked):hovered { border-color: #d0d0d0; }
+CheckBox > .icon:enabled:not(checked):hovered, MenuItem > .check:enabled:not(checked):hovered, RadioButton > .icon:enabled:not(checked):hovered, MenuItem > .radio:enabled:not(checked):hovered { border-color: #d0d0d0; }
 
-CheckBox::icon:not(checked):pressed, MenuItem::check:not(checked):pressed, RadioButton::icon:not(checked):pressed, MenuItem::radio:not(checked):pressed { background-color: #f7f7f7; border-color: #d0d0d0; }
+CheckBox > .icon:not(checked):pressed, MenuItem > .check:not(checked):pressed, RadioButton > .icon:not(checked):pressed, MenuItem > .radio:not(checked):pressed { background-color: #f7f7f7; border-color: #d0d0d0; }
 
-CheckBox::icon:not(checked), MenuItem::check:not(checked) { background-color: white; border: 1px solid #e0e0e0; border-radius: 3px; }
+CheckBox > .icon:not(checked), MenuItem > .check:not(checked) { background-color: white; border: 1px solid #e0e0e0; border-radius: 3px; }
 
-CheckBox::icon:checked, MenuItem::check:checked { background: url(btn_check_on); }
+CheckBox > .icon:checked, MenuItem > .check:checked { background: url(btn_check_on); }
 
-CheckBox::icon:checked:hovered, MenuItem::check:checked:hovered { background: url(btn_check_on_focused); }
+CheckBox > .icon:checked:hovered, MenuItem > .check:checked:hovered { background: url(btn_check_on_focused); }
 
-CheckBox::icon:checked:pressed, MenuItem::check:checked:pressed { background: url(btn_check_on_pressed); }
+CheckBox > .icon:checked:pressed, MenuItem > .check:checked:pressed { background: url(btn_check_on_pressed); }
 
-RadioButton::icon, MenuItem::radio { background-color: white; border: 1px solid #e0e0e0; border-radius: 50%; }
+RadioButton > .icon, MenuItem > .radio { background-color: white; border: 1px solid #e0e0e0; border-radius: 50%; }
 
-RadioButton::icon:checked, MenuItem::radio:checked { border-color: #4e93da; border-width: 5px; }
+RadioButton > .icon:checked, MenuItem > .radio:checked { border-color: #4e93da; border-width: 5px; }
 
 SwitchButton { align: center; background: url(switch_off); }
 
@@ -85,7 +85,7 @@ Resizer:pressed { background-color: rgba(78, 147, 218, 0.8); }
 /* groupbox */
 GroupBox { padding: 20px 10px 16px; }
 
-GroupBox::caption { align: left vcenter; padding: 1px; color: #504840; text-overflow: ellipsis; }
+GroupBox > .caption { align: left vcenter; padding: 1px; color: #504840; text-overflow: ellipsis; }
 
 @define-drawables { group_box_frame_up_left: url(group_box_frame_up_left);
   group_box_frame_up_right: url(group_box_frame_up_right);
@@ -98,11 +98,11 @@ ListWidget:focused { border-color: #2e93fa; }
 
 ListWidget:not(enabled) { background-color: #f0f0f0; }
 
-StringListAdapter::item, IconStringListAdapter::item { padding: 2px 4px; }
+ListWidget > .item { padding: 2px 4px; }
 
-StringListAdapter::item:hovered, IconStringListAdapter::item:hovered { background-color: #e2edf9; }
+ListWidget > .item:hovered { background-color: #e2edf9; }
 
-StringListAdapter::item:focused, StringListAdapter::item:selected, IconStringListAdapter::item:focused, IconStringListAdapter::item:selected { background-color: #4e93da; color: #f0f0f0; }
+ListWidget > .item:focused, ListWidget > .item:selected { background-color: #4e93da; color: #f0f0f0; }
 
 /* combobox */
 ComboBoxBase { padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
@@ -117,27 +117,27 @@ ComboBoxBase.opened { border-color: #4e93da; }
 
 ComboBoxBase:not(enabled) { border-color: #ccc; opacity: 0.4; }
 
-ComboBoxBase::body { min-width: 40px; padding: 2px; align: left vcenter; stretch: both; transition: color 100ms ease; }
+ComboBoxBase > .body { min-width: 40px; padding: 2px; align: left vcenter; stretch: both; transition: color 100ms ease; }
 
-ComboBoxBase::body:hovered { color: #46617e; }
+ComboBoxBase > .body:hovered { color: #46617e; }
 
-ComboBoxBase::body:pressed { color: #417fbf; }
+ComboBoxBase > .body:pressed { color: #417fbf; }
 
-ComboBoxBase::button { align: center; padding: 3px 2px; }
+ComboBoxBase > .button { align: center; padding: 3px 2px; }
 
-ComboBoxBase::body:not(enabled), ComboBoxBase::button:not(enabled) { opacity: 0.4; }
+ComboBoxBase > .body:not(enabled), ComboBoxBase > .button:not(enabled) { opacity: 0.4; }
 
-ComboBoxBase::list { border: 1px solid #aaa; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); background-color: white; }
+Popup.combobox > ListWidget { box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
 
-ComboBoxBase::list:focused { border: 1px solid rgba(32, 64, 255, 0.75); }
+Popup.combobox > ListWidget:focused { border-color: rgba(32, 64, 255, 0.75); }
 
-ComboBoxBase::list:not(enabled) { background-color: #f0f0f0; }
+Popup.combobox > ListWidget:not(enabled) { background-color: #f0f0f0; }
 
 ComboEdit { background: none; }
 
-ComboEdit::body:hovered, ComboEdit::body:pressed { color: #404040; }
+ComboEdit > .body:hovered, ComboEdit > .body:pressed { color: #404040; }
 
-ComboEdit::body:focused { color: initial; }
+ComboEdit > .body:focused { color: initial; }
 
 /* menu */
 Menu { width: auto; height: auto; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; }
@@ -152,43 +152,43 @@ MenuItem:focused, MenuItem:selected { background-color: #4e93da; }
 
 MenuItem.separator { padding: 4px; }
 
-MenuItem::separator { min-width: 1px; min-height: 1px; background: #ccc; }
+MenuItem.separator > Widget { min-width: 1px; min-height: 1px; background: #ccc; }
 
-MenuItem::icon { align: left vcenter; padding: 0 2px; }
+MenuItem > .icon { align: left vcenter; padding: 0 2px; }
 
-MenuItem::icon:not(enabled) { opacity: 0.4; }
+MenuItem > .icon:not(enabled) { opacity: 0.4; }
 
-MenuItem::label { align: left vcenter; padding: 0 4px; text-hotkey: underline-on-alt; }
+MenuItem > .label { align: left vcenter; padding: 0 4px; text-hotkey: underline-on-alt; }
 
-MenuItem::shortcut { align: right vcenter; padding-left: 8px; padding-right: 2px; }
+MenuItem > .shortcut { align: right vcenter; padding-left: 8px; padding-right: 2px; }
 
-MenuItem::open { align: center; }
+MenuItem > .open { align: center; }
 
-MenuItem::label:focused, MenuItem::label:selected, MenuItem::shortcut:focused, MenuItem::shortcut:selected { color: #eee; }
+MenuItem > .label:focused, MenuItem > .label:selected, MenuItem > .shortcut:focused, MenuItem > .shortcut:selected { color: #eee; }
 
-MenuItem::label:not(enabled), MenuItem::shortcut:not(enabled) { color: rgba(64, 64, 64, 0.5); }
+MenuItem > .label:not(enabled), MenuItem > .shortcut:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 /* tree */
 TreeItemWidget { min-width: 100px; min-height: 1em; gap: 0; }
 
-TreeItemWidget::body { padding: 2px 4px; gap: 0; }
+TreeItemWidget > .body { padding: 2px 4px; gap: 0; }
 
-TreeItemWidget::body:hovered { background-color: #c7d9ec; }
+TreeItemWidget > .body:hovered { background-color: #c7d9ec; }
 
-TreeItemWidget::body:pressed, TreeItemWidget::body:selected { background-color: #4e93da; }
+TreeItemWidget > .body:pressed, TreeItemWidget > .body:selected { background-color: #4e93da; }
 
-TreeItemWidget::icon { padding-right: 3px; }
+TreeItemWidget > .body > .icon { padding-right: 3px; }
 
-TreeItemWidget::label:pressed, TreeItemWidget::label:selected { color: #f0f0f0; }
+TreeItemWidget > .body > .label:pressed, TreeItemWidget > .body > .label:selected { color: #f0f0f0; }
 
-TreeItemWidget::label:default { font-weight: bold; }
+TreeItemWidget > .body > .label:default { font-weight: bold; }
 
 /* grid */
-StringGridWidget, FileDialog::grid { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; transition: border-color 100ms ease; }
+StringGridWidget { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; transition: border-color 100ms ease; }
 
-StringGridWidget:focused, FileDialog::grid:focused { border-color: #2e93fa; }
+StringGridWidget:focused { border-color: #2e93fa; }
 
-StringGridWidget:not(enabled), FileDialog::grid:not(enabled) { background-color: #f0f0f0; }
+StringGridWidget:not(enabled) { background-color: #f0f0f0; }
 
 @define-colors { grid_selection: rgba(64, 64, 255, 0.5);
   grid_selection_row: rgba(160, 176, 255, 0.2);
@@ -222,19 +222,19 @@ AbstractSlider > SliderHandle:pressed { background-color: rgba(46, 147, 250, 0.7
 
 AbstractSlider > SliderHandle:not(enabled) { opacity: 0.4; }
 
-AbstractSlider::range-before, AbstractSlider::range-after { border-color: transparent; background-color: #888; background-clip: padding-box; }
+AbstractSlider > .range-before, AbstractSlider > .range-after { border-color: transparent; background-color: #888; background-clip: padding-box; }
 
-AbstractSlider.horizontal::range-before, AbstractSlider.horizontal::range-after { border-top-width: 4px; border-bottom-width: 4px; }
+AbstractSlider.horizontal > .range-before, AbstractSlider.horizontal > .range-after { border-top-width: 4px; border-bottom-width: 4px; }
 
-AbstractSlider.vertical::range-before, AbstractSlider.vertical::range-after { border-left-width: 4px; border-right-width: 4px; }
+AbstractSlider.vertical > .range-before, AbstractSlider.vertical > .range-after { border-left-width: 4px; border-right-width: 4px; }
 
-Slider::range-before { background-color: #417fbf; }
+Slider > .range-before { background-color: #417fbf; }
 
-RangeSlider::range-between { border-color: transparent; background-color: #417fbf; background-clip: padding-box; }
+RangeSlider > .range-between { border-color: transparent; background-color: #417fbf; background-clip: padding-box; }
 
-RangeSlider.horizontal::range-between { border-top-width: 4px; border-bottom-width: 4px; }
+RangeSlider.horizontal > .range-between { border-top-width: 4px; border-bottom-width: 4px; }
 
-RangeSlider.vertical::range-between { border-left-width: 4px; border-right-width: 4px; }
+RangeSlider.vertical > .range-between { border-left-width: 4px; border-right-width: 4px; }
 
 @define-drawables { scrollbar_button_up: url(scrollbar_btn_up);
   scrollbar_button_down: url(scrollbar_btn_down);
@@ -248,9 +248,9 @@ TabWidget { gap: 0; }
 
 TabControl { padding-left: 3px; padding-right: 3px; }
 
-TabControl::more { opacity: 0.6; transition: opacity 100ms ease; }
+TabControl > .more { opacity: 0.6; transition: opacity 100ms ease; }
 
-TabControl::more:hovered { opacity: 1; }
+TabControl > .more:hovered { opacity: 1; }
 
 TabHost { padding: 6px; stretch: both; background-color: #f2f4f5; }
 
@@ -262,9 +262,9 @@ TabControl.bottom TabItem { border-top-width: 2px; }
 
 TabItem:selected { border-color: #4e93da; }
 
-TabItem::label { align: hcenter bottom; padding: 0 3px 3px; text-hotkey: underline-on-alt; transition: color 100ms ease; }
+TabItem > .label { align: hcenter bottom; padding: 0 3px 3px; text-hotkey: underline-on-alt; transition: color 100ms ease; }
 
-TabItem::label:hovered, TabItem::label:selected, TabItem::label:focused, TabItem::label:selected:focused { color: #4e93da; }
+TabItem > .label:hovered, TabItem > .label:selected, TabItem > .label:focused, TabItem > .label:selected:focused { color: #4e93da; }
 
 /* editors */
 EditLine { padding: 4px; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
@@ -321,13 +321,13 @@ ToolBarHost { padding: 6px; gap: 8px; }
 
 ToolBar { padding-left: 6px; gap: 4px; border-color: #bbb; border-style: solid; border-left-width: 2px; }
 
-ToolBar::separator { margin-top: 3px; margin-bottom: 3px; border-color: #999; border-style: solid; border-left-width: 1px; }
+ToolBar > .separator { margin-top: 3px; margin-bottom: 3px; border-color: #999; border-style: solid; border-left-width: 1px; }
 
 ToolBar * { background: none; }
 
-ToolBar *:not(hovered):not(pressed) { border: none; }
+ToolBar *:not(hovered):not(pressed) { border-color: transparent; }
 
-ToolBar *:not(enabled) { border: none; opacity: 0.4; }
+ToolBar *:not(enabled) { border-color: transparent; opacity: 0.4; }
 
 ToolBarButton { padding: 4px; focus-rect-color: none; }
 
@@ -354,14 +354,14 @@ ProgressBar { min-width: 50px; min-height: 16px; max-height: 16px; padding: 2px;
 /* winframe */
 WindowFrame { background: #f4f4f4; }
 
-WindowFrame::caption { padding: 3px; background: #e4e4e4; }
+WindowFrame > .caption { padding: 3px; background: #e4e4e4; }
 
-WindowFrame::label { align: left vcenter; stretch: both; padding: 2px; color: #333; font-size: 90%; text-transform: uppercase; }
+WindowFrame > .caption > .label { align: left vcenter; stretch: both; padding: 2px; color: #333; font-size: 0.9em; text-transform: uppercase; }
 
-WindowFrame::body { padding: 3px; stretch: both; }
+WindowFrame > .body { padding: 3px; stretch: both; }
 
 /* appframe */
-AppFrame::body { stretch: both; }
+AppFrame > .body { stretch: both; }
 
 /* dialog, filedialog, inputbox, messagebox, settingsdialog */
 DialogFrame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px #555; }
@@ -374,19 +374,19 @@ FileDialog .content { gap: 1px; }
 
 FileDialog .right-panel { stretch: both; }
 
-FileDialog::grid { stretch: both; }
+FileDialog .right-panel > .grid { stretch: both; }
 
 FilePathPanelButtons { padding-left: 3px; padding-right: 6px; }
 
 FilePathPanelItem { gap: 0; }
 
-FilePathPanelItem::label { align: center; padding: 2px 3px; }
+FilePathPanelItem > .label { align: center; padding: 2px 3px; }
 
-FilePathPanelItem::label:hovered { background-color: #c7d9ec; }
+FilePathPanelItem > .label:hovered { background-color: #c7d9ec; }
 
-FilePathPanelItem::button { padding: 0 1px; }
+FilePathPanelItem > .button { padding: 0 1px; }
 
-FilePathPanelItem::button:hovered { background-color: #c7d9ec; }
+FilePathPanelItem > .button:hovered { background-color: #c7d9ec; }
 
 FileNameEditLine EditLine { stretch: both; }
 
@@ -398,13 +398,13 @@ InputBox > Label, MessageBox > Label { padding: 10px; }
 
 SettingsDialog { padding: 4px; }
 
-SettingsDialog::content { padding: 6px; gap: 3px; }
+SettingsDialog > .content { padding: 6px; gap: 3px; }
 
-SettingsDialog::tree { width: 150px; min-width: 50px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; font-size: 16px; }
+SettingsDialog > .content > .tree { width: 150px; min-width: 50px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; font-size: 16px; }
 
-SettingsDialog::page { min-width: 100px; padding: 4px; stretch: both; }
+SettingsDialog > .content > .page { min-width: 100px; padding: 4px; stretch: both; }
 
-SettingsDialog .settings-table::title { padding: 4px 4px 12px; font-size: 1.6em; }
+SettingsDialog .settings-table > .title { padding: 4px 4px 12px; font-size: 1.6em; }
 
 /* Tooltips */
 Label#tooltip { padding: 3px; box-shadow: 0 2px 7px rgba(0, 0, 0, 0.4); background-color: #222; color: #eee; }

@@ -19,7 +19,8 @@ class GroupBox : Panel
     this(dstring caption = ""d)
     {
         _caption = new Label(caption);
-        _caption.bindSubItem(this, "caption");
+        _caption.isolateThisStyle();
+        _caption.setAttribute("caption");
         _caption.state = State.parent;
         _caption.parent = this;
         _hiddenChildren.append(_caption);
@@ -28,7 +29,8 @@ class GroupBox : Panel
     this(dstring caption, Orientation orientation)
     {
         _caption = new Label(caption);
-        _caption.bindSubItem(this, "caption");
+        _caption.isolateThisStyle();
+        _caption.setAttribute("caption");
         _caption.state = State.parent;
         _caption.parent = this;
         _hiddenChildren.append(_caption);

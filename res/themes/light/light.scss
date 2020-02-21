@@ -51,11 +51,11 @@ Button {
         opacity: 0.4;
     }
 
-    &::icon, &::label {
+    > .icon, > .label {
         align: center;
     }
 
-    &::label {
+    > .label {
         stretch: main;
         text-align: center;
         text-hotkey: underline-on-alt;
@@ -86,7 +86,7 @@ LinkButton {
     border: none;
     background: none;
 
-    &::label {
+    > .label {
         color: #4169e1;
         text-align: start;
         text-overflow: ellipsis-middle;
@@ -105,7 +105,7 @@ CheckBox, RadioButton {
     padding: 2px;
 }
 
-CheckBox::label, RadioButton::label {
+CheckBox > .label, RadioButton > .label {
     align: left vcenter;
     stretch: main;
     text-hotkey: underline-on-alt;
@@ -120,7 +120,7 @@ CheckBox::label, RadioButton::label {
     }
 }
 
-CheckBox::icon, MenuItem::check, RadioButton::icon, MenuItem::radio {
+CheckBox > .icon, MenuItem > .check, RadioButton > .icon, MenuItem > .radio {
     align: center;
     min-width: 16px;
     min-height: 16px;
@@ -139,7 +139,7 @@ CheckBox::icon, MenuItem::check, RadioButton::icon, MenuItem::radio {
     }
 }
 
-CheckBox::icon, MenuItem::check {
+CheckBox > .icon, MenuItem > .check {
     &:not(checked) {
         background-color: white;
         border: 1px solid #e0e0e0;
@@ -159,7 +159,7 @@ CheckBox::icon, MenuItem::check {
     }
 }
 
-RadioButton::icon, MenuItem::radio {
+RadioButton > .icon, MenuItem > .radio {
     background-color: white;
     border: 1px solid #e0e0e0;
     border-radius: 50%;
@@ -223,7 +223,7 @@ GroupBox {
     padding: 20px 10px 16px;
 }
 
-GroupBox::caption {
+GroupBox > .caption {
     align: left vcenter;
     padding: 1px;
     color: #504840;
@@ -250,18 +250,18 @@ ListWidget {
     &:not(enabled) {
         background-color: $disabled-color;
     }
-}
 
-StringListAdapter::item, IconStringListAdapter::item {
-    padding: 2px 4px;
+    > .item {
+        padding: 2px 4px;
 
-    &:hovered {
-        background-color: $hovered-color;
-    }
+        &:hovered {
+            background-color: $hovered-color;
+        }
 
-    &:focused, &:selected {
-        background-color: $main-color;
-        color: $inverse-text-color;
+        &:focused, &:selected {
+            background-color: $main-color;
+            color: $inverse-text-color;
+        }
     }
 }
 
@@ -295,7 +295,7 @@ ComboBoxBase {
         opacity: 0.4;
     }
 
-    &::body {
+    > .body {
         min-width: 40px;
         padding: 2px;
         align: left vcenter;
@@ -311,34 +311,32 @@ ComboBoxBase {
         }
     }
 
-    &::button {
+    > .button {
         align: center;
         padding: 3px 2px;
     }
 
-    &::body:not(enabled), &::button:not(enabled) {
+    > .body:not(enabled), > .button:not(enabled) {
         opacity: 0.4;
     }
+}
 
-    &::list {
-        border: 1px solid #aaa;
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
-        background-color: white;
+Popup.combobox > ListWidget {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
 
-        &:focused {
-            border: 1px solid fade-out(#2040ff, 0.25);
-        }
+    &:focused {
+        border-color: fade-out(#2040ff, 0.25);
+    }
 
-        &:not(enabled) {
-            background-color: $inverse-text-color;
-        }
+    &:not(enabled) {
+        background-color: $inverse-text-color;
     }
 }
 
 ComboEdit {
     background: none;
 
-    &::body {
+    > .body {
         &:hovered, &:pressed {
             color: $text-color;
         }
@@ -380,45 +378,45 @@ MenuItem {
 
     &.separator {
         padding: 4px;
+
+        > Widget {
+            min-width: 1px;
+            min-height: 1px;
+            background: #ccc;
+        }
     }
 
-    &::separator {
-        min-width: 1px;
-        min-height: 1px;
-        background: #ccc;
-    }
-
-    &::icon {
+    > .icon {
         align: left vcenter;
         padding: 0 2px;
     }
 
-    &::icon:not(enabled) {
+    > .icon:not(enabled) {
         opacity: 0.4;
     }
 
-    &::label {
+    > .label {
         align: left vcenter;
         padding: 0 4px;
         text-hotkey: underline-on-alt;
     }
 
-    &::shortcut {
+    > .shortcut {
         align: right vcenter;
         padding-left: 8px;
         padding-right: 2px;
     }
 
-    &::open {
+    > .open {
         align: center;
     }
 
-    &::label:focused, &::label:selected,
-    &::shortcut:focused, &::shortcut:selected {
+    > .label:focused, > .label:selected,
+    > .shortcut:focused, > .shortcut:selected {
         color: #eee;
     }
 
-    &::label:not(enabled), &::shortcut:not(enabled) {
+    > .label:not(enabled), > .shortcut:not(enabled) {
         color: $disabled-text-color;
     }
 }
@@ -430,10 +428,7 @@ TreeItemWidget {
     min-height: 1em;
     gap: 0;
 
-    &::expander {
-    }
-
-    &::body {
+    > .body {
         padding: 2px 4px;
         gap: 0;
 
@@ -444,24 +439,24 @@ TreeItemWidget {
         &:pressed, &:selected {
             background-color: $main-color;
         }
-    }
 
-    &::icon {
-        padding-right: 3px;
-    }
+        > .icon {
+            padding-right: 3px;
+        }
 
-    &::label:pressed, &::label:selected {
-        color: $inverse-text-color;
-    }
+        > .label:pressed, > .label:selected {
+            color: $inverse-text-color;
+        }
 
-    &::label:default {
-        font-weight: bold;
+        > .label:default {
+            font-weight: bold;
+        }
     }
 }
 
 /* grid */
 
-StringGridWidget, FileDialog::grid {
+StringGridWidget {
     min-width: 100px;
     min-height: 60px;
     border: 1px solid #aaa;
@@ -544,42 +539,46 @@ AbstractSlider > SliderHandle {
 }
 
 AbstractSlider {
-    &::range-before, &::range-after {
+    > .range-before, > .range-after {
         border-color: transparent;
         background-color: #888;
         background-clip: padding-box;
     }
 
-    &.horizontal::range-before, &.horizontal::range-after {
-        border-top-width: 4px;
-        border-bottom-width: 4px;
+    &.horizontal {
+        > .range-before, > .range-after {
+            border-top-width: 4px;
+            border-bottom-width: 4px;
+        }
     }
 
-    &.vertical::range-before, &.vertical::range-after {
-        border-left-width: 4px;
-        border-right-width: 4px;
+    &.vertical {
+        > .range-before, > .range-after {
+            border-left-width: 4px;
+            border-right-width: 4px;
+        }
     }
 }
 
 Slider {
-    &::range-before {
+    > .range-before {
         background-color: $secondary-color;
     }
 }
 
 RangeSlider {
-    &::range-between {
+    > .range-between {
         border-color: transparent;
         background-color: $secondary-color;
         background-clip: padding-box;
     }
 
-    &.horizontal::range-between {
+    &.horizontal > .range-between {
         border-top-width: 4px;
         border-bottom-width: 4px;
     }
 
-    &.vertical::range-between {
+    &.vertical > .range-between {
         border-left-width: 4px;
         border-right-width: 4px;
     }
@@ -605,7 +604,7 @@ TabControl {
     padding-right: 3px;
 }
 
-TabControl::more {
+TabControl > .more {
     opacity: 0.6;
     transition: opacity 100ms ease;
 
@@ -638,7 +637,7 @@ TabItem:selected {
     border-color: $main-color;
 }
 
-TabItem::label {
+TabItem > .label {
     align: hcenter bottom;
     padding: 0 3px 3px;
     text-hotkey: underline-on-alt;
@@ -769,7 +768,7 @@ ToolBar {
     border-left-width: 2px;
 }
 
-ToolBar::separator {
+ToolBar > .separator {
     margin-top: 3px;
     margin-bottom: 3px;
     border-color: #999;
@@ -781,11 +780,11 @@ ToolBar * {
     background: none;
 
     &:not(hovered):not(pressed) {
-        border: none;
+        border-color: transparent;
     }
 
     &:not(enabled) {
-        border: none;
+        border-color: transparent;
         opacity: 0.4;
     }
 }
@@ -841,21 +840,21 @@ ProgressBar {
 WindowFrame {
     background: #f4f4f4;
 
-    &::caption {
+    > .caption {
         padding: 3px;
         background: #e4e4e4;
+
+        > .label {
+            align: left vcenter;
+            stretch: both;
+            padding: 2px;
+            color: #333;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
     }
 
-    &::label {
-        align: left vcenter;
-        stretch: both;
-        padding: 2px;
-        color: #333;
-        font-size: 90%;
-        text-transform: uppercase;
-    }
-
-    &::body {
+    > .body {
         padding: 3px;
         stretch: both;
     }
@@ -863,7 +862,7 @@ WindowFrame {
 
 /* appframe */
 
-AppFrame::body {
+AppFrame > .body {
     stretch: both;
 }
 
@@ -889,10 +888,10 @@ FileDialog {
 
     .right-panel {
         stretch: both;
-    }
 
-    &::grid {
-        stretch: both;
+        > .grid {
+            stretch: both;
+        }
     }
 }
 
@@ -904,21 +903,21 @@ FilePathPanelButtons {
 FilePathPanelItem {
     gap: 0;
 
-    &::label {
+    > .label {
         align: center;
         padding: 2px 3px;
+
+        &:hovered {
+            background-color: $secondary-hovered-color;
+        }
     }
 
-    &::label:hovered {
-        background-color: $secondary-hovered-color;
-    }
-
-    &::button {
+    > .button {
         padding: 0 1px;
-    }
 
-    &::button:hovered {
-        background-color: $secondary-hovered-color;
+        &:hovered {
+            background-color: $secondary-hovered-color;
+        }
     }
 }
 
@@ -941,27 +940,27 @@ InputBox, MessageBox {
 SettingsDialog {
     padding: 4px;
 
-    &::content {
+    > .content {
         padding: 6px;
         gap: 3px;
+
+        > .tree {
+            width: 150px;
+            min-width: 50px;
+            padding: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            font-size: 16px;
+        }
+
+        > .page {
+            min-width: 100px;
+            padding: 4px;
+            stretch: both;
+        }
     }
 
-    &::tree {
-        width: 150px;
-        min-width: 50px;
-        padding: 4px;
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        background-color: #fff;
-        font-size: 16px;
-    }
-
-    &::page {
-        min-width: 100px;
-        padding: 4px;
-        stretch: both;
-    }
-
-    .settings-table::title {
+    .settings-table > .title {
         padding: 4px 4px 12px;
         font-size: 1.6em;
     }

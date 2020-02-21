@@ -126,15 +126,16 @@ class TabItem : Panel
          dstring tooltipText = null)
     {
         super(id);
+        isolateStyle();
         _icon = new ImageWidget(iconID);
-        _icon.bindSubItem(this, "icon");
+        _icon.setAttribute("icon");
         _icon.state = State.parent;
         _icon.visibility = iconID ? Visibility.visible : Visibility.gone;
         _label = new Label(label);
-        _label.bindSubItem(this, "label");
+        _label.setAttribute("label");
         _label.state = State.parent;
         _closeButton = new Button(null, "close");
-        _closeButton.bindSubItem(this, "close");
+        _closeButton.setAttribute("close");
         _closeButton.onClick ~= { onTabClose(id); };
         this.enableCloseButton = enableCloseButton;
         this.tooltipText = tooltipText;
@@ -216,7 +217,8 @@ class TabControl : WidgetGroup
     {
         tabAlignment = tabAlign;
         _moreButton = new Button(null, "tab_more");
-        _moreButton.bindSubItem(this, "more");
+        _moreButton.isolateThisStyle();
+        _moreButton.setAttribute("more");
         _moreButton.onMouseEvent ~= &handleMoreBtnMouse;
         addChild(_moreButton); // first child is always MORE button, the rest corresponds to tab list
     }

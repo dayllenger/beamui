@@ -570,6 +570,7 @@ class TreeItemWidget : Panel
         super(item.id);
         _item = item;
 
+        isolateStyle();
         allowsClick = true;
         allowsFocus = true;
         allowsHover = true;
@@ -587,7 +588,7 @@ class TreeItemWidget : Panel
         if (_item.canExpandOrCollapse)
         {
             _expander = new ImageWidget;
-            _expander.bindSubItem(this, "expander");
+            _expander.setAttribute("expander");
             _expander.allowsClick = true;
             _expander.allowsHover = true;
 
@@ -596,18 +597,17 @@ class TreeItemWidget : Panel
                 _item.toggleExpand(_item);
             };
         }
-        _body = new Panel;
-        _body.bindSubItem(this, "body");
+        _body = new Panel(null, "body");
         _body.setState(State.parent);
         if (_item.iconID.length > 0)
         {
             _icon = new ImageWidget(_item.iconID);
-            _icon.bindSubItem(this, "icon");
+            _icon.setAttribute("icon");
             _icon.setState(State.parent);
             _body.addChild(_icon);
         }
         _label = new Label(_item.text);
-        _label.bindSubItem(this, "label");
+        _label.setAttribute("label");
         _label.setState(State.parent);
         _body.add(_label);
         // append children

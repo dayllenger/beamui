@@ -45,20 +45,25 @@ class WindowFrame : Panel
 
     protected void initialize()
     {
-        _titleLayout = new Panel;
+        _titleLayout = new Panel(null, "caption");
             _title = new Label;
             _closeButton = new Button(null, "close");
-        _bodyLayout = new Panel;
+        _bodyLayout = new Panel(null, "body");
             _bodyWidget = createBodyWidget();
 
         with (_titleLayout) {
-            bindSubItem(this, "caption");
+            isolateThisStyle();
             add(_title, _closeButton);
-            _title.bindSubItem(this, "label");
-            _closeButton.setAttribute("flat");
+        }
+        with (_title) {
+            isolateThisStyle();
+            setAttribute("label");
+        }
+        with (_closeButton) {
+            setAttribute("flat");
         }
         with (_bodyLayout) {
-            bindSubItem(this, "body");
+            isolateThisStyle();
             add(_bodyWidget);
         }
         add(_titleLayout, _bodyLayout);

@@ -127,17 +127,10 @@ class Widget
 private:
     /// Widget id
     string _id;
-
     /// Custom attributes map
     string[string] attributes;
-
-    struct StyleSubItemInfo
-    {
-        const(Object) parent;
-        string subName;
-    }
-    /// Structure needed when this widget is subitem of another
-    StyleSubItemInfo* subInfo;
+    /// See `isolateThisStyle`
+    bool _thisStyleIsolated;
     /// If true, the style will be recomputed on next usage
     bool _needToRecomputeStyle = true;
 
@@ -210,9 +203,8 @@ public:
 
         _font.clear();
         eliminate(_background);
-
-        eliminate(subInfo);
         eliminate(_popupMenu);
+
         if (_isDestroyed !is null)
             *_isDestroyed = true;
     }
@@ -229,8 +221,9 @@ public:
         string s = getShortClassName(this);
         if (_id.length)
             s ~= '#' ~ id;
-        if (subInfo)
-            s ~= " as " ~ getShortClassName(subInfo.parent) ~ "::" ~ subInfo.subName;
+        foreach (k, v; attributes)
+            if (!v.length) // style class
+                s ~= '.' ~ k;
         return s;
     }
 
@@ -408,17 +401,6 @@ public:
     //===============================================================
     // Style
 
-    /// Set this widget to be a subitem in stylesheet
-    void bindSubItem(const(Object) parent, string subName)
-    {
-        assert(parent && subName);
-        subInfo = new StyleSubItemInfo(parent, subName);
-        _needToRecomputeStyle = true;
-    }
-
-    /// Signals when styles are being recomputed. Used for mixing properties in the widget.
-    Listener!(void delegate(Style[] chain)) onStyleUpdate;
-
     /// Computed style of this widget. Allows to query and mutate its properties
     final @property inout(ComputedStyle)* style() inout
     {
@@ -426,19 +408,28 @@ public:
         return &_style;
     }
 
-    /// Defines whether widget style is encapsulated, and cascading and inheritance
-    /// in this subtree is independent from outer world
-    final @property bool styleIsolated() const
-    {
-        return _style.isolated;
-    }
-    /// Enable style encapsulation, so cascading and inheritance
-    /// in this subtree will become independent from outer world
+    /** Enable style encapsulation for the subtree only.
+
+        Cascading and inheritance in this subtree will become independent from
+        the outer world. Still, the widget will be accessible via simple selectors.
+    */
     final void isolateStyle()
     {
         _style.isolated = true;
         invalidateStyles();
     }
+    /** Enable style encapsulation for this widget only.
+
+        This particular widget will not be accessible via simple selectors.
+    */
+    final void isolateThisStyle()
+    {
+        _thisStyleIsolated = true;
+        invalidateStyles();
+    }
+
+    /// Signals when styles are being recomputed. Used for mixing properties in the widget.
+    Listener!(void delegate(Style[] chain)) onStyleUpdate;
 
     /// Recompute styles, only if needed
     protected void updateStyles() inout
@@ -482,8 +473,8 @@ public:
         return tmpchain.unsafe_slice;
     }
 
-    /// Match this widget with selector
-    bool matchSelector(ref const(Selector) sel) const
+    /// Match this widget with a selector
+    bool matchSelector(ref const Selector sel) const
     {
         return matchSelector(sel, findStyleScopeRoot());
     }
@@ -493,47 +484,21 @@ public:
         Widget p = cast()_parent;
         while (p)
         {
-            if (p.styleIsolated)
+            if (p._style.isolated)
                 return p;
             p = p._parent;
         }
         return null;
     }
 
-    private bool matchSelector(ref const(Selector) sel, const(Widget) closure) const
+    private bool matchSelector(ref const Selector sel, const Widget closure) const
     {
-        if (this is closure)
-            return matchSelector(sel, null);
+        if (this is closure) // get the enclosing scope root and restart
+            return matchSelector(sel, findStyleScopeRoot());
         if (sel.universal)
             return matchContextSelector(sel, closure);
-        // subitemness
-        if (!subInfo && sel.subitem)
-            return false;
-        if (subInfo)
-        {
-            if (!sel.subitem || subInfo.subName != sel.subitem)
-                return false;
-            // match state
-            if ((sel.specifiedState & state) != sel.enabledState)
-                return false;
-            // match parent
-            if (auto wt = cast(Widget)subInfo.parent)
-            {
-                Selector ps = cast(Selector)sel;
-                ps.subitem = null;
-                ps.specifiedState = State.init;
-                ps.enabledState = State.init;
-                return wt.matchSelector(ps, closure);
-            }
-            else // not a widget
-            {
-                // check only type
-                TypeInfo_Class type = typeid(subInfo.parent);
-                return equalShortClassName(type, sel.type);
-            }
-        }
         // enclosed elements cannot be styled via simple selectors
-        if (closure && !sel.previous)
+        if ((closure || _thisStyleIsolated) && !sel.previous)
             return false;
         // type
         if (sel.type)
@@ -553,6 +518,8 @@ public:
         if ((sel.specifiedState & state) != sel.enabledState)
             return false;
         // classes
+        if (sel.classes.length && !attributes)
+            return false;
         foreach (name; sel.classes)
         {
             auto p = name in attributes;
@@ -573,7 +540,7 @@ public:
         return matchContextSelector(sel, closure);
     }
 
-    private bool matchContextSelector(ref const(Selector) sel, const(Widget) closure) const
+    private bool matchContextSelector(ref const Selector sel, const Widget closure) const
     {
         const Selector* subselector = sel.previous;
         if (!subselector) // exhausted
@@ -596,7 +563,7 @@ public:
                 }
                 return false;
             case child:
-                // match with the only parent
+                // match with the direct parent
                 return _parent.matchSelector(*subselector, closure);
             case next:
                 // match with the previous sibling

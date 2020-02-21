@@ -90,7 +90,8 @@ class ToolBar : Panel
     ToolBar addSeparator()
     {
         auto sep = new Widget;
-        sep.bindSubItem(this, "separator");
+        sep.isolateThisStyle();
+        sep.setAttribute("separator");
         addChild(sep);
         return this;
     }
