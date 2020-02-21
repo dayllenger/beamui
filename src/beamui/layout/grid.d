@@ -38,7 +38,7 @@ import beamui.core.math;
 import beamui.core.units : LayoutLength, Length;
 import beamui.layout.alignment;
 import beamui.style.computed_style : ComputedStyle, StyleProperty;
-import beamui.widgets.widget : DependentSize, ILayout, Widget;
+import beamui.widgets.widget : DependentSize, Element, ILayout;
 
 enum GridFlow : ubyte
 {
@@ -127,7 +127,7 @@ struct TrackSize
 
 private struct GridItem
 {
-    Widget wt;
+    Element el;
     Insets margins;
     Insets marginsNoAuto;
     BoxI area;
@@ -221,7 +221,7 @@ class GridLayout : ILayout
 {
     private
     {
-        Widget host;
+        Element host;
 
         Buf!GridItem items;
         Buf!Track cols;
@@ -234,7 +234,7 @@ class GridLayout : ILayout
         AlignItem[2] defaultAlignment = AlignItem.stretch;
     }
 
-    void onSetup(Widget host)
+    void onSetup(Element host)
     {
         this.host = host;
     }
@@ -286,7 +286,7 @@ class GridLayout : ILayout
         }
     }
 
-    void prepare(ref Buf!Widget list)
+    void prepare(ref Buf!Element list)
     {
         // apply order
         sort!((a, b) => a.style.order < b.style.order, SwapStrategy.stable)(list.unsafe_slice);
@@ -327,14 +327,14 @@ class GridLayout : ILayout
             rows ~= Track(autoRowSize);
     }
 
-    private void resolveItemPositions(Widget[] widgets, const GridNamedAreas namedAreas, GridFlow flow)
+    private void resolveItemPositions(Element[] elements, const GridNamedAreas namedAreas, GridFlow flow)
     {
         bool hasIndefinite;
         foreach (i, ref GridItem item; items.unsafe_slice)
         {
-            const ComputedStyle* wst = widgets[i].style;
+            const ComputedStyle* wst = elements[i].style;
             // unpack item's grid area properties and also get margins
-            item.wt = widgets[i];
+            item.el = elements[i];
             item.margins = wst.margins;
             item.marginsNoAuto = ignoreAutoMargin(item.margins);
             const a = processSpecifiedLineNames(namedAreas.map, wst.gridArea);
@@ -357,8 +357,8 @@ class GridLayout : ILayout
         foreach (i, ref GridItem item; items.unsafe_slice)
         {
             // measure items
-            item.wt.measure();
-            Boundaries wbs = item.wt.boundaries;
+            item.el.measure();
+            Boundaries wbs = item.el.boundaries;
             // add margins
             const msz = item.marginsNoAuto.size;
             wbs.min += msz;
@@ -454,7 +454,7 @@ class GridLayout : ILayout
         // gather items' style properties and boundaries, resolve percent sizes
         foreach (i, ref GridItem item; items.unsafe_slice)
         {
-            const ComputedStyle* st = item.wt.style;
+            const ComputedStyle* st = item.el.style;
             const alignment = st.placeSelf;
             item.alignment[0] = alignment[0] ? alignment[0] : defaultAlignment[0];
             item.alignment[1] = alignment[1] ? alignment[1] : defaultAlignment[1];
@@ -466,7 +466,7 @@ class GridLayout : ILayout
             const w = st.width;
             const h = st.height;
 
-            Boundaries bs = item.wt.boundaries;
+            Boundaries bs = item.el.boundaries;
             if (minw.isPercent)
                 bs.min.w = minw.applyPercent(box.w);
             if (maxw.isPercent)
@@ -478,7 +478,7 @@ class GridLayout : ILayout
             if (h.isPercent)
                 bs.nat.h = h.applyPercent(box.h);
 
-            if (item.wt.dependentSize == DependentSize.width)
+            if (item.el.dependentSize == DependentSize.width)
             {
                 // width depends on height, but we don't know the height yet.
                 // estimate it with some heuristics
@@ -487,7 +487,7 @@ class GridLayout : ILayout
                     approxHeight = bs.nat.h;
                 else
                     approxHeight = boxNoGaps.h;
-                bs.nat.w = item.wt.widthForHeight(approxHeight);
+                bs.nat.w = item.el.widthForHeight(approxHeight);
             }
             else if (w.isPercent)
                 bs.nat.w = w.applyPercent(box.w);
@@ -512,8 +512,8 @@ class GridLayout : ILayout
         {
             Boundaries* bs = &item.bs;
 
-            if (item.wt.dependentSize == DependentSize.height)
-                bs.nat.h = item.wt.heightForWidth(item.hseg.size);
+            if (item.el.dependentSize == DependentSize.height)
+                bs.nat.h = item.el.heightForWidth(item.hseg.size);
 
             bs.nat.h = clamp(bs.nat.h, bs.min.h, bs.max.h);
 
@@ -615,10 +615,10 @@ class GridLayout : ILayout
             Box b = Box(item.hseg.pos, vseg.pos, item.hseg.size, clamp(vseg.size, item.bs.min.h, item.bs.max.h));
             // subtract margins
             b.shrink(item.marginsNoAuto);
-            // lay out the widget
+            // lay out the element
             assert(isFinite(b.x) && isFinite(b.y));
             assert(isFinite(b.w) && isFinite(b.h));
-            item.wt.layout(b);
+            item.el.layout(b);
         }
     }
 }

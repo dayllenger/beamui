@@ -6,16 +6,20 @@ Authors:   dayllenger
 */
 module beamui.layout.free;
 
+import beamui.core.collections : Buf;
+import beamui.core.geometry;
+import beamui.core.math;
+import beamui.core.units : LayoutLength;
 import beamui.style.computed_style : StyleProperty;
-import beamui.widgets.widget;
+import beamui.widgets.widget : Element, ILayout;
 
 /// Place children at specified coordinates
 class FreeLayout : ILayout
 {
-    private Widget host;
-    private Widget[] items;
+    private Element host;
+    private Element[] items;
 
-    void onSetup(Widget host)
+    void onSetup(Element host)
     {
         this.host = host;
     }
@@ -38,7 +42,7 @@ class FreeLayout : ILayout
         }
     }
 
-    void prepare(ref Buf!Widget list)
+    void prepare(ref Buf!Element list)
     {
         items = list.unsafe_slice;
     }

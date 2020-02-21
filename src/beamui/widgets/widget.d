@@ -121,6 +121,8 @@ enum DependentSize
     height,
 }
 
+alias Element = Widget;
+
 /// Base class for all widgets.
 class Widget
 {

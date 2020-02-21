@@ -16,7 +16,7 @@ import beamui.core.geometry;
 import beamui.core.math;
 import beamui.layout.alignment;
 import beamui.style.computed_style : ComputedStyle, StyleProperty;
-import beamui.widgets.widget : ILayout, Widget, DependentSize;
+import beamui.widgets.widget : Element, ILayout, DependentSize;
 
 enum FlexDirection : ubyte
 {
@@ -48,9 +48,9 @@ class FlexLayout : ILayout
 {
     private
     {
-        Widget host;
+        Element host;
 
-        Widget[] widgets;
+        Element[] elements;
         Buf!FlexItem items;
         Buf!Insets margins;
 
@@ -64,7 +64,7 @@ class FlexLayout : ILayout
         bool revY;
     }
 
-    void onSetup(Widget host)
+    void onSetup(Element host)
     {
         this.host = host;
     }
@@ -72,7 +72,7 @@ class FlexLayout : ILayout
     void onDetach()
     {
         host = null;
-        widgets = null;
+        elements = null;
         items.clear();
         margins.clear();
     }
@@ -97,12 +97,12 @@ class FlexLayout : ILayout
         }
     }
 
-    void prepare(ref Buf!Widget list)
+    void prepare(ref Buf!Element list)
     {
         // apply order
         sort!((a, b) => a.style.order < b.style.order)(list.unsafe_slice);
         // allocate empty flex items
-        widgets = list.unsafe_slice;
+        elements = list.unsafe_slice;
         items.resize(list.length);
         margins.resize(list.length);
         // prepare some parameters
@@ -125,11 +125,11 @@ class FlexLayout : ILayout
         foreach (i; 0 .. items.length)
         {
             // measure items
-            Widget wt = widgets[i];
-            wt.measure();
-            Boundaries wbs = wt.boundaries;
+            Element el = elements[i];
+            el.measure();
+            Boundaries wbs = el.boundaries;
             // add margins, store them
-            const m = wt.style.margins;
+            const m = el.style.margins;
             const msz = ignoreAutoMargin(m).size;
             wbs.min += msz;
             wbs.nat += msz;
@@ -162,8 +162,8 @@ class FlexLayout : ILayout
         {
             FlexItem item;
 
-            Widget wt = widgets[i];
-            const ComputedStyle* st = wt.style;
+            Element el = elements[i];
+            const ComputedStyle* st = el.style;
             item.grow = st.flexGrow;
             item.shrink = st.flexShrink;
             const alignment = st.placeSelf[1];
@@ -176,7 +176,7 @@ class FlexLayout : ILayout
             const w = st.width;
             const h = st.height;
 
-            Boundaries bs = wt.boundaries;
+            Boundaries bs = el.boundaries;
             if (minw.isPercent)
                 bs.min.w = minw.applyPercent(box.w);
             if (minh.isPercent)
@@ -205,13 +205,13 @@ class FlexLayout : ILayout
                 // use intrinsic aspect ratio; cross size is definite
                 if (vertical)
                 {
-                    if (wt.dependentSize == DependentSize.height)
-                        bs.nat.w = wt.heightForWidth(bs.nat.h);
+                    if (el.dependentSize == DependentSize.height)
+                        bs.nat.w = el.heightForWidth(bs.nat.h);
                 }
                 else
                 {
-                    if (wt.dependentSize == DependentSize.width)
-                        bs.nat.w = wt.widthForHeight(bs.nat.h);
+                    if (el.dependentSize == DependentSize.width)
+                        bs.nat.w = el.widthForHeight(bs.nat.h);
                 }
             }
             else
@@ -336,12 +336,12 @@ class FlexLayout : ILayout
         // transpose back or place items in backward order in case of a vertical or reversed layout
         swapBoxes(boxes, vertical, revX, revY, box);
 
-        // lay out widgets
+        // lay out the elements
         foreach (i, b; boxes)
         {
             assert(isFinite(b.x) && isFinite(b.y));
             assert(isFinite(b.w) && isFinite(b.h));
-            widgets[i].layout(b);
+            elements[i].layout(b);
         }
     }
 }

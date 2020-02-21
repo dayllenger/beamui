@@ -15,7 +15,7 @@ import beamui.widgets.widget;
 /// Helper for layouts
 struct LayoutItem
 {
-    Widget wt;
+    Element el;
 
     Boundaries bs;
     bool fill;
@@ -44,7 +44,7 @@ class LinearLayout : ILayout
     {
         Orientation _orientation = Orientation.vertical;
 
-        Widget host;
+        Element host;
         /// Temporary layout item list
         Array!LayoutItem items;
     }
@@ -55,7 +55,7 @@ class LinearLayout : ILayout
         _orientation = orientation;
     }
 
-    void onSetup(Widget host)
+    void onSetup(Element host)
     {
         this.host = host;
     }
@@ -78,13 +78,13 @@ class LinearLayout : ILayout
             host.requestLayout();
     }
 
-    void prepare(ref Buf!Widget list)
+    void prepare(ref Buf!Element list)
     {
         items.length = 0;
         // fill items array
-        foreach (wt; list.unsafe_slice)
+        foreach (el; list.unsafe_slice)
         {
-            items ~= LayoutItem(wt);
+            items ~= LayoutItem(el);
         }
     }
 
@@ -97,10 +97,10 @@ class LinearLayout : ILayout
         Boundaries bs;
         foreach (ref item; items)
         {
-            item.wt.measure();
-            Boundaries wbs = item.wt.boundaries;
+            item.el.measure();
+            Boundaries wbs = item.el.boundaries;
             // add margins
-            Size m = item.wt.style.margins.size;
+            Size m = item.el.style.margins.size;
             Boundaries ms = Boundaries(m, m, m);
             wbs.addWidth(ms);
             wbs.addHeight(ms);
@@ -153,7 +153,7 @@ class LinearLayout : ILayout
         // setup fill
         foreach (ref item; items)
         {
-            const wstyle = item.wt.style;
+            const wstyle = item.el.style;
             const stretch = wstyle.stretch;
             const bool main = stretch == Stretch.main || stretch == Stretch.both;
             const bool cross = stretch == Stretch.cross || stretch == Stretch.both;
@@ -162,15 +162,15 @@ class LinearLayout : ILayout
             {
                 item.fill = main;
                 item.result.h = cross ? min(geom.h, item.bs.max.h) : item.bs.nat.h;
-                if (item.wt.dependentSize == DependentSize.width)
-                    item.bs.nat.w = item.wt.widthForHeight(item.result.h - m.height) + m.width;
+                if (item.el.dependentSize == DependentSize.width)
+                    item.bs.nat.w = item.el.widthForHeight(item.result.h - m.height) + m.width;
             }
             else
             {
                 item.fill = main;
                 item.result.w = cross ? min(geom.w, item.bs.max.w) : item.bs.nat.w;
-                if (item.wt.dependentSize == DependentSize.height)
-                    item.bs.nat.h = item.wt.heightForWidth(item.result.w - m.width) + m.height;
+                if (item.el.dependentSize == DependentSize.height)
+                    item.bs.nat.h = item.el.heightForWidth(item.result.w - m.width) + m.height;
             }
         }
         static if (horiz)
@@ -180,9 +180,9 @@ class LinearLayout : ILayout
         float gaps = spacing * (cast(int)items.length - 1);
         allocateSpace!dim(items, geom.pick!dim - gaps);
         // apply resizers
-        foreach (i; 1 .. items.length - 1)
+        foreach (i; 1 .. cast(int)items.length - 1)
         {
-            if (auto resizer = cast(Resizer)items[i].wt)
+            if (auto resizer = cast(Resizer)items[i].el)
             {
                 resizer._orientation = _orientation;
 
@@ -199,15 +199,15 @@ class LinearLayout : ILayout
                 right.result.pick!dim = rresult - delta;
             }
         }
-        if (auto resizer = cast(Resizer)items.front.wt)
+        if (auto resizer = cast(Resizer)items.front.el)
             resizer._orientation = _orientation;
-        if (auto resizer = cast(Resizer)items.back.wt)
+        if (auto resizer = cast(Resizer)items.back.el)
             resizer._orientation = _orientation;
         // lay out items
         float pen = 0;
         foreach (ref item; items)
         {
-            const wstyle = item.wt.style;
+            const wstyle = item.el.style;
             const Insets m = wstyle.margins;
             const Size sz = item.result;
             Box res = Box(geom.x + m.left, geom.y + m.top, geom.w, geom.h);
@@ -223,7 +223,7 @@ class LinearLayout : ILayout
             }
             res.w -= m.width;
             res.h -= m.height;
-            item.wt.layout(res);
+            item.el.layout(res);
             pen += sz.pick!dim + spacing;
         }
     }
@@ -442,7 +442,7 @@ enum ResizerEventType
 
     Also it can be utilized per se, by connecting to `onResize` signal.
 */
-class Resizer : Widget
+class Resizer : Element
 {
     /// Orientation: vertical to resize vertically, horizontal to resize horizontally
     @property Orientation orientation() const { return _orientation; }
