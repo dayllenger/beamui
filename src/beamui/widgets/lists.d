@@ -1,7 +1,7 @@
 /**
 List views on data.
 
-Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -25,10 +25,10 @@ abstract class ListAdapter
             Log.d("Destroying ", getShortClassName(this));
     }
 
+    Widget createSharedItemWidget(out void delegate(int) updater);
+
     /// Returns number of widgets in list
     @property int itemCount() const;
-    /// Returns list item widget by item index
-    inout(Widget) itemWidget(int index) inout;
     /// Returns list item's state flags
     State itemState(int index) const;
     /// Set one or more list item's state flags, returns updated state
@@ -59,22 +59,6 @@ abstract class ListAdapter
     {
         onChange();
     }
-
-    /// Called when theme is changed
-    void handleThemeChange()
-    {
-    }
-
-    /// Returns true to receive mouse events
-    @property bool wantMouseEvents()
-    {
-        return false;
-    }
-    /// Returns true to receive keyboard events
-    @property bool wantKeyEvents()
-    {
-        return false;
-    }
 }
 
 /// List adapter providing strings only
@@ -93,7 +77,6 @@ abstract class StringListAdapterBase : ListAdapter
             State state = State.enabled;
         }
         Array!Item _items;
-        int _lastItemIndex = -1; // TODO: reset when clear or replace?
     }
 
     /// Create empty string list adapter
@@ -218,8 +201,6 @@ abstract class StringListAdapterBase : ListAdapter
 /// List adapter providing strings only
 class StringListAdapter : StringListAdapterBase
 {
-    private Label _widget;
-
     /// Create empty string list adapter
     this()
     {
@@ -238,64 +219,23 @@ class StringListAdapter : StringListAdapterBase
         super(items);
     }
 
-    ~this()
+    override Widget createSharedItemWidget(out void delegate(int) updater)
     {
-        eliminate(_widget);
-    }
-
-    override inout(Widget) itemWidget(int index) inout
-    {
-        if (_widget && index == _lastItemIndex)
-            return _widget;
-        with (caching(this))
-        {
-            if (_widget is null)
-            {
-                _widget = new Label;
-                _widget.isolateThisStyle();
-                _widget.setAttribute("item");
-            }
-            // update widget
-            _widget.text = _items[index].str;
-            _widget.state = _items[index].state;
-            _widget.cancelLayout();
-            _lastItemIndex = index;
-        }
-        return _widget;
-    }
-
-    override void handleThemeChange()
-    {
-        _widget.maybe.handleThemeChange();
-    }
-
-    override State setItemState(int index, State flags)
-    {
-        State res = super.setItemState(index, flags);
-        if (_widget && _lastItemIndex == index)
-            _widget.state = res;
-        return res;
-    }
-
-    override State resetItemState(int index, State flags)
-    {
-        State res = super.resetItemState(index, flags);
-        if (_widget && _lastItemIndex == index)
-            _widget.state = res;
-        return res;
+        auto widget = new Label;
+        widget.isolateThisStyle();
+        widget.setAttribute("item");
+        updater = (i) {
+            widget.text = _items[i].str;
+            widget.state = _items[i].state;
+            widget.cancelLayout();
+        };
+        return widget;
     }
 }
 
 /// List adapter providing strings with icons
 class IconStringListAdapter : StringListAdapterBase
 {
-    private
-    {
-        Panel _widget;
-        Label _label;
-        ImageWidget _icon;
-    }
-
     /// Create empty string list adapter
     this()
     {
@@ -308,69 +248,29 @@ class IconStringListAdapter : StringListAdapterBase
         super(items);
     }
 
-    ~this()
+    override Widget createSharedItemWidget(out void delegate(int) updater)
     {
-        eliminate(_widget);
-    }
-
-    override inout(Widget) itemWidget(int index) inout
-    {
-        if (_widget && index == _lastItemIndex)
-            return _widget;
-        with (caching(this))
-        {
-            if (_widget is null)
+        auto widget = new Panel;
+        widget.isolateThisStyle();
+        widget.setAttribute("item");
+        auto icon = new ImageWidget;
+        auto label = new Label;
+        label.style.stretch = Stretch.both;
+        widget.add(icon, label);
+        updater = (i) {
+            widget.state = _items[i].state;
+            label.text = _items[i].str;
+            if (_items[i].iconID)
             {
-                _widget = new Panel;
-                _widget.isolateThisStyle();
-                _widget.setAttribute("item");
-                _icon = new ImageWidget;
-                _label = new Label;
-                _label.style.stretch = Stretch.both;
-                _widget.add(_icon, _label);
-            }
-            // update widget
-            _widget.state = _items[index].state;
-            _label.text = _items[index].str;
-            if (_items[index].iconID)
-            {
-                _icon.visibility = Visibility.visible;
-                _icon.imageID = _items[index].iconID;
+                icon.visibility = Visibility.visible;
+                icon.imageID = _items[i].iconID;
             }
             else
             {
-                _icon.visibility = Visibility.gone;
+                icon.visibility = Visibility.gone;
             }
-            _lastItemIndex = index;
-        }
-        return _widget;
-    }
-
-    override void handleThemeChange()
-    {
-        _widget.maybe.handleThemeChange();
-    }
-
-    override State setItemState(int index, State flags)
-    {
-        State res = super.setItemState(index, flags);
-        if (_widget && _lastItemIndex == index)
-        {
-            _widget.state = res;
-            _label.state = res;
-        }
-        return res;
-    }
-
-    override State resetItemState(int index, State flags)
-    {
-        State res = super.resetItemState(index, flags);
-        if (_widget && _lastItemIndex == index)
-        {
-            _widget.state = res;
-            _label.state = res;
-        }
-        return res;
+        };
+        return widget;
     }
 }
 
@@ -410,7 +310,12 @@ class ListWidget : WidgetGroup
             _adapter = adapter;
             _adapter.maybe.connect(&handleChildListChange);
             _ownAdapter = false;
-            handleChildListChange();
+
+            if (_itemWidget)
+                destroy(removeChild(_itemWidget));
+            _itemWidget = _adapter.createSharedItemWidget(_updateItemWidget);
+            addChild(_itemWidget);
+            assert(_updateItemWidget);
         }
         /// Set adapter, which will be owned by list (destroy will be called for adapter on widget destroy)
         void ownAdapter(ListAdapter adapter)
@@ -423,7 +328,12 @@ class ListWidget : WidgetGroup
             _adapter = adapter;
             _adapter.maybe.connect(&handleChildListChange);
             _ownAdapter = true;
-            handleChildListChange();
+
+            if (_itemWidget)
+                destroy(removeChild(_itemWidget));
+            _itemWidget = _adapter.createSharedItemWidget(_updateItemWidget);
+            addChild(_itemWidget);
+            assert(_updateItemWidget);
         }
 
         /// Returns number of widgets in list
@@ -461,6 +371,10 @@ class ListWidget : WidgetGroup
 
     private
     {
+        Widget _itemWidget;
+        void delegate(int) _updateItemWidget;
+        int _lastItemIndex = -1; // TODO: reset when clear or replace?
+
         Buf!Box _itemBoxes;
         bool _needScrollbar;
         ScrollBar _scrollbar;
@@ -576,7 +490,21 @@ class ListWidget : WidgetGroup
     inout(Widget) itemWidget(int index) inout
     {
         if (0 <= index && index < itemCount)
-            return _adapter ? _adapter.itemWidget(index) : child(index);
+        {
+            if (_adapter)
+            {
+                if (_lastItemIndex != index)
+                {
+                    with (caching(this))
+                    {
+                        _lastItemIndex = index;
+                        _updateItemWidget(index);
+                    }
+                }
+                return _itemWidget;
+            }
+            return child(index);
+        }
         return null;
     }
 
@@ -795,12 +723,6 @@ class ListWidget : WidgetGroup
         return true;
     }
 
-    override void handleThemeChange()
-    {
-        super.handleThemeChange();
-        _adapter.maybe.handleThemeChange();
-    }
-
     /// List navigation using keys
     override bool handleKeyEvent(KeyEvent event)
     {
@@ -898,20 +820,11 @@ class ListWidget : WidgetGroup
             (vert ? ib.y : ib.x) -= scrollOffset;
             if (ib.contains(event.x, event.y))
             {
-                if (_adapter && _adapter.wantMouseEvents)
+                if (_adapter)
                 {
-                    if (auto wt = _adapter.itemWidget(i))
-                    {
-                        Widget oldParent = wt.parent;
-                        wt.parent = this;
-                        if (event.action == MouseAction.move && event.noKeyMods && event.noMouseMods &&
-                            wt.hasTooltip)
-                        {
-                            wt.scheduleTooltip(600);
-                        }
-                        //wt.handleMouseEvent(event);
-                        wt.parent = oldParent;
-                    }
+                    auto wt = itemWidget(i);
+                    assert(wt);
+                    wt.handleMouseEvent(event);
                 }
                 if (event.alteredByButton(MouseButton.left) ||
                     event.alteredByButton(MouseButton.right) ||
@@ -1183,20 +1096,6 @@ class ListWidget : WidgetGroup
             w.layout(ib);
             w.draw(pr);
         }
-    }
-
-    override bool isChild(Widget item, bool deepSearch = true)
-    {
-        if (_adapter && _adapter.wantMouseEvents)
-        {
-            foreach (i; 0 .. itemCount)
-            {
-                auto itemWidget = _adapter.itemWidget(i);
-                if (itemWidget is item)
-                    return true;
-            }
-        }
-        return super.isChild(item, deepSearch);
     }
 }
 

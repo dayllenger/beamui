@@ -116,13 +116,7 @@ abstract class ComboBoxBase : Panel
         allowsFocus = true;
     }
 
-    protected Widget createSelectedItemWidget()
-    {
-        if (_adapter && _selectedItemIndex < _adapter.itemCount)
-            return _adapter.itemWidget(_selectedItemIndex);
-        else
-            return new Widget;
-    }
+    protected Widget createSelectedItemWidget();
 
     protected Button createButton()
     {
@@ -147,7 +141,6 @@ abstract class ComboBoxBase : Panel
             return; // don't show empty popup
 
         _popupList = createPopup();
-        _popupList.isolateThisStyle();
         _popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
         _popup.setAttribute("combobox");
         _popup.onPopupClose ~= (bool b) {
@@ -200,12 +193,6 @@ abstract class ComboBoxBase : Panel
         if (_popupList)
             _popupList.selectItem(newIndex);
         return oldIndex != newIndex;
-    }
-
-    override void handleThemeChange()
-    {
-        super.handleThemeChange();
-        _adapter.maybe.handleThemeChange();
     }
 }
 
@@ -311,15 +298,6 @@ class ComboBox : ComboBoxBase
     {
         auto label = new Label;
         label.allowsClick = true;
-        float minItemWidth = 0;
-        foreach (i; 0 .. _adapter.itemCount)
-        {
-            Widget item = _adapter.itemWidget(i);
-            item.measure();
-            Size sz = item.minSize;
-            minItemWidth = max(minItemWidth, sz.w);
-        }
-        label.style.minWidth = minItemWidth;
         return label;
     }
 }
@@ -404,15 +382,6 @@ class IconTextComboBox : ComboBoxBase
     {
         auto label = new Label;
         label.allowsClick = true;
-        float minItemWidth = 0;
-        foreach (i; 0 .. _adapter.itemCount)
-        {
-            Widget item = _adapter.itemWidget(i);
-            item.measure();
-            Size sz = item.minSize;
-            minItemWidth = max(minItemWidth, sz.w);
-        }
-        label.style.minWidth = minItemWidth;
         return label;
     }
 }
