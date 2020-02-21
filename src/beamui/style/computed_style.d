@@ -22,7 +22,7 @@ import beamui.style.style;
 import beamui.style.types;
 import beamui.text.fonts;
 import beamui.text.style;
-import beamui.widgets.widget : Widget;
+import beamui.widgets.widget : Element;
 debug (styles) import beamui.core.logger;
 
 /// Enumeration of all supported style properties. NOTE: DON'T use `case .. case` slices on them,
@@ -775,7 +775,7 @@ struct ComputedStyle
         int fontSize() const
         {
             const Length fs = _fontSize;
-            const Widget p = widget.parent;
+            const Element p = element.parent;
             const int def = FontManager.defaultFontSize;
             if (!fs.is_rem && (!p || isolated) && (fs.is_em || fs.is_percent))
                 return def;
@@ -939,7 +939,7 @@ struct ComputedStyle
         void mixBlendMode(BlendMode value) { setProperty!"mixBlendMode" = value; }
     }
 
-    package(beamui) Widget widget;
+    package(beamui) Element element;
     package(beamui) bool isolated;
 
     private
@@ -1123,14 +1123,14 @@ struct ComputedStyle
     void recompute(Style[] chain)
     {
         debug (styles)
-            Log.d("--- Recomputing style for ", typeid(widget), ", id: ", widget.id, " ---");
+            Log.d("--- Recomputing style for ", typeid(element), ", id: ", element.id, " ---");
 
         // explode shorthands first
         foreach_reverse (st; chain)
             explodeShorthands(st);
 
         // find that we are not tied, being the root of style scope
-        Widget parent = widget.parent;
+        Element parent = element.parent;
         const bool canInherit = parent && !isolated;
         /// iterate through all properties
         static foreach (name; __traits(allMembers, StyleProperty))
@@ -1352,7 +1352,7 @@ struct ComputedStyle
             static if (isAnimatable(ptype))
             {
                 // cancel possible animation
-                widget.cancelAnimation(name);
+                element.cancelAnimation(name);
             }
             return;
         }
@@ -1369,7 +1369,7 @@ struct ComputedStyle
         // set it directly otherwise
         field = newValue;
         // invoke side effects
-        widget.handleStyleChange(ptype);
+        element.handleStyleChange(ptype);
     }
 
     private void animateProperty(string name, T)(T ending)
@@ -1382,10 +1382,10 @@ struct ComputedStyle
 
         T starting = field;
         auto tr = new Transition(_transitionDuration, _transitionTimingFunction, _transitionDelay);
-        widget.addAnimation(name, tr.duration,
+        element.addAnimation(name, tr.duration,
             (double t) {
                 field = tr.mix(starting, ending, t);
-                widget.handleStyleChange(ptype);
+                element.handleStyleChange(ptype);
             }
         );
     }

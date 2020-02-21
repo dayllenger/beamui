@@ -181,7 +181,7 @@ public:
     {
         _isDestroyed = new bool;
         _id = ID;
-        _style.widget = this;
+        _style.element = this;
         _background = new Background;
         debug _instanceCount++;
         debug (resalloc)
