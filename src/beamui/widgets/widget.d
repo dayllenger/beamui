@@ -142,9 +142,9 @@ private:
     Visibility _visibility = Visibility.visible; // visible by default
 
     DependentSize _dependentSize;
-    /// Current widget boundaries set by `measure`
+    /// Current element boundaries set by `measure`
     Boundaries _boundaries;
-    /// Current widget box set by `layout`
+    /// Current element box set by `layout`
     Box _box;
     /// Current box without padding and border
     Box _innerBox;
@@ -152,8 +152,8 @@ private:
     bool _needLayout = true;
     /// True to force redraw
     bool _needDraw = true;
-    /// Parent widget
-    Widget _parent;
+    /// Parent element
+    Element _parent;
     /// Window (to be used for top level widgets only!)
     Window _window;
 
@@ -167,7 +167,7 @@ private:
     Animation[string] animations; // key is a property name
 
 protected:
-    WidgetList _hiddenChildren;
+    ElementList _hiddenChildren;
 
 public:
 
@@ -465,7 +465,7 @@ public:
         static Buf!Style tmpchain;
         tmpchain.clear();
         // first find our scope
-        const Widget closure = findStyleScopeRoot();
+        const Element closure = findStyleScopeRoot();
         // we can skip half of work if the state is normal
         Style[] list = (state == State.normal) ? currentTheme.normalStyles : currentTheme.allStyles;
         foreach (style; list)
@@ -481,9 +481,9 @@ public:
         return matchSelector(sel, findStyleScopeRoot());
     }
 
-    private const(Widget) findStyleScopeRoot() const
+    private const(Element) findStyleScopeRoot() const
     {
-        Widget p = cast()_parent;
+        Element p = cast()_parent;
         while (p)
         {
             if (p._style.isolated)
@@ -493,7 +493,7 @@ public:
         return null;
     }
 
-    private bool matchSelector(ref const Selector sel, const Widget closure) const
+    private bool matchSelector(ref const Selector sel, const Element closure) const
     {
         if (this is closure) // get the enclosing scope root and restart
             return matchSelector(sel, findStyleScopeRoot());
@@ -542,7 +542,7 @@ public:
         return matchContextSelector(sel, closure);
     }
 
-    private bool matchContextSelector(ref const Selector sel, const Widget closure) const
+    private bool matchContextSelector(ref const Selector sel, const Element closure) const
     {
         const Selector* subselector = sel.previous;
         if (!subselector) // exhausted
@@ -554,7 +554,7 @@ public:
         {
             case descendant:
                 // match with any of parent widgets
-                Widget p = cast()_parent;
+                Element p = cast()_parent;
                 while (p)
                 {
                     if (p.matchSelector(*subselector, closure))
@@ -605,16 +605,16 @@ public:
     private void invalidateStylesRecursively()
     {
         _needToRecomputeStyle = true;
-        foreach (Widget w; this)
-            w.invalidateStylesRecursively();
+        foreach (Element el; this)
+            el.invalidateStylesRecursively();
     }
 
     /// Handle theme change: e.g. reload some themed resources
     void handleThemeChange()
     {
         // default implementation: call recursive for children
-        foreach (Widget w; this)
-            w.handleThemeChange();
+        foreach (Element el; this)
+            el.handleThemeChange();
 
         _needToRecomputeStyle = true;
     }
@@ -1026,8 +1026,8 @@ public:
 
     @property bool focusGroupFocused() const
     {
-        const w = focusGroupWidget();
-        return (w._state & State.windowFocused) != 0;
+        const el = focusGroupElement();
+        return (el._state & State.windowFocused) != 0;
     }
 
     protected bool setWindowFocusedFlag(bool flag)
@@ -1055,22 +1055,23 @@ public:
 
     @property void focusGroupFocused(bool flag)
     {
-        Widget w = focusGroupWidget();
-        w.setWindowFocusedFlag(flag);
-        while (w.parent)
+        Element el = focusGroupElement();
+        el.setWindowFocusedFlag(flag);
+        while (el.parent)
         {
-            w = w.parent;
-            if (w.parent is null || w.focusGroup)
+            el = el.parent;
+            if (el.parent is null || el.focusGroup)
             {
-                w.setWindowFocusedFlag(flag);
+                el.setWindowFocusedFlag(flag);
             }
         }
     }
 
-    /// Find nearest parent of this widget with `focusGroup` flag. Returns topmost parent if no `focusGroup` flag set to any of parents
-    inout(Widget) focusGroupWidget() inout
+    /// Find nearest parent of this widget with `focusGroup` flag.
+    /// Returns topmost parent if no `focusGroup` flag set to any of parents
+    inout(Element) focusGroupElement() inout
     {
-        Widget p = cast()this;
+        Element p = cast()this;
         while (p)
         {
             if (!p.parent || p.focusGroup)
@@ -1082,16 +1083,16 @@ public:
 
     private static class TabOrderInfo
     {
-        Widget widget;
+        Element element;
         uint tabOrder;
         uint childOrder;
         Box box;
 
-        this(Widget widget)
+        this(Element element)
         {
-            this.widget = widget;
-            this.tabOrder = widget.thisOrParentTabOrder();
-            this.box = widget.box;
+            this.element = element;
+            this.tabOrder = element.thisOrParentTabOrder();
+            this.box = element.box;
         }
 
         static if (BACKEND_GUI)
@@ -1152,11 +1153,11 @@ public:
 
         override string toString() const
         {
-            return widget.id;
+            return element.id;
         }
     }
 
-    private void findFocusableChildren(ref Buf!TabOrderInfo results, Rect clipRect, Widget currentWidget)
+    private void findFocusableChildren(ref Buf!TabOrderInfo results, Rect clipRect, Element current)
     {
         if (visibility != Visibility.visible)
             return;
@@ -1164,23 +1165,23 @@ public:
         Rect rc = _innerBox;
         if (!rc.intersects(clipRect))
             return; // out of clip rectangle
-        if (canFocus || this is currentWidget)
+        if (canFocus || this is current)
         {
             results ~= new TabOrderInfo(this);
             return;
         }
         rc.intersect(clipRect);
-        foreach (Widget w; this)
-            w.findFocusableChildren(results, rc, currentWidget);
+        foreach (Element el; this)
+            el.findFocusableChildren(results, rc, current);
     }
 
     /// Find all focusables belonging to the same `focusGroup` as this widget (does not include current widget).
     /// Usually to be called for focused widget to get possible alternatives to navigate to
-    private Buf!TabOrderInfo findFocusables(Widget currentWidget)
+    private Buf!TabOrderInfo findFocusables(Element current)
     {
         Buf!TabOrderInfo result;
-        Widget group = focusGroupWidget();
-        group.findFocusableChildren(result, Rect(group.box), currentWidget);
+        Element group = focusGroupElement();
+        group.findFocusableChildren(result, Rect(group.box), current);
         for (ushort i = 0; i < result.length; i++)
             result.unsafe_ref(i).childOrder = i + 1;
         sort(result.unsafe_slice);
@@ -1206,7 +1207,7 @@ public:
     }
 
     /// Call on focused widget, to find best
-    private Widget findNextFocusWidget(FocusMovement direction)
+    private Element findNextFocusWidget(FocusMovement direction)
     {
         if (direction == FocusMovement.none)
             return this;
@@ -1216,7 +1217,7 @@ public:
         int myIndex = -1;
         for (int i = 0; i < focusables.length; i++)
         {
-            if (focusables[i].widget is this)
+            if (focusables[i].element is this)
             {
                 myIndex = i;
                 break;
@@ -1227,14 +1228,14 @@ public:
         if (myIndex == -1)
             return null; // not found myself
         if (focusables.length == 1)
-            return focusables.unsafe_ref(0).widget; // single option - use it
+            return focusables.unsafe_ref(0).element; // single option - use it
         if (direction == FocusMovement.next)
         {
             // move forward
             int index = myIndex + 1;
             if (index >= focusables.length)
                 index = 0;
-            return focusables.unsafe_ref(index).widget;
+            return focusables.unsafe_ref(index).element;
         }
         else if (direction == FocusMovement.previous)
         {
@@ -1242,7 +1243,7 @@ public:
             int index = myIndex - 1;
             if (index < 0)
                 index = cast(int)focusables.length - 1;
-            return focusables.unsafe_ref(index).widget;
+            return focusables.unsafe_ref(index).element;
         }
         else
         {
@@ -1258,7 +1259,7 @@ public:
             myIndex = 0;
             for (int i = 0; i < focusables.length; i++)
             {
-                if (focusables[i].widget is this)
+                if (focusables[i].element is this)
                 {
                     myIndex = i;
                     break;
@@ -1277,7 +1278,7 @@ public:
                 if (index >= focusables.length)
                     index = 0;
             }
-            return focusables.unsafe_ref(index).widget;
+            return focusables.unsafe_ref(index).element;
         }
     }
 
@@ -1320,15 +1321,15 @@ public:
         }
         if (direction == FocusMovement.none)
             return false;
-        Widget nextWidget = findNextFocusWidget(direction);
-        if (!nextWidget)
+        Element nextOne = findNextFocusWidget(direction);
+        if (!nextOne)
             return false;
-        nextWidget.setFocus(FocusReason.tabFocus);
+        nextOne.setFocus(FocusReason.tabFocus);
         return true;
     }
 
     /// Set focus to this widget or suitable focusable child, returns previously focused widget
-    Widget setFocus(FocusReason reason = FocusReason.unspecified)
+    Element setFocus(FocusReason reason = FocusReason.unspecified)
     {
         if (window is null)
             return null;
@@ -1337,26 +1338,26 @@ public:
         invalidate();
         if (!canFocus)
         {
-            Widget w = findFocusableChild(true);
-            if (!w)
-                w = findFocusableChild(false);
-            if (w)
-                return window.setFocus(weakRef(w), reason);
+            Element el = findFocusableChild(true);
+            if (!el)
+                el = findFocusableChild(false);
+            if (el)
+                return window.setFocus(weakRef(el), reason);
             // try to find focusable child
             return window.focusedElement;
         }
         return window.setFocus(weakRef(this), reason);
     }
     /// Search children for first focusable item, returns `null` if not found
-    Widget findFocusableChild(bool defaultOnly)
+    Element findFocusableChild(bool defaultOnly)
     {
-        foreach (Widget w; this)
+        foreach (Element el; this)
         {
-            if (w.canFocus && (!defaultOnly || (w.state & State.default_) != 0))
-                return w;
-            w = w.findFocusableChild(defaultOnly);
-            if (w !is null)
-                return w;
+            if (el.canFocus && (!defaultOnly || (el.state & State.default_) != 0))
+                return el;
+            el = el.findFocusableChild(defaultOnly);
+            if (el !is null)
+                return el;
         }
         if (canFocus)
             return this;
@@ -2030,12 +2031,12 @@ public:
         When `deepSearch == true`, returns true if item is this widget
         or one of children inside children tree.
     */
-    bool isChild(Widget item, bool deepSearch = true)
+    bool isChild(Element item, bool deepSearch = true)
     {
         // the contract is that any widget in the tree must have a parent
         if (deepSearch)
         {
-            Widget p = item;
+            Element p = item;
             while (p)
             {
                 if (this is p)
@@ -2060,20 +2061,20 @@ public:
                     return found;
             }
             // lookup children
-            foreach (Widget w; this)
+            foreach (Element el; this)
             {
-                if (T found = w.childByID!T(id))
+                if (T found = el.childByID!T(id))
                     return found;
             }
         }
         else
         {
             // search only across children of this widget
-            foreach (Widget w; this)
+            foreach (Element el; this)
             {
-                if (w.compareID(id))
+                if (el.compareID(id))
                 {
-                    if (T found = cast(T)w)
+                    if (T found = cast(T)el)
                         return found;
                 }
             }
@@ -2082,16 +2083,16 @@ public:
         return null;
     }
 
-    final int opApply(scope int delegate(Widget) callback)
+    final int opApply(scope int delegate(Element) callback)
     {
         foreach (i; 0 .. childCount)
         {
             if (const result = callback(child(i)))
                 return result;
         }
-        foreach (w; _hiddenChildren.unsafe_slice)
+        foreach (el; _hiddenChildren.unsafe_slice)
         {
-            if (const result = callback(w))
+            if (const result = callback(el))
                 return result;
         }
         return 0;
@@ -2115,7 +2116,7 @@ public:
     /// Returns window (if widget or its parent is attached to window)
     @property inout(Window) window() inout
     {
-        Widget p = cast()this;
+        Element p = cast()this;
         while (p)
         {
             if (p._window)
@@ -2131,8 +2132,8 @@ public:
     }
 }
 
-/// Widget list holder
-alias WidgetList = Collection!(Widget, true);
+/// Element list holder
+alias ElementList = Collection!(Element, true);
 
 /** Base class for widgets which have children.
 
@@ -2142,7 +2143,7 @@ alias WidgetList = Collection!(Widget, true);
     you may not use this class. You may inherit directly from the Widget class
     and add code for subwidgets to destructor, `handleThemeChange`, and `draw` (if needed).
 */
-class WidgetGroup : Widget
+class WidgetGroup : Element
 {
     /// Empty parameter list constructor - for usage by factory
     this()
@@ -2155,7 +2156,7 @@ class WidgetGroup : Widget
         super(ID);
     }
 
-    private WidgetList _children;
+    private ElementList _children;
 
     override @property int childCount() const
     {
@@ -2243,12 +2244,12 @@ class WidgetGroup : Widget
 
 interface ILayout
 {
-    void onSetup(Widget host);
+    void onSetup(Element host);
     void onDetach();
     void onStyleChange(StyleProperty p);
     void onChildStyleChange(StyleProperty p);
 
-    void prepare(ref Buf!Widget list);
+    void prepare(ref Buf!Element list);
     Boundaries measure();
     void arrange(Box box);
 }
@@ -2265,7 +2266,7 @@ class Panel : WidgetGroup
 
     private string _kind;
     private ILayout _layout;
-    private Buf!Widget preparedItems;
+    private Buf!Element preparedItems;
 
     this()
     {
@@ -2350,7 +2351,7 @@ class Panel : WidgetGroup
         preparedItems.clear();
         foreach (i; 0 .. childCount)
         {
-            Widget item = child(i);
+            Element item = child(i);
             if (item.visibility != Visibility.gone)
                 preparedItems ~= item;
             else
