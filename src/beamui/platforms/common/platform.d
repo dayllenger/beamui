@@ -11,8 +11,10 @@ module beamui.platforms.common.platform;
 
 public import beamui.graphics.drawables : imageCache;
 public import beamui.widgets.widget : CursorType, Element, Widget;
+import std.algorithm.mutation : swap;
 import beamui.core.animations;
 import beamui.core.asyncsocket;
+import beamui.core.memory : Arena;
 import beamui.core.settings;
 import beamui.core.stdaction : initStandardActions, ACTION_OK;
 import beamui.graphics.iconprovider;
@@ -248,7 +250,6 @@ class Window : CustomEventTarget
         float _devicePixelRatio = 1;
 
         Color _backgroundColor = Color.white;
-        Widget _mainWidget;
         EventList _eventList;
         WindowOptions _options;
 
@@ -259,6 +260,11 @@ class Window : CustomEventTarget
 
         Window[] _children;
         Window _parent;
+
+        Element _mainWidget;
+        ElementStore _elementStore;
+        Arena[2] _widgetArenas;
+        NgWidget delegate() _buildFunc;
 
         KeyMods _keyboardModifiers;
 
@@ -626,6 +632,34 @@ class Window : CustomEventTarget
             const int newy = parentRect.y + (parentRect.h - _windowRect.h) / 2;
             move(newx, newy);
         }
+    }
+
+    //===============================================================
+
+    // experimental
+    final void show(NgWidget delegate() buildFunc)
+    {
+        _buildFunc = buildFunc;
+        rebuild(); // first build
+        show();
+    }
+
+    private void rebuild()
+    {
+        if (!_buildFunc)
+        {
+            needRebuild = false;
+            return;
+        }
+        // prepare allocators and the cache
+        swap(_widgetArenas[0], _widgetArenas[1]);
+        _widgetArenas[0].clear();
+        setCurrentArenaAndStore(_widgetArenas[0], _elementStore);
+        // rebuild and diff
+        NgWidget root = _buildFunc();
+        _mainWidget = mountRoot(root);
+        _mainWidget.window = this;
+        needRebuild = false;
     }
 
     /// Request layout for main widget and popups
@@ -1856,6 +1890,9 @@ class Window : CustomEventTarget
     /// Request update for window (unless `force` is true, update will be performed only if layout, redraw or animation is required)
     void update(bool force = false)
     {
+        if (needRebuild)
+            rebuild();
+
         bool needDraw = false;
         bool needLayout = false;
         _animationActive = false;
@@ -2352,6 +2389,17 @@ class Platform
 @property Platform platform()
 {
     return Platform.instance;
+}
+
+private bool needRebuild = true;
+
+void setState(T)(ref T currentValue, T newValue)
+{
+    if (currentValue !is newValue)
+    {
+        currentValue = newValue;
+        needRebuild = true;
+    }
 }
 
 static if (USE_OPENGL)

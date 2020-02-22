@@ -1,15 +1,7 @@
 /**
-Contains declaration of Widget class - base for all widgets.
+Contains core classes and ancillary types of the widget system.
 
-Synopsis:
----
-auto w = new Widget("id1");
-// modify widget style
-w.style.padding = 10;
-w.style.backgroundColor = 0xAAAA00;
----
-
-Copyright: Vadim Lopatin 2014-2018, Andrzej Kilijański 2017-2018, dayllenger 2018-2019
+Copyright: Vadim Lopatin 2014-2018, Andrzej Kilijański 2017-2018, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -44,6 +36,7 @@ public
 }
 package import beamui.style.computed_style;
 import beamui.core.animations;
+import beamui.core.memory : Arena;
 import beamui.graphics.compositing : BlendMode;
 import beamui.platforms.common.platform;
 import beamui.style.style;
@@ -121,12 +114,108 @@ enum DependentSize
     height,
 }
 
+/// Base class for all widgets
+class NgWidget
+{
+    uint key = uint.max;
+    string id;
+
+    private
+    {
+        static Arena* _arena;
+        static ElementStore* _store;
+
+        ElementID _elementID;
+    }
+
+    static NgWidget make(string id = null)
+    {
+        NgWidget w = arena.make!NgWidget;
+        w.id = id;
+        return w;
+    }
+
+    final protected Element mount(ElementID parentID, size_t index)
+    {
+        // compute the element ID; it always depends on the widget type
+        const typeHash = hashOf(this.classinfo.name);
+        ulong mainHash;
+        // if the widget has a CSS id, it is unique
+        if (id.length)
+        {
+            mainHash = hashOf(id);
+        }
+        else
+        {
+            // use the parent ID, so IDs form a tree structure
+            assert(parentID.value, "Widget must have either a string ID or a parent");
+            // also use either the key or, as a last resort, the index
+            const ulong[2] values = [parentID.value, key != uint.max ? ~key : index];
+            mainHash = hashOf(values);
+        }
+        _elementID = ElementID(typeHash ^ mainHash);
+        // find or create the element
+        Element root = fetchElement();
+        // clear the old element tree structure
+        root.removeAllChildren(false);
+        // finish widget configuration and build the subtree
+        build();
+        // update the element with the data
+        updateElement(root);
+        // continue recursively and build the element tree back
+        foreach (i, item; this)
+        {
+            if (item)
+                root.addChild(item.mount(_elementID, i));
+        }
+        return root;
+    }
+
+    /// Get or create an element instance using the currently bound element store
+    protected E fetchEl(E : Element)()
+    {
+        return _store.fetch!E(_elementID, this);
+    }
+
+    protected static Arena* arena()
+    {
+        assert(_arena, "Widget allocator is used outside the build function");
+        return _arena;
+    }
+
+    //===============================================================
+    // Internal methods to implement in subclasses
+
+    protected void build()
+    {
+    }
+
+    protected Element fetchElement()
+        out(el; el)
+    {
+        return fetchEl!Element;
+    }
+
+    protected void updateElement(Element el)
+        in(el)
+    {
+        el.id = id;
+    }
+
+    protected int opApply(scope int delegate(size_t, NgWidget) callback)
+    {
+        return 0;
+    }
+}
+
 alias Element = Widget;
 
-/// Base class for all widgets.
+/// Base class for all elements
 class Widget
 {
 private:
+    /// Type of the widget instantiated this element
+    TypeInfo_Class widgetType;
     /// Widget id
     string _id;
     /// Custom attributes map
@@ -505,7 +594,7 @@ public:
         // type
         if (sel.type)
         {
-            TypeInfo_Class type = typeid(this);
+            TypeInfo_Class type = widgetType ? cast()widgetType : typeid(this);
             while (!equalShortClassName(type, sel.type))
             {
                 type = type.base; // support inheritance
@@ -2423,6 +2512,67 @@ class Panel : WidgetGroup
             foundWidget.setFocus();
         return found;
     }
+}
+
+/** An integer identifier to map temporal widgets onto persistent elements.
+
+    It is unique inside the window and stable between rebuilds of the widget tree.
+*/
+struct ElementID
+{
+    ulong value;
+}
+
+/// Contains every alive element of the window by `ElementID`
+struct ElementStore
+{
+    static uint instantiations;
+
+    private Element[ElementID] map;
+
+    private this(int);
+    @disable this(this);
+
+    ~this()
+    {
+        eliminate(map);
+    }
+
+    E fetch(E : Element)(ElementID id, NgWidget caller)
+        in(id.value)
+        in(caller)
+        out(el; el)
+    {
+        E el;
+        if (auto p = id in map)
+        {
+            el = cast(E)*p;
+        }
+        else
+        {
+            map[id] = el = new E;
+            (cast(Element)el).widgetType = typeid(caller);
+            instantiations++;
+        }
+        return el;
+    }
+
+    void clear()
+    {
+        eliminate(map);
+    }
+}
+
+// to access from the window
+package(beamui) void setCurrentArenaAndStore(ref Arena arena, ref ElementStore store)
+{
+    NgWidget._arena = &arena;
+    NgWidget._store = &store;
+}
+
+package(beamui) Element mountRoot(NgWidget root)
+{
+    return root.mount(ElementID.init, 0);
 }
 
 /// Helper for locating items in list, tree, table or other controls by typing their name
