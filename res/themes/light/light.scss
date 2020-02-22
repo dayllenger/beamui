@@ -239,6 +239,10 @@ GroupBox > .caption {
 /* lists */
 
 ListWidget {
+    min-width: 2em;
+    min-height: 2em;
+    width: 10em;
+    height: 10em;
     border: 1px solid #aaa;
     background-color: #fff;
     transition: border-color 100ms ease;
@@ -322,6 +326,8 @@ ComboBoxBase {
 }
 
 Popup.combobox > ListWidget {
+    width: auto;
+    height: auto;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
 
     &:focused {

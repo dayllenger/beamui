@@ -92,7 +92,7 @@ GroupBox > .caption { align: left vcenter; padding: 1px; color: #504840; text-ov
   group_box_frame_bottom: url(group_box_frame_bottom); }
 
 /* lists */
-ListWidget { border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
+ListWidget { min-width: 2em; min-height: 2em; width: 10em; height: 10em; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
 
 ListWidget:focused { border-color: #2e93fa; }
 
@@ -127,7 +127,7 @@ ComboBoxBase > .button { align: center; padding: 3px 2px; }
 
 ComboBoxBase > .body:not(enabled), ComboBoxBase > .button:not(enabled) { opacity: 0.4; }
 
-Popup.combobox > ListWidget { box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
+Popup.combobox > ListWidget { width: auto; height: auto; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
 
 Popup.combobox > ListWidget:focused { border-color: rgba(32, 64, 255, 0.75); }
 
