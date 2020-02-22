@@ -120,12 +120,29 @@ class NgWidget
     uint key = uint.max;
     string id;
 
+    bool allowsFocus;
+    bool allowsHover;
+    bool enabled = true;
+    bool visible = true;
+    bool inheritState;
+
+    bool isolateStyle;
+    bool isolateThisStyle;
+
+    bool delegate(KeyEvent) onKeyEvent;
+    bool delegate(MouseEvent) onMouseEvent;
+    bool delegate(WheelEvent) onWheelEvent;
+
+    dstring tooltip;
+
     private
     {
         static Arena* _arena;
         static ElementStore* _store;
 
         ElementID _elementID;
+
+        string[string] _attributes;
     }
 
     static NgWidget make(string id = null)
@@ -134,6 +151,14 @@ class NgWidget
         w.id = id;
         return w;
     }
+
+    final void setAttribute(string name, string value = null)
+        in(name.length)
+    {
+        _attributes[name] = value;
+    }
+
+    //===============================================================
 
     final protected Element mount(ElementID parentID, size_t index)
     {
@@ -200,6 +225,45 @@ class NgWidget
         in(el)
     {
         el.id = id;
+
+        if (el.attributes != _attributes)
+        {
+            el.attributes = _attributes;
+            el.invalidateStyles();
+        }
+
+        el.allowsFocus = allowsFocus;
+        el.allowsHover = allowsHover;
+        el.enabled = enabled;
+        el.visibility = visible ? Visibility.visible : Visibility.hidden;
+
+        if (inheritState)
+            el._state |= State.parent;
+        else
+            el._state &= ~State.parent;
+
+        if (el._style.isolated != isolateStyle)
+        {
+            el._style.isolated = isolateStyle;
+            el.invalidateStyles();
+        }
+        if (el._thisStyleIsolated != isolateThisStyle)
+        {
+            el._thisStyleIsolated = isolateThisStyle;
+            el.invalidateStyles();
+        }
+
+        el.onKeyEvent.clear();
+        el.onMouseEvent.clear();
+        el.onWheelEvent.clear();
+        if (onKeyEvent)
+            el.onKeyEvent ~= onKeyEvent;
+        if (onMouseEvent)
+            el.onMouseEvent ~= onMouseEvent;
+        if (onWheelEvent)
+            el.onWheelEvent ~= onWheelEvent;
+
+        el.tooltipText = tooltip;
     }
 
     protected int opApply(scope int delegate(size_t, NgWidget) callback)
@@ -595,7 +659,7 @@ public:
         if (sel.type)
         {
             TypeInfo_Class type = widgetType ? cast()widgetType : typeid(this);
-            while (!equalShortClassName(type, sel.type))
+            while (!equalShortClassName(type, widgetType ? "Ng" ~ sel.type : sel.type))
             {
                 type = type.base; // support inheritance
                 if (type is typeid(Object))
