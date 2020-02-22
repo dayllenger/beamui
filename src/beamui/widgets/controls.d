@@ -11,6 +11,304 @@ import beamui.core.stdaction;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
+alias ElemImage = ImageWidget;
+alias ElemSwitch = SwitchButton;
+alias ElemCanvas = CanvasWidget;
+
+class NgImageWidget : NgWidget
+{
+    string imageID;
+
+    static NgImageWidget make(string imageID)
+    {
+        NgImageWidget w = arena.make!NgImageWidget;
+        w.imageID = imageID;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemImage;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemImage el = fastCast!ElemImage(element);
+        el.imageID = imageID;
+    }
+}
+
+class NgButton : NgPanel
+{
+    dstring text;
+    string icon;
+    void delegate() onClick;
+
+    static NgButton make(dstring text, void delegate() onClick)
+    {
+        NgButton w = arena.make!NgButton;
+        w.text = text;
+        w.onClick = onClick;
+        return w;
+    }
+
+    static NgButton make(dstring text, string icon, void delegate() onClick)
+    {
+        NgButton w = arena.make!NgButton;
+        w.text = text;
+        w.icon = icon;
+        w.onClick = onClick;
+        return w;
+    }
+
+    this()
+    {
+        allowsFocus = true;
+        allowsHover = true;
+        isolateStyle = true;
+    }
+
+    override protected void build()
+    {
+        NgImageWidget image;
+        if (icon.length)
+        {
+            image = NgImageWidget.make(icon);
+            image.setAttribute("icon");
+            image.inheritState = true;
+        }
+        NgLabel label;
+        if (text.length)
+        {
+            label = NgLabel.make(text);
+            label.setAttribute("label");
+            label.inheritState = true;
+        }
+        attach(image, label);
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemPanel el = fastCast!ElemPanel(element);
+        el.allowsClick = true;
+        el.onClick.clear();
+        if (onClick)
+            el.onClick ~= onClick;
+    }
+}
+
+class NgLinkButton : NgButton
+{
+    import beamui.platforms.common.platform : platform;
+
+    private string url;
+
+    static NgLinkButton make(dstring text, string url, string icon = "applications-internet")
+    {
+        NgLinkButton w = arena.make!NgLinkButton;
+        w.text = text;
+        w.icon = icon;
+        if (url.length)
+        {
+            w.url = url;
+            w.onClick = &w.handleClick;
+        }
+        return w;
+    }
+
+    private void handleClick()
+    {
+        platform.openURL(url);
+    }
+}
+
+class NgSwitchButton : NgWidget
+{
+    bool checked;
+    void delegate(bool) onToggle;
+
+    static NgSwitchButton make(bool checked, void delegate(bool) onToggle)
+    {
+        NgSwitchButton w = arena.make!NgSwitchButton;
+        w.checked = checked;
+        w.onToggle = onToggle;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemSwitch;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemSwitch el = fastCast!ElemSwitch(element);
+        el.checked = checked;
+        el.onToggle.clear();
+        if (onToggle)
+            el.onToggle ~= onToggle;
+    }
+}
+
+class NgCheckBox : NgPanel
+{
+    dstring text;
+    bool checked;
+    void delegate(bool) onToggle;
+
+    static NgCheckBox make(dstring text, bool checked, void delegate(bool) onToggle)
+    {
+        NgCheckBox w = arena.make!NgCheckBox;
+        w.text = text;
+        w.checked = checked;
+        w.onToggle = onToggle;
+        return w;
+    }
+
+    this()
+    {
+        allowsFocus = true;
+        allowsHover = true;
+        isolateStyle = true;
+    }
+
+    override protected void build()
+    {
+        enabled = onToggle !is null;
+
+        NgLabel label;
+        if (text.length)
+        {
+            label = NgLabel.make(text);
+            label.setAttribute("label");
+            label.inheritState = true;
+        }
+        auto image = NgWidget.make();
+        image.setAttribute("icon");
+        image.inheritState = true;
+        attach(image, label);
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemPanel el = fastCast!ElemPanel(element);
+        el.allowsClick = true;
+        el.checked = checked;
+        el.onClick.clear();
+        if (onToggle)
+            el.onClick ~= &handleClick;
+    }
+
+    private void handleClick()
+    {
+        onToggle(!checked);
+    }
+}
+
+class NgRadioButton : NgPanel
+{
+    dstring text;
+    bool checked;
+    void delegate(bool) onToggle;
+
+    static NgRadioButton make(dstring text, bool checked, void delegate(bool) onToggle)
+    {
+        NgRadioButton w = arena.make!NgRadioButton;
+        w.text = text;
+        w.checked = checked;
+        w.onToggle = onToggle;
+        return w;
+    }
+
+    this()
+    {
+        allowsFocus = true;
+        allowsHover = true;
+        isolateStyle = true;
+    }
+
+    override protected void build()
+    {
+        enabled = onToggle !is null;
+
+        NgLabel label;
+        if (text.length)
+        {
+            label = NgLabel.make(text);
+            label.setAttribute("label");
+            label.inheritState = true;
+        }
+        auto image = NgWidget.make();
+        image.setAttribute("icon");
+        image.inheritState = true;
+        attach(image, label);
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemPanel el = fastCast!ElemPanel(element);
+        el.allowsClick = true;
+        el.checked = checked;
+        el.onClick.clear();
+        if (onToggle)
+            el.onClick ~= &handleClick;
+    }
+
+    private void handleClick()
+    {
+        if (checked || !parent)
+            return;
+
+        foreach (i, item; parent)
+        {
+            if (this is item)
+                continue;
+            if (auto rb = cast(NgRadioButton)item)
+            {
+                // deactivate siblings
+                if (rb.checked && rb.onToggle)
+                    rb.onToggle(false);
+            }
+        }
+        onToggle(true);
+    }
+}
+
+class NgCanvasWidget : NgWidget
+{
+    void delegate(Painter, Size) onDraw;
+
+    static NgCanvasWidget make(void delegate(Painter, Size) onDraw)
+    {
+        NgCanvasWidget w = arena.make!NgCanvasWidget;
+        w.onDraw = onDraw;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemCanvas;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemCanvas el = fastCast!ElemCanvas(element);
+        el.onDraw = onDraw;
+    }
+}
+
 /// Static image widget. Can accept any drawable instead of the image (e.g. a gradient).
 class ImageWidget : Widget
 {

@@ -25,6 +25,34 @@ enum int PROGRESS_HIDDEN = -2;
 enum int PROGRESS_INDETERMINATE = -1;
 enum int PROGRESS_MAX = 1000;
 
+alias ElemProgressBar = ProgressBar;
+
+class NgProgressBar : NgWidget
+{
+    int progress;
+
+    static NgProgressBar make(int progress)
+    {
+        NgProgressBar w = arena.make!NgProgressBar;
+        w.progress = progress;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemProgressBar;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemProgressBar el = fastCast!ElemProgressBar(element);
+        el.data.progress = progress;
+        el.animationInterval = 50;
+    }
+}
+
 /// Basic component for different progress bar controls
 class ProgressData
 {

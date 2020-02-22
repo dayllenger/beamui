@@ -23,6 +23,91 @@ import std.math : abs, isFinite, quantize;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
+alias ElemAbstractSlider = AbstractSlider;
+alias ElemSlider = Slider;
+alias ElemRangeSlider = RangeSlider;
+
+abstract class NgAbstractSlider : NgWidget
+{
+    double minValue = 0;
+    double maxValue = 100;
+    double step = 1;
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemAbstractSlider el = fastCast!ElemAbstractSlider(element);
+        el.data.setRange(minValue, maxValue, step);
+    }
+}
+
+class NgSlider : NgAbstractSlider
+{
+    double value = 0;
+    void delegate(double) onChange;
+
+    static NgSlider make(double value, void delegate(double) onChange)
+    {
+        NgSlider w = arena.make!NgSlider;
+        w.value = value;
+        w.onChange = onChange;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        Element el = fetchEl!ElemSlider;
+        el.setAttribute("ignore");
+        return el;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemSlider el = fastCast!ElemSlider(element);
+        el.data.value = value;
+        el.data.onChange.clear();
+        if (onChange)
+            el.data.onChange ~= { onChange(el.data.value); };
+    }
+}
+
+class NgRangeSlider : NgAbstractSlider
+{
+    double first = 0;
+    double second = 0;
+    void delegate(double, double) onChange;
+
+    static NgRangeSlider make(double first, double second, void delegate(double, double) onChange)
+    {
+        NgRangeSlider w = arena.make!NgRangeSlider;
+        w.first = first;
+        w.second = second;
+        w.onChange = onChange;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        Element el = fetchEl!ElemRangeSlider;
+        el.setAttribute("ignore");
+        return el;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemRangeSlider el = fastCast!ElemRangeSlider(element);
+        el.data.setValues(first, second);
+        el.data.onChange.clear();
+        if (onChange)
+            el.data.onChange ~= { onChange(el.data.first, el.data.second); };
+    }
+}
+
 /// Base for slider data components. They validate data and react on changes
 class SliderDataBase
 {

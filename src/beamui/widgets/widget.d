@@ -141,6 +141,7 @@ class NgWidget
         static ElementStore* _store;
 
         ElementID _elementID;
+        NgWidget _parent;
 
         string[string] _attributes;
     }
@@ -160,7 +161,7 @@ class NgWidget
 
     //===============================================================
 
-    final protected Element mount(ElementID parentID, size_t index)
+    final protected Element mount(NgWidget parent, size_t index)
     {
         // compute the element ID; it always depends on the widget type
         const typeHash = hashOf(this.classinfo.name);
@@ -173,25 +174,28 @@ class NgWidget
         else
         {
             // use the parent ID, so IDs form a tree structure
-            assert(parentID.value, "Widget must have either a string ID or a parent");
+            assert(parent, "Widget must have either a string ID or a parent");
             // also use either the key or, as a last resort, the index
-            const ulong[2] values = [parentID.value, key != uint.max ? ~key : index];
+            const ulong[2] values = [parent._elementID.value, key != uint.max ? ~key : index];
             mainHash = hashOf(values);
         }
         _elementID = ElementID(typeHash ^ mainHash);
+        _parent = parent;
         // find or create the element
         Element root = fetchElement();
         // clear the old element tree structure
+    if (!root.hasAttribute("ignore")) // tmp
         root.removeAllChildren(false);
         // finish widget configuration and build the subtree
         build();
         // update the element with the data
         updateElement(root);
         // continue recursively and build the element tree back
+    if (!root.hasAttribute("ignore")) // tmp
         foreach (i, item; this)
         {
             if (item)
-                root.addChild(item.mount(_elementID, i));
+                root.addChild(item.mount(this, i));
         }
         return root;
     }
@@ -208,8 +212,27 @@ class NgWidget
         return _arena;
     }
 
+    protected static E fastCast(E : Element)(Element base)
+    {
+        debug
+        {
+            E el = cast(E)base;
+            assert(el);
+            return el;
+        }
+        else
+            return cast(E)cast(void*)base;
+    }
+
+    final protected inout(NgWidget) parent() inout { return _parent; }
+
     //===============================================================
     // Internal methods to implement in subclasses
+
+    int opApply(scope int delegate(size_t, NgWidget) callback)
+    {
+        return 0;
+    }
 
     protected void build()
     {
@@ -226,6 +249,7 @@ class NgWidget
     {
         el.id = id;
 
+    if (!el.hasAttribute("ignore")) // tmp
         if (el.attributes != _attributes)
         {
             el.attributes = _attributes;
@@ -265,14 +289,73 @@ class NgWidget
 
         el.tooltipText = tooltip;
     }
+}
 
-    protected int opApply(scope int delegate(size_t, NgWidget) callback)
+abstract class NgWidgetGroup : NgWidget
+{
+    private NgWidget[] _children;
+
+    final NgWidget attach(scope NgWidget delegate()[] lazyItems...)
     {
+        _children = arena.allocArray!NgWidget(lazyItems.length);
+        foreach (i, dg; lazyItems)
+        {
+            if (dg)
+                _children[i] = dg();
+        }
+        return this;
+    }
+
+    final NgWidget attach(NgWidget[] items)
+    {
+        _children = items;
+        return this;
+    }
+
+    override int opApply(scope int delegate(size_t, NgWidget) callback)
+    {
+        foreach (i, item; _children)
+        {
+            if (const result = callback(i, item))
+                return result;
+        }
         return 0;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemGroup;
+    }
+}
+
+class NgPanel : NgWidgetGroup
+{
+    static NgPanel make()
+    {
+        return arena.make!NgPanel;
+    }
+
+    static NgPanel make(string id, string[] classes...)
+    {
+        NgPanel w = arena.make!NgPanel;
+        w.id = id;
+        foreach (name; classes)
+        {
+            if (name.length)
+                w._attributes[name] = null;
+        }
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemPanel;
     }
 }
 
 alias Element = Widget;
+alias ElemGroup = WidgetGroup;
+alias ElemPanel = Panel;
 
 /// Base class for all elements
 class Widget
@@ -2636,7 +2719,7 @@ package(beamui) void setCurrentArenaAndStore(ref Arena arena, ref ElementStore s
 
 package(beamui) Element mountRoot(NgWidget root)
 {
-    return root.mount(ElementID.init, 0);
+    return root.mount(null, 0);
 }
 
 /// Helper for locating items in list, tree, table or other controls by typing their name

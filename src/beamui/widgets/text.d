@@ -14,6 +14,34 @@ import beamui.text.sizetest;
 import beamui.text.style;
 import beamui.widgets.widget;
 
+alias ElemLabel = Label;
+alias ElemParagraph = Paragraph;
+
+class NgLabel : NgWidget
+{
+    dstring text;
+
+    static NgLabel make(dstring text)
+    {
+        NgLabel w = arena.make!NgLabel;
+        w.text = text;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemLabel;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemLabel el = fastCast!ElemLabel(element);
+        el.text = text;
+    }
+}
+
 /** Efficient single- or multiline plain text widget.
 
     Can contain `&` character to underline a mnemonic key.
@@ -291,7 +319,7 @@ class Paragraph : Widget
         Buf!VisibleLine _visibleLines;
     }
 
-    this(dstring txt)
+    this(dstring txt = null)
     {
         this(new TextContent(txt));
     }

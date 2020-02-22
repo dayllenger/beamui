@@ -12,6 +12,33 @@ module beamui.widgets.groupbox;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
+alias ElemGroupBox = GroupBox;
+
+class NgGroupBox : NgPanel
+{
+    dstring caption;
+
+    static NgGroupBox make(dstring caption)
+    {
+        NgGroupBox w = arena.make!NgGroupBox;
+        w.caption = caption;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemGroupBox;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemGroupBox el = fastCast!ElemGroupBox(element);
+        el._caption.text = caption;
+    }
+}
+
 class GroupBox : Panel
 {
     private Label _caption;

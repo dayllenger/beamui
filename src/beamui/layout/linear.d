@@ -419,6 +419,33 @@ private void shrink(string dim)(ref Array!LayoutItem items, const float availabl
     }
 }
 
+class NgSpacer : NgWidget
+{
+    static NgSpacer make()
+    {
+        return arena.make!NgSpacer;
+    }
+}
+
+class NgResizer : NgWidget
+{
+    static NgResizer make()
+    {
+        return arena.make!NgResizer;
+    }
+
+    this()
+    {
+        allowsHover = true;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemResizer;
+    }
+}
+alias ElemResizer = Resizer;
+
 /// Spacer to fill empty space in layouts
 class Spacer : Widget
 {
