@@ -306,9 +306,14 @@ abstract class NgWidgetGroup : NgWidget
         return this;
     }
 
-    final NgWidget attach(NgWidget[] items)
+    final NgWidget attach(uint count, scope NgWidget delegate(uint) generator)
     {
-        _children = items;
+        if (count == 0 || !generator)
+            return this;
+
+        _children = arena.allocArray!NgWidget(count);
+        foreach (i; 0 .. count)
+            _children[i] = generator(i);
         return this;
     }
 

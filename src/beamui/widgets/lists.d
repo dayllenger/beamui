@@ -274,6 +274,69 @@ class IconStringListAdapter : StringListAdapterBase
     }
 }
 
+alias ElemListWidget = ListWidget;
+alias ElemStringListWidget = StringListWidget;
+
+class NgListWidget : NgWidgetGroup
+{
+    ListAdapter adapter;
+    Orientation orientation = Orientation.vertical;
+
+    bool selectOnHover;
+
+    void delegate(int) onItemClick;
+    void delegate(int) onSelect;
+
+    static NgListWidget make(ListAdapter adapter = null)
+    {
+        NgListWidget w = arena.make!NgListWidget;
+        w.adapter = adapter;
+        return w;
+    }
+
+    this()
+    {
+        allowsFocus = true;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemListWidget;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemListWidget el = fastCast!ElemListWidget(element);
+        el.adapter = adapter;
+        el.orientation = orientation;
+        el.selectOnHover = selectOnHover;
+        el.onItemClick.clear();
+        el.onSelect.clear();
+        if (onItemClick)
+            el.onItemClick ~= onItemClick;
+        if (onSelect)
+            el.onSelect ~= onSelect;
+    }
+}
+
+class NgStringListWidget : NgListWidget
+{
+    static NgStringListWidget make(StringListAdapterBase adapter)
+        in(adapter)
+    {
+        NgStringListWidget w = arena.make!NgStringListWidget;
+        w.adapter = adapter;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemStringListWidget;
+    }
+}
+
 /// List widget
 class ListWidget : WidgetGroup
 {
@@ -312,10 +375,15 @@ class ListWidget : WidgetGroup
             _ownAdapter = false;
 
             if (_itemWidget)
-                destroy(removeChild(_itemWidget));
-            _itemWidget = _adapter.createSharedItemWidget(_updateItemWidget);
-            addChild(_itemWidget);
-            assert(_updateItemWidget);
+            {
+                assert(_hiddenChildren.removeValue(_itemWidget));
+                destroy(_itemWidget);
+            }
+            _itemWidget = _adapter.createSharedItemWidget(_itemWidgetUpdater);
+            _itemWidget.parent = this;
+            _hiddenChildren.append(_itemWidget);
+            handleChildListChange();
+            assert(_itemWidgetUpdater);
         }
         /// Set adapter, which will be owned by list (destroy will be called for adapter on widget destroy)
         void ownAdapter(ListAdapter adapter)
@@ -330,10 +398,15 @@ class ListWidget : WidgetGroup
             _ownAdapter = true;
 
             if (_itemWidget)
-                destroy(removeChild(_itemWidget));
-            _itemWidget = _adapter.createSharedItemWidget(_updateItemWidget);
-            addChild(_itemWidget);
-            assert(_updateItemWidget);
+            {
+                assert(_hiddenChildren.removeValue(_itemWidget));
+                destroy(_itemWidget);
+            }
+            _itemWidget = _adapter.createSharedItemWidget(_itemWidgetUpdater);
+            _itemWidget.parent = this;
+            _hiddenChildren.append(_itemWidget);
+            handleChildListChange();
+            assert(_itemWidgetUpdater);
         }
 
         /// Returns number of widgets in list
@@ -372,7 +445,7 @@ class ListWidget : WidgetGroup
     private
     {
         Widget _itemWidget;
-        void delegate(int) _updateItemWidget;
+        void delegate(int) _itemWidgetUpdater;
         int _lastItemIndex = -1; // TODO: reset when clear or replace?
 
         Buf!Box _itemBoxes;
@@ -498,7 +571,7 @@ class ListWidget : WidgetGroup
                     with (caching(this))
                     {
                         _lastItemIndex = index;
-                        _updateItemWidget(index);
+                        _itemWidgetUpdater(index);
                     }
                 }
                 return _itemWidget;
