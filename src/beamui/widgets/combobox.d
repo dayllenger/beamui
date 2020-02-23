@@ -45,6 +45,8 @@ abstract class ComboBoxBase : Panel
                 _adapter.resetItemState(_selectedItemIndex, State.selected | State.focused | State.hovered);
             }
             _selectedItemIndex = index;
+            if (_popupList)
+                _popupList.selectItem(index);
             onSelect(index);
         }
 
@@ -132,7 +134,7 @@ abstract class ComboBoxBase : Panel
         return list;
     }
 
-    private Popup _popup;
+    private bool _popupShown;
     private ListWidget _popupList;
 
     protected void showPopup()
@@ -140,11 +142,12 @@ abstract class ComboBoxBase : Panel
         if (!_adapter || !_adapter.itemCount)
             return; // don't show empty popup
 
+        _popupShown = true;
         _popupList = createPopup();
-        _popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
-        _popup.setAttribute("combobox");
-        _popup.onPopupClose ~= (bool b) {
-            _popup = null;
+        Popup popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
+        popup.setAttribute("combobox");
+        popup.onPopupClose ~= (bool b) {
+            _popupShown = false;
             _popupList = null;
             removeAttribute("opened");
             handlePopupClose();
@@ -152,15 +155,15 @@ abstract class ComboBoxBase : Panel
         setAttribute("opened");
         _popupList.onItemClick ~= (int index) {
             selectedItemIndex = index;
-            if (_popup)
-                _popup.close();
+            if (popup)
+                popup.close();
         };
         _popupList.onKeyEvent ~= (KeyEvent e) {
             if (e.action == KeyAction.keyDown && e.key == Key.escape && e.noModifiers)
             {
-                if (_popup)
+                if (popup)
                 {
-                    _popup.close();
+                    popup.close();
                     return true;
                 }
             }
@@ -176,7 +179,7 @@ abstract class ComboBoxBase : Panel
 
     override protected void handleClick()
     {
-        if (enabled && !_popup)
+        if (enabled && !_popupShown)
         {
             showPopup();
         }
@@ -188,10 +191,8 @@ abstract class ComboBoxBase : Panel
             return false;
         const delta = event.deltaY > 0 ? 1 : -1;
         const oldIndex = selectedItemIndex;
-        const newIndex = clamp(selectedItemIndex + delta, 0, _adapter.itemCount - 1);
+        const newIndex = clamp(oldIndex + delta, 0, _adapter.itemCount - 1);
         selectedItemIndex = newIndex;
-        if (_popupList)
-            _popupList.selectItem(newIndex);
         return oldIndex != newIndex;
     }
 }
