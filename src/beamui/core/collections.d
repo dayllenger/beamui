@@ -318,7 +318,7 @@ if (is(T == struct) || isScalarType!T || isDynamicArray!T)
 
     final @property
     {
-        const(bool)* isDestroyed() const { return _isDestroyed; }
+        const(bool)* destructionFlag() const { return _destructionFlag; }
 
         /// True when there is no items
         bool empty() const
@@ -342,23 +342,22 @@ if (is(T == struct) || isScalarType!T || isDynamicArray!T)
     Signal!(void delegate(ListChange, uint index, uint count)) afterChange;
 
     private T[] _items;
-    private bool* _isDestroyed;
+    private bool* _destructionFlag;
 
     this()
     {
-        _isDestroyed = new bool;
+        _destructionFlag = new bool;
     }
 
     this(uint initialItemCount)
     {
         _items.length = initialItemCount;
-        _isDestroyed = new bool;
+        _destructionFlag = new bool;
     }
 
     ~this()
     {
-        if (_isDestroyed !is null)
-            *_isDestroyed = true;
+        *_destructionFlag = true;
     }
 
 final:

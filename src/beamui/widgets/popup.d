@@ -97,9 +97,12 @@ class Popup : Widget
             if (closePolicy & onPressOutside && event.action == MouseAction.buttonDown ||
                 closePolicy & onReleaseOutside && event.action == MouseAction.buttonUp)
             {
-                if (closePolicy & anchor && this.anchor.widget &&
-                    this.anchor.widget.contains(event.x, event.y))
-                    return false;
+                if (closePolicy & anchor)
+                {
+                    const Element a = this.anchor.widget.get;
+                    if (a && a.contains(event.x, event.y))
+                        return false;
+                }
 
                 closedByEvent = true;
                 scope (exit)
@@ -160,7 +163,7 @@ class Popup : Widget
         {
             Box anchorbox;
             if (anchor.widget)
-                anchorbox = anchor.widget.box;
+                anchorbox = anchor.widget.get.box;
             else
                 anchorbox = windowBox;
 

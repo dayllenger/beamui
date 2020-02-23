@@ -804,9 +804,9 @@ class Window : CustomEventTarget
         if (noTooltipBefore)
         {
             auto tr = Transition(100, TimingFunction.easeIn);
+            res.style.opacity = 0;
             // may be destroyed
             auto popup = weakRef(res);
-            popup.style.opacity = 0;
             addAnimation(tr.duration, (double t) {
                 if (Element p = popup.get)
                     p.style.opacity = tr.mix(0.0f, 1.0f, t);
@@ -848,9 +848,9 @@ class Window : CustomEventTarget
 
         // add a smooth fade-in transition
         auto tr = Transition(150, TimingFunction.easeIn);
+        res.style.opacity = 0;
         // may be destroyed
         auto popup = weakRef(res);
-        popup.style.opacity = 0;
         addAnimation(tr.duration, (double t) {
             if (Element p = popup.get)
                 p.style.opacity = tr.mix(0.0f, 1.0f, t);
@@ -1199,27 +1199,29 @@ class Window : CustomEventTarget
             // after focus change, ask for actions update automatically
             //requestActionsUpdate();
         }
-        return _focusedElement;
+        return _focusedElement.get;
     }
 
     protected Element applyFocus()
     {
-        if (_focusedElement)
+        Element el = _focusedElement.get;
+        if (el)
         {
-            _focusedElement.setState(_focusStateToApply);
+            el.setState(_focusStateToApply);
             update();
         }
-        return _focusedElement;
+        return el;
     }
 
     protected Element removeFocus()
     {
-        if (_focusedElement)
+        Element el = _focusedElement.get;
+        if (el)
         {
-            _focusedElement.resetState(_focusStateToApply);
+            el.resetState(_focusStateToApply);
             update();
         }
-        return _focusedElement;
+        return el;
     }
 
     /// Is this window focused?
@@ -1256,7 +1258,7 @@ class Window : CustomEventTarget
             }
             else // widget or widget tree
             {
-                Element focus = focusedElement;
+                Element focus = focusedElement.get;
                 if (action.call(el => el is focus)) // try focused first
                 {
                     return true;
@@ -1299,7 +1301,7 @@ class Window : CustomEventTarget
             if (ch < ' ' || ch == 0x7F) // filter out control symbols
                 return res;
         }
-        Element focus = focusedElement;
+        Element focus = focusedElement.get;
         Popup modal = modalPopup();
         if (!modal || modal.isChild(focus))
         {
@@ -1389,7 +1391,7 @@ class Window : CustomEventTarget
             {
                 debug (mouse)
                     Log.d("dispatchMouseEvent: Move, buttons state: ", currentButtons);
-                if (!_mouseCapture.contains(event.x, event.y))
+                if (!_mouseCapture.get.contains(event.x, event.y))
                 {
                     if (currentButtons != _mouseCaptureButtons)
                     {
@@ -1448,7 +1450,7 @@ class Window : CustomEventTarget
             }
             else if (event.action == MouseAction.buttonDown || event.action == MouseAction.buttonUp)
             {
-                if (!_mouseCapture.contains(event.x, event.y))
+                if (!_mouseCapture.get.contains(event.x, event.y))
                 {
                     if (currentButtons != _mouseCaptureButtons)
                     {
@@ -1512,13 +1514,14 @@ class Window : CustomEventTarget
 
     protected bool dispatchMouseEvent(WeakRef!Element root, MouseEvent event, ref bool cursorIsSet)
     {
+        Element elem = root.get;
         // route mouse events to visible widgets only
-        if (root.visibility != Visibility.visible)
+        if (elem.visibility != Visibility.visible)
             return false;
-        if (!root.contains(event.x, event.y))
+        if (!elem.contains(event.x, event.y))
             return false;
         // offer event to children first
-        foreach (Element el; root.get)
+        foreach (Element el; elem)
         {
             if (dispatchMouseEvent(weakRef(el), event, cursorIsSet))
                 return true;
@@ -1526,7 +1529,7 @@ class Window : CustomEventTarget
 
         if (event.action == MouseAction.move && !cursorIsSet)
         {
-            CursorType cursorType = root.getCursorType(event.x, event.y);
+            CursorType cursorType = elem.getCursorType(event.x, event.y);
             if (cursorType != CursorType.notSet)
             {
                 setCursorType(cursorType);
@@ -1538,7 +1541,7 @@ class Window : CustomEventTarget
         {
             debug (mouse)
                 Log.d("MouseEvent is processed");
-            if (event.action == MouseAction.buttonDown && _mouseCapture.isNull && !event.doNotTrackButtonDown)
+            if (event.action == MouseAction.buttonDown && !_mouseCapture && !event.doNotTrackButtonDown)
             {
                 debug (mouse)
                     Log.d("Setting active widget");
@@ -1557,7 +1560,7 @@ class Window : CustomEventTarget
     private WeakRef!Element[] _mouseTrackingElements;
     private void addTracking(WeakRef!Element element)
     {
-        if (element.isNull)
+        if (!element)
             return;
         foreach (el; _mouseTrackingElements)
             if (element is el)
@@ -1572,9 +1575,9 @@ class Window : CustomEventTarget
         bool res;
         foreach_reverse (ref el; _mouseTrackingElements)
         {
-            if (el.isNull)
+            if (!el)
                 continue;
-            if (event.action == MouseAction.leave || !el.contains(event.x, event.y))
+            if (event.action == MouseAction.leave || !el.get.contains(event.x, event.y))
             {
                 // send Leave message
                 auto leaveEvent = new MouseEvent(event);
@@ -1585,7 +1588,7 @@ class Window : CustomEventTarget
                 el.nullify();
             }
         }
-        _mouseTrackingElements = _mouseTrackingElements.remove!(a => a.isNull);
+        _mouseTrackingElements = _mouseTrackingElements.remove!(a => !a);
         debug (mouse)
             Log.d("removeTracking, items after: ", _mouseTrackingElements.length);
         return res;
@@ -1600,7 +1603,7 @@ class Window : CustomEventTarget
 
     protected void setMouseCapture(WeakRef!Element el, MouseEvent event)
     {
-        if (el.isNull)
+        if (!el)
             return;
         _mouseCapture = el;
         _mouseCaptureButtons = event.mouseMods;
@@ -1631,10 +1634,10 @@ class Window : CustomEventTarget
 
     protected bool sendAndCheckOverride(WeakRef!Element element, MouseEvent event)
     {
-        if (element.isNull)
+        if (!element)
             return false;
         const res = handleMouseEvent(element, event);
-        if (event.trackingWidget !is null && _mouseCapture !is event.trackingWidget)
+        if (event.trackingWidget && _mouseCapture !is event.trackingWidget)
         {
             setMouseCapture(event.trackingWidget, event);
         }
@@ -1644,7 +1647,7 @@ class Window : CustomEventTarget
     /// Returns true if mouse is currently captured
     bool isMouseCaptured() const
     {
-        return !_mouseCapture.isNull;
+        return !!_mouseCapture;
     }
 
     /// Dispatch wheel event to window content widgets
@@ -1655,10 +1658,10 @@ class Window : CustomEventTarget
 
         hideTooltip();
 
-        if (auto active = _mouseCapture)
+        if (_mouseCapture)
         {
             // try to forward message directly to active widget
-            handleWheelEvent(active, event);
+            handleWheelEvent(_mouseCapture, event);
             if (event.mouseMods == MouseMods.none)
             {
                 // disable capturing - no more buttons pressed
@@ -1684,14 +1687,15 @@ class Window : CustomEventTarget
 
     protected bool dispatchWheelEvent(WeakRef!Element root, WheelEvent event)
     {
+        Element elem = root.get;
         // route wheel events to visible widgets only
-        if (root.visibility != Visibility.visible)
+        if (elem.visibility != Visibility.visible)
             return false;
-        if (!root.contains(event.x, event.y))
+        if (!elem.contains(event.x, event.y))
             return false;
 
         // offer event to children first
-        foreach (Element el; root.get)
+        foreach (Element el; elem)
         {
             if (dispatchWheelEvent(weakRef(el), event))
                 return true;
@@ -1705,7 +1709,7 @@ class Window : CustomEventTarget
         Element el = weak.get;
         if (el.onKeyEvent.assigned && el.onKeyEvent(e))
             return true;  // processed by external handler
-        else if (weak.isNull)
+        else if (!weak)
             return false; // destroyed in the handler, but not processed
         else
             return el.handleKeyEvent(e);
@@ -1716,7 +1720,7 @@ class Window : CustomEventTarget
         Element el = weak.get;
         if (el.onMouseEvent.assigned && el.onMouseEvent(e))
             return true;
-        else if (weak.isNull)
+        else if (!weak)
             return false;
         else
             return el.handleMouseEvent(e);
@@ -1727,7 +1731,7 @@ class Window : CustomEventTarget
         Element el = weak.get;
         if (el.onWheelEvent.assigned && el.onWheelEvent(e))
             return true;
-        else if (weak.isNull)
+        else if (!weak)
             return false;
         else
             return el.handleWheelEvent(e);

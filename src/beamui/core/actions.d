@@ -561,13 +561,13 @@ final class Action
 
         foreach (wt, slot; receivers)
         {
-            if (wt.isNull)
+            if (!wt)
             {
                 // clean up destroyed widgets
                 receivers.remove(wt);
                 continue;
             }
-            if (chooser(wt))
+            if (chooser(wt.get))
             {
                 // check/uncheck
                 if (checkable)

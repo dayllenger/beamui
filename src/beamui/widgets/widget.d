@@ -398,7 +398,7 @@ private:
     /// Window (to be used for top level widgets only!)
     Window _window;
 
-    bool* _isDestroyed;
+    bool* _destructionFlag;
 
     ComputedStyle _style;
 
@@ -420,7 +420,7 @@ public:
     /// Create with ID parameter
     this(string ID)
     {
-        _isDestroyed = new bool;
+        _destructionFlag = new bool;
         _id = ID;
         _style.element = this;
         _background = new Background;
@@ -448,15 +448,11 @@ public:
         eliminate(_background);
         eliminate(_popupMenu);
 
-        if (_isDestroyed !is null)
-            *_isDestroyed = true;
+        *_destructionFlag = true;
     }
 
     /// Flag for `WeakRef` that indicates widget destruction
-    final @property const(bool*) isDestroyed() const
-    {
-        return _isDestroyed;
-    }
+    final @property const(bool*) destructionFlag() const { return _destructionFlag; }
 
     /// Pretty printed name for debugging purposes
     debug string dbgname() const
@@ -1121,7 +1117,7 @@ public:
         bool focused() const
         {
             if (auto w = window)
-                return w.focusedElement is this && (state & State.focused);
+                return this is w.focusedElement.get && (state & State.focused);
             else
                 return false;
         }
@@ -1575,7 +1571,7 @@ public:
         if (window is null)
             return null;
         if (!visible)
-            return window.focusedElement;
+            return window.focusedElement.get;
         invalidate();
         if (!canFocus)
         {
@@ -1585,7 +1581,7 @@ public:
             if (el)
                 return window.setFocus(weakRef(el), reason);
             // try to find focusable child
-            return window.focusedElement;
+            return window.focusedElement.get;
         }
         return window.setFocus(weakRef(this), reason);
     }
@@ -1640,7 +1636,7 @@ public:
     {
         if (auto w = window)
         {
-            bool* destroyed = _isDestroyed;
+            bool* destroyed = _destructionFlag;
             return w.setTimer(intervalMillis, {
                 // cancel timer on widget destruction
                 return !(*destroyed) ? handler() : false;

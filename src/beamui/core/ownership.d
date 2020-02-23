@@ -11,8 +11,14 @@ import std.traits : isImplicitlyConvertible;
 
 enum bool isReferenceType(T) = is(T == class) || is(T == interface) || is(T == U*, U);
 
-enum bool hasIsDestroyedMember(T) =
-    isImplicitlyConvertible!(typeof(__traits(getMember, T, "isDestroyed")), const(bool*));
+enum bool hasDestructionFlag(T) = isImplicitlyConvertible!(
+            typeof(__traits(getMember, T, "destructionFlag")), const(bool*));
+
+/// Shortcut for `WeakRef!T(object)`
+WeakRef!T weakRef(T)(T object)
+{
+    return WeakRef!T(object);
+}
 
 /**
 Extremely simple intrusive weak reference implementation.
@@ -26,39 +32,38 @@ Object B must satisfy some requirements, because of intrusive nature of WeakRef.
 Limitations: WeakRef cannot forward custom `opEquals` and `toHash` calls,
 because their results need to be consistent before and after object destruction.
 */
-struct WeakRef(T) if (isReferenceType!T && hasIsDestroyedMember!T)
+struct WeakRef(T) if (isReferenceType!T && hasDestructionFlag!T)
 {
     private T data;
-    private bool* isDestroyed;
-    alias get this;
+    private const(bool)* flag;
 
     /// Create a weak reference. `object` must be valid, of course.
     this(T object)
     {
-        if (object !is null)
+        if (object)
         {
             data = object;
-            isDestroyed = cast(bool*)object.isDestroyed;
+            flag = object.destructionFlag;
         }
     }
 
     /// Get the object reference
     inout(T) get() inout
     {
-        return isDestroyed && !(*isDestroyed) ? data : null;
-    }
-
-    /// Explicitly check for null
-    @property bool isNull() const
-    {
-        return data is null || isDestroyed is null || *isDestroyed;
+        return flag && !(*flag) ? data : null;
     }
 
     /// Set this reference to point nowhere
     void nullify()
     {
         data = null;
-        isDestroyed = null;
+        flag = null;
+    }
+
+    /// True if the object exists
+    bool opCast(To : bool)() const
+    {
+        return data && flag && !(*flag);
     }
 
     /// Allows to use WeakRef with destroyed item as key in associative arrays
@@ -70,7 +75,7 @@ struct WeakRef(T) if (isReferenceType!T && hasIsDestroyedMember!T)
     /// ditto
     bool opEquals(ref const typeof(this) s) const
     {
-        return data is s.data && isDestroyed is s.isDestroyed;
+        return data is s.data && flag is s.flag;
     }
 }
 
@@ -79,35 +84,34 @@ unittest
 {
     class B
     {
-        bool* isDestroyed;
+        bool* destructionFlag;
 
         this()
         {
-            isDestroyed = new bool;
+            destructionFlag = new bool;
         }
 
         ~this()
         {
-            if (isDestroyed !is null)
-                *isDestroyed = true;
+            *destructionFlag = true;
         }
     }
 
     WeakRef!B reference;
-    assert(reference.isNull);
+    assert(!reference);
 
     B b = new B;
     reference = weakRef(b);
 
     assert(b == reference.get);
-    assert(!reference.isNull);
+    assert(reference);
 
     WeakRef!B ref2 = reference;
     ref2.nullify();
-    assert(ref2.isNull);
+    assert(!ref2);
 
     destroy(b);
-    assert(reference.isNull);
+    assert(!reference);
 }
 
 unittest
@@ -115,15 +119,16 @@ unittest
     // toHash testing
     class B
     {
-        bool* isDestroyed;
+        bool* destructionFlag;
+
         this()
         {
-            isDestroyed = new bool;
+            destructionFlag = new bool;
         }
+
         ~this()
         {
-            if (isDestroyed !is null)
-                *isDestroyed = true;
+            *destructionFlag = true;
         }
     }
 
@@ -138,7 +143,7 @@ unittest
     int count;
     foreach (r, i; map)
     {
-        if (r.isNull)
+        if (!r)
         {
             map.remove(r); // must not crash
             count++;
@@ -146,10 +151,4 @@ unittest
     }
     assert(count == 50);
     assert(map.length == 50);
-}
-
-/// Shortcut for WeakRef!T(object)
-WeakRef!T weakRef(T)(T object)
-{
-    return WeakRef!T(object);
 }
