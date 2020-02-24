@@ -434,9 +434,11 @@ class Button : Panel, ActionHolder
             _action = a;
             if (a)
             {
+                iconID = _action.iconID;
+                text = _action.label;
+                allowsToggle = _action.checkable;
                 a.onChange ~= &updateContent;
                 a.onStateChange ~= &updateState;
-                updateContent();
                 updateState();
             }
         }
@@ -507,9 +509,6 @@ class Button : Panel, ActionHolder
 
     protected void updateContent()
     {
-        iconID = _action.iconID;
-        text = _action.label;
-        allowsToggle = _action.checkable;
     }
 
     protected void updateState()
@@ -521,8 +520,11 @@ class Button : Panel, ActionHolder
 
     override protected void handleClick()
     {
-        if (auto w = window)
-            w.call(_action);
+        if (_action)
+        {
+            if (auto w = window)
+                w.call(_action);
+        }
         if (allowsToggle)
             checked = !checked;
     }

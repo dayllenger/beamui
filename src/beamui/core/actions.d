@@ -246,8 +246,7 @@ enum ActionState
     checked = 4
 }
 
-/**
-    UI action, used in menus, toolbars, etc.
+/** UI action, used in menus, toolbars, etc.
 
     Actions are stored globally, and you can fetch them with `findBy*` functions.
 */
@@ -257,26 +256,14 @@ final class Action
     {
         string id() const
         {
-            return _label.toUTF8;
+            return toUTF8(_label);
         }
 
         /// Label unicode string to show in UI
         dstring label() const { return _label; }
-        /// ditto
-        void label(dstring text)
-        {
-            _label = text;
-            onChange();
-        }
 
         /// Icon resource id
         string iconID() const { return _iconID; }
-        /// ditto
-        void iconID(string id)
-        {
-            _iconID = id;
-            onChange();
-        }
 
         /// Array of shortcuts
         inout(Shortcut)[] shortcuts() inout { return _shortcuts; }
@@ -334,7 +321,7 @@ final class Action
         /// ditto
         void enabled(bool flag)
         {
-            auto newstate = flag ? (_state | ActionState.enabled) : (_state & ~ActionState.enabled);
+            const newstate = flag ? (_state | ActionState.enabled) : (_state & ~ActionState.enabled);
             if (_state != newstate)
             {
                 _state = newstate;
@@ -350,7 +337,7 @@ final class Action
         /// ditto
         void visible(bool flag)
         {
-            auto newstate = flag ? (_state | ActionState.visible) : (_state & ~ActionState.visible);
+            const newstate = flag ? (_state | ActionState.visible) : (_state & ~ActionState.visible);
             if (_state != newstate)
             {
                 _state = newstate;
@@ -360,15 +347,6 @@ final class Action
 
         /// When true, action is intended to use with checkbox/radiobutton-like controls
         bool checkable() const { return _checkable; }
-        /// ditto
-        void checkable(bool flag)
-        {
-            if (_checkable != flag)
-            {
-                _checkable = flag;
-                onChange();
-            }
-        }
 
         /// When true, this action is included to a group of radio actions
         bool isRadio() const
@@ -384,7 +362,7 @@ final class Action
         /// ditto
         void checked(bool flag)
         {
-            auto newstate = flag ? (_state | ActionState.checked) : (_state & ~ActionState.checked);
+            const newstate = flag ? (_state | ActionState.checked) : (_state & ~ActionState.checked);
             if (_state != newstate)
             {
                 _state = newstate;
@@ -403,12 +381,6 @@ final class Action
     Action setVisible(bool flag)
     {
         visible = flag;
-        return this;
-    }
-    /// Chained version of `checkable`
-    Action setCheckable(bool flag)
-    {
-        checkable = flag;
         return this;
     }
     /// Chained version of `checked`
@@ -442,19 +414,19 @@ final class Action
             private Action[] actions;
 
             /// Check an action and uncheck others
-            void check(Action what)
+            void check(Action that)
             {
                 foreach (a; actions)
                 {
-                    a.checked = a is what;
+                    a.checked = that is a;
                 }
             }
 
             /// Remove action from group
-            void remove(Action what)
+            void remove(Action that)
             {
                 foreach (ref a; actions)
-                    if (a is what)
+                    if (that is a)
                         a = null;
                 actions = actions.remove!(a => a is null);
             }
@@ -465,7 +437,7 @@ final class Action
         static ActionShortcutMap shortcutMap;
     }
 
-    /// Create an action with label and, optionally, shortcut
+    /// Create an action. All parameters are optional
     this(dstring label, Key key = Key.none, KeyMods modifiers = KeyMods.none)
     {
         _label = label;
@@ -474,8 +446,7 @@ final class Action
         if (label)
             nameMap[id] = this;
     }
-
-    /// Create an action with label, icon ID and, optionally, shortcut
+    /// ditto
     this(dstring label, string iconID, Key key = Key.none, KeyMods modifiers = KeyMods.none)
     {
         _label = label;
@@ -484,6 +455,20 @@ final class Action
             addShortcut(key, modifiers);
         if (label)
             nameMap[id] = this;
+    }
+    /// Create a checkable action. All parameters are optional
+    static Action makeCheckable(dstring label, Key key = Key.none, KeyMods modifiers = KeyMods.none)
+    {
+        auto a = new Action(label, key, modifiers);
+        a._checkable = true;
+        return a;
+    }
+    /// ditto
+    static Action makeCheckable(dstring label, string iconID, Key key = Key.none, KeyMods modifiers = KeyMods.none)
+    {
+        auto a = new Action(label, iconID, key, modifiers);
+        a._checkable = true;
+        return a;
     }
 
     ~this()

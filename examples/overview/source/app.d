@@ -127,9 +127,9 @@ int main()
     auto viewMenu = mainMenu.addSubmenu("&View");
     auto themeMenu = viewMenu.addSubmenu("&Theme");
     {
-        Action def = new Action("Default").setCheckable(true);
-        Action light = new Action("Light").setCheckable(true).setChecked(true);
-        Action dark = new Action("Dark").setCheckable(true);
+        Action def = Action.makeCheckable("Default");
+        Action light = Action.makeCheckable("Light").setChecked(true);
+        Action dark = Action.makeCheckable("Dark");
         def.bind(frame, { platform.uiTheme = "default"; });
         light.bind(frame, { platform.uiTheme = "light"; });
         dark.bind(frame, { platform.uiTheme = "dark"; });

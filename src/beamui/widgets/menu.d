@@ -24,8 +24,58 @@ class MenuItem : WidgetGroup, ActionHolder
 {
     @property
     {
-        /// Returns item action
+        /// Item action
         inout(Action) action() inout { return _action; }
+        /// ditto
+        protected void action(Action a)
+        {
+            if (_action is a)
+                return;
+
+            _action = a;
+            _checkbox = null;
+            _icon = null;
+            _label = null;
+            _shortcut = null;
+            _separator = null;
+            removeAllChildren();
+            if (!a)
+            {
+                setAttribute("separator");
+                _separator = new Widget;
+                addChild(_separator);
+                allowsToggle = false;
+                enabled = false;
+                return;
+            }
+            // set immutable state first:
+            // check box
+            allowsToggle = a.checkable;
+            if (a.checkable)
+            {
+                _checkbox = new Widget;
+                _checkbox.state = State.parent;
+                addChild(_checkbox);
+            }
+            // icon
+            if (auto iconID = _action.iconID)
+            {
+                _icon = new ImageWidget(iconID);
+                _icon.setAttribute("icon");
+                _icon.state = State.parent;
+                addChild(_icon);
+            }
+            // label
+            _label = new Label(_action.label);
+            _label.setAttribute("label");
+            _label.state = State.parent;
+            addChild(_label);
+
+            a.onChange ~= &updateContent;
+            a.onStateChange ~= &updateState;
+            updateContent();
+            updateState();
+        }
 
         /// Returns true if item is a separator
         bool isSeparator() const
@@ -84,25 +134,17 @@ class MenuItem : WidgetGroup, ActionHolder
         float _height = 0;
     }
 
-    this(Action action, bool fromMenuBar = false)
+    this(Action action = null, bool fromMenuBar = false)
     {
         _fromMenuBar = fromMenuBar;
         isolateStyle();
-        if (action is null)
+        this.action = action;
+        if (!action)
         {
             setAttribute("separator");
             _separator = new Widget;
             addChild(_separator);
             enabled = false;
-        }
-        else
-        {
-            _action = action;
-            action.onChange ~= &updateContent;
-            action.onStateChange ~= &updateState;
-
-            updateContent();
-            updateState();
         }
     }
 
@@ -118,52 +160,9 @@ class MenuItem : WidgetGroup, ActionHolder
 
     protected void updateContent()
     {
-        // check box
-        if (_action.checkable != allowsToggle)
-        {
-            allowsToggle = _action.checkable;
-            if (allowsToggle && !_checkbox)
-            {
-                _checkbox = new Widget;
-                _checkbox.state = State.parent;
-                addChild(_checkbox);
-            }
-            else if (!allowsToggle && _checkbox)
-            {
-                removeChild(_checkbox);
-                eliminate(_checkbox);
-            }
-        }
+        // may become radio button
         if (_checkbox)
             _checkbox.setAttribute(_action.isRadio ? "radio" : "check");
-        // icon
-        if (auto iconID = _action.iconID)
-        {
-            if (!_icon)
-            {
-                _icon = new ImageWidget(iconID);
-                _icon.setAttribute("icon");
-                _icon.state = State.parent;
-                addChild(_icon);
-            }
-            else
-                _icon.imageID = iconID;
-        }
-        else if (_icon)
-        {
-            removeChild(_icon);
-            eliminate(_icon);
-        }
-        // label
-        if (!_label)
-        {
-            _label = new Label(_action.label);
-            _label.setAttribute("label");
-            _label.state = State.parent;
-            addChild(_label);
-        }
-        else
-            _label.text = _action.label;
         // shortcut
         if (auto sc = _action.shortcutText)
         {
