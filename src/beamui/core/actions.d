@@ -137,7 +137,7 @@ struct Shortcut
         return cast(string)buf;
     }
 
-    /// Parse accelerator from string
+    /// Parse shortcut from a string
     bool parse(string s)
     {
         import std.string : strip;
@@ -145,6 +145,9 @@ struct Shortcut
         key = Key.none;
         modifiers = KeyMods.none;
         collectException(strip(s), s);
+        if (!s.length)
+            return false;
+
         while (true)
         {
             bool found;
@@ -265,23 +268,20 @@ final class Action
         /// Icon resource id
         string iconID() const { return _iconID; }
 
-        /// Array of shortcuts
-        inout(Shortcut)[] shortcuts() inout { return _shortcuts; }
+        /// Action shortcut, `Shortcut.init` if none
+        Shortcut shortcut() const { return _shortcut; }
         /// ditto
-        void shortcuts(Shortcut[] ss)
+        void shortcut(Shortcut sc)
         {
-            shortcutMap.remove(_shortcuts);
-            _shortcuts = ss;
+            shortcutMap.remove(_shortcut);
+            _shortcut = sc;
             shortcutMap.add(this);
             onChange();
         }
-        /// Returns text description for the first shortcut of action; `null` if no shortcuts
+        /// Returns text description for the action shortcut, `null` if none
         dstring shortcutText() const
         {
-            if (_shortcuts.length > 0)
-                return _shortcuts[0].label;
-            else
-                return null;
+            return _shortcut != Shortcut.init ? _shortcut.label : null;
         }
 
         /// Returns tooltip text for action
@@ -403,10 +403,10 @@ final class Action
 
         dstring _label;
         string _iconID;
-        Shortcut[] _shortcuts;
-        ActionContext _context = ActionContext.window;
-
         bool _checkable;
+        Shortcut _shortcut;
+
+        ActionContext _context = ActionContext.window;
         ActionState _state = ActionState.enabled | ActionState.visible;
 
         static struct ActionGroup
@@ -441,8 +441,8 @@ final class Action
     this(dstring label, Key key = Key.none, KeyMods modifiers = KeyMods.none)
     {
         _label = label;
-        if (key != Key.none)
-            addShortcut(key, modifiers);
+        _shortcut = Shortcut(key, modifiers);
+        shortcutMap.add(this);
         if (label)
             nameMap[id] = this;
     }
@@ -451,8 +451,8 @@ final class Action
     {
         _label = label;
         _iconID = iconID;
-        if (key != Key.none)
-            addShortcut(key, modifiers);
+        _shortcut = Shortcut(key, modifiers);
+        shortcutMap.add(this);
         if (label)
             nameMap[id] = this;
     }
@@ -488,27 +488,16 @@ final class Action
         }
     }
 
-    /// Add one more shortcut
-    Action addShortcut(Key key, KeyMods modifiers = KeyMods.none)
-    {
-        _shortcuts ~= Shortcut(key, modifiers);
-        shortcutMap.add(this);
-        onChange();
-        return this;
-    }
-
     /// Returns true if shortcut matches provided key code and flags
-    bool hasShortcut(Key key, KeyMods modifiers) const
+    bool matchShortcut(Key key, KeyMods modifiers) const
     {
-        foreach (s; _shortcuts)
+        const sc = _shortcut;
+        if (sc.key == key)
         {
-            if (s.key == key)
-            {
-                // match, counting left/right if needed
-                if ((s.modifiers & KeyMods.common) == (modifiers & KeyMods.common))
-                    if ((s.modifiers & modifiers) == s.modifiers)
-                        return true;
-            }
+            // match, counting left/right if needed
+            if ((sc.modifiers & KeyMods.common) == (modifiers & KeyMods.common))
+                if ((sc.modifiers & modifiers) == sc.modifiers)
+                    return true;
         }
         return false;
     }
@@ -594,21 +583,17 @@ struct ActionShortcutMap
 {
     protected Action[Shortcut] _map;
 
-    /// Add actions
-    void add(Action[] items...)
+    /// Add an action
+    void add(Action a)
     {
-        foreach (a; items)
-        {
-            foreach (sc; a.shortcuts)
-                _map[sc] = a;
-        }
+        if (a.shortcut != Shortcut.init)
+            _map[a.shortcut] = a;
     }
 
-    /// Remove actions by shortcut list
-    void remove(Shortcut[] shortcuts...)
+    /// Remove an action by shortcut
+    void remove(Shortcut sc)
     {
-        foreach (sc; shortcuts)
-            _map.remove(sc);
+        _map.remove(sc);
     }
 
     private static immutable KeyMods[] modMasks = [
@@ -644,7 +629,7 @@ struct ActionShortcutMap
             sc.modifiers = modifiers & mask;
             if (auto p = sc in _map)
             {
-                assert(p.hasShortcut(key, modifiers));
+                assert(p.matchShortcut(key, modifiers));
                 return *p;
             }
         }
@@ -654,15 +639,12 @@ struct ActionShortcutMap
     /// Ability to foreach action by shortcut
     int opApply(scope int delegate(ref Action) op)
     {
-        int result = 0;
-        foreach (ref Shortcut sc; _map.byKey)
+        foreach (sc; _map.byKey)
         {
-            result = op(_map[sc]);
-
-            if (result)
+            if (const result = op(_map[sc]))
                 break;
         }
-        return result;
+        return 0;
     }
 }
 

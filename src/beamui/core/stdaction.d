@@ -136,18 +136,14 @@ void initStandardActions()
 
     ACTION_SELECT_ALL = new Action(tr("Select all"), Key.A, KeyMods.control);
 
-    ACTION_ZOOM_IN = new Action(tr("Zoom In"), Key.numAdd, KeyMods.control); // BUG: such combinations do not work
-    ACTION_ZOOM_OUT = new Action(tr("Zoom Out"), Key.numSub, KeyMods.control);
+    ACTION_ZOOM_IN = new Action(tr("Zoom In"), Key.equal, KeyMods.control);
+    ACTION_ZOOM_OUT = new Action(tr("Zoom Out"), Key.subtract, KeyMods.control);
 
     ACTION_UNDO = new Action(tr("&Undo"), Key.Z, KeyMods.control).setEnabled(false);
-    ACTION_REDO = new Action(tr("&Redo"), Key.Y, KeyMods.control).setEnabled(false)
-        .addShortcut(Key.Z, KeyMods.control | KeyMods.shift);
-    ACTION_CUT = new Action(tr("Cu&t"), Key.X, KeyMods.control).setEnabled(false)
-        .addShortcut(Key.del, KeyMods.shift);
-    ACTION_COPY = new Action(tr("&Copy"), Key.C, KeyMods.control).setEnabled(false)
-        .addShortcut(Key.ins, KeyMods.control);
-    ACTION_PASTE = new Action(tr("&Paste"), Key.V, KeyMods.control)
-        .addShortcut(Key.ins, KeyMods.shift);
+    ACTION_REDO = new Action(tr("&Redo"), Key.Z, KeyMods.control | KeyMods.shift).setEnabled(false);
+    ACTION_CUT = new Action(tr("Cu&t"), Key.X, KeyMods.control).setEnabled(false);
+    ACTION_COPY = new Action(tr("&Copy"), Key.C, KeyMods.control).setEnabled(false);
+    ACTION_PASTE = new Action(tr("&Paste"), Key.V, KeyMods.control).setEnabled(false);
 
     import beamui.core.functions : bunch;
 

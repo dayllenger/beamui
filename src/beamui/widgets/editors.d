@@ -108,7 +108,7 @@ void initStandardEditorActions()
 
     ACTION_ED_PREPEND_NEW_LINE = new Action(tr("Prepend new line"), Key.enter, KeyMods.control | KeyMods.shift);
     ACTION_ED_APPEND_NEW_LINE = new Action(tr("Append new line"), Key.enter, KeyMods.control);
-    ACTION_ED_DELETE_LINE = new Action(tr("Delete line"), Key.D, KeyMods.control).addShortcut(Key.L, KeyMods.control);
+    ACTION_ED_DELETE_LINE = new Action(tr("Delete line"), Key.D, KeyMods.control);
     ACTION_ED_TOGGLE_REPLACE_MODE = new Action(tr("Replace mode"), Key.ins);
     ACTION_ED_TOGGLE_LINE_COMMENT = new Action(tr("Toggle line comment"), Key.divide, KeyMods.control);
     ACTION_ED_TOGGLE_BLOCK_COMMENT = new Action(tr("Toggle block comment"), Key.divide, KeyMods.control | KeyMods.shift);

@@ -142,67 +142,45 @@ class AppFrame : Panel
         initialize();
     }
 
-    bool applyShortcutsSettings()
+    bool applyShortcutSettings()
     {
-        if (shortcutSettings.loaded)
+        if (!shortcutSettings.loaded)
+            return false;
+
+        foreach (key, value; _shortcutSettings.map)
         {
-            foreach (key, value; _shortcutSettings.map)
+            Action action = Action.findByName(key);
+            if (!action)
             {
-                Action action = Action.findByName(key);
-                if (!action)
-                {
-                    Log.e("applyShortcutsSettings: Unknown action name: ", key);
-                }
-                else
-                {
-                    Shortcut[] shortcuts;
-                    if (value.isArray)
-                    {
-                        foreach (i; 0 .. value.length)
-                        {
-                            string v = value[i].str;
-                            Shortcut s;
-                            if (s.parse(v))
-                                shortcuts ~= s;
-                            else
-                                Log.e("applyShortcutsSettings: cannot parse accelerator: ", v);
-                        }
-                    }
-                    else
-                    {
-                        string v = value.str;
-                        Shortcut s;
-                        if (s.parse(v))
-                            shortcuts ~= s;
-                        else
-                            Log.e("applyShortcutsSettings: cannot parse accelerator: ", v);
-                    }
-                    action.shortcuts = shortcuts;
-                }
+                Log.e("AppFrame: unknown action name: ", key);
+                continue;
             }
-            return true;
+
+            string str = value.str;
+            Shortcut sc;
+            if (!sc.parse(str))
+                Log.e("AppFrame: cannot parse shortcut from settings: ", str);
+            action.shortcut = sc;
         }
-        return false;
+        return true;
     }
 
-    /// Set shortcut settings from actions and save to file - useful for initial settings file version creation
-    bool saveShortcutsSettings(const(Action)[] actions)
+    /// Get shortcut settings from actions and save to file - useful for initial settings file creation
+    bool saveShortcutSettings(const(Action)[] actions)
     {
         shortcutSettings.clear();
         foreach (a; actions)
         {
             string name = a.id;
-            if (name)
-            {
-                auto shortcuts = a.shortcuts;
-                Setting s = _shortcutSettings.add(name);
-                if (shortcuts.length == 1)
-                    s.str = shortcuts[0].toString;
-                else if (shortcuts.length > 1)
-                    s.strArray = shortcuts.emap!(a => a.toString);
-            }
+            if (!name.length)
+                continue;
+
+            const Shortcut sc = a.shortcut;
+            Setting s = _shortcutSettings.add(name);
+            if (sc != Shortcut.init)
+                s.str = sc.toString;
         }
-        return shortcutSettings.save();
+        return _shortcutSettings.save();
     }
 
     /// Set background operation to show in status
@@ -217,7 +195,7 @@ class AppFrame : Panel
         _currentBackgroundOperation = op;
         if (op)
         {
-            setTimer(op.updateInterval, delegate() {
+            setTimer(op.updateInterval, {
                 if (_currentBackgroundOperation)
                 {
                     _currentBackgroundOperation.update();
