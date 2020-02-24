@@ -42,6 +42,43 @@ class NgLabel : NgWidget
     }
 }
 
+class NgParagraph : NgWidget
+{
+    private dstring text;
+    private TextContent content;
+
+    static NgParagraph make(dstring text)
+    {
+        NgParagraph w = arena.make!NgParagraph;
+        w.text = text;
+        return w;
+    }
+
+    static NgParagraph make(TextContent content)
+        in(content)
+    {
+        NgParagraph w = arena.make!NgParagraph;
+        w.content = content;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemParagraph;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemParagraph el = fastCast!ElemParagraph(element);
+        if (content)
+            el.content = content;
+        else
+            el.text = text;
+    }
+}
+
 /** Efficient single- or multiline plain text widget.
 
     Can contain `&` character to underline a mnemonic key.
@@ -55,6 +92,9 @@ class Label : Widget
         /// ditto
         override void text(dstring s)
         {
+            if (original == s)
+                return;
+
             if (style.textHotkey != TextHotkey.ignore)
             {
                 auto r = extractMnemonic(s);
@@ -278,6 +318,25 @@ class Paragraph : Widget
     @property
     {
         inout(TextContent) content() inout { return _content; }
+
+        void content(TextContent tc)
+            in(tc)
+        {
+            if (_content is tc)
+                return;
+
+            _content.afterChange -= &handleChange;
+            _content = tc;
+            _content.afterChange ~= &handleChange;
+
+            _lines.length = tc.lineCount;
+            foreach (j; 0 .. tc.lineCount)
+            {
+                _lines[j].str = tc[j];
+                _lines[j].measured = false;
+            }
+            resetAllMarkup();
+        }
 
         /// Get the whole text to show. May be costly in big multiline paragraphs
         override dstring text() const
@@ -517,7 +576,7 @@ class Paragraph : Widget
         }
         else if (op == ListChange.append)
         {
-            foreach (j; _content.lineCount - c - 1 .. _content.lineCount)
+            foreach (j; i .. i + c)
                 _lines ~= TextLine(_content[j]);
         }
         else if (op == ListChange.insert)
