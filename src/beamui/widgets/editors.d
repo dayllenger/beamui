@@ -145,6 +145,167 @@ void initStandardEditorActions()
     ).context(ActionContext.widgetTree);
 }
 
+alias ElemEditLine = EditLine;
+alias ElemEditBox = EditBox;
+
+class NgEditLine : NgWidget
+{
+    dstring placeholder;
+    dchar passwordChar = 0;
+
+    bool readOnly;
+    bool enableCaretBlinking = true;
+    bool copyWholeLineWhenNoSelection = true;
+    bool wantTabs;
+
+    void delegate(dstring) onChange;
+
+    @property void text(dstring str)
+    {
+        _text = str;
+        _replace = true;
+    }
+
+    private
+    {
+        dstring _text;
+        bool _replace;
+    }
+
+    static NgEditLine make(void delegate(dstring) onChange)
+    {
+        NgEditLine w = arena.make!NgEditLine;
+        w.onChange = onChange;
+        return w;
+    }
+
+    static NgEditLine make(dstring text, void delegate(dstring) onChange)
+    {
+        NgEditLine w = arena.make!NgEditLine;
+        w._text = text;
+        w._replace = true;
+        w.onChange = onChange;
+        return w;
+    }
+
+    this()
+    {
+        allowsFocus = true;
+        allowsHover = true;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemEditLine;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemEditLine el = fastCast!ElemEditLine(element);
+        if (_replace)
+            el.text = _text;
+        el.placeholder = placeholder;
+        el.passwordChar = passwordChar;
+
+        el.readOnly = readOnly;
+        el.enableCaretBlinking = enableCaretBlinking;
+        el.copyWholeLineWhenNoSelection = copyWholeLineWhenNoSelection;
+        el.wantTabs = wantTabs;
+
+        el.onChange.clear();
+        if (onChange)
+            el.onChange ~= onChange;
+    }
+}
+
+class NgEditBox : NgWidget
+{
+    dstring placeholder;
+
+    bool readOnly;
+    bool enableCaretBlinking = true;
+    bool copyWholeLineWhenNoSelection = true;
+
+    bool wantTabs = true;
+    bool useSpacesForTabs = true;
+    int tabSize = 4;
+
+    bool smartIndentsAfterPaste;
+
+    bool showTabPositionMarks;
+    bool showWhiteSpaceMarks;
+
+    int minFontSize = -1;
+    int maxFontSize = -1;
+
+    void delegate(EditableContent) onChange;
+
+    private EditableContent content;
+    private ScrollBarMode hscrollbarMode;
+    private ScrollBarMode vscrollbarMode;
+
+    static NgEditBox make(
+        EditableContent content,
+        ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
+        ScrollBarMode vscrollbarMode = ScrollBarMode.automatic,
+    )
+        in(content)
+    {
+        NgEditBox w = arena.make!NgEditBox;
+        w.content = content;
+        w.hscrollbarMode = hscrollbarMode;
+        w.vscrollbarMode = vscrollbarMode;
+        return w;
+    }
+
+    this()
+    {
+        allowsFocus = true;
+        allowsHover = true;
+    }
+
+    override protected Element fetchElement()
+    {
+        auto el = fetchEl!ElemEditBox;
+        el.setAttribute("ignore");
+        return el;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemEditBox el = fastCast!ElemEditBox(element);
+        el.content = content;
+        el.hscrollbarMode = hscrollbarMode;
+        el.vscrollbarMode = vscrollbarMode;
+
+        el.placeholder = placeholder;
+
+        el.readOnly = readOnly;
+        el.enableCaretBlinking = enableCaretBlinking;
+        el.copyWholeLineWhenNoSelection = copyWholeLineWhenNoSelection;
+
+        el.wantTabs = wantTabs;
+        el.useSpacesForTabs = useSpacesForTabs;
+        el.tabSize = tabSize;
+
+        el.smartIndentsAfterPaste = smartIndentsAfterPaste;
+
+        el.showTabPositionMarks = showTabPositionMarks;
+        el.showWhiteSpaceMarks = showWhiteSpaceMarks;
+
+        el.minFontSize = minFontSize;
+        el.maxFontSize = maxFontSize;
+
+        el.onContentChange.clear();
+        if (onChange)
+            el.onContentChange ~= onChange;
+    }
+}
+
 /// Common interface for single- and multiline editors
 interface IEditor
 {
@@ -332,7 +493,7 @@ class EditLine : Widget, IEditor, ActionOperator
     /// When true, Tab / Shift+Tab presses are processed internally in widget (e.g. insert tab character) instead of focus change navigation.
     bool wantTabs;
     /// When true, allows copy / cut whole current line if there is no selection
-    bool copyCurrentLineWhenNoSelection = true;
+    bool copyWholeLineWhenNoSelection = true;
 
     /// Emits when the editor content changes
     Signal!(void delegate(dstring)) onChange;
@@ -940,8 +1101,8 @@ class EditLine : Widget, IEditor, ActionOperator
         ACTION_UNDO.enabled = enabled && hasUndo;
         ACTION_REDO.enabled = enabled && hasRedo;
 
-        ACTION_CUT.enabled = enabled && (copyCurrentLineWhenNoSelection || !_selectionRange.empty);
-        ACTION_COPY.enabled = copyCurrentLineWhenNoSelection || !_selectionRange.empty;
+        ACTION_CUT.enabled = enabled && (copyWholeLineWhenNoSelection || !_selectionRange.empty);
+        ACTION_COPY.enabled = copyWholeLineWhenNoSelection || !_selectionRange.empty;
         ACTION_PASTE.enabled = enabled && platform.hasClipboardText();
     }
 
@@ -989,7 +1150,7 @@ class EditLine : Widget, IEditor, ActionOperator
         if (readOnly)
             return;
         LineRange range = _selectionRange;
-        if (range.empty && copyCurrentLineWhenNoSelection)
+        if (range.empty && copyWholeLineWhenNoSelection)
         {
             range = LineRange(0, lineLength);
         }
@@ -1004,7 +1165,7 @@ class EditLine : Widget, IEditor, ActionOperator
     void copy()
     {
         LineRange range = _selectionRange;
-        if (range.empty && copyCurrentLineWhenNoSelection)
+        if (range.empty && copyWholeLineWhenNoSelection)
         {
             range = LineRange(0, lineLength);
         }
@@ -1508,7 +1669,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
     /// When true, Tab / Shift+Tab presses are processed internally in widget (e.g. insert tab character) instead of focus change navigation.
     bool wantTabs = true;
     /// When true, allows copy / cut whole current line if there is no selection
-    bool copyCurrentLineWhenNoSelection = true;
+    bool copyWholeLineWhenNoSelection = true;
 
     /// Modified state change listener (e.g. content has been saved, or first time modified after save)
     Signal!(void delegate(bool modified)) onModifiedStateChange;
@@ -1830,7 +1991,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
         if (readOnly)
             return;
         TextRange range = _selectionRange;
-        if (range.empty && copyCurrentLineWhenNoSelection)
+        if (range.empty && copyWholeLineWhenNoSelection)
         {
             range = currentLineRange;
         }
@@ -1846,7 +2007,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
     void copy()
     {
         TextRange range = _selectionRange;
-        if (range.empty && copyCurrentLineWhenNoSelection)
+        if (range.empty && copyWholeLineWhenNoSelection)
         {
             range = currentLineRange;
         }
@@ -2883,8 +3044,8 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
         ACTION_UNDO.enabled = enabled && _content.hasUndo;
         ACTION_REDO.enabled = enabled && _content.hasRedo;
 
-        ACTION_CUT.enabled = enabled && (copyCurrentLineWhenNoSelection || !_selectionRange.empty);
-        ACTION_COPY.enabled = copyCurrentLineWhenNoSelection || !_selectionRange.empty;
+        ACTION_CUT.enabled = enabled && (copyWholeLineWhenNoSelection || !_selectionRange.empty);
+        ACTION_COPY.enabled = copyWholeLineWhenNoSelection || !_selectionRange.empty;
         ACTION_PASTE.enabled = enabled && platform.hasClipboardText();
 
         ACTION_ED_INDENT.enabled = enabled && wantTabs;
