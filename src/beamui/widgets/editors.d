@@ -934,6 +934,9 @@ class EditLine : Widget, IEditor, ActionOperator
         debug (editors)
             Log.d("Editor `", id, "`: update actions");
 
+        if (!(state & State.focused))
+            return;
+
         ACTION_UNDO.enabled = enabled && hasUndo;
         ACTION_REDO.enabled = enabled && hasRedo;
 
@@ -2873,6 +2876,9 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
     {
         debug (editors)
             Log.d("Editor `", id, "`: update actions");
+
+        if (!(state & State.focused))
+            return;
 
         ACTION_UNDO.enabled = enabled && _content.hasUndo;
         ACTION_REDO.enabled = enabled && _content.hasRedo;
