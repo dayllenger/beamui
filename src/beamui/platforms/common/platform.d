@@ -728,6 +728,23 @@ class Window : CustomEventTarget
         update(true);
     }
 
+    /// Find topmost visible widget at the (x, y) position in global coordinates. `null` if none
+    private Element performHitTest(Element root, float x, float y)
+    {
+        // this hit test assumes that widgets never leave parent's bounds.
+        // this makes it somewhat logarithmic
+        if (root.visibility != Visibility.visible)
+            return null;
+        if (!root.contains(x, y))
+            return null;
+        foreach_reverse (el; root)
+        {
+            if (auto hit = performHitTest(el, x, y))
+                return hit;
+        }
+        return root;
+    }
+
     //===============================================================
     // Popups, tooltips, message and input boxes
 
@@ -1497,7 +1514,7 @@ class Window : CustomEventTarget
                     break;
                 if (insideOneOfPopups)
                 {
-                    if (dispatchMouseEvent(WeakRef!Element(p), event, cursorIsSet))
+                    if (dispatchMouseEvent(p, event, cursorIsSet))
                         return true;
                 }
                 else
@@ -1506,52 +1523,44 @@ class Window : CustomEventTarget
                         return true;
                 }
             }
-            auto dest = weakRef(modal ? modal : _mainWidget);
-            res = dispatchMouseEvent(dest, event, cursorIsSet);
+            res = dispatchMouseEvent(modal ? modal : _mainWidget, event, cursorIsSet);
         }
         return res || processed || _mainWidget.needDraw;
     }
 
-    protected bool dispatchMouseEvent(WeakRef!Element root, MouseEvent event, ref bool cursorIsSet)
+    protected bool dispatchMouseEvent(Element root, MouseEvent event, ref bool cursorIsSet)
     {
-        Element elem = root.get;
-        // route mouse events to visible widgets only
-        if (elem.visibility != Visibility.visible)
-            return false;
-        if (!elem.contains(event.x, event.y))
-            return false;
-        // offer event to children first
-        foreach (Element el; elem)
+        auto dest = weakRef(performHitTest(root, event.x, event.y));
+        while (dest)
         {
-            if (dispatchMouseEvent(weakRef(el), event, cursorIsSet))
-                return true;
-        }
-
-        if (event.action == MouseAction.move && !cursorIsSet)
-        {
-            CursorType cursorType = elem.getCursorType(event.x, event.y);
-            if (cursorType != CursorType.notSet)
+            if (event.action == MouseAction.move && !cursorIsSet)
             {
-                setCursorType(cursorType);
-                cursorIsSet = true;
+                CursorType cursorType = dest.get.getCursorType(event.x, event.y);
+                if (cursorType != CursorType.notSet)
+                {
+                    setCursorType(cursorType);
+                    cursorIsSet = true;
+                }
             }
-        }
-        // if not processed by children, offer event to the root
-        if (sendAndCheckOverride(root, event))
-        {
-            debug (mouse)
-                Log.d("MouseEvent is processed");
-            if (event.action == MouseAction.buttonDown && !_mouseCapture && !event.doNotTrackButtonDown)
+            if (sendAndCheckOverride(dest, event))
             {
                 debug (mouse)
-                    Log.d("Setting active widget");
-                setMouseCapture(root, event);
+                    Log.d("MouseEvent is processed");
+                if (event.action == MouseAction.buttonDown && !_mouseCapture && !event.doNotTrackButtonDown)
+                {
+                    debug (mouse)
+                        Log.d("Setting active widget");
+                    setMouseCapture(dest, event);
+                }
+                else if (event.action == MouseAction.move)
+                {
+                    addTracking(dest);
+                }
+                return true;
             }
-            else if (event.action == MouseAction.move)
-            {
-                addTracking(root);
-            }
-            return true;
+            // bubble up if not destroyed
+            if (dest)
+                dest = weakRef(dest.get.parent);
         }
         return false;
     }
@@ -1673,35 +1682,29 @@ class Window : CustomEventTarget
         }
         if (Element modal = modalPopup())
         {
-            dispatchWheelEvent(weakRef(modal), event);
+            dispatchWheelEvent(modal, event);
             return;
         }
         foreach_reverse (Element p; _popups)
         {
-            if (p.contains(event.x, event.y))
-                if (dispatchWheelEvent(weakRef(p), event))
-                    return;
+            if (dispatchWheelEvent(p, event))
+                return;
         }
-        dispatchWheelEvent(weakRef(_mainWidget), event);
+        dispatchWheelEvent(_mainWidget, event);
     }
 
-    protected bool dispatchWheelEvent(WeakRef!Element root, WheelEvent event)
+    protected bool dispatchWheelEvent(Element root, WheelEvent event)
     {
-        Element elem = root.get;
-        // route wheel events to visible widgets only
-        if (elem.visibility != Visibility.visible)
-            return false;
-        if (!elem.contains(event.x, event.y))
-            return false;
-
-        // offer event to children first
-        foreach (Element el; elem)
+        auto dest = weakRef(performHitTest(root, event.x, event.y));
+        while (dest)
         {
-            if (dispatchWheelEvent(weakRef(el), event))
+            if (handleWheelEvent(dest, event))
                 return true;
+            // bubble up if not destroyed
+            if (dest)
+                dest = weakRef(dest.get.parent);
         }
-        // if not processed by children, offer event to the root
-        return handleWheelEvent(root, event);
+        return false;
     }
 
     private static bool handleKeyEvent(WeakRef!Element weak, KeyEvent e)

@@ -2335,6 +2335,21 @@ public:
         return 0;
     }
 
+    final int opApplyReverse(scope int delegate(Element) callback)
+    {
+        foreach_reverse (i; 0 .. childCount)
+        {
+            if (const result = callback(child(i)))
+                return result;
+        }
+        foreach_reverse (el; _hiddenChildren.unsafe_slice)
+        {
+            if (const result = callback(el))
+                return result;
+        }
+        return 0;
+    }
+
     /// Parent widget, `null` for top level widget
     @property inout(Widget) parent() inout { return _parent; }
     /// ditto
