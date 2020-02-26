@@ -362,6 +362,7 @@ private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref cons
             applyStateFlag(s, "enabled", State.enabled);
             applyStateFlag(s, "activated", State.activated);
             applyStateFlag(s, "window-focused", State.windowFocused);
+            applyStateFlag(s, "read-only", State.readOnly);
             break;
         case attr:
             sel.attributes ~= Selector.Attr(s, null, Selector.Attr.Pattern.whatever);

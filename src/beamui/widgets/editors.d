@@ -411,12 +411,14 @@ class EditLine : Widget, IEditor, ActionOperator
 
         bool readOnly() const
         {
-            return !enabled;
+            return (state & State.readOnly) != 0;
         }
         void readOnly(bool flag)
         {
-            enabled = !flag;
-            invalidate();
+            if (flag)
+                setState(State.readOnly);
+            else
+                resetState(State.readOnly);
         }
 
         bool replaceMode() const { return _replaceMode; }
@@ -551,12 +553,6 @@ class EditLine : Widget, IEditor, ActionOperator
         eliminate(_undoBuffer);
     }
 
-    override @property bool canFocus() const
-    {
-        // allow to focus even if not enabled
-        return allowsFocus && visible;
-    }
-
     override protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
     {
         if (focused)
@@ -626,7 +622,6 @@ class EditLine : Widget, IEditor, ActionOperator
 
     /// Edit the content
     protected void performOperation(SingleLineEditOperation op)
-        in(!readOnly)
     {
         LineRange rangeBefore = op.rangeBefore;
         assert(rangeBefore.start <= rangeBefore.end);
@@ -1493,7 +1488,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
             _ownContent = false;
             _content.onContentChange ~= &handleContentChange;
             if (_content.readOnly)
-                enabled = false;
+                readOnly = true;
         }
 
         /// Text in the editor
@@ -1539,12 +1534,14 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
 
         bool readOnly() const
         {
-            return !enabled || _content.readOnly;
+            return (state & State.readOnly) != 0 || _content.readOnly;
         }
-        void readOnly(bool on)
+        void readOnly(bool flag)
         {
-            enabled = !on;
-            invalidate();
+            if (flag)
+                setState(State.readOnly);
+            else
+                resetState(State.readOnly);
         }
 
         bool replaceMode() const { return _replaceMode; }
@@ -1762,12 +1759,6 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
 
     //===============================================================
     // Focus
-
-    override @property bool canFocus() const
-    {
-        // allow to focus even if not enabled
-        return allowsFocus && visible;
-    }
 
     override Widget setFocus(FocusReason reason = FocusReason.unspecified)
     {
@@ -4275,7 +4266,7 @@ class LogWidget : EditBox
     {
         _scrollLock = true;
         _enableScrollAfterText = false;
-        enabled = false;
+        readOnly = true;
         // allow font zoom with Ctrl + MouseWheel
         minFontSize = 8;
         maxFontSize = 36;

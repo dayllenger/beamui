@@ -78,6 +78,8 @@ enum State : uint
     default_ = 1 << 8,
     /// Widget has been focused by keyboard navigation
     keyboardFocused = 1 << 9,
+    /// User actions cannot change the content of the widget
+    readOnly = 1 << 10,
     /// Returns state of parent instead of widget's state when requested
     parent = 1 << 20,
 }

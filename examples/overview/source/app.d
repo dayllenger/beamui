@@ -276,7 +276,7 @@ int main()
                     ed1.style.minWidth = 150;
                     ed2.style.minWidth = 150;
                     ed1.placeholder = "I am a placeholder";
-                    ed2.enabled = false;
+                    ed2.readOnly = true;
                     add(ed1, ed2);
                 }
             }

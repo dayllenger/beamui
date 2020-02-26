@@ -271,13 +271,13 @@ EditLine { padding: 4px; border: 1px solid #aaa; background-color: #fff; transit
 
 EditLine:focused { border-color: #2e93fa; }
 
-EditLine:not(enabled) { background-color: #f0f0f0; }
+EditLine:read-only { background-color: #f0f0f0; }
 
 EditBox, LogWidget { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; transition: border-color 100ms ease; }
 
 EditBox:focused, LogWidget:focused { border-color: #2e93fa; }
 
-EditBox:not(enabled), LogWidget:not(enabled) { background-color: #f0f0f0; }
+EditBox:read-only, LogWidget:read-only { background-color: #f0f0f0; }
 
 LogWidget { font-family: monospace; font-size: 10px; }
 
@@ -300,7 +300,7 @@ SourceEdit { font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberati
 
 SourceEdit:focused { border: 1px solid #2e93fa; }
 
-SourceEdit:not(enabled) { background-color: #f0f0f0; }
+SourceEdit:read-only { background-color: #f0f0f0; }
 
 @define-colors { editor_left_pane_background: #f4f4f4;
   editor_left_pane_background2: #ffffff;
