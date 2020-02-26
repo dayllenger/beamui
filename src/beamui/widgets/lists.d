@@ -849,7 +849,7 @@ class ListWidget : WidgetGroup
         }
         if (event.key == Key.space || event.key == Key.enter)
         {
-            if (event.action == KeyAction.keyDown && enabled)
+            if (event.action == KeyAction.keyDown)
             {
                 if (itemEnabled(_selectedItemIndex))
                 {

@@ -204,6 +204,8 @@ ScrollArea { min-width: 200px; min-height: 150px; }
 /* scrollbar */
 ScrollBar { background-color: rgba(0, 0, 0, 0.05); }
 
+ScrollBar:not(enabled) { opacity: 0.4; }
+
 ScrollBar > ScrollIndicator { padding: 3px; background-color: #c2c2c2; }
 
 ScrollBar > ScrollIndicator:hovered { background-color: #d2d2d2; }
@@ -215,6 +217,10 @@ ScrollBar > ScrollIndicator:not(enabled) { opacity: 0.4; }
 ScrollBar > PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
 
 ScrollBar > PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
+
+ScrollBar > PageScrollButton:not(enabled) { opacity: 0.4; }
+
+AbstractSlider:not(enabled) { opacity: 0.4; }
 
 AbstractSlider > SliderHandle { padding: 5px; border: 1px solid transparent; background-color: #4e93da; background-clip: padding-box; }
 

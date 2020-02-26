@@ -549,7 +549,7 @@ abstract class AbstractSlider : WidgetGroup
             if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
             {
                 setState(State.pressed);
-                if (canFocus)
+                if (allowsFocus)
                     setFocus();
                 _dragging = true;
                 if (_orient == Orientation.horizontal)

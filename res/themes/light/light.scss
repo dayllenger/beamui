@@ -500,6 +500,10 @@ ScrollArea {
 
 ScrollBar {
     background-color: fade-out(black, 0.95);
+
+    &:not(enabled) {
+        opacity: 0.4;
+    }
 }
 
 ScrollBar > ScrollIndicator {
@@ -526,6 +530,16 @@ ScrollBar > PageScrollButton {
 
     &:hovered {
         background-color: fade-out(#404080, 0.95);
+    }
+
+    &:not(enabled) {
+        opacity: 0.4;
+    }
+}
+
+AbstractSlider {
+    &:not(enabled) {
+        opacity: 0.4;
     }
 }
 

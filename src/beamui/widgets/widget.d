@@ -1652,13 +1652,16 @@ public:
             w.cancelTimer(timerID);
     }
 
-    /// Process key event, return true if event is processed
+    /** Process key event, return true if event is processed.
+
+        Hidden and disabled widgets should not receive these events.
+    */
     bool handleKeyEvent(KeyEvent event)
     {
         // handle focus navigation using keys
         if (focused && handleMoveFocusUsingKeys(event))
             return true;
-        if (canClick)
+        if (_allowsClick)
         {
             // support onClick event initiated by Space or Return keys
             if (event.key == Key.space || event.key == Key.enter)
@@ -1683,20 +1686,23 @@ public:
         return false;
     }
 
-    /// Process mouse event; return true if event is processed by widget
+    /** Process mouse event; return true if event is processed by widget.
+
+        Hidden and disabled widgets should not receive these events.
+    */
     bool handleMouseEvent(MouseEvent event)
     {
         debug (mouse)
             Log.fd("mouse event, '%s': %s  (%s, %s)", id, event.action, event.x, event.y);
         // support click
-        if (canClick)
+        if (_allowsClick)
         {
             if (event.button == MouseButton.left)
             {
                 if (event.action == MouseAction.buttonDown)
                 {
                     setState(State.pressed);
-                    if (canFocus)
+                    if (_allowsFocus)
                         setFocus();
                     return true;
                 }
@@ -1735,13 +1741,13 @@ public:
         {
             if (canShowPopupMenu(event.x, event.y))
             {
-                if (canFocus)
+                if (_allowsFocus)
                     setFocus();
                 showPopupMenu(event.x, event.y);
                 return true;
             }
         }
-        if (canFocus && event.action == MouseAction.buttonDown && event.button == MouseButton.left)
+        if (_allowsFocus && event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
             setFocus();
             return true;
@@ -1780,7 +1786,10 @@ public:
         return false;
     }
 
-    /// Process wheel event, return true if the event is processed
+    /** Process wheel event, return true if the event is processed.
+
+        Hidden and disabled widgets should not receive these events.
+    */
     bool handleWheelEvent(WheelEvent event)
     {
         return false;

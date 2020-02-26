@@ -729,17 +729,19 @@ class Window : CustomEventTarget
     }
 
     /// Find topmost visible widget at the (x, y) position in global coordinates. `null` if none
-    private Element performHitTest(Element root, float x, float y)
+    private Element performHitTest(Element root, float x, float y, bool enabledOnly)
     {
         // this hit test assumes that widgets never leave parent's bounds.
         // this makes it somewhat logarithmic
         if (root.visibility != Visibility.visible)
             return null;
+        if (enabledOnly && !root.enabled)
+            return null;
         if (!root.contains(x, y))
             return null;
         foreach_reverse (el; root)
         {
-            if (auto hit = performHitTest(el, x, y))
+            if (auto hit = performHitTest(el, x, y, enabledOnly))
                 return hit;
         }
         return root;
@@ -1329,6 +1331,15 @@ class Window : CustomEventTarget
                 if (call(a))
                     return true;
             }
+            // raise from the disabled subtree
+            Element p = focus;
+            while (p)
+            {
+                if (p.enabled)
+                    p = p.parent;
+                else
+                    focus = p = p.parent;
+            }
             while (focus)
             {
                 if (handleKeyEvent(weakRef(focus), event))
@@ -1348,8 +1359,8 @@ class Window : CustomEventTarget
     /// Dispatch key event to widgets which have `wantsKeyTracking == true`
     protected bool dispatchKeyEvent(Element root, KeyEvent event)
     {
-        // route key events to visible widgets only
-        if (root.visibility != Visibility.visible)
+        // route key events to enabled visible widgets only
+        if (root.visibility != Visibility.visible || !root.enabled)
             return false;
         if (root.wantsKeyTracking)
         {
@@ -1530,7 +1541,7 @@ class Window : CustomEventTarget
 
     protected bool dispatchMouseEvent(Element root, MouseEvent event, ref bool cursorIsSet)
     {
-        auto dest = weakRef(performHitTest(root, event.x, event.y));
+        auto dest = weakRef(performHitTest(root, event.x, event.y, true));
         while (dest)
         {
             if (event.action == MouseAction.move && !cursorIsSet)
@@ -1695,7 +1706,7 @@ class Window : CustomEventTarget
 
     protected bool dispatchWheelEvent(Element root, WheelEvent event)
     {
-        auto dest = weakRef(performHitTest(root, event.x, event.y));
+        auto dest = weakRef(performHitTest(root, event.x, event.y, true));
         while (dest)
         {
             if (handleWheelEvent(dest, event))

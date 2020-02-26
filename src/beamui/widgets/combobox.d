@@ -49,16 +49,6 @@ abstract class ComboBoxBase : Panel
                 _popupList.selectItem(index);
             onSelect(index);
         }
-
-        override bool enabled() const
-        {
-            return super.enabled;
-        }
-        override void enabled(bool flag)
-        {
-            super.enabled = flag;
-            _button.enabled = flag;
-        }
     }
 
     /// Triggers on item selection and passes integer index of the item
@@ -179,7 +169,7 @@ abstract class ComboBoxBase : Panel
 
     override protected void handleClick()
     {
-        if (enabled && !_popupShown)
+        if (!_popupShown)
         {
             showPopup();
         }
@@ -187,8 +177,6 @@ abstract class ComboBoxBase : Panel
 
     override bool handleWheelEvent(WheelEvent event)
     {
-        if (!enabled)
-            return false;
         const delta = event.deltaY > 0 ? 1 : -1;
         const oldIndex = selectedItemIndex;
         const newIndex = clamp(oldIndex + delta, 0, _adapter.itemCount - 1);
@@ -423,7 +411,7 @@ class ComboEdit : ComboBox
 
     override bool handleKeyEvent(KeyEvent event)
     {
-        if (event.key == Key.down && enabled)
+        if (event.key == Key.down)
         {
             if (event.action == KeyAction.keyDown)
             {
@@ -431,7 +419,7 @@ class ComboEdit : ComboBox
             }
             return true;
         }
-        if ((event.key == Key.space || event.key == Key.enter) && readOnly && enabled)
+        if ((event.key == Key.space || event.key == Key.enter) && readOnly)
         {
             if (event.action == KeyAction.keyDown)
             {

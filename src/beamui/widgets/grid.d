@@ -1690,7 +1690,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
-            if (canFocus && !focused)
+            if (allowsFocus && !focused)
                 setFocus();
             int resizeCol = isColumnResizingPoint(event.x, event.y);
             if (resizeCol >= 0)
