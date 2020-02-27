@@ -783,13 +783,13 @@ class TreeWidgetBase : ScrollArea, ActionOperator
         _needUpdateWidgetStates = false;
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         if (_needUpdateWidgets)
             updateWidgets();
         if (_needUpdateWidgetStates)
             updateWidgetStates();
-        super.measure();
+        return super.computeBoundaries();
     }
 
     protected void handleTreeContentChange()

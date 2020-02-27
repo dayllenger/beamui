@@ -951,13 +951,10 @@ class ListWidget : WidgetGroup
     private bool needToRecalculateItemSizes;
     private Boundaries cachedBoundaries;
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         if (!needToRecalculateSize)
-        {
-            setBoundaries(cachedBoundaries);
-            return;
-        }
+            return cachedBoundaries;
 
         Boundaries bs;
         // measure children
@@ -988,7 +985,7 @@ class ListWidget : WidgetGroup
         _totalSize = p;
         cachedBoundaries = bs;
         needToRecalculateSize = false;
-        setBoundaries(bs);
+        return bs;
     }
 
     override void layout(Box geom)

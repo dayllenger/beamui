@@ -387,9 +387,8 @@ class ScrollAreaBase : WidgetGroup
             requestLayout();
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
-        Boundaries bs;
         // do first measure to get scrollbar widths
         if (_hscrollbar && (_hmode == Mode.visible || _hmode == Mode.automatic))
         {
@@ -401,9 +400,7 @@ class ScrollAreaBase : WidgetGroup
             _vscrollbar.measure();
             _sbsz.w = _vscrollbar.natSize.w;
         }
-        bs.min = _sbsz;
-        bs.nat = _sbsz;
-        setBoundaries(bs);
+        return Boundaries(_sbsz, _sbsz);
     }
 
     override void layout(Box geom)
@@ -691,14 +688,14 @@ class ScrollArea : ScrollAreaBase
         }
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         if (_contentWidget)
         {
             _contentWidget.measure();
             _fullContentSize = _contentWidget.natSize;
         }
-        super.measure();
+        return super.computeBoundaries();
     }
 
     override void layout(Box geom)

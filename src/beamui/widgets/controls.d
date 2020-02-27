@@ -351,13 +351,13 @@ class ImageWidget : Widget
         _drawable.clear();
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         Size sz;
         DrawableRef img = _drawable;
         if (!img.isNull)
             sz = Size(img.width, img.height);
-        setBoundaries(Boundaries(sz, sz));
+        return Boundaries(sz);
     }
 
     override protected void drawContent(Painter pr)
@@ -564,11 +564,11 @@ class SwitchButton : Widget
         checked = !checked;
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         const Drawable bg = style.backgroundImage;
-        const sz = bg ? Size(bg.width, bg.height) : Size.init;
-        setBoundaries(Boundaries(sz, sz, sz));
+        const sz = bg ? Size(bg.width, bg.height) : Size(0, 0);
+        return Boundaries(sz);
     }
 }
 

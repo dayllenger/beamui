@@ -1390,11 +1390,13 @@ class EditLine : Widget, IEditor, ActionOperator
         return _txtline.size;
     }
 
-    override protected void adjustBoundaries(ref Boundaries bs)
+    override protected Boundaries computeBoundaries()
     {
+        auto bs = super.computeBoundaries();
         const sz = _minSizeTester.getSize();
         bs.min += sz;
         bs.nat += sz;
+        return bs;
     }
 
     override void layout(Box geom)
@@ -3827,13 +3829,15 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
     {
     }
 
-    override protected void adjustBoundaries(ref Boundaries bs)
+    override protected Boundaries computeBoundaries()
     {
+        auto bs = super.computeBoundaries();
         measureVisibleText();
         _minSizeTester.style.tabSize = _content.tabSize;
         const sz = _minSizeTester.getSize() + Size(_leftPaneWidth, 0);
         bs.min += sz;
         bs.nat += sz;
+        return bs;
     }
 
     override protected void adjustClientBox(ref Box clb)

@@ -249,7 +249,7 @@ class MenuItem : WidgetGroup, ActionHolder
         _submenu.maybe.handleThemeChange();
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         Size sz;
         if (isSeparator)
@@ -273,7 +273,7 @@ class MenuItem : WidgetGroup, ActionHolder
                 _labelWidth = sz.w;
             }
         }
-        setBoundaries(Boundaries(sz, sz, Size.none));
+        return Boundaries(sz);
     }
 
     override void layout(Box b)
@@ -799,7 +799,7 @@ class Menu : ListWidget
         return super.handleMouseEvent(event);
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         // align items for vertical menu
         if (orientation == Orientation.vertical)
@@ -823,7 +823,7 @@ class Menu : ListWidget
                     maxCheckBoxWidth, maxLabelWidth, maxIconWidth, maxShortcutWidth, maxMoreBtnWidth);
             }
         }
-        super.measure();
+        return super.computeBoundaries();
     }
 }
 

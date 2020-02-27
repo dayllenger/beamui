@@ -120,10 +120,12 @@ class Popup : Widget
         return _hiddenChildren[0];
     }
 
-    override protected void adjustBoundaries(ref Boundaries bs)
+    override protected Boundaries computeBoundaries()
     {
+        auto bs = super.computeBoundaries();
         contentWidget.measure();
         bs.maximize(contentWidget.boundaries);
+        return bs;
     }
 
     override void layout(Box geom)

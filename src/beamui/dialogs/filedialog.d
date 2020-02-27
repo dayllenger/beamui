@@ -1007,7 +1007,7 @@ class FilePathPanelButtons : WidgetGroup
     }
 
     private float[] itemSizes;
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         Boundaries bs;
         Size min;
@@ -1025,7 +1025,7 @@ class FilePathPanelButtons : WidgetGroup
             bs.maximizeHeight(wbs);
         }
         bs.min = min;
-        setBoundaries(bs);
+        return bs;
     }
 
     override void layout(Box geom)

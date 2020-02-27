@@ -252,7 +252,7 @@ class DockHost : WidgetGroup
         return list;
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         Boundaries bs;
         foreach (i; 0 .. childCount)
@@ -265,7 +265,7 @@ class DockHost : WidgetGroup
                 bs.maximize(item.boundaries);
             }
         }
-        setBoundaries(bs);
+        return bs;
     }
 
     override void layout(Box geom)

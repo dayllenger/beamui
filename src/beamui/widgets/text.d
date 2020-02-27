@@ -212,7 +212,7 @@ class Label : Widget
         natSizeTester.style.font = f;
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         updateStyles();
 
@@ -226,7 +226,7 @@ class Label : Widget
         bs.min.h = min(sz.h, tmin.h);
         bs.nat.w = min(sz.w, tnat.w);
         bs.nat.h = max(sz.h, tnat.h);
-        setBoundaries(bs);
+        return bs;
     }
 
     override float heightForWidth(float width)
@@ -669,7 +669,7 @@ class Paragraph : Widget
         requestLayout();
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         assert(_lines.length == _content.lineCount);
 
@@ -700,7 +700,7 @@ class Paragraph : Widget
         bs.min.h = min(tsz.h, tmin.h);
         bs.nat.w = min(tsz.w, tnat.w);
         bs.nat.h = max(tsz.h, tnat.h);
-        setBoundaries(bs);
+        return bs;
     }
 
     override float heightForWidth(float width)

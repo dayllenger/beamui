@@ -735,7 +735,7 @@ class Slider : AbstractSlider
     }
 
     private float handleSize = 0;
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         _handle.measure();
         Boundaries bs = _handle.boundaries;
@@ -751,7 +751,7 @@ class Slider : AbstractSlider
             bs.nat.h = bs.min.h = bs.nat.h * 5;
             bs.max.w = bs.nat.w = bs.min.w = bs.nat.w;
         }
-        setBoundaries(bs);
+        return bs;
     }
 
     override protected void calcSpace(float availableSize, out float spaceBefore, out float spaceAfter)
@@ -928,7 +928,7 @@ class RangeSlider : AbstractSlider
     }
 
     private float[2] handleSizes = 0;
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         Boundaries bs;
         _1stHandle.measure();
@@ -957,7 +957,7 @@ class RangeSlider : AbstractSlider
             bs.nat.h = bs.min.h = bs.nat.h * 5;
             bs.max.w = bs.nat.w = bs.min.w = bs.nat.w;
         }
-        setBoundaries(bs);
+        return bs;
     }
 
     override protected void calcSpace(float availableSize, out float spaceBefore, out float spaceAfter)

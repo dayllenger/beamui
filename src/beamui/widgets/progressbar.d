@@ -176,7 +176,7 @@ class ProgressBar : Widget
         invalidate();
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         DrawableRef gaugeDrawable = currentTheme.getDrawable("progress_bar_gauge");
         DrawableRef indeterminateDrawable = currentTheme.getDrawable("progress_bar_indeterminate");
@@ -189,9 +189,7 @@ class ProgressBar : Widget
         {
             sz.h = max(sz.h, indeterminateDrawable.height);
         }
-        Boundaries bs;
-        bs.nat = sz;
-        setBoundaries(bs);
+        return Boundaries(Size(0, 0), sz);
     }
 
     override protected void drawContent(Painter pr)

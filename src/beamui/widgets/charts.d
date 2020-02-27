@@ -306,7 +306,7 @@ class SimpleBarChart : Widget
                     max(maxSize.h, avgSize.h));
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         const extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
         const extraSizeY = _axisX.thickness + _axisX.segmentTagLength + _axisY.zeroValueDist + _axisY.arrowSize;
@@ -328,7 +328,7 @@ class SimpleBarChart : Widget
             bs.nat.w = max(bs.min.w, ts.w);
             bs.min.h += ts.h + _marginAfterTitle;
         }
-        setBoundaries(bs);
+        return bs;
     }
 
     override void layout(Box geom)

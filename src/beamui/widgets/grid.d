@@ -1780,13 +1780,15 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         requestLayout();
     }
 
-    override protected void adjustBoundaries(ref Boundaries bs)
+    override protected Boundaries computeBoundaries()
     {
+        auto bs = super.computeBoundaries();
+
         if (_cols == 0 || _rows == 0)
         {
             bs.min += Size(100, 100);
             bs.nat += Size(100, 100);
-            return;
+            return bs;
         }
 
         Size sz;
@@ -1803,6 +1805,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
         bs.min += sz;
         bs.nat += sz;
+        return bs;
     }
 
     protected Size measureCell(int x, int y) const

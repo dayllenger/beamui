@@ -406,7 +406,7 @@ class ScrollBar : WidgetGroup
         super.cancelLayout();
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         Boundaries bs;
         _indicator.measure();
@@ -429,7 +429,7 @@ class ScrollBar : WidgetGroup
             bs.nat.w = bs.min.w = ibs.nat.w + _btnSize * 4;
             bs.max.h = bs.nat.h = bs.min.h = max(ibs.nat.h, bbs.nat.h, fbs.nat.h);
         }
-        setBoundaries(bs);
+        return bs;
     }
 
     override void layout(Box geom)

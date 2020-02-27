@@ -1912,29 +1912,19 @@ public:
         needUpdate();
     }
 
-    /** Measure widget - compute minimal, natural and maximal sizes for the widget
+    /** Measure element - compute minimal, natural and maximal sizes of the border box.
 
-        Override this method only when you make completely new algorithm
-        and don't intend to call `super.measure()`.
-        But if you only need to adjust widget boundaries, e.g. add some width,
-        then override `adjustBoundaries` method.
+        This method calls `computeBoundaries` to get raw size information,
+        applies `padding` and styling such as min-width to it, fixes overflows,
+        and assigns the result to `boundaries`.
+
+        This method may return early without calling `computeBoundaries`
+        if no elements in the sub-tree requested layout.
     */
-    void measure()
-    {
-        setBoundaries(Boundaries());
-    }
-
-    /// Callback to adjust widget boundaries; called after measure and before applying style to them
-    protected void adjustBoundaries(ref Boundaries bs)
-    {
-    }
-
-    /// Set widget boundaries, checking their validity and applying
-    /// padding and min-max style properties
-    final protected void setBoundaries(Boundaries bs)
+    final void measure()
     {
         const Size p = padding.size; // updates style
-        adjustBoundaries(bs);
+        Boundaries bs = computeBoundaries();
         // ignore percentages here - the parent layout will compute them itself
         const minw = _style.minWidth;
         const minh = _style.minHeight;
@@ -1971,6 +1961,11 @@ public:
         bs.nat.h = clamp(bs.nat.h, bs.min.h, bs.max.h);
         // done
         _boundaries = bs;
+    }
+
+    protected Boundaries computeBoundaries()
+    {
+        return Boundaries.init;
     }
 
     /// Returns natural height for the given width
@@ -2605,7 +2600,7 @@ class Panel : WidgetGroup
             _layout.onChildStyleChange(p);
     }
 
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         updateStyles();
 
@@ -2633,7 +2628,7 @@ class Panel : WidgetGroup
                 bs.maximize(item.boundaries);
             }
         }
-        setBoundaries(bs);
+        return bs;
     }
 
     override void layout(Box geometry)

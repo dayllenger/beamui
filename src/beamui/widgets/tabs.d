@@ -475,7 +475,7 @@ class TabControl : WidgetGroup
     }
 
     private Buf!Size itemSizes;
-    override void measure()
+    override protected Boundaries computeBoundaries()
     {
         itemSizes.resize(childCount);
 
@@ -499,7 +499,7 @@ class TabControl : WidgetGroup
             bs.addWidth(wbs);
             bs.maximizeHeight(wbs);
         }
-        setBoundaries(bs);
+        return bs;
     }
 
     override void layout(Box geom)

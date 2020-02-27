@@ -127,14 +127,16 @@ class GroupBox : Panel
         _frameBottom = dp.bottom;
     }
 
-    override protected void adjustBoundaries(ref Boundaries bs)
+    override protected Boundaries computeBoundaries()
     {
+        auto bs = super.computeBoundaries();
         _caption.measure();
         // expand if the caption is bigger than the content
         // frame is already calculated
         const cw = _caption.natSize.w;
         const w = cw + _topFrameLeft + _topFrameRight - _frameLeft - _frameRight;
         bs.nat.w = max(bs.nat.w, w);
+        return bs;
     }
 
     override void layout(Box geom)
