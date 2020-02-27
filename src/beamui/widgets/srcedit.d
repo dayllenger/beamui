@@ -1,7 +1,7 @@
 /**
 Source code editor widget.
 
-Copyright: Vadim Lopatin 2014-2017
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -14,7 +14,48 @@ import beamui.text.style : TextAlign, TextStyle;
 import beamui.widgets.editors;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
+import beamui.widgets.scroll : ScrollBarMode;
 import beamui.widgets.widget;
+
+alias ElemSourceEdit = SourceEdit;
+
+class NgSourceEdit : NgEditBox
+{
+    bool showLineNumbers = true;
+    bool showModificationMarks = true;
+    bool showIcons;
+    bool showFolding;
+
+    static NgSourceEdit make(EditableContent content)
+        in(content)
+    {
+        NgSourceEdit w = arena.make!NgSourceEdit;
+        w.content = content;
+        w.hscrollbarMode = ScrollBarMode.automatic;
+        w.vscrollbarMode = ScrollBarMode.automatic;
+        w.minFontSize = 9;
+        w.maxFontSize = 75;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        auto el = fetchEl!ElemSourceEdit;
+        el.setAttribute("ignore");
+        return el;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemSourceEdit el = fastCast!ElemSourceEdit(element);
+        el.showLineNumbers = showLineNumbers;
+        el.showModificationMarks = showModificationMarks;
+        el.showIcons = showIcons;
+        el.showFolding = showFolding;
+    }
+}
 
 /// Base class for source code editors, with line numbering, syntax highlight, etc.
 class SourceEdit : EditBox

@@ -242,9 +242,9 @@ class NgEditBox : NgWidget
 
     void delegate(EditableContent) onChange;
 
-    private EditableContent content;
-    private ScrollBarMode hscrollbarMode;
-    private ScrollBarMode vscrollbarMode;
+    protected EditableContent content;
+    protected ScrollBarMode hscrollbarMode;
+    protected ScrollBarMode vscrollbarMode;
 
     static NgEditBox make(
         EditableContent content,
