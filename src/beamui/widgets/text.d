@@ -236,15 +236,11 @@ class Label : Widget
         return textobj.sizeAfterWrap.h + p.h;
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        super.layout(geom);
         // wrap again in case the parent widget had not called heightForWidth
         // must be cached when width is the same
-        // textobj.wrap(geom.w - padding.width);
+        // textobj.wrap(box.w - padding.width);
     }
 
     override protected void drawContent(Painter pr)
@@ -710,15 +706,11 @@ class Paragraph : Widget
         return _sizeAfterWrap.h + p.h;
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        setBox(geom);
         // wrap again in case the parent widget had not called heightForWidth
         // must be cached when width is the same
-        wrap(geom.w - padding.width);
+        wrap(box.w - padding.width);
     }
 
     /// Wrap lines within a width

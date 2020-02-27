@@ -1998,21 +1998,23 @@ public:
         return _boundaries.nat.w;
     }
 
-    /// Set widget box and lay out widget contents
+    /** Set widget box and lay out widget contents.
+
+        It computes `innerBox`, shrink padding if necessary, and calls
+        `arrangeContent` to lay out the rest.
+
+        If you need a custom layout logic, in 99% of situations you should
+        override `arrangeContent` method instead of this one.
+    */
     void layout(Box geometry)
     {
         _needLayout = false;
         if (visibility == Visibility.gone)
             return;
 
-        setBox(geometry);
-    }
-
-    /// Set widget `box`, compute `innerBox`, and shrink padding if necessary
-    /// (for usage in subclass' `layout`)
-    final protected void setBox(ref const Box b)
-    {
-        _needLayout = false;
+        alias b = geometry;
+        assert(isFinite(b.x) && isFinite(b.y));
+        assert(isFinite(b.w) && isFinite(b.h));
         // shrink padding when appropriate
         Insets p = padding;
         if (_boundaries.nat.w > b.w)
@@ -2057,6 +2059,12 @@ public:
         }
         _box = snapToDevicePixels(b);
         _innerBox = snapToDevicePixels(b.shrinked(p));
+        arrangeContent();
+    }
+
+    /// Called from `layout`, after `box` and `innerBox` were set
+    protected void arrangeContent()
+    {
     }
 
     /// Draw widget at its position
@@ -2650,14 +2658,8 @@ class Panel : WidgetGroup
         return bs;
     }
 
-    override void layout(Box geometry)
+    override protected void arrangeContent()
     {
-        _needLayout = false;
-        if (visibility == Visibility.gone)
-            return;
-
-        setBox(geometry);
-
         if (_layout)
         {
             _layout.arrange(_innerBox);

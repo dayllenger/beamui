@@ -200,6 +200,10 @@ class Popup : Widget
         geom.moveToFit(windowBox);
 
         super.layout(geom);
+    }
+
+    override protected void arrangeContent()
+    {
         contentWidget.layout(innerBox);
     }
 

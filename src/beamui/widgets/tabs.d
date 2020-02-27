@@ -502,14 +502,9 @@ class TabControl : WidgetGroup
         return bs;
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        setBox(geom);
-        geom = innerBox;
-
+        const geom = innerBox;
         float spaceForItems = geom.w;
         bool needMoreButton;
         float w = 0;

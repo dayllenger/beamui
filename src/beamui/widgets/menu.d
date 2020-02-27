@@ -276,13 +276,9 @@ class MenuItem : WidgetGroup, ActionHolder
         return Boundaries(sz);
     }
 
-    override void layout(Box b)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        setBox(b);
-        b = innerBox;
+        Box b = innerBox;
 
         if (isSeparator)
         {

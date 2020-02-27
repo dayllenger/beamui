@@ -432,14 +432,9 @@ class ScrollBar : WidgetGroup
         return bs;
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        setBox(geom);
-        geom = innerBox;
-
+        Box geom = innerBox;
         if (_orient == Orientation.vertical)
         {
             // buttons

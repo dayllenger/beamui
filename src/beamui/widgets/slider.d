@@ -393,13 +393,8 @@ abstract class AbstractSlider : WidgetGroup
         }
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        setBox(geom);
-
         const b = innerBox;
         Box innerArea = b;
         // lay out bars before and after handles

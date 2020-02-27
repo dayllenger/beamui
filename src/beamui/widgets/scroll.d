@@ -403,13 +403,8 @@ class ScrollAreaBase : WidgetGroup
         return Boundaries(_sbsz, _sbsz);
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        setBox(geom);
-
         const inner = innerBox;
         const sz = inner.size;
         updateScrollBarsVisibility(sz);
@@ -698,12 +693,9 @@ class ScrollArea : ScrollAreaBase
         return super.computeBoundaries();
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        super.layout(geom);
+        super.arrangeContent();
 
         if (_contentWidget && _contentWidget.visibility != Visibility.gone)
         {

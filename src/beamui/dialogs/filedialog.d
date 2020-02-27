@@ -893,10 +893,10 @@ class FileDialog : Dialog, CustomGridCellAdapter
         _fileList.setFocus();
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
         _fileList.autoFitColumnWidths();
-        super.layout(geom);
+        super.arrangeContent();
         _fileList.fillColumnWidth(1);
     }
 }
@@ -1028,13 +1028,8 @@ class FilePathPanelButtons : WidgetGroup
         return bs;
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        setBox(geom);
-
         const inner = innerBox;
         const maxw = inner.w;
         float totalw = 0;

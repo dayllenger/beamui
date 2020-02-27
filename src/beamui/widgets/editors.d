@@ -1399,13 +1399,8 @@ class EditLine : Widget, IEditor, ActionOperator
         return bs;
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        setBox(geom);
-
         // ensure that scroll position is inside min/max area,
         // move back after window or widget resize
         _scrollPos = clamp(fullContentSize.w - innerBox.w, 0, _scrollPos);
@@ -3856,6 +3851,11 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
             _contentChanged = true;
 
         super.layout(geom);
+    }
+
+    override protected void arrangeContent()
+    {
+        super.arrangeContent();
 
         if (_findPanel && _findPanel.visibility != Visibility.gone)
         {
@@ -3873,8 +3873,6 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
 
         if (auto ph = _placeholder)
             ph.wrap(clientBox.w);
-
-        setBox(geom);
     }
 
     protected Size measureVisibleText()
@@ -4316,12 +4314,9 @@ class LogWidget : EditBox
         return res;
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        super.layout(geom);
+        super.arrangeContent();
         if (_scrollLock)
         {
             measureVisibleText();

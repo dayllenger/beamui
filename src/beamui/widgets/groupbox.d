@@ -139,12 +139,10 @@ class GroupBox : Panel
         return bs;
     }
 
-    override void layout(Box geom)
+    override protected void arrangeContent()
     {
-        if (visibility == Visibility.gone)
-            return;
-
-        super.layout(geom);
+        super.arrangeContent();
+        const geom = box;
         // layout the caption
         const cw = _caption.natSize.w;
         const cwinv = geom.w - _topFrameLeft - _topFrameRight;

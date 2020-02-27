@@ -616,8 +616,6 @@ class GridLayout : ILayout
             // subtract margins
             b.shrink(item.marginsNoAuto);
             // lay out the element
-            assert(isFinite(b.x) && isFinite(b.y));
-            assert(isFinite(b.w) && isFinite(b.h));
             item.el.layout(b);
         }
     }

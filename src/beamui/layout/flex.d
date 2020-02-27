@@ -339,8 +339,6 @@ class FlexLayout : ILayout
         // lay out the elements
         foreach (i, b; boxes)
         {
-            assert(isFinite(b.x) && isFinite(b.y));
-            assert(isFinite(b.w) && isFinite(b.h));
             elements[i].layout(b);
         }
     }
