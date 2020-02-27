@@ -35,6 +35,7 @@ public
     import beamui.widgets.popup : PopupAlign;
 }
 package import beamui.style.computed_style;
+import std.math : isFinite;
 import beamui.core.animations;
 import beamui.core.memory : Arena;
 import beamui.graphics.compositing : BlendMode;
@@ -1925,6 +1926,8 @@ public:
     {
         const Size p = padding.size; // updates style
         Boundaries bs = computeBoundaries();
+        assert(isFinite(bs.min.w) && isFinite(bs.min.h));
+        assert(isFinite(bs.nat.w) && isFinite(bs.nat.h));
         // ignore percentages here - the parent layout will compute them itself
         const minw = _style.minWidth;
         const minh = _style.minHeight;
@@ -1935,9 +1938,25 @@ public:
         // the content-based min size doesn't need to include padding.
         // if the size is specified in styles, use it
         if (minw.isDefined)
+        {
             bs.min.w = minw.applyPercent(0);
+            bs.nat.w = max(bs.nat.w, bs.min.w - p.w, 0);
+        }
+        else
+        {
+            bs.min.w = max(bs.min.w, 0);
+            bs.nat.w = max(bs.nat.w, bs.min.w);
+        }
         if (minh.isDefined)
+        {
             bs.min.h = minh.applyPercent(0);
+            bs.nat.h = max(bs.nat.h, bs.min.h - p.h, 0);
+        }
+        else
+        {
+            bs.min.h = max(bs.min.h, 0);
+            bs.nat.h = max(bs.nat.h, bs.min.h);
+        }
         // use the smallest of content-based and specified max sizes
         bs.max.w += p.w;
         bs.max.h += p.h;
