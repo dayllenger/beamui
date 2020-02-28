@@ -428,10 +428,11 @@ class EditLine : Widget, IEditor, ActionOperator
             invalidate();
         }
 
-        bool enableCaretBlinking() const { return _caretBlinks; }
+        bool enableCaretBlinking() const { return _enableCaretBlinking; }
         void enableCaretBlinking(bool flag)
         {
-            _caretBlinks = flag;
+            stopCaretBlinking();
+            _enableCaretBlinking = flag;
         }
 
         /// Password character - 0 for normal editor, some character
@@ -717,15 +718,18 @@ class EditLine : Widget, IEditor, ActionOperator
 
     private
     {
+        bool _enableCaretBlinking = true;
         int _caretBlinkingInterval = 800;
         ulong _caretTimerID;
-        bool _caretBlinkingPhase;
+        bool _caretHidden;
         long _lastBlinkStartTs;
-        bool _caretBlinks = true;
     }
 
     protected void startCaretBlinking()
     {
+        if (!_enableCaretBlinking)
+            return;
+
         if (auto win = window)
         {
             static if (BACKEND_CONSOLE)
@@ -743,8 +747,8 @@ class EditLine : Widget, IEditor, ActionOperator
                     win.cancelTimer(_caretTimerID);
                 }
                 _caretTimerID = setTimer(_caretBlinkingInterval / 2, {
-                    _caretBlinkingPhase = !_caretBlinkingPhase;
-                    if (!_caretBlinkingPhase)
+                    _caretHidden = !_caretHidden;
+                    if (!_caretHidden)
                         _lastBlinkStartTs = currentTimeMillis;
                     invalidate();
                     const bool repeat = focused;
@@ -753,13 +757,16 @@ class EditLine : Widget, IEditor, ActionOperator
                     return repeat;
                 });
                 _lastBlinkStartTs = ts;
-                _caretBlinkingPhase = false;
+                _caretHidden = false;
                 invalidate();
             }
         }
     }
     protected void stopCaretBlinking()
     {
+        if (!_enableCaretBlinking)
+            return;
+
         if (auto win = window)
         {
             static if (BACKEND_CONSOLE)
@@ -772,6 +779,7 @@ class EditLine : Widget, IEditor, ActionOperator
                 {
                     win.cancelTimer(_caretTimerID);
                     _caretTimerID = 0;
+                    _caretHidden = false;
                 }
             }
         }
@@ -797,11 +805,8 @@ class EditLine : Widget, IEditor, ActionOperator
     /// Draw caret
     protected void drawCaret(Painter pr)
     {
-        if (focused)
+        if (focused && !_caretHidden)
         {
-            if (_caretBlinkingPhase && _caretBlinks)
-                return;
-
             const Rect r = caretRect();
             if (r.intersects(Rect(innerBox)))
             {
@@ -2554,11 +2559,11 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
         TextPosition _caretPos;
         TextRange _selectionRange;
 
+        bool _enableCaretBlinking = true;
         int _caretBlinkingInterval = 800;
         ulong _caretTimerID;
-        bool _caretBlinkingPhase;
+        bool _caretHidden;
         long _lastBlinkStartTs;
-        bool _caretBlinks = true;
     }
 
     @property
@@ -2584,10 +2589,11 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
             return _content.lineRange(_caretPos.line);
         }
 
-        bool enableCaretBlinking() const { return _caretBlinks; }
-        void enableCaretBlinking(bool blinks)
+        bool enableCaretBlinking() const { return _enableCaretBlinking; }
+        void enableCaretBlinking(bool flag)
         {
-            _caretBlinks = blinks;
+            stopCaretBlinking();
+            _enableCaretBlinking = flag;
         }
 
         /// Returns true if one or more lines selected fully
@@ -2625,6 +2631,9 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
 
     protected void startCaretBlinking()
     {
+        if (!_enableCaretBlinking)
+            return;
+
         if (auto win = window)
         {
             static if (BACKEND_CONSOLE)
@@ -2642,8 +2651,8 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
                     win.cancelTimer(_caretTimerID);
                 }
                 _caretTimerID = setTimer(_caretBlinkingInterval / 2, {
-                    _caretBlinkingPhase = !_caretBlinkingPhase;
-                    if (!_caretBlinkingPhase)
+                    _caretHidden = !_caretHidden;
+                    if (!_caretHidden)
                         _lastBlinkStartTs = currentTimeMillis;
                     invalidate();
                     const bool repeat = focused;
@@ -2652,7 +2661,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
                     return repeat;
                 });
                 _lastBlinkStartTs = ts;
-                _caretBlinkingPhase = false;
+                _caretHidden = false;
                 invalidate();
             }
         }
@@ -2660,6 +2669,9 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
 
     protected void stopCaretBlinking()
     {
+        if (!_enableCaretBlinking)
+            return;
+
         if (auto win = window)
         {
             static if (BACKEND_CONSOLE)
@@ -2672,6 +2684,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
                 {
                     win.cancelTimer(_caretTimerID);
                     _caretTimerID = 0;
+                    _caretHidden = false;
                 }
             }
         }
@@ -2705,11 +2718,8 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
     /// Draw caret
     protected void drawCaret(Painter pr)
     {
-        if (focused)
+        if (focused && !_caretHidden)
         {
-            if (_caretBlinkingPhase && _caretBlinks)
-                return;
-
             const Rect r = caretRect();
             if (r.intersects(Rect(clientBox)))
             {
