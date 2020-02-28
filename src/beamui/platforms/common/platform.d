@@ -3,7 +3,7 @@ Common Platform definitions.
 
 Platform is abstraction layer for application.
 
-Copyright: Vadim Lopatin 2014-2017, Roman Chistokhodov 2017, Andrzej Kilijański 2017-2018, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, Roman Chistokhodov 2017, Andrzej Kilijański 2017-2018, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -12,6 +12,7 @@ module beamui.platforms.common.platform;
 public import beamui.graphics.drawables : imageCache;
 public import beamui.widgets.widget : CursorType, Element, Widget;
 import std.algorithm.mutation : swap;
+import std.datetime.stopwatch : Duration, StopWatch, dur;
 import beamui.core.animations;
 import beamui.core.asyncsocket;
 import beamui.core.memory : Arena;
@@ -644,21 +645,12 @@ class Window : CustomEventTarget
         _windowRect.w = width;
         _windowRect.h = height;
 
-        debug (resizing)
-        {
+        debug (layout)
             Log.d("handleResize ", _w, "x", _h);
-            const layoutStart = currentTimeMillis;
-        }
 
         // resize changes only window's width and height,
         // so it is quite legitimate to not measure again
         layout();
-
-        debug (resizing)
-        {
-            const layoutEnd = currentTimeMillis;
-            Log.d("resize: layout took ", layoutEnd - layoutStart, " ms");
-        }
         update(true);
     }
 
@@ -1756,6 +1748,13 @@ class Window : CustomEventTarget
             needRebuild = false;
             return;
         }
+
+        debug
+        {
+            StopWatch sw;
+            sw.start();
+        }
+
         // prepare allocators and the cache
         swap(_widgetArenas[0], _widgetArenas[1]);
         _widgetArenas[0].clear();
@@ -1765,6 +1764,14 @@ class Window : CustomEventTarget
         _mainWidget = mountRoot(root);
         _mainWidget.window = this;
         needRebuild = false;
+
+        debug
+        {
+            sw.stop();
+            const elapsed = sw.peek().total!`usecs` / 1000.0f;
+            if (elapsed > PERFORMANCE_LOGGING_THRESHOLD_MS)
+                Log.fd("rebuild took: %.1f ms", elapsed);
+        }
     }
 
     //===============================================================
@@ -1841,8 +1848,14 @@ class Window : CustomEventTarget
     }
 
     /// Measure main widget, popups and tooltip
-    void measure()
+    private void measure()
     {
+        debug (layout)
+        {
+            StopWatch sw;
+            sw.start();
+        }
+
         setupGlobalDPI();
         // TODO: set minimum window size
         _mainWidget.measure();
@@ -1850,11 +1863,25 @@ class Window : CustomEventTarget
             p.measure();
         if (auto tp = _tooltip.popup)
             tp.measure();
+
+        debug (layout)
+        {
+            sw.stop();
+            const elapsed = sw.peek().total!`usecs` / 1000.0f;
+            if (elapsed > PERFORMANCE_LOGGING_THRESHOLD_MS)
+                Log.fd("measure took: %.1f ms", elapsed);
+        }
     }
 
     /// Lay out main widget, popups and tooltip
-    void layout()
+    private void layout()
     {
+        debug (layout)
+        {
+            StopWatch sw;
+            sw.start();
+        }
+
         setupGlobalDPI();
         _mainWidget.layout(Box(0, 0, _w, _h));
         foreach (p; _popups)
@@ -1866,6 +1893,14 @@ class Window : CustomEventTarget
         {
             const sz = tp.natSize;
             tp.layout(Box(0, 0, sz.w, sz.h));
+        }
+
+        debug (layout)
+        {
+            sw.stop();
+            const elapsed = sw.peek().total!`usecs` / 1000.0f;
+            if (elapsed > PERFORMANCE_LOGGING_THRESHOLD_MS)
+                Log.fd("layout took: %.1f ms", elapsed);
         }
     }
 
@@ -1920,7 +1955,7 @@ class Window : CustomEventTarget
         }
     }
 
-    enum PERFORMANCE_LOGGING_THRESHOLD_MS = 2;
+    enum PERFORMANCE_LOGGING_THRESHOLD_MS = 1;
 
     /// Set when first draw is called: don't handle mouse/key input until draw (layout) is called
     private bool _firstDrawCalled;
@@ -1958,20 +1993,15 @@ class Window : CustomEventTarget
 
             if (needLayout)
             {
-                debug (redraw)
-                    const layoutStart = currentTimeMillis;
                 measure();
                 layout();
-                debug (redraw)
-                {
-                    const layoutEnd = currentTimeMillis;
-                    if (layoutEnd - layoutStart > PERFORMANCE_LOGGING_THRESHOLD_MS)
-                        Log.d("layout took ", layoutEnd - layoutStart, " ms");
-                }
             }
 
             debug (redraw)
-                const drawStart = currentTimeMillis;
+            {
+                StopWatch sw;
+                sw.start();
+            }
 
             // draw main widget
             _mainWidget.draw(_painter);
@@ -1991,9 +2021,10 @@ class Window : CustomEventTarget
 
             debug (redraw)
             {
-                const drawEnd = currentTimeMillis;
-                if (drawEnd - drawStart > PERFORMANCE_LOGGING_THRESHOLD_MS)
-                    Log.d("draw took ", drawEnd - drawStart, " ms");
+                sw.stop();
+                const elapsed = sw.peek().total!`usecs` / 1000.0f;
+                if (elapsed > PERFORMANCE_LOGGING_THRESHOLD_MS)
+                    Log.fd("drawing took: %.1f ms", elapsed);
             }
             // cancel animations' update if they are expired
             if (!animationActive && animationUpdateTimerID)

@@ -115,8 +115,8 @@ sdl
 x11
 mouse
 keys
+layout
 redraw
-resizing
 state
 timers
 tooltips
