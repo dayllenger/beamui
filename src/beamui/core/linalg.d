@@ -96,14 +96,13 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
 
     static if (N == 2)
     {
-        /// Returns vector rotated 90 degrees counter clockwise
-        Vector rotated90ccw() const
+        /// Returns 2D vector rotated 90 degrees CW if left-handed, CCW if right-handed
+        Vector rotated90fromXtoY() const
         {
             return Vector(-y, x);
         }
-
-        /// Returns vector rotated 90 degrees clockwise
-        Vector rotated90cw() const
+        /// Returns 2D vector rotated 90 degrees CCW if left-handed, CW if right-handed
+        Vector rotated90fromYtoX() const
         {
             return Vector(y, -x);
         }

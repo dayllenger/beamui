@@ -210,8 +210,8 @@ struct Path
         const squareRadius = squareDist / (2 - 2 * cosine);
         const r = sqrt(squareRadius);
         // find center
-        const v = Vec2(posx - x, posy - y);
-        const ncenter = (clockwise ? v.rotated90cw : v.rotated90ccw).normalized;
+        const v = Vec2(x - posx, y - posy);
+        const ncenter = (clockwise ? v.rotated90fromXtoY : v.rotated90fromYtoX).normalized;
         const mid = Vec2((x + posx) / 2, (y + posy) / 2);
         const center = mid + ncenter * r * cosine_2;
         // find angle to the first arc point

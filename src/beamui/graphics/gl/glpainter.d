@@ -530,7 +530,7 @@ protected:
         q.y += 0.5f;
         const n = (q - p).normalized;
         const dir2 = Vec2(n.x * 0.5f / coeffX, n.y * 0.5f / coeffY);
-        const offset = dir2.rotated90ccw();
+        const offset = dir2.rotated90fromXtoY();
         p -= dir2;
         q += dir2;
         Vec2[4] ps = [p - offset, q - offset, q + offset, p + offset];

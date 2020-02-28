@@ -95,9 +95,6 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
     //      path       \
     //                8 x 7
 
-    // note: `rotated90ccw` visually rotates CLOCKWISE, because this coordinate system is left-handed.
-    // same applies to `rotated90cw`
-
     const r = pen.width / 2;
 
     if (points.length >= 3) // common case first
@@ -106,7 +103,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
         Vec2 norm1;
         Vec2 first = points[0];
         const firstN = (first - points[1]).normalized;
-        norm1 = firstN.rotated90ccw;
+        norm1 = firstN.rotated90fromXtoY;
         if (!loop)
         {
             if (pen.cap == LineCap.round)
@@ -125,7 +122,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
             const p1 = points[i];
             // calculate segment normals
             norm0 = norm1;
-            norm1 = (p1 - p).rotated90cw.normalized;
+            norm1 = (p1 - p).rotated90fromYtoX.normalized;
             const ncos = dotProduct(norm0, norm1);
             // skip collinear
             if (!fequal6(ncos, 1))
@@ -137,8 +134,8 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
         if (loop)
         {
             // the last point is equal to the first point here
-            norm0 = lastN.rotated90cw;
-            norm1 = firstN.rotated90ccw;
+            norm0 = lastN.rotated90fromYtoX;
+            norm1 = firstN.rotated90fromXtoY;
             makeJoin(last, norm0, norm1, dotProduct(norm0, norm1), r,
                 pen.join, pen.miterLimit, builder);
             // close the loop
@@ -148,7 +145,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
         {
             if (pen.cap == LineCap.square)
                 last += lastN * r;
-            const v = lastN.rotated90cw * r;
+            const v = lastN.rotated90fromYtoX * r;
             builder.add(last + v, last - v);
             if (pen.cap == LineCap.round)
                 makeRoundCap(last, lastN * r, builder);
@@ -159,7 +156,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
     {
         const outsideN = (points[0] - points[1]).normalized;
         const outside = outsideN * r;
-        const v = outside.rotated90ccw;
+        const v = outside.rotated90fromXtoY;
 
         if (pen.cap == LineCap.square)
         {
@@ -277,7 +274,7 @@ private void makeRoundCap(Vec2 p, Vec2 outside, StrokeBuilder builder)
 {
     Buf!Vec2* positions = builder.beginFanLeft(p);
 
-    const n = outside.rotated90cw;
+    const n = outside.rotated90fromYtoX;
     outside *= 4.0f / 3.0f;
     flattenCubicBezier(
         *positions,
