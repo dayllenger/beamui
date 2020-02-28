@@ -1,7 +1,7 @@
 /**
-The main module for drawing 2D graphics.
+The main module for 2D painting.
 
-Copyright: dayllenger 2019
+Copyright: dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -614,13 +614,15 @@ final class Painter
             return;
         }
 
-        static void correctFrameBounds(ref int n1, ref int n2, ref float n3, ref float n4)
+        static void correctFrameBounds(ref int a1, ref int a2, ref float b1, ref float b2)
         {
-            if (n1 > n2)
+            if (a1 > a2)
             {
-                const int middledist = (n1 + n2) / 2 - n1;
-                n1 = n2 = n1 + middledist;
-                n3 = n4 = n3 + middledist;
+                a1 = a2 = (a1 + a2) / 2;
+            }
+            if (b1 > b2)
+            {
+                b1 = b2 = (b1 + b2) / 2;
             }
         }
 
