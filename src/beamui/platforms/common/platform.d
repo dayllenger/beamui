@@ -634,73 +634,7 @@ class Window : CustomEventTarget
         }
     }
 
-    //===============================================================
-
-    // experimental
-    final void show(NgWidget delegate() buildFunc)
-    {
-        _buildFunc = buildFunc;
-        rebuild(); // first build
-        show();
-    }
-
-    private void rebuild()
-    {
-        if (!_buildFunc)
-        {
-            needRebuild = false;
-            return;
-        }
-        // prepare allocators and the cache
-        swap(_widgetArenas[0], _widgetArenas[1]);
-        _widgetArenas[0].clear();
-        setCurrentArenaAndStore(_widgetArenas[0], _elementStore);
-        // rebuild and diff
-        NgWidget root = _buildFunc();
-        _mainWidget = mountRoot(root);
-        _mainWidget.window = this;
-        needRebuild = false;
-    }
-
-    /// Request layout for main widget and popups
-    void requestLayout()
-    {
-        _mainWidget.requestLayout();
-        foreach (p; _popups)
-            p.requestLayout();
-        _tooltip.popup.maybe.requestLayout();
-    }
-
-    /// Measure main widget, popups and tooltip
-    void measure()
-    {
-        setupGlobalDPI();
-        // TODO: set minimum window size
-        _mainWidget.measure();
-        foreach (p; _popups)
-            p.measure();
-        if (auto tp = _tooltip.popup)
-            tp.measure();
-    }
-
-    /// Lay out main widget, popups and tooltip
-    void layout()
-    {
-        setupGlobalDPI();
-        _mainWidget.layout(Box(0, 0, _w, _h));
-        foreach (p; _popups)
-        {
-            const sz = p.natSize;
-            p.layout(Box(0, 0, sz.w, sz.h));
-        }
-        if (auto tp = _tooltip.popup)
-        {
-            const sz = tp.natSize;
-            tp.layout(Box(0, 0, sz.w, sz.h));
-        }
-    }
-
-    void handleResize(int width, int height)
+    protected void handleResize(int width, int height)
     {
         if (_w == width && _h == height)
             return;
@@ -726,25 +660,6 @@ class Window : CustomEventTarget
             Log.d("resize: layout took ", layoutEnd - layoutStart, " ms");
         }
         update(true);
-    }
-
-    /// Find topmost visible widget at the (x, y) position in global coordinates. `null` if none
-    private Element performHitTest(Element root, float x, float y, bool enabledOnly)
-    {
-        // this hit test assumes that widgets never leave parent's bounds.
-        // this makes it somewhat logarithmic
-        if (root.visibility != Visibility.visible)
-            return null;
-        if (enabledOnly && !root.enabled)
-            return null;
-        if (!root.contains(x, y))
-            return null;
-        foreach_reverse (el; root)
-        {
-            if (auto hit = performHitTest(el, x, y, enabledOnly))
-                return hit;
-        }
-        return root;
     }
 
     //===============================================================
@@ -999,184 +914,6 @@ class Window : CustomEventTarget
     {
         auto ev = new QueueDestroyEvent(widgetToDestroy);
         postEvent(ev);
-    }
-
-    void addAnimation(long duration, void delegate(double) handler)
-    {
-        assert(duration > 0 && handler);
-        animations ~= Animation(duration * ONE_SECOND / 1000, handler);
-    }
-
-    private void animate(long interval)
-    {
-        // process global animations
-        bool someAnimationsFinished;
-        foreach (ref a; animations)
-        {
-            if (!a.isAnimating)
-            {
-                a.start();
-            }
-            else
-            {
-                a.tick(interval);
-                if (!a.isAnimating)
-                {
-                    a.handler = null;
-                    someAnimationsFinished = true;
-                }
-            }
-        }
-        if (someAnimationsFinished)
-            animations = animations.remove!(a => a.handler is null);
-
-        // process widget ones
-        animate(_mainWidget, interval);
-        foreach (p; _popups)
-            animate(p, interval);
-        if (auto p = _tooltip.popup)
-            animate(p, interval);
-    }
-
-    private void animate(Element root, long interval)
-    {
-        assert(root);
-
-        if (root.visibility != Visibility.visible)
-            return;
-
-        foreach (Element el; root)
-            animate(el, interval);
-        if (root.animating)
-            root.animate(interval);
-    }
-
-    // will be called periodically to update animations
-    private bool animationTimerHandler()
-    {
-        needUpdate = true;
-        invalidate();
-        return true;
-    }
-
-    /// OpenGL-specific routines
-    static if (USE_OPENGL)
-    {
-        /// Try to create an OpenGL context with specified version
-        abstract protected bool createContext(int major, int minor);
-        /// Destroy OpenGL context, if exists
-        abstract protected void destroyContext();
-        /// Make window OpenGL context to be current
-        abstract protected void bindContext();
-        /// Swap buffers at the end of frame
-        abstract protected void swapBuffers();
-
-        /// Override to perform some actions after GL context and backend creation
-        protected void handleGLReadiness()
-        {
-        }
-
-        final protected void drawUsingOpenGL(ref PaintEngine engine)
-        {
-            import beamui.graphics.gl.glpainter : GLPaintEngine;
-
-            bindContext();
-            if (!engine)
-                engine = new GLPaintEngine(platform._glSharedData);
-            draw(engine);
-            swapBuffers();
-        }
-    }
-
-    enum PERFORMANCE_LOGGING_THRESHOLD_MS = 2;
-
-    /// Set when first draw is called: don't handle mouse/key input until draw (layout) is called
-    private bool _firstDrawCalled;
-    private long lastDrawTs;
-
-    final protected void draw(PaintEngine engine)
-        in(engine)
-    {
-        _firstDrawCalled = true;
-
-        _painterHead.beginFrame(engine, physicalWidth, physicalHeight, _backgroundColor);
-        try
-        {
-            static import std.datetime;
-
-            setupGlobalDPI();
-
-            // check if we need to relayout
-            bool needDraw;
-            bool needLayout;
-            bool animationActive;
-            checkUpdateNeeded(needDraw, needLayout, animationActive);
-
-            const long ts = std.datetime.Clock.currStdTime;
-            if (animationActive && lastDrawTs != 0)
-            {
-                animate(ts - lastDrawTs);
-                // layout required flag could be changed during animate - check again
-                checkUpdateNeeded(needDraw, needLayout, animationActive);
-                // do update every 16 milliseconds
-                if (animationUpdateTimerID == 0)
-                    animationUpdateTimerID = setTimer(16, &animationTimerHandler);
-            }
-            lastDrawTs = ts;
-
-            if (needLayout)
-            {
-                debug (redraw)
-                    const layoutStart = currentTimeMillis;
-                measure();
-                layout();
-                debug (redraw)
-                {
-                    const layoutEnd = currentTimeMillis;
-                    if (layoutEnd - layoutStart > PERFORMANCE_LOGGING_THRESHOLD_MS)
-                        Log.d("layout took ", layoutEnd - layoutStart, " ms");
-                }
-            }
-
-            debug (redraw)
-                const drawStart = currentTimeMillis;
-
-            // draw main widget
-            _mainWidget.draw(_painter);
-            // draw popups
-            const modal = modalPopup();
-            foreach (p; _popups)
-            {
-                if (p is modal)
-                {
-                    // TODO: get shadow color from theme
-                    _painter.fillRect(0, 0, width, height, Color(0, 0x20));
-                }
-                p.draw(_painter);
-            }
-            // and draw tooltip
-            _tooltip.popup.maybe.draw(_painter);
-
-            debug (redraw)
-            {
-                const drawEnd = currentTimeMillis;
-                if (drawEnd - drawStart > PERFORMANCE_LOGGING_THRESHOLD_MS)
-                    Log.d("draw took ", drawEnd - drawStart, " ms");
-            }
-            // cancel animations' update if they are expired
-            if (!animationActive && animationUpdateTimerID)
-            {
-                cancelTimer(animationUpdateTimerID);
-                animationUpdateTimerID = 0;
-            }
-
-            needUpdate = false;
-        }
-        catch (Exception e)
-        {
-            Log.e("Exception inside window.draw: ", e);
-        }
-        _painterHead.endFrame();
     }
 
     //===============================================================
@@ -1837,89 +1574,10 @@ class Window : CustomEventTarget
         return false;
     }
 
-    //===============================================================
-
     /// Set cursor type for window
     protected void setCursorType(CursorType cursorType)
     {
         // override to support different mouse cursors
-    }
-
-    // set by widgets themselves
-    package(beamui) bool needUpdate;
-
-    /// Check content widgets for necessary redraw and/or layout
-    bool checkUpdateNeeded(out bool needDraw, out bool needLayout, out bool animationActive)
-    {
-        animationActive = animations.length > 0;
-        // skip costly update if no one notified
-        if (!needUpdate)
-            return animationActive;
-
-        checkUpdateNeeded(_mainWidget, needDraw, needLayout, animationActive);
-        foreach (p; _popups)
-            checkUpdateNeeded(p, needDraw, needLayout, animationActive);
-        if (auto p = _tooltip.popup)
-            checkUpdateNeeded(p, needDraw, needLayout, animationActive);
-
-        const ret = needDraw || needLayout || animationActive;
-        debug (redraw)
-        {
-            if (ret)
-            {
-                Log.d("needed:"
-                    ~ (needDraw ? " draw" : null)
-                    ~ (needLayout ? " layout" : null)
-                    ~ (animationActive ? " animation" : null));
-            }
-        }
-        return ret;
-    }
-    /// Check content widgets for necessary redraw and/or layout
-    protected void checkUpdateNeeded(Element root, ref bool needDraw, ref bool needLayout, ref bool animationActive)
-    {
-        assert(root);
-
-        if (root.visibility == Visibility.gone)
-            return;
-
-        needLayout = needLayout || root.needLayout;
-        debug (redraw)
-        {
-            if (root.needLayout)
-                Log.fd("Need layout: %s, parent: %s", root.dbgname,
-                    root.parent ? getShortClassName(root.parent) : "null");
-        }
-        if (root.visibility == Visibility.hidden)
-            return;
-        needDraw = needDraw || root.needDraw;
-        animationActive = animationActive || root.animating;
-        if (needDraw && needLayout && animationActive)
-            return;
-        // check recursively
-        foreach (Element el; root)
-            checkUpdateNeeded(el, needDraw, needLayout, animationActive);
-    }
-
-    private bool _animationActive;
-
-    bool isAnimationActive() const { return _animationActive; }
-
-    /// Request update for window (unless `force` is true, update will be performed only if layout, redraw or animation is required)
-    void update(bool force = false)
-    {
-        if (needRebuild)
-            rebuild();
-
-        bool needDraw = false;
-        bool needLayout = false;
-        _animationActive = false;
-        if (force || checkUpdateNeeded(needDraw, needLayout, _animationActive))
-        {
-            debug (redraw)
-                Log.d("Requesting update");
-            invalidate();
-        }
     }
 
     //===============================================================
@@ -2001,6 +1659,356 @@ class Window : CustomEventTarget
     void cancelTimer(ulong timerID)
     {
         _timerQueue.cancelTimer(timerID);
+    }
+
+    //===============================================================
+    // Update logic, called after various events
+
+    // set by widgets themselves
+    package(beamui) bool needUpdate;
+    private bool _animationActive;
+
+    /// Request update for window (unless `force` is true, update will be performed only if layout, redraw or animation is required)
+    void update(bool force = false)
+    {
+        if (needRebuild)
+            rebuild();
+
+        bool needDraw = false;
+        bool needLayout = false;
+        _animationActive = false;
+        if (force || checkUpdateNeeded(needDraw, needLayout, _animationActive))
+        {
+            debug (redraw)
+                Log.d("Requesting update");
+            invalidate();
+        }
+    }
+
+    /// Check content widgets for necessary redraw and/or layout
+    private bool checkUpdateNeeded(out bool needDraw, out bool needLayout, out bool animationActive)
+    {
+        animationActive = animations.length > 0;
+        // skip costly update if no one notified
+        if (!needUpdate)
+            return animationActive;
+
+        checkUpdateNeeded(_mainWidget, needDraw, needLayout, animationActive);
+        foreach (p; _popups)
+            checkUpdateNeeded(p, needDraw, needLayout, animationActive);
+        if (auto p = _tooltip.popup)
+            checkUpdateNeeded(p, needDraw, needLayout, animationActive);
+
+        const ret = needDraw || needLayout || animationActive;
+        debug (redraw)
+        {
+            if (ret)
+            {
+                Log.d("needed:"
+                    ~ (needDraw ? " draw" : null)
+                    ~ (needLayout ? " layout" : null)
+                    ~ (animationActive ? " animation" : null));
+            }
+        }
+        return ret;
+    }
+    /// Check content widgets for necessary redraw and/or layout
+    private void checkUpdateNeeded(Element root, ref bool needDraw, ref bool needLayout, ref bool animationActive)
+    {
+        assert(root);
+
+        if (root.visibility == Visibility.gone)
+            return;
+
+        needLayout = needLayout || root.needLayout;
+        debug (redraw)
+        {
+            if (root.needLayout)
+                Log.fd("Need layout: %s, parent: %s", root.dbgname,
+                    root.parent ? getShortClassName(root.parent) : "null");
+        }
+        if (root.visibility == Visibility.hidden)
+            return;
+        needDraw = needDraw || root.needDraw;
+        animationActive = animationActive || root.animating;
+        if (needDraw && needLayout && animationActive)
+            return;
+        // check recursively
+        foreach (Element el; root)
+            checkUpdateNeeded(el, needDraw, needLayout, animationActive);
+    }
+
+    //===============================================================
+    // Tree rebuild
+
+    // experimental
+    final void show(NgWidget delegate() buildFunc)
+    {
+        _buildFunc = buildFunc;
+        rebuild(); // first build
+        show();
+    }
+
+    private void rebuild()
+    {
+        if (!_buildFunc)
+        {
+            needRebuild = false;
+            return;
+        }
+        // prepare allocators and the cache
+        swap(_widgetArenas[0], _widgetArenas[1]);
+        _widgetArenas[0].clear();
+        setCurrentArenaAndStore(_widgetArenas[0], _elementStore);
+        // rebuild and diff
+        NgWidget root = _buildFunc();
+        _mainWidget = mountRoot(root);
+        _mainWidget.window = this;
+        needRebuild = false;
+    }
+
+    //===============================================================
+    // Animations
+
+    void addAnimation(long duration, void delegate(double) handler)
+    {
+        assert(duration > 0 && handler);
+        animations ~= Animation(duration * ONE_SECOND / 1000, handler);
+    }
+
+    private void animate(long interval)
+    {
+        // process global animations
+        bool someAnimationsFinished;
+        foreach (ref a; animations)
+        {
+            if (!a.isAnimating)
+            {
+                a.start();
+            }
+            else
+            {
+                a.tick(interval);
+                if (!a.isAnimating)
+                {
+                    a.handler = null;
+                    someAnimationsFinished = true;
+                }
+            }
+        }
+        if (someAnimationsFinished)
+            animations = animations.remove!(a => a.handler is null);
+
+        // process widget ones
+        animate(_mainWidget, interval);
+        foreach (p; _popups)
+            animate(p, interval);
+        if (auto p = _tooltip.popup)
+            animate(p, interval);
+    }
+
+    private void animate(Element root, long interval)
+    {
+        assert(root);
+
+        if (root.visibility != Visibility.visible)
+            return;
+
+        foreach (Element el; root)
+            animate(el, interval);
+        if (root.animating)
+            root.animate(interval);
+    }
+
+    // will be called periodically to update animations
+    private bool animationTimerHandler()
+    {
+        needUpdate = true;
+        invalidate();
+        return true;
+    }
+
+    //===============================================================
+    // Layout and hit-testing
+
+    /// Request layout for main widget and popups
+    void requestLayout()
+    {
+        _mainWidget.requestLayout();
+        foreach (p; _popups)
+            p.requestLayout();
+        _tooltip.popup.maybe.requestLayout();
+    }
+
+    /// Measure main widget, popups and tooltip
+    void measure()
+    {
+        setupGlobalDPI();
+        // TODO: set minimum window size
+        _mainWidget.measure();
+        foreach (p; _popups)
+            p.measure();
+        if (auto tp = _tooltip.popup)
+            tp.measure();
+    }
+
+    /// Lay out main widget, popups and tooltip
+    void layout()
+    {
+        setupGlobalDPI();
+        _mainWidget.layout(Box(0, 0, _w, _h));
+        foreach (p; _popups)
+        {
+            const sz = p.natSize;
+            p.layout(Box(0, 0, sz.w, sz.h));
+        }
+        if (auto tp = _tooltip.popup)
+        {
+            const sz = tp.natSize;
+            tp.layout(Box(0, 0, sz.w, sz.h));
+        }
+    }
+
+    /// Find topmost visible widget at the (x, y) position in global coordinates. `null` if none
+    private Element performHitTest(Element root, float x, float y, bool enabledOnly)
+    {
+        // this hit test assumes that widgets never leave parent's bounds.
+        // this makes it somewhat logarithmic
+        if (root.visibility != Visibility.visible)
+            return null;
+        if (enabledOnly && !root.enabled)
+            return null;
+        if (!root.contains(x, y))
+            return null;
+        foreach_reverse (el; root)
+        {
+            if (auto hit = performHitTest(el, x, y, enabledOnly))
+                return hit;
+        }
+        return root;
+    }
+
+    //===============================================================
+    // Painting
+
+    /// OpenGL-specific routines
+    static if (USE_OPENGL)
+    {
+        /// Try to create an OpenGL context with specified version
+        abstract protected bool createContext(int major, int minor);
+        /// Destroy OpenGL context, if exists
+        abstract protected void destroyContext();
+        /// Make window OpenGL context to be current
+        abstract protected void bindContext();
+        /// Swap buffers at the end of frame
+        abstract protected void swapBuffers();
+
+        /// Override to perform some actions after GL context and backend creation
+        protected void handleGLReadiness()
+        {
+        }
+
+        final protected void drawUsingOpenGL(ref PaintEngine engine)
+        {
+            import beamui.graphics.gl.glpainter : GLPaintEngine;
+
+            bindContext();
+            if (!engine)
+                engine = new GLPaintEngine(platform._glSharedData);
+            draw(engine);
+            swapBuffers();
+        }
+    }
+
+    enum PERFORMANCE_LOGGING_THRESHOLD_MS = 2;
+
+    /// Set when first draw is called: don't handle mouse/key input until draw (layout) is called
+    private bool _firstDrawCalled;
+    private long lastDrawTs;
+
+    final protected void draw(PaintEngine engine)
+        in(engine)
+    {
+        _firstDrawCalled = true;
+
+        _painterHead.beginFrame(engine, physicalWidth, physicalHeight, _backgroundColor);
+        try
+        {
+            static import std.datetime;
+
+            setupGlobalDPI();
+
+            // check if we need to relayout
+            bool needDraw;
+            bool needLayout;
+            bool animationActive;
+            checkUpdateNeeded(needDraw, needLayout, animationActive);
+
+            const long ts = std.datetime.Clock.currStdTime;
+            if (animationActive && lastDrawTs != 0)
+            {
+                animate(ts - lastDrawTs);
+                // layout required flag could be changed during animate - check again
+                checkUpdateNeeded(needDraw, needLayout, animationActive);
+                // do update every 16 milliseconds
+                if (animationUpdateTimerID == 0)
+                    animationUpdateTimerID = setTimer(16, &animationTimerHandler);
+            }
+            lastDrawTs = ts;
+
+            if (needLayout)
+            {
+                debug (redraw)
+                    const layoutStart = currentTimeMillis;
+                measure();
+                layout();
+                debug (redraw)
+                {
+                    const layoutEnd = currentTimeMillis;
+                    if (layoutEnd - layoutStart > PERFORMANCE_LOGGING_THRESHOLD_MS)
+                        Log.d("layout took ", layoutEnd - layoutStart, " ms");
+                }
+            }
+
+            debug (redraw)
+                const drawStart = currentTimeMillis;
+
+            // draw main widget
+            _mainWidget.draw(_painter);
+            // draw popups
+            const modal = modalPopup();
+            foreach (p; _popups)
+            {
+                if (p is modal)
+                {
+                    // TODO: get shadow color from theme
+                    _painter.fillRect(0, 0, width, height, Color(0, 0x20));
+                }
+                p.draw(_painter);
+            }
+            // and draw tooltip
+            _tooltip.popup.maybe.draw(_painter);
+
+            debug (redraw)
+            {
+                const drawEnd = currentTimeMillis;
+                if (drawEnd - drawStart > PERFORMANCE_LOGGING_THRESHOLD_MS)
+                    Log.d("draw took ", drawEnd - drawStart, " ms");
+            }
+            // cancel animations' update if they are expired
+            if (!animationActive && animationUpdateTimerID)
+            {
+                cancelTimer(animationUpdateTimerID);
+                animationUpdateTimerID = 0;
+            }
+
+            needUpdate = false;
+        }
+        catch (Exception e)
+        {
+            Log.e("Exception inside window.draw: ", e);
+        }
+        _painterHead.endFrame();
     }
 }
 
