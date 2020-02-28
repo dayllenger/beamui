@@ -386,16 +386,17 @@ class TabControl : WidgetGroup
         string previousSelectedTab = _selectedTabID;
         foreach (i; 1 .. childCount)
         {
+            auto item = child(i);
             if (index == i - 1)
             {
-                child(i).state = State.selected;
-                _selectedTabID = child(i).id;
+                item.setState(State.selected);
+                _selectedTabID = item.id;
                 if (updateAccess)
                     updateAccessTime();
             }
             else
             {
-                child(i).state = State.normal;
+                item.resetState(State.selected);
             }
         }
         onTabChange(_selectedTabID, previousSelectedTab);
