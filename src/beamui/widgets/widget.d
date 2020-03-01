@@ -187,17 +187,13 @@ class NgWidget
         // clear the old element tree structure
     if (!root.hasAttribute("ignore")) // tmp
         root.removeAllChildren(false);
-        // finish widget configuration and build the subtree
+        // finish widget configuration
         build();
         // update the element with the data
         updateElement(root);
         // continue recursively and build the element tree back
     if (!root.hasAttribute("ignore")) // tmp
-        foreach (i, item; this)
-        {
-            if (item)
-                root.addChild(item.mount(this, i));
-        }
+        mountItems(root);
         return root;
     }
 
@@ -289,6 +285,15 @@ class NgWidget
             el.onWheelEvent ~= onWheelEvent;
 
         el.tooltipText = tooltip;
+    }
+
+    protected void mountItems(Element el)
+    {
+        foreach (i, item; this)
+        {
+            if (item)
+                el.addChild(item.mount(this, i));
+        }
     }
 }
 
