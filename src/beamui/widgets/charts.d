@@ -3,18 +3,15 @@ Chart widgets. Currently only SimpleBarChart.
 
 Synopsis:
 ---
-// creation of simple bar chart
-auto chart = new SimpleBarChart("Chart");
+// create a simple bar chart
+auto chart = new SimpleBarChart("Chart"d);
 
-// add bars
-chart.addBar(12.2, Color(255, 0, 0), "new bar"c);
+// set values
+chart.setValues([12.2, 20]);
 
-// update bar with index 0
-chart.updateBar(0, 10, Color(255, 255, 0), "new bar updated"c);
-chart.updateBar(0, 20);
-
-// remove bars with index 0
-chart.removeBar(0, 20);
+// set styling for bars
+chart.updateBar(0, Color(255, 0, 0), "bar 1"d);
+chart.updateBar(1, Color(255, 255, 0), "bar 2"d);
 
 // change title
 chart.title = "new title"d;
@@ -23,7 +20,7 @@ chart.title = "new title"d;
 chart.axisRatio = 0.3; // y axis length will be 0.3 of x axis
 ---
 
-Copyright: Andrzej Kilijański 2017
+Copyright: Andrzej Kilijański 2017, dayllenger 2020
 License:   Boost License 1.0
 Authors:   Andrzej Kilijański
 */
@@ -39,102 +36,24 @@ class SimpleBarChart : Widget
 {
     this(dstring title = null)
     {
+        this.title = title ? title : tr("New chart");
+
         allowsClick = false;
         allowsFocus = false;
         allowsHover = false;
+
         _axisX.arrowSize = 1;
-        this.title = title ? title : tr("New chart");
         _minDescSizeTester.str = "aaaaaaaaaa";
         handleFontChange();
     }
 
-    struct BarData
+    protected struct Bar
     {
-        double y;
+        Color color = Color.black;
         SimpleText title;
-        Color color;
-
-        this(double y, Color color, dstring title)
-        {
-            this.y = y;
-            this.color = color;
-            this.title.str = title;
-        }
     }
 
-    private BarData*[] _bars;
-    private double _maxY = 0;
-
-    @property size_t barCount() const
-    {
-        return _bars.length;
-    }
-
-    void addBar(double y, Color color, dstring barTitle)
-    {
-        if (y < 0)
-            return; // current limitation only positive values
-        _bars ~= new BarData(y, color, barTitle);
-        if (y > _maxY)
-            _maxY = y;
-        requestLayout();
-    }
-
-    void removeBar(size_t index)
-    {
-        _bars = remove(_bars, index);
-        // update _maxY
-        _maxY = 0;
-        foreach (ref bar; _bars)
-        {
-            if (bar.y > _maxY)
-                _maxY = bar.y;
-        }
-        requestLayout();
-    }
-
-    void removeAllBars()
-    {
-        _bars = [];
-        _maxY = 0;
-        requestLayout();
-    }
-
-    void updateBar(size_t index, double y, Color color, dstring barTitle)
-    {
-        if (y < 0)
-            return; // current limitation only positive values
-        _bars[index].y = y;
-        _bars[index].color = color;
-        _bars[index].title.str = barTitle;
-
-        // update _maxY
-        _maxY = 0;
-        foreach (ref bar; _bars)
-        {
-            if (bar.y > _maxY)
-                _maxY = bar.y;
-        }
-        requestLayout();
-    }
-
-    void updateBar(size_t index, double y)
-    {
-        if (y < 0)
-            return; // curent limitation only positive values
-        _bars[index].y = y;
-
-        // update _maxY
-        _maxY = 0;
-        foreach (ref bar; _bars)
-        {
-            if (bar.y > _maxY)
-                _maxY = bar.y;
-        }
-        requestLayout();
-    }
-
-    struct AxisData
+    protected struct AxisData
     {
         Size maxDescriptionSize = Size(30, 20);
         float thickness = 1;
@@ -144,11 +63,41 @@ class SimpleBarChart : Widget
         float arrowSize = 20;
     }
 
-    AxisData _axisX;
-    AxisData _axisY;
+    final void setValues(const double[] list)
+    {
+        if (_values == list)
+            return;
+        _values = list.dup;
+        _bars.length = list.length;
+        _maxY = 0;
+        foreach (ref v; _values)
+        {
+            v = max(v, 0); // current limitation is positive values only
+            _maxY = max(_maxY, v);
+        }
+        requestLayout();
+    }
+
+    final void updateBar(size_t index, Color color, dstring barTitle)
+        in(index < _values.length)
+    {
+        Bar* bar = &_bars[index];
+        if (bar.color == color && bar.title.str == barTitle)
+            return;
+        bar.color = color;
+        bar.title.str = barTitle;
+        requestLayout();
+    }
 
     private
     {
+        double[] _values;
+        Bar[] _bars;
+        double _maxY = 0;
+
+        AxisData _axisX;
+        AxisData _axisY;
+
         SimpleText _title;
         bool _showTitle = true;
         int _marginAfterTitle = 2;
@@ -176,6 +125,11 @@ class SimpleBarChart : Widget
 
     @property
     {
+        size_t barCount() const
+        {
+            return _values.length;
+        }
+
         /// Title to show
         dstring title() const { return _title.str; }
         /// ditto
@@ -389,10 +343,10 @@ class SimpleBarChart : Widget
         float firstBarX = x1 + _axisY.thickness + _axisX.zeroValueDist;
         const firstBarY = y2 - _axisX.thickness - _axisY.zeroValueDist;
 
-        foreach (ref bar; _bars)
+        foreach (i, ref bar; _bars)
         {
             // draw bar
-            const h = barYValueToPixels(_axisY.lengthFromZeroToArrow, bar.y);
+            const h = barYValueToPixels(_axisY.lengthFromZeroToArrow, _values[i]);
             pr.fillRect(firstBarX, firstBarY - h, _barWidth, h, bar.color);
 
             // draw x axis segment under bar

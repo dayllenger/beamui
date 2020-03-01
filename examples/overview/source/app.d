@@ -719,30 +719,33 @@ Widget createChartsTab()
     const c3 = NamedColor.royal_blue;
     const c4 = Color(230, 126, 34);
 
+    const values = [12.0, 24.0, 5.0, 10.0];
+
     auto barChart1 = new SimpleBarChart("SimpleBarChart"d);
-    barChart1.addBar(12, c1, "Red bar"d);
-    barChart1.addBar(24, c2, "Green bar"d);
-    barChart1.addBar(5, c3, "Blue bar"d);
-    barChart1.addBar(12, c4, "Orange bar"d);
-
     auto barChart2 = new SimpleBarChart("SimpleBarChart - long descriptions"d);
-    barChart2.addBar(12, c1, "Red bar\n(12.0)"d);
-    barChart2.addBar(24, c2, "Green bar\n(24.0)"d);
-    barChart2.addBar(5, c3, "Blue bar\n(5.0)"d);
-    barChart2.addBar(12, c4, "Orange bar\n(12.0)\nlong long long description added here"d);
-
     auto barChart3 = new SimpleBarChart("SimpleBarChart with axis ratio 0.3"d);
-    barChart3.addBar(12, c1, "Red bar"d);
-    barChart3.addBar(24, c2, "Green bar"d);
-    barChart3.addBar(5, c3, "Blue bar"d);
-    barChart3.addBar(12, c4, "Orange bar"d);
-    barChart3.axisRatio = 0.3;
-
     auto barChart4 = new SimpleBarChart("SimpleBarChart with axis ratio 1.3"d);
-    barChart4.addBar(12, c1, "Red bar"d);
-    barChart4.addBar(24, c2, "Green bar"d);
-    barChart4.addBar(5, c3, "Blue bar"d);
-    barChart4.addBar(12, c4, "Orange bar"d);
+    barChart1.setValues(values);
+    barChart2.setValues(values);
+    barChart3.setValues(values);
+    barChart4.setValues(values);
+    barChart1.updateBar(0, c1, "Red bar"d);
+    barChart1.updateBar(1, c2, "Green bar"d);
+    barChart1.updateBar(2, c3, "Blue bar"d);
+    barChart1.updateBar(3, c4, "Orange bar"d);
+    barChart2.updateBar(0, c1, "Red bar\nwith a long long long description"d);
+    barChart2.updateBar(1, c2, "Green bar\nwith a long long long description"d);
+    barChart2.updateBar(2, c3, "Blue bar\nwith a long long long description"d);
+    barChart2.updateBar(3, c4, "Orange bar\nwith a long long long description"d);
+    barChart3.updateBar(0, c1, "Red bar"d);
+    barChart3.updateBar(1, c2, "Green bar"d);
+    barChart3.updateBar(2, c3, "Blue bar"d);
+    barChart3.updateBar(3, c4, "Orange bar"d);
+    barChart4.updateBar(0, c1, "Red bar"d);
+    barChart4.updateBar(1, c2, "Green bar"d);
+    barChart4.updateBar(2, c3, "Blue bar"d);
+    barChart4.updateBar(3, c4, "Orange bar"d);
+    barChart3.axisRatio = 0.3;
     barChart4.axisRatio = 1.3;
 
     auto frame = new Panel("CHARTS");
