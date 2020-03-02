@@ -15,14 +15,24 @@ alias ElemImage = ImageWidget;
 alias ElemSwitch = SwitchButton;
 alias ElemCanvas = CanvasWidget;
 
+/// Static image widget. Can accept any drawable instead of the image (e.g. a gradient)
 class NgImageWidget : NgWidget
 {
-    string imageID;
+    protected string imageID;
+    protected Drawable drawable;
 
+    /// Make with a resource id for this image
     static NgImageWidget make(string imageID)
     {
         NgImageWidget w = arena.make!NgImageWidget;
         w.imageID = imageID;
+        return w;
+    }
+    /// Use a custom drawable to show (not one from resources) instead of an image
+    static NgImageWidget make(DrawableRef drawable)
+    {
+        NgImageWidget w = arena.make!NgImageWidget;
+        w.drawable = drawable;
         return w;
     }
 
@@ -36,15 +46,18 @@ class NgImageWidget : NgWidget
         super.updateElement(element);
 
         ElemImage el = fastCast!ElemImage(element);
-        el.imageID = imageID;
+        if (drawable)
+            el.drawable = DrawableRef(drawable);
+        else
+            el.imageID = imageID;
     }
 }
 
 class NgButton : NgPanel
 {
-    dstring text;
-    string icon;
-    void delegate() onClick;
+    protected dstring text;
+    protected string icon;
+    protected void delegate() onClick;
 
     static NgButton make(dstring text, void delegate() onClick)
     {
@@ -105,7 +118,7 @@ class NgLinkButton : NgButton
 {
     import beamui.platforms.common.platform : platform;
 
-    private string url;
+    protected string url;
 
     static NgLinkButton make(dstring text, string url, string icon = "applications-internet")
     {
@@ -126,10 +139,11 @@ class NgLinkButton : NgButton
     }
 }
 
+/// Switch (on/off) widget
 class NgSwitchButton : NgWidget
 {
-    bool checked;
-    void delegate(bool) onToggle;
+    protected bool checked;
+    protected void delegate(bool) onToggle;
 
     static NgSwitchButton make(bool checked, void delegate(bool) onToggle)
     {
@@ -156,11 +170,12 @@ class NgSwitchButton : NgWidget
     }
 }
 
+/// Check button that can be toggled on or off
 class NgCheckBox : NgPanel
 {
-    dstring text;
-    bool checked;
-    void delegate(bool) onToggle;
+    protected dstring text;
+    protected bool checked;
+    protected void delegate(bool) onToggle;
 
     static NgCheckBox make(dstring text, bool checked, void delegate(bool) onToggle)
     {
@@ -213,11 +228,12 @@ class NgCheckBox : NgPanel
     }
 }
 
+/// Mutually exclusive check button
 class NgRadioButton : NgPanel
 {
-    dstring text;
-    bool checked;
-    void delegate(bool) onToggle;
+    protected dstring text;
+    protected bool checked;
+    protected void delegate(bool) onToggle;
 
     static NgRadioButton make(dstring text, bool checked, void delegate(bool) onToggle)
     {
@@ -284,9 +300,10 @@ class NgRadioButton : NgPanel
     }
 }
 
+/// Canvas widget - draw arbitrary graphics on it by providing a callback
 class NgCanvasWidget : NgWidget
 {
-    void delegate(Painter, Size) onDraw;
+    protected void delegate(Painter, Size) onDraw;
 
     static NgCanvasWidget make(void delegate(Painter, Size) onDraw)
     {
@@ -309,16 +326,16 @@ class NgCanvasWidget : NgWidget
     }
 }
 
-/// Static image widget. Can accept any drawable instead of the image (e.g. a gradient).
 class ImageWidget : Widget
 {
     @property
     {
-        /// Resource id for this image
         string imageID() const { return _imageID; }
         /// ditto
         void imageID(string id)
         {
+            if (_imageID == id)
+                return;
             _imageID = id;
             _drawable.clear();
             if (id.length)
@@ -329,9 +346,10 @@ class ImageWidget : Widget
             requestLayout();
         }
 
-        /// Set custom drawable to show (not one from resources) instead of image
         void drawable(DrawableRef img)
         {
+            if (_drawable is img)
+                return;
             imageID = null;
             _drawable = img;
             requestLayout();
@@ -549,7 +567,6 @@ class LinkButton : Button
     }
 }
 
-/// Switch (on/off) widget
 class SwitchButton : Widget
 {
     this()
@@ -572,7 +589,6 @@ class SwitchButton : Widget
     }
 }
 
-/// Check button that can be toggled on or off
 class CheckBox : Panel
 {
     private
@@ -604,7 +620,6 @@ class CheckBox : Panel
     }
 }
 
-/// Radio button control, which is a mutually exclusive check box
 class RadioButton : Panel
 {
     private
@@ -666,22 +681,15 @@ class RadioButton : Panel
     }
 }
 
-/// Canvas widget - draw arbitrary graphics on it either by overriding of `doDraw()` or by setting `onDraw`
 class CanvasWidget : Widget
 {
     Listener!(void delegate(Painter painter, Size size)) onDraw;
-
-    void doDraw(Painter pr, Size size)
-    {
-        if (onDraw.assigned)
-            onDraw(pr, size);
-    }
 
     override protected void drawContent(Painter pr)
     {
         const b = innerBox;
         pr.clipIn(BoxI.from(b));
         pr.translate(b.x, b.y);
-        doDraw(pr, b.size);
+        onDraw(pr, b.size);
     }
 }
