@@ -1145,10 +1145,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         if (_allowColResizing)
         {
             if (_colResizingIndex >= 0) // resizing in progress
-                return CursorType.sizeWE;
-            int col = isColumnResizingPoint(x, y);
+                return CursorType.resizeCol;
+            const int col = isColumnResizingPoint(x, y);
             if (col >= 0)
-                return CursorType.sizeWE;
+                return CursorType.resizeCol;
         }
         return CursorType.arrow;
     }

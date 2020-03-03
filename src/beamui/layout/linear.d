@@ -490,9 +490,9 @@ class Resizer : Element
     override CursorType getCursorType(float x, float y) const
     {
         if (_orientation == Orientation.vertical)
-            return CursorType.sizeNS;
+            return CursorType.resizeRow;
         else
-            return CursorType.sizeWE;
+            return CursorType.resizeCol;
     }
 
     private

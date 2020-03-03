@@ -22,7 +22,7 @@ import beamui.style.style;
 import beamui.style.types;
 import beamui.text.fonts;
 import beamui.text.style;
-import beamui.widgets.widget : Element;
+import beamui.widgets.widget : CursorType, Element;
 debug (styles) import beamui.core.logger;
 
 /// Enumeration of all supported style properties. NOTE: DON'T use `case .. case` slices on them,
@@ -136,6 +136,8 @@ enum StyleProperty
     transitionTimingFunction,
     transitionDuration,
     transitionDelay,
+    // misc
+    cursor,
 }
 
 /// Provides default style values for most of properties
@@ -937,6 +939,11 @@ struct ComputedStyle
         BlendMode mixBlendMode() const { return _mixBlendMode; }
         /// ditto
         void mixBlendMode(BlendMode value) { setProperty!"mixBlendMode" = value; }
+
+        /// Specifies the type of mouse cursor when pointing over the widget
+        CursorType cursor() const { return _cursor; }
+        /// ditto
+        void cursor(CursorType value) { setProperty!"cursor" = value; }
     }
 
     package(beamui) Element element;
@@ -1059,6 +1066,8 @@ struct ComputedStyle
         TimingFunction _transitionTimingFunction;
         uint _transitionDuration;
         uint _transitionDelay;
+        // misc
+        CursorType _cursor = CursorType.automatic;
     }
 
     ~this()
@@ -1643,6 +1652,7 @@ string getCSSName(StyleProperty ptype)
         case transitionTimingFunction: return "transition-timing-function";
         case transitionDuration:       return "transition-duration";
         case transitionDelay:          return "transition-delay";
+        case cursor: return "cursor";
     }
 }
 
@@ -1702,6 +1712,7 @@ bool inherited(StyleProperty ptype)
         case whiteSpace:
         case wordSpacing:
         case textColor:
+        case cursor:
             return true;
         default:
             return false;

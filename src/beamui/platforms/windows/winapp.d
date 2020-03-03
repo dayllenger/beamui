@@ -495,10 +495,8 @@ final class Win32Window : Window
         return _hwnd == GetForegroundWindow();
     }
 
-    override protected void handleWindowActivityChange(bool isWindowActive)
-    {
-        super.handleWindowActivityChange(isWindowActive);
-    }
+    alias handleWindowActivityChange = typeof(super).handleWindowActivityChange;
+    alias handleResize = typeof(super).handleResize;
 
     //===============================================================
 
@@ -600,74 +598,75 @@ final class Win32Window : Window
 
     //===============================================================
 
-    private uint _cursorType;
-    private HANDLE[ushort] _cursorCache;
+    private CursorType _cursorType;
+    private HANDLE[CursorType] _cursorCache;
 
-    private HANDLE loadCursor(ushort id)
+    override protected void setCursorType(CursorType type)
     {
-        if (auto p = id in _cursorCache)
-            return *p;
-        HANDLE h = LoadCursor(null, MAKEINTRESOURCE(id));
-        _cursorCache[id] = h;
-        return h;
+        _cursorType = type;
+
+        HANDLE h;
+        if (auto p = type in _cursorCache)
+        {
+            h = *p;
+        }
+        else
+        {
+            const id = convertCursorType(type);
+            if (id)
+                h = LoadCursor(null, MAKEINTRESOURCE(id));
+            _cursorCache[type] = h;
+        }
+        SetCursor(h);
     }
 
-    private void handleSetCursorType()
+    private static ushort convertCursorType(CursorType type)
     {
-        HANDLE winCursor = null;
-        switch (_cursorType) with (CursorType)
+        switch (type) with (CursorType)
         {
         case none:
-            winCursor = null;
-            break;
-        case notSet:
-            break;
-        case arrow:
-            winCursor = loadCursor(IDC_ARROW);
-            break;
-        case ibeam:
-            winCursor = loadCursor(IDC_IBEAM);
-            break;
+            return 0;
+        case pointer:
+        case grab:
+            return IDC_HAND;
+        case help:
+            return IDC_HELP;
+        case progress:
+            return IDC_APPSTARTING;
         case wait:
-            winCursor = loadCursor(IDC_WAIT);
-            break;
+            return IDC_WAIT;
         case crosshair:
-            winCursor = loadCursor(IDC_CROSS);
-            break;
-        case waitArrow:
-            winCursor = loadCursor(IDC_APPSTARTING);
-            break;
-        case sizeNWSE:
-            winCursor = loadCursor(IDC_SIZENWSE);
-            break;
-        case sizeNESW:
-            winCursor = loadCursor(IDC_SIZENESW);
-            break;
-        case sizeWE:
-            winCursor = loadCursor(IDC_SIZEWE);
-            break;
-        case sizeNS:
-            winCursor = loadCursor(IDC_SIZENS);
-            break;
-        case sizeAll:
-            winCursor = loadCursor(IDC_SIZEALL);
-            break;
-        case no:
-            winCursor = loadCursor(IDC_NO);
-            break;
-        case hand:
-            winCursor = loadCursor(IDC_HAND);
-            break;
+            return IDC_CROSS;
+        case text:
+        case textVertical:
+            return IDC_IBEAM;
+        case move:
+        case scrollAll:
+            return IDC_SIZEALL;
+        case noDrop:
+        case notAllowed:
+            return IDC_NO;
+        case resizeE:
+        case resizeW:
+        case resizeEW:
+        case resizeCol:
+            return IDC_SIZEWE;
+        case resizeN:
+        case resizeS:
+        case resizeNS:
+        case resizeRow:
+            return IDC_SIZENS;
+        case resizeNE:
+        case resizeSW:
+        case resizeNESW:
+            return IDC_SIZENESW;
+        case resizeNW:
+        case resizeSE:
+        case resizeNWSE:
+            return IDC_SIZENWSE;
         default:
-            break;
+            return IDC_ARROW;
         }
-        SetCursor(winCursor);
-    }
-
-    override protected void setCursorType(CursorType cursorType)
-    {
-        _cursorType = cursorType;
-        handleSetCursorType();
     }
 
     private void updateDPI()
@@ -1330,7 +1329,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         {
             if (LOWORD(lParam) == HTCLIENT)
             {
-                window.handleSetCursorType();
+                window.setCursorType(window._cursorType);
                 return 1;
             }
         }

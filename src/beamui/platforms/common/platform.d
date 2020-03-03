@@ -207,15 +207,6 @@ class Window : CustomEventTarget
             widget.window = this;
         }
 
-        /// Returns current window override cursor type or `notSet` if not overriding
-        CursorType overrideCursorType() const { return _overrideCursorType; }
-        /// Allow override cursor for entire window. Set to `CursorType.notSet` to remove cursor type overriding
-        void overrideCursorType(CursorType newCursorType)
-        {
-            _overrideCursorType = newCursorType;
-            setCursorType(newCursorType);
-        }
-
         /// Get current key modifiers
         KeyMods keyboardModifiers() const { return _keyboardModifiers; }
 
@@ -269,8 +260,7 @@ class Window : CustomEventTarget
 
         KeyMods _keyboardModifiers;
 
-        /// Keep overrided cursor type to `notSet` to get cursor from widget
-        CursorType _overrideCursorType = CursorType.notSet;
+        CursorType _overridenCursorType = CursorType.automatic;
 
         Animation[] animations;
         ulong animationUpdateTimerID;
@@ -1237,7 +1227,7 @@ class Window : CustomEventTarget
         }
 
         Popup modal = modalPopup();
-        bool cursorIsSet = overrideCursorType != CursorType.notSet;
+        bool cursorIsSet = _overridenCursorType != CursorType.automatic;
         if (!res)
         {
             bool insideOneOfPopups;
@@ -1275,10 +1265,12 @@ class Window : CustomEventTarget
         {
             if (event.action == MouseAction.move && !cursorIsSet)
             {
-                CursorType cursorType = dest.get.getCursorType(event.x, event.y);
-                if (cursorType != CursorType.notSet)
+                CursorType cursor = dest.get.style.cursor;
+                if (cursor == CursorType.automatic)
+                    cursor = dest.get.getCursorType(event.x, event.y);
+                if (cursor != CursorType.automatic)
                 {
-                    setCursorType(cursorType);
+                    setCursorType(cursor);
                     cursorIsSet = true;
                 }
             }
@@ -1566,8 +1558,15 @@ class Window : CustomEventTarget
         return false;
     }
 
+    /// Override cursor for the entire window. Set to `CursorType.automatic` to use widget cursors back
+    final void overrideCursorType(CursorType cursor)
+    {
+        _overridenCursorType = cursor;
+        setCursorType(cursor);
+    }
+
     /// Set cursor type for window
-    protected void setCursorType(CursorType cursorType)
+    protected void setCursorType(CursorType cursor)
     {
         // override to support different mouse cursors
     }
@@ -2323,9 +2322,10 @@ class Platform
     /// Open url in external browser
     static void openURL(string url)
     {
-        import std.process;
+        import ps = std.process;
 
-        browse(url);
+        if (url.length)
+            ps.browse(url);
     }
 
     /// Show directory or file in OS file manager (explorer, finder, etc...)

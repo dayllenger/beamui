@@ -76,7 +76,7 @@ private __gshared
 
     Atoms atoms;
 
-    Cursor[CursorType.hand + 1] x11cursors;
+    Cursor[CursorType.max + 1] x11cursors;
 }
 
 private struct AtomRequest
@@ -247,25 +247,61 @@ enum
 
 private void createCursors()
 {
-    createCursor(CursorType.none, XC_arrow);
-    createCursor(CursorType.notSet, XC_arrow);
+    x11cursors[CursorType.none] = createEmptyCursor();
+
+    createCursor(CursorType.automatic, XC_arrow);
     createCursor(CursorType.arrow, XC_left_ptr);
-    createCursor(CursorType.ibeam, XC_xterm);
+    createCursor(CursorType.pointer, XC_hand2);
+    createCursor(CursorType.contextMenu, XC_left_ptr);
+    createCursor(CursorType.help, XC_question_arrow);
+    createCursor(CursorType.progress, XC_watch);
     createCursor(CursorType.wait, XC_watch);
-    createCursor(CursorType.crosshair, XC_tcross);
-    createCursor(CursorType.waitArrow, XC_watch);
-    createCursor(CursorType.sizeNWSE, XC_fleur);
-    createCursor(CursorType.sizeNESW, XC_fleur);
-    createCursor(CursorType.sizeWE, XC_sb_h_double_arrow);
-    createCursor(CursorType.sizeNS, XC_sb_v_double_arrow);
-    createCursor(CursorType.sizeAll, XC_fleur);
-    createCursor(CursorType.no, XC_pirate);
-    createCursor(CursorType.hand, XC_hand2);
+    createCursor(CursorType.cell, XC_plus);
+    createCursor(CursorType.crosshair, XC_crosshair);
+    createCursor(CursorType.text, XC_xterm);
+    createCursor(CursorType.textVertical, XC_xterm);
+    createCursor(CursorType.shortcut, XC_left_ptr);
+    createCursor(CursorType.copy, XC_left_ptr);
+    createCursor(CursorType.move, XC_fleur);
+    createCursor(CursorType.noDrop, XC_circle);
+    createCursor(CursorType.notAllowed, XC_circle);
+    createCursor(CursorType.grab, XC_hand1);
+    createCursor(CursorType.grabbing, XC_left_ptr);
+    createCursor(CursorType.resizeE, XC_right_side);
+    createCursor(CursorType.resizeN, XC_top_side);
+    createCursor(CursorType.resizeNE, XC_top_right_corner);
+    createCursor(CursorType.resizeNW, XC_top_left_corner);
+    createCursor(CursorType.resizeS, XC_bottom_side);
+    createCursor(CursorType.resizeSE, XC_bottom_right_corner);
+    createCursor(CursorType.resizeSW, XC_bottom_left_corner);
+    createCursor(CursorType.resizeW, XC_left_side);
+    createCursor(CursorType.resizeEW, XC_sb_h_double_arrow);
+    createCursor(CursorType.resizeNS, XC_sb_v_double_arrow);
+    createCursor(CursorType.resizeNESW, XC_fleur);
+    createCursor(CursorType.resizeNWSE, XC_fleur);
+    createCursor(CursorType.resizeCol, XC_sb_h_double_arrow);
+    createCursor(CursorType.resizeRow, XC_sb_v_double_arrow);
+    createCursor(CursorType.scrollAll, XC_fleur);
+    createCursor(CursorType.zoomIn, XC_left_ptr);
+    createCursor(CursorType.zoomOut, XC_left_ptr);
 }
 
 private void createCursor(CursorType cursor, ushort icon)
 {
     x11cursors[cursor] = XCreateFontCursor(x11display, icon);
+}
+
+private Cursor createEmptyCursor()
+{
+    char[1] data = 0;
+    auto pixmap = XCreateBitmapFromData(x11display, DefaultRootWindow(x11display), data.ptr, 1, 1);
+    if (!pixmap)
+        return Cursor.init;
+
+    XColor color;
+    auto cursor = XCreatePixmapCursor(x11display, pixmap, pixmap, &color, &color, 0, 0);
+    XFreePixmap(x11display, pixmap);
+    return cursor;
 }
 
 private void freeCursors()
@@ -718,16 +754,15 @@ final class X11Window : DWindow
 
     private CursorType _lastCursorType = CursorType.none;
 
-    override protected void setCursorType(CursorType cursorType)
+    override protected void setCursorType(CursorType type)
     {
-        if (_lastCursorType != cursorType)
-        {
-            debug (x11)
-                Log.d("changing cursor to ", cursorType);
-            _lastCursorType = cursorType;
-            XDefineCursor(x11display, _win, x11cursors[cursorType]);
-            XFlush(x11display);
-        }
+        if (_lastCursorType == type)
+            return;
+        debug (x11)
+            Log.d("X11: changing cursor to ", type);
+        XDefineCursor(x11display, _win, x11cursors[type]);
+        XFlush(x11display);
+        _lastCursorType = type;
     }
 
     private void redraw()

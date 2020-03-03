@@ -91,21 +91,50 @@ enum FocusMovement
 /// Standard mouse cursor types
 enum CursorType
 {
-    none,
-    /// When set in widget means to use parent's cursor, in Window.overrideCursorType() disable overriding.
-    notSet,
+    // general
+    automatic,
     arrow,
-    ibeam,
+    none,
+    // links
+    pointer,
+    // status
+    contextMenu,
+    help,
+    progress,
     wait,
+    // selection
+    cell,
     crosshair,
-    waitArrow,
-    sizeNWSE,
-    sizeNESW,
-    sizeWE,
-    sizeNS,
-    sizeAll,
-    no,
-    hand
+    text,
+    textVertical,
+    // drag and drop
+    shortcut,
+    copy,
+    move,
+    noDrop,
+    notAllowed,
+    grab,
+    grabbing,
+    // resizing
+    resizeE,
+    resizeN,
+    resizeNE,
+    resizeNW,
+    resizeS,
+    resizeSE,
+    resizeSW,
+    resizeW,
+    resizeEW,
+    resizeNS,
+    resizeNESW,
+    resizeNWSE,
+    resizeCol,
+    resizeRow,
+    // scrolling
+    scrollAll,
+    // zooming
+    zoomIn,
+    zoomOut,
 }
 
 enum DependentSize

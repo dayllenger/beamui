@@ -15,10 +15,12 @@ CheckBox,
 RadioButton,
 ComboBoxBase {
   display: row;
+  cursor: pointer;
 }
 
 LinkButton {
   stretch: none;
+  cursor: pointer;
 }
 
 Paragraph {

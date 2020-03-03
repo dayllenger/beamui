@@ -616,7 +616,7 @@ class EditLine : Widget, IEditor, ActionOperator
 
     override CursorType getCursorType(float x, float y) const
     {
-        return CursorType.ibeam;
+        return CursorType.text;
     }
 
     //===============================================================
@@ -1915,7 +1915,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
 
     override CursorType getCursorType(float x, float y) const
     {
-        return x < box.x + _leftPaneWidth ? CursorType.arrow : CursorType.ibeam;
+        return x < box.x + _leftPaneWidth ? CursorType.arrow : CursorType.text;
     }
 
     //===============================================================

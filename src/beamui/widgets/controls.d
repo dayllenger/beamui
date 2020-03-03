@@ -560,11 +560,6 @@ class LinkButton : Button
         a.bind(this, { platform.openURL(url); });
         action = a;
     }
-
-    override CursorType getCursorType(float x, float y) const // doesn't work for actual text, FIXME!
-    {
-        return CursorType.hand;
-    }
 }
 
 class SwitchButton : Widget

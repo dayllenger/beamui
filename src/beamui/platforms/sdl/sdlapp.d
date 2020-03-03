@@ -377,83 +377,82 @@ final class SDLWindow : Window
             redraw();
     }
 
-    private CursorType _lastCursorType = CursorType.none;
-    private SDL_Cursor*[uint] _cursorMap;
+    private CursorType _lastCursorType = CursorType.automatic;
+    private SDL_Cursor*[CursorType] _cursorCache;
 
-    override protected void setCursorType(CursorType cursorType)
+    override protected void setCursorType(CursorType type)
     {
-        // override to support different mouse cursors
-        if (_lastCursorType != cursorType)
+        if (_lastCursorType == type)
+            return;
+
+        debug (sdl)
+            Log.d("SDL: changing cursor to ", type);
+
+        if (type == CursorType.none)
         {
-            if (cursorType == CursorType.none)
-            {
-                SDL_ShowCursor(SDL_DISABLE);
-                return;
-            }
-            if (_lastCursorType == CursorType.none)
-                SDL_ShowCursor(SDL_ENABLE);
-            _lastCursorType = cursorType;
-            SDL_Cursor* cursor;
-            // check for existing cursor in map
-            if (cursorType in _cursorMap)
-            {
-                //Log.d("changing cursor to ", cursorType);
-                cursor = _cursorMap[cursorType];
-                if (cursor)
-                    SDL_SetCursor(cursor);
-                return;
-            }
-            // create new cursor
-            switch (cursorType) with (CursorType)
-            {
-            case arrow:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-                break;
-            case ibeam:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
-                break;
-            case wait:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
-                break;
-            case waitArrow:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAITARROW);
-                break;
-            case crosshair:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
-                break;
-            case no:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NO);
-                break;
-            case hand:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
-                break;
-            case sizeNWSE:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
-                break;
-            case sizeNESW:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
-                break;
-            case sizeWE:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
-                break;
-            case sizeNS:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
-                break;
-            case sizeAll:
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
-                break;
-            default:
-                // TODO: support custom cursors
-                cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-                break;
-            }
-            _cursorMap[cursorType] = cursor;
-            if (cursor)
-            {
-                debug (sdl)
-                    Log.d("changing cursor to ", cursorType);
-                SDL_SetCursor(cursor);
-            }
+            SDL_ShowCursor(SDL_DISABLE);
+            _lastCursorType = CursorType.none;
+            return;
+        }
+        if (_lastCursorType == CursorType.none)
+            SDL_ShowCursor(SDL_ENABLE);
+
+        SDL_Cursor* cursor;
+        // check for existing cursor in map
+        if (auto p = type in _cursorCache)
+        {
+            cursor = *p;
+        }
+        else
+        {
+            // create new one
+            cursor = SDL_CreateSystemCursor(convertCursorType(type));
+            _cursorCache[type] = cursor;
+        }
+        if (cursor)
+            SDL_SetCursor(cursor);
+
+        _lastCursorType = type;
+    }
+
+    private static SDL_SystemCursor convertCursorType(CursorType type)
+    {
+        switch (type) with (CursorType)
+        {
+        case pointer:
+        case grab:
+            return SDL_SYSTEM_CURSOR_HAND;
+        case progress:
+            return SDL_SYSTEM_CURSOR_WAITARROW;
+        case wait:
+            return SDL_SYSTEM_CURSOR_WAIT;
+        case crosshair:
+            return SDL_SYSTEM_CURSOR_CROSSHAIR;
+        case text:
+        case textVertical:
+            return SDL_SYSTEM_CURSOR_IBEAM;
+        case move:
+        case scrollAll:
+            return SDL_SYSTEM_CURSOR_SIZEALL;
+        case noDrop:
+        case notAllowed:
+            return SDL_SYSTEM_CURSOR_NO;
+        case resizeE:
+        case resizeW:
+        case resizeEW:
+        case resizeCol:
+            return SDL_SYSTEM_CURSOR_SIZEWE;
+        case resizeN:
+        case resizeS:
+        case resizeNS:
+        case resizeRow:
+            return SDL_SYSTEM_CURSOR_SIZENS;
+        case resizeNESW:
+            return SDL_SYSTEM_CURSOR_SIZENESW;
+        case resizeNWSE:
+            return SDL_SYSTEM_CURSOR_SIZENWSE;
+        default:
+            return SDL_SYSTEM_CURSOR_ARROW;
         }
     }
 

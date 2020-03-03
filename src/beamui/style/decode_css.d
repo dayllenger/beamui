@@ -27,6 +27,7 @@ import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
 import beamui.style.types : BgPositionRaw, BgSizeRaw, WhiteSpace, SpecialCSSType;
 import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.text.style;
+import beamui.widgets.widget : CursorType;
 
 void logInvalidValue(const Token[] tokens)
 {
@@ -1760,6 +1761,53 @@ Result!TransitionHere decodeTransition(const(Token)[] tokens)
     {
         Log.fe("CSS(%s): malformed transition shorthand", line);
         return E();
+    }
+}
+
+/// Decode cursor property
+Result!CursorType decode(T : CursorType)(const Token[] tokens)
+{
+    with (CursorType)
+    {
+        immutable map = [
+            tup("auto", automatic),
+            tup("default", arrow),
+            tup("none", none),
+            tup("pointer", pointer),
+            tup("context-menu", contextMenu),
+            tup("help", help),
+            tup("progress", progress),
+            tup("wait", wait),
+            tup("cell", cell),
+            tup("crosshair", crosshair),
+            tup("text", text),
+            tup("vertical-text", textVertical),
+            tup("alias", shortcut),
+            tup("copy", copy),
+            tup("move", move),
+            tup("no-drop", noDrop),
+            tup("not-allowed", notAllowed),
+            tup("grab", grab),
+            tup("grabbing", grabbing),
+            tup("e-resize", resizeE),
+            tup("n-resize", resizeN),
+            tup("ne-resize", resizeNE),
+            tup("nw-resize", resizeNW),
+            tup("s-resize", resizeS),
+            tup("se-resize", resizeSE),
+            tup("sw-resize", resizeSW),
+            tup("w-resize", resizeW),
+            tup("ew-resize", resizeEW),
+            tup("ns-resize", resizeNS),
+            tup("nesw-resize", resizeNESW),
+            tup("nwse-resize", resizeNWSE),
+            tup("col-resize", resizeCol),
+            tup("row-resize", resizeRow),
+            tup("all-scroll", scrollAll),
+            tup("zoom-in", zoomIn),
+            tup("zoom-out", zoomOut),
+        ];
+        return decodeSimpleEnum(tokens, "cursor", map);
     }
 }
 
