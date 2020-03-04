@@ -310,8 +310,6 @@ class GridLayout : ILayout
         items.resize(list.length);
         // find definite areas for all items in the grid
         resolveItemPositions(list.unsafe_slice, namedAreas, flow);
-        // sort items by their spans
-        sort!((ref a, ref b) => a.area.w + a.area.h < b.area.w + b.area.h)(items.unsafe_slice);
         // allocate tracks
         cols.clear();
         rows.clear();
@@ -394,6 +392,7 @@ class GridLayout : ILayout
         return bs;
     }
 
+    // this distribution approach does not require passing items with small spans first
     private void distributeSizesAcrossColumns(ref const Boundaries bs, BoxI area)
     {
         if (area.w == 1)
