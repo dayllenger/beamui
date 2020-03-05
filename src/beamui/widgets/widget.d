@@ -326,6 +326,29 @@ class NgWidget
     }
 }
 
+abstract class NgWidgetWrapper : NgWidget
+{
+    protected NgWidget _content;
+
+    final NgWidget wrap(lazy NgWidget content)
+    {
+        _content = content;
+        return this;
+    }
+
+    override protected int opApply(scope int delegate(size_t, NgWidget) callback)
+    {
+        if (const result = callback(0, _content))
+            return result;
+        return 0;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemGroup;
+    }
+}
+
 abstract class NgWidgetGroup : NgWidget
 {
     private NgWidget[] _children;

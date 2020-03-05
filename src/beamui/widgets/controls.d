@@ -53,32 +53,21 @@ class NgImageWidget : NgWidget
     }
 }
 
-class NgButton : NgPanel
+class NgButtonLike : NgPanel
 {
     protected dstring text;
     protected string icon;
-    protected void delegate() onClick;
 
-    static NgButton make(dstring text, void delegate() onClick)
+    static NgButtonLike make(dstring text, string icon)
     {
-        NgButton w = arena.make!NgButton;
-        w.text = text;
-        w.onClick = onClick;
-        return w;
-    }
-
-    static NgButton make(dstring text, string icon, void delegate() onClick)
-    {
-        NgButton w = arena.make!NgButton;
+        NgButtonLike w = arena.make!NgButtonLike;
         w.text = text;
         w.icon = icon;
-        w.onClick = onClick;
         return w;
     }
 
     this()
     {
-        allowsFocus = true;
         allowsHover = true;
         isolateStyle = true;
     }
@@ -101,36 +90,88 @@ class NgButton : NgPanel
         }
         attach(image, label);
     }
+}
+
+class NgButton : NgButtonLike
+{
+    protected void delegate() onClick;
+
+    static NgButton make(dstring text, void delegate() onClick)
+    {
+        NgButton w = arena.make!NgButton;
+        w.text = text;
+        w.onClick = onClick;
+        return w;
+    }
+
+    static NgButton make(dstring text, string icon, void delegate() onClick)
+    {
+        NgButton w = arena.make!NgButton;
+        w.text = text;
+        w.icon = icon;
+        w.onClick = onClick;
+        return w;
+    }
+
+    this()
+    {
+        allowsFocus = true;
+    }
 
     override protected void updateElement(Element element)
     {
         super.updateElement(element);
 
         ElemPanel el = fastCast!ElemPanel(element);
-        el.allowsClick = true;
         el.onClick.clear();
         if (onClick)
+        {
+            el.allowsClick = true;
             el.onClick ~= onClick;
+        }
     }
 }
 
-class NgLinkButton : NgButton
+class NgLink : NgWidgetWrapper
 {
     import beamui.platforms.common.platform : platform;
 
     protected string url;
 
-    static NgLinkButton make(dstring text, string url, string icon = "applications-internet")
+    static NgLink make(string url)
     {
-        NgLinkButton w = arena.make!NgLinkButton;
-        w.text = text;
-        w.icon = icon;
+        NgLink w = arena.make!NgLink;
+        w.url = url;
+        return w;
+    }
+
+    this()
+    {
+        allowsFocus = true;
+    }
+
+    override protected void build()
+    {
+        if (_content)
+            _content.inheritState = true;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemPanel;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemPanel el = fastCast!ElemPanel(element);
+        el.onClick.clear();
         if (url.length)
         {
-            w.url = url;
-            w.onClick = &w.handleClick;
+            el.allowsClick = true;
+            el.onClick ~= &handleClick;
         }
-        return w;
     }
 
     private void handleClick()

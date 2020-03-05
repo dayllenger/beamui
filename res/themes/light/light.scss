@@ -29,7 +29,7 @@ $focused-border-color: saturate($main-color, 30%);
 
 /* controls */
 
-Button {
+Button, ButtonLike {
     align: center;
     padding: 4px 8px;
     border: 1px solid #aaa;
@@ -81,7 +81,7 @@ Button.flat {
     focus-rect-color: none;
 }
 
-LinkButton {
+LinkButton, Link > ButtonLike {
     padding: 3px;
     border: none;
     background: none;
