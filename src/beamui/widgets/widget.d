@@ -914,6 +914,24 @@ public:
         _needToRecomputeStyle = true;
     }
 
+    package(beamui) void handleDPIChange()
+    {
+        // recompute styles to resolve length units with new DPI
+        if (_needToRecomputeStyle)
+        {
+            _needToRecomputeStyle = false;
+            cachedChain.clear();
+            cachedChain ~= selectStyleChain();
+        }
+        _style.recompute(cachedChain.unsafe_slice);
+        if (onStyleUpdate.assigned)
+            onStyleUpdate(cachedChain.unsafe_slice);
+
+        // continue recursively
+        foreach (Element el; this)
+            el.handleDPIChange();
+    }
+
     //===============================================================
     // Style related properties
 

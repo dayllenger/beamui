@@ -1084,20 +1084,12 @@ final class Win32Platform : Platform
         SendMessage(window._hwnd, WM_CLOSE, 0, 0);
     }
 
-    override void requestLayout()
+    override protected int opApply(scope int delegate(size_t i, Window w) callback)
     {
-        foreach (w; windows)
-        {
-            w.requestLayout();
-            w.invalidate();
-        }
-    }
-
-    override void handleThemeChange()
-    {
-        super.handleThemeChange();
-        foreach (w; windows)
-            w.dispatchThemeChanged();
+        foreach (i, w; windows)
+            if (const result = callback(i, w))
+                break;
+        return 0;
     }
 
     override bool hasClipboardText(bool mouseBuffer = false)

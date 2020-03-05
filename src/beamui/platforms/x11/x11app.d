@@ -1284,6 +1284,14 @@ final class X11Platform : Platform
         XUnlockDisplay(x11display2);
     }
 
+    override protected int opApply(scope int delegate(size_t i, DWindow w) callback)
+    {
+        foreach (i, w; windows)
+            if (const result = callback(i, w))
+                break;
+        return 0;
+    }
+
     private int numberOfPendingEvents(int msecs = 10)
     {
         import core.sys.posix.sys.select;
@@ -1873,21 +1881,6 @@ final class X11Platform : Platform
         {
             XSetSelectionOwner(x11display, selection, xwindow, CurrentTime);
         }
-    }
-
-    override void requestLayout()
-    {
-        foreach (w; windows)
-        {
-            w.requestLayout();
-        }
-    }
-
-    override void handleThemeChange()
-    {
-        super.handleThemeChange();
-        foreach (w; windows)
-            w.dispatchThemeChanged();
     }
 }
 

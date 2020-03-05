@@ -567,21 +567,40 @@ class Window : CustomEventTarget
             if (_devicePixelRatio != dpr)
                 Log.d("Window pixel ratio changed from ", _devicePixelRatio, " to ", dpr);
         }
-        _screenDPI = dpi;
-        _devicePixelRatio = dpr;
+        if (_screenDPI != dpi || _devicePixelRatio != dpr)
+        {
+            _screenDPI = dpi;
+            _devicePixelRatio = dpr;
+            dispatchDPIChange();
+        }
     }
+
     /// Called before layout and redraw. Widgets and painter use global DPI and DPR values
     /// to make proper scaling and unit conversion, but these values are per-window
     private void setupGlobalDPI()
     {
-        static import beamui.core.units;
-        beamui.core.units.setupDPI(_screenDPI, _devicePixelRatio);
+        import u = beamui.core.units;
+
+        u.setupDPI(_screenDPI, _devicePixelRatio);
+    }
+
+    private void dispatchDPIChange()
+    {
+        if (!_mainWidget)
+            return; // at window creation
+
+        setupGlobalDPI();
+        _mainWidget.handleDPIChange();
+        foreach (Widget p; _popups)
+            p.handleDPIChange();
+        if (Widget p = _tooltip.popup)
+            p.handleDPIChange();
     }
 
     /// Set the minimal window size and resize the window if needed; called from `show()`
     protected void adjustSize()
+        in(_mainWidget)
     {
-        assert(_mainWidget !is null);
         setupGlobalDPI();
         _mainWidget.measure();
         const bs = _mainWidget.boundaries;
@@ -1473,12 +1492,13 @@ class Window : CustomEventTarget
     }
 
     /// Handle theme change: e.g. reload some themed resources
-    void dispatchThemeChanged()
+    void dispatchThemeChange()
     {
         _mainWidget.handleThemeChange();
         foreach (p; _popups)
             p.handleThemeChange();
-        _tooltip.popup.maybe.handleThemeChange();
+        if (auto p = _tooltip.popup)
+            p.handleThemeChange();
         if (currentTheme)
         {
             _backgroundColor = currentTheme.getColor("window_background", Color.white);
@@ -2184,7 +2204,6 @@ class Platform
             {
                 _conf.theme = setupTheme(name);
                 handleThemeChange();
-                requestLayout();
             }
         }
 
@@ -2292,8 +2311,8 @@ class Platform
         return w ? w.hasVisibleModalChild : false;
     }
 
-    /// Call request layout for all windows
-    abstract void requestLayout();
+    /// Iterate over all windows
+    abstract protected int opApply(scope int delegate(size_t, Window) callback);
 
     //===============================================================
 
@@ -2305,7 +2324,7 @@ class Platform
     abstract void setClipboardText(dstring text, bool mouseBuffer = false);
 
     /// Reload current theme. Useful to quickly edit and test a theme
-    void reloadTheme()
+    final void reloadTheme()
     {
         Log.v("Reloading theme ", _conf.theme);
         auto theme = loadTheme(_conf.theme);
@@ -2316,7 +2335,16 @@ class Platform
         }
         currentTheme = theme;
         handleThemeChange();
-        requestLayout();
+    }
+
+    /** Call to disable automatic screen DPI detection, to use provided one instead.
+
+        Pass 0 to disable override and use value detected by windows.
+    */
+    final void overrideDPI(float dpi, float dpr)
+    {
+        .overrideDPI(dpi, dpr);
+        handleDPIChange();
     }
 
     /// Open url in external browser
@@ -2337,12 +2365,25 @@ class Platform
     }
 
     /// Handle theme change, e.g. reload some themed resources
-    void handleThemeChange()
+    private void handleThemeChange()
     {
-        // override and call dispatchThemeChange for all windows
         static if (BACKEND_GUI)
         {
             imageCache.clear();
+        }
+        foreach (i, w; this)
+        {
+            w.dispatchThemeChange();
+            w.invalidate();
+        }
+    }
+
+    private void handleDPIChange()
+    {
+        foreach (i, w; this)
+        {
+            w.dispatchDPIChange();
+            w.invalidate();
         }
     }
 

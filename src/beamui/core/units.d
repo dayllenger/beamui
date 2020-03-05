@@ -345,38 +345,27 @@ enum long ONE_SECOND = 10_000_000L;
 
 import std.math : round;
 import beamui.core.geometry : Box, Point, Rect;
+import beamui.core.math : clamp;
 
 /// Called by window
 package(beamui) void setupDPI(float dpi, float dpr)
+    in(dpi > 0 && dpr > 0)
 {
-    assert(dpi > 0 && dpr > 0);
-
-    if (!overriden)
-    {
-        screenDPI = dpi;
-        devicePixelRatio = dpr;
-        dipsPerInch = dpi / dpr;
-    }
-}
-
-/// Call to disable automatic screen DPI detection, use provided one instead
-/// (pass 0 to disable override and use value detected by platform)
-void overrideDPI(float dpi, float dpr)
-{
-    import beamui.core.math : clamp;
-
-    if (dpi <= 0 || dpr <= 0)
-    {
-        overriden = false;
+    if (overriden)
         return;
-    }
-
-    dpi = clamp(dpi, 10, 1000);
-    dpr = clamp(dpr, 0.1, 10);
 
     screenDPI = dpi;
     devicePixelRatio = dpr;
     dipsPerInch = dpi / dpr;
+}
+/// ditto
+package(beamui) void overrideDPI(float dpi, float dpr)
+{
+    overriden = false;
+    if (dpi <= 0 || dpr <= 0)
+        return;
+
+    setupDPI(clamp(dpi, 10, 1000), clamp(dpr, 0.1, 10));
     overriden = true;
 }
 
