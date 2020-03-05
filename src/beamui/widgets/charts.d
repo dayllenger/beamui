@@ -32,6 +32,57 @@ import beamui.text.sizetest;
 import beamui.text.style;
 import beamui.widgets.widget;
 
+struct SimpleBar
+{
+    Color color = Color.black;
+    dstring title;
+}
+
+class NgSimpleBarChart : NgWidget
+{
+    protected const(double)[] data;
+    protected const(SimpleBar)[] bars;
+    protected dstring title;
+    Color axisColor = Color(0xc0c0c0);
+    Color segmentTagColor = Color(0xc0c0c0);
+    Color backgroundColor = Color(0xffffff);
+    double axisRatio = 0.6;
+
+    static NgSimpleBarChart make(const double[] data, const SimpleBar[] bars, dstring title = null)
+    {
+        NgSimpleBarChart w = arena.make!NgSimpleBarChart;
+        w.data = data;
+        w.bars = bars;
+        w.title = title;
+        return w;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemSimpleBarChart;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemSimpleBarChart el = fastCast!ElemSimpleBarChart(element);
+        el.title = title;
+        el.chartAxisColor = axisColor;
+        el.chartSegmentTagColor = segmentTagColor;
+        el.chartBackgroundColor = backgroundColor;
+        el.axisRatio = axisRatio;
+
+        el.setValues(data);
+        foreach (i, ref bar; bars[0 .. min(data.length, bars.length)])
+        {
+            el.updateBar(i, bar.color, bar.title);
+        }
+    }
+}
+
+alias ElemSimpleBarChart = SimpleBarChart;
+
 class SimpleBarChart : Widget
 {
     this(dstring title = null)
@@ -135,66 +186,55 @@ class SimpleBarChart : Widget
         /// ditto
         void title(dstring s)
         {
+            if (_title.str is s)
+                return;
             _title.str = s;
-            if (_showTitle)
-                requestLayout();
-        }
-
-        /// Show title?
-        bool showTitle() const { return _showTitle; }
-        /// ditto
-        void showTitle(bool show)
-        {
-            if (_showTitle != show)
-            {
-                _showTitle = show;
-                requestLayout();
-            }
+            _showTitle = s !is null;
+            requestLayout();
         }
 
         Color chartBackgroundColor() const { return _backgroundColor; }
         /// ditto
         void chartBackgroundColor(Color value)
         {
-            if (_backgroundColor != value)
-            {
-                _backgroundColor = value;
-                invalidate();
-            }
+            if (_backgroundColor == value)
+                return;
+            _backgroundColor = value;
+            invalidate();
         }
 
         Color chartAxisColor() const { return _axisColor; }
         /// ditto
         void chartAxisColor(Color value)
         {
-            if (_axisColor != value)
-            {
-                _axisColor = value;
-                invalidate();
-            }
+            if (_axisColor == value)
+                return;
+            _axisColor = value;
+            invalidate();
         }
 
         Color chartSegmentTagColor() const { return _segmentTagColor; }
         /// ditto
         void chartSegmentTagColor(Color value)
         {
-            if (_segmentTagColor != value)
-            {
-                _segmentTagColor = value;
-                invalidate();
-            }
+            if (_segmentTagColor == value)
+                return;
+            _segmentTagColor = value;
+            invalidate();
         }
 
         double axisRatio() const { return _axisRatio; }
-
-        void axisRatio(double newRatio)
+        /// ditto
+        void axisRatio(double value)
         {
-            _axisRatio = newRatio;
+            if (_axisRatio == value)
+                return;
+            _axisRatio = value;
             requestLayout();
         }
 
         dstring minDescSizeTester() const { return _minDescSizeTester.str; }
-
+        /// ditto
         void minDescSizeTester(dstring txt)
         {
             _minDescSizeTester.str = txt;
