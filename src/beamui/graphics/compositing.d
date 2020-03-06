@@ -7,6 +7,8 @@ Authors:   dayllenger
 */
 module beamui.graphics.compositing;
 
+@safe:
+
 /// Porter-Duff compositing modes
 enum CompositeMode
 {

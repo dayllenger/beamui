@@ -1047,7 +1047,7 @@ public struct HorizEdge
 {
     float l = 0, r = 0, y = 0;
 
-    static bool isValidTrapezoid(HorizEdge top, HorizEdge bot) nothrow
+    static bool isValidTrapezoid(HorizEdge top, HorizEdge bot) nothrow @safe
     {
         return top.y <= bot.y && // a trapezoid with zero height is a chain break
             ((top.l + eps < top.r && bot.l <= bot.r) ||

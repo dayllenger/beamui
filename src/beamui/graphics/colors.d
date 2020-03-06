@@ -7,7 +7,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.graphics.colors;
 
-nothrow:
+nothrow @safe:
 
 import std.string : strip;
 import std.traits : EnumMembers, isIntegral;

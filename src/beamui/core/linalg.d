@@ -7,7 +7,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.linalg;
 
-nothrow:
+nothrow @safe:
 
 import std.math : cos, sin, sqrt, tan, isFinite, PI;
 import std.string : format;
@@ -39,7 +39,7 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     enum int dimension = N;
 
     /// Returns a pointer to the first vector element
-    const(T*) ptr() const { return vec.ptr; }
+    const(T*) ptr() const @trusted { return vec.ptr; }
 
     /// Create with all components filled with specified value
     this(T v)
@@ -260,7 +260,7 @@ struct Mat2x3
         Note: Values are stored in row-major order, so when passing it to OpenGL
         with `glUniform*` functions, you'll need to set `transpose` parameter to GL_TRUE.
     */
-    const(float*) ptr() const { return store.ptr.ptr; }
+    const(float*) ptr() const @trusted { return store.ptr.ptr; }
 
     this(float diagonal)
     {

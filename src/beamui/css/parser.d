@@ -9,7 +9,7 @@ Authors:   dayllenger
 */
 module beamui.css.parser;
 
-nothrow:
+nothrow @safe:
 
 import std.typecons : Nullable, nullable;
 import beamui.core.logger;

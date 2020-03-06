@@ -7,7 +7,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.units;
 
-nothrow:
+nothrow @safe:
 
 import beamui.core.geometry : isDefinedSize, isValidSize, SIZE_UNSPECIFIED;
 

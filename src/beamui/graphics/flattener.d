@@ -7,7 +7,7 @@ Authors:   dayllenger
 */
 module beamui.graphics.flattener;
 
-nothrow:
+nothrow @safe:
 
 import std.math : fabs, cos, sin, sqrt, isFinite, PI, PI_2;
 import beamui.core.collections : Buf;

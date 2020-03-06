@@ -7,7 +7,7 @@ Authors:   dayllenger
 */
 module beamui.graphics.polygons;
 
-nothrow:
+nothrow @safe:
 
 import std.algorithm : sort, swap;
 import beamui.core.collections : Buf;
@@ -218,7 +218,7 @@ bool splitIntoTrapezoids(const Vec2[] poly, ref Buf!HorizEdge output)
     {
         // the idea is that a y-monotone polygon has only one local minimum
 
-        static bool less(const Vec2* poly, ptrdiff_t i, ptrdiff_t j)
+        static bool less(const Vec2* poly, ptrdiff_t i, ptrdiff_t j) @trusted
         {
             return poly[i].y < poly[j].y || (poly[i].y == poly[j].y && i < j);
         }
@@ -228,7 +228,8 @@ bool splitIntoTrapezoids(const Vec2[] poly, ref Buf!HorizEdge output)
         foreach (i; 0 .. len)
         {
             // compare with the previous and the next
-            if (less(poly.ptr, i, (i + 1) % len) && less(poly.ptr, i, (i - 1 + len) % len))
+            const ptr = &poly[0];
+            if (less(ptr, i, (i + 1) % len) && less(ptr, i, (i - 1 + len) % len))
             {
                 localMins++;
                 if (localMins > 1)

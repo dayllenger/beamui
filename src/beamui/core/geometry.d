@@ -7,7 +7,7 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.core.geometry;
 
-nothrow:
+nothrow @safe:
 
 import std.conv : to;
 import std.format : format;

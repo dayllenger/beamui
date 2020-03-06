@@ -7,7 +7,7 @@ Authors:   dayllenger
 */
 module beamui.core.math;
 
-nothrow:
+nothrow @safe:
 
 import std.math : fabs;
 

@@ -7,7 +7,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.parseutils;
 
-nothrow:
+nothrow @safe:
 
 import std.uni : isAlpha, isLower, isNumber, isUpper;
 

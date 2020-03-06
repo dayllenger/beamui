@@ -6,6 +6,8 @@ Authors:   dayllenger
 */
 module beamui.core.memory;
 
+@safe:
+
 import std.conv : emplace;
 import beamui.core.ownership : isReferenceType;
 
@@ -15,7 +17,7 @@ struct Arena
     private size_t len;
 
     /// Allocate and construct a class instance
-    T make(T, Args...)(Args args) if (is(T == class))
+    T make(T, Args...)(Args args) @trusted if (is(T == class))
     {
         // align to 16 bytes
         enum alignedSize = (__traits(classInstanceSize, T) | 0b1111) + 1;
@@ -29,7 +31,7 @@ struct Arena
     }
 
     /// Allocate and initialize a struct instance
-    T* make(T)() if (is(T == struct))
+    T* make(T)() @trusted if (is(T == struct))
     {
         const site = len;
         len += T.sizeof;
@@ -42,7 +44,7 @@ struct Arena
     }
 
     /// Allocate an array of size `count`, filled with nulls
-    T[] allocArray(T)(size_t count) if (isReferenceType!T)
+    T[] allocArray(T)(size_t count) @trusted if (isReferenceType!T)
     {
         if (count == 0)
             return null;

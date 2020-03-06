@@ -529,7 +529,7 @@ if (isMutable!T &&
     !hasElaborateCopyConstructor!T &&
     !hasElaborateAssign!T &&
     !hasElaborateDestructor!T)
-{ nothrow @nogc:
+{ nothrow @nogc @safe:
 
     import core.stdc.stdlib : malloc, realloc, free;
     import core.stdc.string : memcpy;
@@ -563,13 +563,13 @@ if (isMutable!T &&
 
     @disable this(this);
 
-    ~this()
+    ~this() @trusted
     {
         free(_data);
     }
 
     /// Duplicate the buffer. Capacity is not retained
-    Buf!T dup() const
+    Buf!T dup() const @trusted
     {
         if (_length > 0)
         {
@@ -583,7 +583,7 @@ if (isMutable!T &&
     }
 
     /// Make sure the buffer's capacity is at least `count` items
-    void reserve(uint count)
+    void reserve(uint count) @trusted
     {
         if (_capacity < count)
         {
@@ -600,7 +600,7 @@ if (isMutable!T &&
         put(value);
     }
     /// ditto
-    void put(ref T value)
+    void put(ref T value) @trusted
     {
         if (_length == _capacity)
             reserve(_capacity * 3 / 2 + 1);
@@ -608,7 +608,7 @@ if (isMutable!T &&
         _length++;
     }
     /// ditto
-    void put(const T[] slice)
+    void put(const T[] slice) @trusted
     {
         if (slice.length > 0)
         {
@@ -625,7 +625,7 @@ if (isMutable!T &&
         It may shrink the buffer if the requested length is much less than
         the buffer has.
     */
-    void resize(uint len, T initial = T.init)
+    void resize(uint len, T initial = T.init) @trusted
     {
         if (len > _capacity)
         {
@@ -660,24 +660,24 @@ if (isMutable!T &&
     alias opOpAssign(string op : "~") = put;
     alias opDollar = length;
 
-    const(T[]) opIndex() const
+    const(T[]) opIndex() const @trusted
     {
         return _data[0 .. _length];
     }
 
-    ref const(T) opIndex(size_t i) const
+    ref const(T) opIndex(size_t i) const @trusted
     {
         assert(i < _length);
         return _data[i];
     }
 
-    void opIndexAssign(T value, size_t i)
+    void opIndexAssign(T value, size_t i) @trusted
     {
         assert(i < _length);
         _data[i] = value;
     }
 
-    void opIndexAssign(ref T value, size_t i)
+    void opIndexAssign(ref T value, size_t i) @trusted
     {
         assert(i < _length);
         _data[i] = value;
@@ -689,14 +689,14 @@ if (isMutable!T &&
         return _data;
     }
     /// Get the mutable reference to i-th element (you can pass negative indices here to start from the end)
-    ref T unsafe_ref(ptrdiff_t i)
+    ref T unsafe_ref(ptrdiff_t i) @trusted
     {
         const l = cast(ptrdiff_t)_length;
         assert(i < l && -i <= l);
         return _data[i + (i < 0) * l];
     }
     /// Get the mutable slice of the buffer
-    inout(T[]) unsafe_slice() inout
+    inout(T[]) unsafe_slice() inout @trusted
     {
         return _data[0 .. _length];
     }

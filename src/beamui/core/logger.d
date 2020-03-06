@@ -38,7 +38,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.core.logger;
 
-nothrow:
+nothrow @safe:
 
 import core.sync.mutex;
 import std.stdio : File, printf, stdout, stderr, writef;
@@ -48,7 +48,7 @@ version (Android)
 }
 
 /// Log levels
-enum LogLevel
+enum LogLevel : ubyte
 {
     /// Fatal error, cannot resume
     fatal,
@@ -75,26 +75,24 @@ enum LogLevel
         assert(0);
 }
 
+shared static this()
+{
+    Log.mutex = new shared(Mutex);
+}
+
 class Log
 {
     static nothrow:
 
-    __gshared private
+    private
     {
-        LogLevel logLevel = LogLevel.info;
-        File* logFile;
-        Mutex _mutex;
-    }
-
-    @property Mutex mutex()
-    {
-        if (_mutex is null)
-            _mutex = new Mutex;
-        return _mutex;
+        shared LogLevel logLevel = LogLevel.info;
+        shared Mutex mutex;
+        __gshared File* logFile;
     }
 
     /// Redirects output to stdout
-    void setStdoutLogger()
+    void setStdoutLogger() @trusted
     {
         try
         {
@@ -108,7 +106,7 @@ class Log
     }
 
     /// Redirects output to stderr
-    void setStderrLogger()
+    void setStderrLogger() @trusted
     {
         try
         {
@@ -122,7 +120,7 @@ class Log
     }
 
     /// Redirects output to file
-    void setFileLogger(File* file)
+    void setFileLogger(File* file) @trusted
     {
         try
         {
@@ -143,19 +141,11 @@ class Log
             printException(e);
     }
 
-    /// Set log level (one of LogLevel)
+    /// Set a log level
     void setLogLevel(LogLevel level)
     {
-        try
-        {
-            synchronized (mutex)
-            {
-                logLevel = level;
-                i("Log level changed to ", level);
-            }
-        }
-        catch (Exception e)
-            printException(e);
+        logLevel = level;
+        i("Log level changed to ", level);
     }
 
     /// Returns true if messages for level are enabled
@@ -300,7 +290,7 @@ class Log
         logfImpl(LogLevel.fatal, fmt, args);
     }
 
-    private void logImpl(S...)(LogLevel level, ref const S args)
+    private void logImpl(S...)(LogLevel level, ref const S args) @trusted
     {
         try
         {
@@ -340,7 +330,7 @@ class Log
         catch (Exception e)
             printException(e);
     }
-    private void logfImpl(S...)(LogLevel level, string fmt, ref const S args)
+    private void logfImpl(S...)(LogLevel level, string fmt, ref const S args) @trusted
     {
         try
         {
@@ -376,7 +366,7 @@ class Log
             printException(e);
     }
 
-    private void printException(Exception e)
+    private void printException(Exception e) @trusted
     {
         printf("\nAn exception inside the logger: %.*s\n", e.msg.length, e.msg.ptr);
     }

@@ -6,6 +6,8 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.style.types;
 
+@safe:
+
 import beamui.core.types : State;
 import beamui.core.units : Length;
 import beamui.graphics.drawables : BgSizeType;

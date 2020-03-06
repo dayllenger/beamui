@@ -12,7 +12,7 @@ Authors:   dayllenger
 */
 module beamui.css.tokenizer;
 
-nothrow:
+nothrow @safe:
 
 /// Transform a CSS source code into a token range
 TokenRange tokenizeCSS(string source)
@@ -150,7 +150,7 @@ private dstring preprocessInput(string src)
     import std.array : appender;
     import std.utf : byDchar;
 
-    auto res = appender!(dchar[]);
+    auto res = appender!dstring;
     res.reserve(src.length / 2);
     bool wasCR;
     foreach (c; src.byDchar)
@@ -164,7 +164,7 @@ private dstring preprocessInput(string src)
         wasCR = (c == '\r');
     }
     res ~= "\0\0\0"d; // append enough EOFs to not worry about it
-    return cast(dstring)res.data;
+    return res.data;
 }
 
 // Here are not many comments because that document is very descriptive.

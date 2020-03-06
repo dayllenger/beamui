@@ -6,7 +6,7 @@ Authors:   dayllenger
 */
 module beamui.layout.alignment;
 
-nothrow:
+nothrow @safe:
 
 import beamui.core.geometry : Box, Insets, Point, Size, isDefinedSize;
 
