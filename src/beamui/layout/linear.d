@@ -182,7 +182,7 @@ class LinearLayout : ILayout
         // apply resizers
         foreach (i; 1 .. cast(int)items.length - 1)
         {
-            if (auto resizer = cast(Resizer)items[i].el)
+            if (auto resizer = cast(ElemResizer)items[i].el)
             {
                 resizer._orientation = _orientation;
 
@@ -199,9 +199,9 @@ class LinearLayout : ILayout
                 right.result.pick!dim = rresult - delta;
             }
         }
-        if (auto resizer = cast(Resizer)items.front.el)
+        if (auto resizer = cast(ElemResizer)items.front.el)
             resizer._orientation = _orientation;
-        if (auto resizer = cast(Resizer)items.back.el)
+        if (auto resizer = cast(ElemResizer)items.back.el)
             resizer._orientation = _orientation;
         // lay out items
         float pen = 0;
@@ -444,10 +444,9 @@ class NgResizer : NgWidget
         return fetchEl!ElemResizer;
     }
 }
-alias ElemResizer = Resizer;
 
 /// Spacer to fill empty space in layouts
-class Spacer : Widget
+class Spacer : Element
 {
     this()
     {
@@ -469,7 +468,7 @@ enum ResizerEventType
 
     Also it can be utilized per se, by connecting to `onResize` signal.
 */
-class Resizer : Element
+class ElemResizer : Element
 {
     /// Orientation: vertical to resize vertically, horizontal to resize horizontally
     @property Orientation orientation() const { return _orientation; }

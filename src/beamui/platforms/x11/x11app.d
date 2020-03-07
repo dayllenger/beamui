@@ -718,7 +718,7 @@ final class X11Window : DWindow
         if (!mainWidget)
         {
             Log.e("Window is shown without main widget");
-            mainWidget = new Widget;
+            mainWidget = new Element;
         }
         adjustSize();
         adjustPosition();

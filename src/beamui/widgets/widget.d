@@ -416,12 +416,8 @@ class NgPanel : NgWidgetGroup
     }
 }
 
-alias Element = Widget;
-alias ElemGroup = WidgetGroup;
-alias ElemPanel = Panel;
-
 /// Base class for all elements
-class Widget
+class Element
 {
 private:
     /// Type of the widget instantiated this element
@@ -539,7 +535,7 @@ public:
         }
     }
     /// Chained version of `id`
-    final Widget setID(string id)
+    final Element setID(string id)
     {
         this.id = id;
         return this;
@@ -1254,13 +1250,13 @@ public:
     }
 
     /// Chained version of `enabled`
-    final Widget setEnabled(bool flag)
+    final Element setEnabled(bool flag)
     {
         enabled = flag;
         return this;
     }
     /// Chained version of `checked`
-    final Widget setChecked(bool flag)
+    final Element setChecked(bool flag)
     {
         checked = flag;
         return this;
@@ -1301,7 +1297,7 @@ public:
         May return `null` if no tooltip to show.
         It's up to widget, to show tooltips outside or not.
     */
-    Widget createTooltip(float x, float y)
+    Element createTooltip(float x, float y)
     {
         // default implementation supports tooltips when tooltipText property is set
         import beamui.widgets.text : Label;
@@ -2303,26 +2299,26 @@ public:
         return 0;
     }
     /// Returns child by index
-    inout(Widget) child(int index) inout
+    inout(Element) child(int index) inout
     {
         return null;
     }
 
     /// Add a child. Returns the added item with its original type
-    T addChild(T)(T item) if (is(T : Widget))
+    T addChild(T)(T item) if (is(T : Element))
     {
         addChildImpl(item);
         return item;
     }
     /// Append several children
-    final void add(Widget first, Widget[] next...)
+    final void add(Element first, Element[] next...)
     {
         addChildImpl(first);
         foreach (item; next)
             addChildImpl(item);
     }
     /// Append several children, skipping `null` widgets
-    final void addSome(Widget first, Widget[] next...)
+    final void addSome(Element first, Element[] next...)
     {
         if (first)
             addChildImpl(first);
@@ -2330,28 +2326,28 @@ public:
             if (item)
                 addChildImpl(item);
     }
-    protected void addChildImpl(Widget item)
+    protected void addChildImpl(Element item)
     {
         assert(false, "addChild: this widget does not support having children");
     }
 
     /// Insert child before given index, returns inserted item
-    Widget insertChild(int index, Widget item)
+    Element insertChild(int index, Element item)
     {
         assert(false, "insertChild: this widget does not support having children");
     }
     /// Remove child by index, returns removed item
-    Widget removeChild(int index)
+    Element removeChild(int index)
     {
         assert(false, "removeChild: this widget does not support having children");
     }
     /// Remove child by ID, returns removed item
-    Widget removeChild(string id)
+    Element removeChild(string id)
     {
         assert(false, "removeChild: this widget does not support having children");
     }
     /// Remove child, returns removed item
-    Widget removeChild(Widget child)
+    Element removeChild(Element child)
     {
         assert(false, "removeChild: this widget does not support having children");
     }
@@ -2366,7 +2362,7 @@ public:
         return -1;
     }
     /// Returns index of widget in child list, -1 if passed widget is not a child of this widget
-    int childIndex(const Widget item) const
+    int childIndex(const Element item) const
     {
         return -1;
     }
@@ -2459,9 +2455,9 @@ public:
     }
 
     /// Parent widget, `null` for top level widget
-    @property inout(Widget) parent() inout { return _parent; }
+    @property inout(Element) parent() inout { return _parent; }
     /// ditto
-    @property void parent(Widget widget)
+    @property void parent(Element widget)
     {
         if (_visibility != Visibility.gone)
         {
@@ -2503,7 +2499,7 @@ alias ElementList = Collection!(Element, true);
     you may not use this class. You may inherit directly from the Widget class
     and add code for subwidgets to destructor, `handleThemeChange`, and `draw` (if needed).
 */
-class WidgetGroup : Element
+class ElemGroup : Element
 {
     /// Empty parameter list constructor - for usage by factory
     this()
@@ -2523,44 +2519,44 @@ class WidgetGroup : Element
         return cast(int)_children.count;
     }
 
-    override inout(Widget) child(int index) inout
+    override inout(Element) child(int index) inout
     {
         return _children[index];
     }
 
-    override protected void addChildImpl(Widget item)
+    override protected void addChildImpl(Element item)
     {
-        assert(item, "Widget must exist");
+        assert(item, "Element must exist");
         _children.append(item);
         item.parent = this;
         handleChildListChange();
     }
 
-    override Widget insertChild(int index, Widget item)
+    override Element insertChild(int index, Element item)
     {
-        assert(item, "Widget must exist");
+        assert(item, "Element must exist");
         _children.insert(index, item);
         item.parent = this;
         handleChildListChange();
         return item;
     }
 
-    override Widget removeChild(int index)
+    override Element removeChild(int index)
     {
-        Widget result = _children.remove(index);
+        Element result = _children.remove(index);
         assert(result);
         result.parent = null;
         handleChildListChange();
         return result;
     }
 
-    override Widget removeChild(string id)
+    override Element removeChild(string id)
     {
         int index = cast(int)_children.indexOf(id);
         return index >= 0 ? removeChild(index) : null;
     }
 
-    override Widget removeChild(Widget child)
+    override Element removeChild(Element child)
     {
         if (child)
         {
@@ -2582,15 +2578,15 @@ class WidgetGroup : Element
         return cast(int)_children.indexOf(id);
     }
 
-    override int childIndex(const Widget item) const
+    override int childIndex(const Element item) const
     {
         return cast(int)_children.indexOf(item);
     }
 
     /// Replace one child with another. It DOES NOT destroy the old item
-    void replaceChild(Widget oldChild, Widget newChild)
+    void replaceChild(Element oldChild, Element newChild)
     {
-        assert(newChild && oldChild, "Widgets must exist");
+        assert(newChild && oldChild, "Elements must exist");
         _children.replace(oldChild, newChild);
         oldChild.parent = null;
         newChild.parent = this;
@@ -2620,7 +2616,7 @@ interface ILayout
     inner frame (usually, only one child should be visible at a time, see
     `showChild` method).
 */
-class Panel : WidgetGroup
+class ElemPanel : ElemGroup
 {
     import beamui.layout.factory : createLayout;
 
@@ -2760,21 +2756,21 @@ class Panel : WidgetGroup
     bool showChild(string ID, Visibility othersVisibility = Visibility.hidden, bool updateFocus = false)
     {
         bool found;
-        Widget foundWidget;
+        Element foundItem;
         foreach (i; 0 .. childCount)
         {
-            Widget item = child(i);
+            Element item = child(i);
             if (item.compareID(ID))
             {
                 item.visibility = Visibility.visible;
-                foundWidget = item;
+                foundItem = item;
                 found = true;
             }
             else
                 item.visibility = othersVisibility;
         }
         if (found && updateFocus)
-            foundWidget.setFocus();
+            foundItem.setFocus();
         return found;
     }
 }

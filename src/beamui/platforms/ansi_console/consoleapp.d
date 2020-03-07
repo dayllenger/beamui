@@ -57,7 +57,7 @@ class ConsoleWindow : Window
         if (!mainWidget)
         {
             Log.e("Window is shown without main widget");
-            mainWidget = new Widget;
+            mainWidget = new Element;
         }
         _visible = true;
         handleWindowStateChange(WindowState.normal, BoxI(0, 0, _platform.console.width, _platform.console.height));

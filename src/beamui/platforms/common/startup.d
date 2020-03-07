@@ -486,7 +486,7 @@ void releaseResourcesOnAppExit()
     import beamui.style.style;
     import beamui.style.theme;
     import beamui.text.simple : clearSimpleTextPool;
-    import beamui.widgets.widget : Widget;
+    import beamui.widgets.widget : Element;
 
     GC.collect();
 
@@ -510,7 +510,7 @@ void releaseResourcesOnAppExit()
                 Log.e(msg, T.instanceCount);
             }
         }
-        checkInstanceCount!Widget();
+        checkInstanceCount!Element();
         checkInstanceCount!BitmapData();
         checkInstanceCount!Style();
         checkInstanceCount!ImageDrawable();

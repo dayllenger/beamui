@@ -14,9 +14,6 @@ import beamui.text.sizetest;
 import beamui.text.style;
 import beamui.widgets.widget;
 
-alias ElemLabel = Label;
-alias ElemParagraph = Paragraph;
-
 class NgLabel : NgWidget
 {
     dstring text;
@@ -83,7 +80,7 @@ class NgParagraph : NgWidget
 
     Can contain `&` character to underline a mnemonic key.
 */
-class Label : Widget
+class ElemLabel : Element
 {
     @property
     {
@@ -309,7 +306,7 @@ unittest
 
 /** Widget for multiline text with optional inner markup.
 */
-class Paragraph : Widget
+class ElemParagraph : Element
 {
     @property
     {

@@ -23,10 +23,6 @@ import std.math : abs, isFinite, quantize;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
-alias ElemAbstractSlider = AbstractSlider;
-alias ElemSlider = Slider;
-alias ElemRangeSlider = RangeSlider;
-
 abstract class NgAbstractSlider : NgWidget
 {
     double minValue = 0;
@@ -303,7 +299,7 @@ final class SliderEvent
 }
 
 /// Base class for sliders
-abstract class AbstractSlider : WidgetGroup
+abstract class ElemAbstractSlider : ElemGroup
 {
     @property
     {
@@ -474,7 +470,7 @@ abstract class AbstractSlider : WidgetGroup
 
     protected void drawInner(Painter pr);
 
-    class SliderHandle : ImageWidget
+    class SliderHandle : ElemImage
     {
         Listener!(void delegate(SliderAction)) onAction;
         Listener!(void delegate(double)) onDragging;
@@ -635,7 +631,7 @@ abstract class AbstractSlider : WidgetGroup
         }
     }
 
-    class SliderBar : Widget
+    class SliderBar : Element
     {
         this()
         {
@@ -647,7 +643,7 @@ abstract class AbstractSlider : WidgetGroup
 }
 
 /// Slider widget - either vertical or horizontal
-class Slider : AbstractSlider
+class ElemSlider : ElemAbstractSlider
 {
     override @property inout(SliderData) data() inout { return _data; }
 
@@ -775,7 +771,7 @@ class Slider : AbstractSlider
 }
 
 /// Slider widget with two handles to select a range between values
-class RangeSlider : AbstractSlider
+class ElemRangeSlider : ElemAbstractSlider
 {
     override @property inout(RangeSliderData) data() inout { return _data; }
 

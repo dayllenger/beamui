@@ -10,7 +10,7 @@ Authors:   Vadim Lopatin
 module beamui.platforms.common.platform;
 
 public import beamui.graphics.drawables : imageCache;
-public import beamui.widgets.widget : CursorType, Element, Widget;
+public import beamui.widgets.widget : CursorType, Element;
 import std.algorithm.mutation : swap;
 import std.datetime.stopwatch : Duration, StopWatch, dur;
 import beamui.core.animations;
@@ -193,9 +193,9 @@ class Window : CustomEventTarget
         }
 
         /// Get main widget of the window
-        inout(Widget) mainWidget() inout { return _mainWidget; }
+        inout(Element) mainWidget() inout { return _mainWidget; }
         /// Assign main widget to the window. Must not be `null`. Destroys previous main widget.
-        void mainWidget(Widget widget)
+        void mainWidget(Element widget)
         {
             assert(widget, "Assigned null main widget");
             if (_mainWidget)

@@ -81,9 +81,7 @@ class NgSimpleBarChart : NgWidget
     }
 }
 
-alias ElemSimpleBarChart = SimpleBarChart;
-
-class SimpleBarChart : Widget
+class ElemSimpleBarChart : Element
 {
     this(dstring title = null)
     {

@@ -11,10 +11,6 @@ import beamui.core.stdaction;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-alias ElemImage = ImageWidget;
-alias ElemSwitch = SwitchButton;
-alias ElemCanvas = CanvasWidget;
-
 /// Static image widget. Can accept any drawable instead of the image (e.g. a gradient)
 class NgImageWidget : NgWidget
 {
@@ -367,7 +363,7 @@ class NgCanvasWidget : NgWidget
     }
 }
 
-class ImageWidget : Widget
+class ElemImage : Element
 {
     @property
     {
@@ -432,7 +428,7 @@ class ImageWidget : Widget
 }
 
 /// Button, which can have icon, label, and can be checkable
-class Button : Panel, ActionHolder
+class Button : ElemPanel, ActionHolder
 {
     @property
     {
@@ -453,7 +449,7 @@ class Button : Panel, ActionHolder
             }
             else if (some)
             {
-                _icon = new ImageWidget(id);
+                _icon = new ElemImage(id);
                 _icon.setAttribute("icon");
                 _icon.state = State.parent;
                 add(_icon);
@@ -472,7 +468,7 @@ class Button : Panel, ActionHolder
             }
             else if (some)
             {
-                _icon = new ImageWidget;
+                _icon = new ElemImage;
                 _icon.setAttribute("icon");
                 _icon.state = State.parent;
                 _icon.drawable = img;
@@ -522,7 +518,7 @@ class Button : Panel, ActionHolder
             }
             else if (some)
             {
-                _label = new Label(s);
+                _label = new ElemLabel(s);
                 _label.setAttribute("label");
                 _label.state = State.parent;
                 add(_label);
@@ -532,8 +528,8 @@ class Button : Panel, ActionHolder
 
     private
     {
-        ImageWidget _icon;
-        Label _label;
+        ElemImage _icon;
+        ElemLabel _label;
 
         Action _action;
     }
@@ -603,7 +599,7 @@ class LinkButton : Button
     }
 }
 
-class SwitchButton : Widget
+class ElemSwitch : Element
 {
     this()
     {
@@ -625,19 +621,19 @@ class SwitchButton : Widget
     }
 }
 
-class CheckBox : Panel
+class CheckBox : ElemPanel
 {
     private
     {
-        Widget _icon;
-        Label _label;
+        Element _icon;
+        ElemLabel _label;
     }
 
     this(dstring labelText = null)
     {
         isolateStyle();
-        _icon = new Widget;
-        _label = new Label(labelText);
+        _icon = new Element;
+        _label = new ElemLabel(labelText);
         _icon.setAttribute("icon");
         _label.setAttribute("label");
         _icon.state = State.parent;
@@ -656,19 +652,19 @@ class CheckBox : Panel
     }
 }
 
-class RadioButton : Panel
+class RadioButton : ElemPanel
 {
     private
     {
-        Widget _icon;
-        Label _label;
+        Element _icon;
+        ElemLabel _label;
     }
 
     this(dstring labelText = null)
     {
         isolateStyle();
-        _icon = new Widget;
-        _label = new Label(labelText);
+        _icon = new Element;
+        _label = new ElemLabel(labelText);
         _icon.setAttribute("icon");
         _label.setAttribute("label");
         _icon.state = State.parent;
@@ -696,12 +692,12 @@ class RadioButton : Panel
 
     void uncheckSiblings()
     {
-        Widget p = parent;
+        Element p = parent;
         if (!p)
             return;
         foreach (i; 0 .. p.childCount)
         {
-            Widget child = p.child(i);
+            Element child = p.child(i);
             if (child is this)
                 continue;
             auto rb = cast(RadioButton)child;
@@ -717,7 +713,7 @@ class RadioButton : Panel
     }
 }
 
-class CanvasWidget : Widget
+class ElemCanvas : Element
 {
     Listener!(void delegate(Painter painter, Size size)) onDraw;
 

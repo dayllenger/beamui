@@ -12,8 +12,6 @@ module beamui.widgets.groupbox;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-alias ElemGroupBox = GroupBox;
-
 class NgGroupBox : NgPanel
 {
     dstring caption;
@@ -39,13 +37,13 @@ class NgGroupBox : NgPanel
     }
 }
 
-class GroupBox : Panel
+class ElemGroupBox : ElemPanel
 {
-    private Label _caption;
+    private ElemLabel _caption;
 
     this(dstring caption = ""d)
     {
-        _caption = new Label(caption);
+        _caption = new ElemLabel(caption);
         _caption.isolateThisStyle();
         _caption.setAttribute("caption");
         _caption.state = State.parent;
@@ -55,7 +53,7 @@ class GroupBox : Panel
 
     this(dstring caption, Orientation orientation)
     {
-        _caption = new Label(caption);
+        _caption = new ElemLabel(caption);
         _caption.isolateThisStyle();
         _caption.setAttribute("caption");
         _caption.state = State.parent;
@@ -82,7 +80,7 @@ class GroupBox : Panel
             // get default padding
             Insets p = super.padding;
             // correct padding based on frame drawables and caption
-            (cast(GroupBox)this).calcFrame(); // hack
+            (cast()this).calcFrame(); // hack
             p.top = max(p.top, _topHeight);
             p.left = max(p.left, _frameLeft);
             p.right = max(p.right, _frameRight);

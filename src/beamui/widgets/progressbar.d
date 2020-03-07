@@ -25,8 +25,6 @@ enum int PROGRESS_HIDDEN = -2;
 enum int PROGRESS_INDETERMINATE = -1;
 enum int PROGRESS_MAX = 1000;
 
-alias ElemProgressBar = ProgressBar;
-
 class NgProgressBar : NgWidget
 {
     int progress;
@@ -88,7 +86,7 @@ class ProgressData
 }
 
 /// Progress bar widget
-class ProgressBar : Widget
+class ElemProgressBar : Element
 {
     @property
     {

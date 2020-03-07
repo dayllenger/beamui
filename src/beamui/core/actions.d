@@ -12,7 +12,7 @@ import beamui.core.collections;
 import beamui.core.functions;
 import beamui.core.ownership;
 import beamui.core.signals;
-import beamui.widgets.widget : Widget;
+import beamui.widgets.widget : Element;
 
 /// Keyboard shortcut (key + modifiers)
 struct Shortcut
@@ -399,7 +399,7 @@ final class Action
 
     private
     {
-        void delegate()[WeakRef!Widget] receivers;
+        void delegate()[WeakRef!Element] receivers;
 
         dstring _label;
         string _iconID;
@@ -503,7 +503,7 @@ final class Action
     }
 
     /// Assign a delegate and a widget, which will be used to determine action context
-    void bind(Widget parent, void delegate() func)
+    void bind(Element parent, void delegate() func)
     {
         if (func)
         {
@@ -513,20 +513,20 @@ final class Action
             }
             else
             {
-                receivers[WeakRef!Widget.init] = func;
+                receivers[WeakRef!Element.init] = func;
                 context = ActionContext.application;
             }
         }
     }
 
     /// Unbind action from the widget, if action is associated with it
-    void unbind(Widget parent)
+    void unbind(Element parent)
     {
         receivers.remove(weakRef(parent));
     }
 
     /// Process the action
-    bool call(bool delegate(Widget) chooser)
+    bool call(bool delegate(Element) chooser)
     {
         assert(chooser !is null);
         // do not call deactivated action

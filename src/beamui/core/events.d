@@ -9,7 +9,10 @@ module beamui.core.events;
 
 nothrow:
 
-import beamui.widgets.widget;
+import beamui.core.functions;
+import beamui.core.geometry : Point;
+import beamui.core.ownership : WeakRef;
+import beamui.widgets.widget : Element;
 
 /// Mouse action codes for `MouseEvent`
 enum MouseAction : uint
@@ -190,7 +193,7 @@ final class MouseEvent
         MouseMods _mouseMods;
         KeyMods _keyMods;
         /// Widget which currently tracks mouse events
-        WeakRef!Widget _trackingWidget;
+        WeakRef!Element _trackingWidget;
         ButtonDetails _lbutton;
         ButtonDetails _mbutton;
         ButtonDetails _rbutton;
@@ -286,7 +289,7 @@ final class MouseEvent
         }
 
         /// Get event tracking widget to override
-        WeakRef!Widget trackingWidget() { return _trackingWidget; }
+        WeakRef!Element trackingWidget() { return _trackingWidget; }
         /// Mouse button tracking flag
         bool doNotTrackButtonDown() const { return _doNotTrackButtonDown; }
         /// ditto
@@ -313,7 +316,7 @@ final class MouseEvent
         _action = a;
     }
     /// Override mouse tracking widget
-    void track(WeakRef!Widget w)
+    void track(WeakRef!Element w)
     {
         _trackingWidget = w;
     }
@@ -881,7 +884,7 @@ class CustomEvent
 
         static __gshared uint _uniqueIDGenerator;
 
-        WeakRef!Widget _destinationWidget;
+        WeakRef!Element _destinationWidget;
         Object _objectParam;
         int _intParam;
     }
@@ -899,7 +902,7 @@ class CustomEvent
 
         uint uniqueID() const { return _uniqueID; }
 
-        WeakRef!Widget destinationWidget() { return _destinationWidget; }
+        WeakRef!Element destinationWidget() { return _destinationWidget; }
 
         Object objectParam() { return _objectParam; }
         /// ditto
@@ -924,7 +927,7 @@ class RunnableEvent : CustomEvent
 {
     protected void delegate() _action;
 
-    this(int ID, WeakRef!Widget destinationWidget, void delegate() action)
+    this(int ID, WeakRef!Element destinationWidget, void delegate() action)
     {
         super(ID);
         _destinationWidget = destinationWidget;
@@ -945,12 +948,12 @@ $(LINK2 $(DDOX_ROOT_DIR)beamui/platforms/common/platform/Window.queueWidgetDestr
 */
 class QueueDestroyEvent : RunnableEvent
 {
-    private Widget _widgetToDestroy;
+    private Element _widgetToDestroy;
 
-    this(Widget widgetToDestroy)
+    this(Element widgetToDestroy)
     {
         _widgetToDestroy = widgetToDestroy;
-        super(1, WeakRef!Widget(null), delegate void() {
+        super(1, WeakRef!Element(null), delegate void() {
             if (_widgetToDestroy.parent)
                 _widgetToDestroy.parent.removeChild(_widgetToDestroy);
             destroy(_widgetToDestroy);

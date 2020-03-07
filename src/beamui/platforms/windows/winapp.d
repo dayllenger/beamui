@@ -555,7 +555,7 @@ final class Win32Window : Window
         if (!mainWidget)
         {
             Log.e("Window is shown without main widget");
-            mainWidget = new Widget;
+            mainWidget = new Element;
         }
         ReleaseCapture();
 

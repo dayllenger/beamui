@@ -145,8 +145,6 @@ void initStandardEditorActions()
     ).context(ActionContext.widgetTree);
 }
 
-alias ElemEditLine = EditLine;
-
 class NgEditLine : NgWidget
 {
     dstring placeholder;
@@ -363,7 +361,7 @@ interface IEditor
 }
 
 /// Single-line text field
-class EditLine : Widget, IEditor, ActionOperator
+class ElemEditLine : Element, IEditor, ActionOperator
 {
     @property
     {
