@@ -1,3 +1,4 @@
+/+ Under major rewrite
 module app;
 
 import beamui;
@@ -764,3 +765,4 @@ Widget createChartsTab()
 
     return frame;
 }
++/

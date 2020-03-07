@@ -6,7 +6,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.dialogs.dialog;
-
+/+
 import std.conv;
 import beamui.core.i18n;
 import beamui.core.signals;
@@ -242,3 +242,4 @@ class DialogFrame : WindowFrame
         bodyWidget = _dialog;
     }
 }
++/

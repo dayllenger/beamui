@@ -22,7 +22,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.dialogs.messagebox;
-
+/+
 import beamui.core.actions;
 import beamui.core.i18n;
 import beamui.core.signals;
@@ -57,3 +57,4 @@ class MessageBox : Dialog
         addChild(createButtonsPanel(_actions, _defaultButtonIndex, 0));
     }
 }
++/

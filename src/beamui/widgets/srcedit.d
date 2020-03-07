@@ -6,7 +6,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.srcedit;
-
+/+
 import beamui.core.units;
 import beamui.text.simple : drawSimpleText;
 import beamui.text.sizetest;
@@ -456,3 +456,4 @@ class SourceEdit : EditBox
         }
     }
 }
++/

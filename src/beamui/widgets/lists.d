@@ -8,11 +8,13 @@ Authors:   Vadim Lopatin
 module beamui.widgets.lists;
 
 import beamui.core.signals;
+import beamui.core.types : State, StringListValue;
+/+
 import beamui.widgets.controls;
 import beamui.widgets.scrollbar;
 import beamui.widgets.text;
 import beamui.widgets.widget;
-
++/
 /// List widget adapter provides items for list widgets
 abstract class ListAdapter
 {
@@ -24,9 +26,9 @@ abstract class ListAdapter
         debug (lists)
             Log.d("Destroying ", getShortClassName(this));
     }
-
+/+
     Widget createSharedItemWidget(out void delegate(int) updater);
-
++/
     /// Returns number of widgets in list
     @property int itemCount() const;
     /// Returns list item's state flags
@@ -218,7 +220,7 @@ class StringListAdapter : StringListAdapterBase
     {
         super(items);
     }
-
+/+
     override Widget createSharedItemWidget(out void delegate(int) updater)
     {
         auto widget = new Label;
@@ -231,6 +233,7 @@ class StringListAdapter : StringListAdapterBase
         };
         return widget;
     }
++/
 }
 
 /// List adapter providing strings with icons
@@ -247,7 +250,7 @@ class IconStringListAdapter : StringListAdapterBase
     {
         super(items);
     }
-
+/+
     override Widget createSharedItemWidget(out void delegate(int) updater)
     {
         auto widget = new Panel;
@@ -272,8 +275,9 @@ class IconStringListAdapter : StringListAdapterBase
         };
         return widget;
     }
++/
 }
-
+/+
 alias ElemListWidget = ListWidget;
 alias ElemStringListWidget = StringListWidget;
 
@@ -1305,3 +1309,4 @@ class StringListWidget : ListWidget
         return false; // did not find term
     }
 }
++/

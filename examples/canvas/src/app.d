@@ -1,3 +1,4 @@
+/+ Under major rewrite
 module app;
 
 import std.functional : toDelegate;
@@ -442,3 +443,4 @@ void blending(Painter pr, Size sz)
     pr.beginLayer(lsv, 1, data.blendMode);
     pr.drawImage(data.duck, 10, 10, 1);
 }
++/

@@ -8,7 +8,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.appframe;
-
+/+
 import std.path;
 import beamui.core.files;
 import beamui.core.settings;
@@ -266,3 +266,4 @@ class AppFrame : Panel
         return new Widget;
     }
 }
++/

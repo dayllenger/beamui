@@ -6,7 +6,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.dialogs.settingsdialog;
-
+/+
 import std.file;
 import std.path;
 import beamui.core.files;
@@ -597,3 +597,4 @@ class SettingsDialog : Dialog
         }
     }
 }
++/

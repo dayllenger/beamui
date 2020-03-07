@@ -10,7 +10,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.popup;
-
+/+
 import beamui.platforms.common.platform;
 import beamui.widgets.widget;
 
@@ -212,3 +212,4 @@ class Popup : Widget
         contentWidget.draw(pr);
     }
 }
++/

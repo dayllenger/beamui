@@ -44,10 +44,10 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.scroll;
-
+/+
 import beamui.widgets.scrollbar;
 import beamui.widgets.widget;
-
++/
 /// Scroll bar visibility mode
 enum ScrollBarMode
 {
@@ -60,7 +60,7 @@ enum ScrollBarMode
     /// Scrollbar is provided by external control outside this widget
     external,
 }
-
+/+
 /// Scroll action codes for scrolling areas
 enum ScrollAreaAction
 {
@@ -726,3 +726,4 @@ class ScrollArea : ScrollAreaBase
         _contentWidget.maybe.draw(pr);
     }
 }
++/

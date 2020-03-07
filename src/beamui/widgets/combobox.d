@@ -20,7 +20,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.combobox;
-
+/+
 import beamui.widgets.controls;
 import beamui.widgets.editors;
 import beamui.widgets.lists;
@@ -432,3 +432,4 @@ class ComboEdit : ComboBox
         return super.handleKeyEvent(event);
     }
 }
++/

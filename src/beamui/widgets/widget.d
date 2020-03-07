@@ -32,7 +32,7 @@ public
 
     import beamui.text.fonts;
 
-    import beamui.widgets.popup : PopupAlign;
+    // import beamui.widgets.popup : PopupAlign;
 }
 package import beamui.style.computed_style;
 import std.math : isFinite;
@@ -504,7 +504,7 @@ public:
 
         _font.clear();
         eliminate(_background);
-        eliminate(_popupMenu);
+        // eliminate(_popupMenu);
 
         *_destructionFlag = true;
     }
@@ -1295,7 +1295,7 @@ public:
     {
         return tooltipText.length > 0;
     }
-
+/+
     /** Will be called from window once tooltip request timer expired.
 
         May return `null` if no tooltip to show.
@@ -1318,7 +1318,7 @@ public:
         if (auto w = window)
             w.scheduleTooltip(weakRef(this), delay, alignment, x, y);
     }
-
++/
     //===============================================================
     // About focus
 
@@ -1809,6 +1809,7 @@ public:
                 return true;
             }
         }
+/+
         if (event.action == MouseAction.move && event.noKeyMods && event.noMouseMods && hasTooltip)
         {
             scheduleTooltip(600);
@@ -1823,6 +1824,7 @@ public:
                 return true;
             }
         }
++/
         if (_allowsFocus && event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
             setFocus();
@@ -2258,7 +2260,7 @@ public:
 
     //===============================================================
     // Popup (contextual) menu support
-
+/+
     private Menu _popupMenu;
     /// Popup (contextual menu), associated with this widget
     @property Menu popupMenu() { return _popupMenu; }
@@ -2291,7 +2293,7 @@ public:
         auto popup = window.showPopup(_popupMenu, weakRef(this), PopupAlign.point | PopupAlign.right, x, y);
         popup.ownContent = false;
     }
-
++/
     //===============================================================
     // Widget hierarhy methods
 

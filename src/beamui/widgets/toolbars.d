@@ -10,7 +10,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.toolbars;
-
+/+
 import beamui.widgets.combobox;
 import beamui.widgets.controls;
 import beamui.widgets.text;
@@ -118,3 +118,4 @@ class ToolBarHost : Panel
         return cast(ToolBar)childByID(ID);
     }
 }
++/

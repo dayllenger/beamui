@@ -10,7 +10,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.statusline;
-
+/+
 import beamui.text.sizetest;
 import beamui.widgets.controls;
 import beamui.widgets.editors;
@@ -207,3 +207,4 @@ class StatusLine : Panel
         _editorStatePanel.setState(null, editorState);
     }
 }
++/

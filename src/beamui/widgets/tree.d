@@ -41,7 +41,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.tree;
-
+/+
 import beamui.core.stdaction;
 import beamui.widgets.controls;
 import beamui.widgets.menu;
@@ -1041,3 +1041,4 @@ unittest
     assert(!root.selectedItem);
     assert(!root.defaultItem);
 }
++/

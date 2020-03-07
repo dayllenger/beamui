@@ -294,8 +294,8 @@ class Window : CustomEventTarget
         onClose();
 
         timerThread.maybe.stop();
-        eliminate(_tooltip.popup);
-        eliminate(_popups);
+        // eliminate(_tooltip.popup);
+        // eliminate(_popups);
         eliminate(_mainWidget);
         eliminate(_timerQueue);
         eliminate(_eventList);
@@ -591,10 +591,12 @@ class Window : CustomEventTarget
 
         setupGlobalDPI();
         _mainWidget.handleDPIChange();
+/+
         foreach (Widget p; _popups)
             p.handleDPIChange();
         if (Widget p = _tooltip.popup)
             p.handleDPIChange();
++/
     }
 
     /// Set the minimal window size and resize the window if needed; called from `show()`
@@ -665,7 +667,7 @@ class Window : CustomEventTarget
 
     //===============================================================
     // Popups, tooltips, message and input boxes
-
+/+
     private Popup[] _popups;
 
     protected static struct TooltipInfo
@@ -751,10 +753,11 @@ class Window : CustomEventTarget
         _tooltip.popup = res;
         return res;
     }
-
++/
     /// Hide tooltip if shown and cancel tooltip timer if set
     void hideTooltip()
     {
+/+
         if (_tooltip.popup)
         {
             debug (tooltips)
@@ -772,8 +775,9 @@ class Window : CustomEventTarget
             _tooltip.timerID = 0;
             _tooltip.owner.nullify();
         }
++/
     }
-
+/+
     /// Show new popup
     Popup showPopup(Element content, WeakRef!Element anchor = null,
             PopupAlign alignment = PopupAlign.center, float x = 0, float y = 0)
@@ -848,7 +852,7 @@ class Window : CustomEventTarget
         auto dlg = new InputBox(title, message, this, initialText, handler);
         dlg.show();
     }
-
++/
     //===============================================================
 
     private Listener!(void delegate(string[])) _filesDropped;
@@ -892,11 +896,13 @@ class Window : CustomEventTarget
     {
         if (_mainWidget.isChild(el))
             return true;
+/+
         foreach (p; _popups)
             if (p.isChild(el))
                 return true;
         if (_tooltip.popup && _tooltip.popup.isChild(el))
             return true;
++/
         return false;
     }
 
@@ -1059,8 +1065,8 @@ class Window : CustomEventTarget
                 return res;
         }
         Element focus = focusedElement.get;
-        Popup modal = modalPopup();
-        if (!modal || modal.isChild(focus))
+        // Popup modal = modalPopup();
+        // if (!modal || modal.isChild(focus))
         {
             // process shortcuts
             if (event.action == KeyAction.keyDown)
@@ -1087,7 +1093,8 @@ class Window : CustomEventTarget
                 focus = focus.parent;
             }
         }
-        Element dest = modal ? modal : _mainWidget;
+        // Element dest = modal ? modal : _mainWidget;
+        Element dest = _mainWidget;
         if (dispatchKeyEvent(dest, event))
             return res;
         else
@@ -1120,7 +1127,7 @@ class Window : CustomEventTarget
     {
         if (hasModalWindowsAbove || !_firstDrawCalled)
             return false;
-
+/+
         // check tooltip
         if (event.action == MouseAction.move)
         {
@@ -1144,7 +1151,7 @@ class Window : CustomEventTarget
                 hideTooltip();
             }
         }
-
++/
         debug (mouse)
             Log.fd("dispatchMouseEvent %s (%s, %s)", event.action, event.x, event.y);
 
@@ -1244,11 +1251,11 @@ class Window : CustomEventTarget
         {
             processed = checkRemoveTracking(event);
         }
-
-        Popup modal = modalPopup();
+        // Popup modal = modalPopup();
         bool cursorIsSet = _overridenCursorType != CursorType.automatic;
         if (!res)
         {
+/+
             bool insideOneOfPopups;
             foreach_reverse (p; _popups)
             {
@@ -1273,6 +1280,8 @@ class Window : CustomEventTarget
                 }
             }
             res = dispatchMouseEvent(modal ? modal : _mainWidget, event, cursorIsSet);
++/
+            res = dispatchMouseEvent(_mainWidget, event, cursorIsSet);
         }
         return res || processed || _mainWidget.needDraw;
     }
@@ -1431,6 +1440,7 @@ class Window : CustomEventTarget
             }
             return;
         }
+/+
         if (Element modal = modalPopup())
         {
             dispatchWheelEvent(modal, event);
@@ -1441,6 +1451,7 @@ class Window : CustomEventTarget
             if (dispatchWheelEvent(p, event))
                 return;
         }
++/
         dispatchWheelEvent(_mainWidget, event);
     }
 
@@ -1495,10 +1506,12 @@ class Window : CustomEventTarget
     void dispatchThemeChange()
     {
         _mainWidget.handleThemeChange();
+/+
         foreach (p; _popups)
             p.handleThemeChange();
         if (auto p = _tooltip.popup)
             p.handleThemeChange();
++/
         if (currentTheme)
         {
             _backgroundColor = currentTheme.getColor("window_background", Color.white);
@@ -1705,11 +1718,12 @@ class Window : CustomEventTarget
             return animationActive;
 
         checkUpdateNeeded(_mainWidget, needDraw, needLayout, animationActive);
+/+
         foreach (p; _popups)
             checkUpdateNeeded(p, needDraw, needLayout, animationActive);
         if (auto p = _tooltip.popup)
             checkUpdateNeeded(p, needDraw, needLayout, animationActive);
-
++/
         const ret = needDraw || needLayout || animationActive;
         debug (redraw)
         {
@@ -1827,10 +1841,12 @@ class Window : CustomEventTarget
 
         // process widget ones
         animate(_mainWidget, interval);
+/+
         foreach (p; _popups)
             animate(p, interval);
         if (auto p = _tooltip.popup)
             animate(p, interval);
++/
     }
 
     private void animate(Element root, long interval)
@@ -1861,9 +1877,11 @@ class Window : CustomEventTarget
     void requestLayout()
     {
         _mainWidget.requestLayout();
+/+
         foreach (p; _popups)
             p.requestLayout();
         _tooltip.popup.maybe.requestLayout();
++/
     }
 
     /// Measure main widget, popups and tooltip
@@ -1878,11 +1896,12 @@ class Window : CustomEventTarget
         setupGlobalDPI();
         // TODO: set minimum window size
         _mainWidget.measure();
+/+
         foreach (p; _popups)
             p.measure();
         if (auto tp = _tooltip.popup)
             tp.measure();
-
++/
         debug (layout)
         {
             sw.stop();
@@ -1903,6 +1922,7 @@ class Window : CustomEventTarget
 
         setupGlobalDPI();
         _mainWidget.layout(Box(0, 0, _w, _h));
+/+
         foreach (p; _popups)
         {
             const sz = p.natSize;
@@ -1913,7 +1933,7 @@ class Window : CustomEventTarget
             const sz = tp.natSize;
             tp.layout(Box(0, 0, sz.w, sz.h));
         }
-
++/
         debug (layout)
         {
             sw.stop();
@@ -2025,6 +2045,7 @@ class Window : CustomEventTarget
             // draw main widget
             _mainWidget.draw(_painter);
             // draw popups
+/+
             const modal = modalPopup();
             foreach (p; _popups)
             {
@@ -2037,7 +2058,7 @@ class Window : CustomEventTarget
             }
             // and draw tooltip
             _tooltip.popup.maybe.draw(_painter);
-
++/
             debug (redraw)
             {
                 sw.stop();

@@ -10,7 +10,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.docks;
-
+/+
 import beamui.layout.linear : Resizer, ResizerEventType;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
@@ -352,3 +352,4 @@ class DockWindow : WindowFrame
     //    return new Widget("DOCK_WINDOW_BODY");
     //}
 }
++/

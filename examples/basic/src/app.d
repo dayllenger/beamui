@@ -1,3 +1,4 @@
+/+ Under major rewrite
 module app;
 
 import beamui;
@@ -63,3 +64,4 @@ int main()
     // run event loop
     return platform.enterMessageLoop();
 }
++/

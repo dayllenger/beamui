@@ -12,7 +12,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.widgets.menu;
-
+/+
 import beamui.widgets.controls;
 import beamui.widgets.lists;
 import beamui.widgets.popup;
@@ -962,3 +962,4 @@ class MenuBar : Menu
         return super.handleKeyEvent(event);
     }
 }
++/

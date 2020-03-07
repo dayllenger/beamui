@@ -39,7 +39,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.grid;
-
+/+
 import std.container.rbtree;
 import beamui.core.config;
 import beamui.core.stdaction;
@@ -2268,3 +2268,4 @@ class StringGridWidget : StringGridWidgetBase
         _cellRowHeaderSelectedBackgroundDrawable = currentTheme.getDrawable("grid_cell_background_row_header_selected");
     }
 }
++/

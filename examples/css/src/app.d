@@ -1,14 +1,4 @@
-/**
-
-Synopsis:
----
-dub run :css
----
-
-Copyright: dayllenger 2018
-License:   Boost License 1.0
-Authors:   dayllenger
-*/
+/+ Under major rewrite
 module app;
 
 import beamui;
@@ -137,3 +127,4 @@ Button.folder::label {
     color: orange;
 }
 `;
++/

@@ -15,7 +15,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.dialogs.filedialog;
-
+/+
 import std.array : empty;
 import std.file;
 import std.path;
@@ -1293,3 +1293,4 @@ class DirEditLine : FileNameEditLine
         _caption = tr("Select directory");
     }
 }
++/

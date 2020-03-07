@@ -6,7 +6,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.winframe;
-
+/+
 import beamui.widgets.controls;
 import beamui.widgets.text;
 import beamui.widgets.widget;
@@ -78,3 +78,4 @@ class WindowFrame : Panel
         return new Widget;
     }
 }
++/

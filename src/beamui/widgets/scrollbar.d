@@ -6,7 +6,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.scrollbar;
-
+/+
 import std.math : isFinite;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
@@ -595,3 +595,4 @@ class ScrollBar : WidgetGroup
         }
     }
 }
++/

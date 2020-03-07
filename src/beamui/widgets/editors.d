@@ -146,7 +146,6 @@ void initStandardEditorActions()
 }
 
 alias ElemEditLine = EditLine;
-alias ElemEditBox = EditBox;
 
 class NgEditLine : NgWidget
 {
@@ -219,7 +218,7 @@ class NgEditLine : NgWidget
             el.onChange ~= onChange;
     }
 }
-
+/+
 class NgEditBox : NgWidget
 {
     dstring placeholder;
@@ -305,7 +304,7 @@ class NgEditBox : NgWidget
             el.onContentChange ~= onChange;
     }
 }
-
++/
 /// Common interface for single- and multiline editors
 interface IEditor
 {
@@ -352,7 +351,7 @@ interface IEditor
     void deselect();
     /// Select the whole text
     void selectAll();
-
+/+
     /// Create the default popup menu with undo/redo/cut/copy/paste actions
     static Menu createDefaultPopupMenu()
     {
@@ -360,6 +359,7 @@ interface IEditor
         menu.add(ACTION_UNDO, ACTION_REDO, ACTION_CUT, ACTION_COPY, ACTION_PASTE);
         return menu;
     }
++/
 }
 
 /// Single-line text field
@@ -1466,7 +1466,7 @@ class EditLine : Widget, IEditor, ActionOperator
         }
     }
 }
-
+/+
 /// Multiline editor and base for complex source editors
 class EditBox : ScrollAreaBase, IEditor, ActionOperator
 {
@@ -4588,3 +4588,4 @@ class FindPanel : Panel
         updateHighlight();
     }
 }
++/
