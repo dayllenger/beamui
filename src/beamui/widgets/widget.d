@@ -144,6 +144,10 @@ enum DependentSize
     height,
 }
 
+interface IState
+{
+}
+
 /// Base class for all widgets
 class Widget
 {
@@ -173,6 +177,8 @@ class Widget
         ElementID _elementID;
         Widget _parent;
 
+        IState* _statePtr;
+
         string[string] _attributes;
     }
 
@@ -190,6 +196,12 @@ class Widget
     }
 
     //===============================================================
+
+    protected static Arena* arena()
+    {
+        assert(_arena, "Widget allocator is used outside the build function");
+        return _arena;
+    }
 
     final protected Element mount(Widget parent, size_t index)
     {
@@ -213,6 +225,7 @@ class Widget
         _parent = parent;
         // find or create the element
         Element root = fetchElement();
+        _statePtr = &root._localState;
         // clear the old element tree structure
     if (!root.hasAttribute("ignore")) // tmp
         root.removeAllChildren(false);
@@ -232,12 +245,6 @@ class Widget
         return _store.fetch!E(_elementID, this);
     }
 
-    protected static Arena* arena()
-    {
-        assert(_arena, "Widget allocator is used outside the build function");
-        return _arena;
-    }
-
     protected static E fastCast(E : Element)(Element base)
     {
         debug
@@ -248,6 +255,22 @@ class Widget
         }
         else
             return cast(E)cast(void*)base;
+    }
+
+    protected S useState(S : IState)()
+        in(_statePtr, "The element hasn't mounted yet")
+    {
+        S s;
+        if (*_statePtr)
+        {
+            s = cast(S)*_statePtr;
+            assert(s, "The widget state instance cannot change its type");
+        }
+        else
+        {
+            *_statePtr = s = new S;
+        }
+        return s;
     }
 
     final protected inout(Widget) parent() inout { return _parent; }
@@ -430,6 +453,8 @@ private:
     bool _thisStyleIsolated;
     /// If true, the style will be recomputed on next usage
     bool _needToRecomputeStyle = true;
+
+    IState _localState;
 
     /// Widget state
     State _state = State.normal;
