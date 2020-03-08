@@ -19,6 +19,7 @@ struct Arena
     /// Allocate and construct a class instance
     T make(T, Args...)(Args args) @trusted if (is(T == class))
     {
+        static assert(!__traits(hasMember, T, "__xdtor"), "Arena-allocated object should be trivial to destroy");
         // align to 16 bytes
         enum alignedSize = (__traits(classInstanceSize, T) | 0b1111) + 1;
 
@@ -33,6 +34,8 @@ struct Arena
     /// Allocate and initialize a struct instance
     T* make(T)() @trusted if (is(T == struct))
     {
+        static assert(!__traits(hasMember, T, "__xdtor"), "Arena-allocated object should be trivial to destroy");
+
         const site = len;
         len += T.sizeof;
         if (buf.length < len)
