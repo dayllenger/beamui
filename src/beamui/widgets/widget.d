@@ -382,14 +382,13 @@ abstract class WidgetGroup : Widget
 {
     private Widget[] _children;
 
-    final Widget attach(scope Widget delegate()[] lazyItems...)
+    final Widget attach(Widget[] items...)
     {
-        _children = arena.allocArray!Widget(lazyItems.length);
-        foreach (i, dg; lazyItems)
-        {
-            if (dg)
-                _children[i] = dg();
-        }
+        if (items.length == 0)
+            return this;
+
+        _children = arena.allocArray!Widget(items.length);
+        _children[] = items[];
         return this;
     }
 
