@@ -1,15 +1,75 @@
 /**
 Scrollbar control.
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.scrollbar;
-/+
+
 import std.math : isFinite;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
+
+/// Scroll bar - either vertical or horizontal
+class ScrollBar : Widget
+{
+    protected Orientation orientation;
+    protected float position;
+    protected ScrollData data;
+
+    /** Scroll event listener. Carries scroll position after the default handling.
+
+        Return false if you want to discard this change (if any) and handle
+        it manually, setting `position`.
+    */
+    bool delegate(ScrollAction, float) onScroll;
+
+    /// Construct with an orientation (vertical, horizontal) and, optionally, an explicit position
+    static ScrollBar make(Orientation orientation, float position = float.nan)
+    {
+        ScrollBar w = arena.make!ScrollBar;
+        w.orientation = orientation;
+        w.position = position;
+        return w;
+    }
+
+    static ScrollBar make(Orientation orientation, ScrollData data)
+        in(data)
+    {
+        ScrollBar w = arena.make!ScrollBar;
+        w.orientation = orientation;
+        w.data = data;
+        return w;
+    }
+
+    this()
+    {
+        isolateStyle = true;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemScrollBar;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemScrollBar el = fastCast!ElemScrollBar(element);
+        el.orientation = orientation;
+        el.onScroll.clear();
+        if (onScroll)
+            el.onScroll ~= onScroll;
+
+        if (!data)
+            data = el.data;
+        el.data = data;
+        if (isFinite(position))
+            data.position = position;
+    }
+}
 
 /// Component for scroll data. It validates it and reacts on changes
 class ScrollData
@@ -22,11 +82,10 @@ class ScrollData
         void position(float v)
         {
             adjustPos(v);
-            if (_pos != v)
-            {
-                _pos = v;
-                onChange();
-            }
+            if (_pos == v)
+                return;
+            _pos = v;
+            onChange();
         }
         /// Scroll length (max `position` + `page`). Always >= 0
         float range() const { return _range; }
@@ -45,10 +104,9 @@ class ScrollData
 
     /// Set new `range` and `page` values for scrolling. They must be >= 0
     final void setRange(float range, float page)
+        in(range >= 0)
+        in(page >= 0)
     {
-        assert(range >= 0);
-        assert(page >= 0);
-
         if (_range != range || _page != page)
         {
             _range = range;
@@ -65,7 +123,7 @@ class ScrollData
     }
 }
 
-/// Scroll bar action codes for `ScrollEvent`
+/// Scroll bar action codes
 enum ScrollAction : ubyte
 {
     pressed,  /// Indicator dragging started
@@ -77,54 +135,32 @@ enum ScrollAction : ubyte
     lineDown, /// Down/right button pressed
 }
 
-/// Scrollbar event
-final class ScrollEvent
-{
-    const ScrollAction action;
-    const ScrollData data;
-    /// Position after default event handling
-    const float position;
-    private float amendment = -float.max;
-
-    this(ScrollAction a, ScrollData d, float p)
-    {
-        action = a;
-        data = d;
-        position = p;
-    }
-
-    /// Set a new scroll position in an event handler
-    void amend(float position)
-    {
-        amendment = position;
-    }
-
-    /// Set that the scroll position should not be updated to `position` after the event
-    void discard()
-    {
-        amendment = float.max;
-    }
-}
-
-/// Scroll bar - either vertical or horizontal
-class ScrollBar : WidgetGroup
+class ElemScrollBar : ElemGroup
 {
     @property
     {
         /// Scrollbar data component
         inout(ScrollData) data() inout { return _data; }
+        /// ditto
+        void data(ScrollData obj)
+            in(obj)
+        {
+            if (_data is obj)
+                return;
+            _data.onChange -= &handleDataChange;
+            _data = obj;
+            _data.onChange ~= &handleDataChange;
+        }
 
-        /// Scrollbar orientation (vertical, horizontal)
         Orientation orientation() const { return _orient; }
         /// ditto
         void orientation(Orientation value)
         {
-            if (_orient != value)
-            {
-                _orient = value;
-                updateDrawables();
-                requestLayout();
-            }
+            if (_orient == value)
+                return;
+            _orient = value;
+            updateDrawables();
+            requestLayout();
         }
 
         /// True if full scroll range is visible, and no need of scrolling at all
@@ -134,8 +170,7 @@ class ScrollBar : WidgetGroup
         }
     }
 
-    /// Scroll event listeners
-    Signal!(void delegate(ScrollEvent event)) onScroll;
+    Signal!(bool delegate(ScrollAction, float)) onScroll;
 
     /// Jump length on lineUp/lineDown events
     float lineStep = 0;
@@ -144,36 +179,43 @@ class ScrollBar : WidgetGroup
     {
         ScrollData _data;
 
-        // not _orientation to not intersect with inner buttons _orientation
         Orientation _orient = Orientation.vertical;
 
         ScrollIndicator _indicator;
-        PageScrollButton _pageUp;
-        PageScrollButton _pageDown;
-        Button _btnBack;
-        Button _btnForward;
+        Element _pageUp;
+        Element _pageDown;
+        ElemImage _btnBack;
+        ElemImage _btnForward;
 
         Box _scrollArea;
         float _minIndicatorSize = 0;
         float _btnSize = 0;
     }
 
-    this(Orientation orient = Orientation.vertical, ScrollData data = null)
+    this()
     {
-        isolateStyle();
-        _data = data ? data : new ScrollData;
+        _data = new ScrollData;
         _data.onChange ~= &handleDataChange;
-        _orient = orient;
-        _btnBack = new Button;
-        _btnForward = new Button;
+        _btnBack = new ElemImage;
+        _btnForward = new ElemImage;
         _btnBack.setAttribute("button-back");
         _btnForward.setAttribute("button-forward");
+        _btnBack.allowsClick = true;
+        _btnBack.allowsHover = true;
+        _btnForward.allowsClick = true;
+        _btnForward.allowsHover = true;
         _pageUp = new PageScrollButton;
         _pageDown = new PageScrollButton;
         _indicator = new ScrollIndicator;
         updateDrawables();
-        add(_btnBack, _btnForward, _indicator, _pageUp, _pageDown);
-        bunch(_btnBack, _btnForward, _indicator, _pageUp, _pageDown).allowsFocus(false);
+
+        _hiddenChildren.reserve(5);
+        foreach (el; tup(_btnBack, _btnForward, _indicator, _pageUp, _pageDown))
+        {
+            el.parent = this;
+            _hiddenChildren.append(el);
+        }
+
         _btnBack.onClick ~= { triggerAction(ScrollAction.lineUp); };
         _btnForward.onClick ~= { triggerAction(ScrollAction.lineDown); };
         _pageUp.onClick ~= { triggerAction(ScrollAction.pageUp); };
@@ -218,23 +260,16 @@ class ScrollBar : WidgetGroup
 
         if (onScroll.assigned)
         {
-            auto event = new ScrollEvent(a, _data, pos);
             insideHandler = true;
-            onScroll(event);
+            const done = !onScroll(a, pos);
             insideHandler = false;
-
-            if (event.amendment == float.max)
+            if (done)
                 return;
-            if (event.amendment >= 0)
-            {
-                _data.position = event.amendment;
-                return;
-            }
         }
         _data.position = pos;
     }
 
-    /// Default slider offset on pageUp/pageDown, lineUp/lineDown actions
+    /// Default scroll offset on pageUp/pageDown, lineUp/lineDown actions
     protected float getDefaultOffset(ScrollAction action) const
     {
         float delta = 0;
@@ -464,7 +499,7 @@ class ScrollBar : WidgetGroup
         bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).draw(pr);
     }
 
-    class ScrollIndicator : ImageWidget
+    class ScrollIndicator : ElemImage
     {
         @property void scrollArea(Box b)
         {
@@ -586,7 +621,7 @@ class ScrollBar : WidgetGroup
         }
     }
 
-    class PageScrollButton : Widget
+    class PageScrollButton : Element
     {
         this()
         {
@@ -595,4 +630,3 @@ class ScrollBar : WidgetGroup
         }
     }
 }
-+/
