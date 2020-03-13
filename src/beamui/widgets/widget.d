@@ -209,7 +209,7 @@ class Widget
         return _arena;
     }
 
-    final protected Element mount(Widget parent, size_t index)
+    private Element mount(Widget parent, size_t index)
     {
         // compute the element ID; it always depends on the widget type
         const typeHash = hashOf(this.classinfo.name);
@@ -233,16 +233,19 @@ class Widget
         Element root = fetchElement();
         _statePtr = &root._localState;
         // clear the old element tree structure
-    if (!root.hasAttribute("ignore")) // tmp
         root.removeAllChildren(false);
         // finish widget configuration
         build();
         // update the element with the data
         updateElement(root);
         // continue recursively and build the element tree back
-    if (!root.hasAttribute("ignore")) // tmp
-        mountItems(root);
+        mountChildren(root);
         return root;
+    }
+
+    final protected Element mountChild(Widget child, size_t index)
+    {
+        return child.mount(this, index);
     }
 
     /// Get or create an element instance using the currently bound element store
@@ -304,7 +307,6 @@ class Widget
     {
         el.id = id;
 
-    if (!el.hasAttribute("ignore")) // tmp
         if (el.attributes != _attributes)
         {
             el.attributes = _attributes;
@@ -345,7 +347,7 @@ class Widget
         el.tooltipText = tooltip;
     }
 
-    protected void mountItems(Element el)
+    protected void mountChildren(Element el)
     {
         foreach (i, item; this)
         {
