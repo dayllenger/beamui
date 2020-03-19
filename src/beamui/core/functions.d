@@ -26,6 +26,20 @@ auto caching(T)(T obj) if (is(T == class))
     return cast()obj;
 }
 
+Derived fastCast(Derived, Base)(Base base)
+if ((is(Base == class) || is(Base == interface)) && is(Derived : Base))
+{
+    debug
+    {
+        assert(base);
+        Derived obj = cast(Derived)base;
+        assert(obj, "Failed downcast");
+        return obj;
+    }
+    else
+        return cast(Derived)cast(void*)base;
+}
+
 /// Conversion from wchar z-string
 wstring fromWStringz(T)(const(T) s) if (is(T == wchar[]) || is(T == wchar*))
 {

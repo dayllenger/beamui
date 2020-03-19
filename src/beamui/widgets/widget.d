@@ -261,18 +261,6 @@ class Widget
         return _store.fetch!E(_elementID, this);
     }
 
-    protected static E fastCast(E : Element)(Element base)
-    {
-        debug
-        {
-            E el = cast(E)base;
-            assert(el);
-            return el;
-        }
-        else
-            return cast(E)cast(void*)base;
-    }
-
     protected S useState(S : IState)()
         in(_statePtr, "The element hasn't mounted yet")
     {
