@@ -68,6 +68,8 @@ class ButtonLike : Panel
         isolateStyle = true;
     }
 
+    protected alias attach = typeof(super).attach;
+
     override protected void build()
     {
         ImageWidget image;
@@ -231,6 +233,9 @@ class CheckBox : Panel
         isolateStyle = true;
     }
 
+    protected alias enabled = typeof(super).enabled;
+    protected alias attach = typeof(super).attach;
+
     override protected void build()
     {
         enabled = onToggle !is null;
@@ -288,6 +293,9 @@ class RadioButton : Panel
         allowsHover = true;
         isolateStyle = true;
     }
+
+    protected alias enabled = typeof(super).enabled;
+    protected alias attach = typeof(super).attach;
 
     override protected void build()
     {

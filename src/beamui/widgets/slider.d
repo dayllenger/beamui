@@ -172,6 +172,8 @@ class Slider : AbstractSlider
         }
     }
 
+    protected alias enabled = typeof(super).enabled;
+
     override protected void build()
     {
         super.build();
@@ -299,6 +301,8 @@ class RangeSlider : AbstractSlider
                 onChange(first, v);
         }
     }
+
+    protected alias enabled = typeof(super).enabled;
 
     override protected void build()
     {
