@@ -6,7 +6,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.srcedit;
-/+
+
 import beamui.core.units;
 import beamui.text.simple : drawSimpleText;
 import beamui.text.sizetest;
@@ -17,13 +17,16 @@ import beamui.widgets.popup;
 import beamui.widgets.scroll : ScrollBarMode;
 import beamui.widgets.widget;
 
-alias ElemSourceEdit = SourceEdit;
-
+/// Base class for source code editors, with line numbering, syntax highlight, etc.
 class SourceEdit : EditBox
 {
+    /// When true, line numbers are shown
     bool showLineNumbers = true;
+    /// When true, show modification marks for lines (whether line is unchanged/modified/modified_saved)
     bool showModificationMarks = true;
+    /// When true, show icons (e.g. bookmarks or breakpoints) on the left pane
     bool showIcons;
+    /// When true, show folding controls on the left pane
     bool showFolding;
 
     static SourceEdit make(EditableContent content)
@@ -31,18 +34,21 @@ class SourceEdit : EditBox
     {
         SourceEdit w = arena.make!SourceEdit;
         w.content = content;
-        w.hscrollbarMode = ScrollBarMode.automatic;
-        w.vscrollbarMode = ScrollBarMode.automatic;
-        w.minFontSize = 9;
-        w.maxFontSize = 75;
         return w;
+    }
+
+    this()
+    {
+        hscrollbarMode = ScrollBarMode.automatic;
+        vscrollbarMode = ScrollBarMode.automatic;
+        // allow font zoom with Ctrl + MouseWheel
+        minFontSize = 9;
+        maxFontSize = 75;
     }
 
     override protected Element fetchElement()
     {
-        auto el = fetchEl!ElemSourceEdit;
-        el.setAttribute("ignore");
-        return el;
+        return fetchEl!ElemSourceEdit;
     }
 
     override protected void updateElement(Element element)
@@ -57,72 +63,61 @@ class SourceEdit : EditBox
     }
 }
 
-/// Base class for source code editors, with line numbering, syntax highlight, etc.
-class SourceEdit : EditBox
+class ElemSourceEdit : ElemEditBox
 {
     @property
     {
-        /// When true, line numbers are shown
         bool showLineNumbers() const { return _showLineNumbers; }
         /// ditto
         void showLineNumbers(bool flag)
         {
-            if (_showLineNumbers != flag)
-            {
-                _showLineNumbers = flag;
-                updateLeftPaneWidth();
-                requestLayout();
-            }
+            if (_showLineNumbers == flag)
+                return;
+            _showLineNumbers = flag;
+            updateLeftPaneWidth();
+            requestLayout();
         }
 
-        /// When true, show modification marks for lines (whether line is unchanged/modified/modified_saved)
         bool showModificationMarks() const { return _showModificationMarks; }
         /// ditto
         void showModificationMarks(bool flag)
         {
-            if (_showModificationMarks != flag)
-            {
-                _showModificationMarks = flag;
-                updateLeftPaneWidth();
-                requestLayout();
-            }
+            if (_showModificationMarks == flag)
+                return;
+            _showModificationMarks = flag;
+            updateLeftPaneWidth();
+            requestLayout();
         }
 
-        /// When true, show icons like bookmarks or breakpoints at the left
         bool showIcons() const { return _showIcons; }
         /// ditto
         void showIcons(bool flag)
         {
-            if (_showIcons != flag)
-            {
-                _showIcons = flag;
-                updateLeftPaneWidth();
-                requestLayout();
-            }
+            if (_showIcons == flag)
+                return;
+            _showIcons = flag;
+            updateLeftPaneWidth();
+            requestLayout();
         }
 
-        /// When true, show folding controls at the left
         bool showFolding() const { return _showFolding; }
         /// ditto
         void showFolding(bool flag)
         {
-            if (_showFolding != flag)
-            {
-                _showFolding = flag;
-                updateLeftPaneWidth();
-                requestLayout();
-            }
+            if (_showFolding == flag)
+                return;
+            _showFolding = flag;
+            updateLeftPaneWidth();
+            requestLayout();
         }
-
-        string filename() const { return _filename; }
     }
 
     private
     {
-        bool _showLineNumbers = true; /// show line numbers in left pane
-        bool _showModificationMarks = true; /// show modification marks in left pane
-        bool _showIcons = false; /// show icons in left pane
-        bool _showFolding = false; /// show folding controls in left pane
+        bool _showLineNumbers = true;
+        bool _showModificationMarks = true;
+        bool _showIcons;
+        bool _showFolding;
 
         float _lineNumbersWidth = 0;
         float _modificationMarksWidth = 0;
@@ -145,46 +140,11 @@ class SourceEdit : EditBox
         Color _colorIconBreakpoint = Color(0xFF0000);
         Color _colorIconBookmark = Color(0x0000FF);
         Color _colorIconError = Color(0xFF0000, 0x80);
-
-        string _filename;
     }
 
     this()
     {
         _extendRightScrollBound = true;
-        // allow font zoom with Ctrl + MouseWheel
-        minFontSize = 9;
-        maxFontSize = 75;
-    }
-
-    /// Load from file
-    bool load(string fn)
-    {
-        if (content.load(fn))
-        {
-            _filename = fn;
-            requestLayout();
-            return true;
-        }
-        // failed
-        _filename = null;
-        return false;
-    }
-
-    bool save(string fn)
-    {
-        if (content.save(fn))
-        {
-            _filename = fn;
-            requestLayout();
-            window.update();
-            return true;
-        }
-        // failed
-        requestLayout();
-        window.update();
-        _filename = null;
-        return false;
     }
 
     override void handleThemeChange()
@@ -277,6 +237,7 @@ class SourceEdit : EditBox
 
     protected bool handleLeftPaneIconsMouseClick(MouseEvent event, Box b, int line)
     {
+/+
         if (event.button == MouseButton.right)
         {
             if (auto menu = getLeftPaneIconsPopupMenu(line))
@@ -289,9 +250,10 @@ class SourceEdit : EditBox
             }
             return true;
         }
++/
         return true;
     }
-
+/+
     protected Menu getLeftPaneIconsPopupMenu(int line)
     {
         Menu menu = new Menu;
@@ -301,7 +263,7 @@ class SourceEdit : EditBox
         menu.add(ACTION_ED_TOGGLE_BOOKMARK);
         return menu;
     }
-
++/
     override protected void updateLeftPaneWidth()
     {
         _iconsWidth = _showIcons ? _iconsPaneWidth : 0;
@@ -456,4 +418,3 @@ class SourceEdit : EditBox
         }
     }
 }
-+/

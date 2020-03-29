@@ -145,18 +145,25 @@ void initStandardEditorActions()
     ).context(ActionContext.widgetTree);
 }
 
+/// Single-line text field
 class EditLine : Widget
 {
+    /// Placeholder is a short peace of text that describes the expected input
     dstring placeholder;
+    /// A character (e.g. '*') to hide password-like input. 0 for normal editor
     dchar passwordChar = 0;
-
+    /// When true, user cannot change content of the editor
     bool readOnly;
+    /// When true, enables caret blinking, otherwise it's always visible
     bool enableCaretBlinking = true;
+    /// When true, allows copy/cut the whole line if there is no selection
     bool copyWholeLineWhenNoSelection = true;
     bool wantTabs;
 
+    /// Signals when the editor content changes
     void delegate(dstring) onChange;
 
+    /// Set text as a string. Replaces any already typed text
     @property void text(dstring str)
     {
         _text = str;
@@ -216,22 +223,30 @@ class EditLine : Widget
             el.onChange ~= onChange;
     }
 }
-/+
-class EditBox : Widget
-{
-    dstring placeholder;
 
+/// Multiline editor and base for complex source editors
+class EditBox : ScrollAreaBase
+{
+    /// Placeholder is a short peace of text that describes the expected input
+    dstring placeholder;
+    /// When true, user cannot change content of the editor
     bool readOnly;
+    /// When true, enables caret blinking, otherwise it's always visible
     bool enableCaretBlinking = true;
+    /// When true, allows copy/cut whole current line if there is no selection
     bool copyWholeLineWhenNoSelection = true;
 
     bool wantTabs = true;
+    /// When true, spaces will be inserted instead of tabs on Tab key
     bool useSpacesForTabs = true;
+    /// Tab stop size (in number of spaces)
     int tabSize = 4;
 
     bool smartIndentsAfterPaste;
 
+    /// When true, shows mark on tab positions at the beginning of lines
     bool showTabPositionMarks;
+    /// When true, show marks for tabs and spaces at the beginning and the end of lines, and tabs inside lines
     bool showWhiteSpaceMarks;
 
     int minFontSize = -1;
@@ -240,8 +255,6 @@ class EditBox : Widget
     void delegate(EditableContent) onChange;
 
     protected EditableContent content;
-    protected ScrollBarMode hscrollbarMode;
-    protected ScrollBarMode vscrollbarMode;
 
     static EditBox make(
         EditableContent content,
@@ -265,9 +278,7 @@ class EditBox : Widget
 
     override protected Element fetchElement()
     {
-        auto el = fetchEl!ElemEditBox;
-        el.setAttribute("ignore");
-        return el;
+        return fetchEl!ElemEditBox;
     }
 
     override protected void updateElement(Element element)
@@ -276,8 +287,6 @@ class EditBox : Widget
 
         ElemEditBox el = fastCast!ElemEditBox(element);
         el.content = content;
-        el.hscrollbarMode = hscrollbarMode;
-        el.vscrollbarMode = vscrollbarMode;
 
         el.placeholder = placeholder;
 
@@ -302,7 +311,7 @@ class EditBox : Widget
             el.onContentChange ~= onChange;
     }
 }
-+/
+
 /// Common interface for single- and multiline editors
 interface IEditor
 {
@@ -313,7 +322,7 @@ interface IEditor
         /// ditto
         void text(dstring txt);
 
-        /// Placeholder is a short peace of text that describe expected value in an input field
+        /// Placeholder is a short peace of text that describes the expected input
         dstring placeholder() const;
         /// ditto
         void placeholder(dstring txt);
@@ -360,12 +369,10 @@ interface IEditor
 +/
 }
 
-/// Single-line text field
 class ElemEditLine : Element, IEditor, ActionOperator
 {
     @property
     {
-        /// Text line string
         override dstring text() const { return _str; }
         /// ditto
         override void text(dstring txt)
@@ -382,6 +389,7 @@ class ElemEditLine : Element, IEditor, ActionOperator
         {
             return _placeholder ? _placeholder.str : null;
         }
+        /// ditto
         void placeholder(dstring txt)
         {
             if (!_placeholder)
@@ -401,6 +409,7 @@ class ElemEditLine : Element, IEditor, ActionOperator
         {
             return _minSizeTester.str;
         }
+        /// ditto
         void minSizeTester(dstring txt)
         {
             _minSizeTester.str = txt;
@@ -411,6 +420,7 @@ class ElemEditLine : Element, IEditor, ActionOperator
         {
             return (state & State.readOnly) != 0;
         }
+        /// ditto
         void readOnly(bool flag)
         {
             if (flag)
@@ -420,6 +430,7 @@ class ElemEditLine : Element, IEditor, ActionOperator
         }
 
         bool replaceMode() const { return _replaceMode; }
+        /// ditto
         void replaceMode(bool flag)
         {
             _replaceMode = flag;
@@ -427,14 +438,13 @@ class ElemEditLine : Element, IEditor, ActionOperator
         }
 
         bool enableCaretBlinking() const { return _enableCaretBlinking; }
+        /// ditto
         void enableCaretBlinking(bool flag)
         {
             stopCaretBlinking();
             _enableCaretBlinking = flag;
         }
 
-        /// Password character - 0 for normal editor, some character
-        /// e.g. `*` to hide text by replacing all characters with this char
         dchar passwordChar() const { return _passwordChar; }
         /// ditto
         void passwordChar(dchar ch)
@@ -493,10 +503,8 @@ class ElemEditLine : Element, IEditor, ActionOperator
 
     /// When true, Tab / Shift+Tab presses are processed internally in widget (e.g. insert tab character) instead of focus change navigation.
     bool wantTabs;
-    /// When true, allows copy / cut whole current line if there is no selection
     bool copyWholeLineWhenNoSelection = true;
 
-    /// Emits when the editor content changes
     Signal!(void delegate(dstring)) onChange;
     /// Emits when the editor caret position changes
     Signal!(void delegate(int)) onCaretPosChange;
@@ -534,16 +542,14 @@ class ElemEditLine : Element, IEditor, ActionOperator
         float _firstGlyphPosX = 0;
     }
 
-    this(dstring initialContent = null)
+    this()
     {
-        allowsFocus = true;
         bindActions();
         handleFontChange();
         handleThemeChange();
 
         _undoBuffer = new UndoBuffer;
         _minSizeTester.str = "aaaaa"d;
-        text = initialContent;
     }
 
     ~this()
@@ -1464,9 +1470,8 @@ class ElemEditLine : Element, IEditor, ActionOperator
         }
     }
 }
-/+
-/// Multiline editor and base for complex source editors
-class EditBox : ScrollAreaBase, IEditor, ActionOperator
+
+class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
 {
     @property
     {
@@ -1552,7 +1557,6 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
             invalidate();
         }
 
-        /// Tab size (in number of spaces)
         int tabSize() const
         {
             return _content.tabSize;
@@ -1569,7 +1573,6 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
             }
         }
 
-        /// When true, spaces will be inserted instead of tabs on Tab key
         bool useSpacesForTabs() const
         {
             return _content.useSpacesForTabs;
@@ -1621,7 +1624,6 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
             _maxFontSize = size;
         }
 
-        /// When true shows mark on tab positions in beginning of line
         bool showTabPositionMarks() const { return _showTabPositionMarks; }
         /// ditto
         void showTabPositionMarks(bool show)
@@ -1632,7 +1634,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
                 invalidate();
             }
         }
-        /// When true, show marks for tabs and spaces at beginning and end of line, and tabs inside line
+
         bool showWhiteSpaceMarks() const { return _showWhiteSpaceMarks; }
         /// ditto
         void showWhiteSpaceMarks(bool show)
@@ -1728,13 +1730,8 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
         uint _markupEngaged;
     }
 
-    this(dstring initialContent = null,
-         ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
-         ScrollBarMode vscrollbarMode = ScrollBarMode.automatic)
+    this()
     {
-        super(hscrollbarMode, vscrollbarMode);
-        allowsFocus = true;
-
         _content = new EditableContent;
         _content.onContentChange ~= &handleContentChange;
 
@@ -1742,7 +1739,6 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
         handleFontChange();
         handleThemeChange();
 
-        text = initialContent;
         _minSizeTester.str = "aaaaa\naaaaa"d;
         setScrollSteps(0, 3);
     }
@@ -1760,9 +1756,9 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
     //===============================================================
     // Focus
 
-    override Widget setFocus(FocusReason reason = FocusReason.unspecified)
+    override Element setFocus(FocusReason reason = FocusReason.unspecified)
     {
-        Widget res = super.setFocus(reason);
+        Element res = super.setFocus(reason);
         if (focused)
             handleEditorStateChange();
         return res;
@@ -1856,26 +1852,28 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
         data.position = _firstVisibleLine;
     }
 
-    override protected void handleHScroll(ScrollEvent event)
+    override protected bool handleHScroll(ScrollAction action, float position)
     {
-        if (scrollPos.x != event.position)
+        if (scrollPos.x != position)
         {
-            scrollPos.x = event.position;
+            scrollPos.x = position;
             invalidate();
         }
+        return true;
     }
 
-    override protected void handleVScroll(ScrollEvent event)
+    override protected bool handleVScroll(ScrollAction action, float position)
     {
-        const pos = cast(int)event.position;
+        const pos = cast(int)position;
         if (_firstVisibleLine != pos)
         {
             _firstVisibleLine = pos;
-            event.discard();
             measureVisibleText();
             updateScrollBars();
             invalidate();
+            return false;
         }
+        return true;
     }
 
     /// Updates `onStateChange` with recent position
@@ -1900,7 +1898,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
         }
         onStateChange(info);
     }
-
+/+
     override bool canShowPopupMenu(float x, float y)
     {
         if (popupMenu is null)
@@ -1910,7 +1908,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
                 return false;
         return true;
     }
-
++/
     override CursorType getCursorType(float x, float y) const
     {
         return x < box.x + _leftPaneWidth ? CursorType.arrow : CursorType.text;
@@ -2970,11 +2968,12 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
 
         ACTION_ED_TOGGLE_LINE_COMMENT.bind(this, &toggleLineComment);
         ACTION_ED_TOGGLE_BLOCK_COMMENT.bind(this, &toggleBlockComment);
-
+/+
         ACTION_ED_FIND.bind(this, &openFindPanel);
         ACTION_ED_FIND_NEXT.bind(this, { findNext(false); });
         ACTION_ED_FIND_PREV.bind(this, { findNext(true); });
         ACTION_ED_REPLACE.bind(this, &openReplacePanel);
++/
     }
 
     protected void unbindActions()
@@ -3590,7 +3589,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
         }
         return res;
     }
-
+/+
     private FindPanel _findPanel;
 
     protected void openFindPanel()
@@ -3655,7 +3654,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
             }
         }
     }
-
++/
     private dstring selectionText(bool singleLineOnly = false) const
     {
         const TextRange range = _selectionRange;
@@ -3864,7 +3863,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
     override protected void arrangeContent()
     {
         super.arrangeContent();
-
+/+
         if (_findPanel && _findPanel.visibility != Visibility.gone)
         {
             _findPanel.measure();
@@ -3872,7 +3871,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
             const cb = clientBox;
             _findPanel.layout(Box(cb.x, cb.y + cb.h - sz.h, cb.w, sz.h));
         }
-
++/
         if (_contentChanged)
         {
             measureVisibleText();
@@ -3915,7 +3914,7 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
                 line.wrap(clientBox.w);
         }
         sz.h = _lineHeight * _content.lineCount; // height - for all lines
-        // we use max width of the viewed lines as content width
+        // we use max width of the viewed lines as the content width;
         // in some situations, we reset it to shrink the horizontal scrolling range
         if (_content.lineCount < _lastMeasureLineCount / 3)
             _maxLineWidth = sz.w;
@@ -4243,10 +4242,10 @@ class EditBox : ScrollAreaBase, IEditor, ActionOperator
 
         drawCaret(pr);
 
-        _findPanel.maybe.draw(pr);
+        // _findPanel.maybe.draw(pr);
     }
 }
-
+/+
 /// Read only edit box for displaying logs with lines append operation
 class LogWidget : EditBox
 {
