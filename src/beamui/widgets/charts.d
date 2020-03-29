@@ -83,14 +83,8 @@ class SimpleBarChart : Widget
 
 class ElemSimpleBarChart : Element
 {
-    this(dstring title = null)
+    this()
     {
-        this.title = title ? title : tr("New chart");
-
-        allowsClick = false;
-        allowsFocus = false;
-        allowsHover = false;
-
         _axisX.arrowSize = 1;
         _minDescSizeTester.str = "aaaaaaaaaa";
         handleFontChange();
@@ -179,7 +173,6 @@ class ElemSimpleBarChart : Element
             return _values.length;
         }
 
-        /// Title to show
         dstring title() const { return _title.str; }
         /// ditto
         void title(dstring s)
@@ -429,7 +422,7 @@ class ElemSimpleBarChart : Element
         if (approxEqual(_maxY, 0, 0.0000001, 0.0000001))
             currentMaxValue = 100;
 
-        double pixValue = axisInPixels / currentMaxValue;
+        const pixValue = axisInPixels / currentMaxValue;
         return cast(float)round(barYValue * pixValue);
     }
 }

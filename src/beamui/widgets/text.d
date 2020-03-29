@@ -1,7 +1,7 @@
 /**
 Widgets to show plain or formatted single- and multiline text.
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -14,9 +14,14 @@ import beamui.text.sizetest;
 import beamui.text.style;
 import beamui.widgets.widget;
 
+/** Efficient single- or multiline plain text widget.
+
+    Can contain `&` character to underline a mnemonic key.
+*/
 class Label : Widget
 {
-    dstring text;
+    /// Text to show
+    protected dstring text;
 
     static Label make(dstring text)
     {
@@ -39,17 +44,11 @@ class Label : Widget
     }
 }
 
+/** Widget for multiline text with optional inner markup.
+*/
 class Paragraph : Widget
 {
-    private dstring text;
-    private TextContent content;
-
-    static Paragraph make(dstring text)
-    {
-        Paragraph w = arena.make!Paragraph;
-        w.text = text;
-        return w;
-    }
+    protected TextContent content;
 
     static Paragraph make(TextContent content)
         in(content)
@@ -69,22 +68,14 @@ class Paragraph : Widget
         super.updateElement(element);
 
         ElemParagraph el = fastCast!ElemParagraph(element);
-        if (content)
-            el.content = content;
-        else
-            el.text = text;
+        el.content = content;
     }
 }
 
-/** Efficient single- or multiline plain text widget.
-
-    Can contain `&` character to underline a mnemonic key.
-*/
 class ElemLabel : Element
 {
     @property
     {
-        /// Text to show
         override dstring text() const { return original; }
         /// ditto
         override void text(dstring s)
@@ -304,14 +295,12 @@ unittest
     assert(extractMnemonic("a &"d) == tup("a &"d, -1));
 }
 
-/** Widget for multiline text with optional inner markup.
-*/
 class ElemParagraph : Element
 {
     @property
     {
         inout(TextContent) content() inout { return _content; }
-
+        /// ditto
         void content(TextContent tc)
             in(tc)
         {

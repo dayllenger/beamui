@@ -14,8 +14,9 @@ import beamui.widgets.widget;
 
 class GroupBox : Panel
 {
-    dstring caption;
+    protected dstring caption;
 
+    /// Make a groupbox with caption label
     static GroupBox make(dstring caption)
     {
         GroupBox w = arena.make!GroupBox;
@@ -41,9 +42,9 @@ class ElemGroupBox : ElemPanel
 {
     private ElemLabel _caption;
 
-    this(dstring caption = ""d)
+    this()
     {
-        _caption = new ElemLabel(caption);
+        _caption = new ElemLabel;
         _caption.isolateThisStyle();
         _caption.setAttribute("caption");
         _caption.state = State.parent;
@@ -51,30 +52,14 @@ class ElemGroupBox : ElemPanel
         _hiddenChildren.append(_caption);
     }
 
-    this(dstring caption, Orientation orientation)
+    this(Orientation orientation)
     {
-        _caption = new ElemLabel(caption);
-        _caption.isolateThisStyle();
-        _caption.setAttribute("caption");
-        _caption.state = State.parent;
-        _caption.parent = this;
-        _hiddenChildren.append(_caption);
+        this();
         style.display = orientation == Orientation.vertical ? "column" : "row";
     }
 
     override @property
     {
-        /// Groupbox caption text to show
-        dstring text() const
-        {
-            return _caption.text;
-        }
-        /// ditto
-        void text(dstring s)
-        {
-            _caption.text = s;
-        }
-
         Insets padding() const
         {
             // get default padding
