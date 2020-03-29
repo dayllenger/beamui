@@ -229,8 +229,8 @@ class Widget
         }
         _elementID = ElementID(typeHash ^ mainHash);
         _parent = parent;
-        // find or create the element
-        Element root = fetchElement();
+        // find or create the element using the currently bound element store
+        Element root = _store.fetch(_elementID, this);
         _statePtr = &root._localState;
         // reparent the element silently
         root._parent = parentElem;
@@ -253,12 +253,6 @@ class Widget
         in(child)
     {
         return child.mount(this, thisElem, index);
-    }
-
-    /// Get or create an element instance using the currently bound element store
-    protected E fetchEl(E : Element)()
-    {
-        return _store.fetch!E(_elementID, this);
     }
 
     protected S useState(S : IState)()
@@ -291,10 +285,10 @@ class Widget
     {
     }
 
-    protected Element fetchElement()
+    protected Element createElement()
         out(el; el)
     {
-        return fetchEl!Element;
+        return new Element;
     }
 
     protected void updateElement(Element el)
@@ -360,9 +354,9 @@ abstract class WidgetWrapper : Widget
         return 0;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemGroup;
+        return new ElemGroup;
     }
 
     override protected void updateElement(Element el)
@@ -409,9 +403,9 @@ abstract class WidgetGroup : Widget
         return 0;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemGroup;
+        return new ElemGroup;
     }
 
     override protected void updateElement(Element el)
@@ -445,9 +439,9 @@ class Panel : WidgetGroup
         return w;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemPanel;
+        return new ElemPanel;
     }
 }
 
@@ -2871,20 +2865,19 @@ struct ElementStore
         eliminate(map);
     }
 
-    E fetch(E : Element)(ElementID id, Widget caller)
+    Element fetch(ElementID id, Widget caller)
         in(id.value)
         in(caller)
-        out(el; el)
     {
-        E el;
+        Element el;
         if (auto p = id in map)
         {
-            el = cast(E)*p;
+            el = *p;
         }
         else
         {
-            map[id] = el = new E;
-            (cast(Element)el).widgetType = typeid(caller);
+            map[id] = el = caller.createElement();
+            el.widgetType = typeid(caller);
             instantiations++;
         }
         return el;

@@ -46,9 +46,9 @@ class SourceEdit : EditBox
         maxFontSize = 75;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemSourceEdit;
+        return new ElemSourceEdit(content);
     }
 
     override protected void updateElement(Element element)
@@ -142,8 +142,9 @@ class ElemSourceEdit : ElemEditBox
         Color _colorIconError = Color(0xFF0000, 0x80);
     }
 
-    this()
+    this(EditableContent content)
     {
+        super(content);
         _extendRightScrollBound = true;
     }
 

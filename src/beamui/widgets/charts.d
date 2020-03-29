@@ -57,9 +57,9 @@ class SimpleBarChart : Widget
         return w;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemSimpleBarChart;
+        return new ElemSimpleBarChart;
     }
 
     override protected void updateElement(Element element)

@@ -440,9 +440,9 @@ class Resizer : Widget
         allowsHover = true;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemResizer;
+        return new ElemResizer;
     }
 }
 

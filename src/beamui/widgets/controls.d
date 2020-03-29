@@ -32,9 +32,9 @@ class ImageWidget : Widget
         return w;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemImage;
+        return new ElemImage;
     }
 
     override protected void updateElement(Element element)
@@ -155,9 +155,9 @@ class Link : WidgetWrapper
             _content.inheritState = true;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemPanel;
+        return new ElemPanel;
     }
 
     override protected void updateElement(Element element)
@@ -193,9 +193,9 @@ class SwitchButton : Widget
         return w;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemSwitch;
+        return new ElemSwitch;
     }
 
     override protected void updateElement(Element element)
@@ -358,9 +358,9 @@ class CanvasWidget : Widget
         return w;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemCanvas;
+        return new ElemCanvas;
     }
 
     override protected void updateElement(Element element)

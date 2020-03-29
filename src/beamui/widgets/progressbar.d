@@ -38,9 +38,9 @@ class ProgressBar : Widget
         return w;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemProgressBar;
+        return new ElemProgressBar;
     }
 
     override protected void updateElement(Element element)

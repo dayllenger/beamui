@@ -30,9 +30,9 @@ class Label : Widget
         return w;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemLabel;
+        return new ElemLabel;
     }
 
     override protected void updateElement(Element element)
@@ -58,9 +58,9 @@ class Paragraph : Widget
         return w;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemParagraph;
+        return new ElemParagraph;
     }
 
     override protected void updateElement(Element element)

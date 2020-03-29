@@ -180,9 +180,9 @@ class Slider : AbstractSlider
         enabled = onChange || onScroll;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemSlider;
+        return new ElemSlider;
     }
 
     override protected void updateElement(Element element)
@@ -310,9 +310,9 @@ class RangeSlider : AbstractSlider
         enabled = onChange || onScroll1 || onScroll2;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemRangeSlider;
+        return new ElemRangeSlider;
     }
 
     override protected void updateElement(Element element)

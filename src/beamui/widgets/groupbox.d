@@ -24,9 +24,9 @@ class GroupBox : Panel
         return w;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemGroupBox;
+        return new ElemGroupBox;
     }
 
     override protected void updateElement(Element element)

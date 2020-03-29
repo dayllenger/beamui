@@ -303,9 +303,9 @@ class ListWidget : WidgetGroup
         allowsFocus = true;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemListWidget;
+        return new ElemListWidget;
     }
 
     override protected void updateElement(Element element)
@@ -335,9 +335,9 @@ class StringListWidget : ListWidget
         return w;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemStringListWidget;
+        return new ElemStringListWidget;
     }
 }
 

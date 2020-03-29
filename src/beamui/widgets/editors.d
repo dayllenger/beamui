@@ -198,9 +198,9 @@ class EditLine : Widget
         allowsHover = true;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemEditLine;
+        return new ElemEditLine;
     }
 
     override protected void updateElement(Element element)
@@ -276,9 +276,9 @@ class EditBox : ScrollAreaBase
         allowsHover = true;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemEditBox;
+        return new ElemEditBox(content);
     }
 
     override protected void updateElement(Element element)
@@ -1730,9 +1730,10 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
         uint _markupEngaged;
     }
 
-    this()
+    this(EditableContent content)
+        in(content)
     {
-        _content = new EditableContent;
+        _content = content;
         _content.onContentChange ~= &handleContentChange;
 
         bindActions();

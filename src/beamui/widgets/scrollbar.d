@@ -48,9 +48,9 @@ class ScrollBar : Widget
         isolateStyle = true;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemScrollBar;
+        return new ElemScrollBar(data ? data : new ScrollData);
     }
 
     override protected void updateElement(Element element)
@@ -192,9 +192,10 @@ class ElemScrollBar : ElemGroup
         float _btnSize = 0;
     }
 
-    this()
+    this(ScrollData data)
+        in(data)
     {
-        _data = new ScrollData;
+        _data = data;
         _data.onChange ~= &handleDataChange;
         _btnBack = new ElemImage;
         _btnForward = new ElemImage;
@@ -220,6 +221,11 @@ class ElemScrollBar : ElemGroup
         _btnForward.onClick ~= { triggerAction(ScrollAction.lineDown); };
         _pageUp.onClick ~= { triggerAction(ScrollAction.pageUp); };
         _pageDown.onClick ~= { triggerAction(ScrollAction.pageDown); };
+    }
+
+    ~this()
+    {
+        _data.onChange -= &handleDataChange;
     }
 
     override void handleThemeChange()

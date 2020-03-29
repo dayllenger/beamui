@@ -611,9 +611,9 @@ class ScrollArea : ScrollAreaBase
         return this;
     }
 
-    override protected Element fetchElement()
+    override protected Element createElement()
     {
-        return fetchEl!ElemScrollArea;
+        return new ElemScrollArea;
     }
 
     override protected void updateElement(Element element)
