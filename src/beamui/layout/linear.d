@@ -419,6 +419,7 @@ private void shrink(string dim)(ref Array!LayoutItem items, const float availabl
     }
 }
 
+/// Spacer to fill empty space in layouts
 class NgSpacer : NgWidget
 {
     static NgSpacer make()
@@ -442,14 +443,6 @@ class NgResizer : NgWidget
     override protected Element fetchElement()
     {
         return fetchEl!ElemResizer;
-    }
-}
-
-/// Spacer to fill empty space in layouts
-class Spacer : Element
-{
-    this()
-    {
     }
 }
 

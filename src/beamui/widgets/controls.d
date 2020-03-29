@@ -128,6 +128,7 @@ class NgButton : NgButtonLike
     }
 }
 
+/// Hyperlink button. May wrap any widget
 class NgLink : NgWidgetWrapper
 {
     import beamui.platforms.common.platform : platform;
@@ -585,20 +586,6 @@ class Button : ElemPanel, ActionHolder
     }
 }
 
-/// Hyperlink button. Like `Button`, may execute arbitrary actions.
-class LinkButton : Button
-{
-    import beamui.platforms.common.platform : platform;
-
-    this(dstring labelText, string url, string icon = "applications-internet")
-    {
-        super(labelText, icon);
-        auto a = new Action(labelText, icon); // TODO: consider link hotkeys
-        a.bind(this, { platform.openURL(url); });
-        action = a;
-    }
-}
-
 class ElemSwitch : Element
 {
     this()
@@ -618,98 +605,6 @@ class ElemSwitch : Element
         const Drawable bg = style.backgroundImage;
         const sz = bg ? Size(bg.width, bg.height) : Size(0, 0);
         return Boundaries(sz);
-    }
-}
-
-class CheckBox : ElemPanel
-{
-    private
-    {
-        Element _icon;
-        ElemLabel _label;
-    }
-
-    this(dstring labelText = null)
-    {
-        isolateStyle();
-        _icon = new Element;
-        _label = new ElemLabel(labelText);
-        _icon.setAttribute("icon");
-        _label.setAttribute("label");
-        _icon.state = State.parent;
-        _label.state = State.parent;
-        add(_icon, _label);
-        if (!labelText)
-            _label.visibility = Visibility.gone;
-        allowsClick = true;
-        allowsFocus = true;
-        allowsHover = true;
-    }
-
-    override protected void handleClick()
-    {
-        checked = !checked;
-    }
-}
-
-class RadioButton : ElemPanel
-{
-    private
-    {
-        Element _icon;
-        ElemLabel _label;
-    }
-
-    this(dstring labelText = null)
-    {
-        isolateStyle();
-        _icon = new Element;
-        _label = new ElemLabel(labelText);
-        _icon.setAttribute("icon");
-        _label.setAttribute("label");
-        _icon.state = State.parent;
-        _label.state = State.parent;
-        add(_icon, _label);
-        if (!labelText)
-            _label.visibility = Visibility.gone;
-        allowsClick = true;
-        allowsFocus = true;
-        allowsHover = true;
-    }
-
-    override protected void handleClick()
-    {
-        checked = true;
-    }
-
-    override protected void handleToggling(bool checked)
-    {
-        if (!blockUnchecking)
-            uncheckSiblings();
-    }
-
-    private bool blockUnchecking = false;
-
-    void uncheckSiblings()
-    {
-        Element p = parent;
-        if (!p)
-            return;
-        foreach (i; 0 .. p.childCount)
-        {
-            Element child = p.child(i);
-            if (child is this)
-                continue;
-            auto rb = cast(RadioButton)child;
-            if (rb)
-            {
-                // deactivate siblings
-                rb.blockUnchecking = true;
-                scope (exit)
-                    rb.blockUnchecking = false;
-                rb.checked = false;
-            }
-        }
     }
 }
 
