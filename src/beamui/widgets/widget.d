@@ -199,7 +199,13 @@ class Widget
 
     protected static Arena* arena()
     {
-        assert(_arena, "Widget allocator is used outside the build function");
+        version (unittest)
+        {
+            if (!_arena)
+                _arena = new Arena;
+        }
+        else
+            assert(_arena, "Widget allocator is used outside the build function");
         return _arena;
     }
 

@@ -13,7 +13,7 @@ slider.onScroll ~= (SliderEvent event) {
 };
 ---
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -23,91 +23,9 @@ import std.math : abs, isFinite, quantize;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
-abstract class AbstractSlider : Widget
+struct SliderRange
 {
-    double minValue = 0;
-    double maxValue = 100;
-    double step = 1;
-
-    override protected void updateElement(Element element)
-    {
-        super.updateElement(element);
-
-        ElemAbstractSlider el = fastCast!ElemAbstractSlider(element);
-        el.data.setRange(minValue, maxValue, step);
-    }
-}
-
-class Slider : AbstractSlider
-{
-    double value = 0;
-    void delegate(double) onChange;
-
-    static Slider make(double value, void delegate(double) onChange)
-    {
-        Slider w = arena.make!Slider;
-        w.value = value;
-        w.onChange = onChange;
-        return w;
-    }
-
-    override protected Element fetchElement()
-    {
-        Element el = fetchEl!ElemSlider;
-        el.setAttribute("ignore");
-        return el;
-    }
-
-    override protected void updateElement(Element element)
-    {
-        super.updateElement(element);
-
-        ElemSlider el = fastCast!ElemSlider(element);
-        el.data.value = value;
-        el.data.onChange.clear();
-        if (onChange)
-            el.data.onChange ~= { onChange(el.data.value); };
-    }
-}
-
-class RangeSlider : AbstractSlider
-{
-    double first = 0;
-    double second = 0;
-    void delegate(double, double) onChange;
-
-    static RangeSlider make(double first, double second, void delegate(double, double) onChange)
-    {
-        RangeSlider w = arena.make!RangeSlider;
-        w.first = first;
-        w.second = second;
-        w.onChange = onChange;
-        return w;
-    }
-
-    override protected Element fetchElement()
-    {
-        Element el = fetchEl!ElemRangeSlider;
-        el.setAttribute("ignore");
-        return el;
-    }
-
-    override protected void updateElement(Element element)
-    {
-        super.updateElement(element);
-
-        ElemRangeSlider el = fastCast!ElemRangeSlider(element);
-        el.data.setValues(first, second);
-        el.data.onChange.clear();
-        if (onChange)
-            el.data.onChange ~= { onChange(el.data.first, el.data.second); };
-    }
-}
-
-/// Base for slider data components. They validate data and react on changes
-class SliderDataBase
-{
-    final @property
+    @property
     {
         /// Slider range min value
         double minValue() const { return _minValue; }
@@ -115,153 +33,305 @@ class SliderDataBase
         double maxValue() const { return _maxValue; }
         /// Step between values. Always > 0
         double step() const { return _step; }
-        /// The difference between max and min values. Always >= 0
-        double range() const { return _maxValue - _minValue; }
     }
 
-    Signal!(void delegate()) onChange;
+    private double _minValue = 0;
+    private double _maxValue = 100;
+    private double _step = 1;
 
-    private
-    {
-        double _minValue = 0;
-        double _maxValue = 100;
-        double _step = 1;
-    }
-
-    /** Set new range (min, max, and step values for slider).
+    /** Make new range of min, max, and step values for a slider.
 
         `min` must be <= `max`, `step` must be > 0.
     */
-    final void setRange(double min, double max, double step = 1)
+    this(double min, double max, double step = 1)
+        in(isFinite(min))
+        in(isFinite(max))
+        in(isFinite(step))
+        in(min <= max)
+        in(step > 0)
     {
-        assert(isFinite(min));
-        assert(isFinite(max));
-        assert(isFinite(step));
-        assert(min <= max);
-        assert(step > 0);
+        _minValue = min;
+        _maxValue = max;
+        _step = step;
+    }
+}
 
-        if (_minValue != min || _maxValue != max || _step != step)
+/// Base class for sliders
+abstract class AbstractSlider : Widget
+{
+    protected SliderRange range;
+    /// Slider orientation (vertical, horizontal)
+    protected Orientation orientation;
+
+    /// Step multiplier for incPage/decPage events
+    uint pageStep = 5;
+
+    this()
+    {
+        isolateStyle = true;
+    }
+
+    /// Get default slider value for some actions. It doesn't clamp them by default
+    protected double getDefaultValue(SliderAction action, double previous) const
+    {
+        switch (action) with (SliderAction)
         {
-            _minValue = min;
-            _maxValue = max;
-            _step = step;
-            adjustValue();
-            onChange();
+        case increase:
+            return previous + range._step;
+        case decrease:
+            return previous - range._step;
+        case incPage:
+        case decPage:
+            const delta = pageStep > 0 ? range._step * pageStep : range._step;
+            if (action == incPage)
+                return previous + delta;
+            else
+                return previous - delta;
+        case moveToMin:
+            return range._minValue;
+        case moveToMax:
+            return range._maxValue;
+        default:
+            return previous;
         }
     }
 
-    protected void adjustValue() {}
+    override protected void build()
+    {
+        if (orientation == Orientation.horizontal)
+            setAttribute("horizontal");
+        else
+            setAttribute("vertical");
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemAbstractSlider el = fastCast!ElemAbstractSlider(element);
+        el.orientation = orientation;
+    }
 }
 
-/// Component for slider data
-class SliderData : SliderDataBase
+/// Single-value slider widget - either vertical or horizontal
+class Slider : AbstractSlider
 {
-    final @property
+    protected double value = 0;
+    protected void delegate(double) onChange;
+
+    /// Slider event listener
+    void delegate(SliderAction, double) onScroll;
+
+    static Slider make(
+        double value,
+        void delegate(double) onChange,
+        SliderRange range,
+        Orientation orientation = Orientation.horizontal,
+    )
+        in(isFinite(value))
     {
-        /// Single current value
-        double value() const { return _value; }
-        /// ditto
-        void value(double v)
+        Slider w = arena.make!Slider;
+        w.range = range;
+        w.orientation = orientation;
+        w.value = w.adjustValue(value);
+        w.onChange = onChange;
+        return w;
+    }
+
+    private double adjustValue(double v) const
+        in(isFinite(v))
+    {
+        const mn = range._minValue;
+        const mx = range._maxValue;
+        if (v <= mn)
+            return mn;
+        else if (v >= mx)
+            return mx;
+        else
+            return min(quantize(v - mn, range._step) + mn, mx);
+    }
+
+    private void triggerAction(SliderAction action)
+    {
+        const v = clamp(getDefaultValue(action, value), range._minValue, range._maxValue);
+        if (onScroll)
+            onScroll(action, v);
+        if (value != v && onChange)
+            onChange(v);
+    }
+
+    private void moveTo(double v)
+    {
+        v = adjustValue(v);
+        if (value != v)
         {
-            adjustValue(v);
-            if (_value != v)
-            {
-                _value = v;
-                onChange();
-            }
+            if (onScroll)
+                onScroll(SliderAction.move, v);
+            if (onChange)
+                onChange(v);
         }
     }
 
-    private double _value = 0;
-
-    override protected void adjustValue()
+    override protected void build()
     {
-        adjustValue(_value);
+        super.build();
+        enabled = onChange || onScroll;
     }
 
-    final void adjustValue(ref double v) const
+    override protected Element fetchElement()
     {
-        assert(isFinite(v));
+        return fetchEl!ElemSlider;
+    }
 
-        const mn = _minValue;
-        const mx = _maxValue;
-        if (v <= mn)
-            v = mn;
-        else if (v >= mx)
-            v = mx;
-        else
-            v = min(quantize(v - mn, _step) + mn, mx);
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemSlider el = fastCast!ElemSlider(element);
+        el.setData(value, range);
+        el.onAction.clear();
+        el.onDragging.clear();
+        if (enabled)
+        {
+            el.onAction ~= &triggerAction;
+            el.onDragging ~= &moveTo;
+        }
     }
 }
 
-/// Data component for sliders used to select a range between two values
-class RangeSliderData : SliderDataBase
+/// Slider widget with two handles to select a numeric range
+class RangeSlider : AbstractSlider
 {
-    final @property
+    protected double first = 0;
+    protected double second = 0;
+    protected void delegate(double, double) onChange;
+
+    /// The first handle event listener
+    void delegate(SliderAction, double) onScroll1;
+    /// The second handle event listener
+    void delegate(SliderAction, double) onScroll2;
+
+    /// If `first` > `second`, the first value will push the second
+    static RangeSlider make(
+        double first,
+        double second,
+        void delegate(double, double) onChange,
+        SliderRange range,
+        Orientation orientation = Orientation.horizontal,
+    )
+        in(isFinite(first))
+        in(isFinite(second))
     {
-        /// The first value
-        double first() const { return _first; }
-        /// The second value
-        double second() const { return _second; }
-        /// Difference between `second` and `first`. Always >= 0
-        double innerRange() const { return _second - _first; }
+        RangeSlider w = arena.make!RangeSlider;
+        w.range = range;
+        w.orientation = orientation;
+        w.second = range._maxValue;
+        w.first = w.adjustFirst(max(first, range._minValue));
+        w.second = w.adjustSecond(min(second, range._maxValue));
+        w.onChange = onChange;
+        return w;
     }
 
-    private double _first = 0;
-    private double _second = 0;
-
-    /// Set two slider values together. If `fst` > `snd`, the first value will push the second
-    final void setValues(double fst, double snd)
+    private double adjustFirst(double v) const
+        in(isFinite(v))
     {
-        const oldFst = _first;
-        const oldSnd = _second;
-        _second = _maxValue;
-        adjustFirst(fst);
-        _first = fst;
-        adjustSecond(snd);
-        _second = snd;
-        if (oldFst != fst || oldSnd != snd)
-            onChange();
-    }
-
-    override protected void adjustValue()
-    {
-        _first = max(_first, _minValue);
-        _second = min(_second, _maxValue);
-        adjustFirst(_first);
-        adjustSecond(_second);
-    }
-
-    final void adjustFirst(ref double v) const
-    {
-        assert(isFinite(v));
-
-        const mn = _minValue;
-        const mx = _second;
+        const mn = range._minValue;
+        const mx = second;
         if (v <= mn)
-            v = mn;
+            return mn;
         else if (v >= mx)
-            v = mx;
+            return mx;
         else
-            v = min(quantize(v - mn, _step) + mn, mx);
+            return min(quantize(v - mn, range._step) + mn, mx);
     }
 
-    final void adjustSecond(ref double v) const
+    private double adjustSecond(double v) const
+        in(isFinite(v))
     {
-        assert(isFinite(v));
-
-        const mn = _first;
-        const mx = _maxValue;
+        const mn = first;
+        const mx = range._maxValue;
         if (v <= mn)
-            v = mn;
+            return mn;
         else if (v >= mx)
-            v = mx;
+            return mx;
         else
-            v = min(quantize(v - mn, _step) + mn, mx);
+            return min(quantize(v - mn, range._step) + mn, mx);
+    }
+
+    private void triggerActionOnFirst(SliderAction action)
+    {
+        const v = clamp(getDefaultValue(action, first), range._minValue, second);
+        if (onScroll1)
+            onScroll1(action, v);
+        if (first != v && onChange)
+            onChange(v, second);
+    }
+
+    private void triggerActionOnSecond(SliderAction action)
+    {
+        const v = clamp(getDefaultValue(action, second), first, range._maxValue);
+        if (onScroll2)
+            onScroll2(action, v);
+        if (second != v && onChange)
+            onChange(first, v);
+    }
+
+    private void moveFirstTo(double v)
+    {
+        v = adjustFirst(v);
+        if (first != v)
+        {
+            if (onScroll1)
+                onScroll1(SliderAction.move, v);
+            if (onChange)
+                onChange(v, second);
+        }
+    }
+
+    private void moveSecondTo(double v)
+    {
+        v = adjustSecond(v);
+        if (second != v)
+        {
+            if (onScroll2)
+                onScroll2(SliderAction.move, v);
+            if (onChange)
+                onChange(first, v);
+        }
+    }
+
+    override protected void build()
+    {
+        super.build();
+        enabled = onChange || onScroll1 || onScroll2;
+    }
+
+    override protected Element fetchElement()
+    {
+        return fetchEl!ElemRangeSlider;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemRangeSlider el = fastCast!ElemRangeSlider(element);
+        el.setData(first, second, range);
+        el.onAction1.clear();
+        el.onAction2.clear();
+        el.onDragging1.clear();
+        el.onDragging2.clear();
+        if (enabled)
+        {
+            el.onAction1 ~= &triggerActionOnFirst;
+            el.onAction2 ~= &triggerActionOnSecond;
+            el.onDragging1 ~= &moveFirstTo;
+            el.onDragging2 ~= &moveSecondTo;
+        }
     }
 }
 
-/// Slider action codes for `SliderEvent`
+/// Slider action codes
 enum SliderAction : ubyte
 {
     press,     /// Dragging started
@@ -275,109 +345,41 @@ enum SliderAction : ubyte
     moveToMax, /// Set to maximum value
 }
 
-/// Slider event
-final class SliderEvent
-{
-    const SliderAction action;
-    const SliderDataBase data;
-    /// Value after default event handling
-    const double value;
-    private double amendment;
-
-    this(SliderAction a, SliderDataBase d, double v)
-    {
-        action = a;
-        data = d;
-        value = v;
-    }
-
-    /// Set new slider value in an event handler
-    void amend(double value)
-    {
-        amendment = value;
-    }
-}
-
-/// Base class for sliders
 abstract class ElemAbstractSlider : ElemGroup
 {
     @property
     {
-        /// Slider data component
-        inout(SliderDataBase) data() inout;
-
-        /// Slider orientation (vertical, horizontal)
         Orientation orientation() const { return _orient; }
         /// ditto
         void orientation(Orientation value)
         {
-            if (_orient != value)
-            {
-                _orient = value;
-                if (value == Orientation.horizontal)
-                {
-                    removeAttribute("vertical");
-                    setAttribute("horizontal");
-                }
-                else
-                {
-                    removeAttribute("horizontal");
-                    setAttribute("vertical");
-                }
-                requestLayout();
-            }
+            if (_orient == value)
+                return;
+            _orient = value;
+            requestLayout();
         }
     }
 
-    /// `data.step` factor for incPage/decPage events
-    uint pageStep = 5;
-
     private
     {
+        double _minValue = 0;
+        double _maxValue = 100;
         Orientation _orient;
 
         SliderBar _rangeBefore;
         SliderBar _rangeAfter;
     }
 
-    this(Orientation orient, scope SliderDataBase data)
+    this()
     {
-        assert(data);
-        data.onChange ~= &handleDataChange;
-        isolateStyle();
-        _orient = orient;
-        setAttribute(orient == Orientation.horizontal ? "horizontal" : "vertical");
         _rangeBefore = new SliderBar;
         _rangeAfter = new SliderBar;
         _rangeBefore.setAttribute("range-before");
         _rangeAfter.setAttribute("range-after");
-        addChild(_rangeBefore);
-        addChild(_rangeAfter);
-    }
-
-    /// Get default slider value for some actions. It doesn't clamp them by default
-    protected double getDefaultValue(SliderAction action, double was) const
-    {
-        switch (action) with (SliderAction)
-        {
-        case increase:
-            return was + data.step;
-        case decrease:
-            return was - data.step;
-        case incPage:
-        case decPage:
-            const delta = pageStep > 0 ? data.step * pageStep : data.step;
-            if (action == incPage)
-                return was + delta;
-            else
-                return was - delta;
-        case moveToMin:
-            return data.minValue;
-        case moveToMax:
-            return data.maxValue;
-        default:
-            return was;
-        }
+        _rangeBefore.parent = this;
+        _rangeAfter.parent = this;
+        _hiddenChildren.append(_rangeBefore);
+        _hiddenChildren.append(_rangeAfter);
     }
 
     protected void handleDataChange()
@@ -450,10 +452,10 @@ abstract class ElemAbstractSlider : ElemGroup
         if (space <= 0) // no place
             return 0;
 
-        const r = data.range;
+        const r = _maxValue - _minValue;
         if (r > 0)
         {
-            const fr = (value - data.minValue) / r;
+            const fr = (value - _minValue) / r;
             const dist = space * fr;
             return cast(float)dist;
         }
@@ -577,9 +579,9 @@ abstract class ElemAbstractSlider : ElemGroup
 
                 const p = _dragStartPos + delta - _start;
                 const offset = hor ? p : _span - p;
-                double v = data.minValue;
+                double v = _minValue;
                 if (_span > 0)
-                    v += offset * data.range / _span;
+                    v += offset * (_maxValue - _minValue) / _span;
                 onDragging(v);
                 return true;
             }
@@ -631,7 +633,7 @@ abstract class ElemAbstractSlider : ElemGroup
         }
     }
 
-    class SliderBar : Element
+    static class SliderBar : Element
     {
         this()
         {
@@ -642,76 +644,45 @@ abstract class ElemAbstractSlider : ElemGroup
     }
 }
 
-/// Slider widget - either vertical or horizontal
 class ElemSlider : ElemAbstractSlider
 {
-    override @property inout(SliderData) data() inout { return _data; }
-
-    /// Slider event listeners
-    Signal!(void delegate(SliderEvent)) onScroll;
+    Signal!(void delegate(SliderAction)) onAction;
+    Signal!(void delegate(double)) onDragging;
 
     private
     {
-        SliderData _data;
+        double _value = 0;
+
         SliderHandle _handle;
     }
 
-    this(Orientation orient = Orientation.horizontal, SliderData data = null)
+    this()
     {
-        if (!data)
-            data = new SliderData;
-        super(orient, data);
-        _data = data;
         _rangeBefore.onClick ~= {
             _handle.setFocus();
-            triggerAction(SliderAction.decPage);
+            onAction(SliderAction.decPage);
         };
         _rangeAfter.onClick ~= {
             _handle.setFocus();
-            triggerAction(SliderAction.incPage);
+            onAction(SliderAction.incPage);
         };
         _handle = new SliderHandle;
-        _handle.onAction = &triggerAction;
-        _handle.onDragging = &handleDragging;
-        addChild(_handle);
+        _handle.onAction = &onAction.emit;
+        _handle.onDragging = &onDragging.emit;
+        _handle.parent = this;
+        _hiddenChildren.append(_handle);
     }
 
-    final void triggerAction(SliderAction action)
+    final void setData(double value, ref const SliderRange range)
     {
-        const v = getDefaultValue(action, _data.value);
-        sendEvent(action, clamp(v, _data.minValue, _data.maxValue));
-    }
+        if (_value == value && _minValue == range._minValue && _maxValue == range._maxValue)
+            return;
 
-    final void moveTo(double value)
-    {
-        _data.adjustValue(value);
-        if (_data.value != value)
-            sendEvent(SliderAction.move, value);
-    }
-
-    private bool insideHandler;
-    private void sendEvent(SliderAction a, double v)
-    {
-        assert(!insideHandler, "Cannot trigger a slider action inside the event handler");
-
-        if (onScroll.assigned)
-        {
-            auto event = new SliderEvent(a, _data, v);
-            insideHandler = true;
-            onScroll(event);
-            insideHandler = false;
-            if (isFinite(event.amendment))
-            {
-                _data.value = event.amendment;
-                return;
-            }
-        }
-        _data.value = v;
-    }
-
-    protected void handleDragging(double computedValue)
-    {
-        moveTo(computedValue);
+        assert(range._minValue <= value && value <= range._maxValue);
+        _value = value;
+        _minValue = range._minValue;
+        _maxValue = range._maxValue;
+        handleDataChange();
     }
 
     override bool handleWheelEvent(WheelEvent event)
@@ -719,7 +690,7 @@ class ElemSlider : ElemAbstractSlider
         const delta = event.deltaX - event.deltaY;
         if (delta != 0)
         {
-            triggerAction(delta > 0 ? SliderAction.increase : SliderAction.decrease);
+            onAction(delta > 0 ? SliderAction.increase : SliderAction.decrease);
             return true;
         }
         return super.handleWheelEvent(event);
@@ -751,7 +722,7 @@ class ElemSlider : ElemAbstractSlider
         if (space <= 0)
             return;
 
-        spaceBefore = offsetAt(space, _data.value);
+        spaceBefore = offsetAt(space, _value);
         spaceAfter = space - spaceBefore;
     }
 
@@ -770,125 +741,60 @@ class ElemSlider : ElemAbstractSlider
     }
 }
 
-/// Slider widget with two handles to select a range between values
 class ElemRangeSlider : ElemAbstractSlider
 {
-    override @property inout(RangeSliderData) data() inout { return _data; }
-
-    /// The first handle event listeners
-    Signal!(void delegate(SliderEvent)) onScroll1;
-    /// The second handle event listeners
-    Signal!(void delegate(SliderEvent)) onScroll2;
+    Signal!(void delegate(SliderAction)) onAction1;
+    Signal!(void delegate(SliderAction)) onAction2;
+    Signal!(void delegate(double)) onDragging1;
+    Signal!(void delegate(double)) onDragging2;
 
     private
     {
-        RangeSliderData _data;
+        double _first = 0;
+        double _second = 0;
+
         SliderHandle _1stHandle;
         SliderHandle _2ndHandle;
         SliderBar _rangeBetween;
     }
 
-    this(Orientation orient = Orientation.horizontal, RangeSliderData data = null)
+    this()
     {
-        if (!data)
-            data = new RangeSliderData;
-        super(orient, data);
-        _data = data;
         _rangeBefore.onClick ~= {
             _1stHandle.setFocus();
-            triggerActionOnFirst(SliderAction.decPage);
+            onAction1(SliderAction.decPage);
         };
         _rangeAfter.onClick ~= {
             _2ndHandle.setFocus();
-            triggerActionOnSecond(SliderAction.incPage);
+            onAction2(SliderAction.incPage);
         };
         _1stHandle = new SliderHandle;
         _2ndHandle = new SliderHandle;
-        _1stHandle.onAction = &triggerActionOnFirst;
-        _2ndHandle.onAction = &triggerActionOnSecond;
-        _1stHandle.onDragging = &handleDragging1;
-        _2ndHandle.onDragging = &handleDragging2;
+        _1stHandle.onAction = &onAction1.emit;
+        _2ndHandle.onAction = &onAction2.emit;
+        _1stHandle.onDragging = &onDragging1.emit;
+        _2ndHandle.onDragging = &onDragging2.emit;
         _rangeBetween = new SliderBar;
         _rangeBetween.setAttribute("range-between");
-        addChild(_1stHandle);
-        addChild(_2ndHandle);
-        addChild(_rangeBetween);
+        _1stHandle.parent = this;
+        _2ndHandle.parent = this;
+        _rangeBetween.parent = this;
+        _hiddenChildren.append(_1stHandle);
+        _hiddenChildren.append(_2ndHandle);
+        _hiddenChildren.append(_rangeBetween);
     }
 
-    final void triggerActionOnFirst(SliderAction action)
+    final void setData(double first, double second, ref const SliderRange range)
     {
-        const v = getDefaultValue(action, _data.first);
-        sendEvent1(action, clamp(v, _data.minValue, _data.second));
-    }
+        if (_first == first && _second == second && _minValue == range._minValue && _maxValue == range._maxValue)
+            return;
 
-    final void triggerActionOnSecond(SliderAction action)
-    {
-        const v = getDefaultValue(action, _data.second);
-        sendEvent2(action, clamp(v, _data.first, _data.maxValue));
-    }
-
-    final void moveFirstTo(double value)
-    {
-        _data.adjustFirst(value);
-        if (_data.first != value)
-            sendEvent1(SliderAction.move, value);
-    }
-
-    final void moveSecondTo(double value)
-    {
-        _data.adjustSecond(value);
-        if (_data.second != value)
-            sendEvent2(SliderAction.move, value);
-    }
-
-    private bool insideHandler;
-
-    private void sendEvent1(SliderAction a, double v)
-    {
-        assert(!insideHandler, "Cannot trigger a slider action inside the event handler");
-
-        if (onScroll1.assigned)
-        {
-            auto event = new SliderEvent(a, _data, v);
-            insideHandler = true;
-            onScroll1(event);
-            insideHandler = false;
-            if (isFinite(event.amendment))
-            {
-                _data.setValues(event.amendment, _data.second);
-                return;
-            }
-        }
-        _data.setValues(v, _data.second);
-    }
-
-    private void sendEvent2(SliderAction a, double v)
-    {
-        assert(!insideHandler, "Cannot trigger a slider action inside the event handler");
-
-        if (onScroll2.assigned)
-        {
-            auto event = new SliderEvent(a, _data, v);
-            insideHandler = true;
-            onScroll2(event);
-            insideHandler = false;
-            if (isFinite(event.amendment))
-            {
-                _data.setValues(_data.first, event.amendment);
-                return;
-            }
-        }
-        _data.setValues(_data.first, v);
-    }
-
-    protected void handleDragging1(double computedValue)
-    {
-        moveFirstTo(computedValue);
-    }
-
-    protected void handleDragging2(double computedValue)
-    {
-        moveSecondTo(computedValue);
+        assert(range._minValue <= first && first <= second && second <= range._maxValue);
+        _minValue = range._minValue;
+        _maxValue = range._maxValue;
+        _first = first;
+        _second = second;
+        handleDataChange();
     }
 
     override bool handleWheelEvent(WheelEvent event)
@@ -910,9 +816,9 @@ class ElemRangeSlider : ElemAbstractSlider
                 diff2 = event.y - (_2ndHandle.box.y + _2ndHandle.box.h / 2);
             }
             if (abs(diff1) < abs(diff2))
-                triggerActionOnFirst(a);
+                onAction1(a);
             else
-                triggerActionOnSecond(a);
+                onAction2(a);
             return true;
         }
         return super.handleWheelEvent(event);
@@ -957,8 +863,8 @@ class ElemRangeSlider : ElemAbstractSlider
         if (space <= 0)
             return;
 
-        spaceBefore = offsetAt(space, _data.first);
-        spaceAfter = space - offsetAt(space, _data.second);
+        spaceBefore = offsetAt(space, _first);
+        spaceAfter = space - offsetAt(space, _second);
     }
 
     override protected void layoutInner(Box scrollArea, Box innerArea)
@@ -1016,66 +922,54 @@ unittest
 {
     static import std.math;
 
-    double last;
-    bool check(double v)
+    static double from(double v, SliderRange r)
     {
-        return std.math.approxEqual(last, v);
+        const w = Slider.make(v, null, r);
+        return w.value;
     }
 
-    auto data = new SliderData;
-    data.onChange ~= { last = data.value; };
+    static bool eq(double a, double b)
+    {
+        return std.math.approxEqual(a, b);
+    }
 
-    data.setRange(-10, 10, 0.1);
-    assert(check(0));
-    data.value = 5;
-    assert(check(5));
-    data.value = -50;
-    assert(check(-10));
-    data.value = 50;
-    assert(check(10));
-    data.value = 7.86;
-    assert(check(7.9));
+    const r = SliderRange(-10, 10, 0.1);
+    assert(eq(0, from(0, r)));
+    assert(eq(5, from(5, r)));
+    assert(eq(-10, from(-50, r)));
+    assert(eq(10, from(50, r)));
+    assert(eq(7.9, from(7.86, r)));
 
-    data.setRange(-200, -100);
-    assert(check(-100));
+    assert(eq(-100, from(19, SliderRange(-200, -100))));
 }
 
 unittest
 {
     static import std.math;
 
-    double[2] last;
-    bool check(double fst, double snd)
+    static double[2] from(double fst, double snd, SliderRange r)
     {
-        return std.math.approxEqual(last[0], fst) && std.math.approxEqual(last[1], snd);
+        const w = RangeSlider.make(fst, snd, null, r);
+        return [w.first, w.second];
     }
 
-    auto data = new RangeSliderData;
-    data.onChange ~= { last = [data.first, data.second]; };
+    static bool eq(double a0, double a1, double[2] b)
+    {
+        return std.math.approxEqual(a0, b[0]) && std.math.approxEqual(a1, b[1]);
+    }
 
-    data.setRange(-10, 10, 0.1);
-    assert(check(0, 0));
-    data.setValues(2, 4);
-    assert(check(2, 4));
-    data.setValues(14, 12);
-    assert(check(10, 10));
-    data.setValues(11, 12);
-    assert(check(10, 10));
-    data.setValues(5, 12);
-    assert(check(5, 10));
-    data.setValues(0, 12);
-    assert(check(0, 10));
-    data.setValues(-15, 12);
-    assert(check(-10, 10));
-    data.setValues(5, 0);
-    assert(check(5, 5));
-    data.setValues(5, -12);
-    assert(check(5, 5));
-    data.setValues(-11, -12);
-    assert(check(-10, -10));
-    data.setValues(-14, -12);
-    assert(check(-10, -10));
+    const r = SliderRange(-10, 10, 0.1);
+    assert(eq(0, 0, from(0, 0, r)));
+    assert(eq(2, 4, from(2, 4, r)));
+    assert(eq(10, 10, from(14, 12, r)));
+    assert(eq(10, 10, from(11, 12, r)));
+    assert(eq(5, 10, from(5, 12, r)));
+    assert(eq(0, 10, from(0, 12, r)));
+    assert(eq(-10, 10, from(-15, 12, r)));
+    assert(eq(5, 5, from(5, 0, r)));
+    assert(eq(5, 5, from(5, -12, r)));
+    assert(eq(-10, -10, from(-11, -12, r)));
+    assert(eq(-10, -10, from(-14, -12, r)));
 
-    data.setRange(-200, -100);
-    assert(check(-100, -100));
+    assert(eq(-100, -100, from(-10, 10, SliderRange(-200, -100))));
 }
