@@ -13,7 +13,7 @@ pb.animationInterval = 50; // 50 milliseconds
 pb.data.progress = PROGRESS_INDETERMINATE;
 ---
 
-Copyright: Vadim Lopatin 2016, dayllenger 2019
+Copyright: Vadim Lopatin 2016, dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -25,10 +25,12 @@ enum int PROGRESS_HIDDEN = -2;
 enum int PROGRESS_INDETERMINATE = -1;
 enum int PROGRESS_MAX = 1000;
 
+/// Progress indicator
 class ProgressBar : Widget
 {
-    int progress;
+    protected int progress = PROGRESS_INDETERMINATE;
 
+    /// Construct with progress value (0 .. 1000; -1 for indeterminate, -2 for hidden)
     static ProgressBar make(int progress)
     {
         ProgressBar w = arena.make!ProgressBar;
@@ -46,85 +48,51 @@ class ProgressBar : Widget
         super.updateElement(element);
 
         ElemProgressBar el = fastCast!ElemProgressBar(element);
-        el.data.progress = progress;
+        el.progress = progress;
         el.animationInterval = 50;
     }
 }
 
-/// Basic component for different progress bar controls
-class ProgressData
+class ElemProgressBar : Element
 {
     @property
     {
-        /// Current progress value, 0 .. 1000; -1 == indeterminate, -2 == hidden
         int progress() const { return _progress; }
         /// ditto
         void progress(int value)
         {
             value = clamp(value, PROGRESS_HIDDEN, PROGRESS_MAX);
-            if (_progress != value)
-            {
-                _progress = value;
-                onChange();
-            }
+            if (_progress == value)
+                return;
+            _progress = value;
+            invalidate();
         }
-        /// Returns true if progress bar is in indeterminate state
-        bool indeterminate() const
-        {
-            return _progress == PROGRESS_INDETERMINATE;
-        }
-    }
-
-    Signal!(void delegate()) onChange;
-
-    private int _progress = PROGRESS_INDETERMINATE;
-
-    this(int progress)
-    {
-        _progress = progress;
-    }
-}
-
-/// Progress bar widget
-class ElemProgressBar : Element
-{
-    @property
-    {
-        /// Progress data
-        inout(ProgressData) data() inout { return _data; }
 
         /// Animation interval in milliseconds, if 0 - no animation
         int animationInterval() const { return _animationInterval; }
         /// ditto
-        void animationInterval(int interval)
+        void animationInterval(int value)
         {
-            interval = clamp(interval, 0, 5000);
-            if (_animationInterval != interval)
-            {
-                _animationInterval = interval;
-                if (interval > 0)
-                    scheduleAnimation();
-                else
-                    stopAnimation();
-            }
+            value = clamp(value, 0, 5000);
+            if (_animationInterval == value)
+                return;
+            _animationInterval = value;
+            if (value > 0)
+                scheduleAnimation();
+            else
+                stopAnimation();
         }
     }
 
     private
     {
-        ProgressData _data;
+        int _progress = PROGRESS_INDETERMINATE;
         int _animationInterval = 0; // no animation by default
 
         ulong _animationTimerID;
         int _animationSpeedPixelsPerSecond = 20;
         long _animationPhase;
         long _lastAnimationTs;
-    }
-
-    this(int progress = PROGRESS_INDETERMINATE)
-    {
-        _data = new ProgressData(progress);
-        _data.onChange ~= &invalidate;
     }
 
     protected void scheduleAnimation()
@@ -138,7 +106,7 @@ class ElemProgressBar : Element
         stopAnimation();
         _animationTimerID = setTimer(_animationInterval,
             delegate() {
-                if (!visible || _data.progress == PROGRESS_HIDDEN)
+                if (!visible || _progress == PROGRESS_HIDDEN)
                 {
                     _lastAnimationTs = 0;
                     _animationTimerID = 0;
@@ -196,11 +164,11 @@ class ElemProgressBar : Element
         pr.clipIn(BoxI.from(b));
 
         DrawableRef animDrawable;
-        if (_data.progress >= 0)
+        if (_progress >= 0)
         {
             DrawableRef gaugeDrawable = currentTheme.getDrawable("progress_bar_gauge");
             animDrawable = currentTheme.getDrawable("progress_bar_gauge_animation");
-            const w = _data.progress * b.w / PROGRESS_MAX;
+            const w = _progress * b.w / PROGRESS_MAX;
             if (!gaugeDrawable.isNull)
             {
                 gaugeDrawable.drawTo(pr, Box(b.x, b.y, w, b.h));
