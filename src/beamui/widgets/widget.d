@@ -209,7 +209,7 @@ class Widget
         return _arena;
     }
 
-    private Element mount(Widget parent, size_t index)
+    private Element mount(Widget parent, Element parentElem, size_t index)
     {
         // compute the element ID; it always depends on the widget type
         const typeHash = hashOf(this.classinfo.name);
@@ -232,20 +232,27 @@ class Widget
         // find or create the element
         Element root = fetchElement();
         _statePtr = &root._localState;
+        // reparent the element silently
+        root._parent = parentElem;
         // clear the old element tree structure
+        Element[] prevItems = arena.allocArray!Element(root.childCount);
+        foreach (i, ref el; prevItems)
+            el = root.child(cast(int)i);
         root.removeAllChildren(false);
         // finish widget configuration
         build();
-        // update the element with the data
+        // update the element with the data, continue for child widgets
         updateElement(root);
-        // continue recursively and build the element tree back
-        mountChildren(root);
+
+        if (root.childCount || prevItems.length)
+            root.diffChildren(prevItems);
         return root;
     }
 
-    final protected Element mountChild(Widget child, size_t index)
+    final protected Element mountChild(Widget child, Element thisElem, size_t index)
+        in(child)
     {
-        return child.mount(this, index);
+        return child.mount(this, thisElem, index);
     }
 
     /// Get or create an element instance using the currently bound element store
@@ -346,15 +353,6 @@ class Widget
 
         el.tooltipText = tooltip;
     }
-
-    protected void mountChildren(Element el)
-    {
-        foreach (i, item; this)
-        {
-            if (item)
-                el.addChild(item.mount(this, i));
-        }
-    }
 }
 
 abstract class WidgetWrapper : Widget
@@ -377,6 +375,14 @@ abstract class WidgetWrapper : Widget
     override protected Element fetchElement()
     {
         return fetchEl!ElemGroup;
+    }
+
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+
+        if (_content)
+            el.addChild(mountChild(_content, el, 0));
     }
 }
 
@@ -418,6 +424,17 @@ abstract class WidgetGroup : Widget
     override protected Element fetchElement()
     {
         return fetchEl!ElemGroup;
+    }
+
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+
+        foreach (i, item; this)
+        {
+            if (item)
+                el.addChild(mountChild(item, el, i));
+        }
     }
 }
 
@@ -2336,6 +2353,11 @@ public:
         return null;
     }
 
+    protected void diffChildren(Element[] oldItems)
+    {
+        assert(0);
+    }
+
     /// Add a child. Returns the added item with its original type
     T addChild(T)(T item) if (is(T : Element))
     {
@@ -2554,6 +2576,36 @@ class ElemGroup : Element
     override inout(Element) child(int index) inout
     {
         return _children[index];
+    }
+
+    override protected void diffChildren(Element[] oldItems)
+    {
+        if (!_children.count && !oldItems.length)
+            return;
+
+        const limit = min(_children.count, oldItems.length);
+        size_t unchanged = limit;
+        foreach (i; 0 .. limit)
+        {
+            if (_children[i] !is oldItems[i])
+            {
+                unchanged = i;
+                break;
+            }
+        }
+        if (unchanged != oldItems.length || _children.count != oldItems.length)
+        {
+            _needToRecomputeStyle = true;
+            requestLayout();
+            foreach (i; unchanged .. _children.count)
+            {
+                Element el = _children[i];
+                assert(el && el._parent is this);
+                el.invalidateStylesRecursively();
+                el.requestLayout();
+            }
+            handleChildListChange();
+        }
     }
 
     override protected void addChildImpl(Element item)
@@ -2865,7 +2917,7 @@ package(beamui) void setCurrentArenaAndStore(ref Arena arena, ref ElementStore s
 
 package(beamui) Element mountRoot(Widget root)
 {
-    return root.mount(null, 0);
+    return root.mount(null, null, 0);
 }
 
 /// Helper for locating items in list, tree, table or other controls by typing their name

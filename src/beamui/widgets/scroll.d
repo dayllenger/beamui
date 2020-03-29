@@ -82,30 +82,31 @@ enum ScrollAreaAction
 
     Provides scroll bars and basic scrolling functionality.
  */
-abstract class ScrollAreaBase : WidgetGroup
+abstract class ScrollAreaBase : Widget
 {
     /// Visibility policy for the horizontal scrollbar
     protected ScrollBarMode hscrollbarMode;
     /// Visibility policy for the vertical scrollbar
     protected ScrollBarMode vscrollbarMode;
 
-    override protected void mountChildren(Element element)
+    override protected void updateElement(Element element)
     {
-        ElemScrollAreaBase el = fastCast!ElemScrollAreaBase(element);
+        super.updateElement(element);
 
+        ElemScrollAreaBase el = fastCast!ElemScrollAreaBase(element);
         ElemScrollBar hbar, vbar;
         if (hscrollbarMode != ScrollBarMode.hidden)
         {
             auto sb = ScrollBar.make(Orientation.horizontal, el._hdata);
             sb.onScroll = &el.handleHScroll;
-            hbar = fastCast!ElemScrollBar(mountChild(sb, 0));
+            hbar = fastCast!ElemScrollBar(mountChild(sb, el, 0));
             el.addChild(hbar);
         }
         if (vscrollbarMode != ScrollBarMode.hidden)
         {
             auto sb = ScrollBar.make(Orientation.vertical, el._vdata);
             sb.onScroll = &el.handleVScroll;
-            vbar = fastCast!ElemScrollBar(mountChild(sb, 1));
+            vbar = fastCast!ElemScrollBar(mountChild(sb, el, 1));
             el.addChild(vbar);
         }
         el.setScrollBars(hscrollbarMode, vscrollbarMode, hbar, vbar);
@@ -615,14 +616,14 @@ class ScrollArea : ScrollAreaBase
         return fetchEl!ElemScrollArea;
     }
 
-    override protected void mountChildren(Element element)
+    override protected void updateElement(Element element)
     {
-        super.mountChildren(element);
+        super.updateElement(element);
 
         ElemScrollArea el = fastCast!ElemScrollArea(element);
         if (_content)
         {
-            auto content = mountChild(_content, 2);
+            auto content = mountChild(_content, el, 2);
             el.addChild(content);
             el.content = content;
         }
