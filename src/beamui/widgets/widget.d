@@ -145,7 +145,7 @@ enum DependentSize
 }
 
 /// Base class for all widgets
-class NgWidget
+class Widget
 {
     uint key = uint.max;
     string id;
@@ -171,14 +171,14 @@ class NgWidget
         static ElementStore* _store;
 
         ElementID _elementID;
-        NgWidget _parent;
+        Widget _parent;
 
         string[string] _attributes;
     }
 
-    static NgWidget make(string id = null)
+    static Widget make(string id = null)
     {
-        NgWidget w = arena.make!NgWidget;
+        Widget w = arena.make!Widget;
         w.id = id;
         return w;
     }
@@ -191,7 +191,7 @@ class NgWidget
 
     //===============================================================
 
-    final protected Element mount(NgWidget parent, size_t index)
+    final protected Element mount(Widget parent, size_t index)
     {
         // compute the element ID; it always depends on the widget type
         const typeHash = hashOf(this.classinfo.name);
@@ -250,12 +250,12 @@ class NgWidget
             return cast(E)cast(void*)base;
     }
 
-    final protected inout(NgWidget) parent() inout { return _parent; }
+    final protected inout(Widget) parent() inout { return _parent; }
 
     //===============================================================
     // Internal methods to implement in subclasses
 
-    int opApply(scope int delegate(size_t, NgWidget) callback)
+    int opApply(scope int delegate(size_t, Widget) callback)
     {
         return 0;
     }
@@ -326,17 +326,17 @@ class NgWidget
     }
 }
 
-abstract class NgWidgetWrapper : NgWidget
+abstract class WidgetWrapper : Widget
 {
-    protected NgWidget _content;
+    protected Widget _content;
 
-    final NgWidget wrap(lazy NgWidget content)
+    final Widget wrap(lazy Widget content)
     {
         _content = content;
         return this;
     }
 
-    override protected int opApply(scope int delegate(size_t, NgWidget) callback)
+    override protected int opApply(scope int delegate(size_t, Widget) callback)
     {
         if (const result = callback(0, _content))
             return result;
@@ -349,13 +349,13 @@ abstract class NgWidgetWrapper : NgWidget
     }
 }
 
-abstract class NgWidgetGroup : NgWidget
+abstract class WidgetGroup : Widget
 {
-    private NgWidget[] _children;
+    private Widget[] _children;
 
-    final NgWidget attach(scope NgWidget delegate()[] lazyItems...)
+    final Widget attach(scope Widget delegate()[] lazyItems...)
     {
-        _children = arena.allocArray!NgWidget(lazyItems.length);
+        _children = arena.allocArray!Widget(lazyItems.length);
         foreach (i, dg; lazyItems)
         {
             if (dg)
@@ -364,18 +364,18 @@ abstract class NgWidgetGroup : NgWidget
         return this;
     }
 
-    final NgWidget attach(uint count, scope NgWidget delegate(uint) generator)
+    final Widget attach(uint count, scope Widget delegate(uint) generator)
     {
         if (count == 0 || !generator)
             return this;
 
-        _children = arena.allocArray!NgWidget(count);
+        _children = arena.allocArray!Widget(count);
         foreach (i; 0 .. count)
             _children[i] = generator(i);
         return this;
     }
 
-    override int opApply(scope int delegate(size_t, NgWidget) callback)
+    override int opApply(scope int delegate(size_t, Widget) callback)
     {
         foreach (i, item; _children)
         {
@@ -391,16 +391,16 @@ abstract class NgWidgetGroup : NgWidget
     }
 }
 
-class NgPanel : NgWidgetGroup
+class Panel : WidgetGroup
 {
-    static NgPanel make()
+    static Panel make()
     {
-        return arena.make!NgPanel;
+        return arena.make!Panel;
     }
 
-    static NgPanel make(string id, string[] classes...)
+    static Panel make(string id, string[] classes...)
     {
-        NgPanel w = arena.make!NgPanel;
+        Panel w = arena.make!Panel;
         w.id = id;
         foreach (name; classes)
         {
@@ -797,7 +797,7 @@ public:
         if (sel.type)
         {
             TypeInfo_Class type = widgetType ? cast()widgetType : typeid(this);
-            while (!equalShortClassName(type, widgetType ? "Ng" ~ sel.type : sel.type))
+            while (!equalShortClassName(type, sel.type))
             {
                 type = type.base; // support inheritance
                 if (type is typeid(Object))
@@ -2799,7 +2799,7 @@ struct ElementStore
         eliminate(map);
     }
 
-    E fetch(E : Element)(ElementID id, NgWidget caller)
+    E fetch(E : Element)(ElementID id, Widget caller)
         in(id.value)
         in(caller)
         out(el; el)
@@ -2827,11 +2827,11 @@ struct ElementStore
 // to access from the window
 package(beamui) void setCurrentArenaAndStore(ref Arena arena, ref ElementStore store)
 {
-    NgWidget._arena = &arena;
-    NgWidget._store = &store;
+    Widget._arena = &arena;
+    Widget._store = &store;
 }
 
-package(beamui) Element mountRoot(NgWidget root)
+package(beamui) Element mountRoot(Widget root)
 {
     return root.mount(null, 0);
 }

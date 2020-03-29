@@ -23,7 +23,7 @@ import std.math : abs, isFinite, quantize;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
-abstract class NgAbstractSlider : NgWidget
+abstract class AbstractSlider : Widget
 {
     double minValue = 0;
     double maxValue = 100;
@@ -38,14 +38,14 @@ abstract class NgAbstractSlider : NgWidget
     }
 }
 
-class NgSlider : NgAbstractSlider
+class Slider : AbstractSlider
 {
     double value = 0;
     void delegate(double) onChange;
 
-    static NgSlider make(double value, void delegate(double) onChange)
+    static Slider make(double value, void delegate(double) onChange)
     {
-        NgSlider w = arena.make!NgSlider;
+        Slider w = arena.make!Slider;
         w.value = value;
         w.onChange = onChange;
         return w;
@@ -70,15 +70,15 @@ class NgSlider : NgAbstractSlider
     }
 }
 
-class NgRangeSlider : NgAbstractSlider
+class RangeSlider : AbstractSlider
 {
     double first = 0;
     double second = 0;
     void delegate(double, double) onChange;
 
-    static NgRangeSlider make(double first, double second, void delegate(double, double) onChange)
+    static RangeSlider make(double first, double second, void delegate(double, double) onChange)
     {
-        NgRangeSlider w = arena.make!NgRangeSlider;
+        RangeSlider w = arena.make!RangeSlider;
         w.first = first;
         w.second = second;
         w.onChange = onChange;

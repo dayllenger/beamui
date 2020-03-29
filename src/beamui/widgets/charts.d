@@ -38,7 +38,7 @@ struct SimpleBar
     dstring title;
 }
 
-class NgSimpleBarChart : NgWidget
+class SimpleBarChart : Widget
 {
     protected const(double)[] data;
     protected const(SimpleBar)[] bars;
@@ -48,9 +48,9 @@ class NgSimpleBarChart : NgWidget
     Color backgroundColor = Color(0xffffff);
     double axisRatio = 0.6;
 
-    static NgSimpleBarChart make(const double[] data, const SimpleBar[] bars, dstring title = null)
+    static SimpleBarChart make(const double[] data, const SimpleBar[] bars, dstring title = null)
     {
-        NgSimpleBarChart w = arena.make!NgSimpleBarChart;
+        SimpleBarChart w = arena.make!SimpleBarChart;
         w.data = data;
         w.bars = bars;
         w.title = title;

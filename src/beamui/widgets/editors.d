@@ -145,7 +145,7 @@ void initStandardEditorActions()
     ).context(ActionContext.widgetTree);
 }
 
-class NgEditLine : NgWidget
+class EditLine : Widget
 {
     dstring placeholder;
     dchar passwordChar = 0;
@@ -169,16 +169,16 @@ class NgEditLine : NgWidget
         bool _replace;
     }
 
-    static NgEditLine make(void delegate(dstring) onChange)
+    static EditLine make(void delegate(dstring) onChange)
     {
-        NgEditLine w = arena.make!NgEditLine;
+        EditLine w = arena.make!EditLine;
         w.onChange = onChange;
         return w;
     }
 
-    static NgEditLine make(dstring text, void delegate(dstring) onChange)
+    static EditLine make(dstring text, void delegate(dstring) onChange)
     {
-        NgEditLine w = arena.make!NgEditLine;
+        EditLine w = arena.make!EditLine;
         w._text = text;
         w._replace = true;
         w.onChange = onChange;
@@ -217,7 +217,7 @@ class NgEditLine : NgWidget
     }
 }
 /+
-class NgEditBox : NgWidget
+class EditBox : Widget
 {
     dstring placeholder;
 
@@ -243,14 +243,14 @@ class NgEditBox : NgWidget
     protected ScrollBarMode hscrollbarMode;
     protected ScrollBarMode vscrollbarMode;
 
-    static NgEditBox make(
+    static EditBox make(
         EditableContent content,
         ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
         ScrollBarMode vscrollbarMode = ScrollBarMode.automatic,
     )
         in(content)
     {
-        NgEditBox w = arena.make!NgEditBox;
+        EditBox w = arena.make!EditBox;
         w.content = content;
         w.hscrollbarMode = hscrollbarMode;
         w.vscrollbarMode = vscrollbarMode;

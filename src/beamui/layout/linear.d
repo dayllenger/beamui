@@ -420,19 +420,19 @@ private void shrink(string dim)(ref Array!LayoutItem items, const float availabl
 }
 
 /// Spacer to fill empty space in layouts
-class NgSpacer : NgWidget
+class Spacer : Widget
 {
-    static NgSpacer make()
+    static Spacer make()
     {
-        return arena.make!NgSpacer;
+        return arena.make!Spacer;
     }
 }
 
-class NgResizer : NgWidget
+class Resizer : Widget
 {
-    static NgResizer make()
+    static Resizer make()
     {
-        return arena.make!NgResizer;
+        return arena.make!Resizer;
     }
 
     this()

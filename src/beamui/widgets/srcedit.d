@@ -19,17 +19,17 @@ import beamui.widgets.widget;
 
 alias ElemSourceEdit = SourceEdit;
 
-class NgSourceEdit : NgEditBox
+class SourceEdit : EditBox
 {
     bool showLineNumbers = true;
     bool showModificationMarks = true;
     bool showIcons;
     bool showFolding;
 
-    static NgSourceEdit make(EditableContent content)
+    static SourceEdit make(EditableContent content)
         in(content)
     {
-        NgSourceEdit w = arena.make!NgSourceEdit;
+        SourceEdit w = arena.make!SourceEdit;
         w.content = content;
         w.hscrollbarMode = ScrollBarMode.automatic;
         w.vscrollbarMode = ScrollBarMode.automatic;

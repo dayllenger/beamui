@@ -12,22 +12,22 @@ import beamui.widgets.text;
 import beamui.widgets.widget;
 
 /// Static image widget. Can accept any drawable instead of the image (e.g. a gradient)
-class NgImageWidget : NgWidget
+class ImageWidget : Widget
 {
     protected string imageID;
     protected Drawable drawable;
 
     /// Make with a resource id for this image
-    static NgImageWidget make(string imageID)
+    static ImageWidget make(string imageID)
     {
-        NgImageWidget w = arena.make!NgImageWidget;
+        ImageWidget w = arena.make!ImageWidget;
         w.imageID = imageID;
         return w;
     }
     /// Use a custom drawable to show (not one from resources) instead of an image
-    static NgImageWidget make(DrawableRef drawable)
+    static ImageWidget make(DrawableRef drawable)
     {
-        NgImageWidget w = arena.make!NgImageWidget;
+        ImageWidget w = arena.make!ImageWidget;
         w.drawable = drawable;
         return w;
     }
@@ -49,14 +49,14 @@ class NgImageWidget : NgWidget
     }
 }
 
-class NgButtonLike : NgPanel
+class ButtonLike : Panel
 {
     protected dstring text;
     protected string icon;
 
-    static NgButtonLike make(dstring text, string icon)
+    static ButtonLike make(dstring text, string icon)
     {
-        NgButtonLike w = arena.make!NgButtonLike;
+        ButtonLike w = arena.make!ButtonLike;
         w.text = text;
         w.icon = icon;
         return w;
@@ -70,17 +70,17 @@ class NgButtonLike : NgPanel
 
     override protected void build()
     {
-        NgImageWidget image;
+        ImageWidget image;
         if (icon.length)
         {
-            image = NgImageWidget.make(icon);
+            image = ImageWidget.make(icon);
             image.setAttribute("icon");
             image.inheritState = true;
         }
-        NgLabel label;
+        Label label;
         if (text.length)
         {
-            label = NgLabel.make(text);
+            label = Label.make(text);
             label.setAttribute("label");
             label.inheritState = true;
         }
@@ -88,21 +88,21 @@ class NgButtonLike : NgPanel
     }
 }
 
-class NgButton : NgButtonLike
+class Button : ButtonLike
 {
     protected void delegate() onClick;
 
-    static NgButton make(dstring text, void delegate() onClick)
+    static Button make(dstring text, void delegate() onClick)
     {
-        NgButton w = arena.make!NgButton;
+        Button w = arena.make!Button;
         w.text = text;
         w.onClick = onClick;
         return w;
     }
 
-    static NgButton make(dstring text, string icon, void delegate() onClick)
+    static Button make(dstring text, string icon, void delegate() onClick)
     {
-        NgButton w = arena.make!NgButton;
+        Button w = arena.make!Button;
         w.text = text;
         w.icon = icon;
         w.onClick = onClick;
@@ -129,15 +129,15 @@ class NgButton : NgButtonLike
 }
 
 /// Hyperlink button. May wrap any widget
-class NgLink : NgWidgetWrapper
+class Link : WidgetWrapper
 {
     import beamui.platforms.common.platform : platform;
 
     protected string url;
 
-    static NgLink make(string url)
+    static Link make(string url)
     {
-        NgLink w = arena.make!NgLink;
+        Link w = arena.make!Link;
         w.url = url;
         return w;
     }
@@ -178,14 +178,14 @@ class NgLink : NgWidgetWrapper
 }
 
 /// Switch (on/off) widget
-class NgSwitchButton : NgWidget
+class SwitchButton : Widget
 {
     protected bool checked;
     protected void delegate(bool) onToggle;
 
-    static NgSwitchButton make(bool checked, void delegate(bool) onToggle)
+    static SwitchButton make(bool checked, void delegate(bool) onToggle)
     {
-        NgSwitchButton w = arena.make!NgSwitchButton;
+        SwitchButton w = arena.make!SwitchButton;
         w.checked = checked;
         w.onToggle = onToggle;
         return w;
@@ -209,15 +209,15 @@ class NgSwitchButton : NgWidget
 }
 
 /// Check button that can be toggled on or off
-class NgCheckBox : NgPanel
+class CheckBox : Panel
 {
     protected dstring text;
     protected bool checked;
     protected void delegate(bool) onToggle;
 
-    static NgCheckBox make(dstring text, bool checked, void delegate(bool) onToggle)
+    static CheckBox make(dstring text, bool checked, void delegate(bool) onToggle)
     {
-        NgCheckBox w = arena.make!NgCheckBox;
+        CheckBox w = arena.make!CheckBox;
         w.text = text;
         w.checked = checked;
         w.onToggle = onToggle;
@@ -235,14 +235,14 @@ class NgCheckBox : NgPanel
     {
         enabled = onToggle !is null;
 
-        NgLabel label;
+        Label label;
         if (text.length)
         {
-            label = NgLabel.make(text);
+            label = Label.make(text);
             label.setAttribute("label");
             label.inheritState = true;
         }
-        auto image = NgWidget.make();
+        auto image = Widget.make();
         image.setAttribute("icon");
         image.inheritState = true;
         attach(image, label);
@@ -267,15 +267,15 @@ class NgCheckBox : NgPanel
 }
 
 /// Mutually exclusive check button
-class NgRadioButton : NgPanel
+class RadioButton : Panel
 {
     protected dstring text;
     protected bool checked;
     protected void delegate(bool) onToggle;
 
-    static NgRadioButton make(dstring text, bool checked, void delegate(bool) onToggle)
+    static RadioButton make(dstring text, bool checked, void delegate(bool) onToggle)
     {
-        NgRadioButton w = arena.make!NgRadioButton;
+        RadioButton w = arena.make!RadioButton;
         w.text = text;
         w.checked = checked;
         w.onToggle = onToggle;
@@ -293,14 +293,14 @@ class NgRadioButton : NgPanel
     {
         enabled = onToggle !is null;
 
-        NgLabel label;
+        Label label;
         if (text.length)
         {
-            label = NgLabel.make(text);
+            label = Label.make(text);
             label.setAttribute("label");
             label.inheritState = true;
         }
-        auto image = NgWidget.make();
+        auto image = Widget.make();
         image.setAttribute("icon");
         image.inheritState = true;
         attach(image, label);
@@ -327,7 +327,7 @@ class NgRadioButton : NgPanel
         {
             if (this is item)
                 continue;
-            if (auto rb = cast(NgRadioButton)item)
+            if (auto rb = cast(RadioButton)item)
             {
                 // deactivate siblings
                 if (rb.checked && rb.onToggle)
@@ -339,13 +339,13 @@ class NgRadioButton : NgPanel
 }
 
 /// Canvas widget - draw arbitrary graphics on it by providing a callback
-class NgCanvasWidget : NgWidget
+class CanvasWidget : Widget
 {
     protected void delegate(Painter, Size) onDraw;
 
-    static NgCanvasWidget make(void delegate(Painter, Size) onDraw)
+    static CanvasWidget make(void delegate(Painter, Size) onDraw)
     {
-        NgCanvasWidget w = arena.make!NgCanvasWidget;
+        CanvasWidget w = arena.make!CanvasWidget;
         w.onDraw = onDraw;
         return w;
     }
@@ -429,7 +429,7 @@ class ElemImage : Element
 }
 
 /// Button, which can have icon, label, and can be checkable
-class Button : ElemPanel, ActionHolder
+class ElemButton : ElemPanel, ActionHolder
 {
     @property
     {

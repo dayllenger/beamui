@@ -12,13 +12,13 @@ module beamui.widgets.groupbox;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-class NgGroupBox : NgPanel
+class GroupBox : Panel
 {
     dstring caption;
 
-    static NgGroupBox make(dstring caption)
+    static GroupBox make(dstring caption)
     {
-        NgGroupBox w = arena.make!NgGroupBox;
+        GroupBox w = arena.make!GroupBox;
         w.caption = caption;
         return w;
     }

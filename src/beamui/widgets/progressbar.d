@@ -25,13 +25,13 @@ enum int PROGRESS_HIDDEN = -2;
 enum int PROGRESS_INDETERMINATE = -1;
 enum int PROGRESS_MAX = 1000;
 
-class NgProgressBar : NgWidget
+class ProgressBar : Widget
 {
     int progress;
 
-    static NgProgressBar make(int progress)
+    static ProgressBar make(int progress)
     {
-        NgProgressBar w = arena.make!NgProgressBar;
+        ProgressBar w = arena.make!ProgressBar;
         w.progress = progress;
         return w;
     }

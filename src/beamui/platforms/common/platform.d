@@ -256,7 +256,7 @@ class Window : CustomEventTarget
         Element _mainWidget;
         ElementStore _elementStore;
         Arena[2] _widgetArenas;
-        NgWidget delegate() _buildFunc;
+        Widget delegate() _buildFunc;
 
         KeyMods _keyboardModifiers;
 
@@ -1767,7 +1767,7 @@ class Window : CustomEventTarget
     // Tree rebuild
 
     // experimental
-    final void show(NgWidget delegate() buildFunc)
+    final void show(Widget delegate() buildFunc)
     {
         _buildFunc = buildFunc;
         rebuild(); // first build
@@ -1793,7 +1793,7 @@ class Window : CustomEventTarget
         _widgetArenas[0].clear();
         setCurrentArenaAndStore(_widgetArenas[0], _elementStore);
         // rebuild and diff
-        NgWidget root = _buildFunc();
+        Widget root = _buildFunc();
         _mainWidget = mountRoot(root);
         _mainWidget.window = this;
         needRebuild = false;

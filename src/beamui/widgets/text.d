@@ -14,13 +14,13 @@ import beamui.text.sizetest;
 import beamui.text.style;
 import beamui.widgets.widget;
 
-class NgLabel : NgWidget
+class Label : Widget
 {
     dstring text;
 
-    static NgLabel make(dstring text)
+    static Label make(dstring text)
     {
-        NgLabel w = arena.make!NgLabel;
+        Label w = arena.make!Label;
         w.text = text;
         return w;
     }
@@ -39,22 +39,22 @@ class NgLabel : NgWidget
     }
 }
 
-class NgParagraph : NgWidget
+class Paragraph : Widget
 {
     private dstring text;
     private TextContent content;
 
-    static NgParagraph make(dstring text)
+    static Paragraph make(dstring text)
     {
-        NgParagraph w = arena.make!NgParagraph;
+        Paragraph w = arena.make!Paragraph;
         w.text = text;
         return w;
     }
 
-    static NgParagraph make(TextContent content)
+    static Paragraph make(TextContent content)
         in(content)
     {
-        NgParagraph w = arena.make!NgParagraph;
+        Paragraph w = arena.make!Paragraph;
         w.content = content;
         return w;
     }

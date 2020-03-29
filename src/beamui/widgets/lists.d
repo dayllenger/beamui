@@ -281,7 +281,7 @@ class IconStringListAdapter : StringListAdapterBase
 alias ElemListWidget = ListWidget;
 alias ElemStringListWidget = StringListWidget;
 
-class NgListWidget : NgWidgetGroup
+class ListWidget : WidgetGroup
 {
     ListAdapter adapter;
     Orientation orientation = Orientation.vertical;
@@ -291,9 +291,9 @@ class NgListWidget : NgWidgetGroup
     void delegate(int) onItemClick;
     void delegate(int) onSelect;
 
-    static NgListWidget make(ListAdapter adapter = null)
+    static ListWidget make(ListAdapter adapter = null)
     {
-        NgListWidget w = arena.make!NgListWidget;
+        ListWidget w = arena.make!ListWidget;
         w.adapter = adapter;
         return w;
     }
@@ -325,12 +325,12 @@ class NgListWidget : NgWidgetGroup
     }
 }
 
-class NgStringListWidget : NgListWidget
+class StringListWidget : ListWidget
 {
-    static NgStringListWidget make(StringListAdapterBase adapter)
+    static StringListWidget make(StringListAdapterBase adapter)
         in(adapter)
     {
-        NgStringListWidget w = arena.make!NgStringListWidget;
+        StringListWidget w = arena.make!StringListWidget;
         w.adapter = adapter;
         return w;
     }
