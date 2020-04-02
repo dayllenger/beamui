@@ -424,11 +424,6 @@ class ElemImage : Element
     private string _imageID;
     private DrawableRef _drawable;
 
-    this(string imageID = null)
-    {
-        this.imageID = imageID;
-    }
-
     ~this()
     {
         _drawable.clear();
@@ -477,9 +472,10 @@ class ElemButton : ElemPanel, ActionHolder
             }
             else if (some)
             {
-                _icon = new ElemImage(id);
+                _icon = new ElemImage;
                 _icon.setAttribute("icon");
                 _icon.state = State.parent;
+                _icon.imageID = id;
                 add(_icon);
             }
         }
@@ -546,9 +542,10 @@ class ElemButton : ElemPanel, ActionHolder
             }
             else if (some)
             {
-                _label = new ElemLabel(s);
+                _label = new ElemLabel;
                 _label.setAttribute("label");
                 _label.state = State.parent;
+                _label.text = s;
                 add(_label);
             }
         }

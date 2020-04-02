@@ -60,7 +60,7 @@ class Paragraph : Widget
 
     override protected Element createElement()
     {
-        return new ElemParagraph;
+        return new ElemParagraph(content);
     }
 
     override protected void updateElement(Element element)
@@ -123,11 +123,8 @@ class ElemLabel : Element
         TextSizeTester natSizeTester;
     }
 
-    this(dstring txt = null)
+    this()
     {
-        original = txt;
-        textobj.str = txt;
-
         static immutable dchar[80] str = 'a';
         minSizeTester.str = "aaaaa";
         natSizeTester.str = str[];
@@ -360,14 +357,9 @@ class ElemParagraph : Element
         Buf!VisibleLine _visibleLines;
     }
 
-    this(dstring txt = null)
-    {
-        this(new TextContent(txt));
-    }
-
     this(TextContent content)
+        in(content)
     {
-        assert(content);
         _content = content;
         _content.afterChange ~= &handleChange;
 

@@ -501,13 +501,7 @@ public:
     /// Empty parameter list constructor - for usage by factory
     this()
     {
-        this(null);
-    }
-    /// Create with ID parameter
-    this(string ID)
-    {
         _destructionFlag = new bool;
-        _id = ID;
         _style.element = this;
         _background = new Background;
         debug _instanceCount++;
@@ -2468,17 +2462,6 @@ alias ElementList = Collection!(Element, true);
 */
 class ElemGroup : Element
 {
-    /// Empty parameter list constructor - for usage by factory
-    this()
-    {
-        super(null);
-    }
-    /// Create with ID parameter
-    this(string ID)
-    {
-        super(ID);
-    }
-
     private ElementList _children;
 
     override @property int childCount() const
@@ -2620,22 +2603,6 @@ class ElemPanel : ElemGroup
     private string _kind;
     private ILayout _layout;
     private Buf!Element preparedItems;
-
-    this()
-    {
-        super();
-    }
-
-    /// Create a panel with `id` and, perhaps, several style classes
-    this(string id, string[] classes...)
-    {
-        super(id);
-        foreach (a; classes)
-        {
-            if (a.length)
-                setAttribute(a);
-        }
-    }
 
     ~this()
     {
