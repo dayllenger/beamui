@@ -193,6 +193,19 @@ class SwitchButton : Widget
         return w;
     }
 
+    this()
+    {
+        allowsFocus = true;
+        allowsHover = true;
+    }
+
+    protected alias enabled = typeof(super).enabled;
+
+    override protected void build()
+    {
+        enabled = onToggle !is null;
+    }
+
     override protected Element createElement()
     {
         return new ElemSwitch;
@@ -203,10 +216,16 @@ class SwitchButton : Widget
         super.updateElement(element);
 
         ElemSwitch el = fastCast!ElemSwitch(element);
-        el.checked = checked;
-        el.onToggle.clear();
+        el.allowsClick = true;
+        el.applyState(State.checked, checked);
+        el.onClick.clear();
         if (onToggle)
-            el.onToggle ~= onToggle;
+            el.onClick ~= &handleClick;
+    }
+
+    private void handleClick()
+    {
+        onToggle(!checked);
     }
 }
 
@@ -259,7 +278,7 @@ class CheckBox : Panel
 
         ElemPanel el = fastCast!ElemPanel(element);
         el.allowsClick = true;
-        el.checked = checked;
+        el.applyState(State.checked, checked);
         el.onClick.clear();
         if (onToggle)
             el.onClick ~= &handleClick;
@@ -320,7 +339,7 @@ class RadioButton : Panel
 
         ElemPanel el = fastCast!ElemPanel(element);
         el.allowsClick = true;
-        el.checked = checked;
+        el.applyState(State.checked, checked);
         el.onClick.clear();
         if (onToggle)
             el.onClick ~= &handleClick;
@@ -500,7 +519,7 @@ class ElemButton : ElemPanel, ActionHolder
             {
                 iconID = _action.iconID;
                 text = _action.label;
-                allowsToggle = _action.checkable;
+                _checkable = _action.checkable;
                 a.onChange ~= &updateContent;
                 a.onStateChange ~= &updateState;
                 updateState();
@@ -537,6 +556,8 @@ class ElemButton : ElemPanel, ActionHolder
 
     private
     {
+        bool _checkable;
+
         ElemImage _icon;
         ElemLabel _label;
 
@@ -551,7 +572,7 @@ class ElemButton : ElemPanel, ActionHolder
         allowsClick = true;
         allowsFocus = true;
         allowsHover = true;
-        allowsToggle = checkable;
+        _checkable = checkable;
     }
 
     /// Constructor from action by click
@@ -577,11 +598,10 @@ class ElemButton : ElemPanel, ActionHolder
 
     protected void updateState()
     {
-        enabled = _action.enabled;
-        checked = _action.checked;
+        applyState(State.enabled, _action.enabled);
+        applyState(State.checked, _action.checked);
         visibility = _action.visible ? Visibility.visible : Visibility.gone;
     }
-
     override protected void handleClick()
     {
         if (_action)
@@ -589,25 +609,13 @@ class ElemButton : ElemPanel, ActionHolder
             if (auto w = window)
                 w.call(_action);
         }
-        if (allowsToggle)
-            checked = !checked;
+        if (_checkable)
+            applyState(State.checked, !(state & State.checked));
     }
 }
 
 class ElemSwitch : Element
 {
-    this()
-    {
-        allowsClick = true;
-        allowsFocus = true;
-        allowsHover = true;
-    }
-
-    override protected void handleClick()
-    {
-        checked = !checked;
-    }
-
     override protected Boundaries computeBoundaries()
     {
         const Drawable bg = style.backgroundImage;

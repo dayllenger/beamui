@@ -501,7 +501,7 @@ class ElemResizer : Element
         {
             if (!event.doubleClick)
             {
-                setState(State.pressed);
+                applyState(State.pressed, true);
                 _dragging = true;
                 _dragStartPosition = _orientation == Orientation.vertical ? event.y : event.x;
                 _dragStartDelta = _delta;
@@ -548,16 +548,13 @@ class ElemResizer : Element
         }
         if (event.action == MouseAction.move && allowsHover)
         {
-            if (!(state & State.hovered))
-            {
-                setState(State.hovered);
-            }
+            applyState(State.hovered, true);
             return true;
         }
         if (event.action == MouseAction.buttonUp && event.button == MouseButton.left ||
             !event.alteredByButton(MouseButton.left) && _dragging)
         {
-            resetState(State.pressed);
+            applyState(State.pressed, false);
             if (_dragging)
             {
                 _dragging = false;
@@ -568,12 +565,12 @@ class ElemResizer : Element
         }
         if (event.action == MouseAction.leave && allowsHover)
         {
-            resetState(State.hovered);
+            applyState(State.hovered, false);
             return true;
         }
         if (event.action == MouseAction.cancel && allowsHover)
         {
-            resetState(State.hovered | State.pressed);
+            applyState(State.hovered | State.pressed, false);
             if (_dragging)
             {
                 _dragging = false;
@@ -584,7 +581,7 @@ class ElemResizer : Element
         }
         if (event.action == MouseAction.cancel)
         {
-            resetState(State.pressed);
+            applyState(State.pressed, false);
             if (_dragging)
             {
                 _dragging = false;

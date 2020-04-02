@@ -156,6 +156,7 @@ class Widget
 
     bool allowsFocus;
     bool allowsHover;
+    /// True if the widget should be interactive and catch mouse and key events
     bool enabled = true;
     bool visible = true;
     bool inheritState;
@@ -304,7 +305,7 @@ class Widget
 
         el.allowsFocus = allowsFocus;
         el.allowsHover = allowsHover;
-        el.enabled = enabled;
+        el.applyState(State.enabled, enabled);
         el.visibility = visible ? Visibility.visible : Visibility.hidden;
 
         if (inheritState)
@@ -596,7 +597,7 @@ public:
             return _parent.state(newState);
         if (newState != _state)
         {
-            State oldState = _state;
+            const oldState = _state;
             _state = newState;
             // need to recompute the style
             invalidateStyles();
@@ -611,40 +612,18 @@ public:
                 handleFocusChange(true, cast(bool)(newState & State.keyboardFocused));
                 onFocusChange(true);
             }
-            // notify checked changes
-            if ((oldState & State.checked) && !(newState & State.checked))
-            {
-                handleToggling(false);
-                onToggle(false);
-            }
-            else if (!(oldState & State.checked) && (newState & State.checked))
-            {
-                handleToggling(true);
-                onToggle(true);
-            }
         }
     }
-    /// Add state flags (set of flags from `State` enum). Returns new state
-    State setState(State stateFlagsToSet)
+    /// Set or unset `state` flags (a disjunction of `State` options). Returns new state
+    State applyState(State flags, bool set)
     {
-        State st = state | stateFlagsToSet;
-        state = st;
-        return st;
-    }
-    /// Remove state flags (set of flags from `State` enum). Returns new state
-    State resetState(State stateFlagsToUnset)
-    {
-        State st = state & ~stateFlagsToUnset;
+        const st = set ? (state | flags) : (state & ~flags);
         state = st;
         return st;
     }
 
     /// Called to process focus changes before `onFocusChange` signal, override to do it
     protected void handleFocusChange(bool focused, bool receivedFocusFromKeyboard = false)
-    {
-    }
-    /// Called to process checked state changes before `onToggle` signal, override to do it
-    protected void handleToggling(bool checked)
     {
     }
 
@@ -1173,7 +1152,6 @@ public:
         bool _allowsClick;
         bool _allowsFocus;
         bool _allowsHover;
-        bool _allowsToggle;
     }
 
     @property
@@ -1185,25 +1163,6 @@ public:
         bool enabled() const
         {
             return (state & State.enabled) != 0;
-        }
-        /// ditto
-        void enabled(bool flag)
-        {
-            flag ? setState(State.enabled) : resetState(State.enabled);
-        }
-
-        /** True if the widget is somehow checked, as a checkbox or button.
-
-            Corresponds to `State.checked` state flag.
-        */
-        bool checked() const
-        {
-            return (state & State.checked) != 0;
-        }
-        /// ditto
-        void checked(bool flag)
-        {
-            flag ? setState(State.checked) : resetState(State.checked);
         }
 
         /// True if this widget and all its parents are visible
@@ -1249,13 +1208,6 @@ public:
         {
             _allowsHover = v;
         }
-        /// True if the widget supports `checked` state
-        bool allowsToggle() const { return _allowsToggle; }
-        /// ditto
-        void allowsToggle(bool flag)
-        {
-            _allowsToggle = flag;
-        }
 
         /// True if the widget allows click, and it's visible and enabled
         bool canClick() const
@@ -1267,30 +1219,12 @@ public:
         {
             return _allowsFocus && enabled && visible;
         }
-        /// True if the widget allows toggle, and it's visible and enabled
-        bool canToggle() const
-        {
-            return _allowsToggle && enabled && visible;
-        }
 
         /// Override and return true to track key events even when not focused
         bool wantsKeyTracking() const
         {
             return false;
         }
-    }
-
-    /// Chained version of `enabled`
-    final Element setEnabled(bool flag)
-    {
-        enabled = flag;
-        return this;
-    }
-    /// Chained version of `checked`
-    final Element setChecked(bool flag)
-    {
-        checked = flag;
-        return this;
     }
 
     void requestActionsUpdate() // TODO
@@ -1710,9 +1644,6 @@ public:
     /// On click event listener
     Signal!(void delegate()) onClick;
 
-    /// Checked state change event listener
-    Signal!(void delegate(bool)) onToggle;
-
     /// Focus state change event listener
     Signal!(void delegate(bool)) onFocusChange;
 
@@ -1771,14 +1702,14 @@ public:
             {
                 if (event.action == KeyAction.keyDown)
                 {
-                    setState(State.pressed);
+                    applyState(State.pressed, true);
                     return true;
                 }
                 if (event.action == KeyAction.keyUp)
                 {
                     if (state & State.pressed)
                     {
-                        resetState(State.pressed);
+                        applyState(State.pressed, false);
                         handleClick();
                         onClick();
                     }
@@ -1804,7 +1735,7 @@ public:
             {
                 if (event.action == MouseAction.buttonDown)
                 {
-                    setState(State.pressed);
+                    applyState(State.pressed, true);
                     if (_allowsFocus)
                         setFocus();
                     return true;
@@ -1813,7 +1744,7 @@ public:
                 {
                     if (state & State.pressed)
                     {
-                        resetState(State.pressed);
+                        applyState(State.pressed, false);
                         handleClick();
                         onClick();
                     }
@@ -1822,17 +1753,17 @@ public:
             }
             if (event.action == MouseAction.focusIn)
             {
-                setState(State.pressed);
+                applyState(State.pressed, true);
                 return true;
             }
             if (event.action == MouseAction.focusOut)
             {
-                resetState(State.pressed);
+                applyState(State.pressed, false);
                 return true;
             }
             if (event.action == MouseAction.cancel)
             {
-                resetState(State.pressed | State.hovered);
+                applyState(State.pressed | State.hovered, false);
                 return true;
             }
         }
@@ -1865,7 +1796,7 @@ public:
                 {
                     debug (mouse)
                         Log.d("Hover off ", id);
-                    resetState(State.hovered);
+                    applyState(State.hovered, false);
                 }
                 return true;
             }
@@ -1876,7 +1807,7 @@ public:
                     debug (mouse)
                         Log.d("Hover ", id);
                     if (!TOUCH_MODE)
-                        setState(State.hovered);
+                        applyState(State.hovered, true);
                 }
                 return true;
             }
@@ -1884,7 +1815,7 @@ public:
             {
                 debug (mouse)
                     Log.d("Leave ", id);
-                resetState(State.hovered);
+                applyState(State.hovered, false);
                 return true;
             }
         }

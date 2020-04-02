@@ -607,7 +607,7 @@ class ListWidget : WidgetGroup
             if (_adapter)
                 _adapter.resetItemState(_hoverItemIndex, State.hovered);
             else
-                child(_hoverItemIndex).resetState(State.hovered);
+                child(_hoverItemIndex).applyState(State.hovered, false);
             invalidate();
         }
         _hoverItemIndex = index;
@@ -616,7 +616,7 @@ class ListWidget : WidgetGroup
             if (_adapter)
                 _adapter.setItemState(_hoverItemIndex, State.hovered);
             else
-                child(_hoverItemIndex).setState(State.hovered);
+                child(_hoverItemIndex).applyState(State.hovered, true);
             invalidate();
         }
     }
@@ -667,10 +667,7 @@ class ListWidget : WidgetGroup
         {
             if ((child(idx).state & State.focused) != (state & State.focused))
             {
-                if (state & State.focused)
-                    child(idx).setState(State.focused);
-                else
-                    child(idx).resetState(State.focused);
+                child(idx).applyState(State.focused, (state & State.focused) != 0);
                 invalidate();
             }
         }
@@ -784,7 +781,7 @@ class ListWidget : WidgetGroup
             if (_adapter)
                 _adapter.resetItemState(_selectedItemIndex, State.selected | State.focused);
             else
-                child(_selectedItemIndex).resetState(State.selected | State.focused);
+                child(_selectedItemIndex).applyState(State.selected | State.focused, false);
             invalidate();
         }
         _selectedItemIndex = index;
@@ -794,7 +791,7 @@ class ListWidget : WidgetGroup
             if (_adapter)
                 _adapter.setItemState(_selectedItemIndex, State.selected | (state & State.focused));
             else
-                child(_selectedItemIndex).setState(State.selected | (state & State.focused));
+                child(_selectedItemIndex).applyState(State.selected | (state & State.focused), true);
             invalidate();
         }
         return true;

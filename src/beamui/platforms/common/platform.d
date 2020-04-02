@@ -945,17 +945,17 @@ class Window : CustomEventTarget
             return oldFocus;
         if (oldFocus)
         {
-            oldFocus.resetState(targetState);
+            oldFocus.applyState(targetState, false);
             oldFocus.focusGroupFocused(false);
         }
         if (!newFocus || isChild(newFocus))
         {
             if (newFocus)
             {
-                // when calling setState(focused), window.focusedElement is still previously focused widget
+                // when calling this, window.focusedElement is still previously focused widget
                 debug (focus)
                     Log.d("new focus: ", newFocus.dbgname);
-                newFocus.setState(targetState);
+                newFocus.applyState(targetState, true);
             }
             _focusedElement = weakRef(newFocus);
             newFocus.maybe.focusGroupFocused(true);
@@ -970,7 +970,7 @@ class Window : CustomEventTarget
         Element el = _focusedElement.get;
         if (el)
         {
-            el.setState(_focusStateToApply);
+            el.applyState(_focusStateToApply, true);
             update();
         }
         return el;
@@ -981,7 +981,7 @@ class Window : CustomEventTarget
         Element el = _focusedElement.get;
         if (el)
         {
-            el.resetState(_focusStateToApply);
+            el.applyState(_focusStateToApply, false);
             update();
         }
         return el;

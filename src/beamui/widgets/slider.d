@@ -545,7 +545,7 @@ abstract class ElemAbstractSlider : ElemGroup
         {
             if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
             {
-                setState(State.pressed);
+                applyState(State.pressed, true);
                 if (allowsFocus)
                     setFocus();
                 _dragging = true;
@@ -591,7 +591,7 @@ abstract class ElemAbstractSlider : ElemGroup
             }
             if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
             {
-                resetState(State.pressed);
+                applyState(State.pressed, false);
                 if (_dragging)
                 {
                     onAction(SliderAction.release);
@@ -605,7 +605,7 @@ abstract class ElemAbstractSlider : ElemGroup
                 {
                     debug (sliders)
                         Log.d("SliderHandle: hover");
-                    setState(State.hovered);
+                    applyState(State.hovered, true);
                 }
                 return true;
             }
@@ -613,15 +613,15 @@ abstract class ElemAbstractSlider : ElemGroup
             {
                 debug (sliders)
                     Log.d("SliderHandle: leave");
-                resetState(State.hovered);
+                applyState(State.hovered, false);
                 return true;
             }
             if (event.action == MouseAction.cancel && allowsHover)
             {
                 debug (sliders)
                     Log.d("SliderHandle: cancel with allowsHover");
-                resetState(State.hovered);
-                resetState(State.pressed);
+                applyState(State.hovered, false);
+                applyState(State.pressed, false);
                 _dragging = false;
                 return true;
             }
@@ -629,7 +629,7 @@ abstract class ElemAbstractSlider : ElemGroup
             {
                 debug (sliders)
                     Log.d("SliderHandle: cancel");
-                resetState(State.pressed);
+                applyState(State.pressed, false);
                 _dragging = false;
                 return true;
             }

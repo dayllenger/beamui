@@ -110,7 +110,7 @@ class Dialog : Panel
             }(a);
             if (defaultActionIndex == i)
             {
-                btn.setState(State.default_);
+                btn.applyState(State.default_, true);
                 _defaultButton = btn;
             }
             if (a is ACTION_NO || a is ACTION_CANCEL)

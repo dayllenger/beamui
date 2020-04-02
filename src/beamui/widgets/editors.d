@@ -423,10 +423,7 @@ class ElemEditLine : Element, IEditor, ActionOperator
         /// ditto
         void readOnly(bool flag)
         {
-            if (flag)
-                setState(State.readOnly);
-            else
-                resetState(State.readOnly);
+            applyState(State.readOnly, flag);
         }
 
         bool replaceMode() const { return _replaceMode; }
@@ -1543,10 +1540,7 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
         }
         void readOnly(bool flag)
         {
-            if (flag)
-                setState(State.readOnly);
-            else
-                resetState(State.readOnly);
+            applyState(State.readOnly, flag);
         }
 
         bool replaceMode() const { return _replaceMode; }
@@ -4473,16 +4467,8 @@ class FindPanel : Panel
     void setDirection(bool back)
     {
         _backDirection = back;
-        if (back)
-        {
-            _btnFindNext.resetState(State.default_);
-            _btnFindPrev.setState(State.default_);
-        }
-        else
-        {
-            _btnFindNext.setState(State.default_);
-            _btnFindPrev.resetState(State.default_);
-        }
+        _btnFindNext.applyState(State.default_, !back);
+        _btnFindPrev.applyState(State.default_, back);
     }
 
     TextSearchOptions makeSearchOptions() const

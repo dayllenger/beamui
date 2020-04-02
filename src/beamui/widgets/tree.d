@@ -675,18 +675,9 @@ class TreeItemWidget : Panel
         {
             _expander.imageID = _item.expanded ? "arrow_right_down_black" : "arrow_right_hollow";
         }
-        if (_item.isVisible)
-            visibility = Visibility.visible;
-        else
-            visibility = Visibility.gone;
-        if (_item.selectedItem is _item)
-            setState(State.selected);
-        else
-            resetState(State.selected);
-        if (_item.defaultItem is _item)
-            setState(State.default_);
-        else
-            resetState(State.default_);
+        visibility = _item.isVisible ? Visibility.visible : Visibility.gone;
+        applyState(State.selected, _item.selectedItem is _item);
+        applyState(State.default_, _item.defaultItem is _item);
     }
 }
 
