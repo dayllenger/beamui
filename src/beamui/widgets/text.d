@@ -21,14 +21,7 @@ import beamui.widgets.widget;
 class Label : Widget
 {
     /// Text to show
-    protected dstring text;
-
-    static Label make(dstring text)
-    {
-        Label w = arena.make!Label;
-        w.text = text;
-        return w;
-    }
+    dstring text;
 
     override protected Element createElement()
     {
@@ -48,14 +41,11 @@ class Label : Widget
 */
 class Paragraph : Widget
 {
-    protected TextContent content;
+    TextContent content;
 
-    static Paragraph make(TextContent content)
-        in(content)
+    override protected void build()
     {
-        Paragraph w = arena.make!Paragraph;
-        w.content = content;
-        return w;
+        assert(content);
     }
 
     override protected Element createElement()

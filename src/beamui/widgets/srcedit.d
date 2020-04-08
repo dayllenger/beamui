@@ -29,14 +29,6 @@ class SourceEdit : EditBox
     /// When true, show folding controls on the left pane
     bool showFolding;
 
-    static SourceEdit make(EditableContent content)
-        in(content)
-    {
-        SourceEdit w = arena.make!SourceEdit;
-        w.content = content;
-        return w;
-    }
-
     this()
     {
         hscrollbarMode = ScrollBarMode.automatic;

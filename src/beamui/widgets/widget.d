@@ -148,11 +148,41 @@ interface IState
 {
 }
 
+struct WidgetAttributes
+{
+    private string[string] _map;
+
+    bool has(string name) const
+    {
+        return (name in _map) !is null;
+    }
+
+    void set(string name, string value = null)
+        in(name)
+    {
+        _map[name] = value;
+    }
+}
+
+W render(W : Widget)()
+{
+    return Widget.arena.make!W;
+}
+
+W render(W : Widget)(scope void delegate(W) conf)
+    in(conf)
+{
+    auto w = Widget.arena.make!W;
+    conf(w);
+    return w;
+}
+
 /// Base class for all widgets
 class Widget
 {
     uint key = uint.max;
     string id;
+    WidgetAttributes attr;
 
     bool allowsFocus;
     bool allowsHover;
@@ -179,21 +209,6 @@ class Widget
         Widget _parent;
 
         IState* _statePtr;
-
-        string[string] _attributes;
-    }
-
-    static Widget make(string id = null)
-    {
-        Widget w = arena.make!Widget;
-        w.id = id;
-        return w;
-    }
-
-    final void setAttribute(string name, string value = null)
-        in(name.length)
-    {
-        _attributes[name] = value;
     }
 
     //===============================================================
@@ -297,9 +312,9 @@ class Widget
     {
         el.id = id;
 
-        if (el.attributes != _attributes)
+        if (el.attributes != attr._map)
         {
-            el.attributes = _attributes;
+            el.attributes = attr._map;
             el.invalidateStyles();
         }
 
@@ -423,23 +438,6 @@ abstract class WidgetGroup : Widget
 
 class Panel : WidgetGroup
 {
-    static Panel make()
-    {
-        return arena.make!Panel;
-    }
-
-    static Panel make(string id, string[] classes...)
-    {
-        Panel w = arena.make!Panel;
-        w.id = id;
-        foreach (name; classes)
-        {
-            if (name.length)
-                w._attributes[name] = null;
-        }
-        return w;
-    }
-
     override protected Element createElement()
     {
         return new ElemPanel;

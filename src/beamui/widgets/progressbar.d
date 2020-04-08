@@ -28,15 +28,8 @@ enum int PROGRESS_MAX = 1000;
 /// Progress indicator
 class ProgressBar : Widget
 {
-    protected int progress = PROGRESS_INDETERMINATE;
-
-    /// Construct with progress value (0 .. 1000; -1 for indeterminate, -2 for hidden)
-    static ProgressBar make(int progress)
-    {
-        ProgressBar w = arena.make!ProgressBar;
-        w.progress = progress;
-        return w;
-    }
+    /// Progress value (0 .. 1000; -1 for indeterminate, -2 for hidden)
+    int progress = PROGRESS_INDETERMINATE;
 
     override protected Element createElement()
     {

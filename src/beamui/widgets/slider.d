@@ -23,46 +23,18 @@ import std.math : abs, isFinite, quantize;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
-struct SliderRange
-{
-    @property
-    {
-        /// Slider range min value
-        double minValue() const { return _minValue; }
-        /// Slider range max value. Always >= `minValue`
-        double maxValue() const { return _maxValue; }
-        /// Step between values. Always > 0
-        double step() const { return _step; }
-    }
-
-    private double _minValue = 0;
-    private double _maxValue = 100;
-    private double _step = 1;
-
-    /** Make new range of min, max, and step values for a slider.
-
-        `min` must be <= `max`, `step` must be > 0.
-    */
-    this(double min, double max, double step = 1)
-        in(isFinite(min))
-        in(isFinite(max))
-        in(isFinite(step))
-        in(min <= max)
-        in(step > 0)
-    {
-        _minValue = min;
-        _maxValue = max;
-        _step = step;
-    }
-}
-
 /// Base class for sliders
 abstract class AbstractSlider : Widget
 {
-    protected SliderRange range;
-    /// Slider orientation (vertical, horizontal)
-    protected Orientation orientation;
+    /// Slider range min value. Must be <= `maxValue`
+    double minValue = 0;
+    /// Slider range max value. Must be >= `minValue`
+    double maxValue = 100;
+    /// Step between values. Must be > 0
+    double step = 1;
 
+    /// Slider orientation, horizontal by default
+    Orientation orientation = Orientation.horizontal;
     /// Step multiplier for incPage/decPage events
     uint pageStep = 5;
 
@@ -77,20 +49,20 @@ abstract class AbstractSlider : Widget
         switch (action) with (SliderAction)
         {
         case increase:
-            return previous + range._step;
+            return previous + step;
         case decrease:
-            return previous - range._step;
+            return previous - step;
         case incPage:
         case decPage:
-            const delta = pageStep > 0 ? range._step * pageStep : range._step;
+            const delta = pageStep > 0 ? step * pageStep : step;
             if (action == incPage)
                 return previous + delta;
             else
                 return previous - delta;
         case moveToMin:
-            return range._minValue;
+            return minValue;
         case moveToMax:
-            return range._maxValue;
+            return maxValue;
         default:
             return previous;
         }
@@ -98,10 +70,13 @@ abstract class AbstractSlider : Widget
 
     override protected void build()
     {
-        if (orientation == Orientation.horizontal)
-            setAttribute("horizontal");
-        else
-            setAttribute("vertical");
+        assert(isFinite(minValue));
+        assert(isFinite(maxValue));
+        assert(isFinite(step));
+        assert(minValue <= maxValue);
+        assert(step > 0);
+
+        attr.set(orientation == Orientation.horizontal ? "horizontal" : "vertical");
     }
 
     override protected void updateElement(Element element)
@@ -116,44 +91,28 @@ abstract class AbstractSlider : Widget
 /// Single-value slider widget - either vertical or horizontal
 class Slider : AbstractSlider
 {
-    protected double value = 0;
-    protected void delegate(double) onChange;
+    double value = 0;
+    void delegate(double) onChange;
 
     /// Slider event listener
     void delegate(SliderAction, double) onScroll;
 
-    static Slider make(
-        double value,
-        void delegate(double) onChange,
-        SliderRange range,
-        Orientation orientation = Orientation.horizontal,
-    )
-        in(isFinite(value))
-    {
-        Slider w = arena.make!Slider;
-        w.range = range;
-        w.orientation = orientation;
-        w.value = w.adjustValue(value);
-        w.onChange = onChange;
-        return w;
-    }
-
     private double adjustValue(double v) const
         in(isFinite(v))
     {
-        const mn = range._minValue;
-        const mx = range._maxValue;
+        const mn = minValue;
+        const mx = maxValue;
         if (v <= mn)
             return mn;
         else if (v >= mx)
             return mx;
         else
-            return min(quantize(v - mn, range._step) + mn, mx);
+            return min(quantize(v - mn, step) + mn, mx);
     }
 
     private void triggerAction(SliderAction action)
     {
-        const v = clamp(getDefaultValue(action, value), range._minValue, range._maxValue);
+        const v = clamp(getDefaultValue(action, value), minValue, maxValue);
         if (onScroll)
             onScroll(action, v);
         if (value != v && onChange)
@@ -178,6 +137,7 @@ class Slider : AbstractSlider
     {
         super.build();
         enabled = onChange || onScroll;
+        value = adjustValue(value);
     }
 
     override protected Element createElement()
@@ -190,7 +150,7 @@ class Slider : AbstractSlider
         super.updateElement(element);
 
         ElemSlider el = fastCast!ElemSlider(element);
-        el.setData(value, range);
+        el.setData(value, minValue, maxValue);
         el.onAction.clear();
         el.onDragging.clear();
         if (enabled)
@@ -201,68 +161,50 @@ class Slider : AbstractSlider
     }
 }
 
-/// Slider widget with two handles to select a numeric range
+/** Slider widget with two handles to select a numeric range.
+
+    If `first` > `second`, the first value will push the second.
+*/
 class RangeSlider : AbstractSlider
 {
-    protected double first = 0;
-    protected double second = 0;
-    protected void delegate(double, double) onChange;
+    double first = 0;
+    double second = 0;
+    void delegate(double, double) onChange;
 
     /// The first handle event listener
     void delegate(SliderAction, double) onScroll1;
     /// The second handle event listener
     void delegate(SliderAction, double) onScroll2;
 
-    /// If `first` > `second`, the first value will push the second
-    static RangeSlider make(
-        double first,
-        double second,
-        void delegate(double, double) onChange,
-        SliderRange range,
-        Orientation orientation = Orientation.horizontal,
-    )
-        in(isFinite(first))
-        in(isFinite(second))
-    {
-        RangeSlider w = arena.make!RangeSlider;
-        w.range = range;
-        w.orientation = orientation;
-        w.second = range._maxValue;
-        w.first = w.adjustFirst(max(first, range._minValue));
-        w.second = w.adjustSecond(min(second, range._maxValue));
-        w.onChange = onChange;
-        return w;
-    }
-
     private double adjustFirst(double v) const
         in(isFinite(v))
     {
-        const mn = range._minValue;
+        const mn = minValue;
         const mx = second;
         if (v <= mn)
             return mn;
         else if (v >= mx)
             return mx;
         else
-            return min(quantize(v - mn, range._step) + mn, mx);
+            return min(quantize(v - mn, step) + mn, mx);
     }
 
     private double adjustSecond(double v) const
         in(isFinite(v))
     {
         const mn = first;
-        const mx = range._maxValue;
+        const mx = maxValue;
         if (v <= mn)
             return mn;
         else if (v >= mx)
             return mx;
         else
-            return min(quantize(v - mn, range._step) + mn, mx);
+            return min(quantize(v - mn, step) + mn, mx);
     }
 
     private void triggerActionOnFirst(SliderAction action)
     {
-        const v = clamp(getDefaultValue(action, first), range._minValue, second);
+        const v = clamp(getDefaultValue(action, first), minValue, second);
         if (onScroll1)
             onScroll1(action, v);
         if (first != v && onChange)
@@ -271,7 +213,7 @@ class RangeSlider : AbstractSlider
 
     private void triggerActionOnSecond(SliderAction action)
     {
-        const v = clamp(getDefaultValue(action, second), first, range._maxValue);
+        const v = clamp(getDefaultValue(action, second), first, maxValue);
         if (onScroll2)
             onScroll2(action, v);
         if (second != v && onChange)
@@ -308,6 +250,13 @@ class RangeSlider : AbstractSlider
     {
         super.build();
         enabled = onChange || onScroll1 || onScroll2;
+
+        assert(isFinite(first));
+        assert(isFinite(second));
+        const snd = second;
+        second = maxValue;
+        first = adjustFirst(first);
+        second = adjustSecond(snd);
     }
 
     override protected Element createElement()
@@ -320,7 +269,7 @@ class RangeSlider : AbstractSlider
         super.updateElement(element);
 
         ElemRangeSlider el = fastCast!ElemRangeSlider(element);
-        el.setData(first, second, range);
+        el.setData(first, second, minValue, maxValue);
         el.onAction1.clear();
         el.onAction2.clear();
         el.onDragging1.clear();
@@ -677,15 +626,15 @@ class ElemSlider : ElemAbstractSlider
         _hiddenChildren.append(_handle);
     }
 
-    final void setData(double value, ref const SliderRange range)
+    final void setData(double value, double minValue, double maxValue)
     {
-        if (_value == value && _minValue == range._minValue && _maxValue == range._maxValue)
+        if (_value == value && _minValue == minValue && _maxValue == maxValue)
             return;
 
-        assert(range._minValue <= value && value <= range._maxValue);
+        assert(minValue <= value && value <= maxValue);
         _value = value;
-        _minValue = range._minValue;
-        _maxValue = range._maxValue;
+        _minValue = minValue;
+        _maxValue = maxValue;
         handleDataChange();
     }
 
@@ -788,14 +737,14 @@ class ElemRangeSlider : ElemAbstractSlider
         _hiddenChildren.append(_rangeBetween);
     }
 
-    final void setData(double first, double second, ref const SliderRange range)
+    final void setData(double first, double second, double minValue, double maxValue)
     {
-        if (_first == first && _second == second && _minValue == range._minValue && _maxValue == range._maxValue)
+        if (_first == first && _second == second && _minValue == minValue && _maxValue == maxValue)
             return;
 
-        assert(range._minValue <= first && first <= second && second <= range._maxValue);
-        _minValue = range._minValue;
-        _maxValue = range._maxValue;
+        assert(minValue <= first && first <= second && second <= maxValue);
+        _minValue = minValue;
+        _maxValue = maxValue;
         _first = first;
         _second = second;
         handleDataChange();

@@ -1,7 +1,7 @@
 /**
 Simple controls - images, buttons, and so on.
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
@@ -14,23 +14,10 @@ import beamui.widgets.widget;
 /// Static image widget. Can accept any drawable instead of the image (e.g. a gradient)
 class ImageWidget : Widget
 {
-    protected string imageID;
-    protected Drawable drawable;
-
-    /// Make with a resource id for this image
-    static ImageWidget make(string imageID)
-    {
-        ImageWidget w = arena.make!ImageWidget;
-        w.imageID = imageID;
-        return w;
-    }
-    /// Use a custom drawable to show (not one from resources) instead of an image
-    static ImageWidget make(DrawableRef drawable)
-    {
-        ImageWidget w = arena.make!ImageWidget;
-        w.drawable = drawable;
-        return w;
-    }
+    /// Resource id for this image
+    string imageID;
+    /// Custom drawable to show (not one from resources) instead of an image
+    Drawable drawable;
 
     override protected Element createElement()
     {
@@ -51,16 +38,8 @@ class ImageWidget : Widget
 
 class ButtonLike : Panel
 {
-    protected dstring text;
-    protected string icon;
-
-    static ButtonLike make(dstring text, string icon)
-    {
-        ButtonLike w = arena.make!ButtonLike;
-        w.text = text;
-        w.icon = icon;
-        return w;
-    }
+    dstring text;
+    string icon;
 
     this()
     {
@@ -75,15 +54,17 @@ class ButtonLike : Panel
         ImageWidget image;
         if (icon.length)
         {
-            image = ImageWidget.make(icon);
-            image.setAttribute("icon");
+            image = render!ImageWidget;
+            image.imageID = icon;
+            image.attr.set("icon");
             image.inheritState = true;
         }
         Label label;
         if (text.length)
         {
-            label = Label.make(text);
-            label.setAttribute("label");
+            label = render!Label;
+            label.text = text;
+            label.attr.set("label");
             label.inheritState = true;
         }
         attach(image, label);
@@ -92,28 +73,17 @@ class ButtonLike : Panel
 
 class Button : ButtonLike
 {
-    protected void delegate() onClick;
-
-    static Button make(dstring text, void delegate() onClick)
-    {
-        Button w = arena.make!Button;
-        w.text = text;
-        w.onClick = onClick;
-        return w;
-    }
-
-    static Button make(dstring text, string icon, void delegate() onClick)
-    {
-        Button w = arena.make!Button;
-        w.text = text;
-        w.icon = icon;
-        w.onClick = onClick;
-        return w;
-    }
+    void delegate() onClick;
 
     this()
     {
         allowsFocus = true;
+    }
+
+    override protected void build()
+    {
+        super.build();
+        enabled = onClick !is null;
     }
 
     override protected void updateElement(Element element)
@@ -135,14 +105,7 @@ class Link : WidgetWrapper
 {
     import beamui.platforms.common.platform : platform;
 
-    protected string url;
-
-    static Link make(string url)
-    {
-        Link w = arena.make!Link;
-        w.url = url;
-        return w;
-    }
+    string url;
 
     this()
     {
@@ -151,6 +114,7 @@ class Link : WidgetWrapper
 
     override protected void build()
     {
+        enabled = url.length > 0;
         if (_content)
             _content.inheritState = true;
     }
@@ -182,24 +146,14 @@ class Link : WidgetWrapper
 /// Switch (on/off) widget
 class SwitchButton : Widget
 {
-    protected bool checked;
-    protected void delegate(bool) onToggle;
-
-    static SwitchButton make(bool checked, void delegate(bool) onToggle)
-    {
-        SwitchButton w = arena.make!SwitchButton;
-        w.checked = checked;
-        w.onToggle = onToggle;
-        return w;
-    }
+    bool checked;
+    void delegate(bool) onToggle;
 
     this()
     {
         allowsFocus = true;
         allowsHover = true;
     }
-
-    protected alias enabled = typeof(super).enabled;
 
     override protected void build()
     {
@@ -216,11 +170,13 @@ class SwitchButton : Widget
         super.updateElement(element);
 
         ElemSwitch el = fastCast!ElemSwitch(element);
-        el.allowsClick = true;
         el.applyState(State.checked, checked);
         el.onClick.clear();
         if (onToggle)
+        {
+            el.allowsClick = true;
             el.onClick ~= &handleClick;
+        }
     }
 
     private void handleClick()
@@ -232,18 +188,9 @@ class SwitchButton : Widget
 /// Check button that can be toggled on or off
 class CheckBox : Panel
 {
-    protected dstring text;
-    protected bool checked;
-    protected void delegate(bool) onToggle;
-
-    static CheckBox make(dstring text, bool checked, void delegate(bool) onToggle)
-    {
-        CheckBox w = arena.make!CheckBox;
-        w.text = text;
-        w.checked = checked;
-        w.onToggle = onToggle;
-        return w;
-    }
+    dstring text;
+    bool checked;
+    void delegate(bool) onToggle;
 
     this()
     {
@@ -252,7 +199,6 @@ class CheckBox : Panel
         isolateStyle = true;
     }
 
-    protected alias enabled = typeof(super).enabled;
     protected alias attach = typeof(super).attach;
 
     override protected void build()
@@ -262,12 +208,13 @@ class CheckBox : Panel
         Label label;
         if (text.length)
         {
-            label = Label.make(text);
-            label.setAttribute("label");
+            label = render!Label;
+            label.text = text;
+            label.attr.set("label");
             label.inheritState = true;
         }
-        auto image = Widget.make();
-        image.setAttribute("icon");
+        Widget image = render!Widget;
+        image.attr.set("icon");
         image.inheritState = true;
         attach(image, label);
     }
@@ -277,11 +224,13 @@ class CheckBox : Panel
         super.updateElement(element);
 
         ElemPanel el = fastCast!ElemPanel(element);
-        el.allowsClick = true;
         el.applyState(State.checked, checked);
         el.onClick.clear();
         if (onToggle)
+        {
+            el.allowsClick = true;
             el.onClick ~= &handleClick;
+        }
     }
 
     private void handleClick()
@@ -293,18 +242,9 @@ class CheckBox : Panel
 /// Mutually exclusive check button
 class RadioButton : Panel
 {
-    protected dstring text;
-    protected bool checked;
-    protected void delegate(bool) onToggle;
-
-    static RadioButton make(dstring text, bool checked, void delegate(bool) onToggle)
-    {
-        RadioButton w = arena.make!RadioButton;
-        w.text = text;
-        w.checked = checked;
-        w.onToggle = onToggle;
-        return w;
-    }
+    dstring text;
+    bool checked;
+    void delegate(bool) onToggle;
 
     this()
     {
@@ -313,7 +253,6 @@ class RadioButton : Panel
         isolateStyle = true;
     }
 
-    protected alias enabled = typeof(super).enabled;
     protected alias attach = typeof(super).attach;
 
     override protected void build()
@@ -323,12 +262,13 @@ class RadioButton : Panel
         Label label;
         if (text.length)
         {
-            label = Label.make(text);
-            label.setAttribute("label");
+            label = render!Label;
+            label.text = text;
+            label.attr.set("label");
             label.inheritState = true;
         }
-        auto image = Widget.make();
-        image.setAttribute("icon");
+        Widget image = render!Widget;
+        image.attr.set("icon");
         image.inheritState = true;
         attach(image, label);
     }
@@ -338,11 +278,13 @@ class RadioButton : Panel
         super.updateElement(element);
 
         ElemPanel el = fastCast!ElemPanel(element);
-        el.allowsClick = true;
         el.applyState(State.checked, checked);
         el.onClick.clear();
         if (onToggle)
+        {
+            el.allowsClick = true;
             el.onClick ~= &handleClick;
+        }
     }
 
     private void handleClick()
@@ -368,14 +310,7 @@ class RadioButton : Panel
 /// Canvas widget - draw arbitrary graphics on it by providing a callback
 class CanvasWidget : Widget
 {
-    protected void delegate(Painter, Size) onDraw;
-
-    static CanvasWidget make(void delegate(Painter, Size) onDraw)
-    {
-        CanvasWidget w = arena.make!CanvasWidget;
-        w.onDraw = onDraw;
-        return w;
-    }
+    void delegate(Painter, Size) onDraw;
 
     override protected Element createElement()
     {

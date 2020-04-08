@@ -40,22 +40,13 @@ struct SimpleBar
 
 class SimpleBarChart : Widget
 {
-    protected const(double)[] data;
-    protected const(SimpleBar)[] bars;
-    protected dstring title;
+    const(double)[] data;
+    const(SimpleBar)[] bars;
+    dstring title;
     Color axisColor = Color(0xc0c0c0);
     Color segmentTagColor = Color(0xc0c0c0);
     Color backgroundColor = Color(0xffffff);
     double axisRatio = 0.6;
-
-    static SimpleBarChart make(const double[] data, const SimpleBar[] bars, dstring title = null)
-    {
-        SimpleBarChart w = arena.make!SimpleBarChart;
-        w.data = data;
-        w.bars = bars;
-        w.title = title;
-        return w;
-    }
 
     override protected Element createElement()
     {

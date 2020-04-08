@@ -1,8 +1,6 @@
 /**
 Group Box widget.
 
-Group box is linear layout with frame and caption for grouping controls.
-
 Copyright: Vadim Lopatin 2016
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
@@ -12,17 +10,11 @@ module beamui.widgets.groupbox;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
+/// Group box is a panel (column usually) with a frame and a caption
 class GroupBox : Panel
 {
-    protected dstring caption;
-
-    /// Make a groupbox with caption label
-    static GroupBox make(dstring caption)
-    {
-        GroupBox w = arena.make!GroupBox;
-        w.caption = caption;
-        return w;
-    }
+    // Groupbox caption text
+    dstring caption;
 
     override protected Element createElement()
     {

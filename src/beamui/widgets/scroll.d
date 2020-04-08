@@ -85,9 +85,9 @@ enum ScrollAreaAction
 abstract class ScrollAreaBase : Widget
 {
     /// Visibility policy for the horizontal scrollbar
-    protected ScrollBarMode hscrollbarMode;
+    ScrollBarMode hscrollbarMode;
     /// Visibility policy for the vertical scrollbar
-    protected ScrollBarMode vscrollbarMode;
+    ScrollBarMode vscrollbarMode;
 
     override protected void updateElement(Element element)
     {
@@ -97,14 +97,18 @@ abstract class ScrollAreaBase : Widget
         ElemScrollBar hbar, vbar;
         if (hscrollbarMode != ScrollBarMode.hidden)
         {
-            auto sb = ScrollBar.make(Orientation.horizontal, el._hdata);
+            ScrollBar sb = render!ScrollBar;
+            sb.orientation = Orientation.horizontal;
+            sb.data = el._hdata;
             sb.onScroll = &el.handleHScroll;
             hbar = fastCast!ElemScrollBar(mountChild(sb, el, 0));
             el.addChild(hbar);
         }
         if (vscrollbarMode != ScrollBarMode.hidden)
         {
-            auto sb = ScrollBar.make(Orientation.vertical, el._vdata);
+            ScrollBar sb = render!ScrollBar;
+            sb.orientation = Orientation.vertical;
+            sb.data = el._vdata;
             sb.onScroll = &el.handleVScroll;
             vbar = fastCast!ElemScrollBar(mountChild(sb, el, 1));
             el.addChild(vbar);
@@ -592,17 +596,10 @@ class ScrollArea : ScrollAreaBase
 {
     protected Widget _content;
 
-    static ScrollArea make(
-        string id = null,
-        ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
-        ScrollBarMode vscrollbarMode = ScrollBarMode.automatic,
-    )
+    this()
     {
-        ScrollArea w = arena.make!ScrollArea;
-        w.id = id;
-        w.hscrollbarMode = hscrollbarMode;
-        w.vscrollbarMode = vscrollbarMode;
-        return w;
+        hscrollbarMode = ScrollBarMode.automatic;
+        vscrollbarMode = ScrollBarMode.automatic;
     }
 
     final Widget wrap(lazy Widget content)

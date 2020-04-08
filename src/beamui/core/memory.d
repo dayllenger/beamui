@@ -17,7 +17,7 @@ struct Arena
     private size_t len;
 
     /// Allocate and construct a class instance
-    T make(T, Args...)(Args args) @trusted if (is(T == class))
+    T make(T, Args...)(auto ref Args args) @trusted if (is(T == class))
     {
         static assert(!__traits(hasMember, T, "__xdtor"), "Arena-allocated object should be trivial to destroy");
         // align to 16 bytes

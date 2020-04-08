@@ -422,19 +422,10 @@ private void shrink(string dim)(ref Array!LayoutItem items, const float availabl
 /// Spacer to fill empty space in layouts
 class Spacer : Widget
 {
-    static Spacer make()
-    {
-        return arena.make!Spacer;
-    }
 }
 
 class Resizer : Widget
 {
-    static Resizer make()
-    {
-        return arena.make!Resizer;
-    }
-
     this()
     {
         allowsHover = true;

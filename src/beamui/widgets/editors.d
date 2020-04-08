@@ -176,22 +176,6 @@ class EditLine : Widget
         bool _replace;
     }
 
-    static EditLine make(void delegate(dstring) onChange)
-    {
-        EditLine w = arena.make!EditLine;
-        w.onChange = onChange;
-        return w;
-    }
-
-    static EditLine make(dstring text, void delegate(dstring) onChange)
-    {
-        EditLine w = arena.make!EditLine;
-        w._text = text;
-        w._replace = true;
-        w.onChange = onChange;
-        return w;
-    }
-
     this()
     {
         allowsFocus = true;
@@ -227,6 +211,9 @@ class EditLine : Widget
 /// Multiline editor and base for complex source editors
 class EditBox : ScrollAreaBase
 {
+    EditableContent content;
+    void delegate(EditableContent) onChange;
+
     /// Placeholder is a short peace of text that describes the expected input
     dstring placeholder;
     /// When true, user cannot change content of the editor
@@ -252,28 +239,15 @@ class EditBox : ScrollAreaBase
     int minFontSize = -1;
     int maxFontSize = -1;
 
-    void delegate(EditableContent) onChange;
-
-    protected EditableContent content;
-
-    static EditBox make(
-        EditableContent content,
-        ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
-        ScrollBarMode vscrollbarMode = ScrollBarMode.automatic,
-    )
-        in(content)
-    {
-        EditBox w = arena.make!EditBox;
-        w.content = content;
-        w.hscrollbarMode = hscrollbarMode;
-        w.vscrollbarMode = vscrollbarMode;
-        return w;
-    }
-
     this()
     {
         allowsFocus = true;
         allowsHover = true;
+    }
+
+    override protected void build()
+    {
+        assert(content);
     }
 
     override protected Element createElement()

@@ -14,9 +14,11 @@ import beamui.widgets.widget;
 /// Scroll bar - either vertical or horizontal
 class ScrollBar : Widget
 {
-    protected Orientation orientation;
-    protected float position;
-    protected ScrollData data;
+    /// Scrollbar orientation, horizontal by default
+    Orientation orientation;
+    /// Allows to explicitly control scrollbar position
+    float position;
+    ScrollData data;
 
     /** Scroll event listener. Carries scroll position after the default handling.
 
@@ -24,24 +26,6 @@ class ScrollBar : Widget
         it manually, setting `position`.
     */
     bool delegate(ScrollAction, float) onScroll;
-
-    /// Construct with an orientation (vertical, horizontal) and, optionally, an explicit position
-    static ScrollBar make(Orientation orientation, float position = float.nan)
-    {
-        ScrollBar w = arena.make!ScrollBar;
-        w.orientation = orientation;
-        w.position = position;
-        return w;
-    }
-
-    static ScrollBar make(Orientation orientation, ScrollData data)
-        in(data)
-    {
-        ScrollBar w = arena.make!ScrollBar;
-        w.orientation = orientation;
-        w.data = data;
-        return w;
-    }
 
     this()
     {
