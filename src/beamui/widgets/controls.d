@@ -47,7 +47,7 @@ class ButtonLike : Panel
         isolateStyle = true;
     }
 
-    protected alias attach = typeof(super).attach;
+    protected alias wrap = typeof(super).wrap;
 
     override protected void build()
     {
@@ -67,7 +67,7 @@ class ButtonLike : Panel
             label.attr.set("label");
             label.inheritState = true;
         }
-        attach(image, label);
+        wrap(image, label);
     }
 }
 
@@ -199,7 +199,7 @@ class CheckBox : Panel
         isolateStyle = true;
     }
 
-    protected alias attach = typeof(super).attach;
+    protected alias wrap = typeof(super).wrap;
 
     override protected void build()
     {
@@ -216,7 +216,7 @@ class CheckBox : Panel
         Widget image = render!Widget;
         image.attr.set("icon");
         image.inheritState = true;
-        attach(image, label);
+        wrap(image, label);
     }
 
     override protected void updateElement(Element element)
@@ -253,7 +253,7 @@ class RadioButton : Panel
         isolateStyle = true;
     }
 
-    protected alias attach = typeof(super).attach;
+    protected alias wrap = typeof(super).wrap;
 
     override protected void build()
     {
@@ -270,7 +270,7 @@ class RadioButton : Panel
         Widget image = render!Widget;
         image.attr.set("icon");
         image.inheritState = true;
-        attach(image, label);
+        wrap(image, label);
     }
 
     override protected void updateElement(Element element)

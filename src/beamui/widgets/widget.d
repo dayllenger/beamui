@@ -388,7 +388,7 @@ abstract class WidgetGroup : Widget
 {
     private Widget[] _children;
 
-    final Widget attach(Widget[] items...)
+    final Widget wrap(Widget[] items...)
     {
         if (items.length == 0)
             return this;
@@ -398,7 +398,7 @@ abstract class WidgetGroup : Widget
         return this;
     }
 
-    final Widget attach(uint count, scope Widget delegate(uint) generator)
+    final Widget wrap(uint count, scope Widget delegate(uint) generator)
     {
         if (count == 0 || !generator)
             return this;
