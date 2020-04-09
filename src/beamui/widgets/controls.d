@@ -57,7 +57,7 @@ class ButtonLike : Panel
         {
             image = render!ImageWidget;
             image.imageID = icon;
-            image.attr.set("icon");
+            image.attributes.set("icon");
             image.inheritState = true;
         }
         Label label;
@@ -65,7 +65,7 @@ class ButtonLike : Panel
         {
             label = render!Label;
             label.text = text;
-            label.attr.set("label");
+            label.attributes.set("label");
             label.inheritState = true;
         }
         wrap(image, label);
@@ -305,11 +305,11 @@ class CheckBox : Panel
         {
             label = render!Label;
             label.text = text;
-            label.attr.set("label");
+            label.attributes.set("label");
             label.inheritState = true;
         }
         Widget image = render!Widget;
-        image.attr.set("icon");
+        image.attributes.set("icon");
         image.inheritState = true;
         wrap(image, label);
     }
@@ -358,11 +358,11 @@ class RadioButton : Panel
         {
             label = render!Label;
             label.text = text;
-            label.attr.set("label");
+            label.attributes.set("label");
             label.inheritState = true;
         }
         Widget image = render!Widget;
-        image.attr.set("icon");
+        image.attributes.set("icon");
         image.inheritState = true;
         wrap(image, label);
     }

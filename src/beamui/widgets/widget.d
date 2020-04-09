@@ -182,7 +182,7 @@ class Widget
 {
     uint key = uint.max;
     string id;
-    WidgetAttributes attr;
+    WidgetAttributes attributes;
 
     bool allowsFocus;
     bool allowsHover;
@@ -312,9 +312,9 @@ class Widget
     {
         el.id = id;
 
-        if (el.attributes != attr._map)
+        if (el.attributes != attributes._map)
         {
-            el.attributes = attr._map;
+            el.attributes = attributes._map;
             el.invalidateStyles();
         }
 
