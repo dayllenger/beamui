@@ -327,13 +327,13 @@ ToolBarHost { padding: 6px; gap: 8px; }
 
 ToolBar { padding-left: 6px; gap: 4px; border-color: #bbb; border-style: solid; border-left-width: 2px; }
 
-ToolBar > .separator { margin-top: 3px; margin-bottom: 3px; border-color: #999; border-style: solid; border-left-width: 1px; }
+ToolBarSeparator { margin-top: 3px; margin-bottom: 3px; border-color: #999; border-style: solid; border-left-width: 1px; }
 
-ToolBar * { background: none; }
+ToolBar ButtonLike, ToolBar ComboBox { background: none; }
 
-ToolBar *:not(hovered):not(pressed) { border-color: transparent; }
+ToolBar ButtonLike:not(hovered):not(pressed), ToolBar ComboBox:not(hovered):not(pressed) { border-color: transparent; }
 
-ToolBar *:not(enabled) { border-color: transparent; opacity: 0.4; }
+ToolBar ButtonLike:not(enabled), ToolBar ComboBox:not(enabled) { border-color: transparent; opacity: 0.4; }
 
 ToolBarButton { padding: 4px; focus-rect-color: none; }
 

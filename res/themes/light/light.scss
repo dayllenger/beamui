@@ -788,7 +788,7 @@ ToolBar {
     border-left-width: 2px;
 }
 
-ToolBar > .separator {
+ToolBarSeparator {
     margin-top: 3px;
     margin-bottom: 3px;
     border-color: #999;
@@ -796,7 +796,7 @@ ToolBar > .separator {
     border-left-width: 1px;
 }
 
-ToolBar * {
+ToolBar ButtonLike, ToolBar ComboBox {
     background: none;
 
     &:not(hovered):not(pressed) {

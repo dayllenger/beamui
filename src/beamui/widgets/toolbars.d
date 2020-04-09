@@ -10,43 +10,59 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.toolbars;
-/+
-import beamui.widgets.combobox;
+
+import beamui.core.actions : Action;
+// import beamui.widgets.combobox;
 import beamui.widgets.controls;
-import beamui.widgets.text;
-import beamui.widgets.widget;
+import beamui.widgets.widget : Panel, render, Widget;
 
-/// Button for toolbar
-class ToolBarButton : Button
+class ToolBarSeparator : Widget
 {
-    /// Construct with action firing on click
-    this(Action a)
-    {
-        super(a);
-        allowsFocus = false;
-    }
-
-    override protected void updateContent()
-    {
-         // TODO: image only / image + text / text only
-        iconID = action.iconID;
-        allowsToggle = action.checkable;
-    }
-
-    override @property bool hasTooltip() const
-    {
-        return action && action.label;
-    }
-
-    override Widget createTooltip(float x, float y)
-    {
-        const txt = action ? action.tooltipText : null;
-        if (txt && contains(x, y))
-            return new Label(txt).setID("tooltip");
-        return null;
-    }
 }
 
+/// Button for toolbar
+class ToolBarButton : ActionWidgetWrapper
+{
+    protected alias wrap = typeof(super).wrap;
+
+    // TODO: image only / image + text / text only?
+    override protected void build()
+    {
+        super.build();
+        tooltip = action.tooltipText;
+
+        if (!action.checkable)
+        {
+            Button btn = render!Button;
+            btn.allowsFocus = false;
+            if (action.iconID.length)
+                btn.icon = action.iconID;
+            else
+                btn.text = action.label;
+            if (action.enabled)
+                btn.onClick = &call;
+            wrap(btn);
+        }
+        else
+        {
+            CheckButton btn = render!CheckButton;
+            btn.allowsFocus = false;
+            if (action.iconID.length)
+                btn.icon = action.iconID;
+            else
+                btn.text = action.label;
+            if (action.enabled)
+                btn.onToggle = &handleToggle;
+            wrap(btn);
+        }
+    }
+
+    private void handleToggle(bool)
+    {
+        call();
+    }
+}
+/+
 /// Combo box for toolbars
 class ToolBarComboBox : ComboBox
 {
@@ -59,44 +75,25 @@ class ToolBarComboBox : ComboBox
 
     // TODO: tooltips
 }
-
++/
 /// Layout with buttons
 class ToolBar : Panel
 {
-    /// Construct a tool bar with ID
-    this(string ID = "TOOLBAR")
+    /// Shorthand to create a toolbar button
+    static ToolBarButton button(Action action)
+        in(action)
     {
-        super(ID);
+        auto b = render!ToolBarButton;
+        b.action = action;
+        return b;
     }
-
-    /// Add image button to the tool bar
-    ToolBar addButtons(Action[] actions...)
+    /// Shorthand to create a separator between toolbar items
+    static ToolBarSeparator separator()
     {
-        foreach (a; actions)
-        {
-            addChild(new ToolBarButton(a));
-        }
-        return this;
-    }
-
-    /// Add custom control to the tool bar
-    ToolBar addControl(Widget w)
-    {
-        addChild(w);
-        return this;
-    }
-
-    /// Add separator to the tool bar
-    ToolBar addSeparator()
-    {
-        auto sep = new Widget;
-        sep.isolateThisStyle();
-        sep.setAttribute("separator");
-        addChild(sep);
-        return this;
+        return render!ToolBarSeparator;
     }
 }
-
+/+
 /// Layout with several toolbars
 class ToolBarHost : Panel
 {
