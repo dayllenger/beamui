@@ -526,22 +526,22 @@ final class Action
     }
 
     /// Process the action
-    bool call(bool delegate(Element) chooser)
+    bool call(scope bool delegate(Element) chooser)
+        in(chooser)
     {
-        assert(chooser !is null);
         // do not call deactivated action
         if (!enabled)
             return false;
 
         foreach (wt, slot; receivers)
         {
+            const matched = chooser(wt.get);
             if (!wt)
             {
                 // clean up destroyed widgets
                 receivers.remove(wt);
-                continue;
             }
-            if (chooser(wt.get))
+            if (matched)
             {
                 // check/uncheck
                 if (checkable)
