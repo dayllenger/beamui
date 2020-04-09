@@ -871,12 +871,15 @@ class TreeWidgetBase : ScrollArea, ActionOperator
 
     protected void unbindActions()
     {
-        bunch(
+        foreach (Action a; tup(
             ACTION_PAGE_UP,
             ACTION_PAGE_DOWN,
             ACTION_PAGE_BEGIN,
             ACTION_PAGE_END
-        ).unbind(this);
+        ))
+        {
+            a.unbind(this);
+        }
     }
 
     override bool handleKeyEvent(KeyEvent event)

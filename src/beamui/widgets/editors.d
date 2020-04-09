@@ -122,13 +122,16 @@ void initStandardEditorActions()
     ACTION_ED_FIND_PREV = new Action(tr("Find previous"), Key.F3, KeyMods.shift);
     ACTION_ED_REPLACE = new Action(tr("Replace..."), Key.H, KeyMods.control);
 
-    bunch(
+    foreach (Action a; tup(
         ACTION_ED_DEL_PREV_WORD,
         ACTION_ED_DEL_NEXT_WORD,
         ACTION_ED_INDENT,
         ACTION_ED_UNINDENT,
-    ).context(ActionContext.widget);
-    bunch(
+    ))
+    {
+        a.context = ActionContext.widget;
+    }
+    foreach (Action a; tup(
         ACTION_ED_PREPEND_NEW_LINE,
         ACTION_ED_APPEND_NEW_LINE,
         ACTION_ED_DELETE_LINE,
@@ -142,7 +145,10 @@ void initStandardEditorActions()
         ACTION_ED_FIND_NEXT,
         ACTION_ED_FIND_PREV,
         ACTION_ED_REPLACE
-    ).context(ActionContext.widgetTree);
+    ))
+    {
+        a.context = ActionContext.widgetTree;
+    }
 }
 
 /// Single-line text field
@@ -1042,7 +1048,7 @@ class ElemEditLine : Element, IEditor, ActionOperator
 
     protected void unbindActions()
     {
-        bunch(
+        foreach (Action a; tup(
             ACTION_LINE_BEGIN,
             ACTION_LINE_END,
             ACTION_DOCUMENT_BEGIN,
@@ -1062,7 +1068,10 @@ class ElemEditLine : Element, IEditor, ActionOperator
             ACTION_COPY,
             ACTION_PASTE,
             ACTION_ED_TOGGLE_REPLACE_MODE
-        ).unbind(this);
+        ))
+        {
+            a.unbind(this);
+        }
     }
 
     protected void updateActions()
@@ -2947,7 +2956,7 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
 
     protected void unbindActions()
     {
-        bunch(
+        foreach (Action a; tup(
             ACTION_LINE_BEGIN,
             ACTION_LINE_END,
             ACTION_DOCUMENT_BEGIN,
@@ -2966,9 +2975,8 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
             ACTION_CUT,
             ACTION_COPY,
             ACTION_PASTE,
-            ACTION_ED_TOGGLE_REPLACE_MODE
-        ).unbind(this);
-        bunch(
+            ACTION_ED_TOGGLE_REPLACE_MODE,
+
             ACTION_PAGE_UP,
             ACTION_PAGE_DOWN,
             ACTION_PAGE_BEGIN,
@@ -2994,7 +3002,10 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
             ACTION_ED_FIND_NEXT,
             ACTION_ED_FIND_PREV,
             ACTION_ED_REPLACE
-        ).unbind(this);
+        ))
+        {
+            a.unbind(this);
+        }
     }
 
     protected void updateActions()

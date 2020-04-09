@@ -239,87 +239,6 @@ unittest
     A.dtorCalls = 0;
 }
 
-/** Call some method for several objects.
-
-    Example:
-    ---
-    bunch(a, b, c, d).render();
-    // same as:
-    // a.render();
-    // b.render();
-    // c.render();
-    // d.render();
-    ---
-
-    Limitations: return values are not supported currently;
-    `super` cannot be passed as a parameter.
-*/
-auto bunch(TS...)(TS vars) if (TS.length > 0)
-{
-    static struct Result
-    {
-        TS vars;
-
-        void opDispatch(string m, Args...)(auto ref Args args)
-        {
-            enum string expr = "vars[i]." ~ m ~ "(args)";
-            static foreach (i, T; TS)
-            {
-                static if (!__traits(compiles, mixin(expr)))
-                {
-                    import std.format : format;
-
-                    enum string t = T.stringof;
-                    static if (!__traits(hasMember, T, m))
-                        pragma(msg, "'bunch' template: no method '%s' for type '%s'".format(m, t));
-                    else
-                        pragma(msg, "'bunch' template: incorrect parameters in '%s.%s(...)'".format(t, m));
-                }
-                mixin(expr ~ ";");
-            }
-        }
-    }
-    return Result(vars);
-}
-
-unittest
-{
-    class C
-    {
-        nothrow:
-
-        static int count = 0;
-        int i;
-
-        this(int i)
-        {
-            this.i = i;
-        }
-
-        void render(bool dummy)
-        {
-            count += i;
-        }
-    }
-
-    class D : C
-    {
-        nothrow:
-
-        this(int i)
-        {
-            super(i);
-        }
-    }
-
-    C a = new C(1);
-    C b = new C(2);
-    C c = new C(3);
-    D d = new D(4);
-    bunch(a, b, c, d).render(true);
-    assert(C.count == 10);
-}
-
 /** Do not evaluate a method if object is null, return .init value in this case.
 
     Example:
@@ -328,8 +247,6 @@ unittest
     C b = new C;
     a.maybe.render(); // does nothing
     b.maybe.render();
-    // you may do it also this way
-    bunch(a.maybe, b.maybe).render();
     ---
 */
 auto maybe(T)(T var) if (isReferenceType!T)
@@ -393,11 +310,6 @@ unittest
     a.maybe.render(true);
     b.maybe.render(true);
     assert(C.count == 1);
-
-    bunch(a.maybe, b.maybe).render(true);
-    assert(C.count == 2);
-    assert(a.maybe.i == 0);
-    assert(b.maybe.i == 5);
 }
 
 /// Get the short class name, i.e. without module path. `obj` must not be `null`

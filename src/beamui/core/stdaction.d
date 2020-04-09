@@ -145,9 +145,9 @@ void initStandardActions()
     ACTION_COPY = new Action(tr("&Copy"), Key.C, KeyMods.control).setEnabled(false);
     ACTION_PASTE = new Action(tr("&Paste"), Key.V, KeyMods.control).setEnabled(false);
 
-    import beamui.core.functions : bunch;
+    import beamui.core.types : tup;
 
-    bunch(
+    foreach (Action a; tup(
         ACTION_LINE_BEGIN,
         ACTION_LINE_END,
         ACTION_PAGE_UP,
@@ -176,5 +176,8 @@ void initStandardActions()
         ACTION_CUT,
         ACTION_COPY,
         ACTION_PASTE,
-    ).context(ActionContext.widgetTree);
+    ))
+    {
+        a.context = ActionContext.widgetTree;
+    }
 }

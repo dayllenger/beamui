@@ -419,7 +419,8 @@ class ElemScrollBar : ElemGroup
         }
         else
         {
-            bunch(_indicator, _pageUp, _pageDown).visibility(Visibility.gone);
+            foreach (Element el; tup(_indicator, _pageUp, _pageDown))
+                el.visibility = Visibility.gone;
         }
         _btnBack.applyState(State.enabled, canScroll);
         _btnForward.applyState(State.enabled, canScroll);
@@ -427,7 +428,8 @@ class ElemScrollBar : ElemGroup
 
     override void cancelLayout()
     {
-        bunch(_indicator, _pageUp, _pageDown, _btnBack, _btnForward).cancelLayout();
+        foreach (Element el; tup(_indicator, _pageUp, _pageDown, _btnBack, _btnForward))
+            el.cancelLayout();
         super.cancelLayout();
     }
 
@@ -486,7 +488,8 @@ class ElemScrollBar : ElemGroup
 
     override protected void drawContent(Painter pr)
     {
-        bunch(_btnBack, _btnForward, _pageUp, _pageDown, _indicator).draw(pr);
+        foreach (Element el; tup(_btnBack, _btnForward, _pageUp, _pageDown, _indicator))
+            el.draw(pr);
     }
 
     class ScrollIndicator : ElemImage

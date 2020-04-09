@@ -1237,7 +1237,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
     protected void unbindActions()
     {
-        bunch(
+        foreach (Action a; tup(
             ACTION_LINE_BEGIN,
             ACTION_LINE_END,
             ACTION_PAGE_UP,
@@ -1256,7 +1256,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             ACTION_SELECT_DOCUMENT_END,
             ACTION_ENTER,
             ACTION_SELECT_ALL
-        ).unbind(this);
+        ))
+        {
+            a.unbind(this);
+        }
     }
 
     /// Move cursor to the beginning of line
