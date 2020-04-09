@@ -225,62 +225,74 @@ abstract class ElemScrollAreaBase : ElemGroup
 
     final void scrollLeft()
     {
-        _hscrollbar.maybe.triggerAction(ScrollAction.lineUp);
+        if (auto h = _hscrollbar)
+            h.triggerAction(ScrollAction.lineUp);
     }
 
     final void scrollRight()
     {
-        _hscrollbar.maybe.triggerAction(ScrollAction.lineDown);
+        if (auto h = _hscrollbar)
+            h.triggerAction(ScrollAction.lineDown);
     }
 
     final void scrollPageLeft()
     {
-        _hscrollbar.maybe.triggerAction(ScrollAction.pageUp);
+        if (auto h = _hscrollbar)
+            h.triggerAction(ScrollAction.pageUp);
     }
 
     final void scrollPageRight()
     {
-        _hscrollbar.maybe.triggerAction(ScrollAction.pageDown);
+        if (auto h = _hscrollbar)
+            h.triggerAction(ScrollAction.pageDown);
     }
 
     final void scrollLeftCorner()
     {
-        _hscrollbar.maybe.moveTo(0);
+        if (auto h = _hscrollbar)
+            h.moveTo(0);
     }
 
     final void scrollRightCorner()
     {
-        _hscrollbar.maybe.moveTo(_hdata.range);
+        if (auto h = _hscrollbar)
+            h.moveTo(_hdata.range);
     }
 
     final void scrollUp()
     {
-        _vscrollbar.maybe.triggerAction(ScrollAction.lineUp);
+        if (auto v = _vscrollbar)
+            v.triggerAction(ScrollAction.lineUp);
     }
 
     final void scrollDown()
     {
-        _vscrollbar.maybe.triggerAction(ScrollAction.lineDown);
+        if (auto v = _vscrollbar)
+            v.triggerAction(ScrollAction.lineDown);
     }
 
     final void scrollPageUp()
     {
-        _vscrollbar.maybe.triggerAction(ScrollAction.pageUp);
+        if (auto v = _vscrollbar)
+            v.triggerAction(ScrollAction.pageUp);
     }
 
     final void scrollPageDown()
     {
-        _vscrollbar.maybe.triggerAction(ScrollAction.pageDown);
+        if (auto v = _vscrollbar)
+            v.triggerAction(ScrollAction.pageDown);
     }
 
     final void scrollTopCorner()
     {
-        _vscrollbar.maybe.moveTo(0);
+        if (auto v = _vscrollbar)
+            v.moveTo(0);
     }
 
     final void scrollBottomCorner()
     {
-        _vscrollbar.maybe.moveTo(_vdata.range);
+        if (auto v = _vscrollbar)
+            v.moveTo(_vdata.range);
     }
 
     final void scroll(ScrollAreaAction action)
@@ -557,8 +569,10 @@ abstract class ElemScrollAreaBase : ElemGroup
     final override protected void drawContent(Painter pr)
     {
         // draw scrollbars
-        _hscrollbar.maybe.draw(pr);
-        _vscrollbar.maybe.draw(pr);
+        if (auto h = _hscrollbar)
+            h.draw(pr);
+        if (auto v = _vscrollbar)
+            v.draw(pr);
         {
             PaintSaver sv;
             pr.save(sv);

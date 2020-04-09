@@ -1,8 +1,6 @@
 /**
 Various utility and sugar functions.
 
-Sugar templates are very efficient, don't worry about performance.
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
@@ -237,79 +235,6 @@ unittest
     eliminate(amap2);
     assert(amap2 is null && A.dtorCalls == 4);
     A.dtorCalls = 0;
-}
-
-/** Do not evaluate a method if object is null, return .init value in this case.
-
-    Example:
-    ---
-    C a;
-    C b = new C;
-    a.maybe.render(); // does nothing
-    b.maybe.render();
-    ---
-*/
-auto maybe(T)(T var) if (isReferenceType!T)
-{
-    static struct Result
-    {
-        T var;
-
-        auto opDispatch(string m, Args...)(auto ref Args args)
-        {
-            static if (Args.length > 0)
-                enum string expr = "var." ~ m ~ "(args)";
-            else
-                enum string expr = "var." ~ m;
-            static if (!__traits(compiles, mixin(expr)))
-            {
-                import std.format : format;
-
-                enum string t = T.stringof;
-                static if (!__traits(hasMember, T, m))
-                    pragma(msg, "'maybe' template: no method '%s' for type '%s'".format(m, t));
-                else
-                    pragma(msg, "'maybe' template: incorrect parameters in '%s.%s(...)'".format(t, m));
-            }
-
-            alias return_t = ReturnType!((T var, Args args) => mixin(expr));
-            static if (is(return_t == void))
-            {
-                if (var !is null)
-                    mixin(expr ~ ";");
-            }
-            else
-            {
-                if (var !is null)
-                    return mixin(expr);
-                else
-                    return return_t.init;
-            }
-        }
-    }
-    return Result(var);
-}
-
-unittest
-{
-    class C
-    {
-        nothrow:
-
-        static int count;
-        int i = 5;
-
-        void render(bool dummy)
-        {
-            count++;
-        }
-    }
-
-    C a;
-    C b = new C;
-    a.maybe.render(true);
-    b.maybe.render(true);
-    assert(C.count == 1);
 }
 
 /// Get the short class name, i.e. without module path. `obj` must not be `null`

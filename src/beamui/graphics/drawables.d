@@ -1002,7 +1002,8 @@ class Background
     private void drawRectangular(Painter pr, Box b, Box bc, Insets th)
     {
         // shadow
-        shadow.maybe.drawTo(pr, b);
+        if (shadow)
+            shadow.drawTo(pr, b);
         // color
         pr.fillRect(bc.x, bc.y, bc.w, bc.h, color);
         // image

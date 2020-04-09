@@ -35,7 +35,8 @@ class LinearLayout : ILayout
             if (_orientation != value)
             {
                 _orientation = value;
-                host.maybe.requestLayout();
+                if (host)
+                    host.requestLayout();
             }
         }
     }

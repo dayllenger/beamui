@@ -344,7 +344,8 @@ class Window : CustomEventTarget
 
         onClose();
 
-        timerThread.maybe.stop();
+        if (auto t = timerThread)
+            t.stop();
         // eliminate(_tooltip.popup);
         // eliminate(_popups);
         eliminate(_mainWidget);
@@ -1009,7 +1010,8 @@ class Window : CustomEventTarget
                 newFocus.applyState(targetState, true);
             }
             _focusedElement = weakRef(newFocus);
-            newFocus.maybe.focusGroupFocused(true);
+            if (newFocus)
+                newFocus.focusGroupFocused(true);
             // after focus change, ask for actions update automatically
             //requestActionsUpdate();
         }
@@ -1933,7 +1935,8 @@ class Window : CustomEventTarget
 /+
         foreach (p; _popups)
             p.requestLayout();
-        _tooltip.popup.maybe.requestLayout();
+        if (auto p = _tooltip.popup)
+            p.requestLayout();
 +/
     }
 
@@ -2110,7 +2113,8 @@ class Window : CustomEventTarget
                 p.draw(_painter);
             }
             // and draw tooltip
-            _tooltip.popup.maybe.draw(_painter);
+            if (auto p = _tooltip.popup)
+                p.draw(_painter);
 +/
             debug (redraw)
             {

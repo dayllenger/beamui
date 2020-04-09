@@ -2604,7 +2604,8 @@ class ElemPanel : ElemGroup
 
     ~this()
     {
-        _layout.maybe.onDetach();
+        if (_layout)
+            _layout.onDetach();
     }
 
     /** Get the layout object to adjust some properties. May be `null`.
@@ -2636,9 +2637,11 @@ class ElemPanel : ElemGroup
         }
         if (_layout || obj)
         {
-            _layout.maybe.onDetach();
+            if (_layout)
+                _layout.onDetach();
             _layout = obj;
-            obj.maybe.onSetup(this);
+            if (obj)
+                obj.onSetup(this);
             requestLayout();
         }
     }
@@ -2652,7 +2655,8 @@ class ElemPanel : ElemGroup
         else
         {
             super.handleStyleChange(p);
-            _layout.maybe.onStyleChange(p);
+            if (_layout)
+                _layout.onStyleChange(p);
         }
     }
 
