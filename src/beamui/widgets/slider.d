@@ -875,10 +875,17 @@ unittest
 {
     static import std.math;
 
-    static double from(double v, SliderRange r)
+    alias R = Tup!(double, double, double);
+
+    static double from(double v, R r)
     {
-        const w = Slider.make(v, null, r);
-        return w.value;
+        Slider sl = render!Slider;
+        sl.value = v;
+        sl.minValue = r[0];
+        sl.maxValue = r[1];
+        sl.step = r[2];
+        sl.build();
+        return sl.value;
     }
 
     static bool eq(double a, double b)
@@ -886,24 +893,32 @@ unittest
         return std.math.approxEqual(a, b);
     }
 
-    const r = SliderRange(-10, 10, 0.1);
+    const r = R(-10, 10, 0.1);
     assert(eq(0, from(0, r)));
     assert(eq(5, from(5, r)));
     assert(eq(-10, from(-50, r)));
     assert(eq(10, from(50, r)));
     assert(eq(7.9, from(7.86, r)));
 
-    assert(eq(-100, from(19, SliderRange(-200, -100))));
+    assert(eq(-100, from(19, R(-200, -100, 1))));
 }
 
 unittest
 {
     static import std.math;
 
-    static double[2] from(double fst, double snd, SliderRange r)
+    alias R = Tup!(double, double, double);
+
+    static double[2] from(double fst, double snd, R r)
     {
-        const w = RangeSlider.make(fst, snd, null, r);
-        return [w.first, w.second];
+        RangeSlider sl = render!RangeSlider;
+        sl.first = fst;
+        sl.second = snd;
+        sl.minValue = r[0];
+        sl.maxValue = r[1];
+        sl.step = r[2];
+        sl.build();
+        return [sl.first, sl.second];
     }
 
     static bool eq(double a0, double a1, double[2] b)
@@ -911,7 +926,7 @@ unittest
         return std.math.approxEqual(a0, b[0]) && std.math.approxEqual(a1, b[1]);
     }
 
-    const r = SliderRange(-10, 10, 0.1);
+    const r = R(-10, 10, 0.1);
     assert(eq(0, 0, from(0, 0, r)));
     assert(eq(2, 4, from(2, 4, r)));
     assert(eq(10, 10, from(14, 12, r)));
@@ -924,5 +939,5 @@ unittest
     assert(eq(-10, -10, from(-11, -12, r)));
     assert(eq(-10, -10, from(-14, -12, r)));
 
-    assert(eq(-100, -100, from(-10, 10, SliderRange(-200, -100))));
+    assert(eq(-100, -100, from(-10, 10, R(-200, -100, 1))));
 }
