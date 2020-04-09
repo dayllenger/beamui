@@ -16,92 +16,110 @@ tabs.tabHost.style.padding = 12;
 tabs.tabHost.style.backgroundColor = 0xbbbbbb;
 ---
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.tabs;
-/+
+
 import beamui.widgets.controls;
-import beamui.widgets.menu;
-import beamui.widgets.popup;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
+/// Callback type for tab close button
+alias TabCloseHandler = void delegate();
+
+/// Tab header widget
+class TabItem : Panel
+{
+    /// Tab title
+    dstring text;
+    /// Tab icon resource ID
+    string icon;
+    /// If assigned, the tab close button will be visible
+    TabCloseHandler onClose;
+
+    this()
+    {
+        allowsHover = true;
+        isolateStyle = true;
+    }
+
+    protected alias wrap = typeof(super).wrap;
+
+    override protected void build()
+    {
+        ImageWidget image;
+        if (icon.length)
+        {
+            image = render!ImageWidget;
+            image.imageID = icon;
+            image.attr.set("icon");
+            image.inheritState = true;
+            image.tooltip = tooltip;
+        }
+        Label label;
+        if (text.length)
+        {
+            label = render!Label;
+            label.text = text;
+            label.attr.set("label");
+            label.inheritState = true;
+            label.tooltip = tooltip;
+        }
+        Button closeBtn;
+        if (onClose)
+        {
+            closeBtn = render!Button;
+            closeBtn.icon = "close";
+            closeBtn.attr.set("close");
+            closeBtn.onClick = onClose;
+            closeBtn.tooltip = tooltip;
+        }
+        wrap(image, label, closeBtn);
+    }
+}
+
+class PageStack : Panel
+{
+    int visibleItemIndex;
+    bool buildHiddenItems;
+
+    override protected void build()
+    {
+        const idx = visibleItemIndex;
+        Widget item;
+        if (0 <= idx && idx < _children.length)
+            item = _children[idx];
+
+        if (!buildHiddenItems)
+        {
+            _children[] = null;
+            if (item)
+                _children[idx] = item;
+        }
+        else
+        {
+            foreach (ref w; _children)
+            {
+                if (w && w !is item)
+                    w.visible = false;
+            }
+        }
+    }
+}
+/+
+import beamui.widgets.menu;
+import beamui.widgets.popup;
+
 /// Current tab is changed handler
 alias TabChangeHandler = void delegate(string newActiveTabID, string previousTabID);
-/// Tab close button pressed handler
 alias TabCloseHandler = void delegate(string tabID);
 
-/// Tab item widget - to show tab header
 class TabItem : Panel
 {
     @property
     {
-        /// Parent tab control
-        TabControl tabControl()
-        {
-            return cast(TabControl)parent;
-        }
-
-        /// Tab title
-        override dstring text() const
-        {
-             return _label.text;
-        }
-        /// ditto
-        override void text(dstring s)
-        {
-            _label.text = s;
-        }
-
-        /// Tab icon
-        string iconID() const
-        {
-             return _icon.imageID;
-        }
-        /// ditto
-        void iconID(string s)
-        {
-            _icon.imageID = s;
-            _icon.visibility = s ? Visibility.visible : Visibility.gone;
-        }
-
-        /// True if tab close button is visible
-        bool enableCloseButton() const
-        {
-            return _closeButton.visibility == Visibility.visible;
-        }
-        /// ditto
-        void enableCloseButton(bool flag)
-        {
-            _closeButton.visibility = flag ? Visibility.visible : Visibility.gone;
-        }
-
-        override dstring tooltipText()
-        {
-            return _label.tooltipText;
-        }
-        override void tooltipText(dstring text)
-        {
-            bunch(_icon, _label, _closeButton).tooltipText(text);
-        }
-
-        /// Optional integer, associated with this tab
-        int intParam() const { return _intParam; }
-        /// ditto
-        void intParam(int value)
-        {
-            _intParam = value;
-        }
-        /// Optional object, associated with this tab
-        Object objectParam() { return _objectParam; }
-        /// ditto
-        void objectParam(Object value)
-        {
-            _objectParam = value;
-        }
-
         /// Tab last access time
         long lastAccessTime() const { return _lastAccessTime; }
     }
@@ -111,40 +129,14 @@ class TabItem : Panel
 
     private
     {
-        ImageWidget _icon;
-        Label _label;
-        Button _closeButton;
-
-        Object _objectParam;
-        int _intParam;
-
         static long _lastAccessCounter;
         long _lastAccessTime;
     }
 
-    this(string id, dstring label, string iconID = null, bool enableCloseButton = false,
-         dstring tooltipText = null)
+    this(string id)
     {
         super(id);
-        isolateStyle();
-        _icon = new ImageWidget(iconID);
-        _icon.setAttribute("icon");
-        _icon.state = State.parent;
-        _icon.visibility = iconID ? Visibility.visible : Visibility.gone;
-        _label = new Label(label);
-        _label.setAttribute("label");
-        _label.state = State.parent;
-        _closeButton = new Button(null, "close");
-        _closeButton.setAttribute("close");
-        _closeButton.onClick ~= { onTabClose(id); };
-        this.enableCloseButton = enableCloseButton;
-        this.tooltipText = tooltipText;
-        addChild(_icon);
-        addChild(_label);
-        addChild(_closeButton);
         allowsClick = true;
-        allowsHover = true;
-        _label.allowsHover = true;
         _lastAccessTime = _lastAccessCounter++;
     }
 

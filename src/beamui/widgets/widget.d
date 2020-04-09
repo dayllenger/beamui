@@ -386,7 +386,7 @@ abstract class WidgetWrapper : Widget
 
 abstract class WidgetGroup : Widget
 {
-    private Widget[] _children;
+    protected Widget[] _children;
 
     final Widget wrap(Widget[] items...)
     {
