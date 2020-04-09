@@ -39,7 +39,6 @@ class ElemGroupBox : ElemPanel
         _caption = new ElemLabel;
         _caption.isolateThisStyle();
         _caption.setAttribute("caption");
-        _caption.state = State.parent;
         _caption.parent = this;
         _hiddenChildren.append(_caption);
     }

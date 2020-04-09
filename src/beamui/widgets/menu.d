@@ -54,7 +54,6 @@ class MenuItem : WidgetGroup, ActionHolder
             if (a.checkable)
             {
                 _checkbox = new Widget;
-                _checkbox.state = State.parent;
                 addChild(_checkbox);
             }
             // icon
@@ -62,13 +61,11 @@ class MenuItem : WidgetGroup, ActionHolder
             {
                 _icon = new ImageWidget(iconID);
                 _icon.setAttribute("icon");
-                _icon.state = State.parent;
                 addChild(_icon);
             }
             // label
             _label = new Label(_action.label);
             _label.setAttribute("label");
-            _label.state = State.parent;
             addChild(_label);
 
             a.onChange ~= &updateContent;
@@ -102,7 +99,6 @@ class MenuItem : WidgetGroup, ActionHolder
             {
                 _arrow = new ImageWidget("scrollbar_btn_right");
                 _arrow.setAttribute("open");
-                _arrow.state = State.parent;
                 addChild(_arrow);
             }
             else if (!menu && _arrow)
@@ -170,7 +166,6 @@ class MenuItem : WidgetGroup, ActionHolder
             {
                 _shortcut = new Label(sc);
                 _shortcut.setAttribute("shortcut");
-                _shortcut.state = State.parent;
                 addChild(_shortcut);
             }
             else

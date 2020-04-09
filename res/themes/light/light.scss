@@ -29,7 +29,7 @@ $focused-border-color: saturate($main-color, 30%);
 
 /* controls */
 
-Button, ButtonLike {
+ButtonLike {
     align: center;
     padding: 4px 8px;
     border: 1px solid #aaa;
@@ -61,18 +61,18 @@ Button, ButtonLike {
         text-hotkey: underline-on-alt;
         text-overflow: ellipsis;
         transition: color 75ms ease;
+    }
 
-        &:hovered {
-            color: $hovered-label-color;
-        }
+    &:hovered > .label {
+        color: $hovered-label-color;
+    }
 
-        &:pressed {
-            color: $secondary-color;
-        }
+    &:pressed > .label {
+        color: $secondary-color;
+    }
 
-        &:not(enabled) {
-            color: $disabled-text-color;
-        }
+    &:not(enabled) > .label {
+        color: $disabled-text-color;
     }
 }
 
@@ -81,7 +81,7 @@ Button.flat {
     focus-rect-color: none;
 }
 
-LinkButton, Link > ButtonLike {
+Link > ButtonLike {
     padding: 3px;
     border: none;
     background: none;
@@ -90,71 +90,81 @@ LinkButton, Link > ButtonLike {
         color: #4169e1;
         text-align: start;
         text-overflow: ellipsis-middle;
+    }
 
-        &:hovered {
-            text-decoration: underline;
-        }
+    &:hovered > .label {
+        text-decoration: underline;
+    }
 
-        &:not(enabled) {
-            color: fade-out(#c0c0ff, 0.3);
-        }
+    &:not(enabled) > .label {
+        color: fade-out(#c0c0ff, 0.3);
     }
 }
 
 CheckBox, RadioButton {
     padding: 2px;
-}
 
-CheckBox > .label, RadioButton > .label {
-    align: left vcenter;
-    stretch: main;
-    text-hotkey: underline-on-alt;
-    text-overflow: ellipsis;
+    > .label {
+        align: left vcenter;
+        stretch: main;
+        text-hotkey: underline-on-alt;
+        text-overflow: ellipsis;
+    }
 
-    &:hovered {
+    &:hovered > .label {
         color: $hovered-label-color;
     }
 
-    &:not(enabled) {
+    &:not(enabled) > .label {
         color: $disabled-text-color;
     }
 }
 
-CheckBox > .icon, MenuItem > .check, RadioButton > .icon, MenuItem > .radio {
+CheckBox > .icon,
+RadioButton > .icon,
+MenuItem > .check,
+MenuItem > .radio {
     align: center;
     min-width: 16px;
     min-height: 16px;
-
-    &:not(enabled) {
-        opacity: 0.4;
-    }
-
-    &:enabled:not(checked):hovered {
-        border-color: #d0d0d0;
-    }
-
-    &:not(checked):pressed {
-        background-color: #f7f7f7;
-        border-color: #d0d0d0;
-    }
 }
 
-CheckBox > .icon, MenuItem > .check {
-    &:not(checked) {
-        background-color: white;
-        border: 1px solid #e0e0e0;
-        border-radius: 3px;
-    }
+CheckBox:not(enabled) > .icon,
+RadioButton:not(enabled) > .icon,
+MenuItem:not(enabled) > .check,
+MenuItem:not(enabled) > .radio {
+    opacity: 0.4;
+}
 
-    &:checked {
-        background: url(btn_check_on);
-    }
+CheckBox:enabled:not(checked):hovered > .icon,
+RadioButton:enabled:not(checked):hovered > .icon,
+MenuItem:enabled:not(checked):hovered > .check,
+MenuItem:enabled:not(checked):hovered > .radio {
+    border-color: #d0d0d0;
+}
 
-    &:checked:hovered {
+CheckBox:not(checked):pressed > .icon,
+RadioButton:not(checked):pressed > .icon,
+MenuItem:not(checked):pressed > .check,
+MenuItem:not(checked):pressed > .radio {
+    background-color: #f7f7f7;
+    border-color: #d0d0d0;
+}
+
+CheckBox:not(checked) > .icon, MenuItem:not(checked) > .check {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+}
+
+CheckBox:checked > .icon, MenuItem:checked > .check {
+    background: url(btn_check_on);
+
+    &:hovered {
         background: url(btn_check_on_focused);
     }
 
-    &:checked:pressed {
+    &:pressed {
         background: url(btn_check_on_pressed);
     }
 }
@@ -163,11 +173,11 @@ RadioButton > .icon, MenuItem > .radio {
     background-color: white;
     border: 1px solid #e0e0e0;
     border-radius: 50%;
+}
 
-    &:checked {
-        border-color: $main-color;
-        border-width: 5px;
-    }
+RadioButton:checked > .icon, MenuItem:checked > .radio {
+    border-color: $main-color;
+    border-width: 5px;
 }
 
 SwitchButton {
@@ -279,24 +289,32 @@ ComboBoxBase {
 
     &:hovered {
         border-color: $secondary-color;
+
+        > .body {
+            color: $hovered-label-color;
+        }
+    }
+
+    &:pressed {
+        border-color: $main-color;
+        background: linear(180deg, #eeeeee, #dddddd);
+
+        > .body {
+            color: $secondary-color;
+        }
+    }
+
+    &:not(enabled) {
+        border-color: #ccc;
+        opacity: 0.4;
     }
 
     &:focused {
         border-color: $main-color;
     }
 
-    &:pressed {
-        border-color: $main-color;
-        background: linear(180deg, #eeeeee, #dddddd);
-    }
-
     &.opened {
         border-color: $main-color;
-    }
-
-    &:not(enabled) {
-        border-color: #ccc;
-        opacity: 0.4;
     }
 
     > .body {
@@ -305,23 +323,11 @@ ComboBoxBase {
         align: left vcenter;
         stretch: both;
         transition: color 100ms ease;
-
-        &:hovered {
-            color: $hovered-label-color;
-        }
-
-        &:pressed {
-            color: $secondary-color;
-        }
     }
 
     > .button {
         align: center;
         padding: 3px 2px;
-    }
-
-    > .body:not(enabled), > .button:not(enabled) {
-        opacity: 0.4;
     }
 }
 
@@ -342,12 +348,14 @@ Popup.combobox > ListWidget {
 ComboEdit {
     background: none;
 
-    > .body {
-        &:hovered, &:pressed {
+    &:hovered, &:pressed {
+        > .body {
             color: $text-color;
         }
+    }
 
-        &:focused {
+    &:focused {
+        > .body {
             color: initial;
         }
     }
@@ -380,12 +388,26 @@ MenuItem {
 
     &:focused, &:selected {
         background-color: $main-color;
+
+        > .label, > .shortcut {
+            color: #eee;
+        }
+    }
+
+    &:not(enabled) {
+        > .label, > .shortcut {
+            color: $disabled-text-color;
+        }
+
+        > .icon {
+            opacity: 0.4;
+        }
     }
 
     &.separator {
         padding: 4px;
 
-        > Widget {
+        > * {
             min-width: 1px;
             min-height: 1px;
             background: #ccc;
@@ -395,10 +417,6 @@ MenuItem {
     > .icon {
         align: left vcenter;
         padding: 0 2px;
-    }
-
-    > .icon:not(enabled) {
-        opacity: 0.4;
     }
 
     > .label {
@@ -416,15 +434,6 @@ MenuItem {
     > .open {
         align: center;
     }
-
-    > .label:focused, > .label:selected,
-    > .shortcut:focused, > .shortcut:selected {
-        color: #eee;
-    }
-
-    > .label:not(enabled), > .shortcut:not(enabled) {
-        color: $disabled-text-color;
-    }
 }
 
 /* tree */
@@ -438,25 +447,25 @@ TreeItemWidget {
         padding: 2px 4px;
         gap: 0;
 
-        &:hovered {
-            background-color: $secondary-hovered-color;
-        }
-
-        &:pressed, &:selected {
-            background-color: $main-color;
-        }
-
         > .icon {
             padding-right: 3px;
         }
+    }
 
-        > .label:pressed, > .label:selected {
+    &:hovered > .body {
+        background-color: $secondary-hovered-color;
+    }
+
+    &:pressed > .body, &:selected > .body {
+        background-color: $main-color;
+
+        > .label {
             color: $inverse-text-color;
         }
+    }
 
-        > .label:default {
-            font-weight: bold;
-        }
+    &:default > .body > .label {
+        font-weight: bold;
     }
 }
 
@@ -643,6 +652,23 @@ TabItem {
     padding: 6px 1px 0 0;
     gap: 0;
     border: 0 solid transparent;
+
+    &:selected {
+        border-color: $main-color;
+    }
+
+    > .label {
+        align: hcenter bottom;
+        padding: 0 3px 3px;
+        text-hotkey: underline-on-alt;
+        transition: color 100ms ease;
+    }
+
+    &:hovered, &:selected, &:focused {
+        > .label {
+            color: $main-color;
+        }
+    }
 }
 
 TabControl.top TabItem {
@@ -651,22 +677,6 @@ TabControl.top TabItem {
 
 TabControl.bottom TabItem {
     border-top-width: 2px;
-}
-
-TabItem:selected {
-    border-color: $main-color;
-}
-
-TabItem > .label {
-    align: hcenter bottom;
-    padding: 0 3px 3px;
-    text-hotkey: underline-on-alt;
-    transition: color 100ms ease;
-
-    &:hovered, &:selected,
-    &:focused, &:selected:focused {
-        color: $main-color;
-    }
 }
 
 /* editors */
@@ -686,7 +696,7 @@ EditLine {
     }
 }
 
-EditBox, LogWidget {
+EditBox {
     min-width: 100px;
     min-height: 60px;
     border: 1px solid #aaa;

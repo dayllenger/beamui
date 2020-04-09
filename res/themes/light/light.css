@@ -4,61 +4,61 @@
 @define-colors { window_background: #f0f1f1; }
 
 /* controls */
-Button, ButtonLike { align: center; padding: 4px 8px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); focus-rect-color: #bbb; transition: border-color 75ms ease; }
+ButtonLike { align: center; padding: 4px 8px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); focus-rect-color: #bbb; transition: border-color 75ms ease; }
 
-Button:hovered:not(checked), ButtonLike:hovered:not(checked) { border-color: #417fbf; }
+ButtonLike:hovered:not(checked) { border-color: #417fbf; }
 
-Button:pressed, Button:checked, ButtonLike:pressed, ButtonLike:checked { border-color: #4e93da; background: linear(190deg, #e3e3e3, #dfdfdf); }
+ButtonLike:pressed, ButtonLike:checked { border-color: #4e93da; background: linear(190deg, #e3e3e3, #dfdfdf); }
 
-Button:not(enabled), ButtonLike:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
+ButtonLike:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
-Button > .icon, Button > .label, ButtonLike > .icon, ButtonLike > .label { align: center; }
+ButtonLike > .icon, ButtonLike > .label { align: center; }
 
-Button > .label, ButtonLike > .label { stretch: main; text-align: center; text-hotkey: underline-on-alt; text-overflow: ellipsis; transition: color 75ms ease; }
+ButtonLike > .label { stretch: main; text-align: center; text-hotkey: underline-on-alt; text-overflow: ellipsis; transition: color 75ms ease; }
 
-Button > .label:hovered, ButtonLike > .label:hovered { color: #46617e; }
+ButtonLike:hovered > .label { color: #46617e; }
 
-Button > .label:pressed, ButtonLike > .label:pressed { color: #417fbf; }
+ButtonLike:pressed > .label { color: #417fbf; }
 
-Button > .label:not(enabled), ButtonLike > .label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
+ButtonLike:not(enabled) > .label { color: rgba(64, 64, 64, 0.5); }
 
 Button.flat { background: none; focus-rect-color: none; }
 
-LinkButton, Link > ButtonLike { padding: 3px; border: none; background: none; }
+Link > ButtonLike { padding: 3px; border: none; background: none; }
 
-LinkButton > .label, Link > ButtonLike > .label { color: #4169e1; text-align: start; text-overflow: ellipsis-middle; }
+Link > ButtonLike > .label { color: #4169e1; text-align: start; text-overflow: ellipsis-middle; }
 
-LinkButton > .label:hovered, Link > ButtonLike > .label:hovered { text-decoration: underline; }
+Link > ButtonLike:hovered > .label { text-decoration: underline; }
 
-LinkButton > .label:not(enabled), Link > ButtonLike > .label:not(enabled) { color: rgba(192, 192, 255, 0.7); }
+Link > ButtonLike:not(enabled) > .label { color: rgba(192, 192, 255, 0.7); }
 
 CheckBox, RadioButton { padding: 2px; }
 
 CheckBox > .label, RadioButton > .label { align: left vcenter; stretch: main; text-hotkey: underline-on-alt; text-overflow: ellipsis; }
 
-CheckBox > .label:hovered, RadioButton > .label:hovered { color: #46617e; }
+CheckBox:hovered > .label, RadioButton:hovered > .label { color: #46617e; }
 
-CheckBox > .label:not(enabled), RadioButton > .label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
+CheckBox:not(enabled) > .label, RadioButton:not(enabled) > .label { color: rgba(64, 64, 64, 0.5); }
 
-CheckBox > .icon, MenuItem > .check, RadioButton > .icon, MenuItem > .radio { align: center; min-width: 16px; min-height: 16px; }
+CheckBox > .icon, RadioButton > .icon, MenuItem > .check, MenuItem > .radio { align: center; min-width: 16px; min-height: 16px; }
 
-CheckBox > .icon:not(enabled), MenuItem > .check:not(enabled), RadioButton > .icon:not(enabled), MenuItem > .radio:not(enabled) { opacity: 0.4; }
+CheckBox:not(enabled) > .icon, RadioButton:not(enabled) > .icon, MenuItem:not(enabled) > .check, MenuItem:not(enabled) > .radio { opacity: 0.4; }
 
-CheckBox > .icon:enabled:not(checked):hovered, MenuItem > .check:enabled:not(checked):hovered, RadioButton > .icon:enabled:not(checked):hovered, MenuItem > .radio:enabled:not(checked):hovered { border-color: #d0d0d0; }
+CheckBox:enabled:not(checked):hovered > .icon, RadioButton:enabled:not(checked):hovered > .icon, MenuItem:enabled:not(checked):hovered > .check, MenuItem:enabled:not(checked):hovered > .radio { border-color: #d0d0d0; }
 
-CheckBox > .icon:not(checked):pressed, MenuItem > .check:not(checked):pressed, RadioButton > .icon:not(checked):pressed, MenuItem > .radio:not(checked):pressed { background-color: #f7f7f7; border-color: #d0d0d0; }
+CheckBox:not(checked):pressed > .icon, RadioButton:not(checked):pressed > .icon, MenuItem:not(checked):pressed > .check, MenuItem:not(checked):pressed > .radio { background-color: #f7f7f7; border-color: #d0d0d0; }
 
-CheckBox > .icon:not(checked), MenuItem > .check:not(checked) { background-color: white; border: 1px solid #e0e0e0; border-radius: 3px; }
+CheckBox:not(checked) > .icon, MenuItem:not(checked) > .check { background-color: white; border: 1px solid #e0e0e0; border-radius: 3px; }
 
-CheckBox > .icon:checked, MenuItem > .check:checked { background: url(btn_check_on); }
+CheckBox:checked > .icon, MenuItem:checked > .check { background: url(btn_check_on); }
 
-CheckBox > .icon:checked:hovered, MenuItem > .check:checked:hovered { background: url(btn_check_on_focused); }
+CheckBox:checked > .icon:hovered, MenuItem:checked > .check:hovered { background: url(btn_check_on_focused); }
 
-CheckBox > .icon:checked:pressed, MenuItem > .check:checked:pressed { background: url(btn_check_on_pressed); }
+CheckBox:checked > .icon:pressed, MenuItem:checked > .check:pressed { background: url(btn_check_on_pressed); }
 
 RadioButton > .icon, MenuItem > .radio { background-color: white; border: 1px solid #e0e0e0; border-radius: 50%; }
 
-RadioButton > .icon:checked, MenuItem > .radio:checked { border-color: #4e93da; border-width: 5px; }
+RadioButton:checked > .icon, MenuItem:checked > .radio { border-color: #4e93da; border-width: 5px; }
 
 SwitchButton { align: center; background: url(switch_off); }
 
@@ -109,23 +109,21 @@ ComboBoxBase { padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg
 
 ComboBoxBase:hovered { border-color: #417fbf; }
 
-ComboBoxBase:focused { border-color: #4e93da; }
+ComboBoxBase:hovered > .body { color: #46617e; }
 
 ComboBoxBase:pressed { border-color: #4e93da; background: linear(180deg, #eeeeee, #dddddd); }
 
-ComboBoxBase.opened { border-color: #4e93da; }
+ComboBoxBase:pressed > .body { color: #417fbf; }
 
 ComboBoxBase:not(enabled) { border-color: #ccc; opacity: 0.4; }
 
+ComboBoxBase:focused { border-color: #4e93da; }
+
+ComboBoxBase.opened { border-color: #4e93da; }
+
 ComboBoxBase > .body { min-width: 40px; padding: 2px; align: left vcenter; stretch: both; transition: color 100ms ease; }
 
-ComboBoxBase > .body:hovered { color: #46617e; }
-
-ComboBoxBase > .body:pressed { color: #417fbf; }
-
 ComboBoxBase > .button { align: center; padding: 3px 2px; }
-
-ComboBoxBase > .body:not(enabled), ComboBoxBase > .button:not(enabled) { opacity: 0.4; }
 
 Popup.combobox > ListWidget { width: auto; height: auto; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
 
@@ -135,9 +133,9 @@ Popup.combobox > ListWidget:not(enabled) { background-color: #f0f0f0; }
 
 ComboEdit { background: none; }
 
-ComboEdit > .body:hovered, ComboEdit > .body:pressed { color: #404040; }
+ComboEdit:hovered > .body, ComboEdit:pressed > .body { color: #404040; }
 
-ComboEdit > .body:focused { color: initial; }
+ComboEdit:focused > .body { color: initial; }
 
 /* menu */
 Menu { width: auto; height: auto; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; }
@@ -150,13 +148,17 @@ MenuItem:hovered { background-color: #e2edf9; }
 
 MenuItem:focused, MenuItem:selected { background-color: #4e93da; }
 
+MenuItem:focused > .label, MenuItem:focused > .shortcut, MenuItem:selected > .label, MenuItem:selected > .shortcut { color: #eee; }
+
+MenuItem:not(enabled) > .label, MenuItem:not(enabled) > .shortcut { color: rgba(64, 64, 64, 0.5); }
+
+MenuItem:not(enabled) > .icon { opacity: 0.4; }
+
 MenuItem.separator { padding: 4px; }
 
-MenuItem.separator > Widget { min-width: 1px; min-height: 1px; background: #ccc; }
+MenuItem.separator > * { min-width: 1px; min-height: 1px; background: #ccc; }
 
 MenuItem > .icon { align: left vcenter; padding: 0 2px; }
-
-MenuItem > .icon:not(enabled) { opacity: 0.4; }
 
 MenuItem > .label { align: left vcenter; padding: 0 4px; text-hotkey: underline-on-alt; }
 
@@ -164,24 +166,20 @@ MenuItem > .shortcut { align: right vcenter; padding-left: 8px; padding-right: 2
 
 MenuItem > .open { align: center; }
 
-MenuItem > .label:focused, MenuItem > .label:selected, MenuItem > .shortcut:focused, MenuItem > .shortcut:selected { color: #eee; }
-
-MenuItem > .label:not(enabled), MenuItem > .shortcut:not(enabled) { color: rgba(64, 64, 64, 0.5); }
-
 /* tree */
 TreeItemWidget { min-width: 100px; min-height: 1em; gap: 0; }
 
 TreeItemWidget > .body { padding: 2px 4px; gap: 0; }
 
-TreeItemWidget > .body:hovered { background-color: #c7d9ec; }
-
-TreeItemWidget > .body:pressed, TreeItemWidget > .body:selected { background-color: #4e93da; }
-
 TreeItemWidget > .body > .icon { padding-right: 3px; }
 
-TreeItemWidget > .body > .label:pressed, TreeItemWidget > .body > .label:selected { color: #f0f0f0; }
+TreeItemWidget:hovered > .body { background-color: #c7d9ec; }
 
-TreeItemWidget > .body > .label:default { font-weight: bold; }
+TreeItemWidget:pressed > .body, TreeItemWidget:selected > .body { background-color: #4e93da; }
+
+TreeItemWidget:pressed > .body > .label, TreeItemWidget:selected > .body > .label { color: #f0f0f0; }
+
+TreeItemWidget:default > .body > .label { font-weight: bold; }
 
 /* grid */
 StringGridWidget { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; transition: border-color 100ms ease; }
@@ -262,15 +260,15 @@ TabHost { padding: 6px; stretch: both; background-color: #f2f4f5; }
 
 TabItem { padding: 6px 1px 0 0; gap: 0; border: 0 solid transparent; }
 
-TabControl.top TabItem { border-bottom-width: 2px; }
-
-TabControl.bottom TabItem { border-top-width: 2px; }
-
 TabItem:selected { border-color: #4e93da; }
 
 TabItem > .label { align: hcenter bottom; padding: 0 3px 3px; text-hotkey: underline-on-alt; transition: color 100ms ease; }
 
-TabItem > .label:hovered, TabItem > .label:selected, TabItem > .label:focused, TabItem > .label:selected:focused { color: #4e93da; }
+TabItem:hovered > .label, TabItem:selected > .label, TabItem:focused > .label { color: #4e93da; }
+
+TabControl.top TabItem { border-bottom-width: 2px; }
+
+TabControl.bottom TabItem { border-top-width: 2px; }
 
 /* editors */
 EditLine { padding: 4px; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
@@ -279,11 +277,11 @@ EditLine:focused { border-color: #2e93fa; }
 
 EditLine:read-only { background-color: #f0f0f0; }
 
-EditBox, LogWidget { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; transition: border-color 100ms ease; }
+EditBox { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; transition: border-color 100ms ease; }
 
-EditBox:focused, LogWidget:focused { border-color: #2e93fa; }
+EditBox:focused { border-color: #2e93fa; }
 
-EditBox:read-only, LogWidget:read-only { background-color: #f0f0f0; }
+EditBox:read-only { background-color: #f0f0f0; }
 
 LogWidget { font-family: monospace; font-size: 10px; }
 

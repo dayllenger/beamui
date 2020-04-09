@@ -95,7 +95,6 @@ abstract class ComboBoxBase : Panel
     {
         _body = createSelectedItemWidget();
         _body.setAttribute("body");
-        _body.state = State.parent;
         _body.allowsFocus = false;
         _body.onClick ~= &handleClick;
 

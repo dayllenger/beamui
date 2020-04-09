@@ -598,17 +598,14 @@ class TreeItemWidget : Panel
             };
         }
         _body = new Panel(null, "body");
-        _body.setState(State.parent);
         if (_item.iconID.length > 0)
         {
             _icon = new ImageWidget(_item.iconID);
             _icon.setAttribute("icon");
-            _icon.setState(State.parent);
             _body.addChild(_icon);
         }
         _label = new Label(_item.text);
         _label.setAttribute("label");
-        _label.setState(State.parent);
         _body.add(_label);
         // append children
         addSome(_indent, _expander, _body);
