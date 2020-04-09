@@ -550,19 +550,12 @@ final class Win32Window : Window
         DeleteObject(color);
     }
 
-    override void show()
+    override protected void show()
     {
-        if (!mainWidget)
-        {
-            Log.e("Window is shown without main widget");
-            mainWidget = new Element;
-        }
         ReleaseCapture();
 
         adjustSize();
         adjustPosition();
-
-        mainWidget.setFocus();
 
         if (options & WindowOptions.fullscreen)
         {

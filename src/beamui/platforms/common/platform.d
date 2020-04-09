@@ -142,6 +142,67 @@ class EventList
     }
 }
 
+private class RootWidget : Widget
+{
+    void mountContent(Widget content, RootElement root)
+        in(root)
+    {
+        Element elem = content ? mountChild(content, root, 0) : null;
+        Element prevElem = root._content;
+        if (elem is prevElem)
+            return;
+
+        if (prevElem)
+            prevElem.parent = null;
+        root._content = elem;
+        elem.parent = root;
+    }
+}
+
+private class RootElement : Element
+{
+    private Element _content;
+
+    this(Window window)
+        in(window)
+    {
+        this.window = window;
+    }
+
+    override protected Boundaries computeBoundaries()
+    {
+        if (_content)
+        {
+            _content.measure();
+            return _content.boundaries;
+        }
+        return Boundaries();
+    }
+
+    override protected void arrangeContent()
+    {
+        if (_content)
+            _content.layout(innerBox);
+    }
+
+    override protected void drawContent(Painter pr)
+    {
+        if (_content)
+            _content.draw(pr);
+    }
+
+    override @property int childCount() const
+    {
+        return _content ? 1 : 0;
+    }
+
+    override inout(Element) child(int index) inout
+    {
+        assert(_content);
+        return _content;
+    }
+}
+
 /**
     Window abstraction layer. Widgets can be shown only inside window.
 */
@@ -192,20 +253,8 @@ class Window : CustomEventTarget
             return cast(int)(_h * _devicePixelRatio);
         }
 
-        /// Get main widget of the window
-        inout(Element) mainWidget() inout { return _mainWidget; }
-        /// Assign main widget to the window. Must not be `null`. Destroys previous main widget.
-        void mainWidget(Element widget)
-        {
-            assert(widget, "Assigned null main widget");
-            if (_mainWidget)
-            {
-                _mainWidget.window = null;
-                destroy(_mainWidget);
-            }
-            _mainWidget = widget;
-            widget.window = this;
-        }
+        /// Get the root element of the window. Never `null`. Contains top element as the first child
+        inout(Element) rootElement() inout { return _rootElement; }
 
         /// Get current key modifiers
         KeyMods keyboardModifiers() const { return _keyboardModifiers; }
@@ -253,7 +302,8 @@ class Window : CustomEventTarget
         Window[] _children;
         Window _parent;
 
-        Element _mainWidget;
+        RootElement _rootElement;
+        alias _mainWidget = _rootElement; // FIXME: it's not the only root
         ElementStore _elementStore;
         Arena[2] _widgetArenas;
         Widget delegate() _buildFunc;
@@ -276,6 +326,7 @@ class Window : CustomEventTarget
         _children.reserve(10);
         _eventList = new EventList;
         _timerQueue = new TimerQueue;
+        _mainWidget = new RootElement(this);
         _painter = new Painter(_painterHead);
         if (currentTheme)
             _backgroundColor = currentTheme.getColor("window_background", Color.white);
@@ -368,7 +419,7 @@ class Window : CustomEventTarget
     abstract @property void icon(Bitmap icon);
 
     /// Show window
-    abstract void show();
+    abstract protected void show();
     /// Request window redraw
     abstract void invalidate();
     /// Close window
@@ -1770,7 +1821,8 @@ class Window : CustomEventTarget
     final void show(Widget delegate() buildFunc)
     {
         _buildFunc = buildFunc;
-        rebuild(); // first build
+        rebuild(); // the first build
+        _rootElement.setFocus();
         show();
     }
 
@@ -1793,9 +1845,10 @@ class Window : CustomEventTarget
         _widgetArenas[0].clear();
         setCurrentArenaAndStore(_widgetArenas[0], _elementStore);
         // rebuild and diff
-        Widget root = _buildFunc();
-        _mainWidget = mountRoot(root);
-        _mainWidget.window = this;
+        RootWidget root = render!RootWidget;
+        Widget content = _buildFunc();
+        // skip mount and update of the root, mount the child immediately
+        root.mountContent(content, _rootElement);
         needRebuild = false;
 
         debug

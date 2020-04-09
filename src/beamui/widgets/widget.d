@@ -226,6 +226,7 @@ class Widget
     }
 
     private Element mount(Widget parent, Element parentElem, size_t index)
+        in(parent, "Widget must have a parent")
     {
         // compute the element ID; it always depends on the widget type
         const typeHash = hashOf(this.classinfo.name);
@@ -237,8 +238,7 @@ class Widget
         }
         else
         {
-            // use the parent ID, so IDs form a tree structure
-            assert(parent, "Widget must have either a string ID or a parent");
+            // use the parent ID, so IDs form a tree structure.
             // also use either the key or, as a last resort, the index
             const ulong[2] values = [parent._elementID.value, key != uint.max ? ~key : index];
             mainHash = hashOf(values);
@@ -2790,11 +2790,6 @@ package(beamui) void setCurrentArenaAndStore(ref Arena arena, ref ElementStore s
 {
     Widget._arena = &arena;
     Widget._store = &store;
-}
-
-package(beamui) Element mountRoot(Widget root)
-{
-    return root.mount(null, null, 0);
 }
 
 /// Helper for locating items in list, tree, table or other controls by typing their name

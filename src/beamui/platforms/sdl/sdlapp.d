@@ -337,19 +337,12 @@ final class SDLWindow : Window
         }
     }
 
-    override void show()
+    override protected void show()
     {
         Log.d("SDLWindow.show - ", title);
 
-        if (!mainWidget)
-        {
-            Log.e("Window is shown without main widget");
-            mainWidget = new Element;
-        }
         adjustSize();
         adjustPosition();
-
-        mainWidget.setFocus();
 
         SDL_ShowWindow(_win);
         fixSize();

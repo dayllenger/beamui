@@ -52,13 +52,8 @@ class ConsoleWindow : Window
         // ignore
     }
 
-    override void show()
+    override protected void show()
     {
-        if (!mainWidget)
-        {
-            Log.e("Window is shown without main widget");
-            mainWidget = new Element;
-        }
         _visible = true;
         handleWindowStateChange(WindowState.normal, BoxI(0, 0, _platform.console.width, _platform.console.height));
         invalidate();

@@ -711,19 +711,12 @@ final class X11Window : DWindow
                 cast(ubyte*)propData.ptr, cast(int)propData.length);
     }
 
-    override void show()
+    override protected void show()
     {
         Log.d("X11Window.show - ", _title);
 
-        if (!mainWidget)
-        {
-            Log.e("Window is shown without main widget");
-            mainWidget = new Element;
-        }
         adjustSize();
         adjustPosition();
-
-        mainWidget.setFocus();
 
         XMapRaised(x11display, _win);
         XFlush(x11display);
