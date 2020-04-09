@@ -36,6 +36,7 @@ class ImageWidget : Widget
     }
 }
 
+/// Widget with an icon and a label
 class ButtonLike : Panel
 {
     dstring text;
@@ -86,17 +87,112 @@ class Button : ButtonLike
         enabled = onClick !is null;
     }
 
-    override protected void updateElement(Element element)
+    override protected void updateElement(Element el)
     {
-        super.updateElement(element);
+        super.updateElement(el);
 
-        ElemPanel el = fastCast!ElemPanel(element);
         el.onClick.clear();
         if (onClick)
         {
             el.allowsClick = true;
             el.onClick ~= onClick;
         }
+    }
+}
+
+class CheckButton : ButtonLike
+{
+    bool checked;
+    void delegate(bool) onToggle;
+
+    this()
+    {
+        allowsFocus = true;
+    }
+
+    protected alias wrap = typeof(super).wrap;
+
+    override protected void build()
+    {
+        super.build();
+        enabled = onToggle !is null;
+    }
+
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+
+        el.applyState(State.checked, checked);
+        el.onClick.clear();
+        if (onToggle)
+        {
+            el.allowsClick = true;
+            el.onClick ~= &handleClick;
+        }
+    }
+
+    private void handleClick()
+    {
+        onToggle(!checked);
+    }
+}
+
+class ActionWidgetWrapper : Panel
+{
+    /// Action to emit on click
+    Action action;
+    private Element element;
+
+    override protected void build()
+    {
+        assert(action);
+        visible = action.visible;
+    }
+
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+        element = el;
+    }
+
+    final protected void call()
+    {
+        if (auto w = element.window)
+            w.call(action);
+    }
+}
+
+class ActionButton : ActionWidgetWrapper
+{
+    protected alias wrap = typeof(super).wrap;
+
+    override protected void build()
+    {
+        super.build();
+
+        if (!action.checkable)
+        {
+            Button btn = render!Button;
+            btn.icon = action.iconID;
+            btn.text = action.label;
+            if (action.enabled)
+                btn.onClick = &call;
+            wrap(btn);
+        }
+        else
+        {
+            CheckButton btn = render!CheckButton;
+            btn.icon = action.iconID;
+            btn.text = action.label;
+            if (action.enabled)
+                btn.onToggle = &handleToggle;
+            wrap(btn);
+        }
+    }
+
+    private void handleToggle(bool)
+    {
+        call();
     }
 }
 
@@ -124,11 +220,10 @@ class Link : WidgetWrapper
         return new ElemPanel;
     }
 
-    override protected void updateElement(Element element)
+    override protected void updateElement(Element el)
     {
-        super.updateElement(element);
+        super.updateElement(el);
 
-        ElemPanel el = fastCast!ElemPanel(element);
         el.onClick.clear();
         if (url.length)
         {
@@ -219,11 +314,10 @@ class CheckBox : Panel
         wrap(image, label);
     }
 
-    override protected void updateElement(Element element)
+    override protected void updateElement(Element el)
     {
-        super.updateElement(element);
+        super.updateElement(el);
 
-        ElemPanel el = fastCast!ElemPanel(element);
         el.applyState(State.checked, checked);
         el.onClick.clear();
         if (onToggle)
@@ -273,11 +367,10 @@ class RadioButton : Panel
         wrap(image, label);
     }
 
-    override protected void updateElement(Element element)
+    override protected void updateElement(Element el)
     {
-        super.updateElement(element);
+        super.updateElement(el);
 
-        ElemPanel el = fastCast!ElemPanel(element);
         el.applyState(State.checked, checked);
         el.onClick.clear();
         if (onToggle)
@@ -382,167 +475,6 @@ class ElemImage : Element
             const ib = alignBox(innerBox, sz, Align.center);
             img.drawTo(pr, ib);
         }
-    }
-}
-
-/// Button, which can have icon, label, and can be checkable
-class ElemButton : ElemPanel, ActionHolder
-{
-    @property
-    {
-        /// Icon id
-        string iconID() const
-        {
-            return _icon ? _icon.imageID : null;
-        }
-        /// ditto
-        void iconID(string id)
-        {
-            const some = id.length > 0;
-            if (_icon)
-            {
-                if (some)
-                    _icon.imageID = id;
-                _icon.visibility = some ? Visibility.visible : Visibility.gone;
-            }
-            else if (some)
-            {
-                _icon = new ElemImage;
-                _icon.setAttribute("icon");
-                _icon.state = State.parent;
-                _icon.imageID = id;
-                add(_icon);
-            }
-        }
-
-        /// Set custom drawable for icon
-        void drawable(DrawableRef img)
-        {
-            const some = !img.isNull;
-            if (_icon)
-            {
-                if (some)
-                    _icon.drawable = img;
-                _icon.visibility = some ? Visibility.visible : Visibility.gone;
-            }
-            else if (some)
-            {
-                _icon = new ElemImage;
-                _icon.setAttribute("icon");
-                _icon.state = State.parent;
-                _icon.drawable = img;
-                add(_icon);
-            }
-        }
-
-        /// Action to emit on click
-        inout(Action) action() inout { return _action; }
-        /// ditto
-        void action(Action a)
-        {
-            if (_action)
-            {
-                _action.onChange -= &updateContent;
-                _action.onStateChange -= &updateState;
-            }
-            _action = a;
-            if (a)
-            {
-                iconID = _action.iconID;
-                text = _action.label;
-                _checkable = _action.checkable;
-                a.onChange ~= &updateContent;
-                a.onStateChange ~= &updateState;
-                updateState();
-            }
-        }
-    }
-
-    override @property
-    {
-        /// Get label text
-        dstring text() const
-        {
-            return _label ? _label.text : null;
-        }
-        /// Set label plain unicode string
-        void text(dstring s)
-        {
-            const some = s.length > 0;
-            if (_label)
-            {
-                if (some)
-                    _label.text = s;
-                _label.visibility = some ? Visibility.visible : Visibility.gone;
-            }
-            else if (some)
-            {
-                _label = new ElemLabel;
-                _label.setAttribute("label");
-                _label.state = State.parent;
-                _label.text = s;
-                add(_label);
-            }
-        }
-    }
-
-    private
-    {
-        bool _checkable;
-
-        ElemImage _icon;
-        ElemLabel _label;
-
-        Action _action;
-    }
-
-    this(dstring caption = null, string iconID = null, bool checkable = false)
-    {
-        isolateStyle();
-        this.iconID = iconID;
-        this.text = caption;
-        allowsClick = true;
-        allowsFocus = true;
-        allowsHover = true;
-        _checkable = checkable;
-    }
-
-    /// Constructor from action by click
-    this(Action a)
-    {
-        this();
-        id = "button-action-" ~ to!string(a.label);
-        action = a;
-    }
-
-    ~this()
-    {
-        if (_action)
-        {
-            _action.onChange -= &updateContent;
-            _action.onStateChange -= &updateState;
-        }
-    }
-
-    protected void updateContent()
-    {
-    }
-
-    protected void updateState()
-    {
-        applyState(State.enabled, _action.enabled);
-        applyState(State.checked, _action.checked);
-        visibility = _action.visible ? Visibility.visible : Visibility.gone;
-    }
-    override protected void handleClick()
-    {
-        if (_action)
-        {
-            if (auto w = window)
-                w.call(_action);
-        }
-        if (_checkable)
-            applyState(State.checked, !(state & State.checked));
     }
 }
 
