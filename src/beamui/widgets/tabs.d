@@ -54,7 +54,7 @@ class TabItem : Panel
         {
             image = render!ImageWidget;
             image.imageID = icon;
-            image.attributes.set("icon");
+            image.attributes["icon"];
             image.tooltip = tooltip;
         }
         Label label;
@@ -62,7 +62,7 @@ class TabItem : Panel
         {
             label = render!Label;
             label.text = text;
-            label.attributes.set("label");
+            label.attributes["label"];
             label.tooltip = tooltip;
         }
         Button closeBtn;
@@ -70,7 +70,7 @@ class TabItem : Panel
         {
             closeBtn = render!Button;
             closeBtn.icon = "close";
-            closeBtn.attributes.set("close");
+            closeBtn.attributes["close"];
             closeBtn.onClick = onClose;
             closeBtn.tooltip = tooltip;
         }

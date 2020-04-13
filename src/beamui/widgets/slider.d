@@ -76,7 +76,7 @@ abstract class AbstractSlider : Widget
         assert(minValue <= maxValue);
         assert(step > 0);
 
-        attributes.set(orientation == Orientation.horizontal ? "horizontal" : "vertical");
+        attributes[orientation == Orientation.horizontal ? "horizontal" : "vertical"];
     }
 
     override protected void updateElement(Element element)

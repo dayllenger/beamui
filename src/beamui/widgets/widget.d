@@ -150,15 +150,21 @@ interface IState
 
 struct WidgetAttributes
 {
-    private string[string] _map;
+    private string[string] _map; // TODO: rewrite to something faster
 
     bool has(string name) const
     {
         return (name in _map) !is null;
     }
 
-    void set(string name, string value = null)
-        in(name)
+    void opIndex(string name)
+        in(name.length)
+    {
+        _map[name] = null;
+    }
+
+    void opIndexAssign(string value, string name)
+        in(name.length)
     {
         _map[name] = value;
     }

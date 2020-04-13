@@ -57,14 +57,14 @@ class ButtonLike : Panel
         {
             image = render!ImageWidget;
             image.imageID = icon;
-            image.attributes.set("icon");
+            image.attributes["icon"];
         }
         Label label;
         if (text.length)
         {
             label = render!Label;
             label.text = text;
-            label.attributes.set("label");
+            label.attributes["label"];
         }
         wrap(image, label);
     }
@@ -303,10 +303,10 @@ class CheckBox : Panel
         {
             label = render!Label;
             label.text = text;
-            label.attributes.set("label");
+            label.attributes["label"];
         }
         Widget image = render!Widget;
-        image.attributes.set("icon");
+        image.attributes["icon"];
         wrap(image, label);
     }
 
@@ -354,10 +354,10 @@ class RadioButton : Panel
         {
             label = render!Label;
             label.text = text;
-            label.attributes.set("label");
+            label.attributes["label"];
         }
         Widget image = render!Widget;
-        image.attributes.set("icon");
+        image.attributes["icon"];
         wrap(image, label);
     }
 
