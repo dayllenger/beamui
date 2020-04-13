@@ -35,7 +35,7 @@ class TabItem : Panel
     /// Tab title
     dstring text;
     /// Tab icon resource ID
-    string icon;
+    string iconID;
     /// If assigned, the tab close button will be visible
     TabCloseHandler onClose;
 
@@ -50,10 +50,10 @@ class TabItem : Panel
     override protected void build()
     {
         ImageWidget image;
-        if (icon.length)
+        if (iconID.length)
         {
             image = render!ImageWidget;
-            image.imageID = icon;
+            image.imageID = iconID;
             image.attributes["icon"];
             image.tooltip = tooltip;
         }
@@ -69,7 +69,7 @@ class TabItem : Panel
         if (onClose)
         {
             closeBtn = render!Button;
-            closeBtn.icon = "close";
+            closeBtn.iconID = "close";
             closeBtn.attributes["close"];
             closeBtn.onClick = onClose;
             closeBtn.tooltip = tooltip;

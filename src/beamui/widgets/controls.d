@@ -40,7 +40,7 @@ class ImageWidget : Widget
 class ButtonLike : Panel
 {
     dstring text;
-    string icon;
+    string iconID;
 
     this()
     {
@@ -53,10 +53,10 @@ class ButtonLike : Panel
     override protected void build()
     {
         ImageWidget image;
-        if (icon.length)
+        if (iconID.length)
         {
             image = render!ImageWidget;
-            image.imageID = icon;
+            image.imageID = iconID;
             image.attributes["icon"];
         }
         Label label;
@@ -171,7 +171,7 @@ class ActionButton : ActionWidgetWrapper
         if (!action.checkable)
         {
             Button btn = render!Button;
-            btn.icon = action.iconID;
+            btn.iconID = action.iconID;
             btn.text = action.label;
             if (action.enabled)
                 btn.onClick = &call;
@@ -180,7 +180,7 @@ class ActionButton : ActionWidgetWrapper
         else
         {
             CheckButton btn = render!CheckButton;
-            btn.icon = action.iconID;
+            btn.iconID = action.iconID;
             btn.text = action.label;
             if (action.enabled)
                 btn.onToggle = &handleToggle;

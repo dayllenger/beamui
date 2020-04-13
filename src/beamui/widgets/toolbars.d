@@ -36,7 +36,7 @@ class ToolBarButton : ActionWidgetWrapper
             Button btn = render!Button;
             btn.allowsFocus = false;
             if (action.iconID.length)
-                btn.icon = action.iconID;
+                btn.iconID = action.iconID;
             else
                 btn.text = action.label;
             if (action.enabled)
@@ -48,7 +48,7 @@ class ToolBarButton : ActionWidgetWrapper
             CheckButton btn = render!CheckButton;
             btn.allowsFocus = false;
             if (action.iconID.length)
-                btn.icon = action.iconID;
+                btn.iconID = action.iconID;
             else
                 btn.text = action.label;
             if (action.enabled)
