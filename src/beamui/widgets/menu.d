@@ -1,188 +1,134 @@
 /**
 Menu widgets.
 
-MenuItem - menu item container with icon, label, etc.
-
-Menu - vertical popup menu widget
-
-MenuBar - main menu widget
-
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.widgets.menu;
-/+
-import beamui.widgets.controls;
-import beamui.widgets.lists;
-import beamui.widgets.popup;
+
+import beamui.widgets.controls : ImageWidget, ElemImage;
+// import beamui.widgets.lists;
+// import beamui.widgets.popup;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-/// Widget that draws menu item
-class MenuItem : WidgetGroup, ActionHolder
+/// Widget that draws menu item with icon, label, etc.
+class MenuItem : Widget
 {
-    @property
-    {
-        /// Item action
-        inout(Action) action() inout { return _action; }
-        /// ditto
-        protected void action(Action a)
-        {
-            if (_action is a)
-                return;
-
-            _action = a;
-            _checkbox = null;
-            _icon = null;
-            _label = null;
-            _shortcut = null;
-            _separator = null;
-            removeAllChildren();
-            if (!a)
-            {
-                setAttribute("separator");
-                _separator = new Widget;
-                addChild(_separator);
-                allowsToggle = false;
-                enabled = false;
-                return;
-            }
-            // set immutable state first:
-            // check box
-            allowsToggle = a.checkable;
-            if (a.checkable)
-            {
-                _checkbox = new Widget;
-                addChild(_checkbox);
-            }
-            // icon
-            if (auto iconID = _action.iconID)
-            {
-                _icon = new ImageWidget(iconID);
-                _icon.setAttribute("icon");
-                addChild(_icon);
-            }
-            // label
-            _label = new Label(_action.label);
-            _label.setAttribute("label");
-            addChild(_label);
-
-            a.onChange ~= &updateContent;
-            a.onStateChange ~= &updateState;
-            updateContent();
-            updateState();
-        }
-
-        /// Returns true if item is a separator
-        bool isSeparator() const
-        {
-            return _action is null;
-        }
-
-        /// Returns true if item has a submenu
-        bool hasSubmenu() const
-        {
-            return _submenu !is null;
-        }
-
-        /// Submenu, opening by hover or click on this item
-        inout(Menu) submenu() inout { return _submenu; }
-        /// ditto
-        void submenu(Menu menu)
-        {
-            _submenu = menu;
-            if (_fromMenuBar)
-                return;
-            // arrow
-            if (menu && !_arrow)
-            {
-                _arrow = new ImageWidget("scrollbar_btn_right");
-                _arrow.setAttribute("open");
-                addChild(_arrow);
-            }
-            else if (!menu && _arrow)
-            {
-                removeChild(_arrow);
-                eliminate(_arrow);
-            }
-        }
-    }
+    /// Item action
+    Action action;
 
     private
     {
-        bool _fromMenuBar;
-        Menu _submenu;
-
-        Action _action;
-
         Widget _separator;
         Widget _checkbox;
         ImageWidget _icon;
         Label _label;
         Label _shortcut;
-        ImageWidget _arrow;
+    }
+
+    this()
+    {
+        isolateStyle = true;
+    }
+
+    override protected void build()
+    {
+        if (!action)
+        {
+            attributes["separator"];
+            enabled = false;
+            _separator = render!Widget;
+            return;
+        }
+        enabled = action.enabled;
+        visible = action.visible;
+        // check box or radio button
+        if (action.checkable)
+        {
+            _checkbox = render!Widget;
+            _checkbox.attributes[action.isRadio ? "radio" : "check"];
+        }
+        // icon
+        if (auto iconID = action.iconID)
+        {
+            _icon = render!ImageWidget;
+            _icon.attributes["icon"];
+            _icon.imageID = iconID;
+        }
+        // label
+        _label = render!Label;
+        _label.attributes["label"];
+        _label.text = action.label;
+        // shortcut
+        if (auto sc = action.shortcutText)
+        {
+            _shortcut = render!Label;
+            _shortcut.attributes["shortcut"];
+            _shortcut.text = sc;
+        }
+    }
+
+    override protected Element createElement()
+    {
+        return new ElemMenuItem;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemMenuItem el = fastCast!ElemMenuItem(element);
+
+        if (!_separator)
+        {
+            el.applyState(State.checked, action.checked);
+            el._separator = null;
+            el._checkbox = _checkbox ? el.addChild(mountChild(_checkbox, el, 1)) : null;
+            el._icon = _icon ? el.addChild(mountChild(_icon, el, 2)) : null;
+            el._label = fastCast!ElemLabel(el.addChild(mountChild(_label, el, 3)));
+            el._shortcut = _shortcut ? el.addChild(mountChild(_shortcut, el, 4)) : null;
+        }
+        else
+        {
+            el.applyState(State.checked, false);
+            el._separator = el.addChild(mountChild(_separator, el, 0));
+            el._checkbox = null;
+            el._icon = null;
+            el._label = null;
+            el._shortcut = null;
+        }
+    }
+}
+
+class ElemMenuItem : ElemGroup
+{
+    @property
+    {
+        /// Returns true if item is a separator
+        bool isSeparator() const
+        {
+            return _separator !is null;
+        }
+    }
+
+    private
+    {
+        bool _horizontal;
+
+        Element _separator;
+        Element _checkbox;
+        Element _icon;
+        ElemLabel _label;
+        Element _shortcut;
+        Element _arrow;
         float _checkboxWidth = 0;
         float _iconWidth = 0;
         float _labelWidth = 0;
         float _shortcutWidth = 0;
         float _arrowWidth = 0;
         float _height = 0;
-    }
-
-    this(Action action = null, bool fromMenuBar = false)
-    {
-        _fromMenuBar = fromMenuBar;
-        isolateStyle();
-        this.action = action;
-        if (!action)
-        {
-            setAttribute("separator");
-            _separator = new Widget;
-            addChild(_separator);
-            enabled = false;
-        }
-    }
-
-    ~this()
-    {
-        eliminate(_submenu);
-        if (_action)
-        {
-            _action.onChange -= &updateContent;
-            _action.onStateChange -= &updateState;
-        }
-    }
-
-    protected void updateContent()
-    {
-        // may become radio button
-        if (_checkbox)
-            _checkbox.setAttribute(_action.isRadio ? "radio" : "check");
-        // shortcut
-        if (auto sc = _action.shortcutText)
-        {
-            if (!_shortcut)
-            {
-                _shortcut = new Label(sc);
-                _shortcut.setAttribute("shortcut");
-                addChild(_shortcut);
-            }
-            else
-                _shortcut.text = sc;
-        }
-        else if (_shortcut)
-        {
-            removeChild(_shortcut);
-            eliminate(_shortcut);
-        }
-    }
-
-    protected void updateState()
-    {
-        enabled = _action.enabled;
-        checked = _action.checked;
-        visibility = _action.visible ? Visibility.visible : Visibility.gone;
     }
 
     void measureSubitems(ref float maxHeight, ref float maxCheckBoxWidth, ref float maxLabelWidth,
@@ -238,12 +184,6 @@ class MenuItem : WidgetGroup, ActionHolder
         _height = maxHeight;
     }
 
-    override void handleThemeChange()
-    {
-        super.handleThemeChange();
-        _submenu.maybe.handleThemeChange();
-    }
-
     override protected Boundaries computeBoundaries()
     {
         Size sz;
@@ -254,11 +194,10 @@ class MenuItem : WidgetGroup, ActionHolder
         }
         else
         {
-            if (!_fromMenuBar)
+            if (!_horizontal)
             {
                 // for vertical (popup menu)
-                sz = Size(_checkboxWidth + _iconWidth + _labelWidth + _shortcutWidth + _arrowWidth,
-                          _height);
+                sz = Size(_checkboxWidth + _iconWidth + _labelWidth + _shortcutWidth + _arrowWidth, _height);
             }
             else
             {
@@ -282,11 +221,13 @@ class MenuItem : WidgetGroup, ActionHolder
         }
 
         b.w = _checkboxWidth;
-        _checkbox.maybe.layout(b);
+        if (_checkbox)
+            _checkbox.layout(b);
         b.x += b.w;
 
         b.w = _iconWidth;
-        _icon.maybe.layout(b);
+        if (_icon)
+            _icon.layout(b);
         b.x += b.w;
 
         b.w = _labelWidth;
@@ -294,17 +235,71 @@ class MenuItem : WidgetGroup, ActionHolder
         b.x += b.w;
 
         b.w = _shortcutWidth;
-        _shortcut.maybe.layout(b);
+        if (_shortcut)
+            _shortcut.layout(b);
         b.x += b.w;
 
         b.w = _arrowWidth;
-        _arrow.maybe.layout(b);
+        if (_arrow)
+            _arrow.layout(b);
         b.x += b.w;
     }
 
     override protected void drawContent(Painter pr)
     {
         drawAllChildren(pr);
+    }
+}
+/+
+class MenuItem : WidgetGroup, ActionHolder
+{
+    @property
+    {
+        /// Returns true if item has a submenu
+        bool hasSubmenu() const
+        {
+            return _submenu !is null;
+        }
+
+        /// Submenu, opening by hover or click on this item
+        inout(Menu) submenu() inout { return _submenu; }
+        /// ditto
+        void submenu(Menu menu)
+        {
+            _submenu = menu;
+            if (_fromMenuBar)
+                return;
+            // arrow
+            if (menu && !_arrow)
+            {
+                _arrow = new ImageWidget("scrollbar_btn_right");
+                _arrow.setAttribute("open");
+                addChild(_arrow);
+            }
+            else if (!menu && _arrow)
+            {
+                removeChild(_arrow);
+                eliminate(_arrow);
+            }
+        }
+    }
+
+    private
+    {
+        Menu _submenu;
+
+        Action _action;
+    }
+
+    ~this()
+    {
+        eliminate(_submenu);
+    }
+
+    override void handleThemeChange()
+    {
+        super.handleThemeChange();
+        _submenu.maybe.handleThemeChange();
     }
 }
 
