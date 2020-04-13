@@ -369,11 +369,11 @@ class Widget
     }
 }
 
-abstract class WidgetWrapper : Widget
+abstract class WidgetWrapperOf(W : Widget) : W
 {
-    protected Widget _content;
+    protected W _content;
 
-    final Widget wrap(lazy Widget content)
+    final WidgetWrapperOf!W wrap(lazy W content)
     {
         _content = content;
         return this;
@@ -386,11 +386,6 @@ abstract class WidgetWrapper : Widget
         return 0;
     }
 
-    override protected Element createElement()
-    {
-        return new ElemGroup;
-    }
-
     override protected void updateElement(Element el)
     {
         super.updateElement(el);
@@ -400,26 +395,26 @@ abstract class WidgetWrapper : Widget
     }
 }
 
-abstract class WidgetGroup : Widget
+abstract class WidgetGroupOf(W : Widget) : Widget
 {
-    protected Widget[] _children;
+    protected W[] _children;
 
-    final Widget wrap(Widget[] items...)
+    final WidgetGroupOf!W wrap(W[] items...)
     {
         if (items.length == 0)
             return this;
 
-        _children = arena.allocArray!Widget(items.length);
+        _children = arena.allocArray!W(items.length);
         _children[] = items[];
         return this;
     }
 
-    final Widget wrap(uint count, scope Widget delegate(uint) generator)
+    final WidgetGroupOf!W wrap(uint count, scope W delegate(uint) generator)
     {
         if (count == 0 || !generator)
             return this;
 
-        _children = arena.allocArray!Widget(count);
+        _children = arena.allocArray!W(count);
         foreach (i; 0 .. count)
             _children[i] = generator(i);
         return this;
@@ -435,11 +430,6 @@ abstract class WidgetGroup : Widget
         return 0;
     }
 
-    override protected Element createElement()
-    {
-        return new ElemGroup;
-    }
-
     override protected void updateElement(Element el)
     {
         super.updateElement(el);
@@ -452,7 +442,7 @@ abstract class WidgetGroup : Widget
     }
 }
 
-class Panel : WidgetGroup
+class Panel : WidgetGroupOf!Widget
 {
     override protected Element createElement()
     {
@@ -2479,7 +2469,7 @@ alias ElementList = Collection!(Element, true);
     you may not use this class. You may inherit directly from the Widget class
     and add code for subwidgets to destructor, `handleThemeChange`, and `draw` (if needed).
 */
-class ElemGroup : Element
+abstract class ElemGroup : Element
 {
     private ElementList _children;
 

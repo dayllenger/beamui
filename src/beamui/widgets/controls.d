@@ -195,7 +195,7 @@ class ActionButton : ActionWidgetWrapper
 }
 
 /// Hyperlink button. May wrap any widget
-class Link : WidgetWrapper
+class Link : WidgetWrapperOf!Widget
 {
     import beamui.platforms.common.platform : platform;
 

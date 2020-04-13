@@ -78,7 +78,7 @@ class TabItem : Panel
     }
 }
 
-class PageStack : Panel
+abstract class PageStackOf(W : Widget) : WidgetGroupOf!W
 {
     int visibleItemIndex;
     bool buildHiddenItems;
@@ -86,7 +86,7 @@ class PageStack : Panel
     override protected void build()
     {
         const idx = visibleItemIndex;
-        Widget item;
+        W item;
         if (0 <= idx && idx < _children.length)
             item = _children[idx];
 
@@ -106,6 +106,15 @@ class PageStack : Panel
         }
     }
 }
+
+class PageStack : PageStackOf!Widget
+{
+    override protected Element createElement()
+    {
+        return new ElemPanel;
+    }
+}
+
 /+
 import beamui.widgets.menu;
 import beamui.widgets.popup;
