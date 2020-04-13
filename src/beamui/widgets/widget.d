@@ -203,6 +203,9 @@ class Widget
     bool delegate(KeyEvent) onKeyEvent;
     bool delegate(MouseEvent) onMouseEvent;
     bool delegate(WheelEvent) onWheelEvent;
+    // experimental
+    void delegate(string) onAnimationStart;
+    void delegate(string) onAnimationEnd;
 
     dstring tooltip;
 
@@ -348,12 +351,19 @@ class Widget
         el.onKeyEvent.clear();
         el.onMouseEvent.clear();
         el.onWheelEvent.clear();
+        el.onAnimationStart.clear();
+        el.onAnimationEnd.clear();
+
         if (onKeyEvent)
             el.onKeyEvent ~= onKeyEvent;
         if (onMouseEvent)
             el.onMouseEvent ~= onMouseEvent;
         if (onWheelEvent)
             el.onWheelEvent ~= onWheelEvent;
+        if (onAnimationStart)
+            el.onAnimationStart ~= onAnimationStart;
+        if (onAnimationEnd)
+            el.onAnimationEnd ~= onAnimationEnd;
 
         el.tooltipText = tooltip;
     }
@@ -1118,11 +1128,12 @@ public:
     void animate(long interval)
     {
         bool someAnimationsFinished;
-        foreach (ref a; animations)
+        foreach (name, ref a; animations)
         {
             if (!a.isAnimating)
             {
                 a.start();
+                onAnimationStart(name);
             }
             else
             {
@@ -1131,6 +1142,7 @@ public:
                 {
                     a.handler = null;
                     someAnimationsFinished = true;
+                    onAnimationEnd(name);
                 }
             }
         }
@@ -1653,6 +1665,9 @@ public:
 
     /// Fires on mouse/touchpad scroll events, return true to prevent further widget actions
     Signal!(bool delegate(WheelEvent)) onWheelEvent;
+
+    Signal!(void delegate(string)) onAnimationStart;
+    Signal!(void delegate(string)) onAnimationEnd;
 
     //===============================================================
     // Events
