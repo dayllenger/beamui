@@ -46,20 +46,16 @@ final class Style
 
         enum Meta { inherit, initial }
         Meta[size_t] metaProperties;
-
-        debug static __gshared int _instanceCount;
     }
 
     /// Create style with some selector
     this(const Selector selector)
     {
         _selector = selector;
-        debug _instanceCount++;
+        debug const count = debugPlusInstance();
         debug (resalloc)
-            Log.d("Created style, count: ", _instanceCount);
+            Log.d("Created style, count: ", count);
     }
-
-    debug @property static int instanceCount() { return _instanceCount; }
 
     ~this()
     {
@@ -74,10 +70,12 @@ final class Style
             destroy(properties);
         }
 
-        debug _instanceCount--;
+        debug const count = debugMinusInstance();
         debug (resalloc)
-            Log.d("Destroyed style, count: ", _instanceCount);
+            Log.d("Destroyed style, count: ", count);
     }
+
+    mixin DebugInstanceCount!();
 
     /// Returns true whether CSS property is set to `inherit`
     bool isInherited(StrHash name)

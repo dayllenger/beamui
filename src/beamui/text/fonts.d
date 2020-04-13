@@ -28,7 +28,7 @@ module beamui.text.fonts;
 
 public import beamui.core.geometry : Size;
 public import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
-import beamui.core.functions : caching, eliminate, remove, clamp;
+import beamui.core.functions : caching, clamp, DebugInstanceCount, eliminate, remove;
 import beamui.core.logger;
 import beamui.core.types;
 
@@ -154,21 +154,20 @@ class Font : RefCountedObject
 
     this()
     {
-        debug _instanceCount++;
+        debug const count = debugPlusInstance();
         debug (resalloc)
-            Log.d("Created font, count: ", _instanceCount);
+            Log.d("Created font, count: ", count);
     }
-
-    debug private __gshared int _instanceCount;
-    debug static @property int instanceCount() { return _instanceCount; }
 
     ~this()
     {
-        debug _instanceCount--;
+        debug const count = debugMinusInstance();
         debug (resalloc)
-            Log.d("Destroyed font, count: ", _instanceCount);
+            Log.d("Destroyed font, count: ", count);
         clear();
     }
+
+    mixin DebugInstanceCount!();
 
     /// Returns character width
     float getCharWidth(dchar ch)

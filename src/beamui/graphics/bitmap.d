@@ -8,7 +8,7 @@ module beamui.graphics.bitmap;
 
 import beamui.core.collections : Buf;
 import beamui.core.config;
-import beamui.core.functions : getShortClassName;
+import beamui.core.functions : DebugInstanceCount, getShortClassName;
 import beamui.core.geometry : InsetsI, RectI, SizeI;
 import beamui.core.logger;
 import beamui.core.signals : Signal;
@@ -445,12 +445,6 @@ abstract class BitmapData
     const ubyte stride;
     const PixelFormat format;
 
-    debug
-    {
-        private __gshared int _instanceCount;
-        static int instanceCount() { return _instanceCount; }
-    }
-
     this(uint w, uint h, ubyte stride, PixelFormat format)
         in(w > 0 && h > 0)
         in(stride > 0)
@@ -462,7 +456,7 @@ abstract class BitmapData
         this.format = format;
 
         id = bitmapIdGenerator++;
-        debug _instanceCount++;
+        debug debugPlusInstance();
     }
 
     protected this(BitmapData src)
@@ -476,14 +470,16 @@ abstract class BitmapData
         ninePatch = src.ninePatch;
 
         id = bitmapIdGenerator++;
-        debug _instanceCount++;
+        debug debugPlusInstance();
     }
 
     ~this()
     {
         onBitmapDestruction(id);
-        debug _instanceCount--;
+        debug debugMinusInstance();
     }
+
+    mixin DebugInstanceCount!();
 
     inout(void[]) pixels() inout;
     void handleResize() out(; rowBytes >= w * stride);

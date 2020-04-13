@@ -508,23 +508,16 @@ public:
         _destructionFlag = new bool;
         _style.element = this;
         _background = new Background;
-        debug _instanceCount++;
+        debug const count = debugPlusInstance();
         debug (resalloc)
-            Log.fd("Created widget (count: %s): %s", _instanceCount, dbgname());
-    }
-
-    debug
-    {
-        private __gshared int _instanceCount;
-        /// Number of created widget objects, not yet destroyed - for debug purposes
-        static @property int instanceCount() { return _instanceCount; }
+            Log.fd("Created widget (count: %s): %s", count, dbgname());
     }
 
     ~this()
     {
-        debug _instanceCount--;
+        debug const count = debugMinusInstance();
         debug (resalloc)
-            Log.fd("Destroyed widget (count: %s): %s", _instanceCount, dbgname());
+            Log.fd("Destroyed widget (count: %s): %s", count, dbgname());
 
         animations.clear();
 
@@ -534,6 +527,8 @@ public:
 
         *_destructionFlag = true;
     }
+
+    mixin DebugInstanceCount!();
 
     /// Flag for `WeakRef` that indicates widget destruction
     final @property const(bool*) destructionFlag() const { return _destructionFlag; }

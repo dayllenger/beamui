@@ -504,10 +504,10 @@ void releaseResourcesOnAppExit()
     {
         static void checkInstanceCount(T)()
         {
-            if (T.instanceCount > 0)
+            if (T.debugInstanceCount > 0)
             {
                 enum msg = "Undestroyed instances of " ~ T.stringof ~ ": ";
-                Log.e(msg, T.instanceCount);
+                Log.e(msg, T.debugInstanceCount);
             }
         }
         checkInstanceCount!Element();

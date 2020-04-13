@@ -296,3 +296,26 @@ unittest
     assert(wrapAround(0, 0, 9) == 0);
     assert(wrapAround(9, 0, 9) == 9);
 }
+
+mixin template DebugInstanceCount()
+{
+    debug static nothrow @nogc @safe
+    {
+        import core.atomic : atomicOp;
+
+        private shared int _debugInstanceCount;
+
+        /// Number of created objects, not yet destroyed - for debugging purposes
+        int debugInstanceCount() { return _debugInstanceCount; }
+
+        private int debugPlusInstance()
+        {
+            return atomicOp!"+="(_debugInstanceCount, 1);
+        }
+
+        private int debugMinusInstance()
+        {
+            return atomicOp!"-="(_debugInstanceCount, 1);
+        }
+    }
+}

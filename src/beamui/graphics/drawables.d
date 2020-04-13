@@ -35,25 +35,21 @@ static if (BACKEND_GUI)
 /// Base abstract class for all drawables
 class Drawable : RefCountedObject
 {
-    debug static __gshared int _instanceCount;
-    debug @property static int instanceCount()
-    {
-        return _instanceCount;
-    }
-
     this()
     {
-        debug _instanceCount++;
+        debug const count = debugPlusInstance();
         debug (resalloc)
-            Log.d("Created drawable ", getShortClassName(this), ", count: ", _instanceCount);
+            Log.d("Created drawable ", getShortClassName(this), ", count: ", count);
     }
 
     ~this()
     {
-        debug _instanceCount--;
+        debug const count = debugMinusInstance();
         debug (resalloc)
-            Log.d("Destroyed drawable ", getShortClassName(this), ", count: ", _instanceCount);
+            Log.d("Destroyed drawable ", getShortClassName(this), ", count: ", count);
     }
+
+    mixin DebugInstanceCount!();
 
     abstract void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0);
 
@@ -620,27 +616,23 @@ class ImageDrawable : Drawable
     private Bitmap _bitmap;
     private bool _tiled;
 
-    debug static __gshared int _instanceCount;
-    debug @property static int instanceCount()
-    {
-        return _instanceCount;
-    }
-
     this(Bitmap bitmap, bool tiled = false)
     {
         _bitmap = bitmap;
         _tiled = tiled;
-        debug _instanceCount++;
+        debug const count = debugPlusInstance();
         debug (resalloc)
-            Log.d("Created ImageDrawable, count: ", _instanceCount);
+            Log.d("Created ImageDrawable, count: ", count);
     }
 
     ~this()
     {
-        debug _instanceCount--;
+        debug const count = debugMinusInstance();
         debug (resalloc)
-            Log.d("Destroyed ImageDrawable, count: ", _instanceCount);
+            Log.d("Destroyed ImageDrawable, count: ", count);
     }
+
+    mixin DebugInstanceCount!();
 
     override @property float width() const
     {

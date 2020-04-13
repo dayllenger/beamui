@@ -111,21 +111,20 @@ final class FreeTypeFontFile
         _matrix.yy = 0x10000;
         _matrix.xy = 0;
         _matrix.yx = 0;
-        debug++_instanceCount;
+        debug const count = debugPlusInstance();
         debug (FontResources)
-            Log.d("Created FreeTypeFontFile, count: ", _instanceCount);
+            Log.d("Created FreeTypeFontFile, count: ", count);
     }
-
-    debug private static __gshared int _instanceCount;
-    debug @property static int instanceCount() { return _instanceCount; }
 
     ~this()
     {
         clear();
-        debug _instanceCount--;
+        debug const count = debugMinusInstance();
         debug (FontResources)
-            Log.d("Destroyed FreeTypeFontFile, count: ", _instanceCount);
+            Log.d("Destroyed FreeTypeFontFile, count: ", count);
     }
+
+    mixin DebugInstanceCount!();
 
     private static string familyName(FT_Face face)
     {
