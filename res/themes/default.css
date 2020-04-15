@@ -64,7 +64,7 @@ TabWidget {
   display: column;
 }
 
-ListWidget > .item,
+ListView > .item,
 TreeItemWidget,
 TreeItemWidget > .body {
   display: row;

@@ -92,17 +92,17 @@ GroupBox > .caption { align: left vcenter; padding: 1px; color: #504840; text-ov
   group_box_frame_bottom: url(group_box_frame_bottom); }
 
 /* lists */
-ListWidget { min-width: 2em; min-height: 2em; width: 10em; height: 10em; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
+ListView { min-width: 2em; min-height: 2em; width: 10em; height: 10em; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }
 
-ListWidget:focused { border-color: #2e93fa; }
+ListView:focused { border-color: #2e93fa; }
 
-ListWidget:not(enabled) { background-color: #f0f0f0; }
+ListView:not(enabled) { background-color: #f0f0f0; }
 
-ListWidget > .item { padding: 2px 4px; }
+ListView > .item { padding: 2px 4px; }
 
-ListWidget > .item:hovered { background-color: #e2edf9; }
+ListView > .item:hovered { background-color: #e2edf9; }
 
-ListWidget > .item:focused, ListWidget > .item:selected { background-color: #4e93da; color: #f0f0f0; }
+ListView > .item:focused, ListView > .item:selected { background-color: #4e93da; color: #f0f0f0; }
 
 /* combobox */
 ComboBoxBase { padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
@@ -125,11 +125,11 @@ ComboBoxBase > .body { min-width: 40px; padding: 2px; align: left vcenter; stret
 
 ComboBoxBase > .button { align: center; padding: 3px 2px; }
 
-Popup.combobox > ListWidget { width: auto; height: auto; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
+Popup.combobox > ListView { width: auto; height: auto; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
 
-Popup.combobox > ListWidget:focused { border-color: rgba(32, 64, 255, 0.75); }
+Popup.combobox > ListView:focused { border-color: rgba(32, 64, 255, 0.75); }
 
-Popup.combobox > ListWidget:not(enabled) { background-color: #f0f0f0; }
+Popup.combobox > ListView:not(enabled) { background-color: #f0f0f0; }
 
 ComboEdit { background: none; }
 
@@ -200,23 +200,23 @@ StringGridWidget:not(enabled) { background-color: #f0f0f0; }
 ScrollArea { min-width: 200px; min-height: 150px; }
 
 /* scrollbar */
-ScrollBar { background-color: rgba(0, 0, 0, 0.05); }
+ScrollBar, ElemScrollBar { background-color: rgba(0, 0, 0, 0.05); }
 
-ScrollBar:not(enabled) { opacity: 0.4; }
+ScrollBar:not(enabled), ElemScrollBar:not(enabled) { opacity: 0.4; }
 
-ScrollBar > ScrollIndicator { padding: 3px; background-color: #c2c2c2; }
+ScrollBar > ScrollIndicator, ElemScrollBar > ScrollIndicator { padding: 3px; background-color: #c2c2c2; }
 
-ScrollBar > ScrollIndicator:hovered { background-color: #d2d2d2; }
+ScrollBar > ScrollIndicator:hovered, ElemScrollBar > ScrollIndicator:hovered { background-color: #d2d2d2; }
 
-ScrollBar > ScrollIndicator:pressed { background-color: #d8d8d8; }
+ScrollBar > ScrollIndicator:pressed, ElemScrollBar > ScrollIndicator:pressed { background-color: #d8d8d8; }
 
-ScrollBar > ScrollIndicator:not(enabled) { opacity: 0.4; }
+ScrollBar > ScrollIndicator:not(enabled), ElemScrollBar > ScrollIndicator:not(enabled) { opacity: 0.4; }
 
-ScrollBar > PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
+ScrollBar > PageScrollButton:pressed, ElemScrollBar > PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
 
-ScrollBar > PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
+ScrollBar > PageScrollButton:hovered, ElemScrollBar > PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
 
-ScrollBar > PageScrollButton:not(enabled) { opacity: 0.4; }
+ScrollBar > PageScrollButton:not(enabled), ElemScrollBar > PageScrollButton:not(enabled) { opacity: 0.4; }
 
 AbstractSlider:not(enabled) { opacity: 0.4; }
 

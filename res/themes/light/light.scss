@@ -249,7 +249,7 @@ GroupBox > .caption {
 
 /* lists */
 
-ListWidget {
+ListView {
     min-width: 2em;
     min-height: 2em;
     width: 10em;
@@ -332,7 +332,7 @@ ComboBoxBase {
     }
 }
 
-Popup.combobox > ListWidget {
+Popup.combobox > ListView {
     width: auto;
     height: auto;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
@@ -508,7 +508,7 @@ ScrollArea {
 
 /* scrollbar */
 
-ScrollBar {
+ScrollBar, ElemScrollBar {
     background-color: fade-out(black, 0.95);
 
     &:not(enabled) {
@@ -516,7 +516,7 @@ ScrollBar {
     }
 }
 
-ScrollBar > ScrollIndicator {
+ScrollBar > ScrollIndicator, ElemScrollBar > ScrollIndicator {
     padding: 3px;
     background-color: #c2c2c2;
 
@@ -533,7 +533,7 @@ ScrollBar > ScrollIndicator {
     }
 }
 
-ScrollBar > PageScrollButton {
+ScrollBar > PageScrollButton, ElemScrollBar > PageScrollButton {
     &:pressed {
         background-color: fade-out(#404080, 0.9);
     }

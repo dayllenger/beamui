@@ -9,12 +9,11 @@ module beamui.widgets.lists;
 
 import beamui.core.signals;
 import beamui.core.types : State, StringListValue;
-/+
-import beamui.widgets.controls;
+// import beamui.widgets.controls;
 import beamui.widgets.scrollbar;
-import beamui.widgets.text;
+// import beamui.widgets.text;
 import beamui.widgets.widget;
-+/
+
 /// List widget adapter provides items for list widgets
 abstract class ListAdapter
 {
@@ -277,76 +276,83 @@ class IconStringListAdapter : StringListAdapterBase
     }
 +/
 }
-/+
-alias ElemListWidget = ListWidget;
-alias ElemStringListWidget = StringListWidget;
 
-class ListWidget : WidgetGroup
+/// Vertical or horizontal view on list data, with one scrollbar
+class ListView : Widget
 {
-    ListAdapter adapter;
+    /// List orientation, vertical by default
     Orientation orientation = Orientation.vertical;
-
+    /// When true, mouse hover selects underlying item
     bool selectOnHover;
+    /// Number of widgets in the list
+    uint itemCount;
 
-    void delegate(int) onItemClick;
+    Widget delegate(int) itemBuilder;
+
+    /// Handle selection change
     void delegate(int) onSelect;
+    /// Handle item click / activation (e.g. Space or Enter key pressed and mouse double clicked)
+    void delegate(int) onItemClick;
 
-    static ListWidget make(ListAdapter adapter = null)
-    {
-        ListWidget w = arena.make!ListWidget;
-        w.adapter = adapter;
-        return w;
-    }
+    protected Widget[] _items;
 
     this()
     {
         allowsFocus = true;
     }
 
+    override protected void build()
+    {
+        if (!itemCount || !itemBuilder)
+            return;
+
+        _items = arena.allocArray!Widget(itemCount);
+        foreach (i; 0 .. itemCount)
+            _items[i] = itemBuilder(i);
+    }
+
+    override int opApply(scope int delegate(size_t, Widget) callback)
+    {
+        foreach (i, item; _items)
+        {
+            if (const result = callback(i, item))
+                return result;
+        }
+        return 0;
+    }
+
     override protected Element createElement()
     {
-        return new ElemListWidget;
+        return new ElemListView;
     }
 
     override protected void updateElement(Element element)
     {
         super.updateElement(element);
 
-        ElemListWidget el = fastCast!ElemListWidget(element);
-        el.adapter = adapter;
+        ElemListView el = fastCast!ElemListView(element);
         el.orientation = orientation;
         el.selectOnHover = selectOnHover;
-        el.onItemClick.clear();
+
         el.onSelect.clear();
-        if (onItemClick)
-            el.onItemClick ~= onItemClick;
+        el.onItemClick.clear();
         if (onSelect)
             el.onSelect ~= onSelect;
+        if (onItemClick)
+            el.onItemClick ~= onItemClick;
+
+        foreach (i, item; this)
+        {
+            if (item)
+                el.addChild(mountChild(item, el, i));
+        }
     }
 }
 
-class StringListWidget : ListWidget
-{
-    static StringListWidget make(StringListAdapterBase adapter)
-        in(adapter)
-    {
-        StringListWidget w = arena.make!StringListWidget;
-        w.adapter = adapter;
-        return w;
-    }
-
-    override protected Element createElement()
-    {
-        return new ElemStringListWidget;
-    }
-}
-
-/// List widget
-class ListWidget : WidgetGroup
+class ElemListView : ElemGroup
 {
     @property
     {
-        /// List orientation (vertical, horizontal)
         Orientation orientation() const { return _orientation; }
         /// ditto
         void orientation(Orientation value)
@@ -355,15 +361,7 @@ class ListWidget : WidgetGroup
             _scrollbar.orientation = value;
             requestLayout();
         }
-
-        /// When true, mouse hover selects underlying item
-        bool selectOnHover() const { return _selectOnHover; }
-        /// ditto
-        void selectOnHover(bool select)
-        {
-            _selectOnHover = select;
-        }
-
+/+
         /// List adapter
         inout(ListAdapter) adapter() inout { return _adapter; }
         /// ditto
@@ -371,11 +369,16 @@ class ListWidget : WidgetGroup
         {
             if (_adapter is adapter)
                 return; // no changes
-            _adapter.maybe.disconnect(&handleChildListChange);
-            if (_adapter && _ownAdapter)
-                destroy(_adapter);
+            if (_adapter)
+            {
+                _adapter.disconnect(&handleChildListChange);
+                if (_ownAdapter)
+                    destroy(_adapter);
+            }
+            if (adapter)
+                adapter.connect(&handleChildListChange);
+
             _adapter = adapter;
-            _adapter.maybe.connect(&handleChildListChange);
             _ownAdapter = false;
 
             if (_itemWidget)
@@ -394,11 +397,16 @@ class ListWidget : WidgetGroup
         {
             if (_adapter is adapter)
                 return; // no changes
-            _adapter.maybe.disconnect(&handleChildListChange);
-            if (_adapter && _ownAdapter)
-                destroy(_adapter);
+            if (_adapter)
+            {
+                _adapter.disconnect(&handleChildListChange);
+                if (_ownAdapter)
+                    destroy(_adapter);
+            }
+            if (adapter)
+                adapter.connect(&handleChildListChange);
+
             _adapter = adapter;
-            _adapter.maybe.connect(&handleChildListChange);
             _ownAdapter = true;
 
             if (_itemWidget)
@@ -412,7 +420,7 @@ class ListWidget : WidgetGroup
             handleChildListChange();
             assert(_itemWidgetUpdater);
         }
-
++/
         /// Returns number of widgets in list
         int itemCount() const
         {
@@ -421,11 +429,6 @@ class ListWidget : WidgetGroup
 
         /// Selected item index
         int selectedItemIndex() const { return _selectedItemIndex; }
-        /// ditto
-        void selectedItemIndex(int index)
-        {
-            selectItem(index);
-        }
 
         final protected float scrollPosition() const
         {
@@ -438,23 +441,22 @@ class ListWidget : WidgetGroup
         }
     }
 
-    /// Handle selection change
     Signal!(void delegate(int)) onSelect;
-    /// Handle item click / activation (e.g. Space or Enter key pressed and mouse double clicked)
     Signal!(void delegate(int)) onItemClick;
 
+    bool selectOnHover;
     /// Policy for `measure`: when true, it considers items' total size
     bool sumItemSizes;
 
     private
     {
-        Widget _itemWidget;
+        Element _itemWidget;
         void delegate(int) _itemWidgetUpdater;
         int _lastItemIndex = -1; // TODO: reset when clear or replace?
 
         Buf!Box _itemBoxes;
         bool _needScrollbar;
-        ScrollBar _scrollbar;
+        ElemScrollBar _scrollbar;
 
         /// Client area (without scrollbar and padding)
         Box _clientBox;
@@ -466,8 +468,6 @@ class ListWidget : WidgetGroup
         int _selectedItemIndex = -1;
 
         Orientation _orientation = Orientation.vertical;
-        /// When true, mouse hover selects underlying item
-        bool _selectOnHover;
         /// If true, generate `onItemClick` on mouse down instead mouse up event
         bool _clickOnButtonDown;
 
@@ -476,12 +476,10 @@ class ListWidget : WidgetGroup
         bool _ownAdapter;
     }
 
-    /// Create with orientation parameter
-    this(Orientation orientation = Orientation.vertical)
+    this()
     {
-        _orientation = orientation;
-        allowsFocus = true;
-        _scrollbar = new ScrollBar(orientation);
+        _scrollbar = new ElemScrollBar(new ScrollData);
+        _scrollbar.orientation = orientation;
         _scrollbar.visibility = Visibility.gone;
         _scrollbar.parent = this;
         _hiddenChildren.append(_scrollbar);
@@ -489,12 +487,13 @@ class ListWidget : WidgetGroup
 
     ~this()
     {
-        _adapter.maybe.disconnect(&handleChildListChange);
-        debug (lists)
-            Log.d("Destroying List ", _id);
-        if (_adapter && _ownAdapter)
-            destroy(_adapter);
-        _adapter = null;
+        if (_adapter)
+        {
+            _adapter.disconnect(&handleChildListChange);
+            if (_ownAdapter)
+                destroy(_adapter);
+            _adapter = null;
+        }
     }
 
     /// Returns box for item (not scrolled, first item starts at 0,0)
@@ -563,8 +562,8 @@ class ListWidget : WidgetGroup
         return start;
     }
 
-    /// Returns list item widget by item index
-    inout(Widget) itemWidget(int index) inout
+    /// Returns list item element by item index
+    inout(Element) itemElement(int index) inout
     {
         if (0 <= index && index < itemCount)
         {
@@ -896,13 +895,13 @@ class ListWidget : WidgetGroup
             {
                 if (_adapter)
                 {
-                    auto wt = itemWidget(i);
-                    assert(wt);
-                    wt.handleMouseEvent(event);
+                    auto el = itemElement(i);
+                    assert(el);
+                    el.handleMouseEvent(event);
                 }
                 if (event.alteredByButton(MouseButton.left) ||
                     event.alteredByButton(MouseButton.right) ||
-                    _selectOnHover)
+                    selectOnHover)
                 {
                     if (_selectedItemIndex != i && itemEnabled(i))
                     {
@@ -962,12 +961,12 @@ class ListWidget : WidgetGroup
         float p = 0;
         foreach (i; 0 .. itemCount)
         {
-            Widget wt = itemWidget(i);
-            if (wt is null || wt.visibility == Visibility.gone)
+            Element el = itemElement(i);
+            if (el is null || el.visibility == Visibility.gone)
                 continue;
 
-            wt.measure();
-            Boundaries wbs = wt.boundaries;
+            el.measure();
+            Boundaries wbs = el.boundaries;
             if (_orientation == Orientation.vertical)
             {
                 bs.maximizeWidth(wbs);
@@ -1004,16 +1003,16 @@ class ListWidget : WidgetGroup
         float p = 0;
         foreach (i; 0 .. itemCount)
         {
-            Widget wt = itemWidget(i);
-            if (wt is null || wt.visibility == Visibility.gone)
+            Element el = itemElement(i);
+            if (el is null || el.visibility == Visibility.gone)
             {
                 _itemBoxes.unsafe_ref(i).w = 0;
                 _itemBoxes.unsafe_ref(i).h = 0;
                 continue;
             }
 
-            wt.measure();
-            const wnat = wt.natSize;
+            el.measure();
+            const wnat = el.natSize;
             if (vertical)
             {
                 _itemBoxes[i] = Box(0, p, inner.w, wnat.h);
@@ -1059,16 +1058,16 @@ class ListWidget : WidgetGroup
                 p = 0;
                 foreach (i; 0 .. itemCount)
                 {
-                    Widget wt = itemWidget(i);
-                    if (wt is null || wt.visibility == Visibility.gone)
+                    Element el = itemElement(i);
+                    if (el is null || el.visibility == Visibility.gone)
                     {
                         _itemBoxes.unsafe_ref(i).w = 0;
                         _itemBoxes.unsafe_ref(i).h = 0;
                         continue;
                     }
 
-                    wt.measure();
-                    const wnat = wt.natSize;
+                    el.measure();
+                    const wnat = el.natSize;
                     if (vertical)
                     {
                         _itemBoxes[i] = Box(0, p, inner.w, wnat.h);
@@ -1151,8 +1150,8 @@ class ListWidget : WidgetGroup
         const int end = itemByPosition(scrollOffset + (vert ? b.h : b.w));
         foreach (i; start .. end + 1)
         {
-            Widget w = itemWidget(i);
-            if (w is null || w.visibility != Visibility.visible)
+            Element el = itemElement(i);
+            if (el is null || el.visibility != Visibility.visible)
                 continue;
 
             Box ib = _itemBoxes[i];
@@ -1160,12 +1159,12 @@ class ListWidget : WidgetGroup
             ib.y += b.y;
             (vert ? ib.y : ib.x) -= scrollOffset;
 
-            w.layout(ib);
-            w.draw(pr);
+            el.layout(ib);
+            el.draw(pr);
         }
     }
 }
-
+/+
 class StringListWidget : ListWidget
 {
     import core.time : Duration, msecs;
