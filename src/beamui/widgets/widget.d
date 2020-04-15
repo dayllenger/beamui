@@ -281,6 +281,11 @@ class Widget
     }
 
     protected S useState(S : IState)()
+    {
+        return useState(new S);
+    }
+
+    protected S useState(S : IState)(lazy S initial)
         in(_statePtr, "The element hasn't mounted yet")
     {
         S s;
@@ -291,7 +296,7 @@ class Widget
         }
         else
         {
-            *_statePtr = s = new S;
+            *_statePtr = s = initial;
         }
         return s;
     }
