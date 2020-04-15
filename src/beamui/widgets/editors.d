@@ -4312,25 +4312,112 @@ class LogWidget : EditBox
         }
     }
 }
++/
+class EditorSearchPane : Panel
+{
+    dstring initialText;
+    /// True to show replace controls
+    bool replaceMode;
 
+    static class State : IState
+    {
+        TextSearchOptions options;
+    }
+
+    override protected void build()
+    {
+        State st = useState!State;
+
+        if (!replaceMode)
+            attributes["find-only"];
+
+        wrap(
+            render((EditLine ed) {
+                ed.attributes["find"];
+                ed.placeholder = "Find";
+            }),
+            replaceMode ? render((EditLine ed) {
+                ed.attributes["replace"];
+                ed.placeholder = "Replace";
+            }) : null,
+            render((Panel p) {
+                p.attributes["find-buttons"];
+            }).wrap(
+                render((Button b) {
+                    b.text = "Find next";
+                }),
+                render((Button b) {
+                    b.text = "Find previous";
+                }),
+                render((CheckButton b) {
+                    b.iconID = "find_case_sensitive";
+                    b.tooltip = "Case sensitive";
+                    b.checked = (st.options & TextSearchOptions.caseSensitive) != 0;
+                    b.onToggle = (ch) {
+                        setState(st.options, st.options ^ TextSearchOptions.caseSensitive);
+                        updateHighlight();
+                    };
+                }),
+                render((CheckButton b) {
+                    b.iconID = "find_whole_words";
+                    b.tooltip = "Whole words";
+                    b.checked = (st.options & TextSearchOptions.wholeWords) != 0;
+                    b.onToggle = (ch) {
+                        setState(st.options, st.options ^ TextSearchOptions.wholeWords);
+                        updateHighlight();
+                    };
+                }),
+                render((CheckBox cb) {
+                    cb.text = "Sel";
+                    cb.checked = (st.options & TextSearchOptions.selectionOnly) != 0;
+                    cb.onToggle = (ch) {
+                        setState(st.options, st.options ^ TextSearchOptions.selectionOnly);
+                        updateHighlight();
+                    };
+                }),
+            ),
+            replaceMode ? render((Panel p) {
+                p.attributes["replace-buttons"];
+            }).wrap(
+                render((Button b) {
+                    b.text = "Replace";
+                }),
+                render((Button b) {
+                    b.text = "Replace and find";
+                }),
+                render((Button b) {
+                    b.text = "Replace all";
+                }),
+            ) : null,
+            render((Button b) {
+                b.attributes["close"];
+                b.iconID = "close";
+            }),
+        );
+    }
+
+    protected void updateHighlight()
+    {
+    }
+
+    override protected Element createElement()
+    {
+        return new ElemEditorSearchPane;
+    }
+}
+
+class ElemEditorSearchPane : ElemPanel
+{
+    this()
+    {
+        focusGroup = true;
+    }
+}
+/+
 class FindPanel : Panel
 {
     @property
     {
-        /// Returns true if panel is working in replace mode
-        bool replaceMode() const { return _replaceMode; }
-        /// ditto
-        void replaceMode(bool newMode)
-        {
-            if (newMode != _replaceMode)
-            {
-                _replaceMode = newMode;
-                _edReplace.visibility = newMode ? Visibility.visible : Visibility.gone;
-                _replaceBtns.visibility = newMode ? Visibility.visible : Visibility.gone;
-                toggleAttribute("find-only");
-            }
-        }
-
         dstring searchText() const
         {
             return _edFind.text;
@@ -4345,69 +4432,22 @@ class FindPanel : Panel
     private
     {
         EditBox _editor;
-        bool _replaceMode;
 
         EditLine _edFind;
         EditLine _edReplace;
-        Panel _replaceBtns;
-        Button _cbCaseSensitive;
-        Button _cbWholeWords;
-        CheckBox _cbSelection;
         Button _btnFindNext;
         Button _btnFindPrev;
     }
 
-    this(EditBox editor, bool selectionOnly, bool replace, dstring initialText = ""d)
+    this(EditBox editor)
     {
         _editor = editor;
-        _replaceMode = replace;
-
-        _edFind = new EditLine(initialText);
-        _edReplace = new EditLine(initialText);
-        auto findBtns = new Panel(null, "find-buttons");
-            _btnFindNext = new Button("Find next");
-            _btnFindPrev = new Button("Find previous");
-            _cbCaseSensitive = new Button(null, "find_case_sensitive");
-            _cbWholeWords = new Button(null, "find_whole_words");
-            _cbSelection = new CheckBox("Sel");
-        _replaceBtns = new Panel(null, "replace-buttons");
-            auto btnReplace = new Button("Replace");
-            auto btnReplaceAndFind = new Button("Replace and find");
-            auto btnReplaceAll = new Button("Replace all");
-        auto closeBtn = new Button(null, "close");
-
-        add(_edFind, _edReplace, findBtns, _replaceBtns, closeBtn);
-        findBtns.add(_btnFindNext, _btnFindPrev, _cbCaseSensitive, _cbWholeWords, _cbSelection);
-        _replaceBtns.add(btnReplace, btnReplaceAndFind, btnReplaceAll);
-
-        with (_cbCaseSensitive) {
-            allowsToggle = true;
-            tooltipText = "Case sensitive";
-        }
-        with (_cbWholeWords) {
-            allowsToggle = true;
-            tooltipText = "Whole words";
-        }
-        _edFind.setAttribute("find");
-        _edReplace.setAttribute("replace");
-        closeBtn.setAttribute("close");
-
-        if (!replace)
-        {
-            setAttribute("find-only");
-            _edReplace.visibility = Visibility.gone;
-            _replaceBtns.visibility = Visibility.gone;
-        }
 
         _edFind.onEnterKeyPress ~= { findNext(_backDirection); return true; };
         _edFind.onChange ~= &handleFindTextChange;
 
         _btnFindNext.onClick ~= { findNext(false); };
         _btnFindPrev.onClick ~= { findNext(true); };
-
-        _cbCaseSensitive.onToggle ~= &handleCaseSensitiveToggle;
-        _cbWholeWords.onToggle ~= &handleCaseSensitiveToggle;
-        _cbSelection.onToggle ~= &handleCaseSensitiveToggle;
 
         btnReplace.onClick ~= { replaceOne(); };
         btnReplaceAndFind.onClick ~= {
@@ -4417,8 +4457,6 @@ class FindPanel : Panel
         btnReplaceAll.onClick ~= { replaceAll(); };
 
         closeBtn.onClick ~= &close;
-
-        focusGroup = true;
 
         setDirection(false);
         updateHighlight();
@@ -4459,12 +4497,6 @@ class FindPanel : Panel
     TextSearchOptions makeSearchOptions() const
     {
         TextSearchOptions res;
-        if (_cbCaseSensitive.checked)
-            res |= TextSearchOptions.caseSensitive;
-        if (_cbWholeWords.checked)
-            res |= TextSearchOptions.wholeWords;
-        if (_cbSelection.checked)
-            res |= TextSearchOptions.selectionOnly;
         return res;
     }
 
@@ -4549,11 +4581,6 @@ class FindPanel : Panel
     {
         debug (editors)
             Log.d("handleFindTextChange");
-        updateHighlight();
-    }
-
-    void handleCaseSensitiveToggle(bool checkValue)
-    {
         updateHighlight();
     }
 }

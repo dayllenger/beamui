@@ -125,6 +125,7 @@ RadioButton > .icon,
 MenuItem > .check,
 MenuItem > .radio {
     align: center;
+    stretch: none;
     min-width: 16px;
     min-height: 16px;
 }
@@ -718,20 +719,28 @@ LogWidget {
     font-size: 10px;
 }
 
-FindPanel {
+EditorSearchPane {
     padding: 4px;
     background-color: white;
     box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.25);
-}
 
-FindPanel.find-only {
-    row-gap: 0;
-}
+    &.find-only {
+        row-gap: 0;
+    }
 
-FindPanel > Button.close {
-    padding: 0;
-    align-self: center;
-    background: none;
+    ButtonLike {
+        padding: 2px 4px;
+
+        > .label {
+            font-size: 12px;
+        }
+    }
+
+    > Button.close {
+        padding: 0;
+        align-self: center;
+        background: none;
+    }
 }
 
 @define-colors {

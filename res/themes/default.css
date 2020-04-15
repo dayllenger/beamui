@@ -28,26 +28,26 @@ Paragraph {
   white-space: pre-wrap;
 }
 
-FindPanel {
+EditorSearchPane {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-areas: "fe fb c" "re rb .";
 }
-FindPanel > .find {
+EditorSearchPane > .find {
   grid-area: fe;
 }
-FindPanel > .find-buttons {
+EditorSearchPane > .find-buttons {
   display: row;
   grid-area: fb;
 }
-FindPanel > .replace {
+EditorSearchPane > .replace {
   grid-area: re;
 }
-FindPanel > .replace-buttons {
+EditorSearchPane > .replace-buttons {
   display: row;
   grid-area: rb;
 }
-FindPanel > .close {
+EditorSearchPane > .close {
   grid-area: c;
 }
 

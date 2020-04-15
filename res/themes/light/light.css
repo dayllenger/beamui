@@ -40,7 +40,7 @@ CheckBox:hovered > .label, RadioButton:hovered > .label { color: #46617e; }
 
 CheckBox:not(enabled) > .label, RadioButton:not(enabled) > .label { color: rgba(64, 64, 64, 0.5); }
 
-CheckBox > .icon, RadioButton > .icon, MenuItem > .check, MenuItem > .radio { align: center; min-width: 16px; min-height: 16px; }
+CheckBox > .icon, RadioButton > .icon, MenuItem > .check, MenuItem > .radio { align: center; stretch: none; min-width: 16px; min-height: 16px; }
 
 CheckBox:not(enabled) > .icon, RadioButton:not(enabled) > .icon, MenuItem:not(enabled) > .check, MenuItem:not(enabled) > .radio { opacity: 0.4; }
 
@@ -285,11 +285,15 @@ EditBox:read-only { background-color: #f0f0f0; }
 
 LogWidget { font-family: monospace; font-size: 10px; }
 
-FindPanel { padding: 4px; background-color: white; box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.25); }
+EditorSearchPane { padding: 4px; background-color: white; box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.25); }
 
-FindPanel.find-only { row-gap: 0; }
+EditorSearchPane.find-only { row-gap: 0; }
 
-FindPanel > Button.close { padding: 0; align-self: center; background: none; }
+EditorSearchPane ButtonLike { padding: 2px 4px; }
+
+EditorSearchPane ButtonLike > .label { font-size: 12px; }
+
+EditorSearchPane > Button.close { padding: 0; align-self: center; background: none; }
 
 @define-colors { edit_caret: black;
   edit_caret_replace: rgba(128, 128, 255, 0.5);
