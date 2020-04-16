@@ -148,6 +148,28 @@ interface IState
 {
 }
 
+struct WidgetKey
+{
+    size_t computed = size_t.max;
+
+    this(T)(T anyValue) if (!is(T : WidgetKey))
+    {
+        // avoid the situation when the key is set to some existing index
+        computed = ~hashOf(anyValue) - 1;
+    }
+
+    ref WidgetKey opAssign(T)(T anyValue) if (!is(T : WidgetKey))
+    {
+        computed = WidgetKey(anyValue).computed;
+        return this;
+    }
+
+    bool opCast(To : bool)() const
+    {
+        return computed != size_t.max;
+    }
+}
+
 struct WidgetAttributes
 {
     private string[string] _map; // TODO: rewrite to something faster
@@ -186,7 +208,7 @@ W render(W : Widget)(scope void delegate(W) conf)
 /// Base class for all widgets
 class Widget
 {
-    uint key = uint.max;
+    WidgetKey key;
     string id;
     WidgetAttributes attributes;
 
@@ -247,9 +269,12 @@ class Widget
         }
         else
         {
-            // use the parent ID, so IDs form a tree structure.
-            // also use either the key or, as a last resort, the index
-            const ulong[2] values = [parent._elementID.value, key != uint.max ? ~key : index];
+            const ulong[2] values = [
+                // use the parent ID, so IDs form a tree structure
+                parent._elementID.value,
+                // also use either the key or, as a last resort, the index
+                key ? key.computed : index,
+            ];
             mainHash = hashOf(values);
         }
         _elementID = ElementID(typeHash ^ mainHash);
@@ -2962,3 +2987,15 @@ struct AnimationHelper
 }
 
 __gshared bool TOUCH_MODE = false;
+
+//===============================================================
+// Tests
+
+unittest
+{
+    assert(WidgetKey(size_t.max) == WidgetKey.init);
+    assert(WidgetKey(0) != WidgetKey.init);
+    assert(WidgetKey(1) != WidgetKey.init);
+    assert(WidgetKey(0).computed != 0);
+    assert(WidgetKey(1).computed != 1);
+}
