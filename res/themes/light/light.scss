@@ -629,12 +629,12 @@ TabWidget {
     gap: 0;
 }
 
-TabControl {
+TabBar {
     padding-left: 3px;
     padding-right: 3px;
 }
 
-TabControl > .more {
+TabBar > .more {
     opacity: 0.6;
     transition: opacity 100ms ease;
 
@@ -643,7 +643,7 @@ TabControl > .more {
     }
 }
 
-TabHost {
+TabContent {
     padding: 6px;
     stretch: both;
     background-color: #f2f4f5;
@@ -672,11 +672,11 @@ TabItem {
     }
 }
 
-TabControl.top TabItem {
+TabWidget.top > TabBar > TabItem {
     border-bottom-width: 2px;
 }
 
-TabControl.bottom TabItem {
+TabWidget.bottom > TabBar > TabItem {
     border-top-width: 2px;
 }
 

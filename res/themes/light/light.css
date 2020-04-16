@@ -250,13 +250,13 @@ RangeSlider.vertical > .range-between { border-left-width: 4px; border-right-wid
 /* tabs */
 TabWidget { gap: 0; }
 
-TabControl { padding-left: 3px; padding-right: 3px; }
+TabBar { padding-left: 3px; padding-right: 3px; }
 
-TabControl > .more { opacity: 0.6; transition: opacity 100ms ease; }
+TabBar > .more { opacity: 0.6; transition: opacity 100ms ease; }
 
-TabControl > .more:hovered { opacity: 1; }
+TabBar > .more:hovered { opacity: 1; }
 
-TabHost { padding: 6px; stretch: both; background-color: #f2f4f5; }
+TabContent { padding: 6px; stretch: both; background-color: #f2f4f5; }
 
 TabItem { padding: 6px 1px 0 0; gap: 0; border: 0 solid transparent; }
 
@@ -266,9 +266,9 @@ TabItem > .label { align: hcenter bottom; padding: 0 3px 3px; text-hotkey: under
 
 TabItem:hovered > .label, TabItem:selected > .label, TabItem:focused > .label { color: #4e93da; }
 
-TabControl.top TabItem { border-bottom-width: 2px; }
+TabWidget.top > TabBar > TabItem { border-bottom-width: 2px; }
 
-TabControl.bottom TabItem { border-top-width: 2px; }
+TabWidget.bottom > TabBar > TabItem { border-top-width: 2px; }
 
 /* editors */
 EditLine { padding: 4px; border: 1px solid #aaa; background-color: #fff; transition: border-color 100ms ease; }

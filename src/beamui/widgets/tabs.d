@@ -78,6 +78,14 @@ class TabItem : Panel
     }
 }
 
+class TabBar : WidgetGroupOf!TabItem
+{
+    override protected Element createElement()
+    {
+        return new ElemPanel;
+    }
+}
+
 abstract class PageStackOf(W : Widget) : WidgetGroupOf!W
 {
     int visibleItemIndex;
@@ -115,6 +123,102 @@ class PageStack : PageStackOf!Widget
     }
 }
 
+class TabPane : WidgetWrapperOf!Widget
+{
+    override protected Element createElement()
+    {
+        return new ElemPanel;
+    }
+}
+
+/// Container for tab panels
+class TabContent : PageStackOf!TabPane
+{
+    override protected Element createElement()
+    {
+        return new ElemPanel;
+    }
+}
+
+alias TabPair = WidgetPair!(TabItem, Widget);
+
+class TabWidget : Widget
+{
+    /// Tab bar position - top or bottom
+    Align alignment = Align.top;
+    bool buildHiddenTabs;
+
+    protected TabBar _bar;
+    protected TabContent _content;
+
+    final TabWidget wrap(TabPair[] tabs...)
+    {
+        if (tabs.length == 0)
+            return this;
+
+        _bar = render!TabBar;
+        _content = render!TabContent;
+
+        auto items = arena.allocArray!TabItem(tabs.length);
+        auto panes = arena.allocArray!TabPane(tabs.length);
+        foreach (i, pair; tabs)
+        {
+            items[i] = pair.a;
+            TabPane p = render!TabPane;
+            p.wrap(pair.b);
+            panes[i] = p;
+        }
+        _bar.wrap(items);
+        _content.wrap(panes);
+        return this;
+    }
+
+    override int opApply(scope int delegate(size_t, Widget) callback)
+    {
+        if (const result = callback(0, _bar))
+            return result;
+        if (const result = callback(1, _content))
+            return result;
+        return 0;
+    }
+
+    override protected void build()
+    {
+        if (!_bar || !_content)
+            return;
+
+        attributes[alignment == Align.top ? "top" : "bottom"];
+
+        _content.buildHiddenItems = buildHiddenTabs;
+    }
+
+    override protected Element createElement()
+    {
+        return new ElemPanel;
+    }
+
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+
+        el.focusGroup = true;
+
+        if (alignment == Align.top)
+        {
+            if (_bar)
+                el.addChild(mountChild(_bar, el, 0));
+            if (_content)
+                el.addChild(mountChild(_content, el, 1));
+        }
+        else
+        {
+            if (_content)
+                el.addChild(mountChild(_content, el, 1));
+            if (_bar)
+                el.addChild(mountChild(_bar, el, 0));
+        }
+    }
+}
 /+
 import beamui.widgets.menu;
 import beamui.widgets.popup;
@@ -170,24 +274,6 @@ class TabControl : WidgetGroup
         }
 
         string selectedTabID() const { return _selectedTabID; }
-
-        /// Tab alignment - top or bottom
-        Align tabAlignment() const { return _tabAlignment; }
-        /// ditto
-        void tabAlignment(Align a)
-        {
-            _tabAlignment = a;
-            if (a == Align.top)
-            {
-                removeAttribute("bottom");
-                setAttribute("top");
-            }
-            else
-            {
-                removeAttribute("top");
-                setAttribute("bottom");
-            }
-        }
     }
 
     /// Signal of tab change (e.g. by clicking on tab header)
@@ -214,7 +300,6 @@ class TabControl : WidgetGroup
 
     this(Align tabAlign = Align.top)
     {
-        tabAlignment = tabAlign;
         _moreButton = new Button(null, "tab_more");
         _moreButton.isolateThisStyle();
         _moreButton.setAttribute("more");
@@ -578,30 +663,8 @@ class TabControl : WidgetGroup
     }
 }
 
-/// Container for widgets controlled by `TabControl`
 class TabHost : Panel
 {
-    @property
-    {
-        /// Currently set control widget
-        TabControl tabControl() { return _tabControl; }
-        /// ditto
-        void tabControl(TabControl newWidget)
-        {
-            // TODO
-            _tabControl = newWidget;
-            if (_tabControl !is null)
-                _tabControl.onTabChange ~= &handleTabChange;
-        }
-
-        Visibility hiddenTabsVisibility() const { return _hiddenTabsVisibility; }
-        /// ditto
-        void hiddenTabsVisibility(Visibility v)
-        {
-            _hiddenTabsVisibility = v;
-        }
-    }
-
     /// Signal of tab change (e.g. by clicking on tab header)
     Signal!TabChangeHandler onTabChange;
 
@@ -653,7 +716,6 @@ class TabHost : Panel
         assert(childIndex(widget.id) == -1, "duplicate ID for tab host page");
         _tabControl.addTab(widget.id, label, iconID, enableCloseButton, tooltipText);
         initializateTab(widget);
-        //widget.focusGroup = true; // doesn't allow move focus outside of tab content
         addChild(widget);
     }
 
@@ -682,25 +744,10 @@ class TabHost : Panel
     }
 }
 
-/// Compound widget - contains from `TabControl` widget (tabs header) and `TabHost` (content pages)
 class TabWidget : Panel
 {
     @property
     {
-        TabControl tabControl() { return _tabControl; }
-
-        TabHost tabHost() { return _tabHost; }
-
-        Visibility hiddenTabsVisibility() const
-        {
-            return _tabHost.hiddenTabsVisibility;
-        }
-        /// ditto
-        void hiddenTabsVisibility(Visibility v)
-        {
-            _tabHost.hiddenTabsVisibility = v;
-        }
-
         inout(TabItem) selectedTab() inout
         {
             return _tabControl.tab(selectedTabID);
@@ -717,21 +764,12 @@ class TabWidget : Panel
     /// Signal on tab close button
     Signal!TabCloseHandler onTabClose;
 
-    private TabControl _tabControl;
-    private TabHost _tabHost;
-
-    /// Construct a new tab widget with top or bottom tab control placement
     this(Align tabAlignment = Align.top)
     {
         _tabControl = new TabControl(tabAlignment);
         _tabControl.onTabChange ~= &onTabChange.emit;
         _tabControl.onTabClose ~= &onTabClose.emit;
         _tabHost = new TabHost(_tabControl);
-        if (tabAlignment == Align.top)
-            add(_tabControl, _tabHost);
-        else
-            add(_tabHost, _tabControl);
-        focusGroup = true;
     }
 
     /// Add new tab by id and label (raw value)

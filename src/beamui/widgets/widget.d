@@ -374,11 +374,29 @@ class Widget
     }
 }
 
+struct WidgetPair(A : Widget, B : Widget)
+{
+    A a;
+    B b;
+
+    this(A a, B b)
+    {
+        this.a = a;
+        this.b = b;
+    }
+
+    this(TA : A, TB : B)(scope void delegate(TA) confA, scope void delegate(TB) confB)
+    {
+        a = render(confA);
+        b = render(confB);
+    }
+}
+
 abstract class WidgetWrapperOf(W : Widget) : W
 {
     protected W _content;
 
-    final WidgetWrapperOf!W wrap(lazy W content)
+    final WidgetWrapperOf!W wrap(W content)
     {
         _content = content;
         return this;
