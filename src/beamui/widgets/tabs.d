@@ -26,18 +26,27 @@ import beamui.widgets.controls;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-/// Callback type for tab close button
-alias TabCloseHandler = void delegate();
+/// Abstract tab header widget
+class TabItemBase : Panel
+{
+    private bool selected;
 
-/// Tab header widget
-class TabItem : Panel
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+        el.applyState(State.selected, selected);
+    }
+}
+
+/// Common tab header widget. It may have a title, an icon, and a close button
+class TabItem : TabItemBase
 {
     /// Tab title
     dstring text;
     /// Tab icon resource ID
     string iconID;
     /// If assigned, the tab close button will be visible
-    TabCloseHandler onClose;
+    void delegate() onClose;
 
     this()
     {
@@ -78,8 +87,77 @@ class TabItem : Panel
     }
 }
 
-class TabBar : WidgetGroupOf!TabItem
+class TabBar : WidgetGroupOf!TabItemBase
 {
+    WidgetKey selectedTabKey;
+    /// Signals of tab change (e.g. by clicking on tab header)
+    void delegate(TabItemBase) onSelect;
+
+    private int _selectedTabIndex;
+
+    private Tup!(TabItemBase, int) findItemByKey(WidgetKey itemKey)
+    {
+        if (itemKey)
+        {
+            foreach (i, item; _children)
+                if (item && item.key == itemKey)
+                    return tup(item, cast(int)i);
+        }
+        return tup(cast(TabItemBase)null, -1);
+    }
+
+    override protected void build()
+    {
+        assert(onSelect);
+
+        onWheelEvent = &handleWheelEvent;
+
+        foreach (i, item; _children)
+        {
+            if (item)
+            {
+                if (item.key == selectedTabKey)
+                {
+                    item.selected = true;
+                    _selectedTabIndex = cast(int)i;
+                }
+                (index) {
+                    item.onMouseEvent = (MouseEvent e) { return handleItemMouseEvent(index, e); };
+                }(cast(int)i);
+            }
+        }
+    }
+
+    protected bool handleWheelEvent(WheelEvent e)
+    {
+        const len = cast(int)_children.length;
+        const delta = e.deltaX + e.deltaY;
+        int index = _selectedTabIndex + delta;
+        // search for enabled items
+        for (int i; i < len; i++, index += delta)
+        {
+            // select next or previous tab
+            TabItemBase item = _children[.wrapAround(index, 0, len - 1)];
+            if (item && item.enabled)
+            {
+                onSelect(item);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected bool handleItemMouseEvent(int index, MouseEvent e)
+    {
+        if (e.action == MouseAction.buttonDown && e.button == MouseButton.left)
+        {
+            assert(_children[index]);
+            onSelect(_children[index]);
+            return true;
+        }
+        return false;
+    }
+
     override protected Element createElement()
     {
         return new ElemPanel;
@@ -140,12 +218,16 @@ class TabContent : PageStackOf!TabPane
     }
 }
 
-alias TabPair = WidgetPair!(TabItem, Widget);
+alias TabPair = WidgetPair!(TabItemBase, Widget);
 
 class TabWidget : Widget
 {
+    WidgetKey defaultTabKey = 0;
+    /// Signals of tab change (e.g. by clicking on tab header)
+    void delegate(TabItemBase) onSelect;
     /// Tab bar position - top or bottom
     Align alignment = Align.top;
+
     bool buildHiddenTabs;
 
     protected TabBar _bar;
@@ -159,10 +241,17 @@ class TabWidget : Widget
         _bar = render!TabBar;
         _content = render!TabContent;
 
-        auto items = arena.allocArray!TabItem(tabs.length);
+        auto items = arena.allocArray!TabItemBase(tabs.length);
         auto panes = arena.allocArray!TabPane(tabs.length);
         foreach (i, pair; tabs)
         {
+            if (!pair.a || !pair.b)
+                continue;
+
+            const key = pair.a.key ? pair.a.key : WidgetKey(i);
+            pair.a.key = key;
+            pair.b.key = key;
+
             items[i] = pair.a;
             TabPane p = render!TabPane;
             p.wrap(pair.b);
@@ -182,6 +271,31 @@ class TabWidget : Widget
         return 0;
     }
 
+    protected class State : IState
+    {
+        WidgetKey selectedTabKey;
+
+        this()
+        {
+            selectedTabKey = defaultTabKey;
+        }
+
+        void selectTab(TabItemBase item)
+        {
+            if (selectedTabKey != item.key)
+            {
+                setState(selectedTabKey, item.key);
+                if (onSelect)
+                    onSelect(item);
+            }
+        }
+    }
+
+    protected State getState()
+    {
+        return useState(new State);
+    }
+
     override protected void build()
     {
         if (!_bar || !_content)
@@ -189,6 +303,12 @@ class TabWidget : Widget
 
         attributes[alignment == Align.top ? "top" : "bottom"];
 
+        State st = getState();
+
+        const pair = _bar.findItemByKey(st.selectedTabKey);
+        _bar.selectedTabKey = st.selectedTabKey;
+        _bar.onSelect = &st.selectTab;
+        _content.visibleItemIndex = pair[1];
         _content.buildHiddenItems = buildHiddenTabs;
     }
 
@@ -225,7 +345,6 @@ import beamui.widgets.popup;
 
 /// Current tab is changed handler
 alias TabChangeHandler = void delegate(string newActiveTabID, string previousTabID);
-alias TabCloseHandler = void delegate(string tabID);
 
 class TabItem : Panel
 {
@@ -234,9 +353,6 @@ class TabItem : Panel
         /// Tab last access time
         long lastAccessTime() const { return _lastAccessTime; }
     }
-
-    /// Signals tab close button click
-    Signal!TabCloseHandler onTabClose;
 
     private
     {
@@ -276,10 +392,7 @@ class TabControl : WidgetGroup
         string selectedTabID() const { return _selectedTabID; }
     }
 
-    /// Signal of tab change (e.g. by clicking on tab header)
     Signal!TabChangeHandler onTabChange;
-    /// Signals tab close button click
-    Signal!TabCloseHandler onTabClose;
     /// Signals more button click
     Signal!(void delegate()) onMoreButtonClick;
     /// Handler for more button popup menu
@@ -378,20 +491,10 @@ class TabControl : WidgetGroup
     /// Add new tab
     void addTab(TabItem item, int index = -1)
     {
-        item.onMouseEvent ~= (MouseEvent e) { return handleTabBtnMouse(item.id, e); };
-        item.onWheelEvent ~= &handleTabBtnWheel;
-        item.onTabClose ~= &onTabClose.emit;
         if (index >= 0)
             insertChild(index, item);
         else
             addChild(item);
-    }
-    /// Add new tab by id and label string
-    void addTab(string id, dstring label, string iconID = null, bool enableCloseButton = false,
-            dstring tooltipText = null)
-    {
-        auto item = new TabItem(id, label, iconID, enableCloseButton, tooltipText);
-        addTab(item);
     }
 
     /// Remove tab
@@ -421,31 +524,6 @@ class TabControl : WidgetGroup
             {
                 selectTab(index, true);
             }
-        }
-    }
-
-    /// Change name of tab by ID
-    void renameTab(string ID, dstring name)
-    {
-        int index = tabIndex(ID);
-        if (index >= 0)
-        {
-            renameTab(index, name);
-        }
-    }
-    /// Change name of tab by index
-    void renameTab(int index, dstring name)
-    {
-        if (auto wt = cast(TabItem)child(index + 1))
-            wt.text = name;
-    }
-    /// Change name and id of tab
-    void renameTab(int index, string id, dstring name)
-    {
-        if (auto wt = cast(TabItem)child(index + 1))
-        {
-            wt.text = name;
-            wt.id = id;
         }
     }
 
@@ -484,27 +562,6 @@ class TabControl : WidgetGroup
             }
         }
         onTabChange(_selectedTabID, previousSelectedTab);
-    }
-
-    protected bool handleTabBtnMouse(string id, MouseEvent event)
-    {
-        if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
-        {
-            int index = tabIndex(id);
-            if (index >= 0)
-            {
-                selectTab(index, true);
-            }
-        }
-        return true;
-    }
-
-    protected bool handleTabBtnWheel(WheelEvent event)
-    {
-        // select next or previous tab
-        const next = wrapAround(tabIndex(_selectedTabID) + event.deltaX + event.deltaY, 0, tabCount - 1);
-        selectTab(next, true);
-        return true;
     }
 
     protected bool handleMoreBtnMouse(MouseEvent event)
@@ -665,28 +722,6 @@ class TabControl : WidgetGroup
 
 class TabHost : Panel
 {
-    /// Signal of tab change (e.g. by clicking on tab header)
-    Signal!TabChangeHandler onTabChange;
-
-    private TabControl _tabControl;
-    private Visibility _hiddenTabsVisibility = Visibility.hidden;
-
-    this(TabControl tabControl = null)
-    {
-        _tabControl = tabControl;
-        if (_tabControl !is null)
-            _tabControl.onTabChange ~= &handleTabChange;
-    }
-
-    protected void handleTabChange(string newActiveTabID, string previousTabID)
-    {
-        if (newActiveTabID !is null)
-        {
-            showChild(newActiveTabID, _hiddenTabsVisibility, true);
-        }
-        onTabChange(newActiveTabID, previousTabID);
-    }
-
     /// Get tab content widget by id
     Widget tabBody(string id)
     {
@@ -697,108 +732,17 @@ class TabHost : Panel
         }
         return null;
     }
-
-    /// Remove tab
-    void removeTab(string id)
-    {
-        assert(_tabControl !is null, "No TabControl set for TabHost");
-        Widget child = removeChild(id);
-        destroy(child);
-        _tabControl.removeTab(id);
-    }
-
-    /// Add new tab by id and label string
-    void addTab(Widget widget, dstring label, string iconID = null, bool enableCloseButton = false,
-            dstring tooltipText = null)
-    {
-        assert(_tabControl !is null, "No TabControl set for TabHost");
-        assert(widget.id !is null, "ID for tab host page is mandatory");
-        assert(childIndex(widget.id) == -1, "duplicate ID for tab host page");
-        _tabControl.addTab(widget.id, label, iconID, enableCloseButton, tooltipText);
-        initializateTab(widget);
-        addChild(widget);
-    }
-
-    // handles initial tab selection & hides subsequently added tabs so
-    // they don't appear in the same frame
-    private void initializateTab(Widget widget)
-    {
-        if (_tabControl.selectedTabID is null)
-        {
-            selectTab(_tabControl.tab(0).id, false);
-        }
-        else
-        {
-            widget.visibility = Visibility.hidden;
-        }
-    }
-
-    /// Select tab
-    void selectTab(string ID, bool updateAccess)
-    {
-        int index = _tabControl.tabIndex(ID);
-        if (index != -1)
-        {
-            _tabControl.selectTab(index, updateAccess);
-        }
-    }
 }
 
 class TabWidget : Panel
 {
-    @property
-    {
-        inout(TabItem) selectedTab() inout
-        {
-            return _tabControl.tab(selectedTabID);
-        }
-
-        string selectedTabID() const
-        {
-            return _tabControl._selectedTabID;
-        }
-    }
-
-    /// Signal of tab change (e.g. by clicking on tab header)
     Signal!TabChangeHandler onTabChange;
-    /// Signal on tab close button
-    Signal!TabCloseHandler onTabClose;
 
     this(Align tabAlignment = Align.top)
     {
         _tabControl = new TabControl(tabAlignment);
         _tabControl.onTabChange ~= &onTabChange.emit;
-        _tabControl.onTabClose ~= &onTabClose.emit;
         _tabHost = new TabHost(_tabControl);
-    }
-
-    /// Add new tab by id and label (raw value)
-    void addTab(Widget widget, dstring label, string iconID = null, bool enableCloseButton = false,
-            dstring tooltipText = null)
-    {
-        _tabHost.addTab(widget, label, iconID, enableCloseButton, tooltipText);
-    }
-
-    /// Remove tab by id
-    void removeTab(string id)
-    {
-        _tabHost.removeTab(id);
-    }
-
-    /// Change name of the tab
-    void renameTab(string ID, dstring name)
-    {
-        _tabControl.renameTab(ID, name);
-    }
-    /// ditto
-    void renameTab(int index, dstring name)
-    {
-        _tabControl.renameTab(index, name);
-    }
-    /// ditto
-    void renameTab(int index, string id, dstring name)
-    {
-        _tabControl.renameTab(index, id, name);
     }
 
     /// Select tab

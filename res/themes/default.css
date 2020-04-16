@@ -56,7 +56,8 @@ Popup {
   display: column;
 }
 
-TabItem {
+TabItem,
+TabBar {
   display: row;
 }
 

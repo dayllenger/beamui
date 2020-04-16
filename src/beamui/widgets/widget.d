@@ -28,6 +28,8 @@ public
 
     import beamui.layout.alignment;
 
+    import beamui.platforms.common.platform : setState;
+
     import beamui.style.theme : currentTheme;
 
     import beamui.text.fonts;
