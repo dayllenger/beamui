@@ -53,7 +53,7 @@ int main()
     };
     // show message box on OK button click
     ok.onClick ~= {
-        window.showMessageBox("Message box"d, format("%s, %s!"d, ed1.text, ed2.text));
+        new MessageBox(window, "Message box"d, format("%s, %s!"d, ed1.text, ed2.text)).show();
     };
     // close the window by clicking Exit
     exit.onClick ~= &window.close;

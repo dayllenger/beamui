@@ -91,13 +91,13 @@ int main()
                             else
                             {
                                 destroy(editor);
-                                window.showMessageBox("File open error"d, "Cannot open file "d ~ toUTF32(fn));
+                                new MessageBox(window, "File open error"d, "Cannot open file "d ~ toUTF32(fn)).show();
                             }
                         }
                     }
                     else
                     {
-                        window.showMessageBox("FileOpen result"d, "File with bad extension: "d ~ toUTF32(fn));
+                        new MessageBox(window, "FileOpen result"d, "File with bad extension: "d ~ toUTF32(fn)).show();
                     }
                 }
             }
@@ -151,8 +151,11 @@ int main()
         });
     helpMenu.addAction("&About")
         .bind(frame, {
-            window.showMessageBox("About"d,
-                "beamui demo app\n(c) dayllenger, 2018\nhttp://github.com/dayllenger/beamui"d);
+            new MessageBox(
+                window,
+                "About"d,
+                "beamui demo app\n(c) dayllenger, 2018\nhttp://github.com/dayllenger/beamui"d,
+            ).show();
         });
 
     frame.add(mainMenu);

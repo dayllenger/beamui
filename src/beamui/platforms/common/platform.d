@@ -718,7 +718,7 @@ class Window : CustomEventTarget
     }
 
     //===============================================================
-    // Popups, tooltips, message and input boxes
+    // Popups, tooltips
 /+
     private Popup[] _popups;
 
@@ -885,24 +885,6 @@ class Window : CustomEventTarget
                 return p;
         }
         return null;
-    }
-
-    /// Show message box with specified title and message
-    void showMessageBox(dstring title, dstring message, Action[] actions = [ACTION_OK],
-            int defaultActionIndex = 0, void delegate(const Action result) handler = null)
-    {
-        import beamui.dialogs.messagebox;
-
-        auto dlg = new MessageBox(title, message, this, actions, defaultActionIndex, handler);
-        dlg.show();
-    }
-    /// Show input box with title, message, and initial text
-    void showInputBox(dstring title, dstring message, dstring initialText, void delegate(dstring result) handler)
-    {
-        import beamui.dialogs.inputbox;
-
-        auto dlg = new InputBox(title, message, this, initialText, handler);
-        dlg.show();
     }
 +/
     //===============================================================

@@ -34,6 +34,7 @@ class InputBox : Dialog
         EditLine _editor;
     }
 
+    /// Create input box with title, message, and initial text
     this(dstring caption, dstring message, Window parentWindow, dstring initialText,
             void delegate(dstring result) handler)
     {

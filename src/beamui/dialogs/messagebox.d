@@ -5,16 +5,19 @@ Message box implementation.
 Synopsis:
 ---
 // show message box with single Ok button
-window.showMessageBox("Dialog title"d, "Some message"d);
+new MessageBox(window, "Dialog title"d, "Some message"d).show();
 
 // show message box with OK and CANCEL buttons, cancel by default, and handle its result
-window.showMessageBox(tr("Dialog title"), tr("Some message"), [ACTION_OK, ACTION_CANCEL], 1,
-    delegate(const Action a) {
+new MessageBox(
+    window,
+    tr("Dialog title"), tr("Some message"),
+    [ACTION_OK, ACTION_CANCEL], 1, (a) {
         if (a is ACTION_OK)
             Log.d("OK pressed");
         else if (a is ACTION_CANCEL)
             Log.d("CANCEL pressed");
-});
+    }
+).show();
 ---
 
 Copyright: Vadim Lopatin 2014-2017
@@ -37,7 +40,8 @@ class MessageBox : Dialog
     private dstring _message;
     private Action[] _actions;
 
-    this(dstring caption, dstring message, Window parentWindow = null,
+    /// Create a message box with specified title and message
+    this(Window parentWindow, dstring caption, dstring message,
             Action[] buttons = [ACTION_OK], int defaultButtonIndex = 0,
             void delegate(const Action result) handler = null)
     {

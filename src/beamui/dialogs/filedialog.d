@@ -24,6 +24,8 @@ import beamui.core.functions;
 import beamui.core.i18n;
 import beamui.core.stdaction;
 import beamui.dialogs.dialog;
+import beamui.dialogs.inputbox;
+import beamui.dialogs.messagebox;
 import beamui.layout.linear;
 import beamui.platforms.common.platform;
 import beamui.text.simple : drawSimpleText;
@@ -492,9 +494,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         catch (Exception e)
         {
             Log.e("Cannot list directory " ~ dir, e);
-            //import beamui.dialogs.messagebox;
-            //auto msgBox = new MessageBox(tr("Error"), e.msg.toUTF32, window());
-            //msgBox.show();
+            //new MessageBox(window, tr("Error"), toUTF32(e.msg)).show();
             //return false;
             // show empty dir if failed to read
         }
@@ -641,7 +641,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
         }
         catch (Exception e)
         {
-            window.showMessageBox(tr("Cannot create folder"), tr("Folder creation is failed"));
+            new MessageBox(window, tr("Cannot create folder"), tr("Folder creation is failed")).show();
         }
     }
 
@@ -654,10 +654,10 @@ class FileDialog : Dialog, CustomGridCellAdapter
         if (action is ACTION_CREATE_DIRECTORY)
         {
             // show editor popup
-            window.showInputBox(tr("Create new folder"), tr("Input folder name"), ""d, delegate(dstring s) {
+            new InputBox(tr("Create new folder"), tr("Input folder name"), window, ""d, (dstring s) {
                 if (!s.empty)
                     createAndEnterDirectory(toUTF8(s));
-            });
+            }).show();
         }
         if (action is ACTION_OPEN || action is ACTION_OPEN_DIRECTORY || action is ACTION_SAVE)
         {
@@ -703,11 +703,13 @@ class FileDialog : Dialog, CustomGridCellAdapter
     /// Shows question "override file?"
     protected void showConfirmOverwriteQuestion(string filename)
     {
-        window.showMessageBox(tr("Confirm overwrite"),
+        new MessageBox(
+            window,
+            tr("Confirm overwrite"),
             format(tr("A file named \"%s\" already exists. Do you want to replace it?"), baseName(filename)),
             [ACTION_YES, ACTION_NO], 1,
-            delegate(const Action a) { if (a is ACTION_YES) handleAction(_action); }
-        );
+            (a) { if (a is ACTION_YES) handleAction(_action); }
+        ).show();
     }
 
     bool handlePathSelection(string path)
