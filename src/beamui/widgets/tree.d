@@ -657,8 +657,10 @@ class TreeItemWidget : Panel
             {
                 if (auto menu = popupMenuBuilder(_item))
                 {
-                    auto popup = window.showPopup(menu, WeakRef!Widget(this),
-                            PopupAlign.point | PopupAlign.right, event.x, event.y);
+                    auto popup = window.showPopup(menu);
+                    popup.anchor = WeakRef!Widget(this);
+                    popup.alignment = PopupAlign.point | PopupAlign.right;
+                    popup.point = Point(event.x, event.y);
                     return true;
                 }
             }

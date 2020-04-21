@@ -31,14 +31,6 @@ enum PopupAlign : uint
     fitAnchorSize = 32,
 }
 
-struct PopupAnchor
-{
-    WeakRef!Widget widget;
-    float x = 0;
-    float y = 0;
-    PopupAlign alignment = PopupAlign.center;
-}
-
 /// Popup close policy defines when we want to close popup
 enum PopupClosePolicy : uint // TODO: on(Press|Release)OutsideParent, onEscapeKey
 {
@@ -55,7 +47,10 @@ enum PopupClosePolicy : uint // TODO: on(Press|Release)OutsideParent, onEscapeKe
 /// Popup widget container
 class Popup : Widget
 {
-    PopupAnchor anchor;
+    WeakRef!Widget anchor;
+    PopupAlign alignment = PopupAlign.center;
+    Point point;
+
     PopupClosePolicy closePolicy = PopupClosePolicy.onPressOutside;
     /// Modal popup - keypresses and mouse events can be routed to this popup only
     bool modal;
@@ -99,7 +94,7 @@ class Popup : Widget
             {
                 if (closePolicy & anchor)
                 {
-                    const Element a = this.anchor.widget.get;
+                    const Element a = this.anchor.get;
                     if (a && a.contains(event.x, event.y))
                         return false;
                 }
@@ -145,17 +140,16 @@ class Popup : Widget
         Point p;
 
         // aligned simply to a point
-        if (anchor.alignment & PopupAlign.point)
+        if (alignment & PopupAlign.point)
         {
-            p.x = anchor.x;
-            p.y = anchor.y;
-            if (anchor.alignment & PopupAlign.center)
+            p = point;
+            if (alignment & PopupAlign.center)
             {
                 // center around the point
                 p.x -= geom.w / 2;
                 p.y -= geom.h / 2;
             }
-            else if (anchor.alignment & PopupAlign.above)
+            else if (alignment & PopupAlign.above)
             {
                 // raise up
                 p.y -= geom.h;
@@ -164,13 +158,13 @@ class Popup : Widget
         else // aligned to a widget (or the window if null)
         {
             Box anchorbox;
-            if (anchor.widget)
-                anchorbox = anchor.widget.get.box;
+            if (anchor)
+                anchorbox = anchor.get.box;
             else
                 anchorbox = windowBox;
 
             p = anchorbox.pos;
-            if (anchor.alignment & PopupAlign.center)
+            if (alignment & PopupAlign.center)
             {
                 // center around the center of anchor widget
                 p.x = anchorbox.middleX - geom.w / 2;
@@ -178,20 +172,20 @@ class Popup : Widget
             }
             else
             {
-                if (anchor.alignment & PopupAlign.below)
+                if (alignment & PopupAlign.below)
                 {
                     p.y = anchorbox.y + anchorbox.h;
                 }
-                else if (anchor.alignment & PopupAlign.above)
+                else if (alignment & PopupAlign.above)
                 {
                     p.y = anchorbox.y - geom.h;
                 }
-                if (anchor.alignment & PopupAlign.right)
+                if (alignment & PopupAlign.right)
                 {
                     p.x = anchorbox.x + anchorbox.w;
                 }
             }
-            if (anchor.alignment & PopupAlign.fitAnchorSize)
+            if (alignment & PopupAlign.fitAnchorSize)
             {
                 geom.w = max(geom.w, anchorbox.w);
             }

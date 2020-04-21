@@ -1135,7 +1135,10 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         {
             import beamui.widgets.popup;
 
-            auto popup = window.showPopup(menu, WeakRef!Widget(this), PopupAlign.point | PopupAlign.right, x, y);
+            auto popup = window.showPopup(menu);
+            popup.anchor = WeakRef!Widget(this);
+            popup.alignment = PopupAlign.point | PopupAlign.right;
+            popup.point = Point(x, y);
             popup.ownContent = false;
         }
     }

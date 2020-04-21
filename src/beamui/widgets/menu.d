@@ -493,8 +493,9 @@ class Menu : ListWidget
         Menu submenu = _openedSubmenu = item.submenu;
         submenu.visualParentMenu = this;
         _openedSubmenuIndex = itemIndex;
-        auto popup = window.showPopup(submenu, WeakRef!Widget(item),
-                orientation == Orientation.horizontal ? PopupAlign.below : PopupAlign.right);
+        auto popup = window.showPopup(submenu);
+        popup.anchor = WeakRef!Widget(item);
+        popup.alignment = isMenuBar ? PopupAlign.below : PopupAlign.right;
         popup.ownContent = false;
 
         if (navigatingUsingKeys)

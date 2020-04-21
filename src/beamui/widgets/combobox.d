@@ -133,8 +133,10 @@ abstract class ComboBoxBase : Panel
 
         _popupShown = true;
         _popupList = createPopup();
-        Popup popup = window.showPopup(_popupList, WeakRef!Widget(this), PopupAlign.below | PopupAlign.fitAnchorSize);
+        Popup popup = window.showPopup(_popupList);
         popup.setAttribute("combobox");
+        popup.anchor = WeakRef!Widget(this);
+        popup.alignment = PopupAlign.below | PopupAlign.fitAnchorSize;
         popup.onPopupClose ~= (bool b) {
             _popupShown = false;
             _popupList = null;

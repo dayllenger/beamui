@@ -762,7 +762,12 @@ class Window : CustomEventTarget
             const y = _tooltip.y == float.max ? _lastMouseY : _tooltip.y;
             Element el = owner.createTooltip(x, y);
             if (el)
-                showTooltip(el, _tooltip.owner, _tooltip.alignment, x, y);
+            {
+                Popup p = showTooltip(el);
+                p.anchor = _tooltip.owner;
+                p.alignment = _tooltip.alignment;
+                p.point = Point(x, y);
+            }
             else
                 _tooltip.owner.nullify();
         }
@@ -770,24 +775,20 @@ class Window : CustomEventTarget
     }
 
     /// Show tooltip immediately
-    Popup showTooltip(Element content, WeakRef!Element anchor = null,
-            PopupAlign alignment = PopupAlign.center, float x = float.max, float y = float.max)
+    Popup showTooltip(Element content)
+        in(content)
     {
         const noTooltipBefore = _tooltip.popup is null;
         hideTooltip();
 
         debug (tooltips)
             Log.d("show tooltip");
-        if (!content)
-            return null;
+
         auto res = new Popup(content, this);
         res.id = "tooltip-popup";
         // default behaviour is to place tooltip under the mouse cursor
-        if (x == float.max)
-            x = _lastMouseX;
-        if (y == float.max)
-            y = _lastMouseY;
-        res.anchor = PopupAnchor(anchor, x, y, alignment);
+        res.alignment = PopupAlign.point;
+        res.point = Point(_lastMouseX, _lastMouseY);
 
         // add a smooth fade-in transition when there is no tooltip already shown
         if (noTooltipBefore)
@@ -831,11 +832,10 @@ class Window : CustomEventTarget
     }
 /+
     /// Show new popup
-    Popup showPopup(Element content, WeakRef!Element anchor = null,
-            PopupAlign alignment = PopupAlign.center, float x = 0, float y = 0)
+    Popup showPopup(Element content)
+        in(content)
     {
         auto res = new Popup(content, this);
-        res.anchor = PopupAnchor(anchor, x, y, alignment);
 
         // add a smooth fade-in transition
         auto tr = Transition(150, TimingFunction.easeIn);

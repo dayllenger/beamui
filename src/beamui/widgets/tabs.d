@@ -580,8 +580,9 @@ class TabControl : WidgetGroup
     {
         if (auto menu = getMoreButtonPopupMenu())
         {
-            window.showPopup(menu, WeakRef!Widget(_moreButton),
-                    tabAlignment == Align.top ? PopupAlign.below : PopupAlign.above);
+            auto popup = window.showPopup(menu);
+            popup.anchor = WeakRef!Widget(_moreButton);
+            popup.alignment = tabAlignment == Align.top ? PopupAlign.below : PopupAlign.above;
             menu.selectItem(tabIndex(selectedTabID));
             return true;
         }
