@@ -147,15 +147,25 @@ private class RootWidget : Widget
     void mountContent(Widget content, RootElement root)
         in(root)
     {
-        Element elem = content ? mountChild(content, root, 0) : null;
-        Element prevElem = root._content;
-        if (elem is prevElem)
-            return;
+        if (content)
+        {
+            Element elem = mountChild(content, root, 0);
+            if (root._content is elem)
+                return;
 
-        if (prevElem)
-            prevElem.parent = null;
-        root._content = elem;
-        elem.parent = root;
+            if (root._content)
+                root._content.parent = null;
+            root._content = elem;
+            elem.parent = root;
+        }
+        else
+        {
+            if (root._content)
+            {
+                root._content.parent = null;
+                root._content = null;
+            }
+        }
     }
 }
 
@@ -306,7 +316,7 @@ class Window : CustomEventTarget
         alias _mainWidget = _rootElement; // FIXME: it's not the only root
         ElementStore _elementStore;
         Arena[2] _widgetArenas;
-        Widget delegate() _buildFunc;
+        Widget delegate() _mainBuilder;
 
         KeyMods _keyboardModifiers;
 
@@ -346,9 +356,11 @@ class Window : CustomEventTarget
 
         if (auto t = timerThread)
             t.stop();
-        // eliminate(_tooltip.popup);
-        // eliminate(_popups);
+
         eliminate(_mainWidget);
+        eliminate(_popups);
+        // eliminate(_tooltip.popup);
+
         eliminate(_timerQueue);
         eliminate(_eventList);
         eliminate(_painter);
@@ -643,9 +655,9 @@ class Window : CustomEventTarget
 
         setupGlobalDPI();
         _mainWidget.handleDPIChange();
-/+
-        foreach (Widget p; _popups)
+        foreach (p; _popups)
             p.handleDPIChange();
+/+
         if (Widget p = _tooltip.popup)
             p.handleDPIChange();
 +/
@@ -719,9 +731,9 @@ class Window : CustomEventTarget
 
     //===============================================================
     // Popups, tooltips
-/+
-    private Popup[] _popups;
 
+    private ElemPopup[] _popups;
+/+
     protected static struct TooltipInfo
     {
         Popup popup;
@@ -930,10 +942,10 @@ class Window : CustomEventTarget
     {
         if (_mainWidget.isChild(el))
             return true;
-/+
         foreach (p; _popups)
             if (p.isChild(el))
                 return true;
+/+
         if (_tooltip.popup && _tooltip.popup.isChild(el))
             return true;
 +/
@@ -1481,12 +1493,12 @@ class Window : CustomEventTarget
             dispatchWheelEvent(modal, event);
             return;
         }
-        foreach_reverse (Element p; _popups)
++/
+        foreach_reverse (p; _popups)
         {
             if (dispatchWheelEvent(p, event))
                 return;
         }
-+/
         dispatchWheelEvent(_mainWidget, event);
     }
 
@@ -1541,9 +1553,9 @@ class Window : CustomEventTarget
     void dispatchThemeChange()
     {
         _mainWidget.handleThemeChange();
-/+
         foreach (p; _popups)
             p.handleThemeChange();
+/+
         if (auto p = _tooltip.popup)
             p.handleThemeChange();
 +/
@@ -1753,9 +1765,9 @@ class Window : CustomEventTarget
             return animationActive;
 
         checkUpdateNeeded(_mainWidget, needDraw, needLayout, animationActive);
-/+
         foreach (p; _popups)
             checkUpdateNeeded(p, needDraw, needLayout, animationActive);
+/+
         if (auto p = _tooltip.popup)
             checkUpdateNeeded(p, needDraw, needLayout, animationActive);
 +/
@@ -1802,9 +1814,9 @@ class Window : CustomEventTarget
     // Tree rebuild
 
     // experimental
-    final void show(Widget delegate() buildFunc)
+    final void show(Widget delegate() builder)
     {
-        _buildFunc = buildFunc;
+        _mainBuilder = builder;
         rebuild(); // the first build
         _rootElement.setFocus();
         show();
@@ -1812,7 +1824,7 @@ class Window : CustomEventTarget
 
     private void rebuild()
     {
-        if (!_buildFunc)
+        if (!_mainBuilder)
         {
             needRebuild = false;
             return;
@@ -1828,9 +1840,10 @@ class Window : CustomEventTarget
         swap(_widgetArenas[0], _widgetArenas[1]);
         _widgetArenas[0].clear();
         setCurrentArenaAndStore(_widgetArenas[0], _elementStore);
+
         // rebuild and diff
         RootWidget root = render!RootWidget;
-        Widget content = _buildFunc();
+        Widget content = _mainBuilder();
         // skip mount and update of the root, mount the child immediately
         root.mountContent(content, _rootElement);
         needRebuild = false;
@@ -1878,9 +1891,9 @@ class Window : CustomEventTarget
 
         // process widget ones
         animate(_mainWidget, interval);
-/+
         foreach (p; _popups)
             animate(p, interval);
+/+
         if (auto p = _tooltip.popup)
             animate(p, interval);
 +/
@@ -1914,9 +1927,9 @@ class Window : CustomEventTarget
     void requestLayout()
     {
         _mainWidget.requestLayout();
-/+
         foreach (p; _popups)
             p.requestLayout();
+/+
         if (auto p = _tooltip.popup)
             p.requestLayout();
 +/
@@ -1934,9 +1947,9 @@ class Window : CustomEventTarget
         setupGlobalDPI();
         // TODO: set minimum window size
         _mainWidget.measure();
-/+
         foreach (p; _popups)
             p.measure();
+/+
         if (auto tp = _tooltip.popup)
             tp.measure();
 +/
@@ -1960,12 +1973,12 @@ class Window : CustomEventTarget
 
         setupGlobalDPI();
         _mainWidget.layout(Box(0, 0, _w, _h));
-/+
         foreach (p; _popups)
         {
             const sz = p.natSize;
             p.layout(Box(0, 0, sz.w, sz.h));
         }
+/+
         if (auto tp = _tooltip.popup)
         {
             const sz = tp.natSize;

@@ -10,7 +10,7 @@ License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
 module beamui.widgets.popup;
-/+
+
 import beamui.platforms.common.platform;
 import beamui.widgets.widget;
 
@@ -47,6 +47,59 @@ enum PopupClosePolicy : uint // TODO: on(Press|Release)OutsideParent, onEscapeKe
 /// Popup widget container
 class Popup : Widget
 {
+    protected Widget _content;
+
+    final Widget wrap(Widget content)
+    {
+        _content = content;
+        return this;
+    }
+
+    override protected int opApply(scope int delegate(size_t, Widget) callback)
+    {
+        if (const result = callback(0, _content))
+            return result;
+        return 0;
+    }
+
+    override protected Element createElement()
+    {
+        return new ElemPopup;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemPopup el = fastCast!ElemPopup(element);
+        el.content = mountChild(_content, el, 0);
+    }
+}
+
+class ElemPopup : Element
+{
+    final @property
+    {
+        inout(Element) content() inout { return _content; }
+        /// ditto
+        void content(Element elem)
+        {
+            if (_content is elem)
+                return;
+            if (_content)
+                _content.parent = null;
+            _content = elem;
+            if (_content)
+                _content.parent = this;
+            requestLayout();
+        }
+    }
+
+    private
+    {
+        Element _content;
+    }
+/+
     WeakRef!Widget anchor;
     PopupAlign alignment = PopupAlign.center;
     Point point;
@@ -60,22 +113,13 @@ class Popup : Widget
     /// Popup close signal
     Signal!(void delegate(bool byEvent)) onPopupClose;
 
-    this(Widget content, Window window)
-        in(content)
-        in(window)
-    {
-        this.window = window;
-        content.parent = this;
-        _hiddenChildren.append(content);
-    }
-
     /// Close and destroy popup
     void close()
     {
         onPopupClose(closedByEvent);
         if (!ownContent)
         {
-            contentWidget.parent = null;
+            content.parent = null;
             _hiddenChildren.remove(0);
         }
         window.removePopup(this);
@@ -109,20 +153,18 @@ class Popup : Widget
         }
         return false;
     }
-
-    protected @property inout(Widget) contentWidget() inout
-    {
-        return _hiddenChildren[0];
-    }
-
++/
     override protected Boundaries computeBoundaries()
     {
         auto bs = super.computeBoundaries();
-        contentWidget.measure();
-        bs.maximize(contentWidget.boundaries);
+        if (_content)
+        {
+            _content.measure();
+            bs.maximize(_content.boundaries);
+        }
         return bs;
     }
-
+/+
     override void layout(Box geom)
     {
         if (visibility == Visibility.gone)
@@ -195,15 +237,27 @@ class Popup : Widget
 
         super.layout(geom);
     }
-
++/
     override protected void arrangeContent()
     {
-        contentWidget.layout(innerBox);
+        if (_content)
+            _content.layout(innerBox);
     }
 
     override protected void drawContent(Painter pr)
     {
-        contentWidget.draw(pr);
+        if (_content)
+            _content.draw(pr);
+    }
+
+    final override @property int childCount() const
+    {
+        return _content ? 1 : 0;
+    }
+
+    final override inout(Element) child(int index) inout
+    {
+        assert(_content);
+        return _content;
     }
 }
-+/
