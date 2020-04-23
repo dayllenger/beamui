@@ -301,7 +301,7 @@ mixin template DebugInstanceCount()
 {
     debug static nothrow @nogc @safe
     {
-        import core.atomic : atomicOp;
+        import core.atomic : atomicFetchAdd, atomicFetchSub;
 
         private shared int _debugInstanceCount;
 
@@ -310,12 +310,12 @@ mixin template DebugInstanceCount()
 
         private int debugPlusInstance()
         {
-            return atomicOp!"+="(_debugInstanceCount, 1);
+            return atomicFetchAdd(_debugInstanceCount, 1) + 1;
         }
 
         private int debugMinusInstance()
         {
-            return atomicOp!"-="(_debugInstanceCount, 1);
+            return atomicFetchSub(_debugInstanceCount, 1) - 1;
         }
     }
 }
