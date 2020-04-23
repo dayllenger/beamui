@@ -8,7 +8,7 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.widgets.menu;
 
 import beamui.widgets.controls : ImageWidget, ElemImage;
-// import beamui.widgets.lists;
+import beamui.widgets.lists : ListView, ElemListView;
 // import beamui.widgets.popup;
 import beamui.widgets.text;
 import beamui.widgets.widget;
@@ -80,6 +80,7 @@ class MenuItem : Widget
         super.updateElement(element);
 
         ElemMenuItem el = fastCast!ElemMenuItem(element);
+        el._horizontal = cast(MenuBar)parent !is null;
 
         if (!_separator)
         {
@@ -99,6 +100,65 @@ class MenuItem : Widget
             el._label = null;
             el._shortcut = null;
         }
+    }
+}
+
+/// Menu widget (vertical by default)
+class Menu : ListView
+{
+    private MenuItem[] _items;
+
+    this()
+    {
+        selectOnHover = true;
+        itemBuilder = &getItem;
+    }
+
+    /// Create an item, specific for this types of menu. Null action creates a separator
+    MenuItem item(Action action)
+    {
+        auto item = render!MenuItem;
+        item.action = action;
+        return item;
+    }
+
+    /// Set menu items
+    final Menu wrap(MenuItem[] items...)
+    {
+        if (items.length == 0)
+            return this;
+
+        _items = arena.allocArray!MenuItem(items.length);
+        _items[] = items[];
+        itemCount = cast(int)_items.length;
+        return this;
+    }
+
+    private MenuItem getItem(int i)
+    {
+        return _items[i];
+    }
+
+    override protected Element createElement()
+    {
+        return new ElemMenu;
+    }
+
+    override protected void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemMenu el = fastCast!ElemMenu(element);
+    }
+}
+
+/// Menu bar (like main menu)
+class MenuBar : Menu
+{
+    this()
+    {
+        orientation = Orientation.horizontal;
+        selectOnHover = false;
     }
 }
 
@@ -287,8 +347,6 @@ class MenuItem : WidgetGroup, ActionHolder
     private
     {
         Menu _submenu;
-
-        Action _action;
     }
 
     ~this()
@@ -302,10 +360,10 @@ class MenuItem : WidgetGroup, ActionHolder
         _submenu.maybe.handleThemeChange();
     }
 }
-
-/// Base class for menus (vertical by default)
-class Menu : ListWidget
++/
+class ElemMenu : ElemListView
 {
+/+
     /// Menu item click signal. Silences `onItemClick` signal from base class
     Signal!(void delegate(MenuItem)) onMenuItemClick;
     /// Prepare for opening of submenu, return true if opening is allowed
@@ -314,14 +372,16 @@ class Menu : ListWidget
     private
     {
         Menu _parentMenu;
-        Menu visualParentMenu;
+        Menu _visualParentMenu;
     }
 
-    this(Menu parentMenu = null, Orientation orient = Orientation.vertical)
+    this(Menu parentMenu = null)
     {
         _parentMenu = parentMenu;
-        orientation = orient;
-        selectOnHover = true;
+    }
++/
+    this()
+    {
         sumItemSizes = true;
     }
 
@@ -331,57 +391,16 @@ class Menu : ListWidget
     }
 
     /// Get menu item by index
-    inout(MenuItem) menuItem(int index) inout
+    inout(ElemMenuItem) menuItem(int index) inout
     {
-        return cast(inout(MenuItem))itemWidget(index);
+        return cast(inout(ElemMenuItem))itemElement(index);
     }
 
-    @property MenuItem selectedMenuItem()
+    @property inout(ElemMenuItem) selectedMenuItem() inout
     {
         return menuItem(selectedItemIndex);
     }
-
-    /// Add menu item
-    MenuItem add(MenuItem subitem)
-    {
-        addChild(subitem);
-        subitem.parent = this;
-        return subitem;
-    }
-    /// Add menu item(s) from one or more actions (will return item for last action)
-    MenuItem add(Action[] subitemActions...)
-    {
-        MenuItem res;
-        foreach (a; subitemActions)
-        {
-            res = add(new MenuItem(a, isMenuBar));
-        }
-        return res;
-    }
-    /// Convenient function to add menu item by the action arguments
-    Action addAction(dstring label, string iconID = null, Key key = Key.none, KeyMods modifiers = KeyMods.none)
-    {
-        auto a = new Action(label, iconID, key, modifiers);
-        add(a);
-        return a;
-    }
-    /// Add several actions as a group - to be radio button items
-    Menu addActionGroup(Action[] actions...)
-    {
-        Action.groupActions(actions);
-        foreach (a; actions)
-        {
-            add(a);
-        }
-        return this;
-    }
-
-    /// Add separator item
-    MenuItem addSeparator()
-    {
-        return add(new MenuItem(cast(Action)null, isMenuBar));
-    }
-
+/+
     /// Add an item for submenu, returns an empty submenu
     Menu addSubmenu(dstring label, string iconID = null)
     {
@@ -390,7 +409,7 @@ class Menu : ListWidget
         item.submenu = menu;
         return menu;
     }
-
++/
     /// Find subitem by hotkey character, returns subitem index, -1 if not found
     ptrdiff_t findSubitemByHotkey(dchar ch) const
     {
@@ -411,7 +430,7 @@ class Menu : ListWidget
         }
         return -1;
     }
-
+/+
     /// Find subitem by hotkey character, returns an item, `null` if not found
     inout(MenuItem) findSubitemByHotkeyRecursive(dchar ch) inout
     {
@@ -491,7 +510,7 @@ class Menu : ListWidget
         assert(item && item.hasSubmenu);
 
         Menu submenu = _openedSubmenu = item.submenu;
-        submenu.visualParentMenu = this;
+        submenu._visualParentMenu = this;
         _openedSubmenuIndex = itemIndex;
         auto popup = window.showPopup(submenu);
         popup.anchor = WeakRef!Widget(item);
@@ -550,20 +569,20 @@ class Menu : ListWidget
 
         handleClose();
         // remove submenu from the parent
-        if (visualParentMenu)
+        if (_visualParentMenu)
         {
-            visualParentMenu._openedSubmenu = null;
-            visualParentMenu._openedSubmenuIndex = -1;
+            _visualParentMenu._openedSubmenu = null;
+            _visualParentMenu._openedSubmenuIndex = -1;
         }
         // if clicked outside
         if (byEvent)
         {
             // close the whole menu
-            Menu top = visualParentMenu;
+            Menu top = _visualParentMenu;
             while (top)
             {
-                if (top.visualParentMenu)
-                    top = top.visualParentMenu;
+                if (top._visualParentMenu)
+                    top = top._visualParentMenu;
                 else
                 {
                     top.close();
@@ -571,7 +590,7 @@ class Menu : ListWidget
                 }
             }
         }
-        visualParentMenu = null;
+        _visualParentMenu = null;
 
         thisPopup.onPopupClose -= &handleThisPopupClose;
     }
@@ -597,7 +616,7 @@ class Menu : ListWidget
         if (focused && !_previousFocusedWidget)
         {
             // on activating
-            _previousFocusedWidget = visualParentMenu ? WeakRef!Widget(visualParentMenu) : window.focusedElement;
+            _previousFocusedWidget = _visualParentMenu ? WeakRef!Widget(_visualParentMenu) : window.focusedElement;
         }
         super.handleFocusChange(focused);
     }
@@ -642,9 +661,9 @@ class Menu : ListWidget
     /// Process menu item action in a top level menu
     protected void handleMenuItemClick(MenuItem item)
     {
-        if (visualParentMenu)
+        if (_visualParentMenu)
             // send up
-            visualParentMenu.handleMenuItemClick(item);
+            _visualParentMenu.handleMenuItemClick(item);
         else
         {
             if (item.isSeparator)
@@ -673,15 +692,15 @@ class Menu : ListWidget
     private bool _navigatingUsingKeys;
     protected @property bool navigatingUsingKeys() const
     {
-        if (visualParentMenu)
-            return visualParentMenu.navigatingUsingKeys;
+        if (_visualParentMenu)
+            return _visualParentMenu.navigatingUsingKeys;
         else
             return _navigatingUsingKeys;
     }
     protected @property void navigatingUsingKeys(bool flag)
     {
-        if (visualParentMenu)
-            visualParentMenu.navigatingUsingKeys = flag;
+        if (_visualParentMenu)
+            _visualParentMenu.navigatingUsingKeys = flag;
         else
             _navigatingUsingKeys = flag;
     }
@@ -706,10 +725,10 @@ class Menu : ListWidget
                 }
                 if (event.key == Key.up)
                 {
-                    if (visualParentMenu && visualParentMenu.orientation == Orientation.vertical)
+                    if (_visualParentMenu && _visualParentMenu.orientation == Orientation.vertical)
                     {
                         // parent is a popup menu
-                        visualParentMenu.moveSelection(-1);
+                        _visualParentMenu.moveSelection(-1);
                     }
                     else
                     {
@@ -729,9 +748,9 @@ class Menu : ListWidget
             {
                 if (event.key == Key.left)
                 {
-                    if (visualParentMenu)
+                    if (_visualParentMenu)
                     {
-                        if (visualParentMenu.orientation == Orientation.vertical)
+                        if (_visualParentMenu.orientation == Orientation.vertical)
                         {
                             // back to parent menu on Left key
                             close();
@@ -739,7 +758,7 @@ class Menu : ListWidget
                         else
                         {
                             // parent is a menu bar
-                            visualParentMenu.moveSelection(-1);
+                            _visualParentMenu.moveSelection(-1);
                         }
                     }
                     return true;
@@ -752,9 +771,9 @@ class Menu : ListWidget
                         if (!_openedSubmenu)
                             openSubmenu(selectedItemIndex);
                     }
-                    else if (visualParentMenu && visualParentMenu.orientation == Orientation.horizontal)
+                    else if (_visualParentMenu && _visualParentMenu.orientation == Orientation.horizontal)
                     {
-                        visualParentMenu.moveSelection(1);
+                        _visualParentMenu.moveSelection(1);
                     }
                     return true;
                 }
@@ -785,7 +804,7 @@ class Menu : ListWidget
         navigatingUsingKeys = false;
         return super.handleMouseEvent(event);
     }
-
++/
     override protected Boundaries computeBoundaries()
     {
         // align items for vertical menu
@@ -800,32 +819,27 @@ class Menu : ListWidget
             // find max dimensions for item subwidgets
             foreach (i; 0 .. itemCount)
             {
-                menuItem(i).maybe.measureSubitems(maxHeight,
-                    maxCheckBoxWidth, maxLabelWidth, maxIconWidth, maxShortcutWidth, maxMoreBtnWidth);
+                if (auto it = menuItem(i))
+                    it.measureSubitems(maxHeight, maxCheckBoxWidth, maxLabelWidth,
+                        maxIconWidth, maxShortcutWidth, maxMoreBtnWidth);
             }
             // set equal dimensions for item subwidgets
             foreach (i; 0 .. itemCount)
             {
-                menuItem(i).maybe.setSubitemSizes(maxHeight,
-                    maxCheckBoxWidth, maxLabelWidth, maxIconWidth, maxShortcutWidth, maxMoreBtnWidth);
+                if (auto it = menuItem(i))
+                    it.setSubitemSizes(maxHeight, maxCheckBoxWidth, maxLabelWidth,
+                        maxIconWidth, maxShortcutWidth, maxMoreBtnWidth);
             }
         }
         return super.computeBoundaries();
     }
 }
-
-/// Menu bar (like main menu)
-class MenuBar : Menu
+/+
+class ElemMenuBar : ElemMenu
 {
     override @property bool wantsKeyTracking() const
     {
         return true;
-    }
-
-    this()
-    {
-        super(null, Orientation.horizontal);
-        selectOnHover = false;
     }
 
     override protected void handleClose()
