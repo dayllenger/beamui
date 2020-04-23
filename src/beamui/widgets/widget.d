@@ -2332,9 +2332,9 @@ public:
         return null;
     }
 
-    protected void diffChildren(Element[] oldItems)
+    void diffChildren(Element[] oldItems)
     {
-        assert(0);
+        assert(false, "diffChildren: this element cannot have children");
     }
 
     /// Add a child and return it
@@ -2518,7 +2518,7 @@ abstract class ElemGroup : Element
         return _children[index];
     }
 
-    override protected void diffChildren(Element[] oldItems)
+    override void diffChildren(Element[] oldItems)
     {
         if (!_children.count && !oldItems.length)
             return;

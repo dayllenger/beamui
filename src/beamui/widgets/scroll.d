@@ -634,28 +634,22 @@ class ScrollArea : ScrollAreaBase
         ElemScrollArea el = fastCast!ElemScrollArea(element);
         if (_content)
         {
-            auto content = mountChild(_content, el, 2);
-            el.addChild(content);
-            el.content = content;
+            el._content = mountChild(_content, el, 2);
+            el.addChild(el._content);
         }
         else
-            el.content = null;
+            el._content = null;
     }
 }
 
 class ElemScrollArea : ElemScrollAreaBase
 {
-    @property inout(Element) content() inout { return _content; }
-    /// ditto
-    @property void content(Element elem)
+    @property
     {
-        if (_content is elem)
-            return;
-        _content = elem;
-        requestLayout();
-    }
+        inout(Element) content() inout { return _content; }
 
-    override @property Size fullContentSize() const { return _fullContentSize; }
+        override Size fullContentSize() const { return _fullContentSize; }
+    }
 
     private Element _content;
     /// Size of content widget

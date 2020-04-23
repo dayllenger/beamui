@@ -72,29 +72,12 @@ class Popup : Widget
         super.updateElement(element);
 
         ElemPopup el = fastCast!ElemPopup(element);
-        el.content = mountChild(_content, el, 0);
+        el._content = _content ? mountChild(_content, el, 0) : null;
     }
 }
 
 class ElemPopup : Element
 {
-    final @property
-    {
-        inout(Element) content() inout { return _content; }
-        /// ditto
-        void content(Element elem)
-        {
-            if (_content is elem)
-                return;
-            if (_content)
-                _content.parent = null;
-            _content = elem;
-            if (_content)
-                _content.parent = this;
-            requestLayout();
-        }
-    }
-
     private
     {
         Element _content;
@@ -259,5 +242,28 @@ class ElemPopup : Element
     {
         assert(_content);
         return _content;
+    }
+
+    final override void diffChildren(Element[] oldItems)
+    {
+        assert(oldItems.length <= 1);
+        diffContent(oldItems.length > 0 ? oldItems[0] : null);
+    }
+
+    private void diffContent(Element old)
+    {
+        if (_content is old)
+            return;
+
+        if (old)
+            old.parent = null;
+
+        if (_content)
+        {
+            assert(_content.parent is this);
+            _content.requestLayout();
+        }
+        else
+            requestLayout();
     }
 }
