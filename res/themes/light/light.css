@@ -364,7 +364,9 @@ WindowFrame { background: #f4f4f4; }
 
 WindowFrame > .caption { padding: 3px; background: #e4e4e4; }
 
-WindowFrame > .caption > .label { align: left vcenter; stretch: both; padding: 2px; color: #333; font-size: 0.9em; text-transform: uppercase; }
+WindowFrame > .caption > Label { align: left vcenter; stretch: main; padding: 2px; color: #333; font-size: 0.9em; text-overflow: ellipsis; text-transform: uppercase; }
+
+WindowFrame > .caption > Button { padding: 2px; stretch: none; }
 
 WindowFrame > .body { padding: 3px; stretch: both; }
 

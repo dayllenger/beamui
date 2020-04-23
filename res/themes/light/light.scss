@@ -883,13 +883,19 @@ WindowFrame {
         padding: 3px;
         background: #e4e4e4;
 
-        > .label {
+        > Label {
             align: left vcenter;
-            stretch: both;
+            stretch: main;
             padding: 2px;
             color: #333;
             font-size: 0.9em;
+            text-overflow: ellipsis;
             text-transform: uppercase;
+        }
+
+        > Button {
+            padding: 2px;
+            stretch: none;
         }
     }
 
