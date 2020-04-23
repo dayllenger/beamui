@@ -338,15 +338,20 @@ interface IEditor
     void deselect();
     /// Select the whole text
     void selectAll();
-/+
+
     /// Create the default popup menu with undo/redo/cut/copy/paste actions
     static Menu createDefaultPopupMenu()
     {
-        auto menu = new Menu;
-        menu.add(ACTION_UNDO, ACTION_REDO, ACTION_CUT, ACTION_COPY, ACTION_PASTE);
-        return menu;
+        Menu m = render!Menu;
+        m.wrap(
+            m.item(ACTION_UNDO),
+            m.item(ACTION_REDO),
+            m.item(ACTION_CUT),
+            m.item(ACTION_COPY),
+            m.item(ACTION_PASTE),
+        );
+        return m;
     }
-+/
 }
 
 class ElemEditLine : Element, IEditor, ActionOperator

@@ -248,17 +248,17 @@ class ElemSourceEdit : ElemEditBox
 +/
         return true;
     }
-/+
+
     protected Menu getLeftPaneIconsPopupMenu(int line)
     {
-        Menu menu = new Menu;
         ACTION_ED_TOGGLE_BOOKMARK.bind(this, {
             content.lineIcons.toggleBookmark(line);
         });
-        menu.add(ACTION_ED_TOGGLE_BOOKMARK);
-        return menu;
+        Menu m = render!Menu;
+        m.wrap(m.item(ACTION_ED_TOGGLE_BOOKMARK));
+        return m;
     }
-+/
+
     override protected void updateLeftPaneWidth()
     {
         _iconsWidth = _showIcons ? _iconsPaneWidth : 0;
