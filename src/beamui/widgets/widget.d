@@ -2337,33 +2337,11 @@ public:
         assert(0);
     }
 
-    /// Add a child. Returns the added item with its original type
-    T addChild(T)(T item) if (is(T : Element))
-    {
-        addChildImpl(item);
-        return item;
-    }
-    /// Append several children
-    final void add(Element first, Element[] next...)
-    {
-        addChildImpl(first);
-        foreach (item; next)
-            addChildImpl(item);
-    }
-    /// Append several children, skipping `null` widgets
-    final void addSome(Element first, Element[] next...)
-    {
-        if (first)
-            addChildImpl(first);
-        foreach (item; next)
-            if (item)
-                addChildImpl(item);
-    }
-    protected void addChildImpl(Element item)
+    /// Add a child and return it
+    Element addChild(Element item)
     {
         assert(false, "addChild: this element cannot have children");
     }
-
     /// Insert child before given index, returns inserted item
     Element insertChild(int index, Element item)
     {
@@ -2570,12 +2548,13 @@ abstract class ElemGroup : Element
         }
     }
 
-    override protected void addChildImpl(Element item)
+    override Element addChild(Element item)
     {
         assert(item, "Element must exist");
         _children.append(item);
         item.parent = this;
         handleChildListChange();
+        return item;
     }
 
     override Element insertChild(int index, Element item)
