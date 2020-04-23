@@ -181,12 +181,20 @@ struct WidgetAttributes
         return (name in _map) !is null;
     }
 
+    /** Set a style class of the `name`.
+
+        Note: the name must have non-zero length.
+    */
     void opIndex(string name)
         in(name.length)
     {
         _map[name] = null;
     }
 
+    /** Set a custom attribute of the `name` and `value`.
+
+        Note: the name must have non-zero length.
+    */
     void opIndexAssign(string value, string name)
         in(name.length)
     {
@@ -214,14 +222,25 @@ class Widget
     string id;
     WidgetAttributes attributes;
 
+    /// True if the widget can be focused
     bool allowsFocus;
+    /// True if the widget will change `hovered` state while mouse pointer is moving upon it
     bool allowsHover;
     /// True if the widget should be interactive and catch mouse and key events
     bool enabled = true;
     bool visible = true;
     bool inheritState;
 
+    /** Enable style encapsulation for the subtree only.
+
+        Cascading and inheritance in this subtree will become independent from
+        the outer world. Still, the widget will be accessible via simple selectors.
+    */
     bool isolateStyle;
+    /** Enable style encapsulation for this widget only.
+
+        This particular widget will not be accessible via simple selectors.
+    */
     bool isolateThisStyle;
 
     bool delegate(KeyEvent) onKeyEvent;
@@ -492,6 +511,11 @@ abstract class WidgetGroupOf(W : Widget) : Widget
     }
 }
 
+/** Panel is a widget group with some layout.
+
+    Layout type is controlled via `display` style property. By default, without specified layout,
+    panel places all children on top of each other inside its padding box.
+*/
 class Panel : WidgetGroupOf!Widget
 {
     override protected Element createElement()
@@ -560,14 +584,14 @@ public:
         _background = new Background;
         debug const count = debugPlusInstance();
         debug (resalloc)
-            Log.fd("Created widget (count: %s): %s", count, dbgname());
+            Log.fd("Created element (count: %s): %s", count, dbgname());
     }
 
     ~this()
     {
         debug const count = debugMinusInstance();
         debug (resalloc)
-            Log.fd("Destroyed widget (count: %s): %s", count, dbgname());
+            Log.fd("Destroyed element (count: %s): %s", count, dbgname());
 
         animations.clear();
 
@@ -580,7 +604,7 @@ public:
 
     mixin DebugInstanceCount!();
 
-    /// Flag for `WeakRef` that indicates widget destruction
+    /// Flag for `WeakRef` that indicates element destruction
     final @property const(bool*) destructionFlag() const { return _destructionFlag; }
 
     /// Pretty printed name for debugging purposes
@@ -615,7 +639,7 @@ public:
         this.id = id;
         return this;
     }
-    /// Compare widget id with specified value, returns true if matches
+    /// Compare element id with specified value, returns true if matches
     bool compareID(string id) const
     {
         return (_id !is null) && id == _id;
@@ -683,13 +707,13 @@ public:
         return attributes.get(name, null);
     }
 
-    /// Returns true if the widget has a custom attribute of the `name`
+    /// Returns true if the element has a custom attribute of the `name`
     bool hasAttribute(string name) const
     {
         return (name in attributes) !is null;
     }
 
-    /** Remove the custom attribute by `name` from the widget. Does nothing if no such attribute.
+    /** Remove the custom attribute by `name` from the element. Does nothing if no such attribute.
 
         Note: the name must have non-zero length.
     */
@@ -732,7 +756,7 @@ public:
         invalidateStyles();
     }
 
-    /** Toggle a custom attribute on the widget - remove if present, add if not.
+    /** Toggle a custom attribute on the element - remove if present, add if not.
 
         Note: the name must have non-zero length.
     */
@@ -747,34 +771,25 @@ public:
     //===============================================================
     // Style
 
-    /// Computed style of this widget. Allows to query and mutate its properties
+    /// Computed style of this element. Allows to query and mutate its properties
     final @property inout(ComputedStyle)* style() inout
     {
         updateStyles();
         return &_style;
     }
 
-    /** Enable style encapsulation for the subtree only.
-
-        Cascading and inheritance in this subtree will become independent from
-        the outer world. Still, the widget will be accessible via simple selectors.
-    */
     final void isolateStyle()
     {
         _style.isolated = true;
         invalidateStyles();
     }
-    /** Enable style encapsulation for this widget only.
-
-        This particular widget will not be accessible via simple selectors.
-    */
     final void isolateThisStyle()
     {
         _thisStyleIsolated = true;
         invalidateStyles();
     }
 
-    /// Signals when styles are being recomputed. Used for mixing properties in the widget.
+    /// Signals when styles are being recomputed. Used for mixing properties in the element
     Listener!(void delegate(Style[] chain)) onStyleUpdate;
 
     /// Recompute styles, only if needed
@@ -803,7 +818,7 @@ public:
     }
     private Buf!Style cachedChain;
 
-    /// Get a style chain for this widget from current theme, least specific styles first
+    /// Get a style chain for this element from current theme, least specific styles first
     Style[] selectStyleChain()
     {
         static Buf!Style tmpchain;
@@ -819,7 +834,7 @@ public:
         return tmpchain.unsafe_slice;
     }
 
-    /// Match this widget with a selector
+    /// Match this element with a selector
     bool matchSelector(ref const Selector sel) const
     {
         return matchSelector(sel, findStyleScopeRoot());
@@ -987,7 +1002,7 @@ public:
     @property
     {
         enum FOCUS_RECT_PADDING = 2;
-        /// Padding (between background bounds and content of widget)
+        /// Padding (between background bounds and content of element)
         Insets padding() const
         {
             updateStyles();
@@ -1012,7 +1027,7 @@ public:
             return p;
         }
 
-        /// Set the widget background (takes ownership on the object)
+        /// Set the element background (takes ownership on the object)
         void background(Background obj)
             in(obj)
         {
@@ -1026,7 +1041,7 @@ public:
             return TextFlag.unspecified;
         }
 
-        /// Returns font set for widget using style or set manually
+        /// Returns font set for element using style or set manually
         FontRef font() const
         {
             updateStyles();
@@ -1135,7 +1150,7 @@ public:
     //===============================================================
     // Animation
 
-    /// Returns true is widget is being animated - need to call `animate()` and redraw
+    /// Returns true if element is being animated, so it needs to call `animate` and redraw
     @property bool animating() const
     {
         return animations.length > 0;
@@ -1159,7 +1174,7 @@ public:
         animations.remove(name);
     }
 
-    /// Animate widget; interval is time left from previous draw, in hnsecs (1/10000000 of second)
+    /// Animate element; interval is time left from previous draw, in hnsecs (1/10000000 of second)
     void animate(long interval)
     {
         bool someAnimationsFinished;
@@ -1201,7 +1216,7 @@ public:
 
     @property
     {
-        /** True if the widget is interactive.
+        /** True if the element is interactive.
 
             Corresponds to `State.enabled` state flag.
         */
@@ -1210,7 +1225,7 @@ public:
             return (state & State.enabled) != 0;
         }
 
-        /// True if this widget and all its parents are visible
+        /// True if this element and all its parents are visible
         bool visible() const
         {
             if (visibility != Visibility.visible)
@@ -1220,7 +1235,7 @@ public:
             return parent.visible;
         }
 
-        /// True if this widget is currently focused
+        /// True if this element is currently focused
         bool focused() const
         {
             if (auto w = window)
@@ -1229,21 +1244,21 @@ public:
                 return false;
         }
 
-        /// True if the widget supports click by mouse button or enter/space key
+        /// True if the element supports click by mouse button or enter/space key
         bool allowsClick() const { return _allowsClick; }
         /// ditto
         void allowsClick(bool flag)
         {
             _allowsClick = flag;
         }
-        /// True if the widget can be focused
+        /// True if the element can be focused
         bool allowsFocus() const { return _allowsFocus; }
         /// ditto
         void allowsFocus(bool flag)
         {
             _allowsFocus = flag;
         }
-        /// True if the widget will change `hover` state while mouse pointer is moving upon it
+        /// True if the element will change `hovered` state while mouse pointer is moving upon it
         bool allowsHover() const
         {
             return _allowsHover && !TOUCH_MODE;
@@ -1254,12 +1269,12 @@ public:
             _allowsHover = v;
         }
 
-        /// True if the widget allows click, and it's visible and enabled
+        /// True if the element allows click, and it's visible and enabled
         bool canClick() const
         {
             return _allowsClick && enabled && visible;
         }
-        /// True if the widget allows focus, and it's visible and enabled
+        /// True if the element allows focus, and it's visible and enabled
         bool canFocus() const
         {
             return _allowsFocus && enabled && visible;
@@ -1276,7 +1291,7 @@ public:
     {
     }
 
-    /// Returns mouse cursor type for widget
+    /// Returns mouse cursor type for the element
     CursorType getCursorType(float x, float y) const
     {
         return CursorType.arrow;
@@ -1647,7 +1662,7 @@ public:
         return true;
     }
 
-    /// Set focus to this widget or suitable focusable child, returns previously focused widget
+    /// Set focus to this element or suitable focusable child, returns previously focused element
     Element setFocus(FocusReason reason = FocusReason.unspecified)
     {
         if (window is null)
@@ -1713,14 +1728,14 @@ public:
     }
 
     /// Set new timer to call a delegate after specified interval (for recurred notifications, return true from the handler)
-    /// Note: This function will safely cancel the timer if widget is destroyed.
+    /// Note: This function will safely cancel the timer if element is destroyed.
     ulong setTimer(long intervalMillis, bool delegate() handler)
     {
         if (auto w = window)
         {
             bool* destroyed = _destructionFlag;
             return w.setTimer(intervalMillis, {
-                // cancel timer on widget destruction
+                // cancel timer on destruction
                 return !(*destroyed) ? handler() : false;
             });
         }
@@ -1909,7 +1924,7 @@ public:
 
     @property
     {
-        /// Returns true if layout is required for widget and its children
+        /// Returns true if layout is required for element and its children
         bool needLayout() const
         {
             // we need to be sure that the style is updated
@@ -1917,32 +1932,32 @@ public:
             updateStyles();
             return _needLayout;
         }
-        /// Returns true if redraw is required for widget and its children
+        /// Returns true if redraw is required for element and its children
         bool needDraw() const
         {
             updateStyles();
             return _needDraw;
         }
 
-        /// Defines whether widget width/height depends on its height/width
+        /// Defines whether element width/height depends on its height/width
         final DependentSize dependentSize() const { return _dependentSize; }
-        /// Indicate from subclass that widget width/height depends on its height/width
+        /// Indicate from subclass that element width/height depends on its height/width
         final protected void dependentSize(DependentSize value)
         {
             _dependentSize = value;
         }
-        /// Get current widget boundaries (min, nat and max sizes, computed in `measure`)
+        /// Get current element boundaries (min, nat and max sizes, computed in `measure`)
         final ref const(Boundaries) boundaries() const { return _boundaries; }
-        /// Get widget minimal size (computed in `measure`)
+        /// Get element minimal size (computed in `measure`)
         final Size minSize() const { return _boundaries.min; }
-        /// Get widget natural (preferred) size (computed in `measure`)
+        /// Get element natural (preferred) size (computed in `measure`)
         final Size natSize() const { return _boundaries.nat; }
-        /// Get widget maximal size (computed in `measure`)
+        /// Get element maximal size (computed in `measure`)
         final Size maxSize() const { return _boundaries.max; }
 
-        /// Get current widget full box in device-independent pixels (computed and set in `layout`)
+        /// Get current element full box in device-independent pixels (computed and set in `layout`)
         ref const(Box) box() const { return _box; }
-        /// Get current widget box without padding and borders (computed and set in `layout`)
+        /// Get current element box without padding and borders (computed and set in `layout`)
         ref const(Box) innerBox() const { return _innerBox; }
 
         /// Widget visibility (visible, hidden, gone)
@@ -1966,25 +1981,25 @@ public:
         }
     }
 
-    /// Returns true if the point is inside of this widget
+    /// Returns true if the point is inside of this element
     bool contains(float x, float y) const
     {
         return _box.contains(x, y);
     }
 
-    /// Tell the window (if some), that the widget may be invalidated
+    /// Tell the window (if some), that the element may be invalidated
     private void needUpdate()
     {
         if (auto w = window)
             w.needUpdate = true;
     }
-    /// Request relayout of widget and its children
+    /// Request relayout of element and its children
     void requestLayout()
     {
         _needLayout = true;
         needUpdate();
     }
-    /// Cancel relayout of widget
+    /// Cancel relayout of element
     void cancelLayout()
     {
         _needLayout = false;
@@ -2081,7 +2096,7 @@ public:
         return _boundaries.nat.w;
     }
 
-    /** Set widget box and lay out widget contents.
+    /** Set element box and lay out element contents.
 
         It computes `innerBox`, shrink padding if necessary, and calls
         `arrangeContent` to lay out the rest.
@@ -2150,7 +2165,7 @@ public:
     {
     }
 
-    /// Draw widget at its position
+    /// Draw element at its position
     final void draw(Painter pr)
     {
         _needDraw = false;
@@ -2306,7 +2321,7 @@ public:
     //===============================================================
     // Widget hierarhy methods
 
-    /// Returns number of children of this widget
+    /// Returns number of children of this element
     @property int childCount() const
     {
         return 0;
@@ -2346,53 +2361,53 @@ public:
     }
     protected void addChildImpl(Element item)
     {
-        assert(false, "addChild: this widget does not support having children");
+        assert(false, "addChild: this element cannot have children");
     }
 
     /// Insert child before given index, returns inserted item
     Element insertChild(int index, Element item)
     {
-        assert(false, "insertChild: this widget does not support having children");
+        assert(false, "insertChild: this element cannot have children");
     }
     /// Remove child by index, returns removed item
     Element removeChild(int index)
     {
-        assert(false, "removeChild: this widget does not support having children");
+        assert(false, "removeChild: this element cannot have children");
     }
     /// Remove child by ID, returns removed item
     Element removeChild(string id)
     {
-        assert(false, "removeChild: this widget does not support having children");
+        assert(false, "removeChild: this element cannot have children");
     }
     /// Remove child, returns removed item
     Element removeChild(Element child)
     {
-        assert(false, "removeChild: this widget does not support having children");
+        assert(false, "removeChild: this element cannot have children");
     }
     /// Remove all children and optionally destroy them
     void removeAllChildren(bool destroyThem = true)
     {
         // override
     }
-    /// Returns index of widget in child list, -1 if there is no child with this ID
+    /// Returns index of element in child list, -1 if there is no child with this ID
     int childIndex(string id) const
     {
         return -1;
     }
-    /// Returns index of widget in child list, -1 if passed widget is not a child of this widget
+    /// Returns index of element in child list, -1 if passed element is not a child of this element
     int childIndex(const Element item) const
     {
         return -1;
     }
 
-    /** Returns true if item is child of this widget.
+    /** Returns true if item is child of this element.
 
-        When `deepSearch == true`, returns true if item is this widget
+        When `deepSearch == true`, returns true if item is this element
         or one of children inside children tree.
     */
     bool isChild(Element item, bool deepSearch = true)
     {
-        // the contract is that any widget in the tree must have a parent
+        // the contract is that any element in the tree must have a parent
         if (deepSearch)
         {
             Element p = item;
@@ -2428,7 +2443,7 @@ public:
         }
         else
         {
-            // search only across children of this widget
+            // search only across children of this element
             foreach (Element el; this)
             {
                 if (el.compareID(id))
@@ -2472,22 +2487,22 @@ public:
         return 0;
     }
 
-    /// Parent widget, `null` for top level widget
+    /// Parent element, `null` for top level element
     @property inout(Element) parent() inout { return _parent; }
     /// ditto
-    @property void parent(Element widget)
+    @property void parent(Element element)
     {
         if (_visibility != Visibility.gone)
         {
             if (_parent)
                 _parent.requestLayout();
-            if (widget)
-                widget.requestLayout();
+            if (element)
+                element.requestLayout();
         }
-        _parent = widget;
+        _parent = element;
         invalidateStyles();
     }
-    /// Returns window (if widget or its parent is attached to window)
+    /// Returns window (if element or its parent is attached to window)
     @property inout(Window) window() inout
     {
         Element p = cast()this;
@@ -2499,7 +2514,7 @@ public:
         }
         return null;
     }
-    /// Set window (to be used for top level widget from Window implementation).
+    /// Set window (to be used for top level element from Window implementation).
     package(beamui) @property void window(Window window)
     {
         _window = window;
@@ -2509,13 +2524,7 @@ public:
 /// Element list holder
 alias ElementList = Collection!(Element, true);
 
-/** Base class for widgets which have children.
-
-    Added children will correctly handle destruction of parent widget and theme change.
-
-    If your widget has subwidgets which do not need to catch mouse and key events, focus, etc,
-    you may not use this class. You may inherit directly from the Widget class
-    and add code for subwidgets to destructor, `handleThemeChange`, and `draw` (if needed).
+/** Base class for elements which have an array of children.
 */
 abstract class ElemGroup : Element
 {
@@ -2647,7 +2656,7 @@ interface ILayout
     void arrange(Box box);
 }
 
-/** Panel is a widget group with some layout.
+/** Element group with some layout.
 
     By default, without specified layout, it places all children to fill its
     inner frame (usually, only one child should be visible at a time, see
