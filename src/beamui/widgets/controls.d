@@ -8,6 +8,7 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.widgets.controls;
 
 import beamui.core.stdaction;
+import beamui.layout.alignment : alignBox;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 

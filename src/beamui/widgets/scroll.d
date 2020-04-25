@@ -45,6 +45,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.scroll;
 
+import beamui.layout.alignment : alignBox;
 import beamui.widgets.scrollbar;
 import beamui.widgets.widget;
 

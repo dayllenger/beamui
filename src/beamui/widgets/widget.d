@@ -20,23 +20,20 @@ public
     import beamui.core.signals;
     import beamui.core.types;
     import beamui.core.units;
-
     import beamui.graphics.bitmap;
-    import beamui.graphics.colors;
+    import beamui.graphics.colors : Color, NamedColor;
     import beamui.graphics.drawables;
-    import beamui.graphics.painter;
-
-    import beamui.layout.alignment;
-
+    import beamui.graphics.painter : GlyphInstance, Painter, PaintSaver;
+    import beamui.layout.alignment : Align, AlignItem, Distribution, Stretch;
     import beamui.platforms.common.platform : setState;
-
     import beamui.style.theme : currentTheme;
-
-    import beamui.text.fonts;
-
-    // import beamui.widgets.popup : PopupAlign;
+    import beamui.widgets.popup : PopupAlign;
 }
-package import beamui.style.computed_style;
+package
+{
+    import beamui.style.computed_style;
+    import beamui.text.fonts;
+}
 import std.math : isFinite;
 import beamui.core.animations;
 import beamui.core.memory : Arena;

@@ -10,6 +10,7 @@ module beamui.layout.linear;
 nothrow:
 
 import std.container.array;
+import beamui.layout.alignment : alignBox;
 import beamui.widgets.widget;
 
 /// Helper for layouts
