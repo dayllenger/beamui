@@ -1839,7 +1839,7 @@ class Window : CustomEventTarget
         // prepare allocators and the cache
         swap(_widgetArenas[0], _widgetArenas[1]);
         _widgetArenas[0].clear();
-        setCurrentArenaAndStore(_widgetArenas[0], _elementStore);
+        setBuildContext(BuildContext(this, &_widgetArenas[0], &_elementStore));
 
         // rebuild and diff
         RootWidget root = render!RootWidget;

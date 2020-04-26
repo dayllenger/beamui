@@ -251,8 +251,7 @@ class Widget
 
     private
     {
-        static Arena* _arena;
-        static ElementStore* _store;
+        static BuildContext _ctx;
 
         ElementID _elementID;
         Widget _parent;
@@ -266,12 +265,12 @@ class Widget
     {
         version (unittest)
         {
-            if (!_arena)
-                _arena = new Arena;
+            if (!_ctx.arena)
+                _ctx.arena = new Arena;
         }
         else
-            assert(_arena, "Widget allocator is used outside the build function");
-        return _arena;
+            assert(_ctx.arena, "Widget allocator is used outside the build function");
+        return _ctx.arena;
     }
 
     private Element mount(Widget parent, Element parentElem, size_t index)
@@ -298,7 +297,7 @@ class Widget
         _elementID = ElementID(typeHash ^ mainHash);
         _parent = parent;
         // find or create the element using the currently bound element store
-        Element root = _store.fetch(_elementID, this);
+        Element root = _ctx.store.fetch(_elementID, this);
         _statePtr = &root._localState;
         // reparent the element silently
         root._parent = parentElem;
@@ -344,6 +343,7 @@ class Widget
         return s;
     }
 
+    final protected Window window() { return _ctx.window; }
     final protected inout(Widget) parent() inout { return _parent; }
 
     //===============================================================
@@ -2833,11 +2833,17 @@ struct ElementStore
     }
 }
 
-// to access from the window
-package(beamui) void setCurrentArenaAndStore(ref Arena arena, ref ElementStore store)
+struct BuildContext
 {
-    Widget._arena = &arena;
-    Widget._store = &store;
+    Window window;
+    Arena* arena;
+    ElementStore* store;
+}
+
+// to access from the window
+package(beamui) void setBuildContext(BuildContext ctx)
+{
+    Widget._ctx = ctx;
 }
 
 /// Helper for locating items in list, tree, table or other controls by typing their name
