@@ -142,34 +142,21 @@ class EventList
     }
 }
 
-private class RootWidget : Widget
+private final class RootWidget : Widget
 {
-    void mountContent(Widget content, RootElement root)
+    void mountContent(RootElement root, Widget content)
         in(root)
     {
+        auto old = root._content;
+        root._content = null;
+        updateElement(root);
         if (content)
-        {
-            Element elem = mountChild(content, root, 0);
-            if (root._content is elem)
-                return;
-
-            if (root._content)
-                root._content.parent = null;
-            root._content = elem;
-            elem.parent = root;
-        }
-        else
-        {
-            if (root._content)
-            {
-                root._content.parent = null;
-                root._content = null;
-            }
-        }
+            root._content = mountChild(content, root, 0);
+        root.diffContent(old);
     }
 }
 
-private class RootElement : Element
+private final class RootElement : Element
 {
     private Element _content;
 
@@ -210,6 +197,23 @@ private class RootElement : Element
     {
         assert(_content);
         return _content;
+    }
+
+    private void diffContent(Element old)
+    {
+        if (_content is old)
+            return;
+
+        if (old)
+            old.parent = null;
+
+        if (_content)
+        {
+            _content.parent = this;
+            _content.requestLayout();
+        }
+        else
+            requestLayout();
     }
 }
 
@@ -1845,7 +1849,7 @@ class Window : CustomEventTarget
         RootWidget root = render!RootWidget;
         Widget content = _mainBuilder();
         // skip mount and update of the root, mount the child immediately
-        root.mountContent(content, _rootElement);
+        root.mountContent(_rootElement, content);
         needRebuild = false;
 
         debug
