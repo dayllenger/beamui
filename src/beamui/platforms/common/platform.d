@@ -142,9 +142,9 @@ class EventList
     }
 }
 
-private final class RootWidget : Widget
+private final class MainRootWidget : Widget
 {
-    void mountContent(RootElement root, Widget content)
+    void mountContent(MainRootElement root, Widget content)
         in(root)
     {
         auto old = root._content;
@@ -156,7 +156,7 @@ private final class RootWidget : Widget
     }
 }
 
-private final class RootElement : Element
+private final class MainRootElement : Element
 {
     private Element _content;
 
@@ -217,6 +217,82 @@ private final class RootElement : Element
     }
 }
 
+private final class PopupRootWidget : WidgetGroupOf!Popup
+{
+    void mountContent(PopupRootElement root, Popup[] popups)
+        in(root)
+    {
+        Element[] prevItems = arena.allocArray!Element(root.childCount);
+        foreach (i, ref el; prevItems)
+            el = root.child(cast(int)i);
+        root.removeAllChildren(false);
+
+        wrap(popups);
+        updateElement(root);
+
+        root.diffChildren(prevItems);
+    }
+}
+
+private final class PopupRootElement : ElemGroup
+{
+    this(Window window)
+        in(window)
+    {
+        this.window = window;
+    }
+
+    /// Returns last modal popup element, or `null` if no modal popups opened
+    ElemPopup findModal()
+    {
+        foreach_reverse (el; this)
+        {
+            ElemPopup p = fastCast!ElemPopup(el);
+            if (p.modal)
+                return p;
+        }
+        return null;
+    }
+
+    override protected Boundaries computeBoundaries()
+    {
+        Boundaries bs;
+        foreach (i; 0 .. childCount)
+        {
+            Element item = child(i);
+            item.measure();
+            bs.maximize(item.boundaries);
+        }
+        return bs;
+    }
+
+    override protected void arrangeContent()
+    {
+        foreach (i; 0 .. childCount)
+        {
+            Element item = child(i);
+            const sz = item.natSize;
+            item.layout(Box(0, 0, sz.w, sz.h));
+        }
+    }
+
+    override protected void drawContent(Painter pr)
+    {
+        const modal = findModal();
+        foreach (i; 0 .. childCount)
+        {
+            Element item = child(i);
+            if (item is modal)
+            {
+                // TODO: get shadow color from theme
+                const b = box;
+                pr.fillRect(b.x, b.y, b.w, b.h, Color(0, 0x20));
+            }
+            item.draw(pr);
+        }
+    }
+}
+
 /**
     Window abstraction layer. Widgets can be shown only inside window.
 */
@@ -268,7 +344,7 @@ class Window : CustomEventTarget
         }
 
         /// Get the root element of the window. Never `null`. Contains top element as the first child
-        inout(Element) rootElement() inout { return _rootElement; }
+        inout(Element) rootElement() inout { return _mainRootElement; }
 
         /// Get current key modifiers
         KeyMods keyboardModifiers() const { return _keyboardModifiers; }
@@ -316,8 +392,9 @@ class Window : CustomEventTarget
         Window[] _children;
         Window _parent;
 
-        RootElement _rootElement;
-        alias _mainWidget = _rootElement; // FIXME: it's not the only root
+        MainRootElement _mainRootElement;
+        PopupRootElement _popupRootElement;
+
         ElementStore _elementStore;
         Arena[2] _widgetArenas;
         Widget delegate() _mainBuilder;
@@ -340,7 +417,8 @@ class Window : CustomEventTarget
         _children.reserve(10);
         _eventList = new EventList;
         _timerQueue = new TimerQueue;
-        _mainWidget = new RootElement(this);
+        _mainRootElement = new MainRootElement(this);
+        _popupRootElement = new PopupRootElement(this);
         _painter = new Painter(_painterHead);
         if (currentTheme)
             _backgroundColor = currentTheme.getColor("window_background", Color.white);
@@ -361,8 +439,8 @@ class Window : CustomEventTarget
         if (auto t = timerThread)
             t.stop();
 
-        eliminate(_mainWidget);
-        eliminate(_popups);
+        eliminate(_mainRootElement);
+        eliminate(_popupRootElement);
         // eliminate(_tooltip.popup);
 
         eliminate(_timerQueue);
@@ -654,13 +732,9 @@ class Window : CustomEventTarget
 
     private void dispatchDPIChange()
     {
-        if (!_mainWidget)
-            return; // at window creation
-
         setupGlobalDPI();
-        _mainWidget.handleDPIChange();
-        foreach (p; _popups)
-            p.handleDPIChange();
+        _mainRootElement.handleDPIChange();
+        _popupRootElement.handleDPIChange();
 /+
         if (Widget p = _tooltip.popup)
             p.handleDPIChange();
@@ -669,11 +743,10 @@ class Window : CustomEventTarget
 
     /// Set the minimal window size and resize the window if needed; called from `show()`
     protected void adjustSize()
-        in(_mainWidget)
     {
         setupGlobalDPI();
-        _mainWidget.measure();
-        const bs = _mainWidget.boundaries;
+        _mainRootElement.measure();
+        const bs = _mainRootElement.boundaries;
         // some sane constraints
         _minSize.w = clamp(cast(int)bs.min.w, _minSize.w, _maxSize.w);
         _minSize.h = clamp(cast(int)bs.min.h, _minSize.h, _maxSize.h);
@@ -736,7 +809,7 @@ class Window : CustomEventTarget
     //===============================================================
     // Popups, tooltips
 
-    private ElemPopup[] _popups;
+    private Popup[] _popups;
 /+
     protected static struct TooltipInfo
     {
@@ -834,7 +907,7 @@ class Window : CustomEventTarget
             destroy(_tooltip.popup);
             _tooltip.popup = null;
             _tooltip.owner.nullify();
-            _mainWidget.invalidate();
+            _mainRootElement.invalidate();
         }
         if (_tooltip.timerID)
         {
@@ -846,11 +919,12 @@ class Window : CustomEventTarget
         }
 +/
     }
-/+
-    /// Show new popup
-    Popup showPopup(Element content)
-        in(content)
+
+    /// Show a popup in the current build
+    void showPopup(Popup popup)
     {
+        _popups ~= popup;
+/+
         auto res = new Popup(content, this);
 
         // add a smooth fade-in transition
@@ -865,44 +939,11 @@ class Window : CustomEventTarget
 
         _popups ~= res;
         setFocus(weakRef(content));
-        _mainWidget.requestLayout();
+        _mainRootElement.requestLayout();
         update();
         return res;
-    }
-
-    /// Remove popup
-    bool removePopup(Popup popup)
-    {
-        if (!popup)
-            return false;
-        for (int i = 0; i < _popups.length; i++)
-        {
-            Popup p = _popups[i];
-            if (p is popup)
-            {
-                for (int j = i; j < _popups.length - 1; j++)
-                    _popups[j] = _popups[j + 1];
-                _popups.length--;
-                destroy(p);
-                // force redraw
-                _mainWidget.invalidate();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /// Returns last modal popup widget, or `null` if no modal popups opened
-    Popup modalPopup()
-    {
-        foreach_reverse (p; _popups)
-        {
-            if (p.modal)
-                return p;
-        }
-        return null;
-    }
 +/
+    }
     //===============================================================
 
     private Listener!(void delegate(string[])) _filesDropped;
@@ -944,11 +985,10 @@ class Window : CustomEventTarget
     /// Returns true if `el` is child of either the main element, one of popups, or the tooltip
     bool isChild(Element el)
     {
-        if (_mainWidget.isChild(el))
+        if (_mainRootElement.isChild(el))
             return true;
-        foreach (p; _popups)
-            if (p.isChild(el))
-                return true;
+        if (_popupRootElement.isChild(el))
+            return true;
 /+
         if (_tooltip.popup && _tooltip.popup.isChild(el))
             return true;
@@ -1102,7 +1142,7 @@ class Window : CustomEventTarget
             {
                 debug (keys)
                     Log.d("Alt key: keyboardModifiers = ", _keyboardModifiers);
-                _mainWidget.invalidate();
+                _mainRootElement.invalidate();
                 res = true;
             }
         }
@@ -1116,8 +1156,8 @@ class Window : CustomEventTarget
                 return res;
         }
         Element focus = focusedElement.get;
-        // Popup modal = modalPopup();
-        // if (!modal || modal.isChild(focus))
+        ElemPopup modal = _popupRootElement.findModal();
+        if (!modal || modal.isChild(focus))
         {
             // process shortcuts
             if (event.action == KeyAction.keyDown)
@@ -1144,8 +1184,7 @@ class Window : CustomEventTarget
                 focus = focus.parent;
             }
         }
-        // Element dest = modal ? modal : _mainWidget;
-        Element dest = _mainWidget;
+        Element dest = modal ? modal : _mainRootElement;
         if (dispatchKeyEvent(dest, event))
             return res;
         else
@@ -1302,20 +1341,19 @@ class Window : CustomEventTarget
         {
             processed = checkRemoveTracking(event);
         }
-        // Popup modal = modalPopup();
+        ElemPopup modal = _popupRootElement.findModal();
         bool cursorIsSet = _overridenCursorType != CursorType.automatic;
         if (!res)
         {
-/+
             bool insideOneOfPopups;
-            foreach_reverse (p; _popups)
+            foreach_reverse (p; _popupRootElement)
             {
                 if (p is modal)
                     break;
                 if (p.contains(event.x, event.y))
                     insideOneOfPopups = true;
             }
-            foreach_reverse (p; _popups)
+            foreach_reverse (p; _popupRootElement)
             {
                 if (p is modal)
                     break;
@@ -1326,15 +1364,13 @@ class Window : CustomEventTarget
                 }
                 else
                 {
-                    if (p.handleMouseEventOutside(event))
-                        return true;
+                    // if (p.handleMouseEventOutside(event))
+                    //     return true;
                 }
             }
-            res = dispatchMouseEvent(modal ? modal : _mainWidget, event, cursorIsSet);
-+/
-            res = dispatchMouseEvent(_mainWidget, event, cursorIsSet);
+            res = dispatchMouseEvent(modal ? modal : _mainRootElement, event, cursorIsSet);
         }
-        return res || processed || _mainWidget.needDraw;
+        return res || processed || _mainRootElement.needDraw;
     }
 
     protected bool dispatchMouseEvent(Element root, MouseEvent event, ref bool cursorIsSet)
@@ -1491,19 +1527,17 @@ class Window : CustomEventTarget
             }
             return;
         }
-/+
-        if (Element modal = modalPopup())
+        if (Element modal = _popupRootElement.findModal())
         {
             dispatchWheelEvent(modal, event);
             return;
         }
-+/
-        foreach_reverse (p; _popups)
+        foreach_reverse (p; _popupRootElement)
         {
             if (dispatchWheelEvent(p, event))
                 return;
         }
-        dispatchWheelEvent(_mainWidget, event);
+        dispatchWheelEvent(_mainRootElement, event);
     }
 
     protected bool dispatchWheelEvent(Element root, WheelEvent event)
@@ -1556,9 +1590,8 @@ class Window : CustomEventTarget
     /// Handle theme change: e.g. reload some themed resources
     void dispatchThemeChange()
     {
-        _mainWidget.handleThemeChange();
-        foreach (p; _popups)
-            p.handleThemeChange();
+        _mainRootElement.handleThemeChange();
+        _popupRootElement.handleThemeChange();
 /+
         if (auto p = _tooltip.popup)
             p.handleThemeChange();
@@ -1768,9 +1801,8 @@ class Window : CustomEventTarget
         if (!needUpdate)
             return animationActive;
 
-        checkUpdateNeeded(_mainWidget, needDraw, needLayout, animationActive);
-        foreach (p; _popups)
-            checkUpdateNeeded(p, needDraw, needLayout, animationActive);
+        checkUpdateNeeded(_mainRootElement, needDraw, needLayout, animationActive);
+        checkUpdateNeeded(_popupRootElement, needDraw, needLayout, animationActive);
 /+
         if (auto p = _tooltip.popup)
             checkUpdateNeeded(p, needDraw, needLayout, animationActive);
@@ -1822,7 +1854,7 @@ class Window : CustomEventTarget
     {
         _mainBuilder = builder;
         rebuild(); // the first build
-        _rootElement.setFocus();
+        _mainRootElement.setFocus();
         show();
     }
 
@@ -1846,10 +1878,14 @@ class Window : CustomEventTarget
         setBuildContext(BuildContext(this, &_widgetArenas[0], &_elementStore));
 
         // rebuild and diff
-        RootWidget root = render!RootWidget;
+        auto root = render!MainRootWidget;
+        auto popupRoot = render!PopupRootWidget;
         Widget content = _mainBuilder();
         // skip mount and update of the root, mount the child immediately
-        root.mountContent(_rootElement, content);
+        root.mountContent(_mainRootElement, content);
+        popupRoot.mountContent(_popupRootElement, _popups);
+
+        _popups = null;
         needRebuild = false;
 
         debug
@@ -1894,9 +1930,8 @@ class Window : CustomEventTarget
             animations = animations.remove!(a => a.handler is null);
 
         // process widget ones
-        animate(_mainWidget, interval);
-        foreach (p; _popups)
-            animate(p, interval);
+        animate(_mainRootElement, interval);
+        animate(_popupRootElement, interval);
 /+
         if (auto p = _tooltip.popup)
             animate(p, interval);
@@ -1904,9 +1939,8 @@ class Window : CustomEventTarget
     }
 
     private void animate(Element root, long interval)
+        in(root)
     {
-        assert(root);
-
         if (root.visibility != Visibility.visible)
             return;
 
@@ -1930,9 +1964,8 @@ class Window : CustomEventTarget
     /// Request layout for main widget and popups
     void requestLayout()
     {
-        _mainWidget.requestLayout();
-        foreach (p; _popups)
-            p.requestLayout();
+        _mainRootElement.requestLayout();
+        _popupRootElement.requestLayout();
 /+
         if (auto p = _tooltip.popup)
             p.requestLayout();
@@ -1950,9 +1983,8 @@ class Window : CustomEventTarget
 
         setupGlobalDPI();
         // TODO: set minimum window size
-        _mainWidget.measure();
-        foreach (p; _popups)
-            p.measure();
+        _mainRootElement.measure();
+        _popupRootElement.measure();
 /+
         if (auto tp = _tooltip.popup)
             tp.measure();
@@ -1976,12 +2008,8 @@ class Window : CustomEventTarget
         }
 
         setupGlobalDPI();
-        _mainWidget.layout(Box(0, 0, _w, _h));
-        foreach (p; _popups)
-        {
-            const sz = p.natSize;
-            p.layout(Box(0, 0, sz.w, sz.h));
-        }
+        _mainRootElement.layout(Box(0, 0, _w, _h));
+        _popupRootElement.layout(Box(0, 0, _w, _h));
 /+
         if (auto tp = _tooltip.popup)
         {
@@ -2098,19 +2126,10 @@ class Window : CustomEventTarget
             }
 
             // draw main widget
-            _mainWidget.draw(_painter);
+            _mainRootElement.draw(_painter);
             // draw popups
+            _popupRootElement.draw(_painter);
 /+
-            const modal = modalPopup();
-            foreach (p; _popups)
-            {
-                if (p is modal)
-                {
-                    // TODO: get shadow color from theme
-                    _painter.fillRect(0, 0, width, height, Color(0, 0x20));
-                }
-                p.draw(_painter);
-            }
             // and draw tooltip
             if (auto p = _tooltip.popup)
                 p.draw(_painter);

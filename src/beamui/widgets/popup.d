@@ -78,6 +78,8 @@ class Popup : Widget
 
 class ElemPopup : Element
 {
+    bool modal;
+
     private
     {
         Element _content;
