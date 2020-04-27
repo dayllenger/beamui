@@ -277,6 +277,10 @@ ListView {
             background-color: $main-color;
             color: $inverse-text-color;
         }
+
+        &:focused > Label, &:selected > Label {
+            color: $inverse-text-color;
+        }
     }
 }
 

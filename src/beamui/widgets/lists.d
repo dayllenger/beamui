@@ -9,9 +9,9 @@ module beamui.widgets.lists;
 
 import beamui.core.signals;
 import beamui.core.types : State, StringListValue;
-// import beamui.widgets.controls;
+import beamui.widgets.controls : ImageWidget;
 import beamui.widgets.scrollbar;
-// import beamui.widgets.text;
+import beamui.widgets.text : Label;
 import beamui.widgets.widget;
 
 /// List widget adapter provides items for list widgets
@@ -25,9 +25,7 @@ abstract class ListAdapter
         debug (lists)
             Log.d("Destroying ", getShortClassName(this));
     }
-/+
-    Widget createSharedItemWidget(out void delegate(int) updater);
-+/
+
     /// Returns number of widgets in list
     @property int itemCount() const;
     /// Returns list item's state flags
@@ -219,20 +217,6 @@ class StringListAdapter : StringListAdapterBase
     {
         super(items);
     }
-/+
-    override Widget createSharedItemWidget(out void delegate(int) updater)
-    {
-        auto widget = new Label;
-        widget.isolateThisStyle();
-        widget.setAttribute("item");
-        updater = (i) {
-            widget.text = _items[i].str;
-            widget.state = _items[i].state;
-            widget.cancelLayout();
-        };
-        return widget;
-    }
-+/
 }
 
 /// List adapter providing strings with icons
@@ -249,32 +233,6 @@ class IconStringListAdapter : StringListAdapterBase
     {
         super(items);
     }
-/+
-    override Widget createSharedItemWidget(out void delegate(int) updater)
-    {
-        auto widget = new Panel;
-        widget.isolateThisStyle();
-        widget.setAttribute("item");
-        auto icon = new ImageWidget;
-        auto label = new Label;
-        label.style.stretch = Stretch.both;
-        widget.add(icon, label);
-        updater = (i) {
-            widget.state = _items[i].state;
-            label.text = _items[i].str;
-            if (_items[i].iconID)
-            {
-                icon.visibility = Visibility.visible;
-                icon.imageID = _items[i].iconID;
-            }
-            else
-            {
-                icon.visibility = Visibility.gone;
-            }
-        };
-        return widget;
-    }
-+/
 }
 
 /// Vertical or horizontal view on list data, with one scrollbar
@@ -299,6 +257,34 @@ class ListView : Widget
     this()
     {
         allowsFocus = true;
+    }
+
+    /// Create a standard item widget from a string or `StringListValue`
+    Widget item(dstring text)
+    {
+        Label item = render!Label;
+        item.text = text;
+        item.attributes["item"];
+        item.isolateThisStyle = true;
+        return item;
+    }
+    /// ditto
+    Widget item(StringListValue value)
+    {
+        Panel item = render!Panel;
+        item.attributes["item"];
+        item.isolateThisStyle = true;
+
+        Label label = render!Label;
+        label.text = value.label;
+
+        ImageWidget icon;
+        if (value.iconID.length)
+        {
+            icon = render!ImageWidget;
+            icon.imageID = value.iconID;
+        }
+        return item.wrap(icon, label);
     }
 
     override protected void build()

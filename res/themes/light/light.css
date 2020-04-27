@@ -104,6 +104,8 @@ ListView > .item:hovered { background-color: #e2edf9; }
 
 ListView > .item:focused, ListView > .item:selected { background-color: #4e93da; color: #f0f0f0; }
 
+ListView > .item:focused > Label, ListView > .item:selected > Label { color: #f0f0f0; }
+
 /* combobox */
 ComboBoxBase { padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
 
