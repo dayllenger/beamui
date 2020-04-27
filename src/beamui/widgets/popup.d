@@ -47,6 +47,12 @@ enum PopupClosePolicy : uint // TODO: on(Press|Release)OutsideParent, onEscapeKe
 /// Popup widget container
 class Popup : Widget
 {
+    /// Modal popup - keypresses and mouse events can be routed to this popup only
+    bool modal;
+
+    PopupAlign alignment = PopupAlign.center;
+    Point point;
+
     protected Widget _content;
 
     final Widget wrap(Widget content)
@@ -72,26 +78,63 @@ class Popup : Widget
         super.updateElement(element);
 
         ElemPopup el = fastCast!ElemPopup(element);
+        el.modal = modal;
+
+        el.alignment = alignment;
+        el.point = point;
+
         el._content = _content ? mountChild(_content, el, 0) : null;
     }
 }
 
 class ElemPopup : Element
 {
-    bool modal;
+    @property
+    {
+        bool modal() const { return _modal; }
+        /// ditto
+        void modal(bool flag)
+        {
+            if (_modal == flag)
+                return;
+            _modal = flag;
+            invalidate();
+        }
+
+        PopupAlign alignment() const { return _alignment; }
+        /// ditto
+        void alignment(PopupAlign pa)
+        {
+            if (_alignment == pa)
+                return;
+            _alignment = pa;
+            requestLayout();
+        }
+
+        Point point() const { return _point; }
+        /// ditto
+        void point(Point pt)
+        {
+            if (_point == pt)
+                return;
+            _point = pt;
+            requestLayout();
+        }
+    }
 
     private
     {
+        bool _modal;
+
+        PopupAlign _alignment;
+        Point _point;
+
         Element _content;
     }
 /+
     WeakRef!Widget anchor;
-    PopupAlign alignment = PopupAlign.center;
-    Point point;
 
     PopupClosePolicy closePolicy = PopupClosePolicy.onPressOutside;
-    /// Modal popup - keypresses and mouse events can be routed to this popup only
-    bool modal;
     /// Should popup destroy the content widget on close?
     bool ownContent = true;
 
@@ -149,7 +192,7 @@ class ElemPopup : Element
         }
         return bs;
     }
-/+
+
     override void layout(Box geom)
     {
         if (visibility == Visibility.gone)
@@ -167,22 +210,23 @@ class ElemPopup : Element
         Point p;
 
         // aligned simply to a point
-        if (alignment & PopupAlign.point)
+        if (_alignment & PopupAlign.point)
         {
-            p = point;
-            if (alignment & PopupAlign.center)
+            p = _point;
+            if (_alignment & PopupAlign.center)
             {
                 // center around the point
                 p.x -= geom.w / 2;
                 p.y -= geom.h / 2;
             }
-            else if (alignment & PopupAlign.above)
+            else if (_alignment & PopupAlign.above)
             {
                 // raise up
                 p.y -= geom.h;
             }
         }
-        else // aligned to a widget (or the window if null)
+/+
+        else // aligned to a widget
         {
             Box anchorbox;
             if (anchor)
@@ -191,7 +235,7 @@ class ElemPopup : Element
                 anchorbox = windowBox;
 
             p = anchorbox.pos;
-            if (alignment & PopupAlign.center)
+            if (_alignment & PopupAlign.center)
             {
                 // center around the center of anchor widget
                 p.x = anchorbox.middleX - geom.w / 2;
@@ -199,30 +243,31 @@ class ElemPopup : Element
             }
             else
             {
-                if (alignment & PopupAlign.below)
+                if (_alignment & PopupAlign.below)
                 {
                     p.y = anchorbox.y + anchorbox.h;
                 }
-                else if (alignment & PopupAlign.above)
+                else if (_alignment & PopupAlign.above)
                 {
                     p.y = anchorbox.y - geom.h;
                 }
-                if (alignment & PopupAlign.right)
+                if (_alignment & PopupAlign.right)
                 {
                     p.x = anchorbox.x + anchorbox.w;
                 }
             }
-            if (alignment & PopupAlign.fitAnchorSize)
+            if (_alignment & PopupAlign.fitAnchorSize)
             {
                 geom.w = max(geom.w, anchorbox.w);
             }
         }
++/
         geom.pos = p;
         geom.moveToFit(windowBox);
 
         super.layout(geom);
     }
-+/
+
     override protected void arrangeContent()
     {
         if (_content)
