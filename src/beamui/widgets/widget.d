@@ -253,10 +253,16 @@ class Widget
     {
         static BuildContext _ctx;
 
-        ElementID _elementID;
         Widget _parent;
 
-        IState* _statePtr;
+        Element _element;
+        ElementID _elementID;
+    }
+
+    final WeakRef!(const(Element)*) elementRef() const
+        in(_element, "The element hasn't mounted yet")
+    {
+        return weakRef(&_element);
     }
 
     //===============================================================
@@ -297,23 +303,22 @@ class Widget
         _elementID = ElementID(typeHash ^ mainHash);
         _parent = parent;
         // find or create the element using the currently bound element store
-        Element root = _ctx.store.fetch(_elementID, this);
-        _statePtr = &root._localState;
+        _element = _ctx.store.fetch(_elementID, this);
         // reparent the element silently
-        root._parent = parentElem;
+        _element._parent = parentElem;
         // clear the old element tree structure
-        Element[] prevItems = arena.allocArray!Element(root.childCount);
+        Element[] prevItems = arena.allocArray!Element(_element.childCount);
         foreach (i, ref el; prevItems)
-            el = root.child(cast(int)i);
-        root.removeAllChildren(false);
+            el = _element.child(cast(int)i);
+        _element.removeAllChildren(false);
         // finish widget configuration
         build();
         // update the element with the data, continue for child widgets
-        updateElement(root);
+        updateElement(_element);
 
-        if (root.childCount || prevItems.length)
-            root.diffChildren(prevItems);
-        return root;
+        if (_element.childCount || prevItems.length)
+            _element.diffChildren(prevItems);
+        return _element;
     }
 
     final protected Element mountChild(Widget child, Element thisElem, size_t index)
@@ -328,17 +333,17 @@ class Widget
     }
 
     protected S useState(S : IState)(lazy S initial)
-        in(_statePtr, "The element hasn't mounted yet")
+        in(_element, "The element hasn't mounted yet")
     {
         S s;
-        if (*_statePtr)
+        if (auto ls = _element._localState)
         {
-            s = cast(S)*_statePtr;
+            s = cast(S)ls;
             assert(s, "The widget state instance cannot change its type");
         }
         else
         {
-            *_statePtr = s = initial;
+            _element._localState = s = initial;
         }
         return s;
     }

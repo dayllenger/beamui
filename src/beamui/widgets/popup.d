@@ -50,6 +50,7 @@ class Popup : Widget
     /// Modal popup - keypresses and mouse events can be routed to this popup only
     bool modal;
 
+    Widget anchor;
     PopupAlign alignment = PopupAlign.center;
     Point point;
 
@@ -80,6 +81,7 @@ class Popup : Widget
         ElemPopup el = fastCast!ElemPopup(element);
         el.modal = modal;
 
+        el.anchor = anchor ? anchor.elementRef : el._anchor.init;
         el.alignment = alignment;
         el.point = point;
 
@@ -99,6 +101,14 @@ class ElemPopup : Element
                 return;
             _modal = flag;
             invalidate();
+        }
+
+        void anchor(WeakRef!(const(Element)*) wr)
+        {
+            if (_anchor is wr)
+                return;
+            _anchor = wr;
+            requestLayout();
         }
 
         PopupAlign alignment() const { return _alignment; }
@@ -126,14 +136,13 @@ class ElemPopup : Element
     {
         bool _modal;
 
+        WeakRef!(const(Element)*) _anchor;
         PopupAlign _alignment;
         Point _point;
 
         Element _content;
     }
 /+
-    WeakRef!Widget anchor;
-
     PopupClosePolicy closePolicy = PopupClosePolicy.onPressOutside;
     /// Should popup destroy the content widget on close?
     bool ownContent = true;
@@ -225,12 +234,11 @@ class ElemPopup : Element
                 p.y -= geom.h;
             }
         }
-/+
         else // aligned to a widget
         {
             Box anchorbox;
-            if (anchor)
-                anchorbox = anchor.get.box;
+            if (_anchor && *_anchor.get)
+                anchorbox = _anchor.get.box;
             else
                 anchorbox = windowBox;
 
@@ -261,7 +269,6 @@ class ElemPopup : Element
                 geom.w = max(geom.w, anchorbox.w);
             }
         }
-+/
         geom.pos = p;
         geom.moveToFit(windowBox);
 
