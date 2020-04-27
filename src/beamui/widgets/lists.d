@@ -3,7 +3,7 @@ List views on data.
 
 Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017, dayllenger 2018-2020
 License:   Boost License 1.0
-Authors:   Vadim Lopatin
+Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.widgets.lists;
 
@@ -13,227 +13,6 @@ import beamui.widgets.controls : ImageWidget;
 import beamui.widgets.scrollbar;
 import beamui.widgets.text : Label;
 import beamui.widgets.widget;
-
-/// List widget adapter provides items for list widgets
-abstract class ListAdapter
-{
-    /// Handles item change
-    private Signal!(void delegate()) onChange;
-
-    ~this()
-    {
-        debug (lists)
-            Log.d("Destroying ", getShortClassName(this));
-    }
-
-    /// Returns number of widgets in list
-    @property int itemCount() const;
-    /// Returns list item's state flags
-    State itemState(int index) const;
-    /// Set one or more list item's state flags, returns updated state
-    State setItemState(int index, State flags);
-    /// Reset one or more list item's state flags, returns updated state
-    State resetItemState(int index, State flags);
-    /// Returns integer item id by index (if supported)
-    int itemID(int index) const;
-    /// Returns string item id by index (if supported)
-    string itemStringID(int index) const;
-
-    /// Remove all items
-    void clear();
-
-    /// Connect adapter change handler
-    final void connect(void delegate() handler)
-    {
-        onChange.connect(handler);
-    }
-    /// Disconnect adapter change handler
-    final void disconnect(void delegate() handler)
-    {
-        onChange.disconnect(handler);
-    }
-
-    /// Notify listeners about list items changes
-    void updateViews()
-    {
-        onChange();
-    }
-}
-
-/// List adapter providing strings only
-abstract class StringListAdapterBase : ListAdapter
-{
-    private
-    {
-        import std.container.array;
-
-        struct Item
-        {
-            dstring str;
-            int intID;
-            string stringID;
-            string iconID;
-            State state = State.enabled;
-        }
-        Array!Item _items;
-    }
-
-    /// Create empty string list adapter
-    this()
-    {
-    }
-
-    /// Init with array of unicode strings
-    this(dstring[] values)
-    {
-        _items.length = values.length;
-        foreach (i; 0 .. _items.length)
-            _items[i].str = values[i];
-    }
-
-    /// Init with array of `StringListValue`
-    this(StringListValue[] values)
-    {
-        _items.length = values.length;
-        foreach (i; 0 .. _items.length)
-            _items[i] = Item(values[i].label, values[i].intID, values[i].stringID, values[i].iconID);
-    }
-
-    override void clear()
-    {
-        _items.clear();
-        updateViews();
-    }
-
-    /// Add new item
-    void add(dstring str, int index = -1)
-    {
-        Item item;
-        item.str = str;
-        if (index < 0 || index >= _items.length)
-        {
-            _items ~= item;
-        }
-        else
-        {
-            _items.insertBefore(_items[index .. $], item);
-        }
-        updateViews();
-    }
-
-    /// Remove item by index
-    void remove(int index)
-    {
-        if (index < 0 || index >= _items.length)
-            return;
-        _items.linearRemove(_items[index .. index + 1]);
-        updateViews();
-    }
-
-    /// Find item, returns its index or -1 if not found
-    int find(dstring str) const
-    {
-        import std.algorithm : countUntil;
-
-        return cast(int)_items[].countUntil!(a => a.str == str);
-    }
-
-    /// Access to items by index
-    @property dstring item(int index) const
-    {
-        return index >= 0 && index < _items.length ? _items[index].str : null;
-    }
-
-    /// Replace items collection
-    @property void items(dstring[] values)
-    {
-        _items.length = values.length;
-        foreach (i; 0 .. _items.length)
-            _items[i] = Item(values[i]);
-        updateViews();
-    }
-
-    /// Replace items collection
-    @property void items(StringListValue[] values)
-    {
-        _items.length = values.length;
-        foreach (i; 0 .. _items.length)
-            _items[i] = Item(values[i].label, values[i].intID, values[i].stringID, values[i].iconID);
-        updateViews();
-    }
-
-    override @property int itemCount() const
-    {
-        return cast(int)_items.length;
-    }
-
-    override int itemID(int index) const
-    {
-        return index >= 0 && index < _items.length ? _items[index].intID : 0;
-    }
-
-    override string itemStringID(int index) const
-    {
-        return index >= 0 && index < _items.length ? _items[index].stringID : null;
-    }
-
-    override State itemState(int index) const
-    {
-        if (index < 0 || index >= _items.length)
-            return State.unspecified;
-        return _items[index].state;
-    }
-
-    override State setItemState(int index, State flags)
-    {
-        _items[index].state |= flags;
-        return _items[index].state;
-    }
-
-    override State resetItemState(int index, State flags)
-    {
-        _items[index].state &= ~flags;
-        return _items[index].state;
-    }
-}
-
-/// List adapter providing strings only
-class StringListAdapter : StringListAdapterBase
-{
-    /// Create empty string list adapter
-    this()
-    {
-        super();
-    }
-
-    /// Init with array of unicode strings
-    this(dstring[] items)
-    {
-        super(items);
-    }
-
-    /// Init with array of `StringListValue`
-    this(StringListValue[] items)
-    {
-        super(items);
-    }
-}
-
-/// List adapter providing strings with icons
-class IconStringListAdapter : StringListAdapterBase
-{
-    /// Create empty string list adapter
-    this()
-    {
-        super();
-    }
-
-    /// Init with array of `StringListValue`
-    this(StringListValue[] items)
-    {
-        super(items);
-    }
-}
 
 /// Vertical or horizontal view on list data, with one scrollbar
 class ListView : Widget
@@ -343,74 +122,17 @@ class ElemListView : ElemGroup
         /// ditto
         void orientation(Orientation value)
         {
+            if (_orientation == value)
+                return;
             _orientation = value;
             _scrollbar.orientation = value;
             requestLayout();
         }
-/+
-        /// List adapter
-        inout(ListAdapter) adapter() inout { return _adapter; }
-        /// ditto
-        void adapter(ListAdapter adapter)
-        {
-            if (_adapter is adapter)
-                return; // no changes
-            if (_adapter)
-            {
-                _adapter.disconnect(&handleChildListChange);
-                if (_ownAdapter)
-                    destroy(_adapter);
-            }
-            if (adapter)
-                adapter.connect(&handleChildListChange);
 
-            _adapter = adapter;
-            _ownAdapter = false;
-
-            if (_itemWidget)
-            {
-                assert(_hiddenChildren.removeValue(_itemWidget));
-                destroy(_itemWidget);
-            }
-            _itemWidget = _adapter.createSharedItemWidget(_itemWidgetUpdater);
-            _itemWidget.parent = this;
-            _hiddenChildren.append(_itemWidget);
-            handleChildListChange();
-            assert(_itemWidgetUpdater);
-        }
-        /// Set adapter, which will be owned by list (destroy will be called for adapter on widget destroy)
-        void ownAdapter(ListAdapter adapter)
-        {
-            if (_adapter is adapter)
-                return; // no changes
-            if (_adapter)
-            {
-                _adapter.disconnect(&handleChildListChange);
-                if (_ownAdapter)
-                    destroy(_adapter);
-            }
-            if (adapter)
-                adapter.connect(&handleChildListChange);
-
-            _adapter = adapter;
-            _ownAdapter = true;
-
-            if (_itemWidget)
-            {
-                assert(_hiddenChildren.removeValue(_itemWidget));
-                destroy(_itemWidget);
-            }
-            _itemWidget = _adapter.createSharedItemWidget(_itemWidgetUpdater);
-            _itemWidget.parent = this;
-            _hiddenChildren.append(_itemWidget);
-            handleChildListChange();
-            assert(_itemWidgetUpdater);
-        }
-+/
         /// Returns number of widgets in list
         int itemCount() const
         {
-            return _adapter ? _adapter.itemCount : childCount;
+            return childCount;
         }
 
         /// Selected item index
@@ -436,9 +158,9 @@ class ElemListView : ElemGroup
 
     private
     {
-        Element _itemWidget;
-        void delegate(int) _itemWidgetUpdater;
-        int _lastItemIndex = -1; // TODO: reset when clear or replace?
+        Orientation _orientation = Orientation.vertical;
+        /// If true, generate `onItemClick` on mouse down instead mouse up event
+        bool _clickOnButtonDown;
 
         Buf!Box _itemBoxes;
         bool _needScrollbar;
@@ -452,14 +174,6 @@ class ElemListView : ElemGroup
         int _hoverItemIndex = -1;
         /// Item with `selected` state, -1 if no such item
         int _selectedItemIndex = -1;
-
-        Orientation _orientation = Orientation.vertical;
-        /// If true, generate `onItemClick` on mouse down instead mouse up event
-        bool _clickOnButtonDown;
-
-        ListAdapter _adapter;
-        /// When true, need to destroy adapter on list destroy
-        bool _ownAdapter;
     }
 
     this()
@@ -469,17 +183,6 @@ class ElemListView : ElemGroup
         _scrollbar.visibility = Visibility.gone;
         _scrollbar.parent = this;
         _hiddenChildren.append(_scrollbar);
-    }
-
-    ~this()
-    {
-        if (_adapter)
-        {
-            _adapter.disconnect(&handleChildListChange);
-            if (_ownAdapter)
-                destroy(_adapter);
-            _adapter = null;
-        }
     }
 
     /// Returns box for item (not scrolled, first item starts at 0,0)
@@ -551,36 +254,13 @@ class ElemListView : ElemGroup
     /// Returns list item element by item index
     inout(Element) itemElement(int index) inout
     {
-        if (0 <= index && index < itemCount)
-        {
-            if (_adapter)
-            {
-                if (_lastItemIndex != index)
-                {
-                    with (caching(this))
-                    {
-                        _lastItemIndex = index;
-                        _itemWidgetUpdater(index);
-                    }
-                }
-                return _itemWidget;
-            }
-            return child(index);
-        }
-        return null;
+        return child(index);
     }
 
     /// Returns true if item with corresponding index is enabled
     bool itemEnabled(int index)
     {
-        if (0 <= index && index < itemCount)
-        {
-            if (_adapter)
-                return (_adapter.itemState(index) & State.enabled) != 0;
-            else
-                return (child(index).state & State.enabled) != 0;
-        }
-        return false;
+        return (child(index).state & State.enabled) != 0;
     }
 
     protected void setHoverItem(int index)
@@ -589,19 +269,13 @@ class ElemListView : ElemGroup
             return;
         if (_hoverItemIndex != -1)
         {
-            if (_adapter)
-                _adapter.resetItemState(_hoverItemIndex, State.hovered);
-            else
-                child(_hoverItemIndex).applyState(State.hovered, false);
+            child(_hoverItemIndex).applyState(State.hovered, false);
             invalidate();
         }
         _hoverItemIndex = index;
         if (_hoverItemIndex != -1)
         {
-            if (_adapter)
-                _adapter.setItemState(_hoverItemIndex, State.hovered);
-            else
-                child(_hoverItemIndex).applyState(State.hovered, true);
+            child(_hoverItemIndex).applyState(State.hovered, true);
             invalidate();
         }
     }
@@ -637,24 +311,10 @@ class ElemListView : ElemGroup
         if (idx == -1)
             return;
 
-        if (_adapter)
+        if ((child(idx).state & State.focused) != (state & State.focused))
         {
-            if ((_adapter.itemState(idx) & State.focused) != (state & State.focused))
-            {
-                if (state & State.focused)
-                    _adapter.setItemState(idx, State.focused);
-                else
-                    _adapter.resetItemState(idx, State.focused);
-                invalidate();
-            }
-        }
-        else
-        {
-            if ((child(idx).state & State.focused) != (state & State.focused))
-            {
-                child(idx).applyState(State.focused, (state & State.focused) != 0);
-                invalidate();
-            }
+            child(idx).applyState(State.focused, (state & State.focused) != 0);
+            invalidate();
         }
     }
 
@@ -763,20 +423,14 @@ class ElemListView : ElemGroup
             return false;
         if (_selectedItemIndex != -1)
         {
-            if (_adapter)
-                _adapter.resetItemState(_selectedItemIndex, State.selected | State.focused);
-            else
-                child(_selectedItemIndex).applyState(State.selected | State.focused, false);
+            child(_selectedItemIndex).applyState(State.selected | State.focused, false);
             invalidate();
         }
         _selectedItemIndex = index;
         if (_selectedItemIndex != -1)
         {
             makeSelectionVisible();
-            if (_adapter)
-                _adapter.setItemState(_selectedItemIndex, State.selected | (state & State.focused));
-            else
-                child(_selectedItemIndex).applyState(State.selected | (state & State.focused), true);
+            child(_selectedItemIndex).applyState(State.selected | (state & State.focused), true);
             invalidate();
         }
         return true;
@@ -879,12 +533,6 @@ class ElemListView : ElemGroup
             (vert ? ib.y : ib.x) -= scrollOffset;
             if (ib.contains(event.x, event.y))
             {
-                if (_adapter)
-                {
-                    auto el = itemElement(i);
-                    assert(el);
-                    el.handleMouseEvent(event);
-                }
                 if (event.alteredByButton(MouseButton.left) ||
                     event.alteredByButton(MouseButton.right) ||
                     selectOnHover)
