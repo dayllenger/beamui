@@ -125,7 +125,7 @@ ComboBoxBase.opened { border-color: #4e93da; }
 
 ComboBoxBase > .body { min-width: 40px; padding: 2px; align: left vcenter; stretch: both; transition: color 100ms ease; }
 
-ComboBoxBase > .button { align: center; padding: 3px 2px; }
+ComboBoxBase > .arrow { align: center; padding: 3px 2px; }
 
 Popup.combobox > ListView { width: auto; height: auto; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
 
