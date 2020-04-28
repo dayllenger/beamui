@@ -440,7 +440,7 @@ struct WidgetPair(A : Widget, B : Widget)
     }
 }
 
-abstract class WidgetWrapperOf(W : Widget) : W
+abstract class WidgetWrapperOf(W : Widget) : Widget
 {
     protected W _content;
 
