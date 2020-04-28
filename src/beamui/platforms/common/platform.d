@@ -14,7 +14,6 @@ public import beamui.widgets.widget : CursorType, Element;
 import std.algorithm.mutation : swap;
 import std.datetime.stopwatch : Duration, StopWatch, dur;
 import beamui.core.animations;
-import beamui.core.asyncsocket;
 import beamui.core.memory : Arena;
 import beamui.core.settings;
 import beamui.core.stdaction : initStandardActions, ACTION_OK;
@@ -1615,12 +1614,6 @@ class Window : CustomEventTarget
     {
         auto event = new RunnableEvent(CUSTOM_RUNNABLE, WeakRef!Element(null), runnable);
         postEvent(event);
-    }
-
-    /// Creates async socket
-    AsyncSocket createAsyncSocket(AsyncSocketCallback callback)
-    {
-        return new AsyncClientConnection(new AsyncSocketCallbackProxy(callback, &executeInUiThread));
     }
 
     /// Remove event from queue by unique id if not yet dispatched (this method can be used from background thread)
