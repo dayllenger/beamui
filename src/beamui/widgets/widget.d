@@ -536,7 +536,7 @@ private:
     string _id;
     /// Custom attributes map
     string[string] attributes;
-    /// See `isolateThisStyle`
+    /// See `Widget.isolateThisStyle`
     bool _thisStyleIsolated;
     /// If true, the style will be recomputed on next usage
     bool _needToRecomputeStyle = true;
@@ -634,12 +634,6 @@ public:
             _id = id;
             invalidateStyles();
         }
-    }
-    /// Chained version of `id`
-    final Element setID(string id)
-    {
-        this.id = id;
-        return this;
     }
     /// Compare element id with specified value, returns true if matches
     bool compareID(string id) const
@@ -758,18 +752,6 @@ public:
         invalidateStyles();
     }
 
-    /** Toggle a custom attribute on the element - remove if present, add if not.
-
-        Note: the name must have non-zero length.
-    */
-    void toggleAttribute(string name)
-    {
-        assert(name.length);
-        if (!attributes.remove(name))
-            attributes[name] = null;
-        invalidateStyles();
-    }
-
     //===============================================================
     // Style
 
@@ -778,17 +760,6 @@ public:
     {
         updateStyles();
         return &_style;
-    }
-
-    final void isolateStyle()
-    {
-        _style.isolated = true;
-        invalidateStyles();
-    }
-    final void isolateThisStyle()
-    {
-        _thisStyleIsolated = true;
-        invalidateStyles();
     }
 
     /// Signals when styles are being recomputed. Used for mixing properties in the element
@@ -1068,16 +1039,6 @@ public:
                 return TextHotkey.hidden;
             }
             return result;
-        }
-
-        /// Widget content text (override to support this)
-        dstring text() const
-        {
-            return "";
-        }
-        /// ditto
-        void text(dstring s)
-        {
         }
     }
 

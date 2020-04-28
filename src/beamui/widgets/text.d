@@ -66,9 +66,9 @@ class ElemLabel : Element
 {
     @property
     {
-        override dstring text() const { return original; }
+        dstring text() const { return original; }
         /// ditto
-        override void text(dstring s)
+        void text(dstring s)
         {
             if (original == s)
                 return;
@@ -308,12 +308,12 @@ class ElemParagraph : Element
         }
 
         /// Get the whole text to show. May be costly in big multiline paragraphs
-        override dstring text() const
+        dstring text() const
         {
             return _content.getStr();
         }
         /// Replace the whole paragraph text. Does not preserve markup
-        override void text(dstring s)
+        void text(dstring s)
         {
             _content.setStr(s);
             resetAllMarkup();

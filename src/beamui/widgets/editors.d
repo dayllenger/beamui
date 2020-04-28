@@ -217,6 +217,7 @@ class EditLine : Widget
 /// Multiline editor and base for complex source editors
 class EditBox : ScrollAreaBase
 {
+    /// Editor content object
     EditableContent content;
     void delegate(EditableContent) onChange;
 
@@ -358,9 +359,9 @@ class ElemEditLine : Element, IEditor, ActionOperator
 {
     @property
     {
-        override dstring text() const { return _str; }
+        dstring text() const { return _str; }
         /// ditto
-        override void text(dstring txt)
+        void text(dstring txt)
         {
             if (_str != txt)
             {
@@ -1460,7 +1461,6 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
 {
     @property
     {
-        /// Editor content object
         inout(EditableContent) content() inout { return _content; }
         /// ditto
         void content(EditableContent content)
@@ -1481,7 +1481,6 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
                 readOnly = true;
         }
 
-        /// Text in the editor
         override dstring text() const
         {
             return _content.text;
