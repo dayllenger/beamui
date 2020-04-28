@@ -1,4 +1,3 @@
-/+ Under major rewrite
 module app;
 
 import std.functional : toDelegate;
@@ -19,62 +18,9 @@ int main()
     if (!app.initialize())
         return -1;
 
-    setStyleSheet(currentTheme, stylesheet);
+    setStyleSheet(currentTheme, styles);
 
     Window window = platform.createWindow("Canvas example - beamui");
-
-    auto frame = new Panel("frame");
-        auto tabs = new TabWidget;
-            auto canvasPaths = new CanvasWidget;
-            auto canvasBrushes = new CanvasWidget;
-            auto canvasShapes = new CanvasWidget;
-            auto canvasImages = new CanvasWidget;
-            auto canvasText = new CanvasWidget;
-            auto canvasLayers = new CanvasWidget;
-            auto canvasCompositing = new CanvasWidget;
-            auto canvasBlending = new CanvasWidget;
-        auto settings = new Panel("settings");
-            auto aaToggle = new CheckBox("Anti-aliasing");
-            auto blendSettings = new Panel("blend-settings");
-                auto blendModes = new ComboBox;
-
-    frame.add(tabs, settings);
-        tabs.addTab(canvasPaths.setID("PATHS"), "Paths");
-        tabs.addTab(canvasBrushes.setID("BRUSHES"), "Brushes");
-        tabs.addTab(canvasShapes.setID("SHAPES"), "Basic shapes");
-        tabs.addTab(canvasImages.setID("IMAGES"), "Images");
-        tabs.addTab(canvasText.setID("TEXT"), "Text");
-        tabs.addTab(canvasLayers.setID("LAYERS"), "Layers");
-        tabs.addTab(canvasCompositing.setID("COMPOSITING"), "Compositing");
-        tabs.addTab(canvasBlending.setID("BLENDING"), "Blending");
-        settings.add(aaToggle, blendSettings);
-            blendSettings.add(new Label("Blend mode:"), blendModes);
-
-    tabs.onTabChange ~= (string newTab, string prevTab) {
-        if (newTab == "BLENDING")
-            blendSettings.visibility = Visibility.visible;
-        else
-            blendSettings.visibility = Visibility.gone;
-    };
-    blendSettings.visibility = Visibility.gone;
-
-    aaToggle.onToggle ~= (checked) { data.antialiasing = checked; };
-    aaToggle.checked = true;
-
-    blendModes.items = [__traits(allMembers, BlendMode)];
-    blendModes.onSelect ~= (index) {
-        assert(0 <= index && index <= BlendMode.max);
-        data.blendMode = cast(BlendMode)index;
-    };
-
-    canvasPaths.onDraw = toDelegate(&paths);
-    canvasBrushes.onDraw = toDelegate(&brushes);
-    canvasShapes.onDraw = toDelegate(&shapes);
-    canvasImages.onDraw = toDelegate(&images);
-    canvasText.onDraw = toDelegate(&text);
-    canvasLayers.onDraw = toDelegate(&layers);
-    canvasCompositing.onDraw = toDelegate(&compositing);
-    canvasBlending.onDraw = toDelegate(&blending);
 
     data.duck = imageCache.get("ducky");
     data.icon = imageCache.get("fileclose");
@@ -82,13 +28,12 @@ int main()
     scope (exit)
         destroy(data);
 
-    window.mainWidget = frame;
-    window.show();
+    window.show(() => render!App);
     return platform.enterMessageLoop();
 }
 
-string stylesheet = `
-#frame {
+const styles = `
+App {
     display: free;
 }
 TabWidget {
@@ -99,7 +44,7 @@ TabWidget {
     right: 0;
     bottom: 0;
 }
-TabHost {
+TabContent {
     padding: 0;
 }
 #settings {
@@ -128,12 +73,79 @@ TabHost {
 
 struct AppData
 {
-    bool antialiasing;
+    bool antialiasing = true;
     Bitmap duck;
     Bitmap icon;
     BlendMode blendMode;
 }
 AppData data;
+
+class App : Panel
+{
+    static class State : IState
+    {
+        bool blendingSelected;
+    }
+
+    override void build()
+    {
+        State st = useState!State;
+
+        wrap(
+            render((TabWidget tw) {
+                tw.onSelect = (item) {
+                    TabItem it = cast(TabItem)item;
+                    st.blendingSelected = it.text == "Blending";
+                };
+            }).wrap(
+                makeCanvasTab("Paths", &paths),
+                makeCanvasTab("Brushes", &brushes),
+                makeCanvasTab("Basic shapes", &shapes),
+                makeCanvasTab("Images", &images),
+                makeCanvasTab("Text", &text),
+                makeCanvasTab("Layers", &layers),
+                makeCanvasTab("Compositing", &compositing),
+                makeCanvasTab("Blending", &blending),
+            ),
+            render((Panel p) {
+                p.id = "settings";
+            }).wrap(
+                render((CheckBox cb) {
+                    cb.text = "Anti-aliasing";
+                    cb.checked = data.antialiasing;
+                    cb.onToggle = (ch) { setState(data.antialiasing, ch); };
+                }),
+                st.blendingSelected ? {
+                    static immutable dstring[] modeNames = [__traits(allMembers, BlendMode)];
+
+                    Panel p = render!Panel;
+                    p.id = "blend-settings";
+                    return p.wrap(
+                        render((Label lb) {
+                            lb.text = "Blend mode:";
+                        }),
+                        render((ComboBox cb) {
+                            cb.items = modeNames;
+                            cb.onSelect = (i) {
+                                assert(0 <= i && i <= BlendMode.max);
+                                setState(data.blendMode, cast(BlendMode)i);
+                            };
+                        }),
+                    );
+                }() : null,
+            ),
+        );
+    }
+}
+
+TabPair makeCanvasTab(dstring text, void function(Painter, Size) func)
+{
+    TabItem item = render!TabItem;
+    CanvasWidget cvs = render!CanvasWidget;
+    item.text = text;
+    cvs.onDraw = toDelegate(func);
+    return TabPair(item, cvs);
+}
 
 void paths(Painter pr, Size sz)
 {
@@ -443,4 +455,3 @@ void blending(Painter pr, Size sz)
     pr.beginLayer(lsv, 1, data.blendMode);
     pr.drawImage(data.duck, 10, 10, 1);
 }
-+/
