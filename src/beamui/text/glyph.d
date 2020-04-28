@@ -8,7 +8,6 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.text.glyph;
 
 import beamui.core.config : USE_OPENGL;
-import beamui.core.functions : eliminate;
 import beamui.core.signals : Signal;
 
 /// Subpixel rendering mode for fonts (aka ClearType)
@@ -109,7 +108,7 @@ struct GlyphCache
                     continue;
                 // notify about destroyed glyphs
                 onGlyphDestruction(item.glyph.id);
-                eliminate(item.glyph);
+                item = Item();
             }
         }
     }
@@ -135,7 +134,7 @@ struct GlyphCache
                     continue;
                 // notify about destroyed glyphs
                 onGlyphDestruction(item.glyph.id);
-                eliminate(item.glyph);
+                item = Item();
             }
         }
     }
