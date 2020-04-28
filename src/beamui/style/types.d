@@ -12,25 +12,6 @@ import beamui.core.types : State;
 import beamui.core.units : Length;
 import beamui.graphics.drawables : BgSizeType;
 
-/// Text drawing flag bits
-enum TextFlag : uint
-{
-    /// Not set
-    unspecified = 0,
-    /// Text contains hot key prefixed with & char (e.g. "&File")
-    hotkeys = 1,
-    /// Underline hot key when drawing
-    underlineHotkeys = hotkeys | 2,
-    /// Underline hot key when Alt is pressed
-    underlineHotkeysOnAlt = hotkeys | 4,
-    /// Underline text when drawing
-    underline = 8,
-    /// Strikethrough text when drawing
-    strikeThrough = 16, // TODO:
-    /// Use text flags from parent widget
-    parent = 32
-}
-
 enum WhiteSpace : ubyte
 {
     pre,

@@ -40,7 +40,7 @@ import beamui.core.memory : Arena;
 import beamui.graphics.compositing : BlendMode;
 import beamui.platforms.common.platform;
 import beamui.style.style;
-import beamui.style.types : Selector, TextFlag;
+import beamui.style.types : Selector;
 import beamui.text.style : TextHotkey;
 import beamui.widgets.menu;
 
@@ -1035,12 +1035,6 @@ public:
         {
             destroy(_background);
             _background = obj;
-        }
-
-        /// Text flags (bit set of `TextFlag` enum values)
-        TextFlag textFlags() const
-        {
-            return TextFlag.unspecified;
         }
 
         /// Returns font set for element using style or set manually
