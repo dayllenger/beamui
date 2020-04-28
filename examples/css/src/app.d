@@ -1,4 +1,3 @@
-/+ Under major rewrite
 module app;
 
 import beamui;
@@ -11,84 +10,128 @@ int main()
     if (!app.initialize())
         return -1;
 
-    currentTheme.setStyleSheet(stylesheet);
+    setStyleSheet(currentTheme, styles);
 
     Window window = platform.createWindow("CSS sandbox");
 
-    auto splitView = new Panel("split-view");
-        auto editorPane = new Panel("editor-pane");
-            auto editor = new SourceEdit;
-            auto btnUpdate = new Button("Update styles");
-        auto controls = new GroupBox("Controls");
+    cssContent = new EditableContent;
+    cssContent.text = toUTF32(styles);
+    cssContent.syntaxSupport = new CssSyntaxSupport;
 
-    splitView.add(editorPane, new Resizer, controls);
-        editorPane.add(editor, btnUpdate);
-        controls.add(createControlsPanel());
-
-    btnUpdate.id = "update";
-    controls.id = "controls";
-
-    with (editor) {
-        smartIndents = true;
-        content.syntaxSupport = new CssSyntaxSupport;
-        text = stylesheet.toUTF32;
-    }
-
-    btnUpdate.onClick ~= {
-        platform.reloadTheme();
-        currentTheme.setStyleSheet(editor.text.toUTF8);
-    };
-
-    window.mainWidget = splitView;
-    window.show();
-
+    window.show(() => render!App);
     return platform.enterMessageLoop();
 }
 
-Widget createControlsPanel()
+EditableContent cssContent;
+
+class App : Panel
 {
-    auto tabs = new TabWidget;
-
-    auto tab1 = new Panel;
-    with (tab1) {
-        auto gb = new GroupBox("Group Box");
-        with (gb) {
-            add(new CheckBox("Check Box").setChecked(true),
-                new RadioButton("Radio button").setChecked(true),
-                new RadioButton("Radio button"));
-        }
-        auto r1 = new Panel("p1");
-        with (r1) {
-            auto ed = new EditLine("Edit line");
-            auto comb = new ComboBox(["Item 1", "Item 2", "Item 3"]);
-            comb.selectedItemIndex = 0;
-            add(ed, comb);
-            ed.style.stretch = Stretch.both;
-        }
-        auto r2 = new Panel("p2");
-        with (r2) {
-            auto btn1 = new Button("Button");
-            auto btn2 = new Button("Button", "folder");
-            auto btn3 = new Button(null, "dialog-cancel");
-            btn2.setAttribute("folder");
-            add(btn1, btn2, btn3);
-            btn1.style.stretch = Stretch.both;
-        }
-        add(gb);
-        add(new ScrollBar(Orientation.horizontal), new Slider(Orientation.horizontal));
-        add(r1, r2);
+    override void build()
+    {
+        wrap(
+            render((Panel p) {
+                p.id = "editor-pane";
+            }).wrap(
+                render((SourceEdit ed) {
+                    ed.content = cssContent;
+                    // ed.smartIndents = true;
+                }),
+                render((Button b) {
+                    b.id = "update";
+                    b.text = "Update styles";
+                    b.onClick = {
+                        platform.reloadTheme();
+                        setStyleSheet(currentTheme, toUTF8(cssContent.text));
+                    };
+                }),
+            ),
+            render((Resizer r) {}),
+            render((Controls c) {}),
+        );
     }
-    auto tab2 = new Widget;
-
-    tabs.addTab(tab1.setID("tab1"), "Tab 1");
-    tabs.addTab(tab2.setID("tab2"), "Tab 2");
-    return tabs;
 }
 
-string stylesheet =
+class Controls : GroupBox
+{
+    this()
+    {
+        caption = "Controls";
+    }
+
+    override void build()
+    {
+        wrap(
+            render((TabWidget tw) {
+                tw.buildHiddenTabs = true;
+            }).wrap(
+                TabPair(
+                    (TabItem i) { i.text = "Tab 1"; },
+                    (Panel p) {
+                        p.id = "tab1";
+                        p.wrap(
+                            render((GroupBox gb) {
+                                gb.caption = "Group Box";
+                            }).wrap(
+                                render((CheckBox cb) {
+                                    cb.text = "Check Box";
+                                    cb.checked = true;
+                                    cb.onToggle = (ch) { Log.d(); };
+                                }),
+                                render((RadioButton rb) {
+                                    rb.text = "Radio button";
+                                    rb.checked = true;
+                                    rb.onToggle = (ch) { Log.d(); };
+                                }),
+                                render((RadioButton rb) {
+                                    rb.text = "Radio button";
+                                }),
+                            ),
+                            render((ScrollBar sb) {}),
+                            render((Slider sl) {}),
+                            render((Panel p) { p.id = "p1"; }).wrap(
+                                render((EditLine ed) {
+                                    ed.attributes["expand"];
+                                    ed.placeholder = "Edit line";
+                                }),
+                                render((ComboBox cb) {
+                                    static items = ["Item 1"d, "Item 2"d, "Item 3"d];
+                                    cb.items = items;
+                                }),
+                            ),
+                            render((Panel p) { p.id = "p2"; }).wrap(
+                                render((Button b) {
+                                    b.attributes["expand"];
+                                    b.text = "Button";
+                                }),
+                                render((Button b) {
+                                    b.attributes["folder"];
+                                    b.text = "Button";
+                                    b.iconID = "folder";
+                                    b.onClick = { Log.d("click"); };
+                                }),
+                                render((Button b) {
+                                    b.iconID = "dialog-cancel";
+                                    b.onClick = { Log.d("click"); };
+                                }),
+                            ),
+                        );
+                    }
+                ),
+                TabPair(
+                    (TabItem i) { i.text = "Tab 2"; },
+                    (Panel p) {
+                        p.id = "tab2";
+                    }
+                ),
+            )
+        );
+    }
+}
+
+const styles =
 `/* some styles for this window */
 
-#split-view {
+App {
     display: row;
     padding: 10px;
     gap: 3px;
@@ -114,6 +157,8 @@ Button#update {
 
 /* write your own and press the button below */
 
+.expand { stretch: both; }
+
 #tab1 {
     display: column;
     gap: 15px;
@@ -123,8 +168,7 @@ Button#update {
     display: row;
 }
 
-Button.folder::label {
+Button.folder > .label {
     color: orange;
 }
 `;
-+/
