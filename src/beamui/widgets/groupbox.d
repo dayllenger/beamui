@@ -1,7 +1,7 @@
 /**
 Group Box widget.
 
-Copyright: Vadim Lopatin 2016
+Copyright: Vadim Lopatin 2016, dayllenger 2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -13,12 +13,22 @@ import beamui.widgets.widget;
 /// Group box is a panel (column usually) with a frame and a caption
 class GroupBox : Panel
 {
-    // Groupbox caption text
+    /// Groupbox caption text
     dstring caption;
+
+    private ElemLabel makeCaption(Element el)
+    {
+        // no need to recreate this widget every build
+        Label capt = render!Label;
+        capt.key = "__caption__";
+        capt.attributes["caption"];
+        capt.isolateThisStyle = true;
+        return fastCast!ElemLabel(mountChild(capt, el, 0));
+    }
 
     override protected Element createElement()
     {
-        return new ElemGroupBox;
+        return new ElemGroupBox(this);
     }
 
     override protected void updateElement(Element element)
@@ -34,19 +44,11 @@ class ElemGroupBox : ElemPanel
 {
     private ElemLabel _caption;
 
-    this()
+    this(GroupBox widget)
+        in(widget)
     {
-        _caption = new ElemLabel;
-        _caption.isolateThisStyle();
-        _caption.setAttribute("caption");
-        _caption.parent = this;
+        _caption = widget.makeCaption(this);
         _hiddenChildren.append(_caption);
-    }
-
-    this(Orientation orientation)
-    {
-        this();
-        style.display = orientation == Orientation.vertical ? "column" : "row";
     }
 
     override @property
