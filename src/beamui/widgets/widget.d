@@ -304,6 +304,7 @@ class Widget
         _parent = parent;
         // find or create the element using the currently bound element store
         _element = _ctx.store.fetch(_elementID, this);
+        _element._buildInProgress = true;
         // reparent the element silently
         _element._parent = parentElem;
         // clear the old element tree structure
@@ -318,6 +319,7 @@ class Widget
 
         if (_element.childCount || prevItems.length)
             _element.diffChildren(prevItems);
+        _element._buildInProgress = false;
         return _element;
     }
 
@@ -2278,6 +2280,9 @@ public:
     //===============================================================
     // Widget hierarhy methods
 
+    package(beamui) bool _buildInProgress;
+    private enum _treeRebuildMessage = "Cannot alter element tree out of the build process";
+
     /// Returns number of children of this element
     @property int childCount() const
     {
@@ -2290,37 +2295,44 @@ public:
     }
 
     void diffChildren(Element[] oldItems)
+        out(; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "diffChildren: this element cannot have children");
     }
 
     /// Add a child and return it
     Element addChild(Element item)
+        out(; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "addChild: this element cannot have children");
     }
     /// Insert child before given index, returns inserted item
     Element insertChild(int index, Element item)
+        out(; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "insertChild: this element cannot have children");
     }
     /// Remove child by index, returns removed item
     Element removeChild(int index)
+        out(; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "removeChild: this element cannot have children");
     }
     /// Remove child by ID, returns removed item
     Element removeChild(string id)
+        out(; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "removeChild: this element cannot have children");
     }
     /// Remove child, returns removed item
     Element removeChild(Element child)
+        out(; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "removeChild: this element cannot have children");
     }
     /// Remove all children and optionally destroy them
     void removeAllChildren(bool destroyThem = true)
+        out(; _buildInProgress, _treeRebuildMessage)
     {
         // override
     }
@@ -2508,18 +2520,16 @@ abstract class ElemGroup : Element
     override Element addChild(Element item)
     {
         assert(item, "Element must exist");
+        assert(item.parent is this);
         _children.append(item);
-        item.parent = this;
-        handleChildListChange();
         return item;
     }
 
     override Element insertChild(int index, Element item)
     {
         assert(item, "Element must exist");
+        assert(item.parent is this);
         _children.insert(index, item);
-        item.parent = this;
-        handleChildListChange();
         return item;
     }
 
@@ -2552,7 +2562,6 @@ abstract class ElemGroup : Element
     override void removeAllChildren(bool destroyThem = true)
     {
         _children.clear(destroyThem);
-        handleChildListChange();
     }
 
     override int childIndex(string id) const

@@ -146,12 +146,14 @@ private final class MainRootWidget : Widget
     void mountContent(MainRootElement root, Widget content)
         in(root)
     {
+        root._buildInProgress = true;
         auto old = root._content;
         root._content = null;
         updateElement(root);
         if (content)
             root._content = mountChild(content, root, 0);
         root.diffContent(old);
+        root._buildInProgress = false;
     }
 }
 
@@ -221,6 +223,7 @@ private final class PopupRootWidget : WidgetGroupOf!Popup
     void mountContent(PopupRootElement root, Popup[] popups)
         in(root)
     {
+        root._buildInProgress = true;
         Element[] prevItems = arena.allocArray!Element(root.childCount);
         foreach (i, ref el; prevItems)
             el = root.child(cast(int)i);
@@ -230,6 +233,7 @@ private final class PopupRootWidget : WidgetGroupOf!Popup
         updateElement(root);
 
         root.diffChildren(prevItems);
+        root._buildInProgress = false;
     }
 }
 
