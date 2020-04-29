@@ -140,7 +140,6 @@ class ActionWidgetWrapper : Panel
 {
     /// Action to emit on click
     Action action;
-    private Element element;
 
     override protected void build()
     {
@@ -148,15 +147,9 @@ class ActionWidgetWrapper : Panel
         visible = action.visible;
     }
 
-    override protected void updateElement(Element el)
-    {
-        super.updateElement(el);
-        element = el;
-    }
-
     final protected void call()
     {
-        if (auto w = element.window)
+        if (auto w = window)
             w.call(action);
     }
 }

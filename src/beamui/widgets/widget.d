@@ -350,8 +350,14 @@ class Widget
         return s;
     }
 
-    final protected Window window() { return _ctx.window; }
     final protected inout(Widget) parent() inout { return _parent; }
+
+    final protected inout(Window) window() inout
+        in(_element, "The element hasn't mounted yet")
+        out(win; win)
+    {
+        return _element.window;
+    }
 
     //===============================================================
     // Internal methods to implement in subclasses
@@ -2804,7 +2810,6 @@ struct ElementStore
 
 struct BuildContext
 {
-    Window window;
     Arena* arena;
     ElementStore* store;
 }
