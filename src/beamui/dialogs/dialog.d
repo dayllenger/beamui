@@ -227,19 +227,4 @@ class Dialog : Panel
         return super.handleKeyEvent(event);
     }
 }
-
-/// Frame with caption for dialog
-class DialogFrame : WindowFrame
-{
-    private Dialog _dialog;
-
-    this(Dialog dialog, bool enableCloseButton)
-    {
-        super(enableCloseButton);
-        id = dialog.id ~ "_frame";
-        _dialog = dialog;
-        title.text = _dialog.windowTitle;
-        bodyWidget = _dialog;
-    }
-}
 +/

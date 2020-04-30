@@ -917,10 +917,10 @@ AppFrame > .body {
 
 /* dialog, filedialog, inputbox, messagebox, settingsdialog */
 
-DialogFrame {
+WindowFrame.dialog-frame {
     padding: 0;
     border: 1px solid #888;
-    box-shadow: 0 4px 18px #555;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
 }
 
 @define-colors {

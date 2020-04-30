@@ -376,7 +376,7 @@ WindowFrame > .body { padding: 3px; stretch: both; }
 AppFrame > .body { stretch: both; }
 
 /* dialog, filedialog, inputbox, messagebox, settingsdialog */
-DialogFrame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px #555; }
+WindowFrame.dialog-frame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25); }
 
 @define-colors { dialog_background: #eee; }
 
