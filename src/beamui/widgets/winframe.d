@@ -18,18 +18,10 @@ class WindowFrame : Panel
     /// If assigned, the close button will be visible
     void delegate() onClose;
 
-    protected Widget _content;
-
-    final WindowFrame wrap(Widget content)
-    {
-        _content = content;
-        return this;
-    }
-
-    protected alias wrap = typeof(super).wrap;
-
     override protected void build()
     {
+        // swap children - pass them down the tree
+        auto content = _children;
         wrap(
             render((Panel p) {
                 p.attributes["caption"];
@@ -48,7 +40,7 @@ class WindowFrame : Panel
             render((Panel p) {
                 p.attributes["body"];
                 p.isolateThisStyle = true;
-            }).wrap(_content),
+            }).wrap(content),
         );
     }
 }
