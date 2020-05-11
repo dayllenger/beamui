@@ -67,11 +67,11 @@ TabWidget {
 
 ListView > .item,
 TreeItemWidget,
-TreeItemWidget > .body {
+TreeItemWidget > Panel {
   display: row;
 }
 
-TreeWidgetBase > Panel {
+TreeWidget {
   display: column;
   gap: 0;
 }

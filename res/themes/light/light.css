@@ -171,17 +171,17 @@ MenuItem > .open { align: center; }
 /* tree */
 TreeItemWidget { min-width: 100px; min-height: 1em; gap: 0; }
 
-TreeItemWidget > .body { padding: 2px 4px; gap: 0; }
+TreeItemWidget > Panel { padding: 2px 4px; gap: 0; }
 
-TreeItemWidget > .body > .icon { padding-right: 3px; }
+TreeItemWidget > Panel > ImageWidget { padding-right: 3px; }
 
-TreeItemWidget:hovered > .body { background-color: #c7d9ec; }
+TreeItemWidget:hovered > Panel { background-color: #c7d9ec; }
 
-TreeItemWidget:pressed > .body, TreeItemWidget:selected > .body { background-color: #4e93da; }
+TreeItemWidget:pressed > Panel, TreeItemWidget:selected > Panel { background-color: #4e93da; }
 
-TreeItemWidget:pressed > .body > .label, TreeItemWidget:selected > .body > .label { color: #f0f0f0; }
+TreeItemWidget:pressed > Panel > Label, TreeItemWidget:selected > Panel > Label { color: #f0f0f0; }
 
-TreeItemWidget:default > .body > .label { font-weight: bold; }
+TreeItemWidget:default > Panel > Label { font-weight: bold; }
 
 /* grid */
 StringGridWidget { min-width: 100px; min-height: 60px; border: 1px solid #aaa; background-color: #fff; font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console"; transition: border-color 100ms ease; }

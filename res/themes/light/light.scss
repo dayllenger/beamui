@@ -448,28 +448,28 @@ TreeItemWidget {
     min-height: 1em;
     gap: 0;
 
-    > .body {
+    > Panel {
         padding: 2px 4px;
         gap: 0;
 
-        > .icon {
+        > ImageWidget {
             padding-right: 3px;
         }
     }
 
-    &:hovered > .body {
+    &:hovered > Panel {
         background-color: $secondary-hovered-color;
     }
 
-    &:pressed > .body, &:selected > .body {
+    &:pressed > Panel, &:selected > Panel {
         background-color: $main-color;
 
-        > .label {
+        > Label {
             color: $inverse-text-color;
         }
     }
 
-    &:default > .body > .label {
+    &:default > Panel > Label {
         font-weight: bold;
     }
 }

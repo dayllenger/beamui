@@ -36,22 +36,278 @@ tree.onSelect ~= (TreeItem selectedItem, bool activated) {
 tree.selectItem("g1");
 ---
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
-Authors:   Vadim Lopatin
+Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.widgets.tree;
+
+import beamui.widgets.controls : ImageWidget;
+import beamui.widgets.text : Label;
+import beamui.widgets.widget;
+
+/// Abstract tree item
+abstract class TreeItemWidgetBase : WidgetGroupOf!Widget
+{
+    /// True if this item is expanded
+    bool expanded;
+
+    protected TreeItemWidgetBase[] _items;
+    protected TreeItemWidgetBase _parent;
+    protected uint _index;
+    protected uint _level;
+
+    protected bool _selected;
+    protected bool _default;
+
+    final void setItems(size_t count, scope TreeItemWidgetBase delegate(size_t) generator)
+    {
+        if (count == 0 || !generator)
+            return;
+
+        _items = arena.allocArray!TreeItemWidgetBase(count);
+        foreach (i; 0 .. count)
+            _items[i] = generator(i);
+    }
+
+    /// Returns true if the item has subitems and so may collapse or expand itself
+    protected @property bool canExpandOrCollapse() const
+    {
+        return _items.length > 0;
+    }
+
+    protected void select()
+    {
+        TreeWidget tree = cast(TreeWidget)parent;
+        if (tree && tree.onSelect)
+            tree.onSelect(getPath());
+    }
+
+    protected void toggle()
+    {
+        TreeWidget tree = cast(TreeWidget)parent;
+        if (tree && tree.onExpandToggle)
+            tree.onExpandToggle(getPath());
+    }
+
+    private uint[] getPath()
+    {
+        uint[] path;
+        getPath(path);
+        return path;
+    }
+
+    private void getPath(ref uint[] path)
+    {
+        if (_parent)
+        {
+            _parent.getPath(path);
+            path ~= _index;
+        }
+    }
+
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+
+        el.applyState(State.selected, _selected);
+        el.applyState(State.default_, _default);
+    }
+}
+
+private class ClickableImage : ImageWidget
+{
+    void delegate() onClick;
+
+    this()
+    {
+        allowsHover = true;
+    }
+
+    override protected Element createElement()
+    {
+        auto el = super.createElement();
+        el.allowsClick = true;
+        return el;
+    }
+
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+
+        el.onClick.clear();
+        if (onClick)
+            el.onClick ~= onClick;
+    }
+}
+
+/// Tree item widget with a label and icon
+class TreeItemWidget : TreeItemWidgetBase
+{
+    dstring text;
+    string iconID;
+
+    this()
+    {
+        allowsFocus = true;
+        allowsHover = true;
+        isolateStyle = true;
+    }
+
+    private alias wrap = typeof(super).wrap;
+
+    override protected void build()
+    {
+        ClickableImage expander;
+        if (canExpandOrCollapse)
+        {
+            expander = render!ClickableImage;
+            expander.imageID = expanded ? "arrow_right_down_black" : "arrow_right_hollow";
+            expander.onClick = &toggle;
+        }
+        ImageWidget image;
+        if (iconID.length)
+        {
+            image = render!ImageWidget;
+            image.imageID = iconID;
+        }
+        Label label;
+        if (text.length)
+        {
+            label = render!Label;
+            label.text = text;
+        }
+        wrap(
+            expander,
+            render!Panel.wrap(
+                image,
+                label,
+            )
+        );
+    }
+
+    override protected Element createElement()
+    {
+        auto el = new ElemPanel;
+        el.allowsClick = true;
+        return el;
+    }
+
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+
+        el.style.marginLeft = _level * el.font.size * 2;
+
+        el.onClick.clear();
+        el.onClick ~= &select;
+    }
+}
+
+class TreeWidget : Widget
+{
+    /// Invisible topmost item
+    TreeItemWidgetBase root;
+
+    uint[] selected;
+    uint[] marked;
+
+    void delegate(uint[] path) onSelect;
+    void delegate(uint[] path) onExpandToggle;
+
+    override protected void build()
+    {
+        if (root)
+        {
+            root.expanded = true;
+            configureItem(root, 0);
+
+            if (auto item = findItem(root, selected))
+                item._selected = true;
+            if (auto item = findItem(root, marked))
+                item._default = true;
+        }
+    }
+
+    private void configureItem(TreeItemWidgetBase item, uint level)
+    {
+        foreach (i, subitem; item._items)
+        {
+            if (subitem)
+            {
+                subitem._parent = item;
+                subitem._index = cast(uint)i;
+                subitem._level = level;
+                configureItem(subitem, level + 1);
+            }
+        }
+    }
+
+    private TreeItemWidgetBase findItem(TreeItemWidgetBase root, uint[] path)
+    {
+        TreeItemWidgetBase item = root;
+        foreach (i; path)
+        {
+            if (item && i < item._items.length)
+                item = item._items[i];
+            else
+                return null;
+        }
+        return item;
+    }
+
+    override int opApply(scope int delegate(size_t, Widget) callback)
+    {
+        uint i;
+        iterateOver(root, i, callback);
+        return 0;
+    }
+
+    private void iterateOver(TreeItemWidgetBase item, ref uint i, scope int delegate(size_t, Widget) callback)
+    {
+        if (!item || !item.expanded)
+            return;
+        foreach (wt; item._items)
+        {
+            callback(i, wt);
+            i++;
+            iterateOver(wt, i, callback);
+        }
+    }
+
+    private bool handleEvent(KeyEvent e)
+    {
+        if (e.action == KeyAction.keyDown && e.noModifiers)
+        {
+        }
+        return false;
+    }
+
+    override protected Element createElement()
+    {
+        return new ElemPanel;
+    }
+
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+
+        el.onKeyEvent ~= &handleEvent;
+
+        foreach (i, item; this)
+        {
+            if (item)
+                el.addChild(mountChild(item, el, i));
+        }
+    }
+}
 /+
 import beamui.core.stdaction;
-import beamui.widgets.controls;
 import beamui.widgets.menu;
 import beamui.widgets.popup;
 import beamui.widgets.scroll;
 import beamui.widgets.scrollbar : ScrollAction;
-import beamui.widgets.text;
-import beamui.widgets.widget;
 
-/// Tree widget item data container
 class TreeItem
 {
     @property
@@ -120,13 +376,11 @@ class TreeItem
                 child(i).level = _level + 1;
         }
 
-        /// Returns true if item has subitems and can collapse or expand itself
         bool canExpandOrCollapse() const
         {
             return root.canExpandOrCollapseItem(this);
         }
 
-        /// True if this item is expanded
         bool expanded() const { return _expanded; }
         /// ditto
         protected void expanded(bool expanded)
@@ -157,21 +411,6 @@ class TreeItem
         {
             return root.defaultItem;
         }
-
-        /// Optional int value, associated with this item
-        int intParam() const { return _intParam; }
-        /// ditto
-        void intParam(int value)
-        {
-            _intParam = value;
-        }
-        /// Optional object, associated with this item
-        inout(Object) objectParam() inout { return _objectParam; }
-        /// ditto
-        void objectParam(Object value)
-        {
-            _objectParam = value;
-        }
     }
 
     private
@@ -183,28 +422,6 @@ class TreeItem
         uint _level;
         Collection!(TreeItem, true) _children;
         bool _expanded;
-
-        int _intParam;
-        Object _objectParam;
-    }
-
-    this(string id)
-    {
-        _id = id;
-        _expanded = true;
-    }
-
-    this(string id, dstring label, string iconID = null)
-    {
-        _id = id;
-        _expanded = true;
-        _iconID = iconID;
-        _text = label;
-    }
-
-    bool compareID(string id) const
-    {
-        return _id !is null && _id == id;
     }
 
     protected void expand()
@@ -240,31 +457,6 @@ class TreeItem
             toggleExpand(this);
     }
 
-    /// Create and add new child item
-    TreeItem newChild(string id, dstring label, string iconID = null)
-    {
-        auto res = new TreeItem(id, label, iconID);
-        addChild(res);
-        return res;
-    }
-
-    /// Delete all subitems
-    void clear()
-    {
-        RootTreeItem root = this.root;
-        if (hasDescendant(root.selectedItem))
-            root.selectItem(null);
-        if (hasDescendant(root.defaultItem))
-            root.setDefaultItem(null);
-        foreach (c; _children)
-        {
-            c.parent = null;
-            c.level = 0;
-        }
-        _children.clear();
-        root.handleUpdate();
-    }
-
     /// Returns true if item has at least one child
     @property bool hasChildren() const
     {
@@ -279,19 +471,6 @@ class TreeItem
     TreeItem child(int index)
     {
         return _children[index];
-    }
-    /// Adds child, returns added item
-    TreeItem addChild(TreeItem item, int index = -1)
-        in(item)
-    {
-        if (index >= 0)
-            _children.insert(index, item);
-        else
-            _children.append(item);
-        item.parent = this;
-        item.level = _level + 1;
-        item.handleUpdate();
-        return item;
     }
     /// Removes child, returns removed item
     TreeItem removeChild(int index)
@@ -320,23 +499,6 @@ class TreeItem
         res.level = 0;
         root.handleUpdate();
         return res;
-    }
-    /// Removes child by reference, returns removed item
-    TreeItem removeChild(TreeItem child)
-    {
-        int index = cast(int)_children.indexOf(child);
-        return removeChild(index);
-    }
-    /// Removes child by ID, returns removed item
-    TreeItem removeChild(string ID)
-    {
-        int index = cast(int)_children.indexOf(ID);
-        return removeChild(index);
-    }
-    /// Returns index of widget in child list, -1 if passed widget is not a child of this widget
-    int childIndex(TreeItem item)
-    {
-        return cast(int)_children.indexOf(item);
     }
 
     bool hasDescendant(TreeItem item) const
@@ -416,7 +578,6 @@ class TreeItem
     }
 }
 
-/// Invisible root item
 class RootTreeItem : TreeItem
 {
     override @property TreeItem selectedItem() { return _selectedItem; }
@@ -450,19 +611,6 @@ class RootTreeItem : TreeItem
                 return item.hasChildren;
         }
         return false;
-    }
-
-    override void clear()
-    {
-        selectItem(null);
-        setDefaultItem(null);
-        foreach (c; _children)
-        {
-            c.parent = null;
-            c.level = 0;
-        }
-        _children.clear();
-        handleUpdate();
     }
 
     override protected void handleUpdate()
@@ -545,72 +693,13 @@ class RootTreeItem : TreeItem
     }
 }
 
-/// Item widget for displaying in trees
 class TreeItemWidget : Panel
 {
-    /// TreeItem prototype of this widget
-    @property TreeItem item() { return _item; }
-
     Listener!(Menu delegate(TreeItem)) popupMenuBuilder;
 
     private
     {
-        TreeItem _item;
-        Widget _indent;
-        ImageWidget _expander;
-        ImageWidget _icon;
-        Label _label;
-        Panel _body;
         long lastClickTime;
-    }
-
-    this(TreeItem item)
-        in(item)
-    {
-        super(item.id);
-        _item = item;
-
-        isolateStyle();
-        allowsClick = true;
-        allowsFocus = true;
-        allowsHover = true;
-
-        int icount = _item.level - 1;
-        if (!_item.root.canExpandOrCollapseTopLevel)
-            icount--;
-        if (icount > 0)
-        {
-            _indent = new Widget;
-            const w = icount * font.size * 2;
-            _indent.style.minWidth = w;
-            _indent.style.maxWidth = w;
-        }
-        if (_item.canExpandOrCollapse)
-        {
-            _expander = new ImageWidget;
-            _expander.setAttribute("expander");
-            _expander.allowsClick = true;
-            _expander.allowsHover = true;
-
-            _expander.onClick ~= {
-                _item.selectItem(_item);
-                _item.toggleExpand(_item);
-            };
-        }
-        _body = new Panel(null, "body");
-        if (_item.iconID.length > 0)
-        {
-            _icon = new ImageWidget(_item.iconID);
-            _icon.setAttribute("icon");
-            _body.addChild(_icon);
-        }
-        _label = new Label(_item.text);
-        _label.setAttribute("label");
-        _body.add(_label);
-        // append children
-        addSome(_indent, _expander, _body);
-
-        updateWidgetState();
     }
 
     override protected void handleClick()
@@ -632,10 +721,6 @@ class TreeItemWidget : Panel
 
     override bool handleKeyEvent(KeyEvent event)
     {
-        if (onKeyEvent.assigned && onKeyEvent(event))
-            return true; // processed by external handler
-        if (!focused || !visible)
-            return false;
         if (event.action != KeyAction.keyDown)
             return false;
         if (event.key == Key.space || event.key == Key.enter)
@@ -667,27 +752,11 @@ class TreeItemWidget : Panel
         }
         return super.handleMouseEvent(event);
     }
-
-    void updateWidgetState()
-    {
-        if (_expander)
-        {
-            _expander.imageID = _item.expanded ? "arrow_right_down_black" : "arrow_right_hollow";
-        }
-        visibility = _item.isVisible ? Visibility.visible : Visibility.gone;
-        applyState(State.selected, _item.selectedItem is _item);
-        applyState(State.default_, _item.defaultItem is _item);
-    }
 }
 
-/// Abstract tree widget
 class TreeWidgetBase : ScrollArea, ActionOperator
 {
-    /// Access tree items
-    @property RootTreeItem items() { return _tree; }
-
     Signal!(void delegate(TreeItem, bool activated)) onSelect;
-    Signal!(void delegate(TreeItem)) onToggleExpand;
 
     /// Allows to provide individual popup menu for items
     Listener!(Menu delegate(TreeItem)) popupMenuBuilder;
@@ -696,23 +765,14 @@ class TreeWidgetBase : ScrollArea, ActionOperator
     {
         RootTreeItem _tree;
 
-        bool _needUpdateWidgets;
-        bool _needUpdateWidgetStates;
+        bool _needUpdateWidgets = true;
     }
 
     this(ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
          ScrollBarMode vscrollbarMode = ScrollBarMode.automatic)
     {
-        super(hscrollbarMode, vscrollbarMode);
-        contentWidget = new Panel;
         _tree = new RootTreeItem;
-        _tree.onContentChange = &handleTreeContentChange;
-        _tree.onStateChange = &handleTreeStateChange;
         _tree.onSelect = &handleTreeItemSelection;
-        _tree.onToggleExpand = &handleTreeItemOpening;
-
-        _needUpdateWidgets = true;
-        _needUpdateWidgetStates = true;
 
         bindActions();
     }
@@ -723,7 +783,6 @@ class TreeWidgetBase : ScrollArea, ActionOperator
         eliminate(_tree);
     }
 
-    /// Override to use custom tree item widgets
     protected Widget createItemWidget(TreeItem item)
     {
         auto res = new TreeItemWidget(item);
@@ -735,13 +794,6 @@ class TreeWidgetBase : ScrollArea, ActionOperator
     TreeItem findItemByID(string id)
     {
         return _tree.findItemByID(id);
-    }
-
-    void clearAllItems()
-    {
-        items.clear();
-        updateWidgets();
-        requestLayout();
     }
 
     protected void addWidgets(TreeItem item)
@@ -764,39 +816,11 @@ class TreeWidgetBase : ScrollArea, ActionOperator
         _needUpdateWidgets = false;
     }
 
-    protected void updateWidgetStates()
-    {
-        foreach (i; 0 .. contentWidget.childCount)
-        {
-            (cast(TreeItemWidget)contentWidget.child(i)).maybe.updateWidgetState();
-        }
-        _needUpdateWidgetStates = false;
-    }
-
     override protected Boundaries computeBoundaries()
     {
         if (_needUpdateWidgets)
             updateWidgets();
-        if (_needUpdateWidgetStates)
-            updateWidgetStates();
         return super.computeBoundaries();
-    }
-
-    protected void handleTreeContentChange()
-    {
-        _needUpdateWidgets = true;
-        requestLayout();
-    }
-
-    protected void handleTreeStateChange()
-    {
-        _needUpdateWidgetStates = true;
-        requestLayout();
-    }
-
-    protected void handleTreeItemOpening(TreeItem item)
-    {
-        onToggleExpand(item);
     }
 
     protected void handleTreeItemSelection(TreeItem selectedItem, bool activated)
@@ -904,16 +928,6 @@ class TreeWidgetBase : ScrollArea, ActionOperator
             }
         }
         return super.handleKeyEvent(event);
-    }
-}
-
-/// Tree widget with items which can have icons and labels
-class TreeWidget : TreeWidgetBase
-{
-    this(ScrollBarMode hscrollbarMode = ScrollBarMode.automatic,
-         ScrollBarMode vscrollbarMode = ScrollBarMode.automatic)
-    {
-        super(hscrollbarMode, vscrollbarMode);
     }
 }
 
