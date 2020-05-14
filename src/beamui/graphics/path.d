@@ -98,7 +98,7 @@ struct Path
     }
 
     /// Set the current pen position. Closes current subpath, if one exists
-    ref Path moveTo(float x, float y)
+    ref Path moveTo(float x, float y) return
     {
         posx = x;
         posy = y;
@@ -106,7 +106,7 @@ struct Path
         return this;
     }
     /// Move the current position by a vector. Closes current subpath, if one exists
-    ref Path moveBy(float dx, float dy)
+    ref Path moveBy(float dx, float dy) return
     {
         posx += dx;
         posy += dy;
@@ -115,7 +115,7 @@ struct Path
     }
 
     /// Add a line segment to a point
-    ref Path lineTo(float x, float y)
+    ref Path lineTo(float x, float y) return
     {
         ensureContourStarted();
         if (fequal2(x, posx) && fequal2(y, posy)) return this;
@@ -125,7 +125,7 @@ struct Path
         return this;
     }
     /// Add a line segment to a point, relative to the current position
-    ref Path lineBy(float dx, float dy)
+    ref Path lineBy(float dx, float dy) return
     {
         ensureContourStarted();
         if (fzero2(dx) && fzero2(dy)) return this;
@@ -136,7 +136,7 @@ struct Path
     }
 
     /// Add a quadratic Bézier curve with one control point and endpoint
-    ref Path quadraticTo(float p1x, float p1y, float p2x, float p2y)
+    ref Path quadraticTo(float p1x, float p1y, float p2x, float p2y) return
     {
         ensureContourStarted();
         if (fequal2(p1x, posx) && fequal2(p1y, posy) &&
@@ -157,13 +157,13 @@ struct Path
         return this;
     }
     /// Add a quadratic Bézier curve with one control point and endpoint, relative to the current position
-    ref Path quadraticBy(float p1dx, float p1dy, float p2dx, float p2dy)
+    ref Path quadraticBy(float p1dx, float p1dy, float p2dx, float p2dy) return
     {
         return quadraticTo(posx + p1dx, posy + p1dy, posx + p2dx, posy + p2dy);
     }
 
     /// Add a cubic Bézier curve with two control points and endpoint
-    ref Path cubicTo(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y)
+    ref Path cubicTo(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y) return
     {
         ensureContourStarted();
         if (fequal2(p1x, posx) && fequal2(p1y, posy) && fequal2(p2x, posx) &&
@@ -184,7 +184,7 @@ struct Path
         return this;
     }
     /// Add a cubic Bézier curve with two control points and endpoint, relative to the current position
-    ref Path cubicBy(float p1dx, float p1dy, float p2dx, float p2dy, float p3dx, float p3dy)
+    ref Path cubicBy(float p1dx, float p1dy, float p2dx, float p2dy, float p3dx, float p3dy) return
     {
         return cubicTo(posx + p1dx, posy + p1dy, posx + p2dx, posy + p2dy, posx + p3dx, posy + p3dy);
     }
@@ -193,7 +193,7 @@ struct Path
 
         Positive angle draws clockwise.
     */
-    ref Path arcTo(float x, float y, float angle)
+    ref Path arcTo(float x, float y, float angle) return
     {
         import std.math : abs, asin, cos, sqrt, PI;
 
@@ -232,13 +232,13 @@ struct Path
 
         Positive angle draws clockwise.
     */
-    ref Path arcBy(float dx, float dy, float angle)
+    ref Path arcBy(float dx, float dy, float angle) return
     {
         return arcTo(posx + dx, posy + dy, angle);
     }
 
     /// Add a polyline to the path; equivalent to multiple `lineTo` calls with optional `moveTo` beforehand
-    ref Path addPolyline(const Vec2[] array, bool detached)
+    ref Path addPolyline(const Vec2[] array, bool detached) return
     {
         if (array.length != 0)
         {
@@ -266,7 +266,7 @@ struct Path
 
     /// Return pen to initial contour (subpath) position and start new contour.
     /// Visually affects only stroking: filled shapes are closed by definition
-    ref Path close()
+    ref Path close() return
     {
         if (!closed)
         {
@@ -284,7 +284,7 @@ struct Path
     }
 
     /// Translate path by a vector. Can be expensive for very long path
-    ref Path translate(float dx, float dy)
+    ref Path translate(float dx, float dy) return
     {
         foreach (ref p; points.unsafe_slice)
         {

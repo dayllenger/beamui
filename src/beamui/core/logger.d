@@ -368,6 +368,6 @@ class Log
 
     private void printException(Exception e) @trusted
     {
-        printf("\nAn exception inside the logger: %.*s\n", e.msg.length, e.msg.ptr);
+        printf("\nAn exception inside the logger: %.*s\n", cast(int)e.msg.length, e.msg.ptr);
     }
 }

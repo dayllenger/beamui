@@ -36,13 +36,29 @@ struct Brush
         BrushType type() const { return _type; }
 
         /// Underlying data. The `type` must match in order to get it
-        Color solid() const { assert(type == BrushType.solid); return _solid; }
+        Color solid() const
+        {
+            assert(type == BrushType.solid);
+            return _solid;
+        }
         /// ditto
-        ref const(LinearGradient) linear() const { assert(type == BrushType.linear); return _linear; }
+        ref const(LinearGradient) linear() const return
+        {
+            assert(type == BrushType.linear);
+            return _linear;
+        }
         /// ditto
-        ref const(RadialGradient) radial() const { assert(type == BrushType.radial); return _radial; }
+        ref const(RadialGradient) radial() const return
+        {
+            assert(type == BrushType.radial);
+            return _radial;
+        }
         /// ditto
-        ref const(ImagePattern) pattern() const { assert(type == BrushType.pattern); return _pattern; }
+        ref const(ImagePattern) pattern() const return
+        {
+            assert(type == BrushType.pattern);
+            return _pattern;
+        }
 
         /// Paint opacity, in [0, 1] range
         float opacity() const { return _opacity; }
@@ -110,7 +126,7 @@ struct GradientBuilder
     private ColorStop[] _stops;
 
     /// Add a colorstop. The method clamps `offset` to [0, 1] range
-    ref GradientBuilder addStop(float offset, Color color)
+    ref GradientBuilder addStop(float offset, Color color) return
     {
         offset = clamp(offset, 0, 1);
         // replace if such offset already exists

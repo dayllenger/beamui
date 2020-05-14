@@ -281,7 +281,7 @@ struct LineMarkup
         return MarkupSpan(&this, start, count);
     }
 
-    LineMarkup* set(TextAlign alignment)
+    LineMarkup* set(TextAlign alignment) return
     {
         this.alignment = alignment;
         alignmentSet = true;

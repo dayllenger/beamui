@@ -186,7 +186,7 @@ void eliminate(T, S)(ref T[S] values) if (__traits(compiles, eliminate(values[S.
         {
             import core.stdc.stdio : printf;
 
-            printf("An exception during associative array iteration: %.*s\n", e.msg.length, e.msg.ptr);
+            printf("An exception during associative array iteration: %.*s\n", cast(int)e.msg.length, e.msg.ptr);
         }
         destr(values);
         values = null;

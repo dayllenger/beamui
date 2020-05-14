@@ -1469,7 +1469,7 @@ void ensureNotInGC(const Object object)
         if (GC.inFinalizer())
         {
             const name = getShortClassName(object);
-            fprintf(stderr, "Error: %.*s must be destroyed manually.\n", name.length, name.ptr);
+            fprintf(stderr, "Error: %.*s must be destroyed manually.\n", cast(int)name.length, name.ptr);
         }
     }
 }

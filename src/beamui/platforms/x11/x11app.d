@@ -157,7 +157,7 @@ private struct Atoms
             this.tupleof[i] = requests[i].get();
     }
 
-    Atom[] protocols()
+    Atom[] protocols() return
     {
         return (&WM_DELETE_WINDOW)[0 .. 2];
     }

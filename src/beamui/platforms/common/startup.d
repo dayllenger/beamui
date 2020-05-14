@@ -372,7 +372,7 @@ void initLogs()
         }
         catch (Exception e)
         {
-            std.stdio.printf("%.*s\n", e.msg.length, e.msg.ptr);
+            std.stdio.printf("%.*s\n", cast(int)e.msg.length, e.msg.ptr);
             return null;
         }
     }

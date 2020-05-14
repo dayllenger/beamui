@@ -36,7 +36,7 @@ struct TokenRange
     }
 
     /// Current token
-    @property ref const(Token) front() const { return _front; }
+    @property ref const(Token) front() const return { return _front; }
 
     /// Go for the next token. Check for empty before this
     void popFront()

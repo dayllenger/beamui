@@ -74,12 +74,18 @@ struct TextLine
 
         const(FragmentGlyph[]) glyphs() const
         {
-            return _glyphs.length > 0 ? (&_glyphs.front())[0 .. _glyphs.length] : null;
+            if (_glyphs.length > 0)
+                return (&_glyphs.front())[0 .. _glyphs.length];
+            else
+                return null;
         }
 
-        const(LineSpan[]) wrapSpans() const
+        const(LineSpan[]) wrapSpans() const return
         {
-            return _wrapSpans.length > 0 ? (&_wrapSpans.front())[0 .. _wrapSpans.length] : (&_defaultSpan)[0 .. 1];
+            if (_wrapSpans.length > 0)
+                return (&_wrapSpans.front())[0 .. _wrapSpans.length];
+            else
+                return (&_defaultSpan)[0 .. 1];
         }
     }
 

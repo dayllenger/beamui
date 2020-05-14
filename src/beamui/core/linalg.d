@@ -260,7 +260,7 @@ struct Mat2x3
         Note: Values are stored in row-major order, so when passing it to OpenGL
         with `glUniform*` functions, you'll need to set `transpose` parameter to GL_TRUE.
     */
-    const(float*) ptr() const @trusted { return store.ptr.ptr; }
+    const(float*) ptr() const return @trusted { return store.ptr.ptr; }
 
     this(float diagonal)
     {
@@ -281,7 +281,7 @@ struct Mat2x3
     /// Identity matrix
     enum Mat2x3 identity = Mat2x3(1.0f);
     /// Reset this matrix to identity
-    ref Mat2x3 setIdentity()
+    ref Mat2x3 setIdentity() return
     {
         store[0][0] = 1.0f;
         store[0][1] = 0.0f;
@@ -360,7 +360,7 @@ struct Mat2x3
     }
 
     /// Invert this transform. If matrix is not invertible, resets it to identity matrix
-    ref Mat2x3 invert()
+    ref Mat2x3 invert() return
     {
         const float det = store[0][0] * store[1][1] - store[0][1] * store[1][0];
         if (fzero6(det))
@@ -393,7 +393,7 @@ struct Mat2x3
     }
 
     /// Apply translation to this matrix
-    ref Mat2x3 translate(Vec2 offset)
+    ref Mat2x3 translate(Vec2 offset) return
         in(isFinite(), msgNotFinite)
     {
         store[0][2] += store[0][0] * offset.x + store[0][1] * offset.y;
@@ -411,7 +411,7 @@ struct Mat2x3
     }
 
     /// Apply rotation to this matrix
-    ref Mat2x3 rotate(float radians)
+    ref Mat2x3 rotate(float radians) return
         in(isFinite(), msgNotFinite)
     {
         const c = cos(radians);
@@ -439,7 +439,7 @@ struct Mat2x3
     }
 
     /// Apply scaling to this matrix
-    ref Mat2x3 scale(Vec2 factor)
+    ref Mat2x3 scale(Vec2 factor) return
         in(isFinite(), msgNotFinite)
     {
         store[0][0] *= factor.x;
@@ -459,7 +459,7 @@ struct Mat2x3
     }
 
     /// Apply skewing to this matrix
-    ref Mat2x3 skew(Vec2 factor)
+    ref Mat2x3 skew(Vec2 factor) return
         in(isFinite(), msgNotFinite)
     {
         const a = tan(factor.x);
@@ -519,19 +519,19 @@ struct mat4
         m[] = v[];
     }
 
-    ref mat4 opAssign(const ref mat4 v)
+    ref mat4 opAssign(const ref mat4 v) return
     {
         m[] = v.m[];
         return this;
     }
 
-    ref mat4 opAssign(const mat4 v)
+    ref mat4 opAssign(const mat4 v) return
     {
         m[] = v.m[];
         return this;
     }
 
-    ref mat4 opAssign(const float[16] v)
+    ref mat4 opAssign(const float[16] v) return
     {
         m[] = v[];
         return this;
@@ -596,7 +596,7 @@ struct mat4
         m[3 * 4 + 3] = 0.0f;
     }
 
-    ref mat4 lookAt(const Vec3 eye, const Vec3 center, const Vec3 up)
+    ref mat4 lookAt(const Vec3 eye, const Vec3 center, const Vec3 up) return
     {
         Vec3 forward = (center - eye).normalized();
         Vec3 side = crossProduct(forward, up).normalized();
@@ -684,14 +684,14 @@ struct mat4
         return inverse;
     }
 
-    ref mat4 setLookAt(const Vec3 eye, const Vec3 center, const Vec3 up)
+    ref mat4 setLookAt(const Vec3 eye, const Vec3 center, const Vec3 up) return
     {
         setIdentity();
         lookAt(eye, center, up);
         return this;
     }
 
-    ref mat4 translate(const Vec3 v)
+    ref mat4 translate(const Vec3 v) return
     {
         m[3 * 4 + 0] += m[0 * 4 + 0] * v.x + m[1 * 4 + 0] * v.y + m[2 * 4 + 0] * v.z;
         m[3 * 4 + 1] += m[0 * 4 + 1] * v.x + m[1 * 4 + 1] * v.y + m[2 * 4 + 1] * v.z;
@@ -700,7 +700,7 @@ struct mat4
         return this;
     }
 
-    ref mat4 translate(float x, float y, float z)
+    ref mat4 translate(float x, float y, float z) return
     {
         m[3 * 4 + 0] += m[0 * 4 + 0] * x + m[1 * 4 + 0] * y + m[2 * 4 + 0] * z;
         m[3 * 4 + 1] += m[0 * 4 + 1] * x + m[1 * 4 + 1] * y + m[2 * 4 + 1] * z;
@@ -819,7 +819,7 @@ struct mat4
     }
 
     /// 2d index by row, col
-    ref float opIndex(int y, int x)
+    ref float opIndex(int y, int x) return
     {
         return m[y * 4 + x];
     }
@@ -831,7 +831,7 @@ struct mat4
     }
 
     /// Scalar index by rows then (y*4 + x)
-    ref float opIndex(int index)
+    ref float opIndex(int index) return
     {
         return m[index];
     }
@@ -843,13 +843,13 @@ struct mat4
     }
 
     /// Set to identity: fill all items of matrix with zero except main diagonal items which will be assigned to 1.0f
-    ref mat4 setIdentity()
+    ref mat4 setIdentity() return
     {
         this = mat4.init;
         return this;
     }
     /// Set to diagonal: fill all items of matrix with zero except main diagonal items which will be assigned to v
-    ref mat4 setDiagonal(float v)
+    ref mat4 setDiagonal(float v) return
     {
         foreach (x; 0 .. 4)
             foreach (y; 0 .. 4)
@@ -857,13 +857,13 @@ struct mat4
         return this;
     }
     /// Fill all items of matrix with specified value
-    ref mat4 fill(float v)
+    ref mat4 fill(float v) return
     {
         m[] = v;
         return this;
     }
     /// Fill all items of matrix with zero
-    ref mat4 setZero()
+    ref mat4 setZero() return
     {
         m[] = 0;
         return this;
@@ -882,29 +882,29 @@ struct mat4
     }
 
     /// Inplace rotate around Z axis
-    ref mat4 rotatez(float angle)
+    ref mat4 rotatez(float angle) return
     {
         return rotate(angle, 0, 0, 1);
     }
 
     /// Inplace rotate around X axis
-    ref mat4 rotatex(float angle)
+    ref mat4 rotatex(float angle) return
     {
         return rotate(angle, 1, 0, 0);
     }
 
     /// Inplace rotate around Y axis
-    ref mat4 rotatey(float angle)
+    ref mat4 rotatey(float angle) return
     {
         return rotate(angle, 0, 1, 0);
     }
 
-    ref mat4 rotate(float angle, const Vec3 axis)
+    ref mat4 rotate(float angle, const Vec3 axis) return
     {
         return rotate(angle, axis.x, axis.y, axis.z);
     }
 
-    ref mat4 rotate(float angle, float x, float y, float z)
+    ref mat4 rotate(float angle, float x, float y, float z) return
     {
         if (angle == 0.0f)
             return this;
@@ -1024,22 +1024,22 @@ struct mat4
         return this;
     }
 
-    ref mat4 rotateX(float angle)
+    ref mat4 rotateX(float angle) return
     {
         return rotate(angle, 1, 0, 0);
     }
 
-    ref mat4 rotateY(float angle)
+    ref mat4 rotateY(float angle) return
     {
         return rotate(angle, 0, 1, 0);
     }
 
-    ref mat4 rotateZ(float angle)
+    ref mat4 rotateZ(float angle) return
     {
         return rotate(angle, 0, 0, 1);
     }
 
-    ref mat4 scale(float x, float y, float z)
+    ref mat4 scale(float x, float y, float z) return
     {
         m[0 * 4 + 0] *= x;
         m[0 * 4 + 1] *= x;
@@ -1056,7 +1056,7 @@ struct mat4
         return this;
     }
 
-    ref mat4 scale(float v)
+    ref mat4 scale(float v) return
     {
         m[0 * 4 + 0] *= v;
         m[0 * 4 + 1] *= v;
@@ -1073,7 +1073,7 @@ struct mat4
         return this;
     }
 
-    ref mat4 scale(const Vec3 v)
+    ref mat4 scale(const Vec3 v) return
     {
         m[0 * 4 + 0] *= v.x;
         m[0 * 4 + 1] *= v.x;

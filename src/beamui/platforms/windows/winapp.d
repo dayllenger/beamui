@@ -495,8 +495,15 @@ final class Win32Window : Window
         return _hwnd == GetForegroundWindow();
     }
 
-    alias handleWindowActivityChange = typeof(super).handleWindowActivityChange;
-    alias handleResize = typeof(super).handleResize;
+    // make them visible for WndProc
+    override protected void handleResize(int width, int height)
+    {
+        super.handleResize(width, height);
+    }
+    override protected void handleWindowActivityChange(bool isWindowActive)
+    {
+        super.handleWindowActivityChange(isWindowActive);
+    }
 
     //===============================================================
 
