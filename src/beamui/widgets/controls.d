@@ -37,7 +37,15 @@ class ImageWidget : Widget
     }
 }
 
-/// Widget with an icon and a label
+/** Widget with an icon and a label.
+
+    CSS_nodes:
+    ---
+    ButtonLike
+    ├── ImageWidget?.icon
+    ╰── Label?.label
+    ---
+*/
 class ButtonLike : Panel
 {
     dstring text;
@@ -272,7 +280,15 @@ class SwitchButton : Widget
     }
 }
 
-/// Check button that can be toggled on or off
+/** Check box that can be toggled on or off.
+
+    CSS_nodes:
+    ---
+    CheckBox
+    ├── Widget.icon
+    ╰── Label?.label
+    ---
+*/
 class CheckBox : Panel
 {
     dstring text;
@@ -323,7 +339,15 @@ class CheckBox : Panel
     }
 }
 
-/// Mutually exclusive check button
+/** Mutually exclusive check button.
+
+    CSS_nodes:
+    ---
+    RadioButton
+    ├── Widget.icon
+    ╰── Label?.label
+    ---
+*/
 class RadioButton : Panel
 {
     dstring text;

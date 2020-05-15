@@ -38,7 +38,16 @@ class TabItemBase : Panel
     }
 }
 
-/// Common tab header widget. It may have a title, an icon, and a close button
+/** Common tab header widget. It may have a title, an icon, and a close button.
+
+    CSS_nodes:
+    ---
+    TabItem
+    ├── ImageWidget?.icon
+    ├── Label?.label
+    ╰── Button?.close
+    ---
+*/
 class TabItem : TabItemBase
 {
     /// Tab title
@@ -220,6 +229,32 @@ class TabContent : PageStackOf!TabPane
 
 alias TabPair = WidgetPair!(TabItemBase, Widget);
 
+/**
+
+    CSS_nodes:
+    ---
+    // top alignment
+    TabWidget.top
+    ├── TabBar
+    │   ├── TabItemBase
+    │   ...
+    ╰── TabContent
+        ├── TabPane
+        │   ╰── *content*
+        ...
+    ---
+    ---
+    // bottom alignment
+    TabWidget.bottom
+    ├── TabContent
+    │   ├── TabPane
+    │   │   ╰── *content*
+    │   ...
+    ╰── TabBar
+        ├── TabItemBase
+        ...
+    ---
+*/
 class TabWidget : Widget
 {
     WidgetKey defaultTabKey = 0;

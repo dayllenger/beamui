@@ -38,7 +38,20 @@ class ListView : Widget
         allowsFocus = true;
     }
 
-    /// Create a standard item widget from a string or `StringListValue`
+    /** Create a standard item widget from a string or `StringListValue`.
+
+        CSS_nodes:
+        ---
+        // text only
+        Label.item
+        ---
+        ---
+        // StringListValue
+        Panel.item
+        ├── ImageWidget?
+        ╰── Label
+        ---
+    */
     Widget item(dstring text)
     {
         Label item = render!Label;

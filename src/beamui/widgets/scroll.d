@@ -606,6 +606,14 @@ abstract class ElemScrollAreaBase : ElemGroup
     If the size of the content widget exceeds available space, it allows
     to scroll it. If the widget fits, `ScrollArea` can stretch and align it,
     using the respective style properties.
+
+    CSS_nodes:
+    ---
+    ScrollArea
+    ├── ScrollBar?
+    ├── ScrollBar?
+    ╰── *content*
+    ---
  */
 class ScrollArea : ScrollAreaBase
 {

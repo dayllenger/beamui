@@ -38,7 +38,21 @@ private class ComboListView : ListView
     }
 }
 
-/// Abstract combobox widget
+/** Abstract combobox widget.
+
+    CSS_nodes:
+    ---
+    ComboBoxBase.opened?
+    ├── .body
+    ╰── .arrow
+    ---
+    ---
+    Popup.combobox
+    ╰── ListView
+        ├── .item
+        ...
+    ---
+*/
 abstract class ComboBoxBase : Panel
 {
     /// Triggers on item selection and passes integer index of the item

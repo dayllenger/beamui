@@ -13,7 +13,21 @@ import beamui.widgets.lists : ListView, ElemListView;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-/// Widget that draws menu item with icon, label, etc.
+/** Widget that draws menu item with icon, label, etc.
+
+    CSS_nodes:
+    ---
+    MenuItem
+    ├── Widget?.(radio|check)
+    ├── ImageWidget?.icon
+    ├── Label.label
+    ╰── Label?.shortcut
+    ---
+    ---
+    MenuItem.separator
+    ╰── Widget
+    ---
+*/
 class MenuItem : Widget
 {
     /// Item action

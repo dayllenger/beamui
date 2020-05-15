@@ -88,7 +88,16 @@ abstract class AbstractSlider : Widget
     }
 }
 
-/// Single-value slider widget - either vertical or horizontal
+/** Single-value slider widget - either vertical or horizontal.
+
+    CSS_nodes:
+    ---
+    Slider.(horizontal|vertical)
+    ├── SliderBar.range-before
+    ├── SliderBar.range-after
+    ╰── SliderHandle
+    ---
+*/
 class Slider : AbstractSlider
 {
     double value = 0;
@@ -164,6 +173,16 @@ class Slider : AbstractSlider
 /** Slider widget with two handles to select a numeric range.
 
     If `first` > `second`, the first value will push the second.
+
+    CSS_nodes:
+    ---
+    RangeSlider.(horizontal|vertical)
+    ├── SliderBar.range-before
+    ├── SliderBar.range-after
+    ├── SliderBar.range-between
+    ├── SliderHandle
+    ╰── SliderHandle
+    ---
 */
 class RangeSlider : AbstractSlider
 {

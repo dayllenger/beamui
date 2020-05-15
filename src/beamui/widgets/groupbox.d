@@ -10,7 +10,15 @@ module beamui.widgets.groupbox;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-/// Group box is a panel (column usually) with a frame and a caption
+/** Group box is a panel (column usually) with a frame and a caption.
+
+    CSS_nodes:
+    ---
+    GroupBox
+    │   ╰── Label.caption
+    ╰── *items*
+    ---
+*/
 class GroupBox : Panel
 {
     /// Groupbox caption text

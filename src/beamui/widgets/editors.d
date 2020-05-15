@@ -4317,6 +4317,27 @@ class LogWidget : EditBox
     }
 }
 +/
+
+/**
+
+    CSS_nodes:
+    ---
+    EditorSearchPane.find-only?
+    ├── EditLine.find
+    ├── EditLine?.replace
+    ├── Panel.find-buttons
+    │   ├── Button
+    │   ├── Button
+    │   ├── CheckButton
+    │   ├── CheckButton
+    │   ╰── CheckBox
+    ├── Panel?.replace-buttons
+    │   ├── Button
+    │   ├── Button
+    │   ╰── Button
+    ╰── Button.close
+    ---
+*/
 class EditorSearchPane : Panel
 {
     dstring initialText;

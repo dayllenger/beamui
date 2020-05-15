@@ -11,7 +11,18 @@ import std.math : isFinite;
 import beamui.widgets.controls;
 import beamui.widgets.widget;
 
-/// Scroll bar - either vertical or horizontal
+/** Scroll bar - either vertical or horizontal.
+
+    CSS_nodes:
+    ---
+    ScrollBar
+    ├── .button-back
+    ├── .button-forward
+    ├── ScrollIndicator
+    ├── PageScrollButton
+    ╰── PageScrollButton
+    ---
+*/
 class ScrollBar : Widget
 {
     /// Scrollbar orientation, horizontal by default

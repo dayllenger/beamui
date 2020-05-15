@@ -11,7 +11,18 @@ import beamui.widgets.controls : Button;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
-/// Window frame with caption widget
+/** Window frame with caption widget.
+
+    CSS_nodes:
+    ---
+    WindowFrame
+    ├── Panel.caption
+    │   ├── Label
+    │   ╰── Button?.flat
+    ╰── Panel.body
+        ╰── *items*
+    ---
+*/
 class WindowFrame : Panel
 {
     dstring title;
