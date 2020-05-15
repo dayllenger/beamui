@@ -1,5 +1,5 @@
 name "basic"
-description "Basic example for beamui"
+description "Example of a basic temperature converter on beamui"
 homepage "https://github.com/dayllenger/beamui"
 license "BSL-1.0"
 authors "dayllenger"
