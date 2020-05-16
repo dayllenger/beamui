@@ -9,12 +9,9 @@ targetPath "bin"
 targetType "executable"
 
 dependency "beamui" path="../../"
+dependency "beamui:platforms" path="../../platforms"
 
 configuration "application" {
-    subConfiguration "beamui" "x11"
-}
-configuration "win-application" {
-    platforms "windows"
     subConfiguration "beamui" "library"
 }
 configuration "sw" {

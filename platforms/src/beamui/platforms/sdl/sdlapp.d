@@ -9,7 +9,7 @@ module beamui.platforms.sdl.sdlapp;
 
 import beamui.core.config;
 
-static if (BACKEND_SDL):
+static if (BACKEND_GUI):
 import std.string : fromStringz, toStringz;
 import std.utf : toUTF32;
 import bindbc.sdl;

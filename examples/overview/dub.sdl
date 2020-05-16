@@ -11,19 +11,18 @@ targetType "executable"
 stringImportPaths "resources"
 
 dependency "beamui" path="../../"
+dependency "beamui:platforms" path="../../platforms"
 
 configuration "application" {
     subConfiguration "beamui" "library"
 }
 configuration "console" {
     subConfiguration "beamui" "console"
+    subConfiguration "beamui:platforms" "ansi_console"
 }
 configuration "minimal" {
     subConfiguration "beamui" "minimal"
 }
 configuration "sdl" {
-    subConfiguration "beamui" "sdl"
-}
-configuration "x11" {
-    subConfiguration "beamui" "x11"
+    subConfiguration "beamui:platforms" "sdl"
 }

@@ -9,7 +9,7 @@ module beamui.platforms.ansi_console.dconsole;
 
 import beamui.core.config;
 
-static if (BACKEND_ANSI_CONSOLE):
+static if (BACKEND_CONSOLE):
 version (Windows)
 {
     import core.sys.windows.winbase;

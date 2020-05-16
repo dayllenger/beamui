@@ -9,7 +9,7 @@ module beamui.platforms.ansi_console.consolefont;
 
 import beamui.core.config;
 
-static if (BACKEND_ANSI_CONSOLE):
+static if (BACKEND_CONSOLE):
 import beamui.graphics.colors : Color;
 import beamui.style.types : TextFlag;
 import beamui.text.glyph;

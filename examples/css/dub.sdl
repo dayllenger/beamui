@@ -9,3 +9,5 @@ targetPath "bin"
 targetType "executable"
 
 dependency "beamui" path="../../"
+dependency "beamui:platforms" path="../../platforms"
+subConfiguration "beamui:platforms" "sdl"

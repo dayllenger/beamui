@@ -9,13 +9,11 @@ targetPath "bin"
 targetType "executable"
 
 dependency "beamui" path="../../"
+dependency "beamui:platforms" path="../../platforms"
 
 configuration "application" {
     subConfiguration "beamui" "library"
 }
 configuration "sdl" {
-    subConfiguration "beamui" "sdl"
-}
-configuration "x11" {
-    subConfiguration "beamui" "x11"
+    subConfiguration "beamui:platforms" "sdl"
 }

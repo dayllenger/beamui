@@ -9,7 +9,7 @@ module beamui.platforms.ansi_console.consoleapp;
 
 import beamui.core.config;
 
-static if (BACKEND_ANSI_CONSOLE):
+static if (BACKEND_CONSOLE):
 import beamui.core.events;
 import beamui.core.logger;
 import beamui.graphics.bitmap;

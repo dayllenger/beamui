@@ -13,7 +13,6 @@ sourcePaths "3rdparty" "src"
 stringImportPaths "res" "res/shaders"
 
 excludedSourceFiles "3rdparty/fontconfig.d" platform="windows"
-excludedSourceFiles "3rdparty/glx.d" "3rdparty/wgl.d" "3rdparty/xsync.d"
 
 libs "z" platform="linux"
 lflags "/SUBSYSTEM:WINDOWS" "/ENTRY:mainCRTStartup" platform="windows"
@@ -21,6 +20,7 @@ lflags "/SAFESEH:NO" platform="windows-x86"
 
 x:ddoxFilterArgs "--min-protection=Protected" "--in" "beamui" "--ex" ""
 
+subPackage "platforms"
 subPackage "ext"
 subPackage "examples/basic"
 subPackage "examples/canvas"
@@ -28,7 +28,7 @@ subPackage "examples/css"
 subPackage "examples/opengl"
 subPackage "examples/overview"
 
-versions "FT_28" "GL_30" "SDL_205"
+versions "FT_28" "GL_30"
 
 dependency "mofile" version="~>0.2.1"
 dependency "icontheme" version="~>1.2.2"  // Posix only
@@ -36,61 +36,49 @@ dependency "inilike" version="~>1.1.0"    // Posix only
 dependency "xdgpaths" version="~>0.2.5"   // Posix only
 
 configuration "library" {
-    sourceFiles "3rdparty/wgl.d" platform="windows"
-    libs "pixman-1" platform="posix"
+    versions "FREETYPE" platform="posix"
     dependency "bindbc-loader" version="~>0.2.1"
     dependency "bindbc-freetype" version="~>0.6.0" // Posix only
     dependency "bindbc-opengl" version="~>0.9.0"
-    dependency "bindbc-sdl" version="~>0.10.0"     // Posix only
     copyFiles "libs/windows-x86_64/libpixman-1-0.dll" platform="windows-x86_64"
     copyFiles "libs/windows-x86/libpixman-1-0.dll" platform="windows-x86"
     lflags "$PACKAGE_DIR/libs/windows-x86_64/pixman-1.lib" platform="windows-x86_64"
     lflags "$PACKAGE_DIR/libs/windows-x86/pixman-1.lib" platform="windows-x86"
+    libs "pixman-1" platform="posix"
+}
+configuration "freetype" {
+    versions "FREETYPE"
+    dependency "bindbc-loader" version="~>0.2.1"
+    dependency "bindbc-freetype" version="~>0.6.0"
+    dependency "bindbc-opengl" version="~>0.9.0"
+    copyFiles "libs/windows-x86_64/freetype.dll" platform="windows-x86_64"
+    copyFiles "libs/windows-x86/freetype.dll" platform="windows-x86"
+    copyFiles "libs/windows-x86_64/libpixman-1-0.dll" platform="windows-x86_64"
+    copyFiles "libs/windows-x86/libpixman-1-0.dll" platform="windows-x86"
+    lflags "$PACKAGE_DIR/libs/windows-x86_64/pixman-1.lib" platform="windows-x86_64"
+    lflags "$PACKAGE_DIR/libs/windows-x86/pixman-1.lib" platform="windows-x86"
+    libs "pixman-1" platform="posix"
+}
+configuration "minimal" {
+    versions "NO_OPENGL"
+    versions "FREETYPE" platform="posix"
+    dependency "bindbc-loader" version="~>0.2.1"
+    dependency "bindbc-freetype" version="~>0.6.0" // Posix only
+    copyFiles "libs/windows-x86_64/libpixman-1-0.dll" platform="windows-x86_64"
+    copyFiles "libs/windows-x86/libpixman-1-0.dll" platform="windows-x86"
+    lflags "$PACKAGE_DIR/libs/windows-x86_64/pixman-1.lib" platform="windows-x86_64"
+    lflags "$PACKAGE_DIR/libs/windows-x86/pixman-1.lib" platform="windows-x86"
+    libs "pixman-1" platform="posix"
 }
 configuration "console" {
     versions "CONSOLE"
     excludedSourceFiles "3rdparty/dimage/*" "3rdparty/fontconfig.d"
 }
-configuration "minimal" {
-    versions "NO_OPENGL"
-    sourceFiles "3rdparty/wgl.d" platform="windows"
-    libs "pixman-1" platform="posix"
-    dependency "bindbc-loader" version="~>0.2.1"
-    dependency "bindbc-freetype" version="~>0.6.0" // Posix only
-    dependency "bindbc-sdl" version="~>0.10.0"     // Posix only
-    copyFiles "libs/windows-x86_64/libpixman-1-0.dll" platform="windows-x86_64"
-    copyFiles "libs/windows-x86/libpixman-1-0.dll" platform="windows-x86"
-    lflags "$PACKAGE_DIR/libs/windows-x86_64/pixman-1.lib" platform="windows-x86_64"
-    lflags "$PACKAGE_DIR/libs/windows-x86/pixman-1.lib" platform="windows-x86"
-}
-configuration "sdl" {
-    versions "SDL" "FREETYPE"
-    libs "pixman-1" platform="posix"
-    dependency "bindbc-freetype" version="~>0.6.0"
-    dependency "bindbc-opengl" version="~>0.9.0"
-    dependency "bindbc-sdl" version="~>0.10.0"
-    copyFiles "libs/windows-x86_64/freetype.dll" "libs/windows-x86_64/SDL2.dll" platform="windows-x86_64"
-    copyFiles "libs/windows-x86/freetype.dll" "libs/windows-x86/SDL2.dll" platform="windows-x86"
-    copyFiles "libs/windows-x86_64/libpixman-1-0.dll" platform="windows-x86_64"
-    copyFiles "libs/windows-x86/libpixman-1-0.dll" platform="windows-x86"
-    lflags "$PACKAGE_DIR/libs/windows-x86_64/pixman-1.lib" platform="windows-x86_64"
-    lflags "$PACKAGE_DIR/libs/windows-x86/pixman-1.lib" platform="windows-x86"
-}
-configuration "x11" {
-    platforms "posix"
-    versions "X11"
-    libs "pixman-1" "Xext"
-    sourceFiles "3rdparty/glx.d" "3rdparty/xsync.d"
-    dependency "bindbc-loader" version="~>0.2.1"
-    dependency "bindbc-freetype" version="~>0.6.0"
-    dependency "bindbc-opengl" version="~>0.9.0"
-    dependency "x11" version="~>1.0.17"
-}
 
 configuration "ddox" {
+    versions "FREETYPE"
     sourcePaths "ext/src"
     dependency "bindbc-loader" version="~>0.2.1"
     dependency "bindbc-freetype" version="~>0.6.0" // Posix only
     dependency "bindbc-opengl" version="~>0.9.0"
-    dependency "bindbc-sdl" version="~>0.10.0"     // Posix only
 }
