@@ -47,10 +47,9 @@ GLuint compileShader(string source, const ShaderStage stage)
     // check the shader
     if (!checkCompilation(shaderID, stage))
     {
-        shaderID = 0;
         glDeleteShader(shaderID);
+        shaderID = 0;
     }
-
     return shaderID;
 }
 
@@ -66,8 +65,8 @@ GLuint linkShaders(const GLuint[] shaderIDs...)
     // check the program
     if (!checkLinking(programID))
     {
-        programID = 0;
         glDeleteProgram(programID);
+        programID = 0;
     }
     // flag the shaders for deletion
     foreach(sh; shaderIDs)
@@ -77,17 +76,18 @@ GLuint linkShaders(const GLuint[] shaderIDs...)
     return programID;
 }
 
-/// Relink after some location bindings. Nullifies `programID` in case of error
-void relinkProgram(ref GLuint programID)
+/// Relink after some location bindings. Returns false in case of error
+bool relinkProgram(const GLuint programID)
 {
     glLinkProgram(programID);
 
     // check the program
     if (!checkLinking(programID))
     {
-        programID = 0;
         glDeleteProgram(programID);
+        return false;
     }
+    return true;
 }
 
 private enum logMaxLen = 1023;

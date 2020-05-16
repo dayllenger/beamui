@@ -143,12 +143,12 @@ private struct Locations(string[] names)
     static foreach (name; names)
         mixin("GLint " ~ name ~ ";");
 
-    bool initialize(const GLProgram p)
+    bool initialize(const GLProgramInterface pi)
     {
         // retrieve all uniform locations, fail if not found
         static foreach (m; typeof(this).tupleof)
         {
-            m = p.getUniformLocation(__traits(identifier, m));
+            m = pi.getUniformLocation(__traits(identifier, m));
             if (m < 0)
                 return false;
         }
@@ -165,11 +165,11 @@ abstract class ShaderBase : GLProgram
         return import("base.vs.glsl") ~ import("datastore.inc.glsl");
     }
 
-    override protected bool initLocations()
+    override protected bool initLocations(const GLProgramInterface pi)
     {
-        bindAttribLocation("v_position", 0);
-        bindAttribLocation("v_dataIndex", 1);
-        return loc.initialize(this);
+        pi.bindAttribLocation("v_position", 0);
+        pi.bindAttribLocation("v_dataIndex", 1);
+        return loc.initialize(pi);
     }
 
     private void prepare(ref const ParamsBase p)
@@ -213,9 +213,9 @@ final class ShaderSolid : ShaderBase
         return import("solid.fs.glsl");
     }
 
-    override protected bool initLocations()
+    override protected bool initLocations(const GLProgramInterface pi)
     {
-        return super.initLocations() && loc.initialize(this);
+        return super.initLocations(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase)
@@ -233,9 +233,9 @@ final class ShaderLinear : ShaderBase
         return import("linear.fs.glsl") ~ import("gradients.inc.glsl");
     }
 
-    override protected bool initLocations()
+    override protected bool initLocations(const GLProgramInterface pi)
     {
-        return super.initLocations() && loc.initialize(this);
+        return super.initLocations(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsLG p)
@@ -267,9 +267,9 @@ final class ShaderRadial : ShaderBase
         return import("radial.fs.glsl") ~ import("gradients.inc.glsl");
     }
 
-    override protected bool initLocations()
+    override protected bool initLocations(const GLProgramInterface pi)
     {
-        return super.initLocations() && loc.initialize(this);
+        return super.initLocations(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsRG p)
@@ -301,9 +301,9 @@ final class ShaderPattern : ShaderBase
         return import("pattern.fs.glsl");
     }
 
-    override protected bool initLocations()
+    override protected bool initLocations(const GLProgramInterface pi)
     {
-        return super.initLocations() && loc.initialize(this);
+        return super.initLocations(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsPattern p)
@@ -345,10 +345,10 @@ final class ShaderImage : ShaderBase
         return import("image.fs.glsl");
     }
 
-    override protected bool initLocations()
+    override protected bool initLocations(const GLProgramInterface pi)
     {
-        bindAttribLocation("v_texCoord", 2);
-        return super.initLocations() && loc.initialize(this);
+        pi.bindAttribLocation("v_texCoord", 2);
+        return super.initLocations(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsImage p)
@@ -380,10 +380,10 @@ final class ShaderText : ShaderBase
         return import("text.fs.glsl");
     }
 
-    override protected bool initLocations()
+    override protected bool initLocations(const GLProgramInterface pi)
     {
-        bindAttribLocation("v_texCoord", 2);
-        return super.initLocations() && loc.initialize(this);
+        pi.bindAttribLocation("v_texCoord", 2);
+        return super.initLocations(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsText p)
@@ -414,9 +414,9 @@ final class ShaderCompose : ShaderBase
         return import("composition.fs.glsl");
     }
 
-    override protected bool initLocations()
+    override protected bool initLocations(const GLProgramInterface pi)
     {
-        return super.initLocations() && loc.initialize(this);
+        return super.initLocations(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsComposition p)
@@ -448,9 +448,9 @@ final class ShaderBlend : ShaderBase
         return import("blending.fs.glsl");
     }
 
-    override protected bool initLocations()
+    override protected bool initLocations(const GLProgramInterface pi)
     {
-        return super.initLocations() && loc.initialize(this);
+        return super.initLocations(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsComposition p)
@@ -482,13 +482,13 @@ final class ShaderGPAA : GLProgram
         return import("gpaa.fs.glsl");
     }
 
-    override protected bool initLocations()
+    override protected bool initLocations(const GLProgramInterface pi)
     {
-        bindAttribLocation("v_point0", 0);
-        bindAttribLocation("v_point1", 1);
-        bindAttribLocation("v_dataIndex", 2);
-        bindAttribLocation("v_layerIndex", 3);
-        return loc.initialize(this);
+        pi.bindAttribLocation("v_point0", 0);
+        pi.bindAttribLocation("v_point1", 1);
+        pi.bindAttribLocation("v_dataIndex", 2);
+        pi.bindAttribLocation("v_layerIndex", 3);
+        return loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsGPAA p)

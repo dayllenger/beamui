@@ -32,7 +32,6 @@ class GLProgram
     }
 
     const GLuint programID;
-    private GLuint _programID;
 
     this()
     {
@@ -47,21 +46,21 @@ class GLProgram
         if (vs == 0 || fs == 0)
             return;
 
-        _programID = linkShaders(vs, fs);
-        if (_programID == 0)
+        const id = linkShaders(vs, fs);
+        if (!id)
             return;
 
-        if (!initLocations())
+        if (!initLocations(GLProgramInterface(id)))
         {
             Log.e("GL: some of program locations were not found");
             return;
         }
-
-        relinkProgram(_programID);
-        if (_programID == 0)
+        if (!relinkProgram(id))
+        {
             Log.e("GL: cannot relink program");
-
-        programID = _programID;
+            return;
+        }
+        programID = id;
     }
 
     ~this()
@@ -114,17 +113,24 @@ class GLProgram
     }
 
     /// Override to init shader code locations. Return `false` on error
-    abstract bool initLocations();
+    abstract bool initLocations(const GLProgramInterface pi);
+}
 
-    /// Associate a number with an attribute. Must be used inside of `initLocations`
-    final void bindAttribLocation(string name, GLuint location) const
+struct GLProgramInterface
+{
+    const GLuint programID;
+
+    nothrow:
+
+    /// Associate a number with an attribute
+    void bindAttribLocation(string name, GLuint location) const
     {
-        checkgl!glBindAttribLocation(_programID, location, toStringz(name));
+        checkgl!glBindAttribLocation(programID, location, toStringz(name));
     }
     /// Get uniform location from program, returns -1 if location is not found
-    final int getUniformLocation(string name) const
+    int getUniformLocation(string name) const
     {
-        return checkgl!glGetUniformLocation(_programID, toStringz(name));
+        return checkgl!glGetUniformLocation(programID, toStringz(name));
     }
 }
 
