@@ -2,6 +2,8 @@ module app;
 
 import beamui;
 
+mixin RegisterPlatforms;
+
 int main()
 {
     // initialize library

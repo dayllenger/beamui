@@ -6,6 +6,8 @@ import beamui.core.linalg : Vec2;
 import beamui.text.shaping;
 import beamui.text.simple;
 
+mixin RegisterPlatforms;
+
 int main()
 {
     resourceList.setResourceDirs(

@@ -2686,7 +2686,7 @@ struct GuiApp
         }
         initResourceManagers();
 
-        Platform.instance = initPlatform(conf);
+        Platform.instance = initPlatformProxy(conf);
         if (!Platform.instance)
             return false;
 
@@ -2704,5 +2704,28 @@ struct GuiApp
     }
 }
 
-// to remove import
-extern (C) Platform initPlatform(AppConf);
+version (unittest)
+{
+    private extern (C) Platform initPlatformProxy(ref AppConf)
+    {
+        return null;
+    }
+}
+else
+{
+    // to remove import
+    private extern (C) Platform initPlatformProxy(ref AppConf);
+}
+
+/// This mixin links `beamui` and platform library together
+mixin template RegisterPlatforms()
+{
+    pragma(mangle, "initPlatform")
+    private extern (C) Platform initPlatform(AppConf);
+
+    pragma(mangle, "initPlatformProxy")
+    private extern (C) Platform initPlatformProxy(ref AppConf conf)
+    {
+        return initPlatform(conf);
+    }
+}
