@@ -38,8 +38,8 @@ dependency "xdgpaths" version="~>0.2.5"   // Posix only
 configuration "library" {
     versions "FREETYPE" platform="posix"
     dependency "bindbc-loader" version="~>0.2.1"
-    dependency "bindbc-freetype" version="~>0.6.0" // Posix only
-    dependency "bindbc-opengl" version="~>0.9.0"
+    dependency "bindbc-freetype" version="~>0.8.0" // Posix only
+    dependency "bindbc-opengl" version="~>0.12.0"
     copyFiles "libs/windows-x86_64/libpixman-1-0.dll" platform="windows-x86_64"
     copyFiles "libs/windows-x86/libpixman-1-0.dll" platform="windows-x86"
     lflags "$PACKAGE_DIR/libs/windows-x86_64/pixman-1.lib" platform="windows-x86_64"
@@ -49,8 +49,8 @@ configuration "library" {
 configuration "freetype" {
     versions "FREETYPE"
     dependency "bindbc-loader" version="~>0.2.1"
-    dependency "bindbc-freetype" version="~>0.6.0"
-    dependency "bindbc-opengl" version="~>0.9.0"
+    dependency "bindbc-freetype" version="~>0.8.0"
+    dependency "bindbc-opengl" version="~>0.12.0"
     copyFiles "libs/windows-x86_64/freetype.dll" platform="windows-x86_64"
     copyFiles "libs/windows-x86/freetype.dll" platform="windows-x86"
     copyFiles "libs/windows-x86_64/libpixman-1-0.dll" platform="windows-x86_64"
@@ -63,7 +63,7 @@ configuration "minimal" {
     versions "NO_OPENGL"
     versions "FREETYPE" platform="posix"
     dependency "bindbc-loader" version="~>0.2.1"
-    dependency "bindbc-freetype" version="~>0.6.0" // Posix only
+    dependency "bindbc-freetype" version="~>0.8.0" // Posix only
     copyFiles "libs/windows-x86_64/libpixman-1-0.dll" platform="windows-x86_64"
     copyFiles "libs/windows-x86/libpixman-1-0.dll" platform="windows-x86"
     lflags "$PACKAGE_DIR/libs/windows-x86_64/pixman-1.lib" platform="windows-x86_64"
@@ -79,6 +79,6 @@ configuration "ddox" {
     versions "FREETYPE"
     sourcePaths "ext/src"
     dependency "bindbc-loader" version="~>0.2.1"
-    dependency "bindbc-freetype" version="~>0.6.0" // Posix only
-    dependency "bindbc-opengl" version="~>0.9.0"
+    dependency "bindbc-freetype" version="~>0.8.0" // Posix only
+    dependency "bindbc-opengl" version="~>0.12.0"
 }

@@ -19,7 +19,7 @@ configuration "library-linux" {
 }
 configuration "library-osx" {
     platforms "osx"
-    dependency "bindbc-sdl" version="~>0.10.0"
+    dependency "bindbc-sdl" version="~>0.17.0"
     sourcePaths "src/beamui/platforms/sdl"
 }
 configuration "library-windows" {
@@ -34,7 +34,7 @@ configuration "ansi_console" {
 configuration "sdl" {
     copyFiles "../libs/windows-x86_64/SDL2.dll" platform="windows-x86_64"
     copyFiles "../libs/windows-x86/SDL2.dll" platform="windows-x86"
-    dependency "bindbc-sdl" version="~>0.10.0"
+    dependency "bindbc-sdl" version="~>0.17.0"
     sourcePaths "src/beamui/platforms/sdl"
 }
 configuration "x11" {
