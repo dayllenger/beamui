@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 Timur Gafarov
+Copyright (c) 2015-2019 Timur Gafarov
 
 Boost Software License - Version 1.0 - August 17th, 2003
 
@@ -25,17 +25,16 @@ FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-
 // dimage is actually stripped out part of dlib - just to support reading PNG and JPEG
 module dimage.array; //dlib.container.array
 
+import std.traits;
 import dimage.memory;
 
-/*
+/**
  * GC-free dynamic array implementation.
  * Very efficient for small-sized arrays.
  */
-
 struct DynamicArray(T, size_t chunkSize = 32)
 {
     T[chunkSize] staticStorage;
@@ -43,7 +42,7 @@ struct DynamicArray(T, size_t chunkSize = 32)
     uint numChunks = 0;
     uint pos = 0;
 
-    T* storage()
+    private T* storage()
     {
         if (numChunks == 0)
             return staticStorage.ptr;
@@ -51,7 +50,7 @@ struct DynamicArray(T, size_t chunkSize = 32)
             return dynamicStorage.ptr;
     }
 
-    void addChunk()
+    private void addChunk()
     {
         if (numChunks == 0)
         {
@@ -68,7 +67,7 @@ struct DynamicArray(T, size_t chunkSize = 32)
 
     void shiftRight()
     {
-        append(T.init);
+        insertBack(T.init);
 
         for(uint i = pos-1; i > 0; i--)
         {
@@ -87,7 +86,7 @@ struct DynamicArray(T, size_t chunkSize = 32)
         }
     }
 
-    void append(T c)
+    void insertBack(T c)
     {
         if (numChunks == 0)
         {
@@ -110,37 +109,37 @@ struct DynamicArray(T, size_t chunkSize = 32)
         }
     }
 
-    void appendLeft(T c)
+    void insertFront(T c)
     {
         shiftRight();
         storage[0] = c;
     }
 
-    void append(const(T)[] s)
+    void insertBack(const(T)[] s)
     {
         foreach(c; s)
-            append(cast(T)c);
+            insertBack(cast(T)c);
     }
 
-    void appendLeft(const(T)[] s)
+    void insertFront(const(T)[] s)
     {
-        foreach(c; s)
-            appendLeft(cast(T)c);
+        foreach_reverse(c; s)
+            insertFront(cast(T)c);
     }
 
-    auto opCatAssign(T c)
+    auto opOpAssign(string op)(T c) if (op == "~")
     {
-        append(c);
+        insertBack(c);
         return this;
     }
 
-    auto opCatAssign(const(T)[] s)
+    auto opOpAssign(string op)(const(T)[] s) if (op == "~")
     {
-        append(s);
+        insertBack(s);
         return this;
     }
 
-    uint remove(uint n)
+    uint removeBack(uint n)
     {
         if (pos == n)
         {
@@ -160,7 +159,7 @@ struct DynamicArray(T, size_t chunkSize = 32)
         }
     }
 
-    uint removeLeft(uint n)
+    uint removeFront(uint n)
     {
         if (pos == n)
         {
@@ -186,6 +185,8 @@ struct DynamicArray(T, size_t chunkSize = 32)
         return pos;
     }
 
+    alias opDollar = length;
+
     T[] data()
     {
         return storage[0..pos];
@@ -202,24 +203,60 @@ struct DynamicArray(T, size_t chunkSize = 32)
         return t;
     }
 
-    int opApply(int delegate(size_t i, ref T) dg)
+    int opApply(scope int delegate(size_t i, ref T) dg)
     {
+        int result = 0;
+
         foreach(i, ref v; data)
         {
-            dg(i, v);
+            result = dg(i, v);
+            if (result)
+                break;
+        }
+
+        return result;
+    }
+
+    int opApplyReverse(scope int delegate(size_t i, ref T) dg)
+    {
+        int result = 0;
+
+        for(size_t i =  length; i-- > 0; )
+        {
+            result = dg(i, data[i]);
+            if (result)
+                break;
+        }
+
+        return result;
+    }
+
+    int opApply(scope int delegate(ref T) dg)
+    {
+        int result = 0;
+
+        foreach(i, ref v; data)
+        {
+            result = dg(v);
+            if (result)
+                break;
         }
 
         return 0;
     }
 
-    int opApply(int delegate(ref T) dg)
+    int opApplyReverse(scope int delegate(ref T) dg)
     {
-        foreach(i, ref v; data)
+        int result = 0;
+
+        for(size_t i =  length; i-- > 0; )
         {
-            dg(v);
+            result = dg(data[i]);
+            if (result)
+                break;
         }
 
-        return 0;
+        return result;
     }
 
     void free()
@@ -240,4 +277,3 @@ void reallocateArray(T)(ref T[] buffer, size_t len)
     Delete(buffer);
     buffer = buffer2;
 }
-

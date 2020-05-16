@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 Timur Gafarov
+Copyright (c) 2015-2019 Timur Gafarov
 
 Boost Software License - Version 1.0 - August 17th, 2003
 
@@ -25,39 +25,22 @@ FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-
 // dimage is actually stripped out part of dlib - just to support reading PNG and JPEG
 module dimage.jpeg;
 
-version = USE_DIMAGE;
-version(USE_DIMAGE):
-
-
-import std.stdio;
 import std.algorithm;
+import std.math;
+import std.stdio;
 import std.string;
 import std.traits;
 
-import dimage.huffman;
-import dimage.stream;
-import dimage.compound;
 import dimage.array;
-//import dimage.color;
-import dimage.image;
 import dimage.bitio;
-import dimage.memory;
+import dimage.compound;
 import dimage.idct;
-//import dlib.core.memory;
-//import dlib.core.stream;
-//import dlib.core.compound;
-//import dlib.container.array;
-//import dlib.filesystem.local;
-//import dlib.image.color;
-//import dlib.image.image;
-//import dlib.image.io.idct;
-
-//import dlib.core.bitio;
-//import dlib.coding.huffman;
+import dimage.image;
+import dimage.memory;
+import dimage.stream;
 
 /*
  * Simple JPEG decoder
@@ -147,15 +130,66 @@ DynamicArray!char bitString(T)(T n, uint len = 1) if (isIntegral!T)
             s = 1;
         if (s)
         {
-            arr.append(bit + '0');
+            arr.insertBack(bit + '0');
         }
         n <<= 1;
     }
 
     while (arr.length < len)
-        arr.appendLeft('0');
+        arr.insertFront('0');
 
     return arr;
+}
+
+struct HuffmanTreeNode
+{
+    HuffmanTreeNode* parent;
+    HuffmanTreeNode* left;
+    HuffmanTreeNode* right;
+    ubyte ch;
+    uint freq;
+    bool blank = true;
+
+    this(
+        HuffmanTreeNode* leftNode,
+        HuffmanTreeNode* rightNode,
+        ubyte symbol,
+        uint frequency,
+        bool isBlank)
+    {
+        parent = null;
+        left = leftNode;
+        right = rightNode;
+
+        if (left !is null)
+            left.parent = &this;
+        if (right !is null)
+            right.parent = &this;
+
+        ch = symbol;
+        freq = frequency;
+        blank = isBlank;
+    }
+
+    bool isLeaf()
+    {
+        return (left is null && right is null);
+    }
+
+    void free()
+    {
+        if (left !is null)
+        {
+            left.free();
+            Delete(left);
+        }
+
+        if (right !is null)
+        {
+            right.free();
+            Delete(right);
+        }
+    }
 }
 
 HuffmanTreeNode* emptyNode()
@@ -347,10 +381,12 @@ struct JPEGImage
     {
         jfif.free();
         foreach(ref t; dqt) t.free();
-        Delete(dqt);
+        if (dqt.length)
+            Delete(dqt);
         sof0.free();
         foreach(ref t; dht) t.free();
-        Delete(dht);
+        if (dht.length)
+            Delete(dht);
         sos.free();
     }
 
@@ -371,18 +407,6 @@ struct JPEGImage
         return null;
     }
 }
-
-/*
- * Load JPEG from file using local FileSystem.
- * Causes GC allocation
- */
-//SuperImage loadJPEG(string filename)
-//{
-//    InputStream input = openForInput(filename);
-//    auto img = loadJPEG(input);
-//    input.close();
-//    return img;
-//}
 
 /*
  * Load JPEG from stream using default image factory.
@@ -776,7 +800,7 @@ Compound!(bool, string) readDHT(JPEGImage* jpg, InputStream istrm)
                 HuffmanCode code = HuffmanCode(bits, cast(ushort)bitsNum);
 
                 auto entry = HuffmanTableEntry(code, istrm.readNumeric!ubyte);
-                dht.huffmanTable.append(entry);
+                dht.huffmanTable.insertBack(entry);
 
                 dht_length--;
 
@@ -1159,7 +1183,6 @@ Compound!(SuperImage, string) decodeScanData(
         foreach(y; 0..mcu.height) // Pixel coordinates in MCU
         foreach(x; 0..mcu.width)
         {
-            //Color4f col = mcu.getPixel(x, y);
             uint col = mcu.getPixel(x, y);
 
             // Pixel coordinates in image
@@ -1193,7 +1216,7 @@ struct MCU
     uint width;
     uint height;
 
-    alias int[8*8] Block;
+    alias Block = int[8*8];
     Block[] yBlocks;
     Block[] cbBlocks;
     Block[] crBlocks;
@@ -1284,22 +1307,18 @@ struct MCU
         float Cr = cast(float)crBlocks[cri][crpy * 8 + crpx];
 
         // Convert from YCbCr to RGB
-        //Color4f col;
         uint col_r = clamp(Y + 1.402f * Cr);
         uint col_g = clamp(Y - 0.34414f * Cb - 0.71414f * Cr);
         uint col_b = clamp(Y + 1.772f * Cb);
-        //col = col / 255.0f;
-        //col.a = 1.0f;
-
         return 0xFF000000 | (col_r << 16) | (col_g << 8) | (col_b) ;
     }
 }
 
-uint clamp(float v) {
-    import std.conv;
+private uint clamp(float v)
+{
     if (v < 0)
         return 0;
-    uint res = to!uint(v);
+    const res = cast(uint)v;
     if (v > 255)
         return 255;
     return res;

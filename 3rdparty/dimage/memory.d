@@ -25,7 +25,6 @@ FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-
 // dimage is actually stripped out part of dlib - just to support reading PNG and JPEG
 module dimage.memory;//dlib.core.memory
 
@@ -204,5 +203,5 @@ void deallocate(T)(T* obj)
     }
 }
 
-alias allocate New;
-alias deallocate Delete;
+alias New = allocate;
+alias Delete = deallocate;

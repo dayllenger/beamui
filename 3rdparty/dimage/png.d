@@ -25,35 +25,19 @@ FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-
 // dimage is actually stripped out part of dlib - just to support reading PNG and JPEG
 module dimage.png; //dlib.image.io.png
 
-private
-{
-    import std.stdio;
-    import std.math;
-    import std.string;
-    import std.range;
+import std.math;
+import std.range;
+import std.stdio;
+import std.string;
 
-    import dimage.memory;
-    import dimage.stream;
-    import dimage.compound;
-    //import dlib.filesystem.local;
-    //import dlib.math.utils;
-    import dimage.zlib;
-    import dimage.image;
-    //import dlib.image.io.io;
-
-    //import dlib.core.memory;
-    //import dlib.core.stream;
-    //import dlib.core.compound;
-    //import dlib.filesystem.local;
-    //import dlib.math.utils;
-    //import dlib.coding.zlib;
-    //import dlib.image.image;
-    //import dlib.image.io.io;
-}
+import dimage.compound;
+import dimage.image;
+import dimage.memory;
+import dimage.stream;
+import dimage.zlib;
 
 // uncomment this to see debug messages:
 //version = PNGDebug;
@@ -821,31 +805,4 @@ uint crc32(R)(R range, uint inCrc = 0) if (isInputRange!R)
         crc = (crc >> 8) ^ table[(crc ^ v) & 0xFF];
 
     return (crc ^ 0xFFFFFFFF);
-}
-
-static if (false) {
-unittest
-{
-    import std.base64;
-
-    InputStream png() {
-        string minimal =
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADklEQVR42mL4z8AAEGAAAwEBAGb9nyQAAAAASUVORK5CYII=";
-
-        ubyte[] bytes = Base64.decode(minimal);
-        return new ArrayStream(bytes, bytes.length);
-    }
-
-    SuperImage img = loadPNG(png());
-
-    assert(img.width == 1);
-    assert(img.height == 1);
-    assert(img.channels == 3);
-    assert(img.pixelSize == 3);
-    assert(img.data == [0xff, 0x00, 0x00]);
-
-    createDir("tests", false);
-    savePNG(img, "tests/minimal.png");
-    loadPNG("tests/minimal.png");
-}
 }

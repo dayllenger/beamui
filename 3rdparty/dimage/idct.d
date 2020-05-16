@@ -25,46 +25,41 @@ FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-
 // dimage is actually stripped out part of dlib - just to support reading PNG and JPEG
-module dimage.idct; //dlib.image.io.idct
+module dimage.idct;
 
 import std.math;
 
 /*
  * Inverse discrete cosine transform (DCT) for 64x64 blocks
+ *
+ * The input coefficients should already have been multiplied by the
+ * appropriate quantization table. We use fixed-point computation, with the
+ * number of bits for the fractional component varying over the intermediate
+ * stages.
+ *
+ * For more on the actual algorithm, see Z. Wang, "Fast algorithms for the
+ * discrete W transform and for the discrete Fourier transform", IEEE Trans. on
+ * ASSP, Vol. ASSP- 32, pp. 803-816, Aug. 1984.
  */
-
-enum blockSize = 64; // A DCT block is 8x8.
-
-enum w1 = 2841; // 2048*sqrt(2)*cos(1*pi/16)
-enum w2 = 2676; // 2048*sqrt(2)*cos(2*pi/16)
-enum w3 = 2408; // 2048*sqrt(2)*cos(3*pi/16)
-enum w5 = 1609; // 2048*sqrt(2)*cos(5*pi/16)
-enum w6 = 1108; // 2048*sqrt(2)*cos(6*pi/16)
-enum w7 = 565; // 2048*sqrt(2)*cos(7*pi/16)
-
-enum w1pw7 = w1 + w7;
-enum w1mw7 = w1 - w7;
-enum w2pw6 = w2 + w6;
-enum w2mw6 = w2 - w6;
-enum w3pw5 = w3 + w5;
-enum w3mw5 = w3 - w5;
-
-enum r2 = 181; // 256/sqrt(2)
-
-// idct performs a 2-D Inverse Discrete Cosine Transformation.
-//
-// The input coefficients should already have been multiplied by the
-// appropriate quantization table. We use fixed-point computation, with the
-// number of bits for the fractional component varying over the intermediate
-// stages.
-//
-// For more on the actual algorithm, see Z. Wang, "Fast algorithms for the
-// discrete W transform and for the discrete Fourier transform", IEEE Trans. on
-// ASSP, Vol. ASSP- 32, pp. 803-816, Aug. 1984.
 void idct64(int* src)
 {
+    enum w1 = 2841; // 2048*sqrt(2)*cos(1*pi/16)
+    enum w2 = 2676; // 2048*sqrt(2)*cos(2*pi/16)
+    enum w3 = 2408; // 2048*sqrt(2)*cos(3*pi/16)
+    enum w5 = 1609; // 2048*sqrt(2)*cos(5*pi/16)
+    enum w6 = 1108; // 2048*sqrt(2)*cos(6*pi/16)
+    enum w7 = 565; // 2048*sqrt(2)*cos(7*pi/16)
+
+    enum w1pw7 = w1 + w7;
+    enum w1mw7 = w1 - w7;
+    enum w2pw6 = w2 + w6;
+    enum w2mw6 = w2 - w6;
+    enum w3pw5 = w3 + w5;
+    enum w3mw5 = w3 - w5;
+
+    enum r2 = 181; // 256/sqrt(2)
+
     // Horizontal 1-D IDCT.
     for (uint y = 0; y < 8; y++)
     {
@@ -188,30 +183,3 @@ void idct64(int* src)
         src[8*7+x] = (y7 - y1) >> 14;
     }
 }
-
-/*
-void idct(float* inMat, float* outMat)
-{
-    uint i, j, u, v;
-    float s;
-
-    for (i = 0; i < 8; i++)
-    for (j = 0; j < 8; j++)
-    {
-        s = 0;
-
-        for (u = 0; u < 8; u++)
-        for (v = 0; v < 8; v++)
-        {
-            s += inMat[u * 8 + v]
-                * cos((2 * i + 1) * u * PI / 16.0f)
-                * cos((2 * j + 1) * v * PI / 16.0f)
-                * ((u == 0) ? 1 / sqrt(2.0f) : 1.0f)
-                * ((v == 0) ? 1 / sqrt(2.0f) : 1.0f);
-        }
-
-        outMat[i * 8 + j] = s / 4.0f;
-    }
-}
-*/
-
