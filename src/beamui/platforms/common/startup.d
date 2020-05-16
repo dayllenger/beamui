@@ -468,7 +468,11 @@ void initResourceManagers()
     }
 
     resourceList.embedOne!"themes/default.css";
-    version (EmbedStandardResources)
+
+    version (NoStandardResources)
+    {
+    }
+    else
         resourceList.embed!"standard_resources.list";
 
     static if (BACKEND_GUI)

@@ -1,5 +1,5 @@
 name "beamui"
-description "Web-inspired retained-mode UI framework"
+description "Web-inspired desktop UI library"
 homepage "https://github.com/dayllenger/beamui"
 license "BSL-1.0"
 authors "dayllenger" "Vadim Lopatin"
@@ -8,8 +8,8 @@ targetName "beamui"
 targetPath "lib"
 targetType "staticLibrary"
 
-sourcePaths "3rdparty" "src"
 importPaths "3rdparty" "src"
+sourcePaths "3rdparty" "src"
 stringImportPaths "res" "res/shaders"
 
 excludedSourceFiles "3rdparty/fontconfig.d" platform="windows"
@@ -36,7 +36,6 @@ dependency "inilike" version="~>1.1.0"    // Posix only
 dependency "xdgpaths" version="~>0.2.5"   // Posix only
 
 configuration "library" {
-    versions "EmbedStandardResources"
     sourceFiles "3rdparty/wgl.d" platform="windows"
     libs "pixman-1" platform="posix"
     dependency "bindbc-loader" version="~>0.2.1"
@@ -49,15 +48,11 @@ configuration "library" {
     lflags "$PACKAGE_DIR/libs/windows-x86/pixman-1.lib" platform="windows-x86"
 }
 configuration "console" {
-    versions "CONSOLE" "EmbedStandardResources"
+    versions "CONSOLE"
     excludedSourceFiles "3rdparty/dimage/*" "3rdparty/fontconfig.d"
 }
-configuration "external" {
-    versions "EXTERNAL"
-    dependency "bindbc-freetype" version="~>0.6.0" // Posix only
-}
 configuration "minimal" {
-    versions "NO_OPENGL" "EmbedStandardResources"
+    versions "NO_OPENGL"
     sourceFiles "3rdparty/wgl.d" platform="windows"
     libs "pixman-1" platform="posix"
     dependency "bindbc-loader" version="~>0.2.1"
@@ -69,7 +64,7 @@ configuration "minimal" {
     lflags "$PACKAGE_DIR/libs/windows-x86/pixman-1.lib" platform="windows-x86"
 }
 configuration "sdl" {
-    versions "SDL" "FREETYPE" "EmbedStandardResources"
+    versions "SDL" "FREETYPE"
     libs "pixman-1" platform="posix"
     dependency "bindbc-freetype" version="~>0.6.0"
     dependency "bindbc-opengl" version="~>0.9.0"
@@ -83,7 +78,7 @@ configuration "sdl" {
 }
 configuration "x11" {
     platforms "posix"
-    versions "X11" "EmbedStandardResources"
+    versions "X11"
     libs "pixman-1" "Xext"
     sourceFiles "3rdparty/glx.d" "3rdparty/xsync.d"
     dependency "bindbc-loader" version="~>0.2.1"
