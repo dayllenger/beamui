@@ -1,7 +1,7 @@
 /**
 Base utilities for the GL rendering.
 
-Copyright: dayllenger 2019
+Copyright: dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -105,6 +105,7 @@ struct Device
     // they save various expensive GL state changes
     FboManager fboman;
     VaoManager vaoman;
+    ProgramManager progman;
     private DrawFlags currentFlags;
 
     @disable this(this);
@@ -130,6 +131,7 @@ struct Device
     {
         fboman = FboManager.init;
         vaoman = VaoManager.init;
+        progman = ProgramManager.init;
         currentFlags = ~initialFlags;
         setDrawFlags(initialFlags);
         resetBlending();
@@ -140,6 +142,7 @@ struct Device
         setDrawFlags(DrawFlags.none);
         fboman.bind(FboId.init);
         vaoman.unbind();
+        progman.unbind();
     }
 
     void setDrawFlags(DrawFlags f)
@@ -407,5 +410,33 @@ struct VaoManager
     {
         glVertexAttribIPointer(index, components, GL_UNSIGNED_SHORT, stride, cast(void*)offset);
         glEnableVertexAttribArray(index);
+    }
+}
+
+struct ProgramManager
+{
+    import beamui.graphics.gl.program : GLProgram;
+
+    nothrow:
+
+    private GLuint current;
+
+    void bind(GLProgram program)
+        in(program && program.valid, "Attempt to bind invalid shader program")
+    {
+        if (current != program.programID)
+        {
+            checkgl!glUseProgram(program.programID);
+            current = program.programID;
+        }
+    }
+
+    void unbind()
+    {
+        if (current != 0)
+        {
+            checkgl!glUseProgram(0);
+            current = 0;
+        }
     }
 }

@@ -1,7 +1,7 @@
 /**
 Client code for standard shaders.
 
-Copyright: dayllenger 2019
+Copyright: dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -172,9 +172,8 @@ abstract class ShaderBase : GLProgram
         return loc.initialize(this);
     }
 
-    private void setup(ref const ParamsBase p)
+    private void prepare(ref const ParamsBase p)
     {
-        bind();
         glUniform2f(loc.pixelSize, p.pixelSize.x, p.pixelSize.y);
 
         glUniform1i(loc.dataStore, SamplerIndex.data);
@@ -195,9 +194,9 @@ final class ShaderEmpty : ShaderBase
         return q{ void main() {} };
     }
 
-    void setup(ref const ParamsBase p)
+    void prepare(ref const ParamsBase p)
     {
-        super.setup(p);
+        super.prepare(p);
     }
 }
 
@@ -219,9 +218,9 @@ final class ShaderSolid : ShaderBase
         return super.initLocations() && loc.initialize(this);
     }
 
-    void setup(ref const ParamsBase pbase)
+    void prepare(ref const ParamsBase pbase)
     {
-        super.setup(pbase);
+        super.prepare(pbase);
     }
 }
 
@@ -239,9 +238,9 @@ final class ShaderLinear : ShaderBase
         return super.initLocations() && loc.initialize(this);
     }
 
-    void setup(ref const ParamsBase pbase, ref const ParamsLG p)
+    void prepare(ref const ParamsBase pbase, ref const ParamsLG p)
     {
-        super.setup(pbase);
+        super.prepare(pbase);
         const len = cast(int)p.stops.length;
         glUniform1i(loc.viewportHeight, pbase.viewportHeight);
         glUniform2f(loc.start, p.start.x, p.start.y);
@@ -273,9 +272,9 @@ final class ShaderRadial : ShaderBase
         return super.initLocations() && loc.initialize(this);
     }
 
-    void setup(ref const ParamsBase pbase, ref const ParamsRG p)
+    void prepare(ref const ParamsBase pbase, ref const ParamsRG p)
     {
-        super.setup(pbase);
+        super.prepare(pbase);
         const len = cast(int)p.stops.length;
         glUniform1i(loc.viewportHeight, pbase.viewportHeight);
         glUniform2f(loc.center, p.center.x, p.center.y);
@@ -307,10 +306,10 @@ final class ShaderPattern : ShaderBase
         return super.initLocations() && loc.initialize(this);
     }
 
-    void setup(ref const ParamsBase pbase, ref const ParamsPattern p)
+    void prepare(ref const ParamsBase pbase, ref const ParamsPattern p)
         in(p.tex && p.texSize)
     {
-        super.setup(pbase);
+        super.prepare(pbase);
         glUniform1i(loc.viewportHeight, pbase.viewportHeight);
         const sz = *p.texSize;
         const b = p.patRect;
@@ -352,10 +351,10 @@ final class ShaderImage : ShaderBase
         return super.initLocations() && loc.initialize(this);
     }
 
-    void setup(ref const ParamsBase pbase, ref const ParamsImage p)
+    void prepare(ref const ParamsBase pbase, ref const ParamsImage p)
         in(p.tex && p.texSize)
     {
-        super.setup(pbase);
+        super.prepare(pbase);
         glUniform2f(loc.texPixelSize, 1.0f / p.texSize.w, 1.0f / p.texSize.h);
         glUniform1f(loc.opacity, p.opacity);
 
@@ -387,10 +386,10 @@ final class ShaderText : ShaderBase
         return super.initLocations() && loc.initialize(this);
     }
 
-    void setup(ref const ParamsBase pbase, ref const ParamsText p)
+    void prepare(ref const ParamsBase pbase, ref const ParamsText p)
         in(p.tex && p.texSize)
     {
-        super.setup(pbase);
+        super.prepare(pbase);
         glUniform2f(loc.texPixelSize, 1.0f / p.texSize.w, 1.0f / p.texSize.h);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
@@ -420,9 +419,9 @@ final class ShaderCompose : ShaderBase
         return super.initLocations() && loc.initialize(this);
     }
 
-    void setup(ref const ParamsBase pbase, ref const ParamsComposition p)
+    void prepare(ref const ParamsBase pbase, ref const ParamsComposition p)
     {
-        super.setup(pbase);
+        super.prepare(pbase);
         glUniform1i(loc.texHeight, p.box.h);
         glUniform2i(loc.texPos, p.box.x, p.box.y);
         glUniform1f(loc.opacity, p.opacity);
@@ -454,9 +453,9 @@ final class ShaderBlend : ShaderBase
         return super.initLocations() && loc.initialize(this);
     }
 
-    void setup(ref const ParamsBase pbase, ref const ParamsComposition p)
+    void prepare(ref const ParamsBase pbase, ref const ParamsComposition p)
     {
-        super.setup(pbase);
+        super.prepare(pbase);
         glUniform1i(loc.texHeight, p.box.h);
         glUniform2i(loc.texPos, p.box.x, p.box.y);
         glUniform1f(loc.opacity, p.opacity);
@@ -492,9 +491,8 @@ final class ShaderGPAA : GLProgram
         return loc.initialize(this);
     }
 
-    void setup(ref const ParamsBase pbase, ref const ParamsGPAA p)
+    void prepare(ref const ParamsBase pbase, ref const ParamsGPAA p)
     {
-        bind();
         glUniform2f(loc.pixelSize, pbase.pixelSize.x, pbase.pixelSize.y);
         glUniform1i(loc.viewportHeight, pbase.viewportHeight);
         glUniform2f(loc.texPixelSize, p.texPixelSize.x, p.texPixelSize.y);

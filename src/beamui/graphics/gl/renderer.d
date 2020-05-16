@@ -1,7 +1,7 @@
 /**
 OpenGL (ES) 3.0 painter implementation, part 2.
 
-Copyright: dayllenger 2019
+Copyright: dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -402,7 +402,6 @@ private:
         // reset touched state to correctly draw custom OpenGL scene and the like
         device.reset();
 
-        GLProgram.unbind();
         VBO.unbind();
         EBO.unbind();
         Tex2D.unbind();
@@ -446,7 +445,10 @@ private:
     void performStencil(Stenciling type, ref const ParamsBase pbase, Span tris, DrawFlags flags)
     {
         if (auto prog = sh.empty)
-            prog.setup(pbase);
+        {
+            device.progman.bind(prog);
+            prog.prepare(pbase);
+        }
         else
             return failGracefully();
 
@@ -521,49 +523,56 @@ private:
         case empty:
             if (auto prog = sh.empty)
             {
-                prog.setup(base);
+                device.progman.bind(prog);
+                prog.prepare(base);
                 return true;
             }
             return false;
         case solid:
             if (auto prog = sh.solid)
             {
-                prog.setup(base);
+                device.progman.bind(prog);
+                prog.prepare(base);
                 return true;
             }
             return false;
         case linear:
             if (auto prog = sh.linear)
             {
-                prog.setup(base, params.linear);
+                device.progman.bind(prog);
+                prog.prepare(base, params.linear);
                 return true;
             }
             return false;
         case radial:
             if (auto prog = sh.radial)
             {
-                prog.setup(base, params.radial);
+                device.progman.bind(prog);
+                prog.prepare(base, params.radial);
                 return true;
             }
             return false;
         case pattern:
             if (auto prog = sh.pattern)
             {
-                prog.setup(base, params.pattern);
+                device.progman.bind(prog);
+                prog.prepare(base, params.pattern);
                 return true;
             }
             return false;
         case image:
             if (auto prog = sh.image)
             {
-                prog.setup(base, params.image);
+                device.progman.bind(prog);
+                prog.prepare(base, params.image);
                 return true;
             }
             return false;
         case text:
             if (auto prog = sh.text)
             {
-                prog.setup(base, params.text);
+                device.progman.bind(prog);
+                prog.prepare(base, params.text);
                 return true;
             }
             return false;
@@ -574,7 +583,8 @@ private:
     {
         if (cmd.blending != BlendMode.normal && advancedHardwareBlending && sh.blend)
         {
-            sh.blend.setup(pbase, params);
+            device.progman.bind(sh.blend);
+            sh.blend.prepare(pbase, params);
             device.setAdvancedBlending(cmd.blending);
             glBlendBarrierKHR();
         }
@@ -584,7 +594,8 @@ private:
             if (!prog)
                 return failGracefully();
 
-            prog.setup(pbase, params);
+            device.progman.bind(prog);
+            prog.prepare(pbase, params);
             device.setBlending(cmd.composition);
         }
 
@@ -1009,7 +1020,8 @@ private struct GpaaRenderer
             tex,
             Vec2(1.0f / sz.w, 1.0f / sz.h),
         );
-        shader.setup(pbase, params);
+        device.progman.bind(shader);
+        shader.prepare(pbase, params);
         device.drawLines(
             vao,
             DrawFlags.clippingPlanes | DrawFlags.depthTest | DrawFlags.noDepthWrite,

@@ -1,6 +1,6 @@
 /**
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2019
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
@@ -31,7 +31,8 @@ class GLProgram
         return programID != 0;
     }
 
-    private GLuint programID;
+    const GLuint programID;
+    private GLuint _programID;
 
     this()
     {
@@ -46,27 +47,27 @@ class GLProgram
         if (vs == 0 || fs == 0)
             return;
 
-        programID = linkShaders(vs, fs);
-        if (programID == 0)
+        _programID = linkShaders(vs, fs);
+        if (_programID == 0)
             return;
 
         if (!initLocations())
         {
             Log.e("GL: some of program locations were not found");
-            programID = 0;
             return;
         }
 
-        relinkProgram(programID);
-        if (programID == 0)
+        relinkProgram(_programID);
+        if (_programID == 0)
             Log.e("GL: cannot relink program");
+
+        programID = _programID;
     }
 
     ~this()
     {
         if (programID != 0)
             glDeleteProgram(programID);
-        programID = 0;
     }
 
     private string preprocess(string code, ShaderStage stage)
@@ -112,36 +113,18 @@ class GLProgram
         return cast(string)buf;
     }
 
-    /// Binds program in the current context
-    final void bind()
-    {
-        assert(valid, "Attempt to bind invalid shader program");
-        if (programID != currentProgramID)
-        {
-            checkgl!glUseProgram(programID);
-            currentProgramID = programID;
-        }
-    }
-    private static GLuint currentProgramID; // FIXME: safe on context change?
-    /// Unbinds program from current context
-    static void unbind()
-    {
-        checkgl!glUseProgram(0);
-        currentProgramID = 0;
-    }
-
     /// Override to init shader code locations. Return `false` on error
     abstract bool initLocations();
 
     /// Associate a number with an attribute. Must be used inside of `initLocations`
     final void bindAttribLocation(string name, GLuint location) const
     {
-        checkgl!glBindAttribLocation(programID, location, toStringz(name));
+        checkgl!glBindAttribLocation(_programID, location, toStringz(name));
     }
     /// Get uniform location from program, returns -1 if location is not found
     final int getUniformLocation(string name) const
     {
-        return checkgl!glGetUniformLocation(programID, toStringz(name));
+        return checkgl!glGetUniformLocation(_programID, toStringz(name));
     }
 }
 
