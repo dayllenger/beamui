@@ -5,7 +5,7 @@ Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
-module beamui.platforms.common.timer;
+module beamui.core.timer;
 
 import core.thread;
 import beamui.core.functions;
