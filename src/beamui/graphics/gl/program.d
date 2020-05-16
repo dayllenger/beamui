@@ -35,7 +35,7 @@ class GLProgram
 
     this()
     {
-        assert(glslVersionInt != 0 && glslVersionString.length > 0);
+        assert(GLSLInfo.versionInt != 0 && GLSLInfo.versionString.length > 0);
 
         Log.v("GL: compiling ", getShortClassName(this));
 
@@ -74,7 +74,7 @@ class GLProgram
         char[] buf;
         buf.reserve(code.length);
         buf ~= "#version ";
-        buf ~= glslVersionString;
+        buf ~= GLSLInfo.versionString;
         buf ~= '\n';
 
         bool detab;
@@ -91,11 +91,11 @@ class GLProgram
         }
 
         // compatibility fixes
-        if (glslVersionInt < 420)
+        if (GLSLInfo.versionInt < 420)
             buf = replace(buf, "\nconst ", "\n");
-        if (glslVersionInt < 150)
+        if (GLSLInfo.versionInt < 150)
             buf = replace(buf, " texture(", " texture2D(");
-        if (glslVersionInt < 140)
+        if (GLSLInfo.versionInt < 140)
         {
             if (stage == ShaderStage.vertex)
             {
@@ -143,11 +143,14 @@ class GLProgram
     {
         return checkgl!glGetUniformLocation(programID, toStringz(name));
     }
+}
 
-    package(beamui) static int glslVersionInt;
-    private static char[] glslVersionString;
+package struct GLSLInfo
+{
+    static int versionInt;
+    static char[] versionString;
 
-    package(beamui) static bool determineGLSLVersion()
+    static bool determineVersion() nothrow
     {
         if (const raw = checkgl!glGetString(GL_SHADING_LANGUAGE_VERSION))
         {
@@ -156,8 +159,8 @@ class GLProgram
                 const ch = raw[i];
                 if (ch >= '0' && ch <= '9')
                 {
-                    glslVersionInt = glslVersionInt * 10 + (ch - '0');
-                    glslVersionString ~= ch;
+                    versionInt = versionInt * 10 + (ch - '0');
+                    versionString ~= ch;
                 }
                 else if (ch != '.')
                     break;
@@ -165,9 +168,9 @@ class GLProgram
         }
         version (Android)
         {
-            glslVersionInt = 130;
+            versionInt = 130;
         }
 
-        return glslVersionInt != 0 && glslVersionString.length > 0;
+        return versionInt != 0 && versionString.length > 0;
     }
 }

@@ -25,7 +25,7 @@ package(beamui) bool loadGLAPI()
     import std.exception : assertNotThrown;
     import std.string : fromStringz, strip;
     import beamui.core.logger : Log;
-    import beamui.graphics.gl.program : GLProgram;
+    import beamui.graphics.gl.program : GLSLInfo;
     static import bindbc.loader.sharedlib;
     static import bindbc.opengl.config;
     static import bindbc.opengl.gl;
@@ -66,12 +66,12 @@ package(beamui) bool loadGLAPI()
         Log.e("GL: the version must be at least 3.0"); // the same on GLES
         return false;
     }
-    if (!GLProgram.determineGLSLVersion())
+    if (!GLSLInfo.determineVersion())
     {
         Log.e("GL: cannot determine GLSL version");
         return false;
     }
-    Log.v("GL: GLSL version is ", GLProgram.glslVersionInt);
+    Log.v("GL: GLSL version is ", GLSLInfo.versionInt);
     loaded = true;
     return true;
 }
