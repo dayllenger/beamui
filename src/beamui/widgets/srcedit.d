@@ -31,8 +31,6 @@ class SourceEdit : EditBox
 
     this()
     {
-        hscrollbarMode = ScrollBarMode.automatic;
-        vscrollbarMode = ScrollBarMode.automatic;
         // allow font zoom with Ctrl + MouseWheel
         minFontSize = 9;
         maxFontSize = 75;

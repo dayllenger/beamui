@@ -1,0 +1,43 @@
+
+CssHotReloadWidget {
+    display: column;
+    width: 200px;
+    padding: 18px;
+}
+CssHotReloadWidget > * {
+    text-align: center;
+}
+CssHotReloadWidget > Label[state="watching"] {
+    color: green;
+}
+CssHotReloadWidget > Label[state="error"] {
+    color: red;
+}
+
+/* some styles for the main window */
+
+Controls {
+    padding: 10px 15px;
+}
+
+.expand { stretch: both; }
+
+#tab1 {
+    display: column;
+    gap: 15px;
+}
+
+#tab2 {
+    display: column;
+}
+#tab2 > EditBox {
+    stretch: both;
+}
+
+#p1, #p2 {
+    display: row;
+}
+
+Button.folder > .label {
+    color: orange;
+}

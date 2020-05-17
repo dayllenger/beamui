@@ -250,6 +250,8 @@ class EditBox : ScrollAreaBase
     {
         allowsFocus = true;
         allowsHover = true;
+        hscrollbarMode = ScrollBarMode.automatic;
+        vscrollbarMode = ScrollBarMode.automatic;
     }
 
     override protected void build()

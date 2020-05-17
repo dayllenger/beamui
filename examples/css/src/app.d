@@ -5,63 +5,156 @@ import beamui.css.syntax;
 
 mixin RegisterPlatforms;
 
+enum DEFAULT_STYLE = "style";
+
 int main()
 {
+    resourceList.setResourceDirs(
+        appendPath(exePath, "resources/"),
+        appendPath(exePath, "../resources/"),
+    );
+
     GuiApp app;
     app.conf.theme = "light";
     if (!app.initialize())
         return -1;
 
+    const filename = resourceList.getPathByID(DEFAULT_STYLE);
+    const styles = cast(string)loadResourceBytes(filename);
     setStyleSheet(currentTheme, styles);
 
-    Window window = platform.createWindow("CSS sandbox");
+    Window window1 = platform.createWindow("CSS sandbox - beamui");
+    Window window2 = platform.createWindow("CSS hot-reloader", window1, WindowOptions.expanded, 1, 1);
 
-    cssContent = new EditableContent;
-    cssContent.text = toUTF32(styles);
-    cssContent.syntaxSupport = new CssSyntaxSupport;
+    window1.onClose = {
+        window1 = null;
+        if (window2)
+            window2.close();
+    };
+    window2.onClose = {
+        window2 = null;
+        if (window1)
+            window1.close();
+    };
 
-    window.show(() => render!App);
+    window1.show(() => render!Controls);
+    window2.show(() => render!CssHotReloadWidget);
     return platform.enterMessageLoop();
 }
 
-EditableContent cssContent;
-
-class App : Panel
+class CssHotReloadWidget : Panel
 {
-    override void build()
+    protected static class State : IState
     {
+        bool watching;
+        bool error;
+
+        dstring resourceID = DEFAULT_STYLE;
+        FileMonitor fmon;
+
+        void watch(Window win)
+        {
+            const filename = resourceList.getPathByID(toUTF8(resourceID));
+            fmon = FileMonitor(filename);
+            if (fmon.check() == FileMonitor.Status.missing)
+            {
+                setState(error, true);
+                return;
+            }
+            updateStyles();
+            win.setTimer(1000, {
+                if (!watching)
+                    return false;
+
+                const status = fmon.check();
+                if (status == FileMonitor.Status.modified)
+                {
+                    updateStyles();
+                }
+                else if (status == FileMonitor.Status.missing)
+                {
+                    setState(watching, false);
+                    setState(error, true);
+                }
+                return true;
+            });
+            setState(watching, true);
+            setState(error, false);
+        }
+
+        void updateStyles()
+        {
+            const filename = resourceList.getPathByID(toUTF8(resourceID));
+            const styles = cast(string)loadResourceBytes(filename);
+            platform.reloadTheme();
+            setStyleSheet(currentTheme, styles);
+        }
+    }
+
+    override protected void build()
+    {
+        State st = useState!State;
         wrap(
-            render((Panel p) {
-                p.id = "editor-pane";
-            }).wrap(
-                render((SourceEdit ed) {
-                    ed.content = cssContent;
-                    // ed.smartIndents = true;
-                }),
-                render((Button b) {
-                    b.id = "update";
-                    b.text = "Update styles";
-                    b.onClick = {
-                        platform.reloadTheme();
-                        setStyleSheet(currentTheme, toUTF8(cssContent.text));
-                    };
-                }),
-            ),
-            render((Resizer r) {}),
-            render((Controls c) {}),
+            render((Label tip) {
+                tip.text = "Style resource ID:";
+            }),
+            render((EditLine ed) {
+                ed.text = st.resourceID;
+                if (!st.watching)
+                    ed.onChange = (s) { st.resourceID = s; };
+                else
+                    ed.readOnly = true;
+            }),
+            render((CheckButton b) {
+                b.text = "Watch";
+                b.checked = st.watching;
+                b.onToggle = (v) {
+                    if (v)
+                        st.watch(window);
+                    else
+                        setState(st.watching, false);
+                };
+            }),
+            render((Button b) {
+                b.text = "Reload manually";
+                b.onClick = &st.updateStyles;
+            }),
+            render((Label tip) {
+                if (st.watching)
+                {
+                    tip.text = "Status: watching";
+                    tip.attributes["state"] = "watching";
+                }
+                else if (st.error)
+                {
+                    tip.text = "Status: no such file";
+                    tip.attributes["state"] = "error";
+                }
+                else
+                    tip.text = "Status: not watching";
+            }),
         );
     }
 }
 
-class Controls : GroupBox
+class Controls : Panel
 {
-    this()
+    protected static class State : IState
     {
-        caption = "Controls";
+        bool dummyBool;
+        double dummyDouble = 50;
+        EditableContent someText;
+
+        this()
+        {
+            someText = new EditableContent;
+            someText.text = "Lorem ipsum dolor sit amet consectetur adipisicing elit.";
+        }
     }
 
     override void build()
     {
+        State st = useState!State;
         wrap(
             render((TabWidget tw) {
                 tw.buildHiddenTabs = true;
@@ -76,8 +169,8 @@ class Controls : GroupBox
                             }).wrap(
                                 render((CheckBox cb) {
                                     cb.text = "Check Box";
-                                    cb.checked = true;
-                                    cb.onToggle = (ch) { Log.d(); };
+                                    cb.checked = st.dummyBool;
+                                    cb.onToggle = (ch) { setState(st.dummyBool, ch); };
                                 }),
                                 render((RadioButton rb) {
                                     rb.text = "Radio button";
@@ -89,7 +182,10 @@ class Controls : GroupBox
                                 }),
                             ),
                             render((ScrollBar sb) {}),
-                            render((Slider sl) {}),
+                            render((Slider sl) {
+                                sl.value = st.dummyDouble;
+                                sl.onChange = (v) { setState(st.dummyDouble, v); };
+                            }),
                             render((Panel p) { p.id = "p1"; }).wrap(
                                 render((EditLine ed) {
                                     ed.attributes["expand"];
@@ -123,54 +219,19 @@ class Controls : GroupBox
                     (TabItem i) { i.text = "Tab 2"; },
                     (Panel p) {
                         p.id = "tab2";
+                        p.wrap(
+                            render((SourceEdit ed) {
+                                ed.content = st.someText;
+                            }),
+                            render((Resizer r) {}),
+                            render((EditBox ed) {
+                                ed.content = st.someText;
+                                ed.readOnly = true;
+                            }),
+                        );
                     }
                 ),
             )
         );
     }
 }
-
-const styles =
-`/* some styles for this window */
-
-App {
-    display: row;
-    padding: 10px;
-    gap: 3px;
-}
-
-#editor-pane {
-    display: column;
-    width: 500px;
-    height: 500px;
-    stretch: both;
-}
-
-#editor-pane SourceEdit {
-    stretch: both;
-}
-
-Button#update {
-    align: hcenter;
-    stretch: none;
-    padding: 6px;
-    focus-rect-color: none;
-}
-
-/* write your own and press the button below */
-
-.expand { stretch: both; }
-
-#tab1 {
-    display: column;
-    gap: 15px;
-}
-
-#p1, #p2 {
-    display: row;
-}
-
-Button.folder > .label {
-    color: orange;
-}
-`;

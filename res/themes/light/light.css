@@ -22,7 +22,7 @@ ButtonLike:pressed > .label { color: #417fbf; }
 
 ButtonLike:not(enabled) > .label { color: rgba(64, 64, 64, 0.5); }
 
-Button.flat { background: none; focus-rect-color: none; }
+ButtonLike.flat { background: none; focus-rect-color: none; }
 
 Link > ButtonLike { padding: 3px; border: none; background: none; }
 

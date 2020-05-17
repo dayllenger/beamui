@@ -865,3 +865,41 @@ string findExecutablePath(string executableName)
     }
     return null;
 }
+
+struct FileMonitor
+{
+    import std.datetime.systime : SysTime;
+
+    enum Status
+    {
+        same,
+        modified,
+        missing,
+    }
+
+    private string _filename;
+    private SysTime _lastModTS;
+    private ulong _lastSizeInBytes;
+
+    this(string filename)
+    {
+        _filename = filename;
+    }
+
+    Status check()
+    {
+        if (_filename.length && exists(_filename))
+        {
+            const ts = timeLastModified(_filename);
+            const sz = getSize(_filename);
+            if (_lastModTS < ts || _lastSizeInBytes != sz)
+            {
+                _lastModTS = ts;
+                _lastSizeInBytes = sz;
+                return Status.modified;
+            }
+            return Status.same;
+        }
+        return Status.missing;
+    }
+}
