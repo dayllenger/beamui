@@ -609,7 +609,8 @@ public:
         eliminate(_background);
         // eliminate(_popupMenu);
 
-        *_destructionFlag = true;
+        if (_destructionFlag) // may be `null` if constructor of a subclass fails
+            *_destructionFlag = true;
     }
 
     mixin DebugInstanceCount!();
