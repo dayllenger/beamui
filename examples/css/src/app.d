@@ -1,7 +1,6 @@
 module app;
 
 import beamui;
-import beamui.css.syntax;
 
 mixin RegisterPlatforms;
 

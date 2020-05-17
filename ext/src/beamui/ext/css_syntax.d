@@ -5,7 +5,7 @@ Copyright: Vadim Lopatin 2015, dayllenger 2019
 License:   Boost License 1.0
 Authors:   dayllenger
 */
-module beamui.css.syntax;
+module beamui.ext.css_syntax;
 
 import beamui.core.editable;
 
