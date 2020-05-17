@@ -78,6 +78,7 @@ enum LogLevel : ubyte
 shared static this()
 {
     Log.mutex = new shared(Mutex);
+    Log.setStdoutLogger();
 }
 
 class Log
