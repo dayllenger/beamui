@@ -39,8 +39,8 @@ import beamui.core.animations;
 import beamui.core.memory : Arena;
 import beamui.graphics.compositing : BlendMode;
 import beamui.platforms.common.platform;
+import beamui.style.selector;
 import beamui.style.style;
-import beamui.style.types : Selector;
 import beamui.text.style : TextHotkey;
 import beamui.widgets.menu;
 

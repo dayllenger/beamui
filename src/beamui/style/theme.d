@@ -15,7 +15,8 @@ import beamui.graphics.colors;
 import beamui.graphics.drawables;
 import beamui.graphics.resources;
 import beamui.style.style;
-import beamui.style.types : Selector, SpecialCSSType;
+import beamui.style.selector;
+import beamui.style.types : SpecialCSSType;
 
 /// Theme - collection of widget styles, custom colors and drawables
 final class Theme

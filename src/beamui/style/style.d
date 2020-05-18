@@ -16,6 +16,7 @@ import CSS = beamui.css.tokenizer;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawables : BorderStyle, Drawable;
 import beamui.style.decode_css;
+import beamui.style.selector;
 import beamui.style.types;
 
 /// Holds string hash and can compute it at compile time for faster CSS name lookup
