@@ -29,9 +29,10 @@ Authors:   dayllenger
 module beamui.layout.grid;
 
 import std.algorithm.iteration : sum;
-import std.algorithm.mutation : SwapStrategy, swap;
+import std.algorithm.mutation : swap, SwapStrategy;
 import std.algorithm.sorting : sort;
 import std.math : isFinite;
+
 import beamui.core.collections : Buf;
 import beamui.core.geometry;
 import beamui.core.math;
@@ -298,8 +299,8 @@ class GridLayout : ILayout
         const flow = st.gridAutoFlow;
         const autoColSize = st.gridAutoColumns;
         const autoRowSize = st.gridAutoRows;
-        columnGap = host.style.columnGap;
-        rowGap = host.style.rowGap;
+        columnGap = st.columnGap;
+        rowGap = st.rowGap;
         contentAlignment = st.placeContent;
         defaultAlignment = st.placeItems;
         // get the explicit grid size

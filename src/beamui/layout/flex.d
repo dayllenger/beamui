@@ -8,15 +8,17 @@ Authors:   dayllenger
 module beamui.layout.flex;
 
 import std.algorithm.iteration : sum;
-import std.algorithm.mutation : swap;
+import std.algorithm.mutation : swap, SwapStrategy;
 import std.algorithm.sorting : sort;
 import std.math : abs, isFinite;
+
 import beamui.core.collections : Buf;
 import beamui.core.geometry;
 import beamui.core.math;
+import beamui.core.units : LayoutLength;
 import beamui.layout.alignment;
 import beamui.style.computed_style : ComputedStyle, StyleProperty;
-import beamui.widgets.widget : Element, ILayout, DependentSize;
+import beamui.widgets.widget : DependentSize, Element, ILayout;
 
 enum FlexDirection : ubyte
 {
@@ -56,6 +58,7 @@ class FlexLayout : ILayout
 
         FlexDirection dir;
         FlexWrap wrap;
+        LayoutLength columnGap, rowGap;
         Distribution[2] contentAlignment;
         AlignItem defaultAlignment = AlignItem.stretch;
         bool vertical;
@@ -79,40 +82,62 @@ class FlexLayout : ILayout
 
     void onStyleChange(StyleProperty p)
     {
-        with (StyleProperty)
+        switch (p) with (StyleProperty)
         {
-            if (p == justifyContent || p == alignItems || p == flexDirection || p == flexWrap)
+        case justifyContent:
+        case alignItems:
+        case rowGap:
+        case columnGap:
+        case flexDirection:
+        case flexWrap:
+            host.requestLayout();
+            break;
+        case alignContent:
+            if (multiline)
                 host.requestLayout();
-            else if (multiline && p == alignContent)
-                host.requestLayout();
+            break;
+        default:
+            break;
         }
     }
 
     void onChildStyleChange(StyleProperty p)
     {
-        with (StyleProperty)
+        switch (p) with (StyleProperty)
         {
-            if (p == alignSelf || p == order || p == flexGrow || p == flexShrink || p == flexBasis)
-                host.requestLayout();
+        case alignSelf:
+        case order:
+        case flexGrow:
+        case flexShrink:
+        case flexBasis:
+            host.requestLayout();
+            break;
+        default:
+            break;
         }
     }
 
     void prepare(ref Buf!Element list)
     {
         // apply order
-        sort!((a, b) => a.style.order < b.style.order)(list.unsafe_slice);
+        sort!((a, b) => a.style.order < b.style.order, SwapStrategy.stable)(list.unsafe_slice);
         // allocate empty flex items
         elements = list.unsafe_slice;
         items.resize(list.length);
         margins.resize(list.length);
-        // prepare some parameters
+
+        // fetch parameters
         const ComputedStyle* st = host.style;
         dir = st.flexDirection;
         wrap = st.flexWrap;
+        columnGap = st.columnGap;
+        rowGap = st.rowGap;
         contentAlignment = st.placeContent;
         defaultAlignment = st.placeItems[1];
+        // content stretching by main axis is not applicable to flexbox
         if (contentAlignment[0] == Distribution.stretch)
             contentAlignment[0] = Distribution.start;
+        // prepare some useful statements
         vertical = dir == FlexDirection.column || dir == FlexDirection.columnReverse;
         multiline = wrap != FlexWrap.off;
         revX = dir == FlexDirection.rowReverse || dir == FlexDirection.columnReverse;
@@ -121,14 +146,18 @@ class FlexLayout : ILayout
 
     Boundaries measure()
     {
+        const itemCount = cast(int)items.length;
+        if (itemCount == 0)
+            return Boundaries.init;
+
         Boundaries bs;
-        foreach (i; 0 .. items.length)
+        foreach (i; 0 .. itemCount)
         {
             // measure items
             Element el = elements[i];
             el.measure();
             Boundaries wbs = el.boundaries;
-            // add margins, store them
+            // apply margins, store them
             const m = el.style.margins;
             const msz = ignoreAutoMargin(m).size;
             wbs.min += msz;
@@ -147,6 +176,21 @@ class FlexLayout : ILayout
                 bs.addHeight(wbs);
             }
         }
+        // add gaps (for main axis only)
+        if (!vertical)
+        {
+            const gapMin = !multiline ? columnGap.applyPercent(0) : 0;
+            const gapNat = columnGap.applyPercent(bs.nat.w);
+            bs.min.w += gapMin * (itemCount - 1);
+            bs.nat.w += gapNat * (itemCount - 1);
+        }
+        else
+        {
+            const gapMin = !multiline ? rowGap.applyPercent(0) : 0;
+            const gapNat = rowGap.applyPercent(bs.nat.h);
+            bs.min.h += gapMin * (itemCount - 1);
+            bs.nat.h += gapNat * (itemCount - 1);
+        }
         // transpose or swap margins in case of a vertical or reversed layout
         swapMargins(margins.unsafe_slice, vertical, revX, revY);
         return bs;
@@ -157,18 +201,17 @@ class FlexLayout : ILayout
         if (items.length == 0)
             return;
 
-        // gather item style properties and boundaries, resolve percent sizes
         foreach (i; 0 .. items.length)
         {
             FlexItem item;
 
+            // gather style properties for each item
             Element el = elements[i];
             const ComputedStyle* st = el.style;
             item.grow = st.flexGrow;
             item.shrink = st.flexShrink;
             const alignment = st.placeSelf[1];
             item.alignment = alignment ? alignment : defaultAlignment;
-
             const minw = st.minWidth;
             const minh = st.minHeight;
             const maxw = st.maxWidth;
@@ -176,6 +219,7 @@ class FlexLayout : ILayout
             const w = st.width;
             const h = st.height;
 
+            // resolve percent sizes, combine them with boundaries
             Boundaries bs = el.boundaries;
             if (minw.isPercent)
                 bs.min.w = minw.applyPercent(box.w);
@@ -197,6 +241,7 @@ class FlexLayout : ILayout
             bs.max.h = max(bs.max.h, bs.min.h);
             bs.nat.h = clamp(bs.nat.h, bs.min.h, bs.max.h);
 
+            // consider margins
             const Size msz = ignoreAutoMargin(margins[i]).size;
             // determine outer flex base size
             const basis = st.flexBasis;
@@ -234,11 +279,17 @@ class FlexLayout : ILayout
         if (vertical)
             transpose(box);
 
-        doLayout(box);
+        const cgap = columnGap.applyPercent(box.w);
+        const rgap = rowGap.applyPercent(box.h);
+        if (!vertical)
+            doLayout(box, cgap, rgap);
+        else
+            doLayout(box, rgap, cgap);
     }
 
-    private void doLayout(Box box)
+    private void doLayout(Box box, float mainGap, float crossGap)
     {
+        // allocate a buffer for the resulting boxes
         Buf!Box bufBoxes;
         bufBoxes.resize(items.length);
         Box[] boxes = bufBoxes.unsafe_slice;
@@ -259,12 +310,12 @@ class FlexLayout : ILayout
         Buf!float bufLineSizes;
         if (multiline)
         {
-            wrapLines(items[], bufLines, box.w);
+            wrapLines(items[], bufLines, box.w, mainGap);
 
             bufLinePos.resize(bufLines.length);
             bufLineSizes.resize(bufLines.length);
 
-            // compute line sizes
+            // compute line cross sizes
             foreach (j, line; bufLines[])
             {
                 float lsz = 0;
@@ -276,21 +327,36 @@ class FlexLayout : ILayout
                 bufLineSizes[j] = lsz;
             }
 
-            // arrange lines
-            const freeSpace = box.h - sum(bufLineSizes[]);
+            // arrange lines (may stretch them)
+            const freeSpace = box.h - sum(bufLineSizes[]) - crossGap * (cast(int)bufLines.length - 1);
             placeSegments(bufLineSizes.unsafe_slice, bufLinePos.unsafe_slice, box.y, freeSpace, contentAlignment[1]);
+            // add gaps between lines
+            if (!fzero6(crossGap))
+            {
+                float offset = 0;
+                foreach (ref pos; bufLinePos.unsafe_slice)
+                {
+                    pos += offset;
+                    offset += crossGap;
+                }
+            }
 
+            // run main sizing algorithm for each line
             foreach (line; bufLines[])
             {
                 const lineItems = items[][line.start .. line.end];
                 auto lineSizes = bufSizes.unsafe_slice[line.start .. line.end];
-                resolveFlexibleLengths(lineItems, lineSizes, box.w);
+                const spacing = mainGap * (cast(int)lineItems.length - 1);
+                resolveFlexibleLengths(lineItems, lineSizes, box.w - spacing);
             }
         }
-        else
-            resolveFlexibleLengths(items[], bufSizes.unsafe_slice, box.w);
+        else // size all items at once
+        {
+            const spacing = mainGap * (cast(int)items.length - 1);
+            resolveFlexibleLengths(items[], bufSizes.unsafe_slice, box.w - spacing);
+        }
 
-        // arrange items by main axis
+        // compute item positions by main axis
         if (multiline)
         {
             foreach (line; bufLines[])
@@ -298,11 +364,11 @@ class FlexLayout : ILayout
                 const subSizes = bufSizes[][line.start .. line.end];
                 auto subPos = bufPos.unsafe_slice[line.start .. line.end];
                 const subMargins = margins[][line.start .. line.end];
-                placeMain(subSizes, subPos, subMargins, Segment(box.x, box.w), contentAlignment[0]);
+                placeMain(subSizes, subPos, subMargins, Segment(box.x, box.w), mainGap, contentAlignment[0]);
             }
         }
         else
-            placeMain(bufSizes[], bufPos.unsafe_slice, margins[], Segment(box.x, box.w), contentAlignment[0]);
+            placeMain(bufSizes[], bufPos.unsafe_slice, margins[], Segment(box.x, box.w), mainGap, contentAlignment[0]);
 
         // pack main axis positions and sizes back
         foreach (i, ref b; boxes)
@@ -311,7 +377,7 @@ class FlexLayout : ILayout
             b.w = bufSizes[i];
         }
 
-        // compute cross axis sizes and align items by cross axis
+        // align items by cross axis (may stretch them)
         if (multiline)
         {
             foreach (j; 0 .. bufLines.length)
@@ -333,7 +399,7 @@ class FlexLayout : ILayout
             b.shrink(ignoreAutoMargin(margins[i]));
         }
 
-        // transpose back or place items in backward order in case of a vertical or reversed layout
+        // if vertical, transpose boxes back; if reversed, translate items into backward order
         swapBoxes(boxes, vertical, revX, revY, box);
 
         // lay out the elements
@@ -538,16 +604,16 @@ struct Line
     uint end;
 }
 
-void wrapLines(const FlexItem[] items, ref Buf!Line buf, float mainSize)
+void wrapLines(const FlexItem[] items, ref Buf!Line buf, float mainSize, float mainGap)
     in(items.length > 0)
 {
     buf.clear();
     mainSize += eps; // tight boxes may not fit
 
-    const len = cast(uint)items.length;
+    const count = cast(uint)items.length;
     uint start, end;
     float sz = 0;
-    foreach (i; 0 .. len)
+    foreach (i; 0 .. count)
     {
         sz += items[i].bs.nat.w;
         if (sz > mainSize)
@@ -557,19 +623,20 @@ void wrapLines(const FlexItem[] items, ref Buf!Line buf, float mainSize)
             start = end;
             sz = items[i].bs.nat.w;
         }
+        sz += mainGap;
     }
-    if (end != len)
-        buf ~= Line(end, len);
+    if (end != count)
+        buf ~= Line(end, count);
 }
 
-void placeMain(const float[] sizes, float[] positions, const Insets[] margins, Segment room, Distribution mode)
+void placeMain(const float[] sizes, float[] positions, const Insets[] margins, Segment room, float gap, Distribution mode)
     in(sizes.length > 0)
     in(sizes.length == positions.length)
     in(sizes.length == margins.length)
 {
-    const freeSpace = room.size - sum(sizes);
+    const freeSpace = room.size - sum(sizes) - gap * (cast(int)sizes.length - 1);
     const uint autoMargins = countAutoMargins(margins);
-
+    // auto margins will override any distribution strategy
     if (freeSpace > 0 && autoMargins > 0)
     {
         const perMarginSpace = freeSpace / autoMargins;
@@ -613,6 +680,16 @@ void placeMain(const float[] sizes, float[] positions, const Insets[] margins, S
             assert(0);
         }
     }
+    // add gaps
+    if (!fzero6(gap))
+    {
+        float offset = 0;
+        foreach (ref pos; positions)
+        {
+            pos += offset;
+            offset += gap;
+        }
+    }
 }
 
 uint countAutoMargins(const Insets[] margins)
@@ -633,6 +710,7 @@ void alignItems(Box[] boxes, const FlexItem[] items, const Insets[] margins, con
     foreach (i, ref b; boxes)
     {
         const item = &items[i];
+        // consider auto margins by cross axis
         const Insets m = margins[i];
         AlignItem a = item.alignment;
         if (b.h < room.size)
