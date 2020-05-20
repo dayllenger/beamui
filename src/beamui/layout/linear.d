@@ -9,11 +9,13 @@ module beamui.layout.linear;
 
 nothrow:
 
+import std.math : isFinite;
 import beamui.layout.alignment : ignoreAutoMargin;
 import beamui.widgets.widget;
 
 private struct LayoutItem
 {
+    Insets margins;
     Boundaries bs;
     bool fill;
     Size result;
@@ -86,11 +88,9 @@ class LinearLayout : ILayout
         if (items.length == 0)
             return Boundaries.init;
 
-        // fill item array
         Boundaries bs;
         foreach (i; 0 .. items.length)
         {
-            LayoutItem item;
             // measure items
             Element el = elements[i];
             el.measure();
@@ -100,7 +100,7 @@ class LinearLayout : ILayout
             wbs.min += msz;
             wbs.nat += msz;
             wbs.max += msz;
-            item.bs = wbs;
+            // compute container min-nat-max sizes
             if (_orientation == Orientation.horizontal)
             {
                 bs.addWidth(wbs);
@@ -111,7 +111,6 @@ class LinearLayout : ILayout
                 bs.maximizeWidth(wbs);
                 bs.addHeight(wbs);
             }
-            items[i] = item;
         }
         return bs;
     }
@@ -121,36 +120,95 @@ class LinearLayout : ILayout
         if (items.length > 0)
         {
             if (_orientation == Orientation.horizontal)
+            {
+                fillItemArray!(true)(box);
                 doLayout!(true, `w`)(box);
+            }
             else
+            {
+                fillItemArray!(false)(box);
                 doLayout!(false, `h`)(box);
+            }
         }
     }
 
-    private void doLayout(bool horiz, string dim)(Box geom)
+    private void fillItemArray(bool horiz)(Box box)
     {
-        // setup fill
         foreach (i; 0 .. items.length)
         {
-            LayoutItem* item = &items.unsafe_ref(i);
-            const st = elements[i].style;
-            const Insets m = ignoreAutoMargin(st.margins);
+            LayoutItem item;
 
+            // gather style properties for each item
+            Element el = elements[i];
+            const st = el.style;
+            const minw = st.minWidth;
+            const minh = st.minHeight;
+            const maxw = st.maxWidth;
+            const maxh = st.maxHeight;
+            item.margins = ignoreAutoMargin(st.margins);
             item.fill = st.placeSelf[0] == AlignItem.stretch;
+
+            // resolve percent sizes, combine them with boundaries
+            Boundaries bs = el.boundaries;
+            if (minw.isPercent)
+                bs.min.w = minw.applyPercent(box.w);
+            if (minh.isPercent)
+                bs.min.h = minw.applyPercent(box.h);
+            if (maxw.isPercent)
+                bs.max.w = min(bs.max.w, maxw.applyPercent(box.w));
+            if (maxh.isPercent)
+                bs.max.h = min(bs.max.h, maxh.applyPercent(box.h));
+
+            bs.max.w = max(bs.max.w, bs.min.w);
+            bs.max.h = max(bs.max.h, bs.min.h);
+
+            const msz = item.margins.size;
+            // determine preferred main size, calculate cross size
             static if (horiz)
             {
-                item.result.h = min(geom.h, item.bs.max.h);
-                if (elements[i].dependentSize == DependentSize.width)
-                    item.bs.nat.w = elements[i].widthForHeight(item.result.h - m.height) + m.width;
+                item.result.h = min(box.h, bs.max.h);
+                if (el.dependentSize == DependentSize.width)
+                {
+                    bs.nat.w = el.widthForHeight(item.result.h - msz.h);
+                }
+                else
+                {
+                    const w = st.width;
+                    if (w.isPercent)
+                        bs.nat.w = w.applyPercent(box.w);
+                }
             }
             else
             {
-                item.result.w = min(geom.w, item.bs.max.w);
-                if (elements[i].dependentSize == DependentSize.height)
-                    item.bs.nat.h = elements[i].heightForWidth(item.result.w - m.width) + m.height;
+                item.result.w = min(box.w, bs.max.w);
+                if (el.dependentSize == DependentSize.height)
+                {
+                    bs.nat.h = el.heightForWidth(item.result.w - msz.w);
+                }
+                else
+                {
+                    const h = st.height;
+                    if (h.isPercent)
+                        bs.nat.h = h.applyPercent(box.h);
+                }
             }
+
+            bs.nat.w = clamp(bs.nat.w, bs.min.w, bs.max.w);
+            bs.nat.h = clamp(bs.nat.h, bs.min.h, bs.max.h);
+            bs.min += msz;
+            bs.nat += msz;
+            bs.max += msz;
+            assert(isFinite(bs.min.w) && isFinite(bs.min.h));
+            assert(isFinite(bs.nat.w) && isFinite(bs.nat.h));
+            item.bs = bs;
+
+            items[i] = item;
         }
-        allocateSpace!dim(items.unsafe_slice, geom.pick!dim);
+    }
+
+    private void doLayout(bool horiz, string dim)(Box box)
+    {
+        allocateSpace!dim(items.unsafe_slice, box.pick!dim);
 
         // apply resizers
         foreach (i; 1 .. cast(int)items.length - 1)
@@ -181,9 +239,9 @@ class LinearLayout : ILayout
         float pen = 0;
         foreach (i; 0 .. items.length)
         {
-            const Insets m = ignoreAutoMargin(elements[i].style.margins);
+            const Insets m = items[i].margins;
             const Size sz = items[i].result;
-            Box b = Box(geom.x + m.left, geom.y + m.top, sz.w - m.width, sz.h - m.height);
+            Box b = Box(box.x + m.left, box.y + m.top, sz.w - m.width, sz.h - m.height);
             static if (horiz)
             {
                 b.x += pen;
