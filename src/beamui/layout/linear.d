@@ -1,7 +1,7 @@
 /**
 Linear layout implementation.
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
@@ -9,15 +9,11 @@ module beamui.layout.linear;
 
 nothrow:
 
-import std.container.array;
 import beamui.layout.alignment : ignoreAutoMargin;
 import beamui.widgets.widget;
 
-/// Helper for layouts
-struct LayoutItem
+private struct LayoutItem
 {
-    Element el;
-
     Boundaries bs;
     bool fill;
     Size result;
@@ -47,8 +43,9 @@ class LinearLayout : ILayout
         Orientation _orientation = Orientation.vertical;
 
         Element host;
+        Element[] elements;
         /// Temporary layout item list
-        Array!LayoutItem items;
+        Buf!LayoutItem items;
     }
 
     /// Create with orientation
@@ -65,7 +62,7 @@ class LinearLayout : ILayout
     void onDetach()
     {
         host = null;
-        items.length = 0;
+        items.clear();
     }
 
     void onStyleChange(StyleProperty p)
@@ -80,24 +77,22 @@ class LinearLayout : ILayout
 
     void prepare(ref Buf!Element list)
     {
-        items.length = 0;
-        // fill items array
-        foreach (el; list.unsafe_slice)
-        {
-            items ~= LayoutItem(el);
-        }
+        elements = list.unsafe_slice;
+        items.resize(list.length);
     }
 
     Boundaries measure()
     {
         if (items.length == 0)
-            return Boundaries();
+            return Boundaries.init;
 
-        // has items
+        // fill item array
         Boundaries bs;
-        foreach (ref item; items)
+        foreach (i; 0 .. items.length)
         {
-            Element el = item.el;
+            LayoutItem item;
+            // measure items
+            Element el = elements[i];
             el.measure();
             Boundaries wbs = el.boundaries;
             // add margins
@@ -116,6 +111,7 @@ class LinearLayout : ILayout
                 bs.maximizeWidth(wbs);
                 bs.addHeight(wbs);
             }
+            items[i] = item;
         }
         return bs;
     }
@@ -125,46 +121,46 @@ class LinearLayout : ILayout
         if (items.length > 0)
         {
             if (_orientation == Orientation.horizontal)
-                doLayout!`w`(box);
+                doLayout!(true, `w`)(box);
             else
-                doLayout!`h`(box);
+                doLayout!(false, `h`)(box);
         }
     }
 
-    private void doLayout(string dim)(Box geom)
+    private void doLayout(bool horiz, string dim)(Box geom)
     {
-        enum horiz = dim == `w`;
-
         // setup fill
-        foreach (ref item; items)
+        foreach (i; 0 .. items.length)
         {
-            const wstyle = item.el.style;
-            const Insets m = ignoreAutoMargin(wstyle.margins);
-            item.fill = wstyle.placeSelf[0] == AlignItem.stretch;
+            LayoutItem* item = &items.unsafe_ref(i);
+            const st = elements[i].style;
+            const Insets m = ignoreAutoMargin(st.margins);
+
+            item.fill = st.placeSelf[0] == AlignItem.stretch;
             static if (horiz)
             {
                 item.result.h = min(geom.h, item.bs.max.h);
-                if (item.el.dependentSize == DependentSize.width)
-                    item.bs.nat.w = item.el.widthForHeight(item.result.h - m.height) + m.width;
+                if (elements[i].dependentSize == DependentSize.width)
+                    item.bs.nat.w = elements[i].widthForHeight(item.result.h - m.height) + m.width;
             }
             else
             {
                 item.result.w = min(geom.w, item.bs.max.w);
-                if (item.el.dependentSize == DependentSize.height)
-                    item.bs.nat.h = item.el.heightForWidth(item.result.w - m.width) + m.height;
+                if (elements[i].dependentSize == DependentSize.height)
+                    item.bs.nat.h = elements[i].heightForWidth(item.result.w - m.width) + m.height;
             }
         }
-        allocateSpace!dim(items, geom.pick!dim);
+        allocateSpace!dim(items.unsafe_slice, geom.pick!dim);
 
         // apply resizers
         foreach (i; 1 .. cast(int)items.length - 1)
         {
-            if (auto resizer = cast(ElemResizer)items[i].el)
+            if (auto resizer = cast(ElemResizer)elements[i])
             {
                 resizer._orientation = _orientation;
 
-                LayoutItem* left  = &items[i - 1];
-                LayoutItem* right = &items[i + 1];
+                LayoutItem* left  = &items.unsafe_slice[i - 1];
+                LayoutItem* right = &items.unsafe_slice[i + 1];
 
                 const lmin = left.bs.min.pick!dim;
                 const rmin = right.bs.min.pick!dim;
@@ -176,17 +172,17 @@ class LinearLayout : ILayout
                 right.result.pick!dim = rresult - delta;
             }
         }
-        if (auto resizer = cast(ElemResizer)items.front.el)
+        if (auto resizer = cast(ElemResizer)elements[0])
             resizer._orientation = _orientation;
-        if (auto resizer = cast(ElemResizer)items.back.el)
+        if (auto resizer = cast(ElemResizer)elements[$ - 1])
             resizer._orientation = _orientation;
 
         // lay out items
         float pen = 0;
-        foreach (ref item; items)
+        foreach (i; 0 .. items.length)
         {
-            const Insets m = ignoreAutoMargin(item.el.style.margins);
-            const Size sz = item.result;
+            const Insets m = ignoreAutoMargin(elements[i].style.margins);
+            const Size sz = items[i].result;
             Box b = Box(geom.x + m.left, geom.y + m.top, sz.w - m.width, sz.h - m.height);
             static if (horiz)
             {
@@ -198,7 +194,7 @@ class LinearLayout : ILayout
                 b.y += pen;
                 pen += sz.h;
             }
-            item.el.layout(b);
+            elements[i].layout(b);
         }
     }
 }
@@ -208,188 +204,59 @@ private ref auto pick(string dim, T)(ref T s)
     return __traits(getMember, s, dim);
 }
 
-void allocateSpace(string dim)(ref Array!LayoutItem items, float totalSize)
-{
-    float min = 0;
-    float nat = 0;
-    foreach (const ref item; items)
-    {
-        min += item.bs.min.pick!dim;
-        nat += item.bs.nat.pick!dim;
-    }
-
-    if (totalSize == nat)
-    {
-        foreach (ref item; items)
-            item.result.pick!dim = item.bs.nat.pick!dim;
-    }
-    else if (totalSize <= min)
-    {
-        foreach (ref item; items)
-            item.result.pick!dim = item.bs.min.pick!dim;
-    }
-    else if (totalSize > nat)
-        expand!dim(items, totalSize - nat);
-    else
-        shrink!dim(items, totalSize - min);
-}
-
-private struct Item
+private struct TmpItem
 {
     size_t index;
-    float bound = 0;
     float base = 0;
-}
-private Item[] storage;
-
-private void expand(string dim)(ref Array!LayoutItem items, const float extraSize)
-{
-    assert(extraSize > 0);
-
-    const len = items.length;
-    if (storage.length < len)
-        storage.length = len;
-
-    // gather all filling items into the array, set sizes for fixed ones
-    int fillCount;
-    foreach (i; 0 .. len)
-    {
-        auto item = &items[i];
-        const nat = item.bs.nat.pick!dim;
-        const max = item.bs.max.pick!dim;
-        if (item.fill)
-            storage[fillCount++] = Item(i, max, nat);
-        else
-            item.result.pick!dim = nat;
-    }
-
-    if (fillCount > 0)
-    {
-        Item[] filling = storage[0 .. fillCount];
-        // do fill
-        expandImpl(filling, extraSize);
-        // set final values
-        foreach (const ref item; filling)
-        {
-            items[item.index].result.pick!dim = item.base;
-        }
-    }
+    float bound = 0;
 }
 
-private void expandImpl(Item[] filling, float extraSize)
+private void allocateSpace(string dim)(LayoutItem[] items, float totalSize)
 {
-    // check the simplest case
-    if (filling.length == 1)
-    {
-        filling[0].base = min(filling[0].base + extraSize, filling[0].bound);
-        return;
-    }
-
-    // sort items by their natural size
-    sort!((a, b) => a.base < b.base)(filling);
-    // we add space to the smallest first, so last items may get nothing
-    float volume = 0;
-    int end;
-    for (end = 1; end < filling.length; end++)
-    {
-        float v = 0;
-        foreach (j; 0 .. end)
-        {
-            v += min(filling[end].base, filling[j].bound) - filling[j].base;
-        }
-        if (v <= extraSize)
-            volume = v;
-        else
-            break;
-    }
-    const upto = filling[end - 1].base;
-    int skip;
-    foreach (ref item; filling[0 .. end - 1])
-    {
-        item.base = min(upto, item.bound);
-        // skip already bounded by max
-        if (item.base == item.bound)
-            skip++;
-    }
-    extraSize -= volume;
-    if (extraSize > 0)
-    {
-        // after sorting all items in filling[skip .. end] will have the same size
-        // we need to add equal amounts of space to them
-        addSpaceToItems(filling[0 .. end], skip, extraSize);
-    }
-}
-
-private void addSpaceToItems(Item[] items, const int skip, float extraSize)
-{
-    assert(extraSize > 0);
-    assert(items.length > 0);
-
-    // sort by available space to add
-    sort!((a, b) => a.bound - a.base < b.bound - b.base)(items);
-
-    int start = skip;
-    const end = cast(int)items.length;
-    foreach (i; start .. end)
-    {
-        const perItemSize = extraSize / (end - start);
-        const bound = items[i].bound;
-        const diff = bound - items[i].base;
-        // item is bounded, treat as a fixed one
-        if (diff <= perItemSize)
-        {
-            items[i].base = bound;
-            extraSize -= diff;
-            start++;
-        }
-        else
-            break;
-    }
-    addSpaceEvenly(items[start .. end], extraSize);
-}
-
-private void addSpaceEvenly(Item[] items, const float extraSize)
-{
-    assert(extraSize > 0);
-
-    const divisor = cast(int)items.length;
-    if (divisor == 0)
-        return;
-
-    const perItemSize = extraSize / divisor;
+    float occupiedSize = 0;
     foreach (ref item; items)
     {
-        item.base += perItemSize;
-    }
-}
-
-private void shrink(string dim)(ref Array!LayoutItem items, const float available)
-{
-    assert(available > 0);
-
-    const len = items.length;
-    if (storage.length < len)
-        storage.length = len;
-    foreach (i; 0 .. len)
-    {
-        const bs = &items[i].bs;
-        storage[i] = Item(i, bs.nat.pick!dim, bs.min.pick!dim);
+        occupiedSize += item.bs.nat.pick!dim;
+        // set to natural size by default
+        item.result.pick!dim = item.bs.nat.pick!dim;
     }
 
-    Item[] shrinking = storage[0 .. len];
-    // check the simplest case
-    if (len == 1)
+    if (totalSize > occupiedSize)
     {
-        shrinking[0].base += available;
-    }
-    else
-    {
-        addSpaceToItems(shrinking, 0, available);
-    }
-    // write values
-    foreach (const ref item; shrinking)
-    {
-        items[item.index].result.pick!dim = item.base;
+        static Buf!TmpItem filling;
+        filling.clear();
+
+        // gather all filling items into the array
+        foreach (i, ref const item; items)
+        {
+            const nat = item.bs.nat.pick!dim;
+            const max = item.bs.max.pick!dim;
+            if (item.fill)
+                filling ~= TmpItem(i, nat, max);
+        }
+        // distribute space between them
+        int flexibleItemCount = filling.length;
+        float freeSpace = totalSize - occupiedSize;
+        while (flexibleItemCount > 0 && freeSpace > 0)
+        {
+            const spacePerItem = freeSpace / flexibleItemCount;
+            freeSpace = 0;
+            foreach (ref item; filling.unsafe_slice)
+            {
+                if (item.base < item.bound)
+                {
+                    item.base += spacePerItem;
+                    if (item.base > item.bound)
+                    {
+                        flexibleItemCount--;
+                        freeSpace += item.base - item.bound;
+                    }
+                }
+            }
+        }
+        // set final values
+        foreach (item; filling[])
+            items[item.index].result.pick!dim = min(item.base, item.bound);
     }
 }
 
