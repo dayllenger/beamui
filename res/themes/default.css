@@ -8,7 +8,7 @@
 
 Spacer {
   flex: 1;
-  stretch: both;
+  justify-self: stretch;
 }
 
 ButtonLike,
@@ -106,7 +106,7 @@ Dialog > .buttons {
 
 FileDialog .content {
   display: flex;
-  stretch: both;
+  justify-self: stretch;
 }
 
 FileDialog .right-panel {
@@ -121,7 +121,7 @@ FileNameEditLine {
 
 SettingsDialog > .content {
   display: flex;
-  stretch: both;
+  justify-self: stretch;
 }
 SettingsDialog .settings-table {
   display: grid;

@@ -33,7 +33,7 @@ Controls {
     display: column;
 }
 #tab2 > EditBox {
-    stretch: both;
+    justify-self: stretch;
 }
 
 #p1, #p2 {

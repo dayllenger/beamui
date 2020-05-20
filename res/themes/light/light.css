@@ -254,7 +254,7 @@ TabBar > .more { opacity: 0.6; transition: opacity 100ms ease; }
 
 TabBar > .more:hovered { opacity: 1; }
 
-TabContent { padding: 6px; stretch: both; background-color: #f2f4f5; }
+TabContent { justify-self: stretch; padding: 6px; background-color: #f2f4f5; }
 
 TabItem { padding: 6px 1px 0 0; gap: 0; border: 0 solid transparent; }
 
@@ -366,10 +366,10 @@ WindowFrame > .caption > Label { padding: 2px; color: #333; font-size: 0.9em; te
 
 WindowFrame > .caption > Button { margin-left: auto; padding: 2px; }
 
-WindowFrame > .body { padding: 3px; stretch: both; }
+WindowFrame > .body { justify-self: stretch; padding: 3px; }
 
 /* appframe */
-AppFrame > .body { stretch: both; }
+AppFrame > .body { justify-self: stretch; }
 
 /* dialog, filedialog, inputbox, messagebox, settingsdialog */
 WindowFrame.dialog-frame { padding: 0; border: 1px solid #888; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25); }
@@ -380,9 +380,9 @@ FileDialog { min-height: 400px; padding: 4px; }
 
 FileDialog .content { gap: 1px; }
 
-FileDialog .right-panel { stretch: both; }
+FileDialog .right-panel { justify-self: stretch; }
 
-FileDialog .right-panel > .grid { stretch: both; }
+FileDialog .right-panel > .grid { justify-self: stretch; }
 
 FilePathPanelButtons { padding-left: 3px; padding-right: 6px; }
 
@@ -396,7 +396,7 @@ FilePathPanelItem > .button { padding: 0 1px; }
 
 FilePathPanelItem > .button:hovered { background-color: #c7d9ec; }
 
-FileNameEditLine EditLine { stretch: both; }
+FileNameEditLine EditLine { justify-self: stretch; }
 
 @define-colors { file_dialog_dir_name: #000080; }
 
@@ -410,7 +410,7 @@ SettingsDialog > .content { padding: 6px; gap: 3px; }
 
 SettingsDialog > .content > .tree { width: 150px; min-width: 50px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.1); background-color: #fff; font-size: 16px; }
 
-SettingsDialog > .content > .page { min-width: 100px; padding: 4px; stretch: both; }
+SettingsDialog > .content > .page { justify-self: stretch; min-width: 100px; padding: 4px; }
 
 SettingsDialog .settings-table > .title { padding: 4px 4px 12px; font-size: 1.6em; }
 

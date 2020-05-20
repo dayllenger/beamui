@@ -635,8 +635,8 @@ TabBar > .more {
 }
 
 TabContent {
+    justify-self: stretch;
     padding: 6px;
-    stretch: both;
     background-color: #f2f4f5;
 }
 
@@ -890,15 +890,15 @@ WindowFrame {
     }
 
     > .body {
+        justify-self: stretch;
         padding: 3px;
-        stretch: both;
     }
 }
 
 /* appframe */
 
 AppFrame > .body {
-    stretch: both;
+    justify-self: stretch;
 }
 
 /* dialog, filedialog, inputbox, messagebox, settingsdialog */
@@ -922,10 +922,10 @@ FileDialog {
     }
 
     .right-panel {
-        stretch: both;
+        justify-self: stretch;
 
         > .grid {
-            stretch: both;
+            justify-self: stretch;
         }
     }
 }
@@ -957,7 +957,7 @@ FilePathPanelItem {
 }
 
 FileNameEditLine EditLine {
-    stretch: both;
+    justify-self: stretch;
 }
 
 @define-colors {
@@ -989,9 +989,9 @@ SettingsDialog {
         }
 
         > .page {
+            justify-self: stretch;
             min-width: 100px;
             padding: 4px;
-            stretch: both;
         }
     }
 

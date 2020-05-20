@@ -10,7 +10,7 @@ module beamui.layout.linear;
 nothrow:
 
 import std.container.array;
-import beamui.layout.alignment : alignBox, ignoreAutoMargin;
+import beamui.layout.alignment : ignoreAutoMargin;
 import beamui.widgets.widget;
 
 /// Helper for layouts
@@ -74,7 +74,7 @@ class LinearLayout : ILayout
 
     void onChildStyleChange(StyleProperty p)
     {
-        if (p == StyleProperty.alignment || p == StyleProperty.stretch)
+        if (p == StyleProperty.justifySelf)
             host.requestLayout();
     }
 
@@ -139,19 +139,16 @@ class LinearLayout : ILayout
         foreach (ref item; items)
         {
             const wstyle = item.el.style;
-            const stretch = wstyle.stretch;
-            const bool main = stretch == Stretch.main || stretch == Stretch.both;
             const Insets m = ignoreAutoMargin(wstyle.margins);
+            item.fill = wstyle.placeSelf[0] == AlignItem.stretch;
             static if (horiz)
             {
-                item.fill = main;
                 item.result.h = min(geom.h, item.bs.max.h);
                 if (item.el.dependentSize == DependentSize.width)
                     item.bs.nat.w = item.el.widthForHeight(item.result.h - m.height) + m.width;
             }
             else
             {
-                item.fill = main;
                 item.result.w = min(geom.w, item.bs.max.w);
                 if (item.el.dependentSize == DependentSize.height)
                     item.bs.nat.h = item.el.heightForWidth(item.result.w - m.width) + m.height;
