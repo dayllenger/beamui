@@ -282,25 +282,27 @@ class Widget
     private Element mount(Widget parent, Element parentElem, size_t index)
         in(parent, "Widget must have a parent")
     {
+        import std.digest.murmurhash : MurmurHash3;
+
+        MurmurHash3!128 hasher;
+
         // compute the element ID; it always depends on the widget type
-        const typeHash = hashOf(this.classinfo.name);
-        ulong mainHash;
+        const type = cast(void*)this.classinfo;
+        hasher.put((cast(ubyte*)&type)[0 .. size_t.sizeof]);
         // if the widget has a CSS id, it is unique
         if (id.length)
         {
-            mainHash = hashOf(id);
+            hasher.put(cast(ubyte[])id);
         }
         else
         {
-            const ulong[2] values = [
-                // use the parent ID, so IDs form a tree structure
-                parent._elementID.value,
-                // also use either the key or, as a last resort, the index
-                key ? key.computed : index,
-            ];
-            mainHash = hashOf(values);
+            // use the parent ID, so IDs form a tree structure
+            hasher.put(parent._elementID.value);
+            // also use either the key or, as a last resort, the index
+            const k = key ? key.computed : index;
+            hasher.put((cast(ubyte*)&k)[0 .. size_t.sizeof]);
         }
-        _elementID = ElementID(typeHash ^ mainHash);
+        _elementID = ElementID(hasher.finish());
         _parent = parent;
         // find or create the element using the currently bound element store
         _element = _ctx.store.fetch(_elementID, this);
@@ -2767,7 +2769,7 @@ class ElemPanel : ElemGroup
 */
 struct ElementID
 {
-    ulong value;
+    ubyte[16] value;
 }
 
 /// Contains every alive element of the window by `ElementID`
@@ -2786,7 +2788,7 @@ struct ElementStore
     }
 
     Element fetch(ElementID id, Widget caller)
-        in(id.value)
+        in(id != ElementID.init)
         in(caller)
     {
         Element el;

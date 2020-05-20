@@ -31,7 +31,7 @@ if ((is(Base == class) || is(Base == interface)) && is(Derived : Base))
     {
         assert(base);
         Derived obj = cast(Derived)base;
-        assert(obj, "Failed downcast");
+        assert(obj, "Failed downcast: got " ~ getShortClassName(base));
         return obj;
     }
     else
