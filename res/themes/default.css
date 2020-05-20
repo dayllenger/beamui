@@ -7,20 +7,20 @@
 }
 
 Spacer {
+  flex: 1;
   stretch: both;
 }
 
-Button,
 ButtonLike,
 CheckBox,
 RadioButton,
 ComboBoxBase {
-  display: row;
+  display: flex;
   cursor: pointer;
 }
 
-LinkButton {
-  stretch: none;
+Link {
+  place-self: start;
   cursor: pointer;
 }
 
@@ -37,28 +37,28 @@ EditorSearchPane > .find {
   grid-area: fe;
 }
 EditorSearchPane > .find-buttons {
-  display: row;
+  display: flex;
   grid-area: fb;
 }
 EditorSearchPane > .replace {
   grid-area: re;
 }
 EditorSearchPane > .replace-buttons {
-  display: row;
+  display: flex;
   grid-area: rb;
 }
 EditorSearchPane > .close {
   grid-area: c;
 }
 
-GroupBox,
-Popup {
-  display: column;
+GroupBox {
+  display: flex;
+  flex-direction: column;
 }
 
 TabItem,
 TabBar {
-  display: row;
+  display: flex;
 }
 
 TabWidget {
@@ -68,11 +68,12 @@ TabWidget {
 ListView > .item,
 TreeItemWidget,
 TreeItemWidget > Panel {
-  display: row;
+  display: flex;
 }
 
 TreeWidget {
-  display: column;
+  display: flex;
+  flex-direction: column;
   gap: 0;
 }
 
@@ -81,7 +82,7 @@ ToolBarHost,
 StatusLine,
 StatusLineTextPanel,
 StatusLineIconPanel {
-  display: row;
+  display: flex;
 }
 
 AppFrame,
@@ -91,33 +92,35 @@ WindowFrame {
 
 WindowFrame > .caption,
 WindowFrame > .body {
-  display: row;
+  display: flex;
 }
 
 Dialog {
-  display: column;
+  display: flex;
+  flex-direction: column;
 }
 
 Dialog > .buttons {
-  display: row;
+  display: flex;
 }
 
 FileDialog .content {
-  display: row;
+  display: flex;
   stretch: both;
 }
 
 FileDialog .right-panel {
-  display: column;
+  display: flex;
+  flex-direction: column;
 }
 
 FilePathPanelItem,
 FileNameEditLine {
-  display: row;
+  display: flex;
 }
 
 SettingsDialog > .content {
-  display: row;
+  display: flex;
   stretch: both;
 }
 SettingsDialog .settings-table {

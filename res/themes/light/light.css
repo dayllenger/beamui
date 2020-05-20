@@ -4,7 +4,7 @@
 @define-colors { window_background: #f0f1f1; }
 
 /* controls */
-ButtonLike { align: center; padding: 4px 8px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); focus-rect-color: #bbb; transition: border-color 75ms ease; }
+ButtonLike { justify-content: center; align-items: center; padding: 4px 8px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); focus-rect-color: #bbb; transition: border-color 75ms ease; }
 
 ButtonLike:hovered:not(checked) { border-color: #417fbf; }
 
@@ -12,9 +12,7 @@ ButtonLike:pressed, ButtonLike:checked { border-color: #4e93da; background: line
 
 ButtonLike:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
 
-ButtonLike > .icon, ButtonLike > .label { align: center; }
-
-ButtonLike > .label { stretch: main; text-align: center; text-hotkey: underline-on-alt; text-overflow: ellipsis; transition: color 75ms ease; }
+ButtonLike > .label { flex: 1; text-align: center; text-hotkey: underline-on-alt; text-overflow: ellipsis; transition: color 75ms ease; }
 
 ButtonLike:hovered > .label { color: #46617e; }
 
@@ -32,15 +30,15 @@ Link > ButtonLike:hovered > .label { text-decoration: underline; }
 
 Link > ButtonLike:not(enabled) > .label { color: rgba(192, 192, 255, 0.7); }
 
-CheckBox, RadioButton { padding: 2px; }
+CheckBox, RadioButton { align-items: center; padding: 2px; }
 
-CheckBox > .label, RadioButton > .label { align: left vcenter; stretch: main; text-hotkey: underline-on-alt; text-overflow: ellipsis; }
+CheckBox > .label, RadioButton > .label { flex: 1; text-hotkey: underline-on-alt; text-overflow: ellipsis; }
 
 CheckBox:hovered > .label, RadioButton:hovered > .label { color: #46617e; }
 
 CheckBox:not(enabled) > .label, RadioButton:not(enabled) > .label { color: rgba(64, 64, 64, 0.5); }
 
-CheckBox > .icon, RadioButton > .icon, MenuItem > .check, MenuItem > .radio { align: center; stretch: none; min-width: 16px; min-height: 16px; }
+CheckBox > .icon, RadioButton > .icon, MenuItem > .check, MenuItem > .radio { flex: 0; min-width: 16px; min-height: 16px; }
 
 CheckBox:not(enabled) > .icon, RadioButton:not(enabled) > .icon, MenuItem:not(enabled) > .check, MenuItem:not(enabled) > .radio { opacity: 0.4; }
 
@@ -60,7 +58,7 @@ RadioButton > .icon, MenuItem > .radio { background-color: white; border: 1px so
 
 RadioButton:checked > .icon, MenuItem:checked > .radio { border-color: #4e93da; border-width: 5px; }
 
-SwitchButton { align: center; background: url(switch_off); }
+SwitchButton { background: url(switch_off); }
 
 SwitchButton:not(enabled) { opacity: 0.4; }
 
@@ -74,7 +72,7 @@ Label { padding: 2px; }
 Label:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 /* layout.linear */
-Resizer { min-width: 3px; min-height: 3px; }
+Resizer { min-width: 6px; min-height: 6px; }
 
 Resizer:hovered { background-color: rgba(255, 255, 0, 0.2); }
 
@@ -85,7 +83,7 @@ Resizer:pressed { background-color: rgba(78, 147, 218, 0.8); }
 /* groupbox */
 GroupBox { padding: 20px 10px 16px; }
 
-GroupBox > .caption { align: left vcenter; padding: 1px; color: #504840; text-overflow: ellipsis; }
+GroupBox > .caption { padding: 1px; color: #504840; text-overflow: ellipsis; }
 
 @define-drawables { group_box_frame_up_left: url(group_box_frame_up_left);
   group_box_frame_up_right: url(group_box_frame_up_right);
@@ -107,7 +105,7 @@ ListView > .item:focused, ListView > .item:selected { background-color: #4e93da;
 ListView > .item:focused > Label, ListView > .item:selected > Label { color: #f0f0f0; }
 
 /* combobox */
-ComboBoxBase { padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
+ComboBoxBase { align-items: center; padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
 
 ComboBoxBase:hovered { border-color: #417fbf; }
 
@@ -123,9 +121,9 @@ ComboBoxBase:focused { border-color: #4e93da; }
 
 ComboBoxBase.opened { border-color: #4e93da; }
 
-ComboBoxBase > .body { min-width: 40px; padding: 2px; align: left vcenter; stretch: both; transition: color 100ms ease; }
+ComboBoxBase > .body { flex: 1; min-width: 40px; padding: 2px; transition: color 100ms ease; }
 
-ComboBoxBase > .arrow { align: center; padding: 3px 2px; }
+ComboBoxBase > .arrow { padding: 3px 2px; }
 
 Popup.combobox > ListView { width: auto; height: auto; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
 
@@ -160,13 +158,11 @@ MenuItem.separator { padding: 4px; }
 
 MenuItem.separator > * { min-width: 1px; min-height: 1px; background: #ccc; }
 
-MenuItem > .icon { align: left vcenter; padding: 0 2px; }
+MenuItem > .icon { padding: 0 2px; }
 
-MenuItem > .label { align: left vcenter; padding: 0 4px; text-hotkey: underline-on-alt; }
+MenuItem > .label { padding: 0 4px; text-hotkey: underline-on-alt; }
 
-MenuItem > .shortcut { align: right vcenter; padding-left: 8px; padding-right: 2px; }
-
-MenuItem > .open { align: center; }
+MenuItem > .shortcut { padding-left: 8px; padding-right: 2px; text-align: right; }
 
 /* tree */
 TreeItemWidget { min-width: 100px; min-height: 1em; gap: 0; }
@@ -264,7 +260,7 @@ TabItem { padding: 6px 1px 0 0; gap: 0; border: 0 solid transparent; }
 
 TabItem:selected { border-color: #4e93da; }
 
-TabItem > .label { align: hcenter bottom; padding: 0 3px 3px; text-hotkey: underline-on-alt; transition: color 100ms ease; }
+TabItem > .label { align-self: end; padding: 0 3px 3px; text-hotkey: underline-on-alt; transition: color 100ms ease; }
 
 TabItem:hovered > .label, TabItem:selected > .label, TabItem:focused > .label { color: #4e93da; }
 
@@ -324,7 +320,7 @@ SourceEdit:read-only { background-color: #f0f0f0; }
 /* statusline */
 StatusLine { padding: 1px; flex-shrink: 0; background-color: #eceffa; }
 
-StatusLine > Label { stretch: both; }
+StatusLine > Label { flex: 1; }
 
 /* toolbars */
 ToolBarHost { padding: 6px; gap: 8px; }
@@ -364,11 +360,11 @@ ProgressBar { min-width: 50px; min-height: 16px; max-height: 16px; padding: 2px;
 /* winframe */
 WindowFrame { background: #f4f4f4; }
 
-WindowFrame > .caption { padding: 3px; background: #e4e4e4; }
+WindowFrame > .caption { align-items: center; padding: 3px; background: #e4e4e4; }
 
-WindowFrame > .caption > Label { align: left vcenter; stretch: main; padding: 2px; color: #333; font-size: 0.9em; text-overflow: ellipsis; text-transform: uppercase; }
+WindowFrame > .caption > Label { padding: 2px; color: #333; font-size: 0.9em; text-overflow: ellipsis; text-transform: uppercase; }
 
-WindowFrame > .caption > Button { padding: 2px; stretch: none; }
+WindowFrame > .caption > Button { margin-left: auto; padding: 2px; }
 
 WindowFrame > .body { padding: 3px; stretch: both; }
 
@@ -390,9 +386,9 @@ FileDialog .right-panel > .grid { stretch: both; }
 
 FilePathPanelButtons { padding-left: 3px; padding-right: 6px; }
 
-FilePathPanelItem { gap: 0; }
+FilePathPanelItem { align-items: center; gap: 0; }
 
-FilePathPanelItem > .label { align: center; padding: 2px 3px; }
+FilePathPanelItem > .label { padding: 2px 3px; }
 
 FilePathPanelItem > .label:hovered { background-color: #c7d9ec; }
 

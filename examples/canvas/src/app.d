@@ -50,23 +50,18 @@ TabContent {
     padding: 0;
 }
 #settings {
-    display: column;
+    display: flex;
+    flex-direction: column;
+    align-items: end;
     top: 3em;
     right: 1em;
     padding: 6px;
     background-color: rgba(255, 255, 255, 0.8);
     border: 2px solid #888;
 }
-#settings > * {
-    align: right;
-    stretch: none;
-}
 #blend-settings {
-    display: row;
-}
-#blend-settings > Label {
-    align: vcenter;
-    stretch: none;
+    display: flex;
+    align-items: center;
 }
 #blend-settings > ComboBox {
     min-width: 8em;

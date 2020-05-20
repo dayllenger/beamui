@@ -30,7 +30,8 @@ $focused-border-color: saturate($main-color, 30%);
 /* controls */
 
 ButtonLike {
-    align: center;
+    justify-content: center;
+    align-items: center;
     padding: 4px 8px;
     border: 1px solid #aaa;
     background: linear(0deg, #eeeeee, #dddddd);
@@ -51,12 +52,8 @@ ButtonLike {
         opacity: 0.4;
     }
 
-    > .icon, > .label {
-        align: center;
-    }
-
     > .label {
-        stretch: main;
+        flex: 1;
         text-align: center;
         text-hotkey: underline-on-alt;
         text-overflow: ellipsis;
@@ -102,11 +99,11 @@ Link > ButtonLike {
 }
 
 CheckBox, RadioButton {
+    align-items: center;
     padding: 2px;
 
     > .label {
-        align: left vcenter;
-        stretch: main;
+        flex: 1;
         text-hotkey: underline-on-alt;
         text-overflow: ellipsis;
     }
@@ -124,8 +121,7 @@ CheckBox > .icon,
 RadioButton > .icon,
 MenuItem > .check,
 MenuItem > .radio {
-    align: center;
-    stretch: none;
+    flex: 0;
     min-width: 16px;
     min-height: 16px;
 }
@@ -182,7 +178,6 @@ RadioButton:checked > .icon, MenuItem:checked > .radio {
 }
 
 SwitchButton {
-    align: center;
     background: url(switch_off);
 
     &:not(enabled) {
@@ -212,8 +207,8 @@ Label {
 /* layout.linear */
 
 Resizer {
-    min-width: 3px;
-    min-height: 3px;
+    min-width: 6px;
+    min-height: 6px;
 
     &:hovered {
         background-color: fade-out(#ffff00, 0.8);
@@ -235,7 +230,6 @@ GroupBox {
 }
 
 GroupBox > .caption {
-    align: left vcenter;
     padding: 1px;
     color: #504840;
     text-overflow: ellipsis;
@@ -287,6 +281,7 @@ ListView {
 /* combobox */
 
 ComboBoxBase {
+    align-items: center;
     padding: 3px 4px;
     border: 1px solid #aaa;
     background: linear(0deg, #eeeeee, #dddddd);
@@ -323,15 +318,13 @@ ComboBoxBase {
     }
 
     > .body {
+        flex: 1;
         min-width: 40px;
         padding: 2px;
-        align: left vcenter;
-        stretch: both;
         transition: color 100ms ease;
     }
 
     > .arrow {
-        align: center;
         padding: 3px 2px;
     }
 }
@@ -420,24 +413,18 @@ MenuItem {
     }
 
     > .icon {
-        align: left vcenter;
         padding: 0 2px;
     }
 
     > .label {
-        align: left vcenter;
         padding: 0 4px;
         text-hotkey: underline-on-alt;
     }
 
     > .shortcut {
-        align: right vcenter;
         padding-left: 8px;
         padding-right: 2px;
-    }
-
-    > .open {
-        align: center;
+        text-align: right;
     }
 }
 
@@ -663,7 +650,7 @@ TabItem {
     }
 
     > .label {
-        align: hcenter bottom;
+        align-self: end;
         padding: 0 3px 3px;
         text-hotkey: underline-on-alt;
         transition: color 100ms ease;
@@ -793,7 +780,7 @@ StatusLine {
 }
 
 StatusLine > Label {
-    stretch: both;
+    flex: 1;
 }
 
 /* toolbars */
@@ -884,12 +871,11 @@ WindowFrame {
     background: #f4f4f4;
 
     > .caption {
+        align-items: center;
         padding: 3px;
         background: #e4e4e4;
 
         > Label {
-            align: left vcenter;
-            stretch: main;
             padding: 2px;
             color: #333;
             font-size: 0.9em;
@@ -898,8 +884,8 @@ WindowFrame {
         }
 
         > Button {
+            margin-left: auto;
             padding: 2px;
-            stretch: none;
         }
     }
 
@@ -950,10 +936,10 @@ FilePathPanelButtons {
 }
 
 FilePathPanelItem {
+    align-items: center;
     gap: 0;
 
     > .label {
-        align: center;
         padding: 2px 3px;
 
         &:hovered {

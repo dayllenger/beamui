@@ -1,6 +1,7 @@
 
 CssHotReloadWidget {
-    display: column;
+    display: flex;
+    flex-direction: column;
     width: 200px;
     padding: 18px;
 }
@@ -20,10 +21,11 @@ Controls {
     padding: 10px 15px;
 }
 
-.expand { stretch: both; }
+.expand { flex: 1; }
 
 #tab1 {
-    display: column;
+    display: flex;
+    flex-direction: column;
     gap: 15px;
 }
 
@@ -35,7 +37,7 @@ Controls {
 }
 
 #p1, #p2 {
-    display: row;
+    display: flex;
 }
 
 Button.folder > .label {
