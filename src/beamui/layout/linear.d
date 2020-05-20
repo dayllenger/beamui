@@ -141,24 +141,24 @@ class LinearLayout : ILayout
             const wstyle = item.el.style;
             const stretch = wstyle.stretch;
             const bool main = stretch == Stretch.main || stretch == Stretch.both;
-            const bool cross = stretch == Stretch.cross || stretch == Stretch.both;
             const Insets m = ignoreAutoMargin(wstyle.margins);
             static if (horiz)
             {
                 item.fill = main;
-                item.result.h = cross ? min(geom.h, item.bs.max.h) : item.bs.nat.h;
+                item.result.h = min(geom.h, item.bs.max.h);
                 if (item.el.dependentSize == DependentSize.width)
                     item.bs.nat.w = item.el.widthForHeight(item.result.h - m.height) + m.width;
             }
             else
             {
                 item.fill = main;
-                item.result.w = cross ? min(geom.w, item.bs.max.w) : item.bs.nat.w;
+                item.result.w = min(geom.w, item.bs.max.w);
                 if (item.el.dependentSize == DependentSize.height)
                     item.bs.nat.h = item.el.heightForWidth(item.result.w - m.width) + m.height;
             }
         }
         allocateSpace!dim(items, geom.pick!dim);
+
         // apply resizers
         foreach (i; 1 .. cast(int)items.length - 1)
         {
@@ -183,28 +183,25 @@ class LinearLayout : ILayout
             resizer._orientation = _orientation;
         if (auto resizer = cast(ElemResizer)items.back.el)
             resizer._orientation = _orientation;
+
         // lay out items
         float pen = 0;
         foreach (ref item; items)
         {
-            const wstyle = item.el.style;
-            const Insets m = ignoreAutoMargin(wstyle.margins);
+            const Insets m = ignoreAutoMargin(item.el.style.margins);
             const Size sz = item.result;
-            Box res = Box(geom.x + m.left, geom.y + m.top, geom.w, geom.h);
+            Box b = Box(geom.x + m.left, geom.y + m.top, sz.w - m.width, sz.h - m.height);
             static if (horiz)
             {
-                res.x += pen;
-                res = alignBox(res, sz, wstyle.valign);
+                b.x += pen;
+                pen += sz.w;
             }
             else
             {
-                res.y += pen;
-                res = alignBox(res, sz, wstyle.halign);
+                b.y += pen;
+                pen += sz.h;
             }
-            res.w -= m.width;
-            res.h -= m.height;
-            item.el.layout(res);
-            pen += sz.pick!dim;
+            item.el.layout(b);
         }
     }
 }
