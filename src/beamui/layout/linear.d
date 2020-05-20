@@ -10,7 +10,7 @@ module beamui.layout.linear;
 nothrow:
 
 import std.container.array;
-import beamui.layout.alignment : alignBox;
+import beamui.layout.alignment : alignBox, ignoreAutoMargin;
 import beamui.widgets.widget;
 
 /// Helper for layouts
@@ -70,8 +70,6 @@ class LinearLayout : ILayout
 
     void onStyleChange(StyleProperty p)
     {
-        if (p == StyleProperty.rowGap || p == StyleProperty.columnGap)
-            host.requestLayout();
     }
 
     void onChildStyleChange(StyleProperty p)
@@ -99,13 +97,14 @@ class LinearLayout : ILayout
         Boundaries bs;
         foreach (ref item; items)
         {
-            item.el.measure();
-            Boundaries wbs = item.el.boundaries;
+            Element el = item.el;
+            el.measure();
+            Boundaries wbs = el.boundaries;
             // add margins
-            Size m = item.el.style.margins.size;
-            Boundaries ms = Boundaries(m, m, m);
-            wbs.addWidth(ms);
-            wbs.addHeight(ms);
+            const Size msz = ignoreAutoMargin(el.style.margins).size;
+            wbs.min += msz;
+            wbs.nat += msz;
+            wbs.max += msz;
             item.bs = wbs;
             if (_orientation == Orientation.horizontal)
             {
@@ -117,22 +116,6 @@ class LinearLayout : ILayout
                 bs.maximizeWidth(wbs);
                 bs.addHeight(wbs);
             }
-        }
-        if (_orientation == Orientation.horizontal)
-        {
-            const gap = host.style.columnGap.applyPercent(bs.nat.w);
-            const space = gap * (cast(int)items.length - 1);
-            bs.max.w += space;
-            bs.nat.w += space;
-            bs.min.w += space;
-        }
-        else
-        {
-            const gap = host.style.rowGap.applyPercent(bs.nat.h);
-            const space = gap * (cast(int)items.length - 1);
-            bs.max.h += space;
-            bs.nat.h += space;
-            bs.min.h += space;
         }
         return bs;
     }
@@ -159,7 +142,7 @@ class LinearLayout : ILayout
             const stretch = wstyle.stretch;
             const bool main = stretch == Stretch.main || stretch == Stretch.both;
             const bool cross = stretch == Stretch.cross || stretch == Stretch.both;
-            const Insets m = wstyle.margins;
+            const Insets m = ignoreAutoMargin(wstyle.margins);
             static if (horiz)
             {
                 item.fill = main;
@@ -175,12 +158,7 @@ class LinearLayout : ILayout
                     item.bs.nat.h = item.el.heightForWidth(item.result.w - m.width) + m.height;
             }
         }
-        static if (horiz)
-            const spacing = host.style.columnGap.applyPercent(geom.w);
-        else
-            const spacing = host.style.rowGap.applyPercent(geom.h);
-        float gaps = spacing * (cast(int)items.length - 1);
-        allocateSpace!dim(items, geom.pick!dim - gaps);
+        allocateSpace!dim(items, geom.pick!dim);
         // apply resizers
         foreach (i; 1 .. cast(int)items.length - 1)
         {
@@ -210,7 +188,7 @@ class LinearLayout : ILayout
         foreach (ref item; items)
         {
             const wstyle = item.el.style;
-            const Insets m = wstyle.margins;
+            const Insets m = ignoreAutoMargin(wstyle.margins);
             const Size sz = item.result;
             Box res = Box(geom.x + m.left, geom.y + m.top, geom.w, geom.h);
             static if (horiz)
@@ -226,7 +204,7 @@ class LinearLayout : ILayout
             res.w -= m.width;
             res.h -= m.height;
             item.el.layout(res);
-            pen += sz.pick!dim + spacing;
+            pen += sz.pick!dim;
         }
     }
 }
