@@ -10,3 +10,4 @@ targetType "executable"
 
 dependency "beamui" path="../../"
 dependency "beamui:platforms" path="../../platforms"
+dependency "beamui:tools" path="../../tools"

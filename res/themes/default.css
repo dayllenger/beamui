@@ -132,3 +132,21 @@ SettingsDialog .settings-table > .full-row,
 SettingsDialog .settings-table > .title {
   grid-column-end: span 2;
 }
+
+
+
+CssHotReloadWidget {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  padding: 18px;
+}
+CssHotReloadWidget > * {
+  text-align: center;
+}
+CssHotReloadWidget > Label[state="watching"] {
+  color: green;
+}
+CssHotReloadWidget > Label[state="error"] {
+  color: red;
+}

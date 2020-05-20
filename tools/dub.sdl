@@ -1,0 +1,9 @@
+name "tools"
+license "BSL-1.0"
+authors "dayllenger"
+
+targetName "beamui-tools"
+targetPath "../lib"
+targetType "staticLibrary"
+
+dependency "beamui" path="../"
