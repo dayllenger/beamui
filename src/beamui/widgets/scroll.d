@@ -69,14 +69,14 @@ enum ScrollAreaAction
     right,
     pageLeft,
     pageRight,
-    leftCorner,
-    rightCorner,
+    leftEdge,
+    rightEdge,
     up,
     down,
     pageUp,
     pageDown,
-    topCorner,
-    bottomCorner,
+    topEdge,
+    bottomEdge,
 }
 
 /** Abstract scrollable widget (used as a base for other widgets with scrolling).
@@ -248,13 +248,13 @@ abstract class ElemScrollAreaBase : ElemGroup
             h.triggerAction(ScrollAction.pageDown);
     }
 
-    final void scrollLeftCorner()
+    final void scrollLeftEdge()
     {
         if (auto h = _hscrollbar)
             h.moveTo(0);
     }
 
-    final void scrollRightCorner()
+    final void scrollRightEdge()
     {
         if (auto h = _hscrollbar)
             h.moveTo(_hdata.range);
@@ -284,13 +284,13 @@ abstract class ElemScrollAreaBase : ElemGroup
             v.triggerAction(ScrollAction.pageDown);
     }
 
-    final void scrollTopCorner()
+    final void scrollTopEdge()
     {
         if (auto v = _vscrollbar)
             v.moveTo(0);
     }
 
-    final void scrollBottomCorner()
+    final void scrollBottomEdge()
     {
         if (auto v = _vscrollbar)
             v.moveTo(_vdata.range);
@@ -306,8 +306,8 @@ abstract class ElemScrollAreaBase : ElemGroup
                 case right:       h.triggerAction(ScrollAction.lineDown); return;
                 case pageLeft:    h.triggerAction(ScrollAction.pageUp);   return;
                 case pageRight:   h.triggerAction(ScrollAction.pageDown); return;
-                case leftCorner:  h.moveTo(0); return;
-                case rightCorner: h.moveTo(_hdata.range); return;
+                case leftEdge:    h.moveTo(0); return;
+                case rightEdge:   h.moveTo(_hdata.range); return;
                 default: break;
             }
         }
@@ -319,8 +319,8 @@ abstract class ElemScrollAreaBase : ElemGroup
                 case down:         v.triggerAction(ScrollAction.lineDown); return;
                 case pageUp:       v.triggerAction(ScrollAction.pageUp);   return;
                 case pageDown:     v.triggerAction(ScrollAction.pageDown); return;
-                case topCorner:    v.moveTo(0); return;
-                case bottomCorner: v.moveTo(_vdata.range); return;
+                case topEdge:      v.moveTo(0); return;
+                case bottomEdge:   v.moveTo(_vdata.range); return;
                 default: break;
             }
         }

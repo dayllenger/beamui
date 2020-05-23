@@ -886,8 +886,8 @@ class TreeWidgetBase : ScrollArea, ActionOperator
         ACTION_PAGE_UP.bind(this, &_tree.selectPrevious);
         // TODO: implement page down
         ACTION_PAGE_DOWN.bind(this, &_tree.selectNext);
-        ACTION_PAGE_BEGIN.bind(this, &scrollTopCorner);
-        ACTION_PAGE_END.bind(this, &scrollBottomCorner);
+        ACTION_PAGE_BEGIN.bind(this, &scrollTopEdge);
+        ACTION_PAGE_END.bind(this, &scrollBottomEdge);
 
         // TODO: ctrl+up, ctrl+left, ctrl+home, etc.
     }
