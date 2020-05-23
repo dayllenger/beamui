@@ -15,12 +15,15 @@ $focused-border-color: saturate($main-color, 30%);
     sassc --style compact theme.scss theme.css
 */
 
-* {
-    gap: 6px;
+:root {
     font-face: "Helvetica Neue, Liberation Sans, DejaVu Sans, Verdana, Arial, Helvetica, Roboto, Droid Sans";
     font-family: sans-serif;
     font-size: 13px;
     color: $text-color;
+}
+
+Panel {
+    gap: 6px;
 }
 
 @define-colors {

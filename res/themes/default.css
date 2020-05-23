@@ -1,6 +1,6 @@
 /* The default stylesheet. Always embedded into binaries and applied before any other CSS. */
 
-* {
+:root {
   color: #222;
   font-family: sans-serif;
   font-size: 14px;

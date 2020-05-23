@@ -32,6 +32,15 @@ struct Selector
     /// Subitem, `::pseudo-element` from CSS
     string subitem;
 
+    /// Tree-Structural pseudo-class, e.g. `:root` or `:first-child`
+    enum TreePosition
+    {
+        none,
+        root,
+    }
+    /// ditto
+    TreePosition position;
+
     /// Attribute matcher
     struct Attr
     {
@@ -153,14 +162,15 @@ struct Selector
     /// Compute `universal` property
     void calculateUniversality()
     {
-        universal = !type && !id && !classes && specifiedState == State.init && !subitem && !attributes;
+        universal = !type & !id & !classes & !subitem & !attributes;
+        universal &= (specifiedState == State.init) & (position == TreePosition.init);
     }
 
     /**
     Selector specificity.
 
     0 - the number of ID selectors,
-    1 - the number of class and attribute selectors,
+    1 - the number of class, attribute, and tree-structural selectors,
     2 - special rating of state selectors,
     3 - the number of type selectors and pseudo-elements
     */
@@ -185,6 +195,8 @@ struct Selector
                 specificity[1] += cast(uint)s.classes.length;
             if (s.attributes)
                 specificity[1] += cast(uint)s.attributes.length;
+            if (s.position != TreePosition.init)
+                specificity[1]++;
             State st = s.specifiedState;
             if (st != State.init)
                 specificity[2] += st * st * popcnt(st);

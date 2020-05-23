@@ -862,6 +862,15 @@ public:
         // state
         if ((sel.specifiedState & state) != sel.enabledState)
             return false;
+        // tree-structural
+        if (sel.position != Selector.TreePosition.none)
+        {
+            if (sel.position == Selector.TreePosition.root)
+            {
+                if (!_window) // criterion: only root elements have set window
+                    return false;
+            }
+        }
         // classes
         if (sel.classes.length && !attributes)
             return false;

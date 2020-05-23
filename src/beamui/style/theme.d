@@ -354,6 +354,11 @@ private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref cons
                 Log.fw("CSS(%s): there can be only one pseudo element in selector", line);
             break;
         case pseudoClass:
+            if (s == "root")
+            {
+                sel.position = Selector.TreePosition.root;
+                break;
+            }
             applyStateFlag(s, "pressed", State.pressed);
             applyStateFlag(s, "focused", State.focused);
             applyStateFlag(s, "default", State.default_);
