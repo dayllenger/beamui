@@ -310,16 +310,11 @@ private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref cons
     State specified;
     State enabled;
     // state extraction
-    void applyStateFlag(string flag, string stateName, State state)
+    void applyStateFlag(State state, bool positive)
     {
-        bool yes = flag[0] != '!';
-        string s = yes ? flag : flag[1 .. $];
-        if (s == stateName)
-        {
-            specified |= state;
-            if (yes)
-                enabled |= state;
-        }
+        specified |= state;
+        if (positive)
+            enabled |= state;
     }
 
     bool firstEntry = true;
@@ -354,21 +349,44 @@ private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref cons
                 Log.fw("CSS(%s): there can be only one pseudo element in selector", line);
             break;
         case pseudoClass:
-            if (s == "root")
+            const positive = s[0] != '!';
+            switch (positive ? s : s[1 .. $])
             {
+            case "pressed":
+                applyStateFlag(State.pressed, positive);
+                break;
+            case "focused":
+                applyStateFlag(State.focused, positive);
+                break;
+            case "hovered":
+                applyStateFlag(State.hovered, positive);
+                break;
+            case "selected":
+                applyStateFlag(State.selected, positive);
+                break;
+            case "checked":
+                applyStateFlag(State.checked, positive);
+                break;
+            case "enabled":
+                applyStateFlag(State.enabled, positive);
+                break;
+            case "default":
+                applyStateFlag(State.default_, positive);
+                break;
+            case "read-only":
+                applyStateFlag(State.readOnly, positive);
+                break;
+            case "activated":
+                applyStateFlag(State.activated, positive);
+                break;
+            case "window-focused":
+                applyStateFlag(State.windowFocused, positive);
+                break;
+            case "root":
                 sel.position = Selector.TreePosition.root;
                 break;
+            default:
             }
-            applyStateFlag(s, "pressed", State.pressed);
-            applyStateFlag(s, "focused", State.focused);
-            applyStateFlag(s, "default", State.default_);
-            applyStateFlag(s, "hovered", State.hovered);
-            applyStateFlag(s, "selected", State.selected);
-            applyStateFlag(s, "checked", State.checked);
-            applyStateFlag(s, "enabled", State.enabled);
-            applyStateFlag(s, "activated", State.activated);
-            applyStateFlag(s, "window-focused", State.windowFocused);
-            applyStateFlag(s, "read-only", State.readOnly);
             break;
         case attr:
             sel.attributes ~= Selector.Attr(s, null, Selector.Attr.Pattern.whatever);
