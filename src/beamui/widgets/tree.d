@@ -151,7 +151,6 @@ class TreeItemWidget : TreeItemWidgetBase
     {
         allowsFocus = true;
         allowsHover = true;
-        isolateStyle = true;
     }
 
     private alias wrap = typeof(super).wrap;

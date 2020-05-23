@@ -38,11 +38,6 @@ abstract class AbstractSlider : Widget
     /// Step multiplier for incPage/decPage events
     uint pageStep = 5;
 
-    this()
-    {
-        isolateStyle = true;
-    }
-
     /// Get default slider value for some actions. It doesn't clamp them by default
     protected double getDefaultValue(SliderAction action, double previous) const
     {

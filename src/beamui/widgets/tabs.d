@@ -60,7 +60,6 @@ class TabItem : TabItemBase
     this()
     {
         allowsHover = true;
-        isolateStyle = true;
     }
 
     protected alias wrap = typeof(super).wrap;

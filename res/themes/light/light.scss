@@ -57,6 +57,7 @@ ButtonLike {
 
     > .label {
         flex: 1;
+        padding: 0;
         text-align: center;
         text-hotkey: underline-on-alt;
         text-overflow: ellipsis;
@@ -107,6 +108,7 @@ CheckBox, RadioButton {
 
     > .label {
         flex: 1;
+        padding: 0;
         text-hotkey: underline-on-alt;
         text-overflow: ellipsis;
     }
@@ -425,9 +427,8 @@ MenuItem {
     }
 
     > .shortcut {
-        padding-left: 8px;
-        padding-right: 2px;
-        text-align: right;
+        padding-top: 0 2px 0 8px;
+        text-align: end;
     }
 }
 

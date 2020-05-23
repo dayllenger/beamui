@@ -38,11 +38,6 @@ class ScrollBar : Widget
     */
     bool delegate(ScrollAction, float) onScroll;
 
-    this()
-    {
-        isolateStyle = true;
-    }
-
     override protected Element createElement()
     {
         return new ElemScrollBar(data ? data : new ScrollData);

@@ -62,7 +62,6 @@ abstract class ComboBoxBase : Panel
     {
         allowsFocus = true;
         allowsHover = true;
-        isolateStyle = true;
         onWheelEvent = &handleWheelEvent;
     }
 

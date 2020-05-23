@@ -54,7 +54,6 @@ class ButtonLike : Panel
     this()
     {
         allowsHover = true;
-        isolateStyle = true;
     }
 
     protected alias wrap = typeof(super).wrap;
@@ -299,7 +298,6 @@ class CheckBox : Panel
     {
         allowsFocus = true;
         allowsHover = true;
-        isolateStyle = true;
     }
 
     protected alias wrap = typeof(super).wrap;
@@ -358,7 +356,6 @@ class RadioButton : Panel
     {
         allowsFocus = true;
         allowsHover = true;
-        isolateStyle = true;
     }
 
     protected alias wrap = typeof(super).wrap;

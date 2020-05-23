@@ -42,11 +42,6 @@ class MenuItem : Widget
         Label _shortcut;
     }
 
-    this()
-    {
-        isolateStyle = true;
-    }
-
     override protected void build()
     {
         if (!action)

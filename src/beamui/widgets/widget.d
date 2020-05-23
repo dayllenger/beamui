@@ -229,11 +229,7 @@ class Widget
     bool inheritState;
 
     string namespace = "beamui";
-    /** Enable style encapsulation for the subtree only.
-
-        Cascading and inheritance in this subtree will become independent from
-        the outer world. Still, the widget will be accessible via simple selectors.
-    */
+    /// Isolate inheritance of style properties for the widget sub-tree (including this widget)
     bool isolateStyle;
 
     bool delegate(KeyEvent) onKeyEvent;
@@ -805,12 +801,10 @@ public:
     {
         static Buf!Style tmpchain;
         tmpchain.clear();
-        // first find our scope
-        const Element closure = findStyleScopeRoot();
         // we can skip half of work if the state is normal
         Style[] list = currentTheme.getStyles(_namespace, state == State.normal);
         foreach (style; list)
-            if (matchSelector(style.selector, closure))
+            if (matchSelector(style.selector))
                 tmpchain ~= style;
         sort(tmpchain.unsafe_slice);
         return tmpchain.unsafe_slice;
@@ -819,30 +813,8 @@ public:
     /// Match this element with a selector
     bool matchSelector(ref const Selector sel) const
     {
-        return matchSelector(sel, findStyleScopeRoot());
-    }
-
-    private const(Element) findStyleScopeRoot() const
-    {
-        Element p = cast()_parent;
-        while (p)
-        {
-            if (p._style.isolated)
-                return p;
-            p = p._parent;
-        }
-        return null;
-    }
-
-    private bool matchSelector(ref const Selector sel, const Element closure) const
-    {
-        if (this is closure) // get the enclosing scope root and restart
-            return matchSelector(sel, findStyleScopeRoot());
         if (sel.universal)
-            return matchContextSelector(sel, closure);
-        // enclosed elements cannot be styled via simple selectors
-        if (closure && !sel.previous)
-            return false;
+            return matchContextSelector(sel);
         // type
         if (sel.type)
         {
@@ -889,10 +861,10 @@ public:
             else
                 return false;
         }
-        return matchContextSelector(sel, closure);
+        return matchContextSelector(sel);
     }
 
-    private bool matchContextSelector(ref const Selector sel, const Element closure) const
+    private bool matchContextSelector(ref const Selector sel) const
     {
         const Selector* subselector = sel.previous;
         if (!subselector) // exhausted
@@ -907,21 +879,19 @@ public:
                 Element p = cast()_parent;
                 while (p)
                 {
-                    if (p.matchSelector(*subselector, closure))
+                    if (p.matchSelector(*subselector))
                         return true;
-                    if (p is closure)
-                        break;
                     p = p._parent;
                 }
                 return false;
             case child:
                 // match with the direct parent
-                return _parent.matchSelector(*subselector, closure);
+                return _parent.matchSelector(*subselector);
             case next:
                 // match with the previous sibling
                 const n = _parent.childIndex(this) - 1;
                 if (n >= 0)
-                    return _parent.child(n).matchSelector(*subselector, closure);
+                    return _parent.child(n).matchSelector(*subselector);
                 else
                     return false;
             case subsequent:
@@ -930,7 +900,7 @@ public:
                 if (n >= 0)
                 {
                     foreach (i; 0 .. n)
-                        if (_parent.child(i).matchSelector(*subselector, closure))
+                        if (_parent.child(i).matchSelector(*subselector))
                             return true;
                 }
                 return false;
