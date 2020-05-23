@@ -57,7 +57,6 @@ class ListView : Widget
         Label item = render!Label;
         item.text = text;
         item.attributes["item"];
-        item.isolateThisStyle = true;
         return item;
     }
     /// ditto
@@ -65,16 +64,17 @@ class ListView : Widget
     {
         Panel item = render!Panel;
         item.attributes["item"];
-        item.isolateThisStyle = true;
 
         Label label = render!Label;
         label.text = value.label;
+        label.namespace = null;
 
         ImageWidget icon;
         if (value.iconID.length)
         {
             icon = render!ImageWidget;
             icon.imageID = value.iconID;
+            icon.namespace = null;
         }
         return item.wrap(icon, label);
     }

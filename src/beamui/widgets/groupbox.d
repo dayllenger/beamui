@@ -30,7 +30,7 @@ class GroupBox : Panel
         Label capt = render!Label;
         capt.key = "__caption__";
         capt.attributes["caption"];
-        capt.isolateThisStyle = true;
+        capt.namespace = null;
         return fastCast!ElemLabel(mountChild(capt, el, 0));
     }
 

@@ -235,11 +235,6 @@ class Widget
         the outer world. Still, the widget will be accessible via simple selectors.
     */
     bool isolateStyle;
-    /** Enable style encapsulation for this widget only.
-
-        This particular widget will not be accessible via simple selectors.
-    */
-    bool isolateThisStyle;
 
     bool delegate(KeyEvent) onKeyEvent;
     bool delegate(MouseEvent) onMouseEvent;
@@ -413,11 +408,6 @@ class Widget
             el._style.isolated = isolateStyle;
             el.invalidateStyles();
         }
-        if (el._thisStyleIsolated != isolateThisStyle)
-        {
-            el._thisStyleIsolated = isolateThisStyle;
-            el.invalidateStyles();
-        }
 
         el.onKeyEvent.clear();
         el.onMouseEvent.clear();
@@ -556,8 +546,6 @@ private:
     string _id;
     /// Custom attributes map
     string[string] attributes;
-    /// See `Widget.isolateThisStyle`
-    bool _thisStyleIsolated;
     /// If true, the style will be recomputed on next usage
     bool _needToRecomputeStyle = true;
 
@@ -853,7 +841,7 @@ public:
         if (sel.universal)
             return matchContextSelector(sel, closure);
         // enclosed elements cannot be styled via simple selectors
-        if ((closure || _thisStyleIsolated) && !sel.previous)
+        if (closure && !sel.previous)
             return false;
         // type
         if (sel.type)

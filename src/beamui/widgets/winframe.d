@@ -36,21 +36,22 @@ class WindowFrame : Panel
         wrap(
             render((Panel p) {
                 p.attributes["caption"];
-                p.isolateThisStyle = true;
+                p.namespace = null;
             }).wrap(
                 render((Label lb) {
                     lb.text = title;
-                    lb.isolateThisStyle = true;
+                    lb.namespace = null;
                 }),
                 onClose ? render((Button b) {
                     b.attributes["flat"];
+                    b.namespace = null;
                     b.iconID = "close";
                     b.onClick = onClose;
                 }) : null,
             ),
             render((Panel p) {
                 p.attributes["body"];
-                p.isolateThisStyle = true;
+                p.namespace = null;
             }).wrap(content),
         );
     }
