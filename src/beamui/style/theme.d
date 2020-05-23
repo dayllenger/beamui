@@ -1,6 +1,6 @@
 /**
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
@@ -23,17 +23,18 @@ final class Theme
 {
     /// Unique name of theme
     @property string name() const { return _name; }
-    /// List of all styles this theme contains
-    @property Style[] allStyles() { return styleList; }
-    /// List of styles this theme contains for `State.normal`
-    @property Style[] normalStyles() { return styleListNormal; }
 
     private
     {
+        struct Store
+        {
+            Style[] list;
+            Style[] listNormal;
+            Style[Selector] map;
+        }
+
         string _name;
-        Style[] styleList;
-        Style[] styleListNormal;
-        Style[Selector] styleMap;
+        Store[string] _styles;
         DrawableRef[string] drawables;
         Color[string] colors;
     }
@@ -47,28 +48,43 @@ final class Theme
     ~this()
     {
         Log.d("Destroying theme");
-        eliminate(styleList);
-        eliminate(styleListNormal);
-        eliminate(styleMap);
+        foreach (ref store; _styles)
+            eliminate(store.list);
         foreach (ref dr; drawables)
             dr.clear();
         destroy(drawables);
     }
 
-    /// Get a style OR create it if it's not exist
-    Style get(Selector selector)
+    /// Get all styles from a specific set
+    Style[] getStyles(string namespace, bool normalState)
     {
-        if (auto p = selector in styleMap)
-            return *p;
+        Store* store = namespace in _styles;
+        if (store)
+            return normalState ? store.listNormal : store.list;
+        else
+            return null;
+    }
+
+    /// Get a style OR create it if it's not exist
+    Style get(ref Selector selector, string namespace)
+    {
+        Store* store = namespace in _styles;
+        if (store)
+        {
+            if (auto p = selector in store.map)
+                return *p;
+        }
         else
         {
-            auto st = new Style(selector);
-            if ((selector.specifiedState & State.normal) == selector.enabledState)
-                styleListNormal ~= st;
-            styleList ~= st;
-            styleMap[selector] = st;
-            return st;
+            _styles[namespace] = Store.init;
+            store = namespace in _styles;
         }
+        auto st = new Style(selector);
+        if ((selector.specifiedState & State.normal) == selector.enabledState)
+            store.listNormal ~= st;
+        store.list ~= st;
+        store.map[selector] = st;
+        return st;
     }
 
     /// Get custom drawable
@@ -104,7 +120,7 @@ final class Theme
     /// Print out theme stats
     void printStats() const
     {
-        Log.fd("Theme: %s, styles: %s, drawables: %s, colors: %s", _name, styleList.length,
+        Log.fd("Theme: %s, styles: %s, drawables: %s, colors: %s", _name, 999999999, // FIXME
             drawables.length, colors.length);
     }
 }
@@ -149,7 +165,7 @@ Theme loadTheme(string name)
     if (name == "default")
     {
         auto theme = new Theme(name);
-        loadThemeFromCSS(theme, defaultStyleSheet);
+        loadThemeFromCSS(theme, defaultStyleSheet, "beamui");
         return theme;
     }
 
@@ -165,34 +181,35 @@ Theme loadTheme(string name)
 
     auto theme = new Theme(name);
     const stylesheet = CSS.createStyleSheet(src);
-    loadThemeFromCSS(theme, defaultStyleSheet);
-    loadThemeFromCSS(theme, stylesheet);
+    loadThemeFromCSS(theme, defaultStyleSheet, "beamui");
+    loadThemeFromCSS(theme, stylesheet, "beamui");
     return theme;
 }
 
 /// Add style sheet rules from the CSS source to the theme
-void setStyleSheet(Theme theme, string source)
+void setStyleSheet(Theme theme, string source, string namespace = "beamui")
 {
     const stylesheet = CSS.createStyleSheet(source);
-    loadThemeFromCSS(theme, stylesheet);
+    loadThemeFromCSS(theme, stylesheet, namespace);
 }
 
-private void loadThemeFromCSS(Theme theme, const CSS.StyleSheet stylesheet)
+private void loadThemeFromCSS(Theme theme, const CSS.StyleSheet stylesheet, string ns)
+    in(ns.length)
 {
     foreach (r; stylesheet.atRules)
     {
-        applyAtRule(theme, r);
+        applyAtRule(theme, r, ns);
     }
     foreach (r; stylesheet.rulesets)
     {
         foreach (sel; r.selectors)
         {
-            applyRule(theme, sel, r.properties);
+            applyRule(theme, sel, r.properties, ns);
         }
     }
 }
 
-private void importStyleSheet(Theme theme, string resourceID)
+private void importStyleSheet(Theme theme, string resourceID, string ns)
 {
     if (!resourceID)
         return;
@@ -205,10 +222,10 @@ private void importStyleSheet(Theme theme, string resourceID)
     if (!src)
         return;
     const stylesheet = CSS.createStyleSheet(src);
-    loadThemeFromCSS(theme, stylesheet);
+    loadThemeFromCSS(theme, stylesheet, ns);
 }
 
-private void applyAtRule(Theme theme, const CSS.AtRule rule)
+private void applyAtRule(Theme theme, const CSS.AtRule rule, string ns)
 {
     import beamui.style.decode_css;
 
@@ -221,7 +238,7 @@ private void applyAtRule(Theme theme, const CSS.AtRule rule)
         {
             const t = rule.content[0];
             if (t.type == CSS.TokenType.url)
-                importStyleSheet(theme, t.text);
+                importStyleSheet(theme, t.text, ns);
             else
                 Log.e("CSS: in @import only 'url(resource-id)' is allowed for now");
         }
@@ -268,9 +285,10 @@ private void applyAtRule(Theme theme, const CSS.AtRule rule)
         Log.w("CSS: unknown at-rule keyword: ", kw);
 }
 
-private void applyRule(Theme theme, const CSS.Selector selector, const CSS.Property[] properties)
+private void applyRule(Theme theme, const CSS.Selector selector, const CSS.Property[] properties, string ns)
 {
-    auto style = selectStyle(theme, selector);
+    // find style
+    auto style = theme.get(*makeSelector(selector), ns);
     foreach (p; properties)
     {
         assert(p.value.length > 0);
@@ -278,7 +296,7 @@ private void applyRule(Theme theme, const CSS.Selector selector, const CSS.Prope
     }
 }
 
-private Style selectStyle(Theme theme, const CSS.Selector selector)
+private Selector* makeSelector(const CSS.Selector selector)
 {
     const(CSS.SelectorEntry)[] es = selector.entries;
     assert(es.length > 0);
@@ -286,7 +304,7 @@ private Style selectStyle(Theme theme, const CSS.Selector selector)
     auto sel = new Selector;
     while (true)
     {
-        const combinator = constructSelector(sel, es, selector.line);
+        const combinator = makeSelectorPart(sel, es, selector.line);
         if (!combinator.isNull)
         {
             Selector* previous = sel;
@@ -297,13 +315,12 @@ private Style selectStyle(Theme theme, const CSS.Selector selector)
         else
             break;
     }
-    // find style
-    return theme.get(*sel);
+    return sel;
 }
 
 import std.typecons : Nullable, nullable;
-// mutates entries
-private Nullable!(Selector.Combinator) constructSelector(Selector* sel, ref const(CSS.SelectorEntry)[] entries, size_t line)
+// mutates `entries`
+private Nullable!(Selector.Combinator) makeSelectorPart(Selector* sel, ref const(CSS.SelectorEntry)[] entries, size_t line)
 {
     Nullable!(Selector.Combinator) result;
 

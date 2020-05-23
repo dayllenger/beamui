@@ -228,6 +228,7 @@ class Widget
     bool visible = true;
     bool inheritState;
 
+    string namespace = "beamui";
     /** Enable style encapsulation for the subtree only.
 
         Cascading and inheritance in this subtree will become independent from
@@ -400,6 +401,13 @@ class Widget
         else
             el._state &= ~State.parent;
 
+        if (!namespace.length)
+            namespace = _parent.namespace;
+        if (el._namespace != namespace)
+        {
+            el._namespace = namespace;
+            el.invalidateStyles();
+        }
         if (el._style.isolated != isolateStyle)
         {
             el._style.isolated = isolateStyle;
@@ -540,6 +548,8 @@ class Panel : WidgetGroupOf!Widget
 class Element
 {
 private:
+    /// Style namespace
+    string _namespace = "beamui";
     /// Type of the widget instantiated this element
     TypeInfo_Class widgetType;
     /// Widget id
@@ -810,7 +820,7 @@ public:
         // first find our scope
         const Element closure = findStyleScopeRoot();
         // we can skip half of work if the state is normal
-        Style[] list = (state == State.normal) ? currentTheme.normalStyles : currentTheme.allStyles;
+        Style[] list = currentTheme.getStyles(_namespace, state == State.normal);
         foreach (style; list)
             if (matchSelector(style.selector, closure))
                 tmpchain ~= style;
