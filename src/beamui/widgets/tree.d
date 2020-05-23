@@ -163,22 +163,27 @@ class TreeItemWidget : TreeItemWidgetBase
             expander = render!ClickableImage;
             expander.imageID = expanded ? "arrow_right_down_black" : "arrow_right_hollow";
             expander.onClick = &toggle;
+            expander.namespace = null;
         }
         ImageWidget image;
         if (iconID.length)
         {
             image = render!ImageWidget;
             image.imageID = iconID;
+            image.namespace = null;
         }
         Label label;
         if (text.length)
         {
             label = render!Label;
             label.text = text;
+            label.namespace = null;
         }
         wrap(
             expander,
-            render!Panel.wrap(
+            render((Panel p) {
+                p.namespace = null;
+            }).wrap(
                 image,
                 label,
             )

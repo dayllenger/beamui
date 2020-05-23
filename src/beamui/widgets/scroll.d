@@ -99,6 +99,7 @@ abstract class ScrollAreaBase : Widget
         if (hscrollbarMode != ScrollBarMode.hidden)
         {
             ScrollBar sb = render!ScrollBar;
+            sb.namespace = null;
             sb.orientation = Orientation.horizontal;
             sb.data = el._hdata;
             sb.onScroll = &el.handleHScroll;
@@ -108,6 +109,7 @@ abstract class ScrollAreaBase : Widget
         if (vscrollbarMode != ScrollBarMode.hidden)
         {
             ScrollBar sb = render!ScrollBar;
+            sb.namespace = null;
             sb.orientation = Orientation.vertical;
             sb.data = el._vdata;
             sb.onScroll = &el.handleVScroll;

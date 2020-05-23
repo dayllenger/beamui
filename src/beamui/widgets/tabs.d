@@ -72,6 +72,7 @@ class TabItem : TabItemBase
             image = render!ImageWidget;
             image.imageID = iconID;
             image.attributes["icon"];
+            image.namespace = null;
             image.tooltip = tooltip;
         }
         Label label;
@@ -80,6 +81,7 @@ class TabItem : TabItemBase
             label = render!Label;
             label.text = text;
             label.attributes["label"];
+            label.namespace = null;
             label.tooltip = tooltip;
         }
         Button closeBtn;
@@ -88,6 +90,7 @@ class TabItem : TabItemBase
             closeBtn = render!Button;
             closeBtn.iconID = "close";
             closeBtn.attributes["close"];
+            closeBtn.namespace = null;
             closeBtn.onClick = onClose;
             closeBtn.tooltip = tooltip;
         }
@@ -211,6 +214,11 @@ class PageStack : PageStackOf!Widget
 
 class TabPane : WidgetWrapperOf!Widget
 {
+    this()
+    {
+        namespace = null;
+    }
+
     override protected Element createElement()
     {
         return new ElemPanel;
@@ -220,6 +228,11 @@ class TabPane : WidgetWrapperOf!Widget
 /// Container for tab panels
 class TabContent : PageStackOf!TabPane
 {
+    this()
+    {
+        namespace = null;
+    }
+
     override protected Element createElement()
     {
         return new ElemPanel;

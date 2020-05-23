@@ -49,6 +49,7 @@ class MenuItem : Widget
             attributes["separator"];
             enabled = false;
             _separator = render!Widget;
+            _separator.namespace = null;
             return;
         }
         enabled = action.enabled;
@@ -58,23 +59,27 @@ class MenuItem : Widget
         {
             _checkbox = render!Widget;
             _checkbox.attributes[action.isRadio ? "radio" : "check"];
+            _checkbox.namespace = null;
         }
         // icon
         if (auto iconID = action.iconID)
         {
             _icon = render!ImageWidget;
             _icon.attributes["icon"];
+            _icon.namespace = null;
             _icon.imageID = iconID;
         }
         // label
         _label = render!Label;
         _label.attributes["label"];
+        _label.namespace = null;
         _label.text = action.label;
         // shortcut
         if (auto sc = action.shortcutText)
         {
             _shortcut = render!Label;
             _shortcut.attributes["shortcut"];
+            _shortcut.namespace = null;
             _shortcut.text = sc;
         }
     }

@@ -118,6 +118,8 @@ protected:
         Widget arrow = buildArrow();
         body.attributes["body"];
         arrow.attributes["arrow"];
+        body.namespace = null;
+        arrow.namespace = null;
         wrap(body, arrow);
 
         const st = getState();

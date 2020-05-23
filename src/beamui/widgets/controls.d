@@ -66,6 +66,7 @@ class ButtonLike : Panel
             image = render!ImageWidget;
             image.imageID = iconID;
             image.attributes["icon"];
+            image.namespace = null;
         }
         Label label;
         if (text.length)
@@ -73,6 +74,7 @@ class ButtonLike : Panel
             label = render!Label;
             label.text = text;
             label.attributes["label"];
+            label.namespace = null;
         }
         wrap(image, label);
     }
@@ -176,6 +178,7 @@ class ActionButton : ActionWidgetWrapper
             btn.text = action.label;
             if (action.enabled)
                 btn.onClick = &call;
+            btn.namespace = null;
             wrap(btn);
         }
         else
@@ -185,6 +188,7 @@ class ActionButton : ActionWidgetWrapper
             btn.text = action.label;
             if (action.enabled)
                 btn.onToggle = &handleToggle;
+            btn.namespace = null;
             wrap(btn);
         }
     }
@@ -312,9 +316,11 @@ class CheckBox : Panel
             label = render!Label;
             label.text = text;
             label.attributes["label"];
+            label.namespace = null;
         }
         Widget image = render!Widget;
         image.attributes["icon"];
+        image.namespace = null;
         wrap(image, label);
     }
 
@@ -370,9 +376,11 @@ class RadioButton : Panel
             label = render!Label;
             label.text = text;
             label.attributes["label"];
+            label.namespace = null;
         }
         Widget image = render!Widget;
         image.attributes["icon"];
+        image.namespace = null;
         wrap(image, label);
     }
 
