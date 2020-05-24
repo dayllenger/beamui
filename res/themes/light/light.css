@@ -12,15 +12,13 @@ ButtonLike:hovered:not(checked) { border-color: #417fbf; }
 
 ButtonLike:pressed, ButtonLike:checked { border-color: #4e93da; background: linear(190deg, #e3e3e3, #dfdfdf); }
 
-ButtonLike:not(enabled) { border: 1px solid #ccc; opacity: 0.4; }
+ButtonLike:not(enabled) { border: 1px solid #ccc; opacity: 0.4; color: rgba(64, 64, 64, 0.5); }
 
 ButtonLike > .label { flex: 1; padding: 0; text-align: center; text-hotkey: underline-on-alt; text-overflow: ellipsis; transition: color 75ms ease; }
 
-ButtonLike:hovered > .label { color: #46617e; }
+ButtonLike:hovered { color: #46617e; }
 
-ButtonLike:pressed > .label { color: #417fbf; }
-
-ButtonLike:not(enabled) > .label { color: rgba(64, 64, 64, 0.5); }
+ButtonLike:pressed { color: #417fbf; }
 
 ButtonLike.flat { background: none; focus-rect-color: none; }
 
@@ -30,15 +28,15 @@ Link > ButtonLike > .label { color: #4169e1; text-align: start; text-overflow: e
 
 Link > ButtonLike:hovered > .label { text-decoration: underline; }
 
-Link > ButtonLike:not(enabled) > .label { color: rgba(192, 192, 255, 0.7); }
+Link > ButtonLike:not(enabled) { color: rgba(192, 192, 255, 0.7); }
 
 CheckBox, RadioButton { align-items: center; padding: 2px; }
 
 CheckBox > .label, RadioButton > .label { flex: 1; padding: 0; text-hotkey: underline-on-alt; text-overflow: ellipsis; }
 
-CheckBox:hovered > .label, RadioButton:hovered > .label { color: #46617e; }
+CheckBox:hovered, RadioButton:hovered { color: #46617e; }
 
-CheckBox:not(enabled) > .label, RadioButton:not(enabled) > .label { color: rgba(64, 64, 64, 0.5); }
+CheckBox:not(enabled), RadioButton:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 CheckBox > .icon, RadioButton > .icon, MenuItem > .check, MenuItem > .radio { flex: 0; min-width: 16px; min-height: 16px; }
 
@@ -104,18 +102,12 @@ ListView > .item:hovered { background-color: #e2edf9; }
 
 ListView > .item:focused, ListView > .item:selected { background-color: #4e93da; color: #f0f0f0; }
 
-ListView > .item:focused > Label, ListView > .item:selected > Label { color: #f0f0f0; }
-
 /* combobox */
 ComboBoxBase { align-items: center; padding: 3px 4px; border: 1px solid #aaa; background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
 
-ComboBoxBase:hovered { border-color: #417fbf; }
+ComboBoxBase:hovered { border-color: #417fbf; color: #46617e; }
 
-ComboBoxBase:hovered > .body { color: #46617e; }
-
-ComboBoxBase:pressed { border-color: #4e93da; background: linear(180deg, #eeeeee, #dddddd); }
-
-ComboBoxBase:pressed > .body { color: #417fbf; }
+ComboBoxBase:pressed { border-color: #4e93da; background: linear(180deg, #eeeeee, #dddddd); color: #417fbf; }
 
 ComboBoxBase:not(enabled) { border-color: #ccc; opacity: 0.4; }
 
@@ -135,9 +127,9 @@ Popup.combobox > ListView:not(enabled) { background-color: #f0f0f0; }
 
 ComboEdit { background: none; }
 
-ComboEdit:hovered > .body, ComboEdit:pressed > .body { color: #404040; }
+ComboEdit:hovered, ComboEdit:pressed { color: #404040; }
 
-ComboEdit:focused > .body { color: initial; }
+ComboEdit:focused { color: initial; }
 
 /* menu */
 Menu { width: auto; height: auto; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f4f4f4; }
@@ -148,11 +140,9 @@ MenuItem { padding: 6px 4px; }
 
 MenuItem:hovered { background-color: #e2edf9; }
 
-MenuItem:focused, MenuItem:selected { background-color: #4e93da; }
+MenuItem:focused, MenuItem:selected { background-color: #4e93da; color: #eee; }
 
-MenuItem:focused > .label, MenuItem:focused > .shortcut, MenuItem:selected > .label, MenuItem:selected > .shortcut { color: #eee; }
-
-MenuItem:not(enabled) > .label, MenuItem:not(enabled) > .shortcut { color: rgba(64, 64, 64, 0.5); }
+MenuItem:not(enabled) { color: rgba(64, 64, 64, 0.5); }
 
 MenuItem:not(enabled) > .icon { opacity: 0.4; }
 
@@ -175,9 +165,7 @@ TreeItemWidget > Panel > ImageWidget { padding-right: 3px; }
 
 TreeItemWidget:hovered > Panel { background-color: #c7d9ec; }
 
-TreeItemWidget:pressed > Panel, TreeItemWidget:selected > Panel { background-color: #4e93da; }
-
-TreeItemWidget:pressed > Panel > Label, TreeItemWidget:selected > Panel > Label { color: #f0f0f0; }
+TreeItemWidget:pressed > Panel, TreeItemWidget:selected > Panel { background-color: #4e93da; color: #f0f0f0; }
 
 TreeItemWidget:default > Panel > Label { font-weight: bold; }
 
@@ -204,27 +192,27 @@ ScrollBar, ElemScrollBar { background-color: rgba(0, 0, 0, 0.05); }
 
 ScrollBar:not(enabled), ElemScrollBar:not(enabled) { opacity: 0.4; }
 
-ScrollBar > ScrollIndicator, ElemScrollBar > ScrollIndicator { padding: 3px; background-color: #c2c2c2; }
+ScrollIndicator { padding: 3px; background-color: #c2c2c2; }
 
-ScrollBar > ScrollIndicator:hovered, ElemScrollBar > ScrollIndicator:hovered { background-color: #d2d2d2; }
+ScrollIndicator:hovered { background-color: #d2d2d2; }
 
-ScrollBar > ScrollIndicator:pressed, ElemScrollBar > ScrollIndicator:pressed { background-color: #d8d8d8; }
+ScrollIndicator:pressed { background-color: #d8d8d8; }
 
-ScrollBar > ScrollIndicator:not(enabled), ElemScrollBar > ScrollIndicator:not(enabled) { opacity: 0.4; }
+ScrollIndicator:not(enabled) { opacity: 0.4; }
 
-ScrollBar > PageScrollButton:pressed, ElemScrollBar > PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
+PageScrollButton:pressed { background-color: rgba(64, 64, 128, 0.1); }
 
-ScrollBar > PageScrollButton:hovered, ElemScrollBar > PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
+PageScrollButton:hovered { background-color: rgba(64, 64, 128, 0.05); }
 
-ScrollBar > PageScrollButton:not(enabled), ElemScrollBar > PageScrollButton:not(enabled) { opacity: 0.4; }
+PageScrollButton:not(enabled) { opacity: 0.4; }
 
 AbstractSlider:not(enabled) { opacity: 0.4; }
 
-AbstractSlider > SliderHandle { padding: 5px; border: 1px solid transparent; background-color: #4e93da; background-clip: padding-box; }
+SliderHandle { padding: 5px; border: 1px solid transparent; background-color: #4e93da; background-clip: padding-box; }
 
-AbstractSlider > SliderHandle:pressed { background-color: rgba(46, 147, 250, 0.7); }
+SliderHandle:pressed { background-color: rgba(46, 147, 250, 0.7); }
 
-AbstractSlider > SliderHandle:not(enabled) { opacity: 0.4; }
+SliderHandle:not(enabled) { opacity: 0.4; }
 
 AbstractSlider > .range-before, AbstractSlider > .range-after { border-color: transparent; background-color: #888; background-clip: padding-box; }
 
@@ -264,7 +252,7 @@ TabItem:selected { border-color: #4e93da; }
 
 TabItem > .label { align-self: end; padding: 0 3px 3px; text-hotkey: underline-on-alt; transition: color 100ms ease; }
 
-TabItem:hovered > .label, TabItem:selected > .label, TabItem:focused > .label { color: #4e93da; }
+TabItem:hovered, TabItem:selected, TabItem:focused { color: #4e93da; }
 
 TabWidget.top > TabBar > TabItem { border-bottom-width: 2px; }
 
@@ -289,9 +277,7 @@ EditorSearchPane { padding: 4px; background-color: white; box-shadow: 0 -2px 3px
 
 EditorSearchPane.find-only { row-gap: 0; }
 
-EditorSearchPane ButtonLike { padding: 2px 4px; }
-
-EditorSearchPane ButtonLike > .label { font-size: 12px; }
+EditorSearchPane ButtonLike { padding: 2px 4px; font-size: 12px; }
 
 EditorSearchPane > Button.close { padding: 0; align-self: center; background: none; }
 

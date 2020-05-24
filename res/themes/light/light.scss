@@ -53,6 +53,7 @@ ButtonLike {
     &:not(enabled) {
         border: 1px solid #ccc;
         opacity: 0.4;
+        color: $disabled-text-color;
     }
 
     > .label {
@@ -64,16 +65,12 @@ ButtonLike {
         transition: color 75ms ease;
     }
 
-    &:hovered > .label {
+    &:hovered {
         color: $hovered-label-color;
     }
 
-    &:pressed > .label {
+    &:pressed {
         color: $secondary-color;
-    }
-
-    &:not(enabled) > .label {
-        color: $disabled-text-color;
     }
 }
 
@@ -97,7 +94,7 @@ Link > ButtonLike {
         text-decoration: underline;
     }
 
-    &:not(enabled) > .label {
+    &:not(enabled) {
         color: fade-out(#c0c0ff, 0.3);
     }
 }
@@ -113,11 +110,11 @@ CheckBox, RadioButton {
         text-overflow: ellipsis;
     }
 
-    &:hovered > .label {
+    &:hovered {
         color: $hovered-label-color;
     }
 
-    &:not(enabled) > .label {
+    &:not(enabled) {
         color: $disabled-text-color;
     }
 }
@@ -276,10 +273,6 @@ ListView {
             background-color: $main-color;
             color: $inverse-text-color;
         }
-
-        &:focused > Label, &:selected > Label {
-            color: $inverse-text-color;
-        }
     }
 }
 
@@ -294,19 +287,13 @@ ComboBoxBase {
 
     &:hovered {
         border-color: $secondary-color;
-
-        > .body {
-            color: $hovered-label-color;
-        }
+        color: $hovered-label-color;
     }
 
     &:pressed {
         border-color: $main-color;
         background: linear(180deg, #eeeeee, #dddddd);
-
-        > .body {
-            color: $secondary-color;
-        }
+        color: $secondary-color;
     }
 
     &:not(enabled) {
@@ -352,15 +339,11 @@ ComboEdit {
     background: none;
 
     &:hovered, &:pressed {
-        > .body {
-            color: $text-color;
-        }
+        color: $text-color;
     }
 
     &:focused {
-        > .body {
-            color: initial;
-        }
+        color: initial;
     }
 }
 
@@ -391,16 +374,11 @@ MenuItem {
 
     &:focused, &:selected {
         background-color: $main-color;
-
-        > .label, > .shortcut {
-            color: #eee;
-        }
+        color: #eee;
     }
 
     &:not(enabled) {
-        > .label, > .shortcut {
-            color: $disabled-text-color;
-        }
+        color: $disabled-text-color;
 
         > .icon {
             opacity: 0.4;
@@ -454,10 +432,7 @@ TreeItemWidget {
 
     &:pressed > Panel, &:selected > Panel {
         background-color: $main-color;
-
-        > Label {
-            color: $inverse-text-color;
-        }
+        color: $inverse-text-color;
     }
 
     &:default > Panel > Label {
@@ -511,7 +486,7 @@ ScrollBar, ElemScrollBar {
     }
 }
 
-ScrollBar > ScrollIndicator, ElemScrollBar > ScrollIndicator {
+ScrollIndicator {
     padding: 3px;
     background-color: #c2c2c2;
 
@@ -528,7 +503,7 @@ ScrollBar > ScrollIndicator, ElemScrollBar > ScrollIndicator {
     }
 }
 
-ScrollBar > PageScrollButton, ElemScrollBar > PageScrollButton {
+PageScrollButton {
     &:pressed {
         background-color: fade-out(#404080, 0.9);
     }
@@ -548,7 +523,7 @@ AbstractSlider {
     }
 }
 
-AbstractSlider > SliderHandle {
+SliderHandle {
     padding: 5px;
     border: 1px solid transparent;
     background-color: $main-color;
@@ -661,9 +636,7 @@ TabItem {
     }
 
     &:hovered, &:selected, &:focused {
-        > .label {
-            color: $main-color;
-        }
+        color: $main-color;
     }
 }
 
@@ -725,10 +698,7 @@ EditorSearchPane {
 
     ButtonLike {
         padding: 2px 4px;
-
-        > .label {
-            font-size: 12px;
-        }
+        font-size: 12px;
     }
 
     > Button.close {
