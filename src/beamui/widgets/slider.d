@@ -123,9 +123,9 @@ class Slider : AbstractSlider
             onChange(v);
     }
 
-    private void moveTo(double v)
+    private void moveTo(double fr)
     {
-        v = adjustValue(v);
+        const v = adjustValue((1 - fr) * minValue + fr * maxValue);
         if (value != v)
         {
             if (onScroll)
@@ -234,9 +234,9 @@ class RangeSlider : AbstractSlider
             onChange(first, v);
     }
 
-    private void moveFirstTo(double v)
+    private void moveFirstTo(double fr)
     {
-        v = adjustFirst(v);
+        const v = adjustFirst((1 - fr) * minValue + fr * maxValue);
         if (first != v)
         {
             if (onScroll1)
@@ -246,9 +246,9 @@ class RangeSlider : AbstractSlider
         }
     }
 
-    private void moveSecondTo(double v)
+    private void moveSecondTo(double fr)
     {
-        v = adjustSecond(v);
+        const v = adjustSecond((1 - fr) * minValue + fr * maxValue);
         if (second != v)
         {
             if (onScroll2)
@@ -329,8 +329,6 @@ abstract class ElemAbstractSlider : ElemGroup
 
     private
     {
-        double _minValue = 0;
-        double _maxValue = 100;
         Orientation _orient;
 
         SliderBar _rangeBefore;
@@ -414,22 +412,6 @@ abstract class ElemAbstractSlider : ElemGroup
     protected void calcSpace(float availableSize, out float spaceBefore, out float spaceAfter);
     protected void layoutInner(Box scrollArea, Box innerArea);
 
-    final protected float offsetAt(float space, double value) const
-    {
-        if (space <= 0) // no place
-            return 0;
-
-        const r = _maxValue - _minValue;
-        if (r > 0)
-        {
-            const fr = (value - _minValue) / r;
-            const dist = space * fr;
-            return cast(float)dist;
-        }
-        else // empty range
-            return space / 2;
-    }
-
     override protected void drawContent(Painter pr)
     {
         _rangeBefore.draw(pr);
@@ -442,7 +424,7 @@ abstract class ElemAbstractSlider : ElemGroup
     class SliderHandle : ElemImage
     {
         Listener!(void delegate(SliderAction)) onAction;
-        Listener!(void delegate(double)) onDragging;
+        Listener!(void delegate(double fraction)) onDragging;
 
         private
         {
@@ -539,6 +521,9 @@ abstract class ElemAbstractSlider : ElemGroup
             }
             if (event.action == MouseAction.move && _dragging)
             {
+                if (_span <= 0)
+                    return true;
+
                 const bool hor = _orient == Orientation.horizontal;
                 const delta = (hor ? event.x : event.y) - _dragStartEventPos;
                 debug (sliders)
@@ -546,10 +531,8 @@ abstract class ElemAbstractSlider : ElemGroup
 
                 const p = _dragStartPos + delta - _start;
                 const offset = hor ? p : _span - p;
-                double v = _minValue;
-                if (_span > 0)
-                    v += offset * (_maxValue - _minValue) / _span;
-                onDragging(v);
+                const fr = offset / _span;
+                onDragging(fr);
                 return true;
             }
             if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
@@ -614,11 +597,11 @@ abstract class ElemAbstractSlider : ElemGroup
 class ElemSlider : ElemAbstractSlider
 {
     Signal!(void delegate(SliderAction)) onAction;
-    Signal!(void delegate(double)) onDragging;
+    Signal!(void delegate(double fraction)) onDragging;
 
     private
     {
-        double _value = 0;
+        double _fraction = 0;
 
         SliderHandle _handle;
     }
@@ -641,14 +624,13 @@ class ElemSlider : ElemAbstractSlider
     }
 
     final void setData(double value, double minValue, double maxValue)
+        in(minValue <= value && value <= maxValue)
     {
-        if (_value == value && _minValue == minValue && _maxValue == maxValue)
+        const fr = (value - minValue) / max(maxValue - minValue, 1e-6);
+        if (_fraction == fr)
             return;
 
-        assert(minValue <= value && value <= maxValue);
-        _value = value;
-        _minValue = minValue;
-        _maxValue = maxValue;
+        _fraction = fr;
         handleDataChange();
     }
 
@@ -689,7 +671,7 @@ class ElemSlider : ElemAbstractSlider
         if (space <= 0)
             return;
 
-        spaceBefore = offsetAt(space, _value);
+        spaceBefore = space * _fraction;
         spaceAfter = space - spaceBefore;
     }
 
@@ -712,13 +694,13 @@ class ElemRangeSlider : ElemAbstractSlider
 {
     Signal!(void delegate(SliderAction)) onAction1;
     Signal!(void delegate(SliderAction)) onAction2;
-    Signal!(void delegate(double)) onDragging1;
-    Signal!(void delegate(double)) onDragging2;
+    Signal!(void delegate(double fraction)) onDragging1;
+    Signal!(void delegate(double fraction)) onDragging2;
 
     private
     {
-        double _first = 0;
-        double _second = 0;
+        double _fraction1 = 0;
+        double _fraction2 = 0;
 
         SliderHandle _1stHandle;
         SliderHandle _2ndHandle;
@@ -752,15 +734,15 @@ class ElemRangeSlider : ElemAbstractSlider
     }
 
     final void setData(double first, double second, double minValue, double maxValue)
+        in(minValue <= first && first <= second && second <= maxValue)
     {
-        if (_first == first && _second == second && _minValue == minValue && _maxValue == maxValue)
+        const fr1 = (first - minValue) / max(maxValue - minValue, 1e-6);
+        const fr2 = (second - minValue) / max(maxValue - minValue, 1e-6);
+        if (_fraction1 == fr1 && _fraction2 == fr2)
             return;
 
-        assert(minValue <= first && first <= second && second <= maxValue);
-        _minValue = minValue;
-        _maxValue = maxValue;
-        _first = first;
-        _second = second;
+        _fraction1 = fr1;
+        _fraction2 = fr2;
         handleDataChange();
     }
 
@@ -830,8 +812,8 @@ class ElemRangeSlider : ElemAbstractSlider
         if (space <= 0)
             return;
 
-        spaceBefore = offsetAt(space, _first);
-        spaceAfter = space - offsetAt(space, _second);
+        spaceBefore = _fraction1 * space;
+        spaceAfter = space - _fraction2 * space;
     }
 
     override protected void layoutInner(Box scrollArea, Box innerArea)
