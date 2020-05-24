@@ -1132,7 +1132,7 @@ struct ComputedStyle
     void recompute(Style[] chain)
     {
         debug (styles)
-            Log.d("--- Recomputing style for ", typeid(element), ", id: ", element.id, " ---");
+            Log.d("--- Recomputing style for ", element.dbgname, " ---");
 
         // explode shorthands first
         foreach_reverse (st; chain)

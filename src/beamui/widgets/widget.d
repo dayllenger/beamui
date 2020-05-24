@@ -781,7 +781,7 @@ public:
                 Style[] chain = selectStyleChain();
                 // assume that style recomputation is purely depends on style chain
                 // it may not change from previous update
-                if (cast(size_t[])cachedChain[] != cast(size_t[])chain)
+                if (!chain.length || cast(size_t[])cachedChain[] != cast(size_t[])chain)
                 {
                     // copy
                     cachedChain.clear();
