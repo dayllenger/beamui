@@ -954,7 +954,7 @@ struct ComputedStyle
         import core.bitop : bt, bts, btr;
 
         enum bits = StyleProperty.max + 1;
-        /// Explicitly set to inherit value from parent widget
+        /// Inherits value from the parent element
         size_t[bits / (8 * size_t.sizeof) + 1] inheritBitArray;
         /// Overriden by user
         size_t[bits / (8 * size_t.sizeof) + 1] overridenBitArray;
@@ -1072,9 +1072,9 @@ struct ComputedStyle
 
     ~this()
     {
-        if (isOverriden(StyleProperty.boxShadow))
+        if (overrides(StyleProperty.boxShadow))
             eliminate(_boxShadow);
-        if (isOverriden(StyleProperty.bgImage))
+        if (overrides(StyleProperty.bgImage))
             eliminate(_bgImage);
     }
 
@@ -1107,7 +1107,7 @@ struct ComputedStyle
             return ll.applyPercent(0);
     }
 
-    /// Set the property to inherit its value from parent widget
+    /// Set the property to inherit its value from parent element
     void inherit(StyleProperty property)
     {
         bts(inheritBitArray.ptr, property);
@@ -1140,7 +1140,7 @@ struct ComputedStyle
 
         // find that we are not tied, being the root of style scope
         Element parent = element.parent;
-        const bool canInherit = parent && !isolated;
+        const bool hasParent = parent && !isolated;
         /// iterate through all properties
         static foreach (name; __traits(allMembers, StyleProperty))
         {{
@@ -1148,9 +1148,9 @@ struct ComputedStyle
             enum ptype = mixin(`StyleProperty.` ~ name);
             enum specialCSSType = getSpecialCSSType(ptype);
             enum cssname = StrHash(getCSSName(ptype));
-            enum bool inheritsByDefault = inherited(ptype);
+            enum bool inheritsByDefault = isInherited(ptype);
 
-            const setByUser = isOverriden(ptype);
+            const setByUser = overrides(ptype);
             bool setInStyles;
             // search in style chain if not overriden
             if (!setByUser)
@@ -1183,38 +1183,49 @@ struct ComputedStyle
                     }
                 }
                 // set/reset 'inherit' flag
-                if (inh)
+                if (inh || inheritsByDefault && !setInStyles)
                     bts(inheritBitArray.ptr, ptype);
                 else
                     btr(inheritBitArray.ptr, ptype);
             }
-
-            const noValue = !setByUser && !setInStyles;
             // resolve inherited properties
-            if (inheritsByDefault && noValue || isInherited(ptype))
+            if (!setByUser && inherits(ptype))
             {
-                if (canInherit)
+                if (hasParent)
                     setProperty!name(mixin(`parent.style._` ~ name), false);
                 else
                     setDefault!name(false);
             }
-            else if (noValue)
+            else if (!setByUser && !setInStyles)
             {
                 // if nothing there - return value to defaults
                 setDefault!name(false);
             }
         }}
+        // set inherited properties in descendant elements. TODO: optimize, consider recursive updates
+        foreach (child; element)
+        {
+            ComputedStyle* st = child.style;
+            if (!st.isolated)
+            {
+                static foreach (name; __traits(allMembers, StyleProperty))
+                {{
+                    if (st.inherits(mixin(`StyleProperty.` ~ name)))
+                        st.setProperty!name(mixin("_" ~ name), false);
+                }}
+            }
+        }
 
         debug (styles)
             Log.d("--- End style recomputing ---");
     }
 
-    private bool isInherited(StyleProperty ptype)
+    private bool inherits(StyleProperty ptype)
     {
         return bt(inheritBitArray.ptr, ptype) != 0;
     }
 
-    private bool isOverriden(StyleProperty ptype)
+    private bool overrides(StyleProperty ptype)
     {
         return bt(overridenBitArray.ptr, ptype) != 0;
     }
@@ -1379,6 +1390,17 @@ struct ComputedStyle
         field = newValue;
         // invoke side effects
         element.handleStyleChange(ptype);
+        // set inherited properties in descendant elements
+        if (byUser)
+        {
+            foreach (child; element)
+            {
+                ComputedStyle* st = child.style;
+                if (!st.isolated && st.inherits(ptype))
+                    st.setProperty!name(newValue, false);
+            }
+        }
+        // else: handled in `recompute`
     }
 
     private void animateProperty(string name, T)(T ending)
@@ -1698,7 +1720,7 @@ bool isAnimatable(StyleProperty ptype)
 }
 
 /// Returns true whether the property value implicitly inherits from parent widget
-bool inherited(StyleProperty ptype)
+bool isInherited(StyleProperty ptype)
 {
     switch (ptype) with (StyleProperty)
     {
