@@ -95,7 +95,7 @@ struct TextStyle
     /// Allows to underline a single character, usually mnemonic
     int underlinedCharIndex = -1;
     /// Text foreground color
-    Color color;
+    Color color = Color.black;
     /// Text background color
     Color background = Color.transparent;
 }
