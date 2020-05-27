@@ -50,11 +50,11 @@ Result!T Err(T)(T val = T.init)
     return Result!T(val, true);
 }
 
-/// Widget state bit flags
-enum State : uint
+/// Common widget state flags, e.g. `pressed`
+enum StateFlags : uint
 {
     /// Indefinite state
-    unspecified = 0,
+    none = 0,
     /// State not specified / normal
     normal = enabled | windowFocused,
 

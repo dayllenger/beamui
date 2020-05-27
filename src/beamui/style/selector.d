@@ -9,7 +9,7 @@ module beamui.style.selector;
 @safe:
 
 import beamui.core.collections : Buf;
-import beamui.core.types : State;
+import beamui.core.types : StateFlags;
 
 /// CSS element selector
 struct Selector
@@ -26,9 +26,9 @@ struct Selector
     /// List of style classes, `.class` from CSS
     string[] classes;
     /// State that is specified as `:pseudo-class`
-    State specifiedState;
+    StateFlags specifiedState;
     /// State that is enabled, e.g. `pressed|focused` in `:pressed:focused:not(checked)`
-    State enabledState;
+    StateFlags enabledState;
     /// Subitem, `::pseudo-element` from CSS
     string subitem;
 
@@ -163,7 +163,7 @@ struct Selector
     void calculateUniversality()
     {
         universal = !type & !id & !classes & !subitem & !attributes;
-        universal &= (specifiedState == State.init) & (position == TreePosition.init);
+        universal &= (specifiedState == StateFlags.none) & (position == TreePosition.none);
     }
 
     /**
@@ -195,10 +195,10 @@ struct Selector
                 specificity[1] += cast(uint)s.classes.length;
             if (s.attributes)
                 specificity[1] += cast(uint)s.attributes.length;
-            if (s.position != TreePosition.init)
+            if (s.position != TreePosition.none)
                 specificity[1]++;
-            State st = s.specifiedState;
-            if (st != State.init)
+            StateFlags st = s.specifiedState;
+            if (st != StateFlags.none)
                 specificity[2] += st * st * popcnt(st);
             if (s.type)
                 specificity[3]++;
@@ -686,21 +686,21 @@ private struct Parser
         return true;
     }
 
-    static State parseState(const dchar[] str)
+    static StateFlags parseState(const dchar[] str)
     {
-        switch (str)
+        switch (str) with (StateFlags)
         {
-            case "pressed": return State.pressed;
-            case "focused": return State.focused;
-            case "hovered": return State.hovered;
-            case "selected": return State.selected;
-            case "checked": return State.checked;
-            case "enabled": return State.enabled;
-            case "default": return State.default_;
-            case "read-only": return State.readOnly;
-            case "activated": return State.activated;
-            case "window-focused": return State.windowFocused;
-            default: return State.unspecified;
+            case "pressed": return pressed;
+            case "focused": return focused;
+            case "hovered": return hovered;
+            case "selected": return selected;
+            case "checked": return checked;
+            case "enabled": return enabled;
+            case "default": return default_;
+            case "read-only": return readOnly;
+            case "activated": return activated;
+            case "window-focused": return windowFocused;
+            default: return none;
         }
     }
 
@@ -836,8 +836,8 @@ unittest
     assert(sel);
     assert(sel.type == "third");
     assert(sel.id == "id1");
-    assert(sel.specifiedState == (State.enabled | State.hovered));
-    assert(sel.enabledState == State.enabled);
+    assert(sel.specifiedState == (StateFlags.enabled | StateFlags.hovered));
+    assert(sel.enabledState == StateFlags.enabled);
     assert(sel.combinator == Selector.Combinator.descendant);
     sel = sel.previous;
     assert(sel);

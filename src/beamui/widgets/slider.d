@@ -490,7 +490,7 @@ abstract class ElemAbstractSlider : ElemGroup
         {
             if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
             {
-                applyState(State.pressed, true);
+                applyFlags(StateFlags.pressed, true);
                 if (allowsFocus)
                     setFocus();
                 _dragging = true;
@@ -537,7 +537,7 @@ abstract class ElemAbstractSlider : ElemGroup
             }
             if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
             {
-                applyState(State.pressed, false);
+                applyFlags(StateFlags.pressed, false);
                 if (_dragging)
                 {
                     onAction(SliderAction.release);
@@ -547,11 +547,11 @@ abstract class ElemAbstractSlider : ElemGroup
             }
             if (event.action == MouseAction.move && allowsHover)
             {
-                if (!(state & State.hovered))
+                if (!(stateFlags & StateFlags.hovered))
                 {
                     debug (sliders)
                         Log.d("SliderHandle: hover");
-                    applyState(State.hovered, true);
+                    applyFlags(StateFlags.hovered, true);
                 }
                 return true;
             }
@@ -559,15 +559,15 @@ abstract class ElemAbstractSlider : ElemGroup
             {
                 debug (sliders)
                     Log.d("SliderHandle: leave");
-                applyState(State.hovered, false);
+                applyFlags(StateFlags.hovered, false);
                 return true;
             }
             if (event.action == MouseAction.cancel && allowsHover)
             {
                 debug (sliders)
                     Log.d("SliderHandle: cancel with allowsHover");
-                applyState(State.hovered, false);
-                applyState(State.pressed, false);
+                applyFlags(StateFlags.hovered, false);
+                applyFlags(StateFlags.pressed, false);
                 _dragging = false;
                 return true;
             }
@@ -575,7 +575,7 @@ abstract class ElemAbstractSlider : ElemGroup
             {
                 debug (sliders)
                     Log.d("SliderHandle: cancel");
-                applyState(State.pressed, false);
+                applyFlags(StateFlags.pressed, false);
                 _dragging = false;
                 return true;
             }

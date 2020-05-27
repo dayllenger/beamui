@@ -7,8 +7,6 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.widgets.lists;
 
-import beamui.core.signals;
-import beamui.core.types : State, StringListValue;
 import beamui.widgets.controls : ImageWidget;
 import beamui.widgets.scrollbar;
 import beamui.widgets.text : Label;
@@ -273,7 +271,7 @@ class ElemListView : ElemGroup
     /// Returns true if item with corresponding index is enabled
     bool itemEnabled(int index)
     {
-        return (child(index).state & State.enabled) != 0;
+        return (child(index).stateFlags & StateFlags.enabled) != 0;
     }
 
     protected void setHoverItem(int index)
@@ -282,13 +280,13 @@ class ElemListView : ElemGroup
             return;
         if (_hoverItemIndex != -1)
         {
-            child(_hoverItemIndex).applyState(State.hovered, false);
+            child(_hoverItemIndex).applyFlags(StateFlags.hovered, false);
             invalidate();
         }
         _hoverItemIndex = index;
         if (_hoverItemIndex != -1)
         {
-            child(_hoverItemIndex).applyState(State.hovered, true);
+            child(_hoverItemIndex).applyFlags(StateFlags.hovered, true);
             invalidate();
         }
     }
@@ -324,9 +322,9 @@ class ElemListView : ElemGroup
         if (idx == -1)
             return;
 
-        if ((child(idx).state & State.focused) != (state & State.focused))
+        if ((child(idx).stateFlags & StateFlags.focused) != (stateFlags & StateFlags.focused))
         {
-            child(idx).applyState(State.focused, (state & State.focused) != 0);
+            child(idx).applyFlags(StateFlags.focused, (stateFlags & StateFlags.focused) != 0);
             invalidate();
         }
     }
@@ -436,14 +434,14 @@ class ElemListView : ElemGroup
             return false;
         if (_selectedItemIndex != -1)
         {
-            child(_selectedItemIndex).applyState(State.selected | State.focused, false);
+            child(_selectedItemIndex).applyFlags(StateFlags.selected | StateFlags.focused, false);
             invalidate();
         }
         _selectedItemIndex = index;
         if (_selectedItemIndex != -1)
         {
             makeSelectionVisible();
-            child(_selectedItemIndex).applyState(State.selected | (state & State.focused), true);
+            child(_selectedItemIndex).applyFlags(StateFlags.selected | (stateFlags & StateFlags.focused), true);
             invalidate();
         }
         return true;

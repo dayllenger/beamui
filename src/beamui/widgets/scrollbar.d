@@ -428,8 +428,8 @@ class ElemScrollBar : ElemGroup
             foreach (Element el; tup(_indicator, _pageUp, _pageDown))
                 el.visibility = Visibility.gone;
         }
-        _btnBack.applyState(State.enabled, canScroll);
-        _btnForward.applyState(State.enabled, canScroll);
+        _btnBack.applyFlags(StateFlags.enabled, canScroll);
+        _btnForward.applyFlags(StateFlags.enabled, canScroll);
     }
 
     override void cancelLayout()
@@ -524,7 +524,7 @@ class ElemScrollBar : ElemGroup
         {
             if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
             {
-                applyState(State.pressed, true);
+                applyFlags(StateFlags.pressed, true);
                 _dragging = true;
                 _dragStart.x = event.x;
                 _dragStart.y = event.y;
@@ -574,7 +574,7 @@ class ElemScrollBar : ElemGroup
             }
             if (event.action == MouseAction.buttonUp && event.button == MouseButton.left)
             {
-                applyState(State.pressed, false);
+                applyFlags(StateFlags.pressed, false);
                 if (_dragging)
                 {
                     triggerAction(ScrollAction.released);
@@ -584,11 +584,11 @@ class ElemScrollBar : ElemGroup
             }
             if (event.action == MouseAction.move && allowsHover)
             {
-                if (!(state & State.hovered))
+                if (!(stateFlags & StateFlags.hovered))
                 {
                     debug (scrollbars)
                         Log.d("ScrollIndicator: hover");
-                    applyState(State.hovered, true);
+                    applyFlags(StateFlags.hovered, true);
                 }
                 return true;
             }
@@ -596,15 +596,15 @@ class ElemScrollBar : ElemGroup
             {
                 debug (scrollbars)
                     Log.d("ScrollIndicator: leave");
-                applyState(State.hovered, false);
+                applyFlags(StateFlags.hovered, false);
                 return true;
             }
             if (event.action == MouseAction.cancel && allowsHover)
             {
                 debug (scrollbars)
                     Log.d("ScrollIndicator: cancel with allowsHover");
-                applyState(State.hovered, false);
-                applyState(State.pressed, false);
+                applyFlags(StateFlags.hovered, false);
+                applyFlags(StateFlags.pressed, false);
                 _dragging = false;
                 return true;
             }
@@ -612,7 +612,7 @@ class ElemScrollBar : ElemGroup
             {
                 debug (scrollbars)
                     Log.d("ScrollIndicator: cancel");
-                applyState(State.pressed, false);
+                applyFlags(StateFlags.pressed, false);
                 _dragging = false;
                 return true;
             }

@@ -34,7 +34,7 @@ class TabItemBase : Panel
     override protected void updateElement(Element el)
     {
         super.updateElement(el);
-        el.applyState(State.selected, selected);
+        el.applyFlags(StateFlags.selected, selected);
     }
 }
 
@@ -598,14 +598,14 @@ class TabControl : WidgetGroup
             auto item = child(i);
             if (index == i - 1)
             {
-                item.setState(State.selected);
+                item.setState(StateFlags.selected);
                 _selectedTabID = item.id;
                 if (updateAccess)
                     updateAccessTime();
             }
             else
             {
-                item.resetState(State.selected);
+                item.resetState(StateFlags.selected);
             }
         }
         onTabChange(_selectedTabID, previousSelectedTab);

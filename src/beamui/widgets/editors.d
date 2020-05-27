@@ -406,12 +406,12 @@ class ElemEditLine : Element, IEditor, ActionOperator
 
         bool readOnly() const
         {
-            return (state & State.readOnly) != 0;
+            return (stateFlags & StateFlags.readOnly) != 0;
         }
         /// ditto
         void readOnly(bool flag)
         {
-            applyState(State.readOnly, flag);
+            applyFlags(StateFlags.readOnly, flag);
         }
 
         bool replaceMode() const { return _replaceMode; }
@@ -1087,7 +1087,7 @@ class ElemEditLine : Element, IEditor, ActionOperator
         debug (editors)
             Log.d("Editor `", id, "`: update actions");
 
-        if (!(state & State.focused))
+        if (!(stateFlags & StateFlags.focused))
             return;
 
         ACTION_UNDO.enabled = enabled && hasUndo;
@@ -1525,11 +1525,11 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
 
         bool readOnly() const
         {
-            return (state & State.readOnly) != 0 || _content.readOnly;
+            return (stateFlags & StateFlags.readOnly) != 0 || _content.readOnly;
         }
         void readOnly(bool flag)
         {
-            applyState(State.readOnly, flag);
+            applyFlags(StateFlags.readOnly, flag);
         }
 
         bool replaceMode() const { return _replaceMode; }
@@ -3019,7 +3019,7 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
         debug (editors)
             Log.d("Editor `", id, "`: update actions");
 
-        if (!(state & State.focused))
+        if (!(stateFlags & StateFlags.focused))
             return;
 
         ACTION_UNDO.enabled = enabled && _content.hasUndo;
@@ -4517,8 +4517,8 @@ class FindPanel : Panel
     void setDirection(bool back)
     {
         _backDirection = back;
-        _btnFindNext.applyState(State.default_, !back);
-        _btnFindPrev.applyState(State.default_, back);
+        _btnFindNext.applyFlags(StateFlags.default_, !back);
+        _btnFindPrev.applyFlags(StateFlags.default_, back);
     }
 
     TextSearchOptions makeSearchOptions() const

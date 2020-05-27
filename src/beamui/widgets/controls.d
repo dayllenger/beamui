@@ -130,7 +130,7 @@ class CheckButton : ButtonLike
     {
         super.updateElement(el);
 
-        el.applyState(State.checked, checked);
+        el.applyFlags(StateFlags.checked, checked);
         el.onClick.clear();
         if (onToggle)
         {
@@ -268,7 +268,7 @@ class SwitchButton : Widget
         super.updateElement(element);
 
         ElemSwitch el = fastCast!ElemSwitch(element);
-        el.applyState(State.checked, checked);
+        el.applyFlags(StateFlags.checked, checked);
         el.onClick.clear();
         if (onToggle)
         {
@@ -328,7 +328,7 @@ class CheckBox : Panel
     {
         super.updateElement(el);
 
-        el.applyState(State.checked, checked);
+        el.applyFlags(StateFlags.checked, checked);
         el.onClick.clear();
         if (onToggle)
         {
@@ -388,7 +388,7 @@ class RadioButton : Panel
     {
         super.updateElement(el);
 
-        el.applyState(State.checked, checked);
+        el.applyFlags(StateFlags.checked, checked);
         el.onClick.clear();
         if (onToggle)
         {

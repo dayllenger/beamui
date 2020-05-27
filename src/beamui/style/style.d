@@ -10,7 +10,7 @@ module beamui.style.style;
 import std.variant : Variant;
 import beamui.core.animations : TimingFunction;
 import beamui.core.functions;
-import beamui.core.types : Result, State;
+import beamui.core.types : Result;
 import beamui.core.units : Length;
 import CSS = beamui.css.tokenizer;
 import beamui.graphics.colors : Color;

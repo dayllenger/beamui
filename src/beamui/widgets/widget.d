@@ -384,13 +384,13 @@ class Widget
 
         el.allowsFocus = allowsFocus;
         el.allowsHover = allowsHover;
-        el.applyState(State.enabled, enabled);
+        el.applyFlags(StateFlags.enabled, enabled);
         el.visibility = visible ? Visibility.visible : Visibility.hidden;
 
         if (inheritState)
-            el._state |= State.parent;
+            el._stateFlags |= StateFlags.parent;
         else
-            el._state &= ~State.parent;
+            el._stateFlags &= ~StateFlags.parent;
 
         if (!namespace.length)
             namespace = _parent.namespace;
@@ -548,7 +548,7 @@ private:
     IState _localState;
 
     /// Widget state
-    State _state = State.normal;
+    StateFlags _stateFlags = StateFlags.normal;
     /// Widget visibility: either visible, hidden, gone
     Visibility _visibility = Visibility.visible; // visible by default
 
@@ -649,44 +649,44 @@ public:
     //===============================================================
     // State
 
-    /// Widget state (set of flags from `State` enum)
-    @property State state() const
+    /// Set of widget state flags
+    @property StateFlags stateFlags() const
     {
-        if ((_state & State.parent) != 0 && _parent !is null)
-            return _parent.state;
+        if ((_stateFlags & StateFlags.parent) != 0 && _parent !is null)
+            return _parent.stateFlags;
         if (focusGroupFocused)
-            return _state | State.windowFocused; // TODO:
-        return _state;
+            return _stateFlags | StateFlags.windowFocused; // TODO:
+        return _stateFlags;
     }
     /// ditto
-    @property void state(State newState)
+    @property void stateFlags(StateFlags newState)
     {
-        if ((_state & State.parent) != 0 && _parent !is null)
-            return _parent.state(newState);
-        if (newState != _state)
+        if ((_stateFlags & StateFlags.parent) != 0 && _parent !is null)
+            return _parent.stateFlags(newState);
+        if (newState != _stateFlags)
         {
-            const oldState = _state;
-            _state = newState;
+            const oldState = _stateFlags;
+            _stateFlags = newState;
             // need to recompute the style
             invalidateStyles();
             // notify focus changes
-            if ((oldState & State.focused) && !(newState & State.focused))
+            if ((oldState & StateFlags.focused) && !(newState & StateFlags.focused))
             {
                 handleFocusChange(false);
                 onFocusChange(false);
             }
-            else if (!(oldState & State.focused) && (newState & State.focused))
+            else if (!(oldState & StateFlags.focused) && (newState & StateFlags.focused))
             {
-                handleFocusChange(true, cast(bool)(newState & State.keyboardFocused));
+                handleFocusChange(true, cast(bool)(newState & StateFlags.keyboardFocused));
                 onFocusChange(true);
             }
         }
     }
-    /// Set or unset `state` flags (a disjunction of `State` options). Returns new state
-    State applyState(State flags, bool set)
+    /// Set or unset `stateFlags` (a disjunction of `StateFlags` options). Returns new state
+    StateFlags applyFlags(StateFlags flags, bool set)
     {
-        const st = set ? (state | flags) : (state & ~flags);
-        state = st;
+        const st = set ? (stateFlags | flags) : (stateFlags & ~flags);
+        stateFlags = st;
         return st;
     }
 
@@ -802,7 +802,7 @@ public:
         static Buf!Style tmpchain;
         tmpchain.clear();
         // we can skip half of work if the state is normal
-        Style[] list = currentTheme.getStyles(_namespace, state == State.normal);
+        Style[] list = currentTheme.getStyles(_namespace, stateFlags == StateFlags.normal);
         foreach (style; list)
             if (matchSelector(style.selector))
                 tmpchain ~= style;
@@ -830,7 +830,7 @@ public:
         if (sel.id && (!_id || _id != sel.id))
             return false;
         // state
-        if ((sel.specifiedState & state) != sel.enabledState)
+        if ((sel.specifiedState & stateFlags) != sel.enabledState)
             return false;
         // tree-structural
         if (sel.position != Selector.TreePosition.none)
@@ -979,7 +979,7 @@ public:
                 p.left = max(p.left, bp.left);
             }
             if (_style.focusRectColor != Color.transparent &&
-                (allowsFocus || ((state & State.parent) && parent.allowsFocus)))
+                (allowsFocus || ((stateFlags & StateFlags.parent) && parent.allowsFocus)))
             {
                 // add two pixels to padding when focus rect is required
                 // one pixel for focus rect, one for additional space
@@ -1163,11 +1163,11 @@ public:
     {
         /** True if the element is interactive.
 
-            Corresponds to `State.enabled` state flag.
+            Corresponds to `StateFlags.enabled` state flag.
         */
         bool enabled() const
         {
-            return (state & State.enabled) != 0;
+            return (stateFlags & StateFlags.enabled) != 0;
         }
 
         /// True if this element and all its parents are visible
@@ -1184,7 +1184,7 @@ public:
         bool focused() const
         {
             if (auto w = window)
-                return this is w.focusedElement.get && (state & State.focused);
+                return this is w.focusedElement.get && (stateFlags & StateFlags.focused);
             else
                 return false;
         }
@@ -1306,25 +1306,25 @@ public:
     @property bool focusGroupFocused() const
     {
         const el = focusGroupElement();
-        return (el._state & State.windowFocused) != 0;
+        return (el._stateFlags & StateFlags.windowFocused) != 0;
     }
 
     protected bool setWindowFocusedFlag(bool flag)
     {
         if (flag)
         {
-            if ((_state & State.windowFocused) == 0)
+            if ((_stateFlags & StateFlags.windowFocused) == 0)
             {
-                _state |= State.windowFocused;
+                _stateFlags |= StateFlags.windowFocused;
                 invalidate();
                 return true;
             }
         }
         else
         {
-            if ((_state & State.windowFocused) != 0)
+            if ((_stateFlags & StateFlags.windowFocused) != 0)
             {
-                _state &= ~State.windowFocused;
+                _stateFlags &= ~StateFlags.windowFocused;
                 invalidate();
                 return true;
             }
@@ -1632,7 +1632,7 @@ public:
     {
         foreach (Element el; this)
         {
-            if (el.canFocus && (!defaultOnly || (el.state & State.default_) != 0))
+            if (el.canFocus && (!defaultOnly || (el.stateFlags & StateFlags.default_) != 0))
                 return el;
             el = el.findFocusableChild(defaultOnly);
             if (el !is null)
@@ -1710,14 +1710,14 @@ public:
             {
                 if (event.action == KeyAction.keyDown)
                 {
-                    applyState(State.pressed, true);
+                    applyFlags(StateFlags.pressed, true);
                     return true;
                 }
                 if (event.action == KeyAction.keyUp)
                 {
-                    if (state & State.pressed)
+                    if (stateFlags & StateFlags.pressed)
                     {
-                        applyState(State.pressed, false);
+                        applyFlags(StateFlags.pressed, false);
                         handleClick();
                         onClick();
                     }
@@ -1743,16 +1743,16 @@ public:
             {
                 if (event.action == MouseAction.buttonDown)
                 {
-                    applyState(State.pressed, true);
+                    applyFlags(StateFlags.pressed, true);
                     if (_allowsFocus)
                         setFocus();
                     return true;
                 }
                 if (event.action == MouseAction.buttonUp)
                 {
-                    if (state & State.pressed)
+                    if (stateFlags & StateFlags.pressed)
                     {
-                        applyState(State.pressed, false);
+                        applyFlags(StateFlags.pressed, false);
                         handleClick();
                         onClick();
                     }
@@ -1761,17 +1761,17 @@ public:
             }
             if (event.action == MouseAction.focusIn)
             {
-                applyState(State.pressed, true);
+                applyFlags(StateFlags.pressed, true);
                 return true;
             }
             if (event.action == MouseAction.focusOut)
             {
-                applyState(State.pressed, false);
+                applyFlags(StateFlags.pressed, false);
                 return true;
             }
             if (event.action == MouseAction.cancel)
             {
-                applyState(State.pressed | State.hovered, false);
+                applyFlags(StateFlags.pressed | StateFlags.hovered, false);
                 return true;
             }
         }
@@ -1800,22 +1800,22 @@ public:
         {
             if (event.action == MouseAction.focusOut || event.action == MouseAction.cancel)
             {
-                if (state & State.hovered)
+                if (stateFlags & StateFlags.hovered)
                 {
                     debug (mouse)
                         Log.d("Hover off ", id);
-                    applyState(State.hovered, false);
+                    applyFlags(StateFlags.hovered, false);
                 }
                 return true;
             }
             if (event.action == MouseAction.move)
             {
-                if (!(state & State.hovered))
+                if (!(stateFlags & StateFlags.hovered))
                 {
                     debug (mouse)
                         Log.d("Hover ", id);
                     if (!TOUCH_MODE)
-                        applyState(State.hovered, true);
+                        applyFlags(StateFlags.hovered, true);
                 }
                 return true;
             }
@@ -1823,7 +1823,7 @@ public:
             {
                 debug (mouse)
                     Log.d("Leave ", id);
-                applyState(State.hovered, false);
+                applyFlags(StateFlags.hovered, false);
                 return true;
             }
         }
@@ -2182,7 +2182,7 @@ public:
             drawContent(pr);
         }
         // draw an additional frame
-        if (state & State.focused)
+        if (stateFlags & StateFlags.focused)
             drawFocusRect(pr);
     }
 

@@ -98,7 +98,7 @@ class MenuItem : Widget
 
         if (!_separator)
         {
-            el.applyState(State.checked, action.checked);
+            el.applyFlags(StateFlags.checked, action.checked);
             el._separator = null;
             el._checkbox = _checkbox ? el.addChild(mountChild(_checkbox, el, 1)) : null;
             el._icon = _icon ? el.addChild(mountChild(_icon, el, 2)) : null;
@@ -107,7 +107,7 @@ class MenuItem : Widget
         }
         else
         {
-            el.applyState(State.checked, false);
+            el.applyFlags(StateFlags.checked, false);
             el._separator = el.addChild(mountChild(_separator, el, 0));
             el._checkbox = null;
             el._icon = null;

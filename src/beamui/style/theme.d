@@ -9,7 +9,7 @@ module beamui.style.theme;
 import beamui.core.config;
 import beamui.core.functions;
 import beamui.core.logger;
-import beamui.core.types : State;
+import beamui.core.types : StateFlags;
 import CSS = beamui.css.css;
 import beamui.graphics.colors;
 import beamui.graphics.drawables;
@@ -80,7 +80,7 @@ final class Theme
             store = namespace in _styles;
         }
         auto st = new Style(selector);
-        if ((selector.specifiedState & State.normal) == selector.enabledState)
+        if ((selector.specifiedState & StateFlags.normal) == selector.enabledState)
             store.listNormal ~= st;
         store.list ~= st;
         store.map[selector] = st;
@@ -324,10 +324,10 @@ private Nullable!(Selector.Combinator) makeSelectorPart(Selector* sel, ref const
 {
     Nullable!(Selector.Combinator) result;
 
-    State specified;
-    State enabled;
+    StateFlags specified;
+    StateFlags enabled;
     // state extraction
-    void applyStateFlag(State state, bool positive)
+    void applyStateFlag(StateFlags state, bool positive)
     {
         specified |= state;
         if (positive)
@@ -370,34 +370,34 @@ private Nullable!(Selector.Combinator) makeSelectorPart(Selector* sel, ref const
             switch (positive ? s : s[1 .. $])
             {
             case "pressed":
-                applyStateFlag(State.pressed, positive);
+                applyStateFlag(StateFlags.pressed, positive);
                 break;
             case "focused":
-                applyStateFlag(State.focused, positive);
+                applyStateFlag(StateFlags.focused, positive);
                 break;
             case "hovered":
-                applyStateFlag(State.hovered, positive);
+                applyStateFlag(StateFlags.hovered, positive);
                 break;
             case "selected":
-                applyStateFlag(State.selected, positive);
+                applyStateFlag(StateFlags.selected, positive);
                 break;
             case "checked":
-                applyStateFlag(State.checked, positive);
+                applyStateFlag(StateFlags.checked, positive);
                 break;
             case "enabled":
-                applyStateFlag(State.enabled, positive);
+                applyStateFlag(StateFlags.enabled, positive);
                 break;
             case "default":
-                applyStateFlag(State.default_, positive);
+                applyStateFlag(StateFlags.default_, positive);
                 break;
             case "read-only":
-                applyStateFlag(State.readOnly, positive);
+                applyStateFlag(StateFlags.readOnly, positive);
                 break;
             case "activated":
-                applyStateFlag(State.activated, positive);
+                applyStateFlag(StateFlags.activated, positive);
                 break;
             case "window-focused":
-                applyStateFlag(State.windowFocused, positive);
+                applyStateFlag(StateFlags.windowFocused, positive);
                 break;
             case "root":
                 sel.position = Selector.TreePosition.root;

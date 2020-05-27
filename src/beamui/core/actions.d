@@ -242,7 +242,7 @@ enum ActionContext
 }
 
 /// Action state bit flags
-enum ActionState
+private enum ActionState
 {
     enabled = 1,
     visible = 2,

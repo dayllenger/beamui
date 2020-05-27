@@ -1020,16 +1020,16 @@ class Window : CustomEventTarget
     // Focused widget
 
     private WeakRef!Element _focusedElement;
-    private State _focusStateToApply = State.focused;
+    private StateFlags _focusStateToApply = StateFlags.focused;
     /// Returns current focused widget
     @property inout(WeakRef!Element) focusedElement() inout { return _focusedElement; }
 
     /// Change focus to widget
     Element setFocus(WeakRef!Element target, FocusReason reason = FocusReason.unspecified)
     {
-        State targetState = State.focused;
+        auto targetState = StateFlags.focused;
         if (reason == FocusReason.tabFocus)
-            targetState |= State.keyboardFocused;
+            targetState |= StateFlags.keyboardFocused;
         _focusStateToApply = targetState;
 
         Element oldFocus = _focusedElement.get;
@@ -1038,7 +1038,7 @@ class Window : CustomEventTarget
             return oldFocus;
         if (oldFocus)
         {
-            oldFocus.applyState(targetState, false);
+            oldFocus.applyFlags(targetState, false);
             oldFocus.focusGroupFocused(false);
         }
         if (!newFocus || isChild(newFocus))
@@ -1048,7 +1048,7 @@ class Window : CustomEventTarget
                 // when calling this, window.focusedElement is still previously focused widget
                 debug (focus)
                     Log.d("new focus: ", newFocus.dbgname);
-                newFocus.applyState(targetState, true);
+                newFocus.applyFlags(targetState, true);
             }
             _focusedElement = weakRef(newFocus);
             if (newFocus)
@@ -1064,7 +1064,7 @@ class Window : CustomEventTarget
         Element el = _focusedElement.get;
         if (el)
         {
-            el.applyState(_focusStateToApply, true);
+            el.applyFlags(_focusStateToApply, true);
             update();
         }
         return el;
@@ -1075,7 +1075,7 @@ class Window : CustomEventTarget
         Element el = _focusedElement.get;
         if (el)
         {
-            el.applyState(_focusStateToApply, false);
+            el.applyFlags(_focusStateToApply, false);
             update();
         }
         return el;

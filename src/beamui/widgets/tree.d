@@ -110,8 +110,8 @@ abstract class TreeItemWidgetBase : WidgetGroupOf!Widget
     {
         super.updateElement(el);
 
-        el.applyState(State.selected, _selected);
-        el.applyState(State.default_, _default);
+        el.applyFlags(StateFlags.selected, _selected);
+        el.applyFlags(StateFlags.default_, _default);
     }
 }
 
