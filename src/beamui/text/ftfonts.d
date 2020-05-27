@@ -124,9 +124,9 @@ final class FreeTypeFontFile
             Log.d("Destroyed FreeTypeFontFile, count: ", count);
     }
 
-    mixin DebugInstanceCount!();
+    mixin DebugInstanceCount;
 
-    private static string familyName(FT_Face face)
+    static private string familyName(FT_Face face)
     {
         string faceName = fromStringz(face.family_name).dup;
         char[] styleName = fromStringz(face.style_name);
@@ -507,7 +507,7 @@ final class FreeTypeFontManager : FontManager
         return list;
     }
 
-    private static int faceMatch(string requested, string existing)
+    static private int faceMatch(string requested, string existing)
     {
         if (!requested.icmp("Arial"))
         {

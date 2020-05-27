@@ -479,7 +479,7 @@ abstract class BitmapData
         debug debugMinusInstance();
     }
 
-    mixin DebugInstanceCount!();
+    mixin DebugInstanceCount;
 
     inout(void[]) pixels() inout;
     void handleResize() out(; rowBytes >= w * stride);

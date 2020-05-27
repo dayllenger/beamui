@@ -232,7 +232,7 @@ private struct Preprocessor
     import std.utf : byDchar;
     import beamui.core.parseutils : parseHexDigit;
 
-    private static Buf!dchar appender;
+    static private Buf!dchar appender;
     private const(dchar)[] r;
     private size_t i;
 

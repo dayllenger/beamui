@@ -596,7 +596,7 @@ struct ActionShortcutMap
         _map.remove(sc);
     }
 
-    private static immutable KeyMods[] modMasks = [
+    static private immutable KeyMods[] modMasks = [
         KeyMods.lrcontrol | KeyMods.lralt | KeyMods.lrshift | KeyMods.lrmeta,
 
         KeyMods.lrcontrol | KeyMods.lralt | KeyMods.lrshift | KeyMods.lrmeta,

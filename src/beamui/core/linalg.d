@@ -500,7 +500,7 @@ struct Mat2x3
     {
         return .isFinite((this * Vec2(1, 1)).magnitudeSquared);
     }
-    private static immutable msgNotFinite = "Transformation is not finite anymore";
+    static private immutable msgNotFinite = "Transformation is not finite anymore";
 }
 
 struct mat4

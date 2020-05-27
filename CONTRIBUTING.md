@@ -1,9 +1,9 @@
 ## Coding style
 
-Basically, coding style inherits the [Phobos style](https://dlang.org/dstyle.html).
-There are little differences, like no space after `cast(...)` operator.
-
-Tune your editor as described in `.editorconfig` file in the root folder, if your editor cannot recognize it.
+Coding style inherits the [Phobos style](https://dlang.org/dstyle.html).
+There are little differences, such as no space after `cast(...)` operator.
+Common editor options are described in `.editorconfig` file in the root folder
+(of [EditorConfig](https://editorconfig.org/) format).
 
 ### Structure
 
@@ -28,10 +28,7 @@ class A
     // destructor
     ~this();
 
-    // and then methods
-    // public first
-    // protected then
-    // overriden last
+    // methods
 }
 ```
 
@@ -51,7 +48,7 @@ Write trivial getters in one line, for example:
 private long _time;
 ```
 
-Try to place functions *below* of their first call. Humans prefer to read text in up-down direction.
+Try to place functions *below* their first call. Humans prefer to read text top-to-bottom.
 
 If you write a lot of code, split parts with the following line:
 
@@ -62,12 +59,12 @@ If you write a lot of code, split parts with the following line:
 
 ### Attributes
 
-The lefthand attributes and qualifiers should have such order:
+The member attributes and qualifiers on left-hand side should have such order:
 ```D
-abstract/final/override public/protected/package/private static @property
+abstract/final/override/static public/protected/package/private @property
 ```
 
-I don't use `pure @nogc @system/@trusted/@safe` attributes in the library. I decided to not bother with them until they'll be properly implemented.
+I rarely use `pure @nogc @system/@trusted/@safe` in the library. I decided to not bother with them until they'll be properly implemented.
 
 `@property` is needed only to split properties from other methods in documentation.
 

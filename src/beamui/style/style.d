@@ -76,7 +76,7 @@ final class Style
             Log.d("Destroyed style, count: ", count);
     }
 
-    mixin DebugInstanceCount!();
+    mixin DebugInstanceCount;
 
     /// Returns true whether CSS property is set to `inherit`
     bool isInherited(StrHash name)

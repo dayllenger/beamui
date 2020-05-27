@@ -283,10 +283,10 @@ final class Setting
     private Setting _parent;
     private bool _changed;
 
-    private static __gshared Setting dummy = new Setting;
+    __gshared private Setting dummy = new Setting;
 
     /// Array
-    private static struct SettingArray
+    static private struct SettingArray
     {
         Setting[] list;
 
@@ -346,7 +346,7 @@ final class Setting
     }
 
     /// Ordered map
-    private static struct SettingMap
+    static private struct SettingMap
     {
         Setting[] list;
         size_t[string] map;
@@ -1135,7 +1135,7 @@ final class Setting
         }
     }
 
-    private static bool splitKey(string key, ref string part1, ref string part2)
+    static private bool splitKey(string key, ref string part1, ref string part2)
     {
         int dashPos = -1;
         for (int i = 0; i < key.length; i++)

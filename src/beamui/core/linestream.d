@@ -437,7 +437,7 @@ class LineStream
     abstract protected uint decodeText();
 
     /// Unknown line position
-    immutable static uint LINE_POSITION_UNDEFINED = uint.max;
+    static immutable LINE_POSITION_UNDEFINED = uint.max;
 
     /// Read line from stream. Returns `null` on end of file or read error
     dchar[] readLine()
@@ -543,9 +543,9 @@ class LineStream
         return _textBuf[lineStart .. lineEnd];
     }
 
-    protected immutable static int TEXT_BUFFER_SIZE = 1024;
-    protected immutable static int BYTE_BUFFER_SIZE = 512;
-    protected immutable static int QUARTER_BYTE_BUFFER_SIZE = BYTE_BUFFER_SIZE / 4;
+    static protected immutable int TEXT_BUFFER_SIZE = 1024;
+    static protected immutable int BYTE_BUFFER_SIZE = 512;
+    static protected immutable int QUARTER_BYTE_BUFFER_SIZE = BYTE_BUFFER_SIZE / 4;
 
     /// Factory method for string parser
     static LineStream create(string code, string filename = "")

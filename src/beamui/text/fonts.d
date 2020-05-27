@@ -167,7 +167,7 @@ class Font : RefCountedObject
         clear();
     }
 
-    mixin DebugInstanceCount!();
+    mixin DebugInstanceCount;
 
     /// Returns character width
     float getCharWidth(dchar ch)
@@ -405,7 +405,7 @@ class FontManager
         }
     }
 
-    private static __gshared
+    __gshared private
     {
         FontManager _instance;
         int _defaultFontSize = 12;

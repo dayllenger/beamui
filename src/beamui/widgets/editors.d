@@ -4346,7 +4346,7 @@ class EditorSearchPane : Panel
     /// True to show replace controls
     bool replaceMode;
 
-    protected static class State : WidgetState
+    static protected class State : WidgetState
     {
         TextSearchOptions options;
     }

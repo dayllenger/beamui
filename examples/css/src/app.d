@@ -48,7 +48,7 @@ int main()
 
 class Controls : Panel
 {
-    protected static class State : WidgetState
+    static protected class State : WidgetState
     {
         bool dummyBool;
         double dummyDouble = 50;

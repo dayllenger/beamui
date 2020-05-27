@@ -366,7 +366,7 @@ struct TextLine
         return startingOffset;
     }
 
-    private static float alignHor(float lineWidth, float boxWidth, TextAlign a)
+    static private float alignHor(float lineWidth, float boxWidth, TextAlign a)
     {
         if (lineWidth < boxWidth)
         {
@@ -378,7 +378,7 @@ struct TextLine
         return 0;
     }
 
-    private static bool mutateStyle(ref TextStyle prev, ref TextStyle next, MarkupUnit* mu)
+    static private bool mutateStyle(ref TextStyle prev, ref TextStyle next, MarkupUnit* mu)
     {
         // filter relevant attributes and make a fragment style
         const t = mu.attribute.type;

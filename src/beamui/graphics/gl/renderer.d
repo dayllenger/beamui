@@ -786,7 +786,7 @@ private struct RenderTargetPool
         }
     }
 
-    private static bool preparePage(ref FboManager man, ref Page page, SizeI requiredSize)
+    static private bool preparePage(ref FboManager man, ref Page page, SizeI requiredSize)
     {
         const size = choosePageSize(page.size, requiredSize);
         if (page.fbo.handle)
@@ -839,7 +839,7 @@ private struct RenderTargetPool
         }
     }
 
-    private static SizeI choosePageSize(SizeI curr, SizeI req)
+    static private SizeI choosePageSize(SizeI curr, SizeI req)
     {
         curr.w = max(curr.w, INITIAL_SIZE.w);
         curr.h = max(curr.h, INITIAL_SIZE.h);

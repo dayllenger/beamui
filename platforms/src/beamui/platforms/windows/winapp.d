@@ -621,7 +621,7 @@ final class Win32Window : Window
         SetCursor(h);
     }
 
-    private static ushort convertCursorType(CursorType type)
+    static private ushort convertCursorType(CursorType type)
     {
         switch (type) with (CursorType)
         {

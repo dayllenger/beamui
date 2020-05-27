@@ -735,7 +735,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     }
 
     /// Search for index of position inside cumulative sizes array
-    protected static int findPosIndex(const float[] cumulativeSizes, float pos)
+    static protected int findPosIndex(const float[] cumulativeSizes, float pos)
     {
         // binary search
         if (pos < 0 || !cumulativeSizes.length)

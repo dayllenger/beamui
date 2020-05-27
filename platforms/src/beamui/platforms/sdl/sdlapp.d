@@ -408,7 +408,7 @@ final class SDLWindow : Window
         _lastCursorType = type;
     }
 
-    private static SDL_SystemCursor convertCursorType(CursorType type)
+    static private SDL_SystemCursor convertCursorType(CursorType type)
     {
         switch (type) with (CursorType)
         {

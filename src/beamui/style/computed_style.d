@@ -141,7 +141,7 @@ enum StyleProperty
 }
 
 /// Provides default style values for most of properties
-private static ComputedStyle defaults;
+private ComputedStyle defaults;
 
 struct ComputedStyle
 {

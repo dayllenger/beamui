@@ -256,7 +256,7 @@ class Widget
 
     //===============================================================
 
-    protected static Arena* arena()
+    static protected Arena* arena()
     {
         version (unittest)
         {
@@ -602,7 +602,7 @@ public:
             *_destructionFlag = true;
     }
 
-    mixin DebugInstanceCount!();
+    mixin DebugInstanceCount;
 
     /// Flag for `WeakRef` that indicates element destruction
     final @property const(bool*) destructionFlag() const { return _destructionFlag; }
@@ -1353,7 +1353,7 @@ public:
         return cast(inout)p;
     }
 
-    private static class TabOrderInfo
+    static private class TabOrderInfo
     {
         Element element;
         uint tabOrder;

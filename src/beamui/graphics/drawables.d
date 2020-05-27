@@ -49,7 +49,7 @@ class Drawable : RefCountedObject
             Log.d("Destroyed drawable ", getShortClassName(this), ", count: ", count);
     }
 
-    mixin DebugInstanceCount!();
+    mixin DebugInstanceCount;
 
     abstract void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0);
 
@@ -564,7 +564,7 @@ static if (BACKEND_CONSOLE)
             buf.drawChar(dstx, dsty, _text[index], _textColors[index], _bgColors[index]);
         }
 
-        private static int wrapNinePatch(int v, int width, int ninewidth, int left, int right)
+        static private int wrapNinePatch(int v, int width, int ninewidth, int left, int right)
         {
             if (v < left)
                 return v;
@@ -632,7 +632,7 @@ class ImageDrawable : Drawable
             Log.d("Destroyed ImageDrawable, count: ", count);
     }
 
-    mixin DebugInstanceCount!();
+    mixin DebugInstanceCount;
 
     override @property float width() const
     {

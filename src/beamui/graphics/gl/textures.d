@@ -83,7 +83,7 @@ struct TextureCache
         return TextureView(&page.tex, &page.texSize, res.box);
     }
 
-    private static void resize(ref CachePage page, SizeI size)
+    static private void resize(ref CachePage page, SizeI size)
     {
         if (page.texSize == size)
             return;
@@ -161,7 +161,7 @@ struct GlyphCache
         return TextureView(&page.tex, &page.texSize, res.box);
     }
 
-    private static void resize(ref CachePage page, SizeI size)
+    static private void resize(ref CachePage page, SizeI size)
     {
         if (page.texSize == size)
             return;

@@ -12,7 +12,7 @@ class CssHotReloadWidget : Panel
 {
     dstring defaultStyleSheet;
 
-    protected static class State : WidgetState
+    static protected class State : WidgetState
     {
         bool watching;
         bool error;

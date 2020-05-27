@@ -815,7 +815,7 @@ class Window : CustomEventTarget
 
     private Popup[] _popups;
 /+
-    protected static struct TooltipInfo
+    protected struct TooltipInfo
     {
         Popup popup;
         ulong timerID;
@@ -1558,7 +1558,7 @@ class Window : CustomEventTarget
         return false;
     }
 
-    private static bool handleKeyEvent(WeakRef!Element weak, KeyEvent e)
+    static private bool handleKeyEvent(WeakRef!Element weak, KeyEvent e)
     {
         Element el = weak.get;
         if (el.onKeyEvent.assigned && el.onKeyEvent(e))
@@ -1569,7 +1569,7 @@ class Window : CustomEventTarget
             return el.handleKeyEvent(e);
     }
 
-    private static bool handleMouseEvent(WeakRef!Element weak, MouseEvent e)
+    static private bool handleMouseEvent(WeakRef!Element weak, MouseEvent e)
     {
         Element el = weak.get;
         if (el.onMouseEvent.assigned && el.onMouseEvent(e))
@@ -1580,7 +1580,7 @@ class Window : CustomEventTarget
             return el.handleMouseEvent(e);
     }
 
-    private static bool handleWheelEvent(WeakRef!Element weak, WheelEvent e)
+    static private bool handleWheelEvent(WeakRef!Element weak, WheelEvent e)
     {
         Element el = weak.get;
         if (el.onWheelEvent.assigned && el.onWheelEvent(e))
@@ -2272,7 +2272,7 @@ struct WindowMap(W : Window, ID)
 */
 class Platform
 {
-    private static __gshared Platform _instance;
+    __gshared private Platform _instance;
 
     /// Platform singleton instance
     static @property Platform instance() { return _instance; }
