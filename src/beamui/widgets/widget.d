@@ -246,9 +246,9 @@ class Widget
         static BuildContext _ctx;
 
         Widget _parent;
+        WidgetID _widgetID;
 
         Element _element;
-        ElementID _elementID;
     }
 
     final WeakRef!(const(Element)*) elementRef() const
@@ -289,15 +289,15 @@ class Widget
         else
         {
             // use the parent ID, so IDs form a tree structure
-            hasher.put(parent._elementID.value);
+            hasher.put(parent._widgetID.value);
             // also use either the key or, as a last resort, the index
             const k = key ? key.computed : index;
             hasher.put((cast(ubyte*)&k)[0 .. size_t.sizeof]);
         }
-        _elementID = ElementID(hasher.finish());
+        _widgetID = WidgetID(hasher.finish());
         _parent = parent;
         // find or create the element using the currently bound element store
-        _element = _ctx.store.fetch(_elementID, this);
+        _element = _ctx.store.fetch(_widgetID, this);
         _element._buildInProgress = true;
         // reparent the element silently
         _element._parent = parentElem;
@@ -2740,21 +2740,21 @@ class ElemPanel : ElemGroup
     }
 }
 
-/** An integer identifier to map temporal widgets onto persistent elements.
+/** An integer identifier to map temporal widgets onto persistent state.
 
     It is unique inside the window and stable between rebuilds of the widget tree.
 */
-struct ElementID
+package(beamui) struct WidgetID
 {
     ubyte[16] value;
 }
 
-/// Contains every alive element of the window by `ElementID`
-struct ElementStore
+/// Contains every alive element of the window by `WidgetID`
+package(beamui) struct ElementStore
 {
     static uint instantiations;
 
-    private Element[ElementID] map;
+    private Element[WidgetID] map;
 
     private this(int);
     @disable this(this);
@@ -2764,8 +2764,8 @@ struct ElementStore
         eliminate(map);
     }
 
-    Element fetch(ElementID id, Widget caller)
-        in(id != ElementID.init)
+    Element fetch(WidgetID id, Widget caller)
+        in(id != WidgetID.init)
         in(caller)
     {
         Element el;
@@ -2788,7 +2788,7 @@ struct ElementStore
     }
 }
 
-struct BuildContext
+package(beamui) struct BuildContext
 {
     Arena* arena;
     ElementStore* store;
