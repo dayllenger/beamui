@@ -318,7 +318,7 @@ class TabWidget : Widget
         return 0;
     }
 
-    protected class State : IState
+    protected class State : WidgetState
     {
         WidgetKey selectedTabKey;
 
@@ -338,11 +338,6 @@ class TabWidget : Widget
         }
     }
 
-    protected State getState()
-    {
-        return useState(new State);
-    }
-
     override protected void build()
     {
         if (!_bar || !_content)
@@ -350,13 +345,18 @@ class TabWidget : Widget
 
         attributes[alignment == Align.top ? "top" : "bottom"];
 
-        State st = getState();
+        State st = use!State;
 
         const pair = _bar.findItemByKey(st.selectedTabKey);
         _bar.selectedTabKey = st.selectedTabKey;
         _bar.onSelect = &st.selectTab;
         _content.visibleItemIndex = pair[1];
         _content.buildHiddenItems = buildHiddenTabs;
+    }
+
+    override protected State createState()
+    {
+        return new State;
     }
 
     override protected Element createElement()

@@ -4346,14 +4346,19 @@ class EditorSearchPane : Panel
     /// True to show replace controls
     bool replaceMode;
 
-    static class State : IState
+    protected static class State : WidgetState
     {
         TextSearchOptions options;
     }
 
+    override protected State createState()
+    {
+        return new State;
+    }
+
     override protected void build()
     {
-        State st = useState!State;
+        State st = use!State;
 
         if (!replaceMode)
             attributes["find-only"];

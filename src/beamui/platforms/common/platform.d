@@ -398,6 +398,7 @@ class Window : CustomEventTarget
         MainRootElement _mainRootElement;
         PopupRootElement _popupRootElement;
 
+        StateStore _stateStore;
         ElementStore _elementStore;
         Arena[2] _widgetArenas;
         Widget delegate() _mainBuilder;
@@ -1872,7 +1873,7 @@ class Window : CustomEventTarget
         // prepare allocators and the cache
         swap(_widgetArenas[0], _widgetArenas[1]);
         _widgetArenas[0].clear();
-        setBuildContext(BuildContext(&_widgetArenas[0], &_elementStore));
+        setBuildContext(BuildContext(&_widgetArenas[0], &_stateStore, &_elementStore));
 
         // rebuild and diff
         auto root = render!MainRootWidget;

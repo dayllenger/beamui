@@ -68,7 +68,7 @@ abstract class ComboBoxBase : Panel
     private bool handleWheelEvent(WheelEvent event)
     {
         const delta = event.deltaY > 0 ? 1 : -1;
-        const oldIndex = getState().selectedItemIndex;
+        const oldIndex = use!State.selectedItemIndex;
         const newIndex = clamp(oldIndex + delta, 0, itemCount - 1);
         select(newIndex);
         return oldIndex != newIndex;
@@ -76,34 +76,34 @@ abstract class ComboBoxBase : Panel
 
 protected:
 
-    static class State : IState
+    static class State : WidgetState
     {
         int selectedItemIndex;
         bool opened;
     }
 
-    State getState()
+    override State createState()
     {
-        return useState(new State);
+        return new State;
     }
 
     void open()
     {
         if (itemCount > 0) // don't show empty popup
         {
-            setState(getState().opened, true);
+            setState(use!State.opened, true);
         }
     }
 
     void close()
     {
-        setState(getState().opened, false);
+        setState(use!State.opened, false);
         // TODO: focus combobox back
     }
 
     void select(int index)
     {
-        auto st = getState();
+        State st = use!State;
         if (st.selectedItemIndex != index)
         {
             setState(st.selectedItemIndex, index);
@@ -122,7 +122,7 @@ protected:
         arrow.namespace = null;
         wrap(body, arrow);
 
-        const st = getState();
+        const State st = use!State;
         if (st.opened)
         {
             attributes["opened"];
@@ -172,9 +172,8 @@ protected:
 
     override Widget buildBody()
     {
-        const st = getState();
         Label t = render!Label;
-        t.text = items[st.selectedItemIndex];
+        t.text = items[use!State.selectedItemIndex];
         return t;
     }
 
@@ -221,9 +220,8 @@ protected:
 
     override Widget buildBody()
     {
-        const st = getState();
         Label t = render!Label;
-        t.text = items[st.selectedItemIndex].label;
+        t.text = items[use!State.selectedItemIndex].label;
         return t;
     }
 
@@ -295,9 +293,8 @@ protected:
 
     override Widget buildBody()
     {
-        const st = getState();
         EditLine ed = render!EditLine;
-        ed.text = items[st.selectedItemIndex];
+        ed.text = items[use!State.selectedItemIndex];
         ed.readOnly = readOnly;
         return ed;
     }

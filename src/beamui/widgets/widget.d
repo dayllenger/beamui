@@ -143,10 +143,6 @@ enum DependentSize
     height,
 }
 
-interface IState
-{
-}
-
 struct WidgetKey
 {
     size_t computed = size_t.max;
@@ -248,6 +244,7 @@ class Widget
         Widget _parent;
         WidgetID _widgetID;
 
+        WidgetState _state;
         Element _element;
     }
 
@@ -296,8 +293,10 @@ class Widget
         }
         _widgetID = WidgetID(hasher.finish());
         _parent = parent;
-        // find or create the element using the currently bound element store
-        _element = _ctx.store.fetch(_widgetID, this);
+        // find or create widget state object using the currently bound state store
+        _state = _ctx.stateStore.fetch(_widgetID, this);
+        // same for element
+        _element = _ctx.elemStore.fetch(_widgetID, this);
         _element._buildInProgress = true;
         // reparent the element silently
         _element._parent = parentElem;
@@ -323,25 +322,11 @@ class Widget
         return child.mount(this, thisElem, index);
     }
 
-    protected S useState(S : IState)()
+    protected inout(S) use(S : WidgetState)() inout
+        in(_state, "The state hasn't mounted yet")
+        out(s; s, "The widget state has another type: " ~ _state.classinfo.name)
     {
-        return useState(new S);
-    }
-
-    protected S useState(S : IState)(lazy S initial)
-        in(_element, "The element hasn't mounted yet")
-    {
-        S s;
-        if (auto ls = _element._localState)
-        {
-            s = cast(S)ls;
-            assert(s, "The widget state instance cannot change its type");
-        }
-        else
-        {
-            _element._localState = s = initial;
-        }
-        return s;
+        return cast(inout(S))_state;
     }
 
     final protected inout(Widget) parent() inout { return _parent; }
@@ -363,6 +348,12 @@ class Widget
 
     protected void build()
     {
+    }
+
+    protected WidgetState createState()
+        out(st; st)
+    {
+        return new WidgetState;
     }
 
     protected Element createElement()
@@ -530,6 +521,10 @@ class Panel : WidgetGroupOf!Widget
     }
 }
 
+class WidgetState
+{
+}
+
 /// Base class for all elements
 class Element
 {
@@ -544,8 +539,6 @@ private:
     string[string] attributes;
     /// If true, the style will be recomputed on next usage
     bool _needToRecomputeStyle = true;
-
-    IState _localState;
 
     /// Widget state
     StateFlags _stateFlags = StateFlags.normal;
@@ -2749,6 +2742,35 @@ package(beamui) struct WidgetID
     ubyte[16] value;
 }
 
+package(beamui) struct StateStore
+{
+    private WidgetState[WidgetID] map;
+
+    private this(int);
+    @disable this(this);
+
+    ~this()
+    {
+        eliminate(map);
+    }
+
+    WidgetState fetch(WidgetID id, Widget caller)
+        in(id != WidgetID.init)
+        in(caller)
+    {
+        WidgetState st;
+        if (auto p = id in map)
+        {
+            st = *p;
+        }
+        else
+        {
+            map[id] = st = caller.createState();
+        }
+        return st;
+    }
+}
+
 /// Contains every alive element of the window by `WidgetID`
 package(beamui) struct ElementStore
 {
@@ -2781,17 +2803,13 @@ package(beamui) struct ElementStore
         }
         return el;
     }
-
-    void clear()
-    {
-        eliminate(map);
-    }
 }
 
 package(beamui) struct BuildContext
 {
     Arena* arena;
-    ElementStore* store;
+    StateStore* stateStore;
+    ElementStore* elemStore;
 }
 
 // to access from the window

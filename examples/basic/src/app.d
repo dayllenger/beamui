@@ -38,14 +38,19 @@ class TemperatureConverter : Panel
     import std.exception : ifThrown;
     import std.math : isFinite;
 
-    static class State : IState
+    static class State : WidgetState
     {
         float value = 0; // in Celsius
     }
 
+    override State createState()
+    {
+        return new State;
+    }
+
     override void build()
     {
-        State st = useState!State;
+        State st = use!State;
         EditLine ed1 = render!EditLine;
         EditLine ed2 = render!EditLine;
         // we may either control the edit line content,

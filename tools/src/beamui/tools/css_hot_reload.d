@@ -12,7 +12,7 @@ class CssHotReloadWidget : Panel
 {
     dstring defaultStyleSheet;
 
-    protected static class State : IState
+    protected static class State : WidgetState
     {
         bool watching;
         bool error;
@@ -64,9 +64,14 @@ class CssHotReloadWidget : Panel
         }
     }
 
+    override protected State createState()
+    {
+        return new State(defaultStyleSheet);
+    }
+
     override protected void build()
     {
-        State st = useState(new State(defaultStyleSheet));
+        State st = use!State;
         wrap(
             render((Label tip) {
                 tip.text = "Style resource ID:";

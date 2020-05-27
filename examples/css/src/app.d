@@ -48,7 +48,7 @@ int main()
 
 class Controls : Panel
 {
-    protected static class State : IState
+    protected static class State : WidgetState
     {
         bool dummyBool;
         double dummyDouble = 50;
@@ -61,9 +61,14 @@ class Controls : Panel
         }
     }
 
+    override protected State createState()
+    {
+        return new State;
+    }
+
     override void build()
     {
-        State st = useState!State;
+        State st = use!State;
         wrap(
             render((TabWidget tw) {
                 tw.buildHiddenTabs = true;

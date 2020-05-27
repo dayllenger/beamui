@@ -79,14 +79,19 @@ AppData data;
 
 class App : Panel
 {
-    static class State : IState
+    static class State : WidgetState
     {
         bool blendingSelected;
     }
 
+    override State createState()
+    {
+        return new State;
+    }
+
     override void build()
     {
-        State st = useState!State;
+        State st = use!State;
 
         wrap(
             render((TabWidget tw) {
