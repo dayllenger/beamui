@@ -4346,6 +4346,11 @@ class EditorSearchPane : Panel
     /// True to show replace controls
     bool replaceMode;
 
+    this()
+    {
+        focusGroup = true;
+    }
+
     static protected class State : WidgetState
     {
         TextSearchOptions options;
@@ -4442,7 +4447,6 @@ class ElemEditorSearchPane : ElemPanel
 {
     this()
     {
-        focusGroup = true;
     }
 }
 /+

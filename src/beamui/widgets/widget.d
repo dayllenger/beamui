@@ -224,6 +224,17 @@ class Widget
     bool visible = true;
     bool inheritState;
 
+    /** Focus group flag for container widget.
+
+        When focus group is set for some parent widget, focus from one of containing widgets can be moved
+        using keyboard only to one of other widgets containing in it and cannot bypass bounds of `focusGroup`.
+        If focused widget doesn't have any parent with `focusGroup == true`,
+        focus may be moved to any focusable within window.
+    */
+    bool focusGroup;
+    /// Tab order - hint for focus movement using Tab/Shift+Tab
+    ushort tabOrder;
+
     string namespace = "beamui";
     /// Isolate inheritance of style properties for the widget sub-tree (including this widget)
     bool isolateStyle;
@@ -382,6 +393,9 @@ class Widget
             el._stateFlags |= StateFlags.parent;
         else
             el._stateFlags &= ~StateFlags.parent;
+
+        el.focusGroup = focusGroup;
+        el.tabOrder = tabOrder;
 
         if (!namespace.length)
             namespace = _parent.namespace;
@@ -1281,20 +1295,8 @@ public:
     //===============================================================
     // About focus
 
-    private bool _focusGroup;
-    /** Focus group flag for container widget.
-
-        When focus group is set for some parent widget, focus from one of containing widgets can be moved
-        using keyboard only to one of other widgets containing in it and cannot bypass bounds of `focusGroup`.
-        If focused widget doesn't have any parent with `focusGroup == true`,
-        focus may be moved to any focusable within window.
-    */
-    @property bool focusGroup() const { return _focusGroup; }
-    /// ditto
-    @property void focusGroup(bool flag)
-    {
-        _focusGroup = flag;
-    }
+    bool focusGroup;
+    ushort tabOrder;
 
     @property bool focusGroupFocused() const
     {
@@ -1460,19 +1462,10 @@ public:
         return result;
     }
 
-    private ushort _tabOrder;
-    /// Tab order - hint for focus movement using Tab/Shift+Tab
-    @property ushort tabOrder() const { return _tabOrder; }
-    /// ditto
-    @property void tabOrder(ushort tabOrder)
-    {
-        _tabOrder = tabOrder;
-    }
-
     private int thisOrParentTabOrder() const
     {
-        if (_tabOrder)
-            return _tabOrder;
+        if (tabOrder)
+            return tabOrder;
         if (!parent)
             return 0;
         return parent.thisOrParentTabOrder;

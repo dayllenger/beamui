@@ -280,6 +280,11 @@ class TabWidget : Widget
     protected TabBar _bar;
     protected TabContent _content;
 
+    this()
+    {
+        focusGroup = true;
+    }
+
     final TabWidget wrap(TabPair[] tabs...)
     {
         if (tabs.length == 0)
@@ -367,8 +372,6 @@ class TabWidget : Widget
     override protected void updateElement(Element el)
     {
         super.updateElement(el);
-
-        el.focusGroup = true;
 
         if (alignment == Align.top)
         {
