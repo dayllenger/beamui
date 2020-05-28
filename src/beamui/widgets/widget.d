@@ -279,7 +279,7 @@ class Widget
         return _ctx.arena;
     }
 
-    private Element mount(Widget parent, Element parentElem, size_t index)
+    private WidgetID computeID(Widget parent, size_t index)
         in(parent, "Widget must have a parent")
     {
         import std.digest.murmurhash : MurmurHash3;
@@ -302,15 +302,13 @@ class Widget
             const k = key ? key.computed : index;
             hasher.put((cast(ubyte*)&k)[0 .. size_t.sizeof]);
         }
-        _widgetID = WidgetID(hasher.finish());
-        _parent = parent;
-        // find or create widget state object using the currently bound state store
-        _state = _ctx.stateStore.fetch(_widgetID, this);
-        // same for element
-        _element = _ctx.elemStore.fetch(_widgetID, this);
+        return WidgetID(hasher.finish());
+    }
+
+    private void mountRecursively()
+    {
         _element._buildInProgress = true;
-        // reparent the element silently
-        _element._parent = parentElem;
+
         // clear the old element tree structure
         Element[] prevItems = arena.allocArray!Element(_element.childCount);
         foreach (i, ref el; prevItems)
@@ -323,14 +321,27 @@ class Widget
 
         if (_element.childCount || prevItems.length)
             _element.diffChildren(prevItems);
+
         _element._buildInProgress = false;
-        return _element;
     }
 
     final protected Element mountChild(Widget child, Element thisElem, size_t index)
         in(child)
     {
-        return child.mount(this, thisElem, index);
+        const wid = child.computeID(this, index);
+        // find or create widget state object using the currently bound state store
+        WidgetState st = _ctx.stateStore.fetch(wid, child);
+        // same for element
+        Element el = _ctx.elemStore.fetch(wid, child);
+        // reparent the element silently
+        el._parent = thisElem;
+        // attach everything
+        child._widgetID = wid;
+        child._parent = this;
+        child._state = st;
+        child._element = el;
+        child.mountRecursively();
+        return el;
     }
 
     protected inout(S) use(S : WidgetState)() inout
@@ -2809,6 +2820,12 @@ package(beamui) struct BuildContext
 package(beamui) void setBuildContext(BuildContext ctx)
 {
     Widget._ctx = ctx;
+}
+package(beamui) void mountRoot(Widget wt, WidgetState st, Element el)
+{
+    wt._state = st;
+    wt._element = el;
+    wt.mountRecursively();
 }
 
 /// Helper for locating items in list, tree, table or other controls by typing their name

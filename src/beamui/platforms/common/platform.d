@@ -141,20 +141,12 @@ class EventList
     }
 }
 
-private final class MainRootWidget : Widget
+private final class MainRootWidget : WidgetWrapperOf!Widget
 {
-    void mountContent(MainRootElement root, Widget content)
-        in(root)
-    {
-        root._buildInProgress = true;
-        auto old = root._content;
-        root._content = null;
-        updateElement(root);
-        if (content)
-            root._content = mountChild(content, root, 0);
-        root.diffContent(old);
-        root._buildInProgress = false;
-    }
+}
+
+private final class PopupRootWidget : WidgetGroupOf!Popup
+{
 }
 
 private final class MainRootElement : Element
@@ -200,8 +192,9 @@ private final class MainRootElement : Element
         return _content;
     }
 
-    private void diffContent(Element old)
+    override void diffChildren(Element[] oldItems)
     {
+        Element old = oldItems.length ? oldItems[0] : null;
         if (_content is old)
             return;
 
@@ -209,31 +202,17 @@ private final class MainRootElement : Element
             old.parent = null;
 
         if (_content)
-        {
-            _content.parent = this;
             _content.requestLayout();
-        }
         else
             requestLayout();
     }
-}
 
-private final class PopupRootWidget : WidgetGroupOf!Popup
-{
-    void mountContent(PopupRootElement root, Popup[] popups)
-        in(root)
+    override Element addChild(Element item)
     {
-        root._buildInProgress = true;
-        Element[] prevItems = arena.allocArray!Element(root.childCount);
-        foreach (i, ref el; prevItems)
-            el = root.child(cast(int)i);
-        root.removeAllChildren(false);
-
-        wrap(popups);
-        updateElement(root);
-
-        root.diffChildren(prevItems);
-        root._buildInProgress = false;
+        assert(item, "Element must exist");
+        assert(item.parent is this);
+        _content = item;
+        return item;
     }
 }
 
@@ -395,6 +374,8 @@ class Window : CustomEventTarget
         Window[] _children;
         Window _parent;
 
+        WidgetState _mainRootState;
+        WidgetState _popupRootState;
         MainRootElement _mainRootElement;
         PopupRootElement _popupRootElement;
 
@@ -421,6 +402,8 @@ class Window : CustomEventTarget
         _children.reserve(10);
         _eventList = new EventList;
         _timerQueue = new TimerQueue;
+        _mainRootState = new WidgetState;
+        _popupRootState = new WidgetState;
         _mainRootElement = new MainRootElement(this);
         _popupRootElement = new PopupRootElement(this);
         _painter = new Painter(_painterHead);
@@ -443,6 +426,8 @@ class Window : CustomEventTarget
         if (auto t = timerThread)
             t.stop();
 
+        eliminate(_mainRootState);
+        eliminate(_popupRootState);
         eliminate(_mainRootElement);
         eliminate(_popupRootElement);
         // eliminate(_tooltip.popup);
@@ -1877,11 +1862,14 @@ class Window : CustomEventTarget
 
         // rebuild and diff
         auto root = render!MainRootWidget;
-        auto popupRoot = render!PopupRootWidget;
         Widget content = _mainBuilder();
-        // skip mount and update of the root, mount the child immediately
-        root.mountContent(_mainRootElement, content);
-        popupRoot.mountContent(_popupRootElement, _popups);
+        root.wrap(content);
+        mountRoot(root, _mainRootState, _mainRootElement);
+        // popups go afterwards, because widgets may call `showPopup` during build
+        // FIXME: popups may call it too
+        auto popupRoot = render!PopupRootWidget;
+        popupRoot.wrap(_popups);
+        mountRoot(popupRoot, _popupRootState, _popupRootElement);
 
         _popups = null;
         needRebuild = false;
