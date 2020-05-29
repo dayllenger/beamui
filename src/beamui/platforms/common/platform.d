@@ -1022,27 +1022,40 @@ class Window : CustomEventTarget
         Element newFocus = target.get;
         if (oldFocus is newFocus)
             return oldFocus;
+
         if (oldFocus)
         {
             oldFocus.applyFlags(targetState, false);
             oldFocus.focusGroupFocused(false);
+            setFocusWithinFlag(oldFocus, false);
         }
-        if (!newFocus || isChild(newFocus))
+        if (!newFocus)
         {
-            if (newFocus)
-            {
-                // when calling this, window.focusedElement is still previously focused widget
-                debug (focus)
-                    Log.d("new focus: ", newFocus.dbgname);
-                newFocus.applyFlags(targetState, true);
-            }
-            _focusedElement = weakRef(newFocus);
-            if (newFocus)
-                newFocus.focusGroupFocused(true);
-            // after focus change, ask for actions update automatically
-            //requestActionsUpdate();
+            _focusedElement.nullify();
         }
+        else if (isChild(newFocus))
+        {
+            // when calling this, window.focusedElement is still previously focused widget
+            debug (focus)
+                Log.d("new focus: ", newFocus.dbgname);
+            newFocus.applyFlags(targetState, true);
+            _focusedElement = weakRef(newFocus);
+            setFocusWithinFlag(newFocus, true);
+        }
+        // after focus change, ask for actions to update automatically
+        //requestActionsUpdate();
         return _focusedElement.get;
+    }
+
+    private void setFocusWithinFlag(Element el, bool enabled)
+        in(el)
+    {
+        Element p = el.parent;
+        while (p)
+        {
+            p.applyFlags(StateFlags.focusWithin, enabled);
+            p = p.parent;
+        }
     }
 
     protected Element applyFocus()
@@ -1051,6 +1064,7 @@ class Window : CustomEventTarget
         if (el)
         {
             el.applyFlags(_focusStateToApply, true);
+            setFocusWithinFlag(el, true);
             update();
         }
         return el;
@@ -1062,6 +1076,7 @@ class Window : CustomEventTarget
         if (el)
         {
             el.applyFlags(_focusStateToApply, false);
+            setFocusWithinFlag(el, false);
             update();
         }
         return el;

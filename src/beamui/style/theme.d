@@ -399,6 +399,9 @@ private Nullable!(Selector.Combinator) makeSelectorPart(Selector* sel, ref const
             case "window-focused":
                 applyStateFlag(StateFlags.windowFocused, positive);
                 break;
+            case "focus-within":
+                applyStateFlag(StateFlags.focusWithin, positive);
+                break;
             case "root":
                 sel.position = Selector.TreePosition.root;
                 break;
