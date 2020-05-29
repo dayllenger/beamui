@@ -31,6 +31,11 @@ class ProgressBar : Widget
     /// Progress value (0 .. 1000; -1 for indeterminate, -2 for hidden)
     int progress = PROGRESS_INDETERMINATE;
 
+    override protected ProgressBarState createState()
+    {
+        return new ProgressBarState;
+    }
+
     override protected Element createElement()
     {
         return new ElemProgressBar;
@@ -41,24 +46,26 @@ class ProgressBar : Widget
         super.updateElement(element);
 
         ElemProgressBar el = fastCast!ElemProgressBar(element);
-        el.progress = progress;
-        el.animationInterval = 50;
+        el.progress = cast(float)progress / PROGRESS_MAX;
+
+        ProgressBarState st = use!ProgressBarState;
+        st.element = el;
+        st.animationInterval = progress != PROGRESS_HIDDEN ? 50 : 0;
     }
 }
 
-class ElemProgressBar : Element
+class ProgressBarState : WidgetState
 {
-    @property
+    final @property
     {
-        int progress() const { return _progress; }
+        inout(ElemProgressBar) element() inout { return _el; }
         /// ditto
-        void progress(int value)
+        void element(ElemProgressBar el)
         {
-            value = clamp(value, PROGRESS_HIDDEN, PROGRESS_MAX);
-            if (_progress == value)
+            if (_el is el)
                 return;
-            _progress = value;
-            invalidate();
+            stopAnimation();
+            _el = el;
         }
 
         /// Animation interval in milliseconds, if 0 - no animation
@@ -70,69 +77,108 @@ class ElemProgressBar : Element
             if (_animationInterval == value)
                 return;
             _animationInterval = value;
-            if (value > 0)
-                scheduleAnimation();
-            else
-                stopAnimation();
+            scheduleAnimation();
         }
     }
 
     private
     {
-        int _progress = PROGRESS_INDETERMINATE;
+        ElemProgressBar _el;
+
         int _animationInterval = 0; // no animation by default
 
         ulong _animationTimerID;
-        int _animationSpeedPixelsPerSecond = 20;
-        long _animationPhase;
         long _lastAnimationTs;
     }
 
     protected void scheduleAnimation()
+        in(_el)
     {
-        if (!visible || !_animationInterval)
-        {
-            if (_animationTimerID)
-                stopAnimation();
-            return;
-        }
         stopAnimation();
-        _animationTimerID = setTimer(_animationInterval,
-            delegate() {
-                if (!visible || _progress == PROGRESS_HIDDEN)
-                {
-                    _lastAnimationTs = 0;
-                    _animationTimerID = 0;
-                    return false;
-                }
-                long elapsed = 0;
-                long ts = currentTimeMillis;
-                if (_lastAnimationTs)
-                {
-                    elapsed = clamp(ts - _lastAnimationTs, 0, 5000);
-                }
-                _lastAnimationTs = ts;
-                handleAnimationTimer(elapsed);
-                return _animationInterval != 0;
-            });
-        invalidate();
+        if (_animationInterval == 0 || !_el.visible)
+            return;
+
+        _animationTimerID = _el.setTimer(_animationInterval, {
+            if (!_el.visible)
+            {
+                _animationTimerID = 0;
+                _lastAnimationTs = 0;
+                _el.showAnimation = false;
+                return false;
+            }
+            const ts = currentTimeMillis;
+            long elapsed;
+            if (_lastAnimationTs != 0)
+                elapsed = clamp(ts - _lastAnimationTs, 0, 5000);
+            _lastAnimationTs = ts;
+            handleAnimationTimer(elapsed);
+            return _animationInterval != 0;
+        });
+        _el.showAnimation = true;
     }
 
     protected void stopAnimation()
     {
         if (_animationTimerID)
         {
-            cancelTimer(_animationTimerID);
+            _el.cancelTimer(_animationTimerID);
+            _el.showAnimation = false;
             _animationTimerID = 0;
         }
         _lastAnimationTs = 0;
     }
 
     /// Called on animation timer
-    protected void handleAnimationTimer(long millisElapsed)
+    protected void handleAnimationTimer(long msecElapsed)
+        in(_el)
     {
-        _animationPhase += millisElapsed;
-        invalidate();
+        _el.animationPhase = _el.animationPhase + msecElapsed;
+    }
+}
+
+class ElemProgressBar : Element
+{
+    @property
+    {
+        float progress() { return _fraction; }
+        /// ditto
+        void progress(float fr)
+        {
+            fr = clamp(fr, -1, 1);
+            if (_fraction == fr)
+                return;
+            _fraction = fr;
+            invalidate();
+        }
+
+        bool showAnimation() const { return _showAnimation; }
+        /// ditto
+        void showAnimation(bool flag)
+        {
+            if (_showAnimation == flag)
+                return;
+            _showAnimation = flag;
+            invalidate();
+        }
+
+        long animationPhase() const { return _animationPhase; }
+        /// ditto
+        void animationPhase(long msecs)
+        {
+            if (_animationPhase == msecs)
+                return;
+            _animationPhase = msecs;
+            invalidate();
+        }
+    }
+
+    private
+    {
+        float _fraction = -1;
+
+        bool _showAnimation;
+        long _animationPhase;
+        int _animationSpeedPixelsPerSecond = 20;
     }
 
     override protected Boundaries computeBoundaries()
@@ -156,33 +202,29 @@ class ElemProgressBar : Element
         const b = innerBox;
         pr.clipIn(BoxI.from(b));
 
-        DrawableRef animDrawable;
-        if (_progress >= 0)
+        DrawableRef drAnim;
+        if (_fraction >= 0)
         {
-            DrawableRef gaugeDrawable = currentTheme.getDrawable("progress_bar_gauge");
-            animDrawable = currentTheme.getDrawable("progress_bar_gauge_animation");
-            const w = _progress * b.w / PROGRESS_MAX;
-            if (!gaugeDrawable.isNull)
+            DrawableRef drGauge = currentTheme.getDrawable("progress_bar_gauge");
+            drAnim = currentTheme.getDrawable("progress_bar_gauge_animation");
+            if (!drGauge.isNull)
             {
-                gaugeDrawable.drawTo(pr, Box(b.x, b.y, w, b.h));
+                const w = _fraction * b.w;
+                drGauge.drawTo(pr, Box(b.x, b.y, w, b.h));
             }
         }
         else
         {
-            DrawableRef indeterminateDrawable = currentTheme.getDrawable("progress_bar_indeterminate");
-            if (!indeterminateDrawable.isNull)
-            {
-                indeterminateDrawable.drawTo(pr, b);
-            }
-            animDrawable = currentTheme.getDrawable("progress_bar_indeterminate_animation");
+            DrawableRef drIndeterminate = currentTheme.getDrawable("progress_bar_indeterminate");
+            if (!drIndeterminate.isNull)
+                drIndeterminate.drawTo(pr, b);
+            drAnim = currentTheme.getDrawable("progress_bar_indeterminate_animation");
         }
-        if (!animDrawable.isNull && _animationInterval)
+        // show animation
+        if (!drAnim.isNull && _showAnimation)
         {
-            if (!_animationTimerID)
-                scheduleAnimation();
-            const w = animDrawable.width;
-            _animationPhase %= cast(long)(w * 1000);
-            animDrawable.drawTo(pr, b, _animationPhase * _animationSpeedPixelsPerSecond / 1000.0f, 0);
+            const phase = _animationPhase % cast(long)(drAnim.width * 1000);
+            drAnim.drawTo(pr, b, phase * _animationSpeedPixelsPerSecond / 1000.0f, 0);
         }
     }
 }
