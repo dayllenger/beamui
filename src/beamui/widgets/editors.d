@@ -156,7 +156,7 @@ class EditLine : Widget
 {
     /// Placeholder is a short peace of text that describes the expected input
     dstring placeholder;
-    /// A character (e.g. '*') to hide password-like input. 0 for normal editor
+    /// A character (e.g. * or •) to hide password-like input. 0 for normal fields
     dchar passwordChar = 0;
     /// When true, user cannot change content of the editor
     bool readOnly;
@@ -434,11 +434,12 @@ class ElemEditLine : Element, IEditor, ActionOperator
         /// ditto
         void passwordChar(dchar ch)
         {
-            if (_passwordChar != ch)
-            {
-                _passwordChar = ch;
-                requestLayout();
-            }
+            if (_passwordChar == ch)
+                return;
+            _passwordChar = ch;
+            // must be applied immediately
+            measureVisibleText();
+            requestLayout();
         }
 
         /// Length of the line string
