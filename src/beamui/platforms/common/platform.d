@@ -1858,6 +1858,7 @@ class Window : CustomEventTarget
         // prepare allocators and the cache
         swap(_widgetArenas[0], _widgetArenas[1]);
         _widgetArenas[0].clear();
+        _stateStore.clearExpired();
         setBuildContext(BuildContext(&_widgetArenas[0], &_stateStore, &_elementStore));
 
         // rebuild and diff

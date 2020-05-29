@@ -328,18 +328,20 @@ class Widget
     final protected Element mountChild(Widget child, Element thisElem, size_t index)
         in(child)
     {
-        const wid = child.computeID(this, index);
+        const wid = child._widgetID = child.computeID(this, index);
         // find or create widget state object using the currently bound state store
-        WidgetState st = _ctx.stateStore.fetch(wid, child);
+        WidgetState st = child._state = _ctx.stateStore.fetch(wid, child);
         // same for element
-        Element el = _ctx.elemStore.fetch(wid, child);
+        Element el = child._element = _ctx.elemStore.fetch(wid, child);
+        // propagate state age
+        if (_state.childrenTTL == 0)
+            st.age = _state.age;
+        else
+            st.age = _ctx.stateStore.age + _state.childrenTTL;
         // reparent the element silently
         el._parent = thisElem;
-        // attach everything
-        child._widgetID = wid;
         child._parent = this;
-        child._state = st;
-        child._element = el;
+        // continue
         child.mountRecursively();
         return el;
     }
@@ -548,6 +550,8 @@ class Panel : WidgetGroupOf!Widget
 
 class WidgetState
 {
+    protected uint childrenTTL;
+    private ulong age = ulong.max; // no one dies by default
 }
 
 /// Base class for all elements
@@ -2749,6 +2753,7 @@ package(beamui) struct WidgetID
 package(beamui) struct StateStore
 {
     private WidgetState[WidgetID] map;
+    private ulong age;
 
     private this(int);
     @disable this(this);
@@ -2772,6 +2777,24 @@ package(beamui) struct StateStore
             map[id] = st = caller.createState();
         }
         return st;
+    }
+
+    void clearExpired()
+    {
+        Buf!WidgetID keys;
+        foreach (id, st; map)
+        {
+            if (st.age < age)
+            {
+                Log.d(st.childrenTTL);
+                destroy(st);
+                keys ~= id;
+            }
+        }
+        foreach (k; keys)
+            map.remove(k);
+
+        age++;
     }
 }
 

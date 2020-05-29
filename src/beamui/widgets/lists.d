@@ -77,6 +77,14 @@ class ListView : Widget
         return item.wrap(icon, label);
     }
 
+    static protected class State : WidgetState
+    {
+        this()
+        {
+            childrenTTL = 100;
+        }
+    }
+
     override protected void build()
     {
         if (!itemCount || !itemBuilder)
@@ -95,6 +103,11 @@ class ListView : Widget
                 return result;
         }
         return 0;
+    }
+
+    override protected WidgetState createState()
+    {
+        return new State;
     }
 
     override protected Element createElement()
