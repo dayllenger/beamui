@@ -2385,16 +2385,14 @@ class Platform
         options  = combination of `WindowOptions`
         width  = window width
         height = window height
-
-    Note: Window w/o `resizable` nor `fullscreen` will be created with a size based on measurement of its content widget.
     */
     abstract Window createWindow(dstring title, Window parent = null,
             WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
-            uint width = 0, uint height = 0);
+            uint width = 500, uint height = 300);
 
     /** Close a window.
 
-        Closes window earlier created with createWindow()
+        Closes window earlier created with `createWindow`.
     */
     abstract void closeWindow(Window w);
 

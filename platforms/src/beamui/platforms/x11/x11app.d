@@ -362,9 +362,11 @@ final class X11Window : DWindow
         if (parent)
             parent.addModalChild(this);
 
-        const sz = _cachedSize = SizeI(w > 0 ? w : 500, h > 0 ? h : 300);
-        width = sz.w;
-        height = sz.h;
+        w = max(w, 1);
+        h = max(h, 1);
+        width = w;
+        height = h;
+        _cachedSize = SizeI(w, h);
 
         create();
 

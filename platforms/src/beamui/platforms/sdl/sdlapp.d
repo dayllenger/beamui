@@ -67,8 +67,8 @@ final class SDLWindow : Window
         if (parent)
             parent.addModalChild(this);
 
-        width = w > 0 ? w : 500;
-        height = h > 0 ? h : 300;
+        width = max(w, 1);
+        height = max(h, 1);
 
         create();
 

@@ -224,8 +224,8 @@ final class Win32Window : Window
         auto w32parent = cast(Win32Window)parent;
         HWND parenthwnd = w32parent ? w32parent._hwnd : null;
 
-        width = w > 0 ? w : 500;
-        height = h > 0 ? h : 300;
+        width = max(w, 1);
+        height = max(h, 1);
 
         uint ws = WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
         if (options & WindowOptions.resizable)
