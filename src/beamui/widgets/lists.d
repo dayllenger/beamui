@@ -162,15 +162,7 @@ class ElemListView : ElemGroup
         /// Selected item index
         int selectedItemIndex() const { return _selectedItemIndex; }
 
-        final protected float scrollPosition() const
-        {
-            return _scrollbar.data.position;
-        }
-
-        final protected void scrollPosition(float v)
-        {
-            _scrollbar.data.position = v;
-        }
+        final protected inout(ScrollData) scrollData() inout { return _scrolldata; }
     }
 
     Signal!(void delegate(int)) onSelect;
@@ -188,6 +180,7 @@ class ElemListView : ElemGroup
 
         Buf!Box _itemBoxes;
         bool _needScrollbar;
+        ScrollData _scrolldata;
         ElemScrollBar _scrollbar;
 
         /// Client area (without scrollbar and padding)
@@ -202,7 +195,8 @@ class ElemListView : ElemGroup
 
     this()
     {
-        _scrollbar = new ElemScrollBar(new ScrollData);
+        _scrolldata = new ScrollData;
+        _scrollbar = new ElemScrollBar(_scrolldata);
         _scrollbar.orientation = orientation;
         _scrollbar.visibility = Visibility.gone;
         _scrollbar.parent = this;
@@ -224,9 +218,9 @@ class ElemListView : ElemGroup
             return Box.init;
         Box res = itemBoxNoScroll(index);
         if (_orientation == Orientation.horizontal)
-            res.x -= scrollPosition;
+            res.x -= _scrolldata.position;
         else
-            res.y -= scrollPosition;
+            res.y -= _scrolldata.position;
         return res;
     }
 
@@ -382,7 +376,7 @@ class ElemListView : ElemGroup
             else if (scrolledrc.right > viewrc.right)
                 delta = scrolledrc.right - viewrc.right;
         }
-        scrollPosition = scrollPosition + delta;
+        _scrolldata.position = _scrolldata.position + delta;
     }
 
     /// Move selection
@@ -545,7 +539,7 @@ class ElemListView : ElemGroup
         // same as in drawContent()
         const b = innerBox;
         const bool vert = _orientation == Orientation.vertical;
-        const scrollOffset = scrollPosition;
+        const scrollOffset = _scrolldata.position;
         const int start = itemByPosition(scrollOffset);
         const int end = itemByPosition(scrollOffset + (vert ? b.h : b.w));
         // expand a bit to enable scroll by dragging outside the box
@@ -763,7 +757,7 @@ class ElemListView : ElemGroup
         // update scrollbar and lay out
         if (_needScrollbar)
         {
-            _scrollbar.data.setRange(_totalSize, vertical ? _clientBox.h : _clientBox.w);
+            _scrolldata.setRange(_totalSize, vertical ? _clientBox.h : _clientBox.w);
             if (_itemBoxes.length > 0)
                 _scrollbar.lineStep = vertical ? _itemBoxes[0].h : _itemBoxes[0].w;
 
@@ -803,7 +797,7 @@ class ElemListView : ElemGroup
         pr.clipIn(BoxI.from(_clientBox));
         const b = innerBox;
         const bool vert = _orientation == Orientation.vertical;
-        const scrollOffset = scrollPosition;
+        const scrollOffset = _scrolldata.position;
         const int start = itemByPosition(scrollOffset);
         const int end = itemByPosition(scrollOffset + (vert ? b.h : b.w));
         foreach (i; start .. end + 1)
