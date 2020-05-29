@@ -676,8 +676,6 @@ public:
     {
         if ((_stateFlags & StateFlags.parent) != 0 && _parent !is null)
             return _parent.stateFlags;
-        if (focusGroupFocused)
-            return _stateFlags | StateFlags.windowFocused; // TODO:
         return _stateFlags;
     }
     /// ditto
@@ -1312,49 +1310,6 @@ public:
 
     bool focusGroup;
     ushort tabOrder;
-
-    @property bool focusGroupFocused() const
-    {
-        const el = focusGroupElement();
-        return (el._stateFlags & StateFlags.windowFocused) != 0;
-    }
-
-    protected bool setWindowFocusedFlag(bool flag)
-    {
-        if (flag)
-        {
-            if ((_stateFlags & StateFlags.windowFocused) == 0)
-            {
-                _stateFlags |= StateFlags.windowFocused;
-                invalidate();
-                return true;
-            }
-        }
-        else
-        {
-            if ((_stateFlags & StateFlags.windowFocused) != 0)
-            {
-                _stateFlags &= ~StateFlags.windowFocused;
-                invalidate();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @property void focusGroupFocused(bool flag)
-    {
-        Element el = focusGroupElement();
-        el.setWindowFocusedFlag(flag);
-        while (el.parent)
-        {
-            el = el.parent;
-            if (el.parent is null || el.focusGroup)
-            {
-                el.setWindowFocusedFlag(flag);
-            }
-        }
-    }
 
     /// Find nearest parent of this widget with `focusGroup` flag.
     /// Returns topmost parent if no `focusGroup` flag set to any of parents

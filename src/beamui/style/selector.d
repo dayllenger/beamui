@@ -699,7 +699,7 @@ private struct Parser
             case "default": return default_;
             case "read-only": return readOnly;
             case "activated": return activated;
-            case "window-focused": return windowFocused;
+            case "focus-within": return focusWithin;
             default: return none;
         }
     }

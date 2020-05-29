@@ -1026,7 +1026,6 @@ class Window : CustomEventTarget
         if (oldFocus)
         {
             oldFocus.applyFlags(targetState, false);
-            oldFocus.focusGroupFocused(false);
             setFocusWithinFlag(oldFocus, false);
         }
         if (!newFocus)

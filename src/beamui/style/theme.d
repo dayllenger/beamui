@@ -396,9 +396,6 @@ private Nullable!(Selector.Combinator) makeSelectorPart(Selector* sel, ref const
             case "activated":
                 applyStateFlag(StateFlags.activated, positive);
                 break;
-            case "window-focused":
-                applyStateFlag(StateFlags.windowFocused, positive);
-                break;
             case "focus-within":
                 applyStateFlag(StateFlags.focusWithin, positive);
                 break;
