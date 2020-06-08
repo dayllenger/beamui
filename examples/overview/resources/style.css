@@ -1,0 +1,76 @@
+.horizontal {
+  flex-direction: row;
+}
+.stretch {
+  flex: auto;
+}
+
+App {
+  display: column;
+}
+
+TabWidget {
+  justify-self: stretch;
+}
+
+TabForControls {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+
+TabForControls > Panel {
+  display: flex;
+  gap: 12px;
+}
+
+TabForControls > Panel > Panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+TabForControls .labels {
+  text-align: center;
+}
+TabForControls Label.l-1 {
+  color: red;
+  font-size: 18px;
+}
+TabForControls Label.l-2 {
+  font-size: 18px;
+  font-style: italic;
+}
+TabForControls Label.lorem {
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+TabForControls ActionButton > ButtonLike {
+  flex-direction: column;
+}
+
+TabForControls EditLine {
+  min-width: 150px;
+}
+
+TabForEditors,
+EditLineWithSettings,
+SourceEditorWithSettings {
+  display: flex;
+  flex-direction: column;
+}
+SourceEditorWithSettings {
+  flex: auto;
+}
+TabForEditors .settings {
+  display: flex;
+  flex-wrap: wrap;
+}
+TabForEditors EditBox {
+  flex: auto;
+}
+
+TabForCharts {
+  display: column;
+}

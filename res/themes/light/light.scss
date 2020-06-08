@@ -99,6 +99,17 @@ Link > ButtonLike {
     }
 }
 
+Link > Label {
+    color: #4169e1;
+    text-overflow: ellipsis-middle;
+}
+Link:hovered > Label {
+    text-decoration: underline;
+}
+Link:not(enabled) > Label {
+    color: fade-out(#c0c0ff, 0.3);
+}
+
 CheckBox, RadioButton {
     align-items: center;
     padding: 2px;

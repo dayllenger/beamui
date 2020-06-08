@@ -209,6 +209,7 @@ class Link : WidgetWrapperOf!Widget
     this()
     {
         allowsFocus = true;
+        allowsHover = true;
     }
 
     override protected void build()

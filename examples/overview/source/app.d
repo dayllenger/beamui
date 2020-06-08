@@ -1,57 +1,542 @@
-/+ Under major rewrite
+/// Widget overview. No functionality, just appearance and basic behaviour.
 module app;
 
 import beamui;
 
-/// Entry point for application
+mixin RegisterPlatforms;
+
 int main()
 {
     // you can embed resources into the executable
     resourceList.embed!"resources.list";
-    // and you can setup resource paths; not required if only embedded resources are used
-    // beware the order: it must be before any resource loading, like theme
+    // and you can setup resource paths; not required if only embedded resources are used.
+    // it will use existing directories only.
+    // beware the order: it must be before any resource loading, like theme.
     /+
-    string[] resourceDirs = [ // will use only existing directories
+    resourceList.resourceDirs = [
         appendPath(exePath, "resources/"), // at the same directory as executable
         appendPath(exePath, "../resources/"), // at the dub project directory
     ];
-    resourceList.resourceDirs = resourceDirs;
     +/
+
     // initialize the library
     GuiApp app;
     app.conf.theme = "light";
     if (!app.initialize())
         return -1;
 
+    const filename = resourceList.getPathByID("style");
+    const styles = cast(string)loadResourceBytes(filename);
+    setStyleSheet(currentTheme, styles);
+
     // you can change default log level, e.g. always use trace, even for release builds
     //Log.setLogLevel(LogLevel.trace);
     // direct logs to a file
     //Log.setFileLogger(new std.stdio.File("ui.log", "w"));
 
-    // you can override default hinting mode (normal, autohint, disabled)
+    // you can set font hinting mode and antialiasing settings
     FontManager.hintingMode = HintingMode.normal;
-    // you can override antialiasing setting
     // fonts with size less than specified value will not be antialiased
     FontManager.minAntialiasedFontSize = 0;
-    // you can turn on subpixel font rendering (ClearType)
+    // you can turn on subpixel font rendering (ClearType-like)
     FontManager.subpixelRenderingMode = SubpixelRenderingMode.none; // bgr, rgb
 
+    // by default, window will expand if it's smaller than its content
+    Window window = platform.createWindow("Controls overview - beamui");
 
-    // create a window
-    // expand window size if content is bigger than defaults
-    auto window = platform.createWindow("Controls overview - beamui");
+    window.show(() => render!App);
+    return platform.enterMessageLoop();
+}
 
-    // create main content layout
-    auto frame = new Panel;
-    frame.style.display = "column";
-    frame.style.gap = 0; // remove spacing between main menu and tabs
+class App : Panel
+{
+    override void build()
+    {
+        wrap(
+            render((TabWidget tw) {
+                tw.onSelect = (item) {
+                    const ti = cast(TabItem)item;
+                    window.title = ti.text ~ " overview - beamui"d;
+                };
+            }).wrap(
+                TabPair(
+                    (TabItem ti) { ti.text = "Controls"; },
+                    (TabForControls tab) {}
+                ),
+                TabPair(
+                    (TabItem ti) { ti.text = "Editors"; },
+                    (TabForEditors tab) {}
+                ),
+                TabPair(
+                    (TabItem ti) { ti.text = "Charts"; },
+                    (TabForCharts tab) {}
+                ),
+            )
+        );
+    }
+}
 
-    TabWidget tabs;
+/// Most of basic controls and indicators
+class TabForControls : Panel
+{
+    enum Options { one, two, three, }
 
+    static class State : WidgetState
+    {
+        Action fileOpenAction;
+        EditableContent content;
+
+        bool dummyBool;
+        Options dummyOption;
+        double dummyValue = 0.5;
+        double[2] dummyRange = [2, 6];
+
+        this()
+        {
+            fileOpenAction = new Action("&Open", "document-open", Key.O, KeyMods.control);
+            content = new EditableContent;
+            content.text = "Some text in EditBox\nOne more line\nYet another text line";
+        }
+    }
+
+    override State createState()
+    {
+        return new State;
+    }
+
+    override void build()
+    {
+        State st = use!State;
+        wrap(
+            render((Panel p) {}).wrap(
+                render((Panel p) {}).wrap(
+                    render((GroupBox gb) {
+                        gb.caption = "Label";
+                        gb.attributes["labels"];
+                    }).wrap(
+                        render((Label l1) {
+                            l1.text = "Red text";
+                            l1.attributes["l-1"];
+                        }),
+                        render((Label l2) {
+                            l2.text = "Italic text";
+                            l2.attributes["l-2"];
+                        }),
+                        render((Label l) {
+                            l.text = "Lorem ipsum\ndolor sit amet\nconsectetur\nadipisicing elit.\nIllo, tenetur.";
+                            l.attributes["lorem"];
+                        }),
+                        render((Link link) {
+                            link.url = "https://github.com/dayllenger/beamui";
+                        }).wrap(
+                            render((Label t) { t.text = "Go to GitHub page"; })
+                        ),
+                    ),
+                ),
+                render((Panel p) {}).wrap(
+                    render((GroupBox gb) {
+                        gb.caption = "ImageWidget";
+                    }).wrap(
+                        render((ImageWidget iw) {
+                            iw.imageID = "cr3_logo";
+                        })
+                    ),
+                    render((GroupBox gb) {
+                        gb.caption = "SwitchButton";
+                    }).wrap(
+                        render((SwitchButton sb) {
+                            sb.checked = st.dummyBool;
+                            sb.onToggle = (v) { setState(st.dummyBool, v); };
+                        }),
+                        render((SwitchButton sb) {
+                            sb.checked = !st.dummyBool;
+                            sb.onToggle = (v) { setState(st.dummyBool, !v); };
+                        }),
+                        render((SwitchButton sb) {}),
+                        render((SwitchButton sb) { sb.checked = true; }),
+                    ),
+                ),
+                render((Panel p) {}).wrap(
+                    render((GroupBox gb) {
+                        gb.caption = "CheckBox";
+                    }).wrap(
+                        render((CheckBox cb) {
+                            cb.text = "Option 1";
+                            cb.checked = st.dummyBool;
+                            cb.onToggle = (v) { setState(st.dummyBool, v); };
+                        }),
+                        render((CheckBox cb) {
+                            cb.text = "Option 2";
+                            cb.checked = !st.dummyBool;
+                            cb.onToggle = (v) { setState(st.dummyBool, !v); };
+                        }),
+                        render((CheckBox cb) {
+                            cb.text = "Option 3";
+                        }),
+                        render((CheckBox cb) {
+                            cb.text = "Option 4";
+                            cb.checked = true;
+                        }),
+                    ),
+                    render((GroupBox gb) {
+                        gb.caption = "RadioButton";
+                    }).wrap(
+                        render((RadioButton rb) {
+                            rb.text = "Option 1";
+                            rb.checked = st.dummyOption == Options.one;
+                            rb.onToggle = (v) { setState(st.dummyOption, Options.one); };
+                        }),
+                        render((RadioButton rb) {
+                            rb.text = "Option 2";
+                            rb.checked = st.dummyOption == Options.two;
+                            rb.onToggle = (v) { setState(st.dummyOption, Options.two); };
+                        }),
+                        render((RadioButton rb) {
+                            rb.text = "Option 3";
+                            rb.checked = st.dummyOption == Options.three;
+                        }),
+                    ),
+                ),
+                render((Panel p) {}).wrap(
+                    render((GroupBox gb) {
+                        gb.caption = "Button";
+                    }).wrap(
+                        render((Button b) {
+                            b.text = "Enabled";
+                            b.onClick = { Log.d("click"); };
+                        }),
+                        render((Button b) {
+                            b.text = "Disabled";
+                        }),
+                        render((Button b) {
+                            b.text = "Enabled";
+                            b.iconID = "document-open";
+                            b.onClick = { Log.d("click"); };
+                        }),
+                        render((Button b) {
+                            b.text = "Disabled";
+                            b.iconID = "document-save";
+                        }),
+                    ),
+                    render((GroupBox gb) {
+                        gb.caption = "More buttons";
+                    }).wrap(
+                        render((ActionButton ab) {
+                            ab.action = st.fileOpenAction;
+                        }),
+                        render((CheckButton b) {
+                            b.text = "Toggle the action above";
+                            b.checked = st.fileOpenAction.enabled;
+                            b.onToggle = (v) {
+                                setState(v, !v); // temporary hack
+                                st.fileOpenAction.enabled = !v;
+                            };
+                        }),
+                    ),
+                ),
+            ),
+            render((Panel p) {}).wrap(
+                render((GroupBox gb) {
+                    gb.caption = "Scrollbar, Slider, RangeSlider, ProgressBar";
+                    gb.attributes["stretch"];
+                }).wrap(
+                    render((ScrollBar sb) {
+                        sb.onScroll = (action, pos) {
+                            Log.d("scrollbar: ", action);
+                            return true;
+                        };
+                    }),
+                    render((Slider sl) {
+                        sl.value = st.dummyValue;
+                        sl.minValue = -0.75;
+                        sl.maxValue = 0.75;
+                        sl.step = 0.1;
+                        sl.onChange = (v) {
+                            Log.d("slider: ", v);
+                            setState(st.dummyValue, v);
+                        };
+                    }),
+                    render((RangeSlider sl) {
+                        sl.first = st.dummyRange[0];
+                        sl.second = st.dummyRange[1];
+                        sl.minValue = 0;
+                        sl.maxValue = 10;
+                        sl.step = 0.1;
+                        sl.pageStep = 100;
+                        sl.onChange = (a, b) {
+                            Log.fd("range-slider: (%s, %s)", a, b);
+                            setState(st.dummyRange[0], a);
+                            setState(st.dummyRange[1], b);
+                        };
+                    }),
+                    render((ProgressBar pb) {
+                        pb.progress = PROGRESS_HIDDEN;
+                    }),
+                ),
+            ),
+            render((Panel p) {}).wrap(
+                render((GroupBox gb) {
+                    gb.caption = "EditLine";
+                }).wrap(
+                    render((EditLine ed) {
+                        ed.placeholder = "Name";
+                    }),
+                    render((EditLine ed) {
+                        ed.placeholder = "Password";
+                        ed.passwordChar = '•';
+                    }),
+                    render((EditLine ed) {
+                        ed.text = "Read-only";
+                        ed.readOnly = true;
+                    }),
+                ),
+                render((GroupBox gb) {
+                    gb.caption = "EditBox";
+                    gb.attributes["stretch"];
+                }).wrap(
+                    render((EditBox ed) {
+                        ed.content = st.content;
+                        ed.attributes["stretch"];
+                    })
+                ),
+            ),
+        );
+    }
+}
+
+class TabForEditors : Panel
+{
+    static class State : WidgetState
+    {
+        dstring text = "Single line editor sample text";
+        EditableContent content;
+
+        this()
+        {
+            content = new EditableContent;
+            content.text = q{#!/usr/bin/env rdmd
+void main()
+{
+    import std.stdio : writefln;
+    import std.algorithm.sorting : sort;
+    import std.range : chain;
+
+    int[] arr1 = [4, 9, 7];
+    int[] arr2 = [5, 2, 1, 10];
+    int[] arr3 = [6, 8, 3];
+    // @nogc functions are guaranteed by the compiler
+    // to be without any GC allocation
+    () @nogc {
+        sort(chain(arr1, arr2, arr3));
+    }();
+    writefln("%s\n%s\n%s\n", arr1, arr2, arr3);
+}
+}d;
+        }
+    }
+
+    override State createState()
+    {
+        return new State;
+    }
+
+    override void build()
+    {
+        State st = use!State;
+        wrap(
+            render((Label t) {
+                t.text = "EditLine: single-line editor";
+            }),
+            render((EditLineWithSettings ed) {
+                ed.text = st.text;
+                ed.onChange = (str) { setState(st.text, str); };
+            }),
+            render((Label t) {
+                t.text = "SourceEdit: multiline editor, for source code editing";
+            }),
+            render((SourceEditorWithSettings ed) {
+                ed.content = st.content;
+            }),
+            render((Label t) {
+                t.text = "EditBox: additional view on the same content";
+            }),
+            render((EditBox ed) {
+                ed.content = st.content; // view the same content as the first editor
+            }),
+        );
+    }
+}
+
+class EditLineWithSettings : Panel
+{
+    dstring text;
+    void delegate(dstring) onChange;
+
+    static class State : WidgetState
+    {
+        bool readOnly;
+        bool catchTabs;
+        int tabSize = 4;
+        FontFamily fontFamily = FontFamily.sans_serif;
+    }
+
+    override State createState()
+    {
+        return new State;
+    }
+
+    override void build()
+    {
+        State st = use!State;
+        wrap(
+            render((Panel p) {
+                p.attributes["settings"];
+            }).wrap(
+                render((CheckBox cb) {
+                    cb.text = "Read only";
+                    cb.checked = st.readOnly;
+                    cb.onToggle = (v) { setState(st.readOnly, v); };
+                }),
+                render((CheckBox cb) {
+                    cb.text = "Catch tabs";
+                    cb.checked = st.catchTabs;
+                    cb.onToggle = (v) { setState(st.catchTabs, v); };
+                }),
+                render((CheckBox cb) {
+                    cb.text = "Tab size 8";
+                    cb.checked = st.tabSize == 8;
+                    cb.onToggle = (v) { setState(st.tabSize, v ? 8 : 4); };
+                }),
+                render((CheckBox cb) {
+                    cb.text = "Fixed font";
+                    cb.checked = st.fontFamily == FontFamily.monospace;
+                    cb.onToggle = (v) { setState(st.fontFamily, v ? FontFamily.monospace : FontFamily.sans_serif); };
+                }),
+            ),
+            render((EditLine ed) {
+                ed.text = text;
+                ed.onChange = onChange;
+                ed.readOnly = st.readOnly;
+                ed.wantTabs = st.catchTabs;
+            }),
+        );
+    }
+}
+
+class SourceEditorWithSettings : Panel
+{
+    EditableContent content;
+
+    static class State : WidgetState
+    {
+        bool readOnly;
+        bool catchTabs = true;
+        int tabSize = 4;
+        FontFamily fontFamily = FontFamily.monospace;
+
+        bool useSpaces = true;
+        bool lineNumbers = true;
+    }
+
+    override State createState()
+    {
+        return new State;
+    }
+
+    override void build()
+    {
+        State st = use!State;
+        wrap(
+            render((Panel p) {
+                p.attributes["settings"];
+            }).wrap(
+                render((CheckBox cb) {
+                    cb.text = "Read only";
+                    cb.checked = st.readOnly;
+                    cb.onToggle = (v) { setState(st.readOnly, v); };
+                }),
+                render((CheckBox cb) {
+                    cb.text = "Catch tabs";
+                    cb.checked = st.catchTabs;
+                    cb.onToggle = (v) { setState(st.catchTabs, v); };
+                }),
+                render((CheckBox cb) {
+                    cb.text = "Tab size 8";
+                    cb.checked = st.tabSize == 8;
+                    cb.onToggle = (v) { setState(st.tabSize, v ? 8 : 4); };
+                }),
+                render((CheckBox cb) {
+                    cb.text = "Use spaces for indentation";
+                    cb.checked = st.useSpaces;
+                    cb.onToggle = (v) { setState(st.useSpaces, v); };
+                }),
+                render((CheckBox cb) {
+                    cb.text = "Show line numbers";
+                    cb.checked = st.lineNumbers;
+                    cb.onToggle = (v) { setState(st.lineNumbers, v); };
+                }),
+                render((CheckBox cb) {
+                    cb.text = "Fixed font";
+                    cb.checked = st.fontFamily == FontFamily.monospace;
+                    cb.onToggle = (v) { setState(st.fontFamily, v ? FontFamily.monospace : FontFamily.sans_serif); };
+                }),
+            ),
+            render((SourceEdit ed) {
+                ed.content = content;
+                ed.showIcons = true;
+                ed.readOnly = st.readOnly;
+                ed.wantTabs = st.catchTabs;
+                ed.useSpacesForTabs = st.useSpaces;
+                ed.showLineNumbers = st.lineNumbers;
+            }),
+        );
+    }
+}
+
+/// Simple charts
+class TabForCharts : Panel
+{
+    const c1 = NamedColor.tomato;
+    const c2 = NamedColor.lime_green;
+    const c3 = NamedColor.royal_blue;
+    const c4 = Color(230, 126, 34);
+
+    const values = [12.0, 24.0, 5.0, 10.0];
+
+    const bars = [
+        SimpleBar(c1, "Red bar"),
+        SimpleBar(c2, "Green bar"),
+        SimpleBar(c3, "Blue bar"),
+        SimpleBar(c4, "Orange bar"),
+    ];
+    const barsLong = [
+        SimpleBar(c1, "Red bar\nwith a long long long description"),
+        SimpleBar(c2, "Green bar\nwith a long long long description"),
+        SimpleBar(c3, "Blue bar\nwith a long long long description"),
+        SimpleBar(c4, "Orange bar\nwith a long long long description"),
+    ];
+
+    override void build()
+    {
+        wrap(
+            render((SimpleBarChart ch) {
+                ch.title = "SimpleBarChart with axis ratio 0.3";
+                ch.data = values;
+                ch.bars = bars;
+                ch.axisRatio = 0.3;
+            }),
+            render((SimpleBarChart ch) {
+                ch.title = "SimpleBarChart with long descriptions";
+                ch.data = values;
+                ch.bars = barsLong;
+            }),
+        );
+    }
+}
+/+
     //=========================================================================
     // create main menu
 
-    auto fileOpenAction = new Action("&Open", "document-open", Key.O, KeyMods.control);
     fileOpenAction.bind(frame, {
         auto dlg = new FileDialog("Open Text File"d, window);
         dlg.allowMultipleFiles = true;
@@ -165,37 +650,8 @@ int main()
 
     tabs = new TabWidget;
     tabs.onTabClose ~= (string tabID) { tabs.removeTab(tabID); };
-    tabs.onTabChange ~= (string newTabID, string oldTabID) {
-        window.title = tabs.tab(newTabID).text ~ " - controls overview - beamui"d;
-    };
 
-    // most of controls example
     {
-        auto controls = new Panel;
-            auto line1 = new Panel;
-                auto gb = new GroupBox("CheckBox"d);
-                auto gb2 = new GroupBox("RadioButton"d);
-                auto col1 = new Panel;
-                    auto gb3 = new GroupBox("Button"d, Orientation.horizontal);
-                    auto gb4 = new GroupBox("Button with icon and text"d, Orientation.horizontal);
-                    auto gbtext = new GroupBox("Label"d, Orientation.horizontal);
-                auto col2 = new Panel;
-                    auto gb21 = new GroupBox("Button with Action"d);
-                        auto btnToggle = new Button("Toggle action above"d, null, true);
-                    auto gb22 = new GroupBox("ImageWidget"d);
-                auto col3 = new Panel;
-                    auto gb31 = new GroupBox("SwitchButton"d);
-            auto line2 = new Panel;
-                auto gb5 = new GroupBox("Scrollbar, Slider, RangeSlider"d);
-                    auto sb = new ScrollBar(Orientation.horizontal);
-                    auto sl = new Slider;
-                    auto rsl = new RangeSlider;
-                auto gb6 = new GroupBox("EditLine"d);
-            auto line3 = new Panel;
-                auto gbeditbox = new GroupBox("EditBox"d);
-                    auto edbox = new EditBox("Some text in EditBox\nOne more line\nYet another text line");
-                auto gbtabs = new GroupBox("TabWidget"d);
-                    auto tabs1 = new TabWidget;
             auto line4 = new Panel;
                 auto gbgrid = new GroupBox("StringGridWidget"d);
                     auto grid = new StringGridWidget;
@@ -207,105 +663,7 @@ int main()
                             auto btnAddItem = new Button("Add"d);
                             auto btnRemoveItem = new Button("Remove"d);
 
-        with (controls) {
-            style.display = "column";
-            style.padding = 12;
-            add(line1, line2, line3, line4);
-            with (line1) {
-                style.display = "row";
-                add(gb, gb2, col1, col2, col3);
-                with (gb) {
-                    add(new CheckBox("CheckBox 1"d),
-                        new CheckBox("CheckBox 2"d).setChecked(true),
-                        new CheckBox("CheckBox disabled"d).setEnabled(false),
-                        new CheckBox("CheckBox disabled"d).setEnabled(false).setChecked(true));
-                }
-                with (gb2) {
-                    add(new RadioButton("RadioButton 1"d).setChecked(true),
-                        new RadioButton("RadioButton 2"d),
-                        new RadioButton("RadioButton disabled"d).setEnabled(false));
-                }
-                with (col1) {
-                    style.display = "column";
-                    add(gb3, gb4, gbtext);
-                    with (gb3) {
-                        add(new Button("Button"d),
-                            new Button("Button disabled"d).setEnabled(false));
-                    }
-                    with (gb4) {
-                        add(new Button("Enabled"d, "document-open"),
-                            new Button("Disabled"d, "document-save").setEnabled(false));
-                    }
-                    with (gbtext) {
-                        auto l1 = new Label("Red text"d);
-                        auto l2 = new Label("Italic text"d);
-                        l1.style.fontSize = 18;
-                        l1.style.textColor = Color(0xFF0000);
-                        l2.style.fontSize = 18;
-                        l2.style.fontItalic = true;
-                        add(l1, l2);
-                    }
-                }
-                with (col2) {
-                    style.display = "column";
-                    add(gb21, gb22);
-                    with (gb21) {
-                        auto btn = new Button(fileOpenAction);
-                        btn.style.display = "column";
-                        add(btn, btnToggle);
-                    }
-                    with (gb22) {
-                        add(new ImageWidget("cr3_logo"));
-                    }
-                }
-                with (col3) {
-                    style.display = "column";
-                    add(gb31);
-                    with (gb31) {
-                        add(new SwitchButton(),
-                            new SwitchButton().setChecked(true),
-                            new SwitchButton().setEnabled(false),
-                            new SwitchButton().setEnabled(false).setChecked(true));
-                    }
-                }
-            }
-            with (line2) {
-                style.display = "row";
-                add(gb5, gb6);
-                gb5.style.stretch = Stretch.both;
-                gb5.add(sb, sl, rsl);
-                with (gb6) {
-                    auto ed1 = new EditLine("Some text"d);
-                    auto ed2 = new EditLine("Some text"d);
-                    ed1.style.minWidth = 150;
-                    ed2.style.minWidth = 150;
-                    ed1.placeholder = "I am a placeholder";
-                    ed2.readOnly = true;
-                    add(ed1, ed2);
-                }
-            }
-            with (line3) {
-                style.display = "row";
-                add(gbeditbox, gbtabs);
-                with (gbeditbox) {
-                    add(edbox);
-                    gbeditbox.style.stretch = Stretch.both;
-                    edbox.style.stretch = Stretch.both;
-                }
-                with (gbtabs) {
-                    add(tabs1);
-                    with (tabs1) {
-                        tabHost.style.padding = 10;
-                        tabHost.style.backgroundColor = Color(0xE0E0E0);
-                        auto tab1 = new Label("Label on tab page\nLabels can be\nMultiline"d);
-                        auto tab2 = new ImageWidget("beamui-logo");
-                        addTab(tab1.setID("tab1"), "Tab 1"d);
-                        addTab(tab2.setID("tab2"), "Tab 2"d);
-                    }
-                }
-            }
             with (line4) {
-                style.display = "row";
                 add(gbgrid, gbtree);
                 with (gbgrid) {
                     add(grid);
@@ -326,20 +684,6 @@ int main()
                     }
                 }
             }
-        }
-
-        btnToggle.checked = fileOpenAction.enabled;
-        btnToggle.onClick ~= {
-            fileOpenAction.enabled = !fileOpenAction.enabled;
-        };
-
-        sb.onScroll ~= (ScrollEvent event) { Log.d("scrollbar: ", event.action); };
-        sl.data.onChange ~= { Log.d("slider: ", sl.data.value); };
-        rsl.data.onChange ~= { Log.fd("range-slider: (%s, %s)", rsl.data.first, rsl.data.second); };
-        sl.data.setRange(-0.75, 0.75, 0.1);
-        rsl.data.setRange(0, 10, 0.01);
-        rsl.data.setValues(2, 4);
-        rsl.pageStep = 100;
 
         import std.random : uniform;
 
@@ -409,21 +753,6 @@ int main()
         tree.onSelect ~= (TreeItem item, bool) {
             btnRemoveItem.enabled = item !is null;
         };
-
-        tabs.addTab(controls.setID("CONTROLS"), "Controls");
-    }
-
-    // indicators
-    {
-        auto indicators = new Panel;
-        indicators.style.display = "column";
-
-        auto pb = new ProgressBar;
-        pb.data.progress = 250;
-        pb.animationInterval = 50;
-        indicators.add(pb);
-
-        tabs.addTab(indicators.setID("INDICATORS"), "Indicators");
     }
 
     // two long lists
@@ -483,7 +812,6 @@ int main()
     }
 
     tabs.addTab(createFormTab(), "Form");
-    tabs.addTab(createEditorsTab(), "Editors");
 
     // string grid
     {
@@ -546,20 +874,11 @@ int main()
         tabs.addTab(gridTab.setID("GRID"), "Grid");
     }
 
-    tabs.addTab(createChartsTab(), "Charts");
-
     //==========================================================================
 
     tabs.selectTab("CONTROLS");
     tabs.style.stretch = Stretch.both;
     frame.add(tabs);
-
-    window.mainWidget = frame;
-    static if (BACKEND_GUI)
-        window.icon = imageCache.get("beamui-logo");
-    window.show();
-
-    return platform.enterMessageLoop();
 }
 
 Widget createFormTab()
@@ -600,172 +919,35 @@ Widget createFormTab()
     return form;
 }
 
-Widget createEditorsTab()
+Widget createTabForEditors()
 {
-    const dstring sourceCode = q{#!/usr/bin/env rdmd
-void main()
-{
-    import std.stdio : writefln;
-    import std.algorithm.sorting : sort;
-    import std.range : chain;
-
-    int[] arr1 = [4, 9, 7];
-    int[] arr2 = [5, 2, 1, 10];
-    int[] arr3 = [6, 8, 3];
-    // @nogc functions are guaranteed by the compiler
-    // to be without any GC allocation
-    () @nogc {
-        sort(chain(arr1, arr2, arr3));
-    }();
-    writefln("%s\n%s\n%s\n", arr1, arr2, arr3);
-}
-}d;
-
     // create popup menu for edit widgets
     auto editorPopupMenu = new Menu;
     editorPopupMenu.add(ACTION_UNDO, ACTION_REDO, ACTION_CUT, ACTION_COPY, ACTION_PASTE);
 
-    auto frame = new Panel("EDITORS");
-        auto editLineLabel = new Label("EditLine: Single line editor"d);
-        auto editorLabel1 = new Label("SourceEdit: multiline editor, for source code editing"d);
-        auto editorLabel2 = new Label("SourceEdit: additional view on the same content"d);
-
-        auto editLine = new EditLine("Single line editor sample text"d);
-        auto sourceEditor1 = new SourceEdit;
-        auto sourceEditor2 = new SourceEdit;
-
-        auto editLineControl = createEditLineSettingsControl(editLine);
-        auto editorControl = createSourceEditorSettingsControl(sourceEditor1);
-
-    with (frame) {
-        style.display = "column";
-        add(editLineLabel, editLineControl, editLine);
-        add(editorLabel1, editorControl, sourceEditor1);
-        add(editorLabel2, sourceEditor2);
-    }
     with (editLine) {
         popupMenu = editorPopupMenu;
     }
     with (sourceEditor1) {
-        style.stretch = Stretch.both;
-        text = sourceCode;
         popupMenu = editorPopupMenu;
-        showIcons = true;
     }
-    with (sourceEditor2) {
-        style.stretch = Stretch.both;
-        content = sourceEditor1.content; // view the same content as first editbox
-    }
-
-    return frame;
 }
 
 Widget createEditLineSettingsControl(EditLine editor)
 {
-    auto row = new Panel;
-    auto cb1 = new CheckBox("Read only");
-    auto cb2 = new CheckBox("Catch tabs");
-    auto cb3 = new CheckBox("Tab size 8");
-    auto cb4 = new CheckBox("Fixed font");
-    row.add(cb1, cb2, cb3, cb4);
-    row.style.display = "row";
-
-    cb1.checked = editor.readOnly;
-    cb2.checked = editor.wantTabs;
-    cb3.checked = editor.style.tabSize == 8;
     cb4.checked = editor.style.fontFamily == FontFamily.monospace;
-    cb1.onToggle ~= &editor.readOnly;
-    cb2.onToggle ~= (checked) { editor.wantTabs = checked; };
-    cb3.onToggle ~= (checked) { editor.style.tabSize = checked ? 8 : 4; };
     cb4.onToggle ~= (checked) {
         editor.style.fontFace = checked ? "Courier New" : "Arial";
         editor.style.fontFamily = checked ? FontFamily.monospace : FontFamily.sans_serif;
     };
-
-    return row;
 }
 
 Widget createSourceEditorSettingsControl(SourceEdit editor)
 {
-    auto row = new Panel;
-    auto cb1 = new CheckBox("Read only");
-    auto cb2 = new CheckBox("Catch tabs");
-    auto cb3 = new CheckBox("Tab size 8");
-    auto cb4 = new CheckBox("Use spaces for indentation");
-    auto cb5 = new CheckBox("Show line numbers");
-    auto cb6 = new CheckBox("Fixed font");
-    row.add(cb1, cb2, cb3, cb4, cb5, cb6);
-    row.style.display = "row";
-
-    cb1.checked = editor.readOnly;
-    cb2.checked = editor.wantTabs;
-    cb3.checked = editor.tabSize == 8;
-    cb4.checked = editor.useSpacesForTabs;
-    cb5.checked = editor.showLineNumbers;
     cb6.checked = editor.style.fontFamily == FontFamily.monospace;
-    cb1.onToggle ~= &editor.readOnly;
-    cb2.onToggle ~= (checked) { editor.wantTabs = checked; };
-    cb3.onToggle ~= (checked) { editor.tabSize = checked ? 8 : 4; };
-    cb4.onToggle ~= &editor.useSpacesForTabs;
-    cb5.onToggle ~= &editor.showLineNumbers;
     cb6.onToggle ~= (checked) {
         editor.style.fontFace = checked ? "Courier New" : "Arial";
         editor.style.fontFamily = checked ? FontFamily.monospace : FontFamily.sans_serif;
     };
-    return row;
-}
-
-/// Simple charts
-Widget createChartsTab()
-{
-    const c1 = NamedColor.tomato;
-    const c2 = NamedColor.lime_green;
-    const c3 = NamedColor.royal_blue;
-    const c4 = Color(230, 126, 34);
-
-    const values = [12.0, 24.0, 5.0, 10.0];
-
-    auto barChart1 = new SimpleBarChart("SimpleBarChart"d);
-    auto barChart2 = new SimpleBarChart("SimpleBarChart - long descriptions"d);
-    auto barChart3 = new SimpleBarChart("SimpleBarChart with axis ratio 0.3"d);
-    auto barChart4 = new SimpleBarChart("SimpleBarChart with axis ratio 1.3"d);
-    barChart1.setValues(values);
-    barChart2.setValues(values);
-    barChart3.setValues(values);
-    barChart4.setValues(values);
-    barChart1.updateBar(0, c1, "Red bar"d);
-    barChart1.updateBar(1, c2, "Green bar"d);
-    barChart1.updateBar(2, c3, "Blue bar"d);
-    barChart1.updateBar(3, c4, "Orange bar"d);
-    barChart2.updateBar(0, c1, "Red bar\nwith a long long long description"d);
-    barChart2.updateBar(1, c2, "Green bar\nwith a long long long description"d);
-    barChart2.updateBar(2, c3, "Blue bar\nwith a long long long description"d);
-    barChart2.updateBar(3, c4, "Orange bar\nwith a long long long description"d);
-    barChart3.updateBar(0, c1, "Red bar"d);
-    barChart3.updateBar(1, c2, "Green bar"d);
-    barChart3.updateBar(2, c3, "Blue bar"d);
-    barChart3.updateBar(3, c4, "Orange bar"d);
-    barChart4.updateBar(0, c1, "Red bar"d);
-    barChart4.updateBar(1, c2, "Green bar"d);
-    barChart4.updateBar(2, c3, "Blue bar"d);
-    barChart4.updateBar(3, c4, "Orange bar"d);
-    barChart3.axisRatio = 0.3;
-    barChart4.axisRatio = 1.3;
-
-    auto frame = new Panel("CHARTS");
-    frame.add(barChart1, barChart2, barChart3, barChart4);
-
-    setStyleSheet(currentTheme, `
-    TabHost > #CHARTS {
-        display: grid;
-        grid-template-columns: auto auto;
-        grid-template-rows: auto auto;
-        grid-auto-flow: column;
-        justify-items: start;
-        align-items: start;
-    }
-    `);
-
-    return frame;
 }
 +/

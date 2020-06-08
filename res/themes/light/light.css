@@ -30,6 +30,12 @@ Link > ButtonLike:hovered > .label { text-decoration: underline; }
 
 Link > ButtonLike:not(enabled) { color: rgba(192, 192, 255, 0.7); }
 
+Link > Label { color: #4169e1; text-overflow: ellipsis-middle; }
+
+Link:hovered > Label { text-decoration: underline; }
+
+Link:not(enabled) > Label { color: rgba(192, 192, 255, 0.7); }
+
 CheckBox, RadioButton { align-items: center; padding: 2px; }
 
 CheckBox > .label, RadioButton > .label { flex: 1; padding: 0; text-hotkey: underline-on-alt; text-overflow: ellipsis; }
