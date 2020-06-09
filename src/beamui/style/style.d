@@ -22,7 +22,6 @@ import beamui.graphics.drawables : BorderStyle, BoxShadowDrawable, BoxType, Draw
 import beamui.layout.alignment : Align, AlignItem, Distribution, Stretch;
 import beamui.layout.flex : FlexDirection, FlexWrap;
 import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
-import beamui.style.computed_style : getCSSName, getSpecialCSSType, StyleProperty;
 import beamui.style.decode_css;
 import beamui.style.property;
 import beamui.style.selector;
