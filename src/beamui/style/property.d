@@ -298,8 +298,10 @@ package struct StylePropertyList
 
     void set(T)(StyleProperty ptype, T v)
     {
+        import std.traits : Unqual;
+
         BuiltinPropertyValue value;
-        mixin("value._" ~ T.stringof) = v;
+        mixin("value._" ~ (Unqual!T).stringof) = v;
 
         if (!pointers[ptype])
         {
