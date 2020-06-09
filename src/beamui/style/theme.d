@@ -296,13 +296,8 @@ void applyAtRule(Theme theme, const CSS.AtRule rule, string ns)
 void applyRule(Theme theme, Decoder[string] decoders, const CSS.Selector selector,
         const CSS.Property[] properties, string ns)
 {
-    // find style
     auto style = theme.get(*makeSelector(selector), ns);
-    foreach (p; properties)
-    {
-        assert(p.value.length > 0);
-        style.setRawProperty(p.name, p.value);
-    }
+    appendStyleDeclaration(style._props, decoders, properties);
 }
 
 Selector* makeSelector(const CSS.Selector selector)
@@ -464,9 +459,8 @@ Nullable!(Selector.Combinator) makeSelectorPart(Selector* sel, ref const(CSS.Sel
     return result;
 }
 
-StylePropertyList makeStyleDeclaration(Decoder[string] decoders, const CSS.Property[] props)
+void appendStyleDeclaration(ref StylePropertyList list, Decoder[string] decoders, const CSS.Property[] props)
 {
-    StylePropertyList list;
     foreach (p; props)
     {
         assert(p.value.length);
@@ -477,7 +471,6 @@ StylePropertyList makeStyleDeclaration(Decoder[string] decoders, const CSS.Prope
         else
             Log.fe("CSS(%d): unknown property '%s'", p.value[0].line, p.name);
     }
-    return list;
 }
 
 Decoder[string] createDecoders()
@@ -491,6 +484,7 @@ Decoder[string] createDecoders()
         map[cssname] = &decodeLonghand!(ptype, typeof(p));
     }}
 
+    // explode shorthands
     map["margin"] = &decodeShorthandMargin;
     map["padding"] = &decodeShorthandPadding;
     map["place-content"] = &decodeShorthandPlaceContent;

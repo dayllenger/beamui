@@ -197,8 +197,6 @@ struct ComputedStyle
         enum bits = StyleProperty.max + 1;
         /// Inherits value from the parent element
         size_t[bits / (8 * size_t.sizeof) + 1] inheritBitArray;
-        /// Overriden by user
-        size_t[bits / (8 * size_t.sizeof) + 1] overridenBitArray;
 
         // layout
         string _display;
@@ -311,14 +309,6 @@ struct ComputedStyle
         CursorType _cursor = CursorType.automatic;
     }
 
-    ~this()
-    {
-        if (overrides(StyleProperty.boxShadow))
-            eliminate(_boxShadow);
-        if (overrides(StyleProperty.bgImage))
-            eliminate(_bgImage);
-    }
-
     private LayoutLength applyEM(Length value) const
     {
         const LayoutLength ll = value.toLayout;
@@ -354,72 +344,61 @@ struct ComputedStyle
         debug (styles)
             Log.d("--- Recomputing style for ", element.dbgname, " ---");
 
-        // explode shorthands first
-        foreach_reverse (st; chain)
-            explodeShorthands(st);
-
         // find that we are not tied, being the root of style scope
         Element parent = element.parent;
         const bool hasParent = parent && !isolated;
         /// iterate through all properties
         static foreach (name; __traits(allMembers, StyleProperty))
         {{
-            alias T = typeof(mixin(`_` ~ name));
             enum ptype = mixin(`StyleProperty.` ~ name);
-            enum specialCSSType = getSpecialCSSType(ptype);
-            enum cssname = StrHash(getCSSName(ptype));
             enum bool inheritsByDefault = isInherited(ptype);
 
-            const setByUser = overrides(ptype);
-            bool setInStyles;
-            // search in style chain if not overriden
-            if (!setByUser)
+            // search in style chain, find nearest written property
+            bool inh, set;
+            foreach_reverse (st; chain)
             {
-                bool inh;
-                // find nearest written property
-                foreach_reverse (st; chain)
+                auto plist = &st._props;
+
+                static if (!inheritsByDefault)
                 {
-                    static if (!inheritsByDefault)
+                    if (plist.isInherited(ptype))
                     {
-                        if (st.isInherited(cssname))
-                        {
-                            inh = true;
-                            setInStyles = true;
-                            break;
-                        }
-                    }
-                    if (st.isInitial(cssname))
-                    {
-                        setDefault!name(false);
-                        setInStyles = true;
-                        break;
-                    }
-                    // get value here, also pass predicate that checks sanity of value
-                    if (auto p = st.peek!(T, specialCSSType)(cssname, &sanitizeProperty!(ptype, T)))
-                    {
-                        setProperty!name(*p, false);
-                        setInStyles = true;
+                        inh = set = true;
                         break;
                     }
                 }
-                // set/reset 'inherit' flag
-                if (inh || inheritsByDefault && !setInStyles)
-                    bts(inheritBitArray.ptr, ptype);
-                else
-                    btr(inheritBitArray.ptr, ptype);
+                if (plist.isInitial(ptype))
+                {
+                    setDefault!name();
+                    set = true;
+                    break;
+                }
+                // get value here
+                if (auto p = plist.peek!name)
+                {
+                    setProperty!name(*p);
+                    set = true;
+                    break;
+                }
             }
+            // set/reset 'inherit' flag
+            if (inh || inheritsByDefault && !set)
+                bts(inheritBitArray.ptr, ptype);
+            else
+                btr(inheritBitArray.ptr, ptype);
+
             // resolve inherited properties
-            if (!setByUser && inherits(ptype))
+            if (inherits(ptype))
             {
                 if (hasParent)
-                    setProperty!name(mixin(`parent.style._` ~ name), false);
+                    setProperty!name(mixin(`parent.style._` ~ name));
                 else
-                    setDefault!name(false);
+                    setDefault!name();
             }
-            else if (!setByUser && !setInStyles)
+            else if (!set)
             {
                 // if nothing there - return value to defaults
-                setDefault!name(false);
+                setDefault!name();
             }
         }}
         // set inherited properties in descendant elements. TODO: optimize, consider recursive updates
@@ -431,7 +410,7 @@ struct ComputedStyle
                 static foreach (name; __traits(allMembers, StyleProperty))
                 {{
                     if (st.inherits(mixin(`StyleProperty.` ~ name)))
-                        st.setProperty!name(mixin("_" ~ name), false);
+                        st.setProperty!name(mixin("_" ~ name));
                 }}
             }
         }
@@ -443,21 +422,6 @@ struct ComputedStyle
     private bool inherits(StyleProperty ptype)
     {
         return bt(inheritBitArray.ptr, ptype) != 0;
-    }
-
-    private bool overrides(StyleProperty ptype)
-    {
-        return bt(overridenBitArray.ptr, ptype) != 0;
-    }
-
-    private void overrideProperty(StyleProperty ptype)
-    {
-        bts(overridenBitArray.ptr, ptype);
-    }
-
-    private bool sanitizeProperty(StyleProperty ptype, T)(ref const(T) value)
-    {
-        return .sanitizeProperty!ptype(value);
     }
 
     /// Check whether the style can make transition for a CSS property
@@ -510,7 +474,7 @@ struct ComputedStyle
         return false;
     }
 
-    private void setDefault(string name)(bool byUser)
+    private void setDefault(string name)()
     {
         enum ptype = mixin(`StyleProperty.` ~ name);
 
@@ -522,22 +486,19 @@ struct ComputedStyle
             ptype == StyleProperty.textDecorColor)
         {
             // must be computed before
-            setProperty!name(_textColor, byUser);
+            setProperty!name(_textColor);
         }
         else
-            setProperty!name(mixin(`defaults._` ~ name), byUser);
+            setProperty!name(mixin(`defaults._` ~ name));
     }
 
     /// Set a property value, taking transitions into account
-    private void setProperty(string name, T)(T newValue, bool byUser = true)
+    private void setProperty(string name, T)(T newValue)
     {
         import std.meta : Alias;
 
         alias field = Alias!(mixin("_" ~ name));
         enum ptype = mixin(`StyleProperty.` ~ name);
-
-        if (byUser)
-            overrideProperty(ptype);
 
         // do nothing if changed nothing
         if (field is newValue)
@@ -563,17 +524,6 @@ struct ComputedStyle
         field = newValue;
         // invoke side effects
         element.handleStyleChange(ptype);
-        // set inherited properties in descendant elements
-        if (byUser)
-        {
-            foreach (child; element)
-            {
-                ComputedStyle* st = child.style;
-                if (!st.isolated && st.inherits(ptype))
-                    st.setProperty!name(newValue, false);
-            }
-        }
-        // else: handled in `recompute`
     }
 
     private void animateProperty(string name, T)(T ending)
@@ -593,155 +543,4 @@ struct ComputedStyle
             }
         );
     }
-}
-
-private void explodeShorthands(Style st)
-{
-    static immutable margin = ShorthandInsets(
-        StrHash("margin"),
-        StrHash("margin-top"),
-        StrHash("margin-right"),
-        StrHash("margin-bottom"),
-        StrHash("margin-left"));
-    static immutable padding = ShorthandInsets(
-        StrHash("padding"),
-        StrHash("padding-top"),
-        StrHash("padding-right"),
-        StrHash("padding-bottom"),
-        StrHash("padding-left"));
-    static immutable placeContent = ShorthandPair!Distribution(
-        StrHash("place-content"),
-        StrHash("align-content"),
-        StrHash("justify-content"));
-    static immutable placeItems = ShorthandPair!AlignItem(
-        StrHash("place-items"),
-        StrHash("align-items"),
-        StrHash("justify-items"));
-    static immutable placeSelf = ShorthandPair!AlignItem(
-        StrHash("place-self"),
-        StrHash("align-self"),
-        StrHash("justify-self"));
-    static immutable gap = ShorthandPair!Length(
-        StrHash("gap"),
-        StrHash("row-gap"),
-        StrHash("column-gap"));
-    static immutable flexFlow = ShorthandFlexFlow(
-        StrHash("flex-flow"),
-        StrHash("flex-direction"),
-        StrHash("flex-wrap"));
-    static immutable flex = ShorthandFlex(
-        StrHash("flex"),
-        StrHash("flex-grow"),
-        StrHash("flex-shrink"),
-        StrHash("flex-basis"));
-    static immutable gridArea = ShorthandGridArea(
-        StrHash("grid-area"),
-        StrHash("grid-row-start"),
-        StrHash("grid-row-end"),
-        StrHash("grid-column-start"),
-        StrHash("grid-column-end"));
-    static immutable gridRow = ShorthandGridLine(
-        StrHash("grid-row"),
-        StrHash("grid-row-start"),
-        StrHash("grid-row-end"));
-    static immutable gridColumn = ShorthandGridLine(
-        StrHash("grid-column"),
-        StrHash("grid-column-start"),
-        StrHash("grid-column-end"));
-    static immutable bg = ShorthandDrawable(
-        StrHash("background"),
-        StrHash("background-color"),
-        StrHash("background-image"));
-    static immutable border = ShorthandBorder(
-        StrHash("border"),
-        StrHash("border-top-width"),
-        StrHash("border-top-style"),
-        StrHash("border-top-color"),
-        StrHash("border-right-width"),
-        StrHash("border-right-style"),
-        StrHash("border-right-color"),
-        StrHash("border-bottom-width"),
-        StrHash("border-bottom-style"),
-        StrHash("border-bottom-color"),
-        StrHash("border-left-width"),
-        StrHash("border-left-style"),
-        StrHash("border-left-color"));
-    static immutable borderWidth = ShorthandInsets(
-        StrHash("border-width"),
-        StrHash("border-top-width"),
-        StrHash("border-right-width"),
-        StrHash("border-bottom-width"),
-        StrHash("border-left-width"));
-    static immutable borderStyle = ShorthandBorderStyle(
-        StrHash("border-style"),
-        StrHash("border-top-style"),
-        StrHash("border-right-style"),
-        StrHash("border-bottom-style"),
-        StrHash("border-left-style"));
-    static immutable borderColor = ShorthandColors(
-        StrHash("border-color"),
-        StrHash("border-top-color"),
-        StrHash("border-right-color"),
-        StrHash("border-bottom-color"),
-        StrHash("border-left-color"));
-    static immutable borderTop = ShorthandBorderSide(
-        StrHash("border-top"),
-        StrHash("border-top-width"),
-        StrHash("border-top-style"),
-        StrHash("border-top-color"));
-    static immutable borderRight = ShorthandBorderSide(
-        StrHash("border-right"),
-        StrHash("border-right-width"),
-        StrHash("border-right-style"),
-        StrHash("border-right-color"),);
-    static immutable borderBottom = ShorthandBorderSide(
-        StrHash("border-bottom"),
-        StrHash("border-bottom-width"),
-        StrHash("border-bottom-style"),
-        StrHash("border-bottom-color"));
-    static immutable borderLeft = ShorthandBorderSide(
-        StrHash("border-left"),
-        StrHash("border-left-width"),
-        StrHash("border-left-style"),
-        StrHash("border-left-color"));
-    static immutable borderRadii = ShorthandInsets(
-        StrHash("border-radius"),
-        StrHash("border-top-left-radius"),
-        StrHash("border-top-right-radius"),
-        StrHash("border-bottom-left-radius"),
-        StrHash("border-bottom-right-radius"));
-    static immutable textDecor = ShorthandTextDecor(
-        StrHash("text-decoration"),
-        StrHash("text-decoration-line"),
-        StrHash("text-decoration-color"),
-        StrHash("text-decoration-style"));
-    static immutable transition = ShorthandTransition(
-        StrHash("transition"),
-        StrHash("transition-property"),
-        StrHash("transition-duration"),
-        StrHash("transition-timing-function"),
-        StrHash("transition-delay"));
-    st.explode(margin);
-    st.explode(padding);
-    st.explode(placeContent);
-    st.explode(placeItems);
-    st.explode(placeSelf);
-    st.explode(gap);
-    st.explode(flexFlow);
-    st.explode(flex);
-    st.explode(gridArea);
-    st.explode(gridRow);
-    st.explode(gridColumn);
-    st.explode(bg);
-    st.explode(border);
-    st.explode(borderWidth);
-    st.explode(borderStyle);
-    st.explode(borderColor);
-    st.explode(borderTop);
-    st.explode(borderRight);
-    st.explode(borderBottom);
-    st.explode(borderLeft);
-    st.explode(borderRadii);
-    st.explode(textDecor);
-    st.explode(transition);
 }

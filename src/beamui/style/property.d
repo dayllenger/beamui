@@ -182,8 +182,8 @@ package struct PropTypes
     float flexShrink;
     Length flexBasis;
     // grid-specific
-    // TrackSize[] gridTemplateRows;
-    // TrackSize[] gridTemplateColumns;
+    TrackSize[] gridTemplateRows;
+    TrackSize[] gridTemplateColumns;
     GridNamedAreas gridTemplateAreas;
     GridFlow gridAutoFlow;
     TrackSize gridAutoRows;
@@ -248,65 +248,96 @@ package struct PropTypes
     CursorType cursor;
 }
 
-package union BuiltinPropertyValue
+private union BuiltinPropertyValue
 {
-    Align _Align;
-    AlignItem _AlignItem;
-    BgPositionRaw _BgPositionRaw;
-    BgSizeRaw _BgSizeRaw;
-    BlendMode _BlendMode;
-    BorderStyle _BorderStyle;
-    BoxShadowDrawable _BoxShadowDrawable;
-    BoxType _BoxType;
-    Color _Color;
-    CursorType _CursorType;
-    Distribution _Distribution;
-    Drawable _Drawable;
-    FlexDirection _FlexDirection;
-    FlexWrap _FlexWrap;
-    float _float;
-    FontFamily _FontFamily;
-    FontStyle _FontStyle;
-    GridFlow _GridFlow;
-    GridLineName _GridLineName;
-    GridNamedAreas _GridNamedAreas;
-    int _int;
-    Length _Length;
-    RepeatStyle _RepeatStyle;
-    Stretch _Stretch;
-    string _string;
-    TabSize _TabSize;
-    TextAlign _TextAlign;
-    TextDecorLine _TextDecorLine;
-    TextDecorStyle _TextDecorStyle;
-    TextHotkey _TextHotkey;
-    TextOverflow _TextOverflow;
-    TextTransform _TextTransform;
-    TimingFunction _TimingFunction;
-    TrackSize _TrackSize;
-    uint _uint;
-    ushort _ushort;
-    WhiteSpace _WhiteSpace;
+    import std.meta : AliasSeq;
+
+    static foreach (T; AliasSeq!(
+        Align,
+        AlignItem,
+        BgPositionRaw,
+        BgSizeRaw,
+        BlendMode,
+        BorderStyle,
+        BoxShadowDrawable,
+        BoxType,
+        Color,
+        CursorType,
+        Distribution,
+        Drawable,
+        FlexDirection,
+        FlexWrap,
+        float,
+        FontFamily,
+        FontStyle,
+        GridFlow,
+        GridLineName,
+        GridNamedAreas,
+        int,
+        Length,
+        RepeatStyle,
+        Stretch,
+        string,
+        TabSize,
+        TextAlign,
+        TextDecorLine,
+        TextDecorStyle,
+        TextHotkey,
+        TextOverflow,
+        TextTransform,
+        TimingFunction,
+        TrackSize,
+        TrackSize[],
+        uint,
+        ushort,
+        WhiteSpace,
+    ))
+    {
+        mixin(`T ` ~ T.mangleof ~ `;`);
+    }
 }
 
 package struct StylePropertyList
 {
-    enum Pointer : ubyte { none, inherit, initial, some }
+    import std.traits : Unqual;
 
-    BuiltinPropertyValue[] values;
-    Pointer[StyleProperty.max + 1] pointers;
+    private enum Pointer : ubyte { none, inherit, initial, some }
+
+    private BuiltinPropertyValue[] values;
+    private Pointer[StyleProperty.max + 1] pointers;
+
+    /// Try to get value of a property by exact name. Returns a pointer to it or `null`
+    auto peek(string name)()
+    {
+        alias T = typeof(mixin(`PropTypes.` ~ name));
+        enum ptype = mixin(`StyleProperty.` ~ name);
+
+        const ptr = pointers[ptype];
+        if (ptr >= Pointer.some)
+            return mixin(`&values[ptr - Pointer.some].` ~ Unqual!T.mangleof);
+        return null;
+    }
+
+    /// Returns true if `property` is set to 'inherit'
+    bool isInherited(StyleProperty property)
+    {
+        return pointers[property] == Pointer.inherit;
+    }
+    /// Returns true if `property` is set to 'initial'
+    bool isInitial(StyleProperty property)
+    {
+        return pointers[property] == Pointer.initial;
+    }
 
     void set(T)(StyleProperty ptype, T v)
     {
-        import std.traits : Unqual;
-
         BuiltinPropertyValue value;
-        mixin("value._" ~ (Unqual!T).stringof) = v;
+        mixin("value." ~ (Unqual!T).mangleof) = v;
 
-        if (!pointers[ptype])
+        if (pointers[ptype] < Pointer.some)
         {
+            pointers[ptype] = cast(Pointer)(values.length + Pointer.some);
             values ~= value;
-            pointers[ptype] = cast(Pointer)values.length;
         }
         else
         {
