@@ -201,7 +201,7 @@ class TreeItemWidget : TreeItemWidgetBase
     {
         super.updateElement(el);
 
-        el.style.marginLeft = _level * el.font.size * 2;
+        // el.style.marginLeft = _level * el.font.size * 2;
 
         el.onClick.clear();
         el.onClick ~= &select;

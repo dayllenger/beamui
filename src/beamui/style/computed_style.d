@@ -145,467 +145,83 @@ private ComputedStyle defaults;
 
 struct ComputedStyle
 {
-    @property // written mostly at single line for compactness
+    @property
     {
-        /// A kind of layout this widget may apply to its children list
         string display() const { return _display; }
-        /// ditto
-        void display(string name) { setProperty!"display" = name; }
 
-        /// Widget natural (preferred) width (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength width() const { return applyEM(_width); }
-        /// ditto
-        void width(Length len) { setProperty!"width" = len; }
-        /// ditto
-        void width(float px) { setProperty!"width" = Length.px(px); }
-        /// Widget natural (preferred) height (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength height() const { return applyEM(_height); }
-        /// ditto
-        void height(Length len) { setProperty!"height" = len; }
-        /// ditto
-        void height(float px) { setProperty!"height" = Length.px(px); }
 
-        /// Widget min width constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength minWidth() const { return applyEM(_minWidth); }
-        /// ditto
-        void minWidth(Length len) { setProperty!"minWidth" = len; }
-        /// ditto
-        void minWidth(float px) { setProperty!"minWidth" = Length.px(px); }
-        /// Widget min height constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength minHeight() const { return applyEM(_minHeight); }
-        /// ditto
-        void minHeight(Length len) { setProperty!"minHeight" = len; }
-        /// ditto
-        void minHeight(float px) { setProperty!"minHeight" = Length.px(px); }
 
-        /// Widget max width constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength maxWidth() const { return applyEM(_maxWidth); }
-        /// ditto
-        void maxWidth(Length len) { setProperty!"maxWidth" = len; }
-        /// ditto
-        void maxWidth(float px) { setProperty!"maxWidth" = Length.px(px); }
-        /// Widget max height constraint (`SIZE_UNSPECIFIED` or `Length.none` to unset)
         LayoutLength maxHeight() const { return applyEM(_maxHeight); }
-        /// ditto
-        void maxHeight(Length len) { setProperty!"maxHeight" = len; }
-        /// ditto
-        void maxHeight(float px) { setProperty!"maxHeight" = Length.px(px); }
 
-        /// Padding (between background bounds and content of widget)
         Insets padding() const
         {
             return Insets(applyOnlyEM(_paddingTop), applyOnlyEM(_paddingRight),
                           applyOnlyEM(_paddingBottom), applyOnlyEM(_paddingLeft));
         }
-        /// ditto
-        void padding(Insets px4)
-        {
-            if (isDefinedSize(px4.top))
-                setProperty!"paddingTop" = Length.px(px4.top);
-            if (isDefinedSize(px4.right))
-                setProperty!"paddingRight" = Length.px(px4.right);
-            if (isDefinedSize(px4.bottom))
-                setProperty!"paddingBottom" = Length.px(px4.bottom);
-            if (isDefinedSize(px4.left))
-                setProperty!"paddingLeft" = Length.px(px4.left);
-        }
-        /// ditto
-        void padding(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"paddingTop" = len;
-            setProperty!"paddingRight" = len;
-            setProperty!"paddingBottom" = len;
-            setProperty!"paddingLeft" = len;
-        }
-        /// ditto
-        void padding(float px) { padding = Length.px(px); }
-        /// Top padding value
-        float paddingTop() const { return applyOnlyEM(_paddingTop); }
-        /// ditto
-        void paddingTop(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"paddingTop" = len;
-        }
-        /// ditto
-        void paddingTop(float px)
-        {
-            assert(isDefinedSize(px));
-            paddingTop = Length.px(px);
-        }
-        /// Right padding value
-        float paddingRight() const { return applyOnlyEM(_paddingRight); }
-        /// ditto
-        void paddingRight(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"paddingRight" = len;
-        }
-        /// ditto
-        void paddingRight(float px)
-        {
-            assert(isDefinedSize(px));
-            paddingRight = Length.px(px);
-        }
-        /// Bottom padding value
-        float paddingBottom() const { return applyOnlyEM(_paddingBottom); }
-        /// ditto
-        void paddingBottom(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"paddingBottom" = len;
-        }
-        /// ditto
-        void paddingBottom(float px)
-        {
-            assert(isDefinedSize(px));
-            paddingBottom = Length.px(px);
-        }
-        /// Left padding value
-        float paddingLeft() const { return applyOnlyEM(_paddingLeft); }
-        /// ditto
-        void paddingLeft(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"paddingLeft" = len;
-        }
-        /// ditto
-        void paddingLeft(float px)
-        {
-            assert(isDefinedSize(px));
-            paddingLeft = Length.px(px);
-        }
-
         Insets borderWidth() const
         {
             return Insets(applyOnlyEM(_borderTopWidth), applyOnlyEM(_borderRightWidth),
                           applyOnlyEM(_borderBottomWidth), applyOnlyEM(_borderLeftWidth));
         }
-        /// ditto
-        void borderWidth(Insets px4)
-        {
-            if (isDefinedSize(px4.top))
-                setProperty!"borderTopWidth" = Length.px(px4.top);
-            if (isDefinedSize(px4.right))
-                setProperty!"borderRightWidth" = Length.px(px4.right);
-            if (isDefinedSize(px4.bottom))
-                setProperty!"borderBottomWidth" = Length.px(px4.bottom);
-            if (isDefinedSize(px4.left))
-                setProperty!"borderLeftWidth" = Length.px(px4.left);
-        }
-        /// ditto
-        void borderWidth(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"borderTopWidth" = len;
-            setProperty!"borderRightWidth" = len;
-            setProperty!"borderBottomWidth" = len;
-            setProperty!"borderLeftWidth" = len;
-        }
-        /// ditto
-        void borderWidth(float px) { borderWidth = Length.px(px); }
-
-        float borderTopWidth() const { return applyOnlyEM(_borderTopWidth); }
-        /// ditto
-        void borderTopWidth(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"borderTopWidth" = len;
-        }
-        /// ditto
-        void borderTopWidth(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"borderTopWidth" = Length.px(px);
-        }
-
-        float borderRightWidth() const { return applyOnlyEM(_borderRightWidth); }
-        /// ditto
-        void borderRightWidth(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"borderRightWidth" = len;
-        }
-        /// ditto
-        void borderRightWidth(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"borderRightWidth" = Length.px(px);
-        }
-
-        float borderBottomWidth() const { return applyOnlyEM(_borderBottomWidth); }
-        /// ditto
-        void borderBottomWidth(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"borderBottomWidth" = len;
-        }
-        /// ditto
-        void borderBottomWidth(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"borderBottomWidth" = Length.px(px);
-        }
-
-        float borderLeftWidth() const { return applyOnlyEM(_borderLeftWidth); }
-        /// ditto
-        void borderLeftWidth(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"borderLeftWidth" = len;
-        }
-        /// ditto
-        void borderLeftWidth(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"borderLeftWidth" = Length.px(px);
-        }
-
-        /// Margins around widget (`SIZE_UNSPECIFIED` or `Length.none` for `auto`)
         Insets margins() const
         {
             return Insets(applyOnlyEM(_marginTop), applyOnlyEM(_marginRight),
                           applyOnlyEM(_marginBottom), applyOnlyEM(_marginLeft));
         }
-        /// ditto
-        void margins(Insets px4)
-        {
-            setProperty!"marginTop" = Length.px(px4.top);
-            setProperty!"marginRight" = Length.px(px4.right);
-            setProperty!"marginBottom" = Length.px(px4.bottom);
-            setProperty!"marginLeft" = Length.px(px4.left);
-        }
-        /// ditto
-        void margins(Length len)
-        {
-            setProperty!"marginTop" = len;
-            setProperty!"marginRight" = len;
-            setProperty!"marginBottom" = len;
-            setProperty!"marginLeft" = len;
-        }
-        /// ditto
-        void margins(float px) { margins = Length.px(px); }
-        /// Top margin value (`SIZE_UNSPECIFIED` or `Length.none` for `auto`)
-        float marginTop() const { return applyOnlyEM(_marginTop); }
-        /// ditto
-        void marginTop(Length len) { setProperty!"marginTop" = len; }
-        /// ditto
-        void marginTop(float px) { setProperty!"marginTop" = Length.px(px); }
-        /// Right margin value (`SIZE_UNSPECIFIED` or `Length.none` for `auto`)
-        float marginRight() const { return applyOnlyEM(_marginRight); }
-        /// ditto
-        void marginRight(Length len) { setProperty!"marginRight" = len; }
-        /// ditto
-        void marginRight(float px) { setProperty!"marginRight" = Length.px(px); }
-        /// Bottom margin value (`SIZE_UNSPECIFIED` or `Length.none` for `auto`)
-        float marginBottom() const { return applyOnlyEM(_marginBottom); }
-        /// ditto
-        void marginBottom(Length len) { setProperty!"marginBottom" = len; }
-        /// ditto
-        void marginBottom(float px) { setProperty!"marginBottom" = Length.px(px); }
-        /// Left margin value (`SIZE_UNSPECIFIED` or `Length.none` for `auto`)
-        float marginLeft() const { return applyOnlyEM(_marginLeft); }
-        /// ditto
-        void marginLeft(Length len) { setProperty!"marginLeft" = len; }
-        /// ditto
-        void marginLeft(float px) { setProperty!"marginLeft" = Length.px(px); }
 
         LayoutLength left() const { return applyEM(_left); }
-        /// ditto
-        void left(Length len) { setProperty!"left" = len; }
-        /// ditto
-        void left(float px) { setProperty!"left" = Length.px(px); }
-
         LayoutLength top() const { return applyEM(_top); }
-        /// ditto
-        void top(Length len) { setProperty!"top" = len; }
-        /// ditto
-        void top(float px) { setProperty!"top" = Length.px(px); }
-
         LayoutLength right() const { return applyEM(_right); }
-        /// ditto
-        void right(Length len) { setProperty!"right" = len; }
-        /// ditto
-        void right(float px) { setProperty!"right" = Length.px(px); }
-
         LayoutLength bottom() const { return applyEM(_bottom); }
-        /// ditto
-        void bottom(Length len) { setProperty!"bottom" = len; }
-        /// ditto
-        void bottom(float px) { setProperty!"bottom" = Length.px(px); }
 
-        /// Alignment (combined vertical and horizontal)
         Align alignment() const { return _alignment; }
-        /// ditto
-        void alignment(Align value) { setProperty!"alignment" = value; }
         /// Returns horizontal alignment
         Align halign() const { return _alignment & Align.hcenter; }
         /// Returns vertical alignment
         Align valign() const { return _alignment & Align.vcenter; }
 
-        /** Controls whether widget occupies all available width/height in a linear layout.
-
-            `Stretch.cross` by default.
-        */
         Stretch stretch() const { return _stretch; }
-        /// ditto
-        void stretch(Stretch value) { setProperty!"stretch" = value; }
 
-        /// Content distribution by main and cross axes
         Distribution[2] placeContent() const { return [_justifyContent, _alignContent]; }
-        /// ditto
-        void placeContent(Distribution[2] value)
-        {
-            setProperty!"justifyContent" = value[0];
-            setProperty!"alignContent" = value[1];
-        }
-
-        /// Default alignment by main and cross axes for all layout items
         AlignItem[2] placeItems() const { return [_justifyItems, _alignItems]; }
-        /// ditto
-        void placeItems(AlignItem[2] value)
-            in(value[0] != AlignItem.unspecified)
-            in(value[1] != AlignItem.unspecified)
-        {
-            setProperty!"justifyItems" = value[0];
-            setProperty!"alignItems" = value[1];
-        }
-
-        /// Item alignment by main and cross axes
         AlignItem[2] placeSelf() const { return [_justifySelf, _alignSelf]; }
-        /// ditto
-        void placeSelf(AlignItem[2] value)
-        {
-            setProperty!"justifySelf" = value[0];
-            setProperty!"alignSelf" = value[1];
-        }
 
-        /// Set one value for row and column gaps
-        void gap(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"rowGap" = len;
-            setProperty!"columnGap" = len;
-        }
-        /// ditto
-        void gap(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"rowGap" = Length.px(px);
-            setProperty!"columnGap" = Length.px(px);
-        }
-        /// Space between rows in layouts (e.g. in vertical linear layout)
         LayoutLength rowGap() const { return applyEM(_rowGap); }
-        /// ditto
-        void rowGap(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"rowGap" = len;
-        }
-        /// ditto
-        void rowGap(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"rowGap" = Length.px(px);
-        }
-        /// Space between columns in layouts (e.g. in horizontal linear layout)
         LayoutLength columnGap() const { return applyEM(_columnGap); }
-        /// ditto
-        void columnGap(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"columnGap" = len;
-        }
-        /// ditto
-        void columnGap(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"columnGap" = Length.px(px);
-        }
 
-        /// Controls item reordering in some layouts
         int order() const { return _order; }
-        /// ditto
-        void order(int i) { setProperty!"order" = i; }
-
-        /// Widget stack order (`int.min` if unspecified)
         int zIndex() const { return _zIndex; }
-        /// ditto
-        void zIndex(int z) { setProperty!"zIndex" = z; }
 
-        /// Specifies flexbox main axis and its start and end sides
         FlexDirection flexDirection() const { return _flexDirection; }
-        /// ditto
-        void flexDirection(FlexDirection value) { setProperty!"flexDirection" = value; }
-        /// Controls whether flexbox breaks items across several lines
         FlexWrap flexWrap() const { return _flexWrap; }
-        /// ditto
-        void flexWrap(FlexWrap value) { setProperty!"flexWrap" = value; }
 
-        /// Sets how much flex item will grow relative to other flexible items in the container
         float flexGrow() const { return _flexGrow; }
-        /// ditto
-        void flexGrow(float value) { setProperty!"flexGrow" = value; }
-        /// Sets how much flex item will shrink relative to other flexible items in the container
         float flexShrink() const { return _flexShrink; }
-        /// ditto
-        void flexShrink(float value) { setProperty!"flexShrink" = value; }
-        /// The initial size by main axis of the flexible item
         LayoutLength flexBasis() const { return applyEM(_flexBasis); }
-        /// ditto
-        void flexBasis(Length len) { setProperty!"flexBasis" = len; }
-        /// ditto
-        void flexBasis(float px) { setProperty!"flexBasis" = Length.px(px); }
 
         const(TrackSize[]) gridTemplateRows() const { return _gridTemplateRows; }
         const(TrackSize[]) gridTemplateColumns() const { return _gridTemplateColumns; }
         const(GridNamedAreas) gridTemplateAreas() const { return _gridTemplateAreas; }
 
-        /// Specifies how auto-placed items get inserted in the grid
         GridFlow gridAutoFlow() const { return _gridAutoFlow; }
-        /// ditto
-        void gridAutoFlow(GridFlow value) { setProperty!"gridAutoFlow" = value; }
-        /// Default size for grid rows
         TrackSize gridAutoRows() const { return _gridAutoRows; }
-        /// ditto
-        void gridAutoRows(TrackSize sz) { return setProperty!"gridAutoRows" = sz; }
-        /// Default size for grid columns
         TrackSize gridAutoColumns() const { return _gridAutoColumns; }
-        /// ditto
-        void gridAutoColumns(TrackSize sz) { return setProperty!"gridAutoColumns" = sz; }
 
         /// (row-start, column-start, row-end, column-end)
         GridLineName[4] gridArea() const { return [_gridRowStart, _gridColumnStart, _gridRowEnd, _gridColumnEnd]; }
 
-        void gridRowStart(GridLineName value) { setProperty!"gridRowStart" = value; }
-        void gridRowEnd(GridLineName value) { setProperty!"gridRowEnd" = value; }
-        void gridColumnStart(GridLineName value) { setProperty!"gridColumnStart" = value; }
-        void gridColumnEnd(GridLineName value) { setProperty!"gridColumnEnd" = value; }
-
-        /// Background color of the widget
         Color backgroundColor() const { return _bgColor; }
-        /// ditto
-        void backgroundColor(Color value) { setProperty!"bgColor" = value; }
-        /// Set background color from string like "#5599CC" or "white"
-        void backgroundColor(string str)
-        {
-            setProperty!"bgColor" =
-                decodeHexColor(str)
-                    .failed(decodeTextColor(str))
-                    .failed(Ok(Color.transparent))
-                    .val;
-        }
-        /// Background image drawable
         inout(Drawable) backgroundImage() inout { return _bgImage; }
-        /// ditto
-        void backgroundImage(Drawable image) { setProperty!"bgImage" = image; }
 
         BgPosition backgroundPosition() const
         {
             return BgPosition(applyEM(_bgPosition.x), applyEM(_bgPosition.y));
         }
-
         BgSize backgroundSize() const
         {
             const t = _bgSize.type;
@@ -616,163 +232,32 @@ struct ComputedStyle
         }
 
         RepeatStyle backgroundRepeat() const { return _bgRepeat; }
-        /// ditto
-        void backgroundRepeat(RepeatStyle value) { setProperty!"bgRepeat" = value; }
-
         BoxType backgroundOrigin() const { return _bgOrigin; }
-        /// ditto
-        void backgroundOrigin(BoxType box) { setProperty!"bgOrigin" = box; }
-
         BoxType backgroundClip() const { return _bgClip; }
-        /// ditto
-        void backgroundClip(BoxType box) { setProperty!"bgClip" = box; }
 
-        /// Set a color for all four border sides
-        void borderColor(Color value)
+        Color[4] borderColor() const
         {
-            setProperty!"borderTopColor" = value;
-            setProperty!"borderRightColor" = value;
-            setProperty!"borderBottomColor" = value;
-            setProperty!"borderLeftColor" = value;
+            return [_borderTopColor, _borderRightColor,
+                    _borderBottomColor, _borderLeftColor];
         }
-        /// Color of the top widget border
-        Color borderTopColor() const { return _borderTopColor; }
-        /// ditto
-        void borderTopColor(Color value) { setProperty!"borderTopColor" = value; }
-        /// Color of the right widget border
-        Color borderRightColor() const { return _borderRightColor; }
-        /// ditto
-        void borderRightColor(Color value) { setProperty!"borderRightColor" = value; }
-        /// Color of the bottom widget border
-        Color borderBottomColor() const { return _borderBottomColor; }
-        /// ditto
-        void borderBottomColor(Color value) { setProperty!"borderBottomColor" = value; }
-        /// Color of the left widget border
-        Color borderLeftColor() const { return _borderLeftColor; }
-        /// ditto
-        void borderLeftColor(Color value) { setProperty!"borderLeftColor" = value; }
-
-        /// Set a line style for all four border sides
-        void borderStyle(BorderStyle value)
+        BorderStyle[4] borderStyle() const
         {
-            setProperty!"borderTopStyle" = value;
-            setProperty!"borderRightStyle" = value;
-            setProperty!"borderBottomStyle" = value;
-            setProperty!"borderLeftStyle" = value;
+            return [_borderTopStyle, _borderRightStyle,
+                    _borderBottomStyle, _borderLeftStyle];
         }
-        /// Line style of the top widget border
-        BorderStyle borderTopStyle() const { return _borderTopStyle; }
-        /// ditto
-        void borderTopStyle(BorderStyle value) { setProperty!"borderTopStyle" = value; }
-        /// Line style of the right widget border
-        BorderStyle borderRightStyle() const { return _borderRightStyle; }
-        /// ditto
-        void borderRightStyle(BorderStyle value) { setProperty!"borderRightStyle" = value; }
-        /// Line style of the bottom widget border
-        BorderStyle borderBottomStyle() const { return _borderBottomStyle; }
-        /// ditto
-        void borderBottomStyle(BorderStyle value) { setProperty!"borderBottomStyle" = value; }
-        /// Line style of the left widget border
-        BorderStyle borderLeftStyle() const { return _borderLeftStyle; }
-        /// ditto
-        void borderLeftStyle(BorderStyle value) { setProperty!"borderLeftStyle" = value; }
-
-        /// Set a border radius for all corners simultaneously
-        void borderRadius(Insets px4)
+        LayoutLength[4] borderRadii() const
         {
-            if (isDefinedSize(px4.top))
-                setProperty!"borderTopLeftRadius" = Length.px(px4.top);
-            if (isDefinedSize(px4.right))
-                setProperty!"borderTopRightRadius" = Length.px(px4.right);
-            if (isDefinedSize(px4.bottom))
-                setProperty!"borderBottomLeftRadius" = Length.px(px4.bottom);
-            if (isDefinedSize(px4.left))
-                setProperty!"borderBottomRightRadius" = Length.px(px4.left);
-        }
-        /// ditto
-        void borderRadius(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"borderTopLeftRadius" = len;
-            setProperty!"borderTopRightRadius" = len;
-            setProperty!"borderBottomLeftRadius" = len;
-            setProperty!"borderBottomRightRadius" = len;
-        }
-        /// ditto
-        void borderRadius(float px) { borderRadius = Length.px(px); }
-
-        LayoutLength borderTopLeftRadius() const { return applyEM(_borderTopLeftRadius); }
-        /// ditto
-        void borderTopLeftRadius(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"borderTopLeftRadius" = len;
-        }
-        /// ditto
-        void borderTopLeftRadius(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"borderTopLeftRadius" = Length.px(px);
-        }
-
-        LayoutLength borderTopRightRadius() const { return applyEM(_borderTopRightRadius); }
-        /// ditto
-        void borderTopRightRadius(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"borderTopRightRadius" = len;
-        }
-        /// ditto
-        void borderTopRightRadius(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"borderTopRightRadius" = Length.px(px);
-        }
-
-        LayoutLength borderBottomLeftRadius() const { return applyEM(_borderBottomLeftRadius); }
-        /// ditto
-        void borderBottomLeftRadius(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"borderBottomLeftRadius" = len;
-        }
-        /// ditto
-        void borderBottomLeftRadius(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"borderBottomLeftRadius" = Length.px(px);
-        }
-
-        LayoutLength borderBottomRightRadius() const { return applyEM(_borderBottomRightRadius); }
-        /// ditto
-        void borderBottomRightRadius(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"borderBottomRightRadius" = len;
-        }
-        /// ditto
-        void borderBottomRightRadius(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"borderBottomRightRadius" = Length.px(px);
+            return [applyEM(_borderTopLeftRadius), applyEM(_borderTopRightRadius),
+                    applyEM(_borderBottomLeftRadius), applyEM(_borderBottomRightRadius)];
         }
 
         inout(BoxShadowDrawable) boxShadow() inout { return _boxShadow; }
-        /// ditto
-        void boxShadow(BoxShadowDrawable shadow) { setProperty!"boxShadow" = shadow; }
 
-        /// Font face for widget
         string fontFace() const { return _fontFace; }
-        /// ditto
-        void fontFace(string value) { setProperty!"fontFace" = value; }
-        /// Font family for widget
         FontFamily fontFamily() const { return _fontFamily; }
-        /// ditto
-        void fontFamily(FontFamily value) { setProperty!"fontFamily" = value; }
-        /// Font style (italic/normal) for widget
         bool fontItalic() const { return _fontStyle == FontStyle.italic; }
-        /// ditto
-        void fontItalic(bool italic) { setProperty!"fontStyle" = italic ? FontStyle.italic : FontStyle.normal; }
+        ushort fontWeight() const { return _fontWeight; }
+
         /// Computed font size in device-independent pixels
         int fontSize() const
         {
@@ -785,165 +270,34 @@ struct ComputedStyle
             const int base = p && !fs.is_rem ? p.style.fontSize : def;
             return cast(int)ll.applyPercent(base);
         }
-        /// ditto
-        void fontSize(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"fontSize" = len;
-        }
-        /// ditto
-        void fontSize(float px)
-        {
-            assert(isDefinedSize(px));
-            fontSize = Length.px(px);
-        }
-        /// Font weight for widget
-        ushort fontWeight() const { return _fontWeight; }
-        /// ditto
-        void fontWeight(ushort value) { setProperty!"fontWeight" = cast(ushort)clamp(value, 100, 900); }
 
-        /// Tab stop size, in number of spaces from 1 to 16
         TabSize tabSize() const { return _tabSize; }
-        /// ditto
-        void tabSize(TabSize sz) { setProperty!"tabSize" = sz; }
-        /// ditto
-        void tabSize(int i) { setProperty!"tabSize" = TabSize(i); }
 
-        /// Text alignment - start, center, end, or justify
-        TextAlign textAlign() const { return _textAlign; }
-        /// ditto
-        void textAlign(TextAlign a) { setProperty!"textAlign" = a; }
-
-        /// Text decoration - underline, overline, and so on
         TextDecor textDecor() const
         {
             return TextDecor(_textDecorLine, _textDecorColor, _textDecorStyle);
         }
-        /// ditto
-        void textDecor(TextDecor compound)
-        {
-            setProperty!"textDecorLine" = compound.line;
-            setProperty!"textDecorColor" = compound.color;
-            setProperty!"textDecorStyle" = compound.style;
-        }
-        /// The color of text decorations, set with `textDecorLine`
-        Color textDecorColor() const { return _textDecorColor; }
-        /// ditto
-        void textDecorColor(Color color) { setProperty!"textDecorColor" = color; }
-        /// Place where text decoration line(s) appears. Required to be not `none` to draw something
-        TextDecorLine textDecorLine() const { return _textDecorLine; }
-        /// ditto
-        void textDecorLine(TextDecorLine line) { setProperty!"textDecorLine" = line; }
-        /// Style of the line drawn for text decoration - solid, dashed, and the like
-        TextDecorStyle textDecorStyle() const { return _textDecorStyle; }
-        /// ditto
-        void textDecorStyle(TextDecorStyle style) { setProperty!"textDecorStyle" = style; }
-
-        /// Controls how text with `&` hotkey marks should be displayed
+        TextAlign textAlign() const { return _textAlign; }
+        Color textColor() const { return _textColor; }
         TextHotkey textHotkey() const { return _textHotkey; }
-        /// ditto
-        void textHotkey(TextHotkey value) { setProperty!"textHotkey" = value; }
-        /// Specifies how text that doesn't fit and is not displayed should behave
         TextOverflow textOverflow() const { return _textOverflow; }
-        /// ditto
-        void textOverflow(TextOverflow value) { setProperty!"textOverflow" = value; }
-        /// Controls capitalization of text
         TextTransform textTransform() const { return _textTransform; }
-        /// ditto
-        void textTransform(TextTransform value) { setProperty!"textTransform" = value; }
 
         float letterSpacing() const { return applyOnlyEM(_letterSpacing); }
-        /// ditto
-        void letterSpacing(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"letterSpacing" = len;
-        }
-        /// ditto
-        void letterSpacing(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"letterSpacing" = Length.px(px);
-        }
+        float wordSpacing() const { return applyOnlyEM(_wordSpacing); }
 
         float lineHeight() const { return applyOnlyEM(_lineHeight); }
-        /// ditto
-        void lineHeight(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"lineHeight" = len;
-        }
-        /// ditto
-        void lineHeight(float px)
-        {
-            assert(isDefinedSize(px));
-            lineHeight = Length.px(px);
-        }
-
         LayoutLength textIndent() const { return applyEM(_textIndent); }
-        /// ditto
-        void textIndent(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"textIndent" = len;
-        }
-        /// ditto
-        void textIndent(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"textIndent" = Length.px(px);
-        }
 
-        float wordSpacing() const { return applyOnlyEM(_wordSpacing); }
-        /// ditto
-        void wordSpacing(Length len)
-        {
-            assert(len != Length.none);
-            setProperty!"wordSpacing" = len;
-        }
-        /// ditto
-        void wordSpacing(float px)
-        {
-            assert(isDefinedSize(px));
-            setProperty!"wordSpacing" = Length.px(px);
-        }
-
-        /// Controls whether text wrapping is enabled
         bool wordWrap() const { return _whiteSpace == WhiteSpace.preWrap; }
-        /// ditto
-        void wordWrap(bool value) { setProperty!"whiteSpace" = value ? WhiteSpace.preWrap : WhiteSpace.pre; }
-
-        /// Text color
-        Color textColor() const { return _textColor; }
-        /// ditto
-        void textColor(Color value) { setProperty!"textColor" = value; }
-        /// Set text color from string like "#5599CC" or "white"
-        void textColor(string str)
-        {
-            setProperty!"textColor" =
-                decodeHexColor(str)
-                    .failed(decodeTextColor(str))
-                    .failed(Ok(Color.transparent))
-                    .val;
-        }
 
         /// Get color to draw focus rectangle, `Color.transparent` if no focus rect
         Color focusRectColor() const { return _focusRectColor; }
 
-        /// Opacity of the whole widget, always clamped to [0..1] range, where 0.0 - invisible, 1.0 - normal
         float opacity() const { return _opacity; }
-        /// ditto
-        void opacity(float value) { setProperty!"opacity" = clamp(value, 0, 1); }
-
-        /// Specifies how widget blends with a backdrop
         BlendMode mixBlendMode() const { return _mixBlendMode; }
-        /// ditto
-        void mixBlendMode(BlendMode value) { setProperty!"mixBlendMode" = value; }
 
-        /// Specifies the type of mouse cursor when pointing over the widget
         CursorType cursor() const { return _cursor; }
-        /// ditto
-        void cursor(CursorType value) { setProperty!"cursor" = value; }
     }
 
     package(beamui) Element element;
@@ -1105,27 +459,6 @@ struct ComputedStyle
             return ll.applyPercent(fontSize);
         else
             return ll.applyPercent(0);
-    }
-
-    /// Set the property to inherit its value from parent element
-    void inherit(StyleProperty property)
-    {
-        bts(inheritBitArray.ptr, property);
-        bts(overridenBitArray.ptr, property);
-    }
-
-    /// Set the property to its initial value
-    void initialize(StyleProperty property)
-    {
-        final switch (property)
-        {
-            static foreach (name; __traits(allMembers, StyleProperty))
-            {
-                case mixin(`StyleProperty.` ~ name):
-                    setDefault!name(true); // set by user
-                    return;
-            }
-        }
     }
 
     /// Resolve style cascading and inheritance, update all properties

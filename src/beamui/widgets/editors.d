@@ -1419,7 +1419,8 @@ class ElemEditLine : Element, IEditor, ActionOperator
             {
                 const ComputedStyle* st = style;
                 ph.style.alignment = st.textAlign;
-                ph.style.decoration = TextDecor(st.textDecorLine, ph.style.color, st.textDecorStyle);
+                ph.style.decoration = st.textDecor;
+                ph.style.decoration.color = ph.style.color;
                 ph.style.overflow = st.textOverflow;
                 ph.style.tabSize = st.tabSize;
                 ph.style.transform = st.textTransform;
@@ -3170,7 +3171,7 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
             {
                 debug (editors)
                     Log.i("Font size in editor ", id, " zoomed to ", fs);
-                style.fontSize = cast(ushort)fs;
+                // style.fontSize = cast(ushort)fs;
                 measureVisibleText();
                 updateScrollBars();
             }
@@ -4193,7 +4194,8 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
             {
                 const ComputedStyle* st = style;
                 ph.style.alignment = st.textAlign;
-                ph.style.decoration = TextDecor(st.textDecorLine, ph.style.color, st.textDecorStyle);
+                ph.style.decoration = st.textDecor;
+                ph.style.decoration.color = ph.style.color;
                 ph.style.overflow = st.textOverflow;
                 ph.style.tabSize = _content.tabSize;
                 ph.style.transform = st.textTransform;

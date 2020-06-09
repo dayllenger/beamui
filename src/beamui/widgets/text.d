@@ -138,15 +138,6 @@ class ElemLabel : Element
         case textColor:
             textobj.style.color = style.textColor;
             break;
-        case textDecorColor:
-            textobj.style.decoration.color = style.textDecorColor;
-            break;
-        case textDecorLine:
-            textobj.style.decoration.line = style.textDecorLine;
-            break;
-        case textDecorStyle:
-            textobj.style.decoration.style = style.textDecorStyle;
-            break;
         case textHotkey:
             // recompute the mnemonic
             if (hotkeyIndex == -1 && style.textHotkey != TextHotkey.ignore)
@@ -223,6 +214,7 @@ class ElemLabel : Element
         const b = innerBox;
         pr.clipIn(BoxI.from(b));
 
+        textobj.style.decoration = style.textDecor;
         textobj.style.underlinedCharIndex = textHotkey == TextHotkey.underline ? hotkeyIndex : -1;
 
         // TODO: align vertically?
@@ -592,15 +584,6 @@ class ElemParagraph : Element
         case textColor:
             _txtStyle.color = style.textColor;
             break;
-        case textDecorColor:
-            _txtStyle.decoration.color = style.textDecorColor;
-            break;
-        case textDecorLine:
-            _txtStyle.decoration.line = style.textDecorLine;
-            break;
-        case textDecorStyle:
-            _txtStyle.decoration.style = style.textDecorStyle;
-            break;
         case textOverflow:
             _txtStyle.overflow = style.textOverflow;
             break;
@@ -711,6 +694,8 @@ class ElemParagraph : Element
         const clip = pr.getLocalClipBounds();
         if (clip.empty)
             return; // clipped out
+
+        _txtStyle.decoration = style.textDecor;
 
         // draw the paragraph at (b.x, b.y)
         float y = 0;

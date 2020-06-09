@@ -2088,6 +2088,10 @@ public:
             pr.beginLayer(lsv, opacity, blendMode);
 
         // draw the background first
+        const borderColor = _style.borderColor;
+        const borderStyle = _style.borderStyle;
+        const borderWidth = _style.borderWidth;
+        const borderRadii = _style.borderRadii;
         _background.color = _style.backgroundColor;
         _background.image = _style.backgroundImage;
         _background.position = _style.backgroundPosition;
@@ -2095,39 +2099,17 @@ public:
         _background.origin = _style.backgroundOrigin;
         _background.clip = _style.backgroundClip;
         _background.border = Border(
-            BorderSide(
-                _style.borderTopWidth,
-                _style.borderTopStyle,
-                _style.borderTopColor,
-            ),
-            BorderSide(
-                _style.borderRightWidth,
-                _style.borderRightStyle,
-                _style.borderRightColor,
-            ),
-            BorderSide(
-                _style.borderBottomWidth,
-                _style.borderBottomStyle,
-                _style.borderBottomColor,
-            ),
-            BorderSide(
-                _style.borderLeftWidth,
-                _style.borderLeftStyle,
-                _style.borderLeftColor,
-            ),
+            BorderSide(borderWidth.top, borderStyle[0], borderColor[0]),
+            BorderSide(borderWidth.right, borderStyle[1], borderColor[1]),
+            BorderSide(borderWidth.bottom, borderStyle[2], borderColor[2]),
+            BorderSide(borderWidth.left, borderStyle[3], borderColor[3]),
         );
-        {
-            const tl = _style.borderTopLeftRadius;
-            const tr = _style.borderTopRightRadius;
-            const bl = _style.borderBottomLeftRadius;
-            const br = _style.borderBottomRightRadius;
-            _background.radii = BorderRadii(
-                Size(tl.applyPercent(box.w), tl.applyPercent(box.h)),
-                Size(tr.applyPercent(box.w), tr.applyPercent(box.h)),
-                Size(bl.applyPercent(box.w), bl.applyPercent(box.h)),
-                Size(br.applyPercent(box.w), br.applyPercent(box.h)),
-            );
-        }
+        _background.radii = BorderRadii(
+            Size(borderRadii[0].applyPercent(box.w), borderRadii[0].applyPercent(box.h)),
+            Size(borderRadii[1].applyPercent(box.w), borderRadii[1].applyPercent(box.h)),
+            Size(borderRadii[2].applyPercent(box.w), borderRadii[2].applyPercent(box.h)),
+            Size(borderRadii[3].applyPercent(box.w), borderRadii[3].applyPercent(box.h)),
+        );
         _background.shadow = _style.boxShadow;
         _background.stylePadding = _style.padding;
         _background.drawTo(pr, b);
