@@ -215,8 +215,9 @@ struct LayoutLength
 {
     nothrow:
 
-    private float value = SIZE_UNSPECIFIED!float;
-    private bool percentage;
+    // pixels stored as Q12, fractions as Q16.
+    // they are distinguished by the least-significant bit
+    private int value = SIZE_UNSPECIFIED!int;
 
     /// Zero length
     enum LayoutLength zero = LayoutLength(0);
@@ -229,70 +230,42 @@ struct LayoutLength
         if (isDefinedSize(px))
         {
             assert(px < SIZE_UNSPECIFIED!int);
-            value = px;
+            value = cast(int)(px * (1 << 12)) << 1;
         }
     }
     /// Construct from percent
     static LayoutLength percent(float p)
+        in(isDefinedSize(p))
+        in(p < SIZE_UNSPECIFIED!int)
     {
-        assert(isDefinedSize(p));
-        assert(p < SIZE_UNSPECIFIED!int);
-
         LayoutLength ret;
-        ret.value = p;
-        ret.percentage = true;
+        ret.value = cast(int)(p / 100 * (1 << 16)) << 1;
+        ret.value |= 1;
         return ret;
     }
 
     /// True if size is finite, i.e. not `SIZE_UNSPECIFIED`
     bool isDefined() const
     {
-        return value != SIZE_UNSPECIFIED!float;
+        return value != SIZE_UNSPECIFIED!int;
     }
 
     /// True if contains percent value
     bool isPercent() const
     {
-        return percentage;
+        return (value & 1) != 0;
     }
 
     /// If this is percent, return % of `base`, otherwise return stored pixel value
     float applyPercent(float base) const
+        in(isDefinedSize(base))
     {
-        assert(isDefinedSize(base));
-
-        if (value == SIZE_UNSPECIFIED!float)
+        if (value == SIZE_UNSPECIFIED!int)
             return SIZE_UNSPECIFIED!float;
-        if (percentage)
-            return value * base / 100;
+        if (value & 1)
+            return cast(float)(value >> 1) / (1 << 16) * base;
         else
-            return value;
-    }
-}
-
-unittest
-{
-    {
-        LayoutLength len;
-        assert(!len.isPercent);
-        assert(len.applyPercent(50) == SIZE_UNSPECIFIED!float);
-    }
-    {
-        LayoutLength len = SIZE_UNSPECIFIED!float;
-        assert(!len.isPercent);
-        assert(len.applyPercent(50) == SIZE_UNSPECIFIED!float);
-    }
-    for (float f = -10; f < 10; f += 0.3)
-    {
-        LayoutLength len = f;
-        assert(!len.isPercent);
-        assert(len.applyPercent(1234) == f);
-    }
-    for (float f = -200; f < 200; f += 35)
-    {
-        auto len = LayoutLength.percent(f);
-        assert(len.isPercent);
-        assert(len.applyPercent(50) == f / 2);
+            return cast(float)(value >> 1) / (1 << 12);
     }
 }
 
@@ -325,16 +298,6 @@ float parseAngle(string value, string unit)
         return angle * PI * 2;
     else
         return float.nan;
-}
-///
-unittest
-{
-    import std.math : approxEqual;
-
-    assert(parseAngle("120.5", "deg").approxEqual(2.10312, 1e-5));
-    assert(parseAngle("15", "grad").approxEqual(0.23562, 1e-5));
-    assert(parseAngle("-27.7", "rad").approxEqual(-27.7, 1e-5));
-    assert(parseAngle("2", "turn").approxEqual(12.56637, 1e-5));
 }
 
 /// Number of hnsecs (those we use in animations, for example) in one second
@@ -401,3 +364,48 @@ private float devicePixelRatio = 1;
 private float dipsPerInch = 96;
 
 //===============================================================
+// Tests
+
+import std.math : approxEqual;
+
+unittest
+{
+    LayoutLength len;
+    assert(!len.isPercent);
+    assert(len.applyPercent(50) == SIZE_UNSPECIFIED!float);
+}
+
+unittest
+{
+    LayoutLength len = SIZE_UNSPECIFIED!float;
+    assert(!len.isPercent);
+    assert(len.applyPercent(50) == SIZE_UNSPECIFIED!float);
+}
+
+unittest
+{
+    for (float f = -10; f < 10; f += 0.3)
+    {
+        LayoutLength len = f;
+        assert(!len.isPercent);
+        assert(len.applyPercent(1234).approxEqual(f, 1e-2));
+    }
+}
+
+unittest
+{
+    for (float f = -200; f < 200; f += 35)
+    {
+        auto len = LayoutLength.percent(f);
+        assert(len.isPercent);
+        assert(len.applyPercent(50).approxEqual(f / 2, 1e-2));
+    }
+}
+
+unittest
+{
+    assert(parseAngle("120.5", "deg").approxEqual(2.10312, 1e-5));
+    assert(parseAngle("15", "grad").approxEqual(0.23562, 1e-5));
+    assert(parseAngle("-27.7", "rad").approxEqual(-27.7, 1e-5));
+    assert(parseAngle("2", "turn").approxEqual(12.56637, 1e-5));
+}
