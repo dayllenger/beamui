@@ -24,6 +24,9 @@ import beamui.widgets.widget : CursorType;
 /// because order may be changed in the future.
 enum StyleProperty
 {
+    // origins
+    fontSize,
+    textColor,
     // layout
     display,
     // box model
@@ -87,6 +90,10 @@ enum StyleProperty
     bgRepeat,
     bgOrigin,
     bgClip,
+    borderTopColor,
+    borderRightColor,
+    borderBottomColor,
+    borderLeftColor,
     borderTopStyle,
     borderRightStyle,
     borderBottomStyle,
@@ -96,16 +103,17 @@ enum StyleProperty
     borderBottomLeftRadius,
     borderBottomRightRadius,
     boxShadow,
+    focusRectColor,
     // text
     fontFace,
     fontFamily,
-    fontSize,
     fontStyle,
     fontWeight,
     letterSpacing,
     lineHeight,
     tabSize,
     textAlign,
+    textDecorColor,
     textDecorLine,
     textDecorStyle,
     textHotkey,
@@ -114,15 +122,6 @@ enum StyleProperty
     textTransform,
     whiteSpace,
     wordSpacing,
-    // colors
-    textColor,
-    focusRectColor,
-    // depend on text color, so must be computed after
-    borderTopColor,
-    borderRightColor,
-    borderBottomColor,
-    borderLeftColor,
-    textDecorColor,
     // effects
     opacity,
     mixBlendMode,
@@ -540,13 +539,13 @@ bool isAnimatable(StyleProperty ptype)
         case bgColor:
         case bgPosition:
         case bgSize:
+        case borderTopColor: .. case borderLeftColor:
+        case focusRectColor:
         case letterSpacing:
         case lineHeight:
-        case wordSpacing:
         case textColor:
-        case focusRectColor:
-        case borderTopColor: .. case borderLeftColor:
         case textDecorColor:
+        case wordSpacing:
         case opacity:
             return true;
         default:
@@ -559,6 +558,8 @@ bool isInherited(StyleProperty ptype)
 {
     switch (ptype) with (StyleProperty)
     {
+        case fontSize:
+        case textColor:
         case fontFace: .. case fontWeight:
         case letterSpacing:
         case lineHeight:
@@ -568,7 +569,6 @@ bool isInherited(StyleProperty ptype)
         case textTransform:
         case whiteSpace:
         case wordSpacing:
-        case textColor:
         case cursor:
             return true;
         default:

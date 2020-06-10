@@ -197,6 +197,9 @@ struct ComputedStyle
         /// Inherits value from the parent element
         size_t[bits / (8 * size_t.sizeof) + 1] inheritBitArray;
 
+        // origins
+        Length _fontSize = Length.rem(1);
+        Color _textColor = Color.black;
         // layout
         string _display;
         // box model
@@ -260,6 +263,10 @@ struct ComputedStyle
         RepeatStyle _bgRepeat;
         BoxType _bgOrigin = BoxType.padding;
         BoxType _bgClip = BoxType.border;
+        Color _borderTopColor = Color.transparent;
+        Color _borderRightColor = Color.transparent;
+        Color _borderBottomColor = Color.transparent;
+        Color _borderLeftColor = Color.transparent;
         BorderStyle _borderTopStyle = BorderStyle.none;
         BorderStyle _borderRightStyle = BorderStyle.none;
         BorderStyle _borderBottomStyle = BorderStyle.none;
@@ -269,16 +276,17 @@ struct ComputedStyle
         Length _borderBottomLeftRadius = Length.zero;
         Length _borderBottomRightRadius = Length.zero;
         BoxShadowDrawable _boxShadow;
+        Color _focusRectColor = Color.transparent;
         // text
         string _fontFace = "Arial";
         FontFamily _fontFamily = FontFamily.sans_serif;
-        Length _fontSize = Length.rem(1);
         FontStyle _fontStyle = FontStyle.normal;
         ushort _fontWeight = 400;
         Length _letterSpacing = Length.zero;
         Length _lineHeight = Length.rem(1.2);
         TabSize _tabSize;
         TextAlign _textAlign = TextAlign.start;
+        Color _textDecorColor = Color.black;
         TextDecorLine _textDecorLine = TextDecorLine.none;
         TextDecorStyle _textDecorStyle = TextDecorStyle.solid;
         TextHotkey _textHotkey = TextHotkey.ignore;
@@ -287,15 +295,6 @@ struct ComputedStyle
         TextTransform _textTransform = TextTransform.none;
         WhiteSpace _whiteSpace = WhiteSpace.pre;
         Length _wordSpacing = Length.zero;
-        // colors
-        Color _textColor = Color.black;
-        Color _focusRectColor = Color.transparent;
-        // depend on text color
-        Color _borderTopColor = Color.transparent;
-        Color _borderRightColor = Color.transparent;
-        Color _borderBottomColor = Color.transparent;
-        Color _borderLeftColor = Color.transparent;
-        Color _textDecorColor = Color.black;
         // effects
         float _opacity = 1;
         BlendMode _mixBlendMode = BlendMode.normal;
