@@ -3,7 +3,8 @@
 :root {
   color: #222;
   font-family: sans-serif;
-  font-size: 14px;
+  font-size: 1rem;
+  line-height: 1.2rem;
 }
 
 Spacer {

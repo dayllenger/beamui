@@ -737,6 +737,13 @@ struct BgPosition
 {
     LayoutLength x = LayoutLength.percent(0);
     LayoutLength y = LayoutLength.percent(0);
+
+    static BgPosition mix(BgPosition a, BgPosition b, double factor) nothrow
+    {
+        const x = a.x * (1 - factor) + b.x * factor;
+        const y = a.y * (1 - factor) + b.y * factor;
+        return BgPosition(x, y);
+    }
 }
 
 enum BgSizeType
@@ -751,6 +758,18 @@ struct BgSize
     BgSizeType type;
     LayoutLength x;
     LayoutLength y;
+
+    static BgSize mix(BgSize a, BgSize b, double factor) nothrow
+    {
+        if (a.type == BgSizeType.length && b.type == BgSizeType.length)
+        {
+            const x = a.x * (1 - factor) + b.x * factor;
+            const y = a.y * (1 - factor) + b.y * factor;
+            return BgSize(b.type, x, y);
+        }
+        else
+            return b;
+    }
 }
 
 /// Tiling options for one image axis

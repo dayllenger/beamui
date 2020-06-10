@@ -26,6 +26,8 @@ import beamui.text.fonts;
 import beamui.text.style;
 import beamui.widgets.widget : CursorType, Element;
 
+private alias P = StyleProperty;
+
 /// Provides default style values for most of properties
 private ComputedStyle defaults;
 
@@ -35,35 +37,32 @@ struct ComputedStyle
     {
         string display() const { return _display; }
 
-        LayoutLength width() const { return applyEM(_width); }
-        LayoutLength height() const { return applyEM(_height); }
+        LayoutLength width() const { return _width; }
+        LayoutLength height() const { return _height; }
 
-        LayoutLength minWidth() const { return applyEM(_minWidth); }
-        LayoutLength minHeight() const { return applyEM(_minHeight); }
+        LayoutLength minWidth() const { return _minWidth; }
+        LayoutLength minHeight() const { return _minHeight; }
 
-        LayoutLength maxWidth() const { return applyEM(_maxWidth); }
-        LayoutLength maxHeight() const { return applyEM(_maxHeight); }
+        LayoutLength maxWidth() const { return _maxWidth; }
+        LayoutLength maxHeight() const { return _maxHeight; }
 
         Insets padding() const
         {
-            return Insets(applyOnlyEM(_paddingTop), applyOnlyEM(_paddingRight),
-                          applyOnlyEM(_paddingBottom), applyOnlyEM(_paddingLeft));
+            return Insets(_paddingTop, _paddingRight, _paddingBottom, _paddingLeft);
         }
         Insets borderWidth() const
         {
-            return Insets(applyOnlyEM(_borderTopWidth), applyOnlyEM(_borderRightWidth),
-                          applyOnlyEM(_borderBottomWidth), applyOnlyEM(_borderLeftWidth));
+            return Insets(_borderTopWidth, _borderRightWidth, _borderBottomWidth, _borderLeftWidth);
         }
         Insets margins() const
         {
-            return Insets(applyOnlyEM(_marginTop), applyOnlyEM(_marginRight),
-                          applyOnlyEM(_marginBottom), applyOnlyEM(_marginLeft));
+            return Insets(_marginTop, _marginRight, _marginBottom, _marginLeft);
         }
 
-        LayoutLength left() const { return applyEM(_left); }
-        LayoutLength top() const { return applyEM(_top); }
-        LayoutLength right() const { return applyEM(_right); }
-        LayoutLength bottom() const { return applyEM(_bottom); }
+        LayoutLength left() const { return _left; }
+        LayoutLength top() const { return _top; }
+        LayoutLength right() const { return _right; }
+        LayoutLength bottom() const { return _bottom; }
 
         Align alignment() const { return _alignment; }
         /// Returns horizontal alignment
@@ -77,8 +76,8 @@ struct ComputedStyle
         AlignItem[2] placeItems() const { return [_justifyItems, _alignItems]; }
         AlignItem[2] placeSelf() const { return [_justifySelf, _alignSelf]; }
 
-        LayoutLength rowGap() const { return applyEM(_rowGap); }
-        LayoutLength columnGap() const { return applyEM(_columnGap); }
+        LayoutLength rowGap() const { return _rowGap; }
+        LayoutLength columnGap() const { return _columnGap; }
 
         int order() const { return _order; }
         int zIndex() const { return _zIndex; }
@@ -88,7 +87,7 @@ struct ComputedStyle
 
         float flexGrow() const { return _flexGrow; }
         float flexShrink() const { return _flexShrink; }
-        LayoutLength flexBasis() const { return applyEM(_flexBasis); }
+        LayoutLength flexBasis() const { return _flexBasis; }
 
         const(TrackSize[]) gridTemplateRows() const { return _gridTemplateRows; }
         const(TrackSize[]) gridTemplateColumns() const { return _gridTemplateColumns; }
@@ -103,38 +102,24 @@ struct ComputedStyle
 
         Color backgroundColor() const { return _bgColor; }
         inout(Drawable) backgroundImage() inout { return _bgImage; }
-
-        BgPosition backgroundPosition() const
-        {
-            return BgPosition(applyEM(_bgPosition.x), applyEM(_bgPosition.y));
-        }
-        BgSize backgroundSize() const
-        {
-            const t = _bgSize.type;
-            if (t == BgSizeType.length)
-                return BgSize(t, applyEM(_bgSize.x), applyEM(_bgSize.y));
-            else
-                return BgSize(t);
-        }
-
+        BgPosition backgroundPosition() const { return _bgPosition; }
+        BgSize backgroundSize() const { return _bgSize; }
         RepeatStyle backgroundRepeat() const { return _bgRepeat; }
         BoxType backgroundOrigin() const { return _bgOrigin; }
         BoxType backgroundClip() const { return _bgClip; }
 
         Color[4] borderColor() const
         {
-            return [_borderTopColor, _borderRightColor,
-                    _borderBottomColor, _borderLeftColor];
+            return [_borderTopColor, _borderRightColor, _borderBottomColor, _borderLeftColor];
         }
         BorderStyle[4] borderStyle() const
         {
-            return [_borderTopStyle, _borderRightStyle,
-                    _borderBottomStyle, _borderLeftStyle];
+            return [_borderTopStyle, _borderRightStyle, _borderBottomStyle, _borderLeftStyle];
         }
         LayoutLength[4] borderRadii() const
         {
-            return [applyEM(_borderTopLeftRadius), applyEM(_borderTopRightRadius),
-                    applyEM(_borderBottomLeftRadius), applyEM(_borderBottomRightRadius)];
+            return [_borderTopLeftRadius, _borderTopRightRadius,
+                    _borderBottomLeftRadius, _borderBottomRightRadius];
         }
 
         inout(BoxShadowDrawable) boxShadow() inout { return _boxShadow; }
@@ -145,35 +130,22 @@ struct ComputedStyle
         ushort fontWeight() const { return _fontWeight; }
 
         /// Computed font size in device-independent pixels
-        int fontSize() const
-        {
-            const Length fs = _fontSize;
-            const Element p = element.parent;
-            const int def = FontManager.defaultFontSize;
-            if (!fs.is_rem && (!p || isolated) && (fs.is_em || fs.is_percent))
-                return def;
-            const LayoutLength ll = fs.toLayout;
-            const int base = p && !fs.is_rem ? p.style.fontSize : def;
-            return cast(int)ll.applyPercent(base);
-        }
+        int fontSize() const { return _fontSize; }
 
         TabSize tabSize() const { return _tabSize; }
 
-        TextDecor textDecor() const
-        {
-            return TextDecor(_textDecorLine, _textDecorColor, _textDecorStyle);
-        }
+        TextDecor textDecor() const { return TextDecor(_textDecorLine, _textDecorColor, _textDecorStyle); }
         TextAlign textAlign() const { return _textAlign; }
         Color textColor() const { return _textColor; }
         TextHotkey textHotkey() const { return _textHotkey; }
         TextOverflow textOverflow() const { return _textOverflow; }
         TextTransform textTransform() const { return _textTransform; }
 
-        float letterSpacing() const { return applyOnlyEM(_letterSpacing); }
-        float wordSpacing() const { return applyOnlyEM(_wordSpacing); }
+        float letterSpacing() const { return _letterSpacing; }
+        float wordSpacing() const { return _wordSpacing; }
 
-        float lineHeight() const { return applyOnlyEM(_lineHeight); }
-        LayoutLength textIndent() const { return applyEM(_textIndent); }
+        float lineHeight() const { return _lineHeight; }
+        LayoutLength textIndent() const { return _textIndent; }
 
         bool wordWrap() const { return _whiteSpace == WhiteSpace.preWrap; }
 
@@ -193,39 +165,38 @@ struct ComputedStyle
     {
         import core.bitop : bt, bts, btr;
 
-        enum bits = StyleProperty.max + 1;
         /// Inherits value from the parent element
-        size_t[bits / (8 * size_t.sizeof) + 1] inheritBitArray;
+        size_t[(P.max + 1) / (8 * size_t.sizeof) + 1] inheritBitArray;
 
         // origins
-        Length _fontSize = Length.rem(1);
+        int _fontSize = 12;
         Color _textColor = Color.black;
         // layout
         string _display;
         // box model
-        Length _width = Length.none;
-        Length _height = Length.none;
-        Length _minWidth = Length.none;
-        Length _maxWidth = Length.none;
-        Length _minHeight = Length.none;
-        Length _maxHeight = Length.none;
-        Length _paddingTop = Length.zero;
-        Length _paddingRight = Length.zero;
-        Length _paddingBottom = Length.zero;
-        Length _paddingLeft = Length.zero;
-        Length _borderTopWidth = Length.zero;
-        Length _borderRightWidth = Length.zero;
-        Length _borderBottomWidth = Length.zero;
-        Length _borderLeftWidth = Length.zero;
-        Length _marginTop = Length.zero;
-        Length _marginRight = Length.zero;
-        Length _marginBottom = Length.zero;
-        Length _marginLeft = Length.zero;
+        LayoutLength _width = LayoutLength.none;
+        LayoutLength _height = LayoutLength.none;
+        LayoutLength _minWidth = LayoutLength.none;
+        LayoutLength _maxWidth = LayoutLength.none;
+        LayoutLength _minHeight = LayoutLength.none;
+        LayoutLength _maxHeight = LayoutLength.none;
+        float _paddingTop = 0;
+        float _paddingRight = 0;
+        float _paddingBottom = 0;
+        float _paddingLeft = 0;
+        float _borderTopWidth = 0;
+        float _borderRightWidth = 0;
+        float _borderBottomWidth = 0;
+        float _borderLeftWidth = 0;
+        float _marginTop = 0;
+        float _marginRight = 0;
+        float _marginBottom = 0;
+        float _marginLeft = 0;
         // placement
-        Length _left = Length.none;
-        Length _top = Length.none;
-        Length _right = Length.none;
-        Length _bottom = Length.none;
+        LayoutLength _left = LayoutLength.none;
+        LayoutLength _top = LayoutLength.none;
+        LayoutLength _right = LayoutLength.none;
+        LayoutLength _bottom = LayoutLength.none;
         Align _alignment;
         Stretch _stretch = Stretch.cross;
         Distribution _justifyContent = Distribution.stretch;
@@ -234,8 +205,8 @@ struct ComputedStyle
         Distribution _alignContent = Distribution.stretch;
         AlignItem _alignItems = AlignItem.stretch;
         AlignItem _alignSelf = AlignItem.unspecified;
-        Length _rowGap = Length.zero;
-        Length _columnGap = Length.zero;
+        LayoutLength _rowGap = LayoutLength.zero;
+        LayoutLength _columnGap = LayoutLength.zero;
         int _order = 0;
         int _zIndex = int.min;
         // flexbox-specific
@@ -243,7 +214,7 @@ struct ComputedStyle
         FlexWrap _flexWrap = FlexWrap.off;
         float _flexGrow = 0;
         float _flexShrink = 1;
-        Length _flexBasis = Length.none;
+        LayoutLength _flexBasis = LayoutLength.none;
         // grid-specific
         TrackSize[] _gridTemplateRows;
         TrackSize[] _gridTemplateColumns;
@@ -258,8 +229,8 @@ struct ComputedStyle
         // background
         Color _bgColor = Color.transparent;
         Drawable _bgImage;
-        BgPositionRaw _bgPosition;
-        BgSizeRaw _bgSize;
+        BgPosition _bgPosition;
+        BgSize _bgSize;
         RepeatStyle _bgRepeat;
         BoxType _bgOrigin = BoxType.padding;
         BoxType _bgClip = BoxType.border;
@@ -271,10 +242,10 @@ struct ComputedStyle
         BorderStyle _borderRightStyle = BorderStyle.none;
         BorderStyle _borderBottomStyle = BorderStyle.none;
         BorderStyle _borderLeftStyle = BorderStyle.none;
-        Length _borderTopLeftRadius = Length.zero;
-        Length _borderTopRightRadius = Length.zero;
-        Length _borderBottomLeftRadius = Length.zero;
-        Length _borderBottomRightRadius = Length.zero;
+        LayoutLength _borderTopLeftRadius = LayoutLength.zero;
+        LayoutLength _borderTopRightRadius = LayoutLength.zero;
+        LayoutLength _borderBottomLeftRadius = LayoutLength.zero;
+        LayoutLength _borderBottomRightRadius = LayoutLength.zero;
         BoxShadowDrawable _boxShadow;
         Color _focusRectColor = Color.transparent;
         // text
@@ -282,19 +253,19 @@ struct ComputedStyle
         FontFamily _fontFamily = FontFamily.sans_serif;
         FontStyle _fontStyle = FontStyle.normal;
         ushort _fontWeight = 400;
-        Length _letterSpacing = Length.zero;
-        Length _lineHeight = Length.rem(1.2);
+        float _letterSpacing = 0;
+        float _lineHeight = 14;
         TabSize _tabSize;
         TextAlign _textAlign = TextAlign.start;
         Color _textDecorColor = Color.black;
         TextDecorLine _textDecorLine = TextDecorLine.none;
         TextDecorStyle _textDecorStyle = TextDecorStyle.solid;
         TextHotkey _textHotkey = TextHotkey.ignore;
-        Length _textIndent = Length.zero;
+        LayoutLength _textIndent = LayoutLength.zero;
         TextOverflow _textOverflow = TextOverflow.clip;
         TextTransform _textTransform = TextTransform.none;
         WhiteSpace _whiteSpace = WhiteSpace.pre;
-        Length _wordSpacing = Length.zero;
+        float _wordSpacing = 0;
         // effects
         float _opacity = 1;
         BlendMode _mixBlendMode = BlendMode.normal;
@@ -316,11 +287,10 @@ struct ComputedStyle
             return LayoutLength(ll.applyPercent(def));
         }
         else if (value.is_em)
-            return LayoutLength(ll.applyPercent(fontSize));
+            return LayoutLength(ll.applyPercent(_fontSize));
         else
             return ll;
     }
-
     /// ...without percent
     private float applyOnlyEM(Length value) const
     {
@@ -331,7 +301,7 @@ struct ComputedStyle
             return ll.applyPercent(def);
         }
         else if (value.is_em)
-            return ll.applyPercent(fontSize);
+            return ll.applyPercent(_fontSize);
         else
             return ll.applyPercent(0);
     }
@@ -340,9 +310,9 @@ struct ComputedStyle
     void recompute(Style[] chain, ComputedStyle* parentStyle)
     {
         /// iterate through all properties
-        static foreach (name; __traits(allMembers, StyleProperty))
+        static foreach (name; __traits(allMembers, P))
         {{
-            enum ptype = mixin(`StyleProperty.` ~ name);
+            enum ptype = mixin(`P.` ~ name);
             enum bool inheritsByDefault = isInherited(ptype);
 
             // search in style chain, find nearest written property
@@ -361,14 +331,14 @@ struct ComputedStyle
                 }
                 if (plist.isInitial(ptype))
                 {
-                    setDefault!name();
+                    setProperty!name(getDefaultValue!name());
                     set = true;
                     break;
                 }
                 // get value here
                 if (auto p = plist.peek!name)
                 {
-                    setProperty!name(*p);
+                    setProperty!name(postprocessValue!ptype(*p, parentStyle));
                     set = true;
                     break;
                 }
@@ -385,12 +355,12 @@ struct ComputedStyle
                 if (parentStyle)
                     setProperty!name(mixin(`parentStyle._` ~ name));
                 else
-                    setDefault!name();
+                    setProperty!name(getDefaultValue!name());
             }
             else if (!set)
             {
                 // if nothing there - return value to defaults
-                setDefault!name();
+                setProperty!name(getDefaultValue!name());
             }
         }}
         // set inherited properties in descendant elements. TODO: optimize, consider recursive updates
@@ -399,16 +369,110 @@ struct ComputedStyle
             ComputedStyle* st = child.style;
             if (!st.isolated)
             {
-                static foreach (name; __traits(allMembers, StyleProperty))
+                static foreach (name; __traits(allMembers, P))
                 {{
-                    if (st.inherits(mixin(`StyleProperty.` ~ name)))
+                    if (st.inherits(mixin(`P.` ~ name)))
                         st.setProperty!name(mixin("_" ~ name));
                 }}
             }
         }
     }
 
-    private bool inherits(StyleProperty ptype)
+    private auto postprocessValue(P ptype, T)(ref T value, ComputedStyle* parentStyle)
+    {
+        static if (ptype == P.fontSize)
+        {
+            const Length fs = value;
+            const int def = FontManager.defaultFontSize;
+            if (!fs.is_rem && !parentStyle && (fs.is_em || fs.is_percent))
+            {
+                return def;
+            }
+            else
+            {
+                const int base = parentStyle ? parentStyle._fontSize : def;
+                return cast(int)fs.toLayout.applyPercent(base);
+            }
+        }
+        else static if (false
+            || ptype == P.width
+            || ptype == P.height
+            || ptype == P.minWidth
+            || ptype == P.maxWidth
+            || ptype == P.minHeight
+            || ptype == P.maxHeight
+            || ptype == P.left
+            || ptype == P.top
+            || ptype == P.right
+            || ptype == P.bottom
+            || ptype == P.rowGap
+            || ptype == P.columnGap
+            || ptype == P.flexBasis
+            || ptype == P.borderTopLeftRadius
+            || ptype == P.borderTopRightRadius
+            || ptype == P.borderBottomLeftRadius
+            || ptype == P.borderBottomRightRadius
+            || ptype == P.textIndent
+        )
+        {
+            return applyEM(value);
+        }
+        else static if (false
+            || ptype == P.paddingTop
+            || ptype == P.paddingRight
+            || ptype == P.paddingBottom
+            || ptype == P.paddingLeft
+            || ptype == P.borderTopWidth
+            || ptype == P.borderRightWidth
+            || ptype == P.borderBottomWidth
+            || ptype == P.borderLeftWidth
+            || ptype == P.marginTop
+            || ptype == P.marginRight
+            || ptype == P.marginBottom
+            || ptype == P.marginLeft
+            || ptype == P.letterSpacing
+            || ptype == P.lineHeight
+            || ptype == P.wordSpacing
+        )
+        {
+            return applyOnlyEM(value);
+        }
+        else static if (ptype == P.bgPosition)
+        {
+            return BgPosition(applyEM(value.x), applyEM(value.y));
+        }
+        else static if (ptype == P.bgSize)
+        {
+            const t = value.type;
+            if (t == BgSizeType.length)
+                return BgSize(t, applyEM(value.x), applyEM(value.y));
+            else
+                return BgSize(t);
+        }
+        else
+            return value;
+    }
+
+    private auto getDefaultValue(string name)()
+    {
+        enum ptype = mixin(`P.` ~ name);
+
+        static if (false
+            || ptype == P.borderTopColor
+            || ptype == P.borderRightColor
+            || ptype == P.borderBottomColor
+            || ptype == P.borderLeftColor
+            || ptype == P.textDecorColor
+        )
+        {
+            // must be computed before
+            return _textColor;
+        }
+        else
+            return mixin(`defaults._` ~ name);
+    }
+
+    private bool inherits(P ptype)
     {
         return bt(inheritBitArray.ptr, ptype) != 0;
     }
@@ -463,31 +527,13 @@ struct ComputedStyle
         return false;
     }
 
-    private void setDefault(string name)()
-    {
-        enum ptype = mixin(`StyleProperty.` ~ name);
-
-        static if (
-            ptype == StyleProperty.borderTopColor ||
-            ptype == StyleProperty.borderRightColor ||
-            ptype == StyleProperty.borderBottomColor ||
-            ptype == StyleProperty.borderLeftColor ||
-            ptype == StyleProperty.textDecorColor)
-        {
-            // must be computed before
-            setProperty!name(_textColor);
-        }
-        else
-            setProperty!name(mixin(`defaults._` ~ name));
-    }
-
     /// Set a property value, taking transitions into account
     private void setProperty(string name, T)(T newValue)
     {
         import std.meta : Alias;
 
         alias field = Alias!(mixin("_" ~ name));
-        enum ptype = mixin(`StyleProperty.` ~ name);
+        enum ptype = mixin(`P.` ~ name);
 
         // do nothing if changed nothing
         if (field is newValue)
@@ -521,7 +567,7 @@ struct ComputedStyle
         import beamui.core.animations : Transition;
 
         alias field = Alias!(mixin("_" ~ name));
-        enum ptype = mixin(`StyleProperty.` ~ name);
+        enum ptype = mixin(`P.` ~ name);
 
         T starting = field;
         auto tr = new Transition(_transitionDuration, _transitionTimingFunction, _transitionDelay);
