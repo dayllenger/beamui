@@ -406,6 +406,9 @@ Nullable!(Selector.Combinator) makeSelectorPart(Selector* sel, ref const(CSS.Sel
             case "root":
                 sel.position = Selector.TreePosition.root;
                 break;
+            case "empty":
+                sel.position = Selector.TreePosition.empty;
+                break;
             default:
             }
             break;

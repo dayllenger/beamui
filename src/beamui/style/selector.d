@@ -37,6 +37,7 @@ struct Selector
     {
         none,
         root,
+        empty,
     }
     /// ditto
     TreePosition position;

@@ -860,6 +860,11 @@ public:
                 if (!_window) // criterion: only root elements have set window
                     return false;
             }
+            else if (sel.position == Selector.TreePosition.empty)
+            {
+                if (childCount > 0)
+                    return false;
+            }
         }
         // classes
         if (sel.classes.length && !attributes)
@@ -2438,6 +2443,11 @@ abstract class ElemGroup : Element
                 el.requestLayout();
             }
             handleChildListChange();
+        }
+        // handle :empty pseudo-class
+        if (!oldItems.length && _children.count || oldItems.length && !_children.count)
+        {
+            invalidateStylesRecursively();
         }
     }
 
