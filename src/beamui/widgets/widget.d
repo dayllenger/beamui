@@ -69,7 +69,7 @@ enum FocusReason : ubyte
 }
 
 /// Focus movement options
-enum FocusMovement
+enum FocusMovement : ubyte
 {
     /// No focus movement
     none,
@@ -88,7 +88,7 @@ enum FocusMovement
 }
 
 /// Standard mouse cursor types
-enum CursorType
+enum CursorType : ubyte
 {
     // general
     automatic,
@@ -136,7 +136,7 @@ enum CursorType
     zoomOut,
 }
 
-enum DependentSize
+enum DependentSize : ubyte
 {
     none,
     width,

@@ -820,11 +820,11 @@ struct TabSize
     int value() const { return sz; }
     alias value this;
 
-    private int sz = 4;
+    private ubyte sz = 4;
 
     this(int size)
     {
-        sz = clamp(size, 1, 16);
+        sz = cast(ubyte)clamp(size, 1, 16);
     }
 }
 

@@ -754,7 +754,7 @@ struct BgSize
 }
 
 /// Tiling options for one image axis
-enum Tiling
+enum Tiling : ubyte
 {
     none,
     repeat,
@@ -776,7 +776,7 @@ enum BoxType
     content,
 }
 
-enum BorderStyle
+enum BorderStyle : ubyte
 {
     none,
     solid,

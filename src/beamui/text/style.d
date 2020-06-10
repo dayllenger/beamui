@@ -24,7 +24,7 @@ enum TextAlign : ubyte
 
     Note that they can be combined with `|` to draw several lines.
 */
-enum TextDecorLine
+enum TextDecorLine : ubyte
 {
     none = 0,
     over = 1,
