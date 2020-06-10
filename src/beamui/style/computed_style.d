@@ -198,20 +198,11 @@ struct ComputedStyle
         LayoutLength _right = LayoutLength.none;
         LayoutLength _bottom = LayoutLength.none;
         Align _alignment;
-        Stretch _stretch = Stretch.cross;
-        Distribution _justifyContent = Distribution.stretch;
-        AlignItem _justifyItems = AlignItem.stretch;
-        AlignItem _justifySelf = AlignItem.unspecified;
-        Distribution _alignContent = Distribution.stretch;
-        AlignItem _alignItems = AlignItem.stretch;
-        AlignItem _alignSelf = AlignItem.unspecified;
         LayoutLength _rowGap = LayoutLength.zero;
         LayoutLength _columnGap = LayoutLength.zero;
         int _order = 0;
         int _zIndex = int.min;
         // flexbox-specific
-        FlexDirection _flexDirection = FlexDirection.row;
-        FlexWrap _flexWrap = FlexWrap.off;
         float _flexGrow = 0;
         float _flexShrink = 1;
         LayoutLength _flexBasis = LayoutLength.none;
@@ -219,7 +210,6 @@ struct ComputedStyle
         TrackSize[] _gridTemplateRows;
         TrackSize[] _gridTemplateColumns;
         GridNamedAreas _gridTemplateAreas;
-        GridFlow _gridAutoFlow = GridFlow.row;
         TrackSize _gridAutoRows = TrackSize.automatic;
         TrackSize _gridAutoColumns = TrackSize.automatic;
         GridLineName _gridRowStart;
@@ -231,17 +221,10 @@ struct ComputedStyle
         Drawable _bgImage;
         BgPosition _bgPosition;
         BgSize _bgSize;
-        RepeatStyle _bgRepeat;
-        BoxType _bgOrigin = BoxType.padding;
-        BoxType _bgClip = BoxType.border;
         Color _borderTopColor = Color.transparent;
         Color _borderRightColor = Color.transparent;
         Color _borderBottomColor = Color.transparent;
         Color _borderLeftColor = Color.transparent;
-        BorderStyle _borderTopStyle = BorderStyle.none;
-        BorderStyle _borderRightStyle = BorderStyle.none;
-        BorderStyle _borderBottomStyle = BorderStyle.none;
-        BorderStyle _borderLeftStyle = BorderStyle.none;
         LayoutLength _borderTopLeftRadius = LayoutLength.zero;
         LayoutLength _borderTopRightRadius = LayoutLength.zero;
         LayoutLength _borderBottomLeftRadius = LayoutLength.zero;
@@ -250,31 +233,49 @@ struct ComputedStyle
         Color _focusRectColor = Color.transparent;
         // text
         string _fontFace = "Arial";
-        FontFamily _fontFamily = FontFamily.sans_serif;
-        FontStyle _fontStyle = FontStyle.normal;
-        ushort _fontWeight = 400;
         float _letterSpacing = 0;
         float _lineHeight = 14;
-        TabSize _tabSize;
-        TextAlign _textAlign = TextAlign.start;
         Color _textDecorColor = Color.black;
-        TextDecorLine _textDecorLine = TextDecorLine.none;
-        TextDecorStyle _textDecorStyle = TextDecorStyle.solid;
-        TextHotkey _textHotkey = TextHotkey.ignore;
         LayoutLength _textIndent = LayoutLength.zero;
-        TextOverflow _textOverflow = TextOverflow.clip;
-        TextTransform _textTransform = TextTransform.none;
-        WhiteSpace _whiteSpace = WhiteSpace.pre;
         float _wordSpacing = 0;
         // effects
         float _opacity = 1;
-        BlendMode _mixBlendMode = BlendMode.normal;
         // transitions and animations
         string _transitionProperty;
         TimingFunction _transitionTimingFunction;
         uint _transitionDuration;
         uint _transitionDelay;
-        // misc
+
+        // packing
+        Stretch _stretch = Stretch.cross;
+        Distribution _justifyContent = Distribution.stretch;
+        AlignItem _justifyItems = AlignItem.stretch;
+        AlignItem _justifySelf = AlignItem.unspecified;
+        Distribution _alignContent = Distribution.stretch;
+        AlignItem _alignItems = AlignItem.stretch;
+        AlignItem _alignSelf = AlignItem.unspecified;
+        FlexDirection _flexDirection = FlexDirection.row;
+        FlexWrap _flexWrap = FlexWrap.off;
+        GridFlow _gridAutoFlow = GridFlow.row;
+        RepeatStyle _bgRepeat;
+        BoxType _bgOrigin = BoxType.padding;
+        BoxType _bgClip = BoxType.border;
+        BorderStyle _borderTopStyle = BorderStyle.none;
+        BorderStyle _borderRightStyle = BorderStyle.none;
+        BorderStyle _borderBottomStyle = BorderStyle.none;
+        BorderStyle _borderLeftStyle = BorderStyle.none;
+        FontFamily _fontFamily = FontFamily.sans_serif;
+        FontStyle _fontStyle = FontStyle.normal;
+        ushort _fontWeight = 400;
+        TabSize _tabSize = TabSize(4);
+        TextAlign _textAlign = TextAlign.start;
+        TextDecorLine _textDecorLine = TextDecorLine.none;
+        TextDecorStyle _textDecorStyle = TextDecorStyle.solid;
+        TextHotkey _textHotkey = TextHotkey.ignore;
+        TextOverflow _textOverflow = TextOverflow.clip;
+        TextTransform _textTransform = TextTransform.none;
+        WhiteSpace _whiteSpace = WhiteSpace.pre;
+        BlendMode _mixBlendMode = BlendMode.normal;
         CursorType _cursor = CursorType.automatic;
     }
 
