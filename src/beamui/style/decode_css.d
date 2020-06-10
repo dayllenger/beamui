@@ -1650,11 +1650,11 @@ Result!uint decode(SpecialCSSType t : SpecialCSSType.time)(const Token[] tokens)
     const t = tokens[0];
     if (t.type == TokenType.dimension)
     {
-        uint res = to!uint(t.text);
+        const res = assertNotThrown(to!float(t.text));
         if (t.dimensionUnit == "s")
-            return Ok(res * 1000);
+            return Ok(cast(uint)(res * 1000));
         else if (t.dimensionUnit == "ms")
-            return Ok(res);
+            return Ok(cast(uint)res);
         else
         {
             Log.fe("CSS(%s): unknown time dimension: %s", t.line, t.dimensionUnit);
