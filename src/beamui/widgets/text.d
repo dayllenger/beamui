@@ -135,9 +135,6 @@ class ElemLabel : Element
         case textAlign:
             textobj.style.alignment = style.textAlign;
             break;
-        case textColor:
-            textobj.style.color = style.textColor;
-            break;
         case textHotkey:
             // recompute the mnemonic
             if (hotkeyIndex == -1 && style.textHotkey != TextHotkey.ignore)
@@ -170,17 +167,12 @@ class ElemLabel : Element
         }
     }
 
-    override protected void handleFontChange()
+    override protected Boundaries computeBoundaries()
     {
         Font f = font.get;
         textobj.style.font = f;
         minSizeTester.style.font = f;
         natSizeTester.style.font = f;
-    }
-
-    override protected Boundaries computeBoundaries()
-    {
-        updateStyles();
 
         textobj.measure();
 
@@ -214,7 +206,9 @@ class ElemLabel : Element
         const b = innerBox;
         pr.clipIn(BoxI.from(b));
 
-        textobj.style.decoration = style.textDecor;
+        const st = style;
+        textobj.style.color = st.textColor;
+        textobj.style.decoration = st.textDecor;
         textobj.style.underlinedCharIndex = textHotkey == TextHotkey.underline ? hotkeyIndex : -1;
 
         // TODO: align vertically?
@@ -581,9 +575,6 @@ class ElemParagraph : Element
         case textAlign:
             _txtStyle.alignment = style.textAlign;
             break;
-        case textColor:
-            _txtStyle.color = style.textColor;
-            break;
         case textOverflow:
             _txtStyle.overflow = style.textOverflow;
             break;
@@ -602,14 +593,6 @@ class ElemParagraph : Element
         }
     }
 
-    override protected void handleFontChange()
-    {
-        Font f = font.get;
-        _txtStyle.font = f;
-        minSizeTester.style.font = f;
-        natSizeTester.style.font = f;
-    }
-
     private void needToMeasureText()
     {
         _oldTLStyle.font = null;
@@ -620,7 +603,10 @@ class ElemParagraph : Element
     {
         assert(_lines.length == _content.lineCount);
 
-        updateStyles();
+        Font f = font.get;
+        _txtStyle.font = f;
+        minSizeTester.style.font = f;
+        natSizeTester.style.font = f;
 
         Size tsz;
         auto tlstyle = TextLayoutStyle(_txtStyle);
@@ -695,7 +681,9 @@ class ElemParagraph : Element
         if (clip.empty)
             return; // clipped out
 
-        _txtStyle.decoration = style.textDecor;
+        const st = style;
+        _txtStyle.color = st.textColor;
+        _txtStyle.decoration = st.textDecor;
 
         // draw the paragraph at (b.x, b.y)
         float y = 0;

@@ -438,7 +438,8 @@ class ElemEditLine : Element, IEditor, ActionOperator
                 return;
             _passwordChar = ch;
             // must be applied immediately
-            measureVisibleText();
+            _txtline.str = applyPasswordChar(_str);
+            _txtline.measured = false;
             requestLayout();
         }
 
@@ -531,7 +532,6 @@ class ElemEditLine : Element, IEditor, ActionOperator
     this()
     {
         bindActions();
-        handleFontChange();
         handleThemeChange();
 
         _undoBuffer = new UndoBuffer;
@@ -581,27 +581,14 @@ class ElemEditLine : Element, IEditor, ActionOperator
             const tsz = style.tabSize;
             _txtStyle.tabSize = tsz;
             _minSizeTester.style.tabSize = tsz;
-            measureVisibleText();
             break;
         case textTransform:
             _txtStyle.transform = style.textTransform;
             _minSizeTester.style.transform = style.textTransform;
-            measureVisibleText();
             break;
         default:
             break;
         }
-    }
-
-    override protected void handleFontChange()
-    {
-        Font font = font();
-        _spaceWidth = font.spaceWidth;
-        _txtStyle.font = font;
-        _minSizeTester.style.font = font;
-        if (auto ph = _placeholder)
-            ph.style.font = font;
-        measureVisibleText();
     }
 
     override CursorType getCursorType(float x, float y) const
@@ -641,10 +628,9 @@ class ElemEditLine : Element, IEditor, ActionOperator
     {
         _caretPos = min(posAfter, lineLength);
         _selectionRange = LineRange(_caretPos, _caretPos);
-        measureVisibleText();
         ensureCaretVisible();
         updateActions();
-        invalidate();
+        requestLayout();
         onChange(_str);
         onCaretPosChange(_caretPos);
         return;
@@ -1378,22 +1364,25 @@ class ElemEditLine : Element, IEditor, ActionOperator
     //===============================================================
     // Measure, layout, drawing
 
-    protected Size measureVisibleText()
+    override protected Boundaries computeBoundaries()
     {
+        Font f = font.get;
+        _spaceWidth = f.spaceWidth;
+        _txtStyle.font = f;
+        _minSizeTester.style.font = f;
+        if (auto ph = _placeholder)
+            ph.style.font = f;
+
         _txtline.str = applyPasswordChar(_str);
         _txtline.measured = false;
+
         auto tlstyle = TextLayoutStyle(_txtStyle);
         assert(!tlstyle.wrap);
         _txtline.measure(tlstyle);
-        return _txtline.size;
-    }
 
-    override protected Boundaries computeBoundaries()
-    {
-        auto bs = super.computeBoundaries();
-        const sz = _minSizeTester.getSize();
-        bs.min += sz;
-        bs.nat += sz;
+        Boundaries bs;
+        bs.min = _minSizeTester.getSize();
+        bs.nat = _txtline.size;
         return bs;
     }
 
@@ -1722,7 +1711,6 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
         _content.onContentChange ~= &handleContentChange;
 
         bindActions();
-        handleFontChange();
         handleThemeChange();
 
         _minSizeTester.str = "aaaaa\naaaaa"d;
@@ -1820,17 +1808,6 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
     // to hold horizontal scroll position toggling between normal and word wrap mode
     private float previousXScrollPos = 0;
     private ScrollBarMode previousHScrollbarMode;
-
-    override protected void handleFontChange()
-    {
-        Font font = font();
-        _spaceWidth = font.spaceWidth;
-        _lineHeight = max(font.height, 1);
-        _txtStyle.font = font;
-        _minSizeTester.style.font = font;
-        if (auto ph = _placeholder)
-            ph.style.font = font;
-    }
 
     override protected void updateVScrollBar(ScrollData data)
     {
@@ -3821,6 +3798,14 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
 
     override protected Boundaries computeBoundaries()
     {
+        Font f = font.get;
+        _spaceWidth = f.spaceWidth;
+        _lineHeight = max(f.height, 1);
+        _txtStyle.font = f;
+        _minSizeTester.style.font = f;
+        if (auto ph = _placeholder)
+            ph.style.font = f;
+
         auto bs = super.computeBoundaries();
         measureVisibleText();
         _minSizeTester.style.tabSize = _content.tabSize;

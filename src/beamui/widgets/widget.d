@@ -1089,26 +1089,22 @@ public:
         case borderTopStyle: .. case borderLeftStyle:
         case borderTopLeftRadius: .. case borderBottomRightRadius:
         case boxShadow:
+        case focusRectColor:
         case textAlign:
+        case textColor:
         case textDecorColor:
         case textDecorLine:
         case textDecorStyle:
-        case textColor:
         case textOverflow:
-        case focusRectColor:
         case opacity:
         case mixBlendMode:
             invalidate();
             break;
+        case fontSize:
         case fontFace: .. case fontWeight:
             _font.clear();
-            handleFontChange();
             requestLayout();
             break;
-        // transitionProperty
-        // transitionTimingFunction
-        // transitionDuration
-        // transitionDelay
         default:
             break;
         }
@@ -1118,11 +1114,6 @@ public:
     }
 
     protected void handleChildStyleChange(StyleProperty p, Visibility v)
-    {
-    }
-
-    /// Override to handle font changes
-    protected void handleFontChange()
     {
     }
 
@@ -1995,6 +1986,10 @@ public:
         _boundaries = bs;
     }
 
+    /** ...
+
+        Get `font` in this method.
+    */
     protected Boundaries computeBoundaries()
     {
         return Boundaries.init;

@@ -78,7 +78,6 @@ class ElemSimpleBarChart : Element
     {
         _axisX.arrowSize = 1;
         _minDescSizeTester.str = "aaaaaaaaaa";
-        handleFontChange();
     }
 
     protected struct Bar
@@ -230,16 +229,6 @@ class ElemSimpleBarChart : Element
         _backgroundColor = currentTheme.getColor("chart_background", Color(0xffffff));
         _axisColor = currentTheme.getColor("chart_axis", Color(0xc0c0c0));
         _segmentTagColor = currentTheme.getColor("chart_segment_tag", Color(0xc0c0c0));
-        handleFontChange();
-    }
-
-    override protected void handleFontChange()
-    {
-        Font fnt = font.get;
-        _title.style.font = fnt;
-        _axisYMaxValueDesc.style.font = fnt;
-        _axisYAvgValueDesc.style.font = fnt;
-        _minDescSizeTester.style.font = fnt;
     }
 
     protected Size measureAxisXDesc()
@@ -284,6 +273,12 @@ class ElemSimpleBarChart : Element
 
     override protected Boundaries computeBoundaries()
     {
+        Font fnt = font.get;
+        _title.style.font = fnt;
+        _axisYMaxValueDesc.style.font = fnt;
+        _axisYAvgValueDesc.style.font = fnt;
+        _minDescSizeTester.style.font = fnt;
+
         const extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
         const extraSizeY = _axisX.thickness + _axisX.segmentTagLength + _axisY.zeroValueDist + _axisY.arrowSize;
 
