@@ -267,6 +267,28 @@ struct LayoutLength
         else
             return cast(float)(value >> 1) / (1 << 12);
     }
+
+    LayoutLength opBinary(string op : "+")(LayoutLength u) const
+    {
+        if ((value & 1) != (u.value & 1) || value == SIZE_UNSPECIFIED!int || u.value == SIZE_UNSPECIFIED!int)
+            return this;
+
+        LayoutLength ret;
+        ret.value = ((value >> 1) + (u.value >> 1)) << 1;
+        ret.value |= value & 1;
+        return ret;
+    }
+
+    LayoutLength opBinary(string op : "*")(double factor) const
+    {
+        if (value == SIZE_UNSPECIFIED!int)
+            return this;
+
+        LayoutLength ret;
+        ret.value = cast(int)((value >> 1) * factor) << 1;
+        ret.value |= value & 1;
+        return ret;
+    }
 }
 
 /// Parse angle with deg, grad, rad or turn unit. Returns an angle in radians, or NaN if cannot parse.
