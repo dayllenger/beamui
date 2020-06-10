@@ -803,11 +803,19 @@ public:
                 // it may not change from previous update
                 if (!chain.length || cast(size_t[])cachedChain[] != cast(size_t[])chain)
                 {
+                    debug (styles)
+                        Log.d("--- Recomputing style for ", dbgname, " ---");
+
                     // copy
                     cachedChain.clear();
                     cachedChain ~= chain;
+                    // get parent style
+                    auto pstype = _parent && !_style.isolated ? _parent.style : null;
                     // important: we cannot use shared array from `selectStyleChain` func
-                    _style.recompute(cachedChain.unsafe_slice);
+                    _style.recompute(cachedChain.unsafe_slice, pstype);
+
+                    debug (styles)
+                        Log.d("--- End style recomputing ---");
                 }
                 if (onStyleUpdate.assigned)
                     onStyleUpdate(cachedChain.unsafe_slice);
@@ -973,7 +981,8 @@ public:
             cachedChain.clear();
             cachedChain ~= selectStyleChain();
         }
-        _style.recompute(cachedChain.unsafe_slice);
+        auto pstype = _parent && !_style.isolated ? _parent.style : null;
+        _style.recompute(cachedChain.unsafe_slice, pstype);
         if (onStyleUpdate.assigned)
             onStyleUpdate(cachedChain.unsafe_slice);
 

@@ -25,7 +25,6 @@ import beamui.style.types;
 import beamui.text.fonts;
 import beamui.text.style;
 import beamui.widgets.widget : CursorType, Element;
-debug (styles) import beamui.core.logger;
 
 /// Provides default style values for most of properties
 private ComputedStyle defaults;
@@ -339,14 +338,8 @@ struct ComputedStyle
     }
 
     /// Resolve style cascading and inheritance, update all properties
-    void recompute(Style[] chain)
+    void recompute(Style[] chain, ComputedStyle* parentStyle)
     {
-        debug (styles)
-            Log.d("--- Recomputing style for ", element.dbgname, " ---");
-
-        // find that we are not tied, being the root of style scope
-        Element parent = element.parent;
-        const bool hasParent = parent && !isolated;
         /// iterate through all properties
         static foreach (name; __traits(allMembers, StyleProperty))
         {{
@@ -390,8 +383,8 @@ struct ComputedStyle
             // resolve inherited properties
             if (inherits(ptype))
             {
-                if (hasParent)
-                    setProperty!name(mixin(`parent.style._` ~ name));
+                if (parentStyle)
+                    setProperty!name(mixin(`parentStyle._` ~ name));
                 else
                     setDefault!name();
             }
@@ -414,9 +407,6 @@ struct ComputedStyle
                 }}
             }
         }
-
-        debug (styles)
-            Log.d("--- End style recomputing ---");
     }
 
     private bool inherits(StyleProperty ptype)
