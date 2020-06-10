@@ -9,14 +9,12 @@ module beamui.style.computed_style;
 public import beamui.style.property : StyleProperty;
 import beamui.core.animations;
 import beamui.core.editable : TabSize;
-import beamui.core.functions : clamp, eliminate, format;
-import beamui.core.geometry : Insets, isDefinedSize;
-import beamui.core.types : Result, Ok;
+import beamui.core.geometry : Insets;
 import beamui.core.units : Length, LayoutLength;
-import beamui.graphics.colors : Color, decodeHexColor, decodeTextColor;
+import beamui.graphics.colors : Color;
 import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables;
-import beamui.layout.alignment;
+import beamui.layout.alignment : Align, AlignItem, Distribution, Stretch;
 import beamui.layout.flex : FlexDirection, FlexWrap;
 import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
 import beamui.style.property;
@@ -166,7 +164,7 @@ struct ComputedStyle
         import core.bitop : bt, bts, btr;
 
         /// Inherits value from the parent element
-        size_t[(P.max + 1) / (8 * size_t.sizeof) + 1] inheritBitArray;
+        size_t[(P.max + 1) / (8 * size_t.sizeof) + 1] _inheritBitArray;
 
         // origins
         int _fontSize = 12;
@@ -310,6 +308,8 @@ struct ComputedStyle
     /// Resolve style cascading and inheritance, update all properties
     void recompute(Style[] chain, ComputedStyle* parentStyle)
     {
+        _inheritBitArray = 0;
+
         /// iterate through all properties
         static foreach (name; __traits(allMembers, P))
         {{
@@ -321,7 +321,7 @@ struct ComputedStyle
             foreach_reverse (st; chain)
             {
                 auto plist = &st._props;
-
+                // 'inherit'
                 static if (!inheritsByDefault)
                 {
                     if (plist.isInherited(ptype))
@@ -330,13 +330,14 @@ struct ComputedStyle
                         break;
                     }
                 }
+                // 'initial'
                 if (plist.isInitial(ptype))
                 {
                     setProperty!name(getDefaultValue!name());
                     set = true;
                     break;
                 }
-                // get value here
+                // actually specified value
                 if (auto p = plist.peek!name)
                 {
                     setProperty!name(postprocessValue!ptype(*p, parentStyle));
@@ -344,11 +345,9 @@ struct ComputedStyle
                     break;
                 }
             }
-            // set/reset 'inherit' flag
+            // remember inherited properties
             if (inh || inheritsByDefault && !set)
-                bts(inheritBitArray.ptr, ptype);
-            else
-                btr(inheritBitArray.ptr, ptype);
+                bts(_inheritBitArray.ptr, ptype);
 
             // resolve inherited properties
             if (inherits(ptype))
@@ -475,7 +474,7 @@ struct ComputedStyle
 
     private bool inherits(P ptype)
     {
-        return bt(inheritBitArray.ptr, ptype) != 0;
+        return bt(_inheritBitArray.ptr, ptype) != 0;
     }
 
     /// Check whether the style can make transition for a CSS property
@@ -483,19 +482,21 @@ struct ComputedStyle
     {
         if (_transitionTimingFunction is null || _transitionDuration <= 0)
             return false;
-        if (_transitionProperty == "all" || _transitionProperty == property)
+
+        const specified = _transitionProperty;
+        if (specified == "all" || specified == property)
             return true;
 
-        if (_transitionProperty == "padding")
+        if (specified == "padding")
             return property == "padding-top" || property == "padding-right" ||
                    property == "padding-bottom" || property == "padding-left";
 
-        if (_transitionProperty == "background")
+        if (specified == "background")
             return property == "background-color";
 
         const bprefix = "border-";
         const bplen = bprefix.length;
-        if (_transitionProperty == "border-width")
+        if (specified == "border-width")
         {
             if (property.length <= bplen || property[0 .. bplen] != bprefix)
                 return false;
@@ -503,7 +504,7 @@ struct ComputedStyle
             return rest == "top-width" || rest == "right-width" ||
                    rest == "bottom-width" || rest == "left-width";
         }
-        if (_transitionProperty == "border-color")
+        if (specified == "border-color")
         {
             if (property.length <= bplen || property[0 .. bplen] != bprefix)
                 return false;
@@ -511,7 +512,7 @@ struct ComputedStyle
             return rest == "top-color" || rest == "right-color" ||
                    rest == "bottom-color" || rest == "left-color";
         }
-        if (_transitionProperty == "border")
+        if (specified == "border")
         {
             if (property.length <= bplen || property[0 .. bplen] != bprefix)
                 return false;
@@ -522,7 +523,7 @@ struct ComputedStyle
                    rest == "bottom-color" || rest == "left-color";
         }
 
-        if (_transitionProperty == "gap")
+        if (specified == "gap")
             return property == "row-gap" || property == "column-gap";
 
         return false;
@@ -562,19 +563,18 @@ struct ComputedStyle
         element.handleStyleChange(ptype);
     }
 
-    private void animateProperty(string name, T)(T ending)
+    private void animateProperty(string name, T)(T end)
     {
         import std.meta : Alias;
-        import beamui.core.animations : Transition;
 
         alias field = Alias!(mixin("_" ~ name));
         enum ptype = mixin(`P.` ~ name);
 
-        T starting = field;
+        T begin = field;
         auto tr = new Transition(_transitionDuration, _transitionTimingFunction, _transitionDelay);
         element.addAnimation(name, tr.duration,
             (double t) {
-                field = tr.mix(starting, ending, t);
+                field = tr.mix(begin, end, t);
                 element.handleStyleChange(ptype);
             }
         );
