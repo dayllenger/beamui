@@ -198,7 +198,6 @@ class ElemScrollBar : ElemGroup
         _pageUp = new PageScrollButton;
         _pageDown = new PageScrollButton;
         _indicator = new ScrollIndicator;
-        updateDrawables();
 
         _hiddenChildren.reserve(5);
         foreach (el; tup(_btnBack, _btnForward, _indicator, _pageUp, _pageDown))
@@ -218,21 +217,18 @@ class ElemScrollBar : ElemGroup
         _data.onChange -= &handleDataChange;
     }
 
-    override void handleThemeChange()
+    override void handleCustomPropertiesChange()
     {
-        super.handleThemeChange();
         updateDrawables();
     }
 
     protected void updateDrawables()
     {
+        auto pick = (string name) => DrawableRef(style.getPropertyValue!(Drawable, SpecialCSSType.image)(name, null));
         const vert = _orient == Orientation.vertical;
-        _btnBack.drawable = currentTheme.getDrawable(vert ?
-            "scrollbar_button_up" : "scrollbar_button_left");
-        _btnForward.drawable = currentTheme.getDrawable(vert ?
-            "scrollbar_button_down" : "scrollbar_button_right");
-        _indicator.drawable = currentTheme.getDrawable(vert ?
-            "scrollbar_indicator_vertical" : "scrollbar_indicator_horizontal");
+        _btnBack.drawable = pick(vert ? "--button-up" : "--button-left");
+        _btnForward.drawable = pick(vert ? "--button-down" : "--button-right");
+        _indicator.drawable = pick(vert ? "--indicator-vertical" : "--indicator-horizontal");
     }
 
     final void triggerAction(ScrollAction action)

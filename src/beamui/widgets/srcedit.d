@@ -118,18 +118,18 @@ class ElemSourceEdit : ElemEditBox
         uint _foldingPaneWidth = BACKEND_CONSOLE ? 1 : 12;
         uint _modificationMarksPaneWidth = BACKEND_CONSOLE ? 1 : 4;
 
-        Color _leftPaneBgColor = Color(0xF4F4F4);
-        Color _leftPaneBgColor2 = Color(0xFFFFFF);
-        Color _leftPaneBgColor3 = Color(0xF8F8F8);
-        Color _leftPaneLineNumColor = Color(0x4060D0);
-        Color _leftPaneLineNumColorEdited = Color(0xC0C000);
-        Color _leftPaneLineNumColorSaved = Color(0x00C000);
-        Color _leftPaneLineNumColorCurrentLine = Color.transparent;
-        Color _leftPaneLineNumBgColorCurrLine = Color(0x8080FF, 0x40);
-        Color _leftPaneLineNumBgColor = Color(0xF4F4F4);
-        Color _colorIconBreakpoint = Color(0xFF0000);
-        Color _colorIconBookmark = Color(0x0000FF);
-        Color _colorIconError = Color(0xFF0000, 0x80);
+        Color _leftPaneBgColor1;
+        Color _leftPaneBgColor2;
+        Color _leftPaneBgColor3;
+        Color _leftPaneLineNumColor;
+        Color _leftPaneLineNumColorEdited;
+        Color _leftPaneLineNumColorSaved;
+        Color _leftPaneLineNumColorCurrentLine;
+        Color _leftPaneLineNumBgColor;
+        Color _leftPaneLineNumBgColorCurrLine;
+        Color _colorIconBreakpoint;
+        Color _colorIconBookmark;
+        Color _colorIconError;
     }
 
     this(EditableContent content)
@@ -138,22 +138,24 @@ class ElemSourceEdit : ElemEditBox
         _extendRightScrollBound = true;
     }
 
-    override void handleThemeChange()
+    override void handleCustomPropertiesChange()
     {
-        super.handleThemeChange();
-        _leftPaneBgColor = currentTheme.getColor("editor_left_pane_background", Color(0xF4F4F4));
-        _leftPaneBgColor2 = currentTheme.getColor("editor_left_pane_background2", Color(0xFFFFFF));
-        _leftPaneBgColor3 = currentTheme.getColor("editor_left_pane_background3", Color(0xF8F8F8));
-        _leftPaneLineNumColor = currentTheme.getColor("editor_left_pane_line_number_text", Color(0x4060D0));
-        _leftPaneLineNumColorEdited = currentTheme.getColor("editor_left_pane_line_number_text_edited", Color(0xC0C000));
-        _leftPaneLineNumColorSaved = currentTheme.getColor("editor_left_pane_line_number_text_saved", Color(0x00C000));
-        _leftPaneLineNumColorCurrentLine = currentTheme.getColor("editor_left_pane_line_number_text_current_line");
-        _leftPaneLineNumBgColorCurrLine = currentTheme.getColor(
-                "editor_left_pane_line_number_background_current_line", Color(0x8080FF, 0x40));
-        _leftPaneLineNumBgColor = currentTheme.getColor("editor_left_pane_line_number_background", Color(0xF4F4F4));
-        _colorIconBreakpoint = currentTheme.getColor("editor_left_pane_line_icon_breakpoint", Color(0xFF0000));
-        _colorIconBookmark = currentTheme.getColor("editor_left_pane_line_icon_bookmark", Color(0x0000FF));
-        _colorIconError = currentTheme.getColor("editor_left_pane_line_icon_error", Color(0xFF0000, 0x80));
+        super.handleCustomPropertiesChange();
+
+        auto style = this.style;
+        auto pick = (string name) => style.getPropertyValue!Color(name, Color(255, 0, 255));
+        _leftPaneBgColor1 = pick("--left-pane-bg-1");
+        _leftPaneBgColor2 = pick("--left-pane-bg-2");
+        _leftPaneBgColor3 = pick("--left-pane-bg-3");
+        _leftPaneLineNumColor = pick("--left-pane-number-text");
+        _leftPaneLineNumColorEdited = pick("--left-pane-number-text-edited");
+        _leftPaneLineNumColorSaved = pick("--left-pane-number-text-saved");
+        _leftPaneLineNumColorCurrentLine = pick("--left-pane-number-text-current-line");
+        _leftPaneLineNumBgColor = pick("--left-pane-number-bg");
+        _leftPaneLineNumBgColorCurrLine = pick("--left-pane-number-bg-current-line");
+        _colorIconBreakpoint = pick("--left-pane-icon-breakpoint");
+        _colorIconBookmark = pick("--left-pane-icon-bookmark");
+        _colorIconError = pick("--left-pane-icon-error");
     }
 
     override protected bool handleLeftPaneMouseClick(MouseEvent event)
@@ -280,7 +282,7 @@ class ElemSourceEdit : ElemEditBox
 
     override protected void drawLeftPane(Painter pr, Rect rc, int line)
     {
-        pr.fillRect(rc.left, rc.top, rc.width, rc.height, _leftPaneBgColor);
+        pr.fillRect(rc.left, rc.top, rc.width, rc.height, _leftPaneBgColor1);
         rc.right -= BACKEND_CONSOLE ? 1 : 3;
         if (_foldingWidth)
         {

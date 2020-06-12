@@ -516,10 +516,10 @@ class ElemEditLine : Element, IEditor, ActionOperator
         /// Horizontal offset in pixels
         float _scrollPos = 0;
 
-        Color _selectionColorFocused = Color(0x60A0FF, 0x50);
-        Color _selectionColorNormal = Color(0x60A0FF, 0x30);
-        Color _caretColor = Color(0x0);
-        Color _caretColorReplace = Color(0x8080FF, 0x80);
+        Color _selectionColorFocused;
+        Color _selectionColorNormal;
+        Color _caretColor;
+        Color _caretColorReplace;
 
         TextStyle _txtStyle;
         SimpleText* _placeholder;
@@ -532,7 +532,6 @@ class ElemEditLine : Element, IEditor, ActionOperator
     this()
     {
         bindActions();
-        handleThemeChange();
 
         _undoBuffer = new UndoBuffer;
         _minSizeTester.str = "aaaaa"d;
@@ -562,13 +561,13 @@ class ElemEditLine : Element, IEditor, ActionOperator
         super.handleFocusChange(focused);
     }
 
-    override void handleThemeChange()
+    override void handleCustomPropertiesChange()
     {
-        super.handleThemeChange();
-        _caretColor = currentTheme.getColor("edit_caret", Color(0x0));
-        _caretColorReplace = currentTheme.getColor("edit_caret_replace", Color(0x8080FF, 0x80));
-        _selectionColorFocused = currentTheme.getColor("editor_selection_focused", Color(0x60A0FF, 0x50));
-        _selectionColorNormal = currentTheme.getColor("editor_selection_normal", Color(0x60A0FF, 0x30));
+        auto pick = (string name) => style.getPropertyValue!Color(name, Color(255, 0, 255));
+        _caretColor = pick("--caret");
+        _caretColorReplace = pick("--caret-replace");
+        _selectionColorFocused = pick("--selection-focused");
+        _selectionColorNormal = pick("--selection-normal");
     }
 
     override void handleStyleChange(StyleProperty ptype)
@@ -1673,14 +1672,14 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
         bool _showTabPositionMarks;
         bool _showWhiteSpaceMarks;
 
-        Color _selectionColorFocused = Color(0x60A0FF, 0x50);
-        Color _selectionColorNormal = Color(0x60A0FF, 0x30);
-        Color _caretColor = Color(0x0);
-        Color _caretColorReplace = Color(0x8080FF, 0x80);
+        Color _selectionColorFocused;
+        Color _selectionColorNormal;
+        Color _caretColor;
+        Color _caretColorReplace;
 
-        Color _searchHighlightColorCurrent = Color(0x8080FF, 0x80);
-        Color _searchHighlightColorOther = Color(0x8080FF, 0x40);
-        Color _matchingBracketHighlightColor = Color(0xFFE0B0, 0xA0);
+        Color _searchHighlightColorCurrent;
+        Color _searchHighlightColorOther;
+        Color _matchingBracketHighlightColor;
 
         /// When true, call `measureVisibleText` on next layout
         bool _contentChanged = true;
@@ -1711,7 +1710,6 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
         _content.onContentChange ~= &handleContentChange;
 
         bindActions();
-        handleThemeChange();
 
         _minSizeTester.str = "aaaaa\naaaaa"d;
         setScrollSteps(0, 3);
@@ -1760,17 +1758,19 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
 
     //===============================================================
 
-    override void handleThemeChange()
+    override void handleCustomPropertiesChange()
     {
-        super.handleThemeChange();
-        _caretColor = currentTheme.getColor("edit_caret", Color(0x0));
-        _caretColorReplace = currentTheme.getColor("edit_caret_replace", Color(0x8080FF, 0x80));
-        _selectionColorFocused = currentTheme.getColor("editor_selection_focused", Color(0x60A0FF, 0x50));
-        _selectionColorNormal = currentTheme.getColor("editor_selection_normal", Color(0x60A0FF, 0x30));
+        auto style = this.style;
+        auto pick = (string name) => style.getPropertyValue!Color(name, Color(255, 0, 255));
 
-        _searchHighlightColorCurrent = currentTheme.getColor("editor_search_highlight_current", Color(0x8080FF, 0x80));
-        _searchHighlightColorOther = currentTheme.getColor("editor_search_highlight_other", Color(0x8080FF, 0x40));
-        _matchingBracketHighlightColor = currentTheme.getColor("editor_matching_bracket_highlight", Color(0xFFE0B0, 0xA0));
+        _caretColor = pick("--caret");
+        _caretColorReplace = pick("--caret-replace");
+        _selectionColorFocused = pick("--selection-focused");
+        _selectionColorNormal = pick("--selection-normal");
+
+        _searchHighlightColorCurrent = pick("--search-highlight-current");
+        _searchHighlightColorOther = pick("--search-highlight-other");
+        _matchingBracketHighlightColor = pick("--matching-bracket-highlight");
     }
 
     override void handleStyleChange(StyleProperty ptype)
@@ -4253,7 +4253,6 @@ class LogWidget : EditBox
         // allow font zoom with Ctrl + MouseWheel
         minFontSize = 8;
         maxFontSize = 36;
-        handleThemeChange();
     }
 
     /// Append lines to the end of text

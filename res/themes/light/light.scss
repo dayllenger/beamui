@@ -20,14 +20,13 @@ $focused-border-color: saturate($main-color, 30%);
     font-family: sans-serif;
     font-size: 13px;
     color: $text-color;
+
+    --window-bg: #f0f1f1;
+    --dialog-bg: #eee;
 }
 
 Panel {
     gap: 6px;
-}
-
-@define-colors {
-    window_background: #f0f1f1;
 }
 
 /* controls */
@@ -240,18 +239,16 @@ Resizer {
 
 GroupBox {
     padding: 20px 10px 16px;
+
+    --frame-top-left: url(group_box_frame_up_left);
+    --frame-top-right: url(group_box_frame_up_right);
+    --frame-bottom: url(group_box_frame_bottom);
 }
 
 GroupBox > .caption {
     padding: 1px;
     color: #504840;
     text-overflow: ellipsis;
-}
-
-@define-drawables {
-    group_box_frame_up_left: url(group_box_frame_up_left);
-    group_box_frame_up_right: url(group_box_frame_up_right);
-    group_box_frame_bottom: url(group_box_frame_bottom);
 }
 
 /* lists */
@@ -461,6 +458,14 @@ StringGridWidget {
     font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console";
     transition: border-color 100ms ease;
 
+    --selection: #{fade-out(#4040ff, 0.5)};
+    --selection-row: #{fade-out(#a0b0ff, 0.8)};
+    --cell-bg-fixed: #{fade-out(#e0e0e0, 0.8)};
+    --cell-bg-header: #{fade-out(#909090, 0.8)};
+    --cell-bg-header-selected: #{fade-out(#ffc040, 0.5)};
+    --cell-border: #{fade-out(#c0c0c0, 0.8)};
+    --cell-border-header: #{fade-out(#202020, 0.8)};
+
     &:focused {
         border-color: $focused-border-color;
     }
@@ -468,16 +473,6 @@ StringGridWidget {
     &:not(enabled) {
         background-color: $disabled-color;
     }
-}
-
-@define-colors {
-    grid_selection: fade-out(#4040ff, 0.5);
-    grid_selection_row: fade-out(#a0b0ff, 0.8);
-    grid_cell_background_fixed: fade-out(#e0e0e0, 0.8);
-    grid_cell_border: fade-out(#c0c0c0, 0.8);
-    grid_cell_border_header: fade-out(#202020, 0.8);
-    grid_cell_background_header: fade-out(#909090, 0.8);
-    grid_cell_background_header_selected: fade-out(#ffc040, 0.5);
 }
 
 /* scroll */
@@ -491,6 +486,13 @@ ScrollArea {
 
 ScrollBar, ElemScrollBar {
     background-color: fade-out(black, 0.95);
+
+    --button-up: url(scrollbar_btn_up);
+    --button-down: url(scrollbar_btn_down);
+    --button-left: url(scrollbar_btn_left);
+    --button-right: url(scrollbar_btn_right);
+    --indicator-vertical: none;
+    --indicator-horizontal: none;
 
     &:not(enabled) {
         opacity: 0.4;
@@ -595,15 +597,6 @@ RangeSlider {
     }
 }
 
-@define-drawables {
-    scrollbar_button_up: url(scrollbar_btn_up);
-    scrollbar_button_down: url(scrollbar_btn_down);
-    scrollbar_button_left: url(scrollbar_btn_left);
-    scrollbar_button_right: url(scrollbar_btn_right);
-    scrollbar_indicator_vertical: none;
-    scrollbar_indicator_horizontal: none;
-}
-
 /* tabs */
 
 TabWidget {
@@ -681,8 +674,10 @@ EditBox {
     min-height: 60px;
     border: 1px solid #aaa;
     background-color: #fff;
-    font-face: "Menlo,Consolas,DejaVuSansMono,Lucida Sans Typewriter,Courier New,Lucida Console";
     transition: border-color 100ms ease;
+
+    --search-highlight-current: #{fade-out(#a0c0ff, 0.2)};
+    --search-highlight-other: #{fade-out(#f0d080, 0.4)};
 
     &:focused {
         border-color: $focused-border-color;
@@ -719,22 +714,17 @@ EditorSearchPane {
     }
 }
 
-@define-colors {
-    edit_caret: black;
-    edit_caret_replace: fade-out(#8080ff, 0.5);
-    editor_selection_focused: fade-out(#60a0ff, 0.7);
-    editor_selection_normal: fade-out(#60a0ff, 0.9);
-    editor_matching_bracket_highlight: fade-out(#ffe0b0, 0.4);
-    editor_search_highlight_current: fade-out(#a0c0ff, 0.4);
-    editor_search_highlight_other: fade-out(#f0d080, 0.6);
-}
-
 /* srcedit */
 
 SourceEdit {
     font-face: "Menlo,Consolas,DejaVuSansMono,DejaVu Sans Mono,Liberation Mono,Lucida Sans Typewriter,Courier New,Lucida Console";
     font-family: monospace;
-    font-size: 14px;
+
+    --left-pane-number-text-edited: #cc2;
+    --left-pane-number-text-saved: #2c2;
+    --left-pane-icon-breakpoint: #f21818;
+    --left-pane-icon-bookmark: #1818f2;
+    --left-pane-icon-error: #{fade-out(#f21818, 0.5)};
 
     &:focused {
         border: 1px solid $focused-border-color;
@@ -743,17 +733,6 @@ SourceEdit {
     &:read-only {
         background-color: $disabled-color;
     }
-}
-
-@define-colors {
-    editor_left_pane_background: #f4f4f4;
-    editor_left_pane_background2: #ffffff;
-    editor_left_pane_background3: #f0f0f0;
-    editor_left_pane_line_number_text: #444;
-    editor_left_pane_line_number_background: #f8f8f8;
-    editor_left_pane_line_icon_breakpoint: #f21818;
-    editor_left_pane_line_icon_bookmark: #1818f2;
-    editor_left_pane_line_icon_error: fade-out(#f21818, 0.5);
 }
 
 /* statusline */
@@ -825,12 +804,10 @@ DockHostBody {
 
 SimpleBarChart {
     padding: 2px;
-}
 
-@define-colors {
-    chart_background: #ffffff;
-    chart_axis: #c0c0c0;
-    chart_segment_tag: #c0c0c0;
+    --background: #fff;
+    --axis: #c0c0c0;
+    --segment-tag: #c0c0c0;
 }
 
 /* progressbar */
@@ -841,13 +818,11 @@ ProgressBar {
     max-height: 16px;
     padding: 2px;
     border: 1px solid #ccc;
-}
 
-@define-drawables {
-    progress_bar_gauge: #4080ff;
-    progress_bar_gauge_animation: url(progress_bar_gauge_animation.tiled);
-    progress_bar_indeterminate: #80c080;
-    progress_bar_indeterminate_animation: url(progress_bar_gauge_animation.tiled);
+    --gauge: #4080ff;
+    --indeterminate: #80c080;
+    --gauge-animation: url(progress_bar_gauge_animation.tiled);
+    --indeterminate-animation: url(progress_bar_gauge_animation.tiled);
 }
 
 /* winframe */
@@ -894,13 +869,11 @@ WindowFrame.dialog-frame {
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
 }
 
-@define-colors {
-    dialog_background: #eee;
-}
-
 FileDialog {
     min-height: 400px;
     padding: 4px;
+
+    --dir-name: #000080;
 
     .content {
         gap: 1px;
@@ -943,10 +916,6 @@ FilePathPanelItem {
 
 FileNameEditLine EditLine {
     justify-self: stretch;
-}
-
-@define-colors {
-    file_dialog_dir_name: #000080;
 }
 
 InputBox, MessageBox {

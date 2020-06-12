@@ -159,6 +159,11 @@ private final class MainRootElement : Element
         this.window = window;
     }
 
+    override void handleCustomPropertiesChange()
+    {
+        window.backgroundColor = style.getPropertyValue!Color("--window-bg", Color.white);
+    }
+
     override protected Boundaries computeBoundaries()
     {
         if (_content)
@@ -407,8 +412,6 @@ class Window : CustomEventTarget
         _mainRootElement = new MainRootElement(this);
         _popupRootElement = new PopupRootElement(this);
         _painter = new Painter(_painterHead);
-        if (currentTheme)
-            _backgroundColor = currentTheme.getColor("window_background", Color.white);
     }
 
     ~this()
@@ -1599,10 +1602,6 @@ class Window : CustomEventTarget
         if (auto p = _tooltip.popup)
             p.handleThemeChange();
 +/
-        if (currentTheme)
-        {
-            _backgroundColor = currentTheme.getColor("window_background", Color.white);
-        }
         invalidate();
     }
 

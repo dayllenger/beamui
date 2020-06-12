@@ -43,9 +43,6 @@ class SimpleBarChart : Widget
     const(double)[] data;
     const(SimpleBar)[] bars;
     dstring title;
-    Color axisColor = Color(0xc0c0c0);
-    Color segmentTagColor = Color(0xc0c0c0);
-    Color backgroundColor = Color(0xffffff);
     double axisRatio = 0.6;
 
     override protected Element createElement()
@@ -59,9 +56,6 @@ class SimpleBarChart : Widget
 
         ElemSimpleBarChart el = fastCast!ElemSimpleBarChart(element);
         el.title = title;
-        el.chartAxisColor = axisColor;
-        el.chartSegmentTagColor = segmentTagColor;
-        el.chartBackgroundColor = backgroundColor;
         el.axisRatio = axisRatio;
 
         el.setValues(data);
@@ -135,9 +129,9 @@ class ElemSimpleBarChart : Element
         bool _showTitle = true;
         int _marginAfterTitle = 2;
 
-        Color _backgroundColor = Color(0xffffff);
-        Color _axisColor = Color(0xc0c0c0);
-        Color _segmentTagColor = Color(0xc0c0c0);
+        Color _backgroundColor;
+        Color _axisColor;
+        Color _segmentTagColor;
 
         SimpleText _axisYMaxValueDesc;
         SimpleText _axisYAvgValueDesc;
@@ -174,36 +168,6 @@ class ElemSimpleBarChart : Element
             requestLayout();
         }
 
-        Color chartBackgroundColor() const { return _backgroundColor; }
-        /// ditto
-        void chartBackgroundColor(Color value)
-        {
-            if (_backgroundColor == value)
-                return;
-            _backgroundColor = value;
-            invalidate();
-        }
-
-        Color chartAxisColor() const { return _axisColor; }
-        /// ditto
-        void chartAxisColor(Color value)
-        {
-            if (_axisColor == value)
-                return;
-            _axisColor = value;
-            invalidate();
-        }
-
-        Color chartSegmentTagColor() const { return _segmentTagColor; }
-        /// ditto
-        void chartSegmentTagColor(Color value)
-        {
-            if (_segmentTagColor == value)
-                return;
-            _segmentTagColor = value;
-            invalidate();
-        }
-
         double axisRatio() const { return _axisRatio; }
         /// ditto
         void axisRatio(double value)
@@ -223,12 +187,12 @@ class ElemSimpleBarChart : Element
         }
     }
 
-    override void handleThemeChange()
+    override void handleCustomPropertiesChange()
     {
-        super.handleThemeChange();
-        _backgroundColor = currentTheme.getColor("chart_background", Color(0xffffff));
-        _axisColor = currentTheme.getColor("chart_axis", Color(0xc0c0c0));
-        _segmentTagColor = currentTheme.getColor("chart_segment_tag", Color(0xc0c0c0));
+        auto pick = &style.getPropertyValue!Color;
+        _backgroundColor = pick("--background", Color(0xffffff));
+        _axisColor = pick("--axis", Color(0xc0c0c0));
+        _segmentTagColor = pick("--segment-tag", Color(0xc0c0c0));
     }
 
     protected Size measureAxisXDesc()

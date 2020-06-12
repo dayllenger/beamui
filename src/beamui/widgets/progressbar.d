@@ -179,22 +179,21 @@ class ElemProgressBar : Element
         bool _showAnimation;
         long _animationPhase;
         int _animationSpeedPixelsPerSecond = 20;
+
+        Color _gaugeColor;
+        Color _indeterminateColor;
+        DrawableRef _gaugeAnimation;
+        DrawableRef _indeterminateAnimation;
     }
 
-    override protected Boundaries computeBoundaries()
+    override void handleCustomPropertiesChange()
     {
-        DrawableRef gaugeDrawable = currentTheme.getDrawable("progress_bar_gauge");
-        DrawableRef indeterminateDrawable = currentTheme.getDrawable("progress_bar_indeterminate");
-        Size sz;
-        if (!gaugeDrawable.isNull)
-        {
-            sz.h = max(sz.h, gaugeDrawable.height);
-        }
-        if (!indeterminateDrawable.isNull)
-        {
-            sz.h = max(sz.h, indeterminateDrawable.height);
-        }
-        return Boundaries(Size(0, 0), sz);
+        auto pickColor = (string name) => style.getPropertyValue!Color(name, Color.transparent);
+        auto pickDr = (string name) => DrawableRef(style.getPropertyValue!(Drawable, SpecialCSSType.image)(name, null));
+        _gaugeColor = pickColor("--gauge");
+        _indeterminateColor = pickColor("--indeterminate");
+        _gaugeAnimation = pickDr("--gauge-animation");
+        _indeterminateAnimation = pickDr("--indeterminate-animation");
     }
 
     override protected void drawContent(Painter pr)
@@ -205,20 +204,13 @@ class ElemProgressBar : Element
         DrawableRef drAnim;
         if (_fraction >= 0)
         {
-            DrawableRef drGauge = currentTheme.getDrawable("progress_bar_gauge");
-            drAnim = currentTheme.getDrawable("progress_bar_gauge_animation");
-            if (!drGauge.isNull)
-            {
-                const w = _fraction * b.w;
-                drGauge.drawTo(pr, Box(b.x, b.y, w, b.h));
-            }
+            pr.fillRect(b.x, b.y, _fraction * b.w, b.h, _gaugeColor);
+            drAnim = _gaugeAnimation;
         }
         else
         {
-            DrawableRef drIndeterminate = currentTheme.getDrawable("progress_bar_indeterminate");
-            if (!drIndeterminate.isNull)
-                drIndeterminate.drawTo(pr, b);
-            drAnim = currentTheme.getDrawable("progress_bar_indeterminate_animation");
+            pr.fillRect(b.x, b.y, b.w, b.h, _indeterminateColor);
+            drAnim = _indeterminateAnimation;
         }
         // show animation
         if (!drAnim.isNull && _showAnimation)

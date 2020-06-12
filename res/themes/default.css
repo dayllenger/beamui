@@ -4,7 +4,7 @@
   color: #222;
   font-family: sans-serif;
   font-size: 1rem;
-  line-height: 1.2rem;
+  line-height: 1.2em;
 }
 
 Spacer {
@@ -27,6 +27,33 @@ Link {
 
 Paragraph {
   white-space: pre-wrap;
+}
+
+EditLine,
+EditBox {
+  --caret: #000;
+  --caret-replace: rgba(128, 128, 255, 0.5);
+  --selection-focused: rgba(96, 160, 255, 0.3);
+  --selection-normal: rgba(96, 160, 255, 0.2);
+}
+EditBox {
+  --matching-bracket-highlight: rgba(255, 224, 176, 0.6);
+  --search-highlight-current: rgba(128, 128, 255, 0.5);
+  --search-highlight-other: rgba(128, 128, 255, 0.25);
+}
+SourceEdit {
+  --left-pane-bg-1: #f4f4f4;
+  --left-pane-bg-2: #fff;
+  --left-pane-bg-3: #f0f0f0;
+  --left-pane-number-text: #555;
+  --left-pane-number-text-edited: #c0c000;
+  --left-pane-number-text-saved: #00c000;
+  --left-pane-number-text-current-line: #555;
+  --left-pane-number-bg: #f4f4f4;
+  --left-pane-number-bg-current-line: transparent;
+  --left-pane-icon-breakpoint: #f00;
+  --left-pane-icon-bookmark: #00f;
+  --left-pane-icon-error: rgba(255, 0, 0, 0.5);
 }
 
 EditorSearchPane {
