@@ -9,6 +9,7 @@ module beamui.style.property;
 import beamui.core.animations : TimingFunction;
 import beamui.core.editable : TabSize;
 import beamui.core.units : Length;
+import beamui.css.tokenizer : Token;
 import beamui.graphics.colors : Color;
 import beamui.graphics.compositing : BlendMode;
 import beamui.graphics.drawables : BorderStyle, BoxShadowDrawable, BoxType, Drawable, RepeatStyle;
@@ -292,6 +293,7 @@ package struct StylePropertyList
 
     private BuiltinPropertyValue[] values;
     private Pointer[StyleProperty.max + 1] pointers;
+    const(Token)[][string] customProperties;
 
     /// Try to get value of a property by exact name. Returns a pointer to it or `null`
     auto peek(string name)()
@@ -306,12 +308,12 @@ package struct StylePropertyList
     }
 
     /// Returns true if `property` is set to 'inherit'
-    bool isInherited(StyleProperty property)
+    bool isInherited(StyleProperty property) const
     {
         return pointers[property] == Pointer.inherit;
     }
     /// Returns true if `property` is set to 'initial'
-    bool isInitial(StyleProperty property)
+    bool isInitial(StyleProperty property) const
     {
         return pointers[property] == Pointer.initial;
     }

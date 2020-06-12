@@ -466,8 +466,13 @@ void appendStyleDeclaration(ref StylePropertyList list, Decoder[string] decoders
 {
     foreach (p; props)
     {
-        assert(p.value.length);
-        if (auto pdg = p.name in decoders)
+        assert(p.name.length && p.value.length);
+        const twoDashes = p.name.length >= 2 && p.name[0] == '-' && p.name[1] == '-';
+        if (twoDashes)
+        {
+            list.customProperties[p.name] = p.value;
+        }
+        else if (auto pdg = p.name in decoders)
         {
             (*pdg)(list, p.value);
         }

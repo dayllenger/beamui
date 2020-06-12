@@ -226,7 +226,7 @@ private struct Tokenizer
     bool startsWithIdent()
     {
         if (r[i] == '-')
-            return isNameStart(r[i + 1]) || startsValidEscape(r[i + 1], r[i + 2]);
+            return isNameStart(r[i + 1]) || r[i + 1] == '-' || startsValidEscape(r[i + 1], r[i + 2]);
         else if (isNameStart(r[i]))
             return true;
         else if (r[i] == '\\')
@@ -772,6 +772,7 @@ unittest
             -moz-what: 1.23px 0.75em /* the comment */
             @keyword U+140?! -.234e+5;
             color:   #fe5
+            --custom-3
             url(  'stuff.css')
             url(bad url);
             url('apparently, \
@@ -836,6 +837,9 @@ good'
     t = next;
     assert(t.type == TokenType.hash);
     assert(t.text == "fe5");
+    assert(next == Token(TokenType.whitespace));
+
+    assert(next == Token(TokenType.ident, "--custom-3"));
     assert(next == Token(TokenType.whitespace));
 
     assert(next == Token(TokenType.url, "stuff.css"));

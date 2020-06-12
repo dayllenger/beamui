@@ -1117,6 +1117,10 @@ public:
     {
     }
 
+    void handleCustomPropertiesChange()
+    {
+    }
+
     //===============================================================
     // Animation
 

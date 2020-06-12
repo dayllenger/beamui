@@ -6,7 +6,9 @@ Authors:   dayllenger
 */
 module beamui.style.computed_style;
 
+public import beamui.css.tokenizer : CssToken = Token;
 public import beamui.style.property : StyleProperty;
+public import beamui.style.types : SpecialCSSType;
 import beamui.core.animations;
 import beamui.core.editable : TabSize;
 import beamui.core.geometry : Insets;
@@ -17,6 +19,7 @@ import beamui.graphics.drawables;
 import beamui.layout.alignment : Align, AlignItem, Distribution, Stretch;
 import beamui.layout.flex : FlexDirection, FlexWrap;
 import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
+import beamui.style.decode_css;
 import beamui.style.property;
 import beamui.style.style;
 import beamui.style.types;
@@ -275,6 +278,22 @@ struct ComputedStyle
         WhiteSpace _whiteSpace = WhiteSpace.pre;
         BlendMode _mixBlendMode = BlendMode.normal;
         CursorType _cursor = CursorType.automatic;
+
+        const(CssToken)[][string] _customProps;
+    }
+
+    T getPropertyValue(T, SpecialCSSType specialType = SpecialCSSType.none)(string name, lazy T def)
+    {
+        if (auto p = name in _customProps)
+        {
+            const(CssToken)[] tokens = *p;
+            static if (specialType == SpecialCSSType.none)
+                auto res = decode!T(tokens);
+            else
+                auto res = decode!specialType(tokens);
+            return res ? res.val : def;
+        }
+        return def;
     }
 
     private LayoutLength applyEM(Length value) const
@@ -308,9 +327,62 @@ struct ComputedStyle
     /// Resolve style cascading and inheritance, update all properties
     void recompute(Style[] chain, ComputedStyle* parentStyle)
     {
+        const customPropsChanged = recomputeCustom(chain, parentStyle);
+        recomputeBuiltin(chain, parentStyle);
+
+        if (customPropsChanged)
+            element.handleCustomPropertiesChange();
+    }
+
+    private bool recomputeCustom(Style[] chain, ComputedStyle* parentStyle)
+    {
+        import std.range : zip;
+
+        bool hasSome;
+        foreach (st; chain)
+        {
+            if (st._props.customProperties.length)
+            {
+                hasSome = true;
+                break;
+            }
+        }
+        auto old = _customProps;
+        if (hasSome)
+        {
+            _customProps = null;
+            if (parentStyle)
+            {
+                foreach (name, tokens; parentStyle._customProps)
+                    _customProps[name] = tokens;
+            }
+            foreach (st; chain)
+            {
+                foreach (name, tokens; st._props.customProperties)
+                    _customProps[name] = tokens;
+            }
+        }
+        else
+        {
+            _customProps = parentStyle ? parentStyle._customProps : null;
+        }
+
+        if (old.length != _customProps.length)
+            return true;
+        // compare old and new arrays
+        foreach (a, b; zip(old.byKeyValue, _customProps.byKeyValue))
+        {
+            if (a.key != b.key || a.value !is b.value)
+                return true;
+        }
+        return false;
+    }
+
+    private void recomputeBuiltin(Style[] chain, ComputedStyle* parentStyle)
+    {
         _inheritBitArray = 0;
 
-        /// iterate through all properties
+        /// iterate through all built-in properties
         static foreach (name; __traits(allMembers, P))
         {{
             enum ptype = mixin(`P.` ~ name);
@@ -363,6 +435,7 @@ struct ComputedStyle
                 setProperty!name(getDefaultValue!name());
             }
         }}
+
         // set inherited properties in descendant elements. TODO: optimize, consider recursive updates
         foreach (child; element)
         {
