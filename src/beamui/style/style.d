@@ -29,7 +29,6 @@ import beamui.style.types;
 import beamui.text.fonts : FontFamily, FontStyle;
 import beamui.text.style;
 import beamui.widgets.widget : CursorType;
-import CSS = beamui.css.css;
 
 /// Style - holds properties for a single selector
 final class Style
@@ -426,10 +425,8 @@ struct InlineStyle
     void backgroundColor(string str)
     {
         _props.set(P.bgColor,
-            decodeHexColor(str)
-                .failed(decodeTextColor(str))
-                .failed(Ok(Color.transparent))
-                .val);
+            decodeHexColor(str).or(
+                decodeTextColor(str).or(Color.transparent)));
     }
     /// Background image drawable
     void backgroundImage(Drawable image) { _props.set(P.bgImage, image); }
@@ -656,10 +653,8 @@ struct InlineStyle
     void textColor(string str)
     {
         _props.set(P.textColor,
-            decodeHexColor(str)
-                .failed(decodeTextColor(str))
-                .failed(Ok(Color.transparent))
-                .val);
+            decodeHexColor(str).or(
+                decodeTextColor(str).or(Color.transparent)));
     }
 
     /// Opacity of the whole widget, always clamped to [0..1] range, where 0.0 - invisible, 1.0 - normal

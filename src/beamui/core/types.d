@@ -34,9 +34,9 @@ struct Result(T)
         return !err;
     }
 
-    inout(Result!T) failed(T)(lazy scope Result!T fallback) inout
+    inout(T) or(lazy inout(T) fallback) inout
     {
-        return err ? fallback : this;
+        return err ? fallback : val;
     }
 }
 
