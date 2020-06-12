@@ -91,41 +91,13 @@ final class Theme
         return st;
     }
 
-    /// Get custom drawable
-    ref DrawableRef getDrawable(string name)
-    {
-        if (auto p = name in drawables)
-            return *p;
-        else
-            return _emptyDrawable;
-    }
-    private DrawableRef _emptyDrawable;
-
-    /// Set custom drawable for theme
-    Theme setDrawable(string name, Drawable dr)
-    {
-        drawables[name] = dr;
-        return this;
-    }
-
-    /// Get custom color - transparent by default
-    Color getColor(string name, Color defaultColor = Color.transparent) const
-    {
-        return colors.get(name, defaultColor);
-    }
-
-    /// Set custom color for theme
-    Theme setColor(string name, Color color)
-    {
-        colors[name] = color;
-        return this;
-    }
-
     /// Print out theme stats
     void printStats() const
     {
-        Log.fd("Theme: %s, styles: %s, drawables: %s, colors: %s", _name, 999999999, // FIXME
-            drawables.length, colors.length);
+        size_t total;
+        foreach (store; _styles)
+            total += store.list.length;
+        Log.fd("Theme: %s, namespaces: %d, styles: %d", _name, _styles.length, total);
     }
 }
 
@@ -254,40 +226,6 @@ void applyAtRule(Theme theme, const CSS.AtRule rule, string ns)
             Log.e("CSS: empty @import");
         if (ps.length > 0)
             Log.w("CSS: @import cannot have properties");
-    }
-    else if (kw == "define-colors")
-    {
-        foreach (p; ps)
-        {
-            const(CSS.Token)[] tokens = p.value;
-            string id = p.name;
-            if (const res = decode!Color(tokens))
-                theme.setColor(id, res.val);
-        }
-        if (ps.length == 0)
-            Log.w("CSS: empty @define-colors block");
-    }
-    else if (kw == "define-drawables")
-    {
-        foreach (p; ps)
-        {
-            const(CSS.Token)[] tokens = p.value;
-            string id = p.name;
-
-            // color, image, or none
-            if (startsWithColor(tokens))
-            {
-                if (const res = decode!Color(tokens))
-                    theme.setDrawable(id, new SolidFillDrawable(res.val));
-            }
-            else if (tokens.length > 0)
-            {
-                if (auto res = decode!(SpecialCSSType.image)(tokens))
-                    theme.setDrawable(id, res.val);
-            }
-        }
-        if (ps.length == 0)
-            Log.w("CSS: empty @define-drawables block");
     }
     else
         Log.w("CSS: unknown at-rule keyword: ", kw);
