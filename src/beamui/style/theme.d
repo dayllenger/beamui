@@ -12,8 +12,8 @@ import beamui.core.logger;
 import beamui.core.types : Result, StateFlags;
 import beamui.core.units : Length;
 import CSS = beamui.css.css;
-import beamui.graphics.colors;
-import beamui.graphics.drawables;
+import beamui.graphics.colors : Color;
+import beamui.graphics.drawables : BorderStyle, Drawable;
 import beamui.graphics.resources;
 import beamui.layout.alignment : AlignItem, Distribution;
 import beamui.style.decode_css;
@@ -22,7 +22,7 @@ import beamui.style.style;
 import beamui.style.selector;
 import beamui.style.types : SpecialCSSType;
 
-/// Theme - collection of widget styles, custom colors and drawables
+/// Theme - a collection of widget styles
 final class Theme
 {
     /// Unique name of theme
@@ -30,17 +30,19 @@ final class Theme
 
     private
     {
+        struct Bag
+        {
+            Style[] all;
+            Style[] normal;
+        }
         struct Store
         {
-            Style[] list;
-            Style[] listNormal;
-            Style[Selector] map;
+            Bag[string] byTag;
+            Style[Selector*] map;
         }
 
         string _name;
         Store[string] _styles;
-        DrawableRef[string] drawables;
-        Color[string] colors;
     }
 
     /// Create empty theme called `name`
@@ -53,24 +55,24 @@ final class Theme
     {
         Log.d("Destroying theme");
         foreach (ref store; _styles)
-            eliminate(store.list);
-        foreach (ref dr; drawables)
-            dr.clear();
-        destroy(drawables);
+            foreach (ref bag; store.byTag)
+                eliminate(bag.all);
     }
 
     /// Get all styles from a specific set
-    Style[] getStyles(string namespace, bool normalState)
+    Style[] getStyles(string namespace, string tag, bool normalState)
     {
-        Store* store = namespace in _styles;
-        if (store)
-            return normalState ? store.listNormal : store.list;
-        else
-            return null;
+        if (Store* store = namespace in _styles)
+        {
+            if (Bag* bag = tag in store.byTag)
+                return normalState ? bag.normal : bag.all;
+        }
+        return null;
     }
 
     /// Get a style OR create it if it's not exist
-    Style get(ref Selector selector, string namespace)
+    Style get(Selector* selector, string namespace)
+        in(selector)
     {
         Store* store = namespace in _styles;
         if (store)
@@ -83,10 +85,17 @@ final class Theme
             _styles[namespace] = Store.init;
             store = namespace in _styles;
         }
-        auto st = new Style(selector);
+        Bag* bag = selector.type in store.byTag;
+        if (!bag)
+        {
+            store.byTag[selector.type] = Bag.init;
+            bag = selector.type in store.byTag;
+        }
+
+        auto st = new Style(*selector);
         if ((selector.specifiedState & StateFlags.normal) == selector.enabledState)
-            store.listNormal ~= st;
-        store.list ~= st;
+            bag.normal ~= st;
+        bag.all ~= st;
         store.map[selector] = st;
         return st;
     }
@@ -96,7 +105,8 @@ final class Theme
     {
         size_t total;
         foreach (store; _styles)
-            total += store.list.length;
+            foreach (bag; store.byTag)
+                total += bag.all.length;
         Log.fd("Theme: %s, namespaces: %d, styles: %d", _name, _styles.length, total);
     }
 }
@@ -234,7 +244,7 @@ void applyAtRule(Theme theme, const CSS.AtRule rule, string ns)
 void applyRule(Theme theme, Decoder[string] decoders, const CSS.Selector selector,
         const CSS.Property[] properties, string ns)
 {
-    auto style = theme.get(*makeSelector(selector), ns);
+    auto style = theme.get(makeSelector(selector), ns);
     appendStyleDeclaration(style._props, decoders, properties);
 }
 

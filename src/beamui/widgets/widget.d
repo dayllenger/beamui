@@ -829,22 +829,52 @@ public:
     {
         static Buf!Style tmpchain;
         tmpchain.clear();
-        // we can skip half of work if the state is normal
-        Style[] list = currentTheme.getStyles(_namespace, stateFlags == StateFlags.normal);
-        foreach (style; list)
-            if (matchSelector(style.selector))
-                tmpchain ~= style;
+        // we can skip half of work if the state is normal,
+        // and much more work if we select by class name
+        const normalState = stateFlags == StateFlags.normal;
+        TypeInfo_Class type = widgetType ? cast()widgetType : typeid(this);
+        selectByBaseClasses(tmpchain, type, normalState);
+        // sort by specificity
         sort(tmpchain.unsafe_slice);
         return tmpchain.unsafe_slice;
+    }
+
+    private void selectByBaseClasses(ref Buf!Style tmpchain, TypeInfo_Class type, bool normalState)
+    {
+        string tag;
+        if (type !is typeid(Object))
+        {
+            // iterate on base classes in reverse order.
+            // this will define a specificity order on classes
+            selectByBaseClasses(tmpchain, type.base, normalState);
+            // extract short class name
+            const name = type.name;
+            int i = cast(int)name.length;
+            while (i > 0 && name[i - 1] != '.')
+                i--;
+            tag = name[i .. $];
+        }
+        // it will get selectors without any tag first
+        Style[] list = currentTheme.getStyles(_namespace, tag, normalState);
+        foreach (style; list)
+        {
+            if (matchSelectorImpl(style.selector, false))
+                tmpchain ~= style;
+        }
     }
 
     /// Match this element with a selector
     bool matchSelector(ref const Selector sel) const
     {
+        return matchSelectorImpl(sel, true);
+    }
+
+    private bool matchSelectorImpl(ref const Selector sel, bool withType) const
+    {
         if (sel.universal)
             return matchContextSelector(sel);
         // type
-        if (sel.type)
+        if (withType && sel.type.length)
         {
             TypeInfo_Class type = widgetType ? cast()widgetType : typeid(this);
             while (!equalShortClassName(type, sel.type))
@@ -855,7 +885,7 @@ public:
             }
         }
         // id
-        if (sel.id && (!_id || _id != sel.id))
+        if (sel.id.length && _id != sel.id)
             return false;
         // state
         if ((sel.specifiedState & stateFlags) != sel.enabledState)

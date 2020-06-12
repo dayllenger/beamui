@@ -264,9 +264,9 @@ bool equalShortClassName(TypeInfo_Class type, string shortName)
     string name = type.name;
     if (shortName.length >= name.length)
         return false;
-    if (shortName != name[$ - shortName.length .. $])
+    if (name[$ - shortName.length - 1] != '.')
         return false;
-    return name[$ - shortName.length - 1] == '.';
+    return shortName == name[$ - shortName.length .. $];
 }
 ///
 unittest
