@@ -33,6 +33,7 @@
 ./icons/tab_more.png
 ./icons/text-plain.png
 ./icons/user-home.png
+./themes/common/common.css
 ./themes/light/arrow_right_down_black.png
 ./themes/light/arrow_right_hollow.png
 ./themes/light/btn_check_on_focused.png
