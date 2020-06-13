@@ -827,6 +827,8 @@ public:
     /// Get a style chain for this element from current theme, least specific styles first
     Style[] selectStyleChain()
     {
+        import std.algorithm : SwapStrategy;
+
         static Buf!Style tmpchain;
         tmpchain.clear();
         // we can skip half of work if the state is normal,
@@ -835,7 +837,7 @@ public:
         TypeInfo_Class type = widgetType ? cast()widgetType : typeid(this);
         selectByBaseClasses(tmpchain, type, normalState);
         // sort by specificity
-        sort(tmpchain.unsafe_slice);
+        sort!("a < b", SwapStrategy.stable)(tmpchain.unsafe_slice);
         return tmpchain.unsafe_slice;
     }
 
