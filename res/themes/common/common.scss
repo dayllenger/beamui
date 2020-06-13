@@ -313,7 +313,7 @@ ComboBoxBase {
     background: $control-gradient;
     transition: border-color 100ms ease;
 
-    &:hovered, &:pressed, &:focused, &.opened {
+    &:hovered, &:pressed, &:focus-within, &.opened {
         border-color: $main-color;
         color: $hovered-label-color;
     }
@@ -335,7 +335,7 @@ ComboBoxBase {
     }
 
     > .arrow {
-        padding: 3px 2px;
+        padding: 2px;
     }
 }
 
@@ -354,15 +354,21 @@ Popup.combobox > ListView {
 }
 
 ComboEdit {
-    background: none;
+    padding: 0;
+    gap: 0;
+    background: $pane-color;
 
-    &:hovered,
-    &:pressed {
+    > EditLine.body {
+        padding: 5px;
+        border: none;
+        background: none;
         color: $text-color;
     }
 
-    &:focused {
-        color: initial;
+    > ButtonLike.arrow {
+        padding: 5px;
+        border: none;
+        background: none;
     }
 }
 
@@ -633,6 +639,12 @@ TabItem {
         padding: 0 3px 3px;
         text-hotkey: underline-on-alt;
         transition: color 100ms ease;
+    }
+
+    > ButtonLike.close {
+        padding: 0;
+        border: none;
+        background: none;
     }
 
     &:hovered,

@@ -103,7 +103,7 @@ ListView > .item:focused, ListView > .item:selected { background-color: #4e93da;
 /* combobox */
 ComboBoxBase { align-items: center; padding: 3px 4px; border: 1px solid rgba(0, 0, 0, 0.2); background: linear(0deg, #eeeeee, #dddddd); transition: border-color 100ms ease; }
 
-ComboBoxBase:hovered, ComboBoxBase:pressed, ComboBoxBase:focused, ComboBoxBase.opened { border-color: #4e93da; color: #46617e; }
+ComboBoxBase:hovered, ComboBoxBase:pressed, ComboBoxBase:focus-within, ComboBoxBase.opened { border-color: #4e93da; color: #46617e; }
 
 ComboBoxBase:pressed { background: linear(190deg, #e3e3e3, #dfdfdf); }
 
@@ -111,7 +111,7 @@ ComboBoxBase:not(enabled) { border-color: rgba(0, 0, 0, 0.3); opacity: 0.4; }
 
 ComboBoxBase > .body { flex: 1; min-width: 40px; padding: 2px; transition: color 100ms ease; }
 
-ComboBoxBase > .arrow { padding: 3px 2px; }
+ComboBoxBase > .arrow { padding: 2px; }
 
 Popup.combobox > ListView { width: auto; height: auto; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
 
@@ -119,11 +119,11 @@ Popup.combobox > ListView:focused { border-color: rgba(0, 0, 0, 0.2); }
 
 Popup.combobox > ListView:not(enabled) { background-color: #f0f0f0; }
 
-ComboEdit { background: none; }
+ComboEdit { padding: 0; gap: 0; background: #fff; }
 
-ComboEdit:hovered, ComboEdit:pressed { color: #404040; }
+ComboEdit > EditLine.body { padding: 5px; border: none; background: none; color: #404040; }
 
-ComboEdit:focused { color: initial; }
+ComboEdit > ButtonLike.arrow { padding: 5px; border: none; background: none; }
 
 /* menu */
 Menu { width: auto; height: auto; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); background-color: #f3f4f5; }
@@ -220,6 +220,8 @@ TabItem { padding: 6px 1px 0 0; gap: 0; border: 0 solid transparent; }
 TabItem:selected { border-color: #4e93da; }
 
 TabItem > .label { align-self: end; padding: 0 3px 3px; text-hotkey: underline-on-alt; transition: color 100ms ease; }
+
+TabItem > ButtonLike.close { padding: 0; border: none; background: none; }
 
 TabItem:hovered, TabItem:selected, TabItem:focused { color: #4e93da; }
 
