@@ -175,7 +175,7 @@ struct ComputedStyle
     private
     {
         /// Inherits value from the parent element
-        StaticBitArray!(P.max + 1) _inheritBitArray;
+        StaticBitArray!(P.max + 1) _inherited;
 
         // origins
         int _fontSize = 12;
@@ -391,7 +391,8 @@ struct ComputedStyle
 
     private void recomputeBuiltin(Style[] chain, ComputedStyle* parentStyle)
     {
-        _inheritBitArray = _inheritBitArray.init;
+        _inherited = _inherited.init;
+        StaticBitArray!(StyleProperty.max + 1) modified;
 
         /// iterate through all built-in properties
         static foreach (name; __traits(allMembers, P))
@@ -412,7 +413,8 @@ struct ComputedStyle
                 {
                     _propCache.remove(ptype);
                     auto val = postprocessValue!ptype(*p, parentStyle);
-                    setProperty!name(val);
+                    if (setProperty!name(val))
+                        modified.set(ptype);
                     set = true;
                     break;
                 }
@@ -424,8 +426,11 @@ struct ComputedStyle
                         const(CssToken)[] tokens = *p;
                         if (auto cached = ptype in _propCache)
                         {
-                            if (tokens is *cached)
+                            if (*cached is tokens)
+                            {
+                                set = true;
                                 break;
+                            }
                         }
                         _propCache[ptype] = tokens;
 
@@ -443,7 +448,8 @@ struct ComputedStyle
                             break;
 
                         auto val = postprocessValue!ptype(result.val, parentStyle);
-                        setProperty!name(val);
+                        if (setProperty!name(val))
+                            modified.set(ptype);
                         set = true;
                     }
                     break;
@@ -453,7 +459,6 @@ struct ComputedStyle
                 {
                     if (plist.isInherited(ptype))
                     {
-                        _propCache.remove(ptype);
                         inh = set = true;
                         break;
                     }
@@ -462,41 +467,70 @@ struct ComputedStyle
                 if (plist.isInitial(ptype))
                 {
                     _propCache.remove(ptype);
-                    setProperty!name(getDefaultValue!name());
+                    if (setProperty!name(getDefaultValue!name()))
+                        modified.set(ptype);
                     set = true;
                     break;
                 }
             }
             // remember inherited properties
             if (inh || inheritsByDefault && !set)
-                _inheritBitArray.set(ptype);
+                _inherited.set(ptype);
 
             // resolve inherited properties
-            if (inherits(ptype))
+            if (_inherited[ptype])
             {
-                if (parentStyle)
-                    setProperty!name(mixin(`parentStyle._` ~ name));
-                else
-                    setProperty!name(getDefaultValue!name());
+                _propCache.remove(ptype);
+                auto val = parentStyle ? mixin(`parentStyle._` ~ name) : getDefaultValue!name();
+                if (setProperty!name(val))
+                    modified.set(ptype);
             }
             else if (!set)
             {
                 // if nothing there - return value to defaults
-                setProperty!name(getDefaultValue!name());
+                _propCache.remove(ptype);
+                if (setProperty!name(getDefaultValue!name()))
+                    modified.set(ptype);
             }
         }}
+        // invoke side effects
+        foreach (ptype; 0 .. StyleProperty.max + 1)
+        {
+            if (modified[ptype])
+                element.handleStyleChange(cast(StyleProperty)ptype);
+        }
+        // set inherited properties in descendant elements
+        propagateInheritedValues(modified);
+    }
 
-        // set inherited properties in descendant elements. TODO: optimize, consider recursive updates
+    private void propagateInheritedValues(StaticBitArray!(StyleProperty.max + 1) modified)
+    {
         foreach (child; element)
         {
             ComputedStyle* st = child.style;
-            if (!st.isolated)
+            if (st.isolated)
+                continue;
+
+            auto affected = modified & st._inherited;
+
+            static foreach (name; __traits(allMembers, P))
+            {{
+                enum ptype = mixin(`P.` ~ name);
+
+                if (affected[ptype])
+                {
+                    if (!st.setProperty!name(mixin("_" ~ name)))
+                        affected.reset(ptype);
+                }
+            }}
+            // continue recursively
+            st.propagateInheritedValues(affected);
+
+            // invoke side effects
+            foreach (ptype; 0 .. StyleProperty.max + 1)
             {
-                static foreach (name; __traits(allMembers, P))
-                {{
-                    if (st.inherits(mixin(`P.` ~ name)))
-                        st.setProperty!name(mixin("_" ~ name));
-                }}
+                if (affected[ptype])
+                    child.handleStyleChange(cast(StyleProperty)ptype);
             }
         }
     }
@@ -581,11 +615,6 @@ struct ComputedStyle
         return mixin(`defaults._` ~ name);
     }
 
-    private bool inherits(P ptype)
-    {
-        return _inheritBitArray[ptype];
-    }
-
     /// Check whether the style can make transition for a CSS property
     bool hasTransitionFor(string property) const
     {
@@ -639,7 +668,7 @@ struct ComputedStyle
     }
 
     /// Set a property value, taking transitions into account
-    private void setProperty(string name, T)(T newValue)
+    private bool setProperty(string name, T)(T newValue)
     {
         import std.meta : Alias;
 
@@ -654,7 +683,7 @@ struct ComputedStyle
                 // cancel possible animation
                 element.cancelAnimation(name);
             }
-            return;
+            return false;
         }
         // check animation
         static if (isAnimatable(ptype))
@@ -663,13 +692,12 @@ struct ComputedStyle
             if (hasTransitionFor(cssname))
             {
                 animateProperty!name(newValue);
-                return;
+                return true;
             }
         }
         // set it directly otherwise
         field = newValue;
-        // invoke side effects
-        element.handleStyleChange(ptype);
+        return true;
     }
 
     private void animateProperty(string name, T)(T end)

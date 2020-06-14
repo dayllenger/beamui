@@ -47,12 +47,6 @@ struct StaticBitArray(uint bitCount)
 
     private size_t[bitCount / (8 * size_t.sizeof) + 1] _data;
 
-    bool opIndex(uint bit) const @trusted
-        in(bit < bitCount)
-    {
-        return bt(_data.ptr, bit) != 0;
-    }
-
     void set(uint bit) @trusted
         in(bit < bitCount)
     {
@@ -63,5 +57,19 @@ struct StaticBitArray(uint bitCount)
         in(bit < bitCount)
     {
         btr(_data.ptr, bit);
+    }
+
+    bool opIndex(uint bit) const @trusted
+        in(bit < bitCount)
+    {
+        return bt(_data.ptr, bit) != 0;
+    }
+
+    StaticBitArray!bitCount opBinary(string op)(ref const StaticBitArray!bitCount rhs)
+        if (op == "&" || op == "|" || op == "^")
+    {
+        auto ret = this;
+        mixin(`ret._data[] ` ~ op ~ `= rhs._data[];`);
+        return ret;
     }
 }
