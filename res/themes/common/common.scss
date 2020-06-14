@@ -952,18 +952,26 @@ SettingsDialog {
             background-color: $pane-color;
             font-size: 16px;
         }
+    }
+}
 
-        > .page {
-            justify-self: stretch;
-            min-width: 100px;
-            padding: 4px;
-        }
+SettingsPage {
+    justify-self: stretch;
+    min-width: 100px;
+    padding: 6px;
+
+    .error {
+        border-color: red;
     }
 
-    .settings-table > .title {
+    > Label {
         padding: 4px 4px 12px;
         font-size: 1.6em;
     }
+}
+
+SettingsList {
+    align-content: center;
 }
 
 /* Tooltips */

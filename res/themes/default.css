@@ -153,14 +153,12 @@ SettingsDialog > .content {
   display: flex;
   justify-self: stretch;
 }
-SettingsDialog .settings-table {
+SettingsPage {
+  display: column;
+}
+SettingsList {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-content: start;
-}
-SettingsDialog .settings-table > .full-row,
-SettingsDialog .settings-table > .title {
-  grid-column-end: span 2;
 }
 
 

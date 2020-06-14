@@ -339,9 +339,13 @@ SettingsDialog > .content { padding: 6px; gap: 3px; }
 
 SettingsDialog > .content > .tree { width: 150px; min-width: 50px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.2); background-color: #fff; font-size: 16px; }
 
-SettingsDialog > .content > .page { justify-self: stretch; min-width: 100px; padding: 4px; }
+SettingsPage { justify-self: stretch; min-width: 100px; padding: 6px; }
 
-SettingsDialog .settings-table > .title { padding: 4px 4px 12px; font-size: 1.6em; }
+SettingsPage .error { border-color: red; }
+
+SettingsPage > Label { padding: 4px 4px 12px; font-size: 1.6em; }
+
+SettingsList { align-content: center; }
 
 /* Tooltips */
 Label#tooltip { padding: 3px; box-shadow: 0 2px 7px rgba(0, 0, 0, 0.4); background-color: #222; color: #eee; }
