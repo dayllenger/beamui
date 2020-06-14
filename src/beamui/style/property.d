@@ -27,7 +27,6 @@ enum StyleProperty
 {
     // origins
     fontSize,
-    textColor,
     // layout
     display,
     // box model
@@ -114,6 +113,7 @@ enum StyleProperty
     lineHeight,
     tabSize,
     textAlign,
+    textColor,
     textDecorColor,
     textDecorLine,
     textDecorStyle,
@@ -577,12 +577,12 @@ bool isInherited(StyleProperty ptype)
     switch (ptype) with (StyleProperty)
     {
         case fontSize:
-        case textColor:
         case fontFace: .. case fontWeight:
         case letterSpacing:
         case lineHeight:
         case tabSize:
         case textAlign:
+        case textColor:
         case textIndent:
         case textTransform:
         case whiteSpace:

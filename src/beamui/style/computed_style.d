@@ -112,7 +112,12 @@ struct ComputedStyle
 
         Color[4] borderColor() const
         {
-            return [_borderTopColor, _borderRightColor, _borderBottomColor, _borderLeftColor];
+            return [
+                _borderTopColor != Color.none ? _borderTopColor : _textColor,
+                _borderRightColor != Color.none ? _borderRightColor : _textColor,
+                _borderBottomColor != Color.none ? _borderBottomColor : _textColor,
+                _borderLeftColor != Color.none ? _borderLeftColor : _textColor,
+            ];
         }
         BorderStyle[4] borderStyle() const
         {
@@ -136,7 +141,11 @@ struct ComputedStyle
 
         TabSize tabSize() const { return _tabSize; }
 
-        TextDecor textDecor() const { return TextDecor(_textDecorLine, _textDecorColor, _textDecorStyle); }
+        TextDecor textDecor() const
+        {
+            const color = _textDecorColor == Color.none ? _textColor : _textDecorColor;
+            return TextDecor(_textDecorLine, color, _textDecorStyle);
+        }
         TextAlign textAlign() const { return _textAlign; }
         Color textColor() const { return _textColor; }
         TextHotkey textHotkey() const { return _textHotkey; }
@@ -170,7 +179,6 @@ struct ComputedStyle
 
         // origins
         int _fontSize = 12;
-        Color _textColor = Color.black;
         // layout
         string _display;
         // box model
@@ -221,10 +229,10 @@ struct ComputedStyle
         Drawable _bgImage;
         BgPosition _bgPosition;
         BgSize _bgSize;
-        Color _borderTopColor = Color.transparent;
-        Color _borderRightColor = Color.transparent;
-        Color _borderBottomColor = Color.transparent;
-        Color _borderLeftColor = Color.transparent;
+        Color _borderTopColor = Color.none;
+        Color _borderRightColor = Color.none;
+        Color _borderBottomColor = Color.none;
+        Color _borderLeftColor = Color.none;
         LayoutLength _borderTopLeftRadius = LayoutLength.zero;
         LayoutLength _borderTopRightRadius = LayoutLength.zero;
         LayoutLength _borderBottomLeftRadius = LayoutLength.zero;
@@ -235,7 +243,8 @@ struct ComputedStyle
         string _fontFace = "Arial";
         float _letterSpacing = 0;
         float _lineHeight = 14;
-        Color _textDecorColor = Color.black;
+        Color _textColor = Color.black;
+        Color _textDecorColor = Color.none;
         LayoutLength _textIndent = LayoutLength.zero;
         float _wordSpacing = 0;
         // effects
@@ -569,21 +578,7 @@ struct ComputedStyle
 
     private auto getDefaultValue(string name)()
     {
-        enum ptype = mixin(`P.` ~ name);
-
-        static if (false
-            || ptype == P.borderTopColor
-            || ptype == P.borderRightColor
-            || ptype == P.borderBottomColor
-            || ptype == P.borderLeftColor
-            || ptype == P.textDecorColor
-        )
-        {
-            // must be computed before
-            return _textColor;
-        }
-        else
-            return mixin(`defaults._` ~ name);
+        return mixin(`defaults._` ~ name);
     }
 
     private bool inherits(P ptype)
