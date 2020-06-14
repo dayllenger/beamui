@@ -164,10 +164,8 @@ struct ComputedStyle
 
     private
     {
-        import core.bitop : bt, bts, btr;
-
         /// Inherits value from the parent element
-        size_t[(P.max + 1) / (8 * size_t.sizeof) + 1] _inheritBitArray;
+        StaticBitArray!(P.max + 1) _inheritBitArray;
 
         // origins
         int _fontSize = 12;
@@ -380,7 +378,7 @@ struct ComputedStyle
 
     private void recomputeBuiltin(Style[] chain, ComputedStyle* parentStyle)
     {
-        _inheritBitArray = 0;
+        _inheritBitArray = _inheritBitArray.init;
 
         /// iterate through all built-in properties
         static foreach (name; __traits(allMembers, P))
@@ -419,7 +417,7 @@ struct ComputedStyle
             }
             // remember inherited properties
             if (inh || inheritsByDefault && !set)
-                bts(_inheritBitArray.ptr, ptype);
+                _inheritBitArray.set(ptype);
 
             // resolve inherited properties
             if (inherits(ptype))
@@ -547,7 +545,7 @@ struct ComputedStyle
 
     private bool inherits(P ptype)
     {
-        return bt(_inheritBitArray.ptr, ptype) != 0;
+        return _inheritBitArray[ptype];
     }
 
     /// Check whether the style can make transition for a CSS property

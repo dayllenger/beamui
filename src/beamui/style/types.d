@@ -40,3 +40,28 @@ enum SpecialCSSType
     transitionProperty, /// string
     zIndex, /// int
 }
+
+struct StaticBitArray(uint bitCount)
+{
+    import core.bitop : bt, btr, bts;
+
+    private size_t[bitCount / (8 * size_t.sizeof) + 1] _data;
+
+    bool opIndex(uint bit) const @trusted
+        in(bit < bitCount)
+    {
+        return bt(_data.ptr, bit) != 0;
+    }
+
+    void set(uint bit) @trusted
+        in(bit < bitCount)
+    {
+        bts(_data.ptr, bit);
+    }
+
+    void reset(uint bit) @trusted
+        in(bit < bitCount)
+    {
+        btr(_data.ptr, bit);
+    }
+}
