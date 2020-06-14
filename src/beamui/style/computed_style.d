@@ -12,6 +12,7 @@ public import beamui.style.types : SpecialCSSType;
 import beamui.core.animations;
 import beamui.core.editable : TabSize;
 import beamui.core.geometry : Insets;
+import beamui.core.logger;
 import beamui.core.units : Length, LayoutLength;
 import beamui.graphics.colors : Color;
 import beamui.graphics.compositing : BlendMode;
@@ -278,6 +279,7 @@ struct ComputedStyle
         CursorType _cursor = CursorType.automatic;
 
         const(CssToken)[][string] _customProps;
+        const(CssToken)[][StyleProperty] _propCache;
     }
 
     T getPropertyValue(T, SpecialCSSType specialType = SpecialCSSType.none)(string name, lazy T def)
@@ -345,7 +347,7 @@ struct ComputedStyle
                 break;
             }
         }
-        auto old = _customProps;
+        auto previous = _customProps;
         if (hasSome)
         {
             _customProps = null;
@@ -365,10 +367,12 @@ struct ComputedStyle
             _customProps = parentStyle ? parentStyle._customProps : null;
         }
 
-        if (old.length != _customProps.length)
-            return true;
         // compare old and new arrays
-        foreach (a, b; zip(old.byKeyValue, _customProps.byKeyValue))
+        if (previous is _customProps)
+            return false;
+        if (previous.length != _customProps.length)
+            return true;
+        foreach (a, b; zip(previous.byKeyValue, _customProps.byKeyValue))
         {
             if (a.key != b.key || a.value !is b.value)
                 return true;
@@ -391,11 +395,56 @@ struct ComputedStyle
             foreach_reverse (st; chain)
             {
                 auto plist = &st._props;
+                if (!plist.isSet(ptype))
+                    continue;
+
+                // actually specified value
+                if (auto p = plist.peek!name)
+                {
+                    _propCache.remove(ptype);
+                    auto val = postprocessValue!ptype(*p, parentStyle);
+                    setProperty!name(val);
+                    set = true;
+                    break;
+                }
+                // 'var(--something)'
+                if (auto var = plist.getCustomValueName(ptype))
+                {
+                    if (auto p = var in _customProps)
+                    {
+                        const(CssToken)[] tokens = *p;
+                        if (auto cached = ptype in _propCache)
+                        {
+                            if (tokens is *cached)
+                                break;
+                        }
+                        _propCache[ptype] = tokens;
+
+                        alias T = typeof(mixin(`PropTypes.` ~ name));
+                        enum specialType = getSpecialCSSType(ptype);
+
+                        static if (specialType == SpecialCSSType.none)
+                            auto result = decode!T(tokens);
+                        else
+                            auto result = decode!specialType(tokens);
+
+                        if (result.err)
+                            break;
+                        if (!sanitizeProperty!ptype(result.val))
+                            break;
+
+                        auto val = postprocessValue!ptype(result.val, parentStyle);
+                        setProperty!name(val);
+                        set = true;
+                    }
+                    break;
+                }
                 // 'inherit'
                 static if (!inheritsByDefault)
                 {
                     if (plist.isInherited(ptype))
                     {
+                        _propCache.remove(ptype);
                         inh = set = true;
                         break;
                     }
@@ -403,14 +452,8 @@ struct ComputedStyle
                 // 'initial'
                 if (plist.isInitial(ptype))
                 {
+                    _propCache.remove(ptype);
                     setProperty!name(getDefaultValue!name());
-                    set = true;
-                    break;
-                }
-                // actually specified value
-                if (auto p = plist.peek!name)
-                {
-                    setProperty!name(postprocessValue!ptype(*p, parentStyle));
                     set = true;
                     break;
                 }

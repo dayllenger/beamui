@@ -293,6 +293,7 @@ package struct StylePropertyList
 
     private BuiltinPropertyValue[] values;
     private Pointer[StyleProperty.max + 1] pointers;
+    private StaticBitArray!(StyleProperty.max + 1) pointsToVarName;
     const(Token)[][string] customProperties;
 
     /// Try to get value of a property by exact name. Returns a pointer to it or `null`
@@ -302,11 +303,26 @@ package struct StylePropertyList
         enum ptype = mixin(`StyleProperty.` ~ name);
 
         const ptr = pointers[ptype];
-        if (ptr >= Pointer.some)
+        if (ptr >= Pointer.some && !pointsToVarName[ptype])
             return mixin(`&values[ptr - Pointer.some].` ~ Unqual!T.mangleof);
         return null;
     }
 
+    string getCustomValueName(StyleProperty property)
+    {
+        if (pointsToVarName[property])
+        {
+            const v = &values[pointers[property] - Pointer.some];
+            return mixin(`v.` ~ string.mangleof);
+        }
+        return null;
+    }
+
+    /// Returns true if `property` is set to something
+    bool isSet(StyleProperty property) const
+    {
+        return pointers[property] != Pointer.none;
+    }
     /// Returns true if `property` is set to 'inherit'
     bool isInherited(StyleProperty property) const
     {
@@ -334,6 +350,12 @@ package struct StylePropertyList
         }
     }
 
+    void setToVarName(StyleProperty ptype, string value)
+    {
+        set(ptype, value);
+        pointsToVarName.set(ptype);
+    }
+
     void inherit(StyleProperty property)
     {
         pointers[property] = Pointer.inherit;
@@ -343,6 +365,12 @@ package struct StylePropertyList
     {
         pointers[property] = Pointer.initial;
     }
+}
+
+/// `--something`
+package bool isVarName(string name)
+{
+    return name.length >= 2 && name[0] == '-' && name[1] == '-';
 }
 
 /// Checks bounds, like disallowed negative values

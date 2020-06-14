@@ -415,8 +415,7 @@ void appendStyleDeclaration(ref StylePropertyList list, Decoder[string] decoders
     foreach (p; props)
     {
         assert(p.name.length && p.value.length);
-        const twoDashes = p.name.length >= 2 && p.name[0] == '-' && p.name[1] == '-';
-        if (twoDashes)
+        if (isVarName(p.name))
         {
             list.customProperties[p.name] = p.value;
         }
@@ -496,20 +495,38 @@ void decodeLonghand(P ptype, T)(ref StylePropertyList list, const(CSS.Token)[] t
 
 bool setMeta(ref StylePropertyList list, const CSS.Token[] tokens, P[] ps...)
 {
-    if (tokens.length == 1 && tokens[0].type == CSS.TokenType.ident)
+    const t0 = tokens[0];
+    if (tokens.length == 1 && t0.type == CSS.TokenType.ident)
     {
-        if (tokens[0].text == "inherit")
+        if (t0.text == "inherit")
         {
             foreach (p; ps)
                 list.inherit(p);
             return true;
         }
-        if (tokens[0].text == "initial")
+        if (t0.text == "initial")
         {
             foreach (p; ps)
                 list.initialize(p);
             return true;
         }
+    }
+    else if (t0.type == CSS.TokenType.func && t0.text == "var")
+    {
+        if (tokens.length == 3)
+        {
+            if (tokens[1].type == CSS.TokenType.ident && tokens[2].type == CSS.TokenType.closeParen)
+            {
+                if (isVarName(tokens[1].text))
+                {
+                    foreach (p; ps)
+                        list.setToVarName(p, tokens[1].text);
+                    return true;
+                }
+            }
+        }
+        Log.fe("CSS(%d): invalid var() syntax", t0.line);
+        return true;
     }
     return false;
 }
