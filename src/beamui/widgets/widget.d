@@ -325,9 +325,13 @@ class Widget
         _element._buildInProgress = false;
     }
 
-    final protected Element mountChild(Widget child, Element thisElem, size_t index)
-        in(child)
+    /// May return `null`
+    final protected Element mountChild(Widget child, size_t index, bool append = true)
+        in(_element, "Must have an element")
     {
+        if (!child)
+            return null;
+
         const wid = child._widgetID = child.computeID(this, index);
         // find or create widget state object using the currently bound state store
         WidgetState st = child._state = _ctx.stateStore.fetch(wid, child);
@@ -339,10 +343,12 @@ class Widget
         else
             st.age = _ctx.stateStore.age + _state.childrenTTL;
         // reparent the element silently
-        el._parent = thisElem;
+        el._parent = _element;
         child._parent = this;
         // continue
         child.mountRecursively();
+        if (append)
+            _element.addChild(el);
         return el;
     }
 
@@ -483,8 +489,7 @@ abstract class WidgetWrapperOf(W : Widget) : Widget
     {
         super.updateElement(el);
 
-        if (_content)
-            el.addChild(mountChild(_content, el, 0));
+        mountChild(_content, 0);
     }
 }
 
@@ -529,8 +534,7 @@ abstract class WidgetGroupOf(W : Widget) : Widget
 
         foreach (i, item; this)
         {
-            if (item)
-                el.addChild(mountChild(item, el, i));
+            mountChild(item, i);
         }
     }
 }

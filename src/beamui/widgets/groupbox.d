@@ -26,7 +26,7 @@ protected:
         super.updateElement(element);
 
         ElemGroupBox el = fastCast!ElemGroupBox(element);
-        el.caption = mountChild(buildCaption(), el, 0);
+        el.caption = mountChild(buildCaption(), 0, false);
     }
 }
 

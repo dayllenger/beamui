@@ -375,17 +375,13 @@ class TabWidget : Widget
 
         if (alignment == Align.top)
         {
-            if (_bar)
-                el.addChild(mountChild(_bar, el, 0));
-            if (_content)
-                el.addChild(mountChild(_content, el, 1));
+            mountChild(_bar, 0);
+            mountChild(_content, 1);
         }
         else
         {
-            if (_content)
-                el.addChild(mountChild(_content, el, 1));
-            if (_bar)
-                el.addChild(mountChild(_bar, el, 0));
+            mountChild(_content, 1);
+            mountChild(_bar, 0);
         }
     }
 }

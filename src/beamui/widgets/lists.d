@@ -132,8 +132,7 @@ class ListView : Widget
 
         foreach (i, item; this)
         {
-            if (item)
-                el.addChild(mountChild(item, el, i));
+            mountChild(item, i);
         }
     }
 }

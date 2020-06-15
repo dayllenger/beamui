@@ -103,8 +103,7 @@ abstract class ScrollAreaBase : Widget
             sb.orientation = Orientation.horizontal;
             sb.data = el._hdata;
             sb.onScroll = &el.handleHScroll;
-            hbar = fastCast!ElemScrollBar(mountChild(sb, el, 0));
-            el.addChild(hbar);
+            hbar = fastCast!ElemScrollBar(mountChild(sb, 0));
         }
         if (vscrollbarMode != ScrollBarMode.hidden)
         {
@@ -113,8 +112,7 @@ abstract class ScrollAreaBase : Widget
             sb.orientation = Orientation.vertical;
             sb.data = el._vdata;
             sb.onScroll = &el.handleVScroll;
-            vbar = fastCast!ElemScrollBar(mountChild(sb, el, 1));
-            el.addChild(vbar);
+            vbar = fastCast!ElemScrollBar(mountChild(sb, 1));
         }
         el.setScrollBars(hscrollbarMode, vscrollbarMode, hbar, vbar);
     }
@@ -643,13 +641,7 @@ class ScrollArea : ScrollAreaBase
         super.updateElement(element);
 
         ElemScrollArea el = fastCast!ElemScrollArea(element);
-        if (_content)
-        {
-            el._content = mountChild(_content, el, 2);
-            el.addChild(el._content);
-        }
-        else
-            el._content = null;
+        el._content = mountChild(_content, 2);
     }
 }
 

@@ -100,15 +100,15 @@ class MenuItem : Widget
         {
             el.applyFlags(StateFlags.checked, action.checked);
             el._separator = null;
-            el._checkbox = _checkbox ? el.addChild(mountChild(_checkbox, el, 1)) : null;
-            el._icon = _icon ? el.addChild(mountChild(_icon, el, 2)) : null;
-            el._label = fastCast!ElemLabel(el.addChild(mountChild(_label, el, 3)));
-            el._shortcut = _shortcut ? el.addChild(mountChild(_shortcut, el, 4)) : null;
+            el._checkbox = mountChild(_checkbox, 1);
+            el._icon = mountChild(_icon, 2);
+            el._label = fastCast!ElemLabel(mountChild(_label, 3));
+            el._shortcut = mountChild(_shortcut, 4);
         }
         else
         {
             el.applyFlags(StateFlags.checked, false);
-            el._separator = el.addChild(mountChild(_separator, el, 0));
+            el._separator = mountChild(_separator, 0);
             el._checkbox = null;
             el._icon = null;
             el._label = null;

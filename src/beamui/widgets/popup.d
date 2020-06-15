@@ -85,7 +85,7 @@ class Popup : Widget
         el.alignment = alignment;
         el.point = point;
 
-        el._content = _content ? mountChild(_content, el, 0) : null;
+        el._content = mountChild(_content, 0, false);
     }
 }
 
