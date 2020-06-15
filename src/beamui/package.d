@@ -76,5 +76,6 @@ public
     import beamui.widgets.text;
     import beamui.widgets.toolbars;
     import beamui.widgets.tree;
+    import beamui.widgets.trigger;
     import beamui.widgets.widget; // exports a lot of stuff too
 }
