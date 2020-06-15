@@ -279,6 +279,43 @@ class Widget
         return _ctx.arena;
     }
 
+    /// May return `null`
+    final protected Element mountChild(Widget child, size_t index, bool append = true)
+    {
+        if (!child)
+            return null;
+
+        child._parent = this;
+        const wid = child._widgetID = child.computeID(this, index);
+
+        // find or create widget state object using the currently bound state store
+        WidgetState st = child._state = _ctx.stateStore.fetch(wid, child);
+        // propagate state age
+        if (_state.childrenTTL == 0)
+            st.age = _state.age;
+        else
+            st.age = _ctx.stateStore.age + _state.childrenTTL;
+
+        // find or create the element
+        Element el = child._element = _ctx.elemStore.fetch(wid, child);
+        if (el)
+        {
+            assert(_element, "Must have a parent element");
+            // reparent the element silently
+            el._parent = _element;
+            // continue
+            child.mountRecursively();
+            if (append)
+                _element.addChild(el);
+        }
+        else
+        {
+            // no element
+            child.mountRecursivelyWithoutElement();
+        }
+        return el;
+    }
+
     private WidgetID computeID(Widget parent, size_t index)
         in(parent, "Widget must have a parent")
     {
@@ -325,31 +362,13 @@ class Widget
         _element._buildInProgress = false;
     }
 
-    /// May return `null`
-    final protected Element mountChild(Widget child, size_t index, bool append = true)
-        in(_element, "Must have an element")
+    private void mountRecursivelyWithoutElement()
     {
-        if (!child)
-            return null;
-
-        const wid = child._widgetID = child.computeID(this, index);
-        // find or create widget state object using the currently bound state store
-        WidgetState st = child._state = _ctx.stateStore.fetch(wid, child);
-        // same for element
-        Element el = child._element = _ctx.elemStore.fetch(wid, child);
-        // propagate state age
-        if (_state.childrenTTL == 0)
-            st.age = _state.age;
-        else
-            st.age = _ctx.stateStore.age + _state.childrenTTL;
-        // reparent the element silently
-        el._parent = _element;
-        child._parent = this;
-        // continue
-        child.mountRecursively();
-        if (append)
-            _element.addChild(el);
-        return el;
+        build();
+        foreach (i, item; this)
+        {
+            mountChild(item, i);
+        }
     }
 
     protected inout(S) use(S : WidgetState)() inout
@@ -362,10 +381,15 @@ class Widget
     final protected inout(Widget) parent() inout { return _parent; }
 
     final protected inout(Window) window() inout
-        in(_element, "The element hasn't mounted yet")
-        out(win; win)
     {
-        return _element.window;
+        Widget p = cast()this;
+        while (p)
+        {
+            if (p._element && p._element._window)
+                return cast(inout)p._element._window;
+            p = p._parent;
+        }
+        assert(0, "The element hasn't mounted yet");
     }
 
     //===============================================================
@@ -387,7 +411,6 @@ class Widget
     }
 
     protected Element createElement()
-        out(el; el)
     {
         return new Element;
     }
@@ -2816,7 +2839,8 @@ package(beamui) struct ElementStore
         else
         {
             map[id] = el = caller.createElement();
-            el.widgetType = typeid(caller);
+            if (el)
+                el.widgetType = typeid(caller);
             instantiations++;
         }
         return el;
