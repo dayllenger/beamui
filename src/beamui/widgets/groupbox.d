@@ -10,6 +10,26 @@ module beamui.widgets.groupbox;
 import beamui.widgets.text;
 import beamui.widgets.widget;
 
+abstract class GroupBoxBase : Panel
+{
+    abstract Widget buildCaption() out(w; w);
+
+protected:
+
+    override Element createElement()
+    {
+        return new ElemGroupBox;
+    }
+
+    override void updateElement(Element element)
+    {
+        super.updateElement(element);
+
+        ElemGroupBox el = fastCast!ElemGroupBox(element);
+        el.caption = mountChild(buildCaption(), el, 0);
+    }
+}
+
 /** Group box is a panel (column usually) with a frame and a caption.
 
     CSS_nodes:
@@ -19,51 +39,64 @@ import beamui.widgets.widget;
     ╰── *items*
     ---
 */
-class GroupBox : Panel
+class GroupBox : GroupBoxBase
 {
     /// Groupbox caption text
     dstring caption;
 
-    private ElemLabel makeCaption(Element el)
+protected:
+
+    static class State : WidgetState
     {
-        // no need to recreate this widget every build
-        Label capt = render!Label;
-        capt.key = "__caption__";
-        capt.attributes["caption"];
-        capt.namespace = null;
-        return fastCast!ElemLabel(mountChild(capt, el, 0));
+        Label caption;
+
+        this()
+        {
+            // no need to recreate this widget every build
+            caption = new Label;
+            caption.key = "__caption__";
+            caption.attributes["caption"];
+            caption.namespace = null;
+        }
     }
 
-    override protected Element createElement()
+    override State createState()
     {
-        return new ElemGroupBox(this);
+        return new State;
     }
 
-    override protected void updateElement(Element element)
+    override void build()
     {
-        super.updateElement(element);
+        use!State.caption.text = caption;
+    }
 
-        ElemGroupBox el = fastCast!ElemGroupBox(element);
-        el._caption.text = caption;
+    override Widget buildCaption()
+    {
+        return use!State.caption;
     }
 }
 
 class ElemGroupBox : ElemPanel
 {
+    @property
+    {
+        void caption(Element el)
+        {
+            assert(el);
+            if (_caption is el)
+                return;
+            _hiddenChildren.replace(_caption, el);
+            _caption = el;
+        }
+    }
+
     private
     {
-        ElemLabel _caption;
+        Element _caption;
 
         DrawableRef _drFrameTopLeft;
         DrawableRef _drFrameTopRight;
         DrawableRef _drFrameBottom;
-    }
-
-    this(GroupBox widget)
-        in(widget)
-    {
-        _caption = widget.makeCaption(this);
-        _hiddenChildren.append(_caption);
     }
 
     override void handleCustomPropertiesChange()
@@ -104,6 +137,7 @@ class ElemGroupBox : ElemPanel
 
     protected void calcFrame()
     {
+        assert(_caption);
         const Insets cp = _caption.padding;
         const int captFontHeight = _caption.font.height;
         _captionHeight = cp.top + cp.bottom + captFontHeight;
