@@ -31,8 +31,6 @@ Paragraph {
 
 EditLine,
 EditBox {
-  cursor: text;
-
   --caret: #000;
   --caret-replace: rgba(128, 128, 255, 0.5);
   --selection-focused: rgba(96, 160, 255, 0.3);

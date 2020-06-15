@@ -367,6 +367,7 @@ ComboEdit {
     gap: 0;
     background-color: var(--pane-color);
     background-image: none;
+    cursor: auto;
 
     > EditLine.body {
         padding: 5px;

@@ -119,7 +119,7 @@ Popup.combobox > ListView:focused { border-color: var(--paler-border-color); }
 
 Popup.combobox > ListView:not(enabled) { background-color: var(--inverse-text-color); }
 
-ComboEdit { padding: 0; gap: 0; background-color: var(--pane-color); background-image: none; }
+ComboEdit { padding: 0; gap: 0; background-color: var(--pane-color); background-image: none; cursor: auto; }
 
 ComboEdit > EditLine.body { padding: 5px; border: none; background: none; color: var(--text-color); }
 
