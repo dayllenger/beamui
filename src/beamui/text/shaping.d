@@ -45,9 +45,8 @@ void shape(dstring str, ref Buf!ComputedGlyph output, Font font, TextTransform t
     if (len == 0)  // trivial case; do not resize the buffer
         return;
 
+    const spaceWidth = font.spaceWidth;
     const bool fixed = font.isFixed;
-    const fixedCharWidth = font.getCharWidth('M');
-    const spaceWidth = fixed ? fixedCharWidth : font.spaceWidth;
     const bool useKerning = !fixed && font.hasKerning;
 
     output.resize(len);
@@ -77,7 +76,7 @@ void shape(dstring str, ref Buf!ComputedGlyph output, Font font, TextTransform t
         if (fixed)
         {
             // fast calculation for fixed pitch
-            pglyphs[i].width = fixedCharWidth;
+            pglyphs[i].width = spaceWidth;
         }
         else
         {
