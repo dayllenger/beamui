@@ -389,15 +389,12 @@ class Window : CustomEventTarget
         Arena[2] _widgetArenas;
         Widget delegate() _mainBuilder;
 
-        KeyMods _keyboardModifiers;
+        Painter _painter;
+        PainterHead _painterHead;
 
         CursorType _overridenCursorType = CursorType.automatic;
 
-        Animation[] animations;
-        ulong animationUpdateTimerID;
-
-        Painter _painter;
-        PainterHead _painterHead;
+        KeyMods _keyboardModifiers;
     }
 
     this(Window parent, WindowOptions options)
@@ -1900,6 +1897,50 @@ class Window : CustomEventTarget
     //===============================================================
     // Animations
 
+    private
+    {
+        Animation[] animations;
+        ulong _animationUpdateTimerID;
+        ulong _animationTimerID;
+        void delegate(double)[] _animationCallbacks;
+    }
+
+    void requestAnimationFrame(void delegate(double) callback)
+        in(callback)
+    {
+        _animationCallbacks ~= callback;
+        // run callbacks every 16 milliseconds
+        if (_animationTimerID == 0)
+            _animationTimerID = setTimer(16, &handleAnimationTimer);
+    }
+
+    private bool handleAnimationTimer()
+    {
+        import std.datetime : Clock;
+
+        const double ts = now();
+        auto callbacks = _animationCallbacks;
+        _animationCallbacks = null;
+        foreach (cb; callbacks)
+            cb(ts);
+
+        // `update` is called after any timer handler
+
+        // if no frames requested, stop the timer
+        if (!_animationCallbacks.length)
+        {
+            _animationTimerID = 0;
+            return false;
+        }
+        return true;
+    }
+
+    static private double now()
+    {
+        const ts = platform._timeOriginStopWatch.peek();
+        return ts.total!"hnsecs" / 10_000.0;
+    }
+
     void addAnimation(long duration, void delegate(double) handler)
     {
         assert(duration > 0 && handler);
@@ -2108,8 +2149,8 @@ class Window : CustomEventTarget
                 // layout required flag could be changed during animate - check again
                 checkUpdateNeeded(needDraw, needLayout, animationActive);
                 // do update every 16 milliseconds
-                if (animationUpdateTimerID == 0)
-                    animationUpdateTimerID = setTimer(16, &animationTimerHandler);
+                if (_animationUpdateTimerID == 0)
+                    _animationUpdateTimerID = setTimer(16, &animationTimerHandler);
             }
             lastDrawTs = ts;
 
@@ -2142,10 +2183,10 @@ class Window : CustomEventTarget
                     Log.fd("drawing took: %.1f ms", elapsed);
             }
             // cancel animations' update if they are expired
-            if (!animationActive && animationUpdateTimerID)
+            if (!animationActive && _animationUpdateTimerID)
             {
-                cancelTimer(animationUpdateTimerID);
-                animationUpdateTimerID = 0;
+                cancelTimer(_animationUpdateTimerID);
+                _animationUpdateTimerID = 0;
             }
 
             needUpdate = false;
@@ -2346,6 +2387,8 @@ class Platform
     {
         AppConf _conf;
         IconProviderBase _iconProvider;
+
+        StopWatch _timeOriginStopWatch;
     }
 
     this(ref AppConf conf)
@@ -2358,6 +2401,8 @@ class Platform
             loadTranslator(conf.lang);
         }
         setupTheme(conf.theme);
+
+        _timeOriginStopWatch.start();
     }
 
     ~this()
