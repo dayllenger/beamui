@@ -1827,12 +1827,11 @@ class Window : CustomEventTarget
             return;
         }
 
-        debug
-        {
-            StopWatch sw;
-            sw.start();
-        }
+        perf!("rebuild", false)(&rebuildImpl);
+    }
 
+    private void rebuildImpl()
+    {
         // prepare allocators and the cache
         swap(_widgetArenas[0], _widgetArenas[1]);
         _widgetArenas[0].clear();
@@ -1852,14 +1851,6 @@ class Window : CustomEventTarget
 
         _popups = null;
         needRebuild = false;
-
-        debug
-        {
-            sw.stop();
-            const elapsed = sw.peek().total!`usecs` / 1000.0f;
-            if (elapsed > PERFORMANCE_LOGGING_THRESHOLD_MS)
-                Log.fd("rebuild took: %.1f ms", elapsed);
-        }
     }
 
     //===============================================================
@@ -1920,53 +1911,30 @@ class Window : CustomEventTarget
     /// Measure main widget, popups and tooltip
     private void measure()
     {
-        debug (layout)
-        {
-            StopWatch sw;
-            sw.start();
-        }
-
-        setupGlobalDPI();
-        // TODO: set minimum window size
-        _mainRootElement.measure();
-        _popupRootElement.measure();
-        // if (auto tp = _tooltip.popup)
-        //     tp.measure();
-
-        debug (layout)
-        {
-            sw.stop();
-            const elapsed = sw.peek().total!`usecs` / 1000.0f;
-            if (elapsed > PERFORMANCE_LOGGING_THRESHOLD_MS)
-                Log.fd("measure took: %.1f ms", elapsed);
-        }
+        perf!"measure"({
+            setupGlobalDPI();
+            // TODO: set minimum window size
+            _mainRootElement.measure();
+            _popupRootElement.measure();
+            // if (auto tp = _tooltip.popup)
+            //     tp.measure();
+        });
     }
 
     /// Lay out main widget, popups and tooltip
     private void layout()
     {
-        debug (layout)
-        {
-            StopWatch sw;
-            sw.start();
-        }
+        perf!"layout"({
+            setupGlobalDPI();
 
-        setupGlobalDPI();
-        _mainRootElement.layout(Box(0, 0, _w, _h));
-        _popupRootElement.layout(Box(0, 0, _w, _h));
-        // if (auto tp = _tooltip.popup)
-        // {
-        //     const sz = tp.natSize;
-        //     tp.layout(Box(0, 0, sz.w, sz.h));
-        // }
-
-        debug (layout)
-        {
-            sw.stop();
-            const elapsed = sw.peek().total!`usecs` / 1000.0f;
-            if (elapsed > PERFORMANCE_LOGGING_THRESHOLD_MS)
-                Log.fd("layout took: %.1f ms", elapsed);
-        }
+            _mainRootElement.layout(Box(0, 0, _w, _h));
+            _popupRootElement.layout(Box(0, 0, _w, _h));
+            // if (auto tp = _tooltip.popup)
+            // {
+            //     const sz = tp.natSize;
+            //     tp.layout(Box(0, 0, sz.w, sz.h));
+            // }
+        });
     }
 
     /// Find topmost visible widget at the (x, y) position in global coordinates. `null` if none
@@ -2020,8 +1988,6 @@ class Window : CustomEventTarget
         }
     }
 
-    enum PERFORMANCE_LOGGING_THRESHOLD_MS = 1;
-
     /// Set when first draw is called: don't handle mouse/key input until draw (layout) is called
     private bool _firstDrawCalled;
 
@@ -2046,27 +2012,15 @@ class Window : CustomEventTarget
                 layout();
             }
 
-            debug (redraw)
-            {
-                StopWatch sw;
-                sw.start();
-            }
-
-            // draw main widget
-            _mainRootElement.draw(_painter);
-            // draw popups
-            _popupRootElement.draw(_painter);
-            // and draw tooltip
-            // if (auto p = _tooltip.popup)
-            //     p.draw(_painter);
-
-            debug (redraw)
-            {
-                sw.stop();
-                const elapsed = sw.peek().total!`usecs` / 1000.0f;
-                if (elapsed > PERFORMANCE_LOGGING_THRESHOLD_MS)
-                    Log.fd("drawing took: %.1f ms", elapsed);
-            }
+            perf!"redraw"({
+                // draw main widget
+                _mainRootElement.draw(_painter);
+                // draw popups
+                _popupRootElement.draw(_painter);
+                // and draw tooltip
+                // if (auto p = _tooltip.popup)
+                //     p.draw(_painter);
+            });
 
             needUpdate = false;
         }
@@ -2076,6 +2030,30 @@ class Window : CustomEventTarget
         }
         _painterHead.endFrame();
     }
+}
+
+private enum PERFORMANCE_LOGGING_THRESHOLD_MS = 1;
+
+private void perf(string pass, bool useDebugVersion = true)(scope void delegate() dg)
+{
+    mixin(`debug` ~ (useDebugVersion ? `(` ~ pass ~ `)` : ``) ~ `
+    {
+        StopWatch sw;
+        sw.start();
+        dg();
+        sw.stop();
+        printPerf(sw, pass);
+    }
+    else
+        dg();
+    `);
+}
+
+private void printPerf(ref const StopWatch sw, string pass)
+{
+    const elapsed = sw.peek().total!"usecs" / 1000.0f;
+    if (elapsed > PERFORMANCE_LOGGING_THRESHOLD_MS)
+        Log.fd("%s took: %.1f ms", pass, elapsed);
 }
 
 /// Convenient window storage to use in specific platforms
