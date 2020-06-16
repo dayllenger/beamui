@@ -1957,6 +1957,9 @@ public:
     */
     final void measure()
     {
+        if (!_needLayout)
+            return;
+
         const Size p = padding.size; // updates style
         Boundaries bs = computeBoundaries();
         assert(isFinite(bs.min.w) && isFinite(bs.min.h));
@@ -2045,6 +2048,7 @@ public:
     */
     void layout(Box geometry)
     {
+        const requested = _needLayout;
         _needLayout = false;
         if (visibility == Visibility.gone)
             return;
@@ -2052,6 +2056,11 @@ public:
         alias b = geometry;
         assert(isFinite(b.x) && isFinite(b.y));
         assert(isFinite(b.w) && isFinite(b.h));
+        const sb = snapToDevicePixels(b);
+        if (!requested && _box == sb)
+            return;
+        _box = sb;
+
         // shrink padding when appropriate
         Insets p = padding;
         if (_boundaries.nat.w > b.w)
@@ -2094,8 +2103,11 @@ public:
                 }
             }
         }
-        _box = snapToDevicePixels(b);
-        _innerBox = snapToDevicePixels(Box(0, 0, b.w, b.h).shrinked(p));
+        const isb = snapToDevicePixels(Box(0, 0, b.w, b.h).shrinked(p));
+        if (!requested && _innerBox == isb)
+            return;
+        _innerBox = isb;
+
         arrangeContent();
     }
 
