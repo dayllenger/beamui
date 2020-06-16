@@ -1018,7 +1018,6 @@ class FilePathPanelButtons : WidgetGroup
         foreach (i; 0 .. childCount)
         {
             Widget item = child(i);
-            item.visibility = Visibility.visible;
 
             item.measure();
             const wbs = item.boundaries;
@@ -1046,19 +1045,16 @@ class FilePathPanelButtons : WidgetGroup
             {
                 exceeded = true;
             }
-            if (!exceeded || i == 0)
-            { // at least one item must be visible
+            Widget item = child(i);
+            if (!exceeded || i == 0) // at least one item must be visible
+            {
                 totalw += itemSizes[i];
                 visibleItems++;
+                item.visibility = Visibility.visible;
             }
             else
-            {
-                Widget item = child(i);
                 item.visibility = Visibility.gone;
-            }
         }
-        // changing child visibility to `gone` forces parent layout
-        cancelLayout();
         // lay out visible items
         // backward order
         Box ibox = inner;

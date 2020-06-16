@@ -172,11 +172,10 @@ class ElemGroupBox : ElemPanel
     override protected void arrangeContent()
     {
         super.arrangeContent();
-        const geom = box;
-        // layout the caption
+        // lay out the caption
         const cw = _caption.natSize.w;
-        const cwinv = geom.w - _topFrameLeft - _topFrameRight;
-        Box b = Box(geom.x + _topFrameLeft, geom.y, min(cw, cwinv), _captionHeight);
+        const cwinv = box.w - _topFrameLeft - _topFrameRight;
+        Box b = Box(_topFrameLeft, 0, min(cw, cwinv), _captionHeight);
         _caption.layout(b);
     }
 
@@ -194,16 +193,16 @@ class ElemGroupBox : ElemPanel
         const b = box;
         if (!_drFrameTopLeft.isNull)
         {
-            _drFrameTopLeft.drawTo(pr, Box(b.x, b.y + dh, _topFrameLeft, _topHeight - dh));
+            _drFrameTopLeft.drawTo(pr, Box(0, dh, _topFrameLeft, _topHeight - dh));
         }
         if (!_drFrameTopRight.isNull)
         {
             const cw = _caption.box.w;
-            _drFrameTopRight.drawTo(pr, Box(b.x + _topFrameLeft + cw, b.y + dh, b.w - _topFrameLeft - cw, _topHeight - dh));
+            _drFrameTopRight.drawTo(pr, Box(_topFrameLeft + cw, dh, b.w - _topFrameLeft - cw, _topHeight - dh));
         }
         if (!_drFrameBottom.isNull)
         {
-            _drFrameBottom.drawTo(pr, Box(b.x, b.y + _topHeight, b.w, b.h - _topHeight));
+            _drFrameBottom.drawTo(pr, Box(0, _topHeight, b.w, b.h - _topHeight));
         }
     }
 }

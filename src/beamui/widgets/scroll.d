@@ -439,15 +439,11 @@ abstract class ElemScrollAreaBase : ElemGroup
             Box b = Box(inner.x, inner.y + inner.h - _sbsz.h, sz.w - vsbw, _sbsz.h);
             _hscrollbar.layout(b);
         }
-        else if (_hscrollbar)
-            _hscrollbar.cancelLayout();
         if (needVScroll)
         {
             Box b = Box(inner.x + inner.w - _sbsz.w, inner.y, _sbsz.w, sz.h - hsbh);
             _vscrollbar.layout(b);
         }
-        else if (_vscrollbar)
-            _vscrollbar.cancelLayout();
     }
 
     /// Show or hide scrollbars

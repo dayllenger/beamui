@@ -238,7 +238,7 @@ class ElemPopup : Element
         {
             Box anchorbox;
             if (_anchor && *_anchor.get)
-                anchorbox = _anchor.get.box;
+                anchorbox = Box(_anchor.get.origin, _anchor.get.box.size);
             else
                 anchorbox = windowBox;
 

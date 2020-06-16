@@ -1914,6 +1914,9 @@ class Window : CustomEventTarget
             //     const sz = tp.natSize;
             //     tp.layout(Box(0, 0, sz.w, sz.h));
             // }
+
+            _mainRootElement.setOrigin(Point());
+            _popupRootElement.setOrigin(Point());
         });
     }
 

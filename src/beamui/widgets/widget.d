@@ -580,7 +580,10 @@ class WidgetState
     private ulong age = ulong.max; // no one dies by default
 }
 
-/// Base class for all elements
+/** Base class for all elements.
+
+    All products of `measure` and `layout` are in device-independent pixels.
+*/
 class Element
 {
 private:
@@ -607,6 +610,8 @@ private:
     Box _box;
     /// Current box without padding and border
     Box _innerBox;
+    /// Absolute position of this coordinate system origin
+    Point _origin;
     /// True to force layout
     bool _needLayout = true;
     /// True to force redraw
@@ -1835,34 +1840,61 @@ public:
     //===============================================================
     // Layout, measurement, drawing methods and properties
 
-    @property
+    final @property
     {
         /// Returns true if layout is required for element and its children
-        final bool needLayout() const { return _needLayout; }
+        bool needLayout() const { return _needLayout; }
         /// Returns true if redraw is required for element and its children
-        final bool needDraw() const { return _needDraw; }
+        bool needDraw() const { return _needDraw; }
 
         /// Defines whether element width/height depends on its height/width
-        final DependentSize dependentSize() const { return _dependentSize; }
+        DependentSize dependentSize() const { return _dependentSize; }
         /// Indicate from subclass that element width/height depends on its height/width
-        final protected void dependentSize(DependentSize value)
+        protected void dependentSize(DependentSize value)
         {
             _dependentSize = value;
         }
-        /// Get current element boundaries (min, nat and max sizes, computed in `measure`)
-        final ref const(Boundaries) boundaries() const { return _boundaries; }
-        /// Get element minimal size (computed in `measure`)
-        final Size minSize() const { return _boundaries.min; }
-        /// Get element natural (preferred) size (computed in `measure`)
-        final Size natSize() const { return _boundaries.nat; }
-        /// Get element maximal size (computed in `measure`)
-        final Size maxSize() const { return _boundaries.max; }
 
-        /// Get current element full box in device-independent pixels (computed and set in `layout`)
+        /** Element boundaries (min, nat, and max sizes).
+
+            Available after `measure` call.
+        */
+        ref const(Boundaries) boundaries() const { return _boundaries; }
+        /** Minimal size constraint.
+
+            Available after `measure` call.
+        */
+        Size minSize() const { return _boundaries.min; }
+        /** Natural (preferred) size.
+
+            Available after `measure` call.
+        */
+        Size natSize() const { return _boundaries.nat; }
+        /** Maximal size constraint.
+
+            Available after `measure` call.
+        */
+        Size maxSize() const { return _boundaries.max; }
+
+        /** Element's rectangle, relative to `parent.origin`.
+
+            Available after `layout` call.
+        */
         ref const(Box) box() const { return _box; }
-        /// Get current element box without padding and borders (computed and set in `layout`)
-        ref const(Box) innerBox() const { return _innerBox; }
+        /** Content box, i.e. `box` without padding and borders, relative to `origin`.
 
+            Available after `layout` call.
+        */
+        ref const(Box) innerBox() const { return _innerBox; }
+        /** Global position of `box.pos`.
+
+            Available after window relayout.
+        */
+        Point origin() const { return _origin; }
+    }
+
+    @property
+    {
         /// Widget visibility (visible, hidden, gone)
         Visibility visibility() const { return _visibility; }
         /// ditto
@@ -1884,10 +1916,10 @@ public:
         }
     }
 
-    /// Returns true if the point is inside of this element
+    /// Returns true if the point (in absolute coordinates) is inside of this element
     bool contains(float x, float y) const
     {
-        return _box.contains(x, y);
+        return Box(_origin, _box.size).contains(x, y);
     }
 
     /// Request relayout of element and its children
@@ -1900,11 +1932,6 @@ public:
             p._needLayout = true;
             p = p._parent;
         }
-    }
-    /// Cancel relayout of element
-    void cancelLayout()
-    {
-        _needLayout = false;
     }
     /// Request redraw
     final void invalidate()
@@ -1922,6 +1949,8 @@ public:
         This method calls `computeBoundaries` to get raw size information,
         applies `padding` and styling such as min-width to it, fixes overflows,
         and assigns the result to `boundaries`.
+
+        Measurement should be doable when widget has `Visibility.gone`.
 
         This method may return early without calling `computeBoundaries`
         if no elements in the sub-tree requested layout.
@@ -2066,13 +2095,25 @@ public:
             }
         }
         _box = snapToDevicePixels(b);
-        _innerBox = snapToDevicePixels(b.shrinked(p));
+        _innerBox = snapToDevicePixels(Box(0, 0, b.w, b.h).shrinked(p));
         arrangeContent();
     }
 
     /// Called from `layout`, after `box` and `innerBox` were set
     protected void arrangeContent()
     {
+    }
+
+    /// Calculate global positions for all elements, participating in layout
+    final void setOrigin(Point parentOrigin)
+    {
+        if (visibility != Visibility.gone)
+        {
+            parentOrigin += _box.pos;
+            _origin = parentOrigin;
+            foreach (Element el; this)
+                el.setOrigin(parentOrigin);
+        }
     }
 
     /// Draw element at its position
@@ -2126,6 +2167,7 @@ public:
         {
             PaintSaver sv;
             pr.save(sv);
+            pr.translate(_box.x, _box.y);
             drawContent(pr);
         }
         // draw an additional frame
@@ -2627,8 +2669,6 @@ class ElemPanel : ElemGroup
             Element item = child(i);
             if (item.visibility != Visibility.gone)
                 preparedItems ~= item;
-            else
-                item.cancelLayout();
         }
         // now we can safely work with items
         Boundaries bs;

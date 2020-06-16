@@ -1332,29 +1332,27 @@ class ElemEditLine : Element, IEditor, ActionOperator
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
             setFocus();
-            const x = event.x - innerBox.x;
-            const y = event.y - innerBox.y;
+            const pos = event.pos - origin - innerBox.pos;
             if (event.tripleClick)
             {
-                selectLineByMouse(x, y);
+                selectLineByMouse(pos.x, pos.y);
             }
             else if (event.doubleClick)
             {
-                selectWordByMouse(x, y);
+                selectWordByMouse(pos.x, pos.y);
             }
             else
             {
                 const bool doSelect = event.alteredBy(KeyMods.shift);
-                updateCaretPositionByMouse(x, y, doSelect);
+                updateCaretPositionByMouse(pos.x, pos.y, doSelect);
             }
             startCaretBlinking();
             return true;
         }
         if (event.action == MouseAction.move && event.alteredByButton(MouseButton.left))
         {
-            const x = event.x - innerBox.x;
-            const y = event.y - innerBox.y;
-            updateCaretPositionByMouse(x, y, true);
+            const pos = event.pos - origin - innerBox.pos;
+            updateCaretPositionByMouse(pos.x, pos.y, true);
             return true;
         }
         return super.handleMouseEvent(event);
@@ -3286,18 +3284,17 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
         // override to do something useful on hover timeout
     }
 
-    protected void handleHover(Point pos)
+    protected void handleHover(Point clientPos)
     {
-        if (_hoverMousePosition == pos)
+        if (_hoverMousePosition == clientPos)
             return;
         debug (mouse)
-            Log.d("handleHover ", pos);
+            Log.d("handleHover ", clientPos);
         cancelHoverTimer();
-        const p = pos - clientBox.pos;
-        _hoverMousePosition = pos;
-        _hoverTextPosition = clientToTextPos(p);
+        _hoverMousePosition = clientPos;
+        _hoverTextPosition = clientToTextPos(clientPos);
         const Box reversePos = textPosToClient(_hoverTextPosition);
-        if (p.x < reversePos.x + 10)
+        if (clientPos.x < reversePos.x + 10)
         {
             _hoverTimer = setTimer(_hoverTimeoutMillis, delegate() {
                 handleHoverTimeout(_hoverMousePosition, _hoverTextPosition);
@@ -3321,7 +3318,8 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
         debug (mouse)
             Log.d("mouse event: ", id, " ", event.action, "  (", event.x, ",", event.y, ")");
         // support onClick
-        const bool insideLeftPane = event.x < clientBox.x && event.x >= clientBox.x - _leftPaneWidth;
+        const clientPos = event.pos - origin - clientBox.pos;
+        const bool insideLeftPane = -_leftPaneWidth <= clientPos.x && clientPos.x < 0;
         if (event.action == MouseAction.buttonDown && insideLeftPane)
         {
             setFocus();
@@ -3335,16 +3333,16 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
             cancelHoverTimer();
             if (event.tripleClick)
             {
-                selectLineByMouse(event.x - clientBox.x, event.y - clientBox.y);
+                selectLineByMouse(clientPos.x, clientPos.y);
             }
             else if (event.doubleClick)
             {
-                selectWordByMouse(event.x - clientBox.x, event.y - clientBox.y);
+                selectWordByMouse(clientPos.x, clientPos.y);
             }
             else
             {
                 const bool doSelect = event.alteredBy(KeyMods.shift);
-                updateCaretPositionByMouse(event.x - clientBox.x, event.y - clientBox.y, doSelect);
+                updateCaretPositionByMouse(clientPos.x, clientPos.y, doSelect);
 
                 if (event.keyMods == KeyMods.control)
                     handleControlClick();
@@ -3355,7 +3353,7 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
         }
         if (event.action == MouseAction.move && event.alteredByButton(MouseButton.left))
         {
-            updateCaretPositionByMouse(event.x - clientBox.x, event.y - clientBox.y, true);
+            updateCaretPositionByMouse(clientPos.x, clientPos.y, true);
             return true;
         }
         if (event.action == MouseAction.move && event.noMouseMods)
@@ -3363,7 +3361,7 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
             // hover
             if (focused && !insideLeftPane)
             {
-                handleHover(event.pos);
+                handleHover(clientPos);
             }
             else
             {

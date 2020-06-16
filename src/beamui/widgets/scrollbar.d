@@ -358,7 +358,7 @@ class ElemScrollBar : ElemGroup
         }
         layoutButtons(ibox);
         updateVisibility();
-        cancelLayout();
+        setOrigin(origin - box.pos);
     }
 
     protected void layoutButtons(Box ibox)
@@ -426,13 +426,6 @@ class ElemScrollBar : ElemGroup
         }
         _btnBack.applyFlags(StateFlags.enabled, canScroll);
         _btnForward.applyFlags(StateFlags.enabled, canScroll);
-    }
-
-    override void cancelLayout()
-    {
-        foreach (Element el; tup(_indicator, _pageUp, _pageDown, _btnBack, _btnForward))
-            el.cancelLayout();
-        super.cancelLayout();
     }
 
     override protected Boundaries computeBoundaries()

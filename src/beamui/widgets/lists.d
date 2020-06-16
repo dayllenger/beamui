@@ -536,7 +536,7 @@ class ElemListView : ElemGroup
             return true; // layout not yet called
 
         // same as in drawContent()
-        const b = innerBox;
+        const b = Box(origin + innerBox.pos, innerBox.size);
         const bool vert = _orientation == Orientation.vertical;
         const scrollOffset = _scrolldata.position;
         const int start = itemByPosition(scrollOffset);
@@ -688,8 +688,6 @@ class ElemListView : ElemGroup
         float sbsz = 0; // scrollbar size
         if (_needScrollbar)
         {
-            _scrollbar.visibility = Visibility.visible;
-
             _scrollbar.measure();
             const sbnat = _scrollbar.natSize;
             if (vertical)
@@ -747,10 +745,6 @@ class ElemListView : ElemGroup
                 }
             }
         }
-        else
-        {   // hide scrollbar
-            _scrollbar.visibility = Visibility.gone;
-        }
         _clientBox = inner;
 
         // update scrollbar and lay out
@@ -771,10 +765,13 @@ class ElemListView : ElemGroup
                 sbb.y += sbb.h;
                 sbb.h = sbsz;
             }
+            _scrollbar.visibility = Visibility.visible;
             _scrollbar.layout(sbb);
         }
         else
-            _scrollbar.cancelLayout();
+        {   // hide scrollbar
+            _scrollbar.visibility = Visibility.gone;
+        }
 
         if (_makeSelectionVisibleOnNextLayout)
         {
