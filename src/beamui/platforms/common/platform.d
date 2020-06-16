@@ -13,7 +13,6 @@ public import beamui.graphics.drawables : imageCache;
 public import beamui.widgets.widget : CursorType, Element;
 import std.algorithm.mutation : swap;
 import std.datetime.stopwatch : Duration, StopWatch, dur;
-import beamui.core.animations;
 import beamui.core.memory : Arena;
 import beamui.core.settings;
 import beamui.core.stdaction : initStandardActions, ACTION_OK;
@@ -856,7 +855,6 @@ class Window : CustomEventTarget
     Popup showTooltip(Element content)
         in(content)
     {
-        const noTooltipBefore = _tooltip.popup is null;
         hideTooltip();
 
         debug (tooltips)
@@ -867,19 +865,6 @@ class Window : CustomEventTarget
         // default behaviour is to place tooltip under the mouse cursor
         res.alignment = PopupAlign.point;
         res.point = Point(_lastMouseX, _lastMouseY);
-
-        // add a smooth fade-in transition when there is no tooltip already shown
-        if (noTooltipBefore)
-        {
-            auto tr = Transition(100, TimingFunction.easeIn);
-            res.style.opacity = 0;
-            // may be destroyed
-            auto popup = weakRef(res);
-            addAnimation(tr.duration, (double t) {
-                if (Element p = popup.get)
-                    p.style.opacity = tr.mix(0.0f, 1.0f, t);
-            });
-        }
 
         _tooltip.popup = res;
         return res;
@@ -915,16 +900,6 @@ class Window : CustomEventTarget
         _popups ~= popup;
 /+
         auto res = new Popup(content, this);
-
-        // add a smooth fade-in transition
-        auto tr = Transition(150, TimingFunction.easeIn);
-        res.style.opacity = 0;
-        // may be destroyed
-        auto popup = weakRef(res);
-        addAnimation(tr.duration, (double t) {
-            if (Element p = popup.get)
-                p.style.opacity = tr.mix(0.0f, 1.0f, t);
-        });
 
         _popups ~= res;
         setFocus(weakRef(content));
@@ -1789,7 +1764,6 @@ class Window : CustomEventTarget
     /// Check content widgets for necessary redraw and/or layout
     private bool checkUpdateNeeded(out bool needDraw, out bool needLayout, out bool animationActive)
     {
-        animationActive = animations.length > 0;
         // skip costly update if no one notified
         if (!needUpdate)
             return animationActive;
@@ -1899,7 +1873,6 @@ class Window : CustomEventTarget
 
     private
     {
-        Animation[] animations;
         ulong _animationUpdateTimerID;
         ulong _animationTimerID;
         void delegate(double)[] _animationCallbacks;
@@ -1939,36 +1912,8 @@ class Window : CustomEventTarget
         return ts.total!"hnsecs" / 10_000.0;
     }
 
-    void addAnimation(long duration, void delegate(double) handler)
-    {
-        assert(duration > 0 && handler);
-        animations ~= Animation(duration, handler);
-    }
-
     private void animate(double interval)
     {
-        // process global animations
-        bool someAnimationsFinished;
-        foreach (ref a; animations)
-        {
-            if (!a.isAnimating)
-            {
-                a.start();
-            }
-            else
-            {
-                a.tick(interval);
-                if (!a.isAnimating)
-                {
-                    a.handler = null;
-                    someAnimationsFinished = true;
-                }
-            }
-        }
-        if (someAnimationsFinished)
-            animations = animations.remove!(a => a.handler is null);
-
-        // process widget ones
         animate(_mainRootElement, interval);
         animate(_popupRootElement, interval);
 /+
