@@ -4,8 +4,8 @@ import std.math;
 
 struct Animation
 {
-    /// Duration is in hnsecs
-    long duration;
+    /// Duration is in milliseconds
+    double duration = 0;
     /// Handler is invoked every tick
     void delegate(double) handler;
     // elapsed time fraction in [0, 1] range
@@ -13,7 +13,7 @@ struct Animation
 
     @property bool isAnimating() const
     {
-        return !t.isNaN;
+        return duration > 0 && handler && !isNaN(t);
     }
 
     void start()
@@ -26,10 +26,11 @@ struct Animation
         t = double.nan;
     }
 
-    void tick(long interval)
+    void tick(double interval)
+        in(isFinite(interval))
+        in(isAnimating)
     {
-        assert(isAnimating);
-        t += cast(double)interval / cast(double)duration;
+        t += interval / duration;
         if (t < 1.0)
         {
             handler(t);

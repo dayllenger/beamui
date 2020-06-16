@@ -1916,8 +1916,6 @@ class Window : CustomEventTarget
 
     private bool handleAnimationTimer()
     {
-        import std.datetime : Clock;
-
         const double ts = now();
         auto callbacks = _animationCallbacks;
         _animationCallbacks = null;
@@ -1944,10 +1942,10 @@ class Window : CustomEventTarget
     void addAnimation(long duration, void delegate(double) handler)
     {
         assert(duration > 0 && handler);
-        animations ~= Animation(duration * ONE_SECOND / 1000, handler);
+        animations ~= Animation(duration, handler);
     }
 
-    private void animate(long interval)
+    private void animate(double interval)
     {
         // process global animations
         bool someAnimationsFinished;
@@ -1979,7 +1977,7 @@ class Window : CustomEventTarget
 +/
     }
 
-    private void animate(Element root, long interval)
+    private void animate(Element root, double interval)
         in(root)
     {
         if (root.visibility != Visibility.visible)
@@ -2122,7 +2120,7 @@ class Window : CustomEventTarget
 
     /// Set when first draw is called: don't handle mouse/key input until draw (layout) is called
     private bool _firstDrawCalled;
-    private long lastDrawTs;
+    private double _lastDrawTs = 0;
 
     final protected void draw(PaintEngine engine)
         in(engine)
@@ -2132,8 +2130,6 @@ class Window : CustomEventTarget
         _painterHead.beginFrame(engine, physicalWidth, physicalHeight, _backgroundColor);
         try
         {
-            static import std.datetime;
-
             setupGlobalDPI();
 
             // check if we need to relayout
@@ -2142,17 +2138,17 @@ class Window : CustomEventTarget
             bool animationActive;
             checkUpdateNeeded(needDraw, needLayout, animationActive);
 
-            const long ts = std.datetime.Clock.currStdTime;
-            if (animationActive && lastDrawTs != 0)
+            const double ts = now();
+            if (animationActive && _lastDrawTs != 0)
             {
-                animate(ts - lastDrawTs);
+                animate(ts - _lastDrawTs);
                 // layout required flag could be changed during animate - check again
                 checkUpdateNeeded(needDraw, needLayout, animationActive);
                 // do update every 16 milliseconds
                 if (_animationUpdateTimerID == 0)
                     _animationUpdateTimerID = setTimer(16, &animationTimerHandler);
             }
-            lastDrawTs = ts;
+            _lastDrawTs = ts;
 
             if (needLayout)
             {

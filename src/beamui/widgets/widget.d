@@ -1198,7 +1198,7 @@ public:
     void addAnimation(string name, long duration, void delegate(double) handler)
     {
         assert(name && duration > 0 && handler);
-        animations[name] = Animation(duration * ONE_SECOND / 1000, handler);
+        animations[name] = Animation(duration, handler);
         needUpdate();
     }
     /// Experimental API
@@ -1207,8 +1207,8 @@ public:
         animations.remove(name);
     }
 
-    /// Animate element; interval is time left from previous draw, in hnsecs (1/10000000 of second)
-    void animate(long interval)
+    /// Animate element; interval is the time left from the previous tick, in msecs
+    void animate(double interval)
     {
         bool someAnimationsFinished;
         foreach (name, ref a; animations)
