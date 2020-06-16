@@ -289,6 +289,8 @@ struct ComputedStyle
 
         const(CssToken)[][string] _customProps;
         const(CssToken)[][StyleProperty] _propCache;
+
+        AnimationManager _animations;
     }
 
     T getPropertyValue(T, SpecialCSSType specialType = SpecialCSSType.none)(string name, lazy T def)
@@ -336,6 +338,8 @@ struct ComputedStyle
     /// Resolve style cascading and inheritance, update all properties
     void recompute(Style[] chain, ComputedStyle* parentStyle)
     {
+        _animations.element = element;
+
         const customPropsChanged = recomputeCustom(chain, parentStyle);
         recomputeBuiltin(chain, parentStyle);
 
@@ -681,7 +685,7 @@ struct ComputedStyle
             static if (isAnimatable(ptype))
             {
                 // cancel possible animation
-                element.cancelAnimation(name);
+                _animations.cancel(name);
             }
             return false;
         }
@@ -709,11 +713,79 @@ struct ComputedStyle
 
         T begin = field;
         auto tr = new Transition(_transitionDuration, _transitionTimingFunction, _transitionDelay);
-        element.addAnimation(name, tr.duration,
+        _animations.add(name, tr.duration,
             (double t) {
                 field = tr.mix(begin, end, t);
                 element.handleStyleChange(ptype);
             }
         );
+    }
+}
+
+private struct AnimationManager
+{
+    Element element;
+    Animation[string] _map; // key is a property name
+    double _prevTs = 0;
+
+    void add(string name, long duration, void delegate(double) handler)
+    {
+        if (!_map.length)
+        {
+            auto win = element.window;
+            assert(win);
+            win.requestAnimationFrame(&process);
+        }
+        _map[name] = Animation(duration, handler);
+    }
+
+    void cancel(string name)
+    {
+        _map.remove(name);
+    }
+
+    void process(double ts)
+    {
+        if (_prevTs > 0)
+            animate(ts - _prevTs);
+
+        if (_map.length)
+        {
+            _prevTs = ts;
+            auto win = element.window;
+            assert(win);
+            win.requestAnimationFrame(&process);
+        }
+        else
+            _prevTs = 0;
+    }
+
+    void animate(double interval)
+    {
+        bool someAnimationsFinished;
+        foreach (name, ref a; _map)
+        {
+            if (!a.isAnimating)
+            {
+                a.start();
+                element.onAnimationStart(name);
+            }
+            else
+            {
+                a.tick(interval);
+                if (!a.isAnimating)
+                {
+                    a.handler = null;
+                    someAnimationsFinished = true;
+                    element.onAnimationEnd(name);
+                }
+            }
+        }
+        if (someAnimationsFinished)
+        {
+            foreach (k, a; _map)
+                if (!a.handler)
+                    _map.remove(k);
+        }
     }
 }
