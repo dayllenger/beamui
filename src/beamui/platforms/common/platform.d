@@ -1742,7 +1742,6 @@ class Window : CustomEventTarget
 
     // set by widgets themselves
     package(beamui) bool needUpdate;
-    private bool _animationActive;
 
     /// Request update for window (unless `force` is true, update will be performed only if layout, redraw or animation is required)
     void update(bool force = false)
@@ -1750,10 +1749,9 @@ class Window : CustomEventTarget
         if (needRebuild)
             rebuild();
 
-        bool needDraw = false;
-        bool needLayout = false;
-        _animationActive = false;
-        if (force || checkUpdateNeeded(needDraw, needLayout, _animationActive))
+        bool needDraw;
+        bool needLayout;
+        if (force || checkUpdateNeeded(needDraw, needLayout))
         {
             debug (redraw)
                 Log.d("Requesting update");
@@ -1762,36 +1760,33 @@ class Window : CustomEventTarget
     }
 
     /// Check content widgets for necessary redraw and/or layout
-    private bool checkUpdateNeeded(out bool needDraw, out bool needLayout, out bool animationActive)
+    private bool checkUpdateNeeded(out bool needDraw, out bool needLayout)
     {
         // skip costly update if no one notified
         if (!needUpdate)
-            return animationActive;
+            return false;
 
-        checkUpdateNeeded(_mainRootElement, needDraw, needLayout, animationActive);
-        checkUpdateNeeded(_popupRootElement, needDraw, needLayout, animationActive);
-/+
-        if (auto p = _tooltip.popup)
-            checkUpdateNeeded(p, needDraw, needLayout, animationActive);
-+/
-        const ret = needDraw || needLayout || animationActive;
+        checkUpdateNeeded(_mainRootElement, needDraw, needLayout);
+        checkUpdateNeeded(_popupRootElement, needDraw, needLayout);
+        // if (auto p = _tooltip.popup)
+        //     checkUpdateNeeded(p, needDraw, needLayout);
+
+        const ret = needDraw || needLayout;
         debug (redraw)
         {
             if (ret)
             {
                 Log.d("needed:"
                     ~ (needDraw ? " draw" : null)
-                    ~ (needLayout ? " layout" : null)
-                    ~ (animationActive ? " animation" : null));
+                    ~ (needLayout ? " layout" : null));
             }
         }
         return ret;
     }
-    /// Check content widgets for necessary redraw and/or layout
-    private void checkUpdateNeeded(Element root, ref bool needDraw, ref bool needLayout, ref bool animationActive)
+    /// ditto
+    private void checkUpdateNeeded(Element root, ref bool needDraw, ref bool needLayout)
+        in(root)
     {
-        assert(root);
-
         if (root.visibility == Visibility.gone)
             return;
 
@@ -1805,12 +1800,11 @@ class Window : CustomEventTarget
         if (root.visibility == Visibility.hidden)
             return;
         needDraw = needDraw || root.needDraw;
-        animationActive = animationActive || root.animating;
-        if (needDraw && needLayout && animationActive)
+        if (needDraw && needLayout)
             return;
         // check recursively
         foreach (Element el; root)
-            checkUpdateNeeded(el, needDraw, needLayout, animationActive);
+            checkUpdateNeeded(el, needDraw, needLayout);
     }
 
     //===============================================================
@@ -1873,7 +1867,6 @@ class Window : CustomEventTarget
 
     private
     {
-        ulong _animationUpdateTimerID;
         ulong _animationTimerID;
         void delegate(double)[] _animationCallbacks;
     }
@@ -1912,36 +1905,6 @@ class Window : CustomEventTarget
         return ts.total!"hnsecs" / 10_000.0;
     }
 
-    private void animate(double interval)
-    {
-        animate(_mainRootElement, interval);
-        animate(_popupRootElement, interval);
-/+
-        if (auto p = _tooltip.popup)
-            animate(p, interval);
-+/
-    }
-
-    private void animate(Element root, double interval)
-        in(root)
-    {
-        if (root.visibility != Visibility.visible)
-            return;
-
-        foreach (Element el; root)
-            animate(el, interval);
-        if (root.animating)
-            root.animate(interval);
-    }
-
-    // will be called periodically to update animations
-    private bool animationTimerHandler()
-    {
-        needUpdate = true;
-        invalidate();
-        return true;
-    }
-
     //===============================================================
     // Layout and hit-testing
 
@@ -1950,10 +1913,8 @@ class Window : CustomEventTarget
     {
         _mainRootElement.requestLayout();
         _popupRootElement.requestLayout();
-/+
-        if (auto p = _tooltip.popup)
-            p.requestLayout();
-+/
+        // if (auto p = _tooltip.popup)
+        //     p.requestLayout();
     }
 
     /// Measure main widget, popups and tooltip
@@ -1969,10 +1930,9 @@ class Window : CustomEventTarget
         // TODO: set minimum window size
         _mainRootElement.measure();
         _popupRootElement.measure();
-/+
-        if (auto tp = _tooltip.popup)
-            tp.measure();
-+/
+        // if (auto tp = _tooltip.popup)
+        //     tp.measure();
+
         debug (layout)
         {
             sw.stop();
@@ -1994,13 +1954,12 @@ class Window : CustomEventTarget
         setupGlobalDPI();
         _mainRootElement.layout(Box(0, 0, _w, _h));
         _popupRootElement.layout(Box(0, 0, _w, _h));
-/+
-        if (auto tp = _tooltip.popup)
-        {
-            const sz = tp.natSize;
-            tp.layout(Box(0, 0, sz.w, sz.h));
-        }
-+/
+        // if (auto tp = _tooltip.popup)
+        // {
+        //     const sz = tp.natSize;
+        //     tp.layout(Box(0, 0, sz.w, sz.h));
+        // }
+
         debug (layout)
         {
             sw.stop();
@@ -2065,7 +2024,6 @@ class Window : CustomEventTarget
 
     /// Set when first draw is called: don't handle mouse/key input until draw (layout) is called
     private bool _firstDrawCalled;
-    private double _lastDrawTs = 0;
 
     final protected void draw(PaintEngine engine)
         in(engine)
@@ -2077,23 +2035,10 @@ class Window : CustomEventTarget
         {
             setupGlobalDPI();
 
-            // check if we need to relayout
+            // relayout if we need to
             bool needDraw;
             bool needLayout;
-            bool animationActive;
-            checkUpdateNeeded(needDraw, needLayout, animationActive);
-
-            const double ts = now();
-            if (animationActive && _lastDrawTs != 0)
-            {
-                animate(ts - _lastDrawTs);
-                // layout required flag could be changed during animate - check again
-                checkUpdateNeeded(needDraw, needLayout, animationActive);
-                // do update every 16 milliseconds
-                if (_animationUpdateTimerID == 0)
-                    _animationUpdateTimerID = setTimer(16, &animationTimerHandler);
-            }
-            _lastDrawTs = ts;
+            checkUpdateNeeded(needDraw, needLayout);
 
             if (needLayout)
             {
@@ -2111,23 +2056,16 @@ class Window : CustomEventTarget
             _mainRootElement.draw(_painter);
             // draw popups
             _popupRootElement.draw(_painter);
-/+
             // and draw tooltip
-            if (auto p = _tooltip.popup)
-                p.draw(_painter);
-+/
+            // if (auto p = _tooltip.popup)
+            //     p.draw(_painter);
+
             debug (redraw)
             {
                 sw.stop();
                 const elapsed = sw.peek().total!`usecs` / 1000.0f;
                 if (elapsed > PERFORMANCE_LOGGING_THRESHOLD_MS)
                     Log.fd("drawing took: %.1f ms", elapsed);
-            }
-            // cancel animations' update if they are expired
-            if (!animationActive && _animationUpdateTimerID)
-            {
-                cancelTimer(_animationUpdateTimerID);
-                _animationUpdateTimerID = 0;
             }
 
             needUpdate = false;

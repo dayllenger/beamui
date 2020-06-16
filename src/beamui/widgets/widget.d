@@ -35,7 +35,6 @@ package
     import beamui.text.fonts;
 }
 import std.math : isFinite;
-import beamui.core.animations;
 import beamui.core.memory : Arena;
 import beamui.graphics.compositing : BlendMode;
 import beamui.platforms.common.platform;
@@ -624,8 +623,6 @@ private:
     Background _background;
     FontRef _font;
 
-    Animation[string] animations; // key is a property name
-
 protected:
     ElementList _hiddenChildren;
 
@@ -647,8 +644,6 @@ public:
         debug const count = debugMinusInstance();
         debug (resalloc)
             Log.fd("Destroyed element (count: %s): %s", count, dbgname());
-
-        animations.clear();
 
         _font.clear();
         eliminate(_background);
@@ -1183,59 +1178,7 @@ public:
     //===============================================================
     // Animation
 
-    /// Returns true if element is being animated, so it needs to call `animate` and redraw
-    @property bool animating() const
-    {
-        return animations.length > 0;
-    }
-
-    /// Experimental API
-    bool hasAnimation(string name)
-    {
-        return (name in animations) !is null;
-    }
-    /// Experimental API
-    void addAnimation(string name, long duration, void delegate(double) handler)
-    {
-        assert(name && duration > 0 && handler);
-        animations[name] = Animation(duration, handler);
-        needUpdate();
-    }
-    /// Experimental API
-    void cancelAnimation(string name)
-    {
-        animations.remove(name);
-    }
-
-    /// Animate element; interval is the time left from the previous tick, in msecs
-    void animate(double interval)
-    {
-        bool someAnimationsFinished;
-        foreach (name, ref a; animations)
-        {
-            if (!a.isAnimating)
-            {
-                a.start();
-                onAnimationStart(name);
-            }
-            else
-            {
-                a.tick(interval);
-                if (!a.isAnimating)
-                {
-                    a.handler = null;
-                    someAnimationsFinished = true;
-                    onAnimationEnd(name);
-                }
-            }
-        }
-        if (someAnimationsFinished)
-        {
-            foreach (k, a; animations)
-                if (a.handler is null)
-                    animations.remove(k);
-        }
-    }
+    // TODO: some sort of Web Animations API
 
     //===============================================================
     // State related properties and methods
