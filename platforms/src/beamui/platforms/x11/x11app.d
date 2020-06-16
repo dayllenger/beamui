@@ -722,6 +722,8 @@ final class X11Window : DWindow
 
         XMapRaised(x11display, _win);
         XFlush(x11display);
+
+        update();
     }
 
     private uint _lastRedrawEventCode;

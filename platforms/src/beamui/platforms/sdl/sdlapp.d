@@ -347,7 +347,8 @@ final class SDLWindow : Window
         SDL_ShowWindow(_win);
         fixSize();
         SDL_RaiseWindow(_win);
-        invalidate();
+
+        update();
     }
 
     private uint _lastRedrawEventCode;

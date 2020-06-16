@@ -56,7 +56,7 @@ class ConsoleWindow : Window
     {
         _visible = true;
         handleWindowStateChange(WindowState.normal, BoxI(0, 0, _platform.console.width, _platform.console.height));
-        invalidate();
+        update();
     }
 
     override void invalidate()

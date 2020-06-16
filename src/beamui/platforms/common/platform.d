@@ -1566,7 +1566,7 @@ class Window : CustomEventTarget
     }
 
     /// Handle theme change: e.g. reload some themed resources
-    void dispatchThemeChange()
+    private void dispatchThemeChange()
     {
         _mainRootElement.handleThemeChange();
         _popupRootElement.handleThemeChange();
@@ -1574,7 +1574,6 @@ class Window : CustomEventTarget
         if (auto p = _tooltip.popup)
             p.handleThemeChange();
 +/
-        invalidate();
     }
 
     /// Post event to handle in UI thread (this method can be used from background thread)
@@ -1740,71 +1739,52 @@ class Window : CustomEventTarget
     //===============================================================
     // Update logic, called after various events
 
-    // set by widgets themselves
-    package(beamui) bool needUpdate;
+    // set by elements
+    package(beamui) bool needStyleRecalculation = true;
 
-    /// Request update for window (unless `force` is true, update will be performed only if layout, redraw or animation is required)
-    void update(bool force = false)
+    /// Refresh the window (invalidate unconditionally if `forceRedraw` is true)
+    void update(bool forceRedraw = false)
     {
+        // refresh widget and element trees
         if (needRebuild)
             rebuild();
 
-        bool needDraw;
-        bool needLayout;
-        if (force || checkUpdateNeeded(needDraw, needLayout))
+        // refresh computed style info
+        if (needStyleRecalculation)
+        {
+            needStyleRecalculation = false;
+            updateStylesRecursively(_mainRootElement);
+            updateStylesRecursively(_popupRootElement);
+        }
+
+        // refresh layout
+        bool needLayout = _mainRootElement.needLayout;
+        needLayout = needLayout || _popupRootElement.needLayout;
+        if (needLayout)
         {
             debug (redraw)
-                Log.d("Requesting update");
+                Log.d("Requested layout");
+
+            measure();
+            layout();
+        }
+
+        // invalidate the window
+        bool needDraw = needLayout || _mainRootElement.needDraw;
+        needDraw = needDraw || _popupRootElement.needDraw;
+        if (forceRedraw || needDraw)
+        {
+            debug (redraw)
+                Log.d("Requesting redraw");
             invalidate();
         }
     }
 
-    /// Check content widgets for necessary redraw and/or layout
-    private bool checkUpdateNeeded(out bool needDraw, out bool needLayout)
+    static private void updateStylesRecursively(Element root)
     {
-        // skip costly update if no one notified
-        if (!needUpdate)
-            return false;
-
-        checkUpdateNeeded(_mainRootElement, needDraw, needLayout);
-        checkUpdateNeeded(_popupRootElement, needDraw, needLayout);
-        // if (auto p = _tooltip.popup)
-        //     checkUpdateNeeded(p, needDraw, needLayout);
-
-        const ret = needDraw || needLayout;
-        debug (redraw)
-        {
-            if (ret)
-            {
-                Log.d("needed:"
-                    ~ (needDraw ? " draw" : null)
-                    ~ (needLayout ? " layout" : null));
-            }
-        }
-        return ret;
-    }
-    /// ditto
-    private void checkUpdateNeeded(Element root, ref bool needDraw, ref bool needLayout)
-        in(root)
-    {
-        if (root.visibility == Visibility.gone)
-            return;
-
-        needLayout = needLayout || root.needLayout;
-        debug (redraw)
-        {
-            if (root.needLayout)
-                Log.fd("Need layout: %s, parent: %s", root.dbgname,
-                    root.parent ? getShortClassName(root.parent) : "null");
-        }
-        if (root.visibility == Visibility.hidden)
-            return;
-        needDraw = needDraw || root.needDraw;
-        if (needDraw && needLayout)
-            return;
-        // check recursively
+        cast(void)root.style();
         foreach (Element el; root)
-            checkUpdateNeeded(el, needDraw, needLayout);
+            updateStylesRecursively(el);
     }
 
     //===============================================================
@@ -2001,17 +1981,6 @@ class Window : CustomEventTarget
         {
             setupGlobalDPI();
 
-            // relayout if we need to
-            bool needDraw;
-            bool needLayout;
-            checkUpdateNeeded(needDraw, needLayout);
-
-            if (needLayout)
-            {
-                measure();
-                layout();
-            }
-
             perf!"redraw"({
                 // draw main widget
                 _mainRootElement.draw(_painter);
@@ -2021,8 +1990,6 @@ class Window : CustomEventTarget
                 // if (auto p = _tooltip.popup)
                 //     p.draw(_painter);
             });
-
-            needUpdate = false;
         }
         catch (Exception e)
         {
@@ -2370,7 +2337,7 @@ class Platform
         foreach (i, w; this)
         {
             w.dispatchThemeChange();
-            w.invalidate();
+            w.update();
         }
     }
 
@@ -2379,7 +2346,7 @@ class Platform
         foreach (i, w; this)
         {
             w.dispatchDPIChange();
-            w.invalidate();
+            w.update();
         }
     }
 

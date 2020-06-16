@@ -1005,7 +1005,8 @@ public:
                 foreach (i; start + 1 .. _parent.childCount)
                     _parent.child(i).invalidateStylesRecursively();
             }
-            needUpdate(); // useless when no parent
+            if (auto w = window) // useless when no parent
+                w.needStyleRecalculation = true;
         }
     }
 
@@ -1837,19 +1838,9 @@ public:
     @property
     {
         /// Returns true if layout is required for element and its children
-        bool needLayout() const
-        {
-            // we need to be sure that the style is updated
-            // it might set _needDraw or _needLayout flag
-            updateStyles();
-            return _needLayout;
-        }
+        final bool needLayout() const { return _needLayout; }
         /// Returns true if redraw is required for element and its children
-        bool needDraw() const
-        {
-            updateStyles();
-            return _needDraw;
-        }
+        final bool needDraw() const { return _needDraw; }
 
         /// Defines whether element width/height depends on its height/width
         final DependentSize dependentSize() const { return _dependentSize; }
@@ -1899,17 +1890,16 @@ public:
         return _box.contains(x, y);
     }
 
-    /// Tell the window (if some), that the element may be invalidated
-    private void needUpdate()
-    {
-        if (auto w = window)
-            w.needUpdate = true;
-    }
     /// Request relayout of element and its children
-    void requestLayout()
+    final void requestLayout()
     {
-        _needLayout = true;
-        needUpdate();
+        // bubble up so containers (and window) always know if some descendant requires relayout
+        Element p = this;
+        while (p && !p._needLayout)
+        {
+            p._needLayout = true;
+            p = p._parent;
+        }
     }
     /// Cancel relayout of element
     void cancelLayout()
@@ -1917,10 +1907,14 @@ public:
         _needLayout = false;
     }
     /// Request redraw
-    void invalidate()
+    final void invalidate()
     {
-        _needDraw = true;
-        needUpdate();
+        Element p = this;
+        while (p && !p._needDraw)
+        {
+            p._needDraw = true;
+            p = p._parent;
+        }
     }
 
     /** Measure element - compute minimal, natural and maximal sizes of the border box.

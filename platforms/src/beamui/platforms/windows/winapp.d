@@ -579,6 +579,8 @@ final class Win32Window : Window
 
         SetFocus(_hwnd);
         //UpdateWindow(_hwnd);
+
+        update();
     }
 
     override void invalidate()
