@@ -9,18 +9,18 @@ module beamui.style.theme;
 import beamui.core.config;
 import beamui.core.functions;
 import beamui.core.logger;
+import beamui.core.resources;
 import beamui.core.types : Result, StateFlags;
 import beamui.core.units : Length;
-import CSS = beamui.css.css;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawables : BorderStyle, Drawable;
-import beamui.graphics.resources;
 import beamui.layout.alignment : AlignItem, Distribution;
 import beamui.style.decode_css;
 import beamui.style.property;
-import beamui.style.style;
 import beamui.style.selector;
+import beamui.style.style;
 import beamui.style.types : SpecialCSSType;
+import CSS = beamui.css.css;
 
 /// Theme - a collection of widget styles
 final class Theme

@@ -7,6 +7,11 @@ Authors:   dayllenger
 */
 module beamui.events.wheel;
 
+import beamui.core.functions;
+import beamui.core.geometry : Point;
+import beamui.events.keyboard : KeyMods;
+import beamui.events.pointer : MouseButton, MouseMods, toMouseMods;
+
 /// Mouse/touchpad scroll event
 final class WheelEvent
 {

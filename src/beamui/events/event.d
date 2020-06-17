@@ -1,17 +1,15 @@
 /**
-Input events, actions, codes and flags; custom events.
+Common definitions for input events and custom events.
 
 Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
-module beamui.core.events;
+module beamui.events.event;
 
 nothrow:
 
-import beamui.core.functions;
-import beamui.core.geometry : Point;
-import beamui.core.ownership : WeakRef;
+import beamui.core.ownership;
 import beamui.widgets.widget : Element;
 
 /// Base class for custom events

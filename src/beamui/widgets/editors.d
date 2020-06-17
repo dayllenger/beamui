@@ -12,13 +12,15 @@ import beamui.core.collections;
 import beamui.core.linestream;
 import beamui.core.parseutils : isWordChar;
 import beamui.core.signals;
-import beamui.core.stdaction;
 import beamui.core.streams;
 import beamui.core.undo;
+import beamui.events.action;
+import beamui.events.stdactions;
 import beamui.graphics.brush : Brush;
 import beamui.graphics.colors;
 import beamui.graphics.path;
 import beamui.graphics.pen : Pen;
+import beamui.platforms.common.platform;
 import beamui.style.computed_style : ComputedStyle;
 import beamui.text.line;
 import beamui.text.simple;
@@ -30,7 +32,6 @@ import beamui.widgets.popup;
 import beamui.widgets.scroll;
 import beamui.widgets.scrollbar;
 import beamui.widgets.widget;
-import beamui.platforms.common.platform;
 
 /// Editor state to display in status line
 struct EditorStateInfo

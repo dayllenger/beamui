@@ -19,6 +19,7 @@ import beamui.core.geometry;
 import beamui.core.linalg : Vec2, Mat2x3;
 import beamui.core.logger;
 import beamui.core.math;
+import beamui.core.resources;
 import beamui.core.types;
 import beamui.core.units;
 import beamui.graphics.bitmap;
@@ -26,7 +27,6 @@ import beamui.graphics.brush;
 import beamui.graphics.colors;
 import beamui.graphics.painter : Painter, PaintSaver;
 import beamui.graphics.path;
-import beamui.graphics.resources;
 static if (BACKEND_GUI)
 {
     import beamui.graphics.images;

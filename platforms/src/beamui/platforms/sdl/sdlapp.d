@@ -12,11 +12,16 @@ import beamui.core.config;
 static if (BACKEND_GUI):
 import std.string : fromStringz, toStringz;
 import std.utf : toUTF32;
+
 import bindbc.sdl;
-import beamui.core.events;
+
 import beamui.core.functions;
 import beamui.core.geometry;
 import beamui.core.logger;
+import beamui.events.event;
+import beamui.events.keyboard;
+import beamui.events.pointer;
+import beamui.events.wheel;
 import beamui.graphics.bitmap;
 import beamui.graphics.colors : Color;
 import beamui.graphics.painter : PaintEngine;
@@ -25,6 +30,7 @@ import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 import beamui.text.fonts;
 import beamui.text.ftfonts;
+
 version (Windows)
 {
     import core.sys.windows.windows;

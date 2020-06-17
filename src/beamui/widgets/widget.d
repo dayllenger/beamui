@@ -9,7 +9,6 @@ module beamui.widgets.widget;
 
 public
 {
-    import beamui.core.actions;
     import beamui.core.collections;
     import beamui.core.config;
     import beamui.core.functions;
@@ -20,6 +19,10 @@ public
     import beamui.core.signals;
     import beamui.core.types;
     import beamui.core.units;
+    import beamui.events.event;
+    import beamui.events.keyboard;
+    import beamui.events.pointer;
+    import beamui.events.wheel;
     import beamui.graphics.bitmap;
     import beamui.graphics.colors : Color, NamedColor;
     import beamui.graphics.drawables;

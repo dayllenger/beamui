@@ -9,9 +9,9 @@ module beamui.platforms.common.startup;
 
 import beamui.core.config;
 import beamui.core.logger;
+import beamui.core.resources;
 import beamui.graphics.bitmap;
 import beamui.graphics.drawables;
-import beamui.graphics.resources;
 import beamui.text.fonts;
 import beamui.text.ftfonts;
 

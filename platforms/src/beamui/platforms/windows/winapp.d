@@ -23,11 +23,15 @@ import core.sys.windows.wingdi;
 import core.sys.windows.winuser;
 import std.string : toStringz;
 import std.utf : toUTF16, toUTF16z;
-import beamui.core.events;
+
 import beamui.core.functions;
 import beamui.core.geometry;
 import beamui.core.logger;
 import beamui.core.signals;
+import beamui.events.event;
+import beamui.events.keyboard;
+import beamui.events.pointer;
+import beamui.events.wheel;
 import beamui.graphics.bitmap;
 import beamui.graphics.images;
 import beamui.graphics.painter : PaintEngine;

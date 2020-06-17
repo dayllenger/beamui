@@ -17,7 +17,7 @@ module beamui.core.i18n;
 import mofile;
 import beamui.core.functions;
 import beamui.core.logger;
-import beamui.graphics.resources;
+import beamui.core.resources;
 
 /// Translate a message into current application language
 dstring tr(string original)

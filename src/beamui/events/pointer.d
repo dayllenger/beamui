@@ -7,6 +7,14 @@ Authors:   Vadim Lopatin
 */
 module beamui.events.pointer;
 
+nothrow:
+
+import beamui.core.functions;
+import beamui.core.geometry : Point;
+import beamui.core.ownership : WeakRef;
+import beamui.events.keyboard : KeyMods;
+import beamui.widgets.widget : Element;
+
 /// Mouse action codes for `MouseEvent`
 enum MouseAction : uint
 {

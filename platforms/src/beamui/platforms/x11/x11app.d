@@ -10,21 +10,26 @@ module beamui.platforms.x11.x11app;
 import beamui.core.config;
 
 static if (BACKEND_GUI):
-import core.stdc.config : c_ulong, c_long;
+import core.stdc.config : c_long, c_ulong;
 import std.string : fromStringz, toStringz;
-import std.utf : toUTF8, toUTF32;
+import std.utf : toUTF32, toUTF8;
+
 import x11.X;
 import x11.Xatom;
 import x11.Xlib;
 import x11.Xtos;
 import x11.Xutil;
 import xsync;
-import beamui.core.events;
+
 import beamui.core.files;
 import beamui.core.functions : eliminate;
 import beamui.core.geometry;
 import beamui.core.logger;
 import beamui.core.math;
+import beamui.events.event;
+import beamui.events.keyboard;
+import beamui.events.pointer;
+import beamui.events.wheel;
 import beamui.graphics.bitmap;
 import beamui.graphics.colors : Color;
 import beamui.graphics.painter : PaintEngine;
@@ -32,6 +37,7 @@ import beamui.graphics.swpainter;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 import beamui.widgets.widget : CursorType;
+
 static if (USE_OPENGL)
 {
     import glx;

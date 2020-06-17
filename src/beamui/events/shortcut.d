@@ -7,6 +7,10 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.events.shortcut;
 
+public import beamui.events.keyboard : Key, KeyMods;
+import beamui.core.functions;
+import beamui.events.keyboard : keyName, parseKeyName;
+
 /// Keyboard shortcut (key + modifiers)
 struct Shortcut
 {

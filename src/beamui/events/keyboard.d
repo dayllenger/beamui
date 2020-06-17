@@ -7,6 +7,10 @@ Authors:   Vadim Lopatin
 */
 module beamui.events.keyboard;
 
+nothrow:
+
+import beamui.core.functions;
+
 /// Keyboard actions for `KeyEvent`
 enum KeyAction : uint
 {

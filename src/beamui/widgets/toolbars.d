@@ -11,7 +11,7 @@ Authors:   Vadim Lopatin
 */
 module beamui.widgets.toolbars;
 
-import beamui.core.actions : Action;
+import beamui.events.action : Action;
 // import beamui.widgets.combobox;
 import beamui.widgets.controls;
 import beamui.widgets.widget : Panel, render, Widget;

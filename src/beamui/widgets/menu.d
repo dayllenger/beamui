@@ -7,6 +7,7 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.widgets.menu;
 
+import beamui.events.action : Action;
 import beamui.widgets.controls : ImageWidget, ElemImage;
 import beamui.widgets.lists : ListView, ElemListView;
 // import beamui.widgets.popup;

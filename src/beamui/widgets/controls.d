@@ -7,7 +7,8 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.widgets.controls;
 
-import beamui.core.stdaction;
+import beamui.events.action : Action;
+import beamui.events.stdactions;
 import beamui.layout.alignment : alignBox;
 import beamui.widgets.text;
 import beamui.widgets.widget;

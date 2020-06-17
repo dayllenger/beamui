@@ -11,15 +11,17 @@ module beamui.platforms.common.platform;
 
 public import beamui.graphics.drawables : imageCache;
 public import beamui.widgets.widget : CursorType, Element;
+
 import std.algorithm.mutation : swap;
-import std.datetime.stopwatch : Duration, StopWatch, dur;
+import std.datetime.stopwatch : dur, Duration, StopWatch;
+
 import beamui.core.memory : Arena;
+import beamui.core.resources;
 import beamui.core.settings;
-import beamui.core.stdaction : initStandardActions, ACTION_OK;
 import beamui.core.timer;
+import beamui.events.action : Action, ActionContext;
 import beamui.graphics.iconprovider;
 import beamui.graphics.painter;
-import beamui.graphics.resources;
 import beamui.style.theme;
 import beamui.widgets.popup;
 import beamui.widgets.widget;
@@ -2530,7 +2532,7 @@ struct AppConf
 /// Manages UI library (de)initialization
 struct GuiApp
 {
-    import beamui.core.stdaction;
+    import beamui.events.stdactions;
     import beamui.platforms.common.startup;
     import beamui.widgets.editors;
 

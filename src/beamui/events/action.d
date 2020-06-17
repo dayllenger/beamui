@@ -5,13 +5,14 @@ Copyright: Vadim Lopatin 2014-2017, Andrzej Kilijański 2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
-module beamui.core.actions;
+module beamui.events.action;
 
-public import beamui.core.events;
+public import beamui.events.keyboard : Key, KeyMods;
 import beamui.core.collections;
 import beamui.core.functions;
 import beamui.core.ownership;
 import beamui.core.signals;
+import beamui.events.shortcut;
 import beamui.widgets.widget : Element;
 
 /// Defines where the user can invoke the action

@@ -33,19 +33,21 @@ module beamui;
 public
 {
     import beamui.core.files;
+    import beamui.core.resources;
     import beamui.core.settings;
-    import beamui.core.stdaction;
     import beamui.dialogs.dialog;
     import beamui.dialogs.filedialog;
     import beamui.dialogs.messagebox;
     import beamui.dialogs.settingsdialog;
+    import beamui.events.action;
+    import beamui.events.shortcut;
+    import beamui.events.stdactions;
     import beamui.graphics.brush : Brush, GradientBuilder;
     import beamui.graphics.compositing : BlendMode, CompositeMode;
     import beamui.graphics.images;
     import beamui.graphics.path : Path;
     import beamui.graphics.pen : LineCap, LineJoin, Pen;
     import beamui.graphics.polygons : FillRule;
-    import beamui.graphics.resources;
     import beamui.layout.factory : registerLayoutType;
     import beamui.layout.flex : FlexDirection, FlexWrap;
     import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;

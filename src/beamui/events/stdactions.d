@@ -5,10 +5,10 @@ Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
-module beamui.core.stdaction;
+module beamui.events.stdactions;
 
-import beamui.core.actions;
 import beamui.core.i18n;
+import beamui.events.action;
 
 // Elementary actions, no reason to use them in menus and toolbars
 
