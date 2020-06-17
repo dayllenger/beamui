@@ -1166,8 +1166,27 @@ class Background
 */
 class Overlay
 {
+    Color focusRectColor;
+
     void drawTo(Painter pr, Box b)
     {
+        // draw an additional frame
+        drawFocusRect(pr, b);
+    }
+
+    private void drawFocusRect(Painter pr, Box b)
+    {
+        const c = focusRectColor;
+        if (c.isFullyTransparent)
+            return;
+
+        enum FOCUS_RECT_PADDING = 2;
+        RectI rc = RectI(BoxI.from(b));
+        rc.shrink(FOCUS_RECT_PADDING, FOCUS_RECT_PADDING);
+        drawDottedLineH(pr, rc.left, rc.right, rc.top, c);
+        drawDottedLineH(pr, rc.left, rc.right, rc.bottom - 1, c);
+        drawDottedLineV(pr, rc.left, rc.top + 1, rc.bottom - 1, c);
+        drawDottedLineV(pr, rc.right - 1, rc.top + 1, rc.bottom - 1, c);
     }
 }
 

@@ -2206,29 +2206,12 @@ public:
             drawContent(pr);
         }
         // draw the overlay
+        _overlay.focusRectColor = (stateFlags & StateFlags.focused) ? _style.focusRectColor : Color.transparent;
         _overlay.drawTo(pr, b);
-        // draw an additional frame
-        if (stateFlags & StateFlags.focused)
-            drawFocusRect(pr);
     }
 
     protected void drawContent(Painter pr)
     {
-    }
-
-    /// Draw focus rectangle, if enabled in styles
-    protected void drawFocusRect(Painter pr)
-    {
-        const Color c = style.focusRectColor;
-        if (!c.isFullyTransparent)
-        {
-            RectI rc = RectI(BoxI.from(_box));
-            rc.shrink(FOCUS_RECT_PADDING, FOCUS_RECT_PADDING);
-            drawDottedLineH(pr, rc.left, rc.right, rc.top, c);
-            drawDottedLineH(pr, rc.left, rc.right, rc.bottom - 1, c);
-            drawDottedLineV(pr, rc.left, rc.top + 1, rc.bottom - 1, c);
-            drawDottedLineV(pr, rc.right - 1, rc.top + 1, rc.bottom - 1, c);
-        }
     }
 
     /** Just draw all children. Used as default behaviour in some widgets.
