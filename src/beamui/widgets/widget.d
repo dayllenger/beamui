@@ -629,6 +629,9 @@ private:
     Overlay _overlay;
     FontRef _font;
 
+    static Background _sharedBackground;
+    static Overlay _sharedOverlay;
+
 protected:
     ElementList _hiddenChildren;
 
@@ -637,8 +640,13 @@ public:
     /// Empty parameter list constructor - for usage by factory
     this()
     {
-        _background = new Background;
-        _overlay = new Overlay;
+        if (!_sharedBackground)
+        {
+            _sharedBackground = new Background;
+            _sharedOverlay = new Overlay;
+        }
+        _background = _sharedBackground;
+        _overlay = _sharedOverlay;
         _destructionFlag = new bool;
         _style.element = this;
         debug const count = debugPlusInstance();
@@ -652,9 +660,11 @@ public:
         debug (resalloc)
             Log.fd("Destroyed element (count: %s): %s", count, dbgname());
 
+        if (_background !is _sharedBackground)
+            destroy(_background);
+        if (_overlay !is _sharedOverlay)
+            destroy(_overlay);
         _font.clear();
-        eliminate(_background);
-        eliminate(_overlay);
         // eliminate(_popupMenu);
 
         if (_destructionFlag) // may be `null` if constructor of a subclass fails
@@ -1089,7 +1099,8 @@ public:
         void background(Background obj)
             in(obj)
         {
-            destroy(_background);
+            if (_background !is _sharedBackground)
+                destroy(_background);
             _background = obj;
         }
 
@@ -1097,7 +1108,8 @@ public:
         void overlay(Overlay obj)
             in(obj)
         {
-            destroy(_overlay);
+            if (_overlay !is _sharedOverlay)
+                destroy(_overlay);
             _overlay = obj;
         }
 
