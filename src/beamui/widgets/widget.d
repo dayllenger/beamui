@@ -626,6 +626,7 @@ private:
     ComputedStyle _style;
 
     Background _background;
+    Overlay _overlay;
     FontRef _font;
 
 protected:
@@ -636,9 +637,10 @@ public:
     /// Empty parameter list constructor - for usage by factory
     this()
     {
+        _background = new Background;
+        _overlay = new Overlay;
         _destructionFlag = new bool;
         _style.element = this;
-        _background = new Background;
         debug const count = debugPlusInstance();
         debug (resalloc)
             Log.fd("Created element (count: %s): %s", count, dbgname());
@@ -652,6 +654,7 @@ public:
 
         _font.clear();
         eliminate(_background);
+        eliminate(_overlay);
         // eliminate(_popupMenu);
 
         if (_destructionFlag) // may be `null` if constructor of a subclass fails
@@ -1088,6 +1091,14 @@ public:
         {
             destroy(_background);
             _background = obj;
+        }
+
+        /// Set the element overlay (takes ownership on the object)
+        void overlay(Overlay obj)
+            in(obj)
+        {
+            destroy(_overlay);
+            _overlay = obj;
         }
 
         /// Returns font set for element using style or set manually
@@ -2182,6 +2193,8 @@ public:
             pr.translate(_box.x, _box.y);
             drawContent(pr);
         }
+        // draw the overlay
+        _overlay.drawTo(pr, b);
         // draw an additional frame
         if (stateFlags & StateFlags.focused)
             drawFocusRect(pr);

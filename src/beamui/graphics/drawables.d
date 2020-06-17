@@ -834,8 +834,10 @@ struct BorderRadii
     Size br;
 }
 
-/// Standard widget background. It can combine together background color,
-/// image (raster, gradient, etc.), borders and box shadows.
+/** Standard widget background. It paints before any content of an element.
+
+    It combines together background color, image (raster, gradient, etc.), and box shadows.
+*/
 class Background
 {
     Color color = Color.transparent;
@@ -1155,6 +1157,17 @@ class Background
             const br = Brush.fromSolid(border.left.color);
             pr.fill(path, br);
         }
+    }
+}
+
+/** Standard widget overlay. It paints after any content of an element.
+
+    It draws borders and outline.
+*/
+class Overlay
+{
+    void drawTo(Painter pr, Box b)
+    {
     }
 }
 
