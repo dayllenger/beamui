@@ -45,10 +45,10 @@ a:hover {
     padding: 1rem;
 }
 
-table a {
+#main-contents a {
     color: #075;
 }
-table a:hover {
+#main-contents a:hover {
     color: #7a1;
 }
 
