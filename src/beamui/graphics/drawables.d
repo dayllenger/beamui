@@ -174,18 +174,18 @@ private Vec2[2] computeGradientLine(float w, float h, float angle)
 /// Box shadows drawable, can be blurred
 class BoxShadowDrawable : Drawable
 {
-    private int _offsetX;
-    private int _offsetY;
-    private int _blurSize;
-    private Color _color;
+    const int offsetX;
+    const int offsetY;
+    const int blurSize;
+    const Color color;
     private Bitmap _bitmap;
 
     this(int offsetX, int offsetY, uint blurSize = 0, Color color = Color.black)
     {
-        _offsetX = offsetX;
-        _offsetY = offsetY;
-        _blurSize = blurSize;
-        _color = color;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
+        this.blurSize = blurSize;
+        this.color = color;
         if (blurSize == 0)
             return;
 
@@ -198,19 +198,19 @@ class BoxShadowDrawable : Drawable
         blurBitmapARGB8(_bitmap, blurSize);
         _bitmap.preMultiplyAlpha();
         // set 9-patch frame
-        const sz = _blurSize * 2;
+        const sz = blurSize * 2;
         _bitmap.ninePatch = new NinePatch(InsetsI(sz), InsetsI(sz));
     }
 
     override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
     {
         // move and expand the shadow
-        b.x += _offsetX;
-        b.y += _offsetY;
-        b.expand(Insets(_blurSize));
+        b.x += offsetX;
+        b.y += offsetY;
+        b.expand(Insets(blurSize));
 
         // now draw
-        if (_blurSize > 0)
+        if (blurSize > 0)
         {
             pr.drawNinePatch(_bitmap, RectI(0, 0, _bitmap.width, _bitmap.height), Rect(b), 1);
             // debug
@@ -218,7 +218,7 @@ class BoxShadowDrawable : Drawable
         }
         else
         {
-            pr.fillRect(b.x, b.y, b.w, b.h, _color);
+            pr.fillRect(b.x, b.y, b.w, b.h, color);
         }
     }
 }

@@ -2161,14 +2161,23 @@ public:
         if (visibility != Visibility.visible)
             return;
 
-        const b = _box;
-        if (pr.quickReject(b))
-            return; // clipped out
-
         updateStyles();
         const opacity = _style.opacity;
         if (opacity < 0.001f)
             return;
+
+        Insets outset;
+        if (auto shadow = _style.boxShadow)
+        {
+            const sz = shadow.blurSize;
+            outset.left = max(sz - shadow.offsetX, 0);
+            outset.top = max(sz - shadow.offsetY, 0);
+            outset.right = max(sz + shadow.offsetX, 0);
+            outset.bottom = max(sz + shadow.offsetY, 0);
+        }
+        if (pr.quickReject(_box.expanded(outset)))
+            return; // clipped out
+
         // begin a layer if needed
         const blendMode = _style.mixBlendMode;
         PaintSaver lsv;
@@ -2200,7 +2209,7 @@ public:
         );
         _background.shadow = _style.boxShadow;
         _background.stylePadding = _style.padding;
-        _background.drawTo(pr, b);
+        _background.drawTo(pr, _box);
         // draw contents
         {
             PaintSaver sv;
@@ -2210,7 +2219,7 @@ public:
         }
         // draw the overlay
         _overlay.focusRectColor = (stateFlags & StateFlags.focused) ? _style.focusRectColor : Color.transparent;
-        _overlay.drawTo(pr, b);
+        _overlay.drawTo(pr, _box);
     }
 
     protected void drawContent(Painter pr)
