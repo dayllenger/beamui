@@ -147,6 +147,7 @@ void initStandardActions()
 
     import beamui.core.types : tup;
 
+    // dfmt off
     foreach (Action a; tup(
         ACTION_LINE_BEGIN,
         ACTION_LINE_END,
@@ -180,4 +181,5 @@ void initStandardActions()
     {
         a.context = ActionContext.widgetTree;
     }
+    // dfmt on
 }

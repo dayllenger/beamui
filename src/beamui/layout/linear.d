@@ -27,7 +27,10 @@ class LinearLayout : ILayout
     @property
     {
         /// Linear layout orientation (vertical, horizontal)
-        Orientation orientation() const { return _orientation; }
+        Orientation orientation() const
+        {
+            return _orientation;
+        }
         /// ditto
         void orientation(Orientation value)
         {
@@ -217,7 +220,7 @@ class LinearLayout : ILayout
             {
                 resizer._orientation = _orientation;
 
-                LayoutItem* left  = &items.unsafe_slice[i - 1];
+                LayoutItem* left = &items.unsafe_slice[i - 1];
                 LayoutItem* right = &items.unsafe_slice[i + 1];
 
                 const lmin = left.bs.min.pick!dim;
@@ -226,7 +229,7 @@ class LinearLayout : ILayout
                 const rresult = right.result.pick!dim;
                 const delta = clamp(resizer.delta, -(lresult - lmin), rresult - rmin);
                 resizer._delta = cast(int)delta;
-                left.result.pick!dim  = lresult + delta;
+                left.result.pick!dim = lresult + delta;
                 right.result.pick!dim = rresult - delta;
             }
         }
@@ -353,11 +356,12 @@ enum ResizerEventType
 */
 class ElemResizer : Element
 {
+    // dfmt off
     /// Orientation: vertical to resize vertically, horizontal to resize horizontally
     @property Orientation orientation() const { return _orientation; }
-
     /// Resizer offset from initial position
     @property int delta() const { return _delta; }
+    // dfmt on
 
     Signal!(void delegate(ResizerEventType, int dragDelta)) onResize;
 
@@ -442,7 +446,7 @@ class ElemResizer : Element
             return true;
         }
         if (event.action == MouseAction.buttonUp && event.button == MouseButton.left ||
-            !event.alteredByButton(MouseButton.left) && _dragging)
+                !event.alteredByButton(MouseButton.left) && _dragging)
         {
             applyFlags(StateFlags.pressed, false);
             if (_dragging)

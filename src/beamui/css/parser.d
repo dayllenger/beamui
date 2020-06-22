@@ -92,8 +92,8 @@ struct Property
 
 struct Parser
 {
-    nothrow:
-
+nothrow:
+    private alias Tok = TokenType;
     /// Range of tokens
     private TokenRange r;
 
@@ -121,16 +121,16 @@ struct Parser
     {
         AtRule[] atRules;
         RuleSet[] rulesets;
-        while (true) with (TokenType)
+        while (true)
         {
             if (r.empty)
                 break;
-            if (r.front.type == whitespace)
+            if (r.front.type == Tok.whitespace)
             {
                 r.popFront();
                 continue;
             }
-            if (r.front.type == atKeyword)
+            if (r.front.type == Tok.atKeyword)
             {
                 auto atRule = consumeAtRule();
                 if (!atRule.isNull)
@@ -148,7 +148,7 @@ struct Parser
 
     Nullable!AtRule consumeAtRule()
     {
-        assert(r.front.type == TokenType.atKeyword);
+        assert(r.front.type == Tok.atKeyword);
         enum Null = Nullable!AtRule.init;
 
         auto rule = AtRule(r.front.text);
@@ -156,15 +156,15 @@ struct Parser
         r.popFront();
 
         Token[] list;
-        while (true) with (TokenType)
+        while (true)
         {
             if (r.empty)
                 break;
             Token t = r.front;
             r.popFront();
-            if (t.type == whitespace)
+            if (t.type == Tok.whitespace)
                 continue;
-            if (t.type == openCurly)
+            if (t.type == Tok.openCurly)
             {
                 // consume block
                 rule.properties = consumeDeclarationList();
@@ -172,10 +172,9 @@ struct Parser
                     emitError("empty @" ~ rule.keyword ~ " block", t.line);
                 break;
             }
-            if (t.type == semicolon)
+            if (t.type == Tok.semicolon)
                 break;
-            else
-                // consume values
+            else // consume values
                 list ~= t;
         }
         rule.content = list;
@@ -194,11 +193,11 @@ struct Parser
         enum Null = Nullable!RuleSet.init;
 
         RuleSet rule;
-        while (true) with (TokenType)
+        while (true)
         {
             if (r.empty)
                 return Null;
-            if (r.front.type != openCurly)
+            if (r.front.type != Tok.openCurly)
             {
                 rule.selectors = consumeSelectorList();
             }
@@ -214,18 +213,18 @@ struct Parser
     Selector[] consumeSelectorList()
     {
         Selector[] list;
-        while (true) with (TokenType)
+        while (true)
         {
-            if (r.empty || r.front.type == openCurly)
+            if (r.empty || r.front.type == Tok.openCurly)
                 break;
             auto selector = consumeSelector();
             if (!selector.isNull)
                 list ~= selector.get;
-            if (r.front.type == comma)
+            if (r.front.type == Tok.comma)
             {
                 do
                     r.popFront();
-                while (r.front.type == whitespace);
+                while (r.front.type == Tok.whitespace);
             }
         }
         return list;
@@ -236,16 +235,16 @@ struct Parser
         enum Null = Nullable!Selector.init;
 
         Selector sel;
-        while (true) with (TokenType)
+        while (true)
         {
-            if (r.empty || r.front.type == comma || r.front.type == openCurly)
+            if (r.empty || r.front.type == Tok.comma || r.front.type == Tok.openCurly)
                 break;
             // just assign line of the first token
             if (sel.line == 0)
                 sel.line = r.front.line;
 
             sel.entries ~= consumeCompoundSelector();
-            if (r.front.type == whitespace || r.front.type == delim)
+            if (r.front.type == Tok.whitespace || r.front.type == Tok.delim)
             {
                 auto comb = consumeCombinator();
                 if (!comb.isNull)
@@ -261,12 +260,14 @@ struct Parser
     SelectorEntry[] consumeCompoundSelector()
     {
         SelectorEntry[] entries;
-        while (true) with (TokenType)
+        while (true)
         {
-            if (r.empty || r.front.type == whitespace || r.front.type == comma || r.front.type == openCurly)
+            if (r.empty || r.front.type == Tok.whitespace)
+                break;
+            if (r.front.type == Tok.comma || r.front.type == Tok.openCurly)
                 break;
             Token t = r.front;
-            if (t.type == delim) // * .
+            if (t.type == Tok.delim) // * .
             {
                 if (t.text == "*")
                 {
@@ -276,7 +277,7 @@ struct Parser
                 else if (t.text == ".")
                 {
                     r.popFront();
-                    if (r.front.type == ident)
+                    if (r.front.type == Tok.ident)
                     {
                         entries ~= SelectorEntry(SelectorEntryType.class_, r.front.text);
                         r.popFront();
@@ -287,13 +288,13 @@ struct Parser
                 else // combinator or something
                     break;
             }
-            else if (t.type == colon) // pseudo classes and pseudo elements
+            else if (t.type == Tok.colon) // pseudo classes and pseudo elements
             {
                 r.popFront();
-                if (r.front.type == colon)
+                if (r.front.type == Tok.colon)
                 {
                     r.popFront();
-                    if (r.front.type == ident)
+                    if (r.front.type == Tok.ident)
                     {
                         entries ~= SelectorEntry(SelectorEntryType.pseudoElement, r.front.text);
                         r.popFront();
@@ -301,22 +302,22 @@ struct Parser
                     else
                         emitExpected("identifier", "pseudo element", r.front.line);
                 }
-                else if (r.front.type == func && r.front.text == "not")
+                else if (r.front.type == Tok.func && r.front.text == "not")
                 {
                     r.popFront();
                     if (!r.empty)
                     {
-                        if (r.front.type == closeParen)
+                        if (r.front.type == Tok.closeParen)
                             emitError("not() is empty", r.line);
                         else
                         {
-                            if (r.front.type == ident)
+                            if (r.front.type == Tok.ident)
                                 entries ~= SelectorEntry(SelectorEntryType.pseudoClass, "!" ~ r.front.text);
                             else
                                 emitExpected("identifier", "pseudo class", r.front.line);
                             r.popFront();
                         }
-                        if (r.front.type == closeParen)
+                        if (r.front.type == Tok.closeParen)
                             r.popFront();
                         else
                             emitExpected("closing parenthesis", "pseudo class", r.front.line);
@@ -324,7 +325,7 @@ struct Parser
                     else
                         emitUnexpected(r.front, "pseudo class");
                 }
-                else if (r.front.type == ident)
+                else if (r.front.type == Tok.ident)
                 {
                     entries ~= SelectorEntry(SelectorEntryType.pseudoClass, r.front.text);
                     r.popFront();
@@ -332,17 +333,17 @@ struct Parser
                 else
                     emitExpected("valid pseudo-class or pseudo-element", "selector", r.front.line);
             }
-            else if (t.type == ident) // tag
+            else if (t.type == Tok.ident) // tag
             {
                 entries ~= SelectorEntry(SelectorEntryType.element, t.text);
                 r.popFront();
             }
-            else if (t.type == hash && t.id) // id
+            else if (t.type == Tok.hash && t.id) // id
             {
                 entries ~= SelectorEntry(SelectorEntryType.id, t.text);
                 r.popFront();
             }
-            else if (t.type == openSquare) // attribute
+            else if (t.type == Tok.openSquare) // attribute
             {
                 r.popFront();
                 auto entry = consumeAttributeSelector();
@@ -364,34 +365,34 @@ struct Parser
         enum Null = Nullable!SelectorEntry.init;
 
         auto entry = SelectorEntry(SelectorEntryType.attr);
-        while (true) with (TokenType)
+        while (true)
         {
             if (r.empty)
                 break;
             Token t = r.front;
-            if (t.type == closeSquare)
+            if (t.type == Tok.closeSquare)
             {
                 r.popFront();
                 break;
             }
-            if (t.type == ident || t.type == str)
+            if (t.type == Tok.ident || t.type == Tok.str)
             {
                 if (!entry.identifier)
                     entry.identifier = t.text;
                 else
                     entry.str = t.text;
             }
-            else if (t.type == delim && t.text == "=")
+            else if (t.type == Tok.delim && t.text == "=")
                 entry.type = SelectorEntryType.attrExact;
-            else if (t.type == includeMatch)
+            else if (t.type == Tok.includeMatch)
                 entry.type = SelectorEntryType.attrInclude;
-            else if (t.type == dashMatch)
+            else if (t.type == Tok.dashMatch)
                 entry.type = SelectorEntryType.attrDash;
-            else if (t.type == prefixMatch)
+            else if (t.type == Tok.prefixMatch)
                 entry.type = SelectorEntryType.attrPrefix;
-            else if (t.type == suffixMatch)
+            else if (t.type == Tok.suffixMatch)
                 entry.type = SelectorEntryType.attrSuffix;
-            else if (t.type == substringMatch)
+            else if (t.type == Tok.substringMatch)
                 entry.type = SelectorEntryType.attrSubstring;
             else
             {
@@ -413,12 +414,12 @@ struct Parser
         enum Null = Nullable!SelectorEntry.init;
 
         auto entry = SelectorEntry(SelectorEntryType.descendant);
-        while (true) with (TokenType)
+        while (true)
         {
             if (r.empty)
                 break;
             Token t = r.front;
-            if (t.type == delim) // > + ~
+            if (t.type == Tok.delim) // > + ~
             {
                 if (t.text == ">")
                 {
@@ -442,9 +443,9 @@ struct Parser
                 }
                 r.popFront();
             }
-            else if (t.type == whitespace)
+            else if (t.type == Tok.whitespace)
                 r.popFront();
-            else if (t.type == comma || t.type == openCurly)
+            else if (t.type == Tok.comma || t.type == Tok.openCurly)
                 return Null;
             else
                 break;
@@ -455,22 +456,22 @@ struct Parser
     Property[] consumeDeclarationList()
     {
         Property[] list;
-        while (true) with (TokenType)
+        while (true)
         {
             if (r.empty)
                 break;
             Token t = r.front;
-            if (t.type == whitespace)
+            if (t.type == Tok.whitespace)
             {
                 r.popFront();
                 continue;
             }
-            if (t.type == closeCurly)
+            if (t.type == Tok.closeCurly)
             {
                 r.popFront();
                 break;
             }
-            if (t.type == ident)
+            if (t.type == Tok.ident)
             {
                 auto prop = consumeDeclaration();
                 if (!prop.isNull)
@@ -490,15 +491,14 @@ struct Parser
         enum Null = Nullable!Property.init;
 
         auto prop = Property(r.front.text);
-        with (TokenType)
         {
             r.popFront();
-            if (r.empty || r.front.type == closeCurly)
+            if (r.empty || r.front.type == Tok.closeCurly)
                 return Null;
-            while (r.front.type == whitespace)
+            while (r.front.type == Tok.whitespace)
                 r.popFront();
             Token t = r.front;
-            if (t.type == colon)
+            if (t.type == Tok.colon)
             {
                 size_t line = r.line;
                 r.popFront();
@@ -523,15 +523,15 @@ struct Parser
     Token[] consumeValue()
     {
         Token[] list;
-        while (true) with (TokenType)
+        while (true)
         {
-            if (r.empty || r.front.type == closeCurly)
+            if (r.empty || r.front.type == Tok.closeCurly)
                 break;
             Token t = r.front;
             r.popFront();
-            if (t.type == whitespace)
+            if (t.type == Tok.whitespace)
                 continue;
-            if (t.type == semicolon)
+            if (t.type == Tok.semicolon)
                 break;
             list ~= t;
         }
@@ -541,8 +541,8 @@ struct Parser
 
 unittest
 {
-    auto tr = tokenizeCSS(
-`       @import url('secondary.css');
+    auto tr = tokenizeCSS(`
+        @import url('secondary.css');
         @define-colors {
             fg-color: #fff000;
         }

@@ -304,6 +304,7 @@ private struct Line
 */
 struct SimpleText
 {
+    // dfmt off
     @property
     {
         /// Original text data
@@ -313,28 +314,7 @@ struct SimpleText
         {
             if (original is s)
                 return;
-
-            lines.clear();
-            wrappedLines.clear();
-
-            if (s.length > 0)
-            {
-                if (glyphStorage.length < s.length)
-                    glyphStorage.length = s.length;
-                // split by EOL char
-                size_t lineStart;
-                foreach (i, ch; s)
-                {
-                    if (ch == '\n')
-                    {
-                        lines ~= Line(s[lineStart .. i], glyphStorage[lineStart .. i]);
-                        lineStart = i + 1;
-                    }
-                }
-                lines ~= Line(s[lineStart .. $], glyphStorage[lineStart .. s.length]);
-            }
-            original = s;
-            measured = false;
+            setStr(s);
         }
 
         /// True whether there is no text
@@ -348,6 +328,7 @@ struct SimpleText
         /// Size of the text after the last measure and wrapping
         Size sizeAfterWrap() const { return _sizeAfterWrap; }
     }
+    // dfmt on
 
     /// Text style to adjust properties
     TextStyle style;
@@ -367,7 +348,32 @@ struct SimpleText
 
     this(dstring txt)
     {
-        str = txt;
+        setStr(txt);
+    }
+
+    private void setStr(dstring s)
+    {
+        lines.clear();
+        wrappedLines.clear();
+
+        if (s.length > 0)
+        {
+            if (glyphStorage.length < s.length)
+                glyphStorage.length = s.length;
+            // split by EOL char
+            size_t lineStart;
+            foreach (i, ch; s)
+            {
+                if (ch == '\n')
+                {
+                    lines ~= Line(s[lineStart .. i], glyphStorage[lineStart .. i]);
+                    lineStart = i + 1;
+                }
+            }
+            lines ~= Line(s[lineStart .. $], glyphStorage[lineStart .. s.length]);
+        }
+        original = s;
+        measured = false;
     }
 
     /// Measure the text during layout
@@ -483,6 +489,7 @@ private struct SimpleTextPool
         return txt;
     }
 }
+
 private SimpleTextPool immediate;
 
 package(beamui) void clearSimpleTextPool()

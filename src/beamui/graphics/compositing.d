@@ -68,6 +68,7 @@ struct CompositeOperation
 /// Get the blend factors of a composite mode (for premultiplied source and destination)
 CompositeOperation getBlendFactors(CompositeMode compositeMode)
 {
+    // dfmt off
     final switch (compositeMode) with (AlphaBlendFactor)
     {
         case CompositeMode.copy:       return CompositeOperation(one, zero);
@@ -82,4 +83,5 @@ CompositeOperation getBlendFactors(CompositeMode compositeMode)
         case CompositeMode.xor:        return CompositeOperation(oneMinusDst, oneMinusSrc);
         case CompositeMode.lighter:    return CompositeOperation(one, one);
     }
+    // dfmt on
 }

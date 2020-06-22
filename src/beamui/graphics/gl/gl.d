@@ -9,7 +9,9 @@ module beamui.graphics.gl.gl;
 
 import beamui.core.config;
 
+// dfmt off
 static if (USE_OPENGL):
+// dfmt on
 import beamui.core.geometry : BoxI;
 import beamui.graphics.colors : ColorF;
 import beamui.graphics.compositing;
@@ -88,6 +90,7 @@ struct FboId
 
 enum DrawFlags : uint
 {
+    // dfmt off
     none           = 0,
     blending       = 1 << 0,
     clippingPlanes = 1 << 1,
@@ -96,12 +99,12 @@ enum DrawFlags : uint
     noDepthWrite   = 1 << 4,
     stencilTest    = 1 << 5,
     all            = 0xFFFFFFFF,
+    // dfmt on
 }
 
 struct Device
 {
-    nothrow:
-
+nothrow:
     // they save various expensive GL state changes
     FboManager fboman;
     VaoManager vaoman;
@@ -242,38 +245,29 @@ struct Device
     }
 
     void drawTriangles(VaoId vao, DrawFlags flags, int start, int count)
-        in(count > 0)
+    in (count > 0)
     {
         vaoman.bind(vao);
         setDrawFlags(flags);
 
-        glDrawElements(
-            GL_TRIANGLES,
-            count,
-            GL_UNSIGNED_INT,
-            cast(void*)(start * uint.sizeof),
-        );
+        glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, cast(void*)(start * uint.sizeof));
         checkError("draw triangles");
     }
 
     void drawLines(VaoId vao, DrawFlags flags, int start, int count)
-        in(count > 0)
+    in (count > 0)
     {
         vaoman.bind(vao);
         setDrawFlags(flags);
 
-        glDrawElements(
-            GL_LINES,
-            count,
-            GL_UNSIGNED_INT,
-            cast(void*)(start * uint.sizeof),
-        );
+        glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, cast(void*)(start * uint.sizeof));
         checkError("draw lines");
     }
 }
 
 private GLenum convertBlendFactor(AlphaBlendFactor factor)
 {
+    // dfmt off
     final switch (factor) with (AlphaBlendFactor)
     {
         case zero: return GL_ZERO;
@@ -283,10 +277,12 @@ private GLenum convertBlendFactor(AlphaBlendFactor factor)
         case oneMinusSrc: return GL_ONE_MINUS_SRC_ALPHA;
         case oneMinusDst: return GL_ONE_MINUS_DST_ALPHA;
     }
+    // dfmt on
 }
 
 private GLenum convertAdvancedBlendMode(BlendMode mode)
 {
+    // dfmt off
     enum : GLenum
     {
         MULTIPLY_KHR       = 0x9294,
@@ -326,12 +322,12 @@ private GLenum convertAdvancedBlendMode(BlendMode mode)
         case color:      return HSL_COLOR_KHR;
         case luminosity: return HSL_LUMINOSITY_KHR;
     }
+    // dfmt on
 }
 
 struct FboManager
 {
-    nothrow:
-
+nothrow:
     private FboId current = FboId(GLuint.max);
 
     FboId create()
@@ -369,8 +365,7 @@ struct FboManager
 
 struct VaoManager
 {
-    nothrow:
-
+nothrow:
     private VaoId current = VaoId(GLuint.max);
 
     void bind(ref VaoId id)
@@ -415,14 +410,13 @@ struct VaoManager
 
 struct ProgramManager
 {
+nothrow:
     import beamui.graphics.gl.program : GLProgram;
-
-    nothrow:
 
     private GLuint current;
 
     void bind(GLProgram program)
-        in(program && program.valid, "Attempt to bind invalid shader program")
+    in (program && program.valid, "Attempt to bind invalid shader program")
     {
         if (current != program.programID)
         {

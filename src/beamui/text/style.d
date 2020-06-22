@@ -137,6 +137,7 @@ struct TextAttr
         decoration,
         transform,
     }
+
     package union Data
     {
         Color foreground;
@@ -149,6 +150,7 @@ struct TextAttr
         TextDecor decoration;
         TextTransform transform;
     }
+
     package Type type;
     package Data data;
 
@@ -157,21 +159,25 @@ struct TextAttr
         type = Type.foreground;
         data.foreground = color;
     }
+
     this(FontFamily fontFamily)
     {
         type = Type.fontFamily;
         data.fontFamily = fontFamily;
     }
+
     this(FontStyle fontStyle)
     {
         type = Type.fontStyle;
         data.fontStyle = fontStyle;
     }
+
     this(TextDecor decoration)
     {
         type = Type.decoration;
         data.decoration = decoration;
     }
+
     this(TextTransform transform)
     {
         type = Type.transform;
@@ -185,6 +191,7 @@ struct TextAttr
         a.data.background = color;
         return a;
     }
+
     static TextAttr fontFace(string face)
     {
         TextAttr a;
@@ -192,6 +199,7 @@ struct TextAttr
         a.data.fontFace = face;
         return a;
     }
+
     static TextAttr fontSize(int size)
     {
         TextAttr a;
@@ -199,6 +207,7 @@ struct TextAttr
         a.data.fontSize = size;
         return a;
     }
+
     static TextAttr fontWeight(ushort weight)
     {
         TextAttr a;

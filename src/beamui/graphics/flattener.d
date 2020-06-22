@@ -20,10 +20,10 @@ import beamui.core.math : fequal2, fzero6;
 
 /// Convert cubic bezier curve into a list of points
 void flattenCubicBezier(ref Buf!Vec2 output, Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3, bool endpointsToo)
-    in(isFinite(p0.x) && isFinite(p0.y))
-    in(isFinite(p1.x) && isFinite(p1.y))
-    in(isFinite(p2.x) && isFinite(p2.y))
-    in(isFinite(p3.x) && isFinite(p3.y))
+in (isFinite(p0.x) && isFinite(p0.y))
+in (isFinite(p1.x) && isFinite(p1.y))
+in (isFinite(p2.x) && isFinite(p2.y))
+in (isFinite(p3.x) && isFinite(p3.y))
 {
     if (endpointsToo)
         output ~= p0;
@@ -32,20 +32,21 @@ void flattenCubicBezier(ref Buf!Vec2 output, Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3,
         output ~= p3;
 }
 
-private void recursiveCubicBezier(ref Buf!Vec2 output,
-    float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, int level)
+private void recursiveCubicBezier(ref Buf!Vec2 output, float x1, float y1, float x2, float y2, float x3, float y3,
+        float x4, float y4, int level)
 {
-    if (level > 10) return;
+    if (level > 10)
+        return;
 
     enum distanceTolerance = 0.5f * 0.5f;
 
     // calculate all midpoints
-    const x12  = (x1 + x2) / 2;
-    const y12  = (y1 + y2) / 2;
-    const x23  = (x2 + x3) / 2;
-    const y23  = (y2 + y3) / 2;
-    const x34  = (x3 + x4) / 2;
-    const y34  = (y3 + y4) / 2;
+    const x12 = (x1 + x2) / 2;
+    const y12 = (y1 + y2) / 2;
+    const x23 = (x2 + x3) / 2;
+    const y23 = (y2 + y3) / 2;
+    const x34 = (x3 + x4) / 2;
+    const y34 = (y3 + y4) / 2;
     const x123 = (x12 + x23) / 2;
     const y123 = (y12 + y23) / 2;
     const x234 = (x23 + x34) / 2;
@@ -66,16 +67,16 @@ private void recursiveCubicBezier(ref Buf!Vec2 output,
     }
     else
     {
-       recursiveCubicBezier(output, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
-       recursiveCubicBezier(output, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
+        recursiveCubicBezier(output, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
+        recursiveCubicBezier(output, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
     }
 }
 
 /// Convert quadratic bezier curve into a list of points
 void flattenQuadraticBezier(ref Buf!Vec2 output, Vec2 p0, Vec2 p1, Vec2 p2, bool endpointsToo)
-    in(isFinite(p0.x) && isFinite(p0.y))
-    in(isFinite(p1.x) && isFinite(p1.y))
-    in(isFinite(p2.x) && isFinite(p2.y))
+in (isFinite(p0.x) && isFinite(p0.y))
+in (isFinite(p1.x) && isFinite(p1.y))
+in (isFinite(p2.x) && isFinite(p2.y))
 {
     if (endpointsToo)
         output ~= p0;
@@ -84,18 +85,18 @@ void flattenQuadraticBezier(ref Buf!Vec2 output, Vec2 p0, Vec2 p1, Vec2 p2, bool
         output ~= p2;
 }
 
-private void recursiveQuadraticBezier(ref Buf!Vec2 output,
-    float x1, float y1, float x2, float y2, float x3, float y3, int level)
+private void recursiveQuadraticBezier(ref Buf!Vec2 output, float x1, float y1, float x2, float y2, float x3, float y3, int level)
 {
-    if (level > 10) return;
+    if (level > 10)
+        return;
 
     enum distanceTolerance = 0.5f * 0.5f;
 
     // calculate all midpoints
-    const x12  = (x1 + x2) / 2;
-    const y12  = (y1 + y2) / 2;
-    const x23  = (x2 + x3) / 2;
-    const y23  = (y2 + y3) / 2;
+    const x12 = (x1 + x2) / 2;
+    const y12 = (y1 + y2) / 2;
+    const x23 = (x2 + x3) / 2;
+    const y23 = (y2 + y3) / 2;
     const x123 = (x12 + x23) / 2;
     const y123 = (y12 + y23) / 2;
 
@@ -118,10 +119,10 @@ private void recursiveQuadraticBezier(ref Buf!Vec2 output,
 
 /// Convert circular arc into a list of points
 void flattenArc(ref Buf!Vec2 output, Vec2 center, float radius, float startAngle, float angleOffset, bool endpointsToo)
-    in(isFinite(center.x) && isFinite(center.y))
-    in(isFinite(radius))
-    in(isFinite(startAngle))
-    in(isFinite(angleOffset))
+in (isFinite(center.x) && isFinite(center.y))
+in (isFinite(radius))
+in (isFinite(startAngle))
+in (isFinite(angleOffset))
 {
     if (radius < 0)
         return;
@@ -174,8 +175,7 @@ void flattenArc(ref Buf!Vec2 output, Vec2 center, float radius, float startAngle
     flattenArcPart(output, center.x, center.y, rx0, ry0, rx, ry, endpointsToo);
 }
 
-private void flattenArcPart(ref Buf!Vec2 output,
-    float cx, float cy, float ax, float ay, float bx, float by, bool lastToo)
+private void flattenArcPart(ref Buf!Vec2 output, float cx, float cy, float ax, float ay, float bx, float by, bool lastToo)
 {
     const q1 = ax * ax + ay * ay;
     const q2 = q1 + ax * bx + ay * by;

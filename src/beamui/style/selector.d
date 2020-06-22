@@ -14,8 +14,7 @@ import beamui.core.types : StateFlags;
 /// CSS element selector
 struct Selector
 {
-    nothrow:
-
+nothrow:
     import std.ascii : isWhite;
     import std.string : indexOf;
 
@@ -56,6 +55,7 @@ struct Selector
             suffix, /// [attr$=value]
             substring, /// [attr*=value]
         }
+
         string name;
         private string str;
         private Pattern pattern;
@@ -118,9 +118,11 @@ struct Selector
     /// Check if attribute selectors can match something
     void validateAttrs()
     {
-        foreach (ref a; attributes) with (Attr.Pattern)
+        alias P = Attr.Pattern;
+
+        foreach (ref a; attributes)
         {
-            if (a.pattern == include)
+            if (a.pattern == P.include)
             {
                 if (a.str.length > 0)
                 {
@@ -128,18 +130,18 @@ struct Selector
                     {
                         if (isWhite(ch))
                         {
-                            a.pattern = invalid;
+                            a.pattern = P.invalid;
                             break;
                         }
                     }
                 }
                 else
-                    a.pattern = invalid;
+                    a.pattern = P.invalid;
             }
-            if (a.pattern == prefix || a.pattern == suffix || a.pattern == substring)
+            if (a.pattern == P.prefix || a.pattern == P.suffix || a.pattern == P.substring)
             {
                 if (a.str.length == 0)
-                    a.pattern = invalid;
+                    a.pattern = P.invalid;
             }
         }
     }
@@ -226,8 +228,7 @@ private enum DELIM = '\0';
 
 private struct Preprocessor
 {
-    nothrow @nogc:
-
+nothrow @nogc:
     import std.ascii;
     import std.uni : isSurrogate;
     import std.utf : byDchar;
@@ -238,7 +239,7 @@ private struct Preprocessor
     private size_t i;
 
     this(string str)
-        in(!appender.length)
+    in (!appender.length)
     {
         bool wasCR;
         foreach (c; str.byDchar)
@@ -587,15 +588,14 @@ private struct Preprocessor
 
 private struct Parser
 {
-    nothrow:
-
+nothrow:
     import std.utf : toUTF8;
 
     private const(dchar)[] r;
     private size_t i;
 
     this(const(dchar)[] str)
-        in(str.length)
+    in (str.length)
     {
         r = str;
     }
@@ -689,6 +689,7 @@ private struct Parser
 
     static StateFlags parseState(const dchar[] str)
     {
+        // dfmt off
         switch (str) with (StateFlags)
         {
             case "pressed": return pressed;
@@ -703,6 +704,7 @@ private struct Parser
             case "focus-within": return focusWithin;
             default: return none;
         }
+        // dfmt on
     }
 
     Selector.Attr consumeAttributeSelector()

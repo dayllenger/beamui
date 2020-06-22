@@ -9,9 +9,10 @@ module beamui.graphics.gl.compiler;
 
 import beamui.core.config;
 
+// dfmt off
 static if (USE_OPENGL):
 nothrow:
-
+// dfmt on
 import std.string : stripRight;
 import beamui.core.functions : collectException, min;
 import beamui.core.logger;
@@ -25,10 +26,12 @@ enum ShaderStage : ubyte
 
 private GLenum shaderStageToGLenum(ShaderStage stage)
 {
-    final switch (stage) with(ShaderStage)
+    final switch (stage) with (ShaderStage)
     {
-        case vertex:      return GL_VERTEX_SHADER;
-        case fragment:    return GL_FRAGMENT_SHADER;
+    case vertex:
+        return GL_VERTEX_SHADER;
+    case fragment:
+        return GL_FRAGMENT_SHADER;
     }
 }
 
@@ -58,7 +61,7 @@ GLuint linkShaders(const GLuint[] shaderIDs...)
 {
     // create and link program
     GLuint programID = glCreateProgram();
-    foreach(sh; shaderIDs)
+    foreach (sh; shaderIDs)
         glAttachShader(programID, sh);
     glLinkProgram(programID);
 
@@ -69,7 +72,7 @@ GLuint linkShaders(const GLuint[] shaderIDs...)
         programID = 0;
     }
     // flag the shaders for deletion
-    foreach(sh; shaderIDs)
+    foreach (sh; shaderIDs)
     {
         glDeleteShader(sh);
     }

@@ -35,6 +35,7 @@ private ComputedStyle defaults;
 
 struct ComputedStyle
 {
+    // dfmt off
     @property
     {
         string display() const { return _display; }
@@ -168,6 +169,7 @@ struct ComputedStyle
 
         CursorType cursor() const { return _cursor; }
     }
+    // dfmt on
 
     package(beamui) Element element;
     package(beamui) bool isolated;
@@ -399,8 +401,11 @@ struct ComputedStyle
         StaticBitArray!(StyleProperty.max + 1) modified;
 
         /// iterate through all built-in properties
+        // dfmt off
         static foreach (name; __traits(allMembers, P))
-        {{
+        {
+        // dfmt on
+        {
             enum ptype = mixin(`P.` ~ name);
             enum bool inheritsByDefault = isInherited(ptype);
 
@@ -496,7 +501,10 @@ struct ComputedStyle
                 if (setProperty!name(getDefaultValue!name()))
                     modified.set(ptype);
             }
-        }}
+        }
+        // dfmt off
+        }
+        // dfmt on
         // invoke side effects
         foreach (ptype; 0 .. StyleProperty.max + 1)
         {
@@ -518,15 +526,17 @@ struct ComputedStyle
             auto affected = modified & st._inherited;
 
             static foreach (name; __traits(allMembers, P))
-            {{
-                enum ptype = mixin(`P.` ~ name);
-
-                if (affected[ptype])
+            {
                 {
-                    if (!st.setProperty!name(mixin("_" ~ name)))
-                        affected.reset(ptype);
+                    enum ptype = mixin(`P.` ~ name);
+
+                    if (affected[ptype])
+                    {
+                        if (!st.setProperty!name(mixin("_" ~ name)))
+                            affected.reset(ptype);
+                    }
                 }
-            }}
+            }
             // continue recursively
             st.propagateInheritedValues(affected);
 
@@ -555,6 +565,7 @@ struct ComputedStyle
                 return cast(int)fs.toLayout.applyPercent(base);
             }
         }
+        // dfmt off
         else static if (false
             || ptype == P.width
             || ptype == P.height
@@ -598,6 +609,7 @@ struct ComputedStyle
         {
             return applyOnlyEM(value);
         }
+        // dfmt on
         else static if (ptype == P.bgPosition)
         {
             return BgPosition(applyEM(value.x), applyEM(value.y));
@@ -629,6 +641,7 @@ struct ComputedStyle
         if (specified == "all" || specified == property)
             return true;
 
+        // dfmt off
         if (specified == "padding")
             return property == "padding-top" || property == "padding-right" ||
                    property == "padding-bottom" || property == "padding-left";
@@ -667,7 +680,7 @@ struct ComputedStyle
 
         if (specified == "gap")
             return property == "row-gap" || property == "column-gap";
-
+        // dfmt on
         return false;
     }
 
@@ -713,12 +726,10 @@ struct ComputedStyle
 
         T begin = field;
         auto tr = new Transition(_transitionDuration, _transitionTimingFunction, _transitionDelay);
-        _animations.add(name, tr.duration,
-            (double t) {
-                field = tr.mix(begin, end, t);
-                element.handleStyleChange(ptype);
-            }
-        );
+        _animations.add(name, _transitionDuration, (double t) {
+            field = tr.mix(begin, end, t);
+            element.handleStyleChange(ptype);
+        });
     }
 }
 

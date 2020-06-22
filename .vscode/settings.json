@@ -1,0 +1,14 @@
+{
+    "dfmt.spaceAfterCast": false,
+    "dfmt.splitOperatorAtLineEnd": true,
+    "dfmt.templateConstraintStyle": "conditional_newline",
+    "dscanner.ignoredKeys": [
+        "dscanner.confusing.logical_precedence",
+        "dscanner.style.number_literals",
+        "dscanner.style.phobos_naming_convention",
+        "dscanner.style.undocumented_declaration",
+    ],
+    "editor.rulers": [
+        120
+    ],
+}

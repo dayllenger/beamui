@@ -14,8 +14,7 @@ import beamui.events.keyboard : keyName, parseKeyName;
 /// Keyboard shortcut (key + modifiers)
 struct Shortcut
 {
-    nothrow:
-
+nothrow:
     /// Key code from `Key` enum
     Key key;
     /// Key modifiers bit set
@@ -25,9 +24,9 @@ struct Shortcut
     @property dstring label() const
     {
         dstring buf;
-        version (OSX)
+        version (OSX) // FIXME
         {
-            static if (true) // FIXME
+            static if (true)
             {
                 if (modifiers & KeyMods.control)
                     buf ~= "Command+";

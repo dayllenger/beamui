@@ -27,8 +27,8 @@ struct Animation
     }
 
     void tick(double interval)
-        in(isFinite(interval))
-        in(isAnimating)
+    in (isFinite(interval))
+    in (isAnimating)
     {
         t += interval / duration;
         if (t < 1.0)
@@ -62,8 +62,7 @@ struct Transition
 
 interface TimingFunction
 {
-    nothrow:
-
+nothrow:
     static const
     {
         TimingFunction linear = new LinearTimingFunction;
@@ -79,8 +78,7 @@ interface TimingFunction
 
 class LinearTimingFunction : TimingFunction
 {
-    nothrow:
-
+nothrow:
     double get(double t) const
     {
         return t;
@@ -89,8 +87,7 @@ class LinearTimingFunction : TimingFunction
 
 class CubicBezierTimingFunction : TimingFunction
 {
-    nothrow:
-
+nothrow:
     private
     {
         // coefficients
@@ -130,10 +127,12 @@ class CubicBezierTimingFunction : TimingFunction
     {
         return ((ay * t + by) * t + cy) * t;
     }
+
     double sampleCurveDerivativeX(double t) const
     {
         return (3.0 * ax * t + 2.0 * bx) * t + cx;
     }
+
     double sampleCurveDerivativeY(double t) const
     {
         return (3.0 * ay * t + 2.0 * by) * t + cy;

@@ -13,5 +13,7 @@ max_line_length = 120
 indent_size = 2
 
 [*.d]
+dfmt_soft_max_line_length = 120
 dfmt_space_after_cast = false
 dfmt_split_operator_at_line_end = true
+dfmt_template_constraint_style = conditional_newline

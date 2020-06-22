@@ -33,6 +33,7 @@ class CustomEvent
         _uniqueID = ++_uniqueIDGenerator;
     }
 
+    // dfmt off
     @property
     {
         // event id
@@ -56,6 +57,7 @@ class CustomEvent
             _intParam = value;
         }
     }
+    // dfmt on
 }
 
 immutable int CUSTOM_RUNNABLE = 1;

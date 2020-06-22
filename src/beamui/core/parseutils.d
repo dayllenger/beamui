@@ -48,6 +48,7 @@ bool isBracket(dchar ch)
 /// Returns the paired bracket for the , if it's one of `()[]{}`, otherwise returns 0
 dchar getPairedBracket(dchar ch)
 {
+    // dfmt off
     switch (ch)
     {
         case '(': return ')';
@@ -58,6 +59,7 @@ dchar getPairedBracket(dchar ch)
         case ']': return '[';
         default: return 0; // not a bracket
     }
+    // dfmt on
 }
 
 /// Returns true if the char is an opening bracket
@@ -75,8 +77,7 @@ bool isClosingBracket(dchar ch)
 /// Basic stack to count matching brackets
 struct BracketStack
 {
-    nothrow:
-
+nothrow:
     import beamui.core.collections : Buf;
 
     enum Match

@@ -8,7 +8,9 @@ module beamui.graphics.gl.program;
 
 import beamui.core.config;
 
+// dfmt off
 static if (USE_OPENGL):
+// dfmt on
 import std.array : replace;
 import std.string : toStringz;
 import beamui.core.functions : getShortClassName;
@@ -20,7 +22,7 @@ import beamui.graphics.gl.errors;
 /// Base class for GUI shader programs
 class GLProgram
 {
-    nothrow:
+nothrow:
 
     abstract @property string vertexSource() const;
     abstract @property string fragmentSource() const;
@@ -118,9 +120,9 @@ class GLProgram
 
 struct GLProgramInterface
 {
-    const GLuint programID;
+nothrow:
 
-    nothrow:
+    const GLuint programID;
 
     /// Associate a number with an attribute
     void bindAttribLocation(string name, GLuint location) const

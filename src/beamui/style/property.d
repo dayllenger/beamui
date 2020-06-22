@@ -240,6 +240,7 @@ private union BuiltinPropertyValue
 {
     import std.meta : AliasSeq;
 
+    // dfmt off
     static foreach (T; AliasSeq!(
         Align,
         AlignItem,
@@ -283,13 +284,20 @@ private union BuiltinPropertyValue
     {
         mixin(`T ` ~ T.mangleof ~ `;`);
     }
+    // dfmt on
 }
 
 package struct StylePropertyList
 {
     import std.traits : Unqual;
 
-    private enum Pointer : ubyte { none, inherit, initial, some }
+    private enum Pointer : ubyte
+    {
+        none,
+        inherit,
+        initial,
+        some
+    }
 
     private BuiltinPropertyValue[] values;
     private Pointer[StyleProperty.max + 1] pointers;
@@ -376,57 +384,52 @@ package bool isVarName(string name)
 /// Checks bounds, like disallowed negative values
 package bool sanitizeProperty(StyleProperty ptype, T)(ref const T value)
 {
-    with (StyleProperty)
-    {
-        static if (ptype == fontSize)
-            return value.toLayout.applyPercent(100) >= 1;
-        else static if (ptype == bgSize)
-            return value.x.toLayout.applyPercent(100) >= 0 && value.y.toLayout.applyPercent(100) >= 0;
-        else static if (
-            ptype == width ||
-            ptype == height ||
-            ptype == minWidth ||
-            ptype == maxWidth ||
-            ptype == minHeight ||
-            ptype == maxHeight ||
-            ptype == flexBasis ||
-            ptype == lineHeight
-        )
-            return value.toLayout.applyPercent(100) >= 0;
-        else static if (
-            ptype == paddingTop ||
-            ptype == paddingRight ||
-            ptype == paddingBottom ||
-            ptype == paddingLeft ||
-            ptype == borderTopWidth ||
-            ptype == borderRightWidth ||
-            ptype == borderBottomWidth ||
-            ptype == borderLeftWidth ||
-            ptype == borderTopLeftRadius ||
-            ptype == borderTopRightRadius ||
-            ptype == borderBottomLeftRadius ||
-            ptype == borderBottomRightRadius ||
-            ptype == rowGap ||
-            ptype == columnGap
-        )
-            return value !is Length.none && value.toLayout.applyPercent(100) >= 0;
-        else static if (
-            ptype == flexGrow ||
-            ptype == flexShrink
-        )
-            return value >= 0;
-        else static if (
-            ptype == justifyItems ||
-            ptype == alignItems
-        )
-            return value != AlignItem.unspecified;
-        else
-            return true;
-    }
+    alias P = StyleProperty;
+    // dfmt off
+    static if (ptype == P.fontSize)
+        return value.toLayout.applyPercent(100) >= 1;
+    else static if (ptype == P.bgSize)
+        return value.x.toLayout.applyPercent(100) >= 0 && value.y.toLayout.applyPercent(100) >= 0;
+    else static if (false
+        || ptype == P.width
+        || ptype == P.height
+        || ptype == P.minWidth
+        || ptype == P.maxWidth
+        || ptype == P.minHeight
+        || ptype == P.maxHeight
+        || ptype == P.flexBasis
+        || ptype == P.lineHeight
+    )
+        return value.toLayout.applyPercent(100) >= 0;
+    else static if (false
+        || ptype == P.paddingTop
+        || ptype == P.paddingRight
+        || ptype == P.paddingBottom
+        || ptype == P.paddingLeft
+        || ptype == P.borderTopWidth
+        || ptype == P.borderRightWidth
+        || ptype == P.borderBottomWidth
+        || ptype == P.borderLeftWidth
+        || ptype == P.borderTopLeftRadius
+        || ptype == P.borderTopRightRadius
+        || ptype == P.borderBottomLeftRadius
+        || ptype == P.borderBottomRightRadius
+        || ptype == P.rowGap
+        || ptype == P.columnGap
+    )
+        return value !is Length.none && value.toLayout.applyPercent(100) >= 0;
+    else static if (ptype == P.flexGrow || ptype == P.flexShrink)
+        return value >= 0;
+    else static if (ptype == P.justifyItems || ptype == P.alignItems)
+        return value != AlignItem.unspecified;
+    else
+        return true;
+    // dfmt on
 }
 
 package SpecialCSSType getSpecialCSSType(StyleProperty ptype)
 {
+    // dfmt off
     switch (ptype) with (StyleProperty)
     {
         case zIndex:     return SpecialCSSType.zIndex;
@@ -438,11 +441,13 @@ package SpecialCSSType getSpecialCSSType(StyleProperty ptype)
         case transitionDelay:    return SpecialCSSType.time;
         default: return SpecialCSSType.none;
     }
+    // dfmt on
 }
 
 /// Get property name how it looks in CSS
 string getCSSName(StyleProperty ptype)
 {
+    // dfmt off
     final switch (ptype) with (StyleProperty)
     {
         case alignContent: return "align-content";
@@ -543,11 +548,13 @@ string getCSSName(StyleProperty ptype)
         case wordSpacing: return "word-spacing";
         case zIndex: return "z-index";
     }
+    // dfmt on
 }
 
 /// Returns true whether the property can be animated
 bool isAnimatable(StyleProperty ptype)
 {
+    // dfmt off
     switch (ptype) with (StyleProperty)
     {
         case width: .. case marginLeft:
@@ -569,11 +576,13 @@ bool isAnimatable(StyleProperty ptype)
         default:
             return false;
     }
+    // dfmt on
 }
 
 /// Returns true whether the property value implicitly inherits from parent widget
 bool isInherited(StyleProperty ptype)
 {
+    // dfmt off
     switch (ptype) with (StyleProperty)
     {
         case fontSize:
@@ -592,4 +601,5 @@ bool isInherited(StyleProperty ptype)
         default:
             return false;
     }
+    // dfmt on
 }

@@ -13,7 +13,9 @@ module beamui.graphics.images;
 
 import beamui.core.config;
 
+// dfmt off
 static if (BACKEND_GUI):
+// dfmt on
 import std.conv : to;
 import std.uni : toLower;
 static import std.file;
@@ -122,6 +124,6 @@ bool isPNG(string filename)
 /// Is it a JPG filename?
 bool isJPEG(string filename)
 {
-    return filename.endsWith(".jpg") || filename.endsWith(".jpeg") ||
-           filename.endsWith(".JPG") || filename.endsWith(".JPEG");
+    alias fn = filename;
+    return fn.endsWith(".jpg") || fn.endsWith(".jpeg") || fn.endsWith(".JPG") || fn.endsWith(".JPEG");
 }

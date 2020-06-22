@@ -23,8 +23,7 @@ TokenRange tokenizeCSS(string source)
 /// Lazy input range of CSS tokens
 struct TokenRange
 {
-    nothrow:
-
+nothrow:
     private Tokenizer* tokenizer;
     private Token _front;
 
@@ -36,7 +35,10 @@ struct TokenRange
     }
 
     /// Current token
-    @property ref const(Token) front() const return { return _front; }
+    @property ref const(Token) front() const return
+    {
+        return _front;
+    }
 
     /// Go for the next token. Check for empty before this
     void popFront()
@@ -66,8 +68,7 @@ struct TokenRange
 /// CSS token
 struct Token
 {
-    nothrow:
-
+nothrow:
     TokenType type;
     string text;
     string dimensionUnit;
@@ -171,8 +172,7 @@ private dstring preprocessInput(string src)
 // Parsing order was slightly changed.
 private struct Tokenizer
 {
-    nothrow:
-
+nothrow:
     import std.ascii;
     import std.uni : icmp, isSurrogate;
     import std.utf : toUTF8;
@@ -605,8 +605,7 @@ private struct Tokenizer
         }
         if (r[i] == 'e' || r[i] == 'E')
         {
-            if (isDigit(r[i + 1]) ||
-                (r[i + 1] == '-' || r[i + 1] == '+') && isDigit(r[i + 2]))
+            if (isDigit(r[i + 1]) || (r[i + 1] == '-' || r[i + 1] == '+') && isDigit(r[i + 2]))
             {
                 appender ~= r[i];
                 appender ~= r[i + 1];
@@ -624,6 +623,7 @@ private struct Tokenizer
             string repr;
             bool integer;
         }
+
         return Result(toUTF8(appender[]), integer);
     }
 
@@ -734,9 +734,9 @@ private struct Tokenizer
             for (size_t k = 0; k < 6 && hex[k] != 0; k++)
             {
                 start <<= 4;
-                end   <<= 4;
+                end <<= 4;
                 start |= hex[k] == '?' ? 0x0 : parseHexDigit(hex[k]);
-                end   |= hex[k] == '?' ? 0xF : parseHexDigit(hex[k]);
+                end |= hex[k] == '?' ? 0xF : parseHexDigit(hex[k]);
             }
             return Token(TokenType.unicodeRange, start, end);
         }
@@ -784,7 +784,10 @@ good'
         }
     `));
 
-    Token next() { return tr.consumeToken(); }
+    Token next()
+    {
+        return tr.consumeToken();
+    }
 
     assert(next == Token(TokenType.whitespace));
     assert(next == Token(TokenType.ident, "identifier-1"));

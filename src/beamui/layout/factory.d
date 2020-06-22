@@ -32,6 +32,7 @@ private LayoutInstantiator[string] factory;
 
 static this()
 {
+    // dfmt off
     factory = [
         "free": &free,
         "row": &row,
@@ -39,6 +40,7 @@ static this()
         "flex": &flex,
         "grid": &grid,
     ];
+    // dfmt on
 }
 
 private ILayout free()

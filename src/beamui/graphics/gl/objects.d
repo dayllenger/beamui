@@ -9,7 +9,9 @@ module beamui.graphics.gl.objects;
 
 import beamui.core.config;
 
+// dfmt off
 static if (USE_OPENGL):
+// dfmt on
 import beamui.core.geometry : BoxI, SizeI;
 import beamui.graphics.gl.api;
 import beamui.graphics.gl.errors;
@@ -34,7 +36,7 @@ struct RbId
 /// Buffer objects facility
 struct Buffer(GLenum target_)
 {
-    static nothrow:
+static nothrow:
 
     alias target = target_;
 
@@ -64,15 +66,16 @@ struct Buffer(GLenum target_)
 
 alias VBO = Buffer!GL_ARRAY_BUFFER;
 alias EBO = Buffer!GL_ELEMENT_ARRAY_BUFFER;
-
+// dfmt off
 enum TexFiltering : ubyte { sharp, smooth }
 enum TexMipmaps : bool { no, yes }
 enum TexWrap : ubyte { clamp, repeat }
+// dfmt on
 
 /// 2D texture facility
 struct Tex2D
 {
-    static nothrow:
+static nothrow:
 
     void bind(ref TexId id)
     {
@@ -101,10 +104,19 @@ struct Tex2D
 
     void setBasicParams(TexFiltering filter, TexMipmaps mipmap, TexWrap wrap)
     {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter == TexFiltering.smooth ? GL_LINEAR : GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter == TexFiltering.smooth ?
-            (!mipmap ? GL_LINEAR : GL_LINEAR_MIPMAP_LINEAR) :
-            (!mipmap ? GL_NEAREST : GL_NEAREST_MIPMAP_NEAREST));
+        GLenum mag, min;
+        if (filter == TexFiltering.smooth)
+        {
+            mag = GL_LINEAR;
+            min = mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR;
+        }
+        else
+        {
+            mag = GL_NEAREST;
+            min = mipmap ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
+        }
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min);
 
         if (wrap == TexWrap.clamp)
         {
@@ -115,14 +127,14 @@ struct Tex2D
     }
 
     void resize(SizeI size, GLint level, GLint internalFormat, GLenum format, GLenum type)
-        in(size.w > 0 && size.h > 0)
+    in (size.w > 0 && size.h > 0)
     {
         checkgl!glTexImage2D(GL_TEXTURE_2D, level, internalFormat, size.w, size.h, 0, format, type, null);
     }
 
     void copy(TexId oldTex, SizeI oldSize)
-        in(oldTex.handle)
-        in(oldSize.w > 0 && oldSize.h > 0)
+    in (oldTex.handle)
+    in (oldSize.w > 0 && oldSize.h > 0)
     {
         // create a framebuffer
         GLuint fbo;
@@ -152,7 +164,7 @@ struct Tex2D
 /// Depth-stencil renderbuffer facility
 struct DepthStencilRB
 {
-    static nothrow:
+static nothrow:
 
     void bind(ref RbId id)
     {
@@ -173,7 +185,7 @@ struct DepthStencilRB
     }
 
     void resize(SizeI size)
-        in(size.w > 0 && size.h > 0)
+    in (size.w > 0 && size.h > 0)
     {
         checkgl!glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.w, size.h);
     }

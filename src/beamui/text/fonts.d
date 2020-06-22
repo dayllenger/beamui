@@ -87,6 +87,7 @@ class Font : RefCountedObject
 {
     @property
     {
+        // dfmt off
         /// Font size (as requested from font engine)
         final int size() const { return _desc.size; }
         /// Actual font height including interline space
@@ -103,6 +104,7 @@ class Font : RefCountedObject
         final FontFamily family() const { return _desc.family; }
         /// Does this font have kerning?
         final bool hasKerning() const { return _desc.hasKerning; }
+        // dfmt on
 
         /// Returns true if font object is not yet initialized / loaded
         abstract bool isNull() const;

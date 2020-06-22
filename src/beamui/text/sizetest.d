@@ -20,6 +20,7 @@ import beamui.text.shaping;
 */
 struct TextSizeTester
 {
+    // dfmt off
     @property
     {
         /// Text data
@@ -31,6 +32,7 @@ struct TextSizeTester
             oldStyle.font = null; // invalidate
         }
     }
+    // dfmt on
 
     /// Text style to adjust properties
     TextLayoutStyle style;

@@ -23,6 +23,8 @@ alias ID = uint;
 */
 struct Atlas
 {
+nothrow:
+
     private
     {
         const SizeI _maxSize;
@@ -38,15 +40,14 @@ struct Atlas
         SizeI[] minFailed; // by rows
     }
 
-    nothrow:
     @disable this();
     @disable this(this);
 
     this(SizeI maxSize, SizeI initialSize, bool onePixelGap)
-        in(0 < maxSize.w && maxSize.w <= 2 ^^ 16)
-        in(0 < maxSize.h && maxSize.h <= 2 ^^ 16)
-        in(0 < initialSize.w && initialSize.w <= maxSize.w)
-        in(0 < initialSize.h && initialSize.h <= maxSize.h)
+    in (0 < maxSize.w && maxSize.w <= 2 ^^ 16)
+    in (0 < maxSize.h && maxSize.h <= 2 ^^ 16)
+    in (0 < initialSize.w && initialSize.w <= maxSize.w)
+    in (0 < initialSize.h && initialSize.h <= maxSize.h)
     {
         _maxSize = maxSize;
         _size = _initialSize = initialSize;
@@ -69,7 +70,7 @@ struct Atlas
     }
 
     private AtlasResult add(ID id, SizeI size)
-        in(size.w > 0 && size.h > 0)
+    in (size.w > 0 && size.h > 0)
     {
         const sizePlusGap = SizeI(size.w + gap, size.h + gap);
         // find free cells
@@ -308,10 +309,10 @@ struct Atlas
 
 struct AtlasList(ubyte MAX_PAGES, SizeI MAX_SIZE, SizeI INITIAL_SIZE, bool onePixelGap)
 {
+nothrow:
     private Atlas*[MAX_PAGES] pages;
     private ubyte pageCount;
 
-    nothrow:
     @disable this(this);
 
     ~this()

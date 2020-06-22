@@ -56,8 +56,7 @@ interface PathIter
 
 interface StrokeBuilder
 {
-    nothrow:
-
+nothrow:
     void beginContour();
     void add(Vec2 left, Vec2 right);
     Buf!Vec2* beginFanLeft(Vec2 center);
@@ -136,8 +135,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
             // the last point is equal to the first point here
             norm0 = lastN.rotated90fromYtoX;
             norm1 = firstN.rotated90fromXtoY;
-            makeJoin(last, norm0, norm1, dotProduct(norm0, norm1), r,
-                pen.join, pen.miterLimit, builder);
+            makeJoin(last, norm0, norm1, dotProduct(norm0, norm1), r, pen.join, pen.miterLimit, builder);
             // close the loop
             builder.add(first + firstV, first - firstV);
         }
@@ -165,7 +163,8 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
             builder.add(points[1] - outside + v, points[1] - outside - v);
         }
         else
-        {   // starting cap
+        {
+            // starting cap
             if (pen.cap == LineCap.round)
                 makeRoundCap(points[0], outside, builder);
             // the body
@@ -182,7 +181,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
         {
             // make a circle
             makeRoundCap(points[0], Vec2(-r, 0), builder);
-            makeRoundCap(points[0], Vec2( r, 0), builder);
+            makeRoundCap(points[0], Vec2(r, 0), builder);
         }
         else if (pen.cap == LineCap.square)
         {
@@ -194,8 +193,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
     }
 }
 
-private void makeJoin(Vec2 p, Vec2 n0, Vec2 n1, float ncos, float r, LineJoin type, float miterLimit,
-    StrokeBuilder builder)
+private void makeJoin(Vec2 p, Vec2 n0, Vec2 n1, float ncos, float r, LineJoin type, float miterLimit, StrokeBuilder builder)
 {
     // if flat enough, join simply by the first points
     const mul1 = r / 2;
@@ -204,7 +202,7 @@ private void makeJoin(Vec2 p, Vec2 n0, Vec2 n1, float ncos, float r, LineJoin ty
     if (cusp || fequal2(ncos * mul2, mul2))
     {
         const v = n1 * r;
-        if (ncos < 0)  // acute angle, need to flip
+        if (ncos < 0) // acute angle, need to flip
         {
             builder.add(p - v, p + v);
             builder.breakStrip();
@@ -276,14 +274,7 @@ private void makeRoundCap(Vec2 p, Vec2 outside, StrokeBuilder builder)
 
     const n = outside.rotated90fromYtoX;
     outside *= 4.0f / 3.0f;
-    flattenCubicBezier(
-        *positions,
-        p + n,
-        p + n + outside,
-        p - n + outside,
-        p - n,
-        true,
-    );
+    flattenCubicBezier(*positions, p + n, p + n + outside, p - n + outside, p - n, true);
 
     builder.endFan();
 }

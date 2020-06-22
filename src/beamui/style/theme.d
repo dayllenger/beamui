@@ -26,7 +26,10 @@ import CSS = beamui.css.css;
 final class Theme
 {
     /// Unique name of theme
-    @property string name() const { return _name; }
+    @property string name() const
+    {
+        return _name;
+    }
 
     private
     {
@@ -35,10 +38,11 @@ final class Theme
             Style[] all;
             Style[] normal;
         }
+
         struct Store
         {
             Bag[string] byTag;
-            Style[Selector*] map;
+            Style[Selector* ] map;
         }
 
         string _name;
@@ -72,7 +76,7 @@ final class Theme
 
     /// Get a style OR create it if it's not exist
     Style get(Selector* selector, string namespace)
-        in(selector)
+    in (selector)
     {
         Store* store = namespace in _styles;
         if (store)
@@ -113,7 +117,10 @@ final class Theme
 
 private __gshared Theme _currentTheme;
 /// Current theme accessor
-Theme currentTheme() { return _currentTheme; }
+Theme currentTheme()
+{
+    return _currentTheme;
+}
 /// Set a new theme to be current
 void currentTheme(Theme theme)
 {
@@ -184,7 +191,7 @@ void setStyleSheet(Theme theme, string source, string namespace = "beamui")
 private:
 
 void loadThemeFromCSS(Theme theme, const CSS.StyleSheet stylesheet, string ns)
-    in(ns.length)
+in (ns.length)
 {
     Decoder[string] decoders = createDecoders();
 
@@ -241,8 +248,7 @@ void applyAtRule(Theme theme, const CSS.AtRule rule, string ns)
         Log.w("CSS: unknown at-rule keyword: ", kw);
 }
 
-void applyRule(Theme theme, Decoder[string] decoders, const CSS.Selector selector,
-        const CSS.Property[] properties, string ns)
+void applyRule(Theme theme, Decoder[string] decoders, const CSS.Selector selector, const CSS.Property[] properties, string ns)
 {
     auto style = theme.get(makeSelector(selector), ns);
     appendStyleDeclaration(style._props, decoders, properties);
@@ -271,6 +277,7 @@ Selector* makeSelector(const CSS.Selector selector)
 }
 
 import std.typecons : Nullable, nullable;
+
 // mutates `entries`
 Nullable!(Selector.Combinator) makeSelectorPart(Selector* sel, ref const(CSS.SelectorEntry)[] entries, size_t line)
 {
@@ -433,11 +440,13 @@ Decoder[string] createDecoders()
     Decoder[string] map;
 
     static foreach (p; PropTypes.tupleof)
-    {{
-        enum ptype = __traits(getMember, StyleProperty, __traits(identifier, p));
-        enum cssname = getCSSName(ptype);
-        map[cssname] = &decodeLonghand!(ptype, typeof(p));
-    }}
+    {
+        {
+            enum ptype = __traits(getMember, StyleProperty, __traits(identifier, p));
+            enum cssname = getCSSName(ptype);
+            map[cssname] = &decodeLonghand!(ptype, typeof(p));
+        }
+    }
 
     // explode shorthands
     map["margin"] = &decodeShorthandMargin;
@@ -470,7 +479,7 @@ Decoder[string] createDecoders()
 alias P = StyleProperty;
 
 void decodeLonghand(P ptype, T)(ref StylePropertyList list, const(CSS.Token)[] tokens)
-    in(tokens.length)
+in (tokens.length)
 {
     if (setMeta(list, tokens, ptype))
         return;
@@ -558,6 +567,7 @@ void decodeShorthandPair(T, P first, P second)(ref StylePropertyList list, const
         setOrInitialize!second(list, tokens, false, res.val[1]);
     }
 }
+
 void decodeShorthandInsets(P top, P right, P bottom, P left)(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     if (setMeta(list, tokens, top, right, bottom, left))
@@ -573,6 +583,7 @@ void decodeShorthandInsets(P top, P right, P bottom, P left)(ref StylePropertyLi
         setOrInitialize!left(list, tokens, false, arr[arr.length == 4 ? 3 : arr.length == 1 ? 0 : 1]);
     }
 }
+
 void decodeShorthandBorderSide(P width, P style, P color)(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     if (setMeta(list, tokens, width, style, color))
@@ -585,6 +596,7 @@ void decodeShorthandBorderSide(P width, P style, P color)(ref StylePropertyList 
         setOrInitialize!color(list, tokens, res.val[2].err, res.val[2].val);
     }
 }
+
 void decodeShorthandGridLine(P start, P end)(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     if (setMeta(list, tokens, start, end))
@@ -602,6 +614,7 @@ void decodeShorthandMargin(ref StylePropertyList list, const(CSS.Token)[] tokens
 {
     decodeShorthandInsets!(P.marginTop, P.marginRight, P.marginBottom, P.marginLeft)(list, tokens);
 }
+
 void decodeShorthandPadding(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandInsets!(P.paddingTop, P.paddingRight, P.paddingBottom, P.paddingLeft)(list, tokens);
@@ -611,14 +624,17 @@ void decodeShorthandPlaceContent(ref StylePropertyList list, const(CSS.Token)[] 
 {
     decodeShorthandPair!(Distribution, P.alignContent, P.justifyContent)(list, tokens);
 }
+
 void decodeShorthandPlaceItems(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandPair!(AlignItem, P.alignItems, P.justifyItems)(list, tokens);
 }
+
 void decodeShorthandPlaceSelf(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandPair!(AlignItem, P.alignSelf, P.justifySelf)(list, tokens);
 }
+
 void decodeShorthandGap(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandPair!(Length, P.rowGap, P.columnGap)(list, tokens);
@@ -649,6 +665,7 @@ void decodeShorthandFlexFlow(ref StylePropertyList list, const(CSS.Token)[] toke
         setOrInitialize!(P.flexWrap)(list, tokens, res.val[1].err, res.val[1].val);
     }
 }
+
 void decodeShorthandFlex(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     if (setMeta(list, tokens, P.flexGrow, P.flexShrink, P.flexBasis))
@@ -676,10 +693,12 @@ void decodeShorthandGridArea(ref StylePropertyList list, const(CSS.Token)[] toke
         setOrInitialize!(P.gridColumnEnd)(list, tokens, false, ln);
     }
 }
+
 void decodeShorthandGridRow(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandGridLine!(P.gridRowStart, P.gridRowEnd)(list, tokens);
 }
+
 void decodeShorthandGridColumn(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandGridLine!(P.gridColumnStart, P.gridColumnEnd)(list, tokens);
@@ -687,12 +706,14 @@ void decodeShorthandGridColumn(ref StylePropertyList list, const(CSS.Token)[] to
 
 void decodeShorthandBorder(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
+    // dfmt off
     if (setMeta(list, tokens,
-            P.borderTopWidth, P.borderTopStyle, P.borderTopColor,
-            P.borderRightWidth, P.borderRightStyle, P.borderRightColor,
-            P.borderBottomWidth, P.borderBottomStyle, P.borderBottomColor,
-            P.borderLeftWidth, P.borderLeftStyle, P.borderLeftColor))
+            P.borderTopColor, P.borderRightColor, P.borderBottomColor, P.borderLeftColor,
+            P.borderTopStyle, P.borderRightStyle, P.borderBottomStyle, P.borderLeftStyle,
+            P.borderTopWidth, P.borderRightWidth, P.borderBottomWidth, P.borderLeftWidth
+    ))
         return;
+    // dfmt on
 
     if (auto res = decodeBorder(tokens))
     {
@@ -715,6 +736,7 @@ void decodeShorthandBorder(ref StylePropertyList list, const(CSS.Token)[] tokens
         setOrInitialize!(P.borderLeftColor)(list, tokens, creset, cv);
     }
 }
+
 void decodeShorthandBorderColors(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     if (setMeta(list, tokens, P.borderTopColor, P.borderRightColor, P.borderBottomColor, P.borderLeftColor))
@@ -729,6 +751,7 @@ void decodeShorthandBorderColors(ref StylePropertyList list, const(CSS.Token)[] 
         setOrInitialize!(P.borderLeftColor)(list, tokens, false, v);
     }
 }
+
 void decodeShorthandBorderStyle(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     if (setMeta(list, tokens, P.borderTopStyle, P.borderRightStyle, P.borderBottomStyle, P.borderLeftStyle))
@@ -743,30 +766,36 @@ void decodeShorthandBorderStyle(ref StylePropertyList list, const(CSS.Token)[] t
         setOrInitialize!(P.borderLeftStyle)(list, tokens, false, v);
     }
 }
+
 void decodeShorthandBorderWidth(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandInsets!(P.borderTopWidth, P.borderRightWidth, P.borderBottomWidth, P.borderLeftWidth)(list, tokens);
 }
+
 void decodeShorthandBorderTop(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandBorderSide!(P.borderTopWidth, P.borderTopStyle, P.borderTopColor)(list, tokens);
 }
+
 void decodeShorthandBorderRight(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandBorderSide!(P.borderRightWidth, P.borderRightStyle, P.borderRightColor)(list, tokens);
 }
+
 void decodeShorthandBorderBottom(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandBorderSide!(P.borderBottomWidth, P.borderBottomStyle, P.borderBottomColor)(list, tokens);
 }
+
 void decodeShorthandBorderLeft(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
     decodeShorthandBorderSide!(P.borderLeftWidth, P.borderLeftStyle, P.borderLeftColor)(list, tokens);
 }
+
 void decodeShorthandBorderRadii(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
-    decodeShorthandInsets!(P.borderTopLeftRadius, P.borderTopRightRadius,
-            P.borderBottomLeftRadius, P.borderBottomRightRadius)(list, tokens);
+    decodeShorthandInsets!(P.borderTopLeftRadius, P.borderTopRightRadius, P.borderBottomLeftRadius, P
+            .borderBottomRightRadius)(list, tokens);
 }
 
 void decodeShorthandTextDecor(ref StylePropertyList list, const(CSS.Token)[] tokens)
@@ -787,9 +816,7 @@ void decodeShorthandTextDecor(ref StylePropertyList list, const(CSS.Token)[] tok
 
 void decodeShorthandTransition(ref StylePropertyList list, const(CSS.Token)[] tokens)
 {
-    if (setMeta(list, tokens,
-            P.transitionProperty, P.transitionDuration,
-            P.transitionTimingFunction, P.transitionDelay))
+    if (setMeta(list, tokens, P.transitionProperty, P.transitionDuration, P.transitionTimingFunction, P.transitionDelay))
         return;
 
     if (auto res = decodeTransition(tokens))

@@ -9,7 +9,9 @@ module beamui.graphics.gl.textures;
 
 import beamui.core.config;
 
+// dfmt off
 static if (USE_OPENGL):
+// dfmt on
 import beamui.core.geometry : BoxI, SizeI;
 import beamui.graphics.atlas;
 import beamui.graphics.bitmap : Bitmap;
@@ -67,7 +69,7 @@ struct TextureCache
 
     /// Get a view onto uploaded bitmap, or upload it if not done yet. The `bitmap` must not be empty
     TextureView getTexture(ref const Bitmap bitmap)
-        in(bitmap)
+    in (bitmap)
     {
         const sz = SizeI(bitmap.width, bitmap.height);
         const res = atlas.findOrAdd(bitmap.id, &sz);
@@ -124,6 +126,7 @@ struct TextureCache
 /// Glyph cache is the same thing as `TextureCache`, but for glyph images
 struct GlyphCache
 {
+nothrow:
     enum INITIAL_SIZE = SizeI(128, 128);
     enum MAX_SIZE = SizeI(2048, 2048);
     enum MAX_PAGES = 8;
@@ -131,7 +134,6 @@ struct GlyphCache
     private AtlasList!(MAX_PAGES, MAX_SIZE, INITIAL_SIZE, true) atlas;
     private CachePage[MAX_PAGES] pages;
 
-    nothrow:
     @disable this(this);
 
     ~this()
@@ -145,7 +147,7 @@ struct GlyphCache
     }
 
     TextureView getTexture(GlyphRef glyph)
-        in(glyph)
+    in (glyph)
     {
         const sz = SizeI(glyph.blackBoxX, glyph.blackBoxY);
         const res = atlas.findOrAdd(glyph.id, &sz);
@@ -202,10 +204,10 @@ enum MAX_GRADIENTS = 1024;
 
 struct ColorStopAtlas
 {
+nothrow:
     private TexId _tex;
     private uint count;
 
-    nothrow:
     @disable this(this);
 
     void initialize()
@@ -222,7 +224,10 @@ struct ColorStopAtlas
         Tex2D.del(_tex);
     }
 
-    TexId tex() const { return _tex; }
+    TexId tex() const
+    {
+        return _tex;
+    }
 
     uint add(ref const ColorStopAtlasRow row)
     {
@@ -250,8 +255,8 @@ struct ColorStopAtlasRow
     private uint length;
 
     this(const Color[] cs, float opacity) nothrow
-        in(cs.length >= 2)
-        in(0 < opacity && opacity <= 1)
+    in (cs.length >= 2)
+    in (0 < opacity && opacity <= 1)
     {
         length = cs.length < MAX_STOPS ? cast(uint)cs.length : MAX_STOPS;
         foreach (i; 0 .. length)

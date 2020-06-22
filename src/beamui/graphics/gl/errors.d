@@ -9,9 +9,10 @@ module beamui.graphics.gl.errors;
 
 import beamui.core.config;
 
+// dfmt off
 static if (USE_OPENGL):
 nothrow:
-
+// dfmt on
 import std.conv : to;
 import beamui.core.logger;
 import beamui.graphics.gl.api : GLenum, glGetError, GL_NO_ERROR;
@@ -86,7 +87,7 @@ string glErrorToString(GLenum err)
 bool checkFramebuffer(GLenum target = GL_FRAMEBUFFER)
 {
     const status = glCheckFramebufferStatus(target);
-
+    // dfmt off
     string err;
     switch (status)
     {
@@ -103,7 +104,7 @@ bool checkFramebuffer(GLenum target = GL_FRAMEBUFFER)
         case 0x8DA8: err = "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"; break;
         default:     err = to!string(status); break;
     }
-
+    // dfmt on
     Log.e("FBO error: ", err);
     return false;
 }

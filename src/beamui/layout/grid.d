@@ -55,15 +55,14 @@ struct GridNamedAreas
 
 struct GridLineName
 {
+nothrow:
     private bool span;
     private int num;
     private string name;
 
-    nothrow:
-
     this(bool span, int num)
-        in(num > 0)
-        in(num < 10_000)
+    in (num > 0)
+    in (num < 10_000)
     {
         this.span = span;
         this.num = num;
@@ -77,6 +76,7 @@ struct GridLineName
 
 struct TrackSize
 {
+nothrow:
     private enum Type : ubyte
     {
         common,
@@ -84,40 +84,45 @@ struct TrackSize
         minContent,
         maxContent,
     }
+
     private union
     {
         Length common;
         float fr;
     }
+
     private Type type;
 
-    nothrow:
     private this(int);
 
     static TrackSize automatic()
     {
         return TrackSize.init;
     }
+
     static TrackSize fromLength(Length len)
     {
         TrackSize ts;
         ts.common = len;
         return ts;
     }
+
     static TrackSize fromFraction(float fr)
-        in(fr >= 0)
+    in (fr >= 0)
     {
         TrackSize ts;
         ts.fr = fr;
         ts.type = Type.fr;
         return ts;
     }
+
     static TrackSize minContent()
     {
         TrackSize ts;
         ts.type = Type.minContent;
         return ts;
     }
+
     static TrackSize maxContent()
     {
         TrackSize ts;
@@ -146,6 +151,7 @@ private struct TrackBoundaries
 
 private struct Track
 {
+nothrow:
     enum Sizing : ubyte
     {
         automatic,
@@ -154,12 +160,11 @@ private struct Track
         minContent,
         maxContent,
     }
+
     Sizing sizing;
     LayoutLength size;
     TrackBoundaries bs;
     float factor = 0;
-
-    nothrow:
 
     this(TrackSize ts)
     {
@@ -413,6 +418,7 @@ class GridLayout : ILayout
             }
         }
     }
+
     private void distributeSizesAcrossRows(ref const Boundaries bs, BoxI area)
     {
         if (area.h == 1)
@@ -743,6 +749,7 @@ SizeI resolveImplicitPositions(GridItem[] items, SizeI size, GridFlow flow)
         foreach (row; occupied[r.top .. r.bottom])
             row[r.left .. r.right] = true;
     }
+
     static bool fits(bool[] row, ref int left, int right)
     {
         foreach_reverse (x; left .. right)
@@ -861,9 +868,9 @@ SizeI resolveImplicitPositions(GridItem[] items, SizeI size, GridFlow flow)
 }
 
 void sizeTracks(const Track[] tracks, float[] sizes, const float available)
-    in(tracks.length)
-    in(tracks.length == sizes.length)
-    in(isFinite(available))
+in (tracks.length)
+in (tracks.length == sizes.length)
+in (isFinite(available))
 {
     // set the base size from minimum
     float required = 0;

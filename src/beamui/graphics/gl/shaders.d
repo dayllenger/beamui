@@ -9,7 +9,9 @@ module beamui.graphics.gl.shaders;
 
 import beamui.core.config;
 
+// dfmt off
 static if (USE_OPENGL):
+// dfmt on
 import beamui.core.functions : eliminate;
 import beamui.core.geometry : BoxI, SizeI;
 import beamui.core.linalg : Mat2x3, Vec2;
@@ -23,6 +25,7 @@ package:
 /// Contains all standard shaders. They are compiled on demand, so every getter may return `null`
 struct StdShaders
 {
+nothrow:
     private
     {
         ShaderEmpty _empty;
@@ -37,9 +40,8 @@ struct StdShaders
         ShaderGPAA _gpaa;
     }
 
-    nothrow:
     @disable this(this);
-
+    // dfmt off
     ShaderEmpty     empty() { return take(_empty); }
     ShaderSolid     solid() { return take(_solid); }
     ShaderLinear   linear() { return take(_linear); }
@@ -50,6 +52,7 @@ struct StdShaders
     ShaderCompose compose() { return take(_compose); }
     ShaderBlend     blend() { return take(_blend); }
     ShaderGPAA       gpaa() { return take(_gpaa); }
+    // dfmt on
 
     // non-cached compilation of all the shaders may take 200 ms or more,
     // so we won't compile until it's really needed
@@ -138,7 +141,7 @@ private enum SamplerIndex
 
 private struct Locations(string[] names)
 {
-    nothrow:
+nothrow:
 
     static foreach (name; names)
         mixin("GLint " ~ name ~ ";");
@@ -158,7 +161,7 @@ private struct Locations(string[] names)
 
 abstract class ShaderBase : GLProgram
 {
-    nothrow:
+nothrow:
 
     override @property string vertexSource() const
     {
@@ -180,14 +183,12 @@ abstract class ShaderBase : GLProgram
         Tex2D.setup(p.dataStore, SamplerIndex.data);
     }
 
-    private Locations!([
-        "pixelSize", "dataStore"
-    ]) loc;
+    private Locations!(["pixelSize", "dataStore"]) loc;
 }
 
 final class ShaderEmpty : ShaderBase
 {
-    nothrow:
+nothrow:
 
     override @property string fragmentSource() const
     {
@@ -202,12 +203,14 @@ final class ShaderEmpty : ShaderBase
 
 final class ShaderSolid : ShaderBase
 {
-    nothrow:
+nothrow:
 
     override @property string vertexSource() const
     {
-        return "#define DATA_COLOR\n" ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        enum defs = "#define DATA_COLOR\n";
+        return defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
     }
+
     override @property string fragmentSource() const
     {
         return import("solid.fs.glsl");
@@ -226,7 +229,7 @@ final class ShaderSolid : ShaderBase
 
 final class ShaderLinear : ShaderBase
 {
-    nothrow:
+nothrow:
 
     override @property string fragmentSource() const
     {
@@ -253,14 +256,16 @@ final class ShaderLinear : ShaderBase
         Tex2D.setup(p.colors, SamplerIndex.colors);
     }
 
+    // dfmt off
     private Locations!([
         "viewportHeight", "start", "end", "stopsCount", "stops", "colors", "atlasIndex"
     ]) loc;
+    // dfmt on
 }
 
 final class ShaderRadial : ShaderBase
 {
-    nothrow:
+nothrow:
 
     override @property string fragmentSource() const
     {
@@ -287,14 +292,16 @@ final class ShaderRadial : ShaderBase
         Tex2D.setup(p.colors, SamplerIndex.colors);
     }
 
+    // dfmt off
     private Locations!([
         "viewportHeight", "center", "radius", "stopsCount", "stops", "colors", "atlasIndex"
     ]) loc;
+    // dfmt on
 }
 
 final class ShaderPattern : ShaderBase
 {
-    nothrow:
+nothrow:
 
     override @property string fragmentSource() const
     {
@@ -307,7 +314,7 @@ final class ShaderPattern : ShaderBase
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsPattern p)
-        in(p.tex && p.texSize)
+    in (p.tex && p.texSize)
     {
         super.prepare(pbase);
         glUniform1i(loc.viewportHeight, pbase.viewportHeight);
@@ -327,19 +334,23 @@ final class ShaderPattern : ShaderBase
         Tex2D.setup(*p.tex, SamplerIndex.texture);
     }
 
+    // dfmt off
     private Locations!([
         "viewportHeight", "tex", "position", "size", "imgSize", "matrix", "opacity"
     ]) loc;
+    // dfmt on
 }
 
 final class ShaderImage : ShaderBase
 {
-    nothrow:
+nothrow:
 
     override @property string vertexSource() const
     {
-        return "#define UV\n" ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        enum defs = "#define UV\n";
+        return defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
     }
+
     override @property string fragmentSource() const
     {
         return import("image.fs.glsl");
@@ -352,7 +363,7 @@ final class ShaderImage : ShaderBase
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsImage p)
-        in(p.tex && p.texSize)
+    in (p.tex && p.texSize)
     {
         super.prepare(pbase);
         glUniform2f(loc.texPixelSize, 1.0f / p.texSize.w, 1.0f / p.texSize.h);
@@ -362,19 +373,19 @@ final class ShaderImage : ShaderBase
         Tex2D.setup(*p.tex, SamplerIndex.texture);
     }
 
-    private Locations!([
-        "texPixelSize", "tex", "opacity"
-    ]) loc;
+    private Locations!(["texPixelSize", "tex", "opacity"]) loc;
 }
 
 final class ShaderText : ShaderBase
 {
-    nothrow:
+nothrow:
 
     override @property string vertexSource() const
     {
-        return "#define DATA_COLOR\n" ~ "#define UV\n" ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        enum defs = "#define DATA_COLOR\n" ~ "#define UV\n";
+        return defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
     }
+
     override @property string fragmentSource() const
     {
         return import("text.fs.glsl");
@@ -387,7 +398,7 @@ final class ShaderText : ShaderBase
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsText p)
-        in(p.tex && p.texSize)
+    in (p.tex && p.texSize)
     {
         super.prepare(pbase);
         glUniform2f(loc.texPixelSize, 1.0f / p.texSize.w, 1.0f / p.texSize.h);
@@ -396,19 +407,19 @@ final class ShaderText : ShaderBase
         Tex2D.setup(*p.tex, SamplerIndex.texture);
     }
 
-    private Locations!([
-        "texPixelSize", "tex"
-    ]) loc;
+    private Locations!(["texPixelSize", "tex"]) loc;
 }
 
 final class ShaderCompose : ShaderBase
 {
-    nothrow:
+nothrow:
 
     override @property string vertexSource() const
     {
-        return "#define COMPOSITION\n" ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        enum defs = "#define COMPOSITION\n";
+        return defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
     }
+
     override @property string fragmentSource() const
     {
         return import("composition.fs.glsl");
@@ -430,19 +441,19 @@ final class ShaderCompose : ShaderBase
         Tex2D.setup(p.tex, SamplerIndex.texture);
     }
 
-    private Locations!([
-        "tex", "opacity", "texHeight", "texPos"
-    ]) loc;
+    private Locations!(["tex", "opacity", "texHeight", "texPos"]) loc;
 }
 
 final class ShaderBlend : ShaderBase
 {
-    nothrow:
+nothrow:
 
     override @property string vertexSource() const
     {
-        return "#define COMPOSITION\n" ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        enum defs = "#define COMPOSITION\n";
+        return defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
     }
+
     override @property string fragmentSource() const
     {
         return import("blending.fs.glsl");
@@ -464,19 +475,18 @@ final class ShaderBlend : ShaderBase
         Tex2D.setup(p.tex, SamplerIndex.texture);
     }
 
-    private Locations!([
-        "tex", "opacity", "texHeight", "texPos"
-    ]) loc;
+    private Locations!(["tex", "opacity", "texHeight", "texPos"]) loc;
 }
 
 final class ShaderGPAA : GLProgram
 {
-    nothrow:
+nothrow:
 
     override @property string vertexSource() const
     {
         return import("gpaa.vs.glsl") ~ import("datastore.inc.glsl");
     }
+
     override @property string fragmentSource() const
     {
         return import("gpaa.fs.glsl");
@@ -505,7 +515,9 @@ final class ShaderGPAA : GLProgram
         Tex2D.setup(p.tex, SamplerIndex.texture);
     }
 
+    // dfmt off
     private Locations!([
         "pixelSize", "viewportHeight", "dataStore", "layerOffsets", "tex", "texPixelSize"
     ]) loc;
+    // dfmt on
 }

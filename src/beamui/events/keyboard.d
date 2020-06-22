@@ -15,9 +15,9 @@ import beamui.core.functions;
 enum KeyAction : uint
 {
     keyDown, /// Key is pressed
-    keyUp,   /// Key is released
-    text,    /// Text is entered
-    repeat,  /// Repeated key down
+    keyUp, /// Key is released
+    text, /// Text is entered
+    repeat, /// Repeated key down
 }
 
 /** Keyboard modifier flags for `KeyEvent`.
@@ -66,7 +66,7 @@ enum Key : uint
     backspace = 8, /// Backspace
     tab = 9, /// Tab
     enter = 0x0D, /// Return/enter key
-    shift = 0x10,  /// Shift
+    shift = 0x10, /// Shift
     control = 0x11, /// Ctrl
     alt = 0x12, /// Alt
     pause = 0x13, /// Pause
@@ -189,8 +189,7 @@ enum Key : uint
 /// Keyboard event
 final class KeyEvent
 {
-    nothrow:
-
+nothrow:
     private
     {
         KeyAction _action;
@@ -209,6 +208,7 @@ final class KeyEvent
 
     @property
     {
+        // dfmt off
         /// Key action (keyDown, keyUp, text, repeat)
         KeyAction action() const { return _action; }
         /// Key code from `Key` enum
@@ -217,6 +217,7 @@ final class KeyEvent
         KeyMods allModifiers() const { return _mods; }
         /// Entered text, for `text` action
         dstring text() const { return _text; }
+        // dfmt on
 
         /// Get modifiers, not counting the difference between left or right
         KeyMods modifiers() const
@@ -251,6 +252,7 @@ final class KeyEvent
 */
 Key parseKeyName(string name)
 {
+    // dfmt off
     switch (name)
     {
         case "A": case "a": return Key.A;
@@ -348,6 +350,7 @@ Key parseKeyName(string name)
         default:
             return Key.none;
     }
+    // dfmt off
 }
 
 /** Convert `Key` enum item into a human readable key name.
@@ -356,6 +359,7 @@ Key parseKeyName(string name)
 */
 string keyName(Key key)
 {
+    // dfmt off
     switch (key)
     {
         case Key.A: return "A";
@@ -456,4 +460,5 @@ string keyName(Key key)
             catch (Exception)
                 assert(0);
     }
+    // dfmt on
 }

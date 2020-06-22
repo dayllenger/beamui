@@ -49,8 +49,8 @@ enum MouseButton : uint
 /// Represents pressed mouse buttons during `MouseEvent`
 enum MouseMods : uint
 {
-    none = 0,  /// No button
-    left = 1,  /// Left mouse button
+    none = 0, /// No button
+    left = 1, /// Left mouse button
     right = 2, /// Right mouse button
     middle = 4, /// Middle mouse button
     xbutton1 = 8, /// Additional mouse button 1
@@ -60,6 +60,7 @@ enum MouseMods : uint
 /// Convert `MouseButton` to `MouseMods`
 MouseMods toMouseMods(MouseButton btn)
 {
+    // dfmt off
     final switch (btn) with (MouseButton)
     {
         case none: return MouseMods.none;
@@ -69,6 +70,7 @@ MouseMods toMouseMods(MouseButton btn)
         case xbutton1: return MouseMods.xbutton1;
         case xbutton2: return MouseMods.xbutton2;
     }
+    // dfmt on
 }
 
 /// Double click max interval, milliseconds; may be changed by platform
@@ -77,8 +79,7 @@ __gshared long DOUBLE_CLICK_THRESHOLD_MS = 400;
 /// Mouse button state details for `MouseEvent`
 struct ButtonDetails
 {
-    nothrow:
-
+nothrow:
     private
     {
         /// Timestamp of the button press (0 if the button is up)
@@ -97,6 +98,7 @@ struct ButtonDetails
         bool _tripleClick;
     }
 
+    // dfmt off
     @property
     {
         /// Returns true if button is made down shortly after up
@@ -131,6 +133,7 @@ struct ButtonDetails
         /// Bit set of key modifiers saved on button down
         KeyMods keyMods() const { return _keyMods; }
     }
+    // dfmt on
 
     void reset()
     {
@@ -150,8 +153,7 @@ struct ButtonDetails
         collectException(std.datetime.Clock.currStdTime, _downTs);
         _upTs = 0;
         // allow only slight cursor movements when generating double/triple clicks
-        if (_downTs - oldDownTs < DOUBLE_CLICK_THRESHOLD_MS * 10_000 &&
-            abs(_downX - x) < 5 && abs(_downY - y) < 5)
+        if (_downTs - oldDownTs < DOUBLE_CLICK_THRESHOLD_MS * 10_000 && abs(_downX - x) < 5 && abs(_downY - y) < 5)
         {
             _tripleClick = _downTs - _prevDownTs < DOUBLE_CLICK_THRESHOLD_MS * 20_000;
             _doubleClick = !_tripleClick;
@@ -183,7 +185,7 @@ struct ButtonDetails
 */
 final class MouseEvent
 {
-    nothrow:
+nothrow:
 
     private
     {
@@ -226,6 +228,7 @@ final class MouseEvent
         _mbutton = e._mbutton;
     }
 
+    // dfmt off
     @property
     {
         /// Action - `buttonDown`, `move`, etc.
@@ -299,6 +302,7 @@ final class MouseEvent
             _doNotTrackButtonDown = flag;
         }
     }
+    // dfmt on
 
     /// Check whether the mouse button is pressed during this event
     bool alteredByButton(MouseButton btn) const
@@ -325,8 +329,7 @@ final class MouseEvent
     override string toString() const
     {
         try
-            return format("MouseEvent(%s, %s, %s, %s, (%s, %s))",
-                _action, _button, _mouseMods, _keyMods, _x, _y);
+            return format("MouseEvent(%s, %s, %s, %s, (%s, %s))", _action, _button, _mouseMods, _keyMods, _x, _y);
         catch (Exception)
             return null;
     }

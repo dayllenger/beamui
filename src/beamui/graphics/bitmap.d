@@ -94,7 +94,7 @@ struct Bitmap
     private IBitmap impl;
 
     this(int width, int height, PixelFormat format)
-        in(width > 0 && height > 0)
+    in (width > 0 && height > 0)
     {
         impl = getBitmapImpl(format);
         data = new DefaultBitmapData(width, height, impl.stride, format);
@@ -102,7 +102,7 @@ struct Bitmap
     }
 
     this(BitmapData data)
-        in(data)
+    in (data)
     {
         impl = getBitmapImpl(data.format);
         this.data = data;
@@ -157,8 +157,8 @@ struct Bitmap
 
     /// Resize the bitmap, invalidating its content
     void resize(int width, int height)
-        in(width > 0 && height > 0)
-        in(format != PixelFormat.invalid)
+    in (width > 0 && height > 0)
+    in (format != PixelFormat.invalid)
     {
         if (data.w != width || data.h != height)
         {
@@ -170,25 +170,19 @@ struct Bitmap
     }
 
     /// Get a constant pointer to the beginning of the pixel data. `null` if bitmap has zero size
-    const(T)* pixels(T)() const
-        if (T.sizeof == 1 || T.sizeof == 2 || T.sizeof == 4 ||
-            T.sizeof == 8 || T.sizeof == 12 || T.sizeof == 16)
+    const(T)* pixels(T)() const if (isValidPixelSize(T.sizeof))
     {
         return data ? cast(const(T)*)&data.pixels[0] : null;
     }
     /// Provides a constant view on the pixel data. The bitmap must have non-zero size
     const(PixelRef!T) look(T)() const
-        if (T.sizeof == 1 || T.sizeof == 2 || T.sizeof == 4 ||
-            T.sizeof == 8 || T.sizeof == 12 || T.sizeof == 16)
-        in(data)
+    in (data)
     {
         return const(PixelRef!T)(data.pixels, data.rowBytes);
     }
     /// Provides a mutable access to the pixel data. The bitmap must have non-zero size
     PixelRef!T mutate(T)()
-        if (T.sizeof == 1 || T.sizeof == 2 || T.sizeof == 4 ||
-            T.sizeof == 8 || T.sizeof == 12 || T.sizeof == 16)
-        in(data)
+    in (data)
     {
         detach();
         return PixelRef!T(data.pixels, data.rowBytes);
@@ -201,7 +195,7 @@ struct Bitmap
 
     /// Detect nine patch using image 1-pixel border. Returns true if 9-patch markup is found in the image
     bool detectNinePatch()
-        in(format != PixelFormat.invalid)
+    in (format != PixelFormat.invalid)
     {
         if (data.w < 3 || data.h < 3)
             return false; // image is too small
@@ -342,7 +336,7 @@ struct Bitmap
 
     /// Fill the whole bitmap with a solid color
     void fill(Color color)
-        in(format != PixelFormat.invalid)
+    in (format != PixelFormat.invalid)
     {
         if (data.w <= 0 || data.h <= 0)
             return;
@@ -353,7 +347,7 @@ struct Bitmap
 
     /// Fill a rectangle with a solid color. The rectangle is clipped against image boundaries
     void fillRect(RectI rect, Color color)
-        in(format != PixelFormat.invalid)
+    in (format != PixelFormat.invalid)
     {
         if (!applyClipping(rect))
             return;
@@ -373,9 +367,9 @@ struct Bitmap
         Returns: True if copied something.
     */
     bool blit(const Bitmap source, RectI srcRect, RectI dstRect)
-        in(format != PixelFormat.invalid)
-        in(source)
-        in(source.format != PixelFormat.invalid)
+    in (format != PixelFormat.invalid)
+    in (source)
+    in (source.format != PixelFormat.invalid)
     {
         if (!source.applyClipping(srcRect, dstRect))
             return false;
@@ -385,11 +379,9 @@ struct Bitmap
         detach();
         const byteOffset1 = dstRect.top * data.rowBytes + dstRect.left * impl.stride;
         const byteOffset2 = srcRect.top * source.data.rowBytes + srcRect.left * source.impl.stride;
-        return impl.blit(
-            IBitmap.BitmapView(dstRect.size, data.rowBytes, &data.pixels[byteOffset1]),
-            const(IBitmap.BitmapView)(srcRect.size, source.data.rowBytes, &source.data.pixels[byteOffset2]),
-            source.format,
-        );
+        const src = const(IBitmap.BitmapView)(srcRect.size, source.data.rowBytes, &source.data.pixels[byteOffset2]);
+        auto dst = IBitmap.BitmapView(dstRect.size, data.rowBytes, &data.pixels[byteOffset1]);
+        return impl.blit(dst, src, source.format);
     }
 
     void preMultiplyAlpha()
@@ -413,7 +405,12 @@ struct Bitmap
     }
 }
 
-struct PixelRef(T)
+private bool isValidPixelSize(size_t bytes)
+{
+    return bytes == 1 || bytes == 2 || bytes == 4 || bytes == 8 || bytes == 12 || bytes == 16;
+}
+
+struct PixelRef(T) if (isValidPixelSize(T.sizeof))
 {
     private void[] pixels;
     private size_t rowBytes;
@@ -427,11 +424,13 @@ struct PixelRef(T)
 
 abstract class BitmapData
 {
+    // dfmt off
     final @property
     {
         int width() const { return w; }
         int height() const { return h; }
     }
+    // dfmt on
 
     private
     {
@@ -446,9 +445,9 @@ abstract class BitmapData
     const PixelFormat format;
 
     this(uint w, uint h, ubyte stride, PixelFormat format)
-        in(w > 0 && h > 0)
-        in(stride > 0)
-        in(format != PixelFormat.invalid)
+    in (w > 0 && h > 0)
+    in (stride > 0)
+    in (format != PixelFormat.invalid)
     {
         this.w = w;
         this.h = h;
@@ -460,7 +459,7 @@ abstract class BitmapData
     }
 
     protected this(BitmapData src)
-        in(src)
+    in (src)
     {
         w = src.w;
         h = src.h;
@@ -481,9 +480,11 @@ abstract class BitmapData
 
     mixin DebugInstanceCount;
 
+    // dfmt off
     inout(void[]) pixels() inout;
     void handleResize() out(; rowBytes >= w * stride);
     BitmapData clone() out(bmp; bmp && bmp !is this);
+    // dfmt off
 }
 
 final class DefaultBitmapData : BitmapData
@@ -542,7 +543,7 @@ interface IBitmap
         private void* ptr;
 
         inout(T*) scanline(T)(int y) inout
-            in(0 <= y && y < sz.h)
+        in (0 <= y && y < sz.h)
         {
             return cast(inout(T*))(ptr + y * rowBytes);
         }
@@ -618,8 +619,10 @@ static:
 
 final class BitmapARGB8 : IBitmap
 {
+    // dfmt off
     PixelFormat format() const { return PixelFormat.argb8; }
     ubyte stride() const { return 4; }
+    // dfmt on
 
     bool isBlackPixel(const void* pixel) const
     {
@@ -648,8 +651,10 @@ final class BitmapARGB8 : IBitmap
 
 final class BitmapA8 : IBitmap
 {
+    // dfmt off
     PixelFormat format() const { return PixelFormat.a8; }
     ubyte stride() const { return 1; }
+    // dfmt on
 
     bool isBlackPixel(const void* pixel) const
     {

@@ -31,8 +31,7 @@ enum LengthUnit
 /// Represents length with specified measurement unit
 struct Length
 {
-    nothrow:
-
+nothrow:
     private float value = SIZE_UNSPECIFIED!float;
     private LengthUnit type = LengthUnit.device;
 
@@ -55,38 +54,16 @@ struct Length
         float f = isDefinedSize(value) ? value : SIZE_UNSPECIFIED!float;
         return Length(f, LengthUnit.device);
     }
-    static Length cm(float value)
-    {
-        return Length(value, LengthUnit.cm);
-    }
-    static Length mm(float value)
-    {
-        return Length(value, LengthUnit.mm);
-    }
-    static Length inch(float value)
-    {
-        return Length(value, LengthUnit.inch);
-    }
-    static Length pt(float value)
-    {
-        return Length(value, LengthUnit.pt);
-    }
-    static Length px(float value)
-    {
-        return Length(value, LengthUnit.px);
-    }
-    static Length em(float value)
-    {
-        return Length(value, LengthUnit.em);
-    }
-    static Length rem(float value)
-    {
-        return Length(value, LengthUnit.rem);
-    }
-    static Length percent(float value)
-    {
-        return Length(value, LengthUnit.percent);
-    }
+    // dfmt off
+    static Length      cm(float value) { return Length(value, LengthUnit.cm); }
+    static Length      mm(float value) { return Length(value, LengthUnit.mm); }
+    static Length    inch(float value) { return Length(value, LengthUnit.inch); }
+    static Length      pt(float value) { return Length(value, LengthUnit.pt); }
+    static Length      px(float value) { return Length(value, LengthUnit.px); }
+    static Length      em(float value) { return Length(value, LengthUnit.em); }
+    static Length     rem(float value) { return Length(value, LengthUnit.rem); }
+    static Length percent(float value) { return Length(value, LengthUnit.percent); }
+    // dfmt on
 
     bool is_em() const
     {
@@ -111,6 +88,7 @@ struct Length
 
         final switch (type) with (LengthUnit)
         {
+            // dfmt off
             case device:  return cast(int) value;
             case px:      return cast(int)(value * devicePixelRatio);
             case em:
@@ -120,6 +98,7 @@ struct Length
             case mm:      return cast(int)(value * screenDPI / 25.4);
             case inch:    return cast(int)(value * screenDPI);
             case pt:      return cast(int)(value * screenDPI / 72);
+            // dfmt on
         }
     }
 
@@ -131,6 +110,7 @@ struct Length
 
         final switch (type) with (LengthUnit)
         {
+            // dfmt off
             case device:  return LayoutLength(value / devicePixelRatio);
             case px:      return LayoutLength(value);
             case em:
@@ -140,6 +120,7 @@ struct Length
             case mm:      return LayoutLength(value * dipsPerInch / 25.4);
             case inch:    return LayoutLength(value * dipsPerInch);
             case pt:      return LayoutLength(value * dipsPerInch / 72);
+            // dfmt on
         }
     }
 
@@ -213,8 +194,7 @@ struct Length
 /// Layout length can be either in device-independent pixels or in percents
 struct LayoutLength
 {
-    nothrow:
-
+nothrow:
     // pixels stored as Q12, fractions as Q16.
     // they are distinguished by the least-significant bit
     private int value = SIZE_UNSPECIFIED!int;
@@ -235,8 +215,8 @@ struct LayoutLength
     }
     /// Construct from percent
     static LayoutLength percent(float p)
-        in(isDefinedSize(p))
-        in(p < SIZE_UNSPECIFIED!int)
+    in (isDefinedSize(p))
+    in (p < SIZE_UNSPECIFIED!int)
     {
         LayoutLength ret;
         ret.value = cast(int)(p / 100 * (1 << 16)) << 1;
@@ -258,7 +238,7 @@ struct LayoutLength
 
     /// If this is percent, return % of `base`, otherwise return stored pixel value
     float applyPercent(float base) const
-        in(isDefinedSize(base))
+    in (isDefinedSize(base))
     {
         if (value == SIZE_UNSPECIFIED!int)
             return SIZE_UNSPECIFIED!float;
@@ -334,7 +314,7 @@ import beamui.core.math : clamp;
 
 /// Called by window
 package(beamui) void setupDPI(float dpi, float dpr)
-    in(dpi > 0 && dpr > 0)
+in (dpi > 0 && dpr > 0)
 {
     if (overriden)
         return;

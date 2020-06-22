@@ -22,8 +22,7 @@ alias ARGB8 = uint;
 /// Represents RGBA color with one byte per channel
 struct Color
 {
-    align(1) nothrow:
-
+align(1) nothrow:
     ubyte r;
     ubyte g;
     ubyte b;
@@ -43,7 +42,7 @@ struct Color
         The most significant byte of `rgb` must be zero.
     */
     this(uint rgb, ubyte alpha = 255)
-        in((rgb & 0xFF000000) == 0, "The most significant byte must be zero")
+    in ((rgb & 0xFF000000) == 0, "The most significant byte must be zero")
     {
         r = (rgb >> 16) & 0xFF;
         g = (rgb >> 8) & 0xFF;
@@ -175,22 +174,19 @@ struct Color
         const invAlpha = 255 - src.a;
         if (dst.a == 255)
         {
-            return Color(
-                (src.r * src.a + dst.r * invAlpha) >> 8,
-                (src.g * src.a + dst.g * invAlpha) >> 8,
-                (src.b * src.a + dst.b * invAlpha) >> 8,
-            );
+            const r = (src.r * src.a + dst.r * invAlpha) >> 8;
+            const g = (src.g * src.a + dst.g * invAlpha) >> 8;
+            const b = (src.b * src.a + dst.b * invAlpha) >> 8;
+            return Color(r, g, b);
         }
         else
         {
             const dstAlpha = ((dst.a * invAlpha) >> 8) & 0xFF;
             const a = src.a + dstAlpha;
-            return Color(
-                (src.r * src.a + dst.r * dstAlpha) / a,
-                (src.g * src.a + dst.g * dstAlpha) / a,
-                (src.b * src.a + dst.b * dstAlpha) / a,
-                a,
-            );
+            const r = (src.r * src.a + dst.r * dstAlpha) / a;
+            const g = (src.g * src.a + dst.g * dstAlpha) / a;
+            const b = (src.b * src.a + dst.b * dstAlpha) / a;
+            return Color(r, g, b, a);
         }
     }
 
@@ -203,20 +199,18 @@ struct Color
 
         const alpha = cast(uint)(factor * 255);
         const invAlpha = 255 - alpha;
-        return Color(
-            (c1.r * invAlpha + c2.r * alpha) >> 8,
-            (c1.g * invAlpha + c2.g * alpha) >> 8,
-            (c1.b * invAlpha + c2.b * alpha) >> 8,
-            (c1.a * invAlpha + c2.a * alpha) >> 8,
-        );
+        const r = (c1.r * invAlpha + c2.r * alpha) >> 8;
+        const g = (c1.g * invAlpha + c2.g * alpha) >> 8;
+        const b = (c1.b * invAlpha + c2.b * alpha) >> 8;
+        const a = (c1.a * invAlpha + c2.a * alpha) >> 8;
+        return Color(r, g, b, a);
     }
 }
 
 /// Represents RGBA color with floating point channels in [0, 1] range
 struct ColorF
 {
-    nothrow:
-
+nothrow:
     float r = 0;
     float g = 0;
     float b = 0;
@@ -471,9 +465,11 @@ private uint getSubpixelShift(int x0, SubpixelRenderingMode mode)
 {
     switch (mode) with (SubpixelRenderingMode)
     {
-        case rgb: return SHIFT_RGB[x0];
-        case bgr:
-        default:  return SHIFT_BGR[x0];
+    case rgb:
+        return SHIFT_RGB[x0];
+    case bgr:
+    default:
+        return SHIFT_BGR[x0];
     }
 }
 

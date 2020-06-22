@@ -131,8 +131,7 @@ struct ResourceList
                 tmp = baseName(tmp);
             if (!searchWithExt)
                 tmp = stripExtension(stripExtension(tmp));
-            if (tmp.endsWith(normID) &&
-                (tmp.length == normID.length || isDirSeparator(tmp[$ - normID.length - 1])))
+            if (tmp.endsWith(normID) && (tmp.length == normID.length || isDirSeparator(tmp[$ - normID.length - 1])))
             {
                 // found
                 string fn = EMBEDDED_RESOURCE_PREFIX ~ r.filename;
@@ -150,8 +149,7 @@ struct ResourceList
                     tmp = baseName(tmp);
                 if (!searchWithExt)
                     tmp = stripExtension(stripExtension(tmp));
-                if (tmp.endsWith(normID) &&
-                    (tmp.length == normID.length || isDirSeparator(tmp[$ - normID.length - 1])))
+                if (tmp.endsWith(normID) && (tmp.length == normID.length || isDirSeparator(tmp[$ - normID.length - 1])))
                 {
                     // found
                     idToPath[id] = fn;
@@ -234,9 +232,10 @@ private EmbeddedResource[] embedResources(string[] resourceNames)()
 
 private EmbeddedResource[] embedResource(string resourceName)()
 {
-    static if (resourceName.startsWith("#")) // comment
+    static if (resourceName.startsWith("#"))
     {
-        return [];
+        // skip commented
+        return null;
     }
     else
     {

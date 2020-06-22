@@ -441,7 +441,7 @@ struct TmpItem
 }
 
 void resolveFlexibleLengths(const FlexItem[] origItems, float[] sizes, const float mainSize)
-    in(isFinite(mainSize))
+in (isFinite(mainSize))
 {
     // allocate temporary items
     Buf!TmpItem bufItems;
@@ -506,7 +506,7 @@ void resolveFlexibleLengths(const FlexItem[] origItems, float[] sizes, const flo
 }
 
 float calculateFreeSpace(const TmpItem[] items, const float[] sizes, const float mainSize)
-    out(r; isFinite(r))
+out (r; isFinite(r))
 {
     float sum = 0;
     foreach (i, ref item; items)
@@ -523,7 +523,7 @@ bool allFrozen(const TmpItem[] items)
 }
 
 void expand(const TmpItem[] items, float[] sizes, const float factors, const float freeSpace)
-    in(factors > 0)
+in (factors > 0)
 {
     foreach (i, ref item; items)
     {
@@ -605,7 +605,7 @@ struct Line
 }
 
 void wrapLines(const FlexItem[] items, ref Buf!Line buf, float mainSize, float mainGap)
-    in(items.length > 0)
+in (items.length > 0)
 {
     buf.clear();
     mainSize += eps; // tight boxes may not fit
@@ -630,9 +630,9 @@ void wrapLines(const FlexItem[] items, ref Buf!Line buf, float mainSize, float m
 }
 
 void placeMain(const float[] sizes, float[] positions, const Insets[] margins, Segment room, float gap, Distribution mode)
-    in(sizes.length > 0)
-    in(sizes.length == positions.length)
-    in(sizes.length == margins.length)
+in (sizes.length > 0)
+in (sizes.length == positions.length)
+in (sizes.length == margins.length)
 {
     const freeSpace = room.size - sum(sizes) - gap * (cast(int)sizes.length - 1);
     const uint autoMargins = countAutoMargins(margins);

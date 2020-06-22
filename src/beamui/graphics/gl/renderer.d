@@ -9,7 +9,9 @@ module beamui.graphics.gl.renderer;
 
 import beamui.core.config;
 
+// dfmt off
 static if (USE_OPENGL):
+// dfmt on
 import bindbc.opengl.util : loadExtendedGLSymbol;
 import beamui.core.geometry : BoxI, Rect, RectI, SizeI;
 import beamui.core.linalg : Vec2, Mat2x3;
@@ -40,9 +42,9 @@ enum Stenciling
     justCover,
     nonzero,
     zero,
+    // complementary fill rules are currently an internal feature used by `clipIn`
     odd,
     even,
-    // complementary fill rules are currently an internal feature used by `clipIn`
 }
 
 struct Span
@@ -179,7 +181,7 @@ struct DataToUpload
 
 struct Renderer
 {
-    nothrow:
+nothrow:
 
     private
     {
@@ -333,11 +335,7 @@ struct Renderer
 
             // now it's time to draw actual batches
             const Batch[] batches = lists.batches[set.batches.start .. set.batches.end];
-            const pbase = ParamsBase(
-                Vec2(1.0f / rt.box.w, 1.0f / rt.box.h),
-                rt.box.h,
-                databuf.tex,
-            );
+            const pbase = ParamsBase(Vec2(1.0f / rt.box.w, 1.0f / rt.box.h), rt.box.h, databuf.tex);
             // draw opaque first front-to-back
             const flagsOpq = DrawFlags.clippingPlanes | DrawFlags.depthTest;
             foreach_reverse (ref bt; batches)
@@ -352,11 +350,7 @@ struct Renderer
                 RenderTarget* rtCompose = &targets[set.layerToCompose];
                 if (!rtCompose.empty)
                 {
-                    const params = ParamsComposition(
-                        rtCompose.tex,
-                        rtCompose.box,
-                        lrCompose.cmd.opacity,
-                    );
+                    const params = ParamsComposition(rtCompose.tex, rtCompose.box, lrCompose.cmd.opacity);
                     compose(lrCompose.cmd, pbase, params);
                     rtpool.remove(rtCompose.id);
                     *rtCompose = RenderTarget.init;
@@ -434,12 +428,8 @@ private:
         if (!setupSurfaceShader(pbase, params))
             return failGracefully();
 
-        device.drawTriangles(
-            hasUV ? vaoTextured : vao,
-            flags,
-            tris.start * 3,
-            (tris.end - tris.start) * 3,
-        );
+        const vao = hasUV ? vaoTextured : this.vao;
+        device.drawTriangles(vao, flags, tris.start * 3, (tris.end - tris.start) * 3);
     }
 
     void performStencil(Stenciling type, ref const ParamsBase pbase, Span tris, DrawFlags flags)
@@ -471,12 +461,7 @@ private:
             break;
         }
 
-        device.drawTriangles(
-            vao,
-            flags,
-            tris.start * 3,
-            (tris.end - tris.start) * 3,
-        );
+        device.drawTriangles(vao, flags, tris.start * 3, (tris.end - tris.start) * 3);
     }
 
     void performCover(Stenciling type, ref const ParamsBase pbase, ref const ShParams params, Span tris, DrawFlags flags)
@@ -508,12 +493,7 @@ private:
             break;
         }
 
-        device.drawTriangles(
-            vao,
-            flags,
-            tris.start * 3,
-            (tris.end - tris.start) * 3,
-        );
+        device.drawTriangles(vao, flags, tris.start * 3, (tris.end - tris.start) * 3);
     }
 
     bool setupSurfaceShader(ref const ParamsBase base, ref const ShParams params)
@@ -599,12 +579,8 @@ private:
             device.setBlending(cmd.composition);
         }
 
-        device.drawTriangles(
-            vao,
-            DrawFlags.blending | DrawFlags.clippingPlanes | DrawFlags.depthTest | DrawFlags.noDepthWrite,
-            cmd.triangles.start * 3,
-            (cmd.triangles.end - cmd.triangles.start) * 3,
-        );
+        const flags = DrawFlags.blending | DrawFlags.clippingPlanes | DrawFlags.depthTest | DrawFlags.noDepthWrite;
+        device.drawTriangles(vao, flags, cmd.triangles.start * 3, (cmd.triangles.end - cmd.triangles.start) * 3);
         device.resetBlending();
     }
 
@@ -616,6 +592,7 @@ private:
 
 private struct DataBuffer
 {
+nothrow:
     enum ROW_LENGTH = 256;
     enum TEXELS_IN_CHUNK = 4;
     enum WIDTH = ROW_LENGTH * TEXELS_IN_CHUNK;
@@ -624,7 +601,6 @@ private struct DataBuffer
     // for now, I store the data simply in a texture
     TexId tex;
 
-    nothrow:
     @disable this(this);
 
     void initialize()
@@ -695,6 +671,8 @@ private struct RenderTarget
 
 private struct RenderTargetPool
 {
+nothrow:
+
     enum INITIAL_SIZE = SizeI(16, 16);
     enum MAX_SIZE = SizeI(4096, 4096);
     enum MAX_PAGES = 16;
@@ -707,9 +685,9 @@ private struct RenderTargetPool
         RbId depthRB;
         SizeI size;
     }
+
     private Page[MAX_PAGES] pages;
 
-    nothrow:
     @disable this(this);
 
     // use `purge` to clear it
@@ -719,7 +697,7 @@ private struct RenderTargetPool
     }
 
     RenderTarget take(ref FboManager man, SizeI size)
-        in(size.w > 0 && size.h > 0)
+    in (size.w > 0 && size.h > 0)
     {
         import std.random : uniform;
 
@@ -865,10 +843,10 @@ struct GpaaDataToUpload
 
 private struct LayerOffsetBuffer
 {
+nothrow:
     TexId tex;
     int width;
 
-    nothrow:
     @disable this(this);
 
     void initialize()
@@ -911,6 +889,7 @@ private struct LayerOffsetBuffer
 */
 private struct GpaaRenderer
 {
+nothrow:
     private
     {
         VaoId vao;
@@ -925,7 +904,6 @@ private struct GpaaRenderer
         int indices;
     }
 
-    nothrow:
     @disable this(this);
 
     ~this()
@@ -945,12 +923,12 @@ private struct GpaaRenderer
 
         device.vaoman.bind(vao);
         VBO.bind(vboPos);
-        device.vaoman.addAttribF(0, 2),
-        device.vaoman.addAttribF(1, 2, 0, Vec2.sizeof),
+        device.vaoman.addAttribF(0, 2);
+        device.vaoman.addAttribF(1, 2, 0, Vec2.sizeof);
         VBO.bind(vboDat);
-        device.vaoman.addAttribU16(2, 1, 0, ushort.sizeof),
+        device.vaoman.addAttribU16(2, 1, 0, ushort.sizeof);
         VBO.bind(vboLyr);
-        device.vaoman.addAttribU16(3, 1, 0, ushort.sizeof),
+        device.vaoman.addAttribU16(3, 1, 0, ushort.sizeof);
         EBO.bind(ebo);
         device.vaoman.unbind();
 
@@ -1010,30 +988,19 @@ private struct GpaaRenderer
         // copy the current framebuffer contents into the texture
         checkgl!glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, viewSize.w, viewSize.h);
 
-        const pbase = ParamsBase(
-            Vec2(1.0f / viewSize.w, 1.0f / viewSize.h),
-            viewSize.h,
-            dataStore,
-        );
-        const params = ParamsGPAA(
-            lobuf.tex,
-            tex,
-            Vec2(1.0f / sz.w, 1.0f / sz.h),
-        );
+        const pbase = ParamsBase(Vec2(1.0f / viewSize.w, 1.0f / viewSize.h), viewSize.h, dataStore);
+        const params = ParamsGPAA(lobuf.tex, tex, Vec2(1.0f / sz.w, 1.0f / sz.h));
         device.progman.bind(shader);
         shader.prepare(pbase, params);
-        device.drawLines(
-            vao,
-            DrawFlags.clippingPlanes | DrawFlags.depthTest | DrawFlags.noDepthWrite,
-            0,
-            indices,
-        );
+
+        const flags = DrawFlags.clippingPlanes | DrawFlags.depthTest | DrawFlags.noDepthWrite;
+        device.drawLines(vao, flags, 0, indices);
     }
 }
 
 /// Choose appropriate framebuffer texture size after possible window resize
 private SizeI chooseTargetSize(SizeI current, SizeI resized)
-    in(resized.w > 0 && resized.h > 0)
+in (resized.w > 0 && resized.h > 0)
 {
     // bad case
     if (current.w <= 0)

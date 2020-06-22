@@ -44,14 +44,13 @@ enum Stretch : ubyte
     both,
 }
 
-enum AlignItem : ubyte
+enum AlignItem : ubyte // TODO: baseline
 {
     unspecified,
     stretch,
     start,
     end,
     center,
-    // TODO: baseline
 }
 
 enum Distribution : ubyte
@@ -117,8 +116,8 @@ Segment alignItem(Segment item, Segment room, AlignItem a)
 }
 
 void placeSegments(float[] sizes, float[] positions, float initialPos, float freeSpace, Distribution mode)
-    in(sizes.length > 0)
-    in(sizes.length == positions.length)
+in (sizes.length > 0)
+in (sizes.length == positions.length)
 {
     final switch (mode) with (Distribution)
     {
@@ -147,7 +146,7 @@ void placeSegments(float[] sizes, float[] positions, float initialPos, float fre
 }
 
 void stretchItems(float[] sizes, const float freeSpace)
-    in(sizes.length > 0)
+in (sizes.length > 0)
 {
     if (freeSpace > 0)
     {
@@ -158,8 +157,8 @@ void stretchItems(float[] sizes, const float freeSpace)
 }
 
 void placeFromStart(const float[] sizes, float[] positions, const float initialPos)
-    in(sizes.length > 0)
-    in(sizes.length == positions.length)
+in (sizes.length > 0)
+in (sizes.length == positions.length)
 {
     float pen = initialPos;
     foreach (i, sz; sizes)
@@ -170,8 +169,8 @@ void placeFromStart(const float[] sizes, float[] positions, const float initialP
 }
 
 void placeFromEnd(const float[] sizes, float[] positions, const float initialPos)
-    in(sizes.length > 0)
-    in(sizes.length == positions.length)
+in (sizes.length > 0)
+in (sizes.length == positions.length)
 {
     float pen = initialPos;
     foreach (i, sz; sizes)
@@ -182,8 +181,8 @@ void placeFromEnd(const float[] sizes, float[] positions, const float initialPos
 }
 
 void placeToCenter(const float[] sizes, float[] positions, const float initialPos, const float freeSpace)
-    in(sizes.length > 0)
-    in(sizes.length == positions.length)
+in (sizes.length > 0)
+in (sizes.length == positions.length)
 {
     float pen = initialPos + freeSpace / 2;
     foreach (i, sz; sizes)
@@ -194,8 +193,8 @@ void placeToCenter(const float[] sizes, float[] positions, const float initialPo
 }
 
 void placeWithSpaceBetween(const float[] sizes, float[] positions, const float initialPos, const float freeSpace)
-    in(sizes.length > 0)
-    in(sizes.length == positions.length)
+in (sizes.length > 0)
+in (sizes.length == positions.length)
 {
     if (freeSpace <= 0 || sizes.length == 1)
     {
@@ -214,8 +213,8 @@ void placeWithSpaceBetween(const float[] sizes, float[] positions, const float i
 }
 
 void placeWithSpaceAround(const float[] sizes, float[] positions, const float initialPos, const float freeSpace)
-    in(sizes.length > 0)
-    in(sizes.length == positions.length)
+in (sizes.length > 0)
+in (sizes.length == positions.length)
 {
     if (freeSpace <= 0 || sizes.length == 1)
     {
@@ -233,8 +232,8 @@ void placeWithSpaceAround(const float[] sizes, float[] positions, const float in
 }
 
 void placeWithSpaceAroundEvenly(const float[] sizes, float[] positions, const float initialPos, const float freeSpace)
-    in(sizes.length > 0)
-    in(sizes.length == positions.length)
+in (sizes.length > 0)
+in (sizes.length == positions.length)
 {
     if (freeSpace <= 0 || sizes.length == 1)
     {

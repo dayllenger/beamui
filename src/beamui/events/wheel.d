@@ -15,8 +15,8 @@ import beamui.events.pointer : MouseButton, MouseMods, toMouseMods;
 /// Mouse/touchpad scroll event
 final class WheelEvent
 {
-    nothrow:
-
+nothrow:
+    // dfmt off
     @property
     {
         /// Positive when scrolling right, negative when scrolling left
@@ -51,6 +51,7 @@ final class WheelEvent
             return _keyMods == KeyMods.none;
         }
     }
+    // dfmt on
 
     private
     {
@@ -99,8 +100,7 @@ final class WheelEvent
     override string toString() const
     {
         try
-            return format("WheelEvent(%s, %s, %s, (%s, %s), %s, %s)",
-                _deltaX, _deltaY, _deltaZ, _x, _y, _mouseMods, _keyMods);
+            return format("WheelEvent(%s, %s, %s, (%s, %s), %s, %s)", _deltaX, _deltaY, _deltaZ, _x, _y, _mouseMods, _keyMods);
         catch (Exception)
             return null;
     }

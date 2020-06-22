@@ -93,6 +93,7 @@ struct InlineStyle
         _props.initialize(property);
     }
 
+    // dfmt off
 @property:
     /// A kind of layout this widget may apply to its children list
     void display(string name) { _props.set(P.display, name); }
@@ -664,4 +665,6 @@ struct InlineStyle
 
     /// Specifies the type of mouse cursor when pointing over the widget
     void cursor(CursorType value) { _props.set(P.cursor, value); }
+
+    // dfmt on
 }
