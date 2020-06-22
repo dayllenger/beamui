@@ -349,11 +349,7 @@ abstract class ElemAbstractSlider : ElemGroup
 
     protected void handleDataChange()
     {
-        if (!needLayout)
-        {
-            layout(box); // redo layout of the slider only
-            invalidate();
-        }
+        requestLayout();
     }
 
     override protected void arrangeContent()
