@@ -227,13 +227,14 @@ void importStyleSheet(Theme theme, string resourceID, string ns)
 void applyAtRule(Theme theme, const CSS.AtRule rule, string ns)
 {
     const kw = rule.keyword;
+    const rs = rule.rulesets;
     const ps = rule.properties;
 
     if (kw == "import")
     {
-        if (rule.content.length > 0)
+        if (rule.prelude.length > 0)
         {
-            const t = rule.content[0];
+            const t = rule.prelude[0];
             if (t.type == CSS.TokenType.url)
                 importStyleSheet(theme, t.text, ns);
             else
@@ -241,8 +242,18 @@ void applyAtRule(Theme theme, const CSS.AtRule rule, string ns)
         }
         else
             Log.e("CSS: empty @import");
-        if (ps.length > 0)
-            Log.w("CSS: @import cannot have properties");
+        if (rs.length > 0 || ps.length > 0)
+            Log.w("CSS: @import cannot have non-empty block");
+    }
+    else if (kw == "media")
+    {
+        foreach (r; rs)
+        {
+            foreach (sel; r.selectors)
+            {
+                // applyRule(theme, decoders, sel, r.properties, ns);
+            }
+        }
     }
     else
         Log.w("CSS: unknown at-rule keyword: ", kw);

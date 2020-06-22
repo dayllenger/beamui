@@ -28,11 +28,12 @@ struct StyleSheet
     RuleSet[] rulesets;
 }
 
-/// At-rule, looking as @keyword values { properties }
+/// At-rule, looking as `@keyword prelude { properties | rules }`
 struct AtRule
 {
     string keyword;
-    Token[] content;
+    Token[] prelude;
+    RuleSet[] rulesets;
     Property[] properties;
 }
 
@@ -121,10 +122,8 @@ nothrow:
     {
         AtRule[] atRules;
         RuleSet[] rulesets;
-        while (true)
+        while (!r.empty)
         {
-            if (r.empty)
-                break;
             if (r.front.type == Tok.whitespace)
             {
                 r.popFront();
@@ -156,19 +155,44 @@ nothrow:
         r.popFront();
 
         Token[] list;
-        while (true)
+        bool emptyBlock;
+        while (!r.empty)
         {
-            if (r.empty)
-                break;
             Token t = r.front;
             r.popFront();
             if (t.type == Tok.whitespace)
                 continue;
             if (t.type == Tok.openCurly)
             {
-                // consume block
-                rule.properties = consumeDeclarationList();
-                if (rule.properties.length == 0)
+                // bad hack: determine block content type by the keyword
+                if (rule.keyword == "media")
+                {
+                    // consume rules
+                    while (!r.empty)
+                    {
+                        if (r.front.type == Tok.whitespace)
+                        {
+                            r.popFront();
+                            continue;
+                        }
+                        if (r.front.type == Tok.closeCurly)
+                        {
+                            r.popFront();
+                            break;
+                        }
+                        auto ruleset = consumeQualifiedRule();
+                        if (!ruleset.isNull)
+                            rule.rulesets ~= ruleset.get;
+                    }
+                    emptyBlock = !rule.rulesets.length;
+                }
+                else
+                {
+                    // consume properties
+                    rule.properties = consumeDeclarationList();
+                    emptyBlock = !rule.properties.length;
+                }
+                if (emptyBlock)
                     emitError("empty @" ~ rule.keyword ~ " block", t.line);
                 break;
             }
@@ -177,15 +201,13 @@ nothrow:
             else // consume values
                 list ~= t;
         }
-        rule.content = list;
+        rule.prelude = list;
 
-        if (rule.content.length > 0 || rule.properties.length > 0)
+        if (!rule.prelude.length || !emptyBlock)
             return nullable(rule);
-        else
-        {
-            emitError("empty @" ~ rule.keyword ~ " rule, skipping", line);
-            return Null;
-        }
+
+        emitError("empty @" ~ rule.keyword ~ " rule, skipping", line);
+        return Null;
     }
 
     Nullable!RuleSet consumeQualifiedRule()
@@ -193,10 +215,8 @@ nothrow:
         enum Null = Nullable!RuleSet.init;
 
         RuleSet rule;
-        while (true)
+        while (!r.empty)
         {
-            if (r.empty)
-                return Null;
             if (r.front.type != Tok.openCurly)
             {
                 rule.selectors = consumeSelectorList();
@@ -205,17 +225,20 @@ nothrow:
             {
                 r.popFront();
                 rule.properties = consumeDeclarationList();
-                return nullable(rule);
+                if (rule.properties.length)
+                    return nullable(rule);
+                return Null;
             }
         }
+        return Null;
     }
 
     Selector[] consumeSelectorList()
     {
         Selector[] list;
-        while (true)
+        while (!r.empty)
         {
-            if (r.empty || r.front.type == Tok.openCurly)
+            if (r.front.type == Tok.openCurly)
                 break;
             auto selector = consumeSelector();
             if (!selector.isNull)
@@ -235,9 +258,9 @@ nothrow:
         enum Null = Nullable!Selector.init;
 
         Selector sel;
-        while (true)
+        while (!r.empty)
         {
-            if (r.empty || r.front.type == Tok.comma || r.front.type == Tok.openCurly)
+            if (r.front.type == Tok.comma || r.front.type == Tok.openCurly)
                 break;
             // just assign line of the first token
             if (sel.line == 0)
@@ -251,20 +274,17 @@ nothrow:
                     sel.entries ~= comb;
             }
         }
-        if (sel.entries.length > 0)
+        if (sel.entries.length)
             return nullable(sel);
-        else
-            return Null;
+        return Null;
     }
 
     SelectorEntry[] consumeCompoundSelector()
     {
         SelectorEntry[] entries;
-        while (true)
+        while (!r.empty)
         {
-            if (r.empty || r.front.type == Tok.whitespace)
-                break;
-            if (r.front.type == Tok.comma || r.front.type == Tok.openCurly)
+            if (r.front.type == Tok.whitespace || r.front.type == Tok.comma || r.front.type == Tok.openCurly)
                 break;
             Token t = r.front;
             if (t.type == Tok.delim) // * .
@@ -365,10 +385,8 @@ nothrow:
         enum Null = Nullable!SelectorEntry.init;
 
         auto entry = SelectorEntry(SelectorEntryType.attr);
-        while (true)
+        while (!r.empty)
         {
-            if (r.empty)
-                break;
             Token t = r.front;
             if (t.type == Tok.closeSquare)
             {
@@ -401,7 +419,7 @@ nothrow:
             }
             r.popFront();
         }
-        if (entry.identifier.length == 0)
+        if (!entry.identifier.length)
         {
             emitError("attribute selector is empty", r.line);
             return Null;
@@ -414,10 +432,8 @@ nothrow:
         enum Null = Nullable!SelectorEntry.init;
 
         auto entry = SelectorEntry(SelectorEntryType.descendant);
-        while (true)
+        while (!r.empty)
         {
-            if (r.empty)
-                break;
             Token t = r.front;
             if (t.type == Tok.delim) // > + ~
             {
@@ -456,10 +472,8 @@ nothrow:
     Property[] consumeDeclarationList()
     {
         Property[] list;
-        while (true)
+        while (!r.empty)
         {
-            if (r.empty)
-                break;
             Token t = r.front;
             if (t.type == Tok.whitespace)
             {
@@ -491,41 +505,36 @@ nothrow:
         enum Null = Nullable!Property.init;
 
         auto prop = Property(r.front.text);
-        {
+        r.popFront();
+        if (r.empty || r.front.type == Tok.closeCurly)
+            return Null;
+
+        while (r.front.type == Tok.whitespace)
             r.popFront();
-            if (r.empty || r.front.type == Tok.closeCurly)
-                return Null;
-            while (r.front.type == Tok.whitespace)
-                r.popFront();
-            Token t = r.front;
-            if (t.type == Tok.colon)
-            {
-                size_t line = r.line;
-                r.popFront();
-                prop.value = consumeValue();
-                if (prop.value.length > 0)
-                    return nullable(prop);
-                else
-                {
-                    emitError("declaration is empty", line);
-                    return Null;
-                }
-            }
-            else
-            {
-                emitExpected("colon", "declaration", t.line);
-                r.popFront();
-                return Null;
-            }
+
+        Token t = r.front;
+        if (t.type == Tok.colon)
+        {
+            size_t line = r.line;
+            r.popFront();
+            prop.value = consumeValue();
+            if (prop.value.length)
+                return nullable(prop);
+
+            emitError("declaration is empty", line);
+            return Null;
         }
+        emitExpected("colon", "declaration", t.line);
+        r.popFront();
+        return Null;
     }
 
     Token[] consumeValue()
     {
         Token[] list;
-        while (true)
+        while (!r.empty)
         {
-            if (r.empty || r.front.type == Tok.closeCurly)
+            if (r.front.type == Tok.closeCurly)
                 break;
             Token t = r.front;
             r.popFront();
@@ -543,8 +552,13 @@ unittest
 {
     auto tr = tokenizeCSS(`
         @import url('secondary.css');
-        @define-colors {
-            fg-color: #fff000;
+        @font-face {
+            font-family: "Stuff";
+            src: url(there);
+        }
+        @media screen and (stuff >= 0)
+        {* { --fg-color: #fff000; }
+            shalt-not-exist {}
         }
 
         tag.class#id[attr*='text'], second * {
@@ -565,19 +579,35 @@ unittest
     `);
     auto css = parseCSS(tr);
     {
-        auto rs = css.atRules;
+        AtRule[] rs = css.atRules;
+        assert(rs.length == 4);
         assert(rs[0].keyword == "import");
-        assert(rs[0].content[0].type == TokenType.url);
-        assert(rs[0].content[0].text == "secondary.css");
-        assert(rs[1].keyword == "define-colors");
-        assert(rs[1].content.length == 0);
-        assert(rs[1].properties[0].name == "fg-color");
-        assert(rs[1].properties[0].value[0].type == TokenType.hash);
-        assert(rs[1].properties[0].value[0].text == "fff000");
-        assert(rs[2].keyword == "define-drawable");
-        assert(rs[2].content[0].text == "the-drawable");
-        assert(rs[2].content[1].type == TokenType.str);
-        assert(rs[2].content[1].text == "the/path");
+        assert(rs[0].prelude[0].type == TokenType.url);
+        assert(rs[0].prelude[0].text == "secondary.css");
+        {
+            auto ps = rs[1].properties;
+            assert(rs[1].keyword == "font-face");
+            assert(rs[1].prelude.length == 0);
+            assert(ps.length == 2);
+            assert(ps[0].name == "font-family");
+            assert(ps[1].name == "src");
+        }
+        {
+            assert(rs[2].keyword == "media");
+            assert(rs[2].rulesets.length == 1);
+            auto ss = rs[2].rulesets[0].selectors;
+            auto ps = rs[2].rulesets[0].properties;
+            assert(ss.length == 1);
+            assert(ss[0].entries[0].type == SelectorEntryType.universal);
+            assert(ps[0].name == "--fg-color");
+            assert(ps[0].value.length);
+            assert(ps[0].value[0].type == TokenType.hash);
+            assert(ps[0].value[0].text == "fff000");
+        }
+        assert(rs[3].keyword == "define-drawable");
+        assert(rs[3].prelude[0].text == "the-drawable");
+        assert(rs[3].prelude[1].type == TokenType.str);
+        assert(rs[3].prelude[1].text == "the/path");
     }
     {
         assert(css.rulesets.length == 2);
