@@ -1000,10 +1000,11 @@ class Window : CustomEventTarget
         if (oldFocus is newFocus)
             return oldFocus;
 
+        Buf!Element oldParentChain, newParentChain;
         if (oldFocus)
         {
             oldFocus.applyFlags(targetState, false);
-            setFocusWithinFlag(oldFocus, false);
+            collectParentChain(oldFocus, oldParentChain);
         }
         if (!newFocus)
         {
@@ -1016,11 +1017,40 @@ class Window : CustomEventTarget
                 Log.d("new focus: ", newFocus.dbgname);
             newFocus.applyFlags(targetState, true);
             _focusedElement = weakRef(newFocus);
-            setFocusWithinFlag(newFocus, true);
+            collectParentChain(newFocus, newParentChain);
         }
+        // apply `focus-within` flag
+        size_t firstChangedParent = min(oldParentChain.length, newParentChain.length);
+        foreach (i; 0 .. firstChangedParent)
+        {
+            if (oldParentChain[i] !is newParentChain[i])
+            {
+                firstChangedParent = i;
+                break;
+            }
+        }
+        foreach (p; oldParentChain.unsafe_slice[firstChangedParent .. $])
+            p.applyFlags(StateFlags.focusWithin, false);
+        foreach (p; newParentChain.unsafe_slice[firstChangedParent .. $])
+            p.applyFlags(StateFlags.focusWithin, true);
+
         // after focus change, ask for actions to update automatically
         //requestActionsUpdate();
         return _focusedElement.get;
+    }
+
+    private void collectParentChain(Element el, ref Buf!Element output)
+    {
+        void rec(Element p)
+        {
+            if (p)
+            {
+                rec(p.parent);
+                output ~= p;
+            }
+        }
+        output.reserve(8);
+        rec(el.parent);
     }
 
     private void setFocusWithinFlag(Element el, bool enabled)
