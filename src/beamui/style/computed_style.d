@@ -20,7 +20,6 @@ import beamui.graphics.drawables;
 import beamui.layout.alignment : Align, AlignItem, Distribution, Stretch;
 import beamui.layout.flex : FlexDirection, FlexWrap;
 import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
-import beamui.style.decode_css;
 import beamui.style.property;
 import beamui.style.style;
 import beamui.style.types;
@@ -290,7 +289,7 @@ struct ComputedStyle
         CursorType _cursor = CursorType.automatic;
 
         const(CssToken)[][string] _customProps;
-        const(CssToken)[][StyleProperty] _propCache;
+        const(CssToken)[][P] _propCache;
 
         AnimationManager _animations;
     }
@@ -299,14 +298,31 @@ struct ComputedStyle
     {
         if (auto p = name in _customProps)
         {
-            const(CssToken)[] tokens = *p;
-            static if (specialType == SpecialCSSType.none)
-                auto res = decode!T(tokens);
-            else
-                auto res = decode!specialType(tokens);
+            auto res = decodeVar!(T, specialType)(*p);
             return res ? res.val : def;
         }
         return def;
+    }
+
+    private auto decodeVar(T, SpecialCSSType specialType)(const(CssToken)[] tokens)
+    {
+        import beamui.style.decode_css : decode;
+
+        static if (specialType == SpecialCSSType.none)
+            return decode!T(tokens);
+        else
+            return decode!specialType(tokens);
+    }
+
+    private bool checkPropCache(P ptype, const(CssToken)[] tokens)
+    {
+        if (auto cached = ptype in _propCache)
+        {
+            if (*cached is tokens)
+                return true;
+        }
+        _propCache[ptype] = tokens;
+        return false;
     }
 
     private LayoutLength applyEM(Length value) const
@@ -398,124 +414,113 @@ struct ComputedStyle
     private void recomputeBuiltin(Style[] chain, ComputedStyle* parentStyle)
     {
         _inherited = _inherited.init;
-        StaticBitArray!(StyleProperty.max + 1) modified;
+        StaticBitArray!(P.max + 1) modified;
 
         /// iterate through all built-in properties
-        // dfmt off
         static foreach (name; __traits(allMembers, P))
         {
-        // dfmt on
-        {
-            enum ptype = mixin(`P.` ~ name);
-            enum bool inheritsByDefault = isInherited(ptype);
-
-            // search in style chain, find nearest written property
-            bool inh, set;
-            foreach_reverse (st; chain)
-            {
-                auto plist = &st._props;
-                if (!plist.isSet(ptype))
-                    continue;
-
-                // actually specified value
-                if (auto p = plist.peek!name)
-                {
-                    _propCache.remove(ptype);
-                    auto val = postprocessValue!ptype(*p, parentStyle);
-                    if (setProperty!name(val))
-                        modified.set(ptype);
-                    set = true;
-                    break;
-                }
-                // 'var(--something)'
-                if (auto var = plist.getCustomValueName(ptype))
-                {
-                    if (auto p = var in _customProps)
-                    {
-                        const(CssToken)[] tokens = *p;
-                        if (auto cached = ptype in _propCache)
-                        {
-                            if (*cached is tokens)
-                            {
-                                set = true;
-                                break;
-                            }
-                        }
-                        _propCache[ptype] = tokens;
-
-                        alias T = typeof(mixin(`PropTypes.` ~ name));
-                        enum specialType = getSpecialCSSType(ptype);
-
-                        static if (specialType == SpecialCSSType.none)
-                            auto result = decode!T(tokens);
-                        else
-                            auto result = decode!specialType(tokens);
-
-                        if (result.err)
-                            break;
-                        if (!sanitizeProperty!ptype(result.val))
-                            break;
-
-                        auto val = postprocessValue!ptype(result.val, parentStyle);
-                        if (setProperty!name(val))
-                            modified.set(ptype);
-                        set = true;
-                    }
-                    break;
-                }
-                // 'inherit'
-                static if (!inheritsByDefault)
-                {
-                    if (plist.isInherited(ptype))
-                    {
-                        inh = set = true;
-                        break;
-                    }
-                }
-                // 'initial'
-                if (plist.isInitial(ptype))
-                {
-                    _propCache.remove(ptype);
-                    if (setProperty!name(getDefaultValue!name()))
-                        modified.set(ptype);
-                    set = true;
-                    break;
-                }
-            }
-            // remember inherited properties
-            if (inh || inheritsByDefault && !set)
-                _inherited.set(ptype);
-
-            // resolve inherited properties
-            if (_inherited[ptype])
-            {
-                _propCache.remove(ptype);
-                auto val = parentStyle ? mixin(`parentStyle._` ~ name) : getDefaultValue!name();
-                if (setProperty!name(val))
-                    modified.set(ptype);
-            }
-            else if (!set)
-            {
-                // if nothing there - return value to defaults
-                _propCache.remove(ptype);
-                if (setProperty!name(getDefaultValue!name()))
-                    modified.set(ptype);
-            }
+            recomputeProperty!name(chain, parentStyle, modified);
         }
-        // dfmt off
-        }
-        // dfmt on
         // invoke side effects
-        foreach (ptype; 0 .. StyleProperty.max + 1)
+        foreach (ptype; 0 .. P.max + 1)
         {
             if (modified[ptype])
-                element.handleStyleChange(cast(StyleProperty)ptype);
+                element.handleStyleChange(cast(P)ptype);
         }
         // set inherited properties in descendant elements
         propagateInheritedValues(modified);
     }
 
-    private void propagateInheritedValues(StaticBitArray!(StyleProperty.max + 1) modified)
+    private void recomputeProperty(string name)(Style[] chain, ComputedStyle* parentStyle, ref StaticBitArray!(P.max + 1) modified)
+    {
+        alias T = typeof(mixin(`PropTypes.` ~ name));
+        enum ptype = mixin(`P.` ~ name);
+        enum specialType = getSpecialCSSType(ptype);
+        enum bool inheritsByDefault = isInherited(ptype);
+
+        // search in style chain, find nearest written property
+        bool inh, set, fromVar;
+        foreach_reverse (st; chain)
+        {
+            auto plist = &st._props;
+            if (!plist.isSet(ptype))
+                continue;
+
+            // actually specified value
+            if (auto p = plist.peek!name)
+            {
+                auto val = postprocessValue!ptype(*p, parentStyle);
+                if (setProperty!name(val))
+                    modified.set(ptype);
+                set = true;
+                break;
+            }
+            // 'var(--something)'
+            if (auto var = plist.getCustomValueName(ptype))
+            {
+                if (auto p = var in _customProps)
+                {
+                    fromVar = true; // should be set on error too
+                    if (checkPropCache(ptype, *p))
+                    {
+                        set = true;
+                        break;
+                    }
+
+                    auto result = decodeVar!(T, specialType)(*p);
+                    if (result.err)
+                        break;
+                    if (!sanitizeProperty!ptype(result.val))
+                        break;
+
+                    auto val = postprocessValue!ptype(result.val, parentStyle);
+                    if (setProperty!name(val))
+                        modified.set(ptype);
+                    set = true;
+                }
+                break;
+            }
+            // 'inherit'
+            static if (!inheritsByDefault)
+            {
+                if (plist.isInherited(ptype))
+                {
+                    inh = set = true;
+                    break;
+                }
+            }
+            // 'initial'
+            if (plist.isInitial(ptype))
+            {
+                if (setProperty!name(getDefaultValue!name()))
+                    modified.set(ptype);
+                set = true;
+                break;
+            }
+        }
+
+        // resolve inherited properties
+        if (inh || inheritsByDefault && !set)
+        {
+            auto val = parentStyle ? mixin(`parentStyle._` ~ name) : getDefaultValue!name();
+            if (setProperty!name(val))
+                modified.set(ptype);
+            // remember which properties inherit
+            _inherited.set(ptype);
+        }
+        else if (!set)
+        {
+            // if nothing there - return value to defaults
+            if (setProperty!name(getDefaultValue!name()))
+                modified.set(ptype);
+        }
+
+        // remove cached var if was to some other value
+        if (!fromVar)
+            _propCache.remove(ptype);
+    }
+
+    private void propagateInheritedValues(StaticBitArray!(P.max + 1) modified)
     {
         foreach (child; element)
         {
@@ -541,10 +546,10 @@ struct ComputedStyle
             st.propagateInheritedValues(affected);
 
             // invoke side effects
-            foreach (ptype; 0 .. StyleProperty.max + 1)
+            foreach (ptype; 0 .. P.max + 1)
             {
                 if (affected[ptype])
-                    child.handleStyleChange(cast(StyleProperty)ptype);
+                    child.handleStyleChange(cast(P)ptype);
             }
         }
     }
