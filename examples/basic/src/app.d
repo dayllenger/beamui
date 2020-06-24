@@ -8,9 +8,11 @@ int main()
 {
     // initialize library
     GuiApp app;
-    app.conf.theme = "light"; // load better theme
     if (!app.initialize())
         return -1;
+
+    // load a better theme
+    platform.stylesheets = [StyleResource("light")];
 
     // set some global styles before we start
     setStyleSheet(currentTheme, css);

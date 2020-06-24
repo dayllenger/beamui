@@ -5,8 +5,6 @@ import beamui.tools.css_hot_reload;
 
 mixin RegisterPlatforms;
 
-enum DEFAULT_STYLE = "style";
-
 int main()
 {
     resourceList.setResourceDirs(
@@ -15,13 +13,10 @@ int main()
     );
 
     GuiApp app;
-    app.conf.theme = "light";
     if (!app.initialize())
         return -1;
 
-    const filename = resourceList.getPathByID(DEFAULT_STYLE);
-    const styles = cast(string)loadResourceBytes(filename);
-    setStyleSheet(currentTheme, styles);
+    platform.stylesheets = [StyleResource("light"), StyleResource("style")];
 
     Window window1 = platform.createWindow("CSS sandbox - beamui");
     Window window2 = platform.createWindow("CSS hot reloader", window1, WindowOptions.expanded, 1, 1);
@@ -38,11 +33,7 @@ int main()
     };
 
     window1.show(() => render!Controls);
-    window2.show({
-        return render((CssHotReloadWidget w) {
-            w.defaultStyleSheet = DEFAULT_STYLE;
-        });
-    });
+    window2.show(() => render!CssHotReloadWidget);
     return platform.enterMessageLoop();
 }
 

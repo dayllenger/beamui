@@ -10,44 +10,48 @@ import beamui;
 
 class CssHotReloadWidget : Panel
 {
-    dstring defaultStyleSheet;
-
     static protected class State : WidgetState
     {
         bool watching;
         bool error;
 
-        dstring resourceID;
-        FileMonitor fmon;
-
-        this(dstring resourceID)
-        {
-            this.resourceID = resourceID;
-        }
+        FileMonitor[] monitors;
 
         void watch(Window win)
         {
-            const filename = resourceList.getPathByID(toUTF8(resourceID));
-            fmon = FileMonitor(filename);
-            if (fmon.check() == FileMonitor.Status.missing)
+            foreach (res; platform.stylesheets)
             {
-                setState(error, true);
-                return;
+                const fn = resourceList.getPathByID(res.resourceID);
+                if (!fn.startsWith(EMBEDDED_RESOURCE_PREFIX))
+                    monitors ~= FileMonitor(fn);
+            }
+            foreach (ref fmon; monitors)
+            {
+                if (fmon.check() == FileMonitor.Status.missing)
+                {
+                    setState(error, true);
+                    return;
+                }
             }
             updateStyles();
             win.setTimer(1000, {
                 if (!watching)
                     return false;
 
-                const status = fmon.check();
-                if (status == FileMonitor.Status.modified)
+                foreach (ref fmon; monitors)
                 {
-                    updateStyles();
-                }
-                else if (status == FileMonitor.Status.missing)
-                {
-                    setState(watching, false);
-                    setState(error, true);
+                    const status = fmon.check();
+                    if (status == FileMonitor.Status.modified)
+                    {
+                        updateStyles();
+                        break;
+                    }
+                    else if (status == FileMonitor.Status.missing)
+                    {
+                        setState(watching, false);
+                        setState(error, true);
+                        break;
+                    }
                 }
                 return true;
             });
@@ -57,32 +61,19 @@ class CssHotReloadWidget : Panel
 
         void updateStyles()
         {
-            const filename = resourceList.getPathByID(toUTF8(resourceID));
-            const styles = cast(string)loadResourceBytes(filename);
-            platform.reloadTheme();
-            setStyleSheet(currentTheme, styles);
+            platform.stylesheets = platform.stylesheets;
         }
     }
 
     override protected State createState()
     {
-        return new State(defaultStyleSheet);
+        return new State;
     }
 
     override protected void build()
     {
         State st = use!State;
         wrap(
-            render((Label tip) {
-                tip.text = "Style resource ID:";
-            }),
-            render((EditLine ed) {
-                ed.text = st.resourceID;
-                if (!st.watching)
-                    ed.onChange = (s) { st.resourceID = s; };
-                else
-                    ed.readOnly = true;
-            }),
             render((CheckButton b) {
                 b.text = "Watch";
                 b.checked = st.watching;

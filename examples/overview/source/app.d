@@ -21,13 +21,10 @@ int main()
 
     // initialize the library
     GuiApp app;
-    app.conf.theme = "light";
     if (!app.initialize())
         return -1;
 
-    const filename = resourceList.getPathByID("style");
-    const styles = cast(string)loadResourceBytes(filename);
-    setStyleSheet(currentTheme, styles);
+    platform.stylesheets = [StyleResource("light"), StyleResource("style")];
 
     // you can change default log level, e.g. always use trace, even for release builds
     //Log.setLogLevel(LogLevel.trace);

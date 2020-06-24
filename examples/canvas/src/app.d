@@ -16,10 +16,10 @@ int main()
     );
 
     GuiApp app;
-    app.conf.theme = "light";
     if (!app.initialize())
         return -1;
 
+    platform.stylesheets = [StyleResource("light")];
     setStyleSheet(currentTheme, styles);
 
     Window window = platform.createWindow("Canvas example - beamui");
