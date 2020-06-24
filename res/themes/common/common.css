@@ -105,19 +105,17 @@ ComboBoxBase { align-items: center; padding: 3px 4px; border-width: 1px; border-
 
 ComboBoxBase:hovered, ComboBoxBase:pressed, ComboBoxBase:focus-within, ComboBoxBase.opened { border-color: var(--main-color); color: var(--hovered-label-color); }
 
-ComboBoxBase:pressed { background-image: var(--control-gradient-active); }
-
 ComboBoxBase:not(enabled) { border-color: var(--pale-border-color); opacity: 0.4; }
 
 ComboBoxBase > .body { flex: 1; min-width: 40px; padding: 2px; transition: color 100ms ease; }
 
 ComboBoxBase > .arrow { padding: 2px; }
 
-Popup.combobox > ListView { width: auto; height: auto; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); }
-
-Popup.combobox > ListView:focused { border-color: var(--paler-border-color); }
+Popup.combobox > ListView { width: auto; height: auto; border: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
 
 Popup.combobox > ListView:not(enabled) { background-color: var(--inverse-text-color); }
+
+ComboBox:pressed, ComboBox.opened, IconTextComboBox:pressed, IconTextComboBox.opened { background-image: var(--control-gradient-active); }
 
 ComboEdit { padding: 0; gap: 0; background-color: var(--pane-color); background-image: none; cursor: auto; }
 

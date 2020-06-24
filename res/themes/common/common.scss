@@ -327,10 +327,6 @@ ComboBoxBase {
         color: var(--hovered-label-color);
     }
 
-    &:pressed {
-        background-image: var(--control-gradient-active);
-    }
-
     &:not(enabled) {
         border-color: var(--pale-border-color);
         opacity: 0.4;
@@ -351,14 +347,17 @@ ComboBoxBase {
 Popup.combobox > ListView {
     width: auto;
     height: auto;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
-
-    &:focused {
-        border-color: var(--paler-border-color);
-    }
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 
     &:not(enabled) {
         background-color: var(--inverse-text-color);
+    }
+}
+
+ComboBox, IconTextComboBox {
+    &:pressed, &.opened {
+        background-image: var(--control-gradient-active);
     }
 }
 
