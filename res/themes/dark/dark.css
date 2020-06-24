@@ -1,0 +1,67 @@
+@import url("themes/common/common.css");
+
+:root {
+  --window-bg: #4f4f4f;
+  --dialog-bg: #4f4f4f;
+
+  --header-color: #3a3a3a;
+  --top-pane-color: #404142;
+  --pane-color: #383838;
+  --pane-color-disabled: #505050;
+
+  --control-color: #333;
+  --control-color-active: #3d3d3d;
+
+  --control-gradient: linear(0deg, #444, #363636);
+  --control-gradient-active: linear(190deg, #404040, #353535);
+
+  --text-color: #ddd;
+  --inverse-text-color: #404040;
+  --hovered-label-color: #acf;
+  --disabled-text-color: rgba(221, 221, 221, 0.5);
+}
+
+ButtonLike {
+  focus-rect-color: #777;
+}
+
+GroupBox {
+  --frame-top-left: url(dark/group_box_frame_up_left);
+  --frame-top-right: url(dark/group_box_frame_up_right);
+  --frame-bottom: url(dark/group_box_frame_bottom);
+}
+
+ScrollBar,
+ElemScrollBar {
+  background-color: rgba(128, 128, 128, 0.25);
+}
+
+ScrollIndicator {
+  background-color: #aaa;
+}
+
+PageScrollButton:pressed {
+  background-color: rgba(160, 160, 160, 0.2);
+}
+PageScrollButton:hovered {
+  background-color: rgba(160, 160, 160, 0.1);
+}
+
+EditLine,
+EditBox {
+  --caret: #fff;
+}
+SourceEdit {
+  --left-pane-bg-1: #303030;
+  --left-pane-bg-2: #333;
+  --left-pane-bg-3: #252525;
+  --left-pane-number-text: #bbb;
+  --left-pane-number-text-current-line: #fff;
+  --left-pane-number-bg: #303030;
+}
+
+SimpleBarChart {
+  --background: #222;
+  --axis: #666;
+  --segment-tag: #888;
+}

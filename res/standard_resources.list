@@ -44,6 +44,10 @@
 ./themes/common/scrollbar_btn_left.png
 ./themes/common/scrollbar_btn_right.png
 ./themes/common/scrollbar_btn_up.png
+./themes/dark/dark.css
+./themes/dark/group_box_frame_bottom.9.png
+./themes/dark/group_box_frame_up_left.9.png
+./themes/dark/group_box_frame_up_right.9.png
 ./themes/light/arrow_right_down_black.png
 ./themes/light/arrow_right_hollow.png
 ./themes/light/group_box_frame_bottom.9.png

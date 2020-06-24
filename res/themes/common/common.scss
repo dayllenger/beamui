@@ -265,9 +265,9 @@ Resizer {
 GroupBox {
     padding: 20px 10px 16px;
 
-    --frame-top-left: url(group_box_frame_up_left);
-    --frame-top-right: url(group_box_frame_up_right);
-    --frame-bottom: url(group_box_frame_bottom);
+    --frame-top-left: none;
+    --frame-top-right: none;
+    --frame-bottom: none;
 }
 
 GroupBox > .caption {

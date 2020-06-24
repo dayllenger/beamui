@@ -83,7 +83,7 @@ Resizer:hovered { background-color: rgba(255, 255, 0, 0.25); }
 Resizer:focused, Resizer:pressed { background-color: var(--main-color); opacity: 0.75; }
 
 /* groupbox */
-GroupBox { padding: 20px 10px 16px; --frame-top-left: url(group_box_frame_up_left); --frame-top-right: url(group_box_frame_up_right); --frame-bottom: url(group_box_frame_bottom); }
+GroupBox { padding: 20px 10px 16px; --frame-top-left: none; --frame-top-right: none; --frame-bottom: none; }
 
 GroupBox > .caption { padding: 1px; text-overflow: ellipsis; }
 
