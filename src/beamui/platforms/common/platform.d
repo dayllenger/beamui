@@ -1602,10 +1602,10 @@ class Window : CustomEventTarget
     {
         _mainRootElement.handleThemeChange();
         _popupRootElement.handleThemeChange();
-/+
-        if (auto p = _tooltip.popup)
-            p.handleThemeChange();
-+/
+        // if (auto p = _tooltip.popup)
+        //     p.handleThemeChange();
+
+        needStyleRecalculation = true;
     }
 
     /// Post event to handle in UI thread (this method can be used from background thread)
@@ -2174,6 +2174,7 @@ struct WindowMap(W : Window, ID)
 */
 class Platform
 {
+    // dfmt off
     __gshared private Platform _instance;
 
     /// Platform singleton instance
@@ -2190,24 +2191,20 @@ class Platform
     {
         /// Returns application UI language code
         string uiLanguage() const { return _conf.lang; }
-
-        /// Get name of currently active theme
-        string uiTheme() const { return _conf.theme; }
-        /// Set application UI theme - will relayout content of all windows if theme has been changed
-        void uiTheme(string name)
-        {
-            if (_conf.theme != name)
-            {
-                _conf.theme = setupTheme(name);
-                handleThemeChange();
-            }
-        }
-
         /// How dialogs should be displayed - as popup or window
         DialogDisplayMode uiDialogDisplayMode() const { return _conf.dialogDisplayModes; }
-
         /// Default icon for newly created windows
         string defaultWindowIcon() const { return _conf.defaultWindowIcon; }
+
+        /// List of loaded CSS resources. Reloads active theme and updates all windows when set
+        const(StyleResource)[] stylesheets() const { return _stylesheets; }
+        /// ditto
+        void stylesheets(const StyleResource[] resources)
+        {
+            _stylesheets = resources;
+            reloadStyles();
+            handleThemeChange();
+        }
 
         IconProviderBase iconProvider()
         {
@@ -2241,10 +2238,12 @@ class Platform
             int GLVersionMinor() const { return _conf.GLVersionMinor; }
         }
     }
+    // dfmt on
 
     private
     {
         AppConf _conf;
+        const(StyleResource)[] _stylesheets;
         IconProviderBase _iconProvider;
 
         StopWatch _timeOriginStopWatch;
@@ -2259,7 +2258,7 @@ class Platform
             Log.v("Loading '", conf.lang, "' language file");
             loadTranslator(conf.lang);
         }
-        setupTheme(conf.theme);
+        reloadStyles();
 
         _timeOriginStopWatch.start();
     }
@@ -2321,20 +2320,6 @@ class Platform
     /// Set text to clipboard (under Linux, when `mouseBuffer` is true, use mouse selection clipboard)
     abstract void setClipboardText(dstring text, bool mouseBuffer = false);
 
-    /// Reload current theme. Useful to quickly edit and test a theme
-    final void reloadTheme()
-    {
-        Log.v("Reloading theme ", _conf.theme);
-        auto theme = loadTheme(_conf.theme);
-        if (!theme)
-        {
-            Log.e("Cannot reload theme ", _conf.theme);
-            return;
-        }
-        currentTheme = theme;
-        handleThemeChange();
-    }
-
     /** Call to disable automatic screen DPI detection, to use provided one instead.
 
         Pass 0 to disable override and use value detected by windows.
@@ -2362,6 +2347,14 @@ class Platform
         return fm.showInFileManager(pathName);
     }
 
+    private void reloadStyles()
+    {
+        Theme theme = createDefaultTheme();
+        foreach (res; _stylesheets)
+            setStyleSheetFromResource(theme, res);
+        currentTheme = theme;
+    }
+
     /// Handle theme change, e.g. reload some themed resources
     private void handleThemeChange()
     {
@@ -2383,26 +2376,6 @@ class Platform
             w.dispatchDPIChange();
             w.update();
         }
-    }
-
-    private string setupTheme(string name)
-    {
-        Theme theme = loadTheme(name);
-        if (name != "default")
-        {
-            if (!theme)
-            {
-                Log.e("Cannot load theme `", name, "` - will use default theme");
-                theme = loadTheme("default");
-            }
-            else
-            {
-                Log.i("Applying loaded theme ", name);
-            }
-        }
-        assert(theme);
-        currentTheme = theme;
-        return theme.name;
     }
 
     static if (USE_OPENGL)
@@ -2538,24 +2511,22 @@ static if (BACKEND_GUI)
     }
 }
 
-/// Holds initial application settings
+/// Holds initial application settings. All of them require app restart to change
 struct AppConf
 {
-    /// UI language, e.g. "en", "fr", "ru" (requires app restart to change)
+    /// UI language, e.g. "en", "fr", "ru"
     string lang = "en";
-    /// Name of initial UI theme
-    string theme = "default";
-    /// Default icon for newly created windows (requires app restart to change)
+    /// Default icon for newly created windows
     string defaultWindowIcon = "beamui-logo";
 
-    /// How dialogs should be displayed - as popup or window (requires app restart to change)
+    /// How dialogs should be displayed - as popup or window
     DialogDisplayMode dialogDisplayModes =
         DialogDisplayMode.messageBoxInPopup |
         DialogDisplayMode.inputBoxInPopup;
 
-    /// OpenGL context major version (requires app restart to change)
+    /// OpenGL context major version
     int GLVersionMajor = 3;
-    /// OpenGL context minor version (requires app restart to change)
+    /// OpenGL context minor version
     int GLVersionMinor = 2;
 }
 

@@ -25,12 +25,6 @@ import CSS = beamui.css.css;
 /// Theme - a collection of widget styles
 final class Theme
 {
-    /// Unique name of theme
-    @property string name() const
-    {
-        return _name;
-    }
-
     private
     {
         struct Bag
@@ -45,14 +39,7 @@ final class Theme
             Style[Selector* ] map;
         }
 
-        string _name;
         Store[string] _styles;
-    }
-
-    /// Create empty theme called `name`
-    this(string name)
-    {
-        _name = name;
     }
 
     ~this()
@@ -111,7 +98,7 @@ final class Theme
         foreach (store; _styles)
             foreach (bag; store.byTag)
                 total += bag.all.length;
-        Log.fd("Theme: %s, namespaces: %d, styles: %d", _name, _styles.length, total);
+        Log.fd("Theme { namespaces: %d, styles: %d }", _styles.length, total);
     }
 }
 
@@ -140,12 +127,15 @@ private __gshared bool defaultIsLoaded;
 
 private alias Decoder = void function(ref StylePropertyList, const(CSS.Token)[]);
 
-/// Load theme from file, `null` if failed
-Theme loadTheme(string name)
+/// A CSS file resource ID with some additional data
+struct StyleResource
 {
-    if (!name.length)
-        return null;
+    string resourceID;
+    string namespace = "beamui";
+}
 
+Theme createDefaultTheme()
+{
     if (!defaultIsLoaded)
     {
         version (Windows)
@@ -157,35 +147,57 @@ Theme loadTheme(string name)
         defaultStyleSheet = CSS.createStyleSheet(src);
         defaultIsLoaded = true;
     }
-    if (name == "default")
+    auto theme = new Theme;
+    loadThemeFromCSS(theme, defaultStyleSheet, "beamui");
+    return theme;
+}
+
+/// Append style sheet rules from CSS `resource` to `theme`
+void setStyleSheetFromResource(Theme theme, StyleResource resource)
+{
+    import std.utf : validate, UTFException;
+
+    if (!resource.resourceID.length)
+        return;
+
+    Log.fv("CSS: loading '%s.css'", resource.resourceID);
+
+    // TODO: BACKEND_CONSOLE suffix
+    // TODO: cache embedded stylesheets
+
+    const filename = resourceList.getPathByID(resource.resourceID);
+    if (!filename.length)
+        return;
+    if (!filename.endsWith(".css"))
     {
-        auto theme = new Theme(name);
-        loadThemeFromCSS(theme, defaultStyleSheet, "beamui");
-        return theme;
+        // disallow files without this extension for now
+        Log.fe("CSS: not a CSS file: '%s'", filename);
+        return;
+    }
+    const source = cast(string)loadResourceBytes(filename);
+    if (!source.length)
+        return;
+    try
+    {
+        validate(source);
+    }
+    catch (UTFException u)
+    {
+        Log.fe("CSS: file '%s' contains invalid UTF-8", filename);
+        return;
     }
 
-    string id = (BACKEND_CONSOLE ? "console_" ~ name : name) ~ ".css";
-    string filename = resourceList.getPathByID(id);
-    if (!filename.length)
-        return null;
-
-    Log.d("Loading theme from file ", filename);
-    string src = cast(string)loadResourceBytes(filename);
-    if (!src.length)
-        return null;
-
-    auto theme = new Theme(name);
-    const stylesheet = CSS.createStyleSheet(src);
-    loadThemeFromCSS(theme, defaultStyleSheet, "beamui");
-    loadThemeFromCSS(theme, stylesheet, "beamui");
-    return theme;
+    const css = CSS.createStyleSheet(source);
+    loadThemeFromCSS(theme, css, resource.namespace);
 }
 
 /// Add style sheet rules from the CSS source to the theme
 void setStyleSheet(Theme theme, string source, string namespace = "beamui")
 {
-    const stylesheet = CSS.createStyleSheet(source);
-    loadThemeFromCSS(theme, stylesheet, namespace);
+    if (!source.length)
+        return;
+    const css = CSS.createStyleSheet(source);
+    loadThemeFromCSS(theme, css, namespace);
 }
 
 private:
