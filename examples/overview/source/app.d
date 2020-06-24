@@ -2,6 +2,7 @@
 module app;
 
 import beamui;
+import std.conv : dtext;
 
 mixin RegisterPlatforms;
 
@@ -66,6 +67,10 @@ class App : Panel
                 TabPair(
                     (TabItem ti) { ti.text = "Editors"; },
                     (TabForEditors tab) {}
+                ),
+                TabPair(
+                    (TabItem ti) { ti.text = "Lists"; },
+                    (TabForLists tab) {}
                 ),
                 TabPair(
                     (TabItem ti) { ti.text = "Charts"; },
@@ -489,6 +494,154 @@ class SourceEditorWithSettings : Panel
                 ed.useSpacesForTabs = st.useSpaces;
                 ed.showLineNumbers = st.lineNumbers;
             }),
+        );
+    }
+}
+
+/// List controls & combo boxes
+class TabForLists : Panel
+{
+    static class State : WidgetState
+    {
+        TypeInfo_Class selectedClass;
+        TypeInfo_Class selectedDetail;
+    }
+
+    override State createState()
+    {
+        return new State;
+    }
+
+    override void build()
+    {
+        import std.array : array;
+        import std.algorithm : map, splitter;
+        import std.string : join;
+        import beamui.graphics.colors : decodeHexColor, decodeTextColor;
+
+        State st = use!State;
+
+        TypeInfo_Class[] classes;
+        dstring[] classNames;
+        foreach (m; ModuleInfo) {
+            if (m) {
+                foreach (c; m.localClasses) {
+                    if (c) {
+                        classes ~= c;
+                        classNames ~= c.name.to!dstring;
+                    }
+                }
+            }
+        }
+
+        // make color names so decodeTextColor can parse them
+        static immutable dstring[] colorNames = [__traits(allMembers, NamedColor)]
+            .map!(a => a.splitter('_').join).array;
+
+        wrap(
+            render((Panel p) {}).wrap(
+                render((GroupBox gb) {
+                    gb.caption = "Symbol List";
+                    gb.attributes["labels"];
+                }).wrap(
+                    render((Label lb) {
+                        lb.text = "Symbol name:";
+                    }),
+                    render((ComboBox cb) {
+                        cb.items = classNames;
+                        cb.onSelect = (i) {
+                            setState(st.selectedClass, classes[i]);
+                            setState(st.selectedDetail, null);
+                        };
+                    }),
+                    render((Label lb) {
+                        lb.text = "Color:";
+                    }),
+                    render((ComboEdit cb) {
+                        // TODO: make ComboEdit emit string events, not indexes
+                        cb.items = colorNames;
+                        cb.onSelect = (i) {
+                            auto input = colorNames[i].to!string;
+
+                            auto color = decodeHexColor(input)
+                                .or(decodeTextColor(input)
+                                .or(Color.transparent));
+
+                            window.backgroundColor = color;
+                        };
+                    }),
+                ),
+            ),
+            render((Panel p) {}).wrap(
+                render((GroupBox gb) {
+                    gb.caption = "Runtime Introspection";
+                    gb.attributes["labels"];
+                }).wrap(
+                    render((Label lb) {
+                        lb.text = "Selected: " ~ (st.selectedClass ? st.selectedClass.name : "none").to!dstring;
+                    }),
+                    render((Label lb) {
+                        lb.text = "Inheritance:";
+                    }),
+                    render((ListView lv) {
+                        if (!st.selectedClass) {
+                            lv.visible = false;
+                            return;
+                        }
+
+                        dstring[] items;
+                        TypeInfo_Class[] context;
+                        void dumpRuntimeInfo(TypeInfo_Class type, string indent)
+                        {
+                            context ~= type;
+                            items ~= (indent ~ type.name).to!dstring;
+
+                            if (type.base)
+                                dumpRuntimeInfo(type.base, indent ~ "\t");
+
+                            foreach (iface; type.interfaces)
+                                if (iface.classinfo) {
+                                    items ~= (indent ~ "implements " ~ iface.classinfo.name).to!dstring;
+                                    context ~= iface.classinfo;
+                                }
+                        }
+
+                        assert(items.length == context.length);
+
+                        dumpRuntimeInfo(st.selectedClass, "");
+
+                        lv.visible = true;
+                        lv.itemCount = cast(uint)items.length;
+                        lv.itemBuilder = i => lv.item(items[i]);
+                        lv.onSelect = i => setState(st.selectedDetail, context[i]);
+                    }),
+                    render((Label lb) {
+                        lb.text = "Details:";
+                    }),
+                    render((ListView lv) {
+                        if (!st.selectedDetail) {
+                            lv.visible = false;
+                            return;
+                        }
+
+                        auto t = st.selectedDetail;
+
+                        dstring[] items;
+                        items ~= dtext("Name: ", t.name);
+                        items ~= dtext("Data size: ", t.initializer.length);
+                        static foreach (flag; __traits(allMembers, TypeInfo_Class.ClassFlags))
+                        {
+                            items ~= dtext(flag, ": ",
+                                (t.m_flags & __traits(getMember, TypeInfo_Class.ClassFlags, flag)) != 0
+                                    ? "yes" : "no");
+                        }
+
+                        lv.visible = true;
+                        lv.itemCount = cast(uint)items.length;
+                        lv.itemBuilder = i => lv.item(items[i]);
+                    }),
+                ),
+            ),
         );
     }
 }

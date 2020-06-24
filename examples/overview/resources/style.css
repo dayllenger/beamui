@@ -71,6 +71,15 @@ TabForEditors EditBox {
   flex: auto;
 }
 
+TabForLists {
+  display: flex;
+  flex-direction: row;
+}
+
+TabForLists > Panel {
+  flex-grow: 1;
+}
+
 TabForCharts {
   display: column;
 }
