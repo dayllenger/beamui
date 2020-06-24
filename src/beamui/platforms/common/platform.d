@@ -983,14 +983,14 @@ class Window : CustomEventTarget
     // Focused widget
 
     private WeakRef!Element _focusedElement;
-    private StateFlags _focusStateToApply = StateFlags.focused;
+    private StateFlags _focusStateToApply = StateFlags.focused | StateFlags.focusWithin;
     /// Returns current focused widget
     @property inout(WeakRef!Element) focusedElement() inout { return _focusedElement; }
 
     /// Change focus to widget
     Element setFocus(WeakRef!Element target, FocusReason reason = FocusReason.unspecified)
     {
-        auto targetState = StateFlags.focused;
+        auto targetState = StateFlags.focused | StateFlags.focusWithin;
         if (reason == FocusReason.tabFocus)
             targetState |= StateFlags.keyboardFocused;
         _focusStateToApply = targetState;
