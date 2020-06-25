@@ -1,12 +1,12 @@
 /**
 Tabbed controls.
 
-Mostly you will use only TabWidget class. Other classes are ancillary.
+Mostly you will use only `Tabs` class. Other classes are ancillary.
 
 Synopsis:
 ---
 // create tab widget
-auto tabs = new TabWidget;
+auto tabs = new Tabs;
 // and add tabs
 // content widgets must have different non-null ids
 tabs.addTab(new Label("1st tab content"d).setID("tab1"), "Tab 1");
@@ -246,7 +246,7 @@ alias TabPair = WidgetPair!(TabItemBase, Widget);
     CSS_nodes:
     ---
     // top alignment
-    TabWidget.top
+    Tabs.top
     ├── TabBar
     │   ├── TabItemBase
     │   ...
@@ -257,7 +257,7 @@ alias TabPair = WidgetPair!(TabItemBase, Widget);
     ---
     ---
     // bottom alignment
-    TabWidget.bottom
+    Tabs.bottom
     ├── TabContent
     │   ├── TabPane
     │   │   ╰── *content*
@@ -267,7 +267,7 @@ alias TabPair = WidgetPair!(TabItemBase, Widget);
         ...
     ---
 */
-class TabWidget : Widget
+class Tabs : Widget
 {
     WidgetKey defaultTabKey = 0;
     /// Signals of tab change (e.g. by clicking on tab header)
@@ -285,7 +285,7 @@ class TabWidget : Widget
         focusGroup = true;
     }
 
-    final TabWidget wrap(TabPair[] tabs...)
+    final Tabs wrap(TabPair[] tabs...)
     {
         if (tabs.length == 0)
             return this;
@@ -781,7 +781,7 @@ class TabHost : Panel
     }
 }
 
-class TabWidget : Panel
+class Tabs : Panel
 {
     Signal!TabChangeHandler onTabChange;
 

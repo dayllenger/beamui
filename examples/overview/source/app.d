@@ -51,8 +51,8 @@ class App : Panel
     override void build()
     {
         wrap(
-            render((TabWidget tw) {
-                tw.onSelect = (item) {
+            render((Tabs tabs) {
+                tabs.onSelect = (item) {
                     const ti = cast(TabItem)item;
                     window.title = ti.text ~ " overview - beamui"d;
                 };
@@ -802,7 +802,7 @@ class TabForCharts : Panel
     //=========================================================================
     // create tabs
 
-    tabs = new TabWidget;
+    tabs = new Tabs;
     tabs.onTabClose ~= (string tabID) { tabs.removeTab(tabID); };
 
     {

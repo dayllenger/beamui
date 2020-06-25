@@ -613,7 +613,7 @@ RangeSlider {
 
 /* tabs */
 
-TabWidget {
+Tabs {
     gap: 0;
 }
 
@@ -666,11 +666,11 @@ TabItem {
     }
 }
 
-TabWidget.top > TabBar > TabItem {
+Tabs.top > TabBar > TabItem {
     border-bottom-width: 2px;
 }
 
-TabWidget.bottom > TabBar > TabItem {
+Tabs.bottom > TabBar > TabItem {
     border-top-width: 2px;
 }
 

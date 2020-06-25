@@ -203,7 +203,7 @@ RangeSlider.horizontal > .range-between { border-top-width: 4px; border-bottom-w
 RangeSlider.vertical > .range-between { border-left-width: 4px; border-right-width: 4px; }
 
 /* tabs */
-TabWidget { gap: 0; }
+Tabs { gap: 0; }
 
 TabBar { padding-left: 3px; padding-right: 3px; }
 
@@ -223,9 +223,9 @@ TabItem > ButtonLike.close { padding: 0; border: none; background: none; }
 
 TabItem:hovered, TabItem:selected, TabItem:focused { color: var(--main-color); }
 
-TabWidget.top > TabBar > TabItem { border-bottom-width: 2px; }
+Tabs.top > TabBar > TabItem { border-bottom-width: 2px; }
 
-TabWidget.bottom > TabBar > TabItem { border-top-width: 2px; }
+Tabs.bottom > TabBar > TabItem { border-top-width: 2px; }
 
 /* editors */
 EditLine { padding: 4px; border-width: 1px; border-style: solid; border-color: var(--paler-border-color); background-color: var(--pane-color); transition: border-color 100ms ease; }

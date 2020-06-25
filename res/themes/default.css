@@ -89,7 +89,7 @@ TabBar {
   display: flex;
 }
 
-TabWidget {
+Tabs {
   display: column;
 }
 

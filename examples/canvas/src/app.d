@@ -38,7 +38,7 @@ const styles = `
 App {
     display: free;
 }
-TabWidget {
+Tabs {
     width: 600px;
     height: 500px;
     left: 0;
@@ -94,8 +94,8 @@ class App : Panel
         State st = use!State;
 
         wrap(
-            render((TabWidget tw) {
-                tw.onSelect = (item) {
+            render((Tabs tabs) {
+                tabs.onSelect = (item) {
                     TabItem it = cast(TabItem)item;
                     st.blendingSelected = it.text == "Blending";
                 };

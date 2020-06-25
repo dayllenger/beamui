@@ -61,8 +61,8 @@ class Controls : Panel
     {
         State st = use!State;
         wrap(
-            render((TabWidget tw) {
-                tw.buildHiddenTabs = true;
+            render((Tabs tabs) {
+                tabs.buildHiddenTabs = true;
             }).wrap(
                 TabPair(
                     (TabItem i) { i.text = "Tab 1"; },
