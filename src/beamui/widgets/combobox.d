@@ -75,7 +75,30 @@ abstract class ComboBoxBase : Panel
     {
         allowsFocus = true;
         allowsHover = true;
+        onKeyEvent = &handleKeyEvent;
         onWheelEvent = &handleWheelEvent;
+    }
+
+    private bool handleKeyEvent(KeyEvent event)
+    {
+        const oldIndex = use!State.selectedItemIndex;
+        int newIndex = int.min;
+        if (event.action == KeyAction.keyDown)
+        {
+            if (event.key == Key.down)
+                newIndex = oldIndex + 1;
+            else if (event.key == Key.up)
+                newIndex = oldIndex - 1;
+            else if (event.key == Key.home)
+                newIndex = 0;
+            else if (event.key == Key.end)
+                newIndex = itemCount - 1;
+        }
+        if (newIndex == int.min)
+            return false;
+
+        select(clamp(newIndex, 0, itemCount - 1));
+        return true;
     }
 
     private bool handleWheelEvent(WheelEvent event)
@@ -119,15 +142,6 @@ protected:
         st.needToMoveFocus = true;
     }
 
-    void execPreview(int index)
-    {
-        const State st = use!State;
-        if (!st.opened) // called while closed means executed through arrow keys
-            select(index);
-        else if (onPreview)
-            onPreview(index);
-    }
-
     void select(int index)
     {
         State st = use!State;
@@ -158,6 +172,7 @@ protected:
 
             ListView v = buildList();
             v.itemCount = itemCount;
+            v.onSelect = onPreview;
             v.onItemClick = (i) {
                 select(i);
                 close();
@@ -234,8 +249,6 @@ protected:
     {
         ListView v = render!ComboListView;
         v.itemBuilder = i => v.item(items[i]);
-        v.onSelect = &execPreview;
-        v.onItemClick = &select;
         return v;
     }
 
@@ -284,8 +297,6 @@ protected:
     {
         ListView v = render!ComboListView;
         v.itemBuilder = i => v.item(items[i]);
-        v.onSelect = &execPreview;
-        v.onItemClick = &select;
         return v;
     }
 
@@ -313,25 +324,6 @@ class ComboEdit : ComboBoxBase
     this()
     {
         allowsFocus = false;
-        onKeyEvent = &handleKeyEvent;
-    }
-
-    private bool handleKeyEvent(KeyEvent event)
-    {
-        if (event.action == KeyAction.keyDown)
-        {
-            if (event.key == Key.down)
-            {
-                open();
-                return true;
-            }
-            if ((event.key == Key.space || event.key == Key.enter) && readOnly)
-            {
-                open();
-                return true;
-            }
-        }
-        return false;
     }
 
 protected:
@@ -361,7 +353,6 @@ protected:
     {
         ListView v = render!ComboListView;
         v.itemBuilder = i => v.item(items[i]);
-        v.onItemClick = &select;
         return v;
     }
 }
