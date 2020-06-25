@@ -241,7 +241,7 @@ class ConsolePlatform : Platform
         return false;
     }
 
-    override int enterMessageLoop()
+    override int runEventLoop()
     {
         Log.i("Entered message loop");
         while (_console.pollInput())

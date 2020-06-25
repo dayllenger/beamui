@@ -34,7 +34,7 @@ int main()
 
     window1.show(() => render!Controls);
     window2.show(() => render!CssHotReloadWidget);
-    return platform.enterMessageLoop();
+    return platform.runEventLoop();
 }
 
 class Controls : Panel

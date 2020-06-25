@@ -1066,7 +1066,7 @@ final class Win32Platform : Platform
         deinitializeWin32Backend();
     }
 
-    override int enterMessageLoop()
+    override int runEventLoop()
     {
         MSG msg;
         while (GetMessage(&msg, null, 0, 0))

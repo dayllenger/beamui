@@ -25,7 +25,7 @@ int main()
 
     window.show();
 
-    return platform.enterMessageLoop();
+    return platform.runEventLoop();
 }
 
 static if (USE_OPENGL):

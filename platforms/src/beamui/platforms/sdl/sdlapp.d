@@ -1003,7 +1003,7 @@ final class SDLPlatform : Platform
 
     private bool _windowsMinimized;
 
-    override int enterMessageLoop()
+    override int runEventLoop()
     {
         Log.i("entering message loop");
         SDL_Event event;

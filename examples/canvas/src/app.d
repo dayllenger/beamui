@@ -31,7 +31,7 @@ int main()
         destroy(data);
 
     window.show(() => render!App);
-    return platform.enterMessageLoop();
+    return platform.runEventLoop();
 }
 
 const styles = `

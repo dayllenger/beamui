@@ -21,8 +21,8 @@ int main()
     Window window = platform.createWindow("Converter", null, WindowOptions.expanded, 1, 1);
     // show it with the temperature converter as its main widget
     window.show(() => render!TemperatureConverter);
-    // run event loop
-    return platform.enterMessageLoop();
+    // run application event loop
+    return platform.runEventLoop();
 }
 
 const css = `

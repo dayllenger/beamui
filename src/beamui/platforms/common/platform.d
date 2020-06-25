@@ -2274,7 +2274,7 @@ class Platform
 
         When returned from this method, application is shutting down.
     */
-    abstract int enterMessageLoop();
+    abstract int runEventLoop();
 
     //===============================================================
     // Window routines

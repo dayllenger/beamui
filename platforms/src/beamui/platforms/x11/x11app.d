@@ -1331,7 +1331,7 @@ final class X11Platform : Platform
         return eventsInQueue;
     }
 
-    override int enterMessageLoop()
+    override int runEventLoop()
     {
         Log.d("entering message loop");
 

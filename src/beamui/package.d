@@ -20,7 +20,7 @@ int main()
     // show window
     window.show();
     // run event loop
-    return platform.enterMessageLoop();
+    return platform.runEventLoop();
 }
 ---
 
