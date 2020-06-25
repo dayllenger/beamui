@@ -420,7 +420,7 @@ class RadioButton : Panel
 }
 
 /// Canvas widget - draw arbitrary graphics on it by providing a callback
-class CanvasWidget : Widget
+class Canvas : Widget
 {
     void delegate(Painter, Size) onDraw;
 

@@ -68,7 +68,7 @@ SwitchButton:not(enabled) { opacity: 0.4; }
 
 SwitchButton:checked { background: url(switch_on); }
 
-CanvasWidget { min-width: 50px; min-height: 50px; }
+Canvas { min-width: 50px; min-height: 50px; }
 
 /* text */
 Label { padding: 2px; }

@@ -143,7 +143,7 @@ class App : Panel
 TabPair makeCanvasTab(dstring text, void function(Painter, Size) func)
 {
     TabItem item = render!TabItem;
-    CanvasWidget cvs = render!CanvasWidget;
+    Canvas cvs = render!Canvas;
     item.text = text;
     cvs.onDraw = toDelegate(func);
     return TabPair(item, cvs);
