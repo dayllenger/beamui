@@ -500,8 +500,25 @@ class TabForLists : Panel
 {
     static class State : WidgetState
     {
+        TypeInfo_Class[] classes;
+        dstring[] classNames;
+
         TypeInfo_Class selectedClass;
         TypeInfo_Class selectedDetail;
+
+        this()
+        {
+            foreach (m; ModuleInfo)
+            {
+                if (m)
+                    foreach (c; m.localClasses)
+                        if (c)
+                        {
+                            classes ~= c;
+                            classNames ~= c.name.to!dstring;
+                        }
+            }
+        }
     }
 
     override State createState()
@@ -518,19 +535,6 @@ class TabForLists : Panel
 
         State st = use!State;
 
-        TypeInfo_Class[] classes;
-        dstring[] classNames;
-        foreach (m; ModuleInfo) {
-            if (m) {
-                foreach (c; m.localClasses) {
-                    if (c) {
-                        classes ~= c;
-                        classNames ~= c.name.to!dstring;
-                    }
-                }
-            }
-        }
-
         // make color names so decodeTextColor can parse them
         static immutable dstring[] colorNames = [__traits(allMembers, NamedColor)]
             .map!(a => a.splitter('_').join).array;
@@ -545,9 +549,9 @@ class TabForLists : Panel
                         lb.text = "Symbol name:";
                     }),
                     render((ComboBox cb) {
-                        cb.items = classNames;
+                        cb.items = st.classNames;
                         cb.onSelect = (i) {
-                            setState(st.selectedClass, classes[i]);
+                            setState(st.selectedClass, st.classes[i]);
                             setState(st.selectedDetail, null);
                         };
                     }),
