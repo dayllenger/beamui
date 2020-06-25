@@ -30,12 +30,22 @@ import beamui.widgets.widget;
 
 private class ComboListView : ListView
 {
+    bool focus;
+
     override protected Element createElement()
     {
         auto el = new ElemListView;
         el.mouseSelectBehavior = ListMouseBehavior.activateOnRelease;
         el.sumItemSizes = true;
         return el;
+    }
+
+    override protected void updateElement(Element el)
+    {
+        super.updateElement(el);
+
+        if (focus)
+            el.setFocus();
     }
 }
 
@@ -83,6 +93,8 @@ protected:
     {
         int selectedItemIndex;
         bool opened;
+
+        bool needToMoveFocus;
     }
 
     override State createState()
@@ -94,14 +106,17 @@ protected:
     {
         if (itemCount > 0) // don't show empty popup
         {
-            setState(use!State.opened, true);
+            State st = use!State;
+            setState(st.opened, true);
+            st.needToMoveFocus = true;
         }
     }
 
     void close()
     {
-        setState(use!State.opened, false);
-        // TODO: focus combobox back
+        State st = use!State;
+        setState(st.opened, false);
+        st.needToMoveFocus = true;
     }
 
     void execPreview(int index)
@@ -136,12 +151,11 @@ protected:
         arrow.namespace = null;
         wrap(body, arrow);
 
-        const State st = use!State;
+        State st = use!State;
         if (st.opened)
         {
             attributes["opened"];
 
-            // TODO: focus list
             ListView v = buildList();
             v.itemCount = itemCount;
             v.onItemClick = (i) {
@@ -156,6 +170,12 @@ protected:
                 }
                 return false;
             };
+            // FIXME: this is a wacky way to move focus, need a more general solution
+            if (auto clv = cast(ComboListView)v)
+            {
+                clv.focus = st.needToMoveFocus;
+                st.needToMoveFocus = false;
+            }
 
             Popup p = render!Popup;
             p.attributes["combobox"];
@@ -163,6 +183,18 @@ protected:
             p.alignment = PopupAlign.below | PopupAlign.fitAnchorSize;
             p.wrap(v);
             window.showPopup(p);
+        }
+    }
+
+    override void updateElement(Element el)
+    {
+        super.updateElement(el);
+
+        State st = use!State;
+        if (st.needToMoveFocus)
+        {
+            el.setFocus();
+            st.needToMoveFocus = false;
         }
     }
 
