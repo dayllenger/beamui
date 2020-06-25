@@ -12,6 +12,17 @@ import beamui.widgets.scrollbar;
 import beamui.widgets.text : Label;
 import beamui.widgets.widget;
 
+/// Specifies how mouse button input by the user should be handled in a list with multiple items.
+enum ListMouseBehavior
+{
+    /// Clicks items while the mouse button is down. Moving the mouse while dragging causes items under the mouse to be
+    /// selected during the drag operation.
+    activateWhilePressed,
+    /// Clicks items when the mouse button is released. Causes at most one select event per mouse click, potentially
+    /// allows the user to cancel selection when aborted on mouse leave.
+    activateOnRelease,
+}
+
 /// Vertical or horizontal view on list data, with one scrollbar
 class ListView : Widget
 {
@@ -170,12 +181,12 @@ class ElemListView : ElemGroup
     bool selectOnHover;
     /// Policy for `measure`: when true, it considers items' total size
     bool sumItemSizes;
+    /// Controls how mouse button presses and dragging is handled for onItemClick
+    ListMouseBehavior mouseSelectBehavior = ListMouseBehavior.activateWhilePressed;
 
     private
     {
         Orientation _orientation = Orientation.vertical;
-        /// If true, generate `onItemClick` on mouse down instead mouse up event
-        bool _clickOnButtonDown;
 
         Buf!Box _itemBoxes;
         bool _needScrollbar;
@@ -569,13 +580,14 @@ class ElemListView : ElemGroup
                 }
                 if (event.button == MouseButton.left || event.button == MouseButton.right)
                 {
-                    if ((_clickOnButtonDown && event.action == MouseAction.buttonDown) ||
-                            (!_clickOnButtonDown && event.action == MouseAction.buttonUp))
+                    const clickOnButtonDown = mouseSelectBehavior == ListMouseBehavior.activateWhilePressed;
+                    if ((clickOnButtonDown && event.action == MouseAction.buttonDown) ||
+                            (!clickOnButtonDown && event.action == MouseAction.buttonUp))
                     {
                         if (itemEnabled(i))
                         {
                             handleItemClick(i);
-                            if (_clickOnButtonDown)
+                            if (clickOnButtonDown)
                                 event.doNotTrackButtonDown = true;
                         }
                     }

@@ -23,7 +23,7 @@ module beamui.widgets.combobox;
 
 import beamui.widgets.controls : Button, ImageWidget;
 import beamui.widgets.editors : EditLine;
-import beamui.widgets.lists : ElemListView, ListView;
+import beamui.widgets.lists : ElemListView, ListView, ListMouseBehavior;
 import beamui.widgets.popup;
 import beamui.widgets.text : Label;
 import beamui.widgets.widget;
@@ -33,6 +33,7 @@ private class ComboListView : ListView
     override protected Element createElement()
     {
         auto el = new ElemListView;
+        el.mouseSelectBehavior = ListMouseBehavior.activateOnRelease;
         el.sumItemSizes = true;
         return el;
     }
@@ -55,6 +56,8 @@ private class ComboListView : ListView
 */
 abstract class ComboBoxBase : Panel
 {
+    /// Triggers when the user drags the mouse on the list items and hovers over different items
+    void delegate(int) onPreview;
     /// Triggers on item selection and passes integer index of the item
     void delegate(int) onSelect;
 
@@ -101,12 +104,23 @@ protected:
         // TODO: focus combobox back
     }
 
+    void execPreview(int index)
+    {
+        const State st = use!State;
+        if (!st.opened) // called while closed means executed through arrow keys
+            select(index);
+        else if (onPreview)
+            onPreview(index);
+    }
+
     void select(int index)
     {
         State st = use!State;
         if (st.selectedItemIndex != index)
         {
             setState(st.selectedItemIndex, index);
+            if (onPreview)
+                onPreview(index);
             if (onSelect)
                 onSelect(index);
         }
@@ -188,6 +202,8 @@ protected:
     {
         ListView v = render!ComboListView;
         v.itemBuilder = i => v.item(items[i]);
+        v.onSelect = &execPreview;
+        v.onItemClick = &select;
         return v;
     }
 
@@ -236,6 +252,8 @@ protected:
     {
         ListView v = render!ComboListView;
         v.itemBuilder = i => v.item(items[i]);
+        v.onSelect = &execPreview;
+        v.onItemClick = &select;
         return v;
     }
 
@@ -311,6 +329,7 @@ protected:
     {
         ListView v = render!ComboListView;
         v.itemBuilder = i => v.item(items[i]);
+        v.onItemClick = &select;
         return v;
     }
 }
