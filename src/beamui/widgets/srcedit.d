@@ -18,7 +18,7 @@ import beamui.widgets.scroll : ScrollBarMode;
 import beamui.widgets.widget;
 
 /// Base class for source code editors, with line numbering, syntax highlight, etc.
-class SourceEdit : EditBox
+class SourceEdit : TextArea
 {
     /// When true, line numbers are shown
     bool showLineNumbers = true;
@@ -53,7 +53,7 @@ class SourceEdit : EditBox
     }
 }
 
-class ElemSourceEdit : ElemEditBox
+class ElemSourceEdit : ElemTextArea
 {
     @property
     {

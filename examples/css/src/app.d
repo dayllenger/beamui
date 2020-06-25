@@ -92,9 +92,9 @@ class Controls : Panel
                                 sl.onChange = (v) { setState(st.dummyDouble, v); };
                             }),
                             render((Panel p) { p.id = "p1"; }).wrap(
-                                render((EditLine ed) {
+                                render((TextField ed) {
                                     ed.attributes["expand"];
-                                    ed.placeholder = "Edit line";
+                                    ed.placeholder = "Enter some text...";
                                 }),
                                 render((ComboBox cb) {
                                     static items = ["Item 1"d, "Item 2"d, "Item 3"d];
@@ -129,7 +129,7 @@ class Controls : Panel
                                 ed.content = st.someText;
                             }),
                             render((Resizer r) {}),
-                            render((EditBox ed) {
+                            render((TextArea ed) {
                                 ed.content = st.someText;
                                 ed.readOnly = true;
                             }),

@@ -50,12 +50,12 @@ TabForControls ActionButton > ButtonLike {
   flex-direction: column;
 }
 
-TabForControls EditLine {
+TabForControls TextField {
   min-width: 150px;
 }
 
 TabForEditors,
-EditLineWithSettings,
+TextFieldWithSettings,
 SourceEditorWithSettings {
   display: flex;
   flex-direction: column;
@@ -67,7 +67,7 @@ TabForEditors .settings {
   display: flex;
   flex-wrap: wrap;
 }
-TabForEditors EditBox {
+TabForEditors TextArea {
   flex: auto;
 }
 

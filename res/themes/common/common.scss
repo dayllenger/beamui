@@ -368,7 +368,7 @@ ComboEdit {
     background-image: none;
     cursor: auto;
 
-    > EditLine.body {
+    > TextField.body {
         padding: 5px;
         border: none;
         background: none;
@@ -676,7 +676,7 @@ Tabs.bottom > TabBar > TabItem {
 
 /* editors */
 
-EditLine {
+TextField {
     padding: 4px;
     border-width: 1px;
     border-style: solid;
@@ -693,7 +693,7 @@ EditLine {
     }
 }
 
-EditBox {
+TextArea {
     min-width: 100px;
     min-height: 60px;
     border-width: 1px;
@@ -946,7 +946,7 @@ FilePathPanelItem {
     }
 }
 
-FileNameEditLine EditLine {
+FileNameField TextField {
     justify-self: stretch;
 }
 

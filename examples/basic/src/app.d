@@ -53,9 +53,9 @@ class TemperatureConverter : Panel
     override void build()
     {
         State st = use!State;
-        EditLine ed1 = render!EditLine;
-        EditLine ed2 = render!EditLine;
-        // we may either control the edit line content,
+        TextField ed1 = render!TextField;
+        TextField ed2 = render!TextField;
+        // we may either control the text fields,
         // so their text will always be in sync with the value,
         // or, on bad input, allow the user to type that input right
         if (isFinite(st.value))

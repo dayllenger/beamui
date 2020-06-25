@@ -119,7 +119,7 @@ ComboBox:pressed, ComboBox.opened, IconTextComboBox:pressed, IconTextComboBox.op
 
 ComboEdit { padding: 0; gap: 0; background-color: var(--pane-color); background-image: none; cursor: auto; }
 
-ComboEdit > EditLine.body { padding: 5px; border: none; background: none; color: var(--text-color); }
+ComboEdit > TextField.body { padding: 5px; border: none; background: none; color: var(--text-color); }
 
 ComboEdit > ButtonLike.arrow { padding: 5px; border: none; background: none; }
 
@@ -228,17 +228,17 @@ Tabs.top > TabBar > TabItem { border-bottom-width: 2px; }
 Tabs.bottom > TabBar > TabItem { border-top-width: 2px; }
 
 /* editors */
-EditLine { padding: 4px; border-width: 1px; border-style: solid; border-color: var(--paler-border-color); background-color: var(--pane-color); transition: border-color 100ms ease; }
+TextField { padding: 4px; border-width: 1px; border-style: solid; border-color: var(--paler-border-color); background-color: var(--pane-color); transition: border-color 100ms ease; }
 
-EditLine:focused { border-color: var(--secondary-color); }
+TextField:focused { border-color: var(--secondary-color); }
 
-EditLine:read-only { background-color: var(--pane-color-disabled); }
+TextField:read-only { background-color: var(--pane-color-disabled); }
 
-EditBox { min-width: 100px; min-height: 60px; border-width: 1px; border-style: solid; border-color: var(--paler-border-color); background-color: var(--pane-color); transition: border-color 100ms ease; --search-highlight-current: rgba(160, 192, 255, 0.8); --search-highlight-other: rgba(240, 208, 128, 0.6); }
+TextArea { min-width: 100px; min-height: 60px; border-width: 1px; border-style: solid; border-color: var(--paler-border-color); background-color: var(--pane-color); transition: border-color 100ms ease; --search-highlight-current: rgba(160, 192, 255, 0.8); --search-highlight-other: rgba(240, 208, 128, 0.6); }
 
-EditBox:focused { border-color: var(--secondary-color); }
+TextArea:focused { border-color: var(--secondary-color); }
 
-EditBox:read-only { background-color: var(--pane-color-disabled); }
+TextArea:read-only { background-color: var(--pane-color-disabled); }
 
 LogWidget { font-family: monospace; font-size: 10px; }
 
@@ -325,7 +325,7 @@ FilePathPanelItem > .button { padding: 0 1px; }
 
 FilePathPanelItem > .button:hovered { background-color: var(--hovered-color); }
 
-FileNameEditLine EditLine { justify-self: stretch; }
+FileNameField TextField { justify-self: stretch; }
 
 InputBox, MessageBox { padding: 10px; }
 

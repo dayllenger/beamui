@@ -47,8 +47,8 @@ PageScrollButton:hovered {
   background-color: rgba(160, 160, 160, 0.1);
 }
 
-EditLine,
-EditBox {
+TextField,
+TextArea {
   --caret: #fff;
 }
 SourceEdit {

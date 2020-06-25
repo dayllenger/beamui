@@ -31,7 +31,7 @@ class InputBox : Dialog
         dstring _message;
         Action[] _actions;
         dstring _initialText;
-        EditLine _editor;
+        TextField _editor;
     }
 
     /// Create input box with title, message, and initial text
@@ -58,12 +58,12 @@ class InputBox : Dialog
     override void initialize()
     {
         auto msg = new Label(_message);
-        _editor = new EditLine(_initialText);
+        _editor = new TextField(_initialText);
         _editor.onEnterKeyPress ~= {
             closeWithDefaultAction();
             return true;
         };
-        _editor.popupMenu = EditLine.createDefaultPopupMenu();
+        _editor.popupMenu = TextField.createDefaultPopupMenu();
         add(msg, _editor, createButtonsPanel(_actions, _defaultButtonIndex, 0));
     }
 

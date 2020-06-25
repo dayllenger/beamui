@@ -181,7 +181,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
     private
     {
         FilePathPanel _edPath;
-        EditLine _edFilename;
+        TextField _edFilename;
         ComboBox _cbFilters;
         StringGridWidget _fileList;
         FileListSortOrder _sortOrder = FileListSortOrder.name;
@@ -760,7 +760,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             auto rightPanel = new Panel;
                 _edPath = new FilePathPanel;
                 _fileList = new StringGridWidget;
-                _edFilename = new EditLine;
+                _edFilename = new TextField;
 
         with (content) {
             setAttribute("content");
@@ -791,7 +791,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
                 }
                 with (_edFilename) {
                     setAttribute("filename");
-                    popupMenu = EditLine.createDefaultPopupMenu();
+                    popupMenu = TextField.createDefaultPopupMenu();
                 }
             }
         }
@@ -1099,7 +1099,7 @@ class FilePathPanel : Panel
     private
     {
         FilePathPanelButtons _segments;
-        EditLine _edPath;
+        TextField _edPath;
         string _path;
     }
 
@@ -1107,7 +1107,7 @@ class FilePathPanel : Panel
     {
         _segments = new FilePathPanelButtons;
         _segments.id = ID_SEGMENTS;
-        _edPath = new EditLine;
+        _edPath = new TextField;
         _edPath.id = ID_EDITOR;
         _edPath.onEnterKeyPress ~= &handleEnterKey;
         _edPath.onFocusChange ~= &handleEditorFocusChanged;
@@ -1119,7 +1119,7 @@ class FilePathPanel : Panel
 
     void setDefaultPopupMenu()
     {
-        _edPath.popupMenu = EditLine.createDefaultPopupMenu();
+        _edPath.popupMenu = TextField.createDefaultPopupMenu();
     }
 
     protected void handleEditorFocusChanged(bool focused)
@@ -1158,7 +1158,7 @@ class FilePathPanel : Panel
     }
 }
 
-class FileNameEditLine : Panel
+class FileNameField : Panel
 {
     @property
     {
@@ -1224,7 +1224,7 @@ class FileNameEditLine : Panel
 
     private
     {
-        EditLine _edFileName;
+        TextField _edFileName;
         Button _btn;
         string[string] _filetypeIcons;
         dstring _caption;
@@ -1237,7 +1237,7 @@ class FileNameEditLine : Panel
     this()
     {
         _caption = tr("Open File");
-        _edFileName = new EditLine;
+        _edFileName = new TextField;
         _edFileName.style.minWidth = BACKEND_CONSOLE ? 16 : 200;
         _btn = new Button("..."d);
         _btn.isolateThisStyle();
@@ -1274,7 +1274,7 @@ class FileNameEditLine : Panel
 
     void setDefaultPopupMenu()
     {
-        _edFileName.popupMenu = EditLine.createDefaultPopupMenu();
+        _edFileName.popupMenu = TextField.createDefaultPopupMenu();
     }
 
     /// Add new filter entry
@@ -1284,7 +1284,7 @@ class FileNameEditLine : Panel
     }
 }
 
-class DirEditLine : FileNameEditLine
+class DirField : FileNameField
 {
     this()
     {

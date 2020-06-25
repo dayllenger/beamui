@@ -15,7 +15,7 @@ Controls {
 #tab2 {
     display: column;
 }
-#tab2 > EditBox {
+#tab2 > TextArea {
     justify-self: stretch;
 }
 

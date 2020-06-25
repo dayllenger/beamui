@@ -22,7 +22,7 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.widgets.combobox;
 
 import beamui.widgets.controls : Button, ImageWidget;
-import beamui.widgets.editors : EditLine;
+import beamui.widgets.editors : TextField;
 import beamui.widgets.lists : ElemListView, ListView, ListMouseBehavior;
 import beamui.widgets.popup;
 import beamui.widgets.text : Label;
@@ -335,7 +335,7 @@ protected:
 
     override Widget buildBody()
     {
-        EditLine ed = render!EditLine;
+        TextField ed = render!TextField;
         ed.text = items[use!State.selectedItemIndex];
         ed.readOnly = readOnly;
         return ed;

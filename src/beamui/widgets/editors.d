@@ -152,8 +152,8 @@ void initStandardEditorActions()
     }
 }
 
-/// Single-line text field
-class EditLine : Widget
+/// Single-line editable text field
+class TextField : Widget
 {
     /// Placeholder is a short peace of text that describes the expected input
     dstring placeholder;
@@ -191,14 +191,14 @@ class EditLine : Widget
 
     override protected Element createElement()
     {
-        return new ElemEditLine;
+        return new ElemTextField;
     }
 
     override protected void updateElement(Element element)
     {
         super.updateElement(element);
 
-        ElemEditLine el = fastCast!ElemEditLine(element);
+        ElemTextField el = fastCast!ElemTextField(element);
         if (_replace)
             el.text = _text;
         el.placeholder = placeholder;
@@ -216,7 +216,7 @@ class EditLine : Widget
 }
 
 /// Multiline editor and base for complex source editors
-class EditBox : ScrollAreaBase
+class TextArea : ScrollAreaBase
 {
     /// Editor content object
     EditableContent content;
@@ -262,14 +262,14 @@ class EditBox : ScrollAreaBase
 
     override protected Element createElement()
     {
-        return new ElemEditBox(content);
+        return new ElemTextArea(content);
     }
 
     override protected void updateElement(Element element)
     {
         super.updateElement(element);
 
-        ElemEditBox el = fastCast!ElemEditBox(element);
+        ElemTextArea el = fastCast!ElemTextArea(element);
         el.content = content;
 
         el.placeholder = placeholder;
@@ -358,7 +358,7 @@ interface IEditor
     }
 }
 
-class ElemEditLine : Element, IEditor, ActionOperator
+class ElemTextField : Element, IEditor, ActionOperator
 {
     @property
     {
@@ -1448,7 +1448,7 @@ class ElemEditLine : Element, IEditor, ActionOperator
     }
 }
 
-class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
+class ElemTextArea : ElemScrollAreaBase, IEditor, ActionOperator
 {
     @property
     {
@@ -4220,7 +4220,7 @@ class ElemEditBox : ElemScrollAreaBase, IEditor, ActionOperator
 }
 /+
 /// Read only edit box for displaying logs with lines append operation
-class LogWidget : EditBox
+class LogWidget : TextArea
 {
     @property
     {
@@ -4311,8 +4311,8 @@ class LogWidget : EditBox
     CSS_nodes:
     ---
     EditorSearchPane.find-only?
-    ├── EditLine.find
-    ├── EditLine?.replace
+    ├── TextField.find
+    ├── TextField?.replace
     ├── Panel.find-buttons
     │   ├── Button
     │   ├── Button
@@ -4355,11 +4355,11 @@ class EditorSearchPane : Panel
             attributes["find-only"];
 
         wrap(
-            render((EditLine ed) {
+            render((TextField ed) {
                 ed.attributes["find"];
                 ed.placeholder = "Find";
             }),
-            replaceMode ? render((EditLine ed) {
+            replaceMode ? render((TextField ed) {
                 ed.attributes["replace"];
                 ed.placeholder = "Replace";
             }) : null,
@@ -4453,15 +4453,15 @@ class FindPanel : Panel
 
     private
     {
-        EditBox _editor;
+        TextArea _editor;
 
-        EditLine _edFind;
-        EditLine _edReplace;
+        TextField _edFind;
+        TextField _edReplace;
         Button _btnFindNext;
         Button _btnFindPrev;
     }
 
-    this(EditBox editor)
+    this(TextArea editor)
     {
         _editor = editor;
 

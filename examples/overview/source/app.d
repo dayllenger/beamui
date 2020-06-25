@@ -97,7 +97,7 @@ class TabForControls : Panel
         {
             fileOpenAction = new Action("&Open", "document-open", Key.O, KeyMods.control);
             content = new EditableContent;
-            content.text = "Some text in EditBox\nOne more line\nYet another text line";
+            content.text = "Some text in TextArea\nOne more line\nYet another text line";
         }
     }
 
@@ -278,25 +278,25 @@ class TabForControls : Panel
             ),
             render((Panel p) {}).wrap(
                 render((GroupBox gb) {
-                    gb.caption = "EditLine";
+                    gb.caption = "TextField";
                 }).wrap(
-                    render((EditLine ed) {
+                    render((TextField ed) {
                         ed.placeholder = "Name";
                     }),
-                    render((EditLine ed) {
+                    render((TextField ed) {
                         ed.placeholder = "Password";
                         ed.passwordChar = '•';
                     }),
-                    render((EditLine ed) {
+                    render((TextField ed) {
                         ed.text = "Read-only";
                         ed.readOnly = true;
                     }),
                 ),
                 render((GroupBox gb) {
-                    gb.caption = "EditBox";
+                    gb.caption = "TextArea";
                     gb.attributes["stretch"];
                 }).wrap(
-                    render((EditBox ed) {
+                    render((TextArea ed) {
                         ed.content = st.content;
                         ed.attributes["stretch"];
                     })
@@ -347,9 +347,9 @@ void main()
         State st = use!State;
         wrap(
             render((Label t) {
-                t.text = "EditLine: single-line editor";
+                t.text = "TextField: single-line editor";
             }),
-            render((EditLineWithSettings ed) {
+            render((TextFieldWithSettings ed) {
                 ed.text = st.text;
                 ed.onChange = (str) { setState(st.text, str); };
             }),
@@ -360,16 +360,16 @@ void main()
                 ed.content = st.content;
             }),
             render((Label t) {
-                t.text = "EditBox: additional view on the same content";
+                t.text = "TextArea: additional view on the same content";
             }),
-            render((EditBox ed) {
+            render((TextArea ed) {
                 ed.content = st.content; // view the same content as the first editor
             }),
         );
     }
 }
 
-class EditLineWithSettings : Panel
+class TextFieldWithSettings : Panel
 {
     dstring text;
     void delegate(dstring) onChange;
@@ -415,7 +415,7 @@ class EditLineWithSettings : Panel
                     cb.onToggle = (v) { setState(st.fontFamily, v ? FontFamily.monospace : FontFamily.sans_serif); };
                 }),
             ),
-            render((EditLine ed) {
+            render((TextField ed) {
                 ed.text = text;
                 ed.onChange = onChange;
                 ed.readOnly = st.readOnly;
@@ -812,7 +812,7 @@ class TabForCharts : Panel
                 auto gbtree = new GroupBox("TreeWidget"d, Orientation.vertical);
                     auto tree = new TreeWidget;
                     auto newTreeItemForm = new Panel;
-                        auto newTreeItemEd = new EditLine("new item"d);
+                        auto newTreeItemEd = new TextField("new item"d);
                         auto newTreeItemFormRow = new Panel;
                             auto btnAddItem = new Button("Add"d);
                             auto btnRemoveItem = new Button("Remove"d);
@@ -917,7 +917,7 @@ class TabForCharts : Panel
             auto list = new ListWidget(Orientation.vertical);
             auto list2 = new StringListWidget;
             auto itemedit = new Panel;
-                auto itemtext = new EditLine("Text for new item"d);
+                auto itemtext = new TextField("Text for new item"d);
                 auto addbtn = new Button("Add item"d);
 
         with (longLists) {
@@ -1044,10 +1044,10 @@ Widget createFormTab()
     form.addChild(new Label("Field"d));
     // row 1
     form.addChild(new Label("First Name"d));
-    form.addChild(new EditLine("John"d));
+    form.addChild(new TextField("John"d));
     // row 2, disabled
     form.addChild(new Label("Last Name"d).setEnabled(false));
-    form.addChild(new EditLine("Doe"d).setEnabled(false));
+    form.addChild(new TextField("Doe"d).setEnabled(false));
     // row 3, normal readonly combo box
     form.addChild(new Label("Country"d));
     auto combo1 = new ComboBox(["Australia"d, "Canada"d, "France"d, "Germany"d,
@@ -1087,7 +1087,7 @@ Widget createTabForEditors()
     }
 }
 
-Widget createEditLineSettingsControl(EditLine editor)
+Widget createTextFieldSettingsControl(TextField editor)
 {
     cb4.checked = editor.style.fontFamily == FontFamily.monospace;
     cb4.onToggle ~= (checked) {

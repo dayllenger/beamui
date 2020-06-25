@@ -24,7 +24,7 @@ import beamui.widgets.tree;
 import beamui.core.settings;
 import beamui.dialogs.filedialog;
 import beamui.widgets.controls;
-import beamui.widgets.editors : EditLine;
+import beamui.widgets.editors : TextField;
 import beamui.widgets.text : Label;
 import beamui.widgets.widget;
 
@@ -176,7 +176,7 @@ class IntegerEditItem : SettingsItem
         Setting item = settings.settingByPath(path);
         State st = use!State;
 
-        EditLine ed = render!EditLine;
+        TextField ed = render!TextField;
         if (st.valid)
             ed.text = to!dstring(item.integerDef(defaultValue));
         else
@@ -207,7 +207,7 @@ class StringEditItem : SettingsItem
         assert(settings);
         Setting item = settings.settingByPath(path);
 
-        EditLine ed = render!EditLine;
+        TextField ed = render!TextField;
         ed.text = toUTF32(item.strDef(defaultValue));
         ed.onChange = (str) {
             item.str = toUTF8(str);
@@ -224,7 +224,7 @@ class FileNameEditItem : SettingsItem
 
     override Widget[] createWidgets(Setting settings)
     {
-        auto ed = new FileNameEditLine;
+        auto ed = new FileNameField;
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
         ed.text = toUTF32(value);
@@ -239,7 +239,7 @@ class ExecutableFileNameEditItem : SettingsItem
 
     override Widget[] createWidgets(Setting settings)
     {
-        auto ed = new FileNameEditLine;
+        auto ed = new FileNameField;
         ed.addFilter(FileFilterEntry(tr("Executable files"), "*.exe", true));
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
@@ -254,7 +254,7 @@ class PathNameEditItem : SettingsItem
 
     override Widget[] createWidgets(Setting settings)
     {
-        auto ed = new DirEditLine;
+        auto ed = new DirField;
         ed.addFilter(FileFilterEntry(tr("All files"), "*.*"));
         auto setting = settings.settingByPath(_id);
         string value = setting.str = setting.strDef(_defaultValue);
