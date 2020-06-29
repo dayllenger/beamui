@@ -17,7 +17,7 @@ import beamui.graphics.atlas;
 import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.colors : Color;
 import beamui.graphics.gl.api;
-import beamui.graphics.gl.objects : Tex2D, TexId, TexFiltering, TexMipmaps, TexWrap;
+import beamui.graphics.gl.objects;
 import beamui.text.glyph : GlyphRef;
 
 package:
@@ -93,7 +93,7 @@ struct TextureCache
         TexId newTex;
         Tex2D.bind(newTex);
         Tex2D.setBasicParams(TexFiltering.smooth, TexMipmaps.yes, TexWrap.clamp);
-        Tex2D.resize(size, 0, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+        Tex2D.resize(size, 0, TexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE));
 
         if (page.tex.handle)
         {
@@ -111,7 +111,7 @@ struct TextureCache
         // upload packed ARGB data as reversed BGRA.
         // this should work with any byte order
         Tex2D.bind(tex);
-        Tex2D.uploadSubImage(box, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
+        Tex2D.uploadSubImage(box, 0, TexFormat(GL_BGRA, GL_RGBA8, GL_UNSIGNED_INT_8_8_8_8_REV), data);
         // TODO: optimize mipmap generation
         glGenerateMipmap(GL_TEXTURE_2D);
         Tex2D.unbind();
@@ -171,7 +171,7 @@ nothrow:
         TexId newTex;
         Tex2D.bind(newTex);
         Tex2D.setBasicParams(TexFiltering.smooth, TexMipmaps.no, TexWrap.clamp);
-        Tex2D.resize(size, 0, GL_R8, GL_RED, GL_UNSIGNED_BYTE);
+        Tex2D.resize(size, 0, TexFormat(GL_RED, GL_R8, GL_UNSIGNED_BYTE));
 
         if (page.tex.handle)
         {
@@ -188,7 +188,7 @@ nothrow:
     {
         Tex2D.bind(tex);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        Tex2D.uploadSubImage(box, 0, GL_RED, GL_UNSIGNED_BYTE, data.ptr);
+        Tex2D.uploadSubImage(box, 0, TexFormat(GL_RED, GL_R8, GL_UNSIGNED_BYTE), data.ptr);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         Tex2D.unbind();
     }
@@ -206,7 +206,7 @@ struct ColorStopAtlas
 {
 nothrow:
     private TexId _tex;
-    private uint count;
+    private uint _count;
 
     @disable this(this);
 
@@ -214,7 +214,7 @@ nothrow:
     {
         Tex2D.bind(_tex);
         Tex2D.setBasicParams(TexFiltering.smooth, TexMipmaps.no, TexWrap.clamp);
-        Tex2D.resize(SizeI(MAX_STOPS, MAX_GRADIENTS), 0, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+        Tex2D.resize(SizeI(MAX_STOPS, MAX_GRADIENTS), 0, TexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE));
         Tex2D.unbind();
     }
 
@@ -231,21 +231,21 @@ nothrow:
 
     uint add(ref const ColorStopAtlasRow row)
     {
-        if (count == MAX_GRADIENTS)
+        if (_count == MAX_GRADIENTS)
             return MAX_GRADIENTS - 1;
 
-        const box = BoxI(0, count, row.length, 1);
+        const box = BoxI(0, _count, row.length, 1);
         const ptr = row.colors.ptr;
         Tex2D.bind(_tex);
-        Tex2D.uploadSubImage(box, 0, GL_RGBA, GL_UNSIGNED_BYTE, ptr);
+        Tex2D.uploadSubImage(box, 0, TexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE), ptr);
         Tex2D.unbind();
 
-        return count++;
+        return _count++;
     }
 
     void reset()
     {
-        count = 0;
+        _count = 0;
     }
 }
 

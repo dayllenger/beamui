@@ -16,7 +16,7 @@ import beamui.core.geometry : BoxI, SizeI;
 import beamui.graphics.gl.api;
 import beamui.graphics.gl.errors;
 
-package(beamui.graphics):
+package:
 
 struct BufferId
 {
@@ -72,6 +72,13 @@ enum TexMipmaps : bool { no, yes }
 enum TexWrap : ubyte { clamp, repeat }
 // dfmt on
 
+struct TexFormat
+{
+    GLenum format;
+    GLenum internalFormat;
+    GLenum type;
+}
+
 /// 2D texture facility
 struct Tex2D
 {
@@ -126,10 +133,10 @@ static nothrow:
         checkError("filtering");
     }
 
-    void resize(SizeI size, GLint level, GLint internalFormat, GLenum format, GLenum type)
+    void resize(SizeI size, GLint level, TexFormat fmt)
     in (size.w > 0 && size.h > 0)
     {
-        checkgl!glTexImage2D(GL_TEXTURE_2D, level, internalFormat, size.w, size.h, 0, format, type, null);
+        checkgl!glTexImage2D(GL_TEXTURE_2D, level, fmt.internalFormat, size.w, size.h, 0, fmt.format, fmt.type, null);
     }
 
     void copy(TexId oldTex, SizeI oldSize)
@@ -155,9 +162,41 @@ static nothrow:
         checkgl!glDeleteFramebuffers(1, &fbo);
     }
 
-    void uploadSubImage(BoxI box, GLint level, GLenum format, GLenum type, const void* data)
+    void uploadSubImage(BoxI box, GLint level, TexFormat fmt, const void* data)
     {
-        checkgl!glTexSubImage2D(GL_TEXTURE_2D, level, box.x, box.y, box.w, box.h, format, type, data);
+        checkgl!glTexSubImage2D(GL_TEXTURE_2D, level, box.x, box.y, box.w, box.h, fmt.format, fmt.type, data);
+    }
+
+    void upload1D(T)(TexFormat fmt, ref int rowCount, uint itemsPerRow, uint texelsPerItem, const T[] data)
+    in (itemsPerRow > 0)
+    {
+        const count = cast(int)data.length;
+        const filledRows = count / itemsPerRow;
+        const last = count % itemsPerRow;
+        const neededRows = filledRows + (last > 0 ? 1 : 0);
+
+        // resize if needed
+        if (rowCount < neededRows)
+        {
+            const oldRows = rowCount;
+            if (rowCount == 0)
+                rowCount = 1;
+            while (rowCount < neededRows)
+                rowCount *= 2;
+            if (oldRows != rowCount)
+                resize(SizeI(itemsPerRow * texelsPerItem, rowCount), 0, fmt);
+        }
+        // send data on GPU in such a way that it is guaranteed to not escape array bounds
+        if (filledRows > 0)
+        {
+            const box = BoxI(0, 0, itemsPerRow * texelsPerItem, filledRows);
+            uploadSubImage(box, 0, fmt, data.ptr);
+        }
+        if (last > 0)
+        {
+            const box = BoxI(0, filledRows, last * texelsPerItem, 1);
+            uploadSubImage(box, 0, fmt, data.ptr + filledRows * itemsPerRow);
+        }
     }
 }
 

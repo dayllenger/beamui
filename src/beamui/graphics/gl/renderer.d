@@ -622,36 +622,9 @@ nothrow:
         if (dataStore.length == 0)
             return;
 
-        const chunks = min(cast(int)dataStore.length, MAX_DATA_CHUNKS);
-        const fullRows = chunks / ROW_LENGTH;
-        const last = chunks % ROW_LENGTH;
-        const neededRows = fullRows + (last > 0 ? 1 : 0);
-
+        const fmt = TexFormat(GL_RGBA, GL_RGBA32F, GL_FLOAT);
         Tex2D.bind(tex);
-        // resize if needed
-        if (rows < neededRows)
-        {
-            const oldRows = rows;
-            if (rows == 0)
-                rows = 1;
-            while (rows < neededRows)
-                rows *= 2;
-            if (oldRows != rows)
-                Tex2D.resize(SizeI(WIDTH, rows), 0, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-        }
-        // send data on gpu in such a way that it is guaranteed to not escape array bounds
-        if (fullRows > 0)
-        {
-            const box = BoxI(0, 0, WIDTH, fullRows);
-            const ptr = dataStore.ptr;
-            Tex2D.uploadSubImage(box, 0, GL_RGBA, GL_FLOAT, ptr);
-        }
-        if (last > 0)
-        {
-            const box = BoxI(0, fullRows, last * TEXELS_IN_CHUNK, 1);
-            const ptr = dataStore.ptr + fullRows * ROW_LENGTH;
-            Tex2D.uploadSubImage(box, 0, GL_RGBA, GL_FLOAT, ptr);
-        }
+        Tex2D.upload1D(fmt, rows, ROW_LENGTH, TEXELS_IN_CHUNK, dataStore[]);
         Tex2D.unbind();
     }
 }
@@ -767,13 +740,14 @@ nothrow:
     static private bool preparePage(ref FboManager man, ref Page page, SizeI requiredSize)
     {
         const size = choosePageSize(page.size, requiredSize);
+        const fmt = TexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE);
         if (page.fbo.handle)
         {
             if (page.size == size)
                 return true;
 
             Tex2D.bind(page.colorTex);
-            Tex2D.resize(size, 0, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+            Tex2D.resize(size, 0, fmt);
             Tex2D.unbind();
             DepthStencilRB.bind(page.depthRB);
             DepthStencilRB.resize(size);
@@ -787,7 +761,7 @@ nothrow:
             RbId drb;
             Tex2D.bind(ct);
             Tex2D.setBasicParams(TexFiltering.sharp, TexMipmaps.no, TexWrap.clamp);
-            Tex2D.resize(size, 0, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+            Tex2D.resize(size, 0, fmt);
             Tex2D.unbind();
             DepthStencilRB.bind(drb);
             DepthStencilRB.resize(size);
@@ -873,12 +847,13 @@ nothrow:
         while (width < w)
             width *= 2;
 
+        const fmt = TexFormat(GL_RG, GL_RG32F, GL_FLOAT);
         Tex2D.bind(tex);
         if (resize)
         {
-            Tex2D.resize(SizeI(width, 1), 0, GL_RG32F, GL_RG, GL_FLOAT);
+            Tex2D.resize(SizeI(width, 1), 0, fmt);
         }
-        Tex2D.uploadSubImage(BoxI(0, 0, w, 1), 0, GL_RG, GL_FLOAT, list.ptr);
+        Tex2D.uploadSubImage(BoxI(0, 0, w, 1), 0, fmt, list.ptr);
         Tex2D.unbind();
     }
 }
@@ -934,7 +909,7 @@ nothrow:
 
         Tex2D.bind(tex);
         Tex2D.setBasicParams(TexFiltering.smooth, TexMipmaps.no, TexWrap.clamp); // must be linear
-        Tex2D.resize(SizeI(1, 1), 0, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+        Tex2D.resize(SizeI(1, 1), 0, TexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE));
         Tex2D.unbind();
 
         lobuf.initialize();
@@ -982,7 +957,7 @@ nothrow:
         if (texSize != sz)
         {
             texSize = sz;
-            Tex2D.resize(sz, 0, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+            Tex2D.resize(sz, 0, TexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE));
             assert(checkFramebuffer());
         }
         // copy the current framebuffer contents into the texture
