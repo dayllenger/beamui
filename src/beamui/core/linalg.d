@@ -111,16 +111,29 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     /// Returns vector with all components which are negative of components for this vector
     Vector opUnary(string op : "-")() const
     {
-        Vector ret = this;
-        ret.vec[] *= -1;
-        return ret;
+        static if (N == 2)
+        {
+            return Vector(-x, -y);
+        }
+        else
+        {
+            Vector ret = this;
+            ret.vec[] *= -1;
+            return ret;
+        }
     }
 
     /// Perform operation with value to all components of vector
     ref Vector opOpAssign(string op)(T v)
         if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        mixin("vec[] "~op~"= v;");
+        static if (N == 2)
+        {
+            mixin("x "~op~"= v;");
+            mixin("y "~op~"= v;");
+        }
+        else
+            mixin("vec[] "~op~"= v;");
         return this;
     }
     /// ditto
@@ -128,7 +141,13 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
         if (op == "+" || op == "-" || op == "*" || op == "/")
     {
         Vector ret = this;
-        mixin("ret.vec[] "~op~"= v;");
+        static if (N == 2)
+        {
+            mixin("ret.x "~op~"= v;");
+            mixin("ret.y "~op~"= v;");
+        }
+        else
+            mixin("ret.vec[] "~op~"= v;");
         return ret;
     }
 
@@ -136,7 +155,13 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     ref Vector opOpAssign(string op)(const Vector v)
         if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        mixin("vec[] "~op~"= v.vec[];");
+        static if (N == 2)
+        {
+            mixin("x "~op~"= v.x;");
+            mixin("y "~op~"= v.y;");
+        }
+        else
+            mixin("vec[] "~op~"= v.vec[];");
         return this;
     }
     /// ditto
@@ -144,7 +169,13 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
         if (op == "+" || op == "-")
     {
         Vector ret = this;
-        mixin("ret.vec[] "~op~"= v.vec[];");
+        static if (N == 2)
+        {
+            mixin("ret.x "~op~"= v.x;");
+            mixin("ret.y "~op~"= v.y;");
+        }
+        else
+            mixin("ret.vec[] "~op~"= v.vec[];");
         return ret;
     }
 
