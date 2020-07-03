@@ -218,7 +218,7 @@ final class Painter
     void resetMatrix()
         in(active)
     {
-        state.mat.setIdentity();
+        state.mat = Mat2x3.identity;
     }
 
     /** Quickly (and inaccurately) determine that `box` is outside the clip.

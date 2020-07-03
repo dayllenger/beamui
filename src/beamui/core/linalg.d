@@ -311,17 +311,6 @@ struct Mat2x3
 
     /// Identity matrix
     enum Mat2x3 identity = Mat2x3(1.0f);
-    /// Reset this matrix to identity
-    ref Mat2x3 setIdentity() return
-    {
-        store[0][0] = 1.0f;
-        store[0][1] = 0.0f;
-        store[0][2] = 0.0f;
-        store[1][0] = 0.0f;
-        store[1][1] = 1.0f;
-        store[1][2] = 0.0f;
-        return this;
-    }
 
     /// Add or subtract a matrix
     ref Mat2x3 opOpAssign(string op)(Mat2x3 mat) if (op == "+" || op == "-")
@@ -396,7 +385,7 @@ struct Mat2x3
         const float det = store[0][0] * store[1][1] - store[0][1] * store[1][0];
         if (fzero6(det))
         {
-            return setIdentity();
+            this = identity;
         }
         else
         {
@@ -413,8 +402,8 @@ struct Mat2x3
             store[1][0] = -a10 * invdet;
             store[1][1] =  a00 * invdet;
             store[1][2] = (a10 * a02 - a00 * a12) * invdet;
-            return this;
         }
+        return this;
     }
     /// Returns inverted matrix. If matrix is not invertible, returns identity matrix
     Mat2x3 inverted() const
@@ -534,15 +523,16 @@ struct Mat2x3
     static private immutable msgNotFinite = "Transformation is not finite anymore";
 }
 
-struct mat4
+/** Row-major 4x4 floating point matrix. Zero by default.
+*/
+struct Mat4x4
 {
-    nothrow:
+nothrow:
+    float[16] m = 0;
 
-    float[16] m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-
-    this(float v)
+    this(float diagonal)
     {
-        setDiagonal(v);
+        setDiagonal(diagonal);
     }
 
     this(const float[16] v)
@@ -550,19 +540,37 @@ struct mat4
         m[] = v[];
     }
 
-    ref mat4 opAssign(const ref mat4 v) return
+    /// Identity matrix
+    enum Mat4x4 identity = Mat4x4(1.0f);
+
+    /// Set to diagonal: fill all items of matrix with zero except main diagonal items which will be assigned to v
+    ref Mat4x4 setDiagonal(float v) return
+    {
+        foreach (x; 0 .. 4)
+            foreach (y; 0 .. 4)
+                m[y * 4 + x] = (x == y) ? v : 0;
+        return this;
+    }
+    /// Fill all items of matrix with specified value
+    ref Mat4x4 fill(float v) return
+    {
+        m[] = v;
+        return this;
+    }
+
+    ref Mat4x4 opAssign(const ref Mat4x4 v) return
     {
         m[] = v.m[];
         return this;
     }
 
-    ref mat4 opAssign(const mat4 v) return
+    ref Mat4x4 opAssign(const Mat4x4 v) return
     {
         m[] = v.m[];
         return this;
     }
 
-    ref mat4 opAssign(const float[16] v) return
+    ref Mat4x4 opAssign(const float[16] v) return
     {
         m[] = v[];
         return this;
@@ -575,9 +583,9 @@ struct mat4
             return;
 
         // Construct the projection.
-        float width = right - left;
-        float invheight = top - bottom;
-        float clip = farPlane - nearPlane;
+        const width = right - left;
+        const invheight = top - bottom;
+        const clip = farPlane - nearPlane;
         m[0 * 4 + 0] = 2.0f / width;
         m[1 * 4 + 0] = 0.0f;
         m[2 * 4 + 0] = 0.0f;
@@ -599,11 +607,11 @@ struct mat4
     void setPerspective(float angle, float aspect, float nearPlane, float farPlane)
     {
         // Bail out if the projection volume is zero-sized.
-        float radians = (angle / 2.0f) * PI / 180.0f;
+        const radians = (angle / 2.0f) * PI / 180.0f;
         if (nearPlane == farPlane || aspect == 0.0f || radians < 0.0001f)
             return;
-        float f = 1 / tan(radians);
-        float d = 1 / (nearPlane - farPlane);
+        const f = 1 / tan(radians);
+        const d = 1 / (nearPlane - farPlane);
 
         // Construct the projection.
         m[0 * 4 + 0] = f / aspect;
@@ -627,14 +635,13 @@ struct mat4
         m[3 * 4 + 3] = 0.0f;
     }
 
-    ref mat4 lookAt(const Vec3 eye, const Vec3 center, const Vec3 up) return
+    ref Mat4x4 lookAt(const Vec3 eye, const Vec3 center, const Vec3 up) return
     {
-        Vec3 forward = (center - eye).normalized();
-        Vec3 side = crossProduct(forward, up).normalized();
-        Vec3 upVector = crossProduct(side, forward);
+        const Vec3 forward = (center - eye).normalized();
+        const Vec3 side = crossProduct(forward, up).normalized();
+        const Vec3 upVector = crossProduct(side, forward);
 
-        mat4 m;
-        m.setIdentity();
+        Mat4x4 m = Mat4x4.identity;
         m[0 * 4 + 0] = side.x;
         m[1 * 4 + 0] = side.y;
         m[2 * 4 + 0] = side.z;
@@ -660,30 +667,34 @@ struct mat4
     /// Transpose matrix
     void transpose()
     {
-        float[16] tmp = [m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10],
-            m[14], m[3], m[7], m[11], m[15]];
+        const float[16] tmp = [
+            m[0], m[4], m[8], m[12],
+            m[1], m[5], m[9], m[13],
+            m[2], m[6], m[10], m[14],
+            m[3], m[7], m[11], m[15],
+        ];
         m = tmp;
     }
 
-    mat4 invert() const
+    Mat4x4 invert() const
     {
-        float a0 = m[0] * m[5] - m[1] * m[4];
-        float a1 = m[0] * m[6] - m[2] * m[4];
-        float a2 = m[0] * m[7] - m[3] * m[4];
-        float a3 = m[1] * m[6] - m[2] * m[5];
-        float a4 = m[1] * m[7] - m[3] * m[5];
-        float a5 = m[2] * m[7] - m[3] * m[6];
-        float b0 = m[8] * m[13] - m[9] * m[12];
-        float b1 = m[8] * m[14] - m[10] * m[12];
-        float b2 = m[8] * m[15] - m[11] * m[12];
-        float b3 = m[9] * m[14] - m[10] * m[13];
-        float b4 = m[9] * m[15] - m[11] * m[13];
-        float b5 = m[10] * m[15] - m[11] * m[14];
+        const a0 = m[0] * m[5] - m[1] * m[4];
+        const a1 = m[0] * m[6] - m[2] * m[4];
+        const a2 = m[0] * m[7] - m[3] * m[4];
+        const a3 = m[1] * m[6] - m[2] * m[5];
+        const a4 = m[1] * m[7] - m[3] * m[5];
+        const a5 = m[2] * m[7] - m[3] * m[6];
+        const b0 = m[8] * m[13] - m[9] * m[12];
+        const b1 = m[8] * m[14] - m[10] * m[12];
+        const b2 = m[8] * m[15] - m[11] * m[12];
+        const b3 = m[9] * m[14] - m[10] * m[13];
+        const b4 = m[9] * m[15] - m[11] * m[13];
+        const b5 = m[10] * m[15] - m[11] * m[14];
 
         // Calculate the determinant.
-        float det = a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0;
+        const det = a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0;
 
-        mat4 inverse;
+        Mat4x4 inverse;
 
         // Close to zero, can't invert.
         if (fzero6(det))
@@ -710,33 +721,15 @@ struct mat4
         inverse.m[14] = -m[12] * a3 + m[13] * a1 - m[14] * a0;
         inverse.m[15] = m[8] * a3 - m[9] * a1 + m[10] * a0;
 
-        float mul = 1.0f / det;
+        const mul = 1.0f / det;
         inverse *= mul;
         return inverse;
     }
 
-    ref mat4 setLookAt(const Vec3 eye, const Vec3 center, const Vec3 up) return
+    ref Mat4x4 setLookAt(const Vec3 eye, const Vec3 center, const Vec3 up) return
     {
-        setIdentity();
+        this = Mat4x4.identity;
         lookAt(eye, center, up);
-        return this;
-    }
-
-    ref mat4 translate(const Vec3 v) return
-    {
-        m[3 * 4 + 0] += m[0 * 4 + 0] * v.x + m[1 * 4 + 0] * v.y + m[2 * 4 + 0] * v.z;
-        m[3 * 4 + 1] += m[0 * 4 + 1] * v.x + m[1 * 4 + 1] * v.y + m[2 * 4 + 1] * v.z;
-        m[3 * 4 + 2] += m[0 * 4 + 2] * v.x + m[1 * 4 + 2] * v.y + m[2 * 4 + 2] * v.z;
-        m[3 * 4 + 3] += m[0 * 4 + 3] * v.x + m[1 * 4 + 3] * v.y + m[2 * 4 + 3] * v.z;
-        return this;
-    }
-
-    ref mat4 translate(float x, float y, float z) return
-    {
-        m[3 * 4 + 0] += m[0 * 4 + 0] * x + m[1 * 4 + 0] * y + m[2 * 4 + 0] * z;
-        m[3 * 4 + 1] += m[0 * 4 + 1] * x + m[1 * 4 + 1] * y + m[2 * 4 + 1] * z;
-        m[3 * 4 + 2] += m[0 * 4 + 2] * x + m[1 * 4 + 2] * y + m[2 * 4 + 2] * z;
-        m[3 * 4 + 3] += m[0 * 4 + 3] * x + m[1 * 4 + 3] * y + m[2 * 4 + 3] * z;
         return this;
     }
 
@@ -747,71 +740,55 @@ struct mat4
         mixin("m[] "~op~"= v;");
     }
     /// ditto
-    mat4 opBinary(string op)(float v) const
+    Mat4x4 opBinary(string op)(float v) const
         if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        mat4 ret = this;
+        Mat4x4 ret = this;
         mixin("ret.m[] "~op~"= v;");
         return ret;
     }
 
     /// Multiply this matrix by another matrix
-    mat4 opBinary(string op : "*")(const ref mat4 m2) const
+    Mat4x4 opBinary(string op : "*")(const ref Mat4x4 b) const
     {
-        return mul(this, m2);
+        return mul(this, b);
     }
     /// ditto
-    void opOpAssign(string op : "*")(const ref mat4 m2)
+    void opOpAssign(string op : "*")(const ref Mat4x4 b)
     {
-        this = mul(this, m2);
+        this = mul(this, b);
     }
 
     /// Multiply two matrices
-    static mat4 mul(const ref mat4 m1, const ref mat4 m2)
+    static Mat4x4 mul(const ref Mat4x4 a, const ref Mat4x4 b)
     {
-        mat4 m;
-        m.m[0 * 4 + 0] = m1.m[0 * 4 + 0] * m2.m[0 * 4 + 0] + m1.m[1 * 4 + 0] * m2.m[0 * 4 + 1] +
-            m1.m[2 * 4 + 0] * m2.m[0 * 4 + 2] + m1.m[3 * 4 + 0] * m2.m[0 * 4 + 3];
-        m.m[0 * 4 + 1] = m1.m[0 * 4 + 1] * m2.m[0 * 4 + 0] + m1.m[1 * 4 + 1] * m2.m[0 * 4 + 1] +
-            m1.m[2 * 4 + 1] * m2.m[0 * 4 + 2] + m1.m[3 * 4 + 1] * m2.m[0 * 4 + 3];
-        m.m[0 * 4 + 2] = m1.m[0 * 4 + 2] * m2.m[0 * 4 + 0] + m1.m[1 * 4 + 2] * m2.m[0 * 4 + 1] +
-            m1.m[2 * 4 + 2] * m2.m[0 * 4 + 2] + m1.m[3 * 4 + 2] * m2.m[0 * 4 + 3];
-        m.m[0 * 4 + 3] = m1.m[0 * 4 + 3] * m2.m[0 * 4 + 0] + m1.m[1 * 4 + 3] * m2.m[0 * 4 + 1] +
-            m1.m[2 * 4 + 3] * m2.m[0 * 4 + 2] + m1.m[3 * 4 + 3] * m2.m[0 * 4 + 3];
-        m.m[1 * 4 + 0] = m1.m[0 * 4 + 0] * m2.m[1 * 4 + 0] + m1.m[1 * 4 + 0] * m2.m[1 * 4 + 1] +
-            m1.m[2 * 4 + 0] * m2.m[1 * 4 + 2] + m1.m[3 * 4 + 0] * m2.m[1 * 4 + 3];
-        m.m[1 * 4 + 1] = m1.m[0 * 4 + 1] * m2.m[1 * 4 + 0] + m1.m[1 * 4 + 1] * m2.m[1 * 4 + 1] +
-            m1.m[2 * 4 + 1] * m2.m[1 * 4 + 2] + m1.m[3 * 4 + 1] * m2.m[1 * 4 + 3];
-        m.m[1 * 4 + 2] = m1.m[0 * 4 + 2] * m2.m[1 * 4 + 0] + m1.m[1 * 4 + 2] * m2.m[1 * 4 + 1] +
-            m1.m[2 * 4 + 2] * m2.m[1 * 4 + 2] + m1.m[3 * 4 + 2] * m2.m[1 * 4 + 3];
-        m.m[1 * 4 + 3] = m1.m[0 * 4 + 3] * m2.m[1 * 4 + 0] + m1.m[1 * 4 + 3] * m2.m[1 * 4 + 1] +
-            m1.m[2 * 4 + 3] * m2.m[1 * 4 + 2] + m1.m[3 * 4 + 3] * m2.m[1 * 4 + 3];
-        m.m[2 * 4 + 0] = m1.m[0 * 4 + 0] * m2.m[2 * 4 + 0] + m1.m[1 * 4 + 0] * m2.m[2 * 4 + 1] +
-            m1.m[2 * 4 + 0] * m2.m[2 * 4 + 2] + m1.m[3 * 4 + 0] * m2.m[2 * 4 + 3];
-        m.m[2 * 4 + 1] = m1.m[0 * 4 + 1] * m2.m[2 * 4 + 0] + m1.m[1 * 4 + 1] * m2.m[2 * 4 + 1] +
-            m1.m[2 * 4 + 1] * m2.m[2 * 4 + 2] + m1.m[3 * 4 + 1] * m2.m[2 * 4 + 3];
-        m.m[2 * 4 + 2] = m1.m[0 * 4 + 2] * m2.m[2 * 4 + 0] + m1.m[1 * 4 + 2] * m2.m[2 * 4 + 1] +
-            m1.m[2 * 4 + 2] * m2.m[2 * 4 + 2] + m1.m[3 * 4 + 2] * m2.m[2 * 4 + 3];
-        m.m[2 * 4 + 3] = m1.m[0 * 4 + 3] * m2.m[2 * 4 + 0] + m1.m[1 * 4 + 3] * m2.m[2 * 4 + 1] +
-            m1.m[2 * 4 + 3] * m2.m[2 * 4 + 2] + m1.m[3 * 4 + 3] * m2.m[2 * 4 + 3];
-        m.m[3 * 4 + 0] = m1.m[0 * 4 + 0] * m2.m[3 * 4 + 0] + m1.m[1 * 4 + 0] * m2.m[3 * 4 + 1] +
-            m1.m[2 * 4 + 0] * m2.m[3 * 4 + 2] + m1.m[3 * 4 + 0] * m2.m[3 * 4 + 3];
-        m.m[3 * 4 + 1] = m1.m[0 * 4 + 1] * m2.m[3 * 4 + 0] + m1.m[1 * 4 + 1] * m2.m[3 * 4 + 1] +
-            m1.m[2 * 4 + 1] * m2.m[3 * 4 + 2] + m1.m[3 * 4 + 1] * m2.m[3 * 4 + 3];
-        m.m[3 * 4 + 2] = m1.m[0 * 4 + 2] * m2.m[3 * 4 + 0] + m1.m[1 * 4 + 2] * m2.m[3 * 4 + 1] +
-            m1.m[2 * 4 + 2] * m2.m[3 * 4 + 2] + m1.m[3 * 4 + 2] * m2.m[3 * 4 + 3];
-        m.m[3 * 4 + 3] = m1.m[0 * 4 + 3] * m2.m[3 * 4 + 0] + m1.m[1 * 4 + 3] * m2.m[3 * 4 + 1] +
-            m1.m[2 * 4 + 3] * m2.m[3 * 4 + 2] + m1.m[3 * 4 + 3] * m2.m[3 * 4 + 3];
+        Mat4x4 m = void;
+        m.m[0 * 4 + 0] = a.m[0 * 4 + 0] * b.m[0 * 4 + 0] + a.m[1 * 4 + 0] * b.m[0 * 4 + 1] + a.m[2 * 4 + 0] * b.m[0 * 4 + 2] + a.m[3 * 4 + 0] * b.m[0 * 4 + 3];
+        m.m[0 * 4 + 1] = a.m[0 * 4 + 1] * b.m[0 * 4 + 0] + a.m[1 * 4 + 1] * b.m[0 * 4 + 1] + a.m[2 * 4 + 1] * b.m[0 * 4 + 2] + a.m[3 * 4 + 1] * b.m[0 * 4 + 3];
+        m.m[0 * 4 + 2] = a.m[0 * 4 + 2] * b.m[0 * 4 + 0] + a.m[1 * 4 + 2] * b.m[0 * 4 + 1] + a.m[2 * 4 + 2] * b.m[0 * 4 + 2] + a.m[3 * 4 + 2] * b.m[0 * 4 + 3];
+        m.m[0 * 4 + 3] = a.m[0 * 4 + 3] * b.m[0 * 4 + 0] + a.m[1 * 4 + 3] * b.m[0 * 4 + 1] + a.m[2 * 4 + 3] * b.m[0 * 4 + 2] + a.m[3 * 4 + 3] * b.m[0 * 4 + 3];
+        m.m[1 * 4 + 0] = a.m[0 * 4 + 0] * b.m[1 * 4 + 0] + a.m[1 * 4 + 0] * b.m[1 * 4 + 1] + a.m[2 * 4 + 0] * b.m[1 * 4 + 2] + a.m[3 * 4 + 0] * b.m[1 * 4 + 3];
+        m.m[1 * 4 + 1] = a.m[0 * 4 + 1] * b.m[1 * 4 + 0] + a.m[1 * 4 + 1] * b.m[1 * 4 + 1] + a.m[2 * 4 + 1] * b.m[1 * 4 + 2] + a.m[3 * 4 + 1] * b.m[1 * 4 + 3];
+        m.m[1 * 4 + 2] = a.m[0 * 4 + 2] * b.m[1 * 4 + 0] + a.m[1 * 4 + 2] * b.m[1 * 4 + 1] + a.m[2 * 4 + 2] * b.m[1 * 4 + 2] + a.m[3 * 4 + 2] * b.m[1 * 4 + 3];
+        m.m[1 * 4 + 3] = a.m[0 * 4 + 3] * b.m[1 * 4 + 0] + a.m[1 * 4 + 3] * b.m[1 * 4 + 1] + a.m[2 * 4 + 3] * b.m[1 * 4 + 2] + a.m[3 * 4 + 3] * b.m[1 * 4 + 3];
+        m.m[2 * 4 + 0] = a.m[0 * 4 + 0] * b.m[2 * 4 + 0] + a.m[1 * 4 + 0] * b.m[2 * 4 + 1] + a.m[2 * 4 + 0] * b.m[2 * 4 + 2] + a.m[3 * 4 + 0] * b.m[2 * 4 + 3];
+        m.m[2 * 4 + 1] = a.m[0 * 4 + 1] * b.m[2 * 4 + 0] + a.m[1 * 4 + 1] * b.m[2 * 4 + 1] + a.m[2 * 4 + 1] * b.m[2 * 4 + 2] + a.m[3 * 4 + 1] * b.m[2 * 4 + 3];
+        m.m[2 * 4 + 2] = a.m[0 * 4 + 2] * b.m[2 * 4 + 0] + a.m[1 * 4 + 2] * b.m[2 * 4 + 1] + a.m[2 * 4 + 2] * b.m[2 * 4 + 2] + a.m[3 * 4 + 2] * b.m[2 * 4 + 3];
+        m.m[2 * 4 + 3] = a.m[0 * 4 + 3] * b.m[2 * 4 + 0] + a.m[1 * 4 + 3] * b.m[2 * 4 + 1] + a.m[2 * 4 + 3] * b.m[2 * 4 + 2] + a.m[3 * 4 + 3] * b.m[2 * 4 + 3];
+        m.m[3 * 4 + 0] = a.m[0 * 4 + 0] * b.m[3 * 4 + 0] + a.m[1 * 4 + 0] * b.m[3 * 4 + 1] + a.m[2 * 4 + 0] * b.m[3 * 4 + 2] + a.m[3 * 4 + 0] * b.m[3 * 4 + 3];
+        m.m[3 * 4 + 1] = a.m[0 * 4 + 1] * b.m[3 * 4 + 0] + a.m[1 * 4 + 1] * b.m[3 * 4 + 1] + a.m[2 * 4 + 1] * b.m[3 * 4 + 2] + a.m[3 * 4 + 1] * b.m[3 * 4 + 3];
+        m.m[3 * 4 + 2] = a.m[0 * 4 + 2] * b.m[3 * 4 + 0] + a.m[1 * 4 + 2] * b.m[3 * 4 + 1] + a.m[2 * 4 + 2] * b.m[3 * 4 + 2] + a.m[3 * 4 + 2] * b.m[3 * 4 + 3];
+        m.m[3 * 4 + 3] = a.m[0 * 4 + 3] * b.m[3 * 4 + 0] + a.m[1 * 4 + 3] * b.m[3 * 4 + 1] + a.m[2 * 4 + 3] * b.m[3 * 4 + 2] + a.m[3 * 4 + 3] * b.m[3 * 4 + 3];
         return m;
     }
 
     /// Multiply matrix by Vec3
     Vec3 opBinary(string op : "*")(const Vec3 v) const
     {
-        float x = v.x * m[0 * 4 + 0] + v.y * m[1 * 4 + 0] + v.z * m[2 * 4 + 0] + m[3 * 4 + 0];
-        float y = v.x * m[0 * 4 + 1] + v.y * m[1 * 4 + 1] + v.z * m[2 * 4 + 1] + m[3 * 4 + 1];
-        float z = v.x * m[0 * 4 + 2] + v.y * m[1 * 4 + 2] + v.z * m[2 * 4 + 2] + m[3 * 4 + 2];
-        float w = v.x * m[0 * 4 + 3] + v.y * m[1 * 4 + 3] + v.z * m[2 * 4 + 3] + m[3 * 4 + 3];
+        const x = v.x * m[0 * 4 + 0] + v.y * m[1 * 4 + 0] + v.z * m[2 * 4 + 0] + m[3 * 4 + 0];
+        const y = v.x * m[0 * 4 + 1] + v.y * m[1 * 4 + 1] + v.z * m[2 * 4 + 1] + m[3 * 4 + 1];
+        const z = v.x * m[0 * 4 + 2] + v.y * m[1 * 4 + 2] + v.z * m[2 * 4 + 2] + m[3 * 4 + 2];
+        const w = v.x * m[0 * 4 + 3] + v.y * m[1 * 4 + 3] + v.z * m[2 * 4 + 3] + m[3 * 4 + 3];
         if (w == 1.0f)
             return Vec3(x, y, z);
         else
@@ -820,10 +797,10 @@ struct mat4
     /// ditto
     Vec3 opBinaryRight(string op : "*")(const Vec3 v) const
     {
-        float x = v.x * m[0 * 4 + 0] + v.y * m[0 * 4 + 1] + v.z * m[0 * 4 + 2] + m[0 * 4 + 3];
-        float y = v.x * m[1 * 4 + 0] + v.y * m[1 * 4 + 1] + v.z * m[1 * 4 + 2] + m[1 * 4 + 3];
-        float z = v.x * m[2 * 4 + 0] + v.y * m[2 * 4 + 1] + v.z * m[2 * 4 + 2] + m[2 * 4 + 3];
-        float w = v.x * m[3 * 4 + 0] + v.y * m[3 * 4 + 1] + v.z * m[3 * 4 + 2] + m[3 * 4 + 3];
+        const x = v.x * m[0 * 4 + 0] + v.y * m[0 * 4 + 1] + v.z * m[0 * 4 + 2] + m[0 * 4 + 3];
+        const y = v.x * m[1 * 4 + 0] + v.y * m[1 * 4 + 1] + v.z * m[1 * 4 + 2] + m[1 * 4 + 3];
+        const z = v.x * m[2 * 4 + 0] + v.y * m[2 * 4 + 1] + v.z * m[2 * 4 + 2] + m[2 * 4 + 3];
+        const w = v.x * m[3 * 4 + 0] + v.y * m[3 * 4 + 1] + v.z * m[3 * 4 + 2] + m[3 * 4 + 3];
         if (w == 1.0f)
             return Vec3(x, y, z);
         else
@@ -833,19 +810,19 @@ struct mat4
     /// Multiply matrix by Vec4
     Vec4 opBinary(string op : "*")(const Vec4 v) const
     {
-        float x = v.x * m[0 * 4 + 0] + v.y * m[1 * 4 + 0] + v.z * m[2 * 4 + 0] + v.w * m[3 * 4 + 0];
-        float y = v.x * m[0 * 4 + 1] + v.y * m[1 * 4 + 1] + v.z * m[2 * 4 + 1] + v.w * m[3 * 4 + 1];
-        float z = v.x * m[0 * 4 + 2] + v.y * m[1 * 4 + 2] + v.z * m[2 * 4 + 2] + v.w * m[3 * 4 + 2];
-        float w = v.x * m[0 * 4 + 3] + v.y * m[1 * 4 + 3] + v.z * m[2 * 4 + 3] + v.w * m[3 * 4 + 3];
+        const x = v.x * m[0 * 4 + 0] + v.y * m[1 * 4 + 0] + v.z * m[2 * 4 + 0] + v.w * m[3 * 4 + 0];
+        const y = v.x * m[0 * 4 + 1] + v.y * m[1 * 4 + 1] + v.z * m[2 * 4 + 1] + v.w * m[3 * 4 + 1];
+        const z = v.x * m[0 * 4 + 2] + v.y * m[1 * 4 + 2] + v.z * m[2 * 4 + 2] + v.w * m[3 * 4 + 2];
+        const w = v.x * m[0 * 4 + 3] + v.y * m[1 * 4 + 3] + v.z * m[2 * 4 + 3] + v.w * m[3 * 4 + 3];
         return Vec4(x, y, z, w);
     }
     /// ditto
     Vec4 opBinaryRight(string op : "*")(const Vec4 v) const
     {
-        float x = v.x * m[0 * 4 + 0] + v.y * m[0 * 4 + 1] + v.z * m[0 * 4 + 2] + v.w * m[0 * 4 + 3];
-        float y = v.x * m[1 * 4 + 0] + v.y * m[1 * 4 + 1] + v.z * m[1 * 4 + 2] + v.w * m[1 * 4 + 3];
-        float z = v.x * m[2 * 4 + 0] + v.y * m[2 * 4 + 1] + v.z * m[2 * 4 + 2] + v.w * m[2 * 4 + 3];
-        float w = v.x * m[3 * 4 + 0] + v.y * m[3 * 4 + 1] + v.z * m[3 * 4 + 2] + v.w * m[3 * 4 + 3];
+        const x = v.x * m[0 * 4 + 0] + v.y * m[0 * 4 + 1] + v.z * m[0 * 4 + 2] + v.w * m[0 * 4 + 3];
+        const y = v.x * m[1 * 4 + 0] + v.y * m[1 * 4 + 1] + v.z * m[1 * 4 + 2] + v.w * m[1 * 4 + 3];
+        const z = v.x * m[2 * 4 + 0] + v.y * m[2 * 4 + 1] + v.z * m[2 * 4 + 2] + v.w * m[2 * 4 + 3];
+        const w = v.x * m[3 * 4 + 0] + v.y * m[3 * 4 + 1] + v.z * m[3 * 4 + 2] + v.w * m[3 * 4 + 3];
         return Vec4(x, y, z, w);
     }
 
@@ -873,73 +850,24 @@ struct mat4
         return m[index];
     }
 
-    /// Set to identity: fill all items of matrix with zero except main diagonal items which will be assigned to 1.0f
-    ref mat4 setIdentity() return
+    ref Mat4x4 translate(const Vec3 v) return
     {
-        this = mat4.init;
+        m[3 * 4 + 0] += m[0 * 4 + 0] * v.x + m[1 * 4 + 0] * v.y + m[2 * 4 + 0] * v.z;
+        m[3 * 4 + 1] += m[0 * 4 + 1] * v.x + m[1 * 4 + 1] * v.y + m[2 * 4 + 1] * v.z;
+        m[3 * 4 + 2] += m[0 * 4 + 2] * v.x + m[1 * 4 + 2] * v.y + m[2 * 4 + 2] * v.z;
+        m[3 * 4 + 3] += m[0 * 4 + 3] * v.x + m[1 * 4 + 3] * v.y + m[2 * 4 + 3] * v.z;
         return this;
     }
-    /// Set to diagonal: fill all items of matrix with zero except main diagonal items which will be assigned to v
-    ref mat4 setDiagonal(float v) return
-    {
-        foreach (x; 0 .. 4)
-            foreach (y; 0 .. 4)
-                m[y * 4 + x] = (x == y) ? v : 0;
-        return this;
-    }
-    /// Fill all items of matrix with specified value
-    ref mat4 fill(float v) return
-    {
-        m[] = v;
-        return this;
-    }
-    /// Fill all items of matrix with zero
-    ref mat4 setZero() return
-    {
-        m[] = 0;
-        return this;
-    }
-    /// Creates identity matrix
-    static mat4 identity()
-    {
-        return mat4.init;
-    }
-    /// Creates zero matrix
-    static mat4 zero()
-    {
-        mat4 ret = void;
-        ret.m[] = 0;
-        return ret;
-    }
 
-    /// Inplace rotate around Z axis
-    ref mat4 rotatez(float angle) return
-    {
-        return rotate(angle, 0, 0, 1);
-    }
-
-    /// Inplace rotate around X axis
-    ref mat4 rotatex(float angle) return
-    {
-        return rotate(angle, 1, 0, 0);
-    }
-
-    /// Inplace rotate around Y axis
-    ref mat4 rotatey(float angle) return
-    {
-        return rotate(angle, 0, 1, 0);
-    }
-
-    ref mat4 rotate(float angle, const Vec3 axis) return
-    {
-        return rotate(angle, axis.x, axis.y, axis.z);
-    }
-
-    ref mat4 rotate(float angle, float x, float y, float z) return
+    ref Mat4x4 rotate(float angle, const Vec3 axis) return
     {
         if (angle == 0.0f)
             return this;
-        mat4 m;
+
+        float x = axis.x;
+        float y = axis.y;
+        float z = axis.z;
+
         float c, s, ic;
         if (angle == 90.0f || angle == -270.0f)
         {
@@ -958,11 +886,13 @@ struct mat4
         }
         else
         {
-            float a = angle * PI / 180.0f;
+            const a = angle * PI / 180.0f;
             c = cos(a);
             s = sin(a);
         }
-        bool quick = false;
+
+        Mat4x4 m;
+        bool quick;
         if (x == 0.0f)
         {
             if (y == 0.0f)
@@ -970,7 +900,7 @@ struct mat4
                 if (z != 0.0f)
                 {
                     // Rotate around the Z axis.
-                    m.setIdentity();
+                    m = Mat4x4.identity;
                     m.m[0 * 4 + 0] = c;
                     m.m[1 * 4 + 1] = c;
                     if (z < 0.0f)
@@ -989,7 +919,7 @@ struct mat4
             else if (z == 0.0f)
             {
                 // Rotate around the Y axis.
-                m.setIdentity();
+                m = Mat4x4.identity;
                 m.m[0 * 4 + 0] = c;
                 m.m[2 * 4 + 2] = c;
                 if (y < 0.0f)
@@ -1008,7 +938,7 @@ struct mat4
         else if (y == 0.0f && z == 0.0f)
         {
             // Rotate around the X axis.
-            m.setIdentity();
+            m = Mat4x4.identity;
             m.m[1 * 4 + 1] = c;
             m.m[2 * 4 + 2] = c;
             if (x < 0.0f)
@@ -1055,77 +985,34 @@ struct mat4
         return this;
     }
 
-    ref mat4 rotateX(float angle) return
+    /// Inplace rotate around X axis
+    ref Mat4x4 rotateX(float angle) return
     {
-        return rotate(angle, 1, 0, 0);
+        return rotate(angle, Vec3(1, 0, 0));
+    }
+    /// Inplace rotate around Y axis
+    ref Mat4x4 rotateY(float angle) return
+    {
+        return rotate(angle, Vec3(0, 1, 0));
+    }
+    /// Inplace rotate around Z axis
+    ref Mat4x4 rotateZ(float angle) return
+    {
+        return rotate(angle, Vec3(0, 0, 1));
     }
 
-    ref mat4 rotateY(float angle) return
+    ref Mat4x4 scale(float v) return
     {
-        return rotate(angle, 0, 1, 0);
-    }
-
-    ref mat4 rotateZ(float angle) return
-    {
-        return rotate(angle, 0, 0, 1);
-    }
-
-    ref mat4 scale(float x, float y, float z) return
-    {
-        m[0 * 4 + 0] *= x;
-        m[0 * 4 + 1] *= x;
-        m[0 * 4 + 2] *= x;
-        m[0 * 4 + 3] *= x;
-        m[1 * 4 + 0] *= y;
-        m[1 * 4 + 1] *= y;
-        m[1 * 4 + 2] *= y;
-        m[1 * 4 + 3] *= y;
-        m[2 * 4 + 0] *= z;
-        m[2 * 4 + 1] *= z;
-        m[2 * 4 + 2] *= z;
-        m[2 * 4 + 3] *= z;
+        m[0 .. 12] *= v;
         return this;
     }
 
-    ref mat4 scale(float v) return
+    ref Mat4x4 scale(const Vec3 v) return
     {
-        m[0 * 4 + 0] *= v;
-        m[0 * 4 + 1] *= v;
-        m[0 * 4 + 2] *= v;
-        m[0 * 4 + 3] *= v;
-        m[1 * 4 + 0] *= v;
-        m[1 * 4 + 1] *= v;
-        m[1 * 4 + 2] *= v;
-        m[1 * 4 + 3] *= v;
-        m[2 * 4 + 0] *= v;
-        m[2 * 4 + 1] *= v;
-        m[2 * 4 + 2] *= v;
-        m[2 * 4 + 3] *= v;
+        m[0 .. 4] *= v.x;
+        m[4 .. 8] *= v.y;
+        m[8 .. 12] *= v.z;
         return this;
-    }
-
-    ref mat4 scale(const Vec3 v) return
-    {
-        m[0 * 4 + 0] *= v.x;
-        m[0 * 4 + 1] *= v.x;
-        m[0 * 4 + 2] *= v.x;
-        m[0 * 4 + 3] *= v.x;
-        m[1 * 4 + 0] *= v.y;
-        m[1 * 4 + 1] *= v.y;
-        m[1 * 4 + 2] *= v.y;
-        m[1 * 4 + 3] *= v.y;
-        m[2 * 4 + 0] *= v.z;
-        m[2 * 4 + 1] *= v.z;
-        m[2 * 4 + 2] *= v.z;
-        m[2 * 4 + 3] *= v.z;
-        return this;
-    }
-
-    static mat4 translation(float x, float y, float z)
-    {
-        // TODO
-        mat4 res = 1;
-        return res;
     }
 
     /// Decomposes the scale, rotation and translation components of this matrix
@@ -1145,18 +1032,18 @@ struct mat4
 
         // Extract the scale.
         // This is simply the length of each axis (row/column) in the matrix.
-        Vec3 xaxis = Vec3(m[0], m[1], m[2]);
-        float scaleX = xaxis.length;
+        const xaxis = Vec3(m[0], m[1], m[2]);
+        const scaleX = xaxis.length;
 
-        Vec3 yaxis = Vec3(m[4], m[5], m[6]);
-        float scaleY = yaxis.length;
+        const yaxis = Vec3(m[4], m[5], m[6]);
+        const scaleY = yaxis.length;
 
-        Vec3 zaxis = Vec3(m[8], m[9], m[10]);
+        const zaxis = Vec3(m[8], m[9], m[10]);
         float scaleZ = zaxis.length;
 
         // Determine if we have a negative scale (true if determinant is less than zero).
         // In this case, we simply negate a single axis of the scale.
-        float det = determinant();
+        const det = determinant();
         if (det < 0)
             scaleZ = -scaleZ;
 
@@ -1180,18 +1067,18 @@ struct mat4
 
     float determinant() const
     {
-        float a0 = m[0] * m[5] - m[1] * m[4];
-        float a1 = m[0] * m[6] - m[2] * m[4];
-        float a2 = m[0] * m[7] - m[3] * m[4];
-        float a3 = m[1] * m[6] - m[2] * m[5];
-        float a4 = m[1] * m[7] - m[3] * m[5];
-        float a5 = m[2] * m[7] - m[3] * m[6];
-        float b0 = m[8] * m[13] - m[9] * m[12];
-        float b1 = m[8] * m[14] - m[10] * m[12];
-        float b2 = m[8] * m[15] - m[11] * m[12];
-        float b3 = m[9] * m[14] - m[10] * m[13];
-        float b4 = m[9] * m[15] - m[11] * m[13];
-        float b5 = m[10] * m[15] - m[11] * m[14];
+        const a0 = m[0] * m[5] - m[1] * m[4];
+        const a1 = m[0] * m[6] - m[2] * m[4];
+        const a2 = m[0] * m[7] - m[3] * m[4];
+        const a3 = m[1] * m[6] - m[2] * m[5];
+        const a4 = m[1] * m[7] - m[3] * m[5];
+        const a5 = m[2] * m[7] - m[3] * m[6];
+        const b0 = m[8] * m[13] - m[9] * m[12];
+        const b1 = m[8] * m[14] - m[10] * m[12];
+        const b2 = m[8] * m[15] - m[11] * m[12];
+        const b3 = m[9] * m[14] - m[10] * m[13];
+        const b4 = m[9] * m[15] - m[11] * m[13];
+        const b5 = m[10] * m[15] - m[11] * m[14];
         // calculate the determinant
         return a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0;
     }
@@ -1267,9 +1154,9 @@ unittest
     Vec3 a, b, c;
     a.clear(5);
     b.clear(2);
-    float d = a * b;
-    auto r1 = a + b;
-    auto r2 = a - b;
+    const d = a * b;
+    const r1 = a + b;
+    const r2 = a - b;
     c = a;
     c += b;
     c = a;
@@ -1285,7 +1172,7 @@ unittest
     a.x += 0.5f;
     a.y += 0.5f;
     a.z += 0.5f;
-    auto v = b.vec;
+    const v = b.vec;
     a = [0.1f, 0.2f, 0.3f];
     a.normalize();
     c = b.normalized;
@@ -1296,9 +1183,9 @@ unittest
     Vec4 a, b, c;
     a.clear(5);
     b.clear(2);
-    float d = a * b;
-    auto r1 = a + b;
-    auto r2 = a - b;
+    const d = a * b;
+    const r1 = a + b;
+    const r2 = a - b;
     c = a;
     c += b;
     c = a;
@@ -1314,7 +1201,7 @@ unittest
     a.x += 0.5f;
     a.y += 0.5f;
     a.z += 0.5f;
-    auto v = b.vec;
+    const v = b.vec;
     a = [0.1f, 0.2f, 0.3f, 0.4f];
     a.normalize();
     c = b.normalized;
@@ -1362,8 +1249,7 @@ unittest
 
 unittest
 {
-    mat4 m;
-    m.setIdentity();
+    Mat4x4 m = Mat4x4.identity;
     m = [1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f];
     float r;
     r = m[1, 3];
@@ -1373,20 +1259,18 @@ unittest
     m *= 3;
     m /= 3;
     m.translate(Vec3(2, 3, 4));
-    m.translate(5, 6, 7);
     m.lookAt(Vec3(5, 5, 5), Vec3(0, 0, 0), Vec3(-1, 1, 1));
     m.setLookAt(Vec3(5, 5, 5), Vec3(0, 0, 0), Vec3(-1, 1, 1));
-    m.scale(2, 3, 4);
     m.scale(Vec3(2, 3, 4));
 
-    Vec3 vv1 = Vec3(1, 2, 3);
-    auto p1 = m * vv1;
-    Vec3 vv2 = Vec3(3, 4, 5);
-    auto p2 = vv2 * m;
-    auto p3 = Vec4(1, 2, 3, 4) * m;
-    auto p4 = m * Vec4(1, 2, 3, 4);
+    const vv1 = Vec3(1, 2, 3);
+    const p1 = m * vv1;
+    const vv2 = Vec3(3, 4, 5);
+    const p2 = vv2 * m;
+    const p3 = Vec4(1, 2, 3, 4) * m;
+    const p4 = m * Vec4(1, 2, 3, 4);
 
-    m.rotate(30, 1, 1, 1);
+    m.rotate(30, Vec3(1, 1, 1));
     m.rotateX(10);
     m.rotateY(10);
     m.rotateZ(10);
