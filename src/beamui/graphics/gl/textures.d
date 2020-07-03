@@ -39,6 +39,7 @@ private struct CachePage
 {
     TexId tex;
     SizeI texSize;
+    bool contentChanged;
 }
 
 /** Texture cache is an array of texture atlases for static image data.
@@ -81,6 +82,7 @@ struct TextureCache
         {
             resize(*page, res.pageSize);
             upload(page.tex, res.box, bitmap.pixels!uint);
+            page.contentChanged = true;
         }
         return TextureView(&page.tex, &page.texSize, res.box);
     }
@@ -112,14 +114,27 @@ struct TextureCache
         // this should work with any byte order
         Tex2D.bind(tex);
         Tex2D.uploadSubImage(box, 0, TexFormat(GL_BGRA, GL_RGBA8, GL_UNSIGNED_INT_8_8_8_8_REV), data);
-        // TODO: optimize mipmap generation
-        glGenerateMipmap(GL_TEXTURE_2D);
         Tex2D.unbind();
     }
 
     void remove(uint id)
     {
         atlas.remove(id);
+    }
+
+    // called before rendering the frame
+    void updateMipmaps()
+    {
+        foreach (ref p; pages)
+        {
+            if (p.contentChanged)
+            {
+                p.contentChanged = false;
+                Tex2D.bind(p.tex);
+                glGenerateMipmap(GL_TEXTURE_2D);
+            }
+        }
+        Tex2D.unbind();
     }
 }
 

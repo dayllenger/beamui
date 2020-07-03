@@ -164,6 +164,7 @@ protected:
 
     void end()
     {
+        textureCache.updateMipmaps();
         prepareSets();
         prepareLayers();
         constructCoverGeometry();
