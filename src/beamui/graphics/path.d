@@ -23,8 +23,7 @@ struct SubPath
 /// Represents vector shape as one or more subpaths, which contain series of segments
 struct Path
 {
-    nothrow:
-
+nothrow:
     @property
     {
         /// True if no points and contours
@@ -118,7 +117,8 @@ struct Path
     ref Path lineTo(float x, float y) return
     {
         ensureContourStarted();
-        if (fequal2(x, posx) && fequal2(y, posy)) return this;
+        if (fequal2(x, posx) && fequal2(y, posy))
+            return this;
         posx = x;
         posy = y;
         insertLastPoint();
@@ -128,7 +128,8 @@ struct Path
     ref Path lineBy(float dx, float dy) return
     {
         ensureContourStarted();
-        if (fzero2(dx) && fzero2(dy)) return this;
+        if (fzero2(dx) && fzero2(dy))
+            return this;
         posx += dx;
         posy += dy;
         insertLastPoint();
@@ -139,17 +140,12 @@ struct Path
     ref Path quadraticTo(float p1x, float p1y, float p2x, float p2y) return
     {
         ensureContourStarted();
-        if (fequal2(p1x, posx) && fequal2(p1y, posy) &&
-            fequal2(p2x, posx) && fequal2(p2y, posy))
+        bool eq = fequal2(p1x, posx) && fequal2(p1y, posy);
+        eq = eq && fequal2(p2x, posx) && fequal2(p2y, posy);
+        if (eq)
             return this;
 
-        flattenQuadraticBezier(
-            points,
-            Vec2(posx, posy),
-            Vec2(p1x, p1y),
-            Vec2(p2x, p2y),
-            false,
-        );
+        flattenQuadraticBezier(points, Vec2(posx, posy), Vec2(p1x, p1y), Vec2(p2x, p2y), false);
         posx = p2x;
         posy = p2y;
         insertLastPoint();
@@ -166,16 +162,13 @@ struct Path
     ref Path cubicTo(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y) return
     {
         ensureContourStarted();
-        if (fequal2(p1x, posx) && fequal2(p1y, posy) && fequal2(p2x, posx) &&
-            fequal2(p2y, posy) && fequal2(p3x, posx) && fequal2(p3y, posy))
+        bool eq = fequal2(p1x, posx) && fequal2(p1y, posy);
+        eq = eq && fequal2(p2x, posx) && fequal2(p2y, posy);
+        eq = eq && fequal2(p3x, posx) && fequal2(p3y, posy);
+        if (eq)
             return this;
 
-        flattenCubicBezier(
-            points,
-            Vec2(posx, posy), Vec2(p1x, p1y),
-            Vec2(p2x,  p2y),  Vec2(p3x, p3y),
-            false,
-        );
+        flattenCubicBezier(points, Vec2(posx, posy), Vec2(p1x, p1y), Vec2(p2x, p2y), Vec2(p3x, p3y), false);
         posx = p3x;
         posy = p3y;
         insertLastPoint();
@@ -325,8 +318,8 @@ struct Path
             // the contour must not contain coincident adjacent points
             debug foreach (j; 1 .. subpath.points.length)
             {
-                if (fequal6(subpath.points[j - 1].x, subpath.points[j].x) &&
-                    fequal6(subpath.points[j - 1].y, subpath.points[j].y))
+                const vs = subpath.points[j - 1 .. j + 1];
+                if (fequal6(vs[0].x, vs[1].x) && fequal6(vs[0].y, vs[1].y))
                     assert(0, "Path has coincident adjacent points");
             }
             const int result = callback(subpath);

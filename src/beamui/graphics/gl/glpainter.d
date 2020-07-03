@@ -9,7 +9,9 @@ module beamui.graphics.gl.glpainter;
 
 import beamui.core.config;
 
+// dfmt off
 static if (USE_OPENGL):
+// dfmt on
 import std.algorithm.mutation : reverse;
 import std.typecons : scoped;
 import beamui.core.collections : Buf;
@@ -114,7 +116,7 @@ public final class GLPaintEngine : PaintEngine
     }
 
     this(GLSharedData data)
-        in(data)
+    in (data)
     {
         renderer.initialize(&data.sh);
         colorStopAtlas = &data.colorStopAtlas;
@@ -129,7 +131,10 @@ public final class GLPaintEngine : PaintEngine
 
 protected:
 
-    const(State)* st() const { return _st; }
+    const(State)* st() const
+    {
+        return _st;
+    }
 
     void begin(const(State)* st, int w, int h, Color bg)
     {
@@ -172,6 +177,7 @@ protected:
 
         if (batches.length)
         {
+            // dfmt off
             debug (painter)
             {
                 Log.fd("GL: %s bt, %s dat, %s tri, %s v",
@@ -196,6 +202,7 @@ protected:
                 gpaa.layerIndices[],
                 getGlobalLayerPositions(),
             ));
+            // dfmt on
         }
     }
 
@@ -217,7 +224,7 @@ protected:
     }
 
     private void prepareLayers()
-        in(layers.length)
+    in (layers.length)
     {
         if (layers.length == 1)
             return;
@@ -271,11 +278,9 @@ protected:
             }
             // adjust final layer coordinates
             const RectI parentBounds = layers[lr.parent].bounds;
-            const layerShift = Vec2(
-                lr.clip.left + lr.bounds.left - parentBounds.left,
-                lr.clip.top + lr.bounds.top - parentBounds.top,
-            );
-            dataStore.unsafe_ref(lr.cmd.dataIndex).transform = Mat2x3.translation(layerShift);
+            const xshift = lr.clip.left + lr.bounds.left - parentBounds.left;
+            const yshift = lr.clip.top + lr.bounds.top - parentBounds.top;
+            dataStore.unsafe_ref(lr.cmd.dataIndex).transform = Mat2x3.translation(Vec2(xshift, yshift));
         }
         // at this point, all sub-layers of empty layers are empty too
         foreach (ref Set set; sets.unsafe_slice)
@@ -295,12 +300,14 @@ protected:
                 const Span covs = bt.twopass.covers;
                 foreach (ref cov; covers[][covs.start .. covs.end])
                 {
+                    // dfmt off
                     const Vec2[4] vs = [
                         Vec2(cov.rect.left, cov.rect.top),
                         Vec2(cov.rect.left, cov.rect.bottom),
                         Vec2(cov.rect.right, cov.rect.top),
                         Vec2(cov.rect.right, cov.rect.bottom),
                     ];
+                    // dfmt on
                     const v = positions.length;
                     positions ~= vs[];
                     addStrip(triangles, v, 4);
@@ -316,12 +323,7 @@ protected:
                 Layer* lr = &layers.unsafe_ref(set.layerToCompose);
 
                 const SizeI sz = lr.bounds.size;
-                const Vec2[4] vs = [
-                    Vec2(0, 0),
-                    Vec2(0, sz.h),
-                    Vec2(sz.w, 0),
-                    Vec2(sz.w, sz.h),
-                ];
+                const Vec2[4] vs = [Vec2(0, 0), Vec2(0, sz.h), Vec2(sz.w, 0), Vec2(sz.w, sz.h)];
                 const v = positions.length;
                 const t = triangles.length;
                 positions ~= vs[];
@@ -416,11 +418,11 @@ protected:
 
     void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
     {
+        alias S = Stenciling;
         const set = Set(Span(batches.length), Span(dataStore.length), layer.index);
         const task = DepthTask(index, dataStore.length);
-        const stenciling = rule == FillRule.nonzero ?
-            (complement ? Stenciling.zero : Stenciling.nonzero) :
-            (complement ? Stenciling.even : Stenciling.odd);
+        const nonzero = rule == FillRule.nonzero;
+        const stenciling = nonzero ? (complement ? S.zero : S.nonzero) : (complement ? S.even : S.odd);
         if (fillPathImpl(contours, null, stenciling))
         {
             sets ~= set;
@@ -450,12 +452,14 @@ protected:
     void paintOut(ref const Brush br)
     {
         const r = layer.clip;
+        // dfmt off
         const Vec2[4] vs = [
             Vec2(r.left, r.top),
             Vec2(r.left, r.bottom),
             Vec2(r.right, r.top),
             Vec2(r.right, r.bottom),
         ];
+        // dfmt on
         const v = positions.length;
         const t = triangles.length;
         positions ~= vs[];
@@ -507,12 +511,14 @@ protected:
         {
             const tp = st.mat * p;
             const tq = st.mat * q;
+            // dfmt off
             const bbox = Rect(
                 min(tp.x, tq.x) - 0.5f,
                 min(tp.y, tq.y) - 0.5f,
                 max(tp.x, tq.x) + 0.5f,
                 max(tp.y, tq.y) + 0.5f,
             );
+            // dfmt on
             clip = clipByRect(bbox);
         }
         if (clip.empty)
@@ -621,12 +627,14 @@ protected:
             return;
         assert(view.box.w == w && view.box.h == h);
 
+        // dfmt off
         const Vec2[4] vs = [
             Vec2(rp.left, rp.top),
             Vec2(rp.left, rp.bottom),
             Vec2(rp.right, rp.top),
             Vec2(rp.right, rp.bottom),
         ];
+        // dfmt on
         Vec2[4] uvs = [Vec2(0, 0), Vec2(0, h), Vec2(w, 0), Vec2(w, h)];
         foreach (ref uv; uvs)
         {
@@ -641,12 +649,14 @@ protected:
 
         if (st.aa)
         {
+            // dfmt off
             const Vec2[4] silhouette = [
                 Vec2(rp.left, rp.top),
                 Vec2(rp.left, rp.bottom),
                 Vec2(rp.right, rp.bottom),
                 Vec2(rp.right, rp.top),
             ];
+            // dfmt on
             gpaa.add(silhouette[]);
             gpaa.finish(dataStore.length);
         }
@@ -682,6 +692,7 @@ protected:
             return;
         assert(view.box.w == bmp.width && view.box.h == bmp.height);
 
+        // dfmt off
         const Vec2[16] vs = [
             Vec2(info.dst_x0, info.dst_y0),
             Vec2(info.dst_x0, info.dst_y1),
@@ -718,6 +729,7 @@ protected:
             Vec2(info.x3, info.y2),
             Vec2(info.x3, info.y3),
         ];
+        // dfmt on
         foreach (ref uv; uvs)
         {
             uv.x += view.box.x;
@@ -727,6 +739,7 @@ protected:
         positions_textured ~= vs[];
         uvs_textured ~= uvs[];
 
+        // dfmt off
         Tri[18] tris = [
             Tri(0, 1, 2), Tri(1, 2, 3),
             Tri(2, 3, 4), Tri(3, 4, 5),
@@ -738,6 +751,7 @@ protected:
             Tri(10, 11, 12), Tri(11, 12, 13),
             Tri(12, 13, 14), Tri(13, 14, 15),
         ];
+        // dfmt on
         foreach (ref tri; tris)
         {
             tri.v0 += v;
@@ -749,12 +763,14 @@ protected:
 
         if (st.aa)
         {
+            // dfmt off
             const Vec2[4] silhouette = [
                 Vec2(rp.left, rp.top),
                 Vec2(rp.left, rp.bottom),
                 Vec2(rp.right, rp.bottom),
                 Vec2(rp.right, rp.top),
             ];
+            // dfmt on
             gpaa.add(silhouette[]);
             gpaa.finish(dataStore.length);
         }
@@ -886,12 +902,14 @@ private:
         if (clip.empty)
             return false;
 
+        // dfmt off
         const Vec2[4] vs = [
             Vec2(r.left, r.top),
             Vec2(r.left, r.bottom),
             Vec2(r.right, r.top),
             Vec2(r.right, r.bottom),
         ];
+        // dfmt on
         const v = positions.length;
         const t = triangles.length;
         positions ~= vs[];
@@ -900,12 +918,14 @@ private:
         // TODO: does not antialias if it's pixel-aligned
         if (st.aa)
         {
+            // dfmt off
             const Vec2[4] silhouette = [
                 Vec2(r.left, r.top),
                 Vec2(r.left, r.bottom),
                 Vec2(r.right, r.bottom),
                 Vec2(r.right, r.top),
             ];
+            // dfmt on
             gpaa.add(silhouette[]);
             gpaa.finish(dataStore.length);
         }
@@ -1069,7 +1089,7 @@ private:
     }
 
     Batch* hasSimilarSimpleBatch(PaintKind kind, bool opaque)
-        in(sets.length)
+    in (sets.length)
     {
         if ((kind == PaintKind.empty || kind == PaintKind.solid) && batches.length > sets[$ - 1].batches.start)
         {
@@ -1081,7 +1101,7 @@ private:
     }
 
     Batch* hasSimilarTextBatch(const TexId* tex)
-        in(sets.length)
+    in (sets.length)
     {
         if (tex && batches.length > sets[$ - 1].batches.start)
         {
@@ -1100,7 +1120,7 @@ private:
     }
 
     Batch* hasSimilarTwoPassBatch(PaintKind kind, bool opaque, Stenciling stenciling, RectI clip)
-        in(sets.length)
+    in (sets.length)
     {
         if ((kind == PaintKind.empty || kind == PaintKind.solid) && batches.length > sets[$ - 1].batches.start)
         {
@@ -1137,6 +1157,7 @@ private:
 
     DataChunk prepareDataChunk(const Mat2x3* m = null, Color c = Color.transparent)
     {
+        // dfmt off
         return DataChunk(
             m ? *m : st.mat,
             layer.depth,
@@ -1144,6 +1165,7 @@ private:
             Rect.from(st.clipRect),
             ColorF(c).premultiplied,
         );
+        // dfmt on
     }
 
     bool convertBrush(const Brush* br, ref ShParams params, ref DataChunk data)
@@ -1157,10 +1179,14 @@ private:
 
         final switch (br.type) with (BrushType)
         {
-            case solid:   return convertSolid(br.solid, br.opacity, params, data);
-            case linear:  return convertLinear(br.linear, br.opacity, params, data);
-            case radial:  return convertRadial(br.radial, br.opacity, params, data);
-            case pattern: return convertPattern(br.pattern, br.opacity, params, data);
+        case solid:
+            return convertSolid(br.solid, br.opacity, params, data);
+        case linear:
+            return convertLinear(br.linear, br.opacity, params, data);
+        case radial:
+            return convertRadial(br.radial, br.opacity, params, data);
+        case pattern:
+            return convertPattern(br.pattern, br.opacity, params, data);
         }
     }
 
@@ -1174,7 +1200,7 @@ private:
     }
 
     bool convertLinear(ref const LinearGradient grad, float opacity, ref ShParams params, ref DataChunk data)
-        in(grad.colors.length >= 2)
+    in (grad.colors.length >= 2)
     {
         const start = data.transform * grad.start;
         const end = data.transform * grad.end;
@@ -1184,7 +1210,7 @@ private:
         const count = grad.colors.length;
         const row = ColorStopAtlasRow(grad.colors, opacity);
         const atlasIndex = colorStopAtlas.add(row);
-
+        // dfmt off
         params.kind = PaintKind.linear;
         params.linear = ParamsLG(
             start,
@@ -1193,11 +1219,12 @@ private:
             colorStopAtlas.tex,
             atlasIndex,
         );
+        // dfmt on
         return true;
     }
 
     bool convertRadial(ref const RadialGradient grad, float opacity, ref ShParams params, ref DataChunk data)
-        in(grad.colors.length >= 2)
+    in (grad.colors.length >= 2)
     {
         const radius = (data.transform * Vec2(grad.radius, 0) - data.transform * Vec2(0)).length;
         if (fzero2(radius))
@@ -1208,7 +1235,7 @@ private:
         const count = grad.colors.length;
         const row = ColorStopAtlasRow(grad.colors, opacity);
         const atlasIndex = colorStopAtlas.add(row);
-
+        // dfmt off
         params.kind = PaintKind.radial;
         params.radial = ParamsRG(
             center,
@@ -1217,16 +1244,18 @@ private:
             colorStopAtlas.tex,
             atlasIndex,
         );
+        // dfmt on
         return true;
     }
 
     bool convertPattern(ref const ImagePattern pat, float opacity, ref ShParams params, ref DataChunk data)
-        in(pat.image)
+    in (pat.image)
     {
         const TextureView view = textureCache.getTexture(*pat.image);
         if (view.empty)
             return false; // skip rendering
 
+        // dfmt off
         params.kind = PaintKind.pattern;
         params.pattern = ParamsPattern(
             view.tex,
@@ -1235,12 +1264,13 @@ private:
             (data.transform * pat.transform).inverted,
             opacity,
         );
+        // dfmt on
         return true;
     }
 }
 
 void addFan(ref Buf!Tri output, uint vstart, size_t vcount)
-    in(vcount >= 2)
+in (vcount >= 2)
 {
     const v0 = vstart;
     const tris = cast(uint)vcount - 2;
@@ -1250,7 +1280,7 @@ void addFan(ref Buf!Tri output, uint vstart, size_t vcount)
 }
 
 void addStrip(ref Buf!Tri output, uint vstart, size_t vcount)
-    in(vcount >= 2)
+in (vcount >= 2)
 {
     const v0 = vstart;
     const tris = cast(uint)vcount - 2;
@@ -1261,29 +1291,31 @@ void addStrip(ref Buf!Tri output, uint vstart, size_t vcount)
 
 struct LineAppender
 {
-    nothrow:
-
-    @property bool ready() const { return positions !is null; }
+nothrow:
+    @property bool ready() const
+    {
+        return positions !is null;
+    }
 
     private Buf!Vec2* positions;
     private Buf!uint* indices;
     private uint istart;
 
     this(ref Buf!Vec2 positions, ref Buf!uint indices)
-        in(positions.length > 0)
+    in (positions.length > 0)
     {
         this.positions = &positions;
         this.indices = &indices;
     }
 
     void begin()
-        in(positions)
+    in (positions)
     {
         istart = positions.length;
     }
 
     void end()
-        in(positions)
+    in (positions)
     {
         const iend = positions.length;
         if (iend == istart)
@@ -1298,13 +1330,13 @@ struct LineAppender
     }
 
     void v(Vec2 v0)
-        in(positions)
+    in (positions)
     {
         positions.put(v0);
     }
 
     void vs(const Vec2[] points)
-        in(positions)
+    in (positions)
     {
         positions.put(points);
     }
@@ -1312,15 +1344,19 @@ struct LineAppender
 
 final class TriBuilder : StrokeBuilder
 {
-    nothrow:
-
+nothrow:
     private
     {
         Buf!Vec2* positions;
         Buf!Tri* triangles;
         LineAppender contour;
 
-        enum Mode { strip, fan }
+        enum Mode
+        {
+            strip,
+            fan
+        }
+
         Mode mode;
         uint vstart;
     }
@@ -1411,9 +1447,11 @@ final class TriBuilder : StrokeBuilder
 
 struct GpaaAppender
 {
-    nothrow:
-
-    @property LineAppender contour() { return appender; }
+nothrow:
+    @property LineAppender contour()
+    {
+        return appender;
+    }
 
     private
     {

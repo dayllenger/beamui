@@ -108,7 +108,8 @@ struct TextLine
     }
 
     this(this) // FIXME: doesn't link without it
-    {}
+    {
+    }
 
     void measure(ref TextLayoutStyle style)
     {
@@ -153,32 +154,58 @@ struct TextLine
             i++;
             // filter relevant attributes and make a fragment style
             const Font f = prevStyle.font;
+            // dfmt off
             switch (mu.attribute.type) with (TextAttr.Type)
             {
             case fontFace:
                 nextStyle = prevStyle;
                 nextStyle.font = FontManager.instance.getFont(
-                    f.size, f.weight, f.italic, f.family, mu.attribute.data.fontFace);
+                    f.size,
+                    f.weight,
+                    f.italic,
+                    f.family,
+                    mu.attribute.data.fontFace,
+                );
                 break;
             case fontFamily:
                 nextStyle = prevStyle;
                 nextStyle.font = FontManager.instance.getFont(
-                    f.size, f.weight, f.italic, mu.attribute.data.fontFamily, f.face);
+                    f.size,
+                    f.weight,
+                    f.italic,
+                    mu.attribute.data.fontFamily,
+                    f.face,
+                );
                 break;
             case fontSize:
                 nextStyle = prevStyle;
                 nextStyle.font = FontManager.instance.getFont(
-                    mu.attribute.data.fontSize, f.weight, f.italic, f.family, f.face);
+                    mu.attribute.data.fontSize,
+                    f.weight,
+                    f.italic,
+                    f.family,
+                    f.face,
+                );
                 break;
             case fontStyle:
                 nextStyle = prevStyle;
                 nextStyle.font = FontManager.instance.getFont(
-                    f.size, f.weight, mu.attribute.data.fontStyle == FontStyle.italic, f.family, f.face);
+                    f.size,
+                    f.weight,
+                    mu.attribute.data.fontStyle == FontStyle.italic,
+                    f.family,
+                    f.face,
+                );
                 break;
             case fontWeight:
                 nextStyle = prevStyle;
                 nextStyle.font = FontManager.instance.getFont(
-                    f.size, mu.attribute.data.fontWeight, f.italic, f.family, f.face);
+                    f.size,
+                    mu.attribute.data.fontWeight,
+                    f.italic,
+                    f.family,
+                    f.face,
+                );
                 break;
             case transform:
                 nextStyle = prevStyle;
@@ -187,6 +214,7 @@ struct TextLine
             default:
                 continue;
             }
+            // dfmt on
             // before
             if (start < mu.start)
                 measureSimpleFragment(start, mu.start, prevStyle);
@@ -403,8 +431,8 @@ struct TextLine
         return false;
     }
 
-    private bool drawFragmentNonWrapped(Painter pr, Point linePos, float boxWidth,
-        ref float offset, ref uint i, ref uint start, uint end, TextStyle prevStyle)
+    private bool drawFragmentNonWrapped(Painter pr, Point linePos, float boxWidth, ref float offset, ref uint i, ref uint start,
+            uint end, TextStyle prevStyle)
     {
         TextStyle nextStyle = void;
 
@@ -436,8 +464,8 @@ struct TextLine
         return false;
     }
 
-    private bool drawSimpleFragmentNonWrapped(Painter pr, Point linePos, float boxWidth,
-        ref float offset, uint start, uint end, ref TextStyle style)
+    private bool drawSimpleFragmentNonWrapped(Painter pr, Point linePos, float boxWidth, ref float offset, uint start,
+            uint end, ref TextStyle style)
     {
         assert(start < end);
 
@@ -490,8 +518,8 @@ struct TextLine
         return ellipsis.shouldDraw;
     }
 
-    private void drawFragmentWrapped(Painter pr, Point linePos, ref Point offset,
-        ref const(LineSpan)[] wraps, ref uint i, ref uint start, uint end, TextStyle prevStyle)
+    private void drawFragmentWrapped(Painter pr, Point linePos, ref Point offset, ref const(LineSpan)[] wraps, ref uint i,
+            ref uint start, uint end, TextStyle prevStyle)
     {
         TextStyle nextStyle = void;
 
@@ -518,8 +546,8 @@ struct TextLine
         }
     }
 
-    private void drawSimpleFragmentWrapped(Painter pr, Point linePos, ref Point offset,
-        ref const(LineSpan)[] wraps, uint start, uint end, ref TextStyle style)
+    private void drawSimpleFragmentWrapped(Painter pr, Point linePos, ref Point offset, ref const(LineSpan)[] wraps,
+            uint start, uint end, ref TextStyle style)
     {
         assert(start < end);
 

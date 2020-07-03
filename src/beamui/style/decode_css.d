@@ -56,8 +56,7 @@ private void toomany(string what, size_t line)
     Log.fw("CSS(%d): too many values for %s", line, what);
 }
 
-private Result!T decodeSimpleEnum(T)(const Token[] tokens, string what, const Tup!(string, T)[] map)
-    if (is(T == enum))
+private Result!T decodeSimpleEnum(T)(const Token[] tokens, string what, const Tup!(string, T)[] map) if (is(T == enum))
 {
     const t = tokens[0];
     if (t.type != TokenType.ident)
@@ -181,6 +180,7 @@ Result!Align decode(T : Align)(const Token[] tokens)
             shouldbe("alignment", "an identifier", t);
             return Err!Align;
         }
+        // dfmt off
         switch (t.text) with (Align)
         {
             case "center":   result |= center; break;
@@ -195,6 +195,7 @@ Result!Align decode(T : Align)(const Token[] tokens)
                 unknown("alignment", t);
                 return Err!Align;
         }
+        // dfmt on
     }
     return Ok(result);
 }
@@ -204,12 +205,14 @@ Result!Stretch decode(T : Stretch)(const Token[] tokens)
 {
     with (Stretch)
     {
+        // dfmt off
         immutable map = [
             tup("main", main),
             tup("cross", cross),
             tup("both", both),
             tup("none", none),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "stretch", map);
     }
 }
@@ -219,6 +222,7 @@ Result!AlignItem decode(T : AlignItem)(const Token[] tokens)
 {
     with (AlignItem)
     {
+        // dfmt off
         immutable map = [
             tup("auto", unspecified),
             tup("stretch", stretch),
@@ -226,6 +230,7 @@ Result!AlignItem decode(T : AlignItem)(const Token[] tokens)
             tup("end", end),
             tup("center", center),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "item alignment", map);
     }
 }
@@ -235,6 +240,7 @@ Result!Distribution decode(T : Distribution)(const Token[] tokens)
 {
     with (Distribution)
     {
+        // dfmt off
         immutable map = [
             tup("stretch", stretch),
             tup("start", start),
@@ -244,6 +250,7 @@ Result!Distribution decode(T : Distribution)(const Token[] tokens)
             tup("space-around", spaceAround),
             tup("space-evenly", spaceEvenly),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "distribution", map);
     }
 }
@@ -354,12 +361,14 @@ Result!FlexDirection decode(T : FlexDirection)(const Token[] tokens)
 {
     with (FlexDirection)
     {
+        // dfmt off
         immutable map = [
             tup("row", row),
             tup("row-reverse", rowReverse),
             tup("column", column),
             tup("column-reverse", columnReverse),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "flex direction", map);
     }
 }
@@ -369,11 +378,13 @@ Result!FlexWrap decode(T : FlexWrap)(const Token[] tokens)
 {
     with (FlexWrap)
     {
+        // dfmt off
         immutable map = [
             tup("nowrap", off),
             tup("wrap", on),
             tup("wrap-reverse", reverse),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "flex wrap", map);
     }
 }
@@ -461,10 +472,12 @@ Result!GridFlow decode(T : GridFlow)(const Token[] tokens)
 {
     with (GridFlow)
     {
+        // dfmt off
         immutable map = [
             tup("row", row),
             tup("column", column),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "grid flow", map);
     }
 }
@@ -595,6 +608,7 @@ private string[] parseGridTemplateString(string txt)
         name,
         dots,
     }
+
     State state;
 
     string[] row;
@@ -642,7 +656,7 @@ private string[] parseGridTemplateString(string txt)
 }
 
 private bool appendGridRow(string[] row, size_t i, ref RectI[string] areas)
-    in(row.length)
+in (row.length)
 {
     const y = cast(int)i;
     string prev;
@@ -670,6 +684,7 @@ private bool appendGridRow(string[] row, size_t i, ref RectI[string] areas)
         }
         return true;
     }
+
     foreach (j, curr; row)
     {
         if (curr == prev)
@@ -914,6 +929,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
         ret.x = ret.y = Length.percent(50); // another value should be 'center'
         if (t.type == TokenType.ident)
         {
+            // dfmt off
             switch (t.text)
             {
                 case "center": break;
@@ -925,6 +941,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
                     unknown(what, t);
                     return Err!BgPositionRaw;
             }
+            // dfmt on
         }
         else
         {
@@ -944,6 +961,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
 
         if (t1.type == TokenType.ident)
         {
+            // dfmt off
             switch (t1.text)
             {
                 case "center":ret.x = Length.percent(50);  break;
@@ -953,6 +971,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
                     unknown(what, t1);
                     return Err!BgPositionRaw;
             }
+            // dfmt on
         }
         else
         {
@@ -964,6 +983,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
         }
         if (t2.type == TokenType.ident)
         {
+            // dfmt off
             switch (t2.text)
             {
                 case "center": ret.y = Length.percent(50);  break;
@@ -973,6 +993,7 @@ Result!BgPositionRaw decode(T : BgPositionRaw)(const(Token)[] tokens)
                     unknown(what, t2);
                     return Err!BgPositionRaw;
             }
+            // dfmt on
         }
         else
         {
@@ -998,6 +1019,7 @@ Result!BgSizeRaw decode(T : BgSizeRaw)(const(Token)[] tokens)
         const t = tokens[0];
         if (t.type == TokenType.ident)
         {
+            // dfmt off
             switch (t.text)
             {
                 case "auto": break;
@@ -1007,6 +1029,7 @@ Result!BgSizeRaw decode(T : BgSizeRaw)(const(Token)[] tokens)
                     unknown(what, t);
                     return Err!BgSizeRaw;
             }
+            // dfmt on
         }
         else
         {
@@ -1049,7 +1072,7 @@ Result!RepeatStyle decode(T : RepeatStyle)(const(Token)[] tokens)
 {
     assert(tokens.length > 0);
 
-    RepeatStyle ret = { Tiling.none, Tiling.none };
+    auto ret = RepeatStyle(Tiling.none, Tiling.none);
     if (tokens.length == 1)
     {
         const t = tokens[0];
@@ -1097,6 +1120,7 @@ private Result!Tiling decodeTiling(ref const Token t)
         shouldbe("repeat style", "an identifier", t);
         return Err!Tiling;
     }
+    // dfmt off
     switch (t.text) with (Tiling)
     {
         case "repeat":    return Ok(repeat);
@@ -1107,6 +1131,7 @@ private Result!Tiling decodeTiling(ref const Token t)
             unknown("tiling", t);
             return Err!Tiling;
     }
+    // dfmt on
 }
 
 /// Decode box property ('border-box', 'padding-box', 'content-box')
@@ -1114,11 +1139,13 @@ Result!BoxType decode(T : BoxType)(const Token[] tokens)
 {
     with (BoxType)
     {
+        // dfmt off
         immutable map = [
             tup("border-box", border),
             tup("padding-box", padding),
             tup("content-box", content),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "box", map);
     }
 }
@@ -1128,6 +1155,7 @@ Result!BorderStyle decode(T : BorderStyle)(const Token[] tokens)
 {
     with (BorderStyle)
     {
+        // dfmt off
         immutable map = [
             tup("solid", solid),
             tup("none", none),
@@ -1135,6 +1163,7 @@ Result!BorderStyle decode(T : BorderStyle)(const Token[] tokens)
             tup("dashed", dashed),
             tup("double", doubled),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "border style", map);
     }
 }
@@ -1267,6 +1296,7 @@ Result!FontFamily decode(T : FontFamily)(const Token[] tokens)
         shouldbe(what, "an identifier", t);
         return Err!FontFamily;
     }
+    // dfmt off
     switch (t.text) with (FontFamily)
     {
         case "sans-serif": return Ok(sans_serif);
@@ -1279,16 +1309,19 @@ Result!FontFamily decode(T : FontFamily)(const Token[] tokens)
             unknown(what, t);
             return Err!FontFamily;
     }
+    // dfmt on
 }
 /// Decode font style
 Result!FontStyle decode(T : FontStyle)(const Token[] tokens)
 {
     with (FontStyle)
     {
+        // dfmt off
         immutable map = [
             tup("normal", normal),
             tup("italic", italic),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "font style", map);
     }
 }
@@ -1306,6 +1339,7 @@ Result!ushort decode(SpecialCSSType t : SpecialCSSType.fontWeight)(const Token[]
     }
     if (tokens.length > 1)
         toomany(what, t.line);
+    // dfmt off
     switch (t.text)
     {
         case "lighter":
@@ -1325,6 +1359,7 @@ Result!ushort decode(SpecialCSSType t : SpecialCSSType.fontWeight)(const Token[]
             unknown(what, t);
             return Err!ushort;
     }
+    // dfmt on
 }
 
 /// Decode tab character size
@@ -1343,12 +1378,14 @@ Result!TextAlign decode(T : TextAlign)(const Token[] tokens)
 {
     with (TextAlign)
     {
+        // dfmt off
         immutable map = [
             tup("start", start),
             tup("center", center),
             tup("end", end),
             tup("justify", justify),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "text alignment", map);
     }
 }
@@ -1367,6 +1404,7 @@ Result!TextDecorLine decode(T : TextDecorLine)(const Token[] tokens)
             shouldbe(what, "an identifier", t);
             return Err!TextDecorLine;
         }
+        // dfmt off
         switch (t.text) with (TextDecorLine)
         {
             case "overline":     result |= over; break;
@@ -1377,6 +1415,7 @@ Result!TextDecorLine decode(T : TextDecorLine)(const Token[] tokens)
                 unknown(what, t);
                 return Err!TextDecorLine;
         }
+        // dfmt on
     }
     return Ok(result);
 }
@@ -1385,6 +1424,7 @@ Result!TextDecorStyle decode(T : TextDecorStyle)(const Token[] tokens)
 {
     with (TextDecorStyle)
     {
+        // dfmt off
         immutable map = [
             tup("solid", solid),
             tup("double", doubled),
@@ -1392,9 +1432,11 @@ Result!TextDecorStyle decode(T : TextDecorStyle)(const Token[] tokens)
             tup("dashed", dashed),
             tup("wavy", wavy),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "text decoration style", map);
     }
 }
+
 alias TextDecorHere = Tup!(TextDecorLine, Result!Color, Result!TextDecorStyle);
 /// Decode whole shorthand text decoration property
 Result!TextDecorHere decodeTextDecor(const(Token)[] tokens)
@@ -1438,12 +1480,14 @@ Result!TextHotkey decode(T : TextHotkey)(const Token[] tokens)
 {
     with (TextHotkey)
     {
+        // dfmt off
         immutable map = [
             tup("ignore", ignore),
             tup("hidden", hidden),
             tup("underline", underline),
             tup("underline-on-alt", underlineOnAlt),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "text hotkey option", map);
     }
 }
@@ -1453,11 +1497,13 @@ Result!TextOverflow decode(T : TextOverflow)(const Token[] tokens)
 {
     with (TextOverflow)
     {
+        // dfmt off
         immutable map = [
             tup("clip", clip),
             tup("ellipsis", ellipsis),
             tup("ellipsis-middle", ellipsisMiddle),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "text overflow", map);
     }
 }
@@ -1467,12 +1513,14 @@ Result!TextTransform decode(T : TextTransform)(const Token[] tokens)
 {
     with (TextTransform)
     {
+        // dfmt off
         immutable map = [
             tup("none", none),
             tup("uppercase", uppercase),
             tup("lowercase", lowercase),
             tup("capitalize", capitalize),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "text transform", map);
     }
 }
@@ -1482,10 +1530,12 @@ Result!WhiteSpace decode(T : WhiteSpace)(const Token[] tokens)
 {
     with (WhiteSpace)
     {
+        // dfmt off
         immutable map = [
             tup("pre", pre),
             tup("pre-wrap", preWrap),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "white space", map);
     }
 }
@@ -1620,6 +1670,7 @@ Result!BlendMode decode(T : BlendMode)(const Token[] tokens)
 {
     with (BlendMode)
     {
+        // dfmt off
         immutable map = [
             tup("normal", normal),
             tup("multiply", multiply),
@@ -1638,6 +1689,7 @@ Result!BlendMode decode(T : BlendMode)(const Token[] tokens)
             tup("color", color),
             tup("luminosity", luminosity),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "blend mode", map);
     }
 }
@@ -1696,6 +1748,7 @@ Result!TimingFunction decode(T : TimingFunction)(const Token[] tokens)
     if (tokens.length > 1)
         toomany(what, t.line);
 
+    // dfmt off
     switch (t.text) with (TimingFunction)
     {
         case "linear": return Ok(cast()linear);
@@ -1707,7 +1760,9 @@ Result!TimingFunction decode(T : TimingFunction)(const Token[] tokens)
             unknown(what, t);
             return Err!TimingFunction;
     }
+    // dfmt on
 }
+
 alias TransitionHere = Tup!(Result!string, Result!uint, Result!TimingFunction, Result!uint);
 /// Decode shorthand transition property
 Result!TransitionHere decodeTransition(const(Token)[] tokens)
@@ -1769,6 +1824,7 @@ Result!CursorType decode(T : CursorType)(const Token[] tokens)
 {
     with (CursorType)
     {
+        // dfmt off
         immutable map = [
             tup("auto", automatic),
             tup("default", arrow),
@@ -1807,6 +1863,7 @@ Result!CursorType decode(T : CursorType)(const Token[] tokens)
             tup("zoom-in", zoomIn),
             tup("zoom-out", zoomOut),
         ];
+        // dfmt on
         return decodeSimpleEnum(tokens, "cursor", map);
     }
 }
@@ -1913,9 +1970,11 @@ bool startsWithFontWeight(const Token[] tokens)
         if (t.text.length == 3 && t.text[1 .. 3] == "00")
         {
             const ch = t.text[0];
+            // dfmt off
             return ch == '1' || ch == '2' || ch == '3' ||
                    ch == '4' || ch == '5' || ch == '6' ||
                    ch == '7' || ch == '8' || ch == '9';
+            // dfmt on
         }
     }
     return false;
@@ -1975,11 +2034,11 @@ private bool isOneOf(string[] list)(string str)
     {
         static foreach (s; list)
         {
-            case s:
-                return true;
+    case s:
+            return true;
         }
-        default:
-            return false;
+    default:
+        return false;
     }
 }
 

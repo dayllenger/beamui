@@ -54,15 +54,15 @@ bool isConvex(const Vec2[] polygon)
 
     enum eps = 1e-6;
 
-    float wSign = 0;  // first nonzero orientation (positive or negative)
+    float wSign = 0; // first nonzero orientation (positive or negative)
 
     byte xSign;
-    byte xFirstSign;  // sign of first nonzero edge vector x
-    int  xFlips;      // number of sign changes in x
+    byte xFirstSign; // sign of first nonzero edge vector x
+    int xFlips; // number of sign changes in x
 
     byte ySign;
-    byte yFirstSign;  // sign of first nonzero edge vector y
-    int  yFlips;      // number of sign changes in y
+    byte yFirstSign; // sign of first nonzero edge vector y
+    int yFlips; // number of sign changes in y
 
     Vec2 curr = polygon[$ - 2];
     Vec2 next = polygon[$ - 1];
@@ -269,7 +269,7 @@ bool splitIntoTrapezoids(const Vec2[] poly, ref Buf!HorizEdge output)
     // iterate from top to bottom, construct trapezoids,
     // abort if the polygon has self-intersections
     uint added;
-    HorizEdge bot = { poly[topIndex].x, poly[topIndex].x, poly[topIndex].y };
+    auto bot = HorizEdge(poly[topIndex].x, poly[topIndex].x, poly[topIndex].y);
     ptrdiff_t b = topIndex; // backward
     ptrdiff_t f = topIndex; // forward
     foreach (_; 0 .. len)
@@ -361,7 +361,7 @@ version (unittest)
 
 unittest
 {
-    assert( isConvex(rectPoly));
+    assert(isConvex(rectPoly));
     assert(!isConvex(starPoly));
 
     Buf!Vec2 points;

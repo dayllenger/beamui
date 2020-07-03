@@ -25,8 +25,7 @@ import beamui.graphics.polygons : computeBoundingBox;
 
 public interface Plotter
 {
-    nothrow:
-
+nothrow:
     void setPixel(int, int);
     void mixPixel(int, int, float);
     void setScanLine(int, int, int);
@@ -52,10 +51,10 @@ public struct RastParams
 // Polygon rasterizer
 
 public void rasterizePolygons(const Vec2[] points, const uint[] contours, RastParams params, Plotter plotter)
-    in(points.length)
-    in(contours.length)
-    in(!params.clip.empty)
-    in(plotter)
+in (points.length)
+in (contours.length)
+in (!params.clip.empty)
+in (plotter)
 {
     // perform clipping first; contours may change their geometry
 
@@ -66,9 +65,12 @@ public void rasterizePolygons(const Vec2[] points, const uint[] contours, RastPa
         bool updated;
         RectI bounds;
     }
+
     Contour* ctrs = cast(Contour*)malloc(Contour.sizeof * contours.length);
-    if (!ctrs) return;
-    scope(exit) free(ctrs);
+    if (!ctrs)
+        return;
+    scope (exit)
+        free(ctrs);
 
     // we will adjust rasterizer clipping box to the polygon bounding box,
     // because clip is also the working area (on usual fill rules),
@@ -87,12 +89,7 @@ public void rasterizePolygons(const Vec2[] points, const uint[] contours, RastPa
         ctr.updated = false;
         const ps = points[n .. n + len];
         const cb = computeBoundingBox(ps);
-        const cbi = ctr.bounds = RectI(
-            ifloor(cb.left),
-            ifloor(cb.top),
-            iceil(cb.right),
-            iceil(cb.bottom),
-        );
+        const cbi = ctr.bounds = RectI(ifloor(cb.left), ifloor(cb.top), iceil(cb.right), iceil(cb.bottom));
         bbox.left = min(bbox.left, cbi.left);
         bbox.top = min(bbox.top, cbi.top);
         bbox.right = max(bbox.right, cbi.right);
@@ -103,8 +100,7 @@ public void rasterizePolygons(const Vec2[] points, const uint[] contours, RastPa
     foreach (i, ref ctr; ctrs[0 .. contours.length])
     {
         const RectI cb = ctr.bounds;
-        if (cb.top >= clip.bottom || cb.left > clip.right ||
-            cb.bottom <= clip.top || cb.right <= clip.left)
+        if (cb.top >= clip.bottom || cb.left > clip.right || cb.bottom <= clip.top || cb.right <= clip.left)
         {
             ctr.start = 0;
             ctr.len = 0;
@@ -152,8 +148,10 @@ public void rasterizePolygons(const Vec2[] points, const uint[] contours, RastPa
         return;
 
     Edge* e = cast(Edge*)malloc(Edge.sizeof * (n + 1)); // add an extra one as a sentinel
-    if (!e) return;
-    scope(exit) free(e);
+    if (!e)
+        return;
+    scope (exit)
+        free(e);
     n = 0;
 
     int j, k;
@@ -200,9 +198,11 @@ void clip_poly(const(Vec2)[] input, const Vec2[2][] clipEdges, ref Buf!Vec2 outp
     // check if a point is on the LEFT side of an edge
     static bool inside(Vec2 p, ref const Vec2[2] edge)
     {
+        // dfmt off
         return (edge[1].y - edge[0].y) * p.x +
                (edge[0].x - edge[1].x) * p.y +
                (edge[1].x * edge[0].y - edge[0].x * edge[1].y) < 0;
+        // dfmt on
     }
     // calculate intersection point
     static Vec2 intersection(ref const Vec2[2] edge, Vec2 s, Vec2 e)
@@ -238,14 +238,14 @@ void clip_poly(const(Vec2)[] input, const Vec2[2][] clipEdges, ref Buf!Vec2 outp
 
             // Case 1: Both vertices are inside:
             // Only the second vertex is added to the output list
-            if(inside(s, edge) && inside(e, edge))
+            if (inside(s, edge) && inside(e, edge))
             {
                 writer.put(e);
             }
             // Case 2: First vertex is outside while second one is inside:
             // Both the point of intersection of the edge with the clip boundary
             // and the second vertex are added to the output list
-            else if(!inside(s, edge) && inside(e, edge))
+            else if (!inside(s, edge) && inside(e, edge))
             {
                 writer.put(intersection(edge, s, e));
                 writer.put(e);
@@ -253,7 +253,7 @@ void clip_poly(const(Vec2)[] input, const Vec2[2][] clipEdges, ref Buf!Vec2 outp
             // Case 3: First vertex is inside while second one is outside:
             // Only the point of intersection of the edge with the clip boundary
             // is added to the output list
-            else if(inside(s, edge) && !inside(e, edge))
+            else if (inside(s, edge) && !inside(e, edge))
             {
                 writer.put(intersection(edge, s, e));
             }
@@ -686,8 +686,7 @@ int[2] fill_active_edges_aa(float* scanline, float* scanline_fill, int len, cons
 
                 area = min(area, 1);
 
-                scanline[x2] += area +
-                    sign * (1 - ((x2 - x2) + (x_bottom - x2)) / 2) * (sy1 - y_crossing);
+                scanline[x2] += area + sign * (1 - ((x2 - x2) + (x_bottom - x2)) / 2) * (sy1 - y_crossing);
                 scanline_fill[x2] += sign * (sy1 - sy0);
             }
         }
@@ -715,8 +714,7 @@ int[2] fill_active_edges_aa(float* scanline, float* scanline_fill, int len, cons
     return [max(ifloor(fx0), 0), min(iceil(fx1), len)];
 }
 
-void draw_scanline_aa(alias calcCoverage)(const float* scanline, const int width,
-    const int[2] span, const int x, const int y, Plotter plotter)
+void draw_scanline_aa(alias cov)(const float* scanline, int width, int[2] span, int x, int y, Plotter plotter)
 {
     const float* scanline2 = scanline + width;
     int prev = x;
@@ -725,7 +723,7 @@ void draw_scanline_aa(alias calcCoverage)(const float* scanline, const int width
     foreach (i; span[0] .. span[1])
     {
         sum += scanline2[i];
-        const cov = calcCoverage(scanline[i] + sum);
+        const cov = cov(scanline[i] + sum);
         if (cov > 1 - eps)
         {
             if (!run)
@@ -759,10 +757,10 @@ enum FIXMASK = FIX - 1;
 
 struct ActiveEdge
 {
-   ActiveEdge *next;
-   int x, dx;
-   float ey;
-   int direction;
+    ActiveEdge* next;
+    int x, dx;
+    float ey;
+    int direction;
 }
 
 ActiveEdge* new_active(Hheap* hh, const Edge* e, float start_point)
@@ -841,8 +839,10 @@ void sort_active_edges_merge(ref ActiveEdge* head)
 
     static ActiveEdge* sorted_merge(ActiveEdge* a, ActiveEdge* b)
     {
-        if (!a) return b;
-        if (!b) return a;
+        if (!a)
+            return b;
+        if (!b)
+            return a;
 
         ActiveEdge* result;
         if (a.x < b.x)
@@ -1000,7 +1000,7 @@ void fill_active_edges(alias filled)(int len, const(ActiveEdge)* e, int x, int y
         draw_scanline(len, x0, len << FIXSHIFT, x, y, plotter);
 }
 
-void draw_scanline(const int len, const int x0, const int x1, const int x, const int y, Plotter plotter)
+void draw_scanline(int len, int x0, int x1, int x, int y, Plotter plotter)
 {
     int i = x0 >> FIXSHIFT;
     int j = x1 >> FIXSHIFT;
@@ -1050,15 +1050,14 @@ public struct HorizEdge
     static bool isValidTrapezoid(HorizEdge top, HorizEdge bot) nothrow @safe
     {
         return top.y <= bot.y && // a trapezoid with zero height is a chain break
-            ((top.l + eps < top.r && bot.l <= bot.r) ||
-             (bot.l + eps < bot.r && top.l <= top.r));
+            ((top.l + eps < top.r && bot.l <= bot.r) || (bot.l + eps < bot.r && top.l <= top.r));
     }
 }
 
 public void rasterizeTrapezoidChain(const HorizEdge[] chain, RastParams params, Plotter plotter)
-    in(chain.length > 1)
-    in(!params.clip.empty)
-    in(plotter)
+in (chain.length > 1)
+in (!params.clip.empty)
+in (plotter)
 {
     float xmin = float.max, xmax = -float.max;
     foreach (ref e; chain)
@@ -1179,8 +1178,7 @@ struct ScanLine
 
 struct Accumulator
 {
-    nothrow:
-
+nothrow:
     // TODO: rewrite to store the difference in coverage
     private float* scanline;
     private SpanI frame;
@@ -1533,8 +1531,8 @@ void rasterize_trapezoid_i(SpanI clip, TrapezoidI trap, float step_l, float step
 // Line rasterizer
 
 public void rasterizeLine(Vec2 p0, Vec2 p1, ref const RastParams params, Plotter plotter)
-    in(!params.clip.empty)
-    in(plotter)
+in (!params.clip.empty)
+in (plotter)
 {
     // TODO: the line must not touch the right and bottom clip borders.
     // this is a quick fix for this issue, but not a correct one
@@ -1577,10 +1575,10 @@ bool clip_line(Rect clip, ref float x0, ref float y0, ref float x1, ref float y1
     enum OutCode : ubyte
     {
         inside = 0,
-        left   = 1 << 0,
-        right  = 1 << 1,
+        left = 1 << 0,
+        right = 1 << 1,
         bottom = 1 << 2,
-        top    = 1 << 3,
+        top = 1 << 3,
     }
 
     // Compute the bit code for a point (x, y) using the clip rectangle

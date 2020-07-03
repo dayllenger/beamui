@@ -27,6 +27,7 @@ import beamui.graphics.brush;
 import beamui.graphics.colors;
 import beamui.graphics.painter : Painter, PaintSaver;
 import beamui.graphics.path;
+
 static if (BACKEND_GUI)
 {
     import beamui.graphics.images;
@@ -57,10 +58,12 @@ class Drawable : RefCountedObject
     {
         return 0;
     }
+
     @property float height() const
     {
         return 0;
     }
+
     @property Insets padding() const
     {
         return Insets(0);
@@ -225,7 +228,7 @@ class BoxShadowDrawable : Drawable
 
 /// Apply Gaussian blur to the bitmap. This is a slow function, but it's fine for box shadows for now
 private void blurBitmapARGB8(ref Bitmap bitmap, uint blurSize)
-    in(bitmap.format == PixelFormat.argb8)
+in (bitmap.format == PixelFormat.argb8)
 {
     if (blurSize == 0)
         return; // trivial case
@@ -313,6 +316,7 @@ private void blurBitmapARGB8(ref Bitmap bitmap, uint blurSize)
             }
         }
     }
+
     blurH(bitmap.mutate!uint);
     blurV(bitmap.mutate!uint);
 }
@@ -920,12 +924,14 @@ class Background
             return;
         }
         // reduce overlapping corners
+        // dfmt off
         const f = min(
             b.w / (radii.tl.w + radii.tr.w),
             b.w / (radii.bl.w + radii.br.w),
             b.h / (radii.tl.h + radii.bl.h),
             b.h / (radii.tr.h + radii.br.h),
         );
+        // dfmt on
         if (f < 1)
         {
             radii.tl *= f;
@@ -936,6 +942,7 @@ class Background
 
         static Path borderPath;
         borderPath.reset();
+        // dfmt off
         borderPath
             .moveTo(b.x + radii.tl.w, b.y)
             .lineBy(b.w - radii.tl.w - radii.tr.w, 0)
@@ -947,7 +954,7 @@ class Background
             .lineBy(0, -b.h + radii.bl.h + radii.tl.h)
             .cubicBy(0, -k * radii.tl.h, k1 * radii.tl.w, -radii.tl.h, radii.tl.w, -radii.tl.h)
             .close();
-
+        // dfmt on
         bool hasBorder = !border.top.color.isFullyTransparent;
         hasBorder = hasBorder || !fzero2(th.top);
         hasBorder = hasBorder || !fzero2(th.right);
@@ -975,6 +982,7 @@ class Background
 
     private void drawRoundBorder(Painter pr, Box b, Insets th, Color c)
     {
+        // dfmt off
         const bInner = b.shrinked(th);
         const rInner = BorderRadii(
             Size(max(radii.tl.w - th.left, 0), max(radii.tl.h - th.top, 0)),
@@ -1010,6 +1018,7 @@ class Background
         // nonzero fill rule hides any overlaps inside the inner corners
         const br = Brush.fromSolid(c);
         pr.fill(path, br);
+        // dfmt on
     }
 
     private void drawRectangular(Painter pr, Box b, Box bc, Insets th)
@@ -1109,6 +1118,7 @@ class Background
 
     private void drawBorder(Painter pr, Size sz, Insets th)
     {
+        // dfmt off
         static Path path;
 
         if (!fzero2(th.top) && !border.top.color.isFullyTransparent)
@@ -1157,6 +1167,7 @@ class Background
             const br = Brush.fromSolid(border.left.color);
             pr.fill(path, br);
         }
+        // dfmt on
     }
 }
 

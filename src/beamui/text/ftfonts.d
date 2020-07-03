@@ -9,7 +9,9 @@ module beamui.text.ftfonts;
 
 import beamui.core.config;
 
+// dfmt off
 static if (USE_FREETYPE):
+// dfmt on
 import std.file;
 import std.math : abs;
 import std.string;
@@ -38,9 +40,11 @@ private struct FontDef
 
 private final class FontFileItem
 {
+    // dfmt off
     @property ref inout(FontDef) def() inout { return _def; }
     @property string[] filenames() { return _filenames; }
     @property FT_Library* library() { return _library; }
+    // dfmt on
 
     private FontList _activeFonts;
     private FT_Library* _library;
@@ -192,8 +196,10 @@ final class FreeTypeFontFile
 
         debug (FontResources)
         {
+            // dfmt off
             Log.fd("Opened font, face: %s, size: %d, height: %d, weight: %d, style: %s",
                 desc.face, size, desc.height, desc.weight, desc.style);
+            // dfmt on
         }
         return true; // successfully opened
     }
@@ -339,12 +345,14 @@ final class FreeTypeFontFile
     {
         const FT_KERNING_DEFAULT = 0;
         FT_Vector delta;
+        // dfmt off
         const int error = FT_Get_Kerning(
             _face,              // handle to face object
             prevCharIndex,      // left glyph index
             nextCharIndex,      // right glyph index
             FT_KERNING_DEFAULT, // kerning mode
             &delta);            // target vector
+        // dfmt on
         return !error ? delta.x / 64.0f : 0;
     }
 }
@@ -352,7 +360,10 @@ final class FreeTypeFontFile
 /// Font implementation based on FreeType
 final class FreeTypeFont : Font
 {
-    override @property bool isNull() const { return _files.empty; }
+    override @property bool isNull() const
+    {
+        return _files.empty;
+    }
 
     private
     {
@@ -695,14 +706,13 @@ final class FreeTypeFontManager : FontManager
     }
 
     /// Register freetype font by filename - optinally font properties can be passed if known (e.g. from libfontconfig).
-    bool registerFont(string filename, FontFamily family, string face = null, bool italic = false,
-            ushort weight = 0, bool dontLoadFile = false)
+    bool registerFont(string filename, FontFamily family, string face = null, bool italic = false, ushort weight = 0,
+            bool dontLoadFile = false)
     {
         if (_library is null)
             return false;
         debug (FontResources)
-            Log.fv("registerFont(%s, %s, %s, italic: %s, weight: %s)",
-                filename, family, face, italic, weight);
+            Log.fv("registerFont(%s, %s, %s, italic: %s, weight: %s)", filename, family, face, italic, weight);
         if (!exists(filename) || !isFile(filename))
         {
             Log.d("Font file ", filename, " not found");
@@ -729,8 +739,7 @@ final class FreeTypeFontManager : FontManager
                 weight = desc.weight;
                 debug (FontResources)
                 {
-                    Log.fd("Using properties from font file; face: %s, weight: %s, italic: %s",
-                        face, weight, italic);
+                    Log.fd("Using properties from font file; face: %s, weight: %s, italic: %s", face, weight, italic);
                 }
             }
             destroy(font);
@@ -773,10 +782,7 @@ version (Posix)
         Log.i("Getting list of fonts using FontConfig");
         const long startts = currentTimeMillis();
 
-        FcObjectSet* os = FcObjectSetBuild(
-            FC_FILE, FC_WEIGHT, FC_FAMILY,
-            FC_SLANT, FC_SPACING, FC_INDEX, FC_STYLE,
-            null);
+        FcObjectSet* os = FcObjectSetBuild(FC_FILE, FC_WEIGHT, FC_FAMILY, FC_SLANT, FC_SPACING, FC_INDEX, FC_STYLE, null);
         FcPattern* pat = FcPatternCreate();
 
         FcPatternAddBool(pat, FC_SCALABLE, 1);
@@ -797,11 +803,11 @@ version (Posix)
             string filename = fcfile.fromStringz.idup;
             char[] fn = fromStringz(fcfile).dup;
             toLowerInPlace(fn);
+            // dfmt off
             if (!fn.endsWith(".ttf") && !fn.endsWith(".odf") && !fn.endsWith(".otf") &&
                 !fn.endsWith(".pfb") && !fn.endsWith(".pfa"))
-            {
-                continue;
-            }
+                    continue;
+            // dfmt on
 
             FcChar8* fcfamily;
             FcChar8* fcstyle;

@@ -51,12 +51,9 @@ struct RootEntry
     {
         _type = type;
         _path = path;
-        _display = display;
-        if (display is null)
-        {
-            _display = toUTF32(baseName(path));
-        }
+        _display = display ? display : toUTF32(baseName(path));
     }
+    // dfmt off
     /// Returns type
     @property RootEntryType type() const { return _type; }
     /// Returns path
@@ -79,6 +76,7 @@ struct RootEntry
             default:        return "folder-blue";
         }
     }
+    // dfmt on
 }
 
 /// Returns user's home directory entry
@@ -113,15 +111,18 @@ else version (Posix)
 {
     private bool isSpecialFileSystem(const char[] dir, const char[] type)
     {
-        if (dir.startsWith("/dev") || dir.startsWith("/proc") || dir.startsWith("/sys") ||
-            dir.startsWith("/var/run") || dir.startsWith("/var/lock"))
-        {
+        if (dir.startsWith("/dev"))
             return true;
-        }
+        if (dir.startsWith("/proc"))
+            return true;
+        if (dir.startsWith("/sys"))
+            return true;
+        if (dir.startsWith("/var/run"))
+            return true;
+        if (dir.startsWith("/var/lock"))
+            return true;
         if (type == "tmpfs" || type == "rootfs" || type == "rpc_pipefs")
-        {
             return true;
-        }
         return false;
     }
 
@@ -375,15 +376,8 @@ private:
 
     pragma(lib, "Ole32");
 
-    alias GUID KNOWNFOLDERID;
-
-    extern (Windows) HRESULT _dummy_SHGetKnownFolderPath(const(KNOWNFOLDERID)* rfid,
-            DWORD dwFlags, HANDLE hToken, wchar** ppszPath) nothrow @nogc @system;
-
-    enum KNOWNFOLDERID FOLDERID_Links = {
-        0xbfb9d5e0, 0xc6a9, 0x404c,
-        [0xb2, 0xb2, 0xae, 0x6d, 0xb6, 0xaf, 0x49, 0x68]
-    };
+    alias KNOWNFOLDERID = GUID;
+    enum FOLDERID_Links = KNOWNFOLDERID(0xbfb9d5e0, 0xc6a9, 0x404c, [0xb2, 0xb2, 0xae, 0x6d, 0xb6, 0xaf, 0x49, 0x68]);
 }
 
 /// Returns array of user bookmarked directories
@@ -467,12 +461,19 @@ RootEntry[] getBookmarkPaths()
             scope (exit)
                 FreeLibrary(shell);
 
-            auto ptrSHGetKnownFolderPath = cast(typeof(&_dummy_SHGetKnownFolderPath))enforce(GetProcAddress(shell,
-                    "SHGetKnownFolderPath"));
+            // dfmt off
+            static extern (Windows) HRESULT func(
+                const(KNOWNFOLDERID)* rfid,
+                DWORD dwFlags,
+                HANDLE hToken,
+                wchar** ppszPath,
+            ) nothrow @nogc @system;
+            // dfmt on
+            auto SHGetKnownFolderPath = cast(typeof(&func))enforce(GetProcAddress(shell, "SHGetKnownFolderPath"));
 
             wchar* linksFolderZ;
             const linksGuid = FOLDERID_Links;
-            enforce(ptrSHGetKnownFolderPath(&linksGuid, 0, null, &linksFolderZ) == S_OK);
+            enforce(SHGetKnownFolderPath(&linksGuid, 0, null, &linksFolderZ) == S_OK);
             scope (exit)
                 CoTaskMemFree(linksFolderZ);
 
@@ -487,8 +488,7 @@ RootEntry[] getBookmarkPaths()
 
             auto clsidShellLink = CLSID_ShellLink;
             auto iidShellLink = IID_IShellLinkW;
-            hres = CoCreateInstance(&clsidShellLink, null, CLSCTX.CLSCTX_INPROC_SERVER,
-                    &iidShellLink, cast(LPVOID*)&psl);
+            hres = CoCreateInstance(&clsidShellLink, null, CLSCTX.CLSCTX_INPROC_SERVER, &iidShellLink, cast(LPVOID*)&psl);
             enforce(SUCCEEDED(hres), "Failed to create IShellLink instance");
             scope (exit)
                 psl.Release();
@@ -520,10 +520,10 @@ RootEntry[] getBookmarkPaths()
 
                     auto path = szGotPath[0 .. wcslen(szGotPath.ptr)];
 
-                    if (path.length && path.toUTF8.isDir)
+                    if (path.length && isDir(toUTF8(path)))
                     {
-                        res ~= RootEntry(RootEntryType.bookmark, path.toUTF8,
-                                linkFile.name.baseName.stripExtension.toUTF32);
+                        const display = toUTF32(stripExtension(baseName(linkFile.name)));
+                        res ~= RootEntry(RootEntryType.bookmark, toUTF8(path), display);
                     }
                 }
                 catch (Exception e)
@@ -573,7 +573,7 @@ unittest
     version (Posix)
     {
         assert(!isHidden("path/to/normal_file"));
-        assert( isHidden("path/to/.hidden_file"));
+        assert(isHidden("path/to/.hidden_file"));
     }
 }
 

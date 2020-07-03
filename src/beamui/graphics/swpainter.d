@@ -65,7 +65,7 @@ public final class SWPaintEngine : PaintEngine
     }
 
     this(ref Bitmap backbuffer)
-        in(backbuffer)
+    in (backbuffer)
     {
         backbuf = &backbuffer;
         plotter_solid_op = scoped!(PlotterSolid!false)();
@@ -85,7 +85,10 @@ public final class SWPaintEngine : PaintEngine
 
 protected:
 
-    const(State)* st() nothrow { return _st; }
+    const(State)* st() nothrow
+    {
+        return _st;
+    }
 
     void begin(const(State)* st, int w, int h, Color bg)
     {
@@ -119,7 +122,7 @@ protected:
         Layer src = layerStack.unsafe_ref(-1);
         layerStack.shrink(1);
         PM_ImageView dst_img = layerStack.length > 0 ? layerStack.unsafe_ref(-1).img : base_layer.view;
-        scope(exit)
+        scope (exit)
         {
             pixman_image_unref(src.img);
             layer = dst_img;
@@ -131,7 +134,7 @@ protected:
 
         const bool w3c = src.op.blending != BlendMode.normal;
         const operator = w3c ? pm_op(src.op.blending) : pm_op(src.op.composition);
-
+        // dfmt off
         pixman_image_composite32(
             operator,
             src.img, mask_img, dst_img,
@@ -140,6 +143,7 @@ protected:
             src.box.x, src.box.y,
             src.box.w, src.box.h,
         );
+        // dfmt on
     }
 
     void clipOut(uint index, Rect r)
@@ -162,8 +166,7 @@ protected:
 
         paintUsingBrush(br, clip, mat, (Plotter plotter) {
             const HorizEdge[2] t = [
-                {clip.x, clip.x + clip.w, clip.y},
-                {clip.x, clip.x + clip.w, clip.y + clip.h},
+                HorizEdge(clip.x, clip.x + clip.w, clip.y), HorizEdge(clip.x, clip.x + clip.w, clip.y + clip.h)
             ];
             auto rparams = RastParams(false, clip);
             rasterizeTrapezoidChain(t[], rparams, plotter);
@@ -268,8 +271,7 @@ protected:
         });
     }
 
-    private void paintUsingBrush(ref const Brush br, ref BoxI clip, ref Mat2x3 mat,
-        scope void delegate(Plotter) callback)
+    private void paintUsingBrush(ref const Brush br, ref BoxI clip, ref Mat2x3 mat, scope void delegate(Plotter) callback)
     {
         if (br.type == BrushType.solid)
         {
@@ -337,7 +339,7 @@ protected:
             PlotterMask p = plotter_mask;
             p.initialize(mask_img, br.opacity);
             callback(p);
-
+            // dfmt off
             pixman_image_composite32(
                 pixman_op_t.over,
                 src_img, mask_img, layer,
@@ -346,6 +348,7 @@ protected:
                 r.x, r.y,
                 r.w, r.h,
             );
+            // dfmt on
         }
     }
 
@@ -366,12 +369,14 @@ protected:
 
     private void fillRectImpl(Rect r, lazy Plotter plotter)
     {
+        // dfmt off
         Vec2[4] vs = [
             Vec2(r.left, r.top),
             Vec2(r.right, r.top),
             Vec2(r.right, r.bottom),
             Vec2(r.left, r.bottom),
         ];
+        // dfmt on
         transformInPlace(vs[], st.mat);
         const BoxI clip = clipByRect(computeBoundingBox(vs[]));
         if (clip.empty)
@@ -385,10 +390,7 @@ protected:
             if (vs[0].y > vs[2].y)
                 swap(vs[0].y, vs[2].y);
 
-            const HorizEdge[2] t = [
-                {vs[0].x, vs[1].x, vs[0].y},
-                {vs[0].x, vs[1].x, vs[2].y},
-            ];
+            const HorizEdge[2] t = [HorizEdge(vs[0].x, vs[1].x, vs[0].y), HorizEdge(vs[0].x, vs[1].x, vs[2].y)];
             auto rparams = RastParams(st.aa, clip);
             rasterizeTrapezoidChain(t[], rparams, plotter);
         }
@@ -456,7 +458,7 @@ protected:
         Mat2x3 mat = st.mat;
         mat.translate(pos).invert().translate(Vec2(clip.x, clip.y));
         src_img.setTransform(mat);
-
+        // dfmt off
         pixman_image_composite32(
             pixman_op_t.over,
             src_img, mask_img, layer,
@@ -465,6 +467,7 @@ protected:
             clip.x, clip.y,
             clip.w, clip.h,
         );
+        // dfmt on
     }
 
     void drawNinePatch(ref const Bitmap bmp, ref const NinePatchInfo info, float opacity)
@@ -495,7 +498,7 @@ protected:
         Mat2x3 mat = st.mat;
         mat.translate(rect.topLeft).invert().translate(Vec2(clip.x, clip.y));
         tmp_img.setTransform(mat);
-
+        // dfmt off
         pixman_image_composite32(
             pixman_op_t.over,
             tmp_img, mask_img, layer,
@@ -504,6 +507,7 @@ protected:
             clip.x, clip.y,
             clip.w, clip.h,
         );
+        // dfmt on
     }
 
     private void drawNinePatchImpl(PM_ImageView src, PM_ImageView dest, ref const NinePatchInfo info)
@@ -570,7 +574,7 @@ protected:
         else
             mat.scale(Vec2(from.w / cast(float)to.w, from.h / cast(float)to.h));
         src_img.setTransform(mat);
-
+        // dfmt off
         pixman_image_composite32(
             pixman_op_t.src,
             src_img, null, dest_img,
@@ -579,6 +583,7 @@ protected:
             to.x, to.y,
             to.w, to.h,
         );
+        // dfmt on
     }
 
     void drawText(const GlyphInstance[] run, Color c)
@@ -614,7 +619,7 @@ protected:
         Mat2x3 mat = st.mat;
         mat.translate(Vec2(untrBounds.x, untrBounds.y)).invert();
         mask_img.setTransform(mat);
-
+        // dfmt off
         pixman_image_composite32(
             pixman_op_t.over,
             src_img, mask_img, layer,
@@ -623,6 +628,7 @@ protected:
             clip.x, clip.y,
             clip.w, clip.h,
         );
+        // dfmt on
     }
 
     private Plotter choosePlotterForSolidColor(Color c)
@@ -686,8 +692,7 @@ void transformInPlace(Vec2[] vs, ref const Mat2x3 m)
 
 final class PolyBuilder : StrokeBuilder
 {
-    nothrow:
-
+nothrow:
     private
     {
         Buf!Vec2* points;
@@ -719,13 +724,19 @@ final class PolyBuilder : StrokeBuilder
     {
         return points;
     }
+
     Buf!Vec2* beginFanRight(Vec2)
     {
         return &otherSide;
     }
 
-    void endFan() {}
-    void breakStrip() {}
+    void endFan()
+    {
+    }
+
+    void breakStrip()
+    {
+    }
 
     void endContour()
     {
@@ -868,8 +879,8 @@ final class PlotterLinear(bool translucent) : Plotter
     Buf!Color colors;
 
     void initialize(ref PM_ImageView surface, ref const LinearGradient grad, ref const Mat2x3 mat)
-        in(grad.stops.length >= 2)
-        in(grad.colors.length >= 2)
+    in (grad.stops.length >= 2)
+    in (grad.colors.length >= 2)
     {
         image = surface.getData!uint();
         stride = surface.getStride();
@@ -884,7 +895,7 @@ final class PlotterLinear(bool translucent) : Plotter
         colors ~= grad.colors;
     }
 
-    nothrow:
+nothrow:
 
     float calcFraction(int x, int y)
     {
@@ -981,9 +992,9 @@ final class PlotterRadial(bool translucent) : Plotter
     Buf!Color colors;
 
     void initialize(ref PM_ImageView surface, ref const RadialGradient grad, ref const Mat2x3 mat)
-        in(grad.stops.length >= 2)
-        in(grad.colors.length >= 2)
-        in(grad.radius > 0)
+    in (grad.stops.length >= 2)
+    in (grad.colors.length >= 2)
+    in (grad.radius > 0)
     {
         image = surface.getData!uint();
         stride = surface.getStride();
@@ -998,7 +1009,7 @@ final class PlotterRadial(bool translucent) : Plotter
         colors ~= grad.colors;
     }
 
-    nothrow:
+nothrow:
 
     float calcFraction(int x, int y)
     {
@@ -1134,7 +1145,7 @@ pixman_color_t pm_c(Color c)
 }
 
 pixman_color_t pm_gray(float opacity)
-    in(0 <= opacity && opacity <= 1)
+in (0 <= opacity && opacity <= 1)
 {
     const v = cast(ushort)(opacity * ushort.max);
     return pixman_color_t(v, v, v, v);
@@ -1142,16 +1153,16 @@ pixman_color_t pm_gray(float opacity)
 
 pixman_transform_t pm_mat(ref const Mat2x3 mat)
 {
-    pixman_transform_t tr = {[
-        [pm_f(mat.store[0][0]), pm_f(mat.store[0][1]), pm_f(mat.store[0][2])],
-        [pm_f(mat.store[1][0]), pm_f(mat.store[1][1]), pm_f(mat.store[1][2])],
-        [pm_f(0), pm_f(0), pm_f(1)],
-    ]};
+    pixman_transform_t tr = void;
+    tr.matrix[0] = [pm_f(mat.store[0][0]), pm_f(mat.store[0][1]), pm_f(mat.store[0][2])];
+    tr.matrix[1] = [pm_f(mat.store[1][0]), pm_f(mat.store[1][1]), pm_f(mat.store[1][2])];
+    tr.matrix[2] = [pm_f(0), pm_f(0), pm_f(1)];
     return tr;
 }
 
 pixman_op_t pm_op(CompositeMode mode)
 {
+    // dfmt off
     final switch (mode) with (CompositeMode)
     {
         case copy:       return pixman_op_t.src;
@@ -1166,10 +1177,12 @@ pixman_op_t pm_op(CompositeMode mode)
         case xor:        return pixman_op_t.xor;
         case lighter:    return pixman_op_t.add;
     }
+    // dfmt on
 }
 
 pixman_op_t pm_op(BlendMode mode)
 {
+    // dfmt off
     final switch (mode) with (BlendMode)
     {
         case normal:     return pixman_op_t.over;
@@ -1189,10 +1202,13 @@ pixman_op_t pm_op(BlendMode mode)
         case color:      return pixman_op_t.hsl_color;
         case luminosity: return pixman_op_t.hsl_luminosity;
     }
+    // dfmt on
 }
 
+// dfmt off
 enum Repeat : bool { no, yes }
 enum Filtering : bool { no, yes }
+// dfmt on
 
 struct PM_Image
 {
@@ -1223,8 +1239,9 @@ struct PM_Image
     }
 
     static PM_Image fromBitmap(ref const Bitmap bmp, Repeat repeat, Filtering filter)
-        in(bmp)
+    in (bmp)
     {
+        // dfmt off
         auto ret = pixman_image_create_bits(
             pixman_format_code_t.a8r8g8b8,
             bmp.width,
@@ -1232,6 +1249,7 @@ struct PM_Image
             cast(uint*)bmp.pixels!uint,
             cast(int)bmp.rowBytes,
         );
+        // dfmt on
         if (repeat)
             pixman_image_set_repeat(ret, pixman_repeat_t.normal);
         if (filter)
@@ -1246,14 +1264,14 @@ struct PM_ImageView
     alias handle this;
 
     T* getData(T)()
-        in(handle)
-        out(ptr; ptr)
+    in (handle)
+    out (ptr; ptr)
     {
         return cast(T*)pixman_image_get_data(handle);
     }
 
     uint getStride()
-        in(handle)
+    in (handle)
     {
         const bytes = pixman_image_get_depth(handle) / 8;
         assert(bytes > 0);
@@ -1261,7 +1279,7 @@ struct PM_ImageView
     }
 
     void setTransform(ref const Mat2x3 mat)
-        in(handle)
+    in (handle)
     {
         const tr = pm_mat(mat);
         pixman_image_set_transform(handle, &tr);
@@ -1271,8 +1289,8 @@ struct PM_ImageView
 struct LayerPool
 {
     PM_ImageView take(SizeI size)
-        in(size.w > 0)
-        in(size.h > 0)
+    in (size.w > 0)
+    in (size.h > 0)
     {
         auto img = pixman_image_create_bits(pixman_format_code_t.a8r8g8b8, size.w, size.h, null, 0);
         return PM_ImageView(img);
@@ -1282,8 +1300,8 @@ struct LayerPool
 struct MaskPool
 {
     PM_Image take(SizeI size, Filtering filter)
-        in(size.w > 0)
-        in(size.h > 0)
+    in (size.w > 0)
+    in (size.h > 0)
     {
         auto img = pixman_image_create_bits(pixman_format_code_t.a8, size.w, size.h, null, 0);
         if (filter)

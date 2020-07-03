@@ -20,7 +20,6 @@ import beamui.text.ftfonts;
     On win32 - first it tries to init freetype (if compiled with), and falls back to win32 fonts.
     On linux/mac - tries to init freetype with fontconfig, and falls back to hardcoded font paths.
     On console - simply uses console font manager.
-
 */
 bool initFontManager()
 {
@@ -30,8 +29,9 @@ bool initFontManager()
         {
             import beamui.platforms.windows.win32fonts;
 
-            /// Testing freetype font manager
-            static if (USE_FREETYPE)
+            // dfmt off
+            static if (USE_FREETYPE)/**/
+            // dfmt on
             try
             {
                 Log.v("Trying to init FreeType font manager");
@@ -87,9 +87,10 @@ bool initFontManager()
         return true;
     }
 }
-
+// dfmt off
 version (Windows)
-static if (USE_FREETYPE)
+static if (USE_FREETYPE)/**/
+// dfmt on
 private void tryHardcodedFontPaths(FreeTypeFontManager ft)
 {
     import core.sys.windows.shlobj;
@@ -107,11 +108,18 @@ private void tryHardcodedFontPaths(FreeTypeFontManager ft)
         {
             const CSIDL_FLAG_NO_ALIAS = 0x1000;
             const CSIDL_FLAG_DONT_UNEXPAND = 0x2000;
-            if (SUCCEEDED(SHGetFolderPathW(NULL,
-                    CSIDL_FONTS | CSIDL_FLAG_NO_ALIAS | CSIDL_FLAG_DONT_UNEXPAND, NULL, 0, szPath.ptr)))
+            // dfmt off
+            if (SUCCEEDED(SHGetFolderPathW(
+                NULL,
+                CSIDL_FONTS | CSIDL_FLAG_NO_ALIAS | CSIDL_FLAG_DONT_UNEXPAND,
+                NULL,
+                0,
+                szPath.ptr,
+            )))
             {
                 path = toUTF8(fromWStringz(szPath)); // FIXME: compile error
             }
+            // dfmt on
         }
         else
         {
@@ -236,9 +244,10 @@ private void tryHardcodedFontPaths(FreeTypeFontManager ft)
     ft.registerFont(path ~ "verdanai.ttf", FF.sans_serif, "Verdana", true, FW.normal);
     ft.registerFont(path ~ "verdanaz.ttf", FF.sans_serif, "Verdana", true, FW.bold);
 }
-
+// dfmt off
 version (Posix)
-static if (USE_FREETYPE)
+static if (USE_FREETYPE)/**/
+// dfmt on
 private void tryHardcodedFontPaths(FreeTypeFontManager ft)
 {
     import std.file : DirEntry, exists, isDir;
@@ -384,7 +393,7 @@ void initLogs()
             Log.setFileLogger(openLogFile());
             Log.setLogLevel(LogLevel.trace);
         }
-        else
+    else
         {
             // no logging unless version ForceLogs is set
             version (ForceLogs)
@@ -401,7 +410,7 @@ void initLogs()
             {
                 Log.setFileLogger(openLogFile());
             }
-            else
+        else
             {
                 // no logging unless version ForceLogs is set
                 version (ForceLogs)
@@ -423,7 +432,7 @@ void initLogs()
         {
             Log.setLogLevel(LogLevel.trace);
         }
-        else
+    else
         {
             version (ForceLogs)
             {
@@ -446,24 +455,24 @@ void initResourceManagers()
     static if (USE_FREETYPE)
     {
         STD_FONT_FACES = [
-            "Arial" : 12,
-            "Consolas" : 12,
-            "Courier New" : 10,
-            "DejaVu Sans Mono" : 10,
-            "DejaVu Sans" : 10,
-            "DejaVu Serif" : 10,
-            "DejaVuSansMono" : 10,
-            "FreeMono" : 8,
-            "FreeSans" : 8,
-            "FreeSerif" : 8,
-            "Liberation Mono" : 11,
-            "Liberation Sans" : 11,
-            "Liberation Serif" : 11,
-            "Lucida Console" : 12,
-            "Lucida Sans Typewriter" : 10,
-            "Menlo" : 13,
-            "Times New Roman" : 12,
-            "Verdana" : 10,
+            "Arial": 12,
+            "Consolas": 12,
+            "Courier New": 10,
+            "DejaVu Sans Mono": 10,
+            "DejaVu Sans": 10,
+            "DejaVu Serif": 10,
+            "DejaVuSansMono": 10,
+            "FreeMono": 8,
+            "FreeSans": 8,
+            "FreeSerif": 8,
+            "Liberation Mono": 11,
+            "Liberation Sans": 11,
+            "Liberation Serif": 11,
+            "Lucida Console": 12,
+            "Lucida Sans Typewriter": 10,
+            "Menlo": 13,
+            "Times New Roman": 12,
+            "Verdana": 10,
         ];
     }
 
@@ -514,6 +523,7 @@ void releaseResourcesOnAppExit()
                 Log.e(msg, T.debugInstanceCount);
             }
         }
+
         checkInstanceCount!Element();
         checkInstanceCount!BitmapData();
         checkInstanceCount!Style();

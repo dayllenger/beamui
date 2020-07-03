@@ -47,8 +47,7 @@ enum int SIZE_UNSPECIFIED(T : int) = 1 << 29; // not too much to safely sum two 
 /// 2D size
 struct SizeOf(T) if (is(T == float) || is(T == int))
 {
-    nothrow:
-
+nothrow:
     T w = 0;
     T h = 0;
 
@@ -58,14 +57,17 @@ struct SizeOf(T) if (is(T == float) || is(T == int))
     {
         return SizeOf(w + v.w, h + v.h);
     }
+
     SizeOf opBinary(string op : "-")(SizeOf v) const
     {
         return SizeOf(w - v.w, h - v.h);
     }
+
     SizeOf opBinary(string op : "*")(T n) const
     {
         return SizeOf(w * n, h * n);
     }
+
     SizeOf opBinary(string op : "/")(T n) const
     {
         return SizeOf(w / n, h / n);
@@ -76,16 +78,19 @@ struct SizeOf(T) if (is(T == float) || is(T == int))
         w += v.w;
         h += v.h;
     }
+
     void opOpAssign(string op : "-")(SizeOf v)
     {
         w -= v.w;
         h -= v.h;
     }
+
     void opOpAssign(string op : "*")(T n)
     {
         w *= n;
         h *= n;
     }
+
     void opOpAssign(string op : "/")(T n)
     {
         w /= n;
@@ -104,8 +109,7 @@ struct SizeOf(T) if (is(T == float) || is(T == int))
 /// Holds minimum, maximum and natural (preferred) size for widget
 struct Boundaries
 {
-    nothrow:
-
+nothrow:
     Size min;
     Size nat;
     Size max = Size.none;
@@ -150,6 +154,7 @@ struct Boundaries
 
     string toString() const
     {
+        // dfmt off
         try
             return format("{[%s, %s], [%s, %s], [%s, %s]}",
                 min.w, min.h, nat.w, nat.h,
@@ -158,14 +163,14 @@ struct Boundaries
             );
         catch (Exception e)
             return null;
+        // dfmt on
     }
 }
 
 /// 2D box
 struct BoxOf(T) if (is(T == float) || is(T == int))
 {
-    nothrow:
-
+nothrow:
     /// x coordinate of the top left corner
     T x = 0;
     /// y coordinate of the top left corner
@@ -347,8 +352,7 @@ struct BoxOf(T) if (is(T == float) || is(T == int))
 */
 struct RectOf(T) if (is(T == float) || is(T == int))
 {
-    nothrow:
-
+nothrow:
     /// x coordinate of top left corner
     T left = 0;
     /// y coordinate of top left corner
@@ -386,12 +390,7 @@ struct RectOf(T) if (is(T == float) || is(T == int))
     /// Construct from a rectangle with another base type via casting
     static RectOf from(U)(RectOf!U source)
     {
-        return RectOf!T(
-            cast(T)source.left,
-            cast(T)source.top,
-            cast(T)source.right,
-            cast(T)source.bottom,
-        );
+        return RectOf!T(cast(T)source.left, cast(T)source.top, cast(T)source.right, cast(T)source.bottom);
     }
 
     @property const
@@ -554,8 +553,7 @@ struct RectOf(T) if (is(T == float) || is(T == int))
 /// Represents area around rectangle. Used for margin, border and padding
 struct InsetsOf(T) if (is(T == float) || is(T == int))
 {
-    nothrow:
-
+nothrow:
     T top = 0, right = 0, bottom = 0, left = 0;
 
     /// Create equal offset on all sides
@@ -581,12 +579,7 @@ struct InsetsOf(T) if (is(T == float) || is(T == int))
     /// Construct from offsets with another base type via casting
     static InsetsOf from(U)(InsetsOf!U source)
     {
-        return InsetsOf!T(
-            cast(T)source.top,
-            cast(T)source.right,
-            cast(T)source.bottom,
-            cast(T)source.left
-        );
+        return InsetsOf!T(cast(T)source.top, cast(T)source.right, cast(T)source.bottom, cast(T)source.left);
     }
 
     /// Get total offset
@@ -617,8 +610,8 @@ struct InsetsOf(T) if (is(T == float) || is(T == int))
 
     InsetsOf opBinary(string op : "*")(float factor) const
     {
-        return InsetsOf(cast(T)(top * factor), cast(T)(right * factor),
-                        cast(T)(bottom * factor), cast(T)(left * factor));
+        const t = top * factor, r = right * factor, b = bottom * factor, l = left * factor;
+        return InsetsOf(cast(T)t, cast(T)r, cast(T)b, cast(T)l);
     }
 
     /// Sum two areas

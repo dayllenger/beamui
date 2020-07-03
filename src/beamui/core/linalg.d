@@ -16,8 +16,7 @@ import beamui.core.math;
 /// 2-4-dimensional vector
 struct Vector(T, int N) if (2 <= N && N <= 4)
 {
-    nothrow:
-
+nothrow:
     union
     {
         T[N] vec = 0;
@@ -39,7 +38,10 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     enum int dimension = N;
 
     /// Returns a pointer to the first vector element
-    const(T*) ptr() const @trusted { return vec.ptr; }
+    const(T*) ptr() const @trusted
+    {
+        return vec.ptr;
+    }
 
     /// Create with all components filled with specified value
     this(T v)
@@ -124,58 +126,54 @@ struct Vector(T, int N) if (2 <= N && N <= 4)
     }
 
     /// Perform operation with value to all components of vector
-    ref Vector opOpAssign(string op)(T v)
-        if (op == "+" || op == "-" || op == "*" || op == "/")
+    ref Vector opOpAssign(string op)(T v) if (op == "+" || op == "-" || op == "*" || op == "/")
     {
         static if (N == 2)
         {
-            mixin("x "~op~"= v;");
-            mixin("y "~op~"= v;");
+            mixin("x" ~ op ~ "= v;");
+            mixin("y" ~ op ~ "= v;");
         }
         else
-            mixin("vec[] "~op~"= v;");
+            mixin("vec[]" ~ op ~ "= v;");
         return this;
     }
     /// ditto
-    Vector opBinary(string op)(T v) const
-        if (op == "+" || op == "-" || op == "*" || op == "/")
+    Vector opBinary(string op)(T v) const if (op == "+" || op == "-" || op == "*" || op == "/")
     {
         Vector ret = this;
         static if (N == 2)
         {
-            mixin("ret.x "~op~"= v;");
-            mixin("ret.y "~op~"= v;");
+            mixin("ret.x" ~ op ~ "= v;");
+            mixin("ret.y" ~ op ~ "= v;");
         }
         else
-            mixin("ret.vec[] "~op~"= v;");
+            mixin("ret.vec[]" ~ op ~ "= v;");
         return ret;
     }
 
     /// Perform operation with another vector by component
-    ref Vector opOpAssign(string op)(const Vector v)
-        if (op == "+" || op == "-" || op == "*" || op == "/")
+    ref Vector opOpAssign(string op)(const Vector v) if (op == "+" || op == "-" || op == "*" || op == "/")
     {
         static if (N == 2)
         {
-            mixin("x "~op~"= v.x;");
-            mixin("y "~op~"= v.y;");
+            mixin("x" ~ op ~ "= v.x;");
+            mixin("y" ~ op ~ "= v.y;");
         }
         else
-            mixin("vec[] "~op~"= v.vec[];");
+            mixin("vec[]" ~ op ~ "= v.vec[];");
         return this;
     }
     /// ditto
-    Vector opBinary(string op)(const Vector v) const
-        if (op == "+" || op == "-")
+    Vector opBinary(string op)(const Vector v) const if (op == "+" || op == "-")
     {
         Vector ret = this;
         static if (N == 2)
         {
-            mixin("ret.x "~op~"= v.x;");
-            mixin("ret.y "~op~"= v.y;");
+            mixin("ret.x" ~ op ~ "= v.x;");
+            mixin("ret.y" ~ op ~ "= v.y;");
         }
         else
-            mixin("ret.vec[] "~op~"= v.vec[];");
+            mixin("ret.vec[]" ~ op ~ "= v.vec[];");
         return ret;
     }
 
@@ -282,8 +280,7 @@ alias Vec4i = Vector!(int, 4);
 */
 struct Mat2x3
 {
-    nothrow:
-
+nothrow:
     float[3][2] store = [[0.0f, 0.0f, 0.0f], [0.0f, 0.0f, 0.0f]];
 
     /** Returns the pointer to the stored values array.
@@ -291,18 +288,23 @@ struct Mat2x3
         Note: Values are stored in row-major order, so when passing it to OpenGL
         with `glUniform*` functions, you'll need to set `transpose` parameter to GL_TRUE.
     */
-    const(float*) ptr() const return @trusted { return store.ptr.ptr; }
+    const(float*) ptr() const return @trusted
+    {
+        return store.ptr.ptr;
+    }
 
     this(float diagonal)
     {
         store[0][0] = diagonal;
         store[1][1] = diagonal;
     }
+
     this(ref const float[6] array)
     {
         store[0] = array[0 .. 3];
         store[1] = array[3 .. 6];
     }
+
     this(const float[] array)
     {
         store[0] = array[0 .. 3];
@@ -314,40 +316,40 @@ struct Mat2x3
 
     /// Add or subtract a matrix
     ref Mat2x3 opOpAssign(string op)(Mat2x3 mat) if (op == "+" || op == "-")
-        in(isFinite(), msgNotFinite)
+    in (isFinite(), msgNotFinite)
     {
-        mixin("store[0] "~op~"= mat.store[0];");
-        mixin("store[1] "~op~"= mat.store[1];");
+        mixin("store[0]" ~ op ~ "= mat.store[0];");
+        mixin("store[1]" ~ op ~ "= mat.store[1];");
         return this;
     }
     /// ditto
     Mat2x3 opBinary(string op)(Mat2x3 mat) const if (op == "+" || op == "-")
-        in(isFinite(), msgNotFinite)
+    in (isFinite(), msgNotFinite)
     {
         Mat2x3 ret = this;
-        mixin("ret.store[0] "~op~"= mat.store[0];");
-        mixin("ret.store[1] "~op~"= mat.store[1];");
+        mixin("ret.store[0]" ~ op ~ "= mat.store[0];");
+        mixin("ret.store[1]" ~ op ~ "= mat.store[1];");
         return ret;
     }
     /// Multiply this matrix by another one, as they were 3x3 with (0,0,1) last row
-    ref Mat2x3 opOpAssign(string op: "*")(Mat2x3 mat)
-        in(isFinite(), msgNotFinite)
+    ref Mat2x3 opOpAssign(string op : "*")(Mat2x3 mat)
+    in (isFinite(), msgNotFinite)
     {
         const a00 = store[0][0];
         const a01 = store[0][1];
         const a10 = store[1][0];
         const a11 = store[1][1];
-        store[0][0]  = a00 * mat.store[0][0] + a01 * mat.store[1][0];
-        store[0][1]  = a00 * mat.store[0][1] + a01 * mat.store[1][1];
+        store[0][0] = a00 * mat.store[0][0] + a01 * mat.store[1][0];
+        store[0][1] = a00 * mat.store[0][1] + a01 * mat.store[1][1];
         store[0][2] += a00 * mat.store[0][2] + a01 * mat.store[1][2];
-        store[1][0]  = a10 * mat.store[0][0] + a11 * mat.store[1][0];
-        store[1][1]  = a10 * mat.store[0][1] + a11 * mat.store[1][1];
+        store[1][0] = a10 * mat.store[0][0] + a11 * mat.store[1][0];
+        store[1][1] = a10 * mat.store[0][1] + a11 * mat.store[1][1];
         store[1][2] += a10 * mat.store[0][2] + a11 * mat.store[1][2];
         return this;
     }
     /// ditto
     Mat2x3 opBinary(string op : "*")(Mat2x3 mat) const
-        in(isFinite(), msgNotFinite)
+    in (isFinite(), msgNotFinite)
     {
         Mat2x3 ret = void;
         ret.store[0][0] = store[0][0] * mat.store[0][0] + store[0][1] * mat.store[1][0];
@@ -361,15 +363,16 @@ struct Mat2x3
 
     /// Transform a vector by this matrix
     Vec2 opBinary(string op : "*")(Vec2 vec) const
-        out(v; .isFinite(v.x) && .isFinite(v.y), "Transformed vector is not finite")
+    out (v; .isFinite(v.x) && .isFinite(v.y), "Transformed vector is not finite")
     {
-        return Vec2(
-            store[0][0] * vec.x + store[0][1] * vec.y + store[0][2],
-            store[1][0] * vec.x + store[1][1] * vec.y + store[1][2]);
+        const x = store[0][0] * vec.x + store[0][1] * vec.y + store[0][2];
+        const y = store[1][0] * vec.x + store[1][1] * vec.y + store[1][2];
+        return Vec2(x, y);
     }
 
     bool opEquals()(auto ref const Mat2x3 m) const
     {
+        // dfmt off
         return
             fequal6(store[0][0], m.store[0][0]) &&
             fequal6(store[0][1], m.store[0][1]) &&
@@ -377,6 +380,7 @@ struct Mat2x3
             fequal6(store[1][0], m.store[1][0]) &&
             fequal6(store[1][1], m.store[1][1]) &&
             fequal6(store[1][2], m.store[1][2]);
+        // dfmt on
     }
 
     /// Invert this transform. If matrix is not invertible, resets it to identity matrix
@@ -396,11 +400,11 @@ struct Mat2x3
             const a10 = store[1][0];
             const a11 = store[1][1];
             const a12 = store[1][2];
-            store[0][0] =  a11 * invdet;
+            store[0][0] = a11 * invdet;
             store[0][1] = -a01 * invdet;
             store[0][2] = (a01 * a12 - a02 * a11) * invdet;
             store[1][0] = -a10 * invdet;
-            store[1][1] =  a00 * invdet;
+            store[1][1] = a00 * invdet;
             store[1][2] = (a10 * a02 - a00 * a12) * invdet;
         }
         return this;
@@ -414,7 +418,7 @@ struct Mat2x3
 
     /// Apply translation to this matrix
     ref Mat2x3 translate(Vec2 offset) return
-        in(isFinite(), msgNotFinite)
+    in (isFinite(), msgNotFinite)
     {
         store[0][2] += store[0][0] * offset.x + store[0][1] * offset.y;
         store[1][2] += store[1][0] * offset.x + store[1][1] * offset.y;
@@ -422,7 +426,7 @@ struct Mat2x3
     }
     /// Make a translation matrix
     static Mat2x3 translation(Vec2 offset)
-        out(m; m.isFinite(), msgNotFinite)
+    out (m; m.isFinite(), msgNotFinite)
     {
         Mat2x3 m = identity;
         m.store[0][2] = offset.x;
@@ -432,21 +436,21 @@ struct Mat2x3
 
     /// Apply rotation to this matrix
     ref Mat2x3 rotate(float radians) return
-        in(isFinite(), msgNotFinite)
+    in (isFinite(), msgNotFinite)
     {
         const c = cos(radians);
         const s = sin(radians);
         const a00 = store[0][0];
         const a10 = store[1][0];
-        store[0][0] =  a00 * c + store[0][1] * s;
+        store[0][0] = a00 * c + store[0][1] * s;
         store[0][1] = -a00 * s + store[0][1] * c;
-        store[1][0] =  a10 * c + store[1][1] * s;
+        store[1][0] = a10 * c + store[1][1] * s;
         store[1][1] = -a10 * s + store[1][1] * c;
         return this;
     }
     /// Make a rotation matrix
     static Mat2x3 rotation(float radians)
-        out(m; m.isFinite(), msgNotFinite)
+    out (m; m.isFinite(), msgNotFinite)
     {
         Mat2x3 m;
         const c = cos(radians);
@@ -460,7 +464,7 @@ struct Mat2x3
 
     /// Apply scaling to this matrix
     ref Mat2x3 scale(Vec2 factor) return
-        in(isFinite(), msgNotFinite)
+    in (isFinite(), msgNotFinite)
     {
         store[0][0] *= factor.x;
         store[1][0] *= factor.x;
@@ -470,7 +474,7 @@ struct Mat2x3
     }
     /// Make a scaling matrix
     static Mat2x3 scaling(Vec2 factor)
-        out(m; m.isFinite(), msgNotFinite)
+    out (m; m.isFinite(), msgNotFinite)
     {
         Mat2x3 m;
         m.store[0][0] = factor.x;
@@ -480,7 +484,7 @@ struct Mat2x3
 
     /// Apply skewing to this matrix
     ref Mat2x3 skew(Vec2 factor) return
-        in(isFinite(), msgNotFinite)
+    in (isFinite(), msgNotFinite)
     {
         const a = tan(factor.x);
         const b = tan(factor.y);
@@ -494,7 +498,7 @@ struct Mat2x3
     }
     /// Make a skewing matrix
     static Mat2x3 skewing(Vec2 factor)
-        out(m; m.isFinite(), msgNotFinite)
+    out (m; m.isFinite(), msgNotFinite)
     {
         Mat2x3 m = identity;
         m.store[0][1] = tan(factor.x);
@@ -504,22 +508,21 @@ struct Mat2x3
 
     string toString() const
     {
+        // dfmt off
         try
-        {
             return format("[%s %s %s] [%s %s %s]",
                 store[0][0], store[0][1], store[0][2],
                 store[1][0], store[1][1], store[1][2]);
-        }
         catch (Exception e)
-        {
             return null;
-        }
+        // dfmt on
     }
 
     private bool isFinite() const
     {
         return .isFinite((this * Vec2(1, 1)).magnitudeSquared);
     }
+
     static private immutable msgNotFinite = "Transformation is not finite anymore";
 }
 
@@ -667,12 +670,14 @@ nothrow:
     /// Transpose matrix
     void transpose()
     {
+        // dfmt off
         const float[16] tmp = [
             m[0], m[4], m[8], m[12],
             m[1], m[5], m[9], m[13],
             m[2], m[6], m[10], m[14],
             m[3], m[7], m[11], m[15],
         ];
+        // dfmt on
         m = tmp;
     }
 
@@ -734,17 +739,15 @@ nothrow:
     }
 
     /// Perform operation with a scalar to all items of matrix
-    void opOpAssign(string op)(float v)
-        if (op == "+" || op == "-" || op == "*" || op == "/")
+    void opOpAssign(string op)(float v) if (op == "+" || op == "-" || op == "*" || op == "/")
     {
-        mixin("m[] "~op~"= v;");
+        mixin("m[]" ~ op ~ "= v;");
     }
     /// ditto
-    Mat4x4 opBinary(string op)(float v) const
-        if (op == "+" || op == "-" || op == "*" || op == "/")
+    Mat4x4 opBinary(string op)(float v) const if (op == "+" || op == "-" || op == "*" || op == "/")
     {
         Mat4x4 ret = this;
-        mixin("ret.m[] "~op~"= v;");
+        mixin("ret.m[]" ~ op ~ "= v;");
         return ret;
     }
 
@@ -763,6 +766,7 @@ nothrow:
     static Mat4x4 mul(const ref Mat4x4 a, const ref Mat4x4 b)
     {
         Mat4x4 m = void;
+        // dfmt off
         m.m[0 * 4 + 0] = a.m[0 * 4 + 0] * b.m[0 * 4 + 0] + a.m[1 * 4 + 0] * b.m[0 * 4 + 1] + a.m[2 * 4 + 0] * b.m[0 * 4 + 2] + a.m[3 * 4 + 0] * b.m[0 * 4 + 3];
         m.m[0 * 4 + 1] = a.m[0 * 4 + 1] * b.m[0 * 4 + 0] + a.m[1 * 4 + 1] * b.m[0 * 4 + 1] + a.m[2 * 4 + 1] * b.m[0 * 4 + 2] + a.m[3 * 4 + 1] * b.m[0 * 4 + 3];
         m.m[0 * 4 + 2] = a.m[0 * 4 + 2] * b.m[0 * 4 + 0] + a.m[1 * 4 + 2] * b.m[0 * 4 + 1] + a.m[2 * 4 + 2] * b.m[0 * 4 + 2] + a.m[3 * 4 + 2] * b.m[0 * 4 + 3];
@@ -779,6 +783,7 @@ nothrow:
         m.m[3 * 4 + 1] = a.m[0 * 4 + 1] * b.m[3 * 4 + 0] + a.m[1 * 4 + 1] * b.m[3 * 4 + 1] + a.m[2 * 4 + 1] * b.m[3 * 4 + 2] + a.m[3 * 4 + 1] * b.m[3 * 4 + 3];
         m.m[3 * 4 + 2] = a.m[0 * 4 + 2] * b.m[3 * 4 + 0] + a.m[1 * 4 + 2] * b.m[3 * 4 + 1] + a.m[2 * 4 + 2] * b.m[3 * 4 + 2] + a.m[3 * 4 + 2] * b.m[3 * 4 + 3];
         m.m[3 * 4 + 3] = a.m[0 * 4 + 3] * b.m[3 * 4 + 0] + a.m[1 * 4 + 3] * b.m[3 * 4 + 1] + a.m[2 * 4 + 3] * b.m[3 * 4 + 2] + a.m[3 * 4 + 3] * b.m[3 * 4 + 3];
+        // dfmt on
         return m;
     }
 
@@ -1224,12 +1229,12 @@ unittest
     const rc = r * c;
     const sa = s * a;
     const sb = s * b;
-    assert(fequal6(za.x,  0) && fequal6(za.y,  0));
+    assert(fequal6(za.x, 0) && fequal6(za.y, 0));
     assert(fequal6(ib.x, -5) && fequal6(ib.y, -4));
-    assert(fequal6(ta.x, 11) && fequal6(ta.y,  7));
+    assert(fequal6(ta.x, 11) && fequal6(ta.y, 7));
     assert(fequal6(tb.x, -4) && fequal6(tb.y, -5));
     assert(fequal2(rc.x, -1.83) && fequal2(rc.y, 6.83));
-    assert(fequal6(sa.x,  20) && fequal6(sa.y,  24));
+    assert(fequal6(sa.x, 20) && fequal6(sa.y, 24));
     assert(fequal6(sb.x, -10) && fequal6(sb.y, -12));
 
     const m1 = t * r * s;

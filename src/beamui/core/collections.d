@@ -43,7 +43,10 @@ struct Collection(T, bool ownItems = false) if (is(T == class) || is(T == interf
     private size_t len;
 
     /// Number of items in the collection
-    @property size_t count() const { return len; }
+    @property size_t count() const
+    {
+        return len;
+    }
     /// True if there are no items in the collection
     @property bool empty() const
     {
@@ -80,7 +83,7 @@ struct Collection(T, bool ownItems = false) if (is(T == class) || is(T == interf
     }
     /// Insert item before specified position
     void insert(size_t index, T item)
-        in(index <= len, "Index is out of range")
+    in (index <= len, "Index is out of range")
     {
         if (list.length == len) // need to resize
             list.length = list.length * 3 / 2 + 1;
@@ -95,7 +98,7 @@ struct Collection(T, bool ownItems = false) if (is(T == class) || is(T == interf
 
     /// Remove single item and return it
     T remove(size_t index)
-        in(index < len, "Index is out of range")
+    in (index < len, "Index is out of range")
     {
         T result = list[index];
         foreach (i; index .. len - 1)
@@ -177,7 +180,10 @@ struct Collection(T, bool ownItems = false) if (is(T == class) || is(T == interf
                 return i;
         return -1;
     }
-    static if (__traits(hasMember, T, "compareID"))
+
+    // dfmt off
+    static if (__traits(hasMember, T, "compareID"))/**/
+    // dfmt on
     /// Find child index for item by id, returns -1 if not found
     ptrdiff_t indexOf(string id) const
     {
@@ -248,13 +254,13 @@ struct Collection(T, bool ownItems = false) if (is(T == class) || is(T == interf
 
     /// Pick the first item. Fails if no items
     inout(T) front() inout
-        in(len > 0)
+    in (len > 0)
     {
         return list[0];
     }
     /// Remove the first item and return it. Fails if no items
     T popFront()
-        in(len > 0)
+    in (len > 0)
     {
         return remove(0);
     }
@@ -266,13 +272,13 @@ struct Collection(T, bool ownItems = false) if (is(T == class) || is(T == interf
 
     /// Pick the last item. Fails if no items
     inout(T) back() inout
-        in(len > 0)
+    in (len > 0)
     {
         return list[len - 1];
     }
     /// Remove the last item and return it. Fails if no items
     T popBack()
-        in(len > 0)
+    in (len > 0)
     {
         return remove(len - 1);
     }
@@ -309,8 +315,7 @@ enum ListChange
     list.insertItems(0, [1, 2, 3]);
     ---
 */
-class ObservableList(T)
-if (is(T == struct) || isScalarType!T || isDynamicArray!T)
+class ObservableList(T) if (is(T == struct) || isScalarType!T || isDynamicArray!T)
 {
     import std.array : insertInPlace, replaceInPlace;
     import beamui.core.signals : Signal;
@@ -318,7 +323,11 @@ if (is(T == struct) || isScalarType!T || isDynamicArray!T)
 
     final @property
     {
+        // dfmt off
         const(bool)* destructionFlag() const { return _destructionFlag; }
+        /// Const view on the items
+        const(T[]) items() const { return _items; }
+        // dfmt on
 
         /// True when there is no items
         bool empty() const
@@ -331,9 +340,6 @@ if (is(T == struct) || isScalarType!T || isDynamicArray!T)
         {
             return cast(int)_items.length;
         }
-
-        /// Const view on the items
-        const(T[]) items() const { return _items; }
     }
 
     /// Triggers before every change in the list and passes needed information about the change
@@ -524,24 +530,21 @@ final:
     It was designed to be robust, so it reveals mutable references to its data
     only in `unsafe_*` methods.
 */
-struct Buf(T)
-if (isMutable!T &&
-    !hasElaborateCopyConstructor!T &&
-    !hasElaborateAssign!T &&
-    !hasElaborateDestructor!T)
-{ nothrow @nogc @safe:
-
+struct Buf(T) if (isMutable!T && !hasElaborateCopyConstructor!T && !hasElaborateAssign!T && !hasElaborateDestructor!T)
+{
+nothrow @nogc @safe:
     import core.stdc.stdlib : malloc, realloc, free;
     import core.stdc.string : memcpy;
 
     private T* _data;
     private uint _capacity;
     private uint _length;
-
+    // dfmt off
     /// The maximum number of items the buffer can store without reallocation
     @property uint capacity() const { return _capacity; }
     /// The number of items in the buffer
     @property uint length() const { return _length; }
+    // dfmt on
 
     /// Moving constructor, i.e. nullifying the source buffer
     this(ref Buf!T source)
@@ -808,12 +811,11 @@ unittest
         uint index;
         uint count;
     }
+
     Ch[] changes;
 
     auto list = new ObservableList!int;
-    list.beforeChange ~= (ListChange ch, uint i, uint c) {
-        changes ~= Ch(ch, i, c);
-    };
+    list.beforeChange ~= (ListChange ch, uint i, uint c) { changes ~= Ch(ch, i, c); };
     list.afterChange ~= (ListChange ch, uint i, uint c) {
         // we do no test replaceItems here, where calls are not consecutive
         assert(changes[$ - 1] == Ch(ch, i, c));
@@ -844,6 +846,7 @@ unittest
 
 unittest
 {
+    // dfmt off
     class C {}
     struct S {}
 
@@ -864,6 +867,7 @@ unittest
         Buf!int b;
         return b;
     }
+    // dfmt on
 }
 
 unittest

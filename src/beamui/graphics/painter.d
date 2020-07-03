@@ -23,7 +23,7 @@ import beamui.text.glyph : GlyphRef;
 
 enum MAX_DIMENSION = 2 ^^ 14;
 enum MIN_RECT_I = RectI(MAX_DIMENSION, MAX_DIMENSION, -MAX_DIMENSION, -MAX_DIMENSION);
-enum MIN_RECT_F = Rect (MAX_DIMENSION, MAX_DIMENSION, -MAX_DIMENSION, -MAX_DIMENSION);
+enum MIN_RECT_F = Rect(MAX_DIMENSION, MAX_DIMENSION, -MAX_DIMENSION, -MAX_DIMENSION);
 
 /// Positioned glyph
 struct GlyphInstance
@@ -54,16 +54,19 @@ final class Painter
     }
 
     this(ref PainterHead head)
-        in(!head.painter)
+    in (!head.painter)
     {
         head.painter = this;
     }
 
     /// True whether antialiasing is enabled for subsequent drawings
-    @property bool antialias() nothrow const { return state.aa; }
+    @property bool antialias() nothrow const
+    {
+        return state.aa;
+    }
     /// ditto
     @property void antialias(bool flag) nothrow
-        in(active)
+    in (active)
     {
         state.aa = flag;
     }
@@ -73,7 +76,7 @@ final class Painter
 
     /// Intersect subsequent drawing with a region, transformed by current matrix
     void clipIn(BoxI box)
-        in(active)
+    in (active)
     {
         if (state.discard)
             return;
@@ -99,16 +102,13 @@ final class Painter
             const lb = Vec2(rect.left, rect.bottom);
             const Vec2 v1 = state.mat * rt;
             const Vec2 v2 = state.mat * lb;
-            const p0 = Vec2(min(v0.x, v1.x, v2.x, v3.x),
-                            min(v0.y, v1.y, v2.y, v3.y));
-            const p1 = Vec2(max(v0.x, v1.x, v2.x, v3.x),
-                            max(v0.y, v1.y, v2.y, v3.y));
+            const p0 = Vec2(min(v0.x, v1.x, v2.x, v3.x), min(v0.y, v1.y, v2.y, v3.y));
+            const p1 = Vec2(max(v0.x, v1.x, v2.x, v3.x), max(v0.y, v1.y, v2.y, v3.y));
             const bbox = RectI.from(Rect(p0, p1));
             state.clipRect.intersect(bbox);
 
             // not axis-aligned
-            if (!(fequal2(v0.y, v1.y) && fequal2(v0.x, v2.x)) &&
-                !(fequal2(v0.x, v1.x) && fequal2(v0.y, v2.y)))
+            if (!(fequal2(v0.y, v1.y) && fequal2(v0.x, v2.x)) && !(fequal2(v0.x, v1.x) && fequal2(v0.y, v2.y)))
             {
                 // clip out complement triangles
                 const Vec2[4] vs = [lt, rt, rb, lb];
@@ -122,7 +122,7 @@ final class Painter
     }
     /// ditto
     void clipIn(ref const Path path, FillRule rule = FillRule.nonzero)
-        in(active)
+    in (active)
     {
         if (state.discard)
             return;
@@ -140,7 +140,7 @@ final class Painter
 
     /// Remove a region, transformed by current matrix, from subsequent drawing
     void clipOut(BoxI box)
-        in(active)
+    in (active)
     {
         if (box.empty || state.discard)
             return;
@@ -149,7 +149,7 @@ final class Painter
     }
     /// ditto
     void clipOut(ref const Path path, FillRule rule = FillRule.nonzero)
-        in(active)
+    in (active)
     {
         if (path.empty || state.discard)
             return;
@@ -163,19 +163,19 @@ final class Painter
 
     /// Translate origin of the canvas
     void translate(float dx, float dy)
-        in(active)
+    in (active)
     {
         state.mat.translate(Vec2(dx, dy));
     }
     /// Rotate subsequent canvas drawings clockwise
     void rotate(float degrees)
-        in(active)
+    in (active)
     {
         state.mat.rotate(degrees * PI / 180);
     }
     /// Rotate subsequent canvas drawings clockwise around a point
     void rotate(float degrees, float cx, float cy)
-        in(active)
+    in (active)
     {
         const dx = state.mat.store[0][2] - cx; // TODO: make some deconstruction methods?
         const dy = state.mat.store[1][2] - cy;
@@ -185,38 +185,38 @@ final class Painter
     }
     /// Scale subsequent canvas drawings
     void scale(float factor)
-        in(active)
+    in (active)
     {
         state.mat.scale(Vec2(factor, factor));
     }
     /// ditto
     void scale(float factorX, float factorY)
-        in(active)
+    in (active)
     {
         state.mat.scale(Vec2(factorX, factorY));
     }
     /// Skew subsequent canvas drawings by the given angles
     void skew(float degreesX, float degreesY)
-        in(active)
+    in (active)
     {
         state.mat.skew(Vec2(degreesX * PI / 180, -degreesY * PI / 180));
     }
 
     /// Concat a matrix to the current canvas transformation
     void transform(Mat2x3 m)
-        in(active)
+    in (active)
     {
         state.mat *= m;
     }
     /// Setup canvas transformation matrix, replacing current one
     void setMatrix(Mat2x3 m)
-        in(active)
+    in (active)
     {
         state.mat = m;
     }
     /// Reset canvas transformation to identity
     void resetMatrix()
-        in(active)
+    in (active)
     {
         state.mat = Mat2x3.identity;
     }
@@ -227,27 +227,29 @@ final class Painter
     */
     bool quickReject(Box box) const
     {
+        const Mat2x3 m = state.mat;
         Rect tr = Rect(box);
-        if (state.mat.store[0][0] == 1 && state.mat.store[0][1] == 0 &&
-            state.mat.store[1][0] == 0 && state.mat.store[1][1] == 1)
+        if (m.store[0][0] == 1 && m.store[0][1] == 0 && m.store[1][0] == 0 && m.store[1][1] == 1)
         {
             // translation only, fast path
-            const tx = state.mat.store[0][2];
-            const ty = state.mat.store[1][2];
+            const tx = m.store[0][2];
+            const ty = m.store[1][2];
             tr.translate(tx, ty);
         }
         else
         {
-            const Vec2 v0 = state.mat * Vec2(tr.left, tr.top);
-            const Vec2 v1 = state.mat * Vec2(tr.right, tr.top);
-            const Vec2 v2 = state.mat * Vec2(tr.left, tr.bottom);
-            const Vec2 v3 = state.mat * Vec2(tr.right, tr.bottom);
+            const Vec2 v0 = m * Vec2(tr.left, tr.top);
+            const Vec2 v1 = m * Vec2(tr.right, tr.top);
+            const Vec2 v2 = m * Vec2(tr.left, tr.bottom);
+            const Vec2 v3 = m * Vec2(tr.right, tr.bottom);
+            // dfmt off
             tr = Rect(
                 min(v0.x, v1.x, v2.x, v3.x),
                 min(v0.y, v1.y, v2.y, v3.y),
                 max(v0.x, v1.x, v2.x, v3.x),
                 max(v0.y, v1.y, v2.y, v3.y),
             );
+            // dfmt on
         }
         return !tr.intersects(Rect.from(state.clipRect));
     }
@@ -264,28 +266,30 @@ final class Painter
         Rect r = Rect.from(state.clipRect);
         r.expand(1, 1); // antialiased fringe
 
-        if (state.mat.store[0][0] == 1 && state.mat.store[0][1] == 0 &&
-            state.mat.store[1][0] == 0 && state.mat.store[1][1] == 1)
+        Mat2x3 m = state.mat;
+        if (m.store[0][0] == 1 && m.store[0][1] == 0 && m.store[1][0] == 0 && m.store[1][1] == 1)
         {
             // translation only, fast path
-            const tx = state.mat.store[0][2];
-            const ty = state.mat.store[1][2];
+            const tx = m.store[0][2];
+            const ty = m.store[1][2];
             r.translate(-tx, -ty);
             return r;
         }
         else
         {
-            const m = state.mat.inverted;
+            m.invert();
             const Vec2 v0 = m * Vec2(r.left, r.top);
             const Vec2 v1 = m * Vec2(r.right, r.top);
             const Vec2 v2 = m * Vec2(r.left, r.bottom);
             const Vec2 v3 = m * Vec2(r.right, r.bottom);
+            // dfmt off
             return Rect(
                 min(v0.x, v1.x, v2.x, v3.x),
                 min(v0.y, v1.y, v2.y, v3.y),
                 max(v0.x, v1.x, v2.x, v3.x),
                 max(v0.y, v1.y, v2.y, v3.y),
             );
+            // dfmt on
         }
     }
 
@@ -306,8 +310,8 @@ final class Painter
         ---
     */
     int save(ref PaintSaver saver)
-        in(active)
-        in(!saver.painter, "Can't use PaintSaver twice")
+    in (active)
+    in (!saver.painter, "Can't use PaintSaver twice")
     {
         saver.painter = this;
         saver.depth = mainStack.length;
@@ -335,8 +339,8 @@ final class Painter
         ---
     */
     void beginLayer(ref PaintSaver saver, float opacity)
-        in(active)
-        in(!saver.painter, "Can't use PaintSaver twice")
+    in (active)
+    in (!saver.painter, "Can't use PaintSaver twice")
     {
         PaintEngine.LayerOp op;
         op.opacity = clamp(opacity, 0, 1);
@@ -344,8 +348,8 @@ final class Painter
     }
     /// ditto
     void beginLayer(ref PaintSaver saver, float opacity, CompositeMode composition)
-        in(active)
-        in(!saver.painter, "Can't use PaintSaver twice")
+    in (active)
+    in (!saver.painter, "Can't use PaintSaver twice")
     {
         PaintEngine.LayerOp op;
         op.opacity = clamp(opacity, 0, 1);
@@ -354,8 +358,8 @@ final class Painter
     }
     /// ditto
     void beginLayer(ref PaintSaver saver, float opacity, BlendMode blending)
-        in(active)
-        in(!saver.painter, "Can't use PaintSaver twice")
+    in (active)
+    in (!saver.painter, "Can't use PaintSaver twice")
     {
         PaintEngine.LayerOp op;
         op.opacity = clamp(opacity, 0, 1);
@@ -437,7 +441,7 @@ final class Painter
 
     /// Fill the layer with specified brush
     void paintOut(ref const Brush brush)
-        in(active)
+    in (active)
     {
         if (state.discard)
             return;
@@ -449,7 +453,7 @@ final class Painter
 
     /// Fill a path using specified brush
     void fill(ref const Path path, ref const Brush brush, FillRule rule = FillRule.nonzero)
-        in(active)
+    in (active)
     {
         if (path.empty || state.discard)
             return;
@@ -465,7 +469,7 @@ final class Painter
 
     /// Stroke a path using specified brush
     void stroke(ref const Path path, ref const Brush brush, Pen pen)
-        in(active)
+    in (active)
     {
         if (path.empty || state.discard)
             return;
@@ -512,9 +516,9 @@ final class Painter
         No matter of transform, it will always be one pixel wide.
     */
     void drawLine(float x0, float y0, float x1, float y1, Color color)
-        in(isFinite(x0) && isFinite(y0))
-        in(isFinite(x1) && isFinite(y1))
-        in(active)
+    in (isFinite(x0) && isFinite(y0))
+    in (isFinite(x1) && isFinite(y1))
+    in (active)
     {
         if ((fequal2(x0, x1) && fequal2(y0, y1)) || state.discard)
             return;
@@ -525,9 +529,9 @@ final class Painter
     }
     /// Fill a simple axis-oriented rectangle
     void fillRect(float x, float y, float width, float height, Color color)
-        in(isFinite(x) && isFinite(y))
-        in(isFinite(width) && isFinite(height))
-        in(active)
+    in (isFinite(x) && isFinite(y))
+    in (isFinite(width) && isFinite(height))
+    in (active)
     {
         if (fzero2(width) || fzero2(height) || state.discard)
             return;
@@ -538,10 +542,10 @@ final class Painter
     }
     /// Fill a triangle. Use it if you need to draw lone solid triangles
     void fillTriangle(Vec2 p0, Vec2 p1, Vec2 p2, Color color)
-        in(isFinite(p0.magnitudeSquared))
-        in(isFinite(p1.magnitudeSquared))
-        in(isFinite(p2.magnitudeSquared))
-        in(active)
+    in (isFinite(p0.magnitudeSquared))
+    in (isFinite(p1.magnitudeSquared))
+    in (isFinite(p2.magnitudeSquared))
+    in (active)
     {
         if (state.discard)
             return;
@@ -552,9 +556,9 @@ final class Painter
     }
     /// Fill a circle
     void fillCircle(float centerX, float centerY, float radius, Color color)
-        in(isFinite(centerX) && isFinite(centerY))
-        in(isFinite(radius))
-        in(active)
+    in (isFinite(centerX) && isFinite(centerY))
+    in (isFinite(radius))
+    in (active)
     {
         if (radius < 0 || fzero2(radius) || state.discard)
             return;
@@ -566,10 +570,10 @@ final class Painter
 
     /// Draw an image at some position with some opacity
     void drawImage(const Bitmap image, float x, float y, float opacity)
-        in(image)
-        in(isFinite(x) && isFinite(y))
-        in(isFinite(opacity))
-        in(active)
+    in (image)
+    in (isFinite(x) && isFinite(y))
+    in (isFinite(opacity))
+    in (active)
     {
         if (state.discard)
             return;
@@ -592,11 +596,11 @@ final class Painter
 
     /// Draw a rescaled nine-patch image with some opacity
     void drawNinePatch(const Bitmap image, RectI srcRect, Rect dstRect, float opacity)
-        in(image)
-        in(image.hasNinePatch)
-        in(isFinite(dstRect.width) && isFinite(dstRect.height))
-        in(isFinite(opacity))
-        in(active)
+    in (image)
+    in (image.hasNinePatch)
+    in (isFinite(dstRect.width) && isFinite(dstRect.height))
+    in (isFinite(opacity))
+    in (active)
     {
         if (srcRect.empty || dstRect.empty || state.discard)
             return;
@@ -627,12 +631,14 @@ final class Painter
         }
 
         const np = image.ninePatch;
+        // dfmt off
         PaintEngine.NinePatchInfo info = {
             srcRect.left, srcRect.left + np.frame.left, srcRect.right - np.frame.right, srcRect.right,
             srcRect.top, srcRect.top + np.frame.top, srcRect.bottom - np.frame.bottom, srcRect.bottom,
             dstRect.left, dstRect.left + np.frame.left, dstRect.right - np.frame.right, dstRect.right,
             dstRect.top, dstRect.top + np.frame.top, dstRect.bottom - np.frame.bottom, dstRect.bottom,
         };
+        // dfmt on
         correctFrameBounds(info.x1, info.x2, info.dst_x1, info.dst_x2);
         correctFrameBounds(info.y1, info.y2, info.dst_y1, info.dst_y2);
 
@@ -641,7 +647,7 @@ final class Painter
 
     /// Draw a text run at some position with some color
     void drawText(const GlyphInstance[] run, Color color)
-        in(active)
+    in (active)
     {
         if (run.length == 0 || color.isFullyTransparent || state.discard)
             return;
@@ -650,14 +656,15 @@ final class Painter
     }
 
     private PaintEngine.Contours prepareContours(ref const Path path, float padding = 0)
-        in(!path.empty)
-        in(isFinite(padding))
+    in (!path.empty)
+    in (isFinite(padding))
     {
         bufContours.clear();
         const Mat2x3 m = state.mat;
         const RectI clip = state.clipRect;
         Rect bounds = MIN_RECT_F;
         RectI trBounds = MIN_RECT_I;
+        // dfmt off
         foreach (ref subpath; path)
         {
             Rect r = subpath.bounds;
@@ -693,6 +700,7 @@ final class Painter
                 }
             }
         }
+        // dfmt on
         return PaintEngine.Contours(bufContours[], bounds, trBounds);
     }
 }
@@ -706,10 +714,10 @@ struct PainterHead
     private Painter painter;
 
     void beginFrame(PaintEngine paintEngine, int width, int height, Color background)
-        in(painter && !painter.active)
-        in(paintEngine)
-        in(0 < width && width < MAX_DIMENSION)
-        in(0 < height && height < MAX_DIMENSION)
+    in (painter && !painter.active)
+    in (paintEngine)
+    in (0 < width && width < MAX_DIMENSION)
+    in (0 < height && height < MAX_DIMENSION)
     {
         with (painter)
         {
@@ -724,7 +732,7 @@ struct PainterHead
     }
 
     void endFrame()
-        in(painter && painter.active)
+    in (painter && painter.active)
     {
         with (painter)
         {
@@ -736,7 +744,7 @@ struct PainterHead
     }
 
     void repaint()
-        in(painter && !painter.active && painter.engine)
+    in (painter && !painter.active && painter.engine)
     {
         with (painter)
         {
@@ -794,12 +802,14 @@ protected:
         bool discard;
         bool passTransparent;
     }
+
     struct LayerOp
     {
         float opacity = 1;
         CompositeMode composition = CompositeMode.sourceOver;
         BlendMode blending = BlendMode.normal;
     }
+
     struct Contour
     {
         const(Vec2)[] points;
@@ -807,6 +817,7 @@ protected:
         Rect bounds;
         RectI trBounds;
     }
+
     const struct Contours
     {
         Contour[] list;
@@ -818,6 +829,7 @@ protected:
             return list.length > 0;
         }
     }
+
     static class ContourIter : PathIter
     {
         const(Contour)[] list;
@@ -839,6 +851,7 @@ protected:
             return hasElements;
         }
     }
+
     struct NinePatchInfo
     {
         int x0, x1, x2, x3;
@@ -880,12 +893,14 @@ protected:
         const Vec2 v1 = m * Vec2(untr.right, untr.top);
         const Vec2 v2 = m * Vec2(untr.left, untr.bottom);
         const Vec2 v3 = m * Vec2(untr.right, untr.bottom);
+        // dfmt off
         Rect bbox = Rect(
             min(v0.x, v1.x, v2.x, v3.x),
             min(v0.y, v1.y, v2.y, v3.y),
             max(v0.x, v1.x, v2.x, v3.x),
             max(v0.y, v1.y, v2.y, v3.y),
         );
+        // dfmt on
         return bbox;
     }
 
@@ -894,12 +909,14 @@ protected:
         if (fzero2(tr.width) || fzero2(tr.height))
             return BoxI.init;
 
+        // dfmt off
         RectI box = RectI(
             cast(int)floor(tr.left),
             cast(int)floor(tr.top),
             cast(int)ceil(tr.right),
             cast(int)ceil(tr.bottom),
         );
+        // dfmt on
         box.intersect(st.clipRect);
         return BoxI(box);
     }

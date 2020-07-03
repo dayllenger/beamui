@@ -264,12 +264,14 @@ class LineStream
 {
     @property
     {
+        // dfmt off
         /// Returns file name
         string filename() const { return _filename; }
         /// Returns current line number
         uint line() const { return _line; }
         /// Returns file encoding
         EncodingType encoding() const { return _encoding; }
+        // dfmt on
 
         TextFileFormat textFormat() const
         {
@@ -295,7 +297,7 @@ class LineStream
             }
             return TextFileFormat(_encoding, le, _bomDetected);
         }
-
+        // dfmt off
         /// Returns error code
         int errorCode() const { return _errorCode; }
         /// Returns error message
@@ -304,6 +306,7 @@ class LineStream
         int errorLine() const { return _errorLine; }
         /// Returns line position (number of character in line) where error is found
         int errorPos() const { return _errorPos; }
+        // dfmt on
     }
 
     /// Error codes
@@ -612,9 +615,9 @@ class LineStream
     protected bool invalidCharFlag;
     protected void invalidCharError()
     {
-        uint pos = _textLen - _textPos + 1;
-        setError(ErrorCodes.INVALID_CHARACTER,
-                "Invalid character in line " ~ to!string(_line) ~ ":" ~ to!string(pos), _line, pos);
+        const uint pos = _textLen - _textPos + 1;
+        const msg = "Invalid character in line " ~ to!string(_line) ~ ":" ~ to!string(pos);
+        setError(ErrorCodes.INVALID_CHARACTER, msg, _line, pos);
     }
 }
 
@@ -759,13 +762,22 @@ private class Utf8LineStream : LineStream
             uint ch3 = b[3];
             uint ch4 = b[4];
             uint ch5 = b[5];
-            if ((ch1 & 0xC0) != 0x80 || (ch2 & 0xC0) != 0x80 || (ch3 & 0xC0) != 0x80 ||
-                    (ch4 & 0xC0) != 0x80 || (ch5 & 0xC0) != 0x80)
+            // dfmt off
+            if ((ch1 & 0xC0) != 0x80 ||
+                (ch2 & 0xC0) != 0x80 ||
+                (ch3 & 0xC0) != 0x80 ||
+                (ch4 & 0xC0) != 0x80 ||
+                (ch5 & 0xC0) != 0x80)
             {
                 return 0;
             }
-            ch = ((ch0 & 0x01) << 30) | ((ch1 & 0x3F) << 24) | ((ch2 & 0x3F) << 18) | (
-                    (ch3 & 0x3F) << 12) | ((ch4 & 0x3F) << 6) | (ch5 & 0x3F);
+            ch = ((ch0 & 0x01) << 30) |
+                 ((ch1 & 0x3F) << 24) |
+                 ((ch2 & 0x3F) << 18) |
+                 ((ch3 & 0x3F) << 12) |
+                 ((ch4 & 0x3F) << 6) |
+                  (ch5 & 0x3F);
+            // dfmt on
             bread = 5;
         }
         if ((ch >= 0xd800 && ch < 0xe000) || (ch > 0x10FFFF))

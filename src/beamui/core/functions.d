@@ -24,8 +24,7 @@ auto caching(T)(T obj) if (is(T == class))
     return cast()obj;
 }
 
-Derived fastCast(Derived, Base)(Base base)
-if ((is(Base == class) || is(Base == interface)) && is(Derived : Base))
+Derived fastCast(Derived, Base)(Base base) if ((is(Base == class) || is(Base == interface)) && is(Derived : Base))
 {
     debug
     {
@@ -111,17 +110,17 @@ unittest
 
     bool[] res = "stuff".emap!(c => c == 'f');
 
-    assert(res.equal([ false, false, false, true, true ]));
+    assert(res.equal([false, false, false, true, true]));
 
     struct C
     {
         int i;
     }
 
-    C*[] cs = [ new C(5), new C(10) ];
+    C*[] cs = [new C(5), new C(10)];
     int[] ires = cs.emap!(a => a.i);
 
-    assert(ires.equal([ 5, 10 ]));
+    assert(ires.equal([5, 10]));
 }
 
 static if (__VERSION__ < 2088)
@@ -250,7 +249,10 @@ string getShortClassName(const Object obj)
 ///
 unittest
 {
-    class A {}
+    class A
+    {
+    }
+
     A a = new A;
     assert(getShortClassName(a) == "A");
 }
@@ -306,7 +308,10 @@ mixin template DebugInstanceCount()
         private shared int _debugInstanceCount;
 
         /// Number of created objects, not yet destroyed - for debugging purposes
-        int debugInstanceCount() { return _debugInstanceCount; }
+        int debugInstanceCount()
+        {
+            return _debugInstanceCount;
+        }
 
         private int debugPlusInstance()
         {
@@ -315,7 +320,8 @@ mixin template DebugInstanceCount()
             {
                 get = atomicLoad!(MemoryOrder.raw, int)(_debugInstanceCount);
                 set = get + 1;
-            } while (!cas(&_debugInstanceCount, get, set));
+            }
+            while (!cas(&_debugInstanceCount, get, set));
             return set;
         }
 
@@ -326,7 +332,8 @@ mixin template DebugInstanceCount()
             {
                 get = atomicLoad!(MemoryOrder.raw, int)(_debugInstanceCount);
                 set = get - 1;
-            } while (!cas(&_debugInstanceCount, get, set));
+            }
+            while (!cas(&_debugInstanceCount, get, set));
             return set;
         }
     }
