@@ -6,6 +6,7 @@ Authors:   Vadim Lopatin, dayllenger
 */
 module beamui.style.theme;
 
+import beamui.core.collections : Buf;
 import beamui.core.config;
 import beamui.core.functions;
 import beamui.core.logger;
@@ -16,6 +17,7 @@ import beamui.graphics.colors : Color;
 import beamui.graphics.drawables : BorderStyle, Drawable;
 import beamui.layout.alignment : AlignItem, Distribution;
 import beamui.style.decode_css;
+import beamui.style.media;
 import beamui.style.property;
 import beamui.style.selector;
 import beamui.style.style;
@@ -40,6 +42,8 @@ final class Theme
         }
 
         Store[string] _styles;
+
+        uint[] _activeMediaQueries;
     }
 
     ~this()
@@ -89,6 +93,11 @@ final class Theme
         bag.all ~= st;
         store.map[selector] = st;
         return st;
+    }
+
+    bool updateMediaQueries(MediaQueryInput input)
+    {
+        return false;
     }
 
     /// Print out theme stats
@@ -147,9 +156,9 @@ Theme createDefaultTheme()
         defaultStyleSheet = CSS.createStyleSheet(src);
         defaultIsLoaded = true;
     }
-    auto theme = new Theme;
-    loadThemeFromCSS(theme, defaultStyleSheet, "beamui");
-    return theme;
+    auto ctx = Context(new Theme, "beamui");
+    loadThemeFromCSS(ctx, defaultStyleSheet);
+    return ctx.theme;
 }
 
 /// Append style sheet rules from CSS `resource` to `theme`
@@ -187,8 +196,9 @@ void setStyleSheetFromResource(Theme theme, StyleResource resource)
         return;
     }
 
+    auto ctx = Context(theme, resource.namespace);
     const css = CSS.createStyleSheet(source);
-    loadThemeFromCSS(theme, css, resource.namespace);
+    loadThemeFromCSS(ctx, css);
 }
 
 /// Add style sheet rules from the CSS source to the theme
@@ -196,31 +206,41 @@ void setStyleSheet(Theme theme, string source, string namespace = "beamui")
 {
     if (!source.length)
         return;
+    auto ctx = Context(theme, namespace);
     const css = CSS.createStyleSheet(source);
-    loadThemeFromCSS(theme, css, namespace);
+    loadThemeFromCSS(ctx, css);
 }
 
 private:
 
-void loadThemeFromCSS(Theme theme, const CSS.StyleSheet stylesheet, string ns)
-in (ns.length)
+struct Context
 {
-    Decoder[string] decoders = createDecoders();
+    Theme theme;
+    string namespace;
+    Decoder[string] decoders;
+}
+
+void loadThemeFromCSS(ref Context ctx, const CSS.StyleSheet stylesheet)
+in (ctx.namespace.length)
+{
+    if (!ctx.decoders)
+        ctx.decoders = createDecoders();
 
     foreach (r; stylesheet.atRules)
     {
-        applyAtRule(theme, r, ns);
+        applyAtRule(ctx, r);
     }
     foreach (r; stylesheet.rulesets)
     {
         foreach (sel; r.selectors)
         {
-            applyRule(theme, decoders, sel, r.properties, ns);
+            auto style = ctx.theme.get(makeSelector(sel), ctx.namespace);
+            appendStyleDeclaration(style._props, ctx.decoders, r.properties);
         }
     }
 }
 
-void importStyleSheet(Theme theme, string resourceID, string ns)
+void importStyleSheet(ref Context ctx, string resourceID)
 {
     if (!resourceID)
         return;
@@ -233,10 +253,10 @@ void importStyleSheet(Theme theme, string resourceID, string ns)
     if (!src)
         return;
     const stylesheet = CSS.createStyleSheet(src);
-    loadThemeFromCSS(theme, stylesheet, ns);
+    loadThemeFromCSS(ctx, stylesheet);
 }
 
-void applyAtRule(Theme theme, const CSS.AtRule rule, string ns)
+void applyAtRule(ref Context ctx, const CSS.AtRule rule)
 {
     const kw = rule.keyword;
     const rs = rule.rulesets;
@@ -248,7 +268,7 @@ void applyAtRule(Theme theme, const CSS.AtRule rule, string ns)
         {
             const t = rule.prelude[0];
             if (t.type == CSS.TokenType.url)
-                importStyleSheet(theme, t.text, ns);
+                importStyleSheet(ctx, t.text);
             else
                 Log.e("CSS: in @import only 'url(resource-id)' is allowed for now");
         }
@@ -263,18 +283,13 @@ void applyAtRule(Theme theme, const CSS.AtRule rule, string ns)
         {
             foreach (sel; r.selectors)
             {
-                // applyRule(theme, decoders, sel, r.properties, ns);
+                auto style = ctx.theme.get(makeSelector(sel), ctx.namespace);
+                appendStyleDeclaration(style._props, ctx.decoders, r.properties);
             }
         }
     }
     else
         Log.w("CSS: unknown at-rule keyword: ", kw);
-}
-
-void applyRule(Theme theme, Decoder[string] decoders, const CSS.Selector selector, const CSS.Property[] properties, string ns)
-{
-    auto style = theme.get(makeSelector(selector), ns);
-    appendStyleDeclaration(style._props, decoders, properties);
 }
 
 Selector* makeSelector(const CSS.Selector selector)

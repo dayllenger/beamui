@@ -22,6 +22,7 @@ import beamui.core.timer;
 import beamui.events.action : Action, ActionContext;
 import beamui.graphics.iconprovider;
 import beamui.graphics.painter;
+import beamui.style.media;
 import beamui.style.theme;
 import beamui.widgets.popup;
 import beamui.widgets.widget;
@@ -707,7 +708,11 @@ class Window : CustomEventTarget
         {
             _screenDPI = dpi;
             _devicePixelRatio = dpr;
-            dispatchDPIChange();
+            if (!updateMediaQueries())
+                dispatchDPIChange();
+            else
+                dispatchThemeChange();
+            update(true);
         }
     }
 
@@ -725,10 +730,8 @@ class Window : CustomEventTarget
         setupGlobalDPI();
         _mainRootElement.handleDPIChange();
         _popupRootElement.handleDPIChange();
-/+
-        if (Widget p = _tooltip.popup)
-            p.handleDPIChange();
-+/
+        // if (Widget p = _tooltip.popup)
+        //     p.handleDPIChange();
     }
 
     /// Set the minimal window size and resize the window if needed; called from `show()`
@@ -790,10 +793,22 @@ class Window : CustomEventTarget
         debug (layout)
             Log.d("handleResize ", _w, "x", _h);
 
-        // resize changes only window's width and height,
-        // so it is quite legitimate to not measure again
-        layout();
+        if (!updateMediaQueries())
+        {
+            // resize changes only width and height of the window,
+            // so it is quite legitimate to not measure again
+            layout();
+        }
+        else
+        {
+            dispatchThemeChange();
+        }
         update(true);
+    }
+
+    private bool updateMediaQueries()
+    {
+        return currentTheme.updateMediaQueries(MediaQueryInput(_w, _h, _screenDPI, _devicePixelRatio));
     }
 
     //===============================================================
@@ -1785,6 +1800,7 @@ class Window : CustomEventTarget
         if (needStyleRecalculation)
         {
             needStyleRecalculation = false;
+            setupGlobalDPI();
             updateStylesRecursively(_mainRootElement);
             updateStylesRecursively(_popupRootElement);
         }
@@ -2364,6 +2380,7 @@ class Platform
         }
         foreach (i, w; this)
         {
+            w.updateMediaQueries();
             w.dispatchThemeChange();
             w.update();
         }
@@ -2373,7 +2390,10 @@ class Platform
     {
         foreach (i, w; this)
         {
-            w.dispatchDPIChange();
+            if (!w.updateMediaQueries())
+                w.dispatchDPIChange();
+            else
+                w.dispatchThemeChange();
             w.update();
         }
     }
