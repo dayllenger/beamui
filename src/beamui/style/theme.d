@@ -65,36 +65,6 @@ final class Theme
         return null;
     }
 
-    /// Get a style OR create it if it's not exist
-    Style get(Selector* selector, string namespace)
-    in (selector)
-    {
-        Store* store = namespace in _styles;
-        if (store)
-        {
-            if (auto p = selector in store.map)
-                return *p;
-        }
-        else
-        {
-            _styles[namespace] = Store.init;
-            store = namespace in _styles;
-        }
-        Bag* bag = selector.type in store.byTag;
-        if (!bag)
-        {
-            store.byTag[selector.type] = Bag.init;
-            bag = selector.type in store.byTag;
-        }
-
-        auto st = new Style(*selector);
-        if ((selector.specifiedState & StateFlags.normal) == selector.enabledState)
-            bag.normal ~= st;
-        bag.all ~= st;
-        store.map[selector] = st;
-        return st;
-    }
-
     bool updateMediaQueries(MediaQueryInput input)
     {
         return false;
@@ -166,7 +136,7 @@ void setStyleSheetFromResource(Theme theme, StyleResource resource)
 {
     import std.utf : validate, UTFException;
 
-    if (!resource.resourceID.length)
+    if (!theme || !resource.resourceID.length)
         return;
 
     Log.fv("CSS: loading '%s.css'", resource.resourceID);
@@ -218,14 +188,63 @@ struct Context
     Theme theme;
     string namespace;
     Decoder[string] decoders;
+    Theme.Store* store;
+
+    @disable this();
+    @disable this(this);
+
+    this(Theme theme, string namespace)
+    in (theme)
+    in (namespace.length)
+    {
+        this.theme = theme;
+        this.namespace = namespace;
+        decoders = createDecoders();
+
+        store = namespace in theme._styles;
+        if (!store)
+        {
+            theme._styles[namespace] = Theme.Store.init;
+            store = namespace in theme._styles;
+        }
+    }
+
+    this(ref Context ctx)
+    {
+        theme = ctx.theme;
+        namespace = ctx.namespace;
+        decoders = ctx.decoders;
+
+        store = namespace in theme._styles;
+        if (!store)
+        {
+            theme._styles[namespace] = Theme.Store.init;
+            store = namespace in theme._styles;
+        }
+    }
+
+    /// Get a style OR create it if it's not exist
+    Style get(Selector* selector)
+    in (selector)
+    {
+        Theme.Bag* bag = selector.type in store.byTag;
+        if (!bag)
+        {
+            store.byTag[selector.type] = Theme.Bag.init;
+            bag = selector.type in store.byTag;
+        }
+
+        auto st = new Style(*selector);
+        if ((selector.specifiedState & StateFlags.normal) == selector.enabledState)
+            bag.normal ~= st;
+        bag.all ~= st;
+        store.map[selector] = st;
+        return st;
+    }
 }
 
 void loadThemeFromCSS(ref Context ctx, const CSS.StyleSheet stylesheet)
-in (ctx.namespace.length)
 {
-    if (!ctx.decoders)
-        ctx.decoders = createDecoders();
-
     foreach (r; stylesheet.atRules)
     {
         applyAtRule(ctx, r);
@@ -234,7 +253,7 @@ in (ctx.namespace.length)
     {
         foreach (sel; r.selectors)
         {
-            auto style = ctx.theme.get(makeSelector(sel), ctx.namespace);
+            auto style = ctx.get(makeSelector(sel));
             appendStyleDeclaration(style._props, ctx.decoders, r.properties);
         }
     }
@@ -279,12 +298,13 @@ void applyAtRule(ref Context ctx, const CSS.AtRule rule)
     }
     else if (kw == "media")
     {
+        auto ctxWithMQ = Context(ctx);
         foreach (r; rs)
         {
             foreach (sel; r.selectors)
             {
-                auto style = ctx.theme.get(makeSelector(sel), ctx.namespace);
-                appendStyleDeclaration(style._props, ctx.decoders, r.properties);
+                auto style = ctxWithMQ.get(makeSelector(sel));
+                appendStyleDeclaration(style._props, ctxWithMQ.decoders, r.properties);
             }
         }
     }
