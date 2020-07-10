@@ -12,7 +12,9 @@ import beamui.core.config;
 // dfmt off
 static if (USE_OPENGL):
 // dfmt on
+import beamui.core.collections : Buf;
 import beamui.core.geometry : BoxI, SizeI;
+import beamui.core.math : max;
 import beamui.graphics.atlas;
 import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.colors : Color;
@@ -112,8 +114,34 @@ struct TextureCache
     {
         // upload packed ARGB data as reversed BGRA.
         // this should work with any byte order
+        const fmt = TexFormat(GL_BGRA, GL_RGBA8, GL_UNSIGNED_INT_8_8_8_8_REV);
         Tex2D.bind(tex);
-        Tex2D.uploadSubImage(box, 0, TexFormat(GL_BGRA, GL_RGBA8, GL_UNSIGNED_INT_8_8_8_8_REV), data);
+
+        // erase the gaps to prevent edge artifacts
+        static Buf!uint zeros;
+        zeros.resize(max(box.w, box.h) + 2);
+        const vEdge = box.x > 0;
+        const hEdge = box.y > 0;
+        if (vEdge)
+        {
+            const b = BoxI(box.x - 1, box.y, 1, box.h);
+            Tex2D.uploadSubImage(b, 0, fmt, zeros[].ptr);
+        }
+        if (hEdge)
+        {
+            const b = vEdge ? BoxI(box.x - 1, box.y - 1, box.w + 2, 1) : BoxI(0, box.y - 1, box.w + 1, 1);
+            Tex2D.uploadSubImage(b, 0, fmt, zeros[].ptr);
+        }
+        {
+            const b = BoxI(box.x + box.w, box.y, 1, box.h);
+            Tex2D.uploadSubImage(b, 0, fmt, zeros[].ptr);
+        }
+        {
+            const b = vEdge ? BoxI(box.x - 1, box.y + box.h, box.w + 2, 1) : BoxI(0, box.y + box.h, box.w + 1, 1);
+            Tex2D.uploadSubImage(b, 0, fmt, zeros[].ptr);
+        }
+        // upload the image
+        Tex2D.uploadSubImage(box, 0, fmt, data);
         Tex2D.unbind();
     }
 
