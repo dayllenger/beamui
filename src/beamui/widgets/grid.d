@@ -1708,7 +1708,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             }
             if (cellFound && normalCell)
             {
-                if (c == _col && r == _row && event.doubleClick)
+                if (c == _col && r == _row && event.isDoubleClick)
                 {
                     activateCell(c, r);
                 }

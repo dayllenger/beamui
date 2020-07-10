@@ -93,18 +93,18 @@ nothrow:
         MouseMods _mouseMods;
         KeyMods _keyMods;
         /// True if button is made down shortly after up - valid if button is down
-        bool _doubleClick;
+        bool _isDoubleClick;
         /// True if button is made down twice shortly after up - valid if button is down
-        bool _tripleClick;
+        bool _isTripleClick;
     }
 
     // dfmt off
     @property
     {
         /// Returns true if button is made down shortly after up
-        bool doubleClick() const { return _doubleClick; }
+        bool isDoubleClick() const { return _isDoubleClick; }
         /// Returns true if button is made down twice shortly after up
-        bool tripleClick() const { return _tripleClick; }
+        bool isTripleClick() const { return _isTripleClick; }
 
         /// Returns true if button is currently pressed
         bool isDown() const
@@ -155,14 +155,14 @@ nothrow:
         // allow only slight cursor movements when generating double/triple clicks
         if (_downTs - oldDownTs < DOUBLE_CLICK_THRESHOLD_MS * 10_000 && abs(_downX - x) < 5 && abs(_downY - y) < 5)
         {
-            _tripleClick = _downTs - _prevDownTs < DOUBLE_CLICK_THRESHOLD_MS * 20_000;
-            _doubleClick = !_tripleClick;
-            _prevDownTs = _doubleClick ? oldDownTs : 0;
+            _isTripleClick = _downTs - _prevDownTs < DOUBLE_CLICK_THRESHOLD_MS * 20_000;
+            _isDoubleClick = !_isTripleClick;
+            _prevDownTs = _isDoubleClick ? oldDownTs : 0;
         }
         else
         {
-            _doubleClick = false;
-            _tripleClick = false;
+            _isDoubleClick = false;
+            _isTripleClick = false;
         }
         _downX = x;
         _downY = y;
@@ -174,8 +174,8 @@ nothrow:
     {
         static import std.datetime;
 
-        _doubleClick = false;
-        _tripleClick = false;
+        _isDoubleClick = false;
+        _isTripleClick = false;
         collectException(std.datetime.Clock.currStdTime, _upTs);
     }
 }
@@ -267,18 +267,18 @@ nothrow:
         }
 
         /// Returns true for `buttonDown` event when button is pressed second time in short interval after pressing first time
-        bool doubleClick() const
+        bool isDoubleClick() const
         {
             if (_action != MouseAction.buttonDown)
                 return false;
-            return buttonDetails.doubleClick;
+            return buttonDetails.isDoubleClick;
         }
         /// Returns true for `buttonDown` event when button is pressed third time in short interval after pressing first time
-        bool tripleClick() const
+        bool isTripleClick() const
         {
             if (_action != MouseAction.buttonDown)
                 return false;
-            return buttonDetails.tripleClick;
+            return buttonDetails.isTripleClick;
         }
 
         /// True if has no mouse buttons pressed during the event

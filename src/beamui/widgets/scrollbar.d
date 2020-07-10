@@ -154,7 +154,7 @@ class ElemScrollBar : ElemGroup
         }
 
         /// True if full scroll range is visible, and no need of scrolling at all
-        bool fullRangeVisible() const
+        bool isFullRangeVisible() const
         {
             return _data.page >= _data.range;
         }

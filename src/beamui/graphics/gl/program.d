@@ -28,7 +28,7 @@ nothrow:
     abstract @property string fragmentSource() const;
 
     /// Returns true if program is ready for use
-    final @property bool valid() const
+    final @property bool isValid() const
     {
         return programID != 0;
     }

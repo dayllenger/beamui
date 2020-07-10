@@ -1292,7 +1292,7 @@ in (vcount >= 2)
 struct LineAppender
 {
 nothrow:
-    @property bool ready() const
+    @property bool isReady() const
     {
         return positions !is null;
     }
@@ -1420,7 +1420,7 @@ nothrow:
             triangles.put(Tri(mode == Mode.strip ? v : vstart, v + 1, v + 2));
         }
         // generate line silhouette for further antialiasing
-        if (contour.ready)
+        if (contour.isReady)
         {
             contour.begin();
             if (mode == Mode.strip)

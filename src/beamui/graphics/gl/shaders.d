@@ -60,7 +60,7 @@ nothrow:
     {
         if (!prog)
             prog = new T;
-        return prog.valid ? prog : null;
+        return prog.isValid ? prog : null;
     }
 
     ~this()

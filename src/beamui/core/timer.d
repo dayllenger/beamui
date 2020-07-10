@@ -41,7 +41,7 @@ class TimerQueue
     /// Returns timestamp in milliseconds of the next scheduled event or 0 if no events queued
     long nextTimestamp() const
     {
-        if (!queue.length || !queue[0].valid)
+        if (!queue.length || !queue[0].isValid)
             return 0;
         return queue[0].nextTimestamp;
     }
@@ -73,7 +73,7 @@ class TimerQueue
     {
         if (!queue.length)
             return;
-        queue = queue.remove!(t => !t.valid);
+        queue = queue.remove!(t => !t.isValid);
         sort(queue);
     }
 }
@@ -121,7 +121,7 @@ struct TimerInfo
             return _nextTimestamp;
         }
         /// Returns true if timer is not yet cancelled
-        bool valid() const
+        bool isValid() const
         {
             return _handler !is null;
         }
@@ -158,11 +158,11 @@ struct TimerInfo
 
     int opCmp(const ref TimerInfo b) const
     {
-        if (valid && !b.valid)
+        if (isValid && !b.isValid)
             return -1;
-        if (!valid && b.valid)
+        if (!isValid && b.isValid)
             return 1;
-        if (!valid && !b.valid)
+        if (!isValid && !b.isValid)
             return 0;
         if (_nextTimestamp < b._nextTimestamp)
             return -1;

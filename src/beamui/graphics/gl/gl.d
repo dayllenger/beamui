@@ -416,7 +416,7 @@ nothrow:
     private GLuint current;
 
     void bind(GLProgram program)
-    in (program && program.valid, "Attempt to bind invalid shader program")
+    in (program && program.isValid, "Attempt to bind invalid shader program")
     {
         if (current != program.programID)
         {

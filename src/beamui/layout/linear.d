@@ -393,7 +393,7 @@ class ElemResizer : Element
     {
         if (event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
-            if (!event.doubleClick)
+            if (!event.isDoubleClick)
             {
                 applyFlags(StateFlags.pressed, true);
                 _dragging = true;

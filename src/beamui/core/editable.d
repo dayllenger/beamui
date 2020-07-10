@@ -371,7 +371,7 @@ struct TextRange
         return end <= start;
     }
     /// Returns true if start and end located at the same line
-    @property bool singleLine() const
+    @property bool isSingleLine() const
     {
         return end.line == start.line;
     }
@@ -1329,7 +1329,7 @@ class EditableContent : TextContent
     protected void replaceRange(TextRange before, TextRange after, dstring[] newContent, EditStateMark[] marks = null)
     {
         const dstring firstLineBefore = line(before.start.line);
-        const dstring lastLineBefore = before.singleLine ? firstLineBefore : line(before.end.line);
+        const dstring lastLineBefore = before.isSingleLine ? firstLineBefore : line(before.end.line);
         const dstring firstLineHead = 0 < before.start.pos && before.start.pos <= firstLineBefore.length ?
             firstLineBefore[0 .. before.start.pos] : null;
         const dstring lastLineTail = 0 <= before.end.pos && before.end.pos < lastLineBefore.length ?

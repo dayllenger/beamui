@@ -45,7 +45,7 @@ struct EditorStateInfo
     /// Character under cursor
     dchar character;
     /// Returns true if editor is in active state
-    @property bool active() const
+    @property bool isActive() const
     {
         return col > 0 && line > 0;
     }
@@ -1334,11 +1334,11 @@ class ElemTextField : Element, IEditor, ActionOperator
         {
             setFocus();
             const pos = event.pos - origin - innerBox.pos;
-            if (event.tripleClick)
+            if (event.isTripleClick)
             {
                 selectLineByMouse(pos.x, pos.y);
             }
-            else if (event.doubleClick)
+            else if (event.isDoubleClick)
             {
                 selectWordByMouse(pos.x, pos.y);
             }
@@ -3332,11 +3332,11 @@ class ElemTextArea : ElemScrollAreaBase, IEditor, ActionOperator
         {
             setFocus();
             cancelHoverTimer();
-            if (event.tripleClick)
+            if (event.isTripleClick)
             {
                 selectLineByMouse(clientPos.x, clientPos.y);
             }
-            else if (event.doubleClick)
+            else if (event.isDoubleClick)
             {
                 selectWordByMouse(clientPos.x, clientPos.y);
             }
@@ -3725,7 +3725,7 @@ class ElemTextArea : ElemScrollAreaBase, IEditor, ActionOperator
         if (!pattern.length)
         {
             // support highlighting selection text - if whole word is selected
-            if (_selectionRange.empty || !_selectionRange.singleLine)
+            if (_selectionRange.empty || !_selectionRange.isSingleLine)
                 return;
             if (_selectionRange.start.line >= _content.lineCount)
                 return;
@@ -3978,7 +3978,7 @@ class ElemTextArea : ElemScrollAreaBase, IEditor, ActionOperator
         }
 
         // frame around current line
-        if (focused && lineIndex == _caretPos.line && sel.singleLine && sel.start.line == _caretPos.line)
+        if (focused && lineIndex == _caretPos.line && sel.isSingleLine && sel.start.line == _caretPos.line)
         {
             const c = Color(0x808080, 0x60);
             pr.fillRect(visibleBox.x, visibleBox.y, visibleBox.w, 1, c);
