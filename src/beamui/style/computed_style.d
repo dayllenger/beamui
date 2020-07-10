@@ -633,7 +633,10 @@ struct ComputedStyle
 
     private auto getDefaultValue(string name)()
     {
-        return mixin(`defaults._` ~ name);
+        static if (name == "transitionTimingFunction")
+            return cast()TimingFunction.ease; // it is a class instance
+        else
+            return mixin(`defaults._` ~ name);
     }
 
     /// Check whether the style can make transition for a CSS property
