@@ -598,8 +598,6 @@ private:
     string _id;
     /// Custom attributes map
     string[string] attributes;
-    /// If true, the style will be recomputed on next usage
-    bool _needToRecomputeStyle = true;
 
     /// Widget state
     StateFlags _stateFlags = StateFlags.normal;
@@ -615,14 +613,23 @@ private:
     Box _innerBox;
     /// Absolute position of this coordinate system origin
     Point _origin;
-    /// True to force layout
-    bool _needLayout = true;
-    /// True to force redraw
-    bool _needDraw = true;
     /// Parent element
     Element _parent;
     /// Window (to be used for top level widgets only!)
     Window _window;
+
+    /// Defines what kind of style recalculation is needed. Higher stages include lower ones
+    enum StyleInvalidation : ubyte
+    {
+        none,
+        recompute,
+        match,
+    }
+    StyleInvalidation _styleInvalidation = StyleInvalidation.match;
+    /// True to force layout
+    bool _needLayout = true;
+    /// True to force redraw
+    bool _needDraw = true;
 
     bool* _destructionFlag;
 
@@ -834,38 +841,46 @@ public:
     Listener!(void delegate(Style[] chain)) onStyleUpdate;
 
     /// Recompute styles, only if needed
-    protected void updateStyles() inout
+    package(beamui) void updateStyles() inout
     {
-        if (_needToRecomputeStyle)
+        if (_styleInvalidation == StyleInvalidation.none)
+            return;
+
+        debug (styles)
+            Log.d("--- Updating style for ", dbgname, " ---");
+
+        with (caching(this))
         {
-            with (caching(this))
+            bool recompute = _styleInvalidation == StyleInvalidation.recompute;
+            _styleInvalidation = StyleInvalidation.none;
+
+            if (!recompute)
             {
-                _needToRecomputeStyle = false;
                 Style[] chain = selectStyleChain();
-                // assume that style recomputation is purely depends on style chain
+                // assuming that style recomputation purely depends on style chain,
                 // it may not change from previous update
-                if (!chain.length || cast(size_t[])cachedChain[] != cast(size_t[])chain)
+                if (!chain.length || cast(size_t[])_cachedChain[] != cast(size_t[])chain)
                 {
-                    debug (styles)
-                        Log.d("--- Recomputing style for ", dbgname, " ---");
-
+                    recompute = true;
                     // copy
-                    cachedChain.clear();
-                    cachedChain ~= chain;
-                    // get parent style
-                    auto pstype = _parent && !_style.isolated ? _parent.style : null;
-                    // important: we cannot use shared array from `selectStyleChain` func
-                    _style.recompute(cachedChain.unsafe_slice, pstype);
-
-                    debug (styles)
-                        Log.d("--- End style recomputing ---");
+                    _cachedChain.clear();
+                    _cachedChain ~= chain;
                 }
-                if (onStyleUpdate.assigned)
-                    onStyleUpdate(cachedChain.unsafe_slice);
+            }
+            if (recompute)
+            {
+                // get parent style
+                auto pstyle = _parent && !_style.isolated ? _parent.style : null;
+                // important: we should not use the shared array from `selectStyleChain` func
+                _style.recompute(_cachedChain.unsafe_slice, pstyle);
+                onStyleUpdate(_cachedChain.unsafe_slice);
             }
         }
+
+        debug (styles)
+            Log.d("--- end ---");
     }
-    private Buf!Style cachedChain;
+    private Buf!Style _cachedChain;
 
     /// Get a style chain for this element from current theme, least specific styles first
     Style[] selectStyleChain()
@@ -1033,7 +1048,7 @@ public:
 
     private void invalidateStylesRecursively()
     {
-        _needToRecomputeStyle = true;
+        _styleInvalidation = StyleInvalidation.match;
         foreach (Element el; this)
             el.invalidateStylesRecursively();
     }
@@ -1041,26 +1056,17 @@ public:
     /// Handle theme change: e.g. reload some themed resources
     void handleThemeChange()
     {
+        _styleInvalidation = StyleInvalidation.match;
+
         // default implementation: call recursive for children
         foreach (Element el; this)
             el.handleThemeChange();
-
-        _needToRecomputeStyle = true;
     }
 
     package(beamui) void handleDPIChange()
     {
-        // recompute styles to resolve length units with new DPI
-        if (_needToRecomputeStyle)
-        {
-            _needToRecomputeStyle = false;
-            cachedChain.clear();
-            cachedChain ~= selectStyleChain();
-        }
-        auto pstype = _parent && !_style.isolated ? _parent.style : null;
-        _style.recompute(cachedChain.unsafe_slice, pstype);
-        if (onStyleUpdate.assigned)
-            onStyleUpdate(cachedChain.unsafe_slice);
+        // invalidate styles to resolve length units with new DPI
+        _styleInvalidation = max(_styleInvalidation, StyleInvalidation.recompute);
 
         // continue recursively
         foreach (Element el; this)
@@ -2511,7 +2517,7 @@ abstract class ElemGroup : Element
         }
         if (unchanged != oldItems.length || _children.count != oldItems.length)
         {
-            _needToRecomputeStyle = true;
+            _styleInvalidation = StyleInvalidation.match;
             requestLayout();
             foreach (i; unchanged .. _children.count)
             {
