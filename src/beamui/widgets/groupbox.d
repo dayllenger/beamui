@@ -142,13 +142,11 @@ class ElemGroupBox : ElemPanel
         const int captFontHeight = _caption.font.height;
         _captionHeight = cp.top + cp.bottom + captFontHeight;
 
-        const upLeftW = !_drFrameTopLeft.isNull ? _drFrameTopLeft.width : 0;
-        const upLeftH = !_drFrameTopLeft.isNull ? _drFrameTopLeft.height : 0;
-        const upRightW = !_drFrameTopRight.isNull ? _drFrameTopRight.width : 0;
-        const upRightH = !_drFrameTopRight.isNull ? _drFrameTopRight.height : 0;
-        _topFrameHeight = max(upLeftH, upRightH);
-        _topFrameLeft = upLeftW;
-        _topFrameRight = upRightW;
+        const topLeftSize = !_drFrameTopLeft.isNull ? _drFrameTopLeft.size : Size(0, 0);
+        const topRightSize = !_drFrameTopRight.isNull ? _drFrameTopRight.size : Size(0, 0);
+        _topFrameHeight = max(topLeftSize.h, topRightSize.h);
+        _topFrameLeft = topLeftSize.w;
+        _topFrameRight = topRightSize.w;
         _topHeight = max(_captionHeight, _topFrameHeight);
 
         const Insets dp = !_drFrameBottom.isNull ? _drFrameBottom.padding : Insets(0);

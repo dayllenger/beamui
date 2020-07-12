@@ -478,20 +478,16 @@ class ElemImage : Element
 
     override protected Boundaries computeBoundaries()
     {
-        Size sz;
-        DrawableRef img = _drawable;
-        if (!img.isNull)
-            sz = Size(img.width, img.height);
+        const Drawable img = _drawable.get;
+        const sz = img ? img.size : Size(0, 0);
         return Boundaries(sz);
     }
 
     override protected void drawContent(Painter pr)
     {
-        DrawableRef img = _drawable;
-        if (!img.isNull)
+        if (Drawable img = _drawable.get)
         {
-            const sz = Size(img.width, img.height);
-            const ib = alignBox(innerBox, sz, Align.center);
+            const ib = alignBox(innerBox, img.size, Align.center);
             img.drawTo(pr, ib);
         }
     }
@@ -502,7 +498,7 @@ class ElemSwitch : Element
     override protected Boundaries computeBoundaries()
     {
         const Drawable bg = style.backgroundImage;
-        const sz = bg ? Size(bg.width, bg.height) : Size(0, 0);
+        const sz = bg ? bg.size : Size(0, 0);
         return Boundaries(sz);
     }
 }

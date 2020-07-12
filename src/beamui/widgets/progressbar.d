@@ -201,21 +201,21 @@ class ElemProgressBar : Element
         const b = innerBox;
         pr.clipIn(BoxI.from(b));
 
-        DrawableRef drAnim;
+        Drawable drAnim;
         if (_fraction >= 0)
         {
             pr.fillRect(b.x, b.y, _fraction * b.w, b.h, _gaugeColor);
-            drAnim = _gaugeAnimation;
+            drAnim = _gaugeAnimation.get;
         }
         else
         {
             pr.fillRect(b.x, b.y, b.w, b.h, _indeterminateColor);
-            drAnim = _indeterminateAnimation;
+            drAnim = _indeterminateAnimation.get;
         }
         // show animation
-        if (!drAnim.isNull && _showAnimation)
+        if (drAnim && _showAnimation)
         {
-            const phase = _animationPhase % cast(long)(drAnim.width * 1000);
+            const phase = _animationPhase % cast(long)(drAnim.size.w * 1000);
             drAnim.drawTo(pr, b, phase * _animationSpeedPixelsPerSecond / 1000.0f, 0);
         }
     }

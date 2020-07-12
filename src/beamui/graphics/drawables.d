@@ -54,16 +54,12 @@ class Drawable : RefCountedObject
 
     abstract void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0);
 
-    @property float width() const
+    /// Size of the drawable in device-independent pixels
+    @property Size size() const
     {
-        return 0;
+        return Size(0, 0);
     }
-
-    @property float height() const
-    {
-        return 0;
-    }
-
+    /// Padding of the drawable in device-independent pixels
     @property Insets padding() const
     {
         return Insets(0);
@@ -543,14 +539,9 @@ static if (BACKEND_CONSOLE)
             }
         }
 
-        override @property float width() const
+        override @property Size size() const
         {
-            return _width;
-        }
-
-        override @property float height() const
-        {
-            return _height;
+            return Size(_width, _height);
         }
 
         override @property Insets padding() const
@@ -638,26 +629,16 @@ class ImageDrawable : Drawable
 
     mixin DebugInstanceCount;
 
-    override @property float width() const
+    override @property Size size() const
     {
         if (_bitmap)
         {
             if (_bitmap.hasNinePatch)
-                return _bitmap.width - 2;
-            return _bitmap.width;
+                return Size(_bitmap.width - 2, _bitmap.height - 2);
+            else
+                return Size(_bitmap.width, _bitmap.height);
         }
-        return 0;
-    }
-
-    override @property float height() const
-    {
-        if (_bitmap)
-        {
-            if (_bitmap.hasNinePatch)
-                return _bitmap.height - 2;
-            return _bitmap.height;
-        }
-        return 0;
+        return Size(0, 0);
     }
 
     override @property Insets padding() const
@@ -725,14 +706,9 @@ static if (USE_OPENGL)
             // buf.drawCustomOpenGLScene(Rect(b), &doDraw);
         }
 
-        override @property float width() const
+        override @property Size size() const
         {
-            return 20; // dummy size
-        }
-
-        override @property float height() const
-        {
-            return 20; // dummy size
+            return Size(20, 20); // dummy size
         }
     }
 }
@@ -855,24 +831,6 @@ class Background
     BoxShadowDrawable shadow;
 
     Insets stylePadding;
-
-    @property float width() const
-    {
-        const th = border.left.thickness + border.right.thickness;
-        return image ? image.width + th : th;
-    }
-
-    @property float height() const
-    {
-        const th = border.top.thickness + border.bottom.thickness;
-        return image ? image.height + th : th;
-    }
-
-    @property Insets padding() const
-    {
-        const bs = border.getSize;
-        return image ? image.padding + bs : bs;
-    }
 
     void drawTo(Painter pr, Box b)
     {
@@ -1052,10 +1010,9 @@ class Background
                 b.shrink(stylePadding);
         }
         // determine the size
-        const iw = image.width;
-        const ih = image.height;
-        float w = iw, h = ih;
-        if (fzero6(iw) || fzero6(ih))
+        const isz = image.size;
+        float w = isz.w, h = isz.h;
+        if (fzero6(w) || fzero6(h))
         {
             w = b.w;
             h = b.h;
@@ -1065,12 +1022,12 @@ class Background
             if (b.w < w)
             {
                 w = b.w;
-                h = b.w * ih / iw;
+                h = b.w * isz.h / isz.w;
             }
             if (b.h < h)
             {
                 h = b.h;
-                w = b.h * iw / ih;
+                w = b.h * isz.w / isz.h;
             }
         }
         else if (size.type == BgSizeType.cover)
@@ -1078,12 +1035,12 @@ class Background
             if (b.w > w)
             {
                 w = b.w;
-                h = b.w * ih / iw;
+                h = b.w * isz.h / isz.w;
             }
             if (b.h > h)
             {
                 h = b.h;
-                w = b.h * iw / ih;
+                w = b.h * isz.w / isz.h;
             }
         }
         else // length
@@ -1093,12 +1050,12 @@ class Background
                 if (size.x.isDefined)
                 {
                     w = size.x.applyPercent(b.w);
-                    h = w * ih / iw;
+                    h = w * isz.h / isz.w;
                 }
                 else if (size.y.isDefined)
                 {
                     h = size.y.applyPercent(b.h);
-                    w = h * iw / ih;
+                    w = h * isz.w / isz.h;
                 }
             }
             else
