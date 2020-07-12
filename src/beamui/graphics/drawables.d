@@ -633,10 +633,12 @@ class ImageDrawable : Drawable
     {
         if (_bitmap)
         {
+            Size sz = Size(_bitmap.width, _bitmap.height);
             if (_bitmap.hasNinePatch)
-                return Size(_bitmap.width - 2, _bitmap.height - 2);
-            else
-                return Size(_bitmap.width, _bitmap.height);
+                sz = Size(sz.w - 2, sz.h - 2);
+
+            const idpr = 10.0f / Length.dipToDevice(10);
+            return sz * idpr;
         }
         return Size(0, 0);
     }
@@ -644,9 +646,12 @@ class ImageDrawable : Drawable
     override @property Insets padding() const
     {
         if (_bitmap && _bitmap.hasNinePatch)
-            return Insets.from(_bitmap.ninePatch.padding);
-        else
-            return Insets(0);
+        {
+            const pad = Insets.from(_bitmap.ninePatch.padding);
+            const idpr = 10.0f / Length.dipToDevice(10);
+            return pad * idpr;
+        }
+        return Insets(0);
     }
 
     override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
