@@ -204,7 +204,7 @@ class ElemLabel : Element
     override protected void drawContent(Painter pr)
     {
         const b = innerBox;
-        pr.clipIn(BoxI.from(b));
+        pr.clipIn(b);
 
         const st = style;
         textobj.style.color = st.textColor;
@@ -675,7 +675,7 @@ class ElemParagraph : Element
             return;
 
         const b = innerBox;
-        pr.clipIn(BoxI.from(b));
+        pr.clipIn(b);
 
         const clip = pr.getLocalClipBounds();
         if (clip.empty)

@@ -1959,7 +1959,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
 
                     PaintSaver sv;
                     pr.save(sv);
-                    pr.clipIn(BoxI.from(clipped));
+                    pr.clipIn(clipped);
 
                     const bool isHeader = x < _headerCols || y < _headerRows;
                     if (phase == 0)

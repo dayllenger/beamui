@@ -199,7 +199,7 @@ class ElemProgressBar : Element
     override protected void drawContent(Painter pr)
     {
         const b = innerBox;
-        pr.clipIn(BoxI.from(b));
+        pr.clipIn(b);
 
         Drawable drAnim;
         if (_fraction >= 0)

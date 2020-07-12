@@ -802,7 +802,7 @@ class ElemListView : ElemGroup
             return;
 
         // draw items
-        pr.clipIn(BoxI.from(_clientBox));
+        pr.clipIn(_clientBox);
         const b = innerBox;
         const bool vert = _orientation == Orientation.vertical;
         const scrollOffset = _scrolldata.position;

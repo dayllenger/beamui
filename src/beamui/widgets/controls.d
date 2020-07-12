@@ -510,7 +510,7 @@ class ElemCanvas : Element
     override protected void drawContent(Painter pr)
     {
         const b = innerBox;
-        pr.clipIn(BoxI.from(b));
+        pr.clipIn(b);
         pr.translate(b.x, b.y);
         onDraw(pr, b.size);
     }

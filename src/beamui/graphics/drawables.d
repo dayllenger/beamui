@@ -996,7 +996,7 @@ class Background
         {
             PaintSaver sv;
             pr.save(sv);
-            pr.clipIn(BoxI.from(bc));
+            pr.clipIn(bc);
             drawImage(pr, b);
         }
         // border

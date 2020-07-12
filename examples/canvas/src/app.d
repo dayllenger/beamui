@@ -395,7 +395,7 @@ void compositing(Painter pr, Size sz)
 
         PaintSaver sv, lsv;
         pr.save(sv);
-        pr.clipIn(BoxI(5, 5, 95, 95));
+        pr.clipIn(Box(5, 5, 95, 95));
         pr.beginLayer(lsv, 1, mode);
         pr.fillTriangle(Vec2(10, 10), Vec2(90, 70), Vec2(70, 90), color);
     }
@@ -453,7 +453,7 @@ void blending(Painter pr, Size sz)
 
     PaintSaver sv, lsv;
     pr.save(sv);
-    pr.clipIn(BoxI(9, 9, data.duck.width + 2, data.duck.height + 2));
+    pr.clipIn(Box(9, 9, data.duck.width + 2, data.duck.height + 2));
     pr.beginLayer(lsv, 1, data.blendMode);
     pr.drawImage(data.duck, 10, 10, 1);
 }

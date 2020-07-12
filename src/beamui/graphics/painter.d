@@ -75,7 +75,7 @@ final class Painter
     // Clipping, transformations, and layer handling
 
     /// Intersect subsequent drawing with a region, transformed by current matrix
-    void clipIn(BoxI box)
+    void clipIn(Box box)
     in (active)
     {
         if (state.discard)
@@ -83,7 +83,7 @@ final class Painter
         if (box.empty)
             return discardSubsequent();
 
-        const rect = Rect.from(RectI(box));
+        const rect = Rect(box);
         const lt = Vec2(rect.left, rect.top);
         const rb = Vec2(rect.right, rect.bottom);
         const Vec2 v0 = state.mat * lt;
@@ -139,13 +139,13 @@ final class Painter
     }
 
     /// Remove a region, transformed by current matrix, from subsequent drawing
-    void clipOut(BoxI box)
+    void clipOut(Box box)
     in (active)
     {
         if (box.empty || state.discard)
             return;
 
-        engine.clipOut(mainStack.length, Rect(box.x, box.y, box.x + box.w, box.y + box.h));
+        engine.clipOut(mainStack.length, Rect(box));
     }
     /// ditto
     void clipOut(ref const Path path, FillRule rule = FillRule.nonzero)
@@ -795,6 +795,7 @@ protected:
     struct State
     {
         bool aa = true;
+        /// Transformed
         RectI clipRect = RectI(-MAX_DIMENSION, -MAX_DIMENSION, MAX_DIMENSION, MAX_DIMENSION);
         Mat2x3 mat = Mat2x3.identity;
 

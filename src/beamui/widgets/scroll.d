@@ -574,14 +574,14 @@ abstract class ElemScrollAreaBase : ElemGroup
             PaintSaver sv;
             pr.save(sv);
             // apply clipping
-            pr.clipIn(BoxI.from(_clientBox));
+            pr.clipIn(_clientBox);
             drawClient(pr);
         }
         {
             // add the client box to the extended area clip
             Box clipb = innerBox;
             clipb.h = _clientBox.h;
-            pr.clipIn(BoxI.from(clipb));
+            pr.clipIn(clipb);
             drawExtendedArea(pr);
         }
     }

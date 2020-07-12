@@ -1393,10 +1393,10 @@ class ElemTextField : Element, IEditor, ActionOperator
 
     final override protected void drawContent(Painter pr)
     {
-        // apply clipping
-        pr.clipIn(BoxI.from(innerBox));
-
         const b = innerBox;
+        // apply clipping
+        pr.clipIn(b);
+
         drawLineBackground(pr, b, b);
 
         if (_txtline.glyphCount == 0)
