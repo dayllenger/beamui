@@ -90,12 +90,12 @@ protected:
         return _st;
     }
 
-    void begin(const(State)* st, int w, int h, Color bg)
+    void begin(const(State)* st, FrameConfig conf)
     {
         _st = st;
 
-        backbuf.resize(w, h);
-        backbuf.fill(bg);
+        backbuf.resize(conf.width, conf.height);
+        backbuf.fill(conf.background);
         base_layer = PM_Image.fromBitmap(*backbuf, Repeat.no, Filtering.no);
         layer = base_layer.view;
     }

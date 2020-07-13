@@ -713,11 +713,13 @@ struct PainterHead
 {
     private Painter painter;
 
-    void beginFrame(PaintEngine paintEngine, int width, int height, Color background)
+    /// `width` and `height` are in device-independent pixels. `scaling` is DPR usually
+    void beginFrame(PaintEngine paintEngine, int width, int height, float scaling, Color background)
     in (painter && !painter.active)
     in (paintEngine)
     in (0 < width && width < MAX_DIMENSION)
     in (0 < height && height < MAX_DIMENSION)
+    in (scaling > 0)
     {
         with (painter)
         {
@@ -727,7 +729,7 @@ struct PainterHead
             state.clipRect = RectI(0, 0, width, height);
             mainStack.clear();
             bufContours.clear();
-            engine.begin(&state, width, height, background);
+            engine.begin(&state, PaintEngine.FrameConfig(width, height, scaling, background));
         }
     }
 
@@ -791,11 +793,18 @@ struct PaintSaver
 interface PaintEngine
 {
 protected:
+    struct FrameConfig
+    {
+        int width;
+        int height;
+        float scaling = 1;
+        Color background;
+    }
 
     struct State
     {
         bool aa = true;
-        /// Transformed
+        /// Transformed, but not scaled
         RectI clipRect = RectI(-MAX_DIMENSION, -MAX_DIMENSION, MAX_DIMENSION, MAX_DIMENSION);
         Mat2x3 mat = Mat2x3.identity;
 
@@ -863,7 +872,7 @@ protected:
 
     const(State)* st() nothrow;
 
-    void begin(const(State)*, int, int, Color);
+    void begin(const(State)*, FrameConfig);
     void end();
     void paint();
 

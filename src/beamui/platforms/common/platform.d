@@ -2027,7 +2027,7 @@ class Window : CustomEventTarget
     {
         _firstDrawCalled = true;
 
-        _painterHead.beginFrame(engine, physicalWidth, physicalHeight, _backgroundColor);
+        _painterHead.beginFrame(engine, _w, _h, _devicePixelRatio, _backgroundColor);
         try
         {
             setupGlobalDPI();

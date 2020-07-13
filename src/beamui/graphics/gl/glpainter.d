@@ -136,7 +136,7 @@ protected:
         return _st;
     }
 
-    void begin(const(State)* st, int w, int h, Color bg)
+    void begin(const(State)* st, FrameConfig conf)
     {
         _st = st;
 
@@ -157,8 +157,8 @@ protected:
         depthTasks.clear();
 
         Layer lr;
-        lr.clip = lr.bounds = RectI(0, 0, w, h);
-        lr.fill = ColorF(bg);
+        lr.clip = lr.bounds = RectI(0, 0, conf.width, conf.height);
+        lr.fill = ColorF(conf.background);
         layers ~= lr;
         layer = &layers.unsafe_ref(0);
         sets ~= Set.init;
