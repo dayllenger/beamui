@@ -254,11 +254,20 @@ class Widget
     {
         static BuildContext _ctx;
 
+        InlineStyle* _style;
+
         Widget _parent;
         WidgetID _widgetID;
 
         WidgetState _state;
         Element _element;
+    }
+
+    final void style(ref InlineStyle st)
+    {
+        if (!_style)
+            _style = _ctx.arena.make!InlineStyle;
+        *_style = st;
     }
 
     final WeakRef!(const(Element)*) elementRef() const
@@ -454,6 +463,8 @@ class Widget
             el.invalidateStyles();
         }
 
+        el._inlineStyle = _style;
+
         el.onKeyEvent.clear();
         el.onMouseEvent.clear();
         el.onWheelEvent.clear();
@@ -633,6 +644,7 @@ private:
 
     bool* _destructionFlag;
 
+    InlineStyle* _inlineStyle;
     ComputedStyle _style;
 
     Background _background;
@@ -872,7 +884,7 @@ public:
                 // get parent style
                 auto pstyle = _parent && !_style.isolated ? _parent.style : null;
                 // important: we should not use the shared array from `selectStyleChain` func
-                _style.recompute(_cachedChain.unsafe_slice, pstyle);
+                _style.recompute(_cachedChain.unsafe_slice, _inlineStyle, pstyle);
                 onStyleUpdate(_cachedChain.unsafe_slice);
             }
         }

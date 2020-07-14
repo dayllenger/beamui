@@ -10,6 +10,7 @@ public import beamui.css.tokenizer : CssToken = Token;
 public import beamui.style.property : StyleProperty;
 public import beamui.style.types : SpecialCSSType;
 import beamui.core.animations;
+import beamui.core.collections : Buf;
 import beamui.core.editable : TabSize;
 import beamui.core.geometry : Insets;
 import beamui.core.logger;
@@ -354,12 +355,12 @@ struct ComputedStyle
     }
 
     /// Resolve style cascading and inheritance, update all properties
-    void recompute(Style[] chain, ComputedStyle* parentStyle)
+    void recompute(Style[] chain, InlineStyle* inline, ComputedStyle* parentStyle)
     {
         _animations.element = element;
 
         const customPropsChanged = recomputeCustom(chain, parentStyle);
-        recomputeBuiltin(chain, parentStyle);
+        recomputeBuiltin(chain, inline, parentStyle);
 
         if (customPropsChanged)
             element.handleCustomPropertiesChange();
@@ -411,7 +412,7 @@ struct ComputedStyle
         return false;
     }
 
-    private void recomputeBuiltin(Style[] chain, ComputedStyle* parentStyle)
+    private void recomputeBuiltin(Style[] chain, InlineStyle* inline, ComputedStyle* parentStyle)
     {
         _inherited = _inherited.init;
         StaticBitArray!(P.max + 1) modified;
@@ -419,7 +420,7 @@ struct ComputedStyle
         /// iterate through all built-in properties
         static foreach (name; __traits(allMembers, P))
         {
-            recomputeProperty!name(chain, parentStyle, modified);
+            recomputeProperty!name(chain, inline, parentStyle, modified);
         }
         // invoke side effects
         foreach (ptype; 0 .. P.max + 1)
@@ -431,18 +432,26 @@ struct ComputedStyle
         propagateInheritedValues(modified);
     }
 
-    private void recomputeProperty(string name)(Style[] chain, ComputedStyle* parentStyle, ref StaticBitArray!(P.max + 1) modified)
+    private void recomputeProperty(string name)(Style[] chain, InlineStyle* inline, ComputedStyle* parentStyle,
+            ref StaticBitArray!(P.max + 1) modified)
     {
         alias T = typeof(mixin(`PropTypes.` ~ name));
         enum ptype = mixin(`P.` ~ name);
         enum specialType = getSpecialCSSType(ptype);
         enum bool inheritsByDefault = isInherited(ptype);
 
+        // prepare style chain, placing most specific styles first
+        static Buf!(StylePropertyList*) buf;
+        buf.clear();
+        if (inline)
+            buf ~= &inline._props;
+        foreach_reverse (st; chain)
+            buf ~= &st._props;
+
         // search in style chain, find nearest written property
         bool inh, set, fromVar;
-        foreach_reverse (st; chain)
+        foreach (plist; buf.unsafe_slice)
         {
-            auto plist = &st._props;
             if (!plist.isSet(ptype))
                 continue;
 

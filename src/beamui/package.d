@@ -53,6 +53,8 @@ public
     import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
     import beamui.layout.linear : ElemResizer, Resizer, ResizerEventType, Spacer;
     import beamui.platforms.common.platform;
+    import beamui.style.property : StyleProperty;
+    import beamui.style.style : InlineStyle;
     import beamui.style.theme;
     import beamui.text.fonts : Font, FontFamily, FontManager, FontRef, FontStyle, FontWeight, HintingMode;
     import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
