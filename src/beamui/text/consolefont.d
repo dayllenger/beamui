@@ -1,15 +1,17 @@
 /**
-
+Console font manager (with a single font).
 
 Copyright: Vadim Lopatin 2016-2017
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
-module beamui.platforms.ansi_console.consolefont;
+module beamui.text.consolefont;
 
 import beamui.core.config;
 
+// dfmt off
 static if (BACKEND_CONSOLE):
+// dfmt on
 import beamui.graphics.colors : Color;
 import beamui.style.types : TextFlag;
 import beamui.text.glyph;
@@ -17,6 +19,7 @@ import beamui.text.fonts;
 
 class ConsoleFont : Font
 {
+    // dfmt off
     override @property const
     {
         bool isNull() { return false; }
@@ -24,6 +27,7 @@ class ConsoleFont : Font
         bool isFixed() { return true; }
         float spaceWidth() { return 1; }
     }
+    // dfmt on
 
     private immutable(Glyph) _glyph;
 
@@ -35,7 +39,7 @@ class ConsoleFont : Font
         _desc.weight = 400;
         _desc.size = 1;
         _desc.height = 1;
-
+        // dfmt off
         immutable(Glyph) g = {
             blackBoxX: 1,
             blackBoxY: 1,
@@ -45,13 +49,17 @@ class ConsoleFont : Font
             subpixelMode: SubpixelRenderingMode.none,
             glyph: [0],
         };
+        // dfmt on
         _glyph = g;
     }
 
-    override float getCharWidth(dchar ch) const { return 1; }
+    override float getCharWidth(dchar ch) const
+    {
+        return 1;
+    }
 
-    override int measureText(const dchar[] text, ref int[] widths, int maxWidth = MAX_WIDTH_UNSPECIFIED,
-            int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
+    override int measureText(const dchar[] text, ref int[] widths, int maxWidth = MAX_WIDTH_UNSPECIFIED, int tabSize = 4,
+            int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         if (text.length == 0)
             return 0;
@@ -81,8 +89,8 @@ class ConsoleFont : Font
                 x = tabPosition;
                 continue;
             }
-            else if (ch == '&' &&
-                (textFlags & (TextFlag.underlineHotkeys | TextFlag.hotkeys | TextFlag.underlineHotkeysOnAlt)))
+            else if (ch == '&' && (textFlags & (TextFlag.underlineHotkeys | TextFlag.hotkeys | TextFlag
+                    .underlineHotkeysOnAlt)))
             {
                 pwidths[i] = x;
                 continue; // skip '&' in hot key when measuring
@@ -97,8 +105,8 @@ class ConsoleFont : Font
         return charsMeasured;
     }
 
-    override void drawText(DrawBuf drawBuf, int x, int y, const dchar[] text, Color color, int tabSize = 4,
-            int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
+    override void drawText(DrawBuf drawBuf, int x, int y, const dchar[] text, Color color, int tabSize = 4, int tabOffset = 0,
+            TextFlag textFlags = TextFlag.unspecified)
     {
         if (text.length == 0)
             return; // nothing to draw - empty text
@@ -126,8 +134,7 @@ class ConsoleFont : Font
         foreach (int i; 0 .. charsMeasured)
         {
             dchar ch = text[i];
-            if (ch == '&' &&
-                (textFlags & (TextFlag.underlineHotkeys | TextFlag.hotkeys | TextFlag.underlineHotkeysOnAlt)))
+            if (ch == '&' && (textFlags & (TextFlag.underlineHotkeys | TextFlag.hotkeys | TextFlag.underlineHotkeysOnAlt)))
             {
                 if (textFlags & (TextFlag.underlineHotkeys | TextFlag.underlineHotkeysOnAlt))
                     underline = true; // turn ON underline for hot key
@@ -162,9 +169,8 @@ class ConsoleFont : Font
         buf.console.underline = false;
     }
 
-    override void drawColoredText(DrawBuf drawBuf, int x, int y, const dchar[] text,
-            const CustomCharProps[] charProps, int tabSize = 4, int tabOffset = 0,
-            TextFlag textFlags = TextFlag.unspecified)
+    override void drawColoredText(DrawBuf drawBuf, int x, int y, const dchar[] text, const CustomCharProps[] charProps,
+            int tabSize = 4, int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
         if (text.length == 0)
             return; // nothing to draw - empty text
@@ -193,13 +199,10 @@ class ConsoleFont : Font
             dchar ch = text[i];
             Color color = i < charProps.length ? charProps[i].color : charProps[$ - 1].color;
             buf.console.textColor = ANSIConsoleDrawBuf.toConsoleColor(color);
-            customizedTextFlags = (i < charProps.length ? charProps[i].textFlags : charProps[$ - 1].textFlags) |
-                textFlags;
+            customizedTextFlags = (i < charProps.length ? charProps[i].textFlags : charProps[$ - 1].textFlags) | textFlags;
             underline = (customizedTextFlags & TextFlag.underline) != 0;
             // turn off underline after hot key
-            if (ch == '&' &&
-                    (textFlags & (TextFlag.underlineHotkeys | TextFlag.hotkeys | TextFlag
-                        .underlineHotkeysOnAlt)))
+            if (ch == '&' && (textFlags & (TextFlag.underlineHotkeys | TextFlag.hotkeys | TextFlag.underlineHotkeysOnAlt)))
             {
                 // draw underline
                 buf.console.underline = true;
@@ -249,10 +252,12 @@ class ConsoleFont : Font
     {
         // ignore
     }
+
     override void cleanup()
     {
         // ignore
     }
+
     override void clearGlyphCache()
     {
         // ignore

@@ -39,7 +39,7 @@ import beamui.graphics.swpainter;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 import beamui.platforms.windows.win32bitmap;
-import beamui.platforms.windows.win32fonts;
+import beamui.text.win32fonts;
 
 pragma(lib, "gdi32.lib");
 pragma(lib, "user32.lib");

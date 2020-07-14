@@ -15,10 +15,10 @@ import beamui.core.logger;
 import beamui.graphics.bitmap;
 import beamui.graphics.colors : Color;
 import beamui.graphics.drawables : ConsoleDrawBuf;
-import beamui.platforms.ansi_console.consolefont;
 import beamui.platforms.ansi_console.dconsole;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
+import beamui.text.consolefont;
 import beamui.text.glyph : GlyphRef;
 
 class ConsoleWindow : Window

@@ -1,7 +1,5 @@
 /**
-Win32 fonts support.
-
-Part of the Win32 platform.
+Win32-based font manager and rasterizer.
 
 Usually you don't need to use this module directly.
 
@@ -9,12 +7,14 @@ Copyright: Vadim Lopatin 2014-2017
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
-module beamui.platforms.windows.win32fonts;
+module beamui.text.win32fonts;
 
+// dfmt off
 version (Windows):
 import beamui.core.config;
 
 static if (BACKEND_GUI):
+// dfmt on
 import core.sys.windows.windows;
 import std.math;
 import std.string;
@@ -178,7 +178,10 @@ ushort prepare_lcd_glyph(ubyte* gbuf1, ref GLYPHMETRICS gm, ref ubyte[] gbuf2, r
 /// Font implementation based on Win32 API system fonts
 final class Win32Font : Font
 {
-    override @property bool isNull() const { return _hfont is null; }
+    override @property bool isNull() const
+    {
+        return _hfont is null;
+    }
 
     private
     {
@@ -322,8 +325,7 @@ final class Win32Font : Font
                     // antialiased glyph
                     ubyte[] glyph = new ubyte[gs];
                     res = GetGlyphOutlineW(_dc, cast(wchar)ch, GGO_GRAY8_BITMAP, //GGO_METRICS
-                            &metrics,
-                            gs, glyph.ptr, &scaleMatrix);
+                            &metrics, gs, glyph.ptr, &scaleMatrix);
                     if (res == GDI_ERROR)
                     {
                         return null;
@@ -358,8 +360,7 @@ final class Win32Font : Font
                     // bitmap glyph
                     ubyte[] glyph = new ubyte[gs];
                     res = GetGlyphOutlineW(_dc, cast(wchar)ch, GGO_BITMAP, //GGO_METRICS
-                            &metrics, gs,
-                            glyph.ptr, &scaleMatrix);
+                            &metrics, gs, glyph.ptr, &scaleMatrix);
                     if (res == GDI_ERROR)
                     {
                         return null;
@@ -429,8 +430,8 @@ final class Win32Font : Font
 
         debug (FontResources)
         {
-            Log.fd("Created Win32Font %s, size: %d, height: %d, points: %d, dpi: %d",
-                _desc.face, _desc.size, _desc.height, lf.lfHeight, _dpi);
+            Log.fd("Created Win32Font %s, size: %d, height: %d, points: %d, dpi: %d", _desc.face, _desc.size,
+                    _desc.height, lf.lfHeight, _dpi);
         }
         return true;
     }
@@ -487,6 +488,7 @@ final class Win32FontManager : FontManager
         LOGFONTA lf;
         lf.lfCharSet = ANSI_CHARSET; //DEFAULT_CHARSET;
         HDC dc = CreateCompatibleDC(NULL);
+        // dfmt off
         const int res = EnumFontFamiliesExA(
             dc, // handle to DC
             &lf, // font information
@@ -494,6 +496,7 @@ final class Win32FontManager : FontManager
             cast(LPARAM)cast(void*)this, // additional data
             0U, // not used; must be 0
         );
+        // dfmt on
         DeleteObject(dc);
         Log.i("Found ", _fontFaces.length, " font faces");
     }
@@ -527,6 +530,7 @@ final class Win32FontManager : FontManager
     /// Find font face definition by family only (try to get one of defaults for family if possible)
     private FontDef* findFace(FontFamily family)
     {
+        // dfmt off
         switch (family)
         {
         case FontFamily.sans_serif:
@@ -560,6 +564,7 @@ final class Win32FontManager : FontManager
         default:
             return null;
         }
+        // dfmt on
     }
 
     /// Find font face definition by list of faces
@@ -649,11 +654,8 @@ FontFamily pitchAndFamilyToFontFamily(ubyte flags)
     return FontFamily.sans_serif;
 }
 
-extern (Windows) int fontEnumFontFamProc(
-    const LOGFONTA* logicalFontData,
-    const TEXTMETRICA* physicalFontData,
-    DWORD fontType,
-    LPARAM appDefinedData)
+extern (Windows) int fontEnumFontFamProc(const LOGFONTA* logicalFontData, const TEXTMETRICA* physicalFontData,
+        DWORD fontType, LPARAM appDefinedData)
 {
     if (fontType == TRUETYPE_FONTTYPE)
     {

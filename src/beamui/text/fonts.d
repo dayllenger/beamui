@@ -1,19 +1,6 @@
 /**
 Base fonts access interface and common implementation.
 
-Font - base class for fonts.
-
-FontManager - base class for font managers - provides access to available fonts.
-
-
-Actual implementations are:
-
-beamui.text.ftfonts - FreeType based font manager.
-
-beamui.platforms.ansi_console.consolefont - console font manager (with single font).
-
-beamui.platforms.windows.win32fonts - Win32 API based font manager.
-
 Synopsis:
 ---
 // find suitable font of size 25, normal, preferrable Arial, or, if not available, any SansSerif font
@@ -321,7 +308,7 @@ struct FontFaceProps
 
 enum int MAX_ALLOWED_FONT_SIZE = 512;
 
-/// Access points to fonts.
+/// Base class for font managers. Provides access to available fonts
 class FontManager
 {
     static @property

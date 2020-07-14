@@ -27,7 +27,7 @@ bool initFontManager()
     {
         version (Windows)
         {
-            import beamui.platforms.windows.win32fonts;
+            import beamui.text.win32fonts;
 
             // dfmt off
             static if (USE_FREETYPE)/**/
@@ -81,7 +81,7 @@ bool initFontManager()
     }
     else
     {
-        import beamui.platforms.ansi_console.consolefont;
+        import beamui.text.consolefont;
 
         FontManager.instance = new ConsoleFontManager;
         return true;
