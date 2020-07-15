@@ -12,7 +12,6 @@ nothrow @safe:
 import std.math : fabs, cos, sin, sqrt, isFinite, PI, PI_2;
 import beamui.core.collections : Buf;
 import beamui.core.linalg : Vec2;
-import beamui.core.math : fequal2, fzero6;
 
 // Bezier flattening is based on Maxim Shemanarev article
 // https://web.archive.org/web/20190309181735/http://antigrain.com/research/adaptive_bezier/index.html
@@ -118,79 +117,51 @@ private void recursiveQuadraticBezier(ref Buf!Vec2 output, float x1, float y1, f
 }
 
 /// Convert circular arc into a list of points
-void flattenArc(ref Buf!Vec2 output, Vec2 center, float radius, float startAngle, float angleOffset, bool endpointsToo)
+void flattenArc(ref Buf!Vec2 output, Vec2 center, float radius, float startAngle, float deltaAngle, bool endpointsToo)
 in (isFinite(center.x) && isFinite(center.y))
 in (isFinite(radius))
 in (isFinite(startAngle))
-in (isFinite(angleOffset))
+in (isFinite(deltaAngle))
 {
-    if (radius < 0)
-        return;
-
     const rx0 = radius * cos(startAngle);
     const ry0 = radius * sin(startAngle);
-
     if (endpointsToo)
         output ~= Vec2(center.x + rx0, center.y - ry0);
 
-    if (fzero6(angleOffset) || fzero6(radius))
+    deltaAngle = deltaAngle % (PI * 2);
+    const angleOffset = fabs(deltaAngle);
+    if (angleOffset < 1e-6f || radius < 1e-6f)
         return;
 
-    // Based on https://stackoverflow.com/a/44829356, just works.
-    // We cut long arcs here by 3 cubic bezier curves, so algorithm becomes very simple.
+    // convert arc into a cubic spline, max 90 degrees for each segment
+    const parts = cast(uint)(angleOffset / PI_2 + 1);
+    const halfPartDA = (deltaAngle / parts) / 2;
+    float kappa = fabs(4.0f / 3.0f * (1 - cos(halfPartDA)) / sin(halfPartDA));
+    if (deltaAngle < 0)
+        kappa = -kappa;
 
-    enum FULL = PI * 2;
-
-    angleOffset = angleOffset % FULL;
-    const endAngle = startAngle + angleOffset;
-
-    const rx = radius * cos(endAngle);
-    const ry = radius * sin(endAngle);
-
-    const offset = fabs(angleOffset);
-    if (offset > FULL / 3)
+    float ax = rx0, ay = ry0;
+    float x0 = center.x + ax, y0 = center.y - ay;
+    foreach (i; 1 .. parts + 1)
     {
-        const int dir = angleOffset > 0 ? 1 : -1;
-        const rx1 = radius * cos(startAngle + dir * FULL / 3);
-        const ry1 = radius * sin(startAngle + dir * FULL / 3);
-        if (!fequal2(rx, rx1) || !fequal2(ry, ry1))
-        {
-            if (offset > FULL * 2 / 3)
-            {
-                const rx2 = radius * cos(startAngle + dir * FULL * 2 / 3);
-                const ry2 = radius * sin(startAngle + dir * FULL * 2 / 3);
-                if (!fequal2(rx, rx2) || !fequal2(ry, ry2))
-                {
-                    flattenArcPart(output, center.x, center.y, rx0, ry0, rx1, ry1, true);
-                    flattenArcPart(output, center.x, center.y, rx1, ry1, rx2, ry2, true);
-                    flattenArcPart(output, center.x, center.y, rx2, ry2, rx, ry, endpointsToo);
-                    return;
-                }
-            }
-            flattenArcPart(output, center.x, center.y, rx0, ry0, rx1, ry1, true);
-            flattenArcPart(output, center.x, center.y, rx1, ry1, rx, ry, endpointsToo);
-            return;
-        }
+        const b = startAngle + deltaAngle * i / parts;
+        const bx = radius * cos(b);
+        const by = radius * sin(b);
+
+        const x3 = center.x + bx;
+        const y3 = center.y - by;
+        const x1 = x0 - kappa * ay;
+        const y1 = y0 - kappa * ax;
+        const x2 = x3 + kappa * by;
+        const y2 = y3 + kappa * bx;
+
+        recursiveCubicBezier(output, x0, y0, x1, y1, x2, y2, x3, y3, 0);
+        if (i < parts || endpointsToo)
+            output ~= Vec2(x3, y3);
+
+        ax = bx;
+        ay = by;
+        x0 = x3;
+        y0 = y3;
     }
-    flattenArcPart(output, center.x, center.y, rx0, ry0, rx, ry, endpointsToo);
-}
-
-private void flattenArcPart(ref Buf!Vec2 output, float cx, float cy, float ax, float ay, float bx, float by, bool lastToo)
-{
-    const q1 = ax * ax + ay * ay;
-    const q2 = q1 + ax * bx + ay * by;
-    const k2 = 4.0f / 3.0f * (sqrt(2 * q1 * q2) - q2) / (ax * by - ay * bx);
-
-    const x0 = cx + ax;
-    const y0 = cy - ay;
-    const x1 = cx + ax - k2 * ay;
-    const y1 = cy - ay - k2 * ax;
-    const x2 = cx + bx + k2 * by;
-    const y2 = cy - by + k2 * bx;
-    const x3 = cx + bx;
-    const y3 = cy - by;
-
-    recursiveCubicBezier(output, x0, y0, x1, y1, x2, y2, x3, y3, 0);
-    if (lastToo)
-        output ~= Vec2(x3, y3);
 }

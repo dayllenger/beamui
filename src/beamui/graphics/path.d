@@ -195,7 +195,7 @@ nothrow:
             return this;
 
         const bool clockwise = angle > 0;
-        angle = min(abs(angle), 360) * PI / 180;
+        angle = min(abs(angle), 359) * PI / 180;
         const cosine_2 = cos(angle / 2);
         const cosine = 2 * cosine_2 * cosine_2 - 1;
         // find radius using cosine formula
