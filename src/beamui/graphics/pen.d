@@ -67,7 +67,9 @@ nothrow:
 }
 
 /// Build strokes from given path and stroke parameters
-void expandStrokes(PathIter path, Pen pen, StrokeBuilder builder)
+void expandStrokes(PathIter iter, Pen pen, StrokeBuilder builder)
+in (iter)
+in (builder)
 {
     if (pen.width < 0.01f)
         return;
@@ -77,7 +79,7 @@ void expandStrokes(PathIter path, Pen pen, StrokeBuilder builder)
 
     const(Vec2)[] points;
     bool closed;
-    while (path.next(points, closed))
+    while (iter.next(points, closed))
     {
         builder.beginContour();
         expandSubpath(points, closed, pen, builder);

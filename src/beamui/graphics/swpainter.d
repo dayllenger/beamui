@@ -51,6 +51,8 @@ public final class SWPaintEngine : PaintEngine
         PM_ImageView layer; // points either to base_layer or to some layer img in the stack
         Buf!Layer layerStack;
 
+        FlatteningContourIter strokeIter;
+
         Buf!Vec2 bufVerts;
         Buf!uint bufContours;
         Buf!HorizEdge bufTraps;
@@ -68,6 +70,7 @@ public final class SWPaintEngine : PaintEngine
     in (backbuffer)
     {
         backbuf = &backbuffer;
+        strokeIter = new FlatteningContourIter(true);
         plotter_solid_op = scoped!(PlotterSolid!false)();
         plotter_solid_tr = scoped!(PlotterSolid!true)();
         plotter_linear_op = scoped!(PlotterLinear!false)();
@@ -187,7 +190,7 @@ protected:
             {
                 if (lst[0].points.length >= 3)
                 {
-                    transform(lst[0].points, bufVerts, mat);
+                    lst[0].flatten!true(bufVerts, mat);
                     bufTraps.clear();
                     if (splitIntoTrapezoids(bufVerts[], bufTraps))
                     {
@@ -205,10 +208,9 @@ protected:
                 bufContours.clear();
                 foreach (ref cr; lst)
                 {
-                    if (cr.points.length >= 3)
+                    if (lst[0].points.length >= 3)
                     {
-                        transform(cr.points, bufVerts, mat);
-                        bufContours ~= cast(uint)cr.points.length;
+                        bufContours ~= lst[0].flatten!true(bufVerts, mat);
                     }
                 }
                 if (bufContours.length)
@@ -234,13 +236,12 @@ protected:
             bufVerts.clear();
             bufContours.clear();
             {
-                auto iter = scoped!ContourIter(contours);
+                strokeIter.recharge(contours, mat);
                 auto builder = scoped!PolyBuilder(bufVerts, bufContours);
-                expandStrokes(iter, pen, builder);
+                expandStrokes(strokeIter, pen, builder);
             }
             if (bufVerts.length)
             {
-                transformInPlace(bufVerts.unsafe_slice, mat);
                 auto rparams = RastParams(st.aa, clip);
                 rasterizePolygons(bufVerts[], bufContours[], rparams, plotter);
             }
@@ -257,9 +258,8 @@ protected:
             auto rparams = RastParams(st.aa, clip);
             foreach (ref cr; lst)
             {
-                const Vec2[] points = cr.points;
                 bufVerts.clear();
-                transform(points, bufVerts, mat);
+                lst[0].flatten!true(bufVerts, mat);
 
                 foreach (i; 1 .. bufVerts.length)
                 {

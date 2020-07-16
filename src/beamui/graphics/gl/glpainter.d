@@ -110,6 +110,7 @@ public final class GLPaintEngine : PaintEngine
         TextureCache* textureCache;
         GlyphCache* glyphCache;
 
+        FlatteningContourIter strokeIter;
         GpaaAppender gpaa;
 
         Renderer renderer;
@@ -122,6 +123,7 @@ public final class GLPaintEngine : PaintEngine
         colorStopAtlas = &data.colorStopAtlas;
         textureCache = &data.textureCache;
         glyphCache = &data.glyphCache;
+        strokeIter = new FlatteningContourIter(false);
     }
 
     ~this()
@@ -478,7 +480,6 @@ protected:
 
     void strokePath(ref Contours contours, ref const Brush br, ref const Pen pen, bool)
     {
-        auto iter = scoped!ContourIter(contours);
         auto builder_obj = scoped!TriBuilder(positions, triangles);
         TriBuilder builder = builder_obj;
 
@@ -486,9 +487,11 @@ protected:
         if (st.aa)
             builder.contour = gpaa.contour;
 
-        expandStrokes(iter, pen, builder);
+        strokeIter.recharge(contours, st.mat);
+        expandStrokes(strokeIter, pen, builder);
         if (st.aa)
             gpaa.finish(dataStore.length);
+
         if (triangles.length > t)
         {
             const trivial = contours.list.length == 1 && contours.list[0].points.length < 3;
@@ -937,23 +940,28 @@ private:
         const lst = contours.list;
         if (lst.length == 1)
         {
-            const(Vec2)[] points = lst[0].points[0 .. $ - (lst[0].closed ? 1 : 0)];
-            if (points.length < 3)
+            if (lst[0].points.length < 3)
                 return false;
 
             const RectI clip = lst[0].trBounds;
             const v = positions.length;
             const t = triangles.length;
-            positions ~= points;
-            addFan(triangles, v, points.length);
+            uint pcount = lst[0].flatten!false(positions, st.mat);
+            // remove the extra point
+            if (lst[0].closed)
+            {
+                positions.shrink(1);
+                pcount--;
+            }
+            addFan(triangles, v, pcount);
 
             if (st.aa)
             {
-                gpaa.add(points);
+                gpaa.add(positions[][v .. $]);
                 gpaa.finish(dataStore.length);
             }
-
-            if (isConvex(points) && stenciling != Stenciling.zero && stenciling != Stenciling.even)
+            // spline is convex iff hull of its control points is convex
+            if (isConvex(lst[0].points) && stenciling != Stenciling.zero && stenciling != Stenciling.even)
             {
                 return simple(t, clip, br);
             }
@@ -970,15 +978,19 @@ private:
             const t = triangles.length;
             foreach (ref cr; lst)
             {
-                const Vec2[] points = cr.points[0 .. $ - (cr.closed ? 1 : 0)];
-                if (points.length < 3)
+                if (cr.points.length < 3)
                     continue;
 
                 const v = positions.length;
-                positions ~= points;
-                addFan(triangles, v, points.length);
+                uint pcount = cr.flatten!false(positions, st.mat);
+                if (cr.closed)
+                {
+                    positions.shrink(1);
+                    pcount--;
+                }
+                addFan(triangles, v, pcount);
                 if (st.aa)
-                    gpaa.add(points);
+                    gpaa.add(positions[][v .. $]);
             }
             if (st.aa)
                 gpaa.finish(dataStore.length);

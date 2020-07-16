@@ -10,15 +10,81 @@ module beamui.graphics.path;
 import std.math;
 import beamui.core.collections : Buf;
 import beamui.core.geometry : Rect;
-import beamui.core.linalg : Vec2;
+import beamui.core.linalg : Mat2x3, Vec2;
 import beamui.core.math;
 import beamui.graphics.flattener;
 
 struct SubPath
 {
-    Vec2[] points;
+nothrow:
+    const(Path.Command)[] commands;
+    const(Vec2)[] points;
     bool closed;
     Rect bounds;
+
+    uint flatten(bool transform)(ref Buf!Vec2 output, Mat2x3 mat) const
+    {
+        const len = output.length;
+        Vec2 p = points[0];
+        static if (transform)
+            p = mat * p;
+        output ~= p;
+        const(Vec2)[] r = points[1 .. $];
+
+        // TODO: use matrix to compute tolerance
+        foreach (cmd; commands)
+        {
+            final switch (cmd) with (Path.Command)
+            {
+            case lineTo:
+                p = r[0];
+                static if (transform)
+                    p = mat * p;
+                r = r[1 .. $];
+                break;
+            case quadTo:
+                Vec2 p1 = r[0];
+                Vec2 p2 = r[1];
+                static if (transform)
+                {
+                    p1 = mat * p1;
+                    p2 = mat * p2;
+                }
+                flattenQuadraticBezier(output, p, p1, p2, false);
+                p = p2;
+                r = r[2 .. $];
+                break;
+            case cubicTo:
+                Vec2 p1 = r[0];
+                Vec2 p2 = r[1];
+                Vec2 p3 = r[2];
+                static if (transform)
+                {
+                    p1 = mat * p1;
+                    p2 = mat * p2;
+                    p3 = mat * p3;
+                }
+                flattenCubicBezier(output, p, p1, p2, p3, false);
+                p = p3;
+                r = r[3 .. $];
+                break;
+            }
+            output ~= p;
+        }
+        debug sanitize(output[][len .. $]);
+        return output.length - len;
+    }
+
+    debug private void sanitize(const Vec2[] points) const
+    {
+        // the contour must not contain coincident adjacent points
+        foreach (j; 1 .. points.length)
+        {
+            const vs = points[j - 1 .. j + 1];
+            if (fequal6(vs[0].x, vs[1].x) && fequal6(vs[0].y, vs[1].y))
+                assert(0, "Path has coincident adjacent points");
+        }
+    }
 }
 
 /// Represents vector shape as one or more subpaths, which contain series of segments
@@ -43,27 +109,26 @@ nothrow:
             if (subpaths.length == 0)
                 return SubPath.init;
 
-            static Buf!Vec2 buf;
-            buf.clear();
+            SubPath sub;
+            sub.closed = subpaths[0].closed;
+            sub.bounds = subpaths.length > 1 ? subpaths[0].bounds : currentContourBounds;
 
-            const(Vec2)[] pts = points[];
             const end = subpaths.length > 1 ? subpaths[1].start : commands.length;
-            flattenContour(buf, commands[][0 .. end], pts);
-
-            const bounds = subpaths.length > 1 ? subpaths[0].bounds : currentContourBounds;
-            return const(SubPath)(buf[], subpaths[0].closed, bounds);
+            sub.commands = commands[][0 .. end];
+            sub.points = points[][0 .. countPoints(sub.commands)];
+            return sub;
         }
+    }
+
+    enum Command : ubyte
+    {
+        lineTo,
+        quadTo,
+        cubicTo,
     }
 
     private
     {
-        enum Command : ubyte
-        {
-            lineTo,
-            quadTo,
-            cubicTo,
-        }
-
         struct SubPathInternal
         {
             uint start;
@@ -358,29 +423,22 @@ nothrow:
             return 0;
         assert(subpaths.length > 0);
 
-        static Buf!Vec2 buf;
-        buf.clear();
-
-        const(Vec2)[] pts = points[];
+        uint pstart;
         foreach (i; 0 .. subpaths.length)
         {
+            SubPath sub;
+            sub.closed = subpaths[i].closed;
+            sub.bounds = (i + 1 < subpaths.length) ? subpaths[i].bounds : currentContourBounds;
+
             const start = subpaths[i].start;
             const end = (i + 1 < subpaths.length) ? subpaths[i + 1].start : commands.length;
+            sub.commands = commands[][start .. end];
 
-            const len = buf.length;
-            flattenContour(buf, commands[][start .. end], pts);
+            const pend = pstart + countPoints(sub.commands);
+            sub.points = points[][pstart .. pend];
+            pstart = pend;
 
-            const bounds = (i + 1 < subpaths.length) ? subpaths[i].bounds : currentContourBounds;
-            const subpath = const(SubPath)(buf[][len .. $], subpaths[i].closed, bounds);
-
-            // the contour must not contain coincident adjacent points
-            debug foreach (j; 1 .. subpath.points.length)
-            {
-                const vs = subpath.points[j - 1 .. j + 1];
-                if (fequal6(vs[0].x, vs[1].x) && fequal6(vs[0].y, vs[1].y))
-                    assert(0, "Path has coincident adjacent points");
-            }
-            const int result = callback(subpath);
+            const int result = callback(sub);
             if (result != 0)
                 return result;
         }
@@ -390,31 +448,23 @@ nothrow:
 
 private nothrow:
 
-void flattenContour(ref Buf!Vec2 output, const Path.Command[] commands, ref const(Vec2)[] points)
+uint countPoints(const Path.Command[] cmds)
 {
-    Vec2 p = points[0];
-    output ~= p;
-    points = points[1 .. $];
-
-    foreach (cmd; commands)
+    uint count = 1;
+    foreach (cmd; cmds)
     {
         final switch (cmd) with (Path.Command)
         {
         case lineTo:
-            p = points[0];
-            points = points[1 .. $];
+            count += 1;
             break;
         case quadTo:
-            flattenQuadraticBezier(output, p, points[0], points[1], false);
-            p = points[1];
-            points = points[2 .. $];
+            count += 2;
             break;
         case cubicTo:
-            flattenCubicBezier(output, p, points[0], points[1], points[2], false);
-            p = points[2];
-            points = points[3 .. $];
+            count += 3;
             break;
         }
-        output ~= p;
     }
+    return count;
 }

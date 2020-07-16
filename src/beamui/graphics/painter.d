@@ -16,7 +16,7 @@ import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.brush : Brush;
 import beamui.graphics.colors : Color;
 import beamui.graphics.compositing : BlendMode, CompositeMode;
-import beamui.graphics.path : Path;
+import beamui.graphics.path;
 import beamui.graphics.polygons : FillRule;
 import beamui.graphics.pen : PathIter, Pen;
 import beamui.text.glyph : GlyphRef;
@@ -111,9 +111,11 @@ final class Painter
             if (!(fequal2(v0.y, v1.y) && fequal2(v0.x, v2.x)) && !(fequal2(v0.x, v1.x) && fequal2(v0.y, v2.y)))
             {
                 // clip out complement triangles
+                const Path.Command[3] cmds = Path.Command.lineTo;
                 const Vec2[4] vs = [lt, rt, rb, lb];
-                const PaintEngine.Contour contour = {vs, false, rect, state.clipRect};
-                const PaintEngine.Contours contours = {(&contour)[0 .. 1], contour.bounds, contour.trBounds};
+                const subpath = SubPath(cmds, vs, false, rect);
+                const contour = PaintEngine.Contour(subpath, state.clipRect);
+                const contours = PaintEngine.Contours((&contour)[0 .. 1], subpath.bounds, contour.trBounds);
                 engine.clipOut(mainStack.length, contours, FillRule.nonzero, true);
             }
         }
@@ -689,12 +691,7 @@ final class Painter
                 );
                 if (box.intersect(clip))
                 {
-                    bufContours ~= PaintEngine.Contour(
-                        subpath.points,
-                        subpath.closed,
-                        subpath.bounds,
-                        box,
-                    );
+                    bufContours ~= PaintEngine.Contour(subpath, box);
                     bounds.include(r);
                     trBounds.include(box);
                 }
@@ -822,10 +819,9 @@ protected:
 
     struct Contour
     {
-        const(Vec2)[] points;
-        bool closed;
-        Rect bounds;
+        SubPath subpath;
         RectI trBounds;
+        alias subpath this;
     }
 
     const struct Contours
@@ -840,13 +836,25 @@ protected:
         }
     }
 
-    static class ContourIter : PathIter
+    static class FlatteningContourIter : PathIter
     {
-        const(Contour)[] list;
+        private
+        {
+            const(Contour)[] list;
+            Mat2x3 mat;
+            bool transform;
+            Buf!Vec2 buf;
+        }
 
-        this(ref Contours contours)
+        this(bool transform)
+        {
+            this.transform = transform;
+        }
+
+        void recharge(ref Contours contours, ref const Mat2x3 mat)
         {
             list = contours.list;
+            this.mat = mat;
         }
 
         bool next(out const(Vec2)[] points, out bool closed)
@@ -854,8 +862,14 @@ protected:
             const hasElements = list.length > 0;
             if (hasElements)
             {
-                points = list[0].points;
-                closed = list[0].closed;
+                buf.clear();
+                if (transform)
+                    list[0].subpath.flatten!true(buf, mat);
+                else
+                    list[0].subpath.flatten!false(buf, mat);
+
+                points = buf[];
+                closed = list[0].subpath.closed;
                 list = list[1 .. $];
             }
             return hasElements;
