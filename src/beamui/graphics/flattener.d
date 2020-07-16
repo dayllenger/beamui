@@ -1,7 +1,7 @@
 /**
 Bezier curve and circle arc flattening routines.
 
-Copyright: dayllenger 2019
+Copyright: dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -9,115 +9,42 @@ module beamui.graphics.flattener;
 
 nothrow @safe:
 
-import std.math : fabs, cos, sin, sqrt, isFinite, PI, PI_2;
-import beamui.core.collections : Buf;
+import std.math : fabs, cos, sin, isFinite, PI, PI_2;
 import beamui.core.linalg : Vec2;
 
 // Bezier flattening is based on Maxim Shemanarev article
 // https://web.archive.org/web/20190309181735/http://antigrain.com/research/adaptive_bezier/index.html
 // It works, but requires further development
 
+/// Convert quadratic bezier curve into a list of points
+void flattenQuadraticBezier(O)(ref O output, Vec2 p0, Vec2 p1, Vec2 p2, bool endpoints, float minDist = 0.7f)
+in (isFinite(p0.x) && isFinite(p0.y))
+in (isFinite(p1.x) && isFinite(p1.y))
+in (isFinite(p2.x) && isFinite(p2.y))
+{
+    if (endpoints)
+        output.put(p0);
+    Flattener!O(minDist).quadratic(output, p0, p1, p2, 0);
+    if (endpoints)
+        output.put(p2);
+}
+
 /// Convert cubic bezier curve into a list of points
-void flattenCubicBezier(ref Buf!Vec2 output, Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3, bool endpointsToo)
+void flattenCubicBezier(O)(ref O output, Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3, bool endpoints, float minDist = 0.7f)
 in (isFinite(p0.x) && isFinite(p0.y))
 in (isFinite(p1.x) && isFinite(p1.y))
 in (isFinite(p2.x) && isFinite(p2.y))
 in (isFinite(p3.x) && isFinite(p3.y))
 {
-    if (endpointsToo)
-        output ~= p0;
-    recursiveCubicBezier(output, p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, 0);
-    if (endpointsToo)
-        output ~= p3;
-}
-
-private void recursiveCubicBezier(ref Buf!Vec2 output, float x1, float y1, float x2, float y2, float x3, float y3,
-        float x4, float y4, int level)
-{
-    if (level > 10)
-        return;
-
-    enum distanceTolerance = 0.5f * 0.5f;
-
-    // calculate all midpoints
-    const x12 = (x1 + x2) / 2;
-    const y12 = (y1 + y2) / 2;
-    const x23 = (x2 + x3) / 2;
-    const y23 = (y2 + y3) / 2;
-    const x34 = (x3 + x4) / 2;
-    const y34 = (y3 + y4) / 2;
-    const x123 = (x12 + x23) / 2;
-    const y123 = (y12 + y23) / 2;
-    const x234 = (x23 + x34) / 2;
-    const y234 = (y23 + y34) / 2;
-    const x1234 = (x123 + x234) / 2;
-    const y1234 = (y123 + y234) / 2;
-
-    // try to approximate
-    const dx = x4 - x1;
-    const dy = y4 - y1;
-    const d2 = fabs((x2 - x4) * dy - (y2 - y4) * dx);
-    const d3 = fabs((x3 - x4) * dy - (y3 - y4) * dx);
-
-    // check flatness
-    if ((d2 + d3) * (d2 + d3) <= distanceTolerance * (dx * dx + dy * dy))
-    {
-        output ~= Vec2(x1234, y1234);
-    }
-    else
-    {
-        recursiveCubicBezier(output, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
-        recursiveCubicBezier(output, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
-    }
-}
-
-/// Convert quadratic bezier curve into a list of points
-void flattenQuadraticBezier(ref Buf!Vec2 output, Vec2 p0, Vec2 p1, Vec2 p2, bool endpointsToo)
-in (isFinite(p0.x) && isFinite(p0.y))
-in (isFinite(p1.x) && isFinite(p1.y))
-in (isFinite(p2.x) && isFinite(p2.y))
-{
-    if (endpointsToo)
-        output ~= p0;
-    recursiveQuadraticBezier(output, p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, 0);
-    if (endpointsToo)
-        output ~= p2;
-}
-
-private void recursiveQuadraticBezier(ref Buf!Vec2 output, float x1, float y1, float x2, float y2, float x3, float y3, int level)
-{
-    if (level > 10)
-        return;
-
-    enum distanceTolerance = 0.5f * 0.5f;
-
-    // calculate all midpoints
-    const x12 = (x1 + x2) / 2;
-    const y12 = (y1 + y2) / 2;
-    const x23 = (x2 + x3) / 2;
-    const y23 = (y2 + y3) / 2;
-    const x123 = (x12 + x23) / 2;
-    const y123 = (y12 + y23) / 2;
-
-    // try to approximate
-    const dx = x3 - x1;
-    const dy = y3 - y1;
-    const d = fabs((x2 - x3) * dy - (y2 - y3) * dx);
-
-    // check flatness
-    if (d <= distanceTolerance)
-    {
-        output ~= Vec2(x123, y123);
-    }
-    else
-    {
-        recursiveQuadraticBezier(output, x1, y1, x12, y12, x123, y123, level + 1);
-        recursiveQuadraticBezier(output, x123, y123, x23, y23, x3, y3, level + 1);
-    }
+    if (endpoints)
+        output.put(p0);
+    Flattener!O(minDist).cubic(output, p0, p1, p2, p3, 0);
+    if (endpoints)
+        output.put(p3);
 }
 
 /// Convert circular arc into a list of points
-void flattenArc(ref Buf!Vec2 output, Vec2 center, float radius, float startAngle, float deltaAngle, bool endpointsToo)
+void flattenArc(O)(ref O output, Vec2 center, float radius, float startAngle, float deltaAngle, bool endpoints, float minDist = 0.7f)
 in (isFinite(center.x) && isFinite(center.y))
 in (isFinite(radius))
 in (isFinite(startAngle))
@@ -125,8 +52,8 @@ in (isFinite(deltaAngle))
 {
     const rx0 = radius * cos(startAngle);
     const ry0 = radius * sin(startAngle);
-    if (endpointsToo)
-        output ~= Vec2(center.x + rx0, center.y - ry0);
+    if (endpoints)
+        output.put(Vec2(center.x + rx0, center.y - ry0));
 
     deltaAngle = deltaAngle % (PI * 2);
     const angleOffset = fabs(deltaAngle);
@@ -135,11 +62,12 @@ in (isFinite(deltaAngle))
 
     // convert arc into a cubic spline, max 90 degrees for each segment
     const parts = cast(uint)(angleOffset / PI_2 + 1);
-    const halfPartDA = (deltaAngle / parts) / 2;
+    const halfPartDA = (deltaAngle / parts) * 0.5f;
     float kappa = fabs(4.0f / 3.0f * (1 - cos(halfPartDA)) / sin(halfPartDA));
     if (deltaAngle < 0)
         kappa = -kappa;
 
+    const flattener = Flattener!O(minDist);
     float ax = rx0, ay = ry0;
     float x0 = center.x + ax, y0 = center.y - ay;
     foreach (i; 1 .. parts + 1)
@@ -155,13 +83,80 @@ in (isFinite(deltaAngle))
         const x2 = x3 + kappa * by;
         const y2 = y3 + kappa * bx;
 
-        recursiveCubicBezier(output, x0, y0, x1, y1, x2, y2, x3, y3, 0);
-        if (i < parts || endpointsToo)
-            output ~= Vec2(x3, y3);
+        flattener.cubic(output, Vec2(x0, y0), Vec2(x1, y1), Vec2(x2, y2), Vec2(x3, y3), 0);
+        if (i < parts || endpoints)
+            output.put(Vec2(x3, y3));
 
         ax = bx;
         ay = by;
         x0 = x3;
         y0 = y3;
+    }
+}
+
+private struct Flattener(O)
+{
+    float distanceTolerance = 0.5f;
+
+    this(float minDist)
+    in (minDist > 0)
+    {
+        distanceTolerance = minDist * minDist;
+    }
+
+    void quadratic(ref O output, Vec2 p1, Vec2 p2, Vec2 p3, int level) const
+    {
+        if (level > 10)
+            return;
+
+        // calculate all midpoints
+        const Vec2 p12 = (p1 + p2) * 0.5f;
+        const Vec2 p23 = (p2 + p3) * 0.5f;
+        const Vec2 p123 = (p12 + p23) * 0.5f;
+
+        // try to approximate
+        const Vec2 dp = p3 - p1;
+        const d = fabs((p2.x - p3.x) * dp.y - (p2.y - p3.y) * dp.x);
+
+        // check flatness
+        if (d <= distanceTolerance)
+        {
+            output.put(p123);
+        }
+        else
+        {
+            quadratic(output, p1, p12, p123, level + 1);
+            quadratic(output, p123, p23, p3, level + 1);
+        }
+    }
+
+    void cubic(ref O output, Vec2 p1, Vec2 p2, Vec2 p3, Vec2 p4, int level) const
+    {
+        if (level > 10)
+            return;
+
+        // calculate all midpoints
+        const Vec2 p12 = (p1 + p2) * 0.5f;
+        const Vec2 p23 = (p2 + p3) * 0.5f;
+        const Vec2 p34 = (p3 + p4) * 0.5f;
+        const Vec2 p123 = (p12 + p23) * 0.5f;
+        const Vec2 p234 = (p23 + p34) * 0.5f;
+        const Vec2 p1234 = (p123 + p234) * 0.5f;
+
+        // try to approximate
+        const Vec2 dp = p4 - p1;
+        const d2 = fabs((p2.x - p4.x) * dp.y - (p2.y - p4.y) * dp.x);
+        const d3 = fabs((p3.x - p4.x) * dp.y - (p3.y - p4.y) * dp.x);
+
+        // check flatness
+        if ((d2 + d3) * (d2 + d3) <= distanceTolerance * dp.magnitudeSquared)
+        {
+            output.put(p1234);
+        }
+        else
+        {
+            cubic(output, p1, p12, p123, p1234, level + 1);
+            cubic(output, p1234, p234, p34, p4, level + 1);
+        }
     }
 }

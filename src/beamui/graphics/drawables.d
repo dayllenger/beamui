@@ -864,7 +864,7 @@ class Background
             drawRound(pr, b, bc, th);
     }
 
-    // we will use cubic curves to make elliptic arcs, like in `flattenArcPart` function
+    // we will use cubic curves to make elliptic arcs
     private enum k = 0.552285f;
     private enum k1 = 1 - k;
 
