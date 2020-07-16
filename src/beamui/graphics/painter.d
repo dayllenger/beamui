@@ -51,6 +51,7 @@ final class Painter
         PaintEngine.State state;
         Buf!(PaintEngine.State) mainStack;
         Buf!(PaintEngine.Contour) bufContours;
+        Path tempPath;
     }
 
     this(ref PainterHead head)
@@ -567,7 +568,20 @@ final class Painter
         if (!state.passTransparent && color.isFullyTransparent)
             return;
 
-        engine.fillCircle(centerX, centerY, radius, color);
+        const k = radius * 4.0f / 3.0f;
+        const rect = Rect(centerX - radius, centerY - k, centerX + radius, centerY + k);
+
+        tempPath.reset();
+        tempPath.moveTo(rect.left, centerY);
+        tempPath.cubicTo(rect.left, rect.top, rect.right, rect.top, rect.right, centerY);
+        tempPath.cubicTo(rect.right, rect.bottom, rect.left, rect.bottom, rect.left, centerY);
+
+        const contours = prepareContours(tempPath);
+        if (!contours)
+            return;
+
+        const br = Brush.fromSolid(color);
+        engine.fillPath(contours, br, FillRule.evenodd);
     }
 
     /// Draw an image at some position with some opacity
@@ -904,7 +918,6 @@ protected:
     void drawLine(Vec2, Vec2, Color);
     void fillRect(Rect, Color);
     void fillTriangle(Vec2[3], Color);
-    void fillCircle(float, float, float, Color);
 
     void drawImage(ref const Bitmap, Vec2, float);
     void drawNinePatch(ref const Bitmap, ref const NinePatchInfo, float);

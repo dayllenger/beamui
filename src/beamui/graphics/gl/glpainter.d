@@ -586,38 +586,6 @@ protected:
         simpleColorOnly(t, RectI(clip), c);
     }
 
-    void fillCircle(float cx, float cy, float r, Color c)
-    {
-        const BoxI clip = clipByRect(transformBounds(Rect(cx - r, cy - r, cx + r, cy + r)));
-        if (clip.empty)
-            return;
-
-        const ry = r * 4.0f / 3.0f;
-        const pl = Vec2(cx - r, cy);
-        const pr = Vec2(cx + r, cy);
-
-        const minDist = getMinDistFromMatrix(st.mat);
-        const v = positions.length;
-        positions ~= Vec2(cx, cy);
-        positions ~= pl;
-        flattenCubicBezier(positions, pl, Vec2(pl.x, cy - ry), Vec2(pr.x, cy - ry), pr, false, minDist);
-        positions ~= pr;
-        flattenCubicBezier(positions, pr, Vec2(pr.x, cy + ry), Vec2(pl.x, cy + ry), pl, false, minDist);
-        positions ~= pl;
-        const vend = positions.length;
-
-        const t = triangles.length;
-        addFan(triangles, v, vend - v);
-
-        if (st.aa)
-        {
-            gpaa.add(positions[][v + 1 .. vend]);
-            gpaa.finish(dataStore.length);
-        }
-
-        simpleColorOnly(t, RectI(clip), c);
-    }
-
     void drawImage(ref const Bitmap bmp, Vec2 p, float opacity)
     {
         const int w = bmp.width;

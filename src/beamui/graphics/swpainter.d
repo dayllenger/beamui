@@ -415,32 +415,6 @@ protected:
         rasterizePolygons(ps[], lengths[], rparams, plotter);
     }
 
-    void fillCircle(float cx, float cy, float r, Color c)
-    {
-        const BoxI clip = clipByRect(transformBounds(Rect(cx - r, cy - r, cx + r, cy + r)));
-        if (clip.empty)
-            return;
-
-        const rx = r * 4.0f / 3.0f;
-        const top = Vec2(cx, cy - r);
-        const bot = Vec2(cx, cy + r);
-
-        bufVerts.clear();
-        const minDist = getMinDistFromMatrix(st.mat);
-        flattenCubicBezier(bufVerts, top, Vec2(cx + rx, top.y), Vec2(cx + rx, bot.y), bot, true, minDist);
-        flattenCubicBezier(bufVerts, bot, Vec2(cx - rx, bot.y), Vec2(cx - rx, top.y), top, false, minDist);
-        transformInPlace(bufVerts.unsafe_slice, st.mat);
-
-        bufTraps.clear();
-        const added = splitIntoTrapezoids(bufVerts[], bufTraps);
-        if (!added)
-            return;
-
-        auto rparams = RastParams(st.aa, clip);
-        auto plotter = choosePlotterForSolidColor(c);
-        rasterizeTrapezoidChain(bufTraps[], rparams, plotter);
-    }
-
     void drawImage(ref const Bitmap bmp, Vec2 pos, float opacity)
     {
         const rect = Rect(pos.x, pos.y, pos.x + bmp.width, pos.y + bmp.height);
