@@ -1,16 +1,17 @@
 /**
 Path that outlines a complex figure.
 
-Copyright: dayllenger 2019
+Copyright: dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
 module beamui.graphics.path;
 
+import std.math;
 import beamui.core.collections : Buf;
 import beamui.core.geometry : Rect;
 import beamui.core.linalg : Vec2;
-import beamui.core.math : fequal2, fequal6, fzero2, max, min;
+import beamui.core.math;
 import beamui.graphics.flattener;
 
 struct SubPath
@@ -42,27 +43,42 @@ nothrow:
             if (subpaths.length == 0)
                 return SubPath.init;
 
-            const end = subpaths.length > 1 ? subpaths[1].start : points.length;
-            const pts = points[][0 .. end];
+            static Buf!Vec2 buf;
+            buf.clear();
+
+            const(Vec2)[] pts = points[];
+            const end = subpaths.length > 1 ? subpaths[1].start : commands.length;
+            flattenContour(buf, commands[][0 .. end], pts);
+
             const bounds = subpaths.length > 1 ? subpaths[0].bounds : currentContourBounds;
-            return const(SubPath)(pts, subpaths[0].closed, bounds);
+            return const(SubPath)(buf[], subpaths[0].closed, bounds);
         }
     }
 
     private
     {
+        enum Command : ubyte
+        {
+            lineTo,
+            quadTo,
+            cubicTo,
+        }
+
         struct SubPathInternal
         {
             uint start;
+            Vec2 startPos;
+
             bool closed;
             Rect bounds;
         }
 
+        Buf!Command commands;
         Buf!Vec2 points;
         Buf!SubPathInternal subpaths;
+
         bool closed = true;
-        float posx = 0;
-        float posy = 0;
+        Vec2 pos;
         Rect currentContourBounds;
     }
 
@@ -72,43 +88,36 @@ nothrow:
         {
             if (subpaths.length > 0)
                 subpaths.unsafe_ref(-1).bounds = currentContourBounds;
-            currentContourBounds = Rect(posx, posy, posx, posy);
+            currentContourBounds = Rect(pos, pos);
 
-            const i = points.length;
-            points ~= Vec2(posx, posy);
-            subpaths ~= SubPathInternal(i);
+            points ~= pos;
+            subpaths ~= SubPathInternal(commands.length, pos);
             closed = false;
         }
     }
 
-    private void insertLastPoint()
-    {
-        points ~= Vec2(posx, posy);
-        expandBounds(posx, posy);
-    }
-
-    private void expandBounds(float px, float py)
+    private void expandBounds(Vec2 p)
     {
         alias r = currentContourBounds;
-        r.left = min(r.left, px);
-        r.top = min(r.top, py);
-        r.right = max(r.right, px);
-        r.bottom = max(r.bottom, py);
+        r.left = min(r.left, p.x);
+        r.top = min(r.top, p.y);
+        r.right = max(r.right, p.x);
+        r.bottom = max(r.bottom, p.y);
     }
 
     /// Set the current pen position. Closes current subpath, if one exists
     ref Path moveTo(float x, float y) return
     {
-        posx = x;
-        posy = y;
+        pos.x = x;
+        pos.y = y;
         closed = true;
         return this;
     }
     /// Move the current position by a vector. Closes current subpath, if one exists
     ref Path moveBy(float dx, float dy) return
     {
-        posx += dx;
-        posy += dy;
+        pos.x += dx;
+        pos.y += dy;
         closed = true;
         return this;
     }
@@ -117,69 +126,74 @@ nothrow:
     ref Path lineTo(float x, float y) return
     {
         ensureContourStarted();
-        if (fequal2(x, posx) && fequal2(y, posy))
+        if (fequal2(x, pos.x) && fequal2(y, pos.y))
             return this;
-        posx = x;
-        posy = y;
-        insertLastPoint();
+
+        pos.x = x;
+        pos.y = y;
+        commands ~= Command.lineTo;
+        points ~= pos;
+        expandBounds(pos);
         return this;
     }
     /// Add a line segment to a point, relative to the current position
     ref Path lineBy(float dx, float dy) return
     {
-        ensureContourStarted();
-        if (fzero2(dx) && fzero2(dy))
-            return this;
-        posx += dx;
-        posy += dy;
-        insertLastPoint();
-        return this;
+        return lineTo(pos.x + dx, pos.y + dy);
     }
 
     /// Add a quadratic Bézier curve with one control point and endpoint
     ref Path quadraticTo(float p1x, float p1y, float p2x, float p2y) return
     {
         ensureContourStarted();
-        bool eq = fequal2(p1x, posx) && fequal2(p1y, posy);
-        eq = eq && fequal2(p2x, posx) && fequal2(p2y, posy);
+        bool eq = fequal2(p1x, pos.x) && fequal2(p1y, pos.y);
+        eq = eq && fequal2(p2x, pos.x) && fequal2(p2y, pos.y);
         if (eq)
             return this;
 
-        flattenQuadraticBezier(points, Vec2(posx, posy), Vec2(p1x, p1y), Vec2(p2x, p2y), false);
-        posx = p2x;
-        posy = p2y;
-        insertLastPoint();
-        expandBounds(p1x, p1y);
+        const p1 = Vec2(p1x, p1y);
+        const p2 = Vec2(p2x, p2y);
+        commands ~= Command.quadTo;
+        points ~= p1;
+        points ~= p2;
+        pos = p2;
+        expandBounds(p1);
+        expandBounds(p2);
         return this;
     }
     /// Add a quadratic Bézier curve with one control point and endpoint, relative to the current position
     ref Path quadraticBy(float p1dx, float p1dy, float p2dx, float p2dy) return
     {
-        return quadraticTo(posx + p1dx, posy + p1dy, posx + p2dx, posy + p2dy);
+        return quadraticTo(pos.x + p1dx, pos.y + p1dy, pos.x + p2dx, pos.y + p2dy);
     }
 
     /// Add a cubic Bézier curve with two control points and endpoint
     ref Path cubicTo(float p1x, float p1y, float p2x, float p2y, float p3x, float p3y) return
     {
         ensureContourStarted();
-        bool eq = fequal2(p1x, posx) && fequal2(p1y, posy);
-        eq = eq && fequal2(p2x, posx) && fequal2(p2y, posy);
-        eq = eq && fequal2(p3x, posx) && fequal2(p3y, posy);
+        bool eq = fequal2(p1x, pos.x) && fequal2(p1y, pos.y);
+        eq = eq && fequal2(p2x, pos.x) && fequal2(p2y, pos.y);
+        eq = eq && fequal2(p3x, pos.x) && fequal2(p3y, pos.y);
         if (eq)
             return this;
 
-        flattenCubicBezier(points, Vec2(posx, posy), Vec2(p1x, p1y), Vec2(p2x, p2y), Vec2(p3x, p3y), false);
-        posx = p3x;
-        posy = p3y;
-        insertLastPoint();
-        expandBounds(p1x, p1y);
-        expandBounds(p2x, p2y);
+        const p1 = Vec2(p1x, p1y);
+        const p2 = Vec2(p2x, p2y);
+        const p3 = Vec2(p3x, p3y);
+        commands ~= Command.cubicTo;
+        points ~= p1;
+        points ~= p2;
+        points ~= p3;
+        pos = p3;
+        expandBounds(p1);
+        expandBounds(p2);
+        expandBounds(p3);
         return this;
     }
     /// Add a cubic Bézier curve with two control points and endpoint, relative to the current position
     ref Path cubicBy(float p1dx, float p1dy, float p2dx, float p2dy, float p3dx, float p3dy) return
     {
-        return cubicTo(posx + p1dx, posy + p1dy, posx + p2dx, posy + p2dy, posx + p3dx, posy + p3dy);
+        return cubicTo(pos.x + p1dx, pos.y + p1dy, pos.x + p2dx, pos.y + p2dy, pos.x + p3dx, pos.y + p3dy);
     }
 
     /** Add an circular arc extending to a specified point.
@@ -188,37 +202,71 @@ nothrow:
     */
     ref Path arcTo(float x, float y, float angle) return
     {
-        import std.math : abs, asin, cos, sqrt, PI;
-
         ensureContourStarted();
-        if (fzero2(angle) || (fequal2(x, posx) && fequal2(y, posy)))
+        if (fequal2(x, pos.x) && fequal2(y, pos.y))
             return this;
 
         const bool clockwise = angle > 0;
-        angle = min(abs(angle), 359) * PI / 180;
+        angle = min(fabs(angle), 359) * PI / 180;
+        if (angle < 1e-6f)
+            return this;
+
+        // find radius using cosine formula
         const cosine_2 = cos(angle / 2);
         const cosine = 2 * cosine_2 * cosine_2 - 1;
-        // find radius using cosine formula
-        const squareDist = (posx - x) * (posx - x) + (posy - y) * (posy - y);
+        const squareDist = (pos.x - x) * (pos.x - x) + (pos.y - y) * (pos.y - y);
         const squareRadius = squareDist / (2 - 2 * cosine);
         const r = sqrt(squareRadius);
+        if (r < 1e-6f)
+            return this;
+
         // find center
-        const v = Vec2(x - posx, y - posy);
+        const v = Vec2(x - pos.x, y - pos.y);
         const ncenter = (clockwise ? v.rotated90fromXtoY : v.rotated90fromYtoX).normalized;
-        const mid = Vec2((x + posx) / 2, (y + posy) / 2);
+        const mid = Vec2((x + pos.x) / 2, (y + pos.y) / 2);
         const center = mid + ncenter * r * cosine_2;
         // find angle to the first arc point
         const dir = clockwise ? -1 : 1;
         const dy = (center.y - y) / r;
         const beta = asin(dy * 0.999f); // reduce precision error
-        const startAngle = (center.x < x ? beta : PI - beta) - angle * dir;
 
-        flattenArc(points, center, r, startAngle, angle * dir, false);
-        posx = x;
-        posy = y;
-        insertLastPoint();
-        expandBounds(center.x - r, center.y - r);
-        expandBounds(center.x + r, center.y + r);
+        const deltaAngle = angle * dir;
+        const startAngle = (center.x < x ? beta : PI - beta) - deltaAngle;
+
+        // convert arc into a cubic spline, max 90 degrees for each segment
+        const parts = cast(uint)(angle / PI_2 + 1);
+        const halfPartDA = (deltaAngle / parts) / 2;
+        const kappa = dir * fabs(4.0f / 3.0f * (1 - cos(halfPartDA)) / sin(halfPartDA));
+
+        float x0 = pos.x, y0 = pos.y;
+        float ax = x0 - center.x, ay = center.y - y0;
+        foreach (i; 1 .. parts + 1)
+        {
+            const b = startAngle + deltaAngle * i / parts;
+            const bx = r * cos(b);
+            const by = r * sin(b);
+
+            const x3 = center.x + bx;
+            const y3 = center.y - by;
+            const x1 = x0 - kappa * ay;
+            const y1 = y0 - kappa * ax;
+            const x2 = x3 + kappa * by;
+            const y2 = y3 + kappa * bx;
+
+            commands ~= Command.cubicTo;
+            points ~= Vec2(x1, y1);
+            points ~= Vec2(x2, y2);
+            points ~= Vec2(x3, y3);
+
+            ax = bx;
+            ay = by;
+            x0 = x3;
+            y0 = y3;
+        }
+        pos.x = x;
+        pos.y = y;
+        expandBounds(center - r);
+        expandBounds(center + r);
         return this;
     }
     /** Add an circular arc extending to a point, relative to the current position.
@@ -227,7 +275,7 @@ nothrow:
     */
     ref Path arcBy(float dx, float dy, float angle) return
     {
-        return arcTo(posx + dx, posy + dy, angle);
+        return arcTo(pos.x + dx, pos.y + dy, angle);
     }
 
     /// Add a polyline to the path; equivalent to multiple `lineTo` calls with optional `moveTo` beforehand
@@ -238,10 +286,7 @@ nothrow:
             const p0 = array[0];
             if (detached)
                 moveTo(p0.x, p0.y);
-            if (!closed)
-                points ~= p0;
-            else
-                ensureContourStarted();
+            ensureContourStarted();
 
             foreach (i; 1 .. array.length)
             {
@@ -249,28 +294,33 @@ nothrow:
                 const b = array[i];
                 if (!fequal6(a.x, b.x) || !fequal6(a.y, b.y))
                 {
+                    commands ~= Command.lineTo;
                     points ~= b;
-                    expandBounds(b.x, b.y);
+                    expandBounds(b);
                 }
             }
         }
         return this;
     }
 
-    /// Return pen to initial contour (subpath) position and start new contour.
-    /// Visually affects only stroking: filled shapes are closed by definition
+    /** Return pen to initial contour (subpath) position and start new contour.
+
+        Visually affects only stroking: filled shapes are closed by definition.
+    */
     ref Path close() return
     {
         if (!closed)
         {
             assert(subpaths.length > 0);
             subpaths.unsafe_ref(-1).closed = true;
-            const start = points[subpaths[$ - 1].start];
+            const start = subpaths[$ - 1].startPos;
             const end = points[$ - 1];
             if (!fequal6(end.x, start.x) || !fequal6(end.y, start.y))
+            {
+                commands ~= Command.lineTo;
                 points ~= start;
-            posx = start.x;
-            posy = start.y;
+            }
+            pos = start;
             closed = true;
         }
         return this;
@@ -295,10 +345,11 @@ nothrow:
     /// Clear path and reset it to initial state. Retains allocated memory for future use
     void reset()
     {
+        commands.clear();
         points.clear();
         subpaths.clear();
         closed = true;
-        posx = posy = 0;
+        pos = Vec2(0);
     }
 
     int opApply(scope int delegate(ref const SubPath) nothrow callback) const
@@ -307,13 +358,20 @@ nothrow:
             return 0;
         assert(subpaths.length > 0);
 
-        const Vec2[] pts = points[];
+        static Buf!Vec2 buf;
+        buf.clear();
+
+        const(Vec2)[] pts = points[];
         foreach (i; 0 .. subpaths.length)
         {
             const start = subpaths[i].start;
-            const end = (i + 1 < subpaths.length) ? subpaths[i + 1].start : pts.length;
+            const end = (i + 1 < subpaths.length) ? subpaths[i + 1].start : commands.length;
+
+            const len = buf.length;
+            flattenContour(buf, commands[][start .. end], pts);
+
             const bounds = (i + 1 < subpaths.length) ? subpaths[i].bounds : currentContourBounds;
-            const subpath = const(SubPath)(pts[start .. end], subpaths[i].closed, bounds);
+            const subpath = const(SubPath)(buf[][len .. $], subpaths[i].closed, bounds);
 
             // the contour must not contain coincident adjacent points
             debug foreach (j; 1 .. subpath.points.length)
@@ -327,5 +385,36 @@ nothrow:
                 return result;
         }
         return 0;
+    }
+}
+
+private nothrow:
+
+void flattenContour(ref Buf!Vec2 output, const Path.Command[] commands, ref const(Vec2)[] points)
+{
+    Vec2 p = points[0];
+    output ~= p;
+    points = points[1 .. $];
+
+    foreach (cmd; commands)
+    {
+        final switch (cmd) with (Path.Command)
+        {
+        case lineTo:
+            p = points[0];
+            points = points[1 .. $];
+            break;
+        case quadTo:
+            flattenQuadraticBezier(output, p, points[0], points[1], false);
+            p = points[1];
+            points = points[2 .. $];
+            break;
+        case cubicTo:
+            flattenCubicBezier(output, p, points[0], points[1], points[2], false);
+            p = points[2];
+            points = points[3 .. $];
+            break;
+        }
+        output ~= p;
     }
 }
