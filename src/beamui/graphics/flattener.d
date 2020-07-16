@@ -10,11 +10,16 @@ module beamui.graphics.flattener;
 nothrow @safe:
 
 import std.math : fabs, cos, sin, isFinite, PI, PI_2;
-import beamui.core.linalg : Vec2;
+import beamui.core.linalg : Mat2x3, Vec2;
 
 // Bezier flattening is based on Maxim Shemanarev article
 // https://web.archive.org/web/20190309181735/http://antigrain.com/research/adaptive_bezier/index.html
 // It works, but requires further development
+
+float getMinDistFromMatrix(ref const Mat2x3 mat)
+{
+    return 1 / (mat * Vec2(1) - mat * Vec2(0)).length;
+}
 
 /// Convert quadratic bezier curve into a list of points
 void flattenQuadraticBezier(O)(ref O output, Vec2 p0, Vec2 p1, Vec2 p2, bool endpoints, float minDist = 0.7f)

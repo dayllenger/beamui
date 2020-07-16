@@ -14,23 +14,24 @@ static if (USE_OPENGL):
 // dfmt on
 import std.algorithm.mutation : reverse;
 import std.typecons : scoped;
+
 import beamui.core.collections : Buf;
 import beamui.core.geometry : BoxI, Rect, RectI, SizeI;
-import beamui.core.linalg : Vec2, Mat2x3;
+import beamui.core.linalg : Mat2x3, Vec2;
 import beamui.core.logger : Log;
 import beamui.core.math;
 import beamui.graphics.bitmap : Bitmap, onBitmapDestruction;
 import beamui.graphics.brush;
 import beamui.graphics.colors : Color, ColorF;
 import beamui.graphics.compositing : getBlendFactors;
-import beamui.graphics.flattener : flattenCubicBezier;
-import beamui.graphics.painter : GlyphInstance, PaintEngine, MIN_RECT_F;
-import beamui.graphics.pen;
-import beamui.graphics.polygons;
+import beamui.graphics.flattener;
 import beamui.graphics.gl.objects : TexId;
 import beamui.graphics.gl.renderer;
 import beamui.graphics.gl.shaders;
 import beamui.graphics.gl.textures;
+import beamui.graphics.painter : GlyphInstance, MIN_RECT_F, PaintEngine;
+import beamui.graphics.pen;
+import beamui.graphics.polygons;
 import beamui.text.glyph : onGlyphDestruction;
 
 private nothrow:
@@ -488,7 +489,7 @@ protected:
             builder.contour = gpaa.contour;
 
         strokeIter.recharge(contours, st.mat);
-        expandStrokes(strokeIter, pen, builder);
+        expandStrokes(strokeIter, pen, builder, getMinDistFromMatrix(st.mat));
         if (st.aa)
             gpaa.finish(dataStore.length);
 
@@ -595,12 +596,13 @@ protected:
         const pl = Vec2(cx - r, cy);
         const pr = Vec2(cx + r, cy);
 
+        const minDist = getMinDistFromMatrix(st.mat);
         const v = positions.length;
         positions ~= Vec2(cx, cy);
         positions ~= pl;
-        flattenCubicBezier(positions, pl, Vec2(pl.x, cy - ry), Vec2(pr.x, cy - ry), pr, false);
+        flattenCubicBezier(positions, pl, Vec2(pl.x, cy - ry), Vec2(pr.x, cy - ry), pr, false, minDist);
         positions ~= pr;
-        flattenCubicBezier(positions, pr, Vec2(pr.x, cy + ry), Vec2(pl.x, cy + ry), pl, false);
+        flattenCubicBezier(positions, pr, Vec2(pr.x, cy + ry), Vec2(pl.x, cy + ry), pl, false, minDist);
         positions ~= pl;
         const vend = positions.length;
 

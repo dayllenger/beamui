@@ -22,7 +22,7 @@ nothrow:
     bool closed;
     Rect bounds;
 
-    uint flatten(bool transform)(ref Buf!Vec2 output, Mat2x3 mat) const
+    uint flatten(bool transform)(ref Buf!Vec2 output, Mat2x3 mat, float pixelSize = 1) const
     {
         const len = output.length;
         Vec2 p = points[0];
@@ -31,7 +31,13 @@ nothrow:
         output ~= p;
         const(Vec2)[] r = points[1 .. $];
 
-        // TODO: use matrix to compute tolerance
+        // compute distance tolerance
+        float minDist = pixelSize;
+        static if (transform)
+            minDist *= 0.7f;
+        else
+            minDist *= getMinDistFromMatrix(mat);
+
         foreach (cmd; commands)
         {
             final switch (cmd) with (Path.Command)
@@ -50,7 +56,7 @@ nothrow:
                     p1 = mat * p1;
                     p2 = mat * p2;
                 }
-                flattenQuadraticBezier(output, p, p1, p2, false);
+                flattenQuadraticBezier(output, p, p1, p2, false, minDist);
                 p = p2;
                 r = r[2 .. $];
                 break;
@@ -64,7 +70,7 @@ nothrow:
                     p2 = mat * p2;
                     p3 = mat * p3;
                 }
-                flattenCubicBezier(output, p, p1, p2, p3, false);
+                flattenCubicBezier(output, p, p1, p2, p3, false, minDist);
                 p = p3;
                 r = r[3 .. $];
                 break;

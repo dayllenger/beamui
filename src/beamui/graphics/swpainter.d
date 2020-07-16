@@ -208,9 +208,9 @@ protected:
                 bufContours.clear();
                 foreach (ref cr; lst)
                 {
-                    if (lst[0].points.length >= 3)
+                    if (cr.points.length >= 3)
                     {
-                        bufContours ~= lst[0].flatten!true(bufVerts, mat);
+                        bufContours ~= cr.flatten!true(bufVerts, mat);
                     }
                 }
                 if (bufContours.length)
@@ -238,7 +238,7 @@ protected:
             {
                 strokeIter.recharge(contours, mat);
                 auto builder = scoped!PolyBuilder(bufVerts, bufContours);
-                expandStrokes(strokeIter, pen, builder);
+                expandStrokes(strokeIter, pen, builder, getMinDistFromMatrix(mat));
             }
             if (bufVerts.length)
             {
@@ -426,8 +426,9 @@ protected:
         const bot = Vec2(cx, cy + r);
 
         bufVerts.clear();
-        flattenCubicBezier(bufVerts, top, Vec2(cx + rx, top.y), Vec2(cx + rx, bot.y), bot, true);
-        flattenCubicBezier(bufVerts, bot, Vec2(cx - rx, bot.y), Vec2(cx - rx, top.y), top, false);
+        const minDist = getMinDistFromMatrix(st.mat);
+        flattenCubicBezier(bufVerts, top, Vec2(cx + rx, top.y), Vec2(cx + rx, bot.y), bot, true, minDist);
+        flattenCubicBezier(bufVerts, bot, Vec2(cx - rx, bot.y), Vec2(cx - rx, top.y), top, false, minDist);
         transformInPlace(bufVerts.unsafe_slice, st.mat);
 
         bufTraps.clear();

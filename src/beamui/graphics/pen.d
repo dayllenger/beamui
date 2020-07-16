@@ -67,7 +67,7 @@ nothrow:
 }
 
 /// Build strokes from given path and stroke parameters
-void expandStrokes(PathIter iter, Pen pen, StrokeBuilder builder)
+void expandStrokes(PathIter iter, Pen pen, StrokeBuilder builder, float minDist = 0.7f)
 in (iter)
 in (builder)
 {
@@ -82,12 +82,12 @@ in (builder)
     while (iter.next(points, closed))
     {
         builder.beginContour();
-        expandSubpath(points, closed, pen, builder);
+        expandSubpath(points, closed, pen, builder, minDist);
         builder.endContour();
     }
 }
 
-private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, StrokeBuilder builder)
+private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, StrokeBuilder builder, float minDist)
 {
     // generated points run in such order:
     //  0            2 4
@@ -108,7 +108,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
         if (!loop)
         {
             if (pen.cap == LineCap.round)
-                makeRoundCap(first, firstN * r, builder);
+                makeRoundCap(first, firstN * r, builder, minDist);
             else if (pen.cap == LineCap.square)
                 first += firstN * r;
         }
@@ -127,7 +127,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
             const ncos = dotProduct(norm0, norm1);
             // skip collinear
             if (!fequal6(ncos, 1))
-                makeJoin(p, norm0, norm1, ncos, r, pen.join, pen.miterLimit, builder);
+                makeJoin(p, norm0, norm1, ncos, r, pen.join, pen.miterLimit, builder, minDist);
         }
         // end
         Vec2 last = points[$ - 1];
@@ -137,7 +137,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
             // the last point is equal to the first point here
             norm0 = lastN.rotated90fromYtoX;
             norm1 = firstN.rotated90fromXtoY;
-            makeJoin(last, norm0, norm1, dotProduct(norm0, norm1), r, pen.join, pen.miterLimit, builder);
+            makeJoin(last, norm0, norm1, dotProduct(norm0, norm1), r, pen.join, pen.miterLimit, builder, minDist);
             // close the loop
             builder.add(first + firstV, first - firstV);
         }
@@ -148,7 +148,7 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
             const v = lastN.rotated90fromYtoX * r;
             builder.add(last + v, last - v);
             if (pen.cap == LineCap.round)
-                makeRoundCap(last, lastN * r, builder);
+                makeRoundCap(last, lastN * r, builder, minDist);
         }
     }
     // the simplest cases next
@@ -168,13 +168,13 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
         {
             // starting cap
             if (pen.cap == LineCap.round)
-                makeRoundCap(points[0], outside, builder);
+                makeRoundCap(points[0], outside, builder, minDist);
             // the body
             builder.add(points[0] + v, points[0] - v);
             builder.add(points[1] + v, points[1] - v);
             // ending cap
             if (pen.cap == LineCap.round)
-                makeRoundCap(points[1], -outside, builder);
+                makeRoundCap(points[1], -outside, builder, minDist);
         }
     }
     else if (points.length == 1)
@@ -182,8 +182,8 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
         if (pen.cap == LineCap.round)
         {
             // make a circle
-            makeRoundCap(points[0], Vec2(-r, 0), builder);
-            makeRoundCap(points[0], Vec2(r, 0), builder);
+            makeRoundCap(points[0], Vec2(-r, 0), builder, minDist);
+            makeRoundCap(points[0], Vec2(r, 0), builder, minDist);
         }
         else if (pen.cap == LineCap.square)
         {
@@ -195,7 +195,8 @@ private void expandSubpath(const Vec2[] points, bool loop, ref const Pen pen, St
     }
 }
 
-private void makeJoin(Vec2 p, Vec2 n0, Vec2 n1, float ncos, float r, LineJoin type, float miterLimit, StrokeBuilder builder)
+private void makeJoin(Vec2 p, Vec2 n0, Vec2 n1, float ncos, float r, LineJoin type, float miterLimit, StrokeBuilder builder,
+        float minDist)
 {
     // if flat enough, join simply by the first points
     const mul1 = r / 2;
@@ -229,7 +230,7 @@ private void makeJoin(Vec2 p, Vec2 n0, Vec2 n1, float ncos, float r, LineJoin ty
             builder.add(p + v0, p - v0);
 
             Buf!Vec2* positions = upper ? builder.beginFanLeft(p - v0) : builder.beginFanRight(p + v0);
-            flattenArc(*positions, p, r, startAngle, angleOffset, true);
+            flattenArc(*positions, p, r, startAngle, angleOffset, true, minDist);
             builder.endFan();
 
             builder.add(p + v1, p - v1);
@@ -270,13 +271,13 @@ private void makeJoin(Vec2 p, Vec2 n0, Vec2 n1, float ncos, float r, LineJoin ty
     }
 }
 
-private void makeRoundCap(Vec2 p, Vec2 outside, StrokeBuilder builder)
+private void makeRoundCap(Vec2 p, Vec2 outside, StrokeBuilder builder, float minDist)
 {
     Buf!Vec2* positions = builder.beginFanLeft(p);
 
     const n = outside.rotated90fromYtoX;
     outside *= 4.0f / 3.0f;
-    flattenCubicBezier(*positions, p + n, p + n + outside, p - n + outside, p - n, true);
+    flattenCubicBezier(*positions, p + n, p + n + outside, p - n + outside, p - n, true, minDist);
 
     builder.endFan();
 }
