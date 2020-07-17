@@ -402,19 +402,6 @@ protected:
         }
     }
 
-    void fillTriangle(Vec2[3] ps, Color c)
-    {
-        transformInPlace(ps[], st.mat);
-        const BoxI clip = clipByRect(computeBoundingBox(ps[]));
-        if (clip.empty)
-            return;
-
-        const uint[1] lengths = 3;
-        auto rparams = RastParams(st.aa, clip);
-        auto plotter = choosePlotterForSolidColor(c);
-        rasterizePolygons(ps[], lengths[], rparams, plotter);
-    }
-
     void drawImage(ref const Bitmap bmp, Vec2 pos, float opacity)
     {
         const rect = Rect(pos.x, pos.y, pos.x + bmp.width, pos.y + bmp.height);

@@ -555,7 +555,15 @@ final class Painter
         if (!state.passTransparent && color.isFullyTransparent)
             return;
 
-        engine.fillTriangle([p0, p1, p2], color);
+        tempPath.reset();
+        tempPath.moveTo(p0.x, p0.y).lineTo(p1.x, p1.y).lineTo(p2.x, p2.y).close();
+
+        const contours = prepareContours(tempPath);
+        if (!contours)
+            return;
+
+        const br = Brush.fromSolid(color);
+        engine.fillPath(contours, br, FillRule.evenodd);
     }
     /// Fill a circle
     void fillCircle(float centerX, float centerY, float radius, Color color)
@@ -917,7 +925,6 @@ protected:
 
     void drawLine(Vec2, Vec2, Color);
     void fillRect(Rect, Color);
-    void fillTriangle(Vec2[3], Color);
 
     void drawImage(ref const Bitmap, Vec2, float);
     void drawNinePatch(ref const Bitmap, ref const NinePatchInfo, float);

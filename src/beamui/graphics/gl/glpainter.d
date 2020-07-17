@@ -566,26 +566,6 @@ protected:
         fillRectImpl(r, &c);
     }
 
-    void fillTriangle(Vec2[3] ps, Color c)
-    {
-        const BoxI clip = clipByRect(transformBounds(computeBoundingBox(ps[])));
-        if (clip.empty)
-            return;
-
-        const v = positions.length;
-        const t = triangles.length;
-        positions ~= ps[];
-        triangles ~= Tri(v, v + 1, v + 2);
-
-        if (st.aa)
-        {
-            gpaa.add(ps[]);
-            gpaa.finish(dataStore.length);
-        }
-
-        simpleColorOnly(t, RectI(clip), c);
-    }
-
     void drawImage(ref const Bitmap bmp, Vec2 p, float opacity)
     {
         const int w = bmp.width;
