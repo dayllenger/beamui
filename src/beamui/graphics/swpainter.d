@@ -356,16 +356,6 @@ protected:
         }
     }
 
-    void drawLine(Vec2 p, Vec2 q, Color c)
-    {
-        p = st.mat * p;
-        q = st.mat * q;
-
-        auto rparams = RastParams(st.aa, BoxI(st.clipRect));
-        auto plotter = choosePlotterForSolidColor(c);
-        rasterizeLine(p, q, rparams, plotter);
-    }
-
     void fillRect(Rect r, Color c)
     {
         fillRectImpl(r, choosePlotterForSolidColor(c));

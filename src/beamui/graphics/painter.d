@@ -7,6 +7,7 @@ Authors:   dayllenger
 */
 module beamui.graphics.painter;
 
+import std.algorithm.mutation : swap;
 import std.math : ceil, floor, sqrt, isFinite, PI;
 import beamui.core.collections : Buf;
 import beamui.core.geometry : Box, BoxI, Point, Rect, RectI;
@@ -560,7 +561,29 @@ final class Painter
         if (!state.passTransparent && color.isFullyTransparent)
             return;
 
-        engine.drawLine(Vec2(x0, y0), Vec2(x1, y1), color);
+        x0 += 0.5f;
+        y0 += 0.5f;
+        x1 += 0.5f;
+        y1 += 0.5f;
+
+        // no need to clip, they are thin lines anyway
+        const RectI clip = state.clipRect;
+        Rect bounds = Rect(x0, y0, x1, y1);
+        if (bounds.left > bounds.right)
+            swap(bounds.left, bounds.right);
+        if (bounds.top > bounds.bottom)
+            swap(bounds.top, bounds.bottom);
+
+        const Path.Command[1] cmds = Path.Command.lineTo;
+        const Vec2[2] ps = [Vec2(x0, y0), Vec2(x1, y1)];
+        const subpath = SubPath(cmds, ps, false, bounds);
+        const contour = PaintEngine.Contour(subpath, clip);
+        const contours = PaintEngine.Contours((&contour)[0 .. 1], bounds, clip);
+
+        const br = Brush.fromSolid(color);
+        Pen pen = Pen(1);
+        pen.shouldScale = false;
+        engine.strokePath(contours, br, pen, true);
     }
     /// Fill a simple axis-oriented rectangle
     void fillRect(float x, float y, float width, float height, Color color)
@@ -953,7 +976,6 @@ protected:
     void fillPath(ref Contours, ref const Brush, FillRule);
     void strokePath(ref Contours, ref const Brush, ref const Pen, bool hairline);
 
-    void drawLine(Vec2, Vec2, Color);
     void fillRect(Rect, Color);
 
     void drawImage(ref const Bitmap, Vec2, float);

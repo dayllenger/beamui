@@ -514,58 +514,6 @@ protected:
         }
     }
 
-    void drawLine(Vec2 p, Vec2 q, Color c)
-    {
-        BoxI clip;
-        {
-            const tp = st.mat * p;
-            const tq = st.mat * q;
-            // dfmt off
-            const bbox = Rect(
-                min(tp.x, tq.x) - 0.5f,
-                min(tp.y, tq.y) - 0.5f,
-                max(tp.x, tq.x) + 0.5f,
-                max(tp.y, tq.y) + 0.5f,
-            );
-            // dfmt on
-            clip = clipByRect(bbox);
-        }
-        if (clip.empty)
-            return;
-
-        const origin = st.mat * Vec2(0);
-        const coeffX = (st.mat * Vec2(1, 0) - origin).length;
-        const coeffY = (st.mat * Vec2(0, 1) - origin).length;
-        if (coeffX <= 0 && coeffY <= 0)
-            return;
-
-        // draw line using quad
-        p.x += 0.5f;
-        p.y += 0.5f;
-        q.x += 0.5f;
-        q.y += 0.5f;
-        const n = (q - p).normalized;
-        const dir2 = Vec2(n.x * 0.5f / coeffX, n.y * 0.5f / coeffY);
-        const offset = dir2.rotated90fromXtoY();
-        p -= dir2;
-        q += dir2;
-        Vec2[4] ps = [p - offset, q - offset, q + offset, p + offset];
-
-        const v = positions.length;
-        const t = triangles.length;
-        positions ~= ps[];
-        triangles ~= Tri(v, v + 1, v + 2);
-        triangles ~= Tri(v + 2, v + 3, v);
-
-        if (st.aa)
-        {
-            gpaa.add(ps[]);
-            gpaa.finish(dataStore.length);
-        }
-
-        simpleColorOnly(t, RectI(clip), c);
-    }
-
     void fillRect(Rect r, Color c)
     {
         fillRectImpl(r, &c);
