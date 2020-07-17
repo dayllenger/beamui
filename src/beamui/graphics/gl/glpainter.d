@@ -124,7 +124,7 @@ public final class GLPaintEngine : PaintEngine
         colorStopAtlas = &data.colorStopAtlas;
         textureCache = &data.textureCache;
         glyphCache = &data.glyphCache;
-        strokeIter = new FlatteningContourIter(false);
+        strokeIter = new FlatteningContourIter;
     }
 
     ~this()
@@ -488,23 +488,28 @@ protected:
         if (st.aa)
             builder.contour = gpaa.contour;
 
-        strokeIter.recharge(contours, st.mat);
-        expandStrokes(strokeIter, pen, builder, getMinDistFromMatrix(st.mat));
+        // if we are in non-scaling mode, transform contours on CPU, then expand
+        const minDist = pen.shouldScale ? getMinDistFromMatrix(st.mat) : 0.7f;
+        strokeIter.recharge(contours, st.mat, !pen.shouldScale);
+        expandStrokes(strokeIter, pen, builder, minDist);
+
         if (st.aa)
             gpaa.finish(dataStore.length);
 
         if (triangles.length > t)
         {
             const trivial = contours.list.length == 1 && contours.list[0].points.length < 3;
+            const mat = pen.shouldScale ? st.mat : Mat2x3.identity;
             if (br.isOpaque || trivial)
             {
-                simple(t, contours.trBounds, &br);
+                simple(t, contours.trBounds, &br, &mat);
             }
             else
             {
                 // we must do two-pass rendering to avoid overlaps
                 // on bends and self-intersections
-                twoPass(t, Stenciling.justCover, contours.bounds, contours.trBounds, &br);
+                const bounds = pen.shouldScale ? contours.bounds : Rect.from(contours.trBounds);
+                twoPass(t, Stenciling.justCover, bounds, contours.trBounds, &br, &mat);
             }
         }
     }
@@ -979,10 +984,10 @@ private:
         return true;
     }
 
-    bool simple(uint tstart, RectI clip, const Brush* br)
+    bool simple(uint tstart, RectI clip, const Brush* br, const Mat2x3* m = null)
     {
+        DataChunk data = prepareDataChunk(m);
         ShParams params;
-        DataChunk data;
         if (!convertBrush(br, params, data))
             return false;
 
@@ -1009,10 +1014,10 @@ private:
     }
 
     /// Stencil, than cover
-    bool twoPass(uint tstart, Stenciling stenciling, Rect bbox, RectI clip, const Brush* br)
+    bool twoPass(uint tstart, Stenciling stenciling, Rect bbox, RectI clip, const Brush* br, const Mat2x3* m = null)
     {
+        DataChunk data = prepareDataChunk(m);
         ShParams params;
-        DataChunk data;
         if (!convertBrush(br, params, data))
             return false;
 
@@ -1134,8 +1139,6 @@ private:
     {
         if (dataStore.length >= MAX_DATA_CHUNKS)
             return false;
-
-        data = prepareDataChunk();
         if (!br)
             return true; // PaintKind.empty
 

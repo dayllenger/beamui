@@ -70,7 +70,7 @@ public final class SWPaintEngine : PaintEngine
     in (backbuffer)
     {
         backbuf = &backbuffer;
-        strokeIter = new FlatteningContourIter(true);
+        strokeIter = new FlatteningContourIter;
         plotter_solid_op = scoped!(PlotterSolid!false)();
         plotter_solid_tr = scoped!(PlotterSolid!true)();
         plotter_linear_op = scoped!(PlotterLinear!false)();
@@ -236,12 +236,16 @@ protected:
             bufVerts.clear();
             bufContours.clear();
             {
-                strokeIter.recharge(contours, mat);
+                // in non-scaling mode, transform contours before expanding
+                strokeIter.recharge(contours, mat, !pen.shouldScale);
                 auto builder = scoped!PolyBuilder(bufVerts, bufContours);
-                expandStrokes(strokeIter, pen, builder, getMinDistFromMatrix(mat));
+                const minDist = pen.shouldScale ? getMinDistFromMatrix(mat) : 0.7f;
+                expandStrokes(strokeIter, pen, builder, minDist);
             }
             if (bufVerts.length)
             {
+                if (pen.shouldScale)
+                    transformInPlace(bufVerts.unsafe_slice, mat);
                 auto rparams = RastParams(st.aa, clip);
                 rasterizePolygons(bufVerts[], bufContours[], rparams, plotter);
             }

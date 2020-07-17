@@ -47,6 +47,8 @@ struct Pen
     LineCap cap;
     LineJoin join;
     float miterLimit = 10;
+    /// Specifies whether stroke width shall transform
+    bool shouldScale = true;
 }
 
 interface PathIter

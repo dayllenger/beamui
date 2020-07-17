@@ -479,38 +479,70 @@ final class Painter
         if (!state.passTransparent && brush.isFullyTransparent)
             return;
 
-        // fade out very thin lines, taking transformation into account
-        const origin = state.mat * Vec2(0);
-        const coeffX = (state.mat * Vec2(1, 0) - origin).magnitudeSquared;
-        const coeffY = (state.mat * Vec2(0, 1) - origin).magnitudeSquared;
-        const coeff = sqrt(min(coeffX, coeffY));
-        const realW = pen.width * coeff;
-        if (fzero2(realW))
-            return;
-        if (realW < 1)
+        if (pen.shouldScale)
         {
-            const opacity = brush.opacity * realW;
-            if (!state.passTransparent && fzero2(opacity))
+            // fade out very thin lines, taking transformation into account
+            const origin = state.mat * Vec2(0);
+            const coeffX = (state.mat * Vec2(1, 0) - origin).magnitudeSquared;
+            const coeffY = (state.mat * Vec2(0, 1) - origin).magnitudeSquared;
+            const coeff = sqrt(min(coeffX, coeffY));
+            const realW = pen.width * coeff;
+            if (fzero2(realW))
                 return;
+            if (realW < 1)
+            {
+                const opacity = brush.opacity * realW;
+                if (!state.passTransparent && fzero2(opacity))
+                    return;
 
-            const contours = prepareContours(path, pen.width / 2);
-            if (!contours)
-                return;
+                const contours = prepareContours(path, pen.width / 2);
+                if (!contours)
+                    return;
 
-            // make a shallow copy of the brush to change its opacity
-            Brush br = brush;
-            br.opacity = opacity;
-            pen.width = 1.01f / coeff;
-            const hairline = fequal2(coeffX, coeffY);
-            engine.strokePath(contours, br, pen, hairline);
+                // make a shallow copy of the brush to change its opacity
+                Brush br = brush;
+                br.opacity = opacity;
+                pen.width = 1.01f / coeff;
+                const hairline = fequal2(coeffX, coeffY);
+                engine.strokePath(contours, br, pen, hairline);
+            }
+            else
+            {
+                const contours = prepareContours(path, pen.width / 2);
+                if (!contours)
+                    return;
+
+                engine.strokePath(contours, brush, pen, false);
+            }
         }
         else
         {
-            const contours = prepareContours(path, pen.width / 2);
-            if (!contours)
+            if (fzero2(pen.width))
                 return;
+            // fade out very thin lines
+            if (pen.width < 1)
+            {
+                const opacity = brush.opacity * pen.width;
+                if (!state.passTransparent && fzero2(opacity))
+                    return;
 
-            engine.strokePath(contours, brush, pen, false);
+                const contours = prepareContours(path, 0, 0.5f);
+                if (!contours)
+                    return;
+
+                Brush br = brush;
+                br.opacity = opacity;
+                pen.width = 1;
+                engine.strokePath(contours, br, pen, true);
+            }
+            else
+            {
+                const contours = prepareContours(path, 0, pen.width / 2);
+                if (!contours)
+                    return;
+
+                engine.strokePath(contours, brush, pen, false);
+            }
         }
     }
 
@@ -679,9 +711,10 @@ final class Painter
         engine.drawText(run, color);
     }
 
-    private PaintEngine.Contours prepareContours(ref const Path path, float padding = 0)
+    private PaintEngine.Contours prepareContours(ref const Path path, float padding = 0, float trPadding = 0)
     in (!path.empty)
     in (isFinite(padding))
+    in (isFinite(trPadding))
     {
         bufContours.clear();
         const Mat2x3 m = state.mat;
@@ -697,12 +730,13 @@ final class Painter
             const Vec2 v1 = m * Vec2(r.right, r.top);
             const Vec2 v2 = m * Vec2(r.left, r.bottom);
             const Vec2 v3 = m * Vec2(r.right, r.bottom);
-            const tr = Rect(
+            Rect tr = Rect(
                 min(v0.x, v1.x, v2.x, v3.x),
                 min(v0.y, v1.y, v2.y, v3.y),
                 max(v0.x, v1.x, v2.x, v3.x),
                 max(v0.y, v1.y, v2.y, v3.y),
             );
+            tr.expand(trPadding, trPadding);
             if (!fzero2(tr.width) && !fzero2(tr.height))
             {
                 RectI box = RectI(
@@ -868,15 +902,11 @@ protected:
             Buf!Vec2 buf;
         }
 
-        this(bool transform)
-        {
-            this.transform = transform;
-        }
-
-        void recharge(ref Contours contours, ref const Mat2x3 mat)
+        void recharge(ref Contours contours, ref const Mat2x3 mat, bool transform)
         {
             list = contours.list;
             this.mat = mat;
+            this.transform = transform;
         }
 
         bool next(out const(Vec2)[] points, out bool closed)

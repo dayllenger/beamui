@@ -32,13 +32,16 @@ nothrow:
         const(Vec2)[] r = points[1 .. $];
 
         // compute distance tolerance
+        const minDistFromMat = getMinDistFromMatrix(mat);
+        const skip = minDistFromMat > 1000; // TODO: develop robust ways to handle degeneracies
+
         float minDist = pixelSize;
         static if (transform)
             minDist *= 0.7f;
         else
-            minDist *= getMinDistFromMatrix(mat);
+            minDist *= minDistFromMat;
 
-        foreach (cmd; commands)
+        foreach (cmd; !skip ? commands : null)
         {
             final switch (cmd) with (Path.Command)
             {
