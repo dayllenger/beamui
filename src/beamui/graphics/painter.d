@@ -149,7 +149,17 @@ final class Painter
         if (box.empty || state.discard)
             return;
 
-        engine.clipOut(mainStack.length, Rect(box));
+        const r = Rect(box);
+        tempPath.reset();
+        tempPath.moveTo(r.left, r.top);
+        tempPath.lineTo(r.right, r.top).lineTo(r.right, r.bottom).lineTo(r.left, r.bottom);
+        tempPath.close();
+
+        const contours = prepareContours(tempPath);
+        if (!contours)
+            return;
+
+        engine.clipOut(mainStack.length, contours, FillRule.evenodd, false);
     }
     /// ditto
     void clipOut(ref const Path path, FillRule rule = FillRule.nonzero)
@@ -596,7 +606,17 @@ final class Painter
         if (!state.passTransparent && color.isFullyTransparent)
             return;
 
-        engine.fillRect(Rect(x, y, x + width, y + height), color);
+        tempPath.reset();
+        tempPath.moveTo(x, y);
+        tempPath.lineTo(x + width, y).lineTo(x + width, y + height).lineTo(x, y + height);
+        tempPath.close();
+
+        const contours = prepareContours(tempPath);
+        if (!contours)
+            return;
+
+        const br = Brush.fromSolid(color);
+        engine.fillPath(contours, br, FillRule.evenodd);
     }
     /// Fill a triangle. Use it if you need to draw lone solid triangles
     void fillTriangle(Vec2 p0, Vec2 p1, Vec2 p2, Color color)
@@ -666,7 +686,7 @@ final class Painter
             if (state.passTransparent)
             {
                 // draw a transparent rectangle instead
-                engine.fillRect(Rect(x, y, x + w, y + h), Color.transparent);
+                fillRect(x, y, w, h, Color.transparent);
             }
             return;
         }
@@ -692,7 +712,7 @@ final class Painter
             if (state.passTransparent)
             {
                 // draw a transparent rectangle instead
-                engine.fillRect(dstRect, Color.transparent);
+                fillRect(dstRect.left, dstRect.top, dstRect.width, dstRect.height, Color.transparent);
             }
             return;
         }
@@ -968,15 +988,12 @@ protected:
     void beginLayer(BoxI, bool expand, LayerOp);
     void composeLayer();
 
-    void clipOut(uint, Rect);
     void clipOut(uint, ref Contours, FillRule, bool complement);
     void restore(uint);
 
     void paintOut(ref const Brush);
     void fillPath(ref Contours, ref const Brush, FillRule);
     void strokePath(ref Contours, ref const Brush, ref const Pen, bool hairline);
-
-    void fillRect(Rect, Color);
 
     void drawImage(ref const Bitmap, Vec2, float);
     void drawNinePatch(ref const Bitmap, ref const NinePatchInfo, float);

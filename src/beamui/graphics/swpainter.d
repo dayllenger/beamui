@@ -149,10 +149,6 @@ protected:
         // dfmt on
     }
 
-    void clipOut(uint index, Rect r)
-    {
-    }
-
     void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
     {
     }
@@ -356,46 +352,6 @@ protected:
         }
     }
 
-    void fillRect(Rect r, Color c)
-    {
-        fillRectImpl(r, choosePlotterForSolidColor(c));
-    }
-
-    private void fillRectImpl(Rect r, lazy Plotter plotter)
-    {
-        // dfmt off
-        Vec2[4] vs = [
-            Vec2(r.left, r.top),
-            Vec2(r.right, r.top),
-            Vec2(r.right, r.bottom),
-            Vec2(r.left, r.bottom),
-        ];
-        // dfmt on
-        transformInPlace(vs[], st.mat);
-        const BoxI clip = clipByRect(computeBoundingBox(vs[]));
-        if (clip.empty)
-            return;
-
-        // axis-aligned -> one trapezoid
-        if (fequal2(vs[0].x, vs[3].x) && fequal2(vs[0].y, vs[1].y))
-        {
-            if (vs[0].x > vs[1].x)
-                swap(vs[0].x, vs[1].x);
-            if (vs[0].y > vs[2].y)
-                swap(vs[0].y, vs[2].y);
-
-            const HorizEdge[2] t = [HorizEdge(vs[0].x, vs[1].x, vs[0].y), HorizEdge(vs[0].x, vs[1].x, vs[2].y)];
-            auto rparams = RastParams(st.aa, clip);
-            rasterizeTrapezoidChain(t[], rparams, plotter);
-        }
-        else
-        {
-            const uint[1] lengths = 4;
-            auto rparams = RastParams(st.aa, clip);
-            rasterizePolygons(vs[], lengths[], rparams, plotter);
-        }
-    }
-
     void drawImage(ref const Bitmap bmp, Vec2 pos, float opacity)
     {
         const rect = Rect(pos.x, pos.y, pos.x + bmp.width, pos.y + bmp.height);
@@ -585,22 +541,6 @@ protected:
             clip.w, clip.h,
         );
         // dfmt on
-    }
-
-    private Plotter choosePlotterForSolidColor(Color c)
-    {
-        if (c.isOpaque)
-        {
-            PlotterSolid!false p = plotter_solid_op;
-            p.initialize(layer, c);
-            return p;
-        }
-        else
-        {
-            PlotterSolid!true p = plotter_solid_tr;
-            p.initialize(layer, c);
-            return p;
-        }
     }
 }
 

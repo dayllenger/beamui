@@ -407,18 +407,6 @@ protected:
         gpaa.setLayerIndex(layer.index);
     }
 
-    void clipOut(uint index, Rect r)
-    {
-        const set = Set(Span(batches.length), Span(dataStore.length), layer.index);
-        const task = DepthTask(index, dataStore.length);
-        if (fillRectImpl(r, null))
-        {
-            sets ~= set;
-            sets ~= Set(Span(batches.length), Span(dataStore.length), layer.index);
-            depthTasks ~= task;
-        }
-    }
-
     void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
     {
         alias S = Stenciling;
@@ -512,11 +500,6 @@ protected:
                 twoPass(t, Stenciling.justCover, bounds, contours.trBounds, &br, &mat);
             }
         }
-    }
-
-    void fillRect(Rect r, Color c)
-    {
-        fillRectImpl(r, &c);
     }
 
     void drawImage(ref const Bitmap bmp, Vec2 p, float opacity)
@@ -801,43 +784,6 @@ private:
         addStrip(triangles, v, 4);
     }
 
-    bool fillRectImpl(Rect r, Color* c)
-    {
-        const Rect tr = transformBounds(r);
-        const BoxI clip = clipByRect(tr);
-        if (clip.empty)
-            return false;
-
-        // dfmt off
-        const Vec2[4] vs = [
-            Vec2(r.left, r.top),
-            Vec2(r.left, r.bottom),
-            Vec2(r.right, r.top),
-            Vec2(r.right, r.bottom),
-        ];
-        // dfmt on
-        const v = positions.length;
-        const t = triangles.length;
-        positions ~= vs[];
-        addStrip(triangles, v, 4);
-
-        // TODO: does not antialias if it's pixel-aligned
-        if (st.aa)
-        {
-            // dfmt off
-            const Vec2[4] silhouette = [
-                Vec2(r.left, r.top),
-                Vec2(r.left, r.bottom),
-                Vec2(r.right, r.bottom),
-                Vec2(r.right, r.top),
-            ];
-            // dfmt on
-            gpaa.add(silhouette[]);
-            gpaa.finish(dataStore.length);
-        }
-        return c ? simpleColorOnly(t, RectI(clip), *c) : simple(t, RectI(clip), null);
-    }
-
     bool fillPathImpl(ref Contours contours, const Brush* br, Stenciling stenciling)
     {
         const lst = contours.list;
@@ -906,31 +852,6 @@ private:
     }
 
     // TODO: find more opportunities for merging
-
-    bool simpleColorOnly(uint tstart, RectI clip, Color color)
-    {
-        const opaque = color.isOpaque;
-        DataChunk data = prepareDataChunk(null, color);
-        // try to merge with the previous
-        if (auto last = hasSimilarSimpleBatch(PaintKind.solid, opaque))
-        {
-            last.common.clip.include(clip);
-            assert(last.common.triangles.end == tstart);
-            last.common.triangles.end = triangles.length;
-        }
-        else
-        {
-            Batch bt;
-            bt.type = BatchType.simple;
-            bt.common.opaque = opaque;
-            bt.common.clip = clip;
-            bt.common.params.kind = PaintKind.solid;
-            bt.common.triangles = Span(tstart, triangles.length);
-            batches ~= bt;
-        }
-        doneBatch(data);
-        return true;
-    }
 
     bool simple(uint tstart, RectI clip, const Brush* br, const Mat2x3* m = null)
     {
