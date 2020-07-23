@@ -10,24 +10,29 @@ uniform sampler2D tex;
 
 void main()
 {
+    const vec2 uv = texPixelSize * gl_FragCoord.xy;
+    vec2 offset = texPixelSize * vec2(1 - pack.w, pack.w);
+
     // compute the difference between sample position and geometric line
     const float diff = dot(gl_FragCoord.xy, pack.xy) + pack.z;
-
-    // compute the coverage of the neighboring surface
-    const float coverage = 0.5 - abs(diff) + dummy;
-    vec2 offset = vec2(0);
-
-    if (coverage > 0)
+    if (diff < -0.001 || 0.001 < diff)
     {
+        // compute the coverage of the neighboring surface
+        const float coverage = 0.5 - abs(diff) + dummy;
         // select direction to sample a neighbor pixel
-        float dir = diff >= 0 ? 1 : -1;
-        if (pack.w == 0)
-            offset.x = dir * coverage;
-        else
-            offset.y = dir * coverage;
-    }
+        offset *= sign(diff) * coverage;
 
-    // blend pixel with neighbor pixel using texture filtering
-    // and shifting the coordinate appropriately
-    f_color = texture(tex, texPixelSize * (gl_FragCoord.xy + offset));
+        // blend pixel with neighbor pixel using texture filtering
+        // and shifting the coordinate appropriately
+        f_color = texture(tex, uv + offset);
+    }
+    else
+    {
+        // this path handles a nasty case: when the line goes close to pixel center,
+        // the code above may choose the wrong pixel because of differences between
+        // shader and rasterizer calculations
+
+        // just mix two neighbor pixels
+        f_color = (texture(tex, uv + offset) + texture(tex, uv - offset)) * 0.5;
+    }
 }
