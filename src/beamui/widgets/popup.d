@@ -312,12 +312,11 @@ class ElemPopup : Element
         if (old)
             old.parent = null;
 
+        requestLayout();
         if (_content)
         {
             assert(_content.parent is this);
             _content.requestLayout();
         }
-        else
-            requestLayout();
     }
 }

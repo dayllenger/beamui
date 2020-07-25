@@ -208,10 +208,9 @@ private final class MainRootElement : Element
         if (old)
             old.parent = null;
 
+        requestLayout();
         if (_content)
             _content.requestLayout();
-        else
-            requestLayout();
     }
 
     override Element addChild(Element item)
@@ -364,8 +363,8 @@ class Window : CustomEventTarget
 
     private
     {
-        int _w;
-        int _h;
+        int _w = 1;
+        int _h = 1;
         float _screenDPI = 96;
         float _devicePixelRatio = 1;
 
@@ -737,8 +736,7 @@ class Window : CustomEventTarget
     /// Set the minimal window size and resize the window if needed; called from `show()`
     protected void adjustSize()
     {
-        setupGlobalDPI();
-        _mainRootElement.measure();
+        // already measured in `show`
         const bs = _mainRootElement.boundaries;
         // some sane constraints
         _minSize.w = clamp(cast(int)bs.min.w, _minSize.w, _maxSize.w);
@@ -1842,7 +1840,9 @@ class Window : CustomEventTarget
     final void show(Widget delegate() builder)
     {
         _mainBuilder = builder;
-        rebuild(); // the first build
+        needRebuild = true;
+        update(); // the first build
+
         _mainRootElement.setFocus();
         show();
     }
