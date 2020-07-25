@@ -12,6 +12,7 @@ import beamui.core.config;
 // dfmt off
 static if (USE_OPENGL):
 // dfmt on
+import std.conv : to;
 import beamui.core.functions : eliminate;
 import beamui.core.geometry : BoxI, SizeI;
 import beamui.core.linalg : Mat2x3, Vec2;
@@ -19,6 +20,7 @@ import beamui.graphics.colors : ColorF;
 import beamui.graphics.gl.api;
 import beamui.graphics.gl.objects : Tex2D, TexId;
 import beamui.graphics.gl.program;
+import beamui.graphics.gl.stroke_tiling : TILE_SIZE, TileBuffer;
 
 package:
 
@@ -38,6 +40,8 @@ nothrow:
         ShaderCompose _compose;
         ShaderBlend _blend;
         ShaderGPAA _gpaa;
+
+        ShaderSolidStroke _solidStroke;
     }
 
     @disable this(this);
@@ -52,6 +56,8 @@ nothrow:
     ShaderCompose compose() { return take(_compose); }
     ShaderBlend     blend() { return take(_blend); }
     ShaderGPAA       gpaa() { return take(_gpaa); }
+
+    ShaderSolidStroke solidStroke() { return take(_solidStroke); }
     // dfmt on
 
     // non-cached compilation of all the shaders may take 200 ms or more,
@@ -104,6 +110,11 @@ struct ParamsPattern
     float opacity = 0;
 }
 
+struct ParamsTiled
+{
+    TexId buf_segments;
+}
+
 struct ParamsImage
 {
     const(TexId)* tex;
@@ -137,6 +148,7 @@ private enum SamplerIndex
     colors,
     texture,
     offsets,
+    segments,
 }
 
 private struct Locations(string[] names)
@@ -339,6 +351,47 @@ nothrow:
         "viewportHeight", "tex", "position", "size", "imgSize", "matrix", "opacity"
     ]) loc;
     // dfmt on
+}
+
+final class ShaderSolidStroke : GLProgram
+{
+nothrow:
+    override @property string vertexSource() const
+    {
+        enum def1 = "#define DATA_COLOR\n";
+        enum def2 = "#define TILED_STROKE\n";
+        enum def3 = "#define TILE_SIZE " ~ to!string(TILE_SIZE) ~ ".0\n";
+        return def1 ~ def2 ~ def3 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+    }
+
+    override @property string fragmentSource() const
+    {
+        enum def1 = "#define TILED_STROKE\n";
+        enum def2 = "#define TILE_SIZE " ~ to!string(TILE_SIZE) ~ ".0\n";
+        enum def3 = "#define ROW_LENGTH " ~ to!string(TileBuffer.ROW_LENGTH) ~ "\n";
+        return def1 ~ def2 ~ def3 ~ import("stroke-sdf.inc.glsl") ~ import("solid.fs.glsl");
+    }
+
+    override protected bool initLocations(const GLProgramInterface pi)
+    {
+        pi.bindAttribLocation("v_tile", 0);
+        pi.bindAttribLocation("v_segments", 1);
+        pi.bindAttribLocation("v_dataIndex", 2);
+        return loc.initialize(pi);
+    }
+
+    void prepare(ref const ParamsBase pbase, ref const ParamsTiled p)
+    {
+        glUniform2f(loc.pixelSize, pbase.pixelSize.x, pbase.pixelSize.y);
+        glUniform1i(loc.viewportHeight, pbase.viewportHeight);
+
+        glUniform1i(loc.dataStore, SamplerIndex.data);
+        Tex2D.setup(pbase.dataStore, SamplerIndex.data);
+        glUniform1i(loc.buf_segments, SamplerIndex.segments);
+        Tex2D.setup(p.buf_segments, SamplerIndex.segments);
+    }
+
+    private Locations!(["pixelSize", "viewportHeight", "buf_segments", "dataStore"]) loc;
 }
 
 final class ShaderImage : ShaderBase

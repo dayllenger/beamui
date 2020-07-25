@@ -263,6 +263,16 @@ nothrow:
         glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, cast(void*)(start * uint.sizeof));
         checkError("draw lines");
     }
+
+    void drawInstancedQuads(VaoId vao, DrawFlags flags, int count)
+    in (count > 0)
+    {
+        vaoman.bind(vao);
+        setDrawFlags(flags);
+
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, count);
+        checkError("draw triangles");
+    }
 }
 
 private GLenum convertBlendFactor(AlphaBlendFactor factor)
@@ -404,6 +414,12 @@ nothrow:
     void addAttribU16(GLuint index, GLint components, GLsizei stride = 0, GLsizei offset = 0)
     {
         glVertexAttribIPointer(index, components, GL_UNSIGNED_SHORT, stride, cast(void*)offset);
+        glEnableVertexAttribArray(index);
+    }
+
+    void addAttribU32(GLuint index, GLint components, GLsizei stride = 0, GLsizei offset = 0)
+    {
+        glVertexAttribIPointer(index, components, GL_UNSIGNED_INT, stride, cast(void*)offset);
         glEnableVertexAttribArray(index);
     }
 }

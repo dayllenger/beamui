@@ -13,18 +13,20 @@ import beamui.core.config;
 static if (USE_OPENGL):
 // dfmt on
 import bindbc.opengl.util : loadExtendedGLSymbol;
+
 import beamui.core.geometry : BoxI, Rect, RectI, SizeI;
-import beamui.core.linalg : Vec2, Mat2x3;
+import beamui.core.linalg : Mat2x3, Vec2;
 import beamui.core.math : max, min;
 import beamui.graphics.colors : ColorF;
 import beamui.graphics.compositing : BlendMode, CompositeOperation;
-import beamui.graphics.painter : MIN_RECT_I;
 import beamui.graphics.gl.api;
-import beamui.graphics.gl.gl;
 import beamui.graphics.gl.errors;
+import beamui.graphics.gl.gl;
 import beamui.graphics.gl.objects;
 import beamui.graphics.gl.program;
 import beamui.graphics.gl.shaders;
+import beamui.graphics.gl.stroke_tiling;
+import beamui.graphics.painter : MIN_RECT_I;
 
 package nothrow:
 
@@ -35,6 +37,7 @@ enum BatchType
 {
     simple,
     twopass,
+    tiled,
 }
 
 enum Stenciling
@@ -104,6 +107,8 @@ struct ShParams
         ParamsPattern pattern;
         ParamsImage image;
         ParamsText text;
+
+        ParamsTiled tiled;
     }
 }
 
@@ -177,6 +182,9 @@ struct DataToUpload
     Vec2[] uvs2;
 
     DataChunk[] dataStore;
+
+    PackedTile[] strokeTiles;
+    ushort[] strokeTileDat;
 }
 
 struct Renderer
@@ -190,6 +198,11 @@ nothrow:
 
         RenderTargetPool rtpool;
         DataBuffer databuf;
+        TileBuffer tilebuf;
+
+        VaoId vaoTiles;
+        BufferId vboTiles;
+        BufferId vboTileDat;
 
         VaoId vao;
         BufferId vboPos;
@@ -203,7 +216,8 @@ nothrow:
         GpaaRenderer gpaa;
 
         bool advancedHardwareBlending;
-        void function() glBlendBarrierKHR;
+        extern (C) void function() glBlendBarrierKHR;
+        extern (C) void function(uint, uint) @nogc glVertexAttribDivisorARB;
 
         bool fail;
     }
@@ -214,6 +228,18 @@ nothrow:
     {
         this.sh = sh;
 
+        if (device.hasExtension("GL_ARB_instanced_arrays"))
+        {
+            try
+                loadExtendedGLSymbol(cast(void**)&glVertexAttribDivisorARB, "glVertexAttribDivisorARB");
+            catch (Exception e)
+                assert(0);
+        }
+        if (!glVertexAttribDivisorARB)
+            return failGracefully();
+
+        VBO.bind(vboTiles);
+        VBO.bind(vboTileDat);
         VBO.bind(vboPos);
         VBO.bind(vboDat);
         VBO.bind(vboTexturedPos);
@@ -223,6 +249,11 @@ nothrow:
 
         EBO.bind(ebo);
         EBO.unbind();
+
+        device.vaoman.bind(vaoTiles);
+        glVertexAttribDivisorARB(0, 1);
+        glVertexAttribDivisorARB(1, 1);
+        glVertexAttribDivisorARB(2, 1);
 
         device.vaoman.bind(vao);
         VBO.bind(vboPos);
@@ -243,6 +274,7 @@ nothrow:
         device.vaoman.unbind();
 
         databuf.initialize();
+        tilebuf.initialize();
         gpaa.initialize(device);
 
         if (device.hasExtension("GL_KHR_blend_equation_advanced"))
@@ -260,9 +292,12 @@ nothrow:
         rtpool.purge(device.fboman);
         gpaa.deinitialize(device);
 
+        device.vaoman.del(vaoTiles);
         device.vaoman.del(vao);
         device.vaoman.del(vaoTextured);
 
+        VBO.del(vboTiles);
+        VBO.del(vboTileDat);
         VBO.del(vboPos);
         VBO.del(vboDat);
         VBO.del(vboTexturedPos);
@@ -271,8 +306,18 @@ nothrow:
         EBO.del(ebo);
     }
 
-    void upload(const DataToUpload data, const GpaaDataToUpload gpaaData)
+    void upload(const DataToUpload data, const GpaaDataToUpload gpaaData, ref const TileGrid tileGrid)
     {
+        if (fail)
+            return;
+
+        if (data.strokeTiles.length)
+        {
+            VBO.bind(vboTiles);
+            VBO.upload(data.strokeTiles, GL_DYNAMIC_DRAW);
+            VBO.bind(vboTileDat);
+            VBO.upload(data.strokeTileDat, GL_DYNAMIC_DRAW);
+        }
         if (data.tris.length)
         {
             assert(data.pos1.length || data.pos2.length);
@@ -294,11 +339,15 @@ nothrow:
             VBO.upload(data.uvs2, GL_DYNAMIC_DRAW);
         }
         databuf.upload(data.dataStore);
+        tilebuf.upload(tileGrid);
         gpaa.upload(gpaaData);
     }
 
     bool render(const DrawLists lists)
     {
+        if (fail)
+            return false;
+
         prepare();
 
         RenderTarget[] targets = new RenderTarget[lists.layers.length];
@@ -419,6 +468,9 @@ private:
             const flags2ndPass = flags | DrawFlags.stencilTest;
             performStencil(m.stenciling, pbase, bt.common.triangles, flags1stPass);
             performCover(m.stenciling, pbase, bt.common.params, m.coverTriangles, flags2ndPass);
+            break;
+        case tiled:
+            performTiled(pbase, bt.common.params, bt.common.triangles, flags);
             break;
         }
     }
@@ -557,6 +609,30 @@ private:
             }
             return false;
         }
+    }
+
+    void performTiled(ref const ParamsBase pbase, ref const ShParams params, Span points, DrawFlags flags)
+    {
+        if (points.start >= points.end)
+            return;
+
+        if (auto prog = sh.solidStroke)
+        {
+            ParamsTiled ptiled = params.tiled;
+            ptiled.buf_segments = tilebuf.buf_segments;
+            device.progman.bind(prog);
+            prog.prepare(pbase, ptiled);
+        }
+        else
+            return failGracefully();
+
+        device.vaoman.bind(vaoTiles);
+        VBO.bind(vboTiles);
+        device.vaoman.addAttribU16(0, 2, 8, points.start * 8 + 0);
+        device.vaoman.addAttribU32(1, 1, 8, points.start * 8 + 4);
+        VBO.bind(vboTileDat);
+        device.vaoman.addAttribU16(2, 1, 2, points.start * 2);
+        device.drawInstancedQuads(vaoTiles, flags, points.end - points.start);
     }
 
     void compose(ref const ComposeCmd cmd, ref const ParamsBase pbase, ref const ParamsComposition params)

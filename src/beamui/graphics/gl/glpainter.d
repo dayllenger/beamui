@@ -28,6 +28,7 @@ import beamui.graphics.flattener;
 import beamui.graphics.gl.objects : TexId;
 import beamui.graphics.gl.renderer;
 import beamui.graphics.gl.shaders;
+import beamui.graphics.gl.stroke_tiling;
 import beamui.graphics.gl.textures;
 import beamui.graphics.painter : GlyphInstance, MIN_RECT_F, PaintEngine;
 import beamui.graphics.pen;
@@ -107,6 +108,12 @@ public final class GLPaintEngine : PaintEngine
         Buf!DepthTask depthTasks;
         Buf!Vec2 layerOffsets;
 
+        Buf!Vec2 bufVerts;
+        Buf!uint bufContours;
+        TileGrid tileGrid;
+        Buf!PackedTile tilePoints;
+        Buf!ushort tileDataIndices;
+
         ColorStopAtlas* colorStopAtlas;
         TextureCache* textureCache;
         GlyphCache* glyphCache;
@@ -159,6 +166,10 @@ protected:
         covers.clear();
         depthTasks.clear();
 
+        tileGrid.prepare(conf.width, conf.height);
+        tilePoints.clear();
+        tileDataIndices.clear();
+
         Layer lr;
         lr.clip = lr.bounds = RectI(0, 0, conf.width, conf.height);
         lr.fill = ColorF(conf.background);
@@ -198,13 +209,15 @@ protected:
                 dataIndices_textured[],
                 uvs_textured[],
                 dataStore[],
+                tilePoints[],
+                tileDataIndices[],
             ), const(GpaaDataToUpload)(
                 gpaa.indices[],
                 gpaa.positions[],
                 gpaa.dataIndices[],
                 gpaa.layerIndices[],
                 getGlobalLayerPositions(),
-            ));
+            ), tileGrid);
             // dfmt on
         }
     }
@@ -468,6 +481,87 @@ protected:
     }
 
     void strokePath(ref Contours contours, ref const Brush br, ref const Pen pen, bool)
+    {
+        bool evenlyScaled = true;
+        float width = pen.width;
+        if (pen.shouldScale)
+        {
+            const o = st.mat * Vec2(0);
+            const v = st.mat * Vec2(1, 0) - o;
+            const w = st.mat * Vec2(0, 1) - o;
+            evenlyScaled = fequal2(v.magnitudeSquared, w.magnitudeSquared);
+            width = v.length * pen.width;
+        }
+        if (br.type == BrushType.solid && evenlyScaled && width < 3)
+            strokePathTiled(contours, br, pen, width);
+        else
+            strokePathAsFill(contours, br, pen);
+    }
+
+    private void strokePathTiled(ref Contours contours, ref const Brush br, ref const Pen pen, float realWidth)
+    {
+        bufVerts.clear();
+        bufContours.clear();
+
+        const pixelSize = 1.0f / TILE_SIZE;
+        Mat2x3 mat = Mat2x3.scaling(Vec2(pixelSize)) * st.mat;
+        foreach (ref cr; contours.list)
+        {
+            const len = cr.flatten!true(bufVerts, mat, pixelSize);
+            if (len != 1)
+            {
+                bufContours ~= len;
+                continue;
+            }
+            // fix degeneracies
+            if (pen.cap == LineCap.butt)
+            {
+                bufVerts.shrink(1);
+                continue;
+            }
+            const p = bufVerts[$ - 1];
+            bufVerts.shrink(1);
+            bufVerts ~= p - Vec2(pixelSize * 0.25f, 0);
+            bufVerts ~= p + Vec2(pixelSize * 0.25f, 0);
+            bufContours ~= 2;
+        }
+
+        const start = tilePoints.length;
+        tileGrid.clipStrokeToLattice(bufVerts[], bufContours[], tilePoints, contours.trBounds, realWidth);
+        const count = tilePoints.length - start;
+
+        bool reuseBatch;
+        if (batches.length > sets[$ - 1].batches.start)
+        {
+            Batch* last = &batches.unsafe_ref(-1);
+            if (last.type == BatchType.tiled)
+            {
+                reuseBatch = true;
+                last.common.triangles.end += count;
+            }
+        }
+        if (!reuseBatch)
+        {
+            Batch bt;
+            bt.type = BatchType.tiled;
+            bt.common.triangles = Span(start, start + count);
+            batches ~= bt;
+        }
+
+        tileDataIndices.resize(tilePoints.length, cast(ushort)dataStore.length);
+
+        Mat2x3 quasiMat;
+        quasiMat.store[0][0] = realWidth;
+        quasiMat.store[1][1] = st.aa ? 0.8f : 100; // contrast
+        DataChunk data = prepareDataChunk(&quasiMat, br.solid);
+        ShParams params;
+        convertSolid(br.solid, br.opacity, params, data);
+
+        dataStore ~= data;
+        advanceDepth();
+    }
+
+    private void strokePathAsFill(ref Contours contours, ref const Brush br, ref const Pen pen)
     {
         auto builder_obj = scoped!TriBuilder(positions, triangles);
         TriBuilder builder = builder_obj;

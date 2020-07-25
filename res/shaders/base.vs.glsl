@@ -1,4 +1,13 @@
+#ifdef TILED_STROKE
+in uvec2 v_tile;
+in uint v_segments;
+flat out ivec2 segments;
+flat out float width;
+flat out float contrast;
+#else
 in vec2 v_position;
+#endif
+
 in uint v_dataIndex;
 
 #ifdef UV
@@ -34,11 +43,21 @@ void main()
     brushColor = color;
 #endif
 
+#ifdef TILED_STROKE
+    segments = ivec2(int(v_segments >> 8), int(v_segments) & 0xFF);
+    width = transform[0][0];
+    contrast = transform[1][1];
+
+    const vec2 offset = vec2(gl_VertexID & 1, (gl_VertexID & 2) == 2);
+    const vec2 pos = (vec2(v_tile) + offset) * TILE_SIZE;
+#else
     const vec3 pos = transform * vec3(v_position, 1);
-    gl_Position.x = pos.x * pixelSize.x * 2 - 1;
-    gl_Position.y = 1 - pos.y * pixelSize.y * 2; // user Y is reversed
+#endif
+
+    gl_Position.x = pos.x * pixelSize.x * 2.0 - 1.0;
+    gl_Position.y = 1.0 - pos.y * pixelSize.y * 2.0; // user Y is reversed
     gl_Position.z = depth;
-    gl_Position.w = 1;
+    gl_Position.w = 1.0;
 
     gl_ClipDistance[0] = -pos.y + clip.w;
     gl_ClipDistance[1] = -pos.x + clip.z;
