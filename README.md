@@ -15,7 +15,7 @@ Please note that the library is unstable until v1.0, and minor versions may and 
 * Cross-platform (Linux, Windows, macOS)
 * CSS theming: implementation of a [part of CSS 3](https://github.com/dayllenger/beamui/wiki/CSS-Reference), with few adjustments
 * Flexbox layout and a small subset of CSS Grid
-* Hardware acceleration using OpenGL 3.0+
+* Hardware acceleration using OpenGL 3.1+
 * Fallback to software renderer when OpenGL is not available
 * Painting API with antialiased filling and stroking of arbitrary paths
 

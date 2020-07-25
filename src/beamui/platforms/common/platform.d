@@ -2423,7 +2423,7 @@ class Platform
             }
             // the first initialization
             const major = clamp(_conf.GLVersionMajor, 3, 4);
-            const minor = clamp(_conf.GLVersionMinor, 0, major == 3 ? 3 : 6);
+            const minor = clamp(_conf.GLVersionMinor, major == 3 ? 1 : 0, major == 3 ? 3 : 6);
             bool success = createGLContext(window, major, minor);
             if (!success)
             {
@@ -2432,10 +2432,10 @@ class Platform
                     success = createGLContext(window, 4, 3);
                 if (!success && ver > 40)
                     success = createGLContext(window, 4, 0);
-                if (!success && ver > 32)
-                    success = createGLContext(window, 3, 2);
-                if (!success && ver > 30)
-                    success = createGLContext(window, 3, 0);
+                if (!success && ver > 33)
+                    success = createGLContext(window, 3, 3);
+                if (!success && ver > 31)
+                    success = createGLContext(window, 3, 1);
             }
             if (success)
             {

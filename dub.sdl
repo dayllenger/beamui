@@ -29,7 +29,7 @@ subPackage "examples/css"
 subPackage "examples/opengl"
 subPackage "examples/overview"
 
-versions "FT_28" "GL_30"
+versions "FT_28" "GL_31"
 
 dependency "mofile" version="~>0.2.1"
 dependency "icontheme" version="~>1.2.2"  // Posix only
