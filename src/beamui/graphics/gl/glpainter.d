@@ -1,7 +1,7 @@
 /**
-OpenGL (ES) 3.0 painter implementation.
+OpenGL (ES) 3 painter implementation.
 
-Copyright: dayllenger 2019
+Copyright: dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -20,6 +20,7 @@ import beamui.core.geometry : BoxI, Rect, RectI, SizeI;
 import beamui.core.linalg : Mat2x3, Vec2;
 import beamui.core.logger : Log;
 import beamui.core.math;
+import beamui.core.types : tup;
 import beamui.graphics.bitmap : Bitmap, onBitmapDestruction;
 import beamui.graphics.brush;
 import beamui.graphics.colors : Color, ColorF;
@@ -71,6 +72,29 @@ public final class GLSharedData
     }
 }
 
+struct Geometry
+{
+    Buf!Batch batches;
+    Buf!Tri triangles;
+
+    Buf!Vec2 positions;
+    Buf!ushort dataIndices;
+    Buf!Vec2 positions_textured;
+    Buf!ushort dataIndices_textured;
+    Buf!Vec2 uvs_textured; // actually in 0..texSize range
+
+    void clear() nothrow
+    {
+        batches.clear();
+        triangles.clear();
+        positions.clear();
+        dataIndices.clear();
+        positions_textured.clear();
+        dataIndices_textured.clear();
+        uvs_textured.clear();
+    }
+}
+
 struct Cover
 {
     Rect rect; /// Local to batch
@@ -93,16 +117,11 @@ public final class GLPaintEngine : PaintEngine
         Layer* layer; // points into array, so need to handle carefully
         Buf!Layer layers;
         Buf!Set sets;
-        Buf!Batch batches;
 
         Buf!DataChunk dataStore;
-        Buf!Tri triangles;
 
-        Buf!Vec2 positions;
-        Buf!ushort dataIndices;
-        Buf!Vec2 positions_textured;
-        Buf!ushort dataIndices_textured;
-        Buf!Vec2 uvs_textured; // actually in 0..texSize range
+        Geometry g_opaque;
+        Geometry g_transp;
 
         Buf!Cover covers;
         Buf!DepthTask depthTasks;
@@ -152,16 +171,11 @@ protected:
 
         layers.clear();
         sets.clear();
-        batches.clear();
 
         dataStore.clear();
-        triangles.clear();
 
-        positions.clear();
-        dataIndices.clear();
-        positions_textured.clear();
-        dataIndices_textured.clear();
-        uvs_textured.clear();
+        g_opaque.clear();
+        g_transp.clear();
 
         covers.clear();
         depthTasks.clear();
@@ -189,25 +203,36 @@ protected:
         constructCoverGeometry();
         sortBatches();
 
-        if (batches.length)
+        if (g_opaque.batches.length + g_transp.batches.length)
         {
             // dfmt off
             debug (painter)
             {
                 Log.fd("GL: %s bt, %s dat, %s tri, %s v",
-                    batches.length,
+                    g_opaque.batches.length + g_transp.batches.length,
                     dataStore.length,
-                    triangles.length,
-                    positions.length + positions_textured.length,
+                    g_opaque.triangles.length + g_transp.triangles.length,
+                    g_opaque.positions.length + g_opaque.positions_textured.length +
+                    g_transp.positions.length + g_transp.positions_textured.length,
                 );
             }
             renderer.upload(const(DataToUpload)(
-                triangles[],
-                positions[],
-                dataIndices[],
-                positions_textured[],
-                dataIndices_textured[],
-                uvs_textured[],
+                const(GeometryToUpload)(
+                    g_opaque.triangles[],
+                    g_opaque.positions[],
+                    g_opaque.dataIndices[],
+                    g_opaque.positions_textured[],
+                    g_opaque.dataIndices_textured[],
+                    g_opaque.uvs_textured[],
+                ),
+                const(GeometryToUpload)(
+                    g_transp.triangles[],
+                    g_transp.positions[],
+                    g_transp.dataIndices[],
+                    g_transp.positions_textured[],
+                    g_transp.dataIndices_textured[],
+                    g_transp.uvs_textured[],
+                ),
                 dataStore[],
                 tilePoints[],
                 tileDataIndices[],
@@ -224,7 +249,7 @@ protected:
 
     void paint()
     {
-        renderer.render(const(DrawLists)(layers[], sets[], batches[]));
+        renderer.render(const(DrawLists)(layers[], sets[], g_opaque.batches[], g_transp.batches[]));
     }
 
     private void prepareSets()
@@ -232,10 +257,12 @@ protected:
         Set[] list = sets.unsafe_slice;
         foreach (i; 1 .. list.length)
         {
-            list[i - 1].batches.end = list[i].batches.start;
+            list[i - 1].b_opaque.end = list[i].b_opaque.start;
+            list[i - 1].b_transp.end = list[i].b_transp.start;
             list[i - 1].dataChunks.end = list[i].dataChunks.start;
         }
-        list[$ - 1].batches.end = batches.length;
+        list[$ - 1].b_opaque.end = g_opaque.batches.length;
+        list[$ - 1].b_transp.end = g_transp.batches.length;
         list[$ - 1].dataChunks.end = dataStore.length;
     }
 
@@ -252,7 +279,9 @@ protected:
             {
                 if (set.layer == lr.index)
                 {
-                    foreach (ref bt; batches[][set.batches.start .. set.batches.end])
+                    foreach (ref bt; g_opaque.batches.unsafe_slice[set.b_opaque.start .. set.b_opaque.end])
+                        lr.bounds.include(bt.common.clip);
+                    foreach (ref bt; g_transp.batches.unsafe_slice[set.b_transp.start .. set.b_transp.end])
                         lr.bounds.include(bt.common.clip);
                 }
             }
@@ -308,44 +337,48 @@ protected:
 
     private void constructCoverGeometry()
     {
-        foreach (ref bt; batches.unsafe_slice)
+        foreach (Geometry* g; tup(&g_opaque, &g_transp))
         {
-            if (bt.type == BatchType.twopass)
+            foreach (ref bt; g.batches.unsafe_slice)
             {
-                const t = triangles.length;
-                const Span covs = bt.twopass.covers;
-                foreach (ref cov; covers[][covs.start .. covs.end])
+                if (bt.type == BatchType.twopass)
                 {
-                    // dfmt off
-                    const Vec2[4] vs = [
-                        Vec2(cov.rect.left, cov.rect.top),
-                        Vec2(cov.rect.left, cov.rect.bottom),
-                        Vec2(cov.rect.right, cov.rect.top),
-                        Vec2(cov.rect.right, cov.rect.bottom),
-                    ];
-                    // dfmt on
-                    const v = positions.length;
-                    positions ~= vs[];
-                    addStrip(triangles, v, 4);
-                    dataIndices.resize(dataIndices.length + 4, cast(ushort)cov.dataIndex);
+                    const t = g.triangles.length;
+                    const Span covs = bt.twopass.covers;
+                    foreach (ref cov; covers[][covs.start .. covs.end])
+                    {
+                        // dfmt off
+                        const Vec2[4] vs = [
+                            Vec2(cov.rect.left, cov.rect.top),
+                            Vec2(cov.rect.left, cov.rect.bottom),
+                            Vec2(cov.rect.right, cov.rect.top),
+                            Vec2(cov.rect.right, cov.rect.bottom),
+                        ];
+                        // dfmt on
+                        const v = g.positions.length;
+                        g.positions ~= vs[];
+                        addStrip(g.triangles, v, 4);
+                        g.dataIndices.resize(g.dataIndices.length + 4, cast(ushort)cov.dataIndex);
+                    }
+                    bt.twopass.coverTriangles = Span(t, g.triangles.length);
                 }
-                bt.twopass.coverTriangles = Span(t, triangles.length);
             }
         }
         foreach (ref set; sets[])
         {
             if (set.layerToCompose > 0)
             {
+                auto g = pickGeometry(false);
                 Layer* lr = &layers.unsafe_ref(set.layerToCompose);
 
                 const SizeI sz = lr.bounds.size;
                 const Vec2[4] vs = [Vec2(0, 0), Vec2(0, sz.h), Vec2(sz.w, 0), Vec2(sz.w, sz.h)];
-                const v = positions.length;
-                const t = triangles.length;
-                positions ~= vs[];
-                addStrip(triangles, v, 4);
-                dataIndices.resize(dataIndices.length + 4, lr.cmd.dataIndex);
-                lr.cmd.triangles = Span(t, triangles.length);
+                const v = g.positions.length;
+                const t = g.triangles.length;
+                g.positions ~= vs[];
+                addStrip(g.triangles, v, 4);
+                g.dataIndices.resize(g.dataIndices.length + 4, lr.cmd.dataIndex);
+                lr.cmd.triangles = Span(t, g.triangles.length);
             }
         }
     }
@@ -353,13 +386,10 @@ protected:
     private void sortBatches()
     {
         // sort geometry front-to-back inside an opaque batch
-        foreach (ref bt; batches[])
+        foreach (ref bt; g_opaque.batches[])
         {
-            if (bt.common.opaque)
-            {
-                const Span tris = bt.common.triangles;
-                reverse(triangles.unsafe_slice[tris.start .. tris.end]);
-            }
+            const Span tris = bt.common.triangles;
+            reverse(g_opaque.triangles.unsafe_slice[tris.start .. tris.end]);
         }
     }
 
@@ -400,7 +430,7 @@ protected:
         lr.cmd.blending = op.blending;
         layers ~= lr;
         layer = &layers.unsafe_ref(lr.index);
-        sets ~= Set(Span(batches.length), Span(dataStore.length), lr.index);
+        sets ~= makeSet(lr.index);
 
         gpaa.setLayerIndex(lr.index);
     }
@@ -410,7 +440,7 @@ protected:
         layer.sets.end = sets.length;
         layer.cmd.dataIndex = cast(ushort)dataStore.length;
         // setup the parent layer back
-        sets ~= Set(Span(batches.length), Span(dataStore.length), layer.parent, layer.index);
+        sets ~= makeSet(layer.parent, layer.index);
         layer = &layers.unsafe_ref(layer.parent);
         // create an empty data chunk with the parent layer current depth
         const Mat2x3 mat;
@@ -423,16 +453,21 @@ protected:
     void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
     {
         alias S = Stenciling;
-        const set = Set(Span(batches.length), Span(dataStore.length), layer.index);
+        const set = makeSet(layer.index);
         const task = DepthTask(index, dataStore.length);
         const nonzero = rule == FillRule.nonzero;
         const stenciling = nonzero ? (complement ? S.zero : S.nonzero) : (complement ? S.even : S.odd);
         if (fillPathImpl(contours, null, stenciling))
         {
             sets ~= set;
-            sets ~= Set(Span(batches.length), Span(dataStore.length), layer.index);
+            sets ~= makeSet(layer.index);
             depthTasks ~= task;
         }
+    }
+
+    private Set makeSet(uint layer, uint layerToCompose = 0) const
+    {
+        return Set(Span(g_opaque.batches.length), Span(g_transp.batches.length), Span(dataStore.length), layer, layerToCompose);
     }
 
     void restore(uint index)
@@ -464,10 +499,11 @@ protected:
             Vec2(r.right, r.bottom),
         ];
         // dfmt on
-        const v = positions.length;
-        const t = triangles.length;
-        positions ~= vs[];
-        addStrip(triangles, v, 4);
+        auto g = pickGeometry(br.isOpaque);
+        const v = g.positions.length;
+        const t = g.triangles.length;
+        g.positions ~= vs[];
+        addStrip(g.triangles, v, 4);
 
         if (simple(t, r, &br))
         {
@@ -531,9 +567,9 @@ protected:
         const count = tilePoints.length - start;
 
         bool reuseBatch;
-        if (batches.length > sets[$ - 1].batches.start)
+        if (g_transp.batches.length > sets[$ - 1].b_transp.start)
         {
-            Batch* last = &batches.unsafe_ref(-1);
+            Batch* last = &g_transp.batches.unsafe_ref(-1);
             if (last.type == BatchType.tiled)
             {
                 reuseBatch = true;
@@ -545,7 +581,7 @@ protected:
             Batch bt;
             bt.type = BatchType.tiled;
             bt.common.triangles = Span(start, start + count);
-            batches ~= bt;
+            g_transp.batches ~= bt;
         }
 
         tileDataIndices.resize(tilePoints.length, cast(ushort)dataStore.length);
@@ -563,10 +599,12 @@ protected:
 
     private void strokePathAsFill(ref Contours contours, ref const Brush br, ref const Pen pen)
     {
-        auto builder_obj = scoped!TriBuilder(positions, triangles);
+        auto g = pickGeometry(br.isOpaque);
+
+        auto builder_obj = scoped!TriBuilder(g.positions, g.triangles);
         TriBuilder builder = builder_obj;
 
-        const t = triangles.length;
+        const t = g.triangles.length;
         if (st.aa)
             builder.contour = gpaa.contour;
 
@@ -578,7 +616,7 @@ protected:
         if (st.aa)
             gpaa.finish(dataStore.length);
 
-        if (triangles.length > t)
+        if (g.triangles.length > t)
         {
             const trivial = contours.list.length == 1 && contours.list[0].points.length < 3;
             const mat = pen.shouldScale ? st.mat : Mat2x3.identity;
@@ -610,6 +648,7 @@ protected:
             return;
         assert(view.box.w == w && view.box.h == h);
 
+        auto g = pickGeometry(false); // fequal6(opacity, 1) // TODO: image opacity
         // dfmt off
         const Vec2[4] vs = [
             Vec2(rp.left, rp.top),
@@ -624,11 +663,11 @@ protected:
             uv.x += view.box.x;
             uv.y += view.box.y;
         }
-        const v = positions_textured.length;
-        const t = triangles.length;
-        positions_textured ~= vs[];
-        uvs_textured ~= uvs[];
-        addStrip(triangles, v, 4);
+        const v = g.positions_textured.length;
+        const t = g.triangles.length;
+        g.positions_textured ~= vs[];
+        g.uvs_textured ~= uvs[];
+        addStrip(g.triangles, v, 4);
 
         if (st.aa)
         {
@@ -650,14 +689,13 @@ protected:
 
         Batch bt;
         bt.type = BatchType.simple;
-        // bt.common.opaque = fequal6(opacity, 1);
         bt.common.clip = RectI(clip);
         bt.common.params = params;
-        bt.common.triangles = Span(t, triangles.length);
+        bt.common.triangles = Span(t, g.triangles.length);
         bt.simple.hasUV = true;
-        batches ~= bt;
+        g.batches ~= bt;
 
-        dataIndices_textured.resize(positions_textured.length, cast(ushort)dataStore.length);
+        g.dataIndices_textured.resize(g.positions_textured.length, cast(ushort)dataStore.length);
         dataStore ~= prepareDataChunk();
 
         advanceDepth();
@@ -675,6 +713,7 @@ protected:
             return;
         assert(view.box.w == bmp.width && view.box.h == bmp.height);
 
+        auto g = pickGeometry(false);
         // dfmt off
         const Vec2[16] vs = [
             Vec2(info.dst_x0, info.dst_y0),
@@ -718,9 +757,9 @@ protected:
             uv.x += view.box.x;
             uv.y += view.box.y;
         }
-        const v = positions_textured.length;
-        positions_textured ~= vs[];
-        uvs_textured ~= uvs[];
+        const v = g.positions_textured.length;
+        g.positions_textured ~= vs[];
+        g.uvs_textured ~= uvs[];
 
         // dfmt off
         Tri[18] tris = [
@@ -741,8 +780,8 @@ protected:
             tri.v1 += v;
             tri.v2 += v;
         }
-        const t = triangles.length;
-        triangles ~= tris[];
+        const t = g.triangles.length;
+        g.triangles ~= tris[];
 
         if (st.aa)
         {
@@ -764,14 +803,13 @@ protected:
 
         Batch bt;
         bt.type = BatchType.simple;
-        // bt.common.opaque = fequal6(opacity, 1);
         bt.common.clip = RectI(clip);
         bt.common.params = params;
-        bt.common.triangles = Span(t, triangles.length);
+        bt.common.triangles = Span(t, g.triangles.length);
         bt.simple.hasUV = true;
-        batches ~= bt;
+        g.batches ~= bt;
 
-        dataIndices_textured.resize(positions_textured.length, cast(ushort)dataStore.length);
+        g.dataIndices_textured.resize(g.positions_textured.length, cast(ushort)dataStore.length);
         dataStore ~= prepareDataChunk();
 
         advanceDepth();
@@ -783,11 +821,13 @@ protected:
         if (clip.empty)
             return;
 
+        auto g = pickGeometry(false);
+
         Batch bt;
         bt.type = BatchType.simple;
         bt.common.clip = clip;
         bt.common.params.kind = PaintKind.text;
-        bt.common.triangles = Span(triangles.length, triangles.length);
+        bt.common.triangles = Span(g.triangles.length, g.triangles.length);
         bt.simple.hasUV = true;
 
         Batch* similar;
@@ -810,36 +850,36 @@ protected:
                 if (similar)
                 {
                     similar.common.clip.include(clip);
-                    similar.common.triangles.end = triangles.length;
+                    similar.common.triangles.end = g.triangles.length;
                     similar = null;
                 }
                 else
                 {
                     bt.common.params.text = params;
-                    bt.common.triangles.end = triangles.length;
-                    batches ~= bt;
+                    bt.common.triangles.end = g.triangles.length;
+                    g.batches ~= bt;
                 }
-                bt.common.triangles.start = triangles.length;
+                bt.common.triangles.start = g.triangles.length;
                 params = ParamsText(view.tex, view.texSize);
             }
-            addGlyph(gi, view);
+            addGlyph(*g, gi, view);
         }
         if (!params.tex)
             return;
 
-        assert(bt.common.triangles.start < triangles.length);
+        assert(bt.common.triangles.start < g.triangles.length);
         if (similar)
         {
             similar.common.clip.include(clip);
-            similar.common.triangles.end = triangles.length;
+            similar.common.triangles.end = g.triangles.length;
         }
         else
         {
             bt.common.params.text = params;
-            bt.common.triangles.end = triangles.length;
-            batches ~= bt;
+            bt.common.triangles.end = g.triangles.length;
+            g.batches ~= bt;
         }
-        dataIndices_textured.resize(positions_textured.length, cast(ushort)dataStore.length);
+        g.dataIndices_textured.resize(g.positions_textured.length, cast(ushort)dataStore.length);
         dataStore ~= prepareDataChunk(null, c);
         advanceDepth();
     }
@@ -859,7 +899,7 @@ private:
         return r;
     }
 
-    void addGlyph(GlyphInstance gi, ref const TextureView view)
+    void addGlyph(ref Geometry g, GlyphInstance gi, ref const TextureView view)
     {
         const float x = gi.position.x;
         const float y = gi.position.y;
@@ -872,14 +912,16 @@ private:
             uv.x += view.box.x;
             uv.y += view.box.y;
         }
-        const v = positions_textured.length;
-        positions_textured ~= vs[];
-        uvs_textured ~= uvs[];
-        addStrip(triangles, v, 4);
+        const v = g.positions_textured.length;
+        g.positions_textured ~= vs[];
+        g.uvs_textured ~= uvs[];
+        addStrip(g.triangles, v, 4);
     }
 
     bool fillPathImpl(ref Contours contours, const Brush* br, Stenciling stenciling)
     {
+        auto g = pickGeometry(br ? br.isOpaque : true);
+
         const lst = contours.list;
         if (lst.length == 1)
         {
@@ -887,20 +929,20 @@ private:
                 return false;
 
             const RectI clip = lst[0].trBounds;
-            const v = positions.length;
-            const t = triangles.length;
-            uint pcount = lst[0].flatten!false(positions, st.mat);
+            const v = g.positions.length;
+            const t = g.triangles.length;
+            uint pcount = lst[0].flatten!false(g.positions, st.mat);
             // remove the extra point
             if (lst[0].closed)
             {
-                positions.shrink(1);
+                g.positions.shrink(1);
                 pcount--;
             }
-            addFan(triangles, v, pcount);
+            addFan(g.triangles, v, pcount);
 
             if (st.aa)
             {
-                gpaa.add(positions[][v .. $]);
+                gpaa.add(g.positions[][v .. $]);
                 gpaa.finish(dataStore.length);
             }
             // spline is convex iff hull of its control points is convex
@@ -918,27 +960,27 @@ private:
             // C(S(p)) = C(S(p_0 + p_1 + ... + p_n)),
             // where S - stencil, C - cover
 
-            const t = triangles.length;
+            const t = g.triangles.length;
             foreach (ref cr; lst)
             {
                 if (cr.points.length < 3)
                     continue;
 
-                const v = positions.length;
-                uint pcount = cr.flatten!false(positions, st.mat);
+                const v = g.positions.length;
+                uint pcount = cr.flatten!false(g.positions, st.mat);
                 if (cr.closed)
                 {
-                    positions.shrink(1);
+                    g.positions.shrink(1);
                     pcount--;
                 }
-                addFan(triangles, v, pcount);
+                addFan(g.triangles, v, pcount);
                 if (st.aa)
-                    gpaa.add(positions[][v .. $]);
+                    gpaa.add(g.positions[][v .. $]);
             }
             if (st.aa)
                 gpaa.finish(dataStore.length);
 
-            if (triangles.length > t)
+            if (g.triangles.length > t)
                 return twoPass(t, stenciling, contours.bounds, contours.trBounds, br);
             else
                 return false;
@@ -947,6 +989,11 @@ private:
 
     // TODO: find more opportunities for merging
 
+    Geometry* pickGeometry(bool opaque)
+    {
+        return opaque ? &g_opaque : &g_transp;
+    }
+
     bool simple(uint tstart, RectI clip, const Brush* br, const Mat2x3* m = null)
     {
         DataChunk data = prepareDataChunk(m);
@@ -954,25 +1001,25 @@ private:
         if (!convertBrush(br, params, data))
             return false;
 
-        const opaque = br ? br.isOpaque : true; // TODO: image opacity
+        const opaque = br ? br.isOpaque : true;
+        auto g = pickGeometry(opaque);
         // try to merge
         if (auto last = hasSimilarSimpleBatch(params.kind, opaque))
         {
             last.common.clip.include(clip);
             assert(last.common.triangles.end == tstart);
-            last.common.triangles.end = triangles.length;
+            last.common.triangles.end = g.triangles.length;
         }
         else
         {
             Batch bt;
             bt.type = BatchType.simple;
-            bt.common.opaque = opaque;
             bt.common.clip = clip;
             bt.common.params = params;
-            bt.common.triangles = Span(tstart, triangles.length);
-            batches ~= bt;
+            bt.common.triangles = Span(tstart, g.triangles.length);
+            g.batches ~= bt;
         }
-        doneBatch(data);
+        doneBatch(*g, data);
         return true;
     }
 
@@ -991,7 +1038,8 @@ private:
             bbox.expand(bbox.width * SQRT2, bbox.height * SQRT2);
         }
 
-        const opaque = br ? br.isOpaque : true; // TODO: image opacity
+        const opaque = br ? br.isOpaque : true;
+        auto g = pickGeometry(opaque);
         const coverIdx = covers.length;
         covers ~= Cover(bbox, clip, dataStore.length);
         // try to merge
@@ -999,51 +1047,57 @@ private:
         {
             last.common.clip.include(clip);
             assert(last.common.triangles.end == tstart);
-            last.common.triangles.end = triangles.length;
+            last.common.triangles.end = g.triangles.length;
             last.twopass.covers.end++;
         }
         else
         {
             Batch bt;
             bt.type = BatchType.twopass;
-            bt.common.opaque = opaque;
             bt.common.clip = clip;
             bt.common.params = params;
-            bt.common.triangles = Span(tstart, triangles.length);
+            bt.common.triangles = Span(tstart, g.triangles.length);
             bt.twopass.covers = Span(coverIdx, coverIdx + 1);
             bt.twopass.stenciling = stenciling;
-            batches ~= bt;
+            g.batches ~= bt;
         }
-        doneBatch(data);
+        doneBatch(*g, data);
         return true;
     }
 
     Batch* hasSimilarSimpleBatch(PaintKind kind, bool opaque)
     in (sets.length)
     {
-        if ((kind == PaintKind.empty || kind == PaintKind.solid) && batches.length > sets[$ - 1].batches.start)
+        Batch* last;
+        if (kind == PaintKind.empty || kind == PaintKind.solid)
         {
-            Batch* last = &batches.unsafe_ref(-1);
-            if (last.type == BatchType.simple && last.common.opaque == opaque && last.common.params.kind == kind)
-                return last;
+            if (opaque)
+            {
+                if (g_opaque.batches.length > sets[$ - 1].b_opaque.start)
+                    last = &g_opaque.batches.unsafe_ref(-1);
+            }
+            else
+            {
+                if (g_transp.batches.length > sets[$ - 1].b_transp.start)
+                    last = &g_transp.batches.unsafe_ref(-1);
+            }
         }
+        if (last && last.type == BatchType.simple && last.common.params.kind == kind)
+            return last;
         return null;
     }
 
     Batch* hasSimilarTextBatch(const TexId* tex)
     in (sets.length)
     {
-        if (tex && batches.length > sets[$ - 1].batches.start)
+        if (tex && g_transp.batches.length > sets[$ - 1].b_transp.start)
         {
-            Batch* last = &batches.unsafe_ref(-1);
+            Batch* last = &g_transp.batches.unsafe_ref(-1);
             if (last.type == BatchType.simple)
             {
                 const params = &last.common.params;
                 if (params.kind == PaintKind.text && params.text.tex is tex)
-                {
-                    assert(!last.common.opaque);
                     return last;
-                }
             }
         }
         return null;
@@ -1052,30 +1106,40 @@ private:
     Batch* hasSimilarTwoPassBatch(PaintKind kind, bool opaque, Stenciling stenciling, RectI clip)
     in (sets.length)
     {
-        if ((kind == PaintKind.empty || kind == PaintKind.solid) && batches.length > sets[$ - 1].batches.start)
+        Batch* last;
+        if (kind == PaintKind.empty || kind == PaintKind.solid)
         {
-            Batch* last = &batches.unsafe_ref(-1);
-            if (last.type == BatchType.twopass && last.common.opaque == opaque && last.common.params.kind == kind)
+            if (opaque)
             {
-                const bt = last.twopass;
-                if (bt.stenciling == stenciling)
+                if (g_opaque.batches.length > sets[$ - 1].b_opaque.start)
+                    last = &g_opaque.batches.unsafe_ref(-1);
+            }
+            else
+            {
+                if (g_transp.batches.length > sets[$ - 1].b_transp.start)
+                    last = &g_transp.batches.unsafe_ref(-1);
+            }
+        }
+        if (last && last.type == BatchType.twopass && last.common.params.kind == kind)
+        {
+            const bt = last.twopass;
+            if (bt.stenciling == stenciling)
+            {
+                // we can merge non-overlapping covers
+                foreach (ref cov; covers[][bt.covers.start .. bt.covers.end])
                 {
-                    // we can merge non-overlapping covers
-                    foreach (ref cov; covers[][bt.covers.start .. bt.covers.end])
-                    {
-                        if (clip.intersects(cov.clip))
-                            return null;
-                    }
-                    return last;
+                    if (clip.intersects(cov.clip))
+                        return null;
                 }
+                return last;
             }
         }
         return null;
     }
 
-    void doneBatch(ref DataChunk data)
+    void doneBatch(ref Geometry g, ref DataChunk data)
     {
-        dataIndices.resize(positions.length, cast(ushort)dataStore.length);
+        g.dataIndices.resize(g.positions.length, cast(ushort)dataStore.length);
         dataStore ~= data;
         advanceDepth();
     }

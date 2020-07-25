@@ -1,5 +1,5 @@
 /**
-OpenGL (ES) 3.0 painter implementation, part 2.
+OpenGL (ES) 3 painter implementation, part 2.
 
 Copyright: dayllenger 2019-2020
 License:   Boost License 1.0
@@ -17,6 +17,7 @@ import bindbc.opengl.util : loadExtendedGLSymbol;
 import beamui.core.geometry : BoxI, Rect, RectI, SizeI;
 import beamui.core.linalg : Mat2x3, Vec2;
 import beamui.core.math : max, min;
+import beamui.core.types : tup;
 import beamui.graphics.colors : ColorF;
 import beamui.graphics.compositing : BlendMode, CompositeOperation;
 import beamui.graphics.gl.api;
@@ -68,7 +69,6 @@ struct Batch
 
 struct BatchCommon
 {
-    bool opaque;
     RectI clip;
     ShParams params;
     Span triangles;
@@ -154,7 +154,8 @@ struct Layer
 /// In a set, batches can be rearranged
 struct Set
 {
-    Span batches;
+    Span b_opaque;
+    Span b_transp;
     Span dataChunks;
     uint layer;
     uint layerToCompose;
@@ -169,10 +170,11 @@ struct DrawLists
 {
     Layer[] layers;
     Set[] sets;
-    Batch[] batches;
+    Batch[] b_opaque;
+    Batch[] b_transp;
 }
 
-struct DataToUpload
+struct GeometryToUpload
 {
     Tri[] tris;
     Vec2[] pos1;
@@ -180,11 +182,28 @@ struct DataToUpload
     Vec2[] pos2;
     ushort[] dat2;
     Vec2[] uvs2;
+}
 
+struct DataToUpload
+{
+    GeometryToUpload opaque;
+    GeometryToUpload transp;
     DataChunk[] dataStore;
 
     PackedTile[] strokeTiles;
     ushort[] strokeTileDat;
+}
+
+private struct GPUGeometry
+{
+    VaoId vao;
+    BufferId vboPos;
+    BufferId vboDat;
+    VaoId vaoTextured;
+    BufferId vboTexturedPos;
+    BufferId vboTexturedDat;
+    BufferId vboTexturedUVs;
+    BufferId ebo;
 }
 
 struct Renderer
@@ -200,18 +219,12 @@ nothrow:
         DataBuffer databuf;
         TileBuffer tilebuf;
 
+        GPUGeometry g_opaque;
+        GPUGeometry g_transp;
+
         VaoId vaoTiles;
         BufferId vboTiles;
         BufferId vboTileDat;
-
-        VaoId vao;
-        BufferId vboPos;
-        BufferId vboDat;
-        VaoId vaoTextured;
-        BufferId vboTexturedPos;
-        BufferId vboTexturedDat;
-        BufferId vboTexturedUVs;
-        BufferId ebo;
 
         GpaaRenderer gpaa;
 
@@ -238,38 +251,44 @@ nothrow:
         if (!glVertexAttribDivisorARB)
             return failGracefully();
 
+        foreach (g; tup(&g_opaque, &g_transp))
+        {
+            VBO.bind(g.vboPos);
+            VBO.bind(g.vboDat);
+            VBO.bind(g.vboTexturedPos);
+            VBO.bind(g.vboTexturedDat);
+            VBO.bind(g.vboTexturedUVs);
+        }
         VBO.bind(vboTiles);
         VBO.bind(vboTileDat);
-        VBO.bind(vboPos);
-        VBO.bind(vboDat);
-        VBO.bind(vboTexturedPos);
-        VBO.bind(vboTexturedDat);
-        VBO.bind(vboTexturedUVs);
         VBO.unbind();
 
-        EBO.bind(ebo);
+        foreach (g; tup(&g_opaque, &g_transp))
+            EBO.bind(g.ebo);
         EBO.unbind();
 
+        foreach (g; tup(&g_opaque, &g_transp))
+        {
+            device.vaoman.bind(g.vao);
+            VBO.bind(g.vboPos);
+            device.vaoman.addAttribF(0, 2);
+            VBO.bind(g.vboDat);
+            device.vaoman.addAttribU16(1, 1);
+            EBO.bind(g.ebo);
+
+            device.vaoman.bind(g.vaoTextured);
+            VBO.bind(g.vboTexturedPos);
+            device.vaoman.addAttribF(0, 2);
+            VBO.bind(g.vboTexturedDat);
+            device.vaoman.addAttribU16(1, 1);
+            VBO.bind(g.vboTexturedUVs);
+            device.vaoman.addAttribF(2, 2);
+            EBO.bind(g.ebo);
+        }
         device.vaoman.bind(vaoTiles);
         glVertexAttribDivisorARB(0, 1);
         glVertexAttribDivisorARB(1, 1);
         glVertexAttribDivisorARB(2, 1);
-
-        device.vaoman.bind(vao);
-        VBO.bind(vboPos);
-        device.vaoman.addAttribF(0, 2);
-        VBO.bind(vboDat);
-        device.vaoman.addAttribU16(1, 1);
-        EBO.bind(ebo);
-
-        device.vaoman.bind(vaoTextured);
-        VBO.bind(vboTexturedPos);
-        device.vaoman.addAttribF(0, 2);
-        VBO.bind(vboTexturedDat);
-        device.vaoman.addAttribU16(1, 1);
-        VBO.bind(vboTexturedUVs);
-        device.vaoman.addAttribF(2, 2);
-        EBO.bind(ebo);
 
         device.vaoman.unbind();
 
@@ -292,18 +311,20 @@ nothrow:
         rtpool.purge(device.fboman);
         gpaa.deinitialize(device);
 
+        foreach (g; tup(&g_opaque, &g_transp))
+        {
+            device.vaoman.del(g.vao);
+            device.vaoman.del(g.vaoTextured);
+            VBO.del(g.vboPos);
+            VBO.del(g.vboDat);
+            VBO.del(g.vboTexturedPos);
+            VBO.del(g.vboTexturedDat);
+            VBO.del(g.vboTexturedUVs);
+            EBO.del(g.ebo);
+        }
         device.vaoman.del(vaoTiles);
-        device.vaoman.del(vao);
-        device.vaoman.del(vaoTextured);
-
         VBO.del(vboTiles);
         VBO.del(vboTileDat);
-        VBO.del(vboPos);
-        VBO.del(vboDat);
-        VBO.del(vboTexturedPos);
-        VBO.del(vboTexturedDat);
-        VBO.del(vboTexturedUVs);
-        EBO.del(ebo);
     }
 
     void upload(const DataToUpload data, const GpaaDataToUpload gpaaData, ref const TileGrid tileGrid)
@@ -311,32 +332,35 @@ nothrow:
         if (fail)
             return;
 
+        foreach (pair; tup(tup(&data.opaque, &g_opaque), tup(&data.transp, &g_transp)))
+        {
+            if (pair[0].tris.length)
+            {
+                assert(pair[0].pos1.length || pair[0].pos2.length);
+                assert(pair[0].pos1.length == pair[0].dat1.length);
+                assert(pair[0].pos2.length == pair[0].dat2.length);
+                assert(pair[0].pos2.length == pair[0].uvs2.length);
+
+                EBO.bind(pair[1].ebo);
+                EBO.upload(pair[0].tris, GL_DYNAMIC_DRAW);
+                VBO.bind(pair[1].vboPos);
+                VBO.upload(pair[0].pos1, GL_DYNAMIC_DRAW);
+                VBO.bind(pair[1].vboDat);
+                VBO.upload(pair[0].dat1, GL_DYNAMIC_DRAW);
+                VBO.bind(pair[1].vboTexturedPos);
+                VBO.upload(pair[0].pos2, GL_DYNAMIC_DRAW);
+                VBO.bind(pair[1].vboTexturedDat);
+                VBO.upload(pair[0].dat2, GL_DYNAMIC_DRAW);
+                VBO.bind(pair[1].vboTexturedUVs);
+                VBO.upload(pair[0].uvs2, GL_DYNAMIC_DRAW);
+            }
+        }
         if (data.strokeTiles.length)
         {
             VBO.bind(vboTiles);
             VBO.upload(data.strokeTiles, GL_DYNAMIC_DRAW);
             VBO.bind(vboTileDat);
             VBO.upload(data.strokeTileDat, GL_DYNAMIC_DRAW);
-        }
-        if (data.tris.length)
-        {
-            assert(data.pos1.length || data.pos2.length);
-            assert(data.pos1.length == data.dat1.length);
-            assert(data.pos2.length == data.dat2.length);
-            assert(data.pos2.length == data.uvs2.length);
-
-            EBO.bind(ebo);
-            EBO.upload(data.tris, GL_DYNAMIC_DRAW);
-            VBO.bind(vboPos);
-            VBO.upload(data.pos1, GL_DYNAMIC_DRAW);
-            VBO.bind(vboDat);
-            VBO.upload(data.dat1, GL_DYNAMIC_DRAW);
-            VBO.bind(vboTexturedPos);
-            VBO.upload(data.pos2, GL_DYNAMIC_DRAW);
-            VBO.bind(vboTexturedDat);
-            VBO.upload(data.dat2, GL_DYNAMIC_DRAW);
-            VBO.bind(vboTexturedUVs);
-            VBO.upload(data.uvs2, GL_DYNAMIC_DRAW);
         }
         databuf.upload(data.dataStore);
         tilebuf.upload(tileGrid);
@@ -383,14 +407,14 @@ nothrow:
             }
 
             // now it's time to draw actual batches
-            const Batch[] batches = lists.batches[set.batches.start .. set.batches.end];
+            const Batch[] b_opaque = lists.b_opaque[set.b_opaque.start .. set.b_opaque.end];
+            const Batch[] b_transp = lists.b_transp[set.b_transp.start .. set.b_transp.end];
             const pbase = ParamsBase(Vec2(1.0f / rt.box.w, 1.0f / rt.box.h), rt.box.h, databuf.tex);
             // draw opaque first front-to-back
             const flagsOpq = DrawFlags.clippingPlanes | DrawFlags.depthTest;
-            foreach_reverse (ref bt; batches)
+            foreach_reverse (ref bt; b_opaque)
             {
-                if (bt.common.opaque)
-                    drawBatch(bt, pbase, flagsOpq);
+                drawBatch(g_opaque, bt, pbase, flagsOpq);
             }
             // compose layer if some
             if (set.layerToCompose > 0)
@@ -407,10 +431,9 @@ nothrow:
             }
             // draw transparent back-to-front without writing to depth
             const flagsTrt = flagsOpq | DrawFlags.blending | DrawFlags.noDepthWrite;
-            foreach (ref bt; batches)
+            foreach (ref bt; b_transp)
             {
-                if (!bt.common.opaque)
-                    drawBatch(bt, pbase, flagsTrt);
+                drawBatch(g_transp, bt, pbase, flagsTrt);
             }
         }
         // anti-alias
@@ -455,19 +478,19 @@ private:
         glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
     }
 
-    void drawBatch(ref const Batch bt, ref const ParamsBase pbase, DrawFlags flags)
+    void drawBatch(ref GPUGeometry g, ref const Batch bt, ref const ParamsBase pbase, DrawFlags flags)
     {
         final switch (bt.type) with (BatchType)
         {
         case simple:
-            performSimple(bt.simple.hasUV, pbase, bt.common.params, bt.common.triangles, flags);
+            performSimple(g, bt.simple.hasUV, pbase, bt.common.params, bt.common.triangles, flags);
             break;
         case twopass:
             const BatchTwoPass m = bt.twopass;
             const flags1stPass = (flags | DrawFlags.noColorWrite | DrawFlags.stencilTest) & ~DrawFlags.depthTest;
             const flags2ndPass = flags | DrawFlags.stencilTest;
-            performStencil(m.stenciling, pbase, bt.common.triangles, flags1stPass);
-            performCover(m.stenciling, pbase, bt.common.params, m.coverTriangles, flags2ndPass);
+            performStencil(g, m.stenciling, pbase, bt.common.triangles, flags1stPass);
+            performCover(g, m.stenciling, pbase, bt.common.params, m.coverTriangles, flags2ndPass);
             break;
         case tiled:
             performTiled(pbase, bt.common.params, bt.common.triangles, flags);
@@ -475,16 +498,16 @@ private:
         }
     }
 
-    void performSimple(bool hasUV, ref const ParamsBase pbase, ref const ShParams params, Span tris, DrawFlags flags)
+    void performSimple(ref GPUGeometry g, bool hasUV, ref const ParamsBase pbase, ref const ShParams params, Span tris, DrawFlags flags)
     {
         if (!setupSurfaceShader(pbase, params))
             return failGracefully();
 
-        const vao = hasUV ? vaoTextured : this.vao;
+        const vao = hasUV ? g.vaoTextured : g.vao;
         device.drawTriangles(vao, flags, tris.start * 3, (tris.end - tris.start) * 3);
     }
 
-    void performStencil(Stenciling type, ref const ParamsBase pbase, Span tris, DrawFlags flags)
+    void performStencil(ref GPUGeometry g, Stenciling type, ref const ParamsBase pbase, Span tris, DrawFlags flags)
     {
         if (auto prog = sh.empty)
         {
@@ -513,10 +536,10 @@ private:
             break;
         }
 
-        device.drawTriangles(vao, flags, tris.start * 3, (tris.end - tris.start) * 3);
+        device.drawTriangles(g.vao, flags, tris.start * 3, (tris.end - tris.start) * 3);
     }
 
-    void performCover(Stenciling type, ref const ParamsBase pbase, ref const ShParams params, Span tris, DrawFlags flags)
+    void performCover(ref GPUGeometry g, Stenciling type, ref const ParamsBase pbase, ref const ShParams params, Span tris, DrawFlags flags)
     {
         if (!setupSurfaceShader(pbase, params))
             return failGracefully();
@@ -545,7 +568,7 @@ private:
             break;
         }
 
-        device.drawTriangles(vao, flags, tris.start * 3, (tris.end - tris.start) * 3);
+        device.drawTriangles(g.vao, flags, tris.start * 3, (tris.end - tris.start) * 3);
     }
 
     bool setupSurfaceShader(ref const ParamsBase base, ref const ShParams params)
@@ -655,8 +678,9 @@ private:
             device.setBlending(cmd.composition);
         }
 
+        const g = &g_transp;
         const flags = DrawFlags.blending | DrawFlags.clippingPlanes | DrawFlags.depthTest | DrawFlags.noDepthWrite;
-        device.drawTriangles(vao, flags, cmd.triangles.start * 3, (cmd.triangles.end - cmd.triangles.start) * 3);
+        device.drawTriangles(g.vao, flags, cmd.triangles.start * 3, (cmd.triangles.end - cmd.triangles.start) * 3);
         device.resetBlending();
     }
 
