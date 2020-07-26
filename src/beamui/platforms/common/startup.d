@@ -547,3 +547,17 @@ version (unittest)
     static if (__VERSION__ >= 2087)
         extern (C) __gshared string[] rt_options = ["gcopt=parallel:0"];
 }
+
+// for main function
+version (Windows)
+{
+    version (LDC)
+    {
+        static if (__VERSION__ >= 2091)
+            pragma(linkerDirective, "/ENTRY:wmainCRTStartup");
+        else
+            pragma(linkerDirective, "/ENTRY:mainCRTStartup");
+    }
+    else
+        pragma(linkerDirective, "/ENTRY:mainCRTStartup");
+}
