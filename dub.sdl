@@ -18,6 +18,8 @@ libs "z" platform="linux"
 lflags "/SUBSYSTEM:WINDOWS" platform="windows"
 lflags "/SAFESEH:NO" platform="windows-x86"
 
+toolchainRequirements frontend=">=2.086"
+
 x:ddoxFilterArgs "--min-protection=Protected" "--in" "beamui" "--ex" ""
 
 subPackage "platforms"

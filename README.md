@@ -50,8 +50,7 @@ What was removed:
 
 You will need *dub* package manager, *dmd* or *ldc* compiler. Other compilers were not tested. Visit [dlang download page](https://dlang.org/download.html) for various installation methods.
 
-On Windows, *dmd >= 2.086* or *ldc >= 1.16* are required.
-On other platforms, *dmd >= 2.082* or *ldc >= 1.12* should work fine.
+Supported compiler versions are dmd ≥ 2.086, ldc ≥ 1.16.
 
 ### Dependencies
 
