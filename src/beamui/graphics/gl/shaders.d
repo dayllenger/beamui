@@ -180,10 +180,15 @@ nothrow:
         return import("base.vs.glsl") ~ import("datastore.inc.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool beforeLinking(const GLProgramInterface pi)
     {
         pi.bindAttribLocation("v_position", 0);
         pi.bindAttribLocation("v_dataIndex", 1);
+        return true;
+    }
+
+    override protected bool afterLinking(const GLProgramInterface pi)
+    {
         return loc.initialize(pi);
     }
 
@@ -228,9 +233,9 @@ nothrow:
         return import("solid.fs.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool afterLinking(const GLProgramInterface pi)
     {
-        return super.initLocations(pi) && loc.initialize(pi);
+        return super.afterLinking(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase)
@@ -248,9 +253,9 @@ nothrow:
         return import("linear.fs.glsl") ~ import("gradients.inc.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool afterLinking(const GLProgramInterface pi)
     {
-        return super.initLocations(pi) && loc.initialize(pi);
+        return super.afterLinking(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsLG p)
@@ -284,9 +289,9 @@ nothrow:
         return import("radial.fs.glsl") ~ import("gradients.inc.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool afterLinking(const GLProgramInterface pi)
     {
-        return super.initLocations(pi) && loc.initialize(pi);
+        return super.afterLinking(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsRG p)
@@ -320,9 +325,9 @@ nothrow:
         return import("pattern.fs.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool afterLinking(const GLProgramInterface pi)
     {
-        return super.initLocations(pi) && loc.initialize(pi);
+        return super.afterLinking(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsPattern p)
@@ -372,11 +377,16 @@ nothrow:
         return def1 ~ def2 ~ def3 ~ import("stroke-sdf.inc.glsl") ~ import("solid.fs.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool beforeLinking(const GLProgramInterface pi)
     {
         pi.bindAttribLocation("v_tile", 0);
         pi.bindAttribLocation("v_segments", 1);
         pi.bindAttribLocation("v_dataIndex", 2);
+        return true;
+    }
+
+    override protected bool afterLinking(const GLProgramInterface pi)
+    {
         return loc.initialize(pi);
     }
 
@@ -409,10 +419,15 @@ nothrow:
         return import("image.fs.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool beforeLinking(const GLProgramInterface pi)
     {
         pi.bindAttribLocation("v_texCoord", 2);
-        return super.initLocations(pi) && loc.initialize(pi);
+        return super.beforeLinking(pi);
+    }
+
+    override protected bool afterLinking(const GLProgramInterface pi)
+    {
+        return super.afterLinking(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsImage p)
@@ -444,10 +459,15 @@ nothrow:
         return import("text.fs.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool beforeLinking(const GLProgramInterface pi)
     {
         pi.bindAttribLocation("v_texCoord", 2);
-        return super.initLocations(pi) && loc.initialize(pi);
+        return super.beforeLinking(pi);
+    }
+
+    override protected bool afterLinking(const GLProgramInterface pi)
+    {
+        return super.afterLinking(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsText p)
@@ -478,9 +498,9 @@ nothrow:
         return import("composition.fs.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool afterLinking(const GLProgramInterface pi)
     {
-        return super.initLocations(pi) && loc.initialize(pi);
+        return super.afterLinking(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsComposition p)
@@ -512,9 +532,9 @@ nothrow:
         return import("blending.fs.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool afterLinking(const GLProgramInterface pi)
     {
-        return super.initLocations(pi) && loc.initialize(pi);
+        return super.afterLinking(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase, ref const ParamsComposition p)
@@ -545,12 +565,17 @@ nothrow:
         return import("gpaa.fs.glsl");
     }
 
-    override protected bool initLocations(const GLProgramInterface pi)
+    override protected bool beforeLinking(const GLProgramInterface pi)
     {
         pi.bindAttribLocation("v_point0", 0);
         pi.bindAttribLocation("v_point1", 1);
         pi.bindAttribLocation("v_dataIndex", 2);
         pi.bindAttribLocation("v_layerIndex", 3);
+        return true;
+    }
+
+    override protected bool afterLinking(const GLProgramInterface pi)
+    {
         return loc.initialize(pi);
     }
 

@@ -48,20 +48,35 @@ nothrow:
         if (vs == 0 || fs == 0)
             return;
 
-        const id = linkShaders(vs, fs);
-        if (!id)
-            return;
+        const shaderIDs = [vs, fs];
 
-        if (!initLocations(GLProgramInterface(id)))
+        // create and assemble program
+        const id = glCreateProgram();
+        foreach (sh; shaderIDs)
+            glAttachShader(id, sh);
+
+        // flag the shaders for deletion
+        foreach (sh; shaderIDs)
+            glDeleteShader(sh);
+
+        if (!beforeLinking(GLProgramInterface(id)))
+        {
+            Log.e("GL: error setting program parameters");
+            glDeleteProgram(id);
+            return;
+        }
+        if (!linkProgram(id))
+        {
+            glDeleteProgram(id);
+            return;
+        }
+        if (!afterLinking(GLProgramInterface(id)))
         {
             Log.e("GL: some of program locations were not found");
+            glDeleteProgram(id);
             return;
         }
-        if (!relinkProgram(id))
-        {
-            Log.e("GL: cannot relink program");
-            return;
-        }
+
         programID = id;
     }
 
@@ -107,21 +122,22 @@ nothrow:
             else
             {
                 buf = replace(buf, "\nin ", "\nvarying ");
-                buf = replace(buf, "\nout vec4 outColor;", "\n");
-                buf = replace(buf, "outColor", "gl_FragColor");
+                buf = replace(buf, "\nout vec4 f_color;", "\n");
+                buf = replace(buf, "f_color", "gl_FragColor");
             }
         }
         return cast(string)buf;
     }
 
-    /// Override to init shader code locations. Return `false` on error
-    abstract bool initLocations(const GLProgramInterface pi);
+    /// Bind locations, set transform feedback varyings, etc. Return false on error
+    abstract bool beforeLinking(const GLProgramInterface pi);
+    /// Get code locations and other info. Return false on error
+    abstract bool afterLinking(const GLProgramInterface pi);
 }
 
 struct GLProgramInterface
 {
 nothrow:
-
     const GLuint programID;
 
     /// Associate a number with an attribute

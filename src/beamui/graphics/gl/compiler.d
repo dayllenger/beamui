@@ -1,7 +1,7 @@
 ﻿/**
 GLSL shader compiling and linking routines.
 
-Copyright: dayllenger 2019
+Copyright: dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -56,41 +56,13 @@ GLuint compileShader(string source, const ShaderStage stage)
     return shaderID;
 }
 
-/// Link compiled shaders. Deletes passed shader objects. Returns 0 in case of error
-GLuint linkShaders(const GLuint[] shaderIDs...)
-{
-    // create and link program
-    GLuint programID = glCreateProgram();
-    foreach (sh; shaderIDs)
-        glAttachShader(programID, sh);
-    glLinkProgram(programID);
-
-    // check the program
-    if (!checkLinking(programID))
-    {
-        glDeleteProgram(programID);
-        programID = 0;
-    }
-    // flag the shaders for deletion
-    foreach (sh; shaderIDs)
-    {
-        glDeleteShader(sh);
-    }
-    return programID;
-}
-
-/// Relink after some location bindings. Returns false in case of error
-bool relinkProgram(const GLuint programID)
+/// Link prepared shader program. Returns false in case of error
+bool linkProgram(GLuint programID)
 {
     glLinkProgram(programID);
 
     // check the program
-    if (!checkLinking(programID))
-    {
-        glDeleteProgram(programID);
-        return false;
-    }
-    return true;
+    return checkLinking(programID);
 }
 
 private enum logMaxLen = 1023;
