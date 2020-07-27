@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
 dub fetch ddox --DRT-gcopt=parallel:0
-cp ./ddox/ddox.inc.composite.dt ~/.dub/packages/ddox-*/ddox/views/ddox.inc.composite.dt
-cp ./ddox/ddox.module.dt ~/.dub/packages/ddox-*/ddox/views/ddox.module.dt
 
-parser=~/.dub/packages/ddox-*/ddox/source/ddox/parsers/jsonparser.d
+DIRS=(~/.dub/packages/ddox-*/ddox/)
+DIR=${DIRS[-1]}
+
+cp ./ddox/ddox.inc.composite.dt $DIR/views/ddox.inc.composite.dt
+cp ./ddox/ddox.module.dt $DIR/views/ddox.module.dt
+
+parser=$DIR/source/ddox/parsers/jsonparser.d
 size=$(wc -c < $parser)
 origSize=25965
 
