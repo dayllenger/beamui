@@ -199,7 +199,10 @@ nothrow:
             if (f & DrawFlags.stencilTest)
                 glEnable(GL_STENCIL_TEST);
             else
+            {
                 glDisable(GL_STENCIL_TEST);
+                glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+            }
         }
     }
 
