@@ -18,28 +18,17 @@ import beamui.core.functions : collectException, min;
 import beamui.core.logger;
 import beamui.graphics.gl.api;
 
-enum ShaderStage : ubyte
+enum ShaderStage : GLenum
 {
-    vertex = 1,
-    fragment = 2,
-}
-
-private GLenum shaderStageToGLenum(ShaderStage stage)
-{
-    final switch (stage) with (ShaderStage)
-    {
-    case vertex:
-        return GL_VERTEX_SHADER;
-    case fragment:
-        return GL_FRAGMENT_SHADER;
-    }
+    vertex = GL_VERTEX_SHADER,
+    fragment = GL_FRAGMENT_SHADER,
 }
 
 /// Compile single shader from source. Returns 0 in case of error
 GLuint compileShader(string source, const ShaderStage stage)
 {
     // create a shader
-    GLuint shaderID = glCreateShader(shaderStageToGLenum(stage));
+    GLuint shaderID = glCreateShader(stage);
 
     // compile the shader
     const char* csource = source.ptr;

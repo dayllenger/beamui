@@ -11,6 +11,7 @@ import beamui.core.config;
 // dfmt off
 static if (USE_OPENGL):
 // dfmt on
+public import beamui.graphics.gl.compiler : ShaderStage;
 import std.array : replace;
 import std.string : toStringz;
 import beamui.core.functions : getShortClassName;
@@ -23,9 +24,7 @@ import beamui.graphics.gl.errors;
 class GLProgram
 {
 nothrow:
-
-    abstract @property string vertexSource() const;
-    abstract @property string fragmentSource() const;
+    abstract @property string[ShaderStage] sources() const;
 
     /// Returns true if program is ready for use
     final @property bool isValid() const
@@ -41,14 +40,20 @@ nothrow:
 
         Log.v("GL: compiling ", getShortClassName(this));
 
-        string vsrc = preprocess(vertexSource, ShaderStage.vertex);
-        string fsrc = preprocess(fragmentSource, ShaderStage.fragment);
-        const vs = compileShader(vsrc, ShaderStage.vertex);
-        const fs = compileShader(fsrc, ShaderStage.fragment);
-        if (vs == 0 || fs == 0)
-            return;
-
-        const shaderIDs = [vs, fs];
+        // compile shaders
+        GLuint[] shaderIDs;
+        foreach (pair; byKeyValue(sources))
+        {
+            const src = preprocess(pair.value, pair.key);
+            const shader = compileShader(src, pair.key);
+            if (!shader)
+            {
+                foreach (sh; shaderIDs)
+                    glDeleteShader(sh);
+                return;
+            }
+            shaderIDs ~= shader;
+        }
 
         // create and assemble program
         const id = glCreateProgram();

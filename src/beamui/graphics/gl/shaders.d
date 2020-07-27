@@ -174,10 +174,10 @@ nothrow:
 abstract class ShaderBase : GLProgram
 {
 nothrow:
-
-    override @property string vertexSource() const
+    override @property string[ShaderStage] sources() const
     {
-        return import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const vs = import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        return [ShaderStage.vertex : vs];
     }
 
     override protected bool beforeLinking(const GLProgramInterface pi)
@@ -206,10 +206,11 @@ nothrow:
 final class ShaderEmpty : ShaderBase
 {
 nothrow:
-
-    override @property string fragmentSource() const
+    override @property string[ShaderStage] sources() const
     {
-        return q{ void main() {} };
+        auto map = super.sources;
+        map[ShaderStage.fragment] = `void main() {}`;
+        return map;
     }
 
     void prepare(ref const ParamsBase p)
@@ -221,16 +222,12 @@ nothrow:
 final class ShaderSolid : ShaderBase
 {
 nothrow:
-
-    override @property string vertexSource() const
+    override @property string[ShaderStage] sources() const
     {
-        enum defs = "#define DATA_COLOR\n";
-        return defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
-    }
-
-    override @property string fragmentSource() const
-    {
-        return import("solid.fs.glsl");
+        enum def1 = "#define DATA_COLOR\n";
+        const vs = def1 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const fs = import("solid.fs.glsl");
+        return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
 
     override protected bool afterLinking(const GLProgramInterface pi)
@@ -247,10 +244,11 @@ nothrow:
 final class ShaderLinear : ShaderBase
 {
 nothrow:
-
-    override @property string fragmentSource() const
+    override @property string[ShaderStage] sources() const
     {
-        return import("linear.fs.glsl") ~ import("gradients.inc.glsl");
+        auto map = super.sources;
+        map[ShaderStage.fragment] = import("linear.fs.glsl") ~ import("gradients.inc.glsl");
+        return map;
     }
 
     override protected bool afterLinking(const GLProgramInterface pi)
@@ -283,10 +281,11 @@ nothrow:
 final class ShaderRadial : ShaderBase
 {
 nothrow:
-
-    override @property string fragmentSource() const
+    override @property string[ShaderStage] sources() const
     {
-        return import("radial.fs.glsl") ~ import("gradients.inc.glsl");
+        auto map = super.sources;
+        map[ShaderStage.fragment] = import("radial.fs.glsl") ~ import("gradients.inc.glsl");
+        return map;
     }
 
     override protected bool afterLinking(const GLProgramInterface pi)
@@ -319,10 +318,11 @@ nothrow:
 final class ShaderPattern : ShaderBase
 {
 nothrow:
-
-    override @property string fragmentSource() const
+    override @property string[ShaderStage] sources() const
     {
-        return import("pattern.fs.glsl");
+        auto map = super.sources;
+        map[ShaderStage.fragment] = import("pattern.fs.glsl");
+        return map;
     }
 
     override protected bool afterLinking(const GLProgramInterface pi)
@@ -361,20 +361,15 @@ nothrow:
 final class ShaderSolidStroke : GLProgram
 {
 nothrow:
-    override @property string vertexSource() const
+    override @property string[ShaderStage] sources() const
     {
         enum def1 = "#define DATA_COLOR\n";
         enum def2 = "#define TILED_STROKE\n";
         enum def3 = "#define TILE_SIZE " ~ to!string(TILE_SIZE) ~ ".0\n";
-        return def1 ~ def2 ~ def3 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
-    }
-
-    override @property string fragmentSource() const
-    {
-        enum def1 = "#define TILED_STROKE\n";
-        enum def2 = "#define TILE_SIZE " ~ to!string(TILE_SIZE) ~ ".0\n";
-        enum def3 = "#define ROW_LENGTH " ~ to!string(TileBuffer.ROW_LENGTH) ~ "\n";
-        return def1 ~ def2 ~ def3 ~ import("stroke-sdf.inc.glsl") ~ import("solid.fs.glsl");
+        enum def4 = "#define ROW_LENGTH " ~ to!string(TileBuffer.ROW_LENGTH) ~ "\n";
+        const vs = def1 ~ def2 ~ def3 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const fs = def2 ~ def3 ~ def4 ~ import("stroke-sdf.inc.glsl") ~ import("solid.fs.glsl");
+        return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
 
     override protected bool beforeLinking(const GLProgramInterface pi)
@@ -407,16 +402,12 @@ nothrow:
 final class ShaderImage : ShaderBase
 {
 nothrow:
-
-    override @property string vertexSource() const
+    override @property string[ShaderStage] sources() const
     {
         enum defs = "#define UV\n";
-        return defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
-    }
-
-    override @property string fragmentSource() const
-    {
-        return import("image.fs.glsl");
+        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const fs = import("image.fs.glsl");
+        return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
 
     override protected bool beforeLinking(const GLProgramInterface pi)
@@ -447,16 +438,12 @@ nothrow:
 final class ShaderText : ShaderBase
 {
 nothrow:
-
-    override @property string vertexSource() const
+    override @property string[ShaderStage] sources() const
     {
         enum defs = "#define DATA_COLOR\n" ~ "#define UV\n";
-        return defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
-    }
-
-    override @property string fragmentSource() const
-    {
-        return import("text.fs.glsl");
+        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const fs = import("text.fs.glsl");
+        return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
 
     override protected bool beforeLinking(const GLProgramInterface pi)
@@ -487,15 +474,12 @@ final class ShaderCompose : ShaderBase
 {
 nothrow:
 
-    override @property string vertexSource() const
+    override @property string[ShaderStage] sources() const
     {
         enum defs = "#define COMPOSITION\n";
-        return defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
-    }
-
-    override @property string fragmentSource() const
-    {
-        return import("composition.fs.glsl");
+        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const fs = import("composition.fs.glsl");
+        return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
 
     override protected bool afterLinking(const GLProgramInterface pi)
@@ -521,15 +505,12 @@ final class ShaderBlend : ShaderBase
 {
 nothrow:
 
-    override @property string vertexSource() const
+    override @property string[ShaderStage] sources() const
     {
         enum defs = "#define COMPOSITION\n";
-        return defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
-    }
-
-    override @property string fragmentSource() const
-    {
-        return import("blending.fs.glsl");
+        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const fs = import("blending.fs.glsl");
+        return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
 
     override protected bool afterLinking(const GLProgramInterface pi)
@@ -555,14 +536,11 @@ final class ShaderGPAA : GLProgram
 {
 nothrow:
 
-    override @property string vertexSource() const
+    override @property string[ShaderStage] sources() const
     {
-        return import("gpaa.vs.glsl") ~ import("datastore.inc.glsl");
-    }
-
-    override @property string fragmentSource() const
-    {
-        return import("gpaa.fs.glsl");
+        const vs = import("gpaa.vs.glsl") ~ import("datastore.inc.glsl");
+        const fs = import("gpaa.fs.glsl");
+        return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
 
     override protected bool beforeLinking(const GLProgramInterface pi)
