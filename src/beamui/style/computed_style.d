@@ -164,6 +164,7 @@ struct ComputedStyle
         /// Get color to draw focus rectangle, `Color.transparent` if no focus rect
         Color focusRectColor() const { return _focusRectColor; }
 
+        SingleTransform transform() const { return _transform; }
         float opacity() const { return _opacity; }
         BlendMode mixBlendMode() const { return _mixBlendMode; }
 
@@ -250,6 +251,7 @@ struct ComputedStyle
         LayoutLength _textIndent = LayoutLength.zero;
         float _wordSpacing = 0;
         // effects
+        SingleTransform _transform;
         float _opacity = 1;
         // transitions and animations
         string _transitionProperty;
@@ -635,6 +637,10 @@ struct ComputedStyle
                 return BgSize(t, applyEM(value.x), applyEM(value.y));
             else
                 return BgSize(t);
+        }
+        else static if (ptype == P.transform)
+        {
+            return SingleTransform(value.kind, applyEM(value.a), applyEM(value.b));
         }
         else
             return value;

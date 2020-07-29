@@ -43,6 +43,7 @@ import beamui.graphics.compositing : BlendMode;
 import beamui.platforms.common.platform;
 import beamui.style.selector;
 import beamui.style.style;
+import beamui.style.types : SingleTransformKind;
 import beamui.text.style : TextHotkey;
 import beamui.widgets.menu;
 
@@ -2198,9 +2199,20 @@ public:
 
         // begin a layer if needed
         const blendMode = _style.mixBlendMode;
-        PaintSaver lsv;
+        PaintSaver svOuter;
         if (opacity < 0.999f || blendMode != BlendMode.normal)
-            pr.beginLayer(lsv, opacity, blendMode);
+            pr.beginLayer(svOuter, opacity, blendMode);
+        else
+            pr.save(svOuter);
+
+        const transform = _style.transform;
+        if (transform.kind != SingleTransformKind.none)
+        {
+            const origin = _box.middle;
+            pr.translate(origin.x, origin.y);
+            pr.transform(transform.toMatrix(_box.w, _box.h));
+            pr.translate(-origin.x, -origin.y);
+        }
 
         // draw the background first
         const borderColor = _style.borderColor;

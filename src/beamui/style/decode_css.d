@@ -24,7 +24,7 @@ import beamui.graphics.drawables;
 import beamui.layout.alignment;
 import beamui.layout.flex : FlexDirection, FlexWrap;
 import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
-import beamui.style.types : BgPositionRaw, BgSizeRaw, WhiteSpace, SpecialCSSType;
+import beamui.style.types;
 import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
 import beamui.text.style;
 import beamui.widgets.widget : CursorType;
@@ -886,7 +886,7 @@ Result!Drawable decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)
         {
             angle = parseAngle(tokens[1].text, tokens[1].dimensionUnit);
         }
-        if (angle.isNaN)
+        if (isNaN(angle))
         {
             Log.fe("CSS(%s): 1st linear gradient parameter should be angle (deg, grad, rad or turn)", tokens[1].line);
             return Err!Drawable;
@@ -1652,6 +1652,188 @@ Result!Color decode(T : Color)(ref const(Token)[] tokens)
     }
     unknown("color", t);
     return Err!Color;
+}
+
+/// Decode transform part
+Result!SingleTransformRaw decode(T : SingleTransformRaw)(const Token[] tokens)
+{
+    import std.math : isNaN;
+
+    assert(tokens.length > 0);
+
+    alias E = Err!SingleTransformRaw;
+    SingleTransformRaw result;
+
+    const t0 = tokens[0];
+    if (t0.type == TokenType.ident)
+    {
+        if (t0.text != "none")
+        {
+            unknown("transform identifier", t0);
+            return E();
+        }
+        return Ok(result);
+    }
+    if (t0.type != TokenType.func)
+    {
+        shouldbe("transform", "function or none", t0);
+        return E();
+    }
+    if (tokens[$ - 1].type != TokenType.closeParen)
+    {
+        Log.fe("CSS(%d): expected closing parenthesis", t0.line);
+        return E();
+    }
+
+    switch (t0.text)
+    {
+    case "translate":
+        if (tokens.length != 5 || tokens[2].type != TokenType.comma)
+        {
+            Log.fe("CSS(%d): expected two comma-separated lengths", t0.line);
+            return E();
+        }
+        result.kind = SingleTransformKind.translate;
+        if (const len = decode!Length(tokens[1 .. 2]))
+            result.a = len.val;
+        else
+            return E();
+        if (const len = decode!Length(tokens[3 .. 4]))
+            result.b = len.val;
+        else
+            return E();
+        break;
+    case "translateX":
+        if (tokens.length > 3)
+            toomany(t0.text, t0.line);
+
+        result.kind = SingleTransformKind.translate;
+        if (const len = decode!Length(tokens[1 .. 2]))
+            result.a = len.val;
+        else
+            return E();
+        break;
+    case "translateY":
+        if (tokens.length > 3)
+            toomany(t0.text, t0.line);
+
+        result.kind = SingleTransformKind.translate;
+        if (const len = decode!Length(tokens[1 .. 2]))
+            result.b = len.val;
+        else
+            return E();
+        break;
+    case "rotate":
+        if (tokens.length > 3)
+            toomany(t0.text, t0.line);
+
+        float angle;
+        if (tokens[1].type == TokenType.dimension)
+            angle = parseAngle(tokens[1].text, tokens[1].dimensionUnit);
+        if (isNaN(angle))
+        {
+            unknown("angle", tokens[1]);
+            return E();
+        }
+        result.kind = SingleTransformKind.rotate;
+        result.a = Length.px(angle);
+        break;
+    case "scale":
+        if (tokens.length != 5 || tokens[2].type != TokenType.comma)
+        {
+            Log.fe("CSS(%d): expected two comma-separated numbers", t0.line);
+            return E();
+        }
+        result.kind = SingleTransformKind.scale;
+        if (const num = decode!float(tokens[1 .. 2]))
+            result.a = Length.px(num.val);
+        else
+            return E();
+        if (const num = decode!float(tokens[3 .. 4]))
+            result.b = Length.px(num.val);
+        else
+            return E();
+        break;
+    case "scaleX":
+        if (tokens.length > 3)
+            toomany(t0.text, t0.line);
+
+        result.kind = SingleTransformKind.scale;
+        if (const num = decode!float(tokens[1 .. 2]))
+            result.a = Length.px(num.val);
+        else
+            return E();
+        break;
+    case "scaleY":
+        if (tokens.length > 3)
+            toomany(t0.text, t0.line);
+
+        result.kind = SingleTransformKind.scale;
+        if (const num = decode!float(tokens[1 .. 2]))
+            result.b = Length.px(num.val);
+        else
+            return E();
+        break;
+    case "skew":
+        if (tokens.length != 5 || tokens[2].type != TokenType.comma)
+        {
+            Log.fe("CSS(%d): expected two comma-separated angles", t0.line);
+            return E();
+        }
+        float[2] angles;
+        if (tokens[1].type == TokenType.dimension)
+            angles[0] = parseAngle(tokens[1].text, tokens[1].dimensionUnit);
+        if (tokens[3].type == TokenType.dimension)
+            angles[1] = parseAngle(tokens[3].text, tokens[3].dimensionUnit);
+        if (isNaN(angles[0]))
+        {
+            unknown("angle", tokens[1]);
+            return E();
+        }
+        if (isNaN(angles[1]))
+        {
+            unknown("angle", tokens[3]);
+            return E();
+        }
+        result.kind = SingleTransformKind.skew;
+        result.a = Length.px(angles[0]);
+        result.b = Length.px(angles[1]);
+        break;
+    case "skewX":
+        if (tokens.length > 3)
+            toomany(t0.text, t0.line);
+
+        float angle;
+        if (tokens[1].type == TokenType.dimension)
+            angle = parseAngle(tokens[1].text, tokens[1].dimensionUnit);
+        if (isNaN(angle))
+        {
+            unknown("angle", tokens[1]);
+            return E();
+        }
+        result.kind = SingleTransformKind.skew;
+        result.a = Length.px(angle);
+        break;
+    case "skewY":
+        if (tokens.length > 3)
+            toomany(t0.text, t0.line);
+
+        float angle;
+        if (tokens[1].type == TokenType.dimension)
+            angle = parseAngle(tokens[1].text, tokens[1].dimensionUnit);
+        if (isNaN(angle))
+        {
+            unknown("angle", tokens[1]);
+            return E();
+        }
+        result.kind = SingleTransformKind.skew;
+        result.b = Length.px(angle);
+        break;
+    default:
+        unknown("transform function", t0);
+        return E();
+    }
+    return Ok(result);
 }
 
 /// Decode opacity in [0..1] range

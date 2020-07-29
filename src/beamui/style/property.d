@@ -124,6 +124,7 @@ enum StyleProperty
     whiteSpace,
     wordSpacing,
     // effects
+    transform,
     opacity,
     mixBlendMode,
     // transitions and animations
@@ -214,6 +215,7 @@ package struct PropTypes
     Length width;
     Length wordSpacing;
     RepeatStyle bgRepeat;
+    SingleTransformRaw transform;
     Stretch stretch;
     string display;
     string fontFace;
@@ -265,6 +267,7 @@ private union BuiltinPropertyValue
         int,
         Length,
         RepeatStyle,
+        SingleTransformRaw,
         Stretch,
         string,
         TabSize,
@@ -418,6 +421,8 @@ package bool sanitizeProperty(StyleProperty ptype, T)(ref const T value)
         || ptype == P.columnGap
     )
         return value !is Length.none && value.toLayout.applyPercent(100) >= 0;
+    else static if (ptype == P.transform)
+        return value.a !is Length.none && value.b !is Length.none;
     else static if (ptype == P.flexGrow || ptype == P.flexShrink)
         return value >= 0;
     else static if (ptype == P.justifyItems || ptype == P.alignItems)
@@ -539,6 +544,7 @@ string getCSSName(StyleProperty ptype)
         case textOverflow: return "text-overflow";
         case textTransform: return "text-transform";
         case top: return "top";
+        case transform: return "transform";
         case transitionDelay: return "transition-delay";
         case transitionDuration: return "transition-duration";
         case transitionProperty: return "transition-property";

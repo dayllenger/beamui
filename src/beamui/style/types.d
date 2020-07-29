@@ -1,14 +1,15 @@
 /**
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
+Copyright: dayllenger 2018-2020
 License:   Boost License 1.0
-Authors:   Vadim Lopatin, dayllenger
+Authors:   dayllenger
 */
 module beamui.style.types;
 
 @safe:
 
-import beamui.core.units : Length;
+import beamui.core.linalg : Mat2x3, Vec2;
+import beamui.core.units : LayoutLength, Length;
 import beamui.graphics.drawables : BgSizeType;
 
 enum WhiteSpace : ubyte
@@ -28,6 +29,46 @@ struct BgSizeRaw
     BgSizeType type;
     Length x;
     Length y;
+}
+
+enum SingleTransformKind : ubyte
+{
+    none,
+    translate,
+    rotate,
+    scale,
+    skew,
+}
+
+struct SingleTransformRaw
+{
+    SingleTransformKind kind;
+    Length a = Length.zero;
+    Length b = Length.zero;
+}
+
+struct SingleTransform
+{
+    SingleTransformKind kind;
+    LayoutLength a = LayoutLength.zero;
+    LayoutLength b = LayoutLength.zero;
+
+    Mat2x3 toMatrix(float width, float height) const nothrow
+    {
+        final switch (kind) with (SingleTransformKind)
+        {
+        case none:
+            return Mat2x3.identity;
+        case translate:
+            return Mat2x3.translation(Vec2(a.applyPercent(width), b.applyPercent(height)));
+        case rotate:
+            return Mat2x3.rotation(a.applyPercent(0));
+        case scale:
+            return Mat2x3.scaling(Vec2(a.applyPercent(width), b.applyPercent(height)));
+        case skew:
+            return Mat2x3.skewing(Vec2(a.applyPercent(0), b.applyPercent(0)));
+        }
+    }
 }
 
 enum SpecialCSSType
