@@ -41,8 +41,6 @@ public final class SWPaintEngine : PaintEngine
             LayerOp op;
         }
 
-        const(State)* _st;
-
         LayerPool layerPool;
         MaskPool maskPool;
 
@@ -88,39 +86,32 @@ public final class SWPaintEngine : PaintEngine
 
 protected:
 
-    const(State)* st() nothrow
+    override void begin(FrameConfig conf)
     {
-        return _st;
-    }
-
-    void begin(const(State)* st, FrameConfig conf)
-    {
-        _st = st;
-
         backbuf.resize(conf.width, conf.height);
         backbuf.fill(conf.background);
         base_layer = PM_Image.fromBitmap(*backbuf, Repeat.no, Filtering.no);
         layer = base_layer.view;
     }
 
-    void end()
+    override void end()
     {
         foreach (layer; layerStack.unsafe_slice)
             pixman_image_unref(layer.img);
         layerStack.clear();
     }
 
-    void paint()
+    override void paint()
     {
     }
 
-    void beginLayer(BoxI clip, bool expand, LayerOp op)
+    override void beginLayer(BoxI clip, bool expand, LayerOp op)
     {
         layer = layerPool.take(clip.size);
         layerStack ~= Layer(layer, clip, op);
     }
 
-    void composeLayer()
+    override void composeLayer()
     {
         Layer src = layerStack.unsafe_ref(-1);
         layerStack.shrink(1);
@@ -149,15 +140,15 @@ protected:
         // dfmt on
     }
 
-    void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
+    override void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
     {
     }
 
-    void restore(uint index)
+    override void restore(uint index)
     {
     }
 
-    void paintOut(ref const Brush br)
+    override void paintOut(ref const Brush br)
     {
         Mat2x3 mat = st.mat;
         BoxI clip = st.clipRect;
@@ -172,7 +163,7 @@ protected:
         });
     }
 
-    void fillPath(ref Contours contours, ref const Brush br, FillRule rule)
+    override void fillPath(ref Contours contours, ref const Brush br, FillRule rule)
     {
         const lst = contours.list;
         BoxI clip = contours.trBounds;
@@ -215,7 +206,7 @@ protected:
         });
     }
 
-    void strokePath(ref Contours contours, ref const Brush br, ref const Pen pen, bool hairline)
+    override void strokePath(ref Contours contours, ref const Brush br, ref const Pen pen, bool hairline)
     {
         if (hairline)
             strokeHairlinePath(contours.list, br);
@@ -352,7 +343,7 @@ protected:
         }
     }
 
-    void drawImage(ref const Bitmap bmp, Vec2 pos, float opacity)
+    override void drawImage(ref const Bitmap bmp, Vec2 pos, float opacity)
     {
         const rect = Rect(pos.x, pos.y, pos.x + bmp.width, pos.y + bmp.height);
         const BoxI clip = clipByRect(transformBounds(rect));
@@ -382,7 +373,7 @@ protected:
         // dfmt on
     }
 
-    void drawNinePatch(ref const Bitmap bmp, ref const NinePatchInfo info, float opacity)
+    override void drawNinePatch(ref const Bitmap bmp, ref const NinePatchInfo info, float opacity)
     {
         const rect = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
         const BoxI clip = clipByRect(transformBounds(rect));
@@ -498,7 +489,7 @@ protected:
         // dfmt on
     }
 
-    void drawText(const GlyphInstance[] run, Color c)
+    override void drawText(const GlyphInstance[] run, Color c)
     {
         if (run[0].glyph.subpixelMode != SubpixelRenderingMode.none)
             return;

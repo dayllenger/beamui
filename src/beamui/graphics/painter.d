@@ -825,7 +825,8 @@ struct PainterHead
             state.clipRect = RectI(0, 0, width, height);
             mainStack.clear();
             bufContours.clear();
-            engine.begin(&state, PaintEngine.FrameConfig(width, height, scaling, background));
+            engine.st = &state;
+            engine.begin(PaintEngine.FrameConfig(width, height, scaling, background));
         }
     }
 
@@ -886,7 +887,7 @@ struct PaintSaver
 }
 
 /// Base for painting backends
-interface PaintEngine
+abstract class PaintEngine
 {
 protected:
     struct FrameConfig
@@ -979,9 +980,9 @@ protected:
         float dst_y0, dst_y1, dst_y2, dst_y3;
     }
 
-    const(State)* st() nothrow;
+    const(State)* st;
 
-    void begin(const(State)*, FrameConfig);
+    void begin(FrameConfig);
     void end();
     void paint();
 

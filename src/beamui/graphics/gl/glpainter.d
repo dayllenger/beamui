@@ -112,8 +112,6 @@ public final class GLPaintEngine : PaintEngine
 {
     private
     {
-        const(State)* _st;
-
         Layer* layer; // points into array, so need to handle carefully
         Buf!Layer layers;
         Buf!Set sets;
@@ -160,15 +158,8 @@ public final class GLPaintEngine : PaintEngine
 
 protected:
 
-    const(State)* st() const
+    override void begin(FrameConfig conf)
     {
-        return _st;
-    }
-
-    void begin(const(State)* st, FrameConfig conf)
-    {
-        _st = st;
-
         layers.clear();
         sets.clear();
 
@@ -195,7 +186,7 @@ protected:
         gpaa.prepare();
     }
 
-    void end()
+    override void end()
     {
         textureCache.updateMipmaps();
         prepareSets();
@@ -247,7 +238,7 @@ protected:
         }
     }
 
-    void paint()
+    override void paint()
     {
         renderer.render(const(DrawLists)(layers[], sets[], g_opaque.batches[], g_transp.batches[]));
     }
@@ -415,7 +406,7 @@ protected:
         return list;
     }
 
-    void beginLayer(BoxI clip, bool expand, LayerOp op)
+    override void beginLayer(BoxI clip, bool expand, LayerOp op)
     {
         Layer lr;
         lr.index = layers.length;
@@ -435,7 +426,7 @@ protected:
         gpaa.setLayerIndex(lr.index);
     }
 
-    void composeLayer()
+    override void composeLayer()
     {
         layer.sets.end = sets.length;
         layer.cmd.dataIndex = cast(ushort)dataStore.length;
@@ -450,7 +441,7 @@ protected:
         gpaa.setLayerIndex(layer.index);
     }
 
-    void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
+    override void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
     {
         alias S = Stenciling;
         const set = makeSet(layer.index);
@@ -470,7 +461,7 @@ protected:
         return Set(Span(g_opaque.batches.length), Span(g_transp.batches.length), Span(dataStore.length), layer, layerToCompose);
     }
 
-    void restore(uint index)
+    override void restore(uint index)
     {
         const int i = index;
         foreach (ref DepthTask task; depthTasks.unsafe_slice)
@@ -488,7 +479,7 @@ protected:
         dataStore.unsafe_ref(dataIndex).depth = layer.depth;
     }
 
-    void paintOut(ref const Brush br)
+    override void paintOut(ref const Brush br)
     {
         const r = layer.clip;
         // dfmt off
@@ -511,12 +502,12 @@ protected:
         }
     }
 
-    void fillPath(ref Contours contours, ref const Brush br, FillRule rule)
+    override void fillPath(ref Contours contours, ref const Brush br, FillRule rule)
     {
         fillPathImpl(contours, &br, rule == FillRule.nonzero ? Stenciling.nonzero : Stenciling.odd);
     }
 
-    void strokePath(ref Contours contours, ref const Brush br, ref const Pen pen, bool)
+    override void strokePath(ref Contours contours, ref const Brush br, ref const Pen pen, bool)
     {
         bool evenlyScaled = true;
         float width = pen.width;
@@ -634,7 +625,7 @@ protected:
         }
     }
 
-    void drawImage(ref const Bitmap bmp, Vec2 p, float opacity)
+    override void drawImage(ref const Bitmap bmp, Vec2 p, float opacity)
     {
         const int w = bmp.width;
         const int h = bmp.height;
@@ -701,7 +692,7 @@ protected:
         advanceDepth();
     }
 
-    void drawNinePatch(ref const Bitmap bmp, ref const NinePatchInfo info, float opacity)
+    override void drawNinePatch(ref const Bitmap bmp, ref const NinePatchInfo info, float opacity)
     {
         const rp = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
         const BoxI clip = clipByRect(transformBounds(rp));
@@ -815,7 +806,7 @@ protected:
         advanceDepth();
     }
 
-    void drawText(const GlyphInstance[] run, Color c)
+    override void drawText(const GlyphInstance[] run, Color c)
     {
         const clip = RectI(clipByRect(transformBounds(computeTextRunBounds(run))));
         if (clip.empty)
