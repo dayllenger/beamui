@@ -171,12 +171,12 @@ protected:
         covers.clear();
         depthTasks.clear();
 
-        tileGrid.prepare(conf.width, conf.height);
+        tileGrid.prepare(conf.ddpSize.w, conf.ddpSize.h);
         tilePoints.clear();
         tileDataIndices.clear();
 
         Layer lr;
-        lr.clip = lr.bounds = RectI(0, 0, conf.width, conf.height);
+        lr.clip = lr.bounds = RectI(0, 0, conf.ddpSize.w, conf.ddpSize.h);
         lr.fill = ColorF(conf.background);
         layers ~= lr;
         layer = &layers.unsafe_ref(0);

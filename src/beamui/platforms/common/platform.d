@@ -322,15 +322,6 @@ class Window : CustomEventTarget
         /// Current window ratio between physical and logical (device-independent) pixels
         float devicePixelRatio() const { return _devicePixelRatio; }
 
-        protected int physicalWidth() const
-        {
-            return cast(int)(_w * _devicePixelRatio);
-        }
-        protected int physicalHeight() const
-        {
-            return cast(int)(_h * _devicePixelRatio);
-        }
-
         /// Get the root element of the window. Never `null`. Contains top element as the first child
         inout(Element) rootElement() inout { return _mainRootElement; }
 
@@ -2027,7 +2018,14 @@ class Window : CustomEventTarget
     {
         _firstDrawCalled = true;
 
-        _painterHead.beginFrame(engine, _w, _h, _devicePixelRatio, _backgroundColor);
+        float scaling = _devicePixelRatio;
+        version (OSX)
+        {
+            if (openglEnabled)
+                scaling = 1;
+        }
+        const physicalSize = SizeI(cast(int)(_w * scaling), cast(int)(_h * scaling));
+        _painterHead.beginFrame(engine, Size(_w, _h), physicalSize, _backgroundColor);
         try
         {
             setupGlobalDPI();

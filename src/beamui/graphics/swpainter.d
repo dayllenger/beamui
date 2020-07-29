@@ -88,7 +88,7 @@ protected:
 
     override void begin(FrameConfig conf)
     {
-        backbuf.resize(conf.width, conf.height);
+        backbuf.resize(conf.ddpSize.w, conf.ddpSize.h);
         backbuf.fill(conf.background);
         base_layer = PM_Image.fromBitmap(*backbuf, Repeat.no, Filtering.no);
         layer = base_layer.view;

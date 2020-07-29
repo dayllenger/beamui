@@ -10,8 +10,8 @@ module beamui.graphics.painter;
 import std.algorithm.mutation : swap;
 import std.math : ceil, floor, sqrt, isFinite, PI;
 import beamui.core.collections : Buf;
-import beamui.core.geometry : Box, BoxI, Point, Rect, RectI;
-import beamui.core.linalg : Mat2x3, Vec2;
+import beamui.core.geometry;
+import beamui.core.linalg;
 import beamui.core.math;
 import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.brush : Brush;
@@ -51,6 +51,8 @@ final class Painter
         PaintEngine engine;
         PaintEngine.State state;
         Buf!(PaintEngine.State) mainStack;
+        Mat2x3 baseMatrix;
+
         Buf!(PaintEngine.Contour) bufContours;
         Path tempPath;
     }
@@ -226,13 +228,13 @@ final class Painter
     void setMatrix(Mat2x3 m)
     in (active)
     {
-        state.mat = m;
+        state.mat = baseMatrix * m;
     }
     /// Reset canvas transformation to identity
     void resetMatrix()
     in (active)
     {
-        state.mat = Mat2x3.identity;
+        state.mat = baseMatrix;
     }
 
     /** Quickly (and inaccurately) determine that `box` is outside the clip.
@@ -809,24 +811,26 @@ struct PainterHead
 {
     private Painter painter;
 
-    /// `width` and `height` are in device-independent pixels. `scaling` is DPR usually
-    void beginFrame(PaintEngine paintEngine, int width, int height, float scaling, Color background)
+    /// `dipSize` is in device-independent pixels, `ddpSize` is in physical pixels
+    void beginFrame(PaintEngine paintEngine, Size dipSize, SizeI ddpSize, Color background)
     in (painter && !painter.active)
     in (paintEngine)
-    in (0 < width && width < MAX_DIMENSION)
-    in (0 < height && height < MAX_DIMENSION)
-    in (scaling > 0)
+    in (0 < dipSize.w && dipSize.w < MAX_DIMENSION)
+    in (0 < dipSize.h && dipSize.h < MAX_DIMENSION)
+    in (0 < ddpSize.w && ddpSize.w < MAX_DIMENSION)
+    in (0 < ddpSize.h && ddpSize.h < MAX_DIMENSION)
     {
         with (painter)
         {
             active = true;
             engine = paintEngine;
             state = PaintEngine.State.init;
-            state.clipRect = RectI(0, 0, width, height);
+            state.clipRect = RectI(0, 0, ddpSize.w, ddpSize.h);
+            state.mat = baseMatrix = Mat2x3.scaling(Vec2(ddpSize.w / dipSize.w, ddpSize.h / dipSize.h));
             mainStack.clear();
             bufContours.clear();
             engine.st = &state;
-            engine.begin(PaintEngine.FrameConfig(width, height, scaling, background));
+            engine.begin(PaintEngine.FrameConfig(dipSize, ddpSize, background));
         }
     }
 
@@ -892,17 +896,17 @@ abstract class PaintEngine
 protected:
     struct FrameConfig
     {
-        int width;
-        int height;
-        float scaling = 1;
+        Size dipSize;
+        SizeI ddpSize;
         Color background;
     }
 
     struct State
     {
         bool aa = true;
-        /// Transformed, but not scaled
+        /// Transformed and scaled
         RectI clipRect = RectI(-MAX_DIMENSION, -MAX_DIMENSION, MAX_DIMENSION, MAX_DIMENSION);
+        /// Contains scaling
         Mat2x3 mat = Mat2x3.identity;
 
         bool layer;
