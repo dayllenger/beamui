@@ -43,6 +43,9 @@ class MenuItem : Widget
         Label _shortcut;
     }
 
+    protected alias enabled = typeof(super).enabled;
+    protected alias visible = typeof(super).visible;
+
     override protected void build()
     {
         if (!action)

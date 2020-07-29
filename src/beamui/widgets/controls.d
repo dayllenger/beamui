@@ -90,6 +90,8 @@ class Button : ButtonLike
         allowsFocus = true;
     }
 
+    protected alias enabled = typeof(super).enabled;
+
     override protected void build()
     {
         super.build();
@@ -119,6 +121,7 @@ class CheckButton : ButtonLike
         allowsFocus = true;
     }
 
+    protected alias enabled = typeof(super).enabled;
     protected alias wrap = typeof(super).wrap;
 
     override protected void build()
@@ -213,6 +216,8 @@ class Link : WidgetWrapperOf!Widget
         allowsHover = true;
     }
 
+    protected alias enabled = typeof(super).enabled;
+
     override protected void build()
     {
         enabled = url.length > 0;
@@ -254,6 +259,8 @@ class SwitchButton : Widget
         allowsFocus = true;
         allowsHover = true;
     }
+
+    protected alias enabled = typeof(super).enabled;
 
     override protected void build()
     {
@@ -306,6 +313,7 @@ class CheckBox : Panel
         allowsHover = true;
     }
 
+    protected alias enabled = typeof(super).enabled;
     protected alias wrap = typeof(super).wrap;
 
     override protected void build()
@@ -366,6 +374,7 @@ class RadioButton : Panel
         allowsHover = true;
     }
 
+    protected alias enabled = typeof(super).enabled;
     protected alias wrap = typeof(super).wrap;
 
     override protected void build()
