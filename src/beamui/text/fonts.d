@@ -4,11 +4,11 @@ Base fonts access interface and common implementation.
 Synopsis:
 ---
 // find suitable font of size 25, normal, preferrable Arial, or, if not available, any SansSerif font
-const selector = FontSelector("Arial", FontFamily.sans_serif, 25, FontWeight.normal, false);
-FontRef font = FontManager.instance.getFont(selector);
+const family = FontFamily.both(GenericFontFamily.sans_serif, "Arial");
+FontRef font = FontManager.instance.getFont(FontSelector(family, 25));
 ---
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2019
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
 */
@@ -16,12 +16,12 @@ module beamui.text.fonts;
 
 public import beamui.core.geometry : Size;
 public import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
-import beamui.core.functions : caching, clamp, DebugInstanceCount, eliminate, remove;
+import beamui.core.functions;
 import beamui.core.logger;
 import beamui.core.types;
 
-/// Font families enum
-enum FontFamily : ubyte
+/// Generic font families
+enum GenericFontFamily : ubyte
 {
     /// Unknown / not set / does not matter
     unspecified,
@@ -35,6 +35,40 @@ enum FontFamily : ubyte
     cursive,
     /// Monospace font (fixed pitch font), e.g. Courier New
     monospace
+}
+
+/// Either a generic or a specific font family name
+struct FontFamily
+{
+nothrow:
+    GenericFontFamily generic;
+    string specific;
+
+    this(GenericFontFamily generic)
+    {
+        this.generic = generic;
+    }
+    this(string specific)
+    {
+        this.specific = specific;
+    }
+
+    static FontFamily both(GenericFontFamily generic, string specific)
+    {
+        FontFamily ff;
+        ff.generic = generic;
+        ff.specific = specific;
+        return ff;
+    }
+
+    // dfmt off
+    private alias GFF = GenericFontFamily;
+    static FontFamily sans_serif() { return FontFamily(GFF.sans_serif); }
+    static FontFamily serif() { return FontFamily(GFF.serif); }
+    static FontFamily monospace() { return FontFamily(GFF.monospace); }
+    static FontFamily cursive() { return FontFamily(GFF.cursive); }
+    static FontFamily fantasy() { return FontFamily(GFF.fantasy); }
+    // dfmt on
 }
 
 /// Font weight constants (100..900)
@@ -56,7 +90,6 @@ enum FontStyle : ubyte
 /// Contains all needed font properties
 struct FontDescription
 {
-    string face;
     FontFamily family;
     FontStyle style;
     ushort weight;
@@ -73,27 +106,27 @@ struct FontDescription
 */
 class Font : RefCountedObject
 {
+    // dfmt off
+    final @property const
+    {
+        /// Font size (as requested from font engine)
+        int size() { return _desc.size; }
+        /// Actual font height including interline space
+        int height() { return _desc.height; }
+        /// Font weight (100..900)
+        ushort weight() { return _desc.weight; }
+        /// Baseline offset
+        int baseline() { return _desc.baseline; }
+        /// True if the font style is italic
+        bool italic() { return _desc.style == FontStyle.italic; }
+        /// Font family
+        FontFamily family() { return _desc.family; }
+        /// Does this font have kerning?
+        bool hasKerning() { return _desc.hasKerning; }
+    }
+    // dfmt on
     @property
     {
-        // dfmt off
-        /// Font size (as requested from font engine)
-        final int size() const { return _desc.size; }
-        /// Actual font height including interline space
-        final int height() const { return _desc.height; }
-        /// Font weight (100..900)
-        final ushort weight() const { return _desc.weight; }
-        /// Baseline offset
-        final int baseline() const { return _desc.baseline; }
-        /// True if the font style is italic
-        final bool italic() const { return _desc.style == FontStyle.italic; }
-        /// Font face name
-        final string face() const { return _desc.face; }
-        /// Font family
-        final FontFamily family() const { return _desc.family; }
-        /// Does this font have kerning?
-        final bool hasKerning() const { return _desc.hasKerning; }
-        // dfmt on
-
         /// Returns true if font object is not yet initialized / loaded
         abstract bool isNull() const;
 
@@ -227,13 +260,13 @@ struct FontList
         foreach (i, ref item; _list)
         {
             Font f = item.get;
-            if (f.family != sel.family)
-                continue;
             if (f.size != sel.size)
                 continue;
-            if (f.italic != sel.italic || f.weight != sel.weight)
+            if (f.italic != sel.italic)
                 continue;
-            if (f.face != sel.face)
+            if (f.weight != sel.weight)
+                continue;
+            if (f.family != sel.family)
                 continue;
             return i;
         }
@@ -300,20 +333,10 @@ enum HintingMode
 
 struct FontSelector
 {
-    string face;
-    FontFamily family;
+    FontFamily family = FontFamily.sans_serif;
+    int size = 14;
     bool italic;
-    int size;
-    ushort weight;
-}
-
-/// Font face properties item
-struct FontFaceProps
-{
-    /// Font face name
-    string face;
-    /// Font family
-    FontFamily family;
+    ushort weight = FontWeight.normal;
 }
 
 enum int MAX_ALLOWED_FONT_SIZE = 512;
@@ -429,8 +452,8 @@ class FontManager
     /// Non-caching implementation of `getFont`
     abstract protected FontRef getFontImpl(ref const FontSelector selector);
 
-    /// Override to return list of font faces available
-    FontFaceProps[] getFaces()
+    /// Return list of font families available, associated with generic families
+    FontFamily[] getFamilies()
     {
         return null;
     }

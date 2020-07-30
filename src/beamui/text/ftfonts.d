@@ -33,7 +33,6 @@ private int stdFontFacePriority(string face)
 private struct FontDef
 {
     FontFamily family;
-    string face;
     bool italic;
     ushort weight;
 }
@@ -185,7 +184,7 @@ final class FreeTypeFontFile
 
         // overwrite existing description
         // TODO: test multiple files
-        desc.face = familyName(_face);
+        desc.family.specific = familyName(_face);
         desc.style = _face.style_flags & FT_STYLE_FLAG_ITALIC ? FontStyle.italic : FontStyle.normal;
         desc.weight = _face.style_flags & FT_STYLE_FLAG_BOLD ? FontWeight.bold : FontWeight.normal;
 
@@ -376,7 +375,6 @@ final class FreeTypeFont : Font
     this(FontFileItem item, int size)
     {
         _fontItem = item;
-        _desc.face = item.def.face;
         _desc.family = item.def.family;
         _desc.style = item.def.italic ? FontStyle.italic : FontStyle.normal;
         _desc.weight = item.def.weight;
@@ -496,28 +494,6 @@ final class FreeTypeFontManager : FontManager
     private FontFileItem[] _fontFiles;
     private FontFileItem[FontDef] _fontFileMap;
 
-    /// Return list of available font faces
-    override FontFaceProps[] getFaces()
-    {
-        FontFaceProps[] list;
-        foreach (f; _fontFiles)
-        {
-            auto item = FontFaceProps(f.def.face, f.def.family);
-            bool there;
-            foreach (ref p; list)
-            {
-                if (p.face == item.face)
-                {
-                    there = true;
-                    break;
-                }
-            }
-            if (!there)
-                list ~= item;
-        }
-        return list;
-    }
-
     static private int faceMatch(string requested, string existing)
     {
         if (!requested.icmp("Arial"))
@@ -548,22 +524,22 @@ final class FreeTypeFontManager : FontManager
     {
         FontFileItem best;
         int bestScore;
-        string[] faces = def.face.length ? split(def.face, ",") : null;
+        string[] faces = def.family.specific.length ? split(def.family.specific, ",") : null;
         foreach (FontFileItem item; _fontFiles)
         {
             int score;
             int bestFaceMatch;
-            if (faces.length && def.face.length)
+            if (faces.length && def.family.specific.length)
             {
                 foreach (i; 0 .. faces.length)
                 {
                     string f = faces[i].strip;
-                    if (f.icmp(item.def.face) == 0)
+                    if (f.icmp(item.def.family.specific) == 0)
                     {
                         score += 3000 - i;
                         break;
                     }
-                    bestFaceMatch = max(bestFaceMatch, faceMatch(f, item.def.face));
+                    bestFaceMatch = max(bestFaceMatch, faceMatch(f, item.def.family.specific));
                 }
             }
             score += bestFaceMatch;
@@ -628,9 +604,30 @@ final class FreeTypeFontManager : FontManager
 
     override protected FontRef getFontImpl(ref const FontSelector selector)
     {
-        const def = FontDef(selector.family, selector.face, selector.italic, selector.weight);
+        const def = FontDef(selector.family, selector.italic, selector.weight);
         FontFileItem f = findBestMatch(def);
         return f ? f.get(selector.size) : FontRef.init;
+    }
+
+    override FontFamily[] getFamilies()
+    {
+        FontFamily[] list;
+        foreach (f; _fontFiles)
+        {
+            auto item = f.def.family;
+            bool there;
+            foreach (ref p; list)
+            {
+                if (p.specific == item.specific)
+                {
+                    there = true;
+                    break;
+                }
+            }
+            if (!there)
+                list ~= item;
+        }
+        return list;
     }
 
     override void checkpoint()
@@ -661,7 +658,7 @@ final class FreeTypeFontManager : FontManager
     {
         import std.path : baseName;
 
-        FontFamily family = FontFamily.sans_serif;
+        auto family = GenericFontFamily.sans_serif;
         string face;
         bool italic;
         ushort weight;
@@ -678,7 +675,7 @@ final class FreeTypeFontManager : FontManager
         case "DroidSansMono.ttf":
             face = "Droid Sans Mono";
             weight = FontWeight.normal;
-            family = FontFamily.monospace;
+            family = GenericFontFamily.monospace;
             break;
         case "Roboto-Light.ttf":
             face = "Roboto";
@@ -703,11 +700,11 @@ final class FreeTypeFontManager : FontManager
                 return false;
             break;
         }
-        return registerFont(filename, FontFamily.sans_serif, face, italic, weight);
+        return registerFont(filename, family, face, italic, weight);
     }
 
     /// Register freetype font by filename - optinally font properties can be passed if known (e.g. from libfontconfig).
-    bool registerFont(string filename, FontFamily family, string face = null, bool italic = false, ushort weight = 0,
+    bool registerFont(string filename, GenericFontFamily family, string face = null, bool italic = false, ushort weight = 0,
             bool dontLoadFile = false)
     {
         if (_library is null)
@@ -735,7 +732,7 @@ final class FreeTypeFontManager : FontManager
             {
                 // properties are not set by caller
                 // get properties from loaded font
-                face = desc.face;
+                face = desc.family.specific;
                 italic = desc.style == FontStyle.italic;
                 weight = desc.weight;
                 debug (FontResources)
@@ -746,7 +743,7 @@ final class FreeTypeFontManager : FontManager
             destroy(font);
         }
 
-        FontDef def = FontDef(family, face, italic, weight);
+        FontDef def = FontDef(FontFamily.both(family, face), italic, weight);
         FontFileItem item = _fontFileMap.get(def, null);
         if (item is null)
         {
@@ -822,19 +819,19 @@ version (Posix)
             FcPatternGetInteger(fontset.fonts[i], FC_SPACING, 0, &fcspacing);
             FcPatternGetInteger(fontset.fonts[i], FC_WEIGHT, 0, &fcweight);
 
-            FontFamily family;
+            GenericFontFamily family;
             if (fcspacing == FC_MONO)
-                family = FontFamily.monospace;
+                family = GenericFontFamily.monospace;
             else
             {
                 char[] fm = fcfamily.fromStringz.dup;
                 toLowerInPlace(fm);
                 if (fm.indexOf("sans") >= 0)
-                    family = FontFamily.sans_serif;
+                    family = GenericFontFamily.sans_serif;
                 else if (fm.indexOf("serif") >= 0)
-                    family = FontFamily.serif;
+                    family = GenericFontFamily.serif;
                 else
-                    family = FontFamily.sans_serif;
+                    family = GenericFontFamily.sans_serif;
             }
 
             string face = fcfamily.fromStringz.idup;

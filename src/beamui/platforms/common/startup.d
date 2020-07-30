@@ -97,7 +97,7 @@ private void tryHardcodedFontPaths(FreeTypeFontManager ft)
     import core.sys.windows.windows;
     import std.utf;
 
-    alias FF = FontFamily;
+    alias FF = GenericFontFamily;
     alias FW = FontWeight;
 
     string path = "c:\\Windows\\Fonts\\";
@@ -253,7 +253,7 @@ private void tryHardcodedFontPaths(FreeTypeFontManager ft)
     import std.file : DirEntry, exists, isDir;
     import beamui.core.files : AttrFilter, listDirectory;
 
-    alias FF = FontFamily;
+    alias FF = GenericFontFamily;
     alias FW = FontWeight;
 
     static bool registerFonts(FreeTypeFontManager ft, string path)

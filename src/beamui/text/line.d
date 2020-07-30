@@ -159,10 +159,9 @@ struct TextLine
             {
             case fontFace:
                 const sel = FontSelector(
-                    mu.attribute.data.fontFace,
-                    f.family,
-                    f.italic,
+                    FontFamily.both(f.family.generic, mu.attribute.data.fontFace),
                     f.size,
+                    f.italic,
                     f.weight,
                 );
                 nextStyle = prevStyle;
@@ -170,10 +169,9 @@ struct TextLine
                 break;
             case fontFamily:
                 const sel = FontSelector(
-                    f.face,
-                    mu.attribute.data.fontFamily,
-                    f.italic,
+                    FontFamily.both(mu.attribute.data.fontFamily, f.family.specific),
                     f.size,
+                    f.italic,
                     f.weight,
                 );
                 nextStyle = prevStyle;
@@ -181,10 +179,9 @@ struct TextLine
                 break;
             case fontSize:
                 const sel = FontSelector(
-                    f.face,
                     f.family,
-                    f.italic,
                     mu.attribute.data.fontSize,
+                    f.italic,
                     f.weight,
                 );
                 nextStyle = prevStyle;
@@ -192,10 +189,9 @@ struct TextLine
                 break;
             case fontStyle:
                 const sel = FontSelector(
-                    f.face,
                     f.family,
-                    mu.attribute.data.fontStyle == FontStyle.italic,
                     f.size,
+                    mu.attribute.data.fontStyle == FontStyle.italic,
                     f.weight,
                 );
                 nextStyle = prevStyle;
@@ -203,10 +199,9 @@ struct TextLine
                 break;
             case fontWeight:
                 const sel = FontSelector(
-                    f.face,
                     f.family,
-                    f.italic,
                     f.size,
+                    f.italic,
                     mu.attribute.data.fontWeight,
                 );
                 nextStyle = prevStyle;

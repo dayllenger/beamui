@@ -26,7 +26,7 @@ import beamui.style.decode_css;
 import beamui.style.property;
 import beamui.style.selector;
 import beamui.style.types;
-import beamui.text.fonts : FontFamily, FontStyle;
+import beamui.text.fonts : GenericFontFamily, FontStyle;
 import beamui.text.style;
 import beamui.widgets.widget : CursorType;
 
@@ -550,7 +550,7 @@ struct InlineStyle
     /// Font face for widget
     void fontFace(string value) { _props.set(P.fontFace, value); }
     /// Font family for widget
-    void fontFamily(FontFamily value) { _props.set(P.fontFamily, value); }
+    void fontFamily(GenericFontFamily value) { _props.set(P.fontFamily, value); }
     /// Font style (italic/normal) for widget
     void fontItalic(bool italic) { _props.set(P.fontStyle, italic ? FontStyle.italic : FontStyle.normal); }
     /// Font size for widget

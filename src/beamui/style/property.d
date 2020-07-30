@@ -17,7 +17,7 @@ import beamui.layout.alignment : Align, AlignItem, Distribution, Stretch;
 import beamui.layout.flex : FlexDirection, FlexWrap;
 import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
 import beamui.style.types;
-import beamui.text.fonts : FontFamily, FontStyle;
+import beamui.text.fonts : GenericFontFamily, FontStyle;
 import beamui.text.style;
 import beamui.widgets.widget : CursorType;
 
@@ -170,7 +170,7 @@ package struct PropTypes
     float flexGrow;
     float flexShrink;
     float opacity;
-    FontFamily fontFamily;
+    GenericFontFamily fontFamily;
     FontStyle fontStyle;
     GridFlow gridAutoFlow;
     GridLineName gridColumnEnd;
@@ -259,7 +259,7 @@ private union BuiltinPropertyValue
         FlexDirection,
         FlexWrap,
         float,
-        FontFamily,
+        GenericFontFamily,
         FontStyle,
         GridFlow,
         GridLineName,

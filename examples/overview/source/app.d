@@ -379,7 +379,7 @@ class TextFieldWithSettings : Panel
         bool readOnly;
         bool catchTabs;
         int tabSize = 4;
-        FontFamily fontFamily = FontFamily.sans_serif;
+        bool fixedFont;
     }
 
     override State createState()
@@ -411,8 +411,8 @@ class TextFieldWithSettings : Panel
                 }),
                 render((CheckBox cb) {
                     cb.text = "Fixed font";
-                    cb.checked = st.fontFamily == FontFamily.monospace;
-                    cb.onToggle = (v) { setState(st.fontFamily, v ? FontFamily.monospace : FontFamily.sans_serif); };
+                    cb.checked = st.fixedFont;
+                    cb.onToggle = (v) { setState(st.fixedFont, v); };
                 }),
             ),
             render((TextField ed) {
@@ -420,6 +420,7 @@ class TextFieldWithSettings : Panel
                 ed.onChange = onChange;
                 ed.readOnly = st.readOnly;
                 ed.wantTabs = st.catchTabs;
+                ed.attributes[st.fixedFont ? "monospace-font" : "normal-font"];
             }),
         );
     }
@@ -434,7 +435,7 @@ class SourceEditorWithSettings : Panel
         bool readOnly;
         bool catchTabs = true;
         int tabSize = 4;
-        FontFamily fontFamily = FontFamily.monospace;
+        bool fixedFont = true;
 
         bool useSpaces = true;
         bool lineNumbers = true;
@@ -479,8 +480,8 @@ class SourceEditorWithSettings : Panel
                 }),
                 render((CheckBox cb) {
                     cb.text = "Fixed font";
-                    cb.checked = st.fontFamily == FontFamily.monospace;
-                    cb.onToggle = (v) { setState(st.fontFamily, v ? FontFamily.monospace : FontFamily.sans_serif); };
+                    cb.checked = st.fixedFont;
+                    cb.onToggle = (v) { setState(st.fixedFont, v); };
                 }),
             ),
             render((SourceEdit ed) {
@@ -490,6 +491,7 @@ class SourceEditorWithSettings : Panel
                 ed.wantTabs = st.catchTabs;
                 ed.useSpacesForTabs = st.useSpaces;
                 ed.showLineNumbers = st.lineNumbers;
+                ed.attributes[st.fixedFont ? "monospace-font" : "normal-font"];
             }),
         );
     }

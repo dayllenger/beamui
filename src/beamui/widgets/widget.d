@@ -1144,7 +1144,8 @@ public:
                 if (!_font.isNull)
                     return _font;
 
-                const sel = FontSelector(st.fontFace, st.fontFamily, st.fontItalic, st.fontSize, st.fontWeight);
+                const family = FontFamily.both(st.fontFamily, st.fontFace);
+                const sel = FontSelector(family, st.fontSize, st.fontItalic, st.fontWeight);
                 _font = FontManager.instance.getFont(sel);
                 return _font;
             }

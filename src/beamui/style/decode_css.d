@@ -25,7 +25,7 @@ import beamui.layout.alignment;
 import beamui.layout.flex : FlexDirection, FlexWrap;
 import beamui.layout.grid : GridFlow, GridLineName, GridNamedAreas, TrackSize;
 import beamui.style.types;
-import beamui.text.fonts : FontFamily, FontStyle, FontWeight;
+import beamui.text.fonts : GenericFontFamily, FontStyle, FontWeight;
 import beamui.text.style;
 import beamui.widgets.widget : CursorType;
 
@@ -1285,7 +1285,7 @@ Result!BoxShadowDrawable decode(T : BoxShadowDrawable)(const Token[] tokens)
 // Font and textual
 
 /// Decode font family
-Result!FontFamily decode(T : FontFamily)(const Token[] tokens)
+Result!GenericFontFamily decode(T : GenericFontFamily)(const Token[] tokens)
 {
     assert(tokens.length > 0);
 
@@ -1294,10 +1294,10 @@ Result!FontFamily decode(T : FontFamily)(const Token[] tokens)
     if (t.type != TokenType.ident)
     {
         shouldbe(what, "an identifier", t);
-        return Err!FontFamily;
+        return Err!GenericFontFamily;
     }
     // dfmt off
-    switch (t.text) with (FontFamily)
+    switch (t.text) with (GenericFontFamily)
     {
         case "sans-serif": return Ok(sans_serif);
         case "serif":      return Ok(serif);
@@ -1307,7 +1307,7 @@ Result!FontFamily decode(T : FontFamily)(const Token[] tokens)
         case "none":       return Ok(unspecified);
         default:
             unknown(what, t);
-            return Err!FontFamily;
+            return Err!GenericFontFamily;
     }
     // dfmt on
 }

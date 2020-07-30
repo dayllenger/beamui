@@ -33,8 +33,7 @@ class ConsoleFont : Font
 
     this()
     {
-        _desc.face = "console";
-        _desc.family = FontFamily.monospace;
+        _desc.family = FontFamily.both(GenericFontFamily.monospace, "console");
         _desc.style = FontStyle.normal;
         _desc.weight = 400;
         _desc.size = 1;

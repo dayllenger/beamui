@@ -70,6 +70,12 @@ TabForEditors .settings {
 TabForEditors TextArea {
   flex: auto;
 }
+.monospace-font {
+  font-family: monospace;
+}
+.normal-font {
+  font-family: sans-serif;
+}
 
 TabForLists {
   display: flex;

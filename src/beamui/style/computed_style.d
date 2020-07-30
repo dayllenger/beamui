@@ -133,7 +133,7 @@ struct ComputedStyle
         inout(BoxShadowDrawable) boxShadow() inout { return _boxShadow; }
 
         string fontFace() const { return _fontFace; }
-        FontFamily fontFamily() const { return _fontFamily; }
+        GenericFontFamily fontFamily() const { return _fontFamily; }
         bool fontItalic() const { return _fontStyle == FontStyle.italic; }
         ushort fontWeight() const { return _fontWeight; }
 
@@ -277,7 +277,7 @@ struct ComputedStyle
         BorderStyle _borderRightStyle = BorderStyle.none;
         BorderStyle _borderBottomStyle = BorderStyle.none;
         BorderStyle _borderLeftStyle = BorderStyle.none;
-        FontFamily _fontFamily = FontFamily.sans_serif;
+        GenericFontFamily _fontFamily = GenericFontFamily.sans_serif;
         FontStyle _fontStyle = FontStyle.normal;
         ushort _fontWeight = 400;
         TabSize _tabSize = TabSize(4);

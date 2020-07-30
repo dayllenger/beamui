@@ -25,16 +25,8 @@ import beamui.text.glyph;
 
 private struct FontDef
 {
-    immutable FontFamily family;
-    immutable string face;
-    immutable ubyte pitchAndFamily;
-
-    this(FontFamily family, string face, ubyte pitchAndFamily)
-    {
-        this.family = family;
-        this.face = face;
-        this.pitchAndFamily = pitchAndFamily;
-    }
+    FontFamily family;
+    ubyte pitchAndFamily;
 }
 
 // support of subpixel rendering
@@ -402,8 +394,8 @@ final class Win32Font : Font
 
         LOGFONTA lf;
         lf.lfCharSet = ANSI_CHARSET; //DEFAULT_CHARSET;
-        lf.lfFaceName[0 .. def.face.length] = def.face;
-        lf.lfFaceName[def.face.length] = 0;
+        lf.lfFaceName[0 .. def.family.specific.length] = def.family.specific;
+        lf.lfFaceName[def.family.specific.length] = 0;
         lf.lfHeight = -size; //pixelsToPoints(size);
         lf.lfItalic = italic;
         lf.lfWeight = weight;
@@ -425,13 +417,12 @@ final class Win32Font : Font
         _desc.baseline = _desc.height - tm.tmDescent;
         _desc.weight = weight;
         _desc.style = italic ? FontStyle.italic : FontStyle.normal;
-        _desc.face = def.face;
         _desc.family = def.family;
 
         debug (FontResources)
         {
-            Log.fd("Created Win32Font %s, size: %d, height: %d, points: %d, dpi: %d", _desc.face, _desc.size,
-                    _desc.height, lf.lfHeight, _dpi);
+            Log.fd("Created Win32Font %s, size: %d, height: %d, points: %d, dpi: %d", _desc.family.specific, _desc
+                    .size, _desc.height, lf.lfHeight, _dpi);
         }
         return true;
     }
@@ -458,28 +449,6 @@ final class Win32FontManager : FontManager
     private FontList _activeFonts;
     private FontDef[] _fontFaces;
     private size_t[string] _faceByName;
-
-    /// Override to return list of font faces available
-    override FontFaceProps[] getFaces()
-    {
-        FontFaceProps[] res;
-        for (int i = 0; i < _fontFaces.length; i++)
-        {
-            FontFaceProps item = FontFaceProps(_fontFaces[i].face, _fontFaces[i].family);
-            bool found;
-            for (int j = 0; j < res.length; j++)
-            {
-                if (res[j].face == item.face)
-                {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found)
-                res ~= item;
-        }
-        return res;
-    }
 
     this()
     {
@@ -508,10 +477,10 @@ final class Win32FontManager : FontManager
 
     override protected FontRef getFontImpl(ref const FontSelector selector)
     {
-        FontDef* def = findFace(selector.family, selector.face);
+        FontDef* def = findFace(selector.family.generic, selector.family.specific);
         if (def !is null)
         {
-            const sel = FontSelector(def.face, def.family, selector.italic, selector.size, selector.weight);
+            const sel = FontSelector(def.family, selector.size, selector.italic, selector.weight);
             ptrdiff_t index = _activeFonts.find(sel);
             if (index >= 0)
                 return _activeFonts.get(index);
@@ -529,12 +498,12 @@ final class Win32FontManager : FontManager
     }
 
     /// Find font face definition by family only (try to get one of defaults for family if possible)
-    private FontDef* findFace(FontFamily family)
+    private FontDef* findFace(GenericFontFamily family)
     {
         // dfmt off
         switch (family)
         {
-        case FontFamily.sans_serif:
+        case GenericFontFamily.sans_serif:
             return findFace([
                 "Arial",
                 "Tahoma",
@@ -542,21 +511,21 @@ final class Win32FontManager : FontManager
                 "Verdana",
                 "Lucida Sans",
             ]);
-        case FontFamily.serif:
+        case GenericFontFamily.serif:
             return findFace([
                 "Times New Roman",
                 "Georgia",
                 "Century Schoolbook",
                 "Bookman Old Style",
             ]);
-        case FontFamily.monospace:
+        case GenericFontFamily.monospace:
             return findFace([
                 "Courier New",
                 "Lucida Console",
                 "Century Schoolbook",
                 "Bookman Old Style",
             ]);
-        case FontFamily.cursive:
+        case GenericFontFamily.cursive:
             return findFace([
                 "Comic Sans MS",
                 "Lucida Handwriting",
@@ -594,7 +563,7 @@ final class Win32FontManager : FontManager
     }
 
     /// Find font face definition by family and face
-    private FontDef* findFace(FontFamily family, string face)
+    private FontDef* findFace(GenericFontFamily family, string face)
     {
         // by face only
         if (auto ptr = findFace(face))
@@ -604,22 +573,43 @@ final class Win32FontManager : FontManager
             return ptr;
         foreach (ref def; _fontFaces)
         {
-            if (def.family == family)
+            if (def.family.generic == family)
                 return &def;
         }
-        if (auto ptr = findFace(FontFamily.sans_serif))
+        if (auto ptr = findFace(GenericFontFamily.sans_serif))
             return ptr;
         return &_fontFaces[0];
     }
 
     /// Register enumerated font
-    bool registerFont(FontFamily family, string face, ubyte pitchAndFamily)
+    bool registerFont(GenericFontFamily family, string face, ubyte pitchAndFamily)
     {
         debug (FontResources)
             Log.fv("registerFont(%s, %s)", family, face);
         _faceByName[face] = _fontFaces.length;
-        _fontFaces ~= FontDef(family, face, pitchAndFamily);
+        _fontFaces ~= FontDef(FontFamily.both(family, face), pitchAndFamily);
         return true;
+    }
+
+    override FontFamily[] getFamilies()
+    {
+        FontFamily[] list;
+        foreach (f; _fontFaces)
+        {
+            auto item = f.family;
+            bool there;
+            foreach (ref p; list)
+            {
+                if (p.specific == item.specific)
+                {
+                    there = true;
+                    break;
+                }
+            }
+            if (!there)
+                list ~= item;
+        }
+        return list;
     }
 
     /// Clear usage flags for all entries
@@ -642,17 +632,17 @@ final class Win32FontManager : FontManager
     }
 }
 
-FontFamily pitchAndFamilyToFontFamily(ubyte flags)
+GenericFontFamily pitchAndFamilyToFontFamily(ubyte flags)
 {
     if ((flags & FF_DECORATIVE) == FF_DECORATIVE)
-        return FontFamily.fantasy;
+        return GenericFontFamily.fantasy;
     else if ((flags & (FIXED_PITCH)) != 0) // | | MONO_FONT
-        return FontFamily.monospace;
+        return GenericFontFamily.monospace;
     else if ((flags & (FF_ROMAN)) != 0)
-        return FontFamily.serif;
+        return GenericFontFamily.serif;
     else if ((flags & (FF_SCRIPT)) != 0)
-        return FontFamily.cursive;
-    return FontFamily.sans_serif;
+        return GenericFontFamily.cursive;
+    return GenericFontFamily.sans_serif;
 }
 
 extern (Windows) int fontEnumFontFamProc(const LOGFONTA* logicalFontData, const TEXTMETRICA* physicalFontData,
@@ -662,7 +652,7 @@ extern (Windows) int fontEnumFontFamProc(const LOGFONTA* logicalFontData, const 
     {
         Win32FontManager fontman = cast(Win32FontManager)cast(void*)appDefinedData;
         string face = fromStringz(logicalFontData.lfFaceName.ptr).dup;
-        FontFamily family = pitchAndFamilyToFontFamily(logicalFontData.lfPitchAndFamily);
+        GenericFontFamily family = pitchAndFamilyToFontFamily(logicalFontData.lfPitchAndFamily);
         if (face.length < 2 || face[0] == '@')
             return 1;
         fontman.registerFont(family, face, logicalFontData.lfPitchAndFamily);

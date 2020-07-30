@@ -9,7 +9,7 @@ module beamui.text.style;
 
 import beamui.core.editable : TabSize;
 import beamui.graphics.colors : Color;
-import beamui.text.fonts : Font, FontFamily, FontStyle;
+import beamui.text.fonts : Font, GenericFontFamily, FontStyle;
 
 /// Specifies text alignment
 enum TextAlign : ubyte
@@ -143,7 +143,7 @@ struct TextAttr
         Color foreground;
         Color background;
         string fontFace;
-        FontFamily fontFamily;
+        GenericFontFamily fontFamily;
         int fontSize;
         FontStyle fontStyle;
         ushort fontWeight;
@@ -160,7 +160,7 @@ struct TextAttr
         data.foreground = color;
     }
 
-    this(FontFamily fontFamily)
+    this(GenericFontFamily fontFamily)
     {
         type = Type.fontFamily;
         data.fontFamily = fontFamily;
