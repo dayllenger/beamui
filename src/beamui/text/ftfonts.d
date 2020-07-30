@@ -770,6 +770,7 @@ version (Posix)
 {
     bool registerFontConfigFonts(FreeTypeFontManager fontMan)
     {
+        import std.path : extension;
         import fontconfig;
 
         const loaded = loadFontConfig();
@@ -801,13 +802,12 @@ version (Posix)
             if (FcPatternGetString(fontset.fonts[i], FC_FILE, 0, &fcfile) != FcResultMatch)
                 continue;
             string filename = fcfile.fromStringz.idup;
-            char[] fn = fromStringz(fcfile).dup;
-            toLowerInPlace(fn);
-            // dfmt off
-            if (!fn.endsWith(".ttf") && !fn.endsWith(".odf") && !fn.endsWith(".otf") &&
-                !fn.endsWith(".pfb") && !fn.endsWith(".pfa"))
-                    continue;
-            // dfmt on
+            if (filename.length < 4)
+                continue;
+            char[] ext = extension(filename).dup;
+            toLowerInPlace(ext);
+            if (ext != ".ttf" && ext != ".ttc" && ext != ".odf" && ext != ".otf" && ext != ".pfb" && ext != ".pfa")
+                continue;
 
             FcChar8* fcfamily;
             FcChar8* fcstyle;
