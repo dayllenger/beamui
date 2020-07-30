@@ -56,7 +56,7 @@ public
     import beamui.style.property : StyleProperty;
     import beamui.style.style : InlineStyle;
     import beamui.style.theme;
-    import beamui.text.fonts : Font, FontFamily, FontManager, FontRef, FontStyle, FontWeight, HintingMode;
+    import beamui.text.fonts : Font, FontFamily, FontManager, FontRef, FontSelector, FontStyle, FontWeight, HintingMode;
     import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
     import beamui.text.style;
     import beamui.widgets.appframe;

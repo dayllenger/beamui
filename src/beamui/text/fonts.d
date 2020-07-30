@@ -4,7 +4,8 @@ Base fonts access interface and common implementation.
 Synopsis:
 ---
 // find suitable font of size 25, normal, preferrable Arial, or, if not available, any SansSerif font
-FontRef font = FontManager.instance.getFont(25, FontWeight.normal, false, FontFamily.sans_serif, "Arial");
+const selector = FontSelector("Arial", FontFamily.sans_serif, 25, FontWeight.normal, false);
+FontRef font = FontManager.instance.getFont(selector);
 ---
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2019
@@ -68,7 +69,7 @@ struct FontDescription
 
 /** Font instance with specific size, weight, face, etc.
 
-    Use `FontManager.instance.getFont()` to retrieve it.
+    Use `FontManager.instance.getFont` to retrieve it.
 */
 class Font : RefCountedObject
 {
@@ -221,18 +222,18 @@ struct FontList
     }
 
     /// Find by a set of parameters - returns index of found item, -1 if not found
-    ptrdiff_t find(int size, ushort weight, bool italic, FontFamily family, string face)
+    ptrdiff_t find(ref const FontSelector sel)
     {
         foreach (i, ref item; _list)
         {
             Font f = item.get;
-            if (f.family != family)
+            if (f.family != sel.family)
                 continue;
-            if (f.size != size)
+            if (f.size != sel.size)
                 continue;
-            if (f.italic != italic || f.weight != weight)
+            if (f.italic != sel.italic || f.weight != sel.weight)
                 continue;
-            if (f.face != face)
+            if (f.face != sel.face)
                 continue;
             return i;
         }
@@ -295,6 +296,15 @@ enum HintingMode
     disabled,
     /// Light autohint (similar to Mac)
     light
+}
+
+struct FontSelector
+{
+    string face;
+    FontFamily family;
+    bool italic;
+    int size;
+    ushort weight;
 }
 
 /// Font face properties item
@@ -404,25 +414,20 @@ class FontManager
         double _fontGamma = 1.0;
     }
 
-    // Font cache for fast getFont()
-    private
-    {
-        alias FontArgsTuple = Tup!(int, ushort, bool, FontFamily, string);
-        static FontRef[FontArgsTuple] fontCache;
-    }
+    // Font cache for fast `getFont`
+    static private FontRef[FontSelector] fontCache;
 
     /// Get font instance best matched specified parameters
-    final FontRef getFont(int size, ushort weight, bool italic, FontFamily family, string face)
+    final FontRef getFont(FontSelector selector)
     {
-        auto t = FontArgsTuple(size, weight, italic, family, face);
-        if (auto p = t in fontCache)
+        if (auto p = selector in fontCache)
             return *p;
-        FontRef res = getFontImpl(size, weight, italic, family, face);
-        fontCache[t] = res;
+        FontRef res = getFontImpl(selector);
+        fontCache[selector] = res;
         return res;
     }
-    /// Non-caching implementation of `getFont()`
-    abstract protected FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face);
+    /// Non-caching implementation of `getFont`
+    abstract protected FontRef getFontImpl(ref const FontSelector selector);
 
     /// Override to return list of font faces available
     FontFaceProps[] getFaces()

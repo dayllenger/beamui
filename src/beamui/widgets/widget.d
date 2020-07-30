@@ -1138,13 +1138,14 @@ public:
         /// Returns font set for element using style or set manually
         FontRef font() const
         {
-            updateStyles();
+            const st = style;
             with (caching(this))
             {
                 if (!_font.isNull)
                     return _font;
-                _font = FontManager.instance.getFont(_style.fontSize, _style.fontWeight,
-                        _style.fontItalic, _style.fontFamily, _style.fontFace);
+
+                const sel = FontSelector(st.fontFace, st.fontFamily, st.fontItalic, st.fontSize, st.fontWeight);
+                _font = FontManager.instance.getFont(sel);
                 return _font;
             }
         }

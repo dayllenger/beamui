@@ -277,7 +277,7 @@ class ConsoleFontManager : FontManager
 
     private FontRef _font;
 
-    override protected FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)
+    override protected FontRef getFontImpl(ref const FontSelector selector)
     {
         return _font;
     }

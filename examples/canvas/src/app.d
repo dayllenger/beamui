@@ -313,8 +313,8 @@ void text(Painter pr, Size sz)
 {
     pr.antialias = data.antialiasing;
 
-    auto font0 = FontManager.instance.getFont(20, FontWeight.normal, false, FontFamily.sans_serif, null);
-    auto font1 = FontManager.instance.getFont(16, FontWeight.normal, false, FontFamily.sans_serif, null);
+    auto font0 = FontManager.instance.getFont(FontSelector(null, FontFamily.sans_serif, false, 20, FontWeight.normal));
+    auto font1 = FontManager.instance.getFont(FontSelector(null, FontFamily.sans_serif, false, 16, FontWeight.normal));
 
     const str1 = "It is possible to draw some text using Painter directly"d;
     const str2 = "But this is too low-level"d;

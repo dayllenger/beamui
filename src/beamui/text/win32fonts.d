@@ -506,18 +506,19 @@ final class Win32FontManager : FontManager
         debug Log.i("Destroying Win32FontManager");
     }
 
-    override protected FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)
+    override protected FontRef getFontImpl(ref const FontSelector selector)
     {
-        FontDef* def = findFace(family, face);
+        FontDef* def = findFace(selector.family, selector.face);
         if (def !is null)
         {
-            ptrdiff_t index = _activeFonts.find(size, weight, italic, def.family, def.face);
+            const sel = FontSelector(def.face, def.family, selector.italic, selector.size, selector.weight);
+            ptrdiff_t index = _activeFonts.find(sel);
             if (index >= 0)
                 return _activeFonts.get(index);
             debug (FontResources)
                 Log.d("Creating new font");
             auto item = new Win32Font;
-            if (!item.create(def, size, weight, italic))
+            if (!item.create(def, selector.size, selector.weight, selector.italic))
                 return FontRef.init;
             debug (FontResources)
                 Log.d("Adding to list of active fonts");

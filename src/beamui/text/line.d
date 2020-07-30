@@ -12,7 +12,7 @@ import beamui.core.geometry : Point, Rect, Size;
 import beamui.core.math;
 import beamui.core.units : snapToDevicePixels;
 import beamui.graphics.painter : GlyphInstance, Painter;
-import beamui.text.fonts : Font, FontManager, FontStyle;
+import beamui.text.fonts;
 import beamui.text.glyph : GlyphRef;
 import beamui.text.shaping;
 import beamui.text.style;
@@ -158,54 +158,59 @@ struct TextLine
             switch (mu.attribute.type) with (TextAttr.Type)
             {
             case fontFace:
-                nextStyle = prevStyle;
-                nextStyle.font = FontManager.instance.getFont(
+                const sel = FontSelector(
+                    mu.attribute.data.fontFace,
+                    f.family,
+                    f.italic,
                     f.size,
                     f.weight,
-                    f.italic,
-                    f.family,
-                    mu.attribute.data.fontFace,
                 );
+                nextStyle = prevStyle;
+                nextStyle.font = FontManager.instance.getFont(sel);
                 break;
             case fontFamily:
-                nextStyle = prevStyle;
-                nextStyle.font = FontManager.instance.getFont(
+                const sel = FontSelector(
+                    f.face,
+                    mu.attribute.data.fontFamily,
+                    f.italic,
                     f.size,
                     f.weight,
-                    f.italic,
-                    mu.attribute.data.fontFamily,
-                    f.face,
                 );
+                nextStyle = prevStyle;
+                nextStyle.font = FontManager.instance.getFont(sel);
                 break;
             case fontSize:
-                nextStyle = prevStyle;
-                nextStyle.font = FontManager.instance.getFont(
+                const sel = FontSelector(
+                    f.face,
+                    f.family,
+                    f.italic,
                     mu.attribute.data.fontSize,
                     f.weight,
-                    f.italic,
-                    f.family,
-                    f.face,
                 );
+                nextStyle = prevStyle;
+                nextStyle.font = FontManager.instance.getFont(sel);
                 break;
             case fontStyle:
-                nextStyle = prevStyle;
-                nextStyle.font = FontManager.instance.getFont(
+                const sel = FontSelector(
+                    f.face,
+                    f.family,
+                    mu.attribute.data.fontStyle == FontStyle.italic,
                     f.size,
                     f.weight,
-                    mu.attribute.data.fontStyle == FontStyle.italic,
-                    f.family,
-                    f.face,
                 );
+                nextStyle = prevStyle;
+                nextStyle.font = FontManager.instance.getFont(sel);
                 break;
             case fontWeight:
-                nextStyle = prevStyle;
-                nextStyle.font = FontManager.instance.getFont(
+                const sel = FontSelector(
+                    f.face,
+                    f.family,
+                    f.italic,
                     f.size,
                     mu.attribute.data.fontWeight,
-                    f.italic,
-                    f.family,
-                    f.face,
                 );
+                nextStyle = prevStyle;
+                nextStyle.font = FontManager.instance.getFont(sel);
                 break;
             case transform:
                 nextStyle = prevStyle;

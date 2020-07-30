@@ -626,10 +626,11 @@ final class FreeTypeFontManager : FontManager
         }
     }
 
-    override protected FontRef getFontImpl(int size, ushort weight, bool italic, FontFamily family, string face)
+    override protected FontRef getFontImpl(ref const FontSelector selector)
     {
-        FontFileItem f = findBestMatch(FontDef(family, face, italic, weight));
-        return f ? f.get(size) : FontRef.init;
+        const def = FontDef(selector.family, selector.face, selector.italic, selector.weight);
+        FontFileItem f = findBestMatch(def);
+        return f ? f.get(selector.size) : FontRef.init;
     }
 
     override void checkpoint()
