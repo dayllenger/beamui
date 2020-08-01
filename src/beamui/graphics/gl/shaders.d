@@ -134,7 +134,6 @@ struct ParamsComposition
 
 struct ParamsGPAA
 {
-    TexId layerOffsets;
     TexId tex;
     Vec2 texPixelSize;
 }
@@ -144,7 +143,6 @@ private enum SamplerIndex
     data,
     colors,
     texture,
-    offsets,
     segments,
 }
 
@@ -557,16 +555,14 @@ nothrow:
         glUniform2f(loc.texPixelSize, p.texPixelSize.x, p.texPixelSize.y);
 
         glUniform1i(loc.dataStore, SamplerIndex.data);
-        glUniform1i(loc.layerOffsets, SamplerIndex.offsets);
         glUniform1i(loc.tex, SamplerIndex.texture);
         Tex2D.setup(pbase.dataStore, SamplerIndex.data);
-        Tex2D.setup(p.layerOffsets, SamplerIndex.offsets);
         Tex2D.setup(p.tex, SamplerIndex.texture);
     }
 
     // dfmt off
     private Locations!([
-        "pixelSize", "viewportHeight", "dataStore", "layerOffsets", "tex", "texPixelSize"
+        "pixelSize", "viewportHeight", "dataStore", "tex", "texPixelSize"
     ]) loc;
     // dfmt on
 }

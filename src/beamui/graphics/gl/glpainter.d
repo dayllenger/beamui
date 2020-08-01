@@ -95,6 +95,19 @@ struct Geometry
     }
 }
 
+/// Layers form a tree
+struct Layer
+{
+    RenderLayer base;
+    alias base this;
+
+    Span sets; /// Sets of this layer and its sub-layers
+
+    float depth = 1;
+    float opacity = 1;
+    GpaaAppender gpaa;
+}
+
 struct Cover
 {
     Rect rect; /// Local to batch
@@ -123,7 +136,6 @@ public final class GLPaintEngine : PaintEngine
 
         Buf!Cover covers;
         Buf!DepthTask depthTasks;
-        Buf!Vec2 layerOffsets;
 
         Buf!Vec2 bufVerts;
         Buf!uint bufContours;
@@ -136,7 +148,7 @@ public final class GLPaintEngine : PaintEngine
         GlyphCache* glyphCache;
 
         FlatteningContourIter strokeIter;
-        GpaaAppender gpaa;
+        GpaaAppenderPool gpaaPool;
 
         Renderer renderer;
     }
@@ -175,15 +187,16 @@ protected:
         tilePoints.clear();
         tileDataIndices.clear();
 
+        colorStopAtlas.reset();
+        gpaaPool.reset();
+
         Layer lr;
         lr.clip = lr.bounds = RectI(0, 0, conf.ddpSize.w, conf.ddpSize.h);
         lr.fill = ColorF(conf.background);
+        lr.gpaa = gpaaPool.getFree();
         layers ~= lr;
         layer = &layers.unsafe_ref(0);
         sets ~= Set.init;
-
-        colorStopAtlas.reset();
-        gpaa.prepare();
     }
 
     override void end()
@@ -194,53 +207,67 @@ protected:
         constructCoverGeometry();
         sortBatches();
 
-        if (g_opaque.batches.length + g_transp.batches.length)
+        if (!g_opaque.batches.length && !g_transp.batches.length)
+            return;
+
+        debug (painter)
         {
             // dfmt off
-            debug (painter)
-            {
-                Log.fd("GL: %s bt, %s dat, %s tri, %s v",
-                    g_opaque.batches.length + g_transp.batches.length,
-                    dataStore.length,
-                    g_opaque.triangles.length + g_transp.triangles.length,
-                    g_opaque.positions.length + g_opaque.positions_textured.length +
-                    g_transp.positions.length + g_transp.positions_textured.length,
-                );
-            }
-            renderer.upload(const(DataToUpload)(
-                const(GeometryToUpload)(
-                    g_opaque.triangles[],
-                    g_opaque.positions[],
-                    g_opaque.dataIndices[],
-                    g_opaque.positions_textured[],
-                    g_opaque.dataIndices_textured[],
-                    g_opaque.uvs_textured[],
-                ),
-                const(GeometryToUpload)(
-                    g_transp.triangles[],
-                    g_transp.positions[],
-                    g_transp.dataIndices[],
-                    g_transp.positions_textured[],
-                    g_transp.dataIndices_textured[],
-                    g_transp.uvs_textured[],
-                ),
-                dataStore[],
-                tilePoints[],
-                tileDataIndices[],
-            ), const(GpaaDataToUpload)(
-                gpaa.indices[],
-                gpaa.positions[],
-                gpaa.dataIndices[],
-                gpaa.layerIndices[],
-                getGlobalLayerPositions(),
-            ), tileGrid);
+            Log.fd("GL: %s bt, %s dat, %s tri, %s v",
+                g_opaque.batches.length + g_transp.batches.length,
+                dataStore.length,
+                g_opaque.triangles.length + g_transp.triangles.length,
+                g_opaque.positions.length + g_opaque.positions_textured.length +
+                g_transp.positions.length + g_transp.positions_textured.length,
+            );
             // dfmt on
         }
+
+        // dfmt off
+        static Buf!GpaaDataToUpload gpaaData;
+        gpaaData.clear();
+        foreach (ref lr; layers[])
+        {
+            gpaaData ~= GpaaDataToUpload(
+                lr.gpaa.indices[],
+                lr.gpaa.positions[],
+                lr.gpaa.dataIndices[],
+                lr.bounds.size,
+            );
+        }
+
+        renderer.upload(DataToUpload(
+            GeometryToUpload(
+                g_opaque.triangles[],
+                g_opaque.positions[],
+                g_opaque.dataIndices[],
+                g_opaque.positions_textured[],
+                g_opaque.dataIndices_textured[],
+                g_opaque.uvs_textured[],
+            ),
+            GeometryToUpload(
+                g_transp.triangles[],
+                g_transp.positions[],
+                g_transp.dataIndices[],
+                g_transp.positions_textured[],
+                g_transp.dataIndices_textured[],
+                g_transp.uvs_textured[],
+            ),
+            dataStore[],
+            tilePoints[],
+            tileDataIndices[],
+        ), gpaaData[], tileGrid);
+        // dfmt on
     }
 
     override void paint()
     {
-        renderer.render(const(DrawLists)(layers[], sets[], g_opaque.batches[], g_transp.batches[]));
+        static Buf!(const(RenderLayer)*) lrs;
+        lrs.clear();
+        foreach (ref lr; layers[])
+            lrs ~= &lr.base;
+
+        renderer.render(DrawLists(lrs[], sets[], g_opaque.batches[], g_transp.batches[]));
     }
 
     private void prepareSets()
@@ -261,7 +288,10 @@ protected:
     in (layers.length)
     {
         if (layers.length == 1)
+        {
+            sets.unsafe_ref(-1).finishing = true;
             return;
+        }
 
         // compute optimal layer boundaries on screen, starting from leafs
         foreach_reverse (ref Layer lr; layers.unsafe_slice[1 .. $])
@@ -291,12 +321,16 @@ protected:
         {
             Layer* main = &layers.unsafe_ref(0);
             main.bounds = RectI(0, 0, main.clip.width, main.clip.height);
+            sets.unsafe_ref(main.sets.end - 1).finishing = true;
         }
         // do other job, iterating in straight order
         foreach (ref Layer lr; layers.unsafe_slice[1 .. $])
         {
             if (lr.empty)
                 continue;
+
+            // indicate the set where to antialias
+            sets.unsafe_ref(lr.sets.end - 1).finishing = true;
 
             // shift batches to the layer origin
             const shift = Vec2(-lr.bounds.left, -lr.bounds.top);
@@ -384,28 +418,6 @@ protected:
         }
     }
 
-    private const(Vec2[]) getGlobalLayerPositions()
-    {
-        if (layers.length == 1)
-            return null;
-
-        layerOffsets.resize(layers.length);
-        Vec2[] list = layerOffsets.unsafe_slice;
-
-        foreach (i; 1 .. layers.length)
-        {
-            const Layer* lr = &layers[i];
-            list[i] = list[lr.parent] + Vec2(lr.clip.left, lr.clip.top);
-        }
-        foreach (i; 1 .. layers.length)
-        {
-            const Layer* lr = &layers[i];
-            list[i].x += lr.bounds.left;
-            list[i].y += lr.bounds.top;
-        }
-        return list;
-    }
-
     override void beginLayer(BoxI clip, bool expand, LayerOp op)
     {
         Layer lr;
@@ -419,11 +431,10 @@ protected:
         lr.opacity = op.opacity;
         lr.cmd.composition = getBlendFactors(op.composition);
         lr.cmd.blending = op.blending;
+        lr.gpaa = gpaaPool.getFree();
         layers ~= lr;
         layer = &layers.unsafe_ref(lr.index);
         sets ~= makeSet(lr.index);
-
-        gpaa.setLayerIndex(lr.index);
     }
 
     override void composeLayer()
@@ -438,8 +449,6 @@ protected:
         const Mat2x3 mat;
         dataStore ~= prepareDataChunk(&mat, opacity);
         advanceDepth();
-
-        gpaa.setLayerIndex(layer.index);
     }
 
     override void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
@@ -598,7 +607,7 @@ protected:
 
         const t = g.triangles.length;
         if (st.aa)
-            builder.contour = gpaa.contour;
+            builder.contour = layer.gpaa;
 
         // if we are in non-scaling mode, transform contours on CPU, then expand
         const minDist = pen.shouldScale ? getMinDistFromMatrix(st.mat) : 0.7f;
@@ -606,7 +615,7 @@ protected:
         expandStrokes(strokeIter, pen, builder, minDist);
 
         if (st.aa)
-            gpaa.finish(dataStore.length);
+            layer.gpaa.finish(dataStore.length);
 
         if (g.triangles.length > t)
         {
@@ -671,8 +680,8 @@ protected:
                 Vec2(rp.right, rp.top),
             ];
             // dfmt on
-            gpaa.add(silhouette[]);
-            gpaa.finish(dataStore.length);
+            layer.gpaa.add(silhouette[]);
+            layer.gpaa.finish(dataStore.length);
         }
 
         if (Batch* similar = hasSimilarImageBatch(view.tex, false))
@@ -790,8 +799,8 @@ protected:
                 Vec2(rp.right, rp.top),
             ];
             // dfmt on
-            gpaa.add(silhouette[]);
-            gpaa.finish(dataStore.length);
+            layer.gpaa.add(silhouette[]);
+            layer.gpaa.finish(dataStore.length);
         }
 
         if (Batch* similar = hasSimilarImageBatch(view.tex, false))
@@ -944,8 +953,8 @@ private:
 
             if (st.aa)
             {
-                gpaa.add(g.positions[][v .. $]);
-                gpaa.finish(dataStore.length);
+                layer.gpaa.add(g.positions[][v .. $]);
+                layer.gpaa.finish(dataStore.length);
             }
             // spline is convex iff hull of its control points is convex
             if (isConvex(lst[0].points) && stenciling != Stenciling.zero && stenciling != Stenciling.even)
@@ -977,10 +986,10 @@ private:
                 }
                 addFan(g.triangles, v, pcount);
                 if (st.aa)
-                    gpaa.add(g.positions[][v .. $]);
+                    layer.gpaa.add(g.positions[][v .. $]);
             }
             if (st.aa)
-                gpaa.finish(dataStore.length);
+                layer.gpaa.finish(dataStore.length);
 
             if (g.triangles.length > t)
                 return twoPass(t, stenciling, contours.bounds, contours.trBounds, br);
@@ -1311,59 +1320,6 @@ in (vcount >= 2)
         output ~= Tri(v, v + 1, v + 2);
 }
 
-struct LineAppender
-{
-nothrow:
-    @property bool isReady() const
-    {
-        return positions !is null;
-    }
-
-    private Buf!Vec2* positions;
-    private Buf!uint* indices;
-    private uint istart;
-
-    this(ref Buf!Vec2 positions, ref Buf!uint indices)
-    in (positions.length > 0)
-    {
-        this.positions = &positions;
-        this.indices = &indices;
-    }
-
-    void begin()
-    in (positions)
-    {
-        istart = positions.length;
-    }
-
-    void end()
-    in (positions)
-    {
-        const iend = positions.length;
-        if (iend == istart)
-            return;
-
-        foreach (i; istart .. iend - 1)
-        {
-            indices.put(i - 1);
-            indices.put(i);
-        }
-        istart = iend;
-    }
-
-    void v(Vec2 v0)
-    in (positions)
-    {
-        positions.put(v0);
-    }
-
-    void vs(const Vec2[] points)
-    in (positions)
-    {
-        positions.put(points);
-    }
-}
-
 final class TriBuilder : StrokeBuilder
 {
 nothrow:
@@ -1371,7 +1327,7 @@ nothrow:
     {
         Buf!Vec2* positions;
         Buf!Tri* triangles;
-        LineAppender contour;
+        GpaaAppender contour;
 
         enum Mode
         {
@@ -1442,7 +1398,7 @@ nothrow:
             triangles.put(Tri(mode == Mode.strip ? v : vstart, v + 1, v + 2));
         }
         // generate line silhouette for further antialiasing
-        if (contour.isReady)
+        if (contour)
         {
             contour.begin();
             if (mode == Mode.strip)
@@ -1467,23 +1423,16 @@ nothrow:
     }
 }
 
-struct GpaaAppender
+final class GpaaAppender
 {
 nothrow:
-    @property LineAppender contour()
-    {
-        return appender;
-    }
-
     private
     {
         Buf!uint indices;
         Buf!Vec2 positions;
         Buf!ushort dataIndices;
-        Buf!ushort layerIndices;
-        LineAppender appender;
 
-        uint layerIndex;
+        uint istart;
     }
 
     void prepare()
@@ -1492,29 +1441,79 @@ nothrow:
         dataIndices.clear();
         positions.clear();
         positions ~= Vec2(0, 0);
-        appender = LineAppender(positions, indices);
-    }
-
-    void setLayerIndex(uint i)
-    {
-        layerIndex = i;
     }
 
     void add(const Vec2[] points)
     {
-        appender.begin();
-        appender.vs(points);
+        begin();
+        vs(points);
         const fst = points[0];
         const lst = points[$ - 1];
         if (!fequal2(fst.x, lst.x) || !fequal2(fst.y, lst.y))
-            appender.v(fst);
-        appender.end();
+            v(fst);
+        end();
+    }
+
+    void begin()
+    {
+        istart = positions.length;
+    }
+
+    void end()
+    {
+        const iend = positions.length;
+        if (iend == istart)
+            return;
+
+        foreach (i; istart .. iend - 1)
+        {
+            indices.put(i - 1);
+            indices.put(i);
+        }
+        istart = iend;
+    }
+
+    void v(Vec2 v0)
+    {
+        positions.put(v0);
+    }
+
+    void vs(const Vec2[] points)
+    {
+        positions.put(points);
     }
 
     void finish(uint dataIndex)
     {
         dataIndices.resize(positions.length, cast(ushort)dataIndex);
-        layerIndices.resize(positions.length, cast(ushort)layerIndex);
+    }
+}
+
+struct GpaaAppenderPool
+{
+    private GpaaAppender[] pool;
+    private uint engaged;
+
+    GpaaAppender getFree()
+    {
+        GpaaAppender app;
+        if (engaged < pool.length)
+        {
+            app = pool[engaged];
+        }
+        else
+        {
+            app = new GpaaAppender;
+            pool ~= app;
+        }
+        engaged++;
+        app.prepare();
+        return app;
+    }
+
+    void reset()
+    {
+        engaged = 0;
     }
 }
 

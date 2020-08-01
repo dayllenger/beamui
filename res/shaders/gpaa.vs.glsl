@@ -4,7 +4,6 @@
 in vec2 v_point0;
 in vec2 v_point1;
 in uint v_dataIndex;
-in uint v_layerIndex;
 out float dummy;    // workaround for a bug on Intel driver
 flat out vec4 pack; // this value is provided by the 2nd segment point
 
@@ -12,18 +11,8 @@ out float gl_ClipDistance[4];
 
 uniform vec2 pixelSize;
 uniform int viewportHeight;
-uniform sampler2D layerOffsets;
 
 void fetchData(in int index, out mat3 transform, out float depth, out vec4 clip, out vec4 color);
-
-vec2 fetchLayerOffset()
-{
-    int i = int(v_layerIndex);
-    if (i > 0)
-        return texelFetch(layerOffsets, ivec2(i, 0), 0).xy;
-    else
-        return vec2(0);
-}
 
 void main()
 {
@@ -33,20 +22,17 @@ void main()
     vec4 color;
     fetchData(int(v_dataIndex), transform, depth, clip, color);
 
-    vec2 layerOffset = fetchLayerOffset();
-
-    const vec2 pos0 = (transform * vec3(v_point0, 1)).xy + layerOffset;
-    const vec2 cpos = (transform * vec3(v_point1, 1)).xy;
-    const vec2 pos1 = cpos + layerOffset;
+    const vec2 pos0 = (transform * vec3(v_point0, 1)).xy;
+    const vec2 pos1 = (transform * vec3(v_point1, 1)).xy;
     gl_Position.x = pos1.x * pixelSize.x * 2 - 1;
     gl_Position.y = 1 - pos1.y * pixelSize.y * 2; // user Y is reversed
     gl_Position.z = depth;
     gl_Position.w = 1;
 
-    gl_ClipDistance[0] = -cpos.y + clip.w;
-    gl_ClipDistance[1] = -cpos.x + clip.z;
-    gl_ClipDistance[2] =  cpos.y - clip.y;
-    gl_ClipDistance[3] =  cpos.x - clip.x;
+    gl_ClipDistance[0] = -pos1.y + clip.w;
+    gl_ClipDistance[1] = -pos1.x + clip.z;
+    gl_ClipDistance[2] =  pos1.y - clip.y;
+    gl_ClipDistance[3] =  pos1.x - clip.x;
 
     // compute screen-space position and direction of the line
     const vec2 pos = vec2(pos1.x, viewportHeight - pos1.y);

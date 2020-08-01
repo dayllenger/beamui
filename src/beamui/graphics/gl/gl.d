@@ -354,7 +354,7 @@ nothrow:
     {
         if (current != id)
         {
-            checkgl!glBindFramebuffer(GL_DRAW_FRAMEBUFFER, id.handle);
+            checkgl!glBindFramebuffer(GL_FRAMEBUFFER, id.handle);
             current = id;
         }
     }
@@ -367,12 +367,12 @@ nothrow:
 
     void attachColorTex2D(TexId tex, GLuint num)
     {
-        checkgl!glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + num, GL_TEXTURE_2D, tex.handle, 0);
+        checkgl!glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + num, GL_TEXTURE_2D, tex.handle, 0);
     }
 
     void attachDepthStencilRB(RbId rb)
     {
-        checkgl!glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rb.handle);
+        checkgl!glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rb.handle);
     }
 }
 

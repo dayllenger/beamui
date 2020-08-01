@@ -14,9 +14,10 @@ static if (USE_OPENGL):
 // dfmt on
 import bindbc.opengl.util : loadExtendedGLSymbol;
 
-import beamui.core.geometry : BoxI, Rect, RectI, SizeI;
-import beamui.core.linalg : Mat2x3, Vec2;
-import beamui.core.math : max, min;
+import beamui.core.collections : Buf;
+import beamui.core.geometry;
+import beamui.core.linalg;
+import beamui.core.math;
 import beamui.core.types : tup;
 import beamui.graphics.colors : ColorF;
 import beamui.graphics.compositing : BlendMode, CompositeOperation;
@@ -130,19 +131,15 @@ struct ComposeCmd
     BlendMode blending;
 }
 
-/// Layers form a tree
-struct Layer
+struct RenderLayer
 {
     uint index;
     uint parent;
-    Span sets; /// Sets of this layer and its sub-layers
 
     RectI clip;
     RectI bounds = MIN_RECT_I; /// Relative to `clip`, i.e. "to itself"
-    float depth = 1;
     ColorF fill;
 
-    float opacity = 1;
     ComposeCmd cmd;
 
     bool empty() const nothrow
@@ -159,6 +156,7 @@ struct Set
     Span dataChunks;
     uint layer;
     uint layerToCompose;
+    bool finishing;
 }
 
 struct Tri
@@ -168,30 +166,30 @@ struct Tri
 
 struct DrawLists
 {
-    Layer[] layers;
-    Set[] sets;
-    Batch[] b_opaque;
-    Batch[] b_transp;
+    const(RenderLayer*)[] layers;
+    const(Set)[] sets;
+    const(Batch)[] b_opaque;
+    const(Batch)[] b_transp;
 }
 
 struct GeometryToUpload
 {
-    Tri[] tris;
-    Vec2[] pos1;
-    ushort[] dat1;
-    Vec2[] pos2;
-    ushort[] dat2;
-    Vec2[] uvs2;
+    const(Tri)[] tris;
+    const(Vec2)[] pos1;
+    const(ushort)[] dat1;
+    const(Vec2)[] pos2;
+    const(ushort)[] dat2;
+    const(Vec2)[] uvs2;
 }
 
 struct DataToUpload
 {
     GeometryToUpload opaque;
     GeometryToUpload transp;
-    DataChunk[] dataStore;
+    const(DataChunk)[] dataStore;
 
-    PackedTile[] strokeTiles;
-    ushort[] strokeTileDat;
+    const(PackedTile)[] strokeTiles;
+    const(ushort)[] strokeTileDat;
 }
 
 private struct GPUGeometry
@@ -327,7 +325,7 @@ nothrow:
         VBO.del(vboTileDat);
     }
 
-    void upload(const DataToUpload data, const GpaaDataToUpload gpaaData, ref const TileGrid tileGrid)
+    void upload(const DataToUpload data, const GpaaDataToUpload[] gpaaData, ref const TileGrid tileGrid)
     {
         if (fail)
             return;
@@ -382,7 +380,7 @@ nothrow:
 
         foreach (i, ref set; lists.sets)
         {
-            const Layer* lr = &lists.layers[set.layer];
+            const RenderLayer* lr = lists.layers[set.layer];
             if (lr.empty)
                 continue;
             if (targets[lr.parent].empty)
@@ -419,7 +417,7 @@ nothrow:
             // compose layer if some
             if (set.layerToCompose > 0)
             {
-                const Layer* lrCompose = &lists.layers[set.layerToCompose];
+                const RenderLayer* lrCompose = lists.layers[set.layerToCompose];
                 RenderTarget* rtCompose = &targets[set.layerToCompose];
                 if (!rtCompose.empty)
                 {
@@ -435,13 +433,19 @@ nothrow:
             {
                 drawBatch(g_transp, bt, pbase, flagsTrt);
             }
-        }
-        // anti-alias
-        {
-            if (auto prog = sh.gpaa)
-                gpaa.perform(device, targets[0].box.size, prog, databuf.tex);
-            else
-                failGracefully();
+            // antialias the layer
+            if (set.finishing && gpaa.hasSomething)
+            {
+                if (auto prog = sh.gpaa)
+                {
+                    gpaa.perform(device, set.layer, rt.box, prog, pbase);
+                }
+                else
+                {
+                    failGracefully();
+                    break;
+                }
+            }
         }
 
         reset();
@@ -907,55 +911,10 @@ nothrow:
 
 struct GpaaDataToUpload
 {
-    uint[] ids;
-    Vec2[] pos;
-    ushort[] dat;
-    ushort[] lyr;
-
-    Vec2[] layerOffsets;
-}
-
-private struct LayerOffsetBuffer
-{
-nothrow:
-    TexId tex;
-    int width;
-
-    @disable this(this);
-
-    void initialize()
-    {
-        Tex2D.bind(tex);
-        Tex2D.setBasicParams(TexFiltering.sharp, TexMipmaps.no, TexWrap.clamp);
-        Tex2D.unbind();
-    }
-
-    ~this()
-    {
-        Tex2D.del(tex);
-    }
-
-    void upload(const Vec2[] list)
-    {
-        if (list.length == 0)
-            return;
-
-        const w = min(cast(int)list.length, MAX_LAYERS);
-        const bool resize = width < w;
-        if (width == 0)
-            width = 1;
-        while (width < w)
-            width *= 2;
-
-        const fmt = TexFormat(GL_RG, GL_RG32F, GL_FLOAT);
-        Tex2D.bind(tex);
-        if (resize)
-        {
-            Tex2D.resize(SizeI(width, 1), 0, fmt);
-        }
-        Tex2D.uploadSubImage(BoxI(0, 0, w, 1), 0, fmt, list.ptr);
-        Tex2D.unbind();
-    }
+    const(uint)[] ids;
+    const(Vec2)[] pos;
+    const(ushort)[] dat;
+    SizeI viewSize;
 }
 
 /** Client code for geometric post-process anti-aliasing.
@@ -970,13 +929,14 @@ nothrow:
         VaoId vao;
         BufferId vboPos;
         BufferId vboDat;
-        BufferId vboLyr;
         BufferId ebo;
         TexId tex;
         SizeI texSize;
-        LayerOffsetBuffer lobuf;
 
-        int indices;
+        Buf!Span layers;
+        Buf!uint indices;
+        Buf!Vec2 positions;
+        Buf!ushort dataIndices;
     }
 
     @disable this(this);
@@ -990,7 +950,6 @@ nothrow:
     {
         VBO.bind(vboPos);
         VBO.bind(vboDat);
-        VBO.bind(vboLyr);
         VBO.unbind();
 
         EBO.bind(ebo);
@@ -1002,8 +961,6 @@ nothrow:
         device.vaoman.addAttribF(1, 2, 0, Vec2.sizeof);
         VBO.bind(vboDat);
         device.vaoman.addAttribU16(2, 1, 0, ushort.sizeof);
-        VBO.bind(vboLyr);
-        device.vaoman.addAttribU16(3, 1, 0, ushort.sizeof);
         EBO.bind(ebo);
         device.vaoman.unbind();
 
@@ -1011,8 +968,6 @@ nothrow:
         Tex2D.setBasicParams(TexFiltering.smooth, TexMipmaps.no, TexWrap.clamp); // must be linear
         Tex2D.resize(SizeI(1, 1), 0, TexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE));
         Tex2D.unbind();
-
-        lobuf.initialize();
     }
 
     void deinitialize(ref Device device)
@@ -1020,56 +975,87 @@ nothrow:
         device.vaoman.del(vao);
         VBO.del(vboPos);
         VBO.del(vboDat);
-        VBO.del(vboLyr);
         EBO.del(ebo);
         Tex2D.del(tex);
     }
 
-    void upload(ref const GpaaDataToUpload data)
+    void upload(const GpaaDataToUpload[] byLayer)
     {
-        indices = cast(int)data.ids.length;
+        layers.clear();
+        indices.clear();
+        positions.clear();
+        dataIndices.clear();
 
-        if (data.ids.length > 0)
+        bool empty = true;
+        foreach (ref data; byLayer)
         {
-            assert(data.pos.length > 0);
-            assert(data.pos.length == data.dat.length);
-
-            EBO.bind(ebo);
-            EBO.upload(data.ids[], GL_DYNAMIC_DRAW);
-            VBO.bind(vboPos);
-            VBO.upload(data.pos[], GL_DYNAMIC_DRAW);
-            VBO.bind(vboDat);
-            VBO.upload(data.dat[], GL_DYNAMIC_DRAW);
-            VBO.bind(vboLyr);
-            VBO.upload(data.lyr[], GL_DYNAMIC_DRAW);
+            if (data.ids.length)
+            {
+                empty = false;
+                break;
+            }
         }
-        lobuf.upload(data.layerOffsets);
-    }
-
-    void perform(ref Device device, SizeI viewSize, ShaderGPAA shader, TexId dataStore)
-    {
-        if (indices <= 0)
+        if (empty)
             return;
 
-        // resize render target if needed to
-        Tex2D.bind(tex);
-        const sz = chooseTargetSize(texSize, viewSize);
+        SizeI maxSize;
+        foreach (ref data; byLayer)
+        {
+            const span = Span(cast(int)indices.length, cast(int)(indices.length + data.ids.length));
+            layers ~= span;
+            if (span.start == span.end)
+                continue;
+
+            indices ~= data.ids;
+            indices.unsafe_slice[span.start .. span.end] += positions.length;
+            positions ~= data.pos;
+            dataIndices ~= data.dat;
+            maxSize.w = max(maxSize.w, data.viewSize.w);
+            maxSize.h = max(maxSize.h, data.viewSize.h);
+        }
+
+        assert(positions.length);
+        assert(positions.length == dataIndices.length);
+
+        EBO.bind(ebo);
+        EBO.upload(indices[], GL_DYNAMIC_DRAW);
+        VBO.bind(vboPos);
+        VBO.upload(positions[], GL_DYNAMIC_DRAW);
+        VBO.bind(vboDat);
+        VBO.upload(dataIndices[], GL_DYNAMIC_DRAW);
+
+        // resize the temporary texture if needed to
+        const sz = chooseTargetSize(texSize, maxSize);
         if (texSize != sz)
         {
             texSize = sz;
+            Tex2D.bind(tex);
             Tex2D.resize(sz, 0, TexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE));
-            assert(checkFramebuffer());
+            Tex2D.unbind();
         }
-        // copy the current framebuffer contents into the texture
-        checkgl!glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, viewSize.w, viewSize.h);
+    }
 
-        const pbase = ParamsBase(Vec2(1.0f / viewSize.w, 1.0f / viewSize.h), viewSize.h, dataStore);
-        const params = ParamsGPAA(lobuf.tex, tex, Vec2(1.0f / sz.w, 1.0f / sz.h));
+    bool hasSomething() const
+    {
+        return indices.length > 0;
+    }
+
+    void perform(ref Device device, uint layerIndex, BoxI viewBox, ShaderGPAA shader, ParamsBase pbase)
+    {
+        const span = layers[layerIndex];
+        if (span.start == span.end)
+            return;
+
+        // copy the current framebuffer contents into the texture
+        Tex2D.bind(tex);
+        checkgl!glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, viewBox.x, viewBox.y, viewBox.w, viewBox.h);
+
+        const params = ParamsGPAA(tex, Vec2(1.0f / texSize.w, 1.0f / texSize.h));
         device.progman.bind(shader);
         shader.prepare(pbase, params);
 
         const flags = DrawFlags.clippingPlanes | DrawFlags.depthTest | DrawFlags.noDepthWrite;
-        device.drawLines(vao, flags, 0, indices);
+        device.drawLines(vao, flags, span.start, span.end - span.start);
     }
 }
 
