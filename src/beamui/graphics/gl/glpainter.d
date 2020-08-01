@@ -416,7 +416,7 @@ protected:
         if (expand)
             lr.bounds = RectI(0, 0, clip.w, clip.h);
         lr.depth = layer.depth;
-        lr.cmd.opacity = op.opacity;
+        lr.opacity = op.opacity;
         lr.cmd.composition = getBlendFactors(op.composition);
         lr.cmd.blending = op.blending;
         layers ~= lr;
@@ -430,12 +430,13 @@ protected:
     {
         layer.sets.end = sets.length;
         layer.cmd.dataIndex = cast(ushort)dataStore.length;
+        const opacity = layer.opacity;
         // setup the parent layer back
         sets ~= makeSet(layer.parent, layer.index);
         layer = &layers.unsafe_ref(layer.parent);
         // create an empty data chunk with the parent layer current depth
         const Mat2x3 mat;
-        dataStore ~= prepareDataChunk(&mat);
+        dataStore ~= prepareDataChunk(&mat, opacity);
         advanceDepth();
 
         gpaa.setLayerIndex(layer.index);
@@ -580,9 +581,9 @@ protected:
         Mat2x3 quasiMat;
         quasiMat.store[0][0] = realWidth;
         quasiMat.store[1][1] = st.aa ? 0.8f : 100; // contrast
-        DataChunk data = prepareDataChunk(&quasiMat, br.solid);
+        DataChunk data = prepareDataChunk(&quasiMat, br.opacity);
         ShParams params;
-        convertSolid(br.solid, br.opacity, params, data);
+        convertSolid(br.solid, params, data);
 
         dataStore ~= data;
         advanceDepth();
@@ -630,7 +631,7 @@ protected:
         const int w = bmp.width;
         const int h = bmp.height;
         const rp = Rect(p.x, p.y, p.x + w, p.y + h);
-        const BoxI clip = clipByRect(transformBounds(rp));
+        const clip = RectI(clipByRect(transformBounds(rp)));
         if (clip.empty)
             return;
 
@@ -674,28 +675,33 @@ protected:
             gpaa.finish(dataStore.length);
         }
 
-        ShParams params;
-        params.kind = PaintKind.image;
-        params.image = ParamsImage(view.tex, view.texSize, opacity);
+        if (Batch* similar = hasSimilarImageBatch(view.tex, false))
+        {
+            similar.common.clip.include(clip);
+            similar.common.triangles.end = g.triangles.length;
+        }
+        else
+        {
+            ShParams params;
+            params.kind = PaintKind.image;
+            params.image = ParamsImage(view.tex, view.texSize);
 
-        Batch bt;
-        bt.type = BatchType.simple;
-        bt.common.clip = RectI(clip);
-        bt.common.params = params;
-        bt.common.triangles = Span(t, g.triangles.length);
-        bt.simple.hasUV = true;
-        g.batches ~= bt;
-
-        g.dataIndices_textured.resize(g.positions_textured.length, cast(ushort)dataStore.length);
-        dataStore ~= prepareDataChunk();
-
-        advanceDepth();
+            Batch bt;
+            bt.type = BatchType.simple;
+            bt.common.clip = clip;
+            bt.common.params = params;
+            bt.common.triangles = Span(t, g.triangles.length);
+            bt.simple.hasUV = true;
+            g.batches ~= bt;
+        }
+        const data = prepareDataChunk(null, opacity);
+        doneTexturedBatch(*g, data);
     }
 
     override void drawNinePatch(ref const Bitmap bmp, ref const NinePatchInfo info, float opacity)
     {
         const rp = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
-        const BoxI clip = clipByRect(transformBounds(rp));
+        const clip = RectI(clipByRect(transformBounds(rp)));
         if (clip.empty)
             return;
 
@@ -788,22 +794,27 @@ protected:
             gpaa.finish(dataStore.length);
         }
 
-        ShParams params;
-        params.kind = PaintKind.image;
-        params.image = ParamsImage(view.tex, view.texSize, opacity);
+        if (Batch* similar = hasSimilarImageBatch(view.tex, false))
+        {
+            similar.common.clip.include(clip);
+            similar.common.triangles.end = g.triangles.length;
+        }
+        else
+        {
+            ShParams params;
+            params.kind = PaintKind.image;
+            params.image = ParamsImage(view.tex, view.texSize);
 
-        Batch bt;
-        bt.type = BatchType.simple;
-        bt.common.clip = RectI(clip);
-        bt.common.params = params;
-        bt.common.triangles = Span(t, g.triangles.length);
-        bt.simple.hasUV = true;
-        g.batches ~= bt;
-
-        g.dataIndices_textured.resize(g.positions_textured.length, cast(ushort)dataStore.length);
-        dataStore ~= prepareDataChunk();
-
-        advanceDepth();
+            Batch bt;
+            bt.type = BatchType.simple;
+            bt.common.clip = clip;
+            bt.common.params = params;
+            bt.common.triangles = Span(t, g.triangles.length);
+            bt.simple.hasUV = true;
+            g.batches ~= bt;
+        }
+        const data = prepareDataChunk(null, opacity);
+        doneTexturedBatch(*g, data);
     }
 
     override void drawText(const GlyphInstance[] run, Color c)
@@ -870,9 +881,9 @@ protected:
             bt.common.triangles.end = g.triangles.length;
             g.batches ~= bt;
         }
-        g.dataIndices_textured.resize(g.positions_textured.length, cast(ushort)dataStore.length);
-        dataStore ~= prepareDataChunk(null, c);
-        advanceDepth();
+        auto data = prepareDataChunk(null, 0);
+        data.color = ColorF(c).premultiplied;
+        doneTexturedBatch(*g, data);
     }
 
 private:
@@ -987,7 +998,7 @@ private:
 
     bool simple(uint tstart, RectI clip, const Brush* br, const Mat2x3* m = null)
     {
-        DataChunk data = prepareDataChunk(m);
+        DataChunk data = prepareDataChunk(m, br ? br.opacity : 1);
         ShParams params;
         if (!convertBrush(br, params, data))
             return false;
@@ -1017,7 +1028,7 @@ private:
     /// Stencil, than cover
     bool twoPass(uint tstart, Stenciling stenciling, Rect bbox, RectI clip, const Brush* br, const Mat2x3* m = null)
     {
-        DataChunk data = prepareDataChunk(m);
+        DataChunk data = prepareDataChunk(m, br ? br.opacity : 1);
         ShParams params;
         if (!convertBrush(br, params, data))
             return false;
@@ -1078,6 +1089,28 @@ private:
         return null;
     }
 
+    Batch* hasSimilarImageBatch(const TexId* tex, bool opaque)
+    in (sets.length)
+    {
+        Batch* last;
+        if (tex && g_transp.batches.length > sets[$ - 1].b_transp.start)
+        {
+            if (opaque)
+            {
+                if (g_opaque.batches.length > sets[$ - 1].b_opaque.start)
+                    last = &g_opaque.batches.unsafe_ref(-1);
+            }
+            else
+            {
+                if (g_transp.batches.length > sets[$ - 1].b_transp.start)
+                    last = &g_transp.batches.unsafe_ref(-1);
+            }
+        }
+        if (last && last.common.params.kind == PaintKind.image && last.common.params.image.tex is tex)
+            return last;
+        return null;
+    }
+
     Batch* hasSimilarTextBatch(const TexId* tex)
     in (sets.length)
     {
@@ -1128,9 +1161,16 @@ private:
         return null;
     }
 
-    void doneBatch(ref Geometry g, ref DataChunk data)
+    void doneBatch(ref Geometry g, ref const DataChunk data)
     {
         g.dataIndices.resize(g.positions.length, cast(ushort)dataStore.length);
+        dataStore ~= data;
+        advanceDepth();
+    }
+
+    void doneTexturedBatch(ref Geometry g, ref const DataChunk data)
+    {
+        g.dataIndices_textured.resize(g.positions_textured.length, cast(ushort)dataStore.length);
         dataStore ~= data;
         advanceDepth();
     }
@@ -1140,7 +1180,7 @@ private:
         layer.depth *= 0.999f;
     }
 
-    DataChunk prepareDataChunk(const Mat2x3* m = null, Color c = Color.transparent)
+    DataChunk prepareDataChunk(const Mat2x3* m, float opacity)
     {
         // dfmt off
         return DataChunk(
@@ -1148,7 +1188,7 @@ private:
             layer.depth,
             0,
             Rect.from(st.clipRect),
-            ColorF(c).premultiplied,
+            ColorF(0, 0, 0, opacity),
         );
         // dfmt on
     }
@@ -1163,35 +1203,35 @@ private:
         final switch (br.type) with (BrushType)
         {
         case solid:
-            return convertSolid(br.solid, br.opacity, params, data);
+            return convertSolid(br.solid, params, data);
         case linear:
-            return convertLinear(br.linear, br.opacity, params, data);
+            return convertLinear(br.linear, params, data);
         case radial:
-            return convertRadial(br.radial, br.opacity, params, data);
+            return convertRadial(br.radial, params, data);
         case pattern:
-            return convertPattern(br.pattern, br.opacity, params, data);
+            return convertPattern(br.pattern, params, data);
         }
     }
 
-    bool convertSolid(Color cu, float opacity, ref ShParams params, ref DataChunk data)
+    bool convertSolid(Color cu, ref ShParams params, ref DataChunk data)
     {
         ColorF c = cu;
-        c.a *= opacity;
+        c.a *= data.color.a; // opacity was stored here
         data.color = c.premultiplied;
         params.kind = PaintKind.solid;
         return true;
     }
 
-    bool convertLinear(ref const LinearGradient grad, float opacity, ref ShParams params, ref DataChunk data)
+    bool convertLinear(ref const LinearGradient grad, ref ShParams params, ref DataChunk data)
     in (grad.colors.length >= 2)
     {
         const start = data.transform * grad.start;
         const end = data.transform * grad.end;
         if (fequal2(start.x, end.x) && fequal2(start.y, end.y))
-            return convertSolid(grad.colors[$ - 1], opacity, params, data);
+            return convertSolid(grad.colors[$ - 1], params, data);
 
         const count = grad.colors.length;
-        const row = ColorStopAtlasRow(grad.colors, opacity);
+        const row = ColorStopAtlasRow(grad.colors);
         const atlasIndex = colorStopAtlas.add(row);
         // dfmt off
         params.kind = PaintKind.linear;
@@ -1206,17 +1246,17 @@ private:
         return true;
     }
 
-    bool convertRadial(ref const RadialGradient grad, float opacity, ref ShParams params, ref DataChunk data)
+    bool convertRadial(ref const RadialGradient grad, ref ShParams params, ref DataChunk data)
     in (grad.colors.length >= 2)
     {
         const radius = (data.transform * Vec2(grad.radius, 0) - data.transform * Vec2(0)).length;
         if (fzero2(radius))
-            return convertSolid(grad.colors[$ - 1], opacity, params, data);
+            return convertSolid(grad.colors[$ - 1], params, data);
 
         const center = data.transform * grad.center;
 
         const count = grad.colors.length;
-        const row = ColorStopAtlasRow(grad.colors, opacity);
+        const row = ColorStopAtlasRow(grad.colors);
         const atlasIndex = colorStopAtlas.add(row);
         // dfmt off
         params.kind = PaintKind.radial;
@@ -1231,7 +1271,7 @@ private:
         return true;
     }
 
-    bool convertPattern(ref const ImagePattern pat, float opacity, ref ShParams params, ref DataChunk data)
+    bool convertPattern(ref const ImagePattern pat, ref ShParams params, ref DataChunk data)
     in (pat.image)
     {
         const TextureView view = textureCache.getTexture(*pat.image);
@@ -1245,7 +1285,6 @@ private:
             view.texSize,
             view.box,
             (data.transform * pat.transform).inverted,
-            opacity,
         );
         // dfmt on
         return true;

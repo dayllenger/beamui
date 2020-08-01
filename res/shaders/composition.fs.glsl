@@ -1,8 +1,8 @@
 in vec2 texCoord;
+flat in float opacity;
 out vec4 f_color;
 
 uniform sampler2D tex;
-uniform float opacity;
 
 void main()
 {

@@ -126,7 +126,6 @@ struct ComposeCmd
 {
     ushort dataIndex;
     Span triangles;
-    float opacity = 0;
     CompositeOperation composition;
     BlendMode blending;
 }
@@ -143,6 +142,7 @@ struct Layer
     float depth = 1;
     ColorF fill;
 
+    float opacity = 1;
     ComposeCmd cmd;
 
     bool empty() const nothrow
@@ -423,7 +423,7 @@ nothrow:
                 RenderTarget* rtCompose = &targets[set.layerToCompose];
                 if (!rtCompose.empty)
                 {
-                    const params = ParamsComposition(rtCompose.tex, rtCompose.box, lrCompose.cmd.opacity);
+                    const params = ParamsComposition(rtCompose.tex, rtCompose.box);
                     compose(lrCompose.cmd, pbase, params);
                     rtpool.remove(rtCompose.id);
                     *rtCompose = RenderTarget.init;

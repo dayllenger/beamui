@@ -1,3 +1,4 @@
+flat in float opacity;
 out vec4 f_color;
 
 uniform int viewportHeight;
@@ -6,7 +7,6 @@ uniform vec2 position; // 0 .. 1
 uniform vec2 size;     // 0 .. 1
 uniform ivec2 imgSize;
 uniform mat3x2 matrix;
-uniform float opacity;
 
 void main()
 {

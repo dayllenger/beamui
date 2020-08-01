@@ -18,6 +18,8 @@ uniform vec2 texPixelSize;
 
 #ifdef DATA_COLOR
 flat out vec4 brushColor;
+#else
+flat out float opacity;
 #endif
 
 #ifdef COMPOSITION
@@ -41,6 +43,8 @@ void main()
     fetchData(int(v_dataIndex), transform, depth, clip, color);
 #ifdef DATA_COLOR
     brushColor = color;
+#else
+    opacity = color.a;
 #endif
 
 #ifdef TILED_STROKE

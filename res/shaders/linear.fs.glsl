@@ -1,3 +1,4 @@
+flat in float opacity;
 out vec4 f_color;
 
 #define MAX_STOPS 16
@@ -22,5 +23,6 @@ void main()
     const float offset = calc_offset(fraction);
 
     float u = offset / MAX_STOPS + 0.5 / MAX_STOPS;
-    f_color = texture(colors, vec2(u, (float(atlasIndex) + 0.5) * ROW_SIZE));
+    float v = (float(atlasIndex) + 0.5) * ROW_SIZE;
+    f_color = texture(colors, vec2(u, v)) * opacity;
 }

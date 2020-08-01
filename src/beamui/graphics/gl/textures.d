@@ -14,7 +14,7 @@ static if (USE_OPENGL):
 // dfmt on
 import beamui.core.collections : Buf;
 import beamui.core.geometry : BoxI, SizeI;
-import beamui.core.math : max;
+import beamui.core.math;
 import beamui.graphics.atlas;
 import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.colors : Color;
@@ -297,15 +297,12 @@ struct ColorStopAtlasRow
     private Color[MAX_STOPS] colors;
     private uint length;
 
-    this(const Color[] cs, float opacity) nothrow
+    this(const Color[] cs) nothrow
     in (cs.length >= 2)
-    in (0 < opacity && opacity <= 1)
     {
-        length = cs.length < MAX_STOPS ? cast(uint)cs.length : MAX_STOPS;
-        foreach (i; 0 .. length)
+        length = cast(uint)min(cs.length, MAX_STOPS);
+        foreach (i, c; cs[0 .. length])
         {
-            Color c = cs[i];
-            c.a = cast(ubyte)(cs[i].a * opacity);
             colors[i] = c.premultiplied;
         }
     }

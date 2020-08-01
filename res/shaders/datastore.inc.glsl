@@ -10,9 +10,7 @@ void fetchData(in int index, out mat3 transform, out float depth, out vec4 clip,
     const vec4 data1 = texelFetch(dataStore, ivec2(u * DATA_TEXELS_IN_CHUNK    , v), 0);
     const vec4 data2 = texelFetch(dataStore, ivec2(u * DATA_TEXELS_IN_CHUNK + 1, v), 0);
     clip = texelFetch(dataStore, ivec2(u * DATA_TEXELS_IN_CHUNK + 2, v), 0);
-#ifdef DATA_COLOR
     color = texelFetch(dataStore, ivec2(u * DATA_TEXELS_IN_CHUNK + 3, v), 0);
-#endif
 
     // (a b c) (d e f) =>
     // (a) (d)    (a) (b) (c)

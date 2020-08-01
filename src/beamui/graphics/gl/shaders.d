@@ -107,7 +107,6 @@ struct ParamsPattern
     const(SizeI)* texSize;
     BoxI patRect;
     Mat2x3 matrix;
-    float opacity = 0;
 }
 
 struct ParamsTiled
@@ -119,7 +118,6 @@ struct ParamsImage
 {
     const(TexId)* tex;
     const(SizeI)* texSize;
-    float opacity = 0;
 }
 
 struct ParamsText
@@ -132,7 +130,6 @@ struct ParamsComposition
 {
     TexId tex;
     BoxI box;
-    float opacity = 0;
 }
 
 struct ParamsGPAA
@@ -345,7 +342,6 @@ nothrow:
         glUniform2f(loc.size, w, h);
         glUniform2i(loc.imgSize, b.w, b.h);
         glUniformMatrix3x2fv(loc.matrix, 1, GL_TRUE, p.matrix.ptr);
-        glUniform1f(loc.opacity, p.opacity);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
         Tex2D.setup(*p.tex, SamplerIndex.texture);
@@ -353,7 +349,7 @@ nothrow:
 
     // dfmt off
     private Locations!([
-        "viewportHeight", "tex", "position", "size", "imgSize", "matrix", "opacity"
+        "viewportHeight", "tex", "position", "size", "imgSize", "matrix"
     ]) loc;
     // dfmt on
 }
@@ -426,13 +422,12 @@ nothrow:
     {
         super.prepare(pbase);
         glUniform2f(loc.texPixelSize, 1.0f / p.texSize.w, 1.0f / p.texSize.h);
-        glUniform1f(loc.opacity, p.opacity);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
         Tex2D.setup(*p.tex, SamplerIndex.texture);
     }
 
-    private Locations!(["texPixelSize", "tex", "opacity"]) loc;
+    private Locations!(["texPixelSize", "tex"]) loc;
 }
 
 final class ShaderText : ShaderBase
@@ -492,13 +487,12 @@ nothrow:
         super.prepare(pbase);
         glUniform1i(loc.texHeight, p.box.h);
         glUniform2i(loc.texPos, p.box.x, p.box.y);
-        glUniform1f(loc.opacity, p.opacity);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
         Tex2D.setup(p.tex, SamplerIndex.texture);
     }
 
-    private Locations!(["tex", "opacity", "texHeight", "texPos"]) loc;
+    private Locations!(["tex", "texHeight", "texPos"]) loc;
 }
 
 final class ShaderBlend : ShaderBase
@@ -523,13 +517,12 @@ nothrow:
         super.prepare(pbase);
         glUniform1i(loc.texHeight, p.box.h);
         glUniform2i(loc.texPos, p.box.x, p.box.y);
-        glUniform1f(loc.opacity, p.opacity);
 
         glUniform1i(loc.tex, SamplerIndex.texture);
         Tex2D.setup(p.tex, SamplerIndex.texture);
     }
 
-    private Locations!(["tex", "opacity", "texHeight", "texPos"]) loc;
+    private Locations!(["tex", "texHeight", "texPos"]) loc;
 }
 
 final class ShaderGPAA : GLProgram
