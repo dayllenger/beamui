@@ -392,7 +392,6 @@ final class Painter
         sv.painter = this;
         sv.depth = mainStack.length;
         mainStack ~= state;
-        layerBounds ~= MIN_RECT_I;
 
         // on certain modes we cannot skip transparent geometry and also must use a full-sized layer
         bool transparentPartsMatter;
@@ -417,18 +416,10 @@ final class Painter
                 return;
         }
 
-        // shift coordinates to the left-top corner of the clipping rectangle
-        const BoxI clip = state.clipRect;
-        assert(!clip.empty);
-        state.clipRect.translate(-clip.x, -clip.y);
-        state.mat = Mat2x3.translation(Vec2(-clip.x, -clip.y)) * state.mat;
-
-        if (transparentPartsMatter)
-            layerBounds.unsafe_ref(-1) = state.clipRect;
-
         mainStack.unsafe_ref(-1).layer = true;
         state.passTransparent = transparentPartsMatter; // doesn't propagate to sub-layers
-        engine.beginLayer(clip, op);
+        layerBounds ~= transparentPartsMatter ? state.clipRect : MIN_RECT_I;
+        engine.beginLayer(op);
     }
 
     private void discardSubsequent()
@@ -452,7 +443,6 @@ final class Painter
                     engine.composeLayer(bounds);
                     layerBounds.shrink(1);
                     // parent layer should have at least that size
-                    bounds.translate(state.clipRect.left, state.clipRect.top);
                     layerBounds.unsafe_ref(-1).include(bounds);
 
                     state.layer = false;
@@ -1050,7 +1040,7 @@ protected:
     void end();
     void paint();
 
-    void beginLayer(BoxI, LayerOp);
+    void beginLayer(LayerOp);
     void composeLayer(RectI);
 
     void clipOut(uint, const SubPath[], FillRule, bool complement);

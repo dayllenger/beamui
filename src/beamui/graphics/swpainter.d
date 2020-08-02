@@ -38,7 +38,7 @@ public final class SWPaintEngine : PaintEngine
         struct Layer
         {
             PM_ImageView img;
-            BoxI box; /// Layer-relative
+            BoxI box; /// Screen-relative
             LayerOp op;
         }
 
@@ -46,8 +46,7 @@ public final class SWPaintEngine : PaintEngine
         MaskPool maskPool;
 
         Bitmap* backbuf;
-        PM_Image base_layer;
-        PM_ImageView layer; // points either to base_layer or to some layer img in the stack
+        PM_ImageView layer; // points to some layer `img` in the stack
         Buf!Layer layerStack;
 
         FlatteningContourIter strokeIter;
@@ -91,14 +90,17 @@ protected:
     {
         backbuf.resize(conf.ddpSize.w, conf.ddpSize.h);
         backbuf.fill(conf.background);
-        base_layer = PM_Image.fromBitmap(*backbuf, Repeat.no, Filtering.no);
-        layer = base_layer.view;
+
+        auto baseLayer = PM_Image.fromBitmap(*backbuf, Repeat.no, Filtering.no);
+        layer = baseLayer.view;
+        baseLayer.view.handle = null;
+
+        layerStack ~= Layer(layer, BoxI(0, 0, conf.ddpSize.w, conf.ddpSize.h));
     }
 
     override void end()
     {
-        foreach (layer; layerStack.unsafe_slice)
-            pixman_image_unref(layer.img);
+        assert(layerStack.length == 1);
         layerStack.clear();
     }
 
@@ -106,17 +108,17 @@ protected:
     {
     }
 
-    override void beginLayer(BoxI clip, LayerOp op)
+    override void beginLayer(LayerOp op)
     {
-        layer = layerPool.take(clip.size);
-        layerStack ~= Layer(layer, clip, op);
+        layer = layerPool.take(st.clipRect.size);
+        layerStack ~= Layer(layer, BoxI(st.clipRect), op);
     }
 
     override void composeLayer(RectI bounds)
     {
         Layer src = layerStack.unsafe_ref(-1);
         layerStack.shrink(1);
-        PM_ImageView dst_img = layerStack.length > 0 ? layerStack.unsafe_ref(-1).img : base_layer.view;
+        PM_ImageView dst_img = layerStack.unsafe_ref(-1).img;
         scope (exit)
         {
             pixman_image_unref(src.img);
@@ -127,6 +129,7 @@ protected:
         if (!mask_img)
             return;
 
+        const offset = layerStack[$ - 1].box.pos;
         const bool w3c = src.op.blending != BlendMode.normal;
         const operator = w3c ? pm_op(src.op.blending) : pm_op(src.op.composition);
         // dfmt off
@@ -135,10 +138,25 @@ protected:
             src.img, mask_img, dst_img,
             0, 0,
             0, 0,
-            src.box.x, src.box.y,
+            src.box.x - offset.x, src.box.y - offset.y,
             src.box.w, src.box.h,
         );
         // dfmt on
+    }
+
+    private BoxI relativeToLayer(RectI clip) const
+    {
+        const offset = layerStack[$ - 1].box.pos;
+        BoxI box = clip;
+        box.x -= offset.x;
+        box.y -= offset.y;
+        return box;
+    }
+
+    private Mat2x3 relativeToLayer(ref const Mat2x3 m) const
+    {
+        const offset = layerStack[$ - 1].box.pos;
+        return Mat2x3.translation(Vec2(-offset.x, -offset.y)) * m;
     }
 
     override void clipOut(uint index, const SubPath[] list, FillRule rule, bool complement)
@@ -151,8 +169,8 @@ protected:
 
     override void paintOut(ref const Brush br)
     {
-        Mat2x3 mat = st.mat;
-        BoxI clip = st.clipRect;
+        Mat2x3 mat = relativeToLayer(st.mat);
+        BoxI clip = relativeToLayer(st.clipRect);
         assert(!clip.empty);
 
         paintUsingBrush(br, clip, mat, (Plotter plotter) {
@@ -166,8 +184,8 @@ protected:
 
     override void fillPath(const SubPath[] list, ref const Brush br, FillRule rule)
     {
-        BoxI clip = geometryBBox.screen;
-        Mat2x3 mat = st.mat;
+        BoxI clip = relativeToLayer(geometryBBox.screen);
+        Mat2x3 mat = relativeToLayer(st.mat);
 
         paintUsingBrush(br, clip, mat, (Plotter plotter) {
             const fillRule = rule == FillRule.nonzero ? RastFillRule.nonzero : RastFillRule.odd;
@@ -216,8 +234,8 @@ protected:
 
     private void strokeThickPath(const SubPath[] list, ref const Brush br, ref const Pen pen)
     {
-        BoxI clip = geometryBBox.screen;
-        Mat2x3 mat = st.mat;
+        BoxI clip = relativeToLayer(geometryBBox.screen);
+        Mat2x3 mat = relativeToLayer(st.mat);
 
         paintUsingBrush(br, clip, mat, (Plotter plotter) {
             bufVerts.clear();
@@ -241,8 +259,8 @@ protected:
 
     private void strokeHairlinePath(const SubPath[] list, ref const Brush br)
     {
-        BoxI clip = st.clipRect;
-        Mat2x3 mat = st.mat;
+        BoxI clip = relativeToLayer(st.clipRect);
+        Mat2x3 mat = relativeToLayer(st.mat);
         mat.translate(Vec2(-0.5f, -0.5f));
 
         paintUsingBrush(br, clip, mat, (Plotter plotter) {
@@ -353,8 +371,8 @@ protected:
         if (!src_img)
             return;
 
-        const BoxI clip = geometryBBox.screen;
-        Mat2x3 mat = st.mat;
+        const BoxI clip = relativeToLayer(geometryBBox.screen);
+        Mat2x3 mat = relativeToLayer(st.mat);
         mat.translate(pos).invert().translate(Vec2(clip.x, clip.y));
         src_img.setTransform(mat);
         // dfmt off
@@ -390,8 +408,8 @@ protected:
 
         drawNinePatchImpl(src_img, tmp_img, info);
 
-        const BoxI clip = geometryBBox.screen;
-        Mat2x3 mat = st.mat;
+        const BoxI clip = relativeToLayer(geometryBBox.screen);
+        Mat2x3 mat = relativeToLayer(st.mat);
         mat.translate(rect.topLeft).invert().translate(Vec2(clip.x, clip.y));
         tmp_img.setTransform(mat);
         // dfmt off
@@ -508,8 +526,8 @@ protected:
 
         blitGlyphs(run, mask_img.getData!ubyte(), mask_img.getStride(), untrBounds.x, untrBounds.y);
 
-        const BoxI clip = geometryBBox.screen;
-        Mat2x3 mat = st.mat;
+        const BoxI clip = relativeToLayer(geometryBBox.screen);
+        Mat2x3 mat = relativeToLayer(st.mat);
         mat.translate(Vec2(untrBounds.x, untrBounds.y)).invert();
         mask_img.setTransform(mat);
         // dfmt off

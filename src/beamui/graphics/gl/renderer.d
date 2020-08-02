@@ -70,7 +70,6 @@ struct Batch
 
 struct BatchCommon
 {
-    RectI clip;
     ShParams params;
     Span triangles;
 }
@@ -136,8 +135,7 @@ struct RenderLayer
     uint index;
     uint parent;
 
-    RectI clip;
-    RectI bounds = MIN_RECT_I; /// Relative to `clip`, i.e. "to itself"
+    RectI bounds = MIN_RECT_I;
     ColorF fill;
 
     ComposeCmd cmd;
@@ -375,7 +373,7 @@ nothrow:
         RenderTarget[] targets = new RenderTarget[lists.layers.length];
         bool[] dirty = new bool[lists.layers.length];
 
-        targets[0].box = BoxI(lists.layers[0].clip);
+        targets[0].box = BoxI(lists.layers[0].bounds);
         dirty[] = true;
 
         foreach (i, ref set; lists.sets)

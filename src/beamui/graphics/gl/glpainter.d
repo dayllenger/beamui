@@ -42,7 +42,6 @@ private nothrow:
 /*
 Notes:
 - this module doesn't call GL at all
-- all matrices and boxes are local to the containing layer, if not stated otherwise
 - all source and destination pixels are premultiplied, if not stated otherwise
 */
 
@@ -192,7 +191,7 @@ protected:
         gpaaPool.reset();
 
         Layer lr;
-        lr.clip = lr.bounds = RectI(0, 0, conf.ddpSize.w, conf.ddpSize.h);
+        lr.bounds = RectI(0, 0, conf.ddpSize.w, conf.ddpSize.h);
         lr.fill = ColorF(conf.background);
         lr.gpaa = gpaaPool.getFree();
         layers ~= lr;
@@ -314,11 +313,6 @@ protected:
                     }
                 }
             }
-            // adjust final layer coordinates
-            const RectI parentBounds = layers[lr.parent].bounds;
-            const xshift = lr.clip.left + lr.bounds.left - parentBounds.left;
-            const yshift = lr.clip.top + lr.bounds.top - parentBounds.top;
-            dataStore.unsafe_ref(lr.cmd.dataIndex).transform = Mat2x3.translation(Vec2(xshift, yshift));
         }
         // at this point, all sub-layers of empty layers are empty too
         foreach (ref Set set; sets.unsafe_slice)
@@ -386,13 +380,12 @@ protected:
         }
     }
 
-    override void beginLayer(BoxI clip, LayerOp op)
+    override void beginLayer(LayerOp op)
     {
         Layer lr;
         lr.index = layers.length;
         lr.parent = layer.index;
         lr.sets.start = sets.length;
-        lr.clip = RectI(clip);
         lr.depth = layer.depth;
         lr.opacity = op.opacity;
         lr.cmd.composition = getBlendFactors(op.composition);
@@ -405,15 +398,17 @@ protected:
 
     override void composeLayer(RectI bounds)
     {
+        const opacity = layer.opacity;
         layer.bounds = bounds;
         layer.sets.end = sets.length;
         layer.cmd.dataIndex = cast(ushort)dataStore.length;
-        const opacity = layer.opacity;
+
         // setup the parent layer back
         sets ~= makeSet(layer.parent, layer.index);
         layer = &layers.unsafe_ref(layer.parent);
-        // create an empty data chunk with the parent layer current depth
-        const Mat2x3 mat;
+
+        // create a data chunk with the parent layer current depth
+        const mat = Mat2x3.translation(Vec2(bounds.left, bounds.top));
         dataStore ~= prepareDataChunk(&mat, opacity);
         advanceDepth();
     }
@@ -458,7 +453,7 @@ protected:
 
     override void paintOut(ref const Brush br)
     {
-        const r = layer.clip;
+        const r = st.clipRect;
         // dfmt off
         const Vec2[4] vs = [
             Vec2(r.left, r.top),
@@ -473,7 +468,7 @@ protected:
         g.positions ~= vs[];
         addStrip(g.triangles, v, 4);
 
-        if (simple(t, r, &br))
+        if (simple(t, &br))
         {
             dataStore.unsafe_ref(-1).transform = Mat2x3.identity;
         }
@@ -590,7 +585,7 @@ protected:
             const mat = pen.shouldScale ? st.mat : Mat2x3.identity;
             if (br.isOpaque || trivial)
             {
-                simple(t, geometryBBox.screen, &br, &mat);
+                simple(t, &br, &mat);
             }
             else
             {
@@ -650,7 +645,6 @@ protected:
 
         if (Batch* similar = hasSimilarImageBatch(view.tex, false))
         {
-            similar.common.clip.include(geometryBBox.screen);
             similar.common.triangles.end = g.triangles.length;
         }
         else
@@ -661,7 +655,6 @@ protected:
 
             Batch bt;
             bt.type = BatchType.simple;
-            bt.common.clip = geometryBBox.screen;
             bt.common.params = params;
             bt.common.triangles = Span(t, g.triangles.length);
             bt.simple.hasUV = true;
@@ -765,7 +758,6 @@ protected:
 
         if (Batch* similar = hasSimilarImageBatch(view.tex, false))
         {
-            similar.common.clip.include(geometryBBox.screen);
             similar.common.triangles.end = g.triangles.length;
         }
         else
@@ -776,7 +768,6 @@ protected:
 
             Batch bt;
             bt.type = BatchType.simple;
-            bt.common.clip = geometryBBox.screen;
             bt.common.params = params;
             bt.common.triangles = Span(t, g.triangles.length);
             bt.simple.hasUV = true;
@@ -792,7 +783,6 @@ protected:
 
         Batch bt;
         bt.type = BatchType.simple;
-        bt.common.clip = geometryBBox.screen;
         bt.common.params.kind = PaintKind.text;
         bt.common.triangles = Span(g.triangles.length, g.triangles.length);
         bt.simple.hasUV = true;
@@ -816,7 +806,6 @@ protected:
             {
                 if (similar)
                 {
-                    similar.common.clip.include(geometryBBox.screen);
                     similar.common.triangles.end = g.triangles.length;
                     similar = null;
                 }
@@ -837,7 +826,6 @@ protected:
         assert(bt.common.triangles.start < g.triangles.length);
         if (similar)
         {
-            similar.common.clip.include(geometryBBox.screen);
             similar.common.triangles.end = g.triangles.length;
         }
         else
@@ -881,7 +869,6 @@ private:
             if (list[0].points.length < 3)
                 return false;
 
-            const RectI clip = geometryBBox.screen;
             const v = g.positions.length;
             const t = g.triangles.length;
             uint pcount = list[0].flatten!false(g.positions, st.mat);
@@ -901,11 +888,11 @@ private:
             // spline is convex iff hull of its control points is convex
             if (isConvex(list[0].points) && stenciling != Stenciling.zero && stenciling != Stenciling.even)
             {
-                return simple(t, clip, br);
+                return simple(t, br);
             }
             else
             {
-                return twoPass(t, stenciling, list[0].bounds, clip, br);
+                return twoPass(t, stenciling, list[0].bounds, geometryBBox.screen, br);
             }
         }
         else
@@ -947,7 +934,7 @@ private:
         return opaque ? &g_opaque : &g_transp;
     }
 
-    bool simple(uint tstart, RectI clip, const Brush* br, const Mat2x3* m = null)
+    bool simple(uint tstart, const Brush* br, const Mat2x3* m = null)
     {
         DataChunk data = prepareDataChunk(m, br ? br.opacity : 1);
         ShParams params;
@@ -959,7 +946,6 @@ private:
         // try to merge
         if (auto last = hasSimilarSimpleBatch(params.kind, opaque))
         {
-            last.common.clip.include(clip);
             assert(last.common.triangles.end == tstart);
             last.common.triangles.end = g.triangles.length;
         }
@@ -967,7 +953,6 @@ private:
         {
             Batch bt;
             bt.type = BatchType.simple;
-            bt.common.clip = clip;
             bt.common.params = params;
             bt.common.triangles = Span(tstart, g.triangles.length);
             g.batches ~= bt;
@@ -998,7 +983,6 @@ private:
         // try to merge
         if (auto last = hasSimilarTwoPassBatch(params.kind, opaque, stenciling, clip))
         {
-            last.common.clip.include(clip);
             assert(last.common.triangles.end == tstart);
             last.common.triangles.end = g.triangles.length;
             last.twopass.covers.end++;
@@ -1007,7 +991,6 @@ private:
         {
             Batch bt;
             bt.type = BatchType.twopass;
-            bt.common.clip = clip;
             bt.common.params = params;
             bt.common.triangles = Span(tstart, g.triangles.length);
             bt.twopass.covers = Span(coverIdx, coverIdx + 1);
