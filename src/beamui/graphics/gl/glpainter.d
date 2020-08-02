@@ -283,48 +283,15 @@ protected:
         list[$ - 1].b_opaque.end = g_opaque.batches.length;
         list[$ - 1].b_transp.end = g_transp.batches.length;
         list[$ - 1].dataChunks.end = dataStore.length;
+        list[$ - 1].finishing = true;
     }
 
     private void prepareLayers()
     in (layers.length)
     {
         if (layers.length == 1)
-        {
-            sets.unsafe_ref(-1).finishing = true;
             return;
-        }
 
-        // compute optimal layer boundaries on screen, starting from leafs
-        foreach_reverse (ref Layer lr; layers.unsafe_slice[1 .. $])
-        {
-            foreach (i, ref set; sets[][lr.sets.start .. lr.sets.end])
-            {
-                if (set.layer == lr.index)
-                {
-                    foreach (ref bt; g_opaque.batches.unsafe_slice[set.b_opaque.start .. set.b_opaque.end])
-                        lr.bounds.include(bt.common.clip);
-                    foreach (ref bt; g_transp.batches.unsafe_slice[set.b_transp.start .. set.b_transp.end])
-                        lr.bounds.include(bt.common.clip);
-                }
-            }
-            RectI clip = lr.clip;
-            clip.translate(-clip.left, -clip.top);
-            if (lr.bounds.intersect(clip))
-            {
-                // parent layer should have at least that size
-                Layer* parent = &layers.unsafe_ref(lr.parent);
-                RectI r = lr.bounds;
-                r.translate(lr.clip.left, lr.clip.top);
-                parent.bounds.include(r);
-            }
-        }
-        // reset for the main layer
-        {
-            Layer* main = &layers.unsafe_ref(0);
-            main.bounds = RectI(0, 0, main.clip.width, main.clip.height);
-            sets.unsafe_ref(main.sets.end - 1).finishing = true;
-        }
-        // do other job, iterating in straight order
         foreach (ref Layer lr; layers.unsafe_slice[1 .. $])
         {
             if (lr.empty)
@@ -419,15 +386,13 @@ protected:
         }
     }
 
-    override void beginLayer(BoxI clip, bool expand, LayerOp op)
+    override void beginLayer(BoxI clip, LayerOp op)
     {
         Layer lr;
         lr.index = layers.length;
         lr.parent = layer.index;
         lr.sets.start = sets.length;
         lr.clip = RectI(clip);
-        if (expand)
-            lr.bounds = RectI(0, 0, clip.w, clip.h);
         lr.depth = layer.depth;
         lr.opacity = op.opacity;
         lr.cmd.composition = getBlendFactors(op.composition);
@@ -438,8 +403,9 @@ protected:
         sets ~= makeSet(lr.index);
     }
 
-    override void composeLayer()
+    override void composeLayer(RectI bounds)
     {
+        layer.bounds = bounds;
         layer.sets.end = sets.length;
         layer.cmd.dataIndex = cast(ushort)dataStore.length;
         const opacity = layer.opacity;

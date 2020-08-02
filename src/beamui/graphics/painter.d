@@ -57,6 +57,8 @@ final class Painter
 
         Buf!SubPath bufContours;
         Path tempPath;
+
+        Buf!RectI layerBounds;
     }
 
     this(ref PainterHead head)
@@ -390,6 +392,7 @@ final class Painter
         sv.painter = this;
         sv.depth = mainStack.length;
         mainStack ~= state;
+        layerBounds ~= MIN_RECT_I;
 
         // on certain modes we cannot skip transparent geometry and also must use a full-sized layer
         bool transparentPartsMatter;
@@ -420,9 +423,12 @@ final class Painter
         state.clipRect.translate(-clip.x, -clip.y);
         state.mat = Mat2x3.translation(Vec2(-clip.x, -clip.y)) * state.mat;
 
+        if (transparentPartsMatter)
+            layerBounds.unsafe_ref(-1) = state.clipRect;
+
         mainStack.unsafe_ref(-1).layer = true;
         state.passTransparent = transparentPartsMatter; // doesn't propagate to sub-layers
-        engine.beginLayer(clip, transparentPartsMatter, op);
+        engine.beginLayer(clip, op);
     }
 
     private void discardSubsequent()
@@ -442,7 +448,13 @@ final class Painter
 
                 if (state.layer)
                 {
-                    engine.composeLayer();
+                    RectI bounds = layerBounds[$ - 1];
+                    engine.composeLayer(bounds);
+                    layerBounds.shrink(1);
+                    // parent layer should have at least that size
+                    bounds.translate(state.clipRect.left, state.clipRect.top);
+                    layerBounds.unsafe_ref(-1).include(bounds);
+
                     state.layer = false;
                 }
             }
@@ -462,6 +474,7 @@ final class Painter
         if (!state.passTransparent && brush.isFullyTransparent)
             return;
 
+        layerBounds.unsafe_ref(-1).include(state.clipRect);
         engine.paintOut(brush);
     }
 
@@ -579,6 +592,8 @@ final class Painter
         if (bounds.top > bounds.bottom)
             swap(bounds.top, bounds.bottom);
 
+        layerBounds.unsafe_ref(-1).include(clip);
+
         const Path.Command[1] cmds = Path.Command.lineTo;
         const Vec2[2] ps = [Vec2(x0, y0), Vec2(x1, y1)];
         const subpath = SubPath(cmds, ps, false, bounds);
@@ -687,6 +702,7 @@ final class Painter
         if (screen.empty)
             return;
 
+        layerBounds.unsafe_ref(-1).include(screen);
         engine.geometryBBox = PaintEngine.BBox(local, screen);
         engine.drawImage(image, Vec2(x, y), opacity);
     }
@@ -742,6 +758,7 @@ final class Painter
         correctFrameBounds(info.x1, info.x2, info.dst_x1, info.dst_x2);
         correctFrameBounds(info.y1, info.y2, info.dst_y1, info.dst_y2);
 
+        layerBounds.unsafe_ref(-1).include(screen);
         engine.geometryBBox = PaintEngine.BBox(dstRect, screen);
         engine.drawNinePatch(image, info, opacity);
     }
@@ -758,6 +775,7 @@ final class Painter
         if (screen.empty)
             return;
 
+        layerBounds.unsafe_ref(-1).include(screen);
         engine.geometryBBox = PaintEngine.BBox(local, screen);
         engine.drawText(run, color);
     }
@@ -806,6 +824,7 @@ final class Painter
             }
         }
         // dfmt on
+        layerBounds.unsafe_ref(-1).include(bbox.screen);
         engine.geometryBBox = bbox;
         return bufContours.length > 0;
     }
@@ -879,6 +898,8 @@ struct PainterHead
             state.mat = baseMatrix = Mat2x3.scaling(Vec2(ddpSize.w / dipSize.w, ddpSize.h / dipSize.h));
             mainStack.clear();
             bufContours.clear();
+            layerBounds.clear();
+            layerBounds ~= MIN_RECT_I;
             engine.st = &state;
             engine.begin(PaintEngine.FrameConfig(dipSize, ddpSize, background));
         }
@@ -1029,8 +1050,8 @@ protected:
     void end();
     void paint();
 
-    void beginLayer(BoxI, bool expand, LayerOp);
-    void composeLayer();
+    void beginLayer(BoxI, LayerOp);
+    void composeLayer(RectI);
 
     void clipOut(uint, const SubPath[], FillRule, bool complement);
     void restore(uint);

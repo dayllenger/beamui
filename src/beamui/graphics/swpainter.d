@@ -106,13 +106,13 @@ protected:
     {
     }
 
-    override void beginLayer(BoxI clip, bool expand, LayerOp op)
+    override void beginLayer(BoxI clip, LayerOp op)
     {
         layer = layerPool.take(clip.size);
         layerStack ~= Layer(layer, clip, op);
     }
 
-    override void composeLayer()
+    override void composeLayer(RectI bounds)
     {
         Layer src = layerStack.unsafe_ref(-1);
         layerStack.shrink(1);
