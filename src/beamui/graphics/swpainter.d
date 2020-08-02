@@ -25,6 +25,7 @@ import beamui.graphics.colors : Color;
 import beamui.graphics.compositing;
 import beamui.graphics.flattener;
 import beamui.graphics.painter;
+import beamui.graphics.path : SubPath;
 import beamui.graphics.polygons;
 import beamui.graphics.pen;
 import beamui.graphics.swrast;
@@ -140,7 +141,7 @@ protected:
         // dfmt on
     }
 
-    override void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
+    override void clipOut(uint index, const SubPath[] list, FillRule rule, bool complement)
     {
     }
 
@@ -163,21 +164,20 @@ protected:
         });
     }
 
-    override void fillPath(ref Contours contours, ref const Brush br, FillRule rule)
+    override void fillPath(const SubPath[] list, ref const Brush br, FillRule rule)
     {
-        const lst = contours.list;
-        BoxI clip = contours.trBounds;
+        BoxI clip = geometryBBox.screen;
         Mat2x3 mat = st.mat;
 
         paintUsingBrush(br, clip, mat, (Plotter plotter) {
             const fillRule = rule == FillRule.nonzero ? RastFillRule.nonzero : RastFillRule.odd;
             auto rparams = RastParams(st.aa, clip, fillRule);
             bufVerts.clear();
-            if (lst.length == 1)
+            if (list.length == 1)
             {
-                if (lst[0].points.length >= 3)
+                if (list[0].points.length >= 3)
                 {
-                    lst[0].flatten!true(bufVerts, mat);
+                    list[0].flatten!true(bufVerts, mat);
                     bufTraps.clear();
                     if (splitIntoTrapezoids(bufVerts[], bufTraps))
                     {
@@ -193,11 +193,11 @@ protected:
             else
             {
                 bufContours.clear();
-                foreach (ref cr; lst)
+                foreach (ref sp; list)
                 {
-                    if (cr.points.length >= 3)
+                    if (sp.points.length >= 3)
                     {
-                        bufContours ~= cr.flatten!true(bufVerts, mat);
+                        bufContours ~= sp.flatten!true(bufVerts, mat);
                     }
                 }
                 if (bufContours.length)
@@ -206,17 +206,17 @@ protected:
         });
     }
 
-    override void strokePath(ref Contours contours, ref const Brush br, ref const Pen pen, bool hairline)
+    override void strokePath(const SubPath[] list, ref const Brush br, ref const Pen pen, bool hairline)
     {
         if (hairline)
-            strokeHairlinePath(contours.list, br);
+            strokeHairlinePath(list, br);
         else
-            strokeThickPath(contours, br, pen);
+            strokeThickPath(list, br, pen);
     }
 
-    private void strokeThickPath(ref Contours contours, ref const Brush br, ref const Pen pen)
+    private void strokeThickPath(const SubPath[] list, ref const Brush br, ref const Pen pen)
     {
-        BoxI clip = contours.trBounds;
+        BoxI clip = geometryBBox.screen;
         Mat2x3 mat = st.mat;
 
         paintUsingBrush(br, clip, mat, (Plotter plotter) {
@@ -224,7 +224,7 @@ protected:
             bufContours.clear();
             {
                 // in non-scaling mode, transform contours before expanding
-                strokeIter.recharge(contours, mat, !pen.shouldScale);
+                strokeIter.recharge(list, mat, !pen.shouldScale);
                 auto builder = scoped!PolyBuilder(bufVerts, bufContours);
                 const minDist = pen.shouldScale ? getMinDistFromMatrix(mat) : 0.7f;
                 expandStrokes(strokeIter, pen, builder, minDist);
@@ -239,7 +239,7 @@ protected:
         });
     }
 
-    private void strokeHairlinePath(const Contour[] lst, ref const Brush br)
+    private void strokeHairlinePath(const SubPath[] list, ref const Brush br)
     {
         BoxI clip = st.clipRect;
         Mat2x3 mat = st.mat;
@@ -247,10 +247,10 @@ protected:
 
         paintUsingBrush(br, clip, mat, (Plotter plotter) {
             auto rparams = RastParams(st.aa, clip);
-            foreach (ref cr; lst)
+            foreach (ref sp; list)
             {
                 bufVerts.clear();
-                lst[0].flatten!true(bufVerts, mat);
+                sp.flatten!true(bufVerts, mat);
 
                 foreach (i; 1 .. bufVerts.length)
                 {
@@ -345,11 +345,6 @@ protected:
 
     override void drawImage(ref const Bitmap bmp, Vec2 pos, float opacity)
     {
-        const rect = Rect(pos.x, pos.y, pos.x + bmp.width, pos.y + bmp.height);
-        const BoxI clip = clipByRect(transformBounds(rect));
-        if (clip.empty)
-            return;
-
         PM_Image mask_img = PM_Image.fromOpacity(opacity);
         if (!mask_img)
             return;
@@ -358,6 +353,7 @@ protected:
         if (!src_img)
             return;
 
+        const BoxI clip = geometryBBox.screen;
         Mat2x3 mat = st.mat;
         mat.translate(pos).invert().translate(Vec2(clip.x, clip.y));
         src_img.setTransform(mat);
@@ -375,15 +371,11 @@ protected:
 
     override void drawNinePatch(ref const Bitmap bmp, ref const NinePatchInfo info, float opacity)
     {
-        const rect = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
-        const BoxI clip = clipByRect(transformBounds(rect));
-        if (clip.empty)
-            return;
-
         PM_Image mask_img = PM_Image.fromOpacity(opacity);
         if (!mask_img)
             return;
 
+        const rect = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
         // for proper filtering, we blit the image to a temporary layer first,
         // then compose it using the matrix
         const tmpsz = SizeI(cast(int)ceil(rect.width), cast(int)ceil(rect.height));
@@ -398,6 +390,7 @@ protected:
 
         drawNinePatchImpl(src_img, tmp_img, info);
 
+        const BoxI clip = geometryBBox.screen;
         Mat2x3 mat = st.mat;
         mat.translate(rect.topLeft).invert().translate(Vec2(clip.x, clip.y));
         tmp_img.setTransform(mat);
@@ -499,19 +492,15 @@ protected:
             return;
 
         BoxI untrBounds;
-        BoxI clip;
         {
-            const Rect r = computeTextRunBounds(run);
+            const Rect r = geometryBBox.local;
             const x = floor(r.left);
             const y = floor(r.top);
             untrBounds.x = cast(int)x;
             untrBounds.y = cast(int)y;
             untrBounds.w = cast(int)ceil(r.right - x);
             untrBounds.h = cast(int)ceil(r.bottom - y);
-            clip = clipByRect(transformBounds(r));
         }
-        if (clip.empty)
-            return;
 
         PM_Image mask_img = maskPool.take(untrBounds.size, Filtering.yes);
         if (!mask_img)
@@ -519,6 +508,7 @@ protected:
 
         blitGlyphs(run, mask_img.getData!ubyte(), mask_img.getStride(), untrBounds.x, untrBounds.y);
 
+        const BoxI clip = geometryBBox.screen;
         Mat2x3 mat = st.mat;
         mat.translate(Vec2(untrBounds.x, untrBounds.y)).invert();
         mask_img.setTransform(mat);
@@ -533,19 +523,6 @@ protected:
         );
         // dfmt on
     }
-}
-
-Rect computeTextRunBounds(const GlyphInstance[] run)
-{
-    Rect r = MIN_RECT_F;
-    foreach (ref gi; run)
-    {
-        r.left = min(r.left, gi.position.x);
-        r.top = min(r.top, gi.position.y);
-        r.right = max(r.right, gi.position.x + gi.glyph.correctedBlackBoxX);
-        r.bottom = max(r.bottom, gi.position.y + gi.glyph.blackBoxY);
-    }
-    return r;
 }
 
 void blitGlyphs(const GlyphInstance[] run, ubyte* mask, uint stride, int x_left, int y_top)

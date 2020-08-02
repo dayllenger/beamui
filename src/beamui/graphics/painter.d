@@ -8,18 +8,20 @@ Authors:   dayllenger
 module beamui.graphics.painter;
 
 import std.algorithm.mutation : swap;
-import std.math : ceil, floor, sqrt, isFinite, PI;
+import std.math : ceil, floor, isFinite, PI, sqrt;
+
 import beamui.core.collections : Buf;
 import beamui.core.geometry;
 import beamui.core.linalg;
 import beamui.core.math;
+import beamui.core.types : Tup, tup;
 import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.brush : Brush;
 import beamui.graphics.colors : Color;
 import beamui.graphics.compositing : BlendMode, CompositeMode;
 import beamui.graphics.path;
-import beamui.graphics.polygons : FillRule;
 import beamui.graphics.pen : PathIter, Pen;
+import beamui.graphics.polygons : FillRule;
 import beamui.text.glyph : GlyphRef;
 
 enum MAX_DIMENSION = 2 ^^ 14;
@@ -53,7 +55,7 @@ final class Painter
         Buf!(PaintEngine.State) mainStack;
         Mat2x3 baseMatrix;
 
-        Buf!(PaintEngine.Contour) bufContours;
+        Buf!SubPath bufContours;
         Path tempPath;
     }
 
@@ -108,8 +110,8 @@ final class Painter
             const Vec2 v2 = state.mat * lb;
             const p0 = Vec2(min(v0.x, v1.x, v2.x, v3.x), min(v0.y, v1.y, v2.y, v3.y));
             const p1 = Vec2(max(v0.x, v1.x, v2.x, v3.x), max(v0.y, v1.y, v2.y, v3.y));
-            const bbox = RectI.from(Rect(p0, p1));
-            state.clipRect.intersect(bbox);
+            const trBounds = RectI.from(Rect(p0, p1));
+            state.clipRect.intersect(trBounds);
 
             // not axis-aligned
             if (!(fequal2(v0.y, v1.y) && fequal2(v0.x, v2.x)) && !(fequal2(v0.x, v1.x) && fequal2(v0.y, v2.y)))
@@ -118,9 +120,8 @@ final class Painter
                 const Path.Command[3] cmds = Path.Command.lineTo;
                 const Vec2[4] vs = [lt, rt, rb, lb];
                 const subpath = SubPath(cmds, vs, false, rect);
-                const contour = PaintEngine.Contour(subpath, state.clipRect);
-                const contours = PaintEngine.Contours((&contour)[0 .. 1], subpath.bounds, contour.trBounds);
-                engine.clipOut(mainStack.length, contours, FillRule.nonzero, true);
+                engine.geometryBBox = PaintEngine.BBox(rect, state.clipRect);
+                engine.clipOut(mainStack.length, (&subpath)[0 .. 1], FillRule.nonzero, true);
             }
         }
         if (state.clipRect.empty)
@@ -135,13 +136,12 @@ final class Painter
         if (path.empty)
             return discardSubsequent();
 
-        const contours = prepareContours(path);
-        if (!contours)
+        if (!prepareContours(path))
             return discardSubsequent();
 
         // limit drawing to path boundaries
-        state.clipRect.intersect(contours.trBounds);
-        engine.clipOut(mainStack.length, contours, rule, true);
+        state.clipRect.intersect(engine.geometryBBox.screen);
+        engine.clipOut(mainStack.length, bufContours[], rule, true);
     }
 
     /// Remove a region, transformed by current matrix, from subsequent drawing
@@ -157,11 +157,10 @@ final class Painter
         tempPath.lineTo(r.right, r.top).lineTo(r.right, r.bottom).lineTo(r.left, r.bottom);
         tempPath.close();
 
-        const contours = prepareContours(tempPath);
-        if (!contours)
+        if (!prepareContours(tempPath))
             return;
 
-        engine.clipOut(mainStack.length, contours, FillRule.evenodd, false);
+        engine.clipOut(mainStack.length, bufContours[], FillRule.evenodd, false);
     }
     /// ditto
     void clipOut(ref const Path path, FillRule rule = FillRule.nonzero)
@@ -170,11 +169,10 @@ final class Painter
         if (path.empty || state.discard)
             return;
 
-        const contours = prepareContours(path);
-        if (!contours)
+        if (!prepareContours(path))
             return;
 
-        engine.clipOut(mainStack.length, contours, rule, false);
+        engine.clipOut(mainStack.length, bufContours[], rule, false);
     }
 
     /// Translate origin of the canvas
@@ -476,11 +474,10 @@ final class Painter
         if (!state.passTransparent && brush.isFullyTransparent)
             return;
 
-        const contours = prepareContours(path);
-        if (!contours)
+        if (!prepareContours(path))
             return;
 
-        engine.fillPath(contours, brush, rule);
+        engine.fillPath(bufContours[], brush, rule);
     }
 
     /// Stroke a path using specified brush
@@ -508,8 +505,7 @@ final class Painter
                 if (!state.passTransparent && fzero2(opacity))
                     return;
 
-                const contours = prepareContours(path, pen.width / 2);
-                if (!contours)
+                if (!prepareContours(path, pen.width / 2))
                     return;
 
                 // make a shallow copy of the brush to change its opacity
@@ -517,15 +513,14 @@ final class Painter
                 br.opacity = opacity;
                 pen.width = 1.01f / coeff;
                 const hairline = fequal2(coeffX, coeffY);
-                engine.strokePath(contours, br, pen, hairline);
+                engine.strokePath(bufContours[], br, pen, hairline);
             }
             else
             {
-                const contours = prepareContours(path, pen.width / 2);
-                if (!contours)
+                if (!prepareContours(path, pen.width / 2))
                     return;
 
-                engine.strokePath(contours, brush, pen, false);
+                engine.strokePath(bufContours[], brush, pen, false);
             }
         }
         else
@@ -539,22 +534,20 @@ final class Painter
                 if (!state.passTransparent && fzero2(opacity))
                     return;
 
-                const contours = prepareContours(path, 0, 0.5f);
-                if (!contours)
+                if (!prepareContours(path, 0, 0.5f))
                     return;
 
                 Brush br = brush;
                 br.opacity = opacity;
                 pen.width = 1;
-                engine.strokePath(contours, br, pen, true);
+                engine.strokePath(bufContours[], br, pen, true);
             }
             else
             {
-                const contours = prepareContours(path, 0, pen.width / 2);
-                if (!contours)
+                if (!prepareContours(path, 0, pen.width / 2))
                     return;
 
-                engine.strokePath(contours, brush, pen, false);
+                engine.strokePath(bufContours[], brush, pen, false);
             }
         }
     }
@@ -589,13 +582,12 @@ final class Painter
         const Path.Command[1] cmds = Path.Command.lineTo;
         const Vec2[2] ps = [Vec2(x0, y0), Vec2(x1, y1)];
         const subpath = SubPath(cmds, ps, false, bounds);
-        const contour = PaintEngine.Contour(subpath, clip);
-        const contours = PaintEngine.Contours((&contour)[0 .. 1], bounds, clip);
+        engine.geometryBBox = PaintEngine.BBox(bounds, clip);
 
         const br = Brush.fromSolid(color);
         Pen pen = Pen(1);
         pen.shouldScale = false;
-        engine.strokePath(contours, br, pen, true);
+        engine.strokePath((&subpath)[0 .. 1], br, pen, true);
     }
     /// Fill a simple axis-oriented rectangle
     void fillRect(float x, float y, float width, float height, Color color)
@@ -613,12 +605,11 @@ final class Painter
         tempPath.lineTo(x + width, y).lineTo(x + width, y + height).lineTo(x, y + height);
         tempPath.close();
 
-        const contours = prepareContours(tempPath);
-        if (!contours)
+        if (!prepareContours(tempPath))
             return;
 
         const br = Brush.fromSolid(color);
-        engine.fillPath(contours, br, FillRule.evenodd);
+        engine.fillPath(bufContours[], br, FillRule.evenodd);
     }
     /// Fill a triangle. Use it if you need to draw lone solid triangles
     void fillTriangle(Vec2 p0, Vec2 p1, Vec2 p2, Color color)
@@ -635,12 +626,11 @@ final class Painter
         tempPath.reset();
         tempPath.moveTo(p0.x, p0.y).lineTo(p1.x, p1.y).lineTo(p2.x, p2.y).close();
 
-        const contours = prepareContours(tempPath);
-        if (!contours)
+        if (!prepareContours(tempPath))
             return;
 
         const br = Brush.fromSolid(color);
-        engine.fillPath(contours, br, FillRule.evenodd);
+        engine.fillPath(bufContours[], br, FillRule.evenodd);
     }
     /// Fill a circle
     void fillCircle(float centerX, float centerY, float radius, Color color)
@@ -661,12 +651,11 @@ final class Painter
         tempPath.cubicTo(rect.left, rect.top, rect.right, rect.top, rect.right, centerY);
         tempPath.cubicTo(rect.right, rect.bottom, rect.left, rect.bottom, rect.left, centerY);
 
-        const contours = prepareContours(tempPath);
-        if (!contours)
+        if (!prepareContours(tempPath))
             return;
 
         const br = Brush.fromSolid(color);
-        engine.fillPath(contours, br, FillRule.evenodd);
+        engine.fillPath(bufContours[], br, FillRule.evenodd);
     }
 
     /// Draw an image at some position with some opacity
@@ -692,6 +681,13 @@ final class Painter
             }
             return;
         }
+
+        const local = Rect(x, y, x + w, y + h);
+        const screen = transformRectAndClip(local);
+        if (screen.empty)
+            return;
+
+        engine.geometryBBox = PaintEngine.BBox(local, screen);
         engine.drawImage(image, Vec2(x, y), opacity);
     }
 
@@ -718,6 +714,9 @@ final class Painter
             }
             return;
         }
+        const screen = transformRectAndClip(dstRect);
+        if (screen.empty)
+            return;
 
         static void correctFrameBounds(ref int a1, ref int a2, ref float b1, ref float b2)
         {
@@ -743,6 +742,7 @@ final class Painter
         correctFrameBounds(info.x1, info.x2, info.dst_x1, info.dst_x2);
         correctFrameBounds(info.y1, info.y2, info.dst_y1, info.dst_y2);
 
+        engine.geometryBBox = PaintEngine.BBox(dstRect, screen);
         engine.drawNinePatch(image, info, opacity);
     }
 
@@ -753,19 +753,26 @@ final class Painter
         if (run.length == 0 || color.isFullyTransparent || state.discard)
             return;
 
+        const local = computeTextRunBounds(run);
+        const screen = transformRectAndClip(local);
+        if (screen.empty)
+            return;
+
+        engine.geometryBBox = PaintEngine.BBox(local, screen);
         engine.drawText(run, color);
     }
 
-    private PaintEngine.Contours prepareContours(ref const Path path, float padding = 0, float trPadding = 0)
+    /// Fills `engine.geometryBBox` and `bufContours`
+    private bool prepareContours(ref const Path path, float padding = 0, float trPadding = 0)
     in (!path.empty)
     in (isFinite(padding))
     in (isFinite(trPadding))
     {
         bufContours.clear();
+        auto bbox = PaintEngine.BBox(MIN_RECT_F, MIN_RECT_I);
+
         const Mat2x3 m = state.mat;
         const RectI clip = state.clipRect;
-        Rect bounds = MIN_RECT_F;
-        RectI trBounds = MIN_RECT_I;
         // dfmt off
         foreach (ref subpath; path)
         {
@@ -792,14 +799,57 @@ final class Painter
                 );
                 if (box.intersect(clip))
                 {
-                    bufContours ~= PaintEngine.Contour(subpath, box);
-                    bounds.include(r);
-                    trBounds.include(box);
+                    bufContours ~= subpath;
+                    bbox.local.include(r);
+                    bbox.screen.include(box);
                 }
             }
         }
         // dfmt on
-        return PaintEngine.Contours(bufContours[], bounds, trBounds);
+        engine.geometryBBox = bbox;
+        return bufContours.length > 0;
+    }
+
+    private RectI transformRectAndClip(Rect untr)
+    {
+        const Mat2x3 m = state.mat;
+        const Vec2 v0 = m * Vec2(untr.left, untr.top);
+        const Vec2 v1 = m * Vec2(untr.right, untr.top);
+        const Vec2 v2 = m * Vec2(untr.left, untr.bottom);
+        const Vec2 v3 = m * Vec2(untr.right, untr.bottom);
+        // dfmt off
+        const tr = Rect(
+            min(v0.x, v1.x, v2.x, v3.x),
+            min(v0.y, v1.y, v2.y, v3.y),
+            max(v0.x, v1.x, v2.x, v3.x),
+            max(v0.y, v1.y, v2.y, v3.y),
+        );
+        // dfmt on
+        if (fzero2(tr.width) || fzero2(tr.height))
+            return RectI.init;
+        // dfmt off
+        RectI box = RectI(
+            cast(int)floor(tr.left),
+            cast(int)floor(tr.top),
+            cast(int)ceil(tr.right),
+            cast(int)ceil(tr.bottom),
+        );
+        // dfmt on
+        box.intersect(state.clipRect);
+        return box;
+    }
+
+    static private Rect computeTextRunBounds(const GlyphInstance[] run)
+    {
+        Rect r = MIN_RECT_F;
+        foreach (ref gi; run)
+        {
+            r.left = min(r.left, gi.position.x);
+            r.top = min(r.top, gi.position.y);
+            r.right = max(r.right, gi.position.x + gi.glyph.correctedBlackBoxX);
+            r.bottom = max(r.bottom, gi.position.y + gi.glyph.blackBoxY);
+        }
+        return r;
     }
 }
 
@@ -914,6 +964,12 @@ protected:
         bool passTransparent;
     }
 
+    struct BBox
+    {
+        Rect local;
+        RectI screen;
+    }
+
     struct LayerOp
     {
         float opacity = 1;
@@ -921,38 +977,19 @@ protected:
         BlendMode blending = BlendMode.normal;
     }
 
-    struct Contour
-    {
-        SubPath subpath;
-        RectI trBounds;
-        alias subpath this;
-    }
-
-    const struct Contours
-    {
-        Contour[] list;
-        Rect bounds;
-        RectI trBounds;
-
-        bool opCast(To : bool)() const
-        {
-            return list.length > 0;
-        }
-    }
-
     static class FlatteningContourIter : PathIter
     {
         private
         {
-            const(Contour)[] list;
+            const(SubPath)[] list;
             Mat2x3 mat;
             bool transform;
             Buf!Vec2 buf;
         }
 
-        void recharge(ref Contours contours, ref const Mat2x3 mat, bool transform)
+        void recharge(const SubPath[] contours, ref const Mat2x3 mat, bool transform)
         {
-            list = contours.list;
+            list = contours;
             this.mat = mat;
             this.transform = transform;
         }
@@ -964,12 +1001,12 @@ protected:
             {
                 buf.clear();
                 if (transform)
-                    list[0].subpath.flatten!true(buf, mat);
+                    list[0].flatten!true(buf, mat);
                 else
-                    list[0].subpath.flatten!false(buf, mat);
+                    list[0].flatten!false(buf, mat);
 
                 points = buf[];
-                closed = list[0].subpath.closed;
+                closed = list[0].closed;
                 list = list[1 .. $];
             }
             return hasElements;
@@ -984,7 +1021,9 @@ protected:
         float dst_y0, dst_y1, dst_y2, dst_y3;
     }
 
+    // temporary state, just to use less parameters in methods
     const(State)* st;
+    BBox geometryBBox;
 
     void begin(FrameConfig);
     void end();
@@ -993,49 +1032,14 @@ protected:
     void beginLayer(BoxI, bool expand, LayerOp);
     void composeLayer();
 
-    void clipOut(uint, ref Contours, FillRule, bool complement);
+    void clipOut(uint, const SubPath[], FillRule, bool complement);
     void restore(uint);
 
     void paintOut(ref const Brush);
-    void fillPath(ref Contours, ref const Brush, FillRule);
-    void strokePath(ref Contours, ref const Brush, ref const Pen, bool hairline);
+    void fillPath(const SubPath[], ref const Brush, FillRule);
+    void strokePath(const SubPath[], ref const Brush, ref const Pen, bool hairline);
 
     void drawImage(ref const Bitmap, Vec2, float);
     void drawNinePatch(ref const Bitmap, ref const NinePatchInfo, float);
     void drawText(const GlyphInstance[], Color);
-
-    final Rect transformBounds(Rect untr) nothrow
-    {
-        const Mat2x3 m = st.mat;
-        const Vec2 v0 = m * Vec2(untr.left, untr.top);
-        const Vec2 v1 = m * Vec2(untr.right, untr.top);
-        const Vec2 v2 = m * Vec2(untr.left, untr.bottom);
-        const Vec2 v3 = m * Vec2(untr.right, untr.bottom);
-        // dfmt off
-        Rect bbox = Rect(
-            min(v0.x, v1.x, v2.x, v3.x),
-            min(v0.y, v1.y, v2.y, v3.y),
-            max(v0.x, v1.x, v2.x, v3.x),
-            max(v0.y, v1.y, v2.y, v3.y),
-        );
-        // dfmt on
-        return bbox;
-    }
-
-    final BoxI clipByRect(Rect tr) nothrow
-    {
-        if (fzero2(tr.width) || fzero2(tr.height))
-            return BoxI.init;
-
-        // dfmt off
-        RectI box = RectI(
-            cast(int)floor(tr.left),
-            cast(int)floor(tr.top),
-            cast(int)ceil(tr.right),
-            cast(int)ceil(tr.bottom),
-        );
-        // dfmt on
-        box.intersect(st.clipRect);
-        return BoxI(box);
-    }
 }

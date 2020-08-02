@@ -32,6 +32,7 @@ import beamui.graphics.gl.shaders;
 import beamui.graphics.gl.stroke_tiling;
 import beamui.graphics.gl.textures;
 import beamui.graphics.painter : GlyphInstance, MIN_RECT_F, PaintEngine;
+import beamui.graphics.path : SubPath;
 import beamui.graphics.pen;
 import beamui.graphics.polygons;
 import beamui.text.glyph : onGlyphDestruction;
@@ -451,7 +452,7 @@ protected:
         advanceDepth();
     }
 
-    override void clipOut(uint index, ref Contours contours, FillRule rule, bool complement)
+    override void clipOut(uint index, const SubPath[] contours, FillRule rule, bool complement)
     {
         alias S = Stenciling;
         const set = makeSet(layer.index);
@@ -512,12 +513,12 @@ protected:
         }
     }
 
-    override void fillPath(ref Contours contours, ref const Brush br, FillRule rule)
+    override void fillPath(const SubPath[] list, ref const Brush br, FillRule rule)
     {
-        fillPathImpl(contours, &br, rule == FillRule.nonzero ? Stenciling.nonzero : Stenciling.odd);
+        fillPathImpl(list, &br, rule == FillRule.nonzero ? Stenciling.nonzero : Stenciling.odd);
     }
 
-    override void strokePath(ref Contours contours, ref const Brush br, ref const Pen pen, bool)
+    override void strokePath(const SubPath[] list, ref const Brush br, ref const Pen pen, bool)
     {
         bool evenlyScaled = true;
         float width = pen.width;
@@ -530,19 +531,19 @@ protected:
             width = v.length * pen.width;
         }
         if (br.type == BrushType.solid && evenlyScaled && width < 3)
-            strokePathTiled(contours, br, pen, width);
+            strokePathTiled(list, br, pen, width);
         else
-            strokePathAsFill(contours, br, pen);
+            strokePathAsFill(list, br, pen);
     }
 
-    private void strokePathTiled(ref Contours contours, ref const Brush br, ref const Pen pen, float realWidth)
+    private void strokePathTiled(const SubPath[] list, ref const Brush br, ref const Pen pen, float realWidth)
     {
         bufVerts.clear();
         bufContours.clear();
 
         const pixelSize = 1.0f / TILE_SIZE;
         Mat2x3 mat = Mat2x3.scaling(Vec2(pixelSize)) * st.mat;
-        foreach (ref cr; contours.list)
+        foreach (ref cr; list)
         {
             const len = cr.flatten!true(bufVerts, mat, pixelSize);
             if (len != 1)
@@ -564,7 +565,7 @@ protected:
         }
 
         const start = tilePoints.length;
-        tileGrid.clipStrokeToLattice(bufVerts[], bufContours[], tilePoints, contours.trBounds, realWidth);
+        tileGrid.clipStrokeToLattice(bufVerts[], bufContours[], tilePoints, geometryBBox.screen, realWidth);
         const count = tilePoints.length - start;
 
         bool reuseBatch;
@@ -598,7 +599,7 @@ protected:
         advanceDepth();
     }
 
-    private void strokePathAsFill(ref Contours contours, ref const Brush br, ref const Pen pen)
+    private void strokePathAsFill(const SubPath[] list, ref const Brush br, ref const Pen pen)
     {
         auto g = pickGeometry(br.isOpaque);
 
@@ -611,7 +612,7 @@ protected:
 
         // if we are in non-scaling mode, transform contours on CPU, then expand
         const minDist = pen.shouldScale ? getMinDistFromMatrix(st.mat) : 0.7f;
-        strokeIter.recharge(contours, st.mat, !pen.shouldScale);
+        strokeIter.recharge(list, st.mat, !pen.shouldScale);
         expandStrokes(strokeIter, pen, builder, minDist);
 
         if (st.aa)
@@ -619,18 +620,18 @@ protected:
 
         if (g.triangles.length > t)
         {
-            const trivial = contours.list.length == 1 && contours.list[0].points.length < 3;
+            const trivial = list.length == 1 && list[0].points.length < 3;
             const mat = pen.shouldScale ? st.mat : Mat2x3.identity;
             if (br.isOpaque || trivial)
             {
-                simple(t, contours.trBounds, &br, &mat);
+                simple(t, geometryBBox.screen, &br, &mat);
             }
             else
             {
                 // we must do two-pass rendering to avoid overlaps
                 // on bends and self-intersections
-                const bounds = pen.shouldScale ? contours.bounds : Rect.from(contours.trBounds);
-                twoPass(t, Stenciling.justCover, bounds, contours.trBounds, &br, &mat);
+                const bounds = pen.shouldScale ? geometryBBox.local : Rect.from(geometryBBox.screen);
+                twoPass(t, Stenciling.justCover, bounds, geometryBBox.screen, &br, &mat);
             }
         }
     }
@@ -640,9 +641,6 @@ protected:
         const int w = bmp.width;
         const int h = bmp.height;
         const rp = Rect(p.x, p.y, p.x + w, p.y + h);
-        const clip = RectI(clipByRect(transformBounds(rp)));
-        if (clip.empty)
-            return;
 
         const TextureView view = textureCache.getTexture(bmp);
         if (view.empty)
@@ -686,7 +684,7 @@ protected:
 
         if (Batch* similar = hasSimilarImageBatch(view.tex, false))
         {
-            similar.common.clip.include(clip);
+            similar.common.clip.include(geometryBBox.screen);
             similar.common.triangles.end = g.triangles.length;
         }
         else
@@ -697,7 +695,7 @@ protected:
 
             Batch bt;
             bt.type = BatchType.simple;
-            bt.common.clip = clip;
+            bt.common.clip = geometryBBox.screen;
             bt.common.params = params;
             bt.common.triangles = Span(t, g.triangles.length);
             bt.simple.hasUV = true;
@@ -709,11 +707,6 @@ protected:
 
     override void drawNinePatch(ref const Bitmap bmp, ref const NinePatchInfo info, float opacity)
     {
-        const rp = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
-        const clip = RectI(clipByRect(transformBounds(rp)));
-        if (clip.empty)
-            return;
-
         const TextureView view = textureCache.getTexture(bmp);
         if (view.empty)
             return;
@@ -791,6 +784,7 @@ protected:
 
         if (st.aa)
         {
+            const rp = Rect(info.dst_x0, info.dst_y0, info.dst_x3, info.dst_y3);
             // dfmt off
             const Vec2[4] silhouette = [
                 Vec2(rp.left, rp.top),
@@ -805,7 +799,7 @@ protected:
 
         if (Batch* similar = hasSimilarImageBatch(view.tex, false))
         {
-            similar.common.clip.include(clip);
+            similar.common.clip.include(geometryBBox.screen);
             similar.common.triangles.end = g.triangles.length;
         }
         else
@@ -816,7 +810,7 @@ protected:
 
             Batch bt;
             bt.type = BatchType.simple;
-            bt.common.clip = clip;
+            bt.common.clip = geometryBBox.screen;
             bt.common.params = params;
             bt.common.triangles = Span(t, g.triangles.length);
             bt.simple.hasUV = true;
@@ -828,15 +822,11 @@ protected:
 
     override void drawText(const GlyphInstance[] run, Color c)
     {
-        const clip = RectI(clipByRect(transformBounds(computeTextRunBounds(run))));
-        if (clip.empty)
-            return;
-
         auto g = pickGeometry(false);
 
         Batch bt;
         bt.type = BatchType.simple;
-        bt.common.clip = clip;
+        bt.common.clip = geometryBBox.screen;
         bt.common.params.kind = PaintKind.text;
         bt.common.triangles = Span(g.triangles.length, g.triangles.length);
         bt.simple.hasUV = true;
@@ -860,7 +850,7 @@ protected:
             {
                 if (similar)
                 {
-                    similar.common.clip.include(clip);
+                    similar.common.clip.include(geometryBBox.screen);
                     similar.common.triangles.end = g.triangles.length;
                     similar = null;
                 }
@@ -881,7 +871,7 @@ protected:
         assert(bt.common.triangles.start < g.triangles.length);
         if (similar)
         {
-            similar.common.clip.include(clip);
+            similar.common.clip.include(geometryBBox.screen);
             similar.common.triangles.end = g.triangles.length;
         }
         else
@@ -896,19 +886,6 @@ protected:
     }
 
 private:
-
-    static Rect computeTextRunBounds(const GlyphInstance[] run)
-    {
-        Rect r = MIN_RECT_F;
-        foreach (ref gi; run)
-        {
-            r.left = min(r.left, gi.position.x);
-            r.top = min(r.top, gi.position.y);
-            r.right = max(r.right, gi.position.x + gi.glyph.correctedBlackBoxX);
-            r.bottom = max(r.bottom, gi.position.y + gi.glyph.blackBoxY);
-        }
-        return r;
-    }
 
     void addGlyph(ref Geometry g, GlyphInstance gi, ref const TextureView view)
     {
@@ -929,22 +906,21 @@ private:
         addStrip(g.triangles, v, 4);
     }
 
-    bool fillPathImpl(ref Contours contours, const Brush* br, Stenciling stenciling)
+    bool fillPathImpl(const SubPath[] list, const Brush* br, Stenciling stenciling)
     {
         auto g = pickGeometry(br ? br.isOpaque : true);
 
-        const lst = contours.list;
-        if (lst.length == 1)
+        if (list.length == 1)
         {
-            if (lst[0].points.length < 3)
+            if (list[0].points.length < 3)
                 return false;
 
-            const RectI clip = lst[0].trBounds;
+            const RectI clip = geometryBBox.screen;
             const v = g.positions.length;
             const t = g.triangles.length;
-            uint pcount = lst[0].flatten!false(g.positions, st.mat);
+            uint pcount = list[0].flatten!false(g.positions, st.mat);
             // remove the extra point
-            if (lst[0].closed)
+            if (list[0].closed)
             {
                 g.positions.shrink(1);
                 pcount--;
@@ -957,13 +933,13 @@ private:
                 layer.gpaa.finish(dataStore.length);
             }
             // spline is convex iff hull of its control points is convex
-            if (isConvex(lst[0].points) && stenciling != Stenciling.zero && stenciling != Stenciling.even)
+            if (isConvex(list[0].points) && stenciling != Stenciling.zero && stenciling != Stenciling.even)
             {
                 return simple(t, clip, br);
             }
             else
             {
-                return twoPass(t, stenciling, lst[0].bounds, clip, br);
+                return twoPass(t, stenciling, list[0].bounds, clip, br);
             }
         }
         else
@@ -972,14 +948,14 @@ private:
             // where S - stencil, C - cover
 
             const t = g.triangles.length;
-            foreach (ref cr; lst)
+            foreach (ref sp; list)
             {
-                if (cr.points.length < 3)
+                if (sp.points.length < 3)
                     continue;
 
                 const v = g.positions.length;
-                uint pcount = cr.flatten!false(g.positions, st.mat);
-                if (cr.closed)
+                uint pcount = sp.flatten!false(g.positions, st.mat);
+                if (sp.closed)
                 {
                     g.positions.shrink(1);
                     pcount--;
@@ -992,7 +968,7 @@ private:
                 layer.gpaa.finish(dataStore.length);
 
             if (g.triangles.length > t)
-                return twoPass(t, stenciling, contours.bounds, contours.trBounds, br);
+                return twoPass(t, stenciling, geometryBBox.local, geometryBBox.screen, br);
             else
                 return false;
         }
