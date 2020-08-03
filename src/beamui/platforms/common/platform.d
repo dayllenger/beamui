@@ -1806,6 +1806,10 @@ class Window : CustomEventTarget
             layout();
         }
 
+        // don't repaint the window if it's not visible
+        if (_windowState >= WindowState.paused) // TODO: try minimized
+            return;
+
         // invalidate the window
         bool needDraw = needLayout || _mainRootElement.needDraw;
         needDraw = needDraw || _popupRootElement.needDraw;
