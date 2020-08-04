@@ -199,8 +199,14 @@ protected:
         sets ~= Set.init;
     }
 
+    private Buf!GpaaDataToUpload gpaaDataToUpload;
+    private Buf!(const(RenderLayer)*) layersToRender;
+
     override void end()
     {
+        layersToRender.clear();
+        gpaaDataToUpload.clear();
+
         textureCache.updateMipmaps();
         prepareSets();
         prepareLayers();
@@ -208,7 +214,10 @@ protected:
         sortBatches();
 
         if (!g_opaque.batches.length && !g_transp.batches.length)
+        {
+            paint();
             return;
+        }
 
         debug (painter)
         {
@@ -224,18 +233,15 @@ protected:
         }
 
         // dfmt off
-        static Buf!GpaaDataToUpload gpaaData;
-        gpaaData.clear();
         foreach (ref lr; layers[])
         {
-            gpaaData ~= GpaaDataToUpload(
+            gpaaDataToUpload ~= GpaaDataToUpload(
                 lr.gpaa.indices[],
                 lr.gpaa.positions[],
                 lr.gpaa.dataIndices[],
                 lr.bounds.size,
             );
         }
-
         renderer.upload(DataToUpload(
             GeometryToUpload(
                 g_opaque.triangles[],
@@ -256,18 +262,18 @@ protected:
             dataStore[],
             tilePoints[],
             tileDataIndices[],
-        ), gpaaData[], tileGrid);
+        ), gpaaDataToUpload[], tileGrid);
         // dfmt on
+
+        paint();
     }
 
-    override void paint()
+    private void paint()
     {
-        static Buf!(const(RenderLayer)*) lrs;
-        lrs.clear();
         foreach (ref lr; layers[])
-            lrs ~= &lr.base;
+            layersToRender ~= &lr.base;
 
-        renderer.render(DrawLists(lrs[], sets[], g_opaque.batches[], g_transp.batches[]));
+        renderer.render(DrawLists(layersToRender[], sets[], g_opaque.batches[], g_transp.batches[]));
     }
 
     private void prepareSets()

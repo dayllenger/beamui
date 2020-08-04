@@ -7,18 +7,20 @@ Authors:   dayllenger
 */
 module beamui.graphics.swpainter;
 
-private nothrow:
+import beamui.core.config;
 
+// dfmt off
+static if (BACKEND_GUI):
+// dfmt on
 import std.algorithm.mutation : swap;
 import std.math : ceil, floor, round;
 import std.typecons : scoped;
 import pixman;
+
 import beamui.core.collections : Buf;
-import beamui.core.functions : eliminate;
-import beamui.core.geometry : BoxI, PointI, Rect, RectI, SizeI;
-import beamui.core.linalg : Mat2x3, Vec2, dotProduct;
+import beamui.core.geometry;
+import beamui.core.linalg;
 import beamui.core.math;
-import beamui.core.types : Tup, tup;
 import beamui.graphics.bitmap : Bitmap;
 import beamui.graphics.brush;
 import beamui.graphics.colors : Color;
@@ -26,12 +28,12 @@ import beamui.graphics.compositing;
 import beamui.graphics.flattener;
 import beamui.graphics.painter;
 import beamui.graphics.path : SubPath;
-import beamui.graphics.polygons;
 import beamui.graphics.pen;
+import beamui.graphics.polygons;
 import beamui.graphics.swrast;
 import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
 
-public final class SWPaintEngine : PaintEngine
+final class SWPaintEngine : PaintEngine
 {
     private
     {
@@ -102,10 +104,6 @@ protected:
     {
         assert(layerStack.length == 1);
         layerStack.clear();
-    }
-
-    override void paint()
-    {
     }
 
     override void beginLayer(LayerOp op)
@@ -542,6 +540,8 @@ protected:
         // dfmt on
     }
 }
+
+private nothrow:
 
 void blitGlyphs(const GlyphInstance[] run, ubyte* mask, uint stride, int x_left, int y_top)
 {

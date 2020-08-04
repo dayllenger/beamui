@@ -903,16 +903,6 @@ struct PainterHead
             active = false;
             restore(0);
             engine.end();
-            engine.paint();
-        }
-    }
-
-    void repaint()
-    in (painter && !painter.active && painter.engine)
-    {
-        with (painter)
-        {
-            engine.paint();
         }
     }
 }
@@ -1038,7 +1028,6 @@ protected:
 
     void begin(FrameConfig);
     void end();
-    void paint();
 
     void beginLayer(LayerOp);
     void composeLayer(RectI);
