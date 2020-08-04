@@ -45,7 +45,8 @@ void main()
     {
         float k = dir.y / dir.x;
         pack.xy = vec2(k, -1);
-        pack.w = 1;
+        // less smoothing for semitransparent shapes -> less interference on overlaps
+        pack.w = (color.a + 1.0) * 0.5;
     }
     else
     {
