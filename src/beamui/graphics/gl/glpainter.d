@@ -970,6 +970,8 @@ private:
     /// Stencil, than cover
     bool twoPass(uint tstart, Stenciling stenciling, Rect bbox, RectI clip, const Brush* br, const Mat2x3* m = null)
     {
+        import std.math : SQRT1_2;
+
         DataChunk data = prepareDataChunk(m, br ? br.opacity : 1);
         ShParams params;
         if (!convertBrush(br, params, data))
@@ -977,9 +979,11 @@ private:
 
         if (stenciling == Stenciling.zero || stenciling == Stenciling.even)
         {
-            import std.math : SQRT2;
-
-            bbox.expand(bbox.width * SQRT2, bbox.height * SQRT2);
+            // When clipping out, we have to enlarge the rectangle to cover
+            // the whole `clipRect`. Both passes share the same matrix, so the
+            // rectangle may be rotated. Fortunately, it is clipped very early
+            // by `clipRect` itself.
+            bbox.expand(bbox.width * SQRT1_2 + 1, bbox.height * SQRT1_2 + 1);
         }
 
         const opaque = br ? br.isOpaque : true;

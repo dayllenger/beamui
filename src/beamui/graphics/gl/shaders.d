@@ -203,15 +203,24 @@ final class ShaderEmpty : ShaderBase
 nothrow:
     override @property string[ShaderStage] sources() const
     {
-        auto map = super.sources;
-        map[ShaderStage.fragment] = `void main() {}`;
-        return map;
+        enum def1 = "#define CUSTOM_DEPTH\n";
+        const vs = def1 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const fs = "void main() {}";
+        return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
 
-    void prepare(ref const ParamsBase p)
+    override protected bool afterLinking(const GLProgramInterface pi)
+    {
+        return super.afterLinking(pi) && loc.initialize(pi);
+    }
+
+    void prepare(ref const ParamsBase p, bool resetDepth)
     {
         super.prepare(p);
+        glUniform1f(loc.customDepth, resetDepth ? 1 : 0);
     }
+
+    private Locations!(["customDepth"]) loc;
 }
 
 final class ShaderSolid : ShaderBase
@@ -223,11 +232,6 @@ nothrow:
         const vs = def1 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
         const fs = import("solid.fs.glsl");
         return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
-    }
-
-    override protected bool afterLinking(const GLProgramInterface pi)
-    {
-        return super.afterLinking(pi) && loc.initialize(pi);
     }
 
     void prepare(ref const ParamsBase pbase)

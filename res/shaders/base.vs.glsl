@@ -28,6 +28,10 @@ uniform int texHeight;
 uniform ivec2 texPos;
 #endif
 
+#ifdef CUSTOM_DEPTH
+uniform float customDepth;
+#endif
+
 out float gl_ClipDistance[4];
 
 uniform vec2 pixelSize;
@@ -60,7 +64,11 @@ void main()
 
     gl_Position.x = pos.x * pixelSize.x * 2.0 - 1.0;
     gl_Position.y = 1.0 - pos.y * pixelSize.y * 2.0; // user Y is reversed
+#ifdef CUSTOM_DEPTH
+    gl_Position.z = max(depth, customDepth);
+#else
     gl_Position.z = depth;
+#endif
     gl_Position.w = 1.0;
 
     gl_ClipDistance[0] = -pos.y + clip.w;

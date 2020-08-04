@@ -370,6 +370,8 @@ nothrow:
 
         prepare();
 
+        static Buf!(const(Batch)*) clipBatches;
+
         RenderTarget[] targets = new RenderTarget[lists.layers.length];
         bool[] dirty = new bool[lists.layers.length];
 
@@ -411,6 +413,8 @@ nothrow:
             foreach_reverse (ref bt; b_opaque)
             {
                 drawBatch(g_opaque, bt, pbase, flagsOpq);
+                if (bt.common.params.kind == PaintKind.empty)
+                    clipBatches ~= &bt;
             }
             // compose layer if some
             if (set.layerToCompose > 0)
@@ -431,9 +435,27 @@ nothrow:
             {
                 drawBatch(g_transp, bt, pbase, flagsTrt);
             }
+            if (fail)
+                break;
+
             // antialias the layer
             if (set.finishing && gpaa.hasSomething)
             {
+                // remove clipping
+                if (clipBatches.length)
+                {
+                    auto prog = sh.empty;
+                    device.progman.bind(prog);
+                    prog.prepare(pbase, true);
+
+                    glDepthFunc(GL_ALWAYS);
+
+                    foreach (bt; clipBatches[])
+                        drawDepthResetBatch(g_opaque, *bt);
+                    clipBatches.clear();
+
+                    glDepthFunc(GL_LEQUAL);
+                }
                 if (auto prog = sh.gpaa)
                 {
                     gpaa.perform(device, set.layer, rt.box, prog, pbase);
@@ -485,14 +507,28 @@ private:
         final switch (bt.type) with (BatchType)
         {
         case simple:
-            performSimple(g, bt.simple.hasUV, pbase, bt.common.params, bt.common.triangles, flags);
+            if (!setupSurfaceShader(pbase, bt.common.params))
+                return failGracefully();
+
+            performSimple(g, bt.simple.hasUV, bt.common.triangles, flags);
             break;
         case twopass:
+            if (auto prog = sh.empty)
+            {
+                device.progman.bind(prog);
+                prog.prepare(pbase, true);
+            }
+            else
+                return failGracefully();
+
+            const flagsSt = flags | DrawFlags.stencilTest;
             const BatchTwoPass m = bt.twopass;
-            const flags1stPass = (flags | DrawFlags.noColorWrite | DrawFlags.stencilTest) & ~DrawFlags.depthTest;
-            const flags2ndPass = flags | DrawFlags.stencilTest;
-            performStencil(g, m.stenciling, pbase, bt.common.triangles, flags1stPass);
-            performCover(g, m.stenciling, pbase, bt.common.params, m.coverTriangles, flags2ndPass);
+            performStencil(g, m.stenciling, bt.common.triangles, flagsSt | DrawFlags.noColorWrite);
+
+            if (!setupSurfaceShader(pbase, bt.common.params))
+                return failGracefully();
+
+            performCover(g, m.stenciling, m.coverTriangles, flagsSt);
             break;
         case tiled:
             performTiled(pbase, bt.common.params, bt.common.triangles, flags);
@@ -500,25 +536,34 @@ private:
         }
     }
 
-    void performSimple(ref GPUGeometry g, bool hasUV, ref const ParamsBase pbase, ref const ShParams params, Span tris, DrawFlags flags)
+    void drawDepthResetBatch(ref GPUGeometry g, ref const Batch bt)
     {
-        if (!setupSurfaceShader(pbase, params))
-            return failGracefully();
+        enum flags = DrawFlags.clippingPlanes | DrawFlags.depthTest | DrawFlags.noColorWrite;
+        enum flagsSt = flags | DrawFlags.stencilTest;
 
+        switch (bt.type) with (BatchType)
+        {
+        case simple:
+            performSimple(g, bt.simple.hasUV, bt.common.triangles, flags);
+            break;
+        case twopass:
+            const BatchTwoPass m = bt.twopass;
+            performStencil(g, m.stenciling, bt.common.triangles, flagsSt | DrawFlags.noDepthWrite);
+            performCover(g, m.stenciling, m.coverTriangles, flagsSt);
+            break;
+        default:
+            assert(0);
+        }
+    }
+
+    void performSimple(ref GPUGeometry g, bool hasUV, Span tris, DrawFlags flags)
+    {
         const vao = hasUV ? g.vaoTextured : g.vao;
         device.drawTriangles(vao, flags, tris.start * 3, (tris.end - tris.start) * 3);
     }
 
-    void performStencil(ref GPUGeometry g, Stenciling type, ref const ParamsBase pbase, Span tris, DrawFlags flags)
+    void performStencil(ref GPUGeometry g, Stenciling type, Span tris, DrawFlags flags)
     {
-        if (auto prog = sh.empty)
-        {
-            device.progman.bind(prog);
-            prog.prepare(pbase);
-        }
-        else
-            return failGracefully();
-
         final switch (type) with (Stenciling)
         {
         case justCover:
@@ -541,11 +586,8 @@ private:
         device.drawTriangles(g.vao, flags, tris.start * 3, (tris.end - tris.start) * 3);
     }
 
-    void performCover(ref GPUGeometry g, Stenciling type, ref const ParamsBase pbase, ref const ShParams params, Span tris, DrawFlags flags)
+    void performCover(ref GPUGeometry g, Stenciling type, Span tris, DrawFlags flags)
     {
-        if (!setupSurfaceShader(pbase, params))
-            return failGracefully();
-
         final switch (type) with (Stenciling)
         {
         case justCover:
@@ -581,7 +623,7 @@ private:
             if (auto prog = sh.empty)
             {
                 device.progman.bind(prog);
-                prog.prepare(base);
+                prog.prepare(base, false);
                 return true;
             }
             return false;

@@ -112,8 +112,8 @@ final class Painter
             const Vec2 v2 = state.mat * lb;
             const p0 = Vec2(min(v0.x, v1.x, v2.x, v3.x), min(v0.y, v1.y, v2.y, v3.y));
             const p1 = Vec2(max(v0.x, v1.x, v2.x, v3.x), max(v0.y, v1.y, v2.y, v3.y));
-            const trBounds = RectI.from(Rect(p0, p1));
-            state.clipRect.intersect(trBounds);
+            const tr = Rect(floor(p0.x), floor(p0.y), ceil(p1.x), ceil(p1.y));
+            state.clipRect.intersect(RectI.from(tr));
 
             // not axis-aligned
             if (!(fequal2(v0.y, v1.y) && fequal2(v0.x, v2.x)) && !(fequal2(v0.x, v1.x) && fequal2(v0.y, v2.y)))
