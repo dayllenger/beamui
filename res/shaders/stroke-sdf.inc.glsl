@@ -1,4 +1,5 @@
 flat in ivec2 segments;
+flat in vec2 shift;
 flat in float width;
 flat in float contrast;
 
@@ -33,7 +34,7 @@ float compute_stroke_sdf()
     {
         ivec2 seg_index = ivec2(i % ROW_LENGTH, i / ROW_LENGTH);
         vec4 seg = texelFetch(buf_segments, seg_index, 0);
-        d = min(d, get_line_dist(uv, seg.xy, seg.zw));
+        d = min(d, get_line_dist(uv, seg.xy + shift, seg.zw + shift));
     }
     return get_stroke_alpha(get_real_dist(d));
 }

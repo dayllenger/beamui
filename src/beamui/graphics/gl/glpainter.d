@@ -314,7 +314,8 @@ protected:
                     const Span data = set.dataChunks;
                     foreach (ref DataChunk ch; dataStore.unsafe_slice[data.start .. data.end])
                     {
-                        ch.transform = Mat2x3.translation(shift) * ch.transform;
+                        ch.transform.store[0][2] += shift.x;
+                        ch.transform.store[1][2] += shift.y;
                         ch.clipRect.translate(shift.x, shift.y);
                     }
                 }
