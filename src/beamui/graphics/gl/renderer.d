@@ -452,7 +452,6 @@ nothrow:
 
                     foreach (bt; clipBatches[])
                         drawDepthResetBatch(g_opaque, *bt);
-                    clipBatches.clear();
 
                     glDepthFunc(GL_LEQUAL);
                 }
@@ -466,6 +465,8 @@ nothrow:
                     break;
                 }
             }
+            if (set.finishing)
+                clipBatches.clear();
         }
 
         reset();
@@ -516,14 +517,16 @@ private:
             if (auto prog = sh.empty)
             {
                 device.progman.bind(prog);
-                prog.prepare(pbase, true);
+                prog.prepare(pbase, false);
             }
             else
                 return failGracefully();
 
             const flagsSt = flags | DrawFlags.stencilTest;
+            // no depth test -> no depth write
+            const flags1stPass = (flagsSt | DrawFlags.noColorWrite) & ~DrawFlags.depthTest;
             const BatchTwoPass m = bt.twopass;
-            performStencil(g, m.stenciling, bt.common.triangles, flagsSt | DrawFlags.noColorWrite);
+            performStencil(g, m.stenciling, bt.common.triangles, flags1stPass);
 
             if (!setupSurfaceShader(pbase, bt.common.params))
                 return failGracefully();
@@ -548,7 +551,7 @@ private:
             break;
         case twopass:
             const BatchTwoPass m = bt.twopass;
-            performStencil(g, m.stenciling, bt.common.triangles, flagsSt | DrawFlags.noDepthWrite);
+            performStencil(g, m.stenciling, bt.common.triangles, flagsSt & ~DrawFlags.depthTest);
             performCover(g, m.stenciling, m.coverTriangles, flagsSt);
             break;
         default:

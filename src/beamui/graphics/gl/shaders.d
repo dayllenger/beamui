@@ -149,7 +149,6 @@ private enum SamplerIndex
 private struct Locations(string[] names)
 {
 nothrow:
-
     static foreach (name; names)
         mixin("GLint " ~ name ~ ";");
 
@@ -171,7 +170,7 @@ abstract class ShaderBase : GLProgram
 nothrow:
     override @property string[ShaderStage] sources() const
     {
-        const vs = import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const vs = import("base.vs.glsl") ~ import("datastore.inc.glsl") ~ import("clip-rect.inc.glsl");
         return [ShaderStage.vertex : vs];
     }
 
@@ -203,8 +202,8 @@ final class ShaderEmpty : ShaderBase
 nothrow:
     override @property string[ShaderStage] sources() const
     {
-        enum def1 = "#define CUSTOM_DEPTH\n";
-        const vs = def1 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        enum def1 = "#define NO_COLOR\n";
+        const vs = def1 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl") ~ import("clip-rect.inc.glsl");
         const fs = "void main() {}";
         return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
@@ -217,7 +216,7 @@ nothrow:
     void prepare(ref const ParamsBase p, bool resetDepth)
     {
         super.prepare(p);
-        glUniform1f(loc.customDepth, resetDepth ? 1 : 0);
+        glUniform1f(loc.customDepth, resetDepth ? 1.0f : 0.0f);
     }
 
     private Locations!(["customDepth"]) loc;
@@ -229,7 +228,7 @@ nothrow:
     override @property string[ShaderStage] sources() const
     {
         enum def1 = "#define DATA_COLOR\n";
-        const vs = def1 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const vs = def1 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl") ~ import("clip-rect.inc.glsl");
         const fs = import("solid.fs.glsl");
         return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
@@ -365,7 +364,7 @@ nothrow:
         enum def2 = "#define TILED_STROKE\n";
         enum def3 = "#define TILE_SIZE " ~ to!string(TILE_SIZE) ~ ".0\n";
         enum def4 = "#define ROW_LENGTH " ~ to!string(TileBuffer.ROW_LENGTH) ~ "\n";
-        const vs = def1 ~ def2 ~ def3 ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const vs = def1 ~ def3 ~ import("tiled.vs.glsl") ~ import("datastore.inc.glsl") ~ import("clip-rect.inc.glsl");
         const fs = def2 ~ def3 ~ def4 ~ import("stroke-sdf.inc.glsl") ~ import("solid.fs.glsl");
         return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
@@ -403,7 +402,7 @@ nothrow:
     override @property string[ShaderStage] sources() const
     {
         enum defs = "#define UV\n";
-        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl") ~ import("clip-rect.inc.glsl");
         const fs = import("image.fs.glsl");
         return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
@@ -438,7 +437,7 @@ nothrow:
     override @property string[ShaderStage] sources() const
     {
         enum defs = "#define DATA_COLOR\n" ~ "#define UV\n";
-        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl") ~ import("clip-rect.inc.glsl");
         const fs = import("text.fs.glsl");
         return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
@@ -470,11 +469,10 @@ nothrow:
 final class ShaderCompose : ShaderBase
 {
 nothrow:
-
     override @property string[ShaderStage] sources() const
     {
         enum defs = "#define COMPOSITION\n";
-        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl") ~ import("clip-rect.inc.glsl");
         const fs = import("composition.fs.glsl");
         return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
@@ -500,11 +498,10 @@ nothrow:
 final class ShaderBlend : ShaderBase
 {
 nothrow:
-
     override @property string[ShaderStage] sources() const
     {
         enum defs = "#define COMPOSITION\n";
-        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl");
+        const vs = defs ~ import("base.vs.glsl") ~ import("datastore.inc.glsl") ~ import("clip-rect.inc.glsl");
         const fs = import("blending.fs.glsl");
         return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }
@@ -530,10 +527,9 @@ nothrow:
 final class ShaderGPAA : GLProgram
 {
 nothrow:
-
     override @property string[ShaderStage] sources() const
     {
-        const vs = import("gpaa.vs.glsl") ~ import("datastore.inc.glsl");
+        const vs = import("gpaa.vs.glsl") ~ import("datastore.inc.glsl") ~ import("clip-rect.inc.glsl");
         const fs = import("gpaa.fs.glsl");
         return [ShaderStage.vertex : vs, ShaderStage.fragment : fs];
     }

@@ -7,12 +7,11 @@ in uint v_dataIndex;
 out float dummy;    // workaround for a bug on Intel driver
 flat out vec4 pack; // this value is provided by the 2nd segment point
 
-out float gl_ClipDistance[4];
-
 uniform vec2 pixelSize;
 uniform int viewportHeight;
 
 void fetchData(in int index, out mat3 transform, out float depth, out vec4 clip, out vec4 color);
+void clipByRect(in vec2 pos, in vec4 clip);
 
 void main()
 {
@@ -24,15 +23,13 @@ void main()
 
     const vec2 pos0 = (transform * vec3(v_point0, 1)).xy;
     const vec2 pos1 = (transform * vec3(v_point1, 1)).xy;
-    gl_Position.x = pos1.x * pixelSize.x * 2 - 1;
-    gl_Position.y = 1 - pos1.y * pixelSize.y * 2; // user Y is reversed
+    const vec2 npos = pos1 * pixelSize * 2.0 - 1.0;
+    gl_Position.x =  npos.x;
+    gl_Position.y = -npos.y; // user Y is reversed
     gl_Position.z = depth;
-    gl_Position.w = 1;
+    gl_Position.w = 1.0;
 
-    gl_ClipDistance[0] = -pos1.y + clip.w;
-    gl_ClipDistance[1] = -pos1.x + clip.z;
-    gl_ClipDistance[2] =  pos1.y - clip.y;
-    gl_ClipDistance[3] =  pos1.x - clip.x;
+    clipByRect(pos1, clip);
 
     // compute screen-space position and direction of the line
     const vec2 pos = vec2(pos1.x, viewportHeight - pos1.y);
