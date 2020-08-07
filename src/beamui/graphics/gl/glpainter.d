@@ -211,7 +211,6 @@ protected:
         prepareSets();
         prepareLayers();
         constructCoverGeometry();
-        sortBatches();
 
         if (!g_opaque.batches.length && !g_transp.batches.length)
         {
@@ -374,16 +373,6 @@ protected:
                 g.dataIndices.resize(g.dataIndices.length + 4, lr.cmd.dataIndex);
                 lr.cmd.triangles = Span(t, g.triangles.length);
             }
-        }
-    }
-
-    private void sortBatches()
-    {
-        // sort geometry front-to-back inside an opaque batch
-        foreach (ref bt; g_opaque.batches[])
-        {
-            const Span tris = bt.common.triangles;
-            reverse(g_opaque.triangles.unsafe_slice[tris.start .. tris.end]);
         }
     }
 
