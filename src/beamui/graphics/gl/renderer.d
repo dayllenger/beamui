@@ -370,24 +370,27 @@ nothrow:
 
         prepare();
 
-        static Buf!(const(Batch)*) clipBatches;
+        static struct LayerInfo
+        {
+            RenderTarget rt;
+            bool dirty = true;
+            Buf!(const(Batch)*) clips;
+        }
 
-        RenderTarget[] targets = new RenderTarget[lists.layers.length];
-        bool[] dirty = new bool[lists.layers.length];
-
-        targets[0].box = BoxI(lists.layers[0].bounds);
-        dirty[] = true;
+        LayerInfo[] infos = new LayerInfo[lists.layers.length];
+        infos[0].rt.box = BoxI(lists.layers[0].bounds);
 
         foreach (i, ref set; lists.sets)
         {
             const RenderLayer* lr = lists.layers[set.layer];
             if (lr.empty)
                 continue;
-            if (targets[lr.parent].empty)
+            if (infos[lr.parent].rt.empty)
                 continue;
 
             // get a render target
-            RenderTarget* rt = &targets[lr.index];
+            LayerInfo* info = &infos[lr.index];
+            RenderTarget* rt = &info.rt;
             if (rt.empty)
             {
                 *rt = rtpool.take(device.fboman, lr.bounds.size);
@@ -398,10 +401,10 @@ nothrow:
             device.fboman.bind(rt.fbo);
             glViewport(rt.box.x, rt.box.y, rt.box.w, rt.box.h);
             // clear it
-            if (dirty[lr.index])
+            if (info.dirty)
             {
                 device.clear(rt.box, lr.fill);
-                dirty[lr.index] = false;
+                info.dirty = false;
             }
 
             // now it's time to draw actual batches
@@ -414,13 +417,13 @@ nothrow:
             {
                 drawBatch(g_opaque, bt, pbase, flagsOpq);
                 if (bt.common.params.kind == PaintKind.empty)
-                    clipBatches ~= &bt;
+                    info.clips ~= &bt;
             }
             // compose layer if some
             if (set.layerToCompose > 0)
             {
                 const RenderLayer* lrCompose = lists.layers[set.layerToCompose];
-                RenderTarget* rtCompose = &targets[set.layerToCompose];
+                RenderTarget* rtCompose = &infos[set.layerToCompose].rt;
                 if (!rtCompose.empty)
                 {
                     const params = ParamsComposition(rtCompose.tex, rtCompose.box);
@@ -442,7 +445,7 @@ nothrow:
             if (set.finishing && gpaa.hasSomething)
             {
                 // remove clipping
-                if (clipBatches.length)
+                if (info.clips.length)
                 {
                     auto prog = sh.empty;
                     device.progman.bind(prog);
@@ -450,7 +453,7 @@ nothrow:
 
                     glDepthFunc(GL_ALWAYS);
 
-                    foreach (bt; clipBatches[])
+                    foreach (bt; info.clips[])
                         drawDepthResetBatch(g_opaque, *bt);
 
                     glDepthFunc(GL_LEQUAL);
@@ -465,9 +468,9 @@ nothrow:
                     break;
                 }
             }
-            if (set.finishing)
-                clipBatches.clear();
         }
+
+        infos[] = LayerInfo.init;
 
         reset();
 
@@ -1032,7 +1035,7 @@ nothrow:
         bool empty = true;
         foreach (ref data; byLayer)
         {
-            if (data.ids.length)
+            if (data.ids.length && data.viewSize.w > 0 && data.viewSize.h > 0)
             {
                 empty = false;
                 break;
