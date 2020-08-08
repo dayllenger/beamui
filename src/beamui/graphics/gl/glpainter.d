@@ -862,14 +862,19 @@ private:
 
         if (list.length == 1)
         {
-            if (list[0].points.length < 3)
+            const sp = list[0];
+            if (sp.points.length < 3)
                 return false;
+
+            const firstP = sp.points[0];
+            const lastP = sp.points[$ - 1];
+            const closed = sp.closed || fequal6(firstP.x, lastP.x) && fequal6(firstP.y, lastP.y);
 
             const v = g.positions.length;
             const t = g.triangles.length;
-            uint pcount = list[0].flatten!false(g.positions, st.mat);
+            uint pcount = sp.flatten!false(g.positions, st.mat);
             // remove the extra point
-            if (list[0].closed)
+            if (closed)
             {
                 g.positions.shrink(1);
                 pcount--;
@@ -882,13 +887,14 @@ private:
                 layer.gpaa.finish(dataStore.length);
             }
             // spline is convex iff hull of its control points is convex
-            if (isConvex(list[0].points) && stenciling != Stenciling.zero && stenciling != Stenciling.even)
+            const hull = closed ? sp.points[0 .. $ - 1] : sp.points;
+            if (isConvex(hull) && stenciling != Stenciling.zero && stenciling != Stenciling.even)
             {
                 return simple(t, br);
             }
             else
             {
-                return twoPass(t, stenciling, list[0].bounds, geometryBBox.screen, br);
+                return twoPass(t, stenciling, sp.bounds, geometryBBox.screen, br);
             }
         }
         else

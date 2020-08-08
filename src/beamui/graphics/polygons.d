@@ -52,7 +52,7 @@ bool isConvex(const Vec2[] polygon)
     if (polygon.length <= 3)
         return true;
 
-    enum eps = 1e-6;
+    enum eps = 0.00005f;
 
     float wSign = 0; // first nonzero orientation (positive or negative)
 
@@ -367,6 +367,12 @@ unittest
     Buf!Vec2 points;
     computeConvexHull(starPoly, points);
     assert(points[] == [Vec2(20, 0), Vec2(40, 20), Vec2(40, 40), Vec2(0, 40), Vec2(0, 20)]);
+}
+
+unittest
+{
+    immutable bend = [Vec2(0, 0), Vec2(-1e-6f, -10), Vec2(20, 0), Vec2(-1e-6f, 10)];
+    assert(isConvex(bend));
 }
 
 unittest

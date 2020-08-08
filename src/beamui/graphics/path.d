@@ -10,7 +10,7 @@ module beamui.graphics.path;
 import std.math;
 import beamui.core.collections : Buf;
 import beamui.core.geometry : Rect;
-import beamui.core.linalg : Mat2x3, Vec2;
+import beamui.core.linalg : Mat2x3, Vec2, Vec2d;
 import beamui.core.math;
 import beamui.graphics.flattener;
 
@@ -282,65 +282,66 @@ nothrow:
 
         const bool clockwise = angle > 0;
         angle = min(fabs(angle), 359) * PI / 180;
-        if (angle < 1e-6f)
+        if (angle < 1e-3f)
+        {
+            pos.x = x;
+            pos.y = y;
+            commands ~= Command.lineTo;
+            points ~= pos;
+            expandBounds(pos);
             return this;
+        }
 
         // find radius using cosine formula
-        const cosine_2 = cos(angle / 2);
-        const cosine = 2 * cosine_2 * cosine_2 - 1;
-        const squareDist = (pos.x - x) * (pos.x - x) + (pos.y - y) * (pos.y - y);
-        const squareRadius = squareDist / (2 - 2 * cosine);
-        const r = sqrt(squareRadius);
-        if (r < 1e-6f)
+        const double cosine_2 = cos(cast(double)angle / 2);
+        const double cosine = 2 * cosine_2 * cosine_2 - 1;
+        const double squareDist = (pos.x - x) * (pos.x - x) + (pos.y - y) * (pos.y - y);
+        const double squareRadius = squareDist / (2 - 2 * cosine);
+        const double r = sqrt(squareRadius);
+        if (r < 1e-6)
             return this;
 
         // find center
-        const v = Vec2(x - pos.x, y - pos.y);
+        const v = Vec2d(x - pos.x, y - pos.y);
         const ncenter = (clockwise ? v.rotated90fromXtoY : v.rotated90fromYtoX).normalized;
-        const mid = Vec2((x + pos.x) / 2, (y + pos.y) / 2);
+        const mid = Vec2d((x + pos.x) / 2, (y + pos.y) / 2);
         const center = mid + ncenter * r * cosine_2;
         // find angle to the first arc point
         const dir = clockwise ? -1 : 1;
-        const dy = (center.y - y) / r;
-        const beta = asin(dy * 0.999f); // reduce precision error
-
-        const deltaAngle = angle * dir;
-        const startAngle = (center.x < x ? beta : PI - beta) - deltaAngle;
+        const double dy = (center.y - y) / r;
+        const double beta = asin(dy);
+        const double deltaAngle = angle * dir;
+        const double startAngle = (center.x < x ? beta : PI - beta) - deltaAngle;
 
         // convert arc into a cubic spline, max 90 degrees for each segment
         const parts = cast(uint)(angle / PI_2 + 1);
-        const halfPartDA = (deltaAngle / parts) / 2;
-        const kappa = dir * fabs(4.0f / 3.0f * (1 - cos(halfPartDA)) / sin(halfPartDA));
+        const double halfPartDA = (deltaAngle / parts) / 2;
+        const double kappa = dir * fabs(4.0 / 3.0 * (1 - cos(halfPartDA)) / sin(halfPartDA));
 
-        float x0 = pos.x, y0 = pos.y;
-        float ax = x0 - center.x, ay = center.y - y0;
+        Vec2 p0 = pos;
+        Vec2 a = Vec2(p0.x - center.x, center.y - p0.y);
         foreach (i; 1 .. parts + 1)
         {
-            const b = startAngle + deltaAngle * i / parts;
-            const bx = r * cos(b);
-            const by = r * sin(b);
+            const double gamma = startAngle + deltaAngle * i / parts;
+            const b = Vec2(r * cos(gamma), r * sin(gamma));
 
-            const x3 = center.x + bx;
-            const y3 = center.y - by;
-            const x1 = x0 - kappa * ay;
-            const y1 = y0 - kappa * ax;
-            const x2 = x3 + kappa * by;
-            const y2 = y3 + kappa * bx;
+            const p3 = Vec2(center.x + b.x, center.y - b.y);
+            const p1 = Vec2(p0.x - kappa * a.y, p0.y - kappa * a.x);
+            const p2 = Vec2(p3.x + kappa * b.y, p3.y + kappa * b.x);
 
             commands ~= Command.cubicTo;
-            points ~= Vec2(x1, y1);
-            points ~= Vec2(x2, y2);
-            points ~= Vec2(x3, y3);
+            points ~= p1;
+            points ~= p2;
+            points ~= p3;
+            expandBounds(p1);
+            expandBounds(p2);
+            expandBounds(p3);
 
-            ax = bx;
-            ay = by;
-            x0 = x3;
-            y0 = y3;
+            a = b;
+            p0 = p3;
         }
         pos.x = x;
         pos.y = y;
-        expandBounds(center - r);
-        expandBounds(center + r);
         return this;
     }
     /** Add an circular arc extending to a point, relative to the current position.

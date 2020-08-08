@@ -316,7 +316,7 @@ nothrow:
 
     /// Add or subtract a matrix
     ref Mat2x3 opOpAssign(string op)(Mat2x3 mat) if (op == "+" || op == "-")
-    in (isFinite(), msgNotFinite)
+    out (; isFinite(), msgNotFinite)
     {
         mixin("store[0]" ~ op ~ "= mat.store[0];");
         mixin("store[1]" ~ op ~ "= mat.store[1];");
@@ -324,7 +324,7 @@ nothrow:
     }
     /// ditto
     Mat2x3 opBinary(string op)(Mat2x3 mat) const if (op == "+" || op == "-")
-    in (isFinite(), msgNotFinite)
+    out (; isFinite(), msgNotFinite)
     {
         Mat2x3 ret = this;
         mixin("ret.store[0]" ~ op ~ "= mat.store[0];");
@@ -333,7 +333,7 @@ nothrow:
     }
     /// Multiply this matrix by another one, as they were 3x3 with (0,0,1) last row
     ref Mat2x3 opOpAssign(string op : "*")(Mat2x3 mat)
-    in (isFinite(), msgNotFinite)
+    out (; isFinite(), msgNotFinite)
     {
         const a00 = store[0][0];
         const a01 = store[0][1];
@@ -349,7 +349,7 @@ nothrow:
     }
     /// ditto
     Mat2x3 opBinary(string op : "*")(Mat2x3 mat) const
-    in (isFinite(), msgNotFinite)
+    out (; isFinite(), msgNotFinite)
     {
         Mat2x3 ret = void;
         ret.store[0][0] = store[0][0] * mat.store[0][0] + store[0][1] * mat.store[1][0];
@@ -418,7 +418,7 @@ nothrow:
 
     /// Apply translation to this matrix
     ref Mat2x3 translate(Vec2 offset) return
-    in (isFinite(), msgNotFinite)
+    out (; isFinite(), msgNotFinite)
     {
         store[0][2] += store[0][0] * offset.x + store[0][1] * offset.y;
         store[1][2] += store[1][0] * offset.x + store[1][1] * offset.y;
@@ -436,7 +436,7 @@ nothrow:
 
     /// Apply rotation to this matrix
     ref Mat2x3 rotate(float radians) return
-    in (isFinite(), msgNotFinite)
+    out (; isFinite(), msgNotFinite)
     {
         const c = cos(radians);
         const s = sin(radians);
@@ -464,7 +464,7 @@ nothrow:
 
     /// Apply scaling to this matrix
     ref Mat2x3 scale(Vec2 factor) return
-    in (isFinite(), msgNotFinite)
+    out (; isFinite(), msgNotFinite)
     {
         store[0][0] *= factor.x;
         store[1][0] *= factor.x;
@@ -484,7 +484,7 @@ nothrow:
 
     /// Apply skewing to this matrix
     ref Mat2x3 skew(Vec2 factor) return
-    in (isFinite(), msgNotFinite)
+    out (; isFinite(), msgNotFinite)
     {
         const a = tan(factor.x);
         const b = tan(factor.y);
