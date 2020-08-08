@@ -119,11 +119,25 @@ final class Painter
             if (!(fequal2(v0.y, v1.y) && fequal2(v0.x, v2.x)) && !(fequal2(v0.x, v1.x) && fequal2(v0.y, v2.y)))
             {
                 // clip out complement triangles
+                Vec2[4] vs;
                 const Path.Command[3] cmds = Path.Command.lineTo;
-                const Vec2[4] vs = [lt, rt, rb, lb];
-                const subpath = SubPath(cmds, vs, false, rect);
+                const SubPath[1] path = SubPath(cmds, vs, false, rect);
                 engine.geometryBBox = PaintEngine.BBox(rect, state.clipRect);
-                engine.clipOut(mainStack.length, (&subpath)[0 .. 1], FillRule.nonzero, true);
+
+                const w2 = box.w / 2;
+                const h2 = box.h / 2;
+                const outerlt = lt + Vec2(-w2, -h2);
+                const outerrt = rt + Vec2(w2, -h2);
+                const outerrb = rb + Vec2(w2, h2);
+                const outerlb = lb + Vec2(-w2, h2);
+                vs = [lt, outerlt, outerrt, rt];
+                engine.clipOut(mainStack.length, path, FillRule.nonzero, false);
+                vs = [rt, outerrt, outerrb, rb];
+                engine.clipOut(mainStack.length, path, FillRule.nonzero, false);
+                vs = [rb, outerrb, outerlb, lb];
+                engine.clipOut(mainStack.length, path, FillRule.nonzero, false);
+                vs = [lb, outerlb, outerlt, lt];
+                engine.clipOut(mainStack.length, path, FillRule.nonzero, false);
             }
         }
         if (state.clipRect.empty)
