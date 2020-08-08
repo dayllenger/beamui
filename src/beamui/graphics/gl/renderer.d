@@ -398,8 +398,8 @@ nothrow:
                     continue;
             }
             // setup the framebuffer
-            device.fboman.bind(rt.fbo);
-            glViewport(rt.box.x, rt.box.y, rt.box.w, rt.box.h);
+            if (device.fboman.bind(rt.fbo))
+                glViewport(rt.box.x, rt.box.y, rt.box.w, rt.box.h);
             // clear it
             if (info.dirty)
             {

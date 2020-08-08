@@ -350,13 +350,15 @@ nothrow:
         return FboId(id);
     }
 
-    void bind(FboId id)
+    bool bind(FboId id)
     {
         if (current != id)
         {
             checkgl!glBindFramebuffer(GL_FRAMEBUFFER, id.handle);
             current = id;
+            return true;
         }
+        return false;
     }
 
     void del(ref FboId id)
