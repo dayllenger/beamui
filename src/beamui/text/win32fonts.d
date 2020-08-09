@@ -23,6 +23,9 @@ import beamui.core.logger;
 import beamui.text.fonts;
 import beamui.text.glyph;
 
+pragma(lib, "gdi32.lib");
+pragma(lib, "user32.lib");
+
 private struct FontDef
 {
     FontFamily family;
