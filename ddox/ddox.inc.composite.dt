@@ -156,7 +156,6 @@
   - if (methods.length > 0 || inheritedMethodsCount > 0)
     section
       - heading(hlevel, "Methods");
-      - foreach (m; methods)
       - if (methods.length > 0)
         table
           tr
