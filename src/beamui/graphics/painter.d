@@ -28,6 +28,31 @@ enum MAX_DIMENSION = 2 ^^ 14;
 enum MIN_RECT_I = RectI(MAX_DIMENSION, MAX_DIMENSION, -MAX_DIMENSION, -MAX_DIMENSION);
 enum MIN_RECT_F = Rect(MAX_DIMENSION, MAX_DIMENSION, -MAX_DIMENSION, -MAX_DIMENSION);
 
+struct LayerInfo
+{
+nothrow:
+    float opacity = 1;
+    CompositeMode composition = CompositeMode.sourceOver;
+    BlendMode blending = BlendMode.normal;
+
+    this(float opacity)
+    {
+        this.opacity = opacity;
+    }
+
+    this(float opacity, CompositeMode composition)
+    {
+        this.opacity = opacity;
+        this.composition = composition;
+    }
+
+    this(float opacity, BlendMode blending)
+    {
+        this.opacity = opacity;
+        this.blending = blending;
+    }
+}
+
 /// Positioned glyph
 struct GlyphInstance
 {
@@ -352,7 +377,7 @@ final class Painter
     /** Start to draw into a new layer, and compose it when `saver` goes out of scope.
 
         Layers are a way to apply opacity and either `CompositeMode` or `BlendMode`
-        to a collection of drawn shapes.
+        to a set of shapes.
 
         Example:
         ---
@@ -362,54 +387,27 @@ final class Painter
         pr.translate(100, 100);
         {
             PaintSaver lsv;
-            pr.beginLayer(lsv, 0.5f, BlendMode.difference);
+            pr.beginLayer(lsv, LayerInfo(0.5f, BlendMode.difference));
             pr.fillCircle(0, 0, 50, NamedColor.red);
             pr.fillCircle(40, 0, 50, NamedColor.blue);
         }
         ---
     */
-    void beginLayer(ref PaintSaver saver, float opacity)
+    void beginLayer(ref PaintSaver saver, LayerInfo info)
     in (active)
     in (!saver.painter, "Can't use PaintSaver twice")
-    {
-        PaintEngine.LayerOp op;
-        op.opacity = clamp(opacity, 0, 1);
-        implBeginLayer(saver, op);
-    }
-    /// ditto
-    void beginLayer(ref PaintSaver saver, float opacity, CompositeMode composition)
-    in (active)
-    in (!saver.painter, "Can't use PaintSaver twice")
-    {
-        PaintEngine.LayerOp op;
-        op.opacity = clamp(opacity, 0, 1);
-        op.composition = composition;
-        implBeginLayer(saver, op);
-    }
-    /// ditto
-    void beginLayer(ref PaintSaver saver, float opacity, BlendMode blending)
-    in (active)
-    in (!saver.painter, "Can't use PaintSaver twice")
-    {
-        PaintEngine.LayerOp op;
-        op.opacity = clamp(opacity, 0, 1);
-        op.blending = blending;
-        implBeginLayer(saver, op);
-    }
-
-    private void implBeginLayer(ref PaintSaver sv, ref PaintEngine.LayerOp op)
     {
         if (state.discard)
             return;
 
         // save state
-        sv.painter = this;
-        sv.depth = mainStack.length;
+        saver.painter = this;
+        saver.depth = mainStack.length;
         mainStack ~= state;
 
         // on certain modes we cannot skip transparent geometry and also must use a full-sized layer
         bool transparentPartsMatter;
-        switch (op.composition) with (CompositeMode)
+        switch (info.composition) with (CompositeMode)
         {
         case copy:
         case sourceIn:
@@ -422,7 +420,8 @@ final class Painter
             break;
         }
 
-        if (fzero6(op.opacity))
+        info.opacity = clamp(info.opacity, 0, 1);
+        if (fzero6(info.opacity))
         {
             // we either discard the geometry or discard the whole layer
             discardSubsequent();
@@ -433,7 +432,7 @@ final class Painter
         mainStack.unsafe_ref(-1).layer = true;
         state.passTransparent = transparentPartsMatter; // doesn't propagate to sub-layers
         layerBounds ~= transparentPartsMatter ? state.clipRect : MIN_RECT_I;
-        engine.beginLayer(op);
+        engine.beginLayer(info);
     }
 
     private void discardSubsequent()
@@ -985,13 +984,6 @@ protected:
         RectI screen;
     }
 
-    struct LayerOp
-    {
-        float opacity = 1;
-        CompositeMode composition = CompositeMode.sourceOver;
-        BlendMode blending = BlendMode.normal;
-    }
-
     static class FlatteningContourIter : PathIter
     {
         private
@@ -1043,7 +1035,7 @@ protected:
     void begin(FrameConfig);
     void end();
 
-    void beginLayer(LayerOp);
+    void beginLayer(LayerInfo);
     void composeLayer(RectI);
 
     void clipOut(uint, const SubPath[], FillRule, bool complement);

@@ -26,7 +26,7 @@ public
     import beamui.graphics.bitmap;
     import beamui.graphics.colors : Color, NamedColor;
     import beamui.graphics.drawables;
-    import beamui.graphics.painter : GlyphInstance, Painter, PaintSaver;
+    import beamui.graphics.painter : LayerInfo, Painter, PaintSaver;
     import beamui.layout.alignment : Align, AlignItem, Distribution, Stretch;
     import beamui.platforms.common.platform : setState;
     import beamui.style.theme : currentTheme;
@@ -2203,7 +2203,7 @@ public:
         const blendMode = _style.mixBlendMode;
         PaintSaver svOuter;
         if (opacity < 0.999f || blendMode != BlendMode.normal)
-            pr.beginLayer(svOuter, opacity, blendMode);
+            pr.beginLayer(svOuter, LayerInfo(opacity, blendMode));
         else
             pr.save(svOuter);
 

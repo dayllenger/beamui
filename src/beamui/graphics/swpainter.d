@@ -41,7 +41,7 @@ final class SWPaintEngine : PaintEngine
         {
             PM_ImageView img;
             BoxI box; /// Screen-relative
-            LayerOp op;
+            LayerInfo info;
         }
 
         LayerPool layerPool;
@@ -106,10 +106,10 @@ protected:
         layerStack.clear();
     }
 
-    override void beginLayer(LayerOp op)
+    override void beginLayer(LayerInfo info)
     {
         layer = layerPool.take(st.clipRect.size);
-        layerStack ~= Layer(layer, BoxI(st.clipRect), op);
+        layerStack ~= Layer(layer, BoxI(st.clipRect), info);
     }
 
     override void composeLayer(RectI bounds)
@@ -123,13 +123,13 @@ protected:
             layer = dst_img;
         }
 
-        PM_Image mask_img = PM_Image.fromOpacity(src.op.opacity);
+        PM_Image mask_img = PM_Image.fromOpacity(src.info.opacity);
         if (!mask_img)
             return;
 
         const offset = layerStack[$ - 1].box.pos;
-        const bool w3c = src.op.blending != BlendMode.normal;
-        const operator = w3c ? pm_op(src.op.blending) : pm_op(src.op.composition);
+        const bool w3c = src.info.blending != BlendMode.normal;
+        const operator = w3c ? pm_op(src.info.blending) : pm_op(src.info.composition);
         // dfmt off
         pixman_image_composite32(
             operator,

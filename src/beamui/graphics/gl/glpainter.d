@@ -31,7 +31,7 @@ import beamui.graphics.gl.renderer;
 import beamui.graphics.gl.shaders;
 import beamui.graphics.gl.stroke_tiling;
 import beamui.graphics.gl.textures;
-import beamui.graphics.painter : GlyphInstance, MIN_RECT_F, PaintEngine;
+import beamui.graphics.painter;
 import beamui.graphics.path : SubPath;
 import beamui.graphics.pen;
 import beamui.graphics.polygons;
@@ -376,16 +376,16 @@ protected:
         }
     }
 
-    override void beginLayer(LayerOp op)
+    override void beginLayer(LayerInfo info)
     {
         Layer lr;
         lr.index = layers.length;
         lr.parent = layer.index;
         lr.sets.start = sets.length;
         lr.depth = layer.depth;
-        lr.opacity = op.opacity;
-        lr.cmd.composition = getBlendFactors(op.composition);
-        lr.cmd.blending = op.blending;
+        lr.opacity = info.opacity;
+        lr.cmd.composition = getBlendFactors(info.composition);
+        lr.cmd.blending = info.blending;
         lr.gpaa = gpaaPool.getFree();
         layers ~= lr;
         layer = &layers.unsafe_ref(lr.index);

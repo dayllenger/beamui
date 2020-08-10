@@ -360,19 +360,19 @@ void layers(Painter pr, Size sz)
     pr.translate(70, 70);
     {
         PaintSaver lsv;
-        pr.beginLayer(lsv, 0.9f);
+        pr.beginLayer(lsv, LayerInfo(0.9f));
         drawWidget();
     }
     pr.translate(150, 0);
     {
         PaintSaver lsv;
-        pr.beginLayer(lsv, 0.5f);
+        pr.beginLayer(lsv, LayerInfo(0.5f));
         drawWidget();
     }
     pr.translate(150, 0);
     {
         PaintSaver lsv;
-        pr.beginLayer(lsv, 0.1f);
+        pr.beginLayer(lsv, LayerInfo(0.1f));
         drawWidget();
     }
 }
@@ -396,12 +396,12 @@ void compositing(Painter pr, Size sz)
         PaintSaver sv, lsv;
         pr.save(sv);
         pr.clipIn(Box(5, 5, 95, 95));
-        pr.beginLayer(lsv, 1, mode);
+        pr.beginLayer(lsv, LayerInfo(1, mode));
         pr.fillTriangle(Vec2(10, 10), Vec2(90, 70), Vec2(70, 90), color);
     }
 
     PaintSaver msv;
-    pr.beginLayer(msv, 1);
+    pr.beginLayer(msv, LayerInfo.init);
     pr.translate(20, 20);
 
     with (CompositeMode)
@@ -454,6 +454,6 @@ void blending(Painter pr, Size sz)
     PaintSaver sv, lsv;
     pr.save(sv);
     pr.clipIn(Box(9, 9, data.duck.width + 2, data.duck.height + 2));
-    pr.beginLayer(lsv, 1, data.blendMode);
+    pr.beginLayer(lsv, LayerInfo(1, data.blendMode));
     pr.drawImage(data.duck, 10, 10, 1);
 }
