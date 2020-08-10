@@ -210,6 +210,7 @@ nothrow:
     {
         Device device;
         StdShaders* sh;
+        FboId defaultFBO;
 
         RenderTargetPool rtpool;
         DataBuffer databuf;
@@ -233,9 +234,33 @@ nothrow:
 
     @disable this(this);
 
-    void initialize(StdShaders* sh)
+    void initialize(StdShaders* sh, GLuint defaultFBO)
     {
         this.sh = sh;
+        this.defaultFBO = FboId(defaultFBO);
+
+        // check the custom framebuffer
+        if (defaultFBO != 0)
+        {
+            enum TARGET = GL_READ_FRAMEBUFFER;
+            enum TYPE = GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE;
+
+            assert(glIsFramebuffer(defaultFBO), "Not a framebuffer object");
+            glBindFramebuffer(TARGET, defaultFBO);
+
+            GLint[4] params;
+            glGetFramebufferAttachmentParameteriv(TARGET, GL_COLOR_ATTACHMENT0, TYPE, &params[0]);
+            glGetFramebufferAttachmentParameteriv(TARGET, GL_DEPTH_ATTACHMENT, TYPE, &params[1]);
+            glGetFramebufferAttachmentParameteriv(TARGET, GL_STENCIL_ATTACHMENT, TYPE, &params[2]);
+            glGetFramebufferAttachmentParameteriv(TARGET, GL_DEPTH_STENCIL_ATTACHMENT, TYPE, &params[3]);
+            const hasColor = params[0] != GL_NONE;
+            const hasDepth = params[1] != GL_NONE || params[3] != GL_NONE;
+            const hasStencil = params[2] != GL_NONE || params[3] != GL_NONE;
+            assert(hasColor && hasDepth && hasStencil, "Framebuffer must have color, depth, and stencil attachments");
+            assert(checkFramebuffer(TARGET));
+
+            glBindFramebuffer(TARGET, 0);
+        }
 
         if (device.hasExtension("GL_ARB_instanced_arrays"))
         {
@@ -378,6 +403,7 @@ nothrow:
         }
 
         LayerInfo[] infos = new LayerInfo[lists.layers.length];
+        infos[0].rt.fbo = defaultFBO;
         infos[0].rt.box = BoxI(lists.layers[0].bounds);
 
         foreach (i, ref set; lists.sets)

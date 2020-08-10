@@ -153,10 +153,10 @@ public final class GLPaintEngine : PaintEngine
         Renderer renderer;
     }
 
-    this(GLSharedData data)
+    this(GLSharedData data, uint customFBO = 0)
     in (data)
     {
-        renderer.initialize(&data.sh);
+        renderer.initialize(&data.sh, customFBO);
         colorStopAtlas = &data.colorStopAtlas;
         textureCache = &data.textureCache;
         glyphCache = &data.glyphCache;
