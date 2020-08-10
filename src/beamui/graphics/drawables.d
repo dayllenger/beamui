@@ -684,40 +684,6 @@ class ImageDrawable : Drawable
     }
 }
 
-static if (USE_OPENGL)
-{
-    /// Custom draw delegate for OpenGL direct drawing
-    alias DrawHandler = void delegate(RectI windowRect, RectI rc);
-
-    /// Custom OpenGL drawing inside a drawable
-    class OpenGLDrawable : Drawable
-    {
-        DrawHandler onDraw;
-
-        this(DrawHandler drawHandler = null)
-        {
-            onDraw = drawHandler;
-        }
-
-        void doDraw(RectI windowRect, RectI rc)
-        {
-            // either override this method or assign draw handler
-            if (onDraw)
-                onDraw(windowRect, rc);
-        }
-
-        override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
-        {
-            // buf.drawCustomOpenGLScene(Rect(b), &doDraw);
-        }
-
-        override @property Size size() const
-        {
-            return Size(20, 20); // dummy size
-        }
-    }
-}
-
 struct BgPosition
 {
     LayoutLength x = LayoutLength.percent(0);
