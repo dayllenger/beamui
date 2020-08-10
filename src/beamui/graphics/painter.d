@@ -60,6 +60,17 @@ struct GlyphInstance
     Point position;
 }
 
+interface CustomSceneDelegate
+{
+    struct Texture
+    {
+        ulong id;
+        PointI origin;
+    }
+
+    Texture render(SizeI) nothrow;
+}
+
 /** Painter draws anti-aliased 2D vector shapes, as well as text and images.
 
     Painter applies clipping and transformation to all operations.
@@ -783,6 +794,17 @@ final class Painter
         engine.drawText(run, color);
     }
 
+    /// Render a custom scene into a texture and compose it as usual layer
+    void drawCustomScene(CustomSceneDelegate scene, SizeI size, LayerInfo layerInfo)
+    in (active)
+    in (scene)
+    in (0 < size.w && size.w < MAX_DIMENSION)
+    in (0 < size.h && size.h < MAX_DIMENSION)
+    {
+        layerInfo.opacity = clamp(layerInfo.opacity, 0, 1);
+        engine.drawCustomScene(scene, size, layerInfo);
+    }
+
     /// Fills `engine.geometryBBox` and `bufContours`
     private bool prepareContours(ref const Path path, float padding = 0, float trPadding = 0)
     in (!path.empty)
@@ -1048,4 +1070,8 @@ protected:
     void drawImage(ref const Bitmap, Vec2, float);
     void drawNinePatch(ref const Bitmap, ref const NinePatchInfo, float);
     void drawText(const GlyphInstance[], Color);
+
+    void drawCustomScene(CustomSceneDelegate, SizeI, LayerInfo)
+    {
+    }
 }

@@ -18,7 +18,7 @@ import beamui.core.collections : Buf;
 import beamui.core.geometry;
 import beamui.core.linalg;
 import beamui.core.math;
-import beamui.core.types : tup;
+import beamui.core.types : Tup, tup;
 import beamui.graphics.colors : ColorF;
 import beamui.graphics.compositing : BlendMode, CompositeOperation;
 import beamui.graphics.gl.api;
@@ -28,7 +28,7 @@ import beamui.graphics.gl.objects;
 import beamui.graphics.gl.program;
 import beamui.graphics.gl.shaders;
 import beamui.graphics.gl.stroke_tiling;
-import beamui.graphics.painter : MIN_RECT_I;
+import beamui.graphics.painter : CustomSceneDelegate, MIN_RECT_I;
 
 package nothrow:
 
@@ -40,6 +40,7 @@ enum BatchType
     simple,
     twopass,
     tiled,
+    custom,
 }
 
 enum Stenciling
@@ -65,6 +66,7 @@ struct Batch
     {
         BatchSimple simple;
         BatchTwoPass twopass;
+        BatchCustom custom;
     }
 }
 
@@ -84,6 +86,12 @@ struct BatchTwoPass
     Span covers;
     Span coverTriangles;
     Stenciling stenciling;
+}
+
+struct BatchCustom
+{
+    uint scene;
+    ComposeCmd cmd;
 }
 
 enum PaintKind
@@ -124,7 +132,6 @@ struct DataChunk
 
 struct ComposeCmd
 {
-    ushort dataIndex;
     Span triangles;
     CompositeOperation composition;
     BlendMode blending;
@@ -155,6 +162,12 @@ struct Set
     uint layer;
     uint layerToCompose;
     bool finishing;
+}
+
+struct CustomScene
+{
+    CustomSceneDelegate deleg;
+    SizeI size;
 }
 
 struct Tri
@@ -222,6 +235,8 @@ nothrow:
         VaoId vaoTiles;
         BufferId vboTiles;
         BufferId vboTileDat;
+
+        Tup!(TexId, BoxI)[] renderedScenes;
 
         GpaaRenderer gpaa;
 
@@ -388,10 +403,23 @@ nothrow:
         gpaa.upload(gpaaData);
     }
 
-    bool render(const DrawLists lists)
+    bool render(const DrawLists lists, CustomScene[] scenes)
     {
         if (fail)
             return false;
+
+        // render custom scenes before touching GL state
+        if (scenes.length)
+        {
+            renderedScenes = new Tup!(TexId, BoxI)[scenes.length];
+            foreach (i, scene; scenes)
+            {
+                const tex = scene.deleg.render(scene.size);
+                const valid = tex.id && glIsTexture(cast(GLuint)tex.id);
+                assert(valid, "Invalid texture returned from the scene delegate");
+                renderedScenes[i] = tup(TexId(cast(GLuint)tex.id), BoxI(tex.origin, scene.size));
+            }
+        }
 
         prepare();
 
@@ -564,6 +592,11 @@ private:
             break;
         case tiled:
             performTiled(pbase, bt.common.params, bt.common.triangles, flags);
+            break;
+        case custom:
+            const view = renderedScenes[bt.custom.scene];
+            const params = ParamsComposition(view[0], view[1]);
+            compose(bt.custom.cmd, pbase, params);
             break;
         }
     }

@@ -102,6 +102,7 @@ struct Layer
     alias base this;
 
     Span sets; /// Sets of this layer and its sub-layers
+    uint dataIndex;
 
     float depth = 1;
     float opacity = 1;
@@ -128,6 +129,7 @@ public final class GLPaintEngine : PaintEngine
         Layer* layer; // points into array, so need to handle carefully
         Buf!Layer layers;
         Buf!Set sets;
+        CustomScene[] customScenes;
 
         Buf!DataChunk dataStore;
 
@@ -265,6 +267,8 @@ protected:
         // dfmt on
 
         paint();
+
+        customScenes = null;
     }
 
     private void paint()
@@ -272,7 +276,7 @@ protected:
         foreach (ref lr; layers[])
             layersToRender ~= &lr.base;
 
-        renderer.render(DrawLists(layersToRender[], sets[], g_opaque.batches[], g_transp.batches[]));
+        renderer.render(DrawLists(layersToRender[], sets[], g_opaque.batches[], g_transp.batches[]), customScenes);
     }
 
     private void prepareSets()
@@ -370,7 +374,7 @@ protected:
                 const t = g.triangles.length;
                 g.positions ~= vs[];
                 addStrip(g.triangles, v, 4);
-                g.dataIndices.resize(g.dataIndices.length + 4, lr.cmd.dataIndex);
+                g.dataIndices.resize(g.dataIndices.length + 4, cast(ushort)lr.dataIndex);
                 lr.cmd.triangles = Span(t, g.triangles.length);
             }
         }
@@ -397,7 +401,7 @@ protected:
         const opacity = layer.opacity;
         layer.bounds = bounds;
         layer.sets.end = sets.length;
-        layer.cmd.dataIndex = cast(ushort)dataStore.length;
+        layer.dataIndex = dataStore.length;
 
         // setup the parent layer back
         sets ~= makeSet(layer.parent, layer.index);
@@ -833,6 +837,35 @@ protected:
         auto data = prepareDataChunk(null, 0);
         data.color = ColorF(c).premultiplied;
         doneTexturedBatch(*g, data);
+    }
+
+    override void drawCustomScene(CustomSceneDelegate scene, SizeI size, LayerInfo info)
+    {
+        auto g = pickGeometry(false);
+
+        // dfmt off
+        const Vec2[4] vs = [
+            Vec2(0, 0),
+            Vec2(0, size.h),
+            Vec2(size.w, 0),
+            Vec2(size.w, size.h),
+        ];
+        // dfmt on
+        const v = g.positions.length;
+        const t = g.triangles.length;
+        g.positions ~= vs[];
+        addStrip(g.triangles, v, 4);
+
+        Batch bt;
+        bt.type = BatchType.custom;
+        bt.custom.scene = cast(uint)customScenes.length;
+        bt.custom.cmd = ComposeCmd(Span(t, g.triangles.length), getBlendFactors(info.composition), info.blending);
+        g.batches ~= bt;
+
+        const data = prepareDataChunk(null, info.opacity);
+        doneBatch(*g, data);
+
+        customScenes ~= CustomScene(scene, size);
     }
 
 private:

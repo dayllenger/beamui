@@ -2497,7 +2497,7 @@ static if (USE_OPENGL)
 private __gshared bool _openglEnabled = true;
 
 /// Check if hardware acceleration is enabled
-bool openglEnabled()
+bool openglEnabled() nothrow
 {
     static if (USE_OPENGL)
         return _openglEnabled;
@@ -2505,7 +2505,7 @@ bool openglEnabled()
         return false;
 }
 /// Disable OpenGL acceleration on app initialization in case of failure
-void disableOpenGL()
+void disableOpenGL() nothrow
 {
     static if (USE_OPENGL)
     {
