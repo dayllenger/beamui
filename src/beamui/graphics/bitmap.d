@@ -20,6 +20,8 @@ enum PixelFormat
     invalid,
     argb8,
     a8,
+    /// Console bitmap format: char-background-foreground as `dchar-xrgb8-xrgb8`
+    cbf32,
 }
 
 /// 9-patch image scaling information (unscaled frame and scaled middle parts)
@@ -525,6 +527,7 @@ static this()
 {
     implementations[PixelFormat.argb8] = new BitmapARGB8;
     implementations[PixelFormat.a8] = new BitmapA8;
+    implementations[PixelFormat.cbf32] = new BitmapCBF32;
 }
 
 private IBitmap getBitmapImpl(PixelFormat fmt)
@@ -673,6 +676,37 @@ final class BitmapA8 : IBitmap
         {
         case a8:
             blitGeneric!ubyte(src, dst);
+            return true;
+        default:
+            return false;
+        }
+    }
+}
+
+final class BitmapCBF32 : IBitmap
+{
+    // dfmt off
+    PixelFormat format() const { return PixelFormat.cbf32; }
+    ubyte stride() const { return 12; }
+    // dfmt on
+
+    bool isBlackPixel(const void* pixel) const
+    {
+        return false;
+    }
+
+    void fill(BitmapView dst, Color color)
+    {
+        const uint[3] val = [0, color.rgba, 0];
+        fillGeneric!(uint[3])(dst, val);
+    }
+
+    bool blit(BitmapView dst, const BitmapView src, PixelFormat srcFmt)
+    {
+        switch (srcFmt) with (PixelFormat)
+        {
+        case cbf32:
+            blitGeneric!(uint[3])(src, dst);
             return true;
         default:
             return false;
