@@ -123,6 +123,9 @@ protected:
             layer = dst_img;
         }
 
+        if (bounds.empty)
+            return;
+
         PM_Image mask_img = PM_Image.fromOpacity(src.info.opacity);
         if (!mask_img)
             return;
@@ -134,10 +137,10 @@ protected:
         pixman_image_composite32(
             operator,
             src.img, mask_img, dst_img,
+            bounds.left - src.box.x, bounds.top - src.box.y,
             0, 0,
-            0, 0,
-            src.box.x - offset.x, src.box.y - offset.y,
-            src.box.w, src.box.h,
+            bounds.left - offset.x, bounds.top - offset.y,
+            bounds.width, bounds.height,
         );
         // dfmt on
     }
