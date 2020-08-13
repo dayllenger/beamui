@@ -138,13 +138,12 @@ class ConsolePlatform : Platform
         super(conf);
 
         _console = new Console;
-        _console.batchMode = true;
         _console.onKeyEvent = &handleKey;
         _console.onMouseEvent = &handleMouse;
         _console.onWheelEvent = &handleWheel;
         _console.onResize = &handleResize;
         _console.onInputIdle = &handleInputIdle;
-        _console.init();
+        _console.initialize();
         _console.setCursorType(ConsoleCursorType.hidden);
 
         _backbuffer = Bitmap(1, 1, PixelFormat.cbf32);
@@ -280,7 +279,6 @@ class ConsolePlatform : Platform
             w.handlePostedEvents();
         }
         redraw();
-        _console.flush();
         windows.purge();
         return false;
     }
@@ -328,27 +326,42 @@ class ConsolePlatform : Platform
     }
 }
 
-private struct Pixel
-{
-    dchar c;
-    uint b, f;
-}
-
 private void blitBitmapOntoConsole(const Bitmap bitmap, Console console)
 {
-    console.setCursor(0, 0);
+    static struct Pixel
+    {
+        dchar c;
+        uint b, f;
+    }
+
+    dchar[] buf = new dchar[bitmap.width];
 
     const view = bitmap.look!Pixel;
     foreach (y; 0 .. bitmap.height)
     {
+        console.setCursor(0, y);
+
         const row = view.scanline(y);
+        uint start, end;
+        Pixel prev;
         foreach (x; 0 .. bitmap.width)
         {
             const Pixel px = row[x];
-            immutable dchar[1] txt = [px.c == 0 ? ' ' : px.c];
-            console.backgroundColor = toConsoleColor(px.b, true);
-            console.textColor = toConsoleColor(px.f, false);
-            console.writeText(txt);
+            if (start < end && (prev.b != px.b || prev.f != px.f))
+            {
+                const bg = toConsoleColor(prev.b);
+                const fg = toConsoleColor(prev.f);
+                console.writeText(buf[start .. end], fg, bg, false);
+                start = end;
+                prev = px;
+            }
+            buf[end++] = (px.c == 0) ? ' ' : px.c;
+        }
+        if (start < end)
+        {
+            const bg = toConsoleColor(prev.b);
+            const fg = toConsoleColor(prev.f);
+            console.writeText(buf[start .. end], fg, bg, false);
         }
     }
 }
@@ -387,11 +400,8 @@ private immutable RGB[16] CONSOLE_COLORS_RGB = [
     RGB(255, 255, 255),
 ];
 
-private ubyte toConsoleColor(uint xrgb8, bool forBackground = false)
+private ubyte toConsoleColor(uint xrgb8)
 {
-    if (forBackground && xrgb8 == 0) // FIXME
-        return CONSOLE_TRANSPARENT_BACKGROUND;
-
     const color = Color.fromPacked(xrgb8);
     int r = color.r;
     int g = color.g;

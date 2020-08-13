@@ -35,214 +35,6 @@ enum ConsoleCursorType
     replace, /// Replace (usually square)
 }
 
-enum TextColor : ubyte
-{
-    BLACK, // 0
-    BLUE,
-    GREEN,
-    CYAN,
-    RED,
-    MAGENTA,
-    YELLOW,
-    GREY,
-    DARK_GREY, // 8
-    LIGHT_BLUE,
-    LIGHT_GREEN,
-    LIGHT_CYAN,
-    LIGHT_RED,
-    LIGHT_MAGENTA,
-    LIGHT_YELLOW,
-    WHITE, // 15
-}
-
-immutable ubyte CONSOLE_TRANSPARENT_BACKGROUND = 0xFF;
-
-struct ConsoleChar
-{
-    dchar ch;
-    uint attr = 0xFFFFFFFF;
-
-    @property
-    {
-        ubyte backgroundColor() const
-        {
-            return cast(ubyte)((attr >> 8) & 0xFF);
-        }
-
-        void backgroundColor(ubyte b)
-        {
-            attr = (attr & 0xFFFF00FF) | ((cast(uint)b) << 8);
-        }
-
-        ubyte textColor() const
-        {
-            return cast(ubyte)((attr) & 0xFF);
-        }
-
-        void textColor(ubyte b)
-        {
-            attr = (attr & 0xFFFFFF00) | (cast(uint)b);
-        }
-
-        bool underline() const
-        {
-            return (attr & 0x10000) != 0;
-        }
-
-        void underline(bool b)
-        {
-            if (b)
-                attr |= 0x10000;
-            else
-                attr &= ~0x10000;
-        }
-    }
-
-    /// Set value, supporting transparent background
-    void set(ConsoleChar v)
-    {
-        if (v.backgroundColor == CONSOLE_TRANSPARENT_BACKGROUND)
-        {
-            ch = v.ch;
-            textColor = v.textColor;
-            underline = v.underline;
-        }
-        else
-            this = v;
-    }
-}
-
-immutable ConsoleChar UNKNOWN_CHAR = ConsoleChar.init;
-
-struct ConsoleBuf
-{
-    // dfmt off
-    @property
-    {
-        int width() const { return _width; }
-        int height() const { return _height; }
-        int cursorX() const { return _cursorX; }
-        int cursorY() const { return _cursorY; }
-    }
-    // dfmt on
-
-    private
-    {
-        int _width;
-        int _height;
-        int _cursorX;
-        int _cursorY;
-        ConsoleChar[] _chars;
-    }
-
-    void clear(ConsoleChar ch)
-    {
-        _chars[0 .. $] = ch;
-    }
-
-    void copyFrom(ref ConsoleBuf buf)
-    {
-        _width = buf._width;
-        _height = buf._height;
-        _cursorX = buf._cursorX;
-        _cursorY = buf._cursorY;
-        _chars.length = buf._chars.length;
-        for (int i = 0; i < _chars.length; i++)
-            _chars[i] = buf._chars[i];
-    }
-
-    void set(int x, int y, ConsoleChar ch)
-    {
-        _chars[y * _width + x].set(ch);
-    }
-
-    ConsoleChar get(int x, int y) const
-    {
-        return _chars[y * _width + x];
-    }
-
-    ConsoleChar[] line(int y)
-    {
-        return _chars[y * _width .. (y + 1) * _width];
-    }
-
-    void resize(int w, int h)
-    {
-        if (_width != w || _height != h)
-        {
-            _chars.length = w * h;
-            _width = w;
-            _height = h;
-        }
-        _cursorX = 0;
-        _cursorY = 0;
-        _chars[0 .. $] = UNKNOWN_CHAR;
-    }
-
-    void scrollUp(uint attr)
-    {
-        for (int i = 0; i + 1 < _height; i++)
-        {
-            _chars[i * _width .. (i + 1) * _width] = _chars[(i + 1) * _width .. (i + 2) * _width];
-        }
-        _chars[(_height - 1) * _width .. _height * _width] = ConsoleChar(' ', attr);
-    }
-
-    void setCursor(int x, int y)
-    {
-        _cursorX = x;
-        _cursorY = y;
-    }
-
-    void writeChar(dchar ch, uint attr)
-    {
-        if (_cursorX >= _width)
-        {
-            _cursorY++;
-            _cursorX = 0;
-            if (_cursorY >= _height)
-            {
-                _cursorY = _height - 1;
-                scrollUp(attr);
-            }
-        }
-        if (ch == '\n')
-        {
-            _cursorX = 0;
-            _cursorY++;
-            if (_cursorY >= _height)
-            {
-                scrollUp(attr);
-                _cursorY = _height - 1;
-            }
-            return;
-        }
-        if (ch == '\r')
-        {
-            _cursorX = 0;
-            return;
-        }
-        set(_cursorX, _cursorY, ConsoleChar(ch, attr));
-        _cursorX++;
-        if (_cursorX >= _width)
-        {
-            if (_cursorY < _height - 1)
-            {
-                _cursorY++;
-                _cursorX = 0;
-            }
-        }
-    }
-
-    void write(dstring str, uint attr)
-    {
-        for (int i = 0; i < str.length; i++)
-        {
-            writeChar(str[i], attr);
-        }
-    }
-}
-
 version (Windows)
 {
 }
@@ -250,17 +42,10 @@ else
 {
     import core.sys.posix.signal;
 
-    __gshared bool SIGHUP_flag = false;
-    extern (C) void signalHandler_SIGHUP(int) nothrow @nogc @system
+    private __gshared bool SIGHUP_flag;
+    private extern (C) void signalHandler_SIGHUP(int) nothrow @nogc @system
     {
         SIGHUP_flag = true;
-        try
-        {
-            //Log.w("SIGHUP signal fired");
-        }
-        catch (Exception e)
-        {
-        }
     }
 
     void setSignalHandlers()
@@ -272,38 +57,13 @@ else
 /// Console I/O support
 class Console
 {
+    // dfmt off
     @property
     {
-        int width() const
-        {
-            return _width;
-        }
-
-        int height() const
-        {
-            return _height;
-        }
-
-        int cursorX() const
-        {
-            return _cursorX;
-        }
-
-        void cursorX(int x)
-        {
-            _cursorX = x;
-        }
-
-        int cursorY() const
-        {
-            return _cursorY;
-        }
-
-        @property void cursorY(int y)
-        {
-            _cursorY = y;
-        }
+        int width() const { return _width; }
+        int height() const { return _height; }
     }
+    // dfmt on
 
     private
     {
@@ -312,9 +72,15 @@ class Console
         int _width;
         int _height;
 
-        ConsoleBuf _buf;
-        ConsoleBuf _batchBuf;
-        uint _consoleAttr;
+        version (Windows)
+        {
+            WORD _attr = WORD.max;
+            immutable ushort COMMON_LVB_UNDERSCORE = 0x8000;
+        }
+        else
+        {
+            uint _attr = uint.max;
+        }
         bool _stopped;
     }
 
@@ -322,8 +88,6 @@ class Console
     {
         HANDLE _hstdin;
         HANDLE _hstdout;
-        WORD _attr;
-        immutable ushort COMMON_LVB_UNDERSCORE = 0x8000;
     }
     else
     {
@@ -440,13 +204,13 @@ class Console
                     //debug Log.d("rawWrite error EAGAIN - will retry");
                     res = cast(int)write(STDOUT_FILENO, s.ptr, s.length);
                     if (res >= 0)
-                        return (res > 0);
+                        return res > 0;
                     err = errno;
                 }
                 Log.e("rawWrite error ", err, " - stopping terminal");
                 _stopped = true;
             }
-            return (res > 0);
+            return res > 0;
         }
     }
 
@@ -489,7 +253,7 @@ class Console
         }
     }
 
-    bool init()
+    bool initialize()
     {
         version (Windows)
         {
@@ -583,44 +347,23 @@ class Console
             //string termType = rawRead();
             //Log.d("Term type=", termType);
         }
-        _buf.resize(_width, _height);
-        _batchBuf.resize(_width, _height);
         return true;
-    }
-
-    void resize(int width, int height)
-    {
-        if (_width != width || _height != height)
-        {
-            _buf.resize(width, height);
-            _batchBuf.resize(width, height);
-            _width = width;
-            _height = height;
-            clearScreen(); //??
-        }
     }
 
     /// Clear screen and set cursor position to 0,0
     void clearScreen()
     {
-        calcAttributes();
-        if (!_batchMode)
+        version (Windows)
         {
-            _buf.clear(ConsoleChar(' ', _consoleAttr));
-            version (Windows)
-            {
-                DWORD charsWritten;
-                FillConsoleOutputCharacter(_hstdout, ' ', _width * _height, COORD(0, 0), &charsWritten);
-                FillConsoleOutputAttribute(_hstdout, _attr, _width * _height, COORD(0, 0), &charsWritten);
-            }
-            else
-            {
-                rawWrite("\033[2J");
-            }
+            _attr = 0;
+            DWORD charsWritten;
+            FillConsoleOutputCharacter(_hstdout, ' ', _width * _height, COORD(0, 0), &charsWritten);
+            FillConsoleOutputAttribute(_hstdout, 0, _width * _height, COORD(0, 0), &charsWritten);
         }
         else
         {
-            _batchBuf.clear(ConsoleChar(' ', _consoleAttr));
+            _attr = 0;
+            rawWrite("\033[2J");
         }
         setCursor(0, 0);
     }
@@ -628,83 +371,40 @@ class Console
     /// Set cursor position
     void setCursor(int x, int y)
     {
-        if (!_batchMode)
-        {
-            _buf.setCursor(x, y);
-            rawSetCursor(x, y);
-            _cursorX = x;
-            _cursorY = y;
-        }
-        else
-        {
-            _batchBuf.setCursor(x, y);
-        }
+        rawSetCursor(x, y);
+        _cursorX = x;
+        _cursorY = y;
     }
 
-    /// Flush batched updates
-    void flush()
-    {
-        if (!_batchMode)
-            return;
-
-        bool drawn;
-        foreach (y; 0 .. _batchBuf.height)
-        {
-            ConsoleChar[] batchLine = _batchBuf.line(y);
-            ConsoleChar[] bufLine = _buf.line(y);
-            foreach (x; 0 .. _batchBuf.width)
-            {
-                if (batchLine[x] != ConsoleChar.init && batchLine[x] != bufLine[x])
-                {
-                    // found non-empty sequence
-                    int xx = 1;
-                    dchar[] str;
-                    str ~= batchLine[x].ch;
-                    bufLine[x] = batchLine[x];
-                    const uint firstAttr = batchLine[x].attr;
-                    for (; x + xx < _batchBuf.width; xx++)
-                    {
-                        if (batchLine[x + xx] == ConsoleChar.init || batchLine[x + xx].attr != firstAttr)
-                            break;
-                        str ~= batchLine[x + xx].ch;
-                        bufLine[x + xx].set(batchLine[x + xx]);
-                    }
-                    rawWriteTextAt(x, y, firstAttr, cast(dstring)str);
-                    x += xx - 1;
-                    drawn = true;
-                }
-            }
-        }
-        if (drawn || _cursorX != _batchBuf.cursorX || _cursorY != _batchBuf.cursorY)
-        {
-            _cursorX = _batchBuf.cursorX;
-            _cursorY = _batchBuf.cursorY;
-            rawSetCursor(_cursorX, _cursorY);
-            rawSetCursorType(_cursorType);
-        }
-        _batchBuf.clear(ConsoleChar.init);
-    }
-
-    /// Write text string
-    void writeText(dstring str)
+    /// Write text string directly onto screen, moving cursor
+    void writeText(const dchar[] str, ubyte textColor, ubyte backgroundColor, bool underline)
     {
         if (!str.length)
             return;
-        updateAttributes();
-        if (!_batchMode)
+
+        rawSetAttributes(textColor, backgroundColor, underline);
+        rawWriteText(str);
+
+        foreach (i; 0 .. str.length)
         {
-            // no batch mode, write directly to screen
-            _buf.write(str, _consoleAttr);
-            rawWriteText(str);
-            _cursorX = _buf.cursorX;
-            _cursorY = _buf.cursorY;
-        }
-        else
-        {
-            // batch mode
-            _batchBuf.write(str, _consoleAttr);
-            _cursorX = _batchBuf.cursorX;
-            _cursorY = _batchBuf.cursorY;
+            if (_cursorX >= _width)
+            {
+                _cursorX = 0;
+                _cursorY++;
+                if (_cursorY >= _height)
+                {
+                    _cursorY = _height - 1;
+                }
+            }
+            _cursorX++;
+            if (_cursorX >= _width)
+            {
+                if (_cursorY < _height - 1)
+                {
+                    _cursorX = 0;
+                    _cursorY++;
+                }
+            }
         }
     }
 
@@ -788,47 +488,15 @@ class Console
     void setCursorType(ConsoleCursorType type)
     {
         _cursorType = type;
-        if (!_batchMode)
-            rawSetCursorType(_cursorType);
+        rawSetCursorType(_cursorType);
     }
 
-    protected void rawWriteTextAt(int x, int y, uint attr, dstring str)
+    protected void rawWriteText(const dchar[] str)
     {
-        if (!str.length)
-            return;
-        version (Windows)
-        {
-            CHAR_INFO[1000] lineBuf;
-            const underscore = ((attr >> 16) & 1) ? COMMON_LVB_UNDERSCORE : 0;
-            WORD newattr = cast(WORD)((attr & 0x0F) | (((attr >> 8) & 0x0F) << 4) | underscore);
-            for (int i = 0; i < str.length; i++)
-            {
-                lineBuf[i].UnicodeChar = cast(WCHAR)str[i];
-                lineBuf[i].Attributes = newattr;
-            }
-            COORD bufSize;
-            COORD bufCoord;
-            bufSize.X = cast(short)str.length;
-            bufSize.Y = 1;
-            bufCoord.X = 0;
-            bufCoord.Y = 0;
-            SMALL_RECT region;
-            region.Left = cast(short)x;
-            region.Right = cast(short)(x + cast(int)str.length);
-            region.Top = cast(short)y;
-            region.Bottom = cast(short)y;
-            WriteConsoleOutput(_hstdout, lineBuf.ptr, bufSize, bufCoord, &region);
-        }
-        else
-        {
-            rawSetCursor(x, y);
-            rawSetAttributes(attr);
-            rawWriteText(cast(dstring)str);
-        }
-    }
+        // use cursor position to break lines
+        debug foreach (ch; str)
+            assert(ch != '\n' && ch != '\r');
 
-    protected void rawWriteText(dstring str)
-    {
         version (Windows)
         {
             wstring s16 = toUTF16(str);
@@ -842,48 +510,48 @@ class Console
         }
     }
 
-    version (Windows)
-    {
-    }
-    else
-    {
-        private int lastTextColor = -1;
-        private int lastBackgroundColor = -1;
-    }
-    protected void rawSetAttributes(uint attr)
+    private ubyte _textColor;
+    private ubyte _backgroundColor;
+    private bool _underline;
+
+    protected void rawSetAttributes(ubyte textColor, ubyte backgroundColor, bool underline)
     {
         version (Windows)
         {
-            WORD newattr = cast(WORD)((attr & 0x0F) | (((attr >> 8) & 0x0F) << 4) | (((attr >> 16) & 1) ?
-        COMMON_LVB_UNDERSCORE : 0));
-            if (newattr != _attr)
-            {
-                _attr = newattr;
-                SetConsoleTextAttribute(_hstdout, _attr);
-            }
+            const attr = cast(WORD)textColor | cast(WORD)backgroundColor << 4 | (underline ? COMMON_LVB_UNDERSCORE : 0);
+            if (_attr == attr)
+                return;
+            _attr = attr;
+
+            SetConsoleTextAttribute(_hstdout, attr);
         }
         else
         {
-            int textCol = (attr & 0x0F);
-            int bgCol = ((attr >> 8) & 0x0F);
-            textCol = (textCol & 7) + (textCol & 8 ? 90 : 30);
-            bgCol = (bgCol & 7) + (bgCol & 8 ? 100 : 40);
-            if (textCol == lastTextColor && bgCol == lastBackgroundColor)
-                return;
             import core.stdc.stdio;
             import core.stdc.string;
 
-            char[50] buf;
-            if (textCol != lastTextColor && bgCol != lastBackgroundColor)
+            const attr = cast(uint)textColor | cast(uint)backgroundColor << 8 | (underline ? 0x10000 : 0);
+            if (_attr == attr)
+                return;
+            _attr = attr;
+
+            const int textCol = (textColor & 7) + (textColor & 8 ? 90 : 30);
+            const int bgCol = (backgroundColor & 7) + (backgroundColor & 8 ? 100 : 40);
+
+            char[50] buf = 0;
+            if (_textColor != textColor && _backgroundColor != backgroundColor)
                 sprintf(buf.ptr, "\x1b[%d;%dm", textCol, bgCol);
-            else if (textCol != lastTextColor && bgCol == lastBackgroundColor)
+            else if (_textColor != textColor && _backgroundColor == backgroundColor)
                 sprintf(buf.ptr, "\x1b[%dm", textCol);
             else
                 sprintf(buf.ptr, "\x1b[%dm", bgCol);
-            lastBackgroundColor = bgCol;
-            lastTextColor = textCol;
+
             rawWrite(cast(string)buf[0 .. strlen(buf.ptr)]);
         }
+
+        _textColor = textColor;
+        _backgroundColor = backgroundColor;
+        _underline = underline;
     }
 
     protected void checkResize()
@@ -892,9 +560,8 @@ class Console
         {
             CONSOLE_SCREEN_BUFFER_INFO csbi;
             if (!GetConsoleScreenBufferInfo(_hstdout, &csbi))
-            {
                 return;
-            }
+
             _cursorX = csbi.dwCursorPosition.X;
             _cursorY = csbi.dwCursorPosition.Y;
             int w = csbi.srWindow.Right - csbi.srWindow.Left + 1; // csbi.dwSize.X;
@@ -919,109 +586,6 @@ class Console
         }
     }
 
-    protected void calcAttributes()
-    {
-        _consoleAttr = cast(uint)_textColor | (cast(uint)_backgroundColor << 8) | (_underline ? 0x10000 : 0);
-        version (Windows)
-        {
-            _attr = cast(WORD)(_textColor | (_backgroundColor << 4) | (_underline ? COMMON_LVB_UNDERSCORE : 0));
-        }
-        else
-        {
-        }
-    }
-
-    protected void updateAttributes()
-    {
-        if (_dirtyAttributes)
-        {
-            calcAttributes();
-            if (!_batchMode)
-            {
-                version (Windows)
-                {
-                    SetConsoleTextAttribute(_hstdout, _attr);
-                }
-                else
-                {
-                    rawSetAttributes(_consoleAttr);
-                }
-            }
-            _dirtyAttributes = false;
-        }
-    }
-
-    protected bool _batchMode;
-    @property bool batchMode()
-    {
-        return _batchMode;
-    }
-
-    @property void batchMode(bool batch)
-    {
-        if (_batchMode == batch)
-            return;
-        if (batch)
-        {
-            // batch mode turned ON
-            _batchBuf.clear(ConsoleChar.init);
-            _batchMode = true;
-        }
-        else
-        {
-            // batch mode turned OFF
-            flush();
-            _batchMode = false;
-        }
-    }
-
-    protected bool _dirtyAttributes;
-    protected ubyte _textColor;
-    protected ubyte _backgroundColor;
-    protected bool _underline;
-    /// Get underline text attribute flag
-    @property bool underline()
-    {
-        return _underline;
-    }
-    /// Set underline text attrubute flag
-    @property void underline(bool flag)
-    {
-        if (flag != _underline)
-        {
-            _underline = flag;
-            _dirtyAttributes = true;
-        }
-    }
-    /// Get text color
-    @property ubyte textColor()
-    {
-        return _textColor;
-    }
-    /// Set text color
-    @property void textColor(ubyte color)
-    {
-        if (_textColor != color)
-        {
-            _textColor = color;
-            _dirtyAttributes = true;
-        }
-    }
-    /// Get background color
-    @property ubyte backgroundColor()
-    {
-        return _backgroundColor;
-    }
-    /// Set background color
-    @property void backgroundColor(ubyte color)
-    {
-        if (_backgroundColor != color)
-        {
-            _backgroundColor = color;
-            _dirtyAttributes = true;
-        }
-    }
-
     /// Keyboard event signal
     Listener!(bool delegate(KeyEvent)) onKeyEvent;
     /// Mouse event signal
@@ -1040,7 +604,7 @@ class Console
 
     protected bool handleMouseEvent(MouseEvent event)
     {
-        ButtonDetails* pbuttonDetails = null;
+        ButtonDetails* pbuttonDetails;
         if (event.button == MouseButton.left)
             pbuttonDetails = &_lbutton;
         else if (event.button == MouseButton.right)
@@ -1071,7 +635,8 @@ class Console
 
     protected bool handleConsoleResize(int width, int height)
     {
-        resize(width, height);
+        _width = width;
+        _height = height;
         return onResize(width, height);
     }
 
