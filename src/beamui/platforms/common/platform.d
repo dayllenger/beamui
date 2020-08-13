@@ -122,7 +122,7 @@ class EventList
         _mutex.lock();
         scope (exit)
             _mutex.unlock();
-        return _events.popFront();
+        return _events.count ? _events.popFront() : null;
     }
     /// Returns event by unique id
     CustomEvent get(uint uniqueID)

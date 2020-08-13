@@ -9,12 +9,17 @@ module beamui.platforms.ansi_console.consoleapp;
 
 import beamui.core.config;
 
+// dfmt off
 static if (BACKEND_CONSOLE):
-import beamui.core.events;
+// dfmt on
+import beamui.core.geometry;
 import beamui.core.logger;
+import beamui.events.event;
+import beamui.events.keyboard;
+import beamui.events.pointer;
+import beamui.events.wheel;
 import beamui.graphics.bitmap;
 import beamui.graphics.colors : Color;
-import beamui.graphics.drawables : ConsoleDrawBuf;
 import beamui.platforms.ansi_console.dconsole;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
@@ -40,7 +45,14 @@ class ConsoleWindow : Window
         setDPI(10, 1);
     }
 
-    override @property dstring title() const { return _title; }
+    override protected void cleanup()
+    {
+    }
+
+    override @property dstring title() const
+    {
+        return _title;
+    }
 
     override @property void title(dstring caption)
     {
@@ -70,6 +82,15 @@ class ConsoleWindow : Window
         _platform.closeWindow(this);
     }
 
+    override void handleResize(int width, int height)
+    {
+        super.handleResize(width, height);
+    }
+
+    protected void redraw()
+    {
+    }
+
     //===============================================================
 
     override @property bool isActive() const
@@ -80,7 +101,10 @@ class ConsoleWindow : Window
 
     private bool _visible;
     /// Returns true if window is shown
-    @property bool visible() { return _visible; }
+    @property bool visible()
+    {
+        return _visible;
+    }
 
     override protected void scheduleSystemTimer(long timestamp)
     {
@@ -90,15 +114,16 @@ class ConsoleWindow : Window
 
 class ConsolePlatform : Platform
 {
-    @property Console console() { return _console; }
-
-    @property DrawBuf drawBuf() { return _drawBuf; }
+    @property Console console()
+    {
+        return _console;
+    }
 
     private
     {
         Console _console;
         WindowMap!(ConsoleWindow, size_t) windows;
-        ANSIConsoleDrawBuf _drawBuf;
+        Bitmap _bitmap;
     }
 
     this(ref AppConf conf)
@@ -114,16 +139,15 @@ class ConsolePlatform : Platform
         _console.onInputIdle = &handleInputIdle;
         _console.init();
         _console.setCursorType(ConsoleCursorType.hidden);
-        _drawBuf = new ANSIConsoleDrawBuf(_console);
+        _bitmap = Bitmap(1, 1, PixelFormat.cbf32);
     }
 
     ~this()
     {
-        destroy(windows);
-        //Log.d("Destroying console");
-        //destroy(_console);
-        Log.d("Destroying drawbuf");
-        destroy(_drawBuf);
+        Log.d("Calling console.uninit");
+        _console.uninit();
+        Log.d("Destroying console");
+        destroy(_console);
     }
 
     override Window createWindow(dstring title, Window parent,
@@ -138,6 +162,14 @@ class ConsolePlatform : Platform
     override void closeWindow(Window w)
     {
         windows.remove(cast(ConsoleWindow)w);
+    }
+
+    override protected int opApply(scope int delegate(size_t i, Window w) callback)
+    {
+        foreach (i, w; windows)
+            if (const result = callback(i, w))
+                break;
+        return 0;
     }
 
     @property ConsoleWindow activeWindow()
@@ -183,7 +215,7 @@ class ConsolePlatform : Platform
 
     protected bool handleResize(int width, int height)
     {
-        drawBuf.resize(width, height);
+        _bitmap.resize(width, height);
         foreach (w; windows)
         {
             w.handleResize(width, height);
@@ -206,22 +238,21 @@ class ConsolePlatform : Platform
         {
             if (w.visible)
             {
-                _drawBuf.fillRect(RectI(0, 0, w.width, w.height), w.backgroundColor);
-                w.draw(_drawBuf);
+                _bitmap.fillRect(RectI(0, 0, w.width, w.height), w.backgroundColor);
+                w.redraw();
                 auto caretRect = w.caretRect;
                 if (w is activeWindow)
                 {
                     if (!caretRect.empty)
                     {
-                        _drawBuf.console.setCursor(caretRect.left, caretRect.top);
-                        _drawBuf.console.setCursorType(w.caretReplace ? ConsoleCursorType.replace
-                                : ConsoleCursorType.insert);
+                        _console.setCursor(cast(int)caretRect.left, cast(int)caretRect.top);
+                        _console.setCursorType(w.caretReplace ? ConsoleCursorType.replace : ConsoleCursorType.insert);
                     }
                     else
                     {
-                        _drawBuf.console.setCursorType(ConsoleCursorType.hidden);
+                        _console.setCursorType(ConsoleCursorType.hidden);
                     }
-                    _drawBuf.console.setWindowCaption(w.title);
+                    _console.setWindowCaption(w.title);
                 }
             }
         }
@@ -274,11 +305,6 @@ class ConsolePlatform : Platform
         _clipboardText = text;
     }
 
-    override void requestLayout()
-    {
-        // TODO
-    }
-
     private void handleCtrlC()
     {
         Log.w("Ctrl+C pressed - stopping application");
@@ -288,52 +314,12 @@ class ConsolePlatform : Platform
         }
     }
 }
-
-/// Drawing buffer - image container which allows to perform some drawing operations
+/+
 class ANSIConsoleDrawBuf : ConsoleDrawBuf
 {
     @property Console console() { return _console; }
 
     private Console _console;
-
-    this(Console console)
-    {
-        _console = console;
-    }
-
-    ~this()
-    {
-        Log.d("Calling console.uninit");
-        _console.uninit();
-    }
-
-    override @property int width() const
-    {
-        return _console.width;
-    }
-    override @property int height() const
-    {
-        return _console.height;
-    }
-
-    override @property int bpp() const
-    {
-        return 4;
-    }
-
-    override void resize(int width, int height)
-    {
-        // IGNORE
-    }
-
-    //===============================================================
-    // Drawing methods
-
-    override void fill(Color color)
-    {
-        // TODO
-        fillRect(RectI(0, 0, width, height), color);
-    }
 
     private struct RGB
     {
@@ -452,22 +438,8 @@ class ANSIConsoleDrawBuf : ConsoleDrawBuf
         _console.setCursor(x, y);
         _console.writeText(cast(dstring)text);
     }
-
-    override void drawFragment(int x, int y, DrawBuf src, RectI srcrect)
-    {
-        // not supported
-    }
-
-    override void drawRescaled(RectI dstrect, DrawBuf src, RectI srcrect)
-    {
-        // not supported
-    }
-
-    override void clear()
-    {
-    }
 }
-
++/
 extern (C) void mySignalHandler(int value)
 {
     Log.i("Signal handler - signal = ", value);

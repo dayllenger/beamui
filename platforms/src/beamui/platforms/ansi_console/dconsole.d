@@ -9,7 +9,9 @@ module beamui.platforms.ansi_console.dconsole;
 
 import beamui.core.config;
 
+// dfmt off
 static if (BACKEND_CONSOLE):
+// dfmt on
 version (Windows)
 {
     import core.sys.windows.winbase;
@@ -19,9 +21,11 @@ version (Windows)
 }
 import std.stdio;
 import std.utf;
-import beamui.core.events;
 import beamui.core.logger;
 import beamui.core.signals;
+import beamui.events.keyboard;
+import beamui.events.pointer;
+import beamui.events.wheel;
 
 /// Console cursor type
 enum ConsoleCursorType
@@ -112,6 +116,7 @@ immutable ConsoleChar UNKNOWN_CHAR = ConsoleChar.init;
 
 struct ConsoleBuf
 {
+    // dfmt off
     @property
     {
         int width() const { return _width; }
@@ -119,6 +124,7 @@ struct ConsoleBuf
         int cursorX() const { return _cursorX; }
         int cursorY() const { return _cursorY; }
     }
+    // dfmt on
 
     private
     {
@@ -793,8 +799,8 @@ class Console
         version (Windows)
         {
             CHAR_INFO[1000] lineBuf;
-            WORD newattr = cast(WORD)((attr & 0x0F) | (((attr >> 8) & 0x0F) << 4) | (((attr >> 16) & 1) ?
-                COMMON_LVB_UNDERSCORE : 0));
+            const underscore = ((attr >> 16) & 1) ? COMMON_LVB_UNDERSCORE : 0;
+            WORD newattr = cast(WORD)((attr & 0x0F) | (((attr >> 8) & 0x0F) << 4) | underscore);
             for (int i = 0; i < str.length; i++)
             {
                 lineBuf[i].UnicodeChar = cast(WCHAR)str[i];
@@ -1196,7 +1202,7 @@ class Console
                 if (eventFlags & MOUSE_WHEELED)
                 {
                     const int delta = (buttonState >> 16) & 0xFFFF;
-                    auto e = new WheelEvent(x, y, mmods, kmods, 0, -delta);
+                    auto e = new WheelEvent(x, y, mmods, kmods, 0, cast(short)-delta);
                     handleWheelEvent(e);
                     actionSent = true;
                 }
@@ -1303,6 +1309,7 @@ class Console
                         else
                             options = null;
 
+                        // dfmt off
                         switch (options)
                         {
                             case "5": mods = KeyMods.control; break;
@@ -1330,9 +1337,11 @@ class Console
                             case "3":  key = Key.del; break;
                             default: break;
                         }
+                        // dfmt on
                     }
                     else
                     {
+                        // dfmt off
                         switch (options)
                         {
                             case "1;5": mods = KeyMods.control; break;
@@ -1362,10 +1371,12 @@ class Console
                             case 'S': key = Key.F4; break;
                             default: break;
                         }
+                        // dfmt on
                     }
                 }
                 else if (escSequence.startsWith("O"))
                 {
+                    // dfmt off
                     switch (letter)
                     {
                         case 'P': key = Key.F1; break;
@@ -1374,6 +1385,7 @@ class Console
                         case 'S': key = Key.F4; break;
                         default: break;
                     }
+                    // dfmt on
                 }
             }
             else

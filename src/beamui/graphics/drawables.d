@@ -317,7 +317,7 @@ in (bitmap.format == PixelFormat.argb8)
     blurV(bitmap.mutate!uint);
 }
 
-static if (BACKEND_CONSOLE)
+static if (false)
 {
     /**
     Sample format:
@@ -340,7 +340,7 @@ static if (BACKEND_CONSOLE)
     }
 }
 
-static if (BACKEND_CONSOLE)
+static if (false)
 {
     abstract class ConsoleDrawBuf : Bitmap
     {

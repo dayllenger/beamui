@@ -13,7 +13,6 @@ import beamui.core.config;
 static if (BACKEND_CONSOLE):
 // dfmt on
 import beamui.graphics.colors : Color;
-import beamui.style.types : TextFlag;
 import beamui.text.glyph;
 import beamui.text.fonts;
 
@@ -56,7 +55,7 @@ class ConsoleFont : Font
     {
         return 1;
     }
-
+    /+
     override int measureText(const dchar[] text, ref int[] widths, int maxWidth = MAX_WIDTH_UNSPECIFIED, int tabSize = 4,
             int tabOffset = 0, TextFlag textFlags = TextFlag.unspecified)
     {
@@ -241,7 +240,7 @@ class ConsoleFont : Font
             buf.console.writeText(cast(dstring)(text[i .. i + 1]));
         }
     }
-
+    +/
     override GlyphRef getCharGlyph(dchar ch, bool withImage = true)
     {
         return &_glyph;
