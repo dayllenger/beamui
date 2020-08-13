@@ -368,7 +368,7 @@ struct Bitmap
 
         Returns: True if copied something.
     */
-    bool blit(const Bitmap source, RectI srcRect, RectI dstRect)
+    bool blit(ref const Bitmap source, RectI srcRect, RectI dstRect)
     in (format != PixelFormat.invalid)
     in (source)
     in (source.format != PixelFormat.invalid)
