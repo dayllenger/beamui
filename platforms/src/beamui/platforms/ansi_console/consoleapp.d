@@ -12,6 +12,7 @@ import beamui.core.config;
 // dfmt off
 static if (BACKEND_CONSOLE):
 // dfmt on
+import beamui.core.functions : eliminate;
 import beamui.core.geometry;
 import beamui.core.logger;
 import beamui.events.event;
@@ -20,6 +21,8 @@ import beamui.events.pointer;
 import beamui.events.wheel;
 import beamui.graphics.bitmap;
 import beamui.graphics.colors : Color;
+import beamui.graphics.painter : PaintEngine;
+import beamui.graphics.txtpainter;
 import beamui.platforms.ansi_console.dconsole;
 import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
@@ -87,8 +90,10 @@ class ConsoleWindow : Window
         super.handleResize(width, height);
     }
 
-    protected void redraw()
+    protected void redraw(PaintEngine engine)
     {
+        // TODO: disable anti-aliasing by default
+        draw(engine);
     }
 
     //===============================================================
@@ -123,7 +128,9 @@ class ConsolePlatform : Platform
     {
         Console _console;
         WindowMap!(ConsoleWindow, size_t) windows;
-        Bitmap _bitmap;
+
+        PaintEngine _paintEngine;
+        Bitmap _backbuffer;
     }
 
     this(ref AppConf conf)
@@ -139,11 +146,14 @@ class ConsolePlatform : Platform
         _console.onInputIdle = &handleInputIdle;
         _console.init();
         _console.setCursorType(ConsoleCursorType.hidden);
-        _bitmap = Bitmap(1, 1, PixelFormat.cbf32);
+
+        _backbuffer = Bitmap(1, 1, PixelFormat.cbf32);
+        _paintEngine = new ConsolePaintEngine(_backbuffer);
     }
 
     ~this()
     {
+        eliminate(_paintEngine);
         Log.d("Calling console.uninit");
         _console.uninit();
         Log.d("Destroying console");
@@ -215,7 +225,6 @@ class ConsolePlatform : Platform
 
     protected bool handleResize(int width, int height)
     {
-        _bitmap.resize(width, height);
         foreach (w; windows)
         {
             w.handleResize(width, height);
@@ -234,28 +243,32 @@ class ConsolePlatform : Platform
     {
         if (!_needRedraw)
             return;
-        foreach (w; windows)
+
+        foreach (ConsoleWindow w; windows)
         {
-            if (w.visible)
+            if (!w.visible)
+                return;
+
+            w.redraw(_paintEngine);
+
+            if (w is activeWindow)
             {
-                _bitmap.fillRect(RectI(0, 0, w.width, w.height), w.backgroundColor);
-                w.redraw();
                 auto caretRect = w.caretRect;
-                if (w is activeWindow)
+                if (!caretRect.empty)
                 {
-                    if (!caretRect.empty)
-                    {
-                        _console.setCursor(cast(int)caretRect.left, cast(int)caretRect.top);
-                        _console.setCursorType(w.caretReplace ? ConsoleCursorType.replace : ConsoleCursorType.insert);
-                    }
-                    else
-                    {
-                        _console.setCursorType(ConsoleCursorType.hidden);
-                    }
-                    _console.setWindowCaption(w.title);
+                    _console.setCursor(cast(int)caretRect.left, cast(int)caretRect.top);
+                    _console.setCursorType(w.caretReplace ? ConsoleCursorType.replace : ConsoleCursorType.insert);
                 }
+                else
+                {
+                    _console.setCursorType(ConsoleCursorType.hidden);
+                }
+                _console.setWindowCaption(w.title);
             }
         }
+
+        blitBitmapOntoConsole(_backbuffer, _console);
+
         _needRedraw = false;
     }
 
@@ -314,132 +327,89 @@ class ConsolePlatform : Platform
         }
     }
 }
-/+
-class ANSIConsoleDrawBuf : ConsoleDrawBuf
+
+private struct Pixel
 {
-    @property Console console() { return _console; }
+    dchar c;
+    uint b, f;
+}
 
-    private Console _console;
+private void blitBitmapOntoConsole(const Bitmap bitmap, Console console)
+{
+    console.setCursor(0, 0);
 
-    private struct RGB
+    const view = bitmap.look!Pixel;
+    foreach (y; 0 .. bitmap.height)
     {
-        int r;
-        int g;
-        int b;
-        int match(int rr, int gg, int bb) immutable
+        const row = view.scanline(y);
+        foreach (x; 0 .. bitmap.width)
         {
-            int dr = rr - r;
-            int dg = gg - g;
-            int db = bb - b;
-            if (dr < 0)
-                dr = -dr;
-            if (dg < 0)
-                dg = -dg;
-            if (db < 0)
-                db = -db;
-            return dr + dg + db;
+            const Pixel px = row[x];
+            immutable dchar[1] txt = [px.c == 0 ? ' ' : px.c];
+            console.backgroundColor = toConsoleColor(px.b, true);
+            console.textColor = toConsoleColor(px.f, false);
+            console.writeText(txt);
         }
-    }
-
-    version (Windows)
-    {
-        // windows color table
-        static immutable RGB[16] CONSOLE_COLORS_RGB = [
-            RGB(0,0,0),
-            RGB(0,0,128),
-            RGB(0,128,0),
-            RGB(0,128,128),
-            RGB(128,0,0),
-            RGB(128,0,128),
-            RGB(128,128,0),
-            RGB(192,192,192),
-            RGB(0x7c,0x7c,0x7c), // ligth gray
-            RGB(0,0,255),
-            RGB(0,255,0),
-            RGB(0,255,255),
-            RGB(255,0,0),
-            RGB(255,0,255),
-            RGB(255,255,0),
-            RGB(255,255,255),
-        ];
-    }
-    else
-    {
-        // linux color table
-        static immutable RGB[16] CONSOLE_COLORS_RGB = [
-            RGB(0,0,0),
-            RGB(128,0,0),
-            RGB(0,128,0),
-            RGB(128,128,0),
-            RGB(0,0,128),
-            RGB(128,0,128),
-            RGB(0,128,128),
-            RGB(192,192,192),
-            RGB(0x7c,0x7c,0x7c), // ligth gray
-            RGB(255,0,0),
-            RGB(0,255,0),
-            RGB(255,255,0),
-            RGB(0,0,255),
-            RGB(255,0,255),
-            RGB(0,255,255),
-            RGB(255,255,255),
-        ];
-    }
-
-    static ubyte toConsoleColor(Color color, bool forBackground = false)
-    {
-        if (forBackground && color.a < 128)
-            return CONSOLE_TRANSPARENT_BACKGROUND;
-        int r = color.r;
-        int g = color.g;
-        int b = color.b;
-        int bestMatch = CONSOLE_COLORS_RGB[0].match(r, g, b);
-        int bestMatchIndex = 0;
-        for (int i = 1; i < 16; i++)
-        {
-            int m = CONSOLE_COLORS_RGB[i].match(r, g, b);
-            if (m < bestMatch)
-            {
-                bestMatch = m;
-                bestMatchIndex = i;
-            }
-        }
-        return cast(ubyte)bestMatchIndex;
-    }
-
-    static immutable dchar[512] SPACE_STRING = ' ';
-
-    override void fillRect(RectI rc, Color color)
-    {
-        if (color.a < 128)
-            return; // transparent
-        _console.backgroundColor = toConsoleColor(color);
-        if (applyClipping(rc))
-        {
-            int w = rc.width;
-            foreach (y; rc.top .. rc.bottom)
-            {
-                _console.setCursor(rc.left, y);
-                _console.writeText(SPACE_STRING[0 .. w]);
-            }
-        }
-    }
-
-    override void drawChar(int x, int y, dchar ch, Color color, Color bgcolor)
-    {
-        if (!clipRect.contains(x, y))
-            return;
-        ubyte tc = toConsoleColor(color, false);
-        ubyte bc = toConsoleColor(bgcolor, true);
-        dchar[1] text;
-        text[0] = ch;
-        _console.textColor = tc;
-        _console.backgroundColor = bc;
-        _console.setCursor(x, y);
-        _console.writeText(cast(dstring)text);
     }
 }
-+/
+
+private struct RGB
+{
+    version (Windows)
+        int b, g, r;
+    else
+        int r, g, b;
+
+    int match(int rr, int gg, int bb) const
+    {
+        import std.math : abs;
+
+        return abs(rr - r) + abs(gg - g) + abs(bb - b);
+    }
+}
+
+private immutable RGB[16] CONSOLE_COLORS_RGB = [
+    RGB(0, 0, 0),
+    RGB(128, 0, 0),
+    RGB(0, 128, 0),
+    RGB(128, 128, 0),
+    RGB(0, 0, 128),
+    RGB(128, 0, 128),
+    RGB(0, 128, 128),
+    RGB(192, 192, 192),
+    RGB(0x7c, 0x7c, 0x7c), // light gray
+    RGB(255, 0, 0),
+    RGB(0, 255, 0),
+    RGB(255, 255, 0),
+    RGB(0, 0, 255),
+    RGB(255, 0, 255),
+    RGB(0, 255, 255),
+    RGB(255, 255, 255),
+];
+
+private ubyte toConsoleColor(uint xrgb8, bool forBackground = false)
+{
+    if (forBackground && xrgb8 == 0) // FIXME
+        return CONSOLE_TRANSPARENT_BACKGROUND;
+
+    const color = Color.fromPacked(xrgb8);
+    int r = color.r;
+    int g = color.g;
+    int b = color.b;
+    int bestMatch = CONSOLE_COLORS_RGB[0].match(r, g, b);
+    int bestMatchIndex = 0;
+    for (int i = 1; i < 16; i++)
+    {
+        int m = CONSOLE_COLORS_RGB[i].match(r, g, b);
+        if (m < bestMatch)
+        {
+            bestMatch = m;
+            bestMatchIndex = i;
+        }
+    }
+    return cast(ubyte)bestMatchIndex;
+}
+
 extern (C) void mySignalHandler(int value)
 {
     Log.i("Signal handler - signal = ", value);

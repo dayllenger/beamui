@@ -359,7 +359,7 @@ class Window : CustomEventTarget
         float _screenDPI = 96;
         float _devicePixelRatio = 1;
 
-        Color _backgroundColor = Color.white;
+        Color _backgroundColor = BACKEND_GUI ? Color.white : Color.transparent;
         EventList _eventList;
         WindowOptions _options;
 
