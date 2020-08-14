@@ -3,3 +3,41 @@
 
     sassc --style compact common.console.scss common.console.css
 */
+
+:root {
+    color: var(--text-color);
+
+    --text-color: #fff;
+    --disabled-text-color: #888;
+}
+
+Panel {
+    gap: 1px 2px;
+}
+
+/* controls */
+
+ButtonLike {
+    &:not(enabled) {
+        color: var(--disabled-text-color);
+    }
+}
+
+Link:not(enabled) > Label {
+    color: var(--disabled-text-color);
+}
+
+CheckBox,
+RadioButton {
+    &:not(enabled) {
+        color: var(--disabled-text-color);
+    }
+}
+
+/* text */
+
+Label {
+    &:not(enabled) {
+        color: var(--disabled-text-color);
+    }
+}

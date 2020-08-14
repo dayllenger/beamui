@@ -163,7 +163,8 @@ private final class MainRootElement : Element
 
     override void handleCustomPropertiesChange()
     {
-        window.backgroundColor = style.getPropertyValue!Color("--window-bg", Color.white);
+        const def = BACKEND_GUI ? Color.white : Color.transparent;
+        window.backgroundColor = style.getPropertyValue!Color("--window-bg", def);
     }
 
     override protected Boundaries computeBoundaries()
