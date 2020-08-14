@@ -3,7 +3,7 @@ Formatting and drawing of simple label-like text.
 
 Simple means without inner markup, with no selection and cursor capabilities.
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -11,6 +11,7 @@ module beamui.text.simple;
 
 import std.array : Appender;
 import beamui.core.collections : Buf;
+import beamui.core.config;
 import beamui.core.geometry : Point, Size, Rect;
 import beamui.core.math : max;
 import beamui.core.units : snapToDevicePixels;
@@ -270,29 +271,38 @@ private struct Line
         }
 
         // preform actual drawing
-        const int decorThickness = 1 + height / 24;
-        const decorColor = style.decoration.color;
-        const bool overline = (style.decoration.line & TextDecorLine.over) != 0;
-        const bool lineThrough = (style.decoration.line & TextDecorLine.through) != 0;
-        if (underline || charUnderlineW > 0)
+        static if (BACKEND_GUI)
         {
-            const underlineY = y + baseline + decorThickness;
-            const w = underline ? lineWidth : charUnderlineW;
-            pr.fillRect(x, underlineY, w, decorThickness, decorColor);
+            const int decorThickness = 1 + height / 24;
+            const decorColor = style.decoration.color;
+            const bool overline = (style.decoration.line & TextDecorLine.over) != 0;
+            const bool lineThrough = (style.decoration.line & TextDecorLine.through) != 0;
+            if (underline || charUnderlineW > 0)
+            {
+                const underlineY = y + baseline + decorThickness;
+                const w = underline ? lineWidth : charUnderlineW;
+                pr.fillRect(x, underlineY, w, decorThickness, decorColor);
+            }
+            if (overline)
+            {
+                const overlineY = y;
+                pr.fillRect(x, overlineY, lineWidth, decorThickness, decorColor);
+            }
+            // text goes after overline and underline
+            pr.drawText(buffer[], style.color);
+            // line-through goes over the text
+            if (lineThrough)
+            {
+                const xheight = font.getCharGlyph('x').blackBoxY;
+                const lineThroughY = y + baseline - xheight / 2 - decorThickness;
+                pr.fillRect(x, lineThroughY, lineWidth, decorThickness, decorColor);
+            }
         }
-        if (overline)
+        else
         {
-            const overlineY = y;
-            pr.fillRect(x, overlineY, lineWidth, decorThickness, decorColor);
-        }
-        // text goes after overline and underline
-        pr.drawText(buffer[], style.color);
-        // line-through goes over the text
-        if (lineThrough)
-        {
-            const xheight = font.getCharGlyph('x').blackBoxY;
-            const lineThroughY = y + baseline - xheight / 2 - decorThickness;
-            pr.fillRect(x, lineThroughY, lineWidth, decorThickness, decorColor);
+            // in console mode, pass text flags in the alpha channel
+            const color = style.color.withAlpha(underline ? 0x1 : 0xFF);
+            pr.drawText(buffer[], color);
         }
     }
 }

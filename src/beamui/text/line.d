@@ -1,6 +1,6 @@
 /**
 
-Copyright: dayllenger 2019
+Copyright: dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   dayllenger
 */
@@ -8,6 +8,7 @@ module beamui.text.line;
 
 import std.container.array;
 import beamui.core.collections : Buf;
+import beamui.core.config;
 import beamui.core.geometry : Point, Rect, Size;
 import beamui.core.math;
 import beamui.core.units : snapToDevicePixels;
@@ -641,27 +642,37 @@ private struct SimpleLine
         {
             pr.fillRect(x, y, width, height, style.background);
         }
-        // decorations
-        const int decorThickness = 1 + height / 24;
-        const decorColor = style.decoration.color;
-        if (style.decoration.line & TextDecorLine.under)
+        static if (BACKEND_GUI)
         {
-            const underlineY = y + baseline + decorThickness;
-            pr.fillRect(x, underlineY, width, decorThickness, decorColor);
+            // decorations
+            const int decorThickness = 1 + height / 24;
+            const decorColor = style.decoration.color;
+            if (style.decoration.line & TextDecorLine.under)
+            {
+                const underlineY = y + baseline + decorThickness;
+                pr.fillRect(x, underlineY, width, decorThickness, decorColor);
+            }
+            if (style.decoration.line & TextDecorLine.over)
+            {
+                const overlineY = y;
+                pr.fillRect(x, overlineY, width, decorThickness, decorColor);
+            }
+            // text goes after overline and underline
+            pr.drawText(glyphs, style.color);
+            // line-through goes over the text
+            if (style.decoration.line & TextDecorLine.through)
+            {
+                const xheight = style.font.getCharGlyph('x').blackBoxY;
+                const lineThroughY = y + baseline - xheight / 2 - decorThickness;
+                pr.fillRect(x, lineThroughY, width, decorThickness, decorColor);
+            }
         }
-        if (style.decoration.line & TextDecorLine.over)
+        else
         {
-            const overlineY = y;
-            pr.fillRect(x, overlineY, width, decorThickness, decorColor);
-        }
-        // text goes after overline and underline
-        pr.drawText(glyphs, style.color);
-        // line-through goes over the text
-        if (style.decoration.line & TextDecorLine.through)
-        {
-            const xheight = style.font.getCharGlyph('x').blackBoxY;
-            const lineThroughY = y + baseline - xheight / 2 - decorThickness;
-            pr.fillRect(x, lineThroughY, width, decorThickness, decorColor);
+            // in console mode, pass text flags in the alpha channel
+            const underline = style.decoration.line & TextDecorLine.under;
+            const color = style.color.withAlpha(underline ? 0x1 : 0xFF);
+            pr.drawText(glyphs, color);
         }
     }
 }

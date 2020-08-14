@@ -343,25 +343,26 @@ private void blitBitmapOntoConsole(const Bitmap bitmap, Console console)
 
         const row = view.scanline(y);
         uint start, end;
-        Pixel prev;
+        Pixel prev = row[0];
         foreach (x; 0 .. bitmap.width)
         {
             const Pixel px = row[x];
-            if (start < end && (prev.b != px.b || prev.f != px.f))
+            if (prev.b != px.b || prev.f != px.f)
             {
                 const bg = toConsoleColor(prev.b);
                 const fg = toConsoleColor(prev.f);
-                console.writeText(buf[start .. end], fg, bg, false);
+                const underline = (prev.f >> 24) == 0x1;
+                console.writeText(buf[start .. end], fg, bg, underline);
                 start = end;
                 prev = px;
             }
             buf[end++] = (px.c == 0) ? ' ' : px.c;
         }
-        if (start < end)
         {
             const bg = toConsoleColor(prev.b);
             const fg = toConsoleColor(prev.f);
-            console.writeText(buf[start .. end], fg, bg, false);
+            const underline = (prev.f >> 24) == 0x1;
+            console.writeText(buf[start .. end], fg, bg, underline);
         }
     }
 }

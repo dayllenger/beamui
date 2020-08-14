@@ -186,8 +186,12 @@ protected:
 
     override void drawImage(ref const Bitmap bmp, Vec2 pos, float)
     {
-        const x = cast(int)pos.x;
-        const y = cast(int)pos.y;
+        if (bmp.format != PixelFormat.cbf32)
+            return;
+
+        const offset = st.mat * Vec2(0);
+        const x = cast(int)(offset.x + pos.x);
+        const y = cast(int)(offset.y + pos.y);
         const w = bmp.width;
         const h = bmp.height;
         backbuf.blit(bmp, RectI(0, 0, w, h), RectI(x, y, x + w, y + h));
@@ -197,8 +201,24 @@ protected:
     {
     }
 
-    override void drawText(const GlyphInstance[], Color)
+    override void drawText(const GlyphInstance[] run, Color c)
     {
+        const offset = st.mat * Vec2(0);
+        const xrgb8 = c.rgba;
+        auto view = backbuf.mutate!Pixel;
+        foreach (g; run)
+        {
+            const x = cast(int)(offset.x + g.position.x);
+            const y = cast(int)(offset.y + g.position.y);
+            if (x < 0 || backbuf.width <= x)
+                continue;
+            if (y < 0 || backbuf.height <= y)
+                continue;
+
+            Pixel* px = &view.scanline(y)[x];
+            px.c = g.glyph.id;
+            px.f = xrgb8;
+        }
     }
 }
 
