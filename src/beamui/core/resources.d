@@ -21,7 +21,6 @@ module beamui.core.resources;
 import std.file;
 import std.path;
 import std.string;
-import beamui.core.config;
 import beamui.core.logger;
 import beamui.core.types;
 
@@ -43,14 +42,7 @@ struct ResourceList
     /// Embed all resources from list
     void embed(string listFilename)()
     {
-        static if (BACKEND_CONSOLE)
-        {
-            embedded ~= embedResources!(splitLines(import("console_" ~ listFilename)))();
-        }
-        else
-        {
-            embedded ~= embedResources!(splitLines(import(listFilename)))();
-        }
+        embedded ~= embedResources!(splitLines(import(listFilename)))();
     }
     /// Embed one particular file by its filename
     void embedOne(string filename)()

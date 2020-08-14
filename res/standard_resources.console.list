@@ -1,0 +1,5 @@
+./i18n/ru.mo
+./i18n/ru.po
+./themes/common/common.console.css
+./themes/dark/dark.console.css
+./themes/light/light.console.css

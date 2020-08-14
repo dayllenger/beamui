@@ -104,8 +104,6 @@ shared static ~this()
 private __gshared CSS.StyleSheet defaultStyleSheet;
 private __gshared bool defaultIsLoaded;
 
-private alias Decoder = void function(ref StylePropertyList, const(CSS.Token)[]);
-
 /// A CSS file resource ID with some additional data
 struct StyleResource
 {
@@ -139,10 +137,7 @@ void setStyleSheetFromResource(Theme theme, StyleResource resource)
     if (!theme || !resource.resourceID.length)
         return;
 
-    Log.fv("CSS: loading '%s.css'", resource.resourceID);
-
-    // TODO: BACKEND_CONSOLE suffix
-    // TODO: cache embedded stylesheets
+    Log.fv("CSS: loading '%s'", resource.resourceID);
 
     const filename = resourceList.getPathByID(resource.resourceID);
     if (!filename.length)
@@ -153,6 +148,7 @@ void setStyleSheetFromResource(Theme theme, StyleResource resource)
         Log.fe("CSS: not a CSS file: '%s'", filename);
         return;
     }
+
     const source = cast(string)loadResourceBytes(filename);
     if (!source.length)
         return;
@@ -166,6 +162,7 @@ void setStyleSheetFromResource(Theme theme, StyleResource resource)
         return;
     }
 
+    // TODO: cache embedded stylesheets
     auto ctx = Context(theme, resource.namespace);
     const css = CSS.createStyleSheet(source);
     loadThemeFromCSS(ctx, css);
@@ -182,6 +179,8 @@ void setStyleSheet(Theme theme, string source, string namespace = "beamui")
 }
 
 private:
+
+alias Decoder = void function(ref StylePropertyList, const(CSS.Token)[]);
 
 struct Context
 {

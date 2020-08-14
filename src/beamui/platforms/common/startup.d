@@ -482,7 +482,12 @@ void initResourceManagers()
     {
     }
     else
-        resourceList.embed!"standard_resources.list";
+    {
+        static if (BACKEND_GUI)
+            resourceList.embed!"standard_resources.list";
+        else
+            resourceList.embed!"standard_resources.console.list";
+    }
 
     static if (BACKEND_GUI)
     {
