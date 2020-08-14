@@ -85,18 +85,27 @@ struct ResourceList
         destroy(idToPath);
     }
 
-    /**
-    Get resource full path.
+    /** Get resource full path.
 
-    $(UL
-        $(LI if provided path - by path relative to embedded files location or resource dirs)
-        $(LI if path is provided partially - match the tail)
-        $(LI if provided extension - with extension)
-        $(LI if nothing of those - by base name)
-    )
-    Null if not found.
+        It searches the file by exact base name or by tail of the full path,
+        in both cases matching twice with and without extension.
+        Returns `null` if not found.
 
-    Note: If ID matches several files, path of the last file is returned.
+        Example:
+        ---
+        // Suppose there is a resource at "./themes/light/frame.9.png".
+        // This file can be found with the following IDs:
+        [
+            "frame.9",
+            "frame.9.png",
+            "light/frame.9.png",
+            "themes/light/frame.9.png",
+            "./themes/light/frame.9.png",
+            "themes/../themes/light/frame.9.png", // such paths work too
+        ]
+        ---
+
+        Note: If ID matches several files, path of the last file is returned.
     */
     string getPathByID(string id)
     {
@@ -105,27 +114,14 @@ struct ResourceList
         if (auto p = id in idToPath)
             return *p;
 
-        import std.algorithm : any;
-
-        bool searchWithDir = any!isDirSeparator(id);
-        bool searchWithExt = extension(id) !is null;
-
-        string tmp;
         string normID = buildNormalizedPath(id);
 
         // search in embedded
         // search backwards to allow overriding standard resources (which are added first)
-        // double strip is needed for .9.png (is there a better solution?)
         foreach_reverse (ref r; embedded)
         {
-            tmp = r.filename;
-            if (!searchWithDir)
-                tmp = baseName(tmp);
-            if (!searchWithExt)
-                tmp = stripExtension(stripExtension(tmp));
-            if (tmp.endsWith(normID) && (tmp.length == normID.length || isDirSeparator(tmp[$ - normID.length - 1])))
+            if (matchPathWithID(r.filename, normID))
             {
-                // found
                 string fn = EMBEDDED_RESOURCE_PREFIX ~ r.filename;
                 idToPath[id] = fn;
                 return fn;
@@ -134,16 +130,10 @@ struct ResourceList
         // search in external
         foreach (path; _resourceDirs)
         {
-            foreach (fn; dirEntries(path, SpanMode.breadth))
+            foreach (string fn; dirEntries(path, SpanMode.breadth))
             {
-                tmp = fn;
-                if (!searchWithDir)
-                    tmp = baseName(tmp);
-                if (!searchWithExt)
-                    tmp = stripExtension(stripExtension(tmp));
-                if (tmp.endsWith(normID) && (tmp.length == normID.length || isDirSeparator(tmp[$ - normID.length - 1])))
+                if (matchPathWithID(fn, normID))
                 {
-                    // found
                     idToPath[id] = fn;
                     return fn;
                 }
@@ -151,6 +141,15 @@ struct ResourceList
         }
         Log.w("Resource ", id, " is not found");
         return null;
+    }
+
+    private bool matchPathWithID(string path, string id)
+    {
+        if (pathSplitter(stripExtension(path)).endsWith(pathSplitter(id)))
+            return true;
+        if (pathSplitter(path).endsWith(pathSplitter(id)))
+            return true;
+        return false;
     }
 
     /**
@@ -244,12 +243,30 @@ private EmbeddedResource[] embedResource(string resourceName)()
         static if (name.length > 0)
         {
             auto data = cast(immutable ubyte[])import(name);
-            static if (data.length > 0)
-                return [EmbeddedResource(buildNormalizedPath(name), data)];
-            else
-                return [];
+            return [EmbeddedResource(buildNormalizedPath(name), data)];
         }
         else
             return [];
     }
+}
+
+//===============================================================
+// Tests
+
+unittest
+{
+    const filename = buildNormalizedPath("./themes/light/frame.9.png");
+    const result = EMBEDDED_RESOURCE_PREFIX ~ filename;
+
+    ResourceList list;
+    list.embedded = [EmbeddedResource(filename, null)];
+    assert(list.getPathByID("frame") is null);
+    assert(list.getPathByID("/frame.9.png") is null);
+    assert(list.getPathByID("ght/frame.9") is null);
+    assert(list.getPathByID("frame.9") == result);
+    assert(list.getPathByID("frame.9.png") == result);
+    assert(list.getPathByID("light/frame.9.png") == result);
+    assert(list.getPathByID("themes/light/frame.9.png") == result);
+    assert(list.getPathByID("themes/../themes/light/frame.9.png") == result);
+    assert(list.getPathByID("./themes/light/frame.9.png") == result);
 }

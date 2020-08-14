@@ -26,9 +26,9 @@ ButtonLike {
 }
 
 GroupBox {
-  --frame-top-left: url(dark/group_box_frame_up_left);
-  --frame-top-right: url(dark/group_box_frame_up_right);
-  --frame-bottom: url(dark/group_box_frame_bottom);
+  --frame-top-left: url(dark/group_box_frame_up_left.9);
+  --frame-top-right: url(dark/group_box_frame_up_right.9);
+  --frame-bottom: url(dark/group_box_frame_bottom.9);
 }
 
 ScrollBar,

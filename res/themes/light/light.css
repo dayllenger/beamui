@@ -1,7 +1,7 @@
 @import url("themes/common/common.css");
 
 GroupBox {
-  --frame-top-left: url(light/group_box_frame_up_left);
-  --frame-top-right: url(light/group_box_frame_up_right);
-  --frame-bottom: url(light/group_box_frame_bottom);
+  --frame-top-left: url(light/group_box_frame_up_left.9);
+  --frame-top-right: url(light/group_box_frame_up_right.9);
+  --frame-bottom: url(light/group_box_frame_bottom.9);
 }
