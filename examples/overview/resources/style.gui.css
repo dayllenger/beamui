@@ -1,0 +1,32 @@
+TabForControls {
+  padding: 6px;
+}
+
+TabForControls > Panel {
+  gap: 12px;
+}
+
+TabForControls > Panel > Panel {
+  gap: 12px;
+}
+
+TabForControls Label.l-1 {
+  font-size: 18px;
+}
+TabForControls Label.l-2 {
+  font-size: 18px;
+}
+TabForControls Label.lorem {
+  font-size: 12px;
+}
+
+TabForControls TextField {
+  min-width: 150px;
+}
+
+.monospace-font {
+  font-family: monospace;
+}
+.normal-font {
+  font-family: sans-serif;
+}

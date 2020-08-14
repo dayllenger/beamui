@@ -16,18 +16,15 @@ Tabs {
 TabForControls {
   display: flex;
   flex-direction: column;
-  padding: 6px;
 }
 
 TabForControls > Panel {
   display: flex;
-  gap: 12px;
 }
 
 TabForControls > Panel > Panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 TabForControls .labels {
@@ -35,23 +32,16 @@ TabForControls .labels {
 }
 TabForControls Label.l-1 {
   color: red;
-  font-size: 18px;
 }
 TabForControls Label.l-2 {
-  font-size: 18px;
   font-style: italic;
 }
 TabForControls Label.lorem {
-  font-size: 12px;
   text-decoration: underline;
 }
 
 TabForControls ActionButton > ButtonLike {
   flex-direction: column;
-}
-
-TabForControls TextField {
-  min-width: 150px;
 }
 
 TabForEditors,
@@ -69,12 +59,6 @@ TabForEditors .settings {
 }
 TabForEditors TextArea {
   flex: auto;
-}
-.monospace-font {
-  font-family: monospace;
-}
-.normal-font {
-  font-family: sans-serif;
 }
 
 TabForLists {

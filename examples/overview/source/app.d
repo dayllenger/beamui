@@ -9,7 +9,10 @@ mixin RegisterPlatforms;
 int main()
 {
     // you can embed resources into the executable
-    resourceList.embed!"resources.list";
+    static if (BACKEND_GUI)
+        resourceList.embed!"resources.list";
+    else
+        resourceList.embed!"resources.console.list";
     // and you can setup resource paths; not required if only embedded resources are used.
     // it will use existing directories only.
     // beware the order: it must be before any resource loading, like theme.
@@ -25,7 +28,10 @@ int main()
     if (!app.initialize())
         return -1;
 
-    platform.stylesheets = [StyleResource("light"), StyleResource("style")];
+    static if (BACKEND_GUI)
+        platform.stylesheets = [StyleResource("light"), StyleResource("style"), StyleResource("style.gui")];
+    else
+        platform.stylesheets = [StyleResource("light.console"), StyleResource("style"), StyleResource("style.console")];
 
     // you can change default log level, e.g. always use trace, even for release builds
     //Log.setLogLevel(LogLevel.trace);

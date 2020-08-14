@@ -1,0 +1,15 @@
+TabForControls {
+  padding: 1px 2px;
+}
+
+TabForControls > Panel {
+  gap: 2px 4px;
+}
+
+TabForControls > Panel > Panel {
+  gap: 2px 4px;
+}
+
+TabForControls TextField {
+  min-width: 50px;
+}
