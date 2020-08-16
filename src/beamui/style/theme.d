@@ -81,22 +81,10 @@ final class Theme
     }
 }
 
-private __gshared Theme _currentTheme;
-/// Current theme accessor
-Theme currentTheme()
-{
-    return _currentTheme;
-}
-/// Set a new theme to be current
-void currentTheme(Theme theme)
-{
-    eliminate(_currentTheme);
-    _currentTheme = theme;
-}
+alias WindowTheme = Theme;
 
 shared static ~this()
 {
-    currentTheme = null;
     defaultStyleSheet = CSS.StyleSheet.init;
     defaultIsLoaded = false;
 }

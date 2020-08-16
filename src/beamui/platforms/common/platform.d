@@ -340,6 +340,8 @@ class Window : CustomEventTarget
             // fake window rectangle -- at position 0,0
             return BoxI(0, 0, _w, _h);
         }
+
+        WindowTheme theme() { return platform._globalTheme; }
     }
 
     /// Blinking caret position (empty rect if no blinking caret)
@@ -798,7 +800,7 @@ class Window : CustomEventTarget
 
     private bool updateMediaQueries()
     {
-        return currentTheme.updateMediaQueries(MediaQueryInput(_w, _h, _screenDPI, _devicePixelRatio));
+        return theme.updateMediaQueries(MediaQueryInput(_w, _h, _screenDPI, _devicePixelRatio));
     }
 
     //===============================================================
@@ -1791,8 +1793,8 @@ class Window : CustomEventTarget
         {
             needStyleRecalculation = false;
             setupGlobalDPI();
-            updateStylesRecursively(_mainRootElement);
-            updateStylesRecursively(_popupRootElement);
+            updateStylesRecursively(theme, _mainRootElement);
+            updateStylesRecursively(theme, _popupRootElement);
         }
 
         // refresh layout
@@ -1822,11 +1824,11 @@ class Window : CustomEventTarget
         }
     }
 
-    static private void updateStylesRecursively(Element root)
+    static private void updateStylesRecursively(WindowTheme theme, Element root)
     {
-        cast(void)root.style();
+        root.updateStyles(theme);
         foreach (Element el; root)
-            updateStylesRecursively(el);
+            updateStylesRecursively(theme, el);
     }
 
     //===============================================================
@@ -2263,6 +2265,7 @@ class Platform
     {
         AppConf _conf;
         const(StyleResource)[] _stylesheets;
+        Theme _globalTheme;
         IconProviderBase _iconProvider;
 
         StopWatch _timeOriginStopWatch;
@@ -2284,6 +2287,7 @@ class Platform
 
     ~this()
     {
+        eliminate(_globalTheme);
         eliminate(_iconProvider);
         static if (USE_OPENGL)
             eliminate(_glSharedData);
@@ -2371,7 +2375,8 @@ class Platform
         Theme theme = createDefaultTheme();
         foreach (res; _stylesheets)
             setStyleSheetFromResource(theme, res);
-        currentTheme = theme;
+        eliminate(_globalTheme);
+        _globalTheme = theme;
     }
 
     /// Handle theme change, e.g. reload some themed resources

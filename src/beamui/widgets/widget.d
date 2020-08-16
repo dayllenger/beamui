@@ -29,7 +29,7 @@ public
     import beamui.graphics.painter : LayerInfo, Painter, PaintSaver;
     import beamui.layout.alignment : Align, AlignItem, Distribution, Stretch;
     import beamui.platforms.common.platform : setState;
-    import beamui.style.theme : currentTheme;
+    import beamui.style.theme : WindowTheme;
     import beamui.widgets.popup : PopupAlign;
 }
 package
@@ -854,7 +854,7 @@ public:
     Listener!(void delegate(Style[] chain)) onStyleUpdate;
 
     /// Recompute styles, only if needed
-    package(beamui) void updateStyles() inout
+    package(beamui) void updateStyles(WindowTheme theme = null) inout
     {
         if (_styleInvalidation == StyleInvalidation.none)
             return;
@@ -869,7 +869,14 @@ public:
 
             if (!recompute)
             {
-                Style[] chain = selectStyleChain();
+                if (!theme)
+                {
+                    if (auto w = window)
+                        theme = w.theme;
+                    else
+                        return;
+                }
+                Style[] chain = selectStyleChain(theme);
                 // assuming that style recomputation purely depends on style chain,
                 // it may not change from previous update
                 if (!chain.length || cast(size_t[])_cachedChain[] != cast(size_t[])chain)
@@ -895,10 +902,13 @@ public:
     }
     private Buf!Style _cachedChain;
 
-    /// Get a style chain for this element from current theme, least specific styles first
-    Style[] selectStyleChain()
+    /// Get a style chain for this element from `theme`, least specific styles first
+    Style[] selectStyleChain(WindowTheme theme)
     {
         import std.algorithm : SwapStrategy;
+
+        if (!theme)
+            return null;
 
         static Buf!Style tmpchain;
         tmpchain.clear();
@@ -906,20 +916,20 @@ public:
         // and much more work if we select by class name
         const normalState = stateFlags == StateFlags.normal;
         TypeInfo_Class type = widgetType ? cast()widgetType : typeid(this);
-        selectByBaseClasses(tmpchain, type, normalState);
+        selectByBaseClasses(theme, tmpchain, type, normalState);
         // sort by specificity
         sort!("a < b", SwapStrategy.stable)(tmpchain.unsafe_slice);
         return tmpchain.unsafe_slice;
     }
 
-    private void selectByBaseClasses(ref Buf!Style tmpchain, TypeInfo_Class type, bool normalState)
+    private void selectByBaseClasses(WindowTheme theme, ref Buf!Style tmpchain, TypeInfo_Class type, bool normalState)
     {
         string tag;
         if (type !is typeid(Object))
         {
             // iterate on base classes in reverse order.
             // this will define a specificity order on classes
-            selectByBaseClasses(tmpchain, type.base, normalState);
+            selectByBaseClasses(theme, tmpchain, type.base, normalState);
             // extract short class name
             const name = type.name;
             int i = cast(int)name.length;
@@ -928,7 +938,7 @@ public:
             tag = name[i .. $];
         }
         // it will get selectors without any tag first
-        Style[] list = currentTheme.getStyles(_namespace, tag, normalState);
+        Style[] list = theme.getStyles(_namespace, tag, normalState);
         foreach (style; list)
         {
             if (matchSelectorImpl(style.selector, false))

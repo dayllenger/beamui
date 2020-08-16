@@ -510,7 +510,6 @@ void releaseResourcesOnAppExit()
 
     clearSimpleTextPool();
     resourceList = ResourceList.init;
-    currentTheme = null;
     FontManager.instance = null;
 
     static if (BACKEND_GUI)
