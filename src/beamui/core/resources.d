@@ -12,7 +12,7 @@ string filename = resourceList.getPathByID("file");
 immutable(ubyte[]) data = loadResourceBytes(filename);
 ---
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
@@ -48,6 +48,11 @@ struct ResourceList
     void embedOne(string filename)()
     {
         embedded ~= embedResource!(filename)();
+    }
+    /// Embed a byte array (such as string) from memory with a fictional filename
+    void embedFromMemory(string filename, immutable void[] content)
+    {
+        embedded ~= EmbeddedResource(filename, cast(immutable ubyte[])content);
     }
 
     /// Get resource directory paths

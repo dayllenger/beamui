@@ -168,16 +168,6 @@ void setStyleSheetFromResource(Theme theme, StyleResource resource)
     loadThemeFromCSS(ctx, css);
 }
 
-/// Add style sheet rules from the CSS source to the theme
-void setStyleSheet(Theme theme, string source, string namespace = "beamui")
-{
-    if (!source.length)
-        return;
-    auto ctx = Context(theme, namespace);
-    const css = CSS.createStyleSheet(source);
-    loadThemeFromCSS(ctx, css);
-}
-
 private:
 
 alias Decoder = void function(ref StylePropertyList, const(CSS.Token)[]);

@@ -19,8 +19,8 @@ int main()
     if (!app.initialize())
         return -1;
 
-    platform.stylesheets = [StyleResource("light")];
-    setStyleSheet(currentTheme, styles);
+    resourceList.embedFromMemory("_styles_.css", styles);
+    platform.stylesheets = [StyleResource("light"), StyleResource("_styles_")];
 
     Window window = platform.createWindow("Canvas example - beamui");
 
