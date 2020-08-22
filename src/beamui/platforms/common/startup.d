@@ -562,6 +562,4 @@ version (Windows)
         else
             pragma(linkerDirective, "/ENTRY:mainCRTStartup");
     }
-    else
-        pragma(linkerDirective, "/ENTRY:mainCRTStartup");
 }
