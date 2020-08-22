@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module beamui.style.decode_css</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../beamui.html">beamui</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">core
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/animations.html">animations</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/collections.html">collections</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/config.html">config</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/editable.html">editable</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/filemanager.html">filemanager</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/files.html">files</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/i18n.html">i18n</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/linalg.html">linalg</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/linestream.html">linestream</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/logger.html">logger</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/math.html">math</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/memory.html">memory</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/ownership.html">ownership</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/resources.html">resources</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/settings.html">settings</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/signals.html">signals</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/streams.html">streams</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/timer.html">timer</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/types.html">types</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/undo.html">undo</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/units.html">units</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">css
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/css/css.html">css</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/css/parser.html">parser</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/css/tokenizer.html">tokenizer</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">dialogs
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/dialogs/dialog.html">dialog</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/dialogs/filedialog.html">filedialog</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/dialogs/inputbox.html">inputbox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/dialogs/messagebox.html">messagebox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/dialogs/settingsdialog.html">settingsdialog</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">events
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/action.html">action</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/keyboard.html">keyboard</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/pointer.html">pointer</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/shortcut.html">shortcut</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/stdactions.html">stdactions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/wheel.html">wheel</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">ext
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">xpm
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/ext/xpm/colors.html">colors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/ext/xpm/reader.html">reader</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/ext/css_syntax.html">css_syntax</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">graphics
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">gl
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/api.html">api</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/compiler.html">compiler</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/errors.html">errors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/gl.html">gl</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/glpainter.html">glpainter</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/objects.html">objects</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/program.html">program</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/renderer.html">renderer</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/shaders.html">shaders</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/stroke_tiling.html">stroke_tiling</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/textures.html">textures</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/atlas.html">atlas</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/bitmap.html">bitmap</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/brush.html">brush</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/colors.html">colors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/compositing.html">compositing</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/drawables.html">drawables</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/flattener.html">flattener</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/iconprovider.html">iconprovider</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/images.html">images</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/painter.html">painter</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/pen.html">pen</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/polygons.html">polygons</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/swpainter.html">swpainter</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/swrast.html">swrast</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/txtpainter.html">txtpainter</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">layout
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/alignment.html">alignment</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/factory.html">factory</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/flex.html">flex</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/free.html">free</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/grid.html">grid</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/linear.html">linear</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">platforms
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">common
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/platforms/common/platform.html">platform</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/platforms/common/startup.html">startup</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">style
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/computed_style.html">computed_style</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../beamui/style/decode_css.html">decode_css</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/media.html">media</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/property.html">property</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/selector.html">selector</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/style.html">style</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/theme.html">theme</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">text
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/consolefont.html">consolefont</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/fonts.html">fonts</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/ftfonts.html">ftfonts</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/glyph.html">glyph</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/line.html">line</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/shaping.html">shaping</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/simple.html">simple</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/sizetest.html">sizetest</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/style.html">style</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/win32fonts.html">win32fonts</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">tools
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/tools/css_hot_reload.html">css_hot_reload</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">widgets
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/appframe.html">appframe</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/charts.html">charts</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/combobox.html">combobox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/controls.html">controls</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/docks.html">docks</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/editors.html">editors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/grid.html">grid</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/groupbox.html">groupbox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/lists.html">lists</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/menu.html">menu</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/popup.html">popup</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/progressbar.html">progressbar</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/scroll.html">scroll</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/scrollbar.html">scrollbar</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/slider.html">slider</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/srcedit.html">srcedit</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/statusline.html">statusline</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/tabs.html">tabs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/text.html">text</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/toolbars.html">toolbars</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/tree.html">tree</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/trigger.html">trigger</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/widget.html">widget</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/winframe.html">winframe</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module beamui.style.decode_css</h1><p>CSS decoding functions: take token array, convert it to some type.
+</p><section><p>Each decoding function returns <code class="lang-d"><span class="typ">Result</span></code> with value and success flag.
+</p>
+</section>
+
+			<section></section>
+			<section>
+				<h2>Import line</h2><pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">beamui<wbr/></span><span class="pun">.</span><span class="pln">style<wbr/></span><span class="pun">.</span><span class="pln">decode_css</span><span class="pun">;</span></code></pre></section>
+					<section>
+						<h2>Functions</h2>
+						<table class="module">
+							<tr>
+								<th class="name">Name</th><th>Description</th>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode <code class="lang-d"><span class="pun">&lt;</span><span class="pln">integer</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode <code class="lang-d"><span class="pun">&lt;</span><span class="pln">number</span><span class="pun">&gt;</span></code> (real) value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode raw string property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode CSS token sequence like 'left vcenter' to <code class="lang-d"><span class="typ">Align</span></code> bit set
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode stretch property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode item alignment property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode content distribution property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode dimension, e.g. 1px, 20%, 1.2em, or 'none'
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode z-index value (an integer or <code class="lang-d"><span class="kwd">auto</span></code>)
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode flexbox direction property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode flexbox wrap property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode grid automatic flow property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode grid tracks size, e.g. 50px, 20%, 1fr, 'min-content', 'max-content', <code class="lang-d"><span class="kwd">auto</span></code>
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode grid row or column template sizes
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode grid template with area names
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode grid line name, e.g. 1, 'span 3', 'header', <code class="lang-d"><span class="kwd">auto</span></code>
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode background image. This function mutates the range - skips found values
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode background position property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode background size property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode background/image repeat property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode box property ('border-box', 'padding-box', 'content-box')
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode border style property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Create a drawable from <code class="lang-d"><span class="pln">box</span><span class="pun">-</span><span class="pln">shadow</span></code> property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode font family
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode font style
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode font weight
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode tab character size
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode text alignment
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode text decoration line
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode text decoration style
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode text hotkey option
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode text overflow
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode text transform
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode white space collapse and wrapping
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode CSS color. This function mutates the range - skips found color value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode transform part
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode opacity in [0..1] range
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode blend mode
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode seconds or milliseconds in CSS. Returns time in msecs.
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode name of property which is a subject of transition
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode transition timing function like 'linear' or 'ease-in-out'
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decode" class="public" href="../../beamui/style/decode_css/decode.html">decode</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode cursor property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodeBackground" class="public" href="../../beamui/style/decode_css/decodeBackground.html">decodeBackground</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode shorthand background property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodeBorder" class="public" href="../../beamui/style/decode_css/decodeBorder.html">decodeBorder</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode shorthand border property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodeFlex" class="public" href="../../beamui/style/decode_css/decodeFlex.html">decodeFlex</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode shorthand flex property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodeFlexFlow" class="public" href="../../beamui/style/decode_css/decodeFlexFlow.html">decodeFlexFlow</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode shorthand flex-flow property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodeGridArea" class="public" href="../../beamui/style/decode_css/decodeGridArea.html">decodeGridArea</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode grid area name, that expands to two or four grid line names
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodeInsets" class="public" href="../../beamui/style/decode_css/decodeInsets.html">decodeInsets</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode CSS rectangle declaration to <code class="lang-d"><span class="typ">Length</span><span class="pun">[]</span></code>
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodePair" class="public" href="../../beamui/style/decode_css/decodePair.html">decodePair</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode item alignment pair
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodePair" class="public" href="../../beamui/style/decode_css/decodePair.html">decodePair</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode content distribution pair
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodePair" class="public" href="../../beamui/style/decode_css/decodePair.html">decodePair</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode CSS length pair, e.g. <code class="lang-d"><span class="pln">gap</span></code> property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodeTextDecor" class="public" href="../../beamui/style/decode_css/decodeTextDecor.html">decodeTextDecor</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode whole shorthand text decoration property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="decodeTransition" class="public" href="../../beamui/style/decode_css/decodeTransition.html">decodeTransition</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>Decode shorthand transition property
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="isFlexDirection" class="public" href="../../beamui/style/decode_css/isFlexDirection.html">isFlexDirection</a><span class="tableEntryAnnotation">(t)</span>
+									</code>
+								</td>
+								<td>True if the token has <code class="lang-d"><span class="pun">&lt;</span><span class="pln">flex</span><span class="pun">-</span><span class="pln">direction</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="isFlexWrap" class="public" href="../../beamui/style/decode_css/isFlexWrap.html">isFlexWrap</a><span class="tableEntryAnnotation">(t)</span>
+									</code>
+								</td>
+								<td>True if the token has <code class="lang-d"><span class="pun">&lt;</span><span class="pln">flex</span><span class="pun">-</span><span class="pln">wrap</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="logInvalidValue" class="public" href="../../beamui/style/decode_css/logInvalidValue.html">logInvalidValue</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="startsWithColor" class="public" href="../../beamui/style/decode_css/startsWithColor.html">startsWithColor</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>True if token sequence starts with <code class="lang-d"><span class="pun">&lt;</span><span class="pln">color</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="startsWithFontFamily" class="public" href="../../beamui/style/decode_css/startsWithFontFamily.html">startsWithFontFamily</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>True if token sequence starts with <code class="lang-d"><span class="pun">&lt;</span><span class="pln">font</span><span class="pun">-</span><span class="pln">family</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="startsWithFontStyle" class="public" href="../../beamui/style/decode_css/startsWithFontStyle.html">startsWithFontStyle</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>True if token sequence starts with <code class="lang-d"><span class="pun">&lt;</span><span class="pln">font</span><span class="pun">-</span><span class="pln">style</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="startsWithFontWeight" class="public" href="../../beamui/style/decode_css/startsWithFontWeight.html">startsWithFontWeight</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>True if token sequence starts with <code class="lang-d"><span class="pun">&lt;</span><span class="pln">font</span><span class="pun">-</span><span class="pln">weight</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="startsWithIdent" class="public" href="../../beamui/style/decode_css/startsWithIdent.html">startsWithIdent</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>True if token sequence starts with identifier value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="startsWithImage" class="public" href="../../beamui/style/decode_css/startsWithImage.html">startsWithImage</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>True if token sequence starts with image value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="startsWithLength" class="public" href="../../beamui/style/decode_css/startsWithLength.html">startsWithLength</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>True if token sequence starts with <code class="lang-d"><span class="pun">&lt;</span><span class="pln">length</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="startsWithTextDecorStyle" class="public" href="../../beamui/style/decode_css/startsWithTextDecorStyle.html">startsWithTextDecorStyle</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>True if token sequence starts with <code class="lang-d"><span class="pun">&lt;</span><span class="pln">text</span><span class="pun">-</span><span class="pln">decoration</span><span class="pun">-</span><span class="pln">style</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="startsWithTime" class="public" href="../../beamui/style/decode_css/startsWithTime.html">startsWithTime</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>True if token sequence starts with <code class="lang-d"><span class="pun">&lt;</span><span class="pln">time</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="startsWithTimingFunction" class="public" href="../../beamui/style/decode_css/startsWithTimingFunction.html">startsWithTimingFunction</a><span class="tableEntryAnnotation">(tokens)</span>
+									</code>
+								</td>
+								<td>True if token sequence starts with <code class="lang-d"><span class="pun">&lt;</span><span class="pln">timing</span><span class="pun">-</span><span class="kwd">function</span><span class="pun">&gt;</span></code> value
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h2>Aliases</h2>
+						<table class="module">
+							<tr>
+								<th class="name">Name</th><th class="type">Type</th><th>Description</th>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="BackgroundHere" class="public" href="../../beamui/style/decode_css/BackgroundHere.html">
+										<code>BackgroundHere</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><a href="../../beamui/core/types/Tup.html"><span class="typ">Tup</span></a>!(beamui.core.types.Result!(beamui.graphics.colors.Color).Result,beamui.core.types.Result!(beamui.graphics.drawables.Drawable).Result)</code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="BorderHere" class="public" href="../../beamui/style/decode_css/BorderHere.html">
+										<code>BorderHere</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><a href="../../beamui/core/types/Tup.html"><span class="typ">Tup</span></a>!(beamui.core.types.Result!(beamui.core.units.Length).Result,beamui.graphics.drawables.BorderStyle,beamui.core.types.Result!(beamui.graphics.colors.Color).Result)</code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="FlexFlowHere" class="public" href="../../beamui/style/decode_css/FlexFlowHere.html">
+										<code>FlexFlowHere</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><a href="../../beamui/core/types/Tup.html"><span class="typ">Tup</span></a>!(beamui.core.types.Result!(beamui.layout.flex.FlexDirection).Result,beamui.core.types.Result!(beamui.layout.flex.FlexWrap).Result)</code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="FlexHere" class="public" href="../../beamui/style/decode_css/FlexHere.html">
+										<code>FlexHere</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><a href="../../beamui/core/types/Tup.html"><span class="typ">Tup</span></a>!(float,float,beamui.core.units.Length)</code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="TextDecorHere" class="public" href="../../beamui/style/decode_css/TextDecorHere.html">
+										<code>TextDecorHere</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><a href="../../beamui/core/types/Tup.html"><span class="typ">Tup</span></a>!(beamui.text.style.TextDecorLine,beamui.core.types.Result!(beamui.graphics.colors.Color).Result,beamui.core.types.Result!(beamui.text.style.TextDecorStyle).Result)</code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="TransitionHere" class="public" href="../../beamui/style/decode_css/TransitionHere.html">
+										<code>TransitionHere</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><a href="../../beamui/core/types/Tup.html"><span class="typ">Tup</span></a>!(beamui.core.types.Result!(string).Result,beamui.core.types.Result!(uint).Result,beamui.core.types.Result!(beamui.core.animations.TimingFunction).Result,beamui.core.types.Result!(uint).Result)</code>
+								</td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+					<footer>
+						<table class="license-info">
+							<tr>
+								<th>Authors</th><td></td>
+							</tr>
+							<tr>
+								<th>Copyright</th><td></td>
+							</tr>
+							<tr>
+								<th>License</th><td></td>
+							</tr>
+						</table>
+						<p class="faint">Generated using the DDOX documentation generator</p>
+					</footer>
+				</div>
+			</body>
+		</html>

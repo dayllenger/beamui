@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module beamui.core.editable</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../beamui.html">beamui</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">core
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/animations.html">animations</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/collections.html">collections</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/config.html">config</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../beamui/core/editable.html">editable</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/filemanager.html">filemanager</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/files.html">files</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/i18n.html">i18n</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/linalg.html">linalg</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/linestream.html">linestream</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/logger.html">logger</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/math.html">math</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/memory.html">memory</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/ownership.html">ownership</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/resources.html">resources</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/settings.html">settings</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/signals.html">signals</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/streams.html">streams</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/timer.html">timer</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/types.html">types</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/undo.html">undo</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/core/units.html">units</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">css
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/css/css.html">css</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/css/parser.html">parser</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/css/tokenizer.html">tokenizer</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">dialogs
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/dialogs/dialog.html">dialog</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/dialogs/filedialog.html">filedialog</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/dialogs/inputbox.html">inputbox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/dialogs/messagebox.html">messagebox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/dialogs/settingsdialog.html">settingsdialog</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">events
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/action.html">action</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/keyboard.html">keyboard</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/pointer.html">pointer</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/shortcut.html">shortcut</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/stdactions.html">stdactions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/events/wheel.html">wheel</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">ext
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">xpm
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/ext/xpm/colors.html">colors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/ext/xpm/reader.html">reader</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/ext/css_syntax.html">css_syntax</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">graphics
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">gl
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/api.html">api</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/compiler.html">compiler</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/errors.html">errors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/gl.html">gl</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/glpainter.html">glpainter</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/objects.html">objects</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/program.html">program</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/renderer.html">renderer</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/shaders.html">shaders</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/stroke_tiling.html">stroke_tiling</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/gl/textures.html">textures</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/atlas.html">atlas</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/bitmap.html">bitmap</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/brush.html">brush</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/colors.html">colors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/compositing.html">compositing</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/drawables.html">drawables</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/flattener.html">flattener</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/iconprovider.html">iconprovider</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/images.html">images</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/painter.html">painter</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/pen.html">pen</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/polygons.html">polygons</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/swpainter.html">swpainter</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/swrast.html">swrast</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/graphics/txtpainter.html">txtpainter</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">layout
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/alignment.html">alignment</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/factory.html">factory</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/flex.html">flex</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/free.html">free</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/grid.html">grid</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/layout/linear.html">linear</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">platforms
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">common
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/platforms/common/platform.html">platform</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/platforms/common/startup.html">startup</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">style
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/computed_style.html">computed_style</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/decode_css.html">decode_css</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/media.html">media</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/property.html">property</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/selector.html">selector</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/style.html">style</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/theme.html">theme</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/style/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">text
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/consolefont.html">consolefont</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/fonts.html">fonts</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/ftfonts.html">ftfonts</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/glyph.html">glyph</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/line.html">line</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/shaping.html">shaping</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/simple.html">simple</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/sizetest.html">sizetest</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/style.html">style</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/text/win32fonts.html">win32fonts</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">tools
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/tools/css_hot_reload.html">css_hot_reload</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">widgets
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/appframe.html">appframe</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/charts.html">charts</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/combobox.html">combobox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/controls.html">controls</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/docks.html">docks</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/editors.html">editors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/grid.html">grid</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/groupbox.html">groupbox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/lists.html">lists</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/menu.html">menu</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/popup.html">popup</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/progressbar.html">progressbar</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/scroll.html">scroll</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/scrollbar.html">scrollbar</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/slider.html">slider</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/srcedit.html">srcedit</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/statusline.html">statusline</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/tabs.html">tabs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/text.html">text</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/toolbars.html">toolbars</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/tree.html">tree</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/trigger.html">trigger</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/widget.html">widget</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../beamui/widgets/winframe.html">winframe</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module beamui.core.editable</h1><p>Editable text content and related data structures.
+</p><section></section>
+
+			<section></section>
+			<section>
+				<h2>Import line</h2><pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">beamui<wbr/></span><span class="pun">.</span><span class="pln">core<wbr/></span><span class="pun">.</span><span class="pln">editable</span><span class="pun">;</span></code></pre></section>
+					<section>
+						<h2>Functions</h2>
+						<table class="module">
+							<tr>
+								<th class="name">Name</th><th>Description</th>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="concatDStrings" class="public" href="../../beamui/core/editable/concatDStrings.html">concatDStrings</a><span class="tableEntryAnnotation">(lines, delimiter)</span>
+									</code>
+								</td>
+								<td>Concat strings from array using delimiter
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="replaceEOLsWithSpaces" class="public" href="../../beamui/core/editable/replaceEOLsWithSpaces.html">replaceEOLsWithSpaces</a><span class="tableEntryAnnotation">(source)</span>
+									</code>
+								</td>
+								<td>Replace end of lines with spaces
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="splitDString" class="public" href="../../beamui/core/editable/splitDString.html">splitDString</a><span class="tableEntryAnnotation">(source, delimiter)</span>
+									</code>
+								</td>
+								<td>Split dstring by delimiters
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="tokenCategory" class="public" href="../../beamui/core/editable/tokenCategory.html">tokenCategory</a><span class="tableEntryAnnotation">(t)</span>
+									</code>
+								</td>
+								<td>Extracts token category, clearing subcategory
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h2>Interfaces</h2>
+						<table class="module">
+							<tr>
+								<th class="name">Name</th><th>Description</th>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="SyntaxSupport" class="public" href="../../beamui/core/editable/SyntaxSupport.html">SyntaxSupport</a>
+									</code>
+								</td>
+								<td>Interface for custom syntax highlight, comments toggling, smart indents,
+and other language dependent features for source code editors
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h2>Classes</h2>
+						<table class="module">
+							<tr>
+								<th class="name">Name</th><th>Description</th>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="EditableContent" class="public" href="../../beamui/core/editable/EditableContent.html">EditableContent</a>
+									</code>
+								</td>
+								<td>Editable multiline text
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="EditOperation" class="public" href="../../beamui/core/editable/EditOperation.html">EditOperation</a>
+									</code>
+								</td>
+								<td>Edit operation details for <code class="lang-d"><a href="../../beamui/core/editable/EditableContent.html"><span class="typ">EditableContent</span></a></code>
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="LineIcon" class="public" href="../../beamui/core/editable/LineIcon.html">LineIcon</a>
+									</code>
+								</td>
+								<td>Text editor line icon
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="SingleLineEditOperation" class="public" href="../../beamui/core/editable/SingleLineEditOperation.html">SingleLineEditOperation</a>
+									</code>
+								</td>
+								<td>Edit operation details for single-line editors
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="TextContent" class="public" href="../../beamui/core/editable/TextContent.html">TextContent</a>
+									</code>
+								</td>
+								<td>Text content by lines
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h2>Structs</h2>
+						<table class="module">
+							<tr>
+								<th class="name">Name</th><th>Description</th>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="LineIcons" class="public" href="../../beamui/core/editable/LineIcons.html">LineIcons</a>
+									</code>
+								</td>
+								<td>Text editor line icon list
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="LineRange" class="public" href="../../beamui/core/editable/LineRange.html">LineRange</a>
+									</code>
+								</td>
+								<td>Line content range
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="TabSize" class="public" href="../../beamui/core/editable/TabSize.html">TabSize</a>
+									</code>
+								</td>
+								<td>Represents size of tab character in spaces, in range from 1 to 16
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="TextLineMeasure" class="public" href="../../beamui/core/editable/TextLineMeasure.html">TextLineMeasure</a>
+									</code>
+								</td>
+								<td>Measure line text (tabs, spaces, and nonspace positions)
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="TextPosition" class="public" href="../../beamui/core/editable/TextPosition.html">TextPosition</a>
+									</code>
+								</td>
+								<td>Text content position
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="TextRange" class="public" href="../../beamui/core/editable/TextRange.html">TextRange</a>
+									</code>
+								</td>
+								<td>Text content range
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h2>Enums</h2>
+						<table class="module">
+							<tr>
+								<th class="name">Name</th><th>Description</th>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="EditAction" class="public" href="../../beamui/core/editable/EditAction.html">EditAction</a>
+									</code>
+								</td>
+								<td>Action performed with editable contents
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="EditStateMark" class="public" href="../../beamui/core/editable/EditStateMark.html">EditStateMark</a>
+									</code>
+								</td>
+								<td>Values for editable line state
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="LineIconType" class="public" href="../../beamui/core/editable/LineIconType.html">LineIconType</a>
+									</code>
+								</td>
+								<td>Types of text editor line icon marks (bookmark / breakpoint / error / ...)
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<code>
+										<a id="TokenCategory" class="public" href="../../beamui/core/editable/TokenCategory.html">TokenCategory</a>
+									</code>
+								</td>
+								<td>Token category for syntax highlight.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h2>Global variables</h2>
+						<table class="module">
+							<tr>
+								<th class="name">Name</th><th class="type">Type</th><th>Description</th>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="EOL" class="public" href="../../beamui/core/editable/EOL.html">
+										<code>EOL</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><span class="kwd">immutable</span><span class="pun">(</span><span class="typ">dchar</span><span class="pun">)</span></code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="SYSTEM_DEFAULT_EOL" class="public" href="../../beamui/core/editable/SYSTEM_DEFAULT_EOL.html">
+										<code>SYSTEM_DEFAULT_EOL</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><span class="kwd">immutable</span><span class="pun">(</span><span class="typ">dchar</span><span class="pun">[]</span><span class="pun">)</span></code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="TOKEN_CATEGORY_MASK" class="public" href="../../beamui/core/editable/TOKEN_CATEGORY_MASK.html">
+										<code>TOKEN_CATEGORY_MASK</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="typ">ubyte</span><span class="pun">)</span></code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="TOKEN_SUBCATEGORY_MASK" class="public" href="../../beamui/core/editable/TOKEN_SUBCATEGORY_MASK.html">
+										<code>TOKEN_SUBCATEGORY_MASK</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="typ">ubyte</span><span class="pun">)</span></code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="TOKEN_UNKNOWN" class="public" href="../../beamui/core/editable/TOKEN_UNKNOWN.html">
+										<code>TOKEN_UNKNOWN</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="typ">ubyte</span><span class="pun">)</span></code>
+								</td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h2>Aliases</h2>
+						<table class="module">
+							<tr>
+								<th class="name">Name</th><th class="type">Type</th><th>Description</th>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="ContentChangeHandler" class="public" href="../../beamui/core/editable/ContentChangeHandler.html">
+										<code>ContentChangeHandler</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><span class="typ">void</span> <span class="kwd">delegate</span><span class="pun">(</span><a href="../../beamui/core/editable/EditOperation.html"><span class="typ">EditOperation</span></a><span class="pun">, </span><span class="kwd">ref</span> <a href="../../beamui/core/editable/TextRange.html"><span class="typ">TextRange</span></a><span class="pun">, </span><span class="kwd">ref</span> <a href="../../beamui/core/editable/TextRange.html"><span class="typ">TextRange</span></a><span class="pun">, </span><span class="typ">Object</span><span class="pun">)</span></code>
+								</td>
+								<td>Editable Content change listener
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="MarksChangeHandler" class="public" href="../../beamui/core/editable/MarksChangeHandler.html">
+										<code>MarksChangeHandler</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><span class="typ">void</span> <span class="kwd">delegate</span><span class="pun">(</span><a href="../../beamui/core/editable/LineIcon.html"><span class="typ">LineIcon</span></a><span class="pun">[]</span><span class="pun">, </span><a href="../../beamui/core/editable/LineIcon.html"><span class="typ">LineIcon</span></a><span class="pun">[]</span><span class="pun">)</span></code>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="TokenProp" class="public" href="../../beamui/core/editable/TokenProp.html">
+										<code>TokenProp</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><span class="typ">ubyte</span></code>
+								</td>
+								<td>TokenCategory holder
+</td>
+							</tr>
+							<tr>
+								<td class="name">
+									<a id="TokenPropString" class="public" href="../../beamui/core/editable/TokenPropString.html">
+										<code>TokenPropString</code>
+									</a>
+								</td>
+								<td class="type">
+									<code class="prettyprint lang-d"><span class="typ">ubyte</span><span class="pun">[]</span></code>
+								</td>
+								<td>TokenCategory string
+</td>
+							</tr>
+						</table>
+					</section>
+					<footer>
+						<table class="license-info">
+							<tr>
+								<th>Authors</th><td></td>
+							</tr>
+							<tr>
+								<th>Copyright</th><td></td>
+							</tr>
+							<tr>
+								<th>License</th><td></td>
+							</tr>
+						</table>
+						<p class="faint">Generated using the DDOX documentation generator</p>
+					</footer>
+				</div>
+			</body>
+		</html>

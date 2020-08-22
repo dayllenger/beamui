@@ -1,0 +1,277 @@
+/*************** Common ***************/
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+    font-size: 14px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #fdfdfd;
+    color: #222;
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", "Segoe UI", "Roboto Sans", "Open Sans", sans-serif;
+    line-height: 1.2;
+}
+
+h1, h2, h3 { font-weight: lighter; }
+h1 {
+    margin-top: -5px;
+    margin-bottom: 2rem;
+    text-shadow: 1px 1px 0 #ddd;
+}
+h2 {
+    margin-top: 2rem;
+    text-indent: 0.25rem;
+}
+h3 {
+    margin-top: 1.5rem;
+}
+
+a {
+    color: #444;
+    text-decoration: none;
+    transition: color 50ms;
+}
+a:hover {
+    color: #000;
+}
+
+/*************** Main ***************/
+
+#main-contents {
+    width: 100%;
+    padding: 1rem;
+}
+
+#main-contents a {
+    color: #075;
+}
+#main-contents a:hover {
+    color: #7a1;
+}
+
+table {
+    width: 100%;
+    border: 1px solid #eee;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 4px 8px;
+    vertical-align: middle;
+}
+th {
+    line-height: 1.6;
+    color: #666;
+    font-style: italic;
+    font-weight: normal;
+    text-align: left;
+}
+th.type {
+    text-align: right;
+}
+tr:nth-of-type(even) {
+    background-color: #f3f4f5;
+}
+td.type {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+}
+td.name {
+    max-width: 250px;
+}
+table.module td.name {
+    width: 250px;
+}
+table.module th.type,
+table.module td.type {
+    text-align: left;
+}
+
+.tableEntryAnnotation {
+    color: #798;
+    font-size: 0.9rem;
+}
+a.property + .tableEntryAnnotation {
+    padding-left: 3px;
+    font-size: 0.8rem;
+}
+
+a.protected, a.package, a.private {
+    padding-left: 16px;
+    background-repeat: no-repeat;
+    font-style: italic;
+}
+a.protected { background-image: url(../images/ddox/protected.png); }
+a.package { background-image: url(../images/ddox/package.png); }
+a.private { background-image: url(../images/ddox/private.png); }
+a.inherited::before {
+    content: url(../images/ddox/inherited.png);
+    display: block;
+    float: right;
+    height: 1rem;
+}
+
+p.inherited {
+    padding-left: 0.5em;
+    color: #666;
+}
+
+/*************** Page navigation ***************/
+
+nav.page-nav ul { list-style: none; padding-left: 0; }
+nav.page-nav li a { color: black; }
+nav.page-nav li:before { content: "▼"; padding-right: 3px; }
+
+/*************** Navigation panel ***************/
+
+#main-nav {
+    width: 100%;
+    max-height: 50vh;
+    padding: 1rem;
+    overflow-y: auto;
+    background-color: #f5f5f5;
+    box-shadow: inset -2px 0 5px rgba(0,0,0,.15);
+    font-size: 15px;
+    line-height: 1.4;
+}
+#main-nav > ul {
+    padding-bottom: 1rem;
+}
+
+#main-nav a {
+    display: block;
+    outline: none;
+    transition: none;
+}
+ul.tree-view a:hover {
+    color: #7a1;
+}
+ul.tree-view .selected a {
+    color: #086;
+}
+
+ul.tree-view li {
+    list-style-type: none;
+}
+ul.tree-view li li {
+    padding-left: 1rem;
+    padding-right: 0.5rem;
+}
+ul.tree-view .package {
+    clear: both;
+    border-radius: 5px;
+    color: #444;
+    cursor: pointer;
+}
+ul.tree-view .package:hover {
+    box-shadow: 0 0 10px 0 rgba(0,0,0,0.1);
+}
+ul.tree-view .package::before {
+    content: "";
+    display: block;
+    float: left;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: #098;
+    margin-top: 0.5rem;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+}
+ul.tree-view .collapsed .package::before {
+    background-color: #888;
+}
+ul.tree-view .module {
+    padding-left: 1.5rem;
+}
+
+ul.tree-view li.collapsed ul { display: none; }
+ul.tree-view, ul.tree-view ul { margin: 0; padding: 0; }
+
+/*************** Search panel ***************/
+
+#symbolSearchPane form {
+    margin-bottom: 1.5rem;
+}
+#symbolSearch {
+    width: 100%;
+}
+#symbolSearchResults {
+    position: absolute;
+    left: 0;
+    width: 96%;
+    min-height: 1rem;
+    margin: 0 2%;
+    margin-top: -1.25rem;
+    padding: 0.25rem;
+    background: #f5f5f5;
+    box-shadow: 0px 5px 5px 0 rgba(0,0,0,0.15);
+    font-size: 13px;
+}
+.symbolList {
+    list-style: none;
+    padding: 0;
+    overflow: hidden;
+}
+.symbolList li {
+    background-repeat: no-repeat;
+    background-position: 0 1px;
+    padding-left: 18px;
+}
+.symbolList li a {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.symbolList li a:hover {
+    color: #7a1;
+}
+
+.searchResults.symbolList li { background-position: 0 5px; }
+.searchResults h2 { margin-bottom: 0; margin-top: 1rem; }
+
+.symbolList .deprecated a { color: gray; }
+.symbolList .module { background-image: url(../images/ddox/module.png); }
+.symbolList .functiondeclaration { background-image: url(../images/ddox/function.png); }
+.symbolList .classdeclaration { background-image: url(../images/ddox/class.png); }
+.symbolList .interfacedeclaration { background-image: url(../images/ddox/interface.png); }
+.symbolList .structdeclaration { background-image: url(../images/ddox/struct.png); }
+.symbolList .variabledeclaration { background-image: url(../images/ddox/variable.png); }
+.symbolList .property { background-image: url(../images/ddox/property.png); }
+.symbolList .enumdeclaration { background-image: url(../images/ddox/enum.png); }
+.symbolList .enummemberdeclaration { background-image: url(../images/ddox/enummember.png); }
+.symbolList .aliasdeclaration { background-image: url(../images/ddox/alias.png); }
+.symbolList .templatedeclaration { background-image: url(../images/ddox/template.png); }
+
+/*************** Footer ***************/
+
+p.faint {
+    color: #ccc;
+    text-align: right;
+}
+
+.license-info { display: none; }
+
+/*************** Responsive ***************/
+
+@media only screen and (min-width: 769px) {
+    #main-contents {
+        width: auto;
+        max-width: 960px;
+        margin-left: 18rem;
+        padding: 2rem;
+    }
+    #main-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 18rem;
+        height: 100vh;
+        max-height: none;
+    }
+}

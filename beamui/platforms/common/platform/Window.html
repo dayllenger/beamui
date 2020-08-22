@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Class Window</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../../../beamui.html">beamui</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">core
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/animations.html">animations</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/collections.html">collections</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/config.html">config</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/editable.html">editable</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/filemanager.html">filemanager</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/files.html">files</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/i18n.html">i18n</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/linalg.html">linalg</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/linestream.html">linestream</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/logger.html">logger</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/math.html">math</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/memory.html">memory</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/ownership.html">ownership</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/resources.html">resources</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/settings.html">settings</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/signals.html">signals</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/streams.html">streams</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/timer.html">timer</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/types.html">types</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/undo.html">undo</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/core/units.html">units</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">css
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/css/css.html">css</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/css/parser.html">parser</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/css/tokenizer.html">tokenizer</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">dialogs
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/dialogs/dialog.html">dialog</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/dialogs/filedialog.html">filedialog</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/dialogs/inputbox.html">inputbox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/dialogs/messagebox.html">messagebox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/dialogs/settingsdialog.html">settingsdialog</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">events
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/events/action.html">action</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/events/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/events/keyboard.html">keyboard</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/events/pointer.html">pointer</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/events/shortcut.html">shortcut</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/events/stdactions.html">stdactions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/events/wheel.html">wheel</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">ext
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">xpm
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/ext/xpm/colors.html">colors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/ext/xpm/reader.html">reader</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/ext/css_syntax.html">css_syntax</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">graphics
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">gl
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/api.html">api</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/compiler.html">compiler</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/errors.html">errors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/gl.html">gl</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/glpainter.html">glpainter</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/objects.html">objects</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/program.html">program</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/renderer.html">renderer</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/shaders.html">shaders</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/stroke_tiling.html">stroke_tiling</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/gl/textures.html">textures</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/atlas.html">atlas</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/bitmap.html">bitmap</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/brush.html">brush</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/colors.html">colors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/compositing.html">compositing</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/drawables.html">drawables</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/flattener.html">flattener</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/iconprovider.html">iconprovider</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/images.html">images</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/painter.html">painter</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/pen.html">pen</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/polygons.html">polygons</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/swpainter.html">swpainter</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/swrast.html">swrast</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/graphics/txtpainter.html">txtpainter</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">layout
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/layout/alignment.html">alignment</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/layout/factory.html">factory</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/layout/flex.html">flex</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/layout/free.html">free</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/layout/grid.html">grid</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/layout/linear.html">linear</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">platforms
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">common
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module selected">
+						<a href="../../../../beamui/platforms/common/platform.html">platform</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/platforms/common/startup.html">startup</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">style
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/style/computed_style.html">computed_style</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/style/decode_css.html">decode_css</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/style/media.html">media</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/style/property.html">property</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/style/selector.html">selector</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/style/style.html">style</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/style/theme.html">theme</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/style/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">text
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/text/consolefont.html">consolefont</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/text/fonts.html">fonts</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/text/ftfonts.html">ftfonts</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/text/glyph.html">glyph</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/text/line.html">line</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/text/shaping.html">shaping</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/text/simple.html">simple</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/text/sizetest.html">sizetest</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/text/style.html">style</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/text/win32fonts.html">win32fonts</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">tools
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/tools/css_hot_reload.html">css_hot_reload</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">widgets
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/appframe.html">appframe</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/charts.html">charts</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/combobox.html">combobox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/controls.html">controls</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/docks.html">docks</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/editors.html">editors</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/grid.html">grid</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/groupbox.html">groupbox</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/lists.html">lists</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/menu.html">menu</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/popup.html">popup</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/progressbar.html">progressbar</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/scroll.html">scroll</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/scrollbar.html">scrollbar</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/slider.html">slider</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/srcedit.html">srcedit</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/statusline.html">statusline</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/tabs.html">tabs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/text.html">text</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/toolbars.html">toolbars</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/tree.html">tree</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/trigger.html">trigger</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/widget.html">widget</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../../beamui/widgets/winframe.html">winframe</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Class Window</h1><p>Window abstraction layer. Widgets can be shown only inside window.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">class</span> <span class="typ">Window</span>
+			<br>&nbsp;&nbsp;: <a href="../../../../beamui/events/event/CustomEventTarget.html"><span class="typ">CustomEventTarget</span></a>
+					</div>
+				</code>
+			</div>
+			
+			<section><h2>Constructors</h2>
+				<table>
+					<tr>
+						<th class="name">Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(parent, options)</span>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Fields</h2>
+				<table>
+					<tr>
+						<th class="type">Type</th><th class="name">Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td class="type">
+			<code class="prettyprint lang-d">
+				<div><a href="../../../../beamui/core/signals/Listener.html"><span class="typ">Listener</a>!(...)</div>
+			</code>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.allowClose.html" class="public"><code>allowClose</code></a>
+						</td>
+						<td>Handler to ask whether it is allowed for window to close itself
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/core/geometry/RectOf.html"><span class="typ">RectOf</span></a>!(float)</code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.caretRect.html" class="public"><code>caretRect</code></a>
+						</td>
+						<td>Blinking caret position (empty rect if no blinking caret)
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="typ">bool</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.caretReplace.html" class="public"><code>caretReplace</code></a>
+						</td>
+						<td>Blinking caret is in replace mode if true, insert mode if false
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<code class="prettyprint lang-d">
+				<div><a href="../../../../beamui/core/signals/Listener.html"><span class="typ">Listener</a>!(...)</div>
+			</code>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.onClose.html" class="public"><code>onClose</code></a>
+						</td>
+						<td>Handler for window closing
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<code class="prettyprint lang-d">
+				<div><a href="../../../../beamui/core/signals/Signal.html"><span class="typ">Signal</a>!(...)</div>
+			</code>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.onWindowActivityChange.html" class="public"><code>onWindowActivityChange</code></a>
+						</td>
+						<td>Window activate/deactivate signal
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<code class="prettyprint lang-d">
+				<div><a href="../../../../beamui/core/signals/Signal.html"><span class="typ">Signal</a>!(...)</div>
+			</code>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.onWindowStateChange.html" class="public"><code>onWindowStateChange</code></a>
+						</td>
+						<td>Window state change signal
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/core/geometry/BoxOf.html"><span class="typ">BoxOf</span></a>!(int)</code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window._windowRect.html" class="protected"><code>_windowRect</code></a>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/platforms/common/platform/WindowState.html"><span class="typ">WindowState</span></a></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window._windowState.html" class="protected"><code>_windowState</code></a>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Properties</h2>
+				<table>
+					<tr>
+						<th class="type">Type</th><th class="name">Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/graphics/colors/Color.html"><span class="typ">Color</span></a></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.backgroundColor.html" class="public property"><code>backgroundColor</code></a><span class="tableEntryAnnotation">[get,&nbsp;set]</span>
+						</td>
+						<td>Window background color
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="typ">float</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.devicePixelRatio.html" class="public property"><code>devicePixelRatio</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Current window ratio between physical and logical (device-independent) pixels
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../../../beamui/core/ownership/WeakRef.html"><span class="typ">WeakRef</span></a>!(beamui.widgets.widget.Element)<span class="pun">)</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.focusedElement.html" class="public property"><code>focusedElement</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Returns current focused widget
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="typ">bool</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.hasModalWindowsAbove.html" class="public property"><code>hasModalWindowsAbove</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Returns true if there is some modal window opened above this window, and this window should not process mouse/key input and should not allow closing
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="typ">int</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.height.html" class="public property"><code>height</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Get current window height (in device-independent pixels)
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/graphics/bitmap/Bitmap.html"><span class="typ">Bitmap</span></a></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.icon.html" class="public property"><code>icon</code></a><span class="tableEntryAnnotation">[set]</span>
+						</td>
+						<td>Set window icon
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="typ">bool</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.isActive.html" class="public property"><code>isActive</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Is this window focused?
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/events/keyboard/KeyMods.html"><span class="typ">KeyMods</span></a></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.keyboardModifiers.html" class="public property"><code>keyboardModifiers</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Get current key modifiers
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/core/geometry/SizeOf.html"><span class="typ">SizeOf</span></a>!(int)</code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.maxSize.html" class="public property"><code>maxSize</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Maximum window size, use <code class="lang-d"><a href="../../../../beamui/platforms/common/platform/Window.setMinMaxSizes.html"><span class="pln">setMinMaxSizes</span></a></code> to set
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/core/geometry/SizeOf.html"><span class="typ">SizeOf</span></a>!(int)</code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.minSize.html" class="public property"><code>minSize</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Minimum window size, use <code class="lang-d"><a href="../../../../beamui/platforms/common/platform/Window.setMinMaxSizes.html"><span class="pln">setMinMaxSizes</span></a></code> to set
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="typ">void</span> <span class="kwd">delegate</span><span class="pun">(</span><span class="typ">string</span><span class="pun">[]</span><span class="pun">)</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.onFileDrop.html" class="public property"><code>onFileDrop</code></a><span class="tableEntryAnnotation">[set]</span>
+						</td>
+						<td>Set handler for files dropped to app window
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/platforms/common/platform/WindowOptions.html"><span class="typ">WindowOptions</span></a></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.options.html" class="public property"><code>options</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Get window behaviour options
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../../../beamui/platforms/common/platform/Window.html"><span class="typ">Window</span></a><span class="pun">)</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.parentWindow.html" class="public property"><code>parentWindow</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Returns parent window
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../../../beamui/widgets/widget/Element.html"><span class="typ">Element</span></a><span class="pun">)</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.rootElement.html" class="public property"><code>rootElement</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Get the root element of the window. Never <code class="lang-d"><span class="kwd">null</span></code>. Contains top element as the first child
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="typ">float</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.screenDPI.html" class="public property"><code>screenDPI</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Current window DPI (dots per inch) value
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/style/theme/Theme.html"><span class="typ">Theme</span></a></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.theme.html" class="public property"><code>theme</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="pln">dstring</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.title.html" class="public property"><code>title</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Get window title (caption)
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="pln">dstring</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.title.html" class="public property"><code>title</code></a><span class="tableEntryAnnotation">[set]</span>
+						</td>
+						<td>Set window title
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="typ">int</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.width.html" class="public property"><code>width</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Get current window width (in device-independent pixels)
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/core/geometry/BoxOf.html"><span class="typ">BoxOf</span></a>!(int)</code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.windowRect.html" class="public property"><code>windowRect</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Returns window rectangle on screen (includes window frame and title)
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><a href="../../../../beamui/platforms/common/platform/WindowState.html"><span class="typ">WindowState</span></a></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.windowState.html" class="public property"><code>windowState</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td>Returns current window state
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="typ">int</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.height.html" class="protected property"><code>height</code></a><span class="tableEntryAnnotation">[set]</span>
+						</td>
+						<td>Assign current window height
+</td>
+					</tr>
+					<tr>
+						<td class="type">
+			<div><code class="prettyprint lang-d"><span class="typ">int</span></code></div>
+						</td>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.width.html" class="protected property"><code>width</code></a><span class="tableEntryAnnotation">[set]</span>
+						</td>
+						<td>Assign current window width
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Methods</h2>
+				<table>
+					<tr>
+						<th class="name">Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.activate.html" class="public">
+								<code>activate</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Just activate window
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.call.html" class="public">
+								<code>call</code>
+							</a>
+							<span class="tableEntryAnnotation">(action)</span>
+						</td>
+						<td>Call an action, considering action context
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.cancelEvent.html" class="public">
+								<code>cancelEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">(uniqueID)</span>
+						</td>
+						<td>Remove event from queue by unique id if not yet dispatched (this method can be used from background thread)
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.cancelTimer.html" class="public">
+								<code>cancelTimer</code>
+							</a>
+							<span class="tableEntryAnnotation">(timerID)</span>
+						</td>
+						<td>Cancel previously scheduled widget timer (for <code class="lang-d"><a href="../../../../beamui/platforms/common/platform/Window.cancelTimer.html#timerID"><span class="pln">timerID</span></a></code> pass value returned from <code class="lang-d"><a href="../../../../beamui/platforms/common/platform/Window.setTimer.html"><span class="pln">setTimer</span></a></code>)
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.canClose.html" class="public">
+								<code>canClose</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Call <code class="lang-d"><a href="../../../../beamui/platforms/common/platform/Window.allowClose.html"><span class="pln">allowClose</span></a></code> handler if set to check if system may close window
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.centerOnParentWindow.html" class="public">
+								<code>centerOnParentWindow</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Center window on parent window, do nothing if there is no parent window
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.close.html" class="public">
+								<code>close</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Close window
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.correctWindowPositionOnScreen.html" class="public">
+								<code>correctWindowPositionOnScreen</code>
+							</a>
+							<span class="tableEntryAnnotation">(rect)</span>
+						</td>
+						<td>Check if window position is inside screen bounds, try to correct if needed. Returns true if position is ok
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.dispatchCustomEvent.html" class="public">
+								<code>dispatchCustomEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">(event)</span>
+						</td>
+						<td>Dispatch custom event
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.dispatchKeyEvent.html" class="public">
+								<code>dispatchKeyEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">(event)</span>
+						</td>
+						<td>Dispatch keyboard event
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.dispatchMouseEvent.html" class="public">
+								<code>dispatchMouseEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">(event)</span>
+						</td>
+						<td>Dispatch mouse event to window content widgets
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.dispatchWheelEvent.html" class="public">
+								<code>dispatchWheelEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">(event)</span>
+						</td>
+						<td>Dispatch wheel event to window content widgets
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.executeInUiThread.html" class="public">
+								<code>executeInUiThread</code>
+							</a>
+							<span class="tableEntryAnnotation">(runnable)</span>
+						</td>
+						<td>Post task to execute in UI thread (this method can be used from background thread)
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.handleDroppedFiles.html" class="public">
+								<code>handleDroppedFiles</code>
+							</a>
+							<span class="tableEntryAnnotation">(filenames)</span>
+						</td>
+						<td>Called when user dragged file(s) to application window
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.handlePostedEvent.html" class="public">
+								<code>handlePostedEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">(uniqueID)</span>
+						</td>
+						<td>Remove event from queue by unique id if not yet dispatched and dispatch it
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.handlePostedEvents.html" class="public">
+								<code>handlePostedEvents</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Handle all events from queue, if any (call from UI thread only)
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.hide.html" class="public">
+								<code>hide</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Restore window if maximized/minimized/hidden
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.hideTooltip.html" class="public">
+								<code>hideTooltip</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Hide tooltip if shown and cancel tooltip timer if set
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.invalidate.html" class="public">
+								<code>invalidate</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Request window redraw
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.isChild.html" class="public">
+								<code>isChild</code>
+							</a>
+							<span class="tableEntryAnnotation">(el)</span>
+						</td>
+						<td>Returns true if <code class="lang-d"><a href="../../../../beamui/platforms/common/platform/Window.isChild.html#el"><span class="pln">el</span></a></code> is child of either the main element, one of popups, or the tooltip
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.isMouseCaptured.html" class="public">
+								<code>isMouseCaptured</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Returns true if mouse is currently captured
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.maximize.html" class="public">
+								<code>maximize</code>
+							</a>
+							<span class="tableEntryAnnotation">(activate)</span>
+						</td>
+						<td>Maximize window
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.minimize.html" class="public">
+								<code>minimize</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Minimize window
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.move.html" class="public">
+								<code>move</code>
+							</a>
+							<span class="tableEntryAnnotation">(x, y, activate)</span>
+						</td>
+						<td>Change window position only
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.moveAndResize.html" class="public">
+								<code>moveAndResize</code>
+							</a>
+							<span class="tableEntryAnnotation">(rc, activate)</span>
+						</td>
+						<td>Set window rectangle
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.overrideCursorType.html" class="public">
+								<code>overrideCursorType</code>
+							</a>
+							<span class="tableEntryAnnotation">(cursor)</span>
+						</td>
+						<td>Override cursor for the entire window. Set to <code class="lang-d"><span class="typ">CursorType<wbr/></span><span class="pun">.</span><span class="pln">automatic</span></code> to use widget cursors back
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.pollTimers.html" class="public">
+								<code>pollTimers</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Poll expired timers; returns true if update is needed
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.postEvent.html" class="public">
+								<code>postEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">(event)</span>
+						</td>
+						<td>Post event to handle in UI thread (this method can be used from background thread)
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.queueWidgetDestroy.html" class="public">
+								<code>queueWidgetDestroy</code>
+							</a>
+							<span class="tableEntryAnnotation">(widgetToDestroy)</span>
+						</td>
+						<td>Allows queue destroy of widget.
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.requestAnimationFrame.html" class="public">
+								<code>requestAnimationFrame</code>
+							</a>
+							<span class="tableEntryAnnotation">(callback)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.requestLayout.html" class="public">
+								<code>requestLayout</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Request layout for main widget and popups
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.resize.html" class="public">
+								<code>resize</code>
+							</a>
+							<span class="tableEntryAnnotation">(w, h, activate)</span>
+						</td>
+						<td>Change window size only
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.restore.html" class="public">
+								<code>restore</code>
+							</a>
+							<span class="tableEntryAnnotation">(activate)</span>
+						</td>
+						<td>Restore window if maximized/minimized/hidden
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.restoreWindowState.html" class="public">
+								<code>restoreWindowState</code>
+							</a>
+							<span class="tableEntryAnnotation">(setting)</span>
+						</td>
+						<td>Restore window state from setting object
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.saveWindowState.html" class="public">
+								<code>saveWindowState</code>
+							</a>
+							<span class="tableEntryAnnotation">(setting)</span>
+						</td>
+						<td>Save window state to setting object
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.setFocus.html" class="public">
+								<code>setFocus</code>
+							</a>
+							<span class="tableEntryAnnotation">(target, reason)</span>
+						</td>
+						<td>Change focus to widget
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.setMinMaxSizes.html" class="public">
+								<code>setMinMaxSizes</code>
+							</a>
+							<span class="tableEntryAnnotation">(minW, minH, maxW, maxH)</span>
+						</td>
+						<td>Set or override the window minimum and maximum sizes. Use a negative value to left it unchanged
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.setTimer.html" class="public">
+								<code>setTimer</code>
+							</a>
+							<span class="tableEntryAnnotation">(intervalMillis, handler)</span>
+						</td>
+						<td>Set timer with a delegate, that will be called after interval expiration; returns timer id.
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.setWindowState.html" class="public">
+								<code>setWindowState</code>
+							</a>
+							<span class="tableEntryAnnotation">(newState, activate, newWindowRect)</span>
+						</td>
+						<td>Change window state, position, or size; returns true if successful, false if not supported by platform
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.show.html" class="public">
+								<code>show</code>
+							</a>
+							<span class="tableEntryAnnotation">(builder)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.showPopup.html" class="public">
+								<code>showPopup</code>
+							</a>
+							<span class="tableEntryAnnotation">(popup)</span>
+						</td>
+						<td>Show a popup in the current build
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.update.html" class="public">
+								<code>update</code>
+							</a>
+							<span class="tableEntryAnnotation">(forceRedraw)</span>
+						</td>
+						<td>Refresh the window (invalidate unconditionally if <code class="lang-d"><a href="../../../../beamui/platforms/common/platform/Window.update.html#forceRedraw"><span class="pln">forceRedraw</span></a></code> is true)
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.adjustPosition.html" class="protected">
+								<code>adjustPosition</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Adjust window position during <code class="lang-d"><a href="../../../../beamui/platforms/common/platform/Window.show.html"><span class="pln">show</span></a><span class="pun">()</span></code>
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.adjustSize.html" class="protected">
+								<code>adjustSize</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Set the minimal window size and resize the window if needed; called from <code class="lang-d"><a href="../../../../beamui/platforms/common/platform/Window.show.html"><span class="pln">show</span></a><span class="pun">()</span></code>
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.applyFocus.html" class="protected">
+								<code>applyFocus</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.bindContext.html" class="protected">
+								<code>bindContext</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Make window OpenGL context to be current
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.captureMouse.html" class="protected">
+								<code>captureMouse</code>
+							</a>
+							<span class="tableEntryAnnotation">(enabled)</span>
+						</td>
+						<td>Platform-dependent mouse capturing
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.cleanup.html" class="protected">
+								<code>cleanup</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Destroy all the resources after close message
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.clearMouseCapture.html" class="protected">
+								<code>clearMouseCapture</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.createContext.html" class="protected">
+								<code>createContext</code>
+							</a>
+							<span class="tableEntryAnnotation">(major, minor)</span>
+						</td>
+						<td>Try to create an OpenGL context with specified version
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.destroyContext.html" class="protected">
+								<code>destroyContext</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Destroy OpenGL context, if exists
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.dispatchCancel.html" class="protected">
+								<code>dispatchCancel</code>
+							</a>
+							<span class="tableEntryAnnotation">(event)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.dispatchKeyEvent.html" class="protected">
+								<code>dispatchKeyEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">(root, event)</span>
+						</td>
+						<td>Dispatch key event to widgets which have <code class="lang-d"><span class="pln">wantsKeyTracking </span><span class="pun">== </span><span class="kwd">true</span></code>
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.dispatchMouseEvent.html" class="protected">
+								<code>dispatchMouseEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">(root, event, cursorIsSet)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.dispatchWheelEvent.html" class="protected">
+								<code>dispatchWheelEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">(root, event)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.draw.html" class="protected">
+								<code>draw</code>
+							</a>
+							<span class="tableEntryAnnotation">(engine)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.drawUsingOpenGL.html" class="protected">
+								<code>drawUsingOpenGL</code>
+							</a>
+							<span class="tableEntryAnnotation">(engine)</span>
+						</td>
+						<td>OpenGL-specific routines
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.handleGLReadiness.html" class="protected">
+								<code>handleGLReadiness</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Override to perform some actions after GL context and backend creation
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.handleResize.html" class="protected">
+								<code>handleResize</code>
+							</a>
+							<span class="tableEntryAnnotation">(width, height)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.handleSizeHintsChange.html" class="protected">
+								<code>handleSizeHintsChange</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.handleTimer.html" class="protected">
+								<code>handleTimer</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>System timer interval expired - notify queue
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.handleWindowActivityChange.html" class="protected">
+								<code>handleWindowActivityChange</code>
+							</a>
+							<span class="tableEntryAnnotation">(isWindowActive)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.handleWindowStateChange.html" class="protected">
+								<code>handleWindowStateChange</code>
+							</a>
+							<span class="tableEntryAnnotation">(newState, newWindowRect)</span>
+						</td>
+						<td>Update and signal window state and/or size/positon changes - for using in platform inplementations
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.postTimerEvent.html" class="protected">
+								<code>postTimerEvent</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Push a timer event into the platform-specific event queue. Called from another thread.
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.removeFocus.html" class="protected">
+								<code>removeFocus</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.scheduleSystemTimer.html" class="protected">
+								<code>scheduleSystemTimer</code>
+							</a>
+							<span class="tableEntryAnnotation">(timestamp)</span>
+						</td>
+						<td>Schedule timer for timestamp in milliseconds - post timer event when finished.
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.sendAndCheckOverride.html" class="protected">
+								<code>sendAndCheckOverride</code>
+							</a>
+							<span class="tableEntryAnnotation">(element, event)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.setCursorType.html" class="protected">
+								<code>setCursorType</code>
+							</a>
+							<span class="tableEntryAnnotation">(cursor)</span>
+						</td>
+						<td>Set cursor type for window
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.setDPI.html" class="protected">
+								<code>setDPI</code>
+							</a>
+							<span class="tableEntryAnnotation">(dpi, dpr)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.setMouseCapture.html" class="protected">
+								<code>setMouseCapture</code>
+							</a>
+							<span class="tableEntryAnnotation">(el, event)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.show.html" class="protected">
+								<code>show</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Show window
+</td>
+					</tr>
+					<tr>
+						<td class="name">
+							<a href="../../../../beamui/platforms/common/platform/Window.swapBuffers.html" class="protected">
+								<code>swapBuffers</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Swap buffers at the end of frame
+</td>
+					</tr>
+				</table>
+			</section>
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Vadim Lopatin
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Vadim Lopatin 2014-2017, Roman Chistokhodov 2017, Andrzej Kilijański 2017-2018, dayllenger 2018-2020
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>Boost License 1.0
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>
