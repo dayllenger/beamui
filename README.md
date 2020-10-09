@@ -4,9 +4,9 @@
 
 [API documentation](https://dayllenger.github.io/beamui/)
 
-[Wiki pages](https://github.com/dayllenger/beamui/wiki)
-
 [Contribution guide](https://github.com/dayllenger/beamui/blob/master/CONTRIBUTING.md)
+
+[The differences to dlangui](https://github.com/dayllenger/beamui/wiki/The-differences-to-dlangui)
 
 Please note that the library is unstable until v1.0, and minor versions may and will break API and old concepts.
 
@@ -35,16 +35,6 @@ Things that are under development:
 * Console text interfaces
 
 This library aims to stay fairly simple and not to compete with Flutter, Avalonia, or Qt. There is no webview, no support for gestures, camera or microphone devices, no utilities for networking. I can only recommend to search for separate packages for your concrete case. Also, the library is not thread safe - all UI operations should perform in a single thread.
-
-#### The differences to DlangUI
-
-From DlangUI it differs basically in the feature set, heavily refactored codebase, improved and simplified API, and various optimizations. Layout system has significantly changed, CSS replaced XML Android-like theming, `Painter` replaced `DrawBuf`, gettext is used instead of ini-files. Signals and actions now work entirely on delegates.
-
-What was removed:
-* DML - it is unnecessary to invent a Turing-complete markup language like QML for making good UIs in D
-* DOM - some dead code
-* Scene3d - some irrelevant code, for my opinion
-* SFML backend - I cannot guarantee good maintenance for it, with various features such as HiDPI. Someone can write (and publish) its own, better implementation.
 
 ## Build Requirements
 
