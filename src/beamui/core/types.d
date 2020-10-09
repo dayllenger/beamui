@@ -11,6 +11,7 @@ module beamui.core.types;
 
 nothrow:
 
+import std.traits;
 import beamui.core.config;
 
 struct Tup(T...)
@@ -24,7 +25,7 @@ Tup!T tup(T...)(T args)
     return Tup!T(args);
 }
 
-struct Result(T)
+struct Result(T) if (isMutable!T && !hasElaborateCopyConstructor!T && !hasElaborateAssign!T && !hasElaborateDestructor!T)
 {
     T val;
     bool err = true;
