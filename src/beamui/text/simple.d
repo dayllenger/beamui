@@ -507,7 +507,11 @@ package(beamui) void clearSimpleTextPool()
     immediate = SimpleTextPool.init;
 }
 
-/// Draw simple text immediately. Useful in very dynamic and massive data lists
+/** Draw simple text immediately. Useful in very dynamic and massive data lists.
+
+    This function performs caching. This means that if you have a few rapidly
+    changing text chunks, nearly never the same, it is better to use `SimpleText` directly.
+*/
 void drawSimpleText(Painter pr, dstring str, float x, float y, Font font, Color color)
 {
     assert(font, "Font is mandatory");

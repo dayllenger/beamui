@@ -1,18 +1,6 @@
 /**
 Slider controls.
 
-Synopsis:
----
-auto slider = new Slider(Orientation.horizontal);
-// slider values are stored inside `.data`
-slider.data.value = 0;
-slider.data.setRange(-50, 50);
-slider.onScroll ~= (SliderEvent event) {
-    if (event.action == SliderAction.moved)
-        Log.d(event.value);
-};
----
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   dayllenger
@@ -84,6 +72,22 @@ abstract class AbstractSlider : Widget
 }
 
 /** Single-value slider widget - either vertical or horizontal.
+
+    Example:
+    ---
+    double someValue = 0;
+
+    render((Slider sl) {
+        sl.value = someValue;
+        sl.minValue = -50;
+        sl.maxValue = 50;
+        sl.step = 10;
+        sl.onChange = (v) {
+            Log.d("slider: ", v);
+            setState(someValue, v);
+        };
+    })
+    ---
 
     CSS_nodes:
     ---
@@ -168,6 +172,25 @@ class Slider : AbstractSlider
 /** Slider widget with two handles to select a numeric range.
 
     If `first` > `second`, the first value will push the second.
+
+    Example:
+    ---
+    double[2] someValues = 0;
+
+    render((RangeSlider sl) {
+        sl.first = someValues[0];
+        sl.second = someValues[1];
+        sl.minValue = 0;
+        sl.maxValue = 10;
+        sl.step = 0.1;
+        sl.pageStep = 100;
+        sl.onChange = (a, b) {
+            Log.fd("range-slider: (%s, %s)", a, b);
+            setState(someValues[0], a);
+            setState(someValues[1], b);
+        };
+    })
+    ---
 
     CSS_nodes:
     ---

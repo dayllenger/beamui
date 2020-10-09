@@ -1,18 +1,6 @@
 /**
 Progress bar control.
 
-Synopsis:
----
-auto pb = new ProgressBar;
-// set progress
-pb.data.progress = 300; // 0 .. 1000
-// set animation interval
-pb.animationInterval = 50; // 50 milliseconds
-
-// for indeterminate state: set progress to PROGRESS_INDETERMINATE (-1)
-pb.data.progress = PROGRESS_INDETERMINATE;
----
-
 Copyright: Vadim Lopatin 2016, dayllenger 2019-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin

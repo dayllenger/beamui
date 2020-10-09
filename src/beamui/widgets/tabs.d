@@ -1,20 +1,7 @@
 /**
 Tabbed controls.
 
-Mostly you will use only `Tabs` class. Other classes are ancillary.
-
-Synopsis:
----
-// create tab widget
-auto tabs = new Tabs;
-// and add tabs
-// content widgets must have different non-null ids
-tabs.addTab(new Label("1st tab content"d).setID("tab1"), "Tab 1");
-tabs.addTab(new Label("2st tab content"d).setID("tab2"), "Tab 2");
-// tab widget consists of two parts: tabControl and tabHost
-tabs.tabHost.style.padding = 12;
-tabs.tabHost.style.backgroundColor = 0xbbbbbb;
----
+Mostly you will use `Tabs` and `TabItem` classes. Other classes are low-level or ancillary.
 
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
@@ -242,6 +229,25 @@ class TabContent : PageStackOf!TabPane
 alias TabPair = WidgetPair!(TabItemBase, Widget);
 
 /**
+
+    Example:
+    ---
+    render((Tabs tabs) {
+        tabs.onSelect = (item) {
+            const ti = cast(TabItem)item;
+            window.title = ti.text;
+        };
+    }).wrap(
+        TabPair(
+            (TabItem ti) { ti.text = "First tab"; },
+            (FirstTab tab) {}
+        ),
+        TabPair(
+            (TabItem ti) { ti.text = "Second tab"; },
+            (SecondTab tab) {}
+        ),
+    )
+    ---
 
     CSS_nodes:
     ---

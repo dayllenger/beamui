@@ -1,7 +1,7 @@
 /**
 Collection types.
 
-Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2019
+Copyright: Vadim Lopatin 2014-2017, dayllenger 2018-2020
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
 */
@@ -18,23 +18,29 @@ import std.traits;
 
     Example:
     ---
-    // add
-    Collection!Widget widgets;
-    widgets ~= new Widget("id1");
-    widgets ~= new Widget("id2");
-    Widget w3 = new Widget("id3");
-    widgets ~= w3;
+    class Item
+    {
+        string id;
+        this(string id) { this.id = id; }
+    }
+
+    // append
+    Collection!Item items;
+    items ~= new Item("id1");
+    items ~= new Item("id2");
+    Item item3 = new Item("id3");
+    items ~= item3;
 
     // remove by index
-    widgets.remove(1);
+    items.remove(1);
 
     // iterate
-    foreach (w; widgets)
-        writeln("widget: ", w.id);
+    foreach (item; items)
+        writeln("item: ", item.id);
 
     // remove by value
-    widgets -= w3;
-    writeln(widgets[0].id);
+    items -= item3;
+    writeln(items[0].id);
     ---
 */
 struct Collection(T, bool ownItems = false) if (is(T == class) || is(T == interface))
