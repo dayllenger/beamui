@@ -198,11 +198,46 @@ struct WidgetAttributes
     }
 }
 
+/** Creates a widget using a fast memory allocator.
+
+    The first way to use it is more declarative and appropriate
+    in writing widget hierarchies:
+    ---
+    render((Control c) {
+        // this function is called immediately.
+        // it's sole purpose is to setup widget properties.
+        // it's more flexible than named arguments could be.
+        c.text = "Fire";
+        c.onClick = &fire;
+    })
+    ---
+
+    The second way is simpler and gives more control:
+    ---
+    Control c = render!Control;
+    c.text = "Fire";
+    c.onClick = &fire;
+    ---
+
+    You may also create an alias and use UFCS:
+    ---
+    alias wgt = render;
+
+    (Control c) {
+        c.text = "Fire";
+        c.onClick = &fire;
+    }.wgt
+    ---
+
+    You may create widgets using `new` operator or any other method,
+    if your task requires so, but in 99.9% of cases you should use
+    this function. It's fast and deterministic.
+*/
 W render(W : Widget)()
 {
     return Widget.arena.make!W;
 }
-
+/// ditto
 W render(W : Widget)(scope void delegate(W) conf)
     in(conf)
 {
