@@ -338,24 +338,6 @@ Result!Length decode(T : Length)(const Token[] tokens)
     return Err!Length;
 }
 
-/// Decode z-index value (an integer or `auto`)
-Result!int decode(SpecialCSSType t : SpecialCSSType.zIndex)(const Token[] tokens)
-{
-    assert(tokens.length > 0);
-
-    if (tokens[0].type == TokenType.ident)
-    {
-        if (tokens[0].text != "auto")
-        {
-            unknown("z-index identifier", tokens[0]);
-            return Err(0);
-        }
-        return Ok(int.min);
-    }
-    else
-        return decode!int(tokens);
-}
-
 /// Decode flexbox direction property
 Result!FlexDirection decode(T : FlexDirection)(const Token[] tokens)
 {

@@ -212,7 +212,7 @@ struct ComputedStyle
         LayoutLength _rowGap = LayoutLength.zero;
         LayoutLength _columnGap = LayoutLength.zero;
         int _order = 0;
-        int _zIndex = int.min;
+        int _zIndex = 0;
         // flexbox-specific
         float _flexGrow = 0;
         float _flexShrink = 1;

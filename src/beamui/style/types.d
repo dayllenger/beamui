@@ -79,7 +79,6 @@ enum SpecialCSSType
     opacity, /// float
     time, /// uint
     transitionProperty, /// string
-    zIndex, /// int
 }
 
 struct StaticBitArray(uint bitCount)

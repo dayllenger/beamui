@@ -389,9 +389,9 @@ struct InlineStyle
         _props.set(P.columnGap, Length.px(px));
     }
 
-    /// Controls item reordering in some layouts
+    /// Controls item reordering in some layouts. 0 by default
     void order(int i) { _props.set(P.order, i); }
-    /// Widget stack order (`int.min` to unspecified)
+    /// Widget paint order. 0 by default
     void zIndex(int z) { _props.set(P.zIndex, z); }
 
     /// Specifies flexbox main axis and its start and end sides

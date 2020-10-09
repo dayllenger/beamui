@@ -37,6 +37,7 @@ package
     import beamui.style.computed_style;
     import beamui.text.fonts;
 }
+import std.algorithm.mutation : swap, SwapStrategy;
 import std.math : isFinite;
 import beamui.core.memory : Arena;
 import beamui.graphics.compositing : BlendMode;
@@ -1235,7 +1236,6 @@ public:
         case wordSpacing:
             requestLayout();
             break;
-        case zIndex:
         case bgColor: .. case bgClip:
         case borderTopColor: .. case borderLeftColor:
         case borderTopStyle: .. case borderLeftStyle:
@@ -2703,6 +2703,7 @@ class ElemPanel : ElemGroup
     private string _kind;
     private ILayout _layout;
     private Buf!Element preparedItems;
+    private bool zIndexTouched;
 
     ~this()
     {
@@ -2765,7 +2766,11 @@ class ElemPanel : ElemGroup
     override protected void handleChildStyleChange(StyleProperty p, Visibility v)
     {
         if (v != Visibility.gone && _layout)
+        {
             _layout.onChildStyleChange(p);
+            if (p == StyleProperty.zIndex)
+                zIndexTouched = true;
+        }
     }
 
     override protected Boundaries computeBoundaries()
@@ -2814,8 +2819,23 @@ class ElemPanel : ElemGroup
 
     override protected void drawContent(Painter pr)
     {
-        foreach (item; preparedItems.unsafe_slice)
-            item.draw(pr);
+        if (!zIndexTouched)
+        {
+            foreach (item; preparedItems.unsafe_slice)
+                item.draw(pr);
+        }
+        else
+        {
+            static Buf!Element sorted;
+            sorted.clear();
+            sorted ~= preparedItems.unsafe_slice;
+
+            // apply paint order
+            sort!((a, b) => a.style.zIndex < b.style.zIndex, SwapStrategy.stable)(sorted.unsafe_slice);
+
+            foreach (item; sorted.unsafe_slice)
+                item.draw(pr);
+        }
     }
 
     /// Make one child (with specified ID) visible, set `othersVisibility` to the rest

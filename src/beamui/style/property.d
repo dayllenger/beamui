@@ -437,7 +437,6 @@ package SpecialCSSType getSpecialCSSType(StyleProperty ptype)
     // dfmt off
     switch (ptype) with (StyleProperty)
     {
-        case zIndex:     return SpecialCSSType.zIndex;
         case bgImage:    return SpecialCSSType.image;
         case fontWeight: return SpecialCSSType.fontWeight;
         case opacity:    return SpecialCSSType.opacity;
