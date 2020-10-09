@@ -8,12 +8,13 @@ Authors:   Vadim Lopatin, dayllenger
 module beamui.events.shortcut;
 
 public import beamui.events.keyboard : Key, KeyMods;
-import beamui.core.functions;
-import beamui.events.keyboard : keyName, parseKeyName;
 
 /// Keyboard shortcut (key + modifiers)
 struct Shortcut
 {
+    import beamui.core.functions;
+    import beamui.events.keyboard : keyName, parseKeyName;
+
 nothrow:
     /// Key code from `Key` enum
     Key key;
@@ -225,5 +226,81 @@ nothrow:
         }
         key = parseKeyName(s);
         return key != Key.none;
+    }
+}
+
+/// Helper for locating items in list, tree, table or other controls by typing their name
+struct TextTypingShortcutHelper
+{
+    import beamui.core.collections : Buf;
+    import beamui.core.logger : currentTimeMillis;
+    import beamui.core.signals;
+    import beamui.events.keyboard;
+    import beamui.events.pointer;
+
+nothrow:
+    /// Expiration time for entered text (in milliseconds); collected text will be cleared after the timeout
+    uint timeout = 800;
+    /// Fires when search text is updated and you can move selection using it
+    Listener!(void delegate(dstring)) onChange;
+
+    private long _lastUpdateTS;
+    private Buf!dchar _text;
+
+    /// Cancel text collection (next typed text will be collected from scratch)
+    void cancel()
+    {
+        _text.clear();
+        _lastUpdateTS = 0;
+        onChange(null);
+    }
+    /// Returns collected text string - use it for lookup
+    @property dstring text() const
+    {
+        return _text[].idup;
+    }
+
+    /// Pass key event here
+    bool handleKeyEvent(KeyEvent event)
+    {
+        const long ts = currentTimeMillis();
+        if (_lastUpdateTS && ts - _lastUpdateTS > timeout)
+            cancel();
+        if (event.action == KeyAction.text)
+        {
+            _text ~= event.text;
+            _lastUpdateTS = ts;
+            onChange(_text[].idup);
+            return false;
+        }
+        if (event.action == KeyAction.keyDown || event.action == KeyAction.keyUp)
+        {
+            switch (event.key) with (Key)
+            {
+            case left:
+            case right:
+            case up:
+            case down:
+            case home:
+            case end:
+            case tab:
+            case pageUp:
+            case pageDown:
+            case backspace:
+                cancel();
+                break;
+            default:
+                break;
+            }
+        }
+        return false;
+    }
+
+    /// Cancel text typing on some mouse events, if necessary
+    bool handleMouseEvent(MouseEvent event)
+    {
+        if (event.action == MouseAction.buttonDown || event.action == MouseAction.buttonUp)
+            cancel();
+        return false;
     }
 }
