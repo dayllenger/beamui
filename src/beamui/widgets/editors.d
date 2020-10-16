@@ -1143,6 +1143,8 @@ class ElemTextField : Element, IEditor, ActionOperator
 
     void copy()
     {
+        if (_passwordChar)
+            return;
         LineRange range = _selectionRange;
         if (range.empty && copyWholeLineWhenNoSelection)
         {
