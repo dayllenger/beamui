@@ -299,9 +299,6 @@ WindowFrame > .caption > Button { margin-left: auto; padding: 2px; }
 
 WindowFrame > .body { justify-self: stretch; padding: 3px; }
 
-/* appframe */
-AppFrame > .body { justify-self: stretch; }
-
 /* dialog, filedialog, inputbox, messagebox, settingsdialog */
 WindowFrame.dialog-frame { padding: 0; border-width: 1px; border-style: solid; border-color: var(--paler-border-color); box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25); }
 

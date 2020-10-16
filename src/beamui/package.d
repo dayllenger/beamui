@@ -37,7 +37,6 @@ public
     import beamui.text.fonts : Font, FontFamily, FontManager, FontRef, FontSelector, FontStyle, FontWeight, HintingMode;
     import beamui.text.glyph : GlyphRef, SubpixelRenderingMode;
     import beamui.text.style;
-    import beamui.widgets.appframe;
     import beamui.widgets.charts;
     import beamui.widgets.combobox;
     import beamui.widgets.controls;

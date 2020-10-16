@@ -885,12 +885,6 @@ WindowFrame {
     }
 }
 
-/* appframe */
-
-AppFrame > .body {
-    justify-self: stretch;
-}
-
 /* dialog, filedialog, inputbox, messagebox, settingsdialog */
 
 WindowFrame.dialog-frame {
