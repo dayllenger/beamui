@@ -22,7 +22,12 @@ enum BrushType
     pattern,
 }
 
-private enum Opaque { hidden, no, yes }
+private enum Opaque
+{
+    hidden,
+    no,
+    yes
+}
 
 /** Brush is either a color, a gradient, or an image pattern.
 
@@ -33,7 +38,10 @@ struct Brush
     @property
     {
         /// The brush type. Once brush constructed, it cannot change
-        BrushType type() const { return _type; }
+        BrushType type() const
+        {
+            return _type;
+        }
 
         /// Underlying data. The `type` must match in order to get it
         Color solid() const
@@ -61,7 +69,10 @@ struct Brush
         }
 
         /// Paint opacity, in [0, 1] range
-        float opacity() const { return _opacity; }
+        float opacity() const
+        {
+            return _opacity;
+        }
         /// ditto
         void opacity(float value)
         {
@@ -90,6 +101,7 @@ struct Brush
             RadialGradient _radial;
             ImagePattern _pattern;
         }
+
         float _opacity = 1;
         Opaque _opq = Opaque.hidden; // because the default color is fully transparent black
     }
@@ -123,6 +135,7 @@ struct GradientBuilder
         float offset = 0;
         Color color;
     }
+
     private ColorStop[] _stops;
 
     /// Add a colorstop. The method clamps `offset` to [0, 1] range
@@ -177,9 +190,12 @@ struct GradientBuilder
         if (_stops.length == 1)
             return Brush.fromSolid(_stops[0].color);
 
-        Opaque op = _stops[0].color.isOpaque ? Opaque.yes :
-                    _stops[0].color.isFullyTransparent ? Opaque.hidden : Opaque.no;
         bool singleColor = true;
+        Opaque op = Opaque.no;
+        if (_stops[0].color.isOpaque)
+            op = Opaque.yes;
+        else if (_stops[0].color.isFullyTransparent)
+            op = Opaque.hidden;
 
         foreach (i; 1 .. _stops.length)
         {

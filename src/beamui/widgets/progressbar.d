@@ -46,7 +46,10 @@ class ProgressBarState : WidgetState
 {
     final @property
     {
-        inout(ElemProgressBar) element() inout { return _el; }
+        inout(ElemProgressBar) element() inout
+        {
+            return _el;
+        }
         /// ditto
         void element(ElemProgressBar el)
         {
@@ -57,7 +60,10 @@ class ProgressBarState : WidgetState
         }
 
         /// Animation interval in milliseconds, if 0 - no animation
-        int animationInterval() const { return _animationInterval; }
+        int animationInterval() const
+        {
+            return _animationInterval;
+        }
         /// ditto
         void animationInterval(int value)
         {
@@ -80,7 +86,7 @@ class ProgressBarState : WidgetState
     }
 
     protected void scheduleAnimation()
-        in(_el)
+    in (_el)
     {
         stopAnimation();
         if (_animationInterval == 0 || !_el.visible)
@@ -118,7 +124,7 @@ class ProgressBarState : WidgetState
 
     /// Called on animation timer
     protected void handleAnimationTimer(long msecElapsed)
-        in(_el)
+    in (_el)
     {
         _el.animationPhase = _el.animationPhase + msecElapsed;
     }
@@ -128,7 +134,10 @@ class ElemProgressBar : Element
 {
     @property
     {
-        float progress() { return _fraction; }
+        float progress()
+        {
+            return _fraction;
+        }
         /// ditto
         void progress(float fr)
         {
@@ -139,7 +148,10 @@ class ElemProgressBar : Element
             invalidate();
         }
 
-        bool showAnimation() const { return _showAnimation; }
+        bool showAnimation() const
+        {
+            return _showAnimation;
+        }
         /// ditto
         void showAnimation(bool flag)
         {
@@ -149,7 +161,10 @@ class ElemProgressBar : Element
             invalidate();
         }
 
-        long animationPhase() const { return _animationPhase; }
+        long animationPhase() const
+        {
+            return _animationPhase;
+        }
         /// ditto
         void animationPhase(long msecs)
         {

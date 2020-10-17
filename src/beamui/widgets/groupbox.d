@@ -12,7 +12,8 @@ import beamui.widgets.widget;
 
 abstract class GroupBoxBase : Panel
 {
-    abstract Widget buildCaption() out(w; w);
+    abstract Widget buildCaption()
+    out (w; w);
 
 protected:
 

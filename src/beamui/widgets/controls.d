@@ -451,7 +451,10 @@ class ElemImage : Element
 {
     @property
     {
-        string imageID() const { return _imageID; }
+        string imageID() const
+        {
+            return _imageID;
+        }
         /// ditto
         void imageID(string id)
         {

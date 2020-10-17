@@ -106,7 +106,7 @@ class ElemSimpleBarChart : Element
     }
 
     final void updateBar(size_t index, Color color, dstring barTitle)
-        in(index < _values.length)
+    in (index < _values.length)
     {
         Bar* bar = &_bars[index];
         if (bar.color == color && bar.title.str == barTitle)
@@ -157,7 +157,10 @@ class ElemSimpleBarChart : Element
             return _values.length;
         }
 
-        dstring title() const { return _title.str; }
+        dstring title() const
+        {
+            return _title.str;
+        }
         /// ditto
         void title(dstring s)
         {
@@ -168,7 +171,10 @@ class ElemSimpleBarChart : Element
             requestLayout();
         }
 
-        double axisRatio() const { return _axisRatio; }
+        double axisRatio() const
+        {
+            return _axisRatio;
+        }
         /// ditto
         void axisRatio(double value)
         {
@@ -178,7 +184,10 @@ class ElemSimpleBarChart : Element
             requestLayout();
         }
 
-        dstring minDescSizeTester() const { return _minDescSizeTester.str; }
+        dstring minDescSizeTester() const
+        {
+            return _minDescSizeTester.str;
+        }
         /// ditto
         void minDescSizeTester(dstring txt)
         {
@@ -231,8 +240,7 @@ class ElemSimpleBarChart : Element
         _axisYAvgValueDesc.measure();
         Size maxSize = _axisYMaxValueDesc.size;
         Size avgSize = _axisYAvgValueDesc.size;
-        return Size(max(maxSize.w, avgSize.w, _axisYMinDescWidth),
-                    max(maxSize.h, avgSize.h));
+        return Size(max(maxSize.w, avgSize.w, _axisYMinDescWidth), max(maxSize.h, avgSize.h));
     }
 
     override protected Boundaries computeBoundaries()
@@ -332,9 +340,9 @@ class ElemSimpleBarChart : Element
 
             // draw x axis segment under bar
             pr.drawLine(
-                firstBarX + _barWidth / 2, y2,
-                firstBarX + _barWidth / 2, y2 + _axisX.segmentTagLength,
-                _segmentTagColor,
+                    firstBarX + _barWidth / 2, y2,
+                    firstBarX + _barWidth / 2, y2 + _axisX.segmentTagLength,
+                    _segmentTagColor,
             );
 
             // draw x axis description

@@ -46,13 +46,22 @@ final class Action
         }
 
         /// Label unicode string to show in UI
-        dstring label() const { return _label; }
+        dstring label() const
+        {
+            return _label;
+        }
 
         /// Icon resource id
-        string iconID() const { return _iconID; }
+        string iconID() const
+        {
+            return _iconID;
+        }
 
         /// Action shortcut, `Shortcut.init` if none
-        Shortcut shortcut() const { return _shortcut; }
+        Shortcut shortcut() const
+        {
+            return _shortcut;
+        }
         /// ditto
         void shortcut(Shortcut sc)
         {
@@ -88,7 +97,10 @@ final class Action
         }
 
         /// Action context; default is `ActionContext.window`
-        ActionContext context() const { return _context; }
+        ActionContext context() const
+        {
+            return _context;
+        }
         /// ditto
         void context(ActionContext ac)
         {
@@ -129,7 +141,10 @@ final class Action
         }
 
         /// When true, action is intended to use with checkbox/radiobutton-like controls
-        bool checkable() const { return _checkable; }
+        bool checkable() const
+        {
+            return _checkable;
+        }
 
         /// When true, this action is included to a group of radio actions
         bool isRadio() const
@@ -214,6 +229,7 @@ final class Action
                 actions = actions.remove!(a => a is null);
             }
         }
+
         ActionGroup* actionGroup;
 
         static Action[string] nameMap;
@@ -310,7 +326,7 @@ final class Action
 
     /// Process the action
     bool call(scope bool delegate(Element) chooser)
-        in(chooser)
+    in (chooser)
     {
         // do not call deactivated action
         if (!enabled)

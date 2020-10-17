@@ -120,6 +120,7 @@ abstract class ScrollAreaBase : Widget
 
 abstract class ElemScrollAreaBase : ElemGroup
 {
+    // dfmt off
     @property
     {
         ScrollBarMode hscrollbarMode() const { return _hmode; }
@@ -167,6 +168,7 @@ abstract class ElemScrollAreaBase : ElemGroup
             return fullContentSize + padding.size;
         }
     }
+    // dfmt on
 
     private
     {
@@ -298,6 +300,7 @@ abstract class ElemScrollAreaBase : ElemGroup
 
     final void scroll(ScrollAreaAction action)
     {
+        // dfmt off
         if (auto h = _hscrollbar)
         {
             switch (action) with (ScrollAreaAction)
@@ -324,6 +327,7 @@ abstract class ElemScrollAreaBase : ElemGroup
                 default: break;
             }
         }
+        // dfmt on
     }
 
     /// Process horizontal scroll event. Return false to discard the event
@@ -512,9 +516,9 @@ abstract class ElemScrollAreaBase : ElemGroup
     protected void needToShowScrollbars(out bool needHScroll, out bool needVScroll)
     {
         needHScroll = _hscrollbar && _hmode != Mode.external &&
-                _hscrollbar.visibility == Visibility.visible;
+            _hscrollbar.visibility == Visibility.visible;
         needVScroll = _vscrollbar && _vmode != Mode.external &&
-                _vscrollbar.visibility == Visibility.visible;
+            _vscrollbar.visibility == Visibility.visible;
     }
 
     /// Override to support modification of client rect after change, e.g. apply offset
@@ -643,27 +647,28 @@ class ScrollArea : ScrollAreaBase
 
 class ElemScrollArea : ElemScrollAreaBase
 {
+    // dfmt off
     @property
     {
         inout(Element) content() inout { return _content; }
 
         override Size fullContentSize() const { return _fullContentSize; }
     }
-
+    // dfmt on
     private Element _content;
     /// Size of content widget
     private Size _fullContentSize;
-
-//     protected void scrollTo(int x, int y)
-//     {
-//         Size sz = fullContentSize;
-//         _scrollPos.x = max(0, min(x, sz.w - _clientBox.w));
-//         _scrollPos.y = max(0, min(y, sz.h - _clientBox.h));
-//         updateScrollBars();
-//         requestLayout();
-// //         invalidate();
-//     }
-
+    /+
+    protected void scrollTo(int x, int y)
+    {
+        Size sz = fullContentSize;
+        _scrollPos.x = max(0, min(x, sz.w - _clientBox.w));
+        _scrollPos.y = max(0, min(y, sz.h - _clientBox.h));
+        updateScrollBars();
+        requestLayout();
+        // invalidate();
+    }
+    +/
     override protected bool handleHScroll(ScrollAction action, float position)
     {
         if (_scrollPos.x != position)

@@ -66,7 +66,10 @@ class ElemLabel : Element
 {
     @property
     {
-        dstring text() const { return original; }
+        dstring text() const
+        {
+            return original;
+        }
         /// ditto
         void text(dstring s)
         {
@@ -273,10 +276,13 @@ class ElemParagraph : Element
 {
     @property
     {
-        inout(TextContent) content() inout { return _content; }
+        inout(TextContent) content() inout
+        {
+            return _content;
+        }
         /// ditto
         void content(TextContent tc)
-            in(tc)
+        in (tc)
         {
             if (_content is tc)
                 return;
@@ -335,7 +341,7 @@ class ElemParagraph : Element
     }
 
     this(TextContent content)
-        in(content)
+    in (content)
     {
         _content = content;
         _content.afterChange ~= &handleChange;

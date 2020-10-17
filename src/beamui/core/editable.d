@@ -228,6 +228,7 @@ struct LineRange
 /// Edit operation details for single-line editors
 class SingleLineEditOperation : UndoOperation
 {
+    // dfmt off
     final @property
     {
         /// Source range to replace with new content
@@ -240,6 +241,7 @@ class SingleLineEditOperation : UndoOperation
         /// New content for range (if required for this action)
         dstring content() { return _content; }
     }
+    // dfmt on
 
     private
     {
@@ -617,6 +619,7 @@ enum EditStateMark : ubyte
 /// Edit operation details for `EditableContent`
 class EditOperation : UndoOperation
 {
+    // dfmt off
     final @property
     {
         /// Action performed
@@ -635,6 +638,7 @@ class EditOperation : UndoOperation
         /// Line edit marks for old range
         EditStateMark[] editMarksBefore() { return _editMarksBefore; }
     }
+    // dfmt on
 
     private
     {
@@ -692,7 +696,8 @@ class EditOperation : UndoOperation
         if (_content.length != 1 || op._content.length != 1) // both ops should operate the same line
             return false;
         // appending of single character
-        if (_rangeBefore.empty && op._rangeBefore.empty && op._content[0].length == 1 && _range.end.pos == op._rangeBefore.start.pos)
+        if (_rangeBefore.empty && op._rangeBefore.empty &&
+                op._content[0].length == 1 && _range.end.pos == op._rangeBefore.start.pos)
         {
             _content[0] ~= op._content[0];
             _range.end.pos++;
@@ -817,7 +822,11 @@ struct TextLineMeasure
 /// Represents size of tab character in spaces, in range from 1 to 16
 struct TabSize
 {
-    int value() const { return sz; }
+    int value() const
+    {
+        return sz;
+    }
+
     alias value this;
 
     private ubyte sz = 4;
@@ -838,7 +847,10 @@ class EditableContent : TextContent
             return _undoBuffer.modified;
         }
 
-        inout(SyntaxSupport) syntaxSupport() inout { return _syntaxSupport; }
+        inout(SyntaxSupport) syntaxSupport() inout
+        {
+            return _syntaxSupport;
+        }
         /// ditto
         void syntaxSupport(SyntaxSupport syntax)
         {
@@ -862,9 +874,15 @@ class EditableContent : TextContent
             return _syntaxSupport && _syntaxSupport.supportsSmartIndents;
         }
 
-        ref LineIcons lineIcons() { return _lineIcons; }
+        ref LineIcons lineIcons()
+        {
+            return _lineIcons;
+        }
 
-        EditStateMark[] editMarks() { return _editMarks; }
+        EditStateMark[] editMarks()
+        {
+            return _editMarks;
+        }
 
         /// Returns all lines concatenated by '\n' delimiter
         dstring text() const
@@ -1380,9 +1398,9 @@ class EditableContent : TextContent
     static bool isWordBound(dchar thischar, dchar nextchar)
     {
         return isAlNum(thischar) && !isAlNum(nextchar) ||
-               isPunct(thischar) && !isPunct(nextchar) ||
-               isBracket(thischar) && !isBracket(nextchar) ||
-               thischar != ' ' && nextchar == ' ';
+            isPunct(thischar) && !isPunct(nextchar) ||
+            isBracket(thischar) && !isBracket(nextchar) ||
+            thischar != ' ' && nextchar == ' ';
     }
 
     /// Change text position to nearest word bound (direction < 0 - back, > 0 - forward)
@@ -1567,7 +1585,10 @@ class EditableContent : TextContent
     private TextFileFormat _format;
 
     /// File used to load editor content
-    @property string filename() const { return _filename; }
+    @property string filename() const
+    {
+        return _filename;
+    }
 
     /// Load content form input stream
     bool load(InputStream f, string fname = null)
@@ -1628,7 +1649,8 @@ class EditableContent : TextContent
         try
         {
             auto f = new FileInputStream(filename);
-            scope (exit) f.close();
+            scope (exit)
+                f.close();
             return load(f, filename);
         }
         catch (ErrnoException e)
@@ -1657,7 +1679,8 @@ class EditableContent : TextContent
             debug (FileFormats)
                 Log.d("creating output stream, file=", filename, " format=", format);
             auto writer = new OutputLineStream(stream, filename, format);
-            scope (exit) writer.close();
+            scope (exit)
+                writer.close();
             foreach (line; lines)
             {
                 writer.writeLine(line);
@@ -1685,7 +1708,8 @@ class EditableContent : TextContent
         try
         {
             auto f = new FileOutputStream(filename);
-            scope (exit) f.close();
+            scope (exit)
+                f.close();
             return save(f, filename, format);
         }
         catch (Exception e)
@@ -1739,7 +1763,10 @@ struct LineIcons
     private int _len;
 
     /// Returns count of items
-    @property int length() const { return _len; }
+    @property int length() const
+    {
+        return _len;
+    }
 
     /// Returns item by index, or `null` if index out of bounds
     LineIcon opIndex(int index)

@@ -173,10 +173,7 @@ protected:
             ListView v = buildList();
             v.itemCount = itemCount;
             v.onSelect = onPreview;
-            v.onItemClick = (i) {
-                select(i);
-                close();
-            };
+            v.onItemClick = (i) { select(i); close(); };
             v.onKeyEvent = (KeyEvent e) {
                 if (e.action == KeyAction.keyDown && e.key == Key.escape && e.noModifiers)
                 {
@@ -214,9 +211,12 @@ protected:
     }
 
     abstract int itemCount() const;
-    abstract Widget buildBody() out(w; w);
-    abstract Widget buildArrow() out(w; w);
-    abstract ListView buildList() out(w; w);
+    abstract Widget buildBody()
+    out (w; w);
+    abstract Widget buildArrow()
+    out (w; w);
+    abstract ListView buildList()
+    out (w; w);
 }
 
 /// Combobox with list of strings

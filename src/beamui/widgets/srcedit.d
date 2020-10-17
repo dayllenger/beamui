@@ -57,7 +57,10 @@ class ElemSourceEdit : ElemTextArea
 {
     @property
     {
-        bool showLineNumbers() const { return _showLineNumbers; }
+        bool showLineNumbers() const
+        {
+            return _showLineNumbers;
+        }
         /// ditto
         void showLineNumbers(bool flag)
         {
@@ -68,7 +71,10 @@ class ElemSourceEdit : ElemTextArea
             requestLayout();
         }
 
-        bool showModificationMarks() const { return _showModificationMarks; }
+        bool showModificationMarks() const
+        {
+            return _showModificationMarks;
+        }
         /// ditto
         void showModificationMarks(bool flag)
         {
@@ -79,7 +85,10 @@ class ElemSourceEdit : ElemTextArea
             requestLayout();
         }
 
-        bool showIcons() const { return _showIcons; }
+        bool showIcons() const
+        {
+            return _showIcons;
+        }
         /// ditto
         void showIcons(bool flag)
         {
@@ -90,7 +99,10 @@ class ElemSourceEdit : ElemTextArea
             requestLayout();
         }
 
-        bool showFolding() const { return _showFolding; }
+        bool showFolding() const
+        {
+            return _showFolding;
+        }
         /// ditto
         void showFolding(bool flag)
         {
@@ -230,7 +242,7 @@ class ElemSourceEdit : ElemTextArea
 
     protected bool handleLeftPaneIconsMouseClick(MouseEvent event, Box b, int line)
     {
-/+
+        /+
         if (event.button == MouseButton.right)
         {
             if (auto menu = getLeftPaneIconsPopupMenu(line))
@@ -245,15 +257,13 @@ class ElemSourceEdit : ElemTextArea
             }
             return true;
         }
-+/
+        +/
         return true;
     }
 
     protected Menu getLeftPaneIconsPopupMenu(int line)
     {
-        ACTION_ED_TOGGLE_BOOKMARK.bind(this, {
-            content.lineIcons.toggleBookmark(line);
-        });
+        ACTION_ED_TOGGLE_BOOKMARK.bind(this, { content.lineIcons.toggleBookmark(line); });
         Menu m = render!Menu;
         m.wrap(m.item(ACTION_ED_TOGGLE_BOOKMARK));
         return m;
@@ -263,9 +273,11 @@ class ElemSourceEdit : ElemTextArea
     {
         _iconsWidth = _showIcons ? _iconsPaneWidth : 0;
         _foldingWidth = _showFolding ? _foldingPaneWidth : 0;
-        _modificationMarksWidth = _showModificationMarks && (BACKEND_GUI || !_showLineNumbers) ?
-            _modificationMarksPaneWidth : 0;
         _lineNumbersWidth = 0;
+        _modificationMarksWidth = 0;
+        if (_showModificationMarks && (BACKEND_GUI || !_showLineNumbers))
+            _modificationMarksWidth = _modificationMarksPaneWidth;
+
         if (_showLineNumbers)
         {
             dchar[] s = to!(dchar[])(content.lineCount);

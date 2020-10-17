@@ -156,7 +156,7 @@ private final class MainRootElement : Element
     private Element _content;
 
     this(Window window)
-        in(window)
+    in (window)
     {
         this.window = window;
     }
@@ -226,7 +226,7 @@ private final class MainRootElement : Element
 private final class PopupRootElement : ElemGroup
 {
     this(Window window)
-        in(window)
+    in (window)
     {
         this.window = window;
     }
@@ -287,6 +287,7 @@ private final class PopupRootElement : ElemGroup
 */
 class Window : CustomEventTarget
 {
+    // dfmt off
     @property
     {
         /// Returns parent window
@@ -298,10 +299,7 @@ class Window : CustomEventTarget
         /// Window background color
         Color backgroundColor() const { return _backgroundColor; }
         /// ditto
-        void backgroundColor(Color color)
-        {
-            _backgroundColor = color;
-        }
+        void backgroundColor(Color color) { _backgroundColor = color; }
 
         /// Get current window width (in device-independent pixels)
         int width() const { return _w; }
@@ -343,6 +341,7 @@ class Window : CustomEventTarget
 
         WindowTheme theme() { return platform._globalTheme; }
     }
+    // dfmt on
 
     /// Blinking caret position (empty rect if no blinking caret)
     Rect caretRect;
@@ -581,12 +580,12 @@ class Window : CustomEventTarget
         return setWindowState(WindowState.unspecified, activate, rc);
     }
 
-    package (beamui) void addModalChild(Window w)
+    package(beamui) void addModalChild(Window w)
     {
         _children ~= w;
     }
 
-    package (beamui) @property bool hasVisibleModalChild()
+    package(beamui) @property bool hasVisibleModalChild()
     {
         foreach (w; _children)
         {
@@ -599,7 +598,7 @@ class Window : CustomEventTarget
         return false;
     }
 
-    package (beamui) void restoreModalChilds()
+    package(beamui) void restoreModalChilds()
     {
         foreach (w; _children)
         {
@@ -615,7 +614,7 @@ class Window : CustomEventTarget
         }
     }
 
-    package (beamui) void minimizeModalChilds()
+    package(beamui) void minimizeModalChilds()
     {
         foreach (w; _children)
         {
@@ -628,7 +627,7 @@ class Window : CustomEventTarget
         }
     }
 
-    package (beamui) void restoreParentWindows()
+    package(beamui) void restoreParentWindows()
     {
         Window[] tmp;
         Window w = this;
@@ -645,7 +644,7 @@ class Window : CustomEventTarget
             tw.restore(true);
     }
 
-    package (beamui) void minimizeParentWindows()
+    package(beamui) void minimizeParentWindows()
     {
         Window[] tmp;
         Window w = this;
@@ -807,7 +806,7 @@ class Window : CustomEventTarget
     // Popups, tooltips
 
     private Popup[] _popups;
-/+
+    /+
     protected struct TooltipInfo
     {
         Popup popup;
@@ -862,7 +861,7 @@ class Window : CustomEventTarget
 
     /// Show tooltip immediately
     Popup showTooltip(Element content)
-        in(content)
+    in (content)
     {
         hideTooltip();
 
@@ -878,11 +877,11 @@ class Window : CustomEventTarget
         _tooltip.popup = res;
         return res;
     }
-+/
+    +/
     /// Hide tooltip if shown and cancel tooltip timer if set
     void hideTooltip()
     {
-/+
+        /+
         if (_tooltip.popup)
         {
             debug (tooltips)
@@ -900,14 +899,14 @@ class Window : CustomEventTarget
             _tooltip.timerID = 0;
             _tooltip.owner.nullify();
         }
-+/
+        +/
     }
 
     /// Show a popup in the current build
     void showPopup(Popup popup)
     {
         _popups ~= popup;
-/+
+        /+
         auto res = new Popup(content, this);
 
         _popups ~= res;
@@ -915,7 +914,7 @@ class Window : CustomEventTarget
         _mainRootElement.requestLayout();
         update();
         return res;
-+/
+        +/
     }
     //===============================================================
 
@@ -962,10 +961,10 @@ class Window : CustomEventTarget
             return true;
         if (_popupRootElement.isChild(el))
             return true;
-/+
+        /+
         if (_tooltip.popup && _tooltip.popup.isChild(el))
             return true;
-+/
+        +/
         return false;
     }
 
@@ -992,7 +991,10 @@ class Window : CustomEventTarget
     private WeakRef!Element _focusedElement;
     private StateFlags _focusStateToApply = StateFlags.focused | StateFlags.focusWithin;
     /// Returns current focused widget
-    @property inout(WeakRef!Element) focusedElement() inout { return _focusedElement; }
+    @property inout(WeakRef!Element) focusedElement() inout
+    {
+        return _focusedElement;
+    }
 
     /// Change focus to widget
     Element setFocus(WeakRef!Element target, FocusReason reason = FocusReason.unspecified)
@@ -1030,7 +1032,7 @@ class Window : CustomEventTarget
         size_t firstChangedParent = min(oldParentChain.length, newParentChain.length);
         foreach (i; 0 .. firstChangedParent)
         {
-            if (oldParentChain[i] !is newParentChain[i])
+            if (oldParentChain[i]!is newParentChain[i])
             {
                 firstChangedParent = i;
                 break;
@@ -1056,12 +1058,13 @@ class Window : CustomEventTarget
                 output ~= p;
             }
         }
+
         output.reserve(8);
         rec(el.parent);
     }
 
     private void setFocusWithinFlag(Element el, bool enabled)
-        in(el)
+    in (el)
     {
         Element p = el.parent;
         while (p)
@@ -1136,7 +1139,7 @@ class Window : CustomEventTarget
                 }
                 else if (context == ActionContext.widgetTree)
                 {
-                   return action.call(el => el && el.isChild(focus));
+                    return action.call(el => el && el.isChild(focus));
                 }
                 else
                     return false;
@@ -1234,7 +1237,7 @@ class Window : CustomEventTarget
     {
         if (hasModalWindowsAbove || !_firstDrawCalled)
             return false;
-/+
+        /+
         // check tooltip
         if (event.action == MouseAction.move)
         {
@@ -1258,7 +1261,7 @@ class Window : CustomEventTarget
                 hideTooltip();
             }
         }
-+/
+        +/
         debug (mouse)
             Log.fd("dispatchMouseEvent %s (%s, %s)", event.action, event.x, event.y);
 
@@ -1575,7 +1578,7 @@ class Window : CustomEventTarget
     {
         Element el = weak.get;
         if (el.onKeyEvent.assigned && el.onKeyEvent(e))
-            return true;  // processed by external handler
+            return true; // processed by external handler
         else if (!weak)
             return false; // destroyed in the handler, but not processed
         else
@@ -1889,7 +1892,7 @@ class Window : CustomEventTarget
     }
 
     void requestAnimationFrame(void delegate(double) callback)
-        in(callback)
+    in (callback)
     {
         _animationCallbacks ~= callback;
         // run callbacks every 16 milliseconds
@@ -2021,7 +2024,7 @@ class Window : CustomEventTarget
     private bool _firstDrawCalled;
 
     final protected void draw(PaintEngine engine)
-        in(engine)
+    in (engine)
     {
         _firstDrawCalled = true;
 
@@ -2349,7 +2352,9 @@ class Platform
     */
     final void overrideDPI(float dpi, float dpr)
     {
+        // dfmt off
         .overrideDPI(dpi, dpr);
+        // dfmt on
         handleDPIChange();
     }
 
@@ -2500,7 +2505,7 @@ void setState(T)(ref T currentValue, T newValue)
 }
 
 static if (USE_OPENGL)
-private __gshared bool _openglEnabled = true;
+    private __gshared bool _openglEnabled = true;
 
 /// Check if hardware acceleration is enabled
 bool openglEnabled() nothrow
@@ -2524,7 +2529,7 @@ static if (BACKEND_GUI)
 {
     version (Windows)
     {
-        package (beamui) void setAppDPIAwareOnWindows()
+        package(beamui) void setAppDPIAwareOnWindows()
         {
             import core.sys.windows.windows;
 
@@ -2624,6 +2629,7 @@ else
 /// This mixin links `beamui` and platform library together
 mixin template RegisterPlatforms()
 {
+    // dfmt off
     pragma(mangle, "initPlatform")
     private extern (C) Platform initPlatform(AppConf);
 
@@ -2632,4 +2638,5 @@ mixin template RegisterPlatforms()
     {
         return initPlatform(conf);
     }
+    // dfmt on
 }

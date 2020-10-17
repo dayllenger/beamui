@@ -48,6 +48,7 @@ nothrow:
     {
         this.generic = generic;
     }
+
     this(string specific)
     {
         this.specific = specific;
@@ -347,7 +348,10 @@ class FontManager
     static @property
     {
         /// Font manager singleton instance
-        FontManager instance() { return _instance; }
+        FontManager instance()
+        {
+            return _instance;
+        }
         /// ditto
         void instance(FontManager manager)
         {
@@ -363,7 +367,10 @@ class FontManager
 
             Used as fallback, and also represents `1rem` CSS length. 12 pixels initially.
         */
-        int defaultFontSize() { return _defaultFontSize; }
+        int defaultFontSize()
+        {
+            return _defaultFontSize;
+        }
         /// ditto
         void defaultFontSize(int size)
         {
@@ -376,7 +383,10 @@ class FontManager
         }
 
         /// Min font size for antialiased fonts (0 means antialiasing always on, some big value = always off)
-        int minAntialiasedFontSize() { return _minAntialiasedFontSize; }
+        int minAntialiasedFontSize()
+        {
+            return _minAntialiasedFontSize;
+        }
         /// ditto
         void minAntialiasedFontSize(int size)
         {
@@ -390,7 +400,10 @@ class FontManager
         }
 
         /// Current hinting mode (normal, autoHint, disabled)
-        HintingMode hintingMode() { return _hintingMode; }
+        HintingMode hintingMode()
+        {
+            return _hintingMode;
+        }
         /// ditto
         void hintingMode(HintingMode mode)
         {
@@ -403,7 +416,10 @@ class FontManager
         }
 
         /// Current subpixel rendering mode for fonts (aka ClearType)
-        SubpixelRenderingMode subpixelRenderingMode() { return _subpixelRenderingMode; }
+        SubpixelRenderingMode subpixelRenderingMode()
+        {
+            return _subpixelRenderingMode;
+        }
         /// ditto
         void subpixelRenderingMode(SubpixelRenderingMode mode)
         {
@@ -411,7 +427,10 @@ class FontManager
         }
 
         /// Font gamma (1.0 is neutral, < 1.0 makes glyphs lighter, >1.0 makes glyphs bolder)
-        double fontGamma() { return _fontGamma; }
+        double fontGamma()
+        {
+            return _fontGamma;
+        }
         /// ditto
         void fontGamma(double v)
         {
@@ -502,7 +521,10 @@ struct GlyphGammaTable(int maxv) if (maxv <= 256)
         }
     }
 
-    @property double gamma() const { return _gamma; }
+    @property double gamma() const
+    {
+        return _gamma;
+    }
 
     /// Correct byte value from source range to 0..255 applying gamma
     ubyte correct(ubyte src) const
@@ -513,7 +535,7 @@ struct GlyphGammaTable(int maxv) if (maxv <= 256)
     }
 }
 
-package(beamui) __gshared GlyphGammaTable!65  _gamma65  = GlyphGammaTable!65(1.0);
+package(beamui) __gshared GlyphGammaTable!65 _gamma65 = GlyphGammaTable!65(1.0);
 package(beamui) __gshared GlyphGammaTable!256 _gamma256 = GlyphGammaTable!256(1.0);
 
 enum dchar UNICODE_SOFT_HYPHEN_CODE = 0x00ad;

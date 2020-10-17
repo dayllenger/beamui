@@ -183,7 +183,7 @@ struct WidgetAttributes
         Note: the name must have non-zero length.
     */
     void opIndex(string name)
-        in(name.length)
+    in (name.length)
     {
         _map[name] = null;
     }
@@ -193,7 +193,7 @@ struct WidgetAttributes
         Note: the name must have non-zero length.
     */
     void opIndexAssign(string value, string name)
-        in(name.length)
+    in (name.length)
     {
         _map[name] = value;
     }
@@ -240,7 +240,7 @@ W render(W : Widget)()
 }
 /// ditto
 W render(W : Widget)(scope void delegate(W) conf)
-    in(conf)
+in (conf)
 {
     auto w = Widget.arena.make!W;
     conf(w);
@@ -308,7 +308,7 @@ class Widget
     }
 
     final WeakRef!(const(Element)*) elementRef() const
-        in(_element, "The element hasn't mounted yet")
+    in (_element, "The element hasn't mounted yet")
     {
         return weakRef(&_element);
     }
@@ -365,7 +365,7 @@ class Widget
     }
 
     private WidgetID computeID(Widget parent, size_t index)
-        in(parent, "Widget must have a parent")
+    in (parent, "Widget must have a parent")
     {
         import std.digest.murmurhash : MurmurHash3;
 
@@ -420,13 +420,16 @@ class Widget
     }
 
     protected inout(S) use(S : WidgetState)() inout
-        in(_state, "The state hasn't mounted yet")
-        out(s; s, "The widget state has another type: " ~ _state.classinfo.name)
+    in (_state, "The state hasn't mounted yet")
+    out (s; s, "The widget state has another type: " ~ _state.classinfo.name)
     {
         return cast(inout(S))_state;
     }
 
-    final protected inout(Widget) parent() inout { return _parent; }
+    final protected inout(Widget) parent() inout
+    {
+        return _parent;
+    }
 
     final protected inout(Window) window() inout
     {
@@ -453,7 +456,7 @@ class Widget
     }
 
     protected WidgetState createState()
-        out(st; st)
+    out (st; st)
     {
         return new WidgetState;
     }
@@ -464,7 +467,7 @@ class Widget
     }
 
     protected void updateElement(Element el)
-        in(el)
+    in (el)
     {
         el.id = id;
 
@@ -522,7 +525,7 @@ class Widget
         el.tooltipText = tooltip;
     }
 }
-
+// dfmt off
 struct WidgetPair(A : Widget, B : Widget)
 {
     A a;
@@ -540,7 +543,7 @@ struct WidgetPair(A : Widget, B : Widget)
         b = render(confB);
     }
 }
-
+// dfmt on
 abstract class WidgetWrapperOf(W : Widget) : Widget
 {
     protected W _content;
@@ -673,6 +676,7 @@ private:
         recompute,
         match,
     }
+
     StyleInvalidation _styleInvalidation = StyleInvalidation.match;
     /// True to force layout
     bool _needLayout = true;
@@ -733,7 +737,10 @@ public:
     mixin DebugInstanceCount;
 
     /// Flag for `WeakRef` that indicates element destruction
-    final @property const(bool*) destructionFlag() const { return _destructionFlag; }
+    final @property const(bool*) destructionFlag() const
+    {
+        return _destructionFlag;
+    }
 
     /// Pretty printed name for debugging purposes
     debug string dbgname() const
@@ -751,7 +758,10 @@ public:
     // Widget ID
 
     /// Widget id, `null` if not set
-    @property string id() const { return _id; }
+    @property string id() const
+    {
+        return _id;
+    }
     /// ditto
     @property void id(string id)
     {
@@ -936,6 +946,7 @@ public:
         debug (styles)
             Log.d("--- end ---");
     }
+
     private Buf!Style _cachedChain;
 
     /// Get a style chain for this element from `theme`, least specific styles first
@@ -1056,36 +1067,36 @@ public:
 
         final switch (sel.combinator) with (Selector.Combinator)
         {
-            case descendant:
-                // match with any of parent widgets
-                Element p = cast()_parent;
-                while (p)
-                {
-                    if (p.matchSelector(*subselector))
+        case descendant:
+            // match with any of parent widgets
+            Element p = cast()_parent;
+            while (p)
+            {
+                if (p.matchSelector(*subselector))
+                    return true;
+                p = p._parent;
+            }
+            return false;
+        case child:
+            // match with the direct parent
+            return _parent.matchSelector(*subselector);
+        case next:
+            // match with the previous sibling
+            const n = _parent.childIndex(this) - 1;
+            if (n >= 0)
+                return _parent.child(n).matchSelector(*subselector);
+            else
+                return false;
+        case subsequent:
+            // match with any of previous siblings
+            const n = _parent.childIndex(this);
+            if (n >= 0)
+            {
+                foreach (i; 0 .. n)
+                    if (_parent.child(i).matchSelector(*subselector))
                         return true;
-                    p = p._parent;
-                }
-                return false;
-            case child:
-                // match with the direct parent
-                return _parent.matchSelector(*subselector);
-            case next:
-                // match with the previous sibling
-                const n = _parent.childIndex(this) - 1;
-                if (n >= 0)
-                    return _parent.child(n).matchSelector(*subselector);
-                else
-                    return false;
-            case subsequent:
-                // match with any of previous siblings
-                const n = _parent.childIndex(this);
-                if (n >= 0)
-                {
-                    foreach (i; 0 .. n)
-                        if (_parent.child(i).matchSelector(*subselector))
-                            return true;
-                }
-                return false;
+            }
+            return false;
         }
     }
 
@@ -1154,7 +1165,7 @@ public:
                 p.left = max(p.left, bp.left);
             }
             if (_style.focusRectColor != Color.transparent &&
-                (allowsFocus || ((stateFlags & StateFlags.parent) && parent.allowsFocus)))
+                    (allowsFocus || ((stateFlags & StateFlags.parent) && parent.allowsFocus)))
             {
                 // add two pixels to padding when focus rect is required
                 // one pixel for focus rect, one for additional space
@@ -1165,7 +1176,7 @@ public:
 
         /// Set the element background (takes ownership on the object)
         void background(Background obj)
-            in(obj)
+        in (obj)
         {
             if (_background !is _sharedBackground)
                 destroy(_background);
@@ -1174,7 +1185,7 @@ public:
 
         /// Set the element overlay (takes ownership on the object)
         void overlay(Overlay obj)
-            in(obj)
+        in (obj)
         {
             if (_overlay !is _sharedOverlay)
                 destroy(_overlay);
@@ -1207,8 +1218,7 @@ public:
                 if (auto w = window)
                 {
                     const modifiers = w.keyboardModifiers;
-                    if ((modifiers & KeyMods.alt) != 0)
-                        // Alt pressed
+                    if ((modifiers & KeyMods.alt) != 0) // Alt pressed
                         return TextHotkey.underline;
                 }
                 return TextHotkey.hidden;
@@ -1317,31 +1327,20 @@ public:
             else
                 return false;
         }
-
+        // dfmt off
         /// True if the element supports click by mouse button or enter/space key
         bool allowsClick() const { return _allowsClick; }
         /// ditto
-        void allowsClick(bool flag)
-        {
-            _allowsClick = flag;
-        }
+        void allowsClick(bool flag) { _allowsClick = flag; }
         /// True if the element can be focused
         bool allowsFocus() const { return _allowsFocus; }
         /// ditto
-        void allowsFocus(bool flag)
-        {
-            _allowsFocus = flag;
-        }
+        void allowsFocus(bool flag) { _allowsFocus = flag; }
         /// True if the element will change `hovered` state while mouse pointer is moving upon it
-        bool allowsHover() const
-        {
-            return _allowsHover && !TOUCH_MODE;
-        }
+        bool allowsHover() const { return _allowsHover && !TOUCH_MODE; }
         /// ditto
-        void allowsHover(bool v)
-        {
-            _allowsHover = v;
-        }
+        void allowsHover(bool v) { _allowsHover = v; }
+        // dfmt on
 
         /// True if the element allows click, and it's visible and enabled
         bool canClick() const
@@ -1379,7 +1378,10 @@ public:
 
         For advanced tooltips - override `hasTooltip` and `createTooltip` methods.
     */
-    @property dstring tooltipText() { return _tooltipText; }
+    @property dstring tooltipText()
+    {
+        return _tooltipText;
+    }
     /// ditto
     @property void tooltipText(dstring text)
     {
@@ -1390,7 +1392,7 @@ public:
     {
         return tooltipText.length > 0;
     }
-/+
+    /+
     /** Will be called from window once tooltip request timer expired.
 
         May return `null` if no tooltip to show.
@@ -1413,7 +1415,7 @@ public:
         if (auto w = window)
             w.scheduleTooltip(weakRef(this), delay, alignment, x, y);
     }
-+/
+    +/
     //===============================================================
     // About focus
 
@@ -1840,7 +1842,7 @@ public:
                 return true;
             }
         }
-/+
+        /+
         if (event.action == MouseAction.move && event.noKeyMods && event.noMouseMods && hasTooltip)
         {
             scheduleTooltip(600);
@@ -1855,7 +1857,7 @@ public:
                 return true;
             }
         }
-+/
+        +/
         if (_allowsFocus && event.action == MouseAction.buttonDown && event.button == MouseButton.left)
         {
             setFocus();
@@ -1932,6 +1934,7 @@ public:
     //===============================================================
     // Layout, measurement, drawing methods and properties
 
+    // dfmt off
     final @property
     {
         /// Returns true if layout is required for element and its children
@@ -1942,10 +1945,7 @@ public:
         /// Defines whether element width/height depends on its height/width
         DependentSize dependentSize() const { return _dependentSize; }
         /// Indicate from subclass that element width/height depends on its height/width
-        protected void dependentSize(DependentSize value)
-        {
-            _dependentSize = value;
-        }
+        protected void dependentSize(DependentSize value) { _dependentSize = value; }
 
         /** Element boundaries (min, nat, and max sizes).
 
@@ -1984,11 +1984,15 @@ public:
         */
         Point origin() const { return _origin; }
     }
+    // dfmt on
 
     @property
     {
         /// Widget visibility (visible, hidden, gone)
-        Visibility visibility() const { return _visibility; }
+        Visibility visibility() const
+        {
+            return _visibility;
+        }
         /// ditto
         void visibility(Visibility newVisibility)
         {
@@ -2273,16 +2277,16 @@ public:
         _background.origin = _style.backgroundOrigin;
         _background.clip = _style.backgroundClip;
         _background.border = Border(
-            BorderSide(borderWidth.top, borderStyle[0], borderColor[0]),
-            BorderSide(borderWidth.right, borderStyle[1], borderColor[1]),
-            BorderSide(borderWidth.bottom, borderStyle[2], borderColor[2]),
-            BorderSide(borderWidth.left, borderStyle[3], borderColor[3]),
+                BorderSide(borderWidth.top, borderStyle[0], borderColor[0]),
+                BorderSide(borderWidth.right, borderStyle[1], borderColor[1]),
+                BorderSide(borderWidth.bottom, borderStyle[2], borderColor[2]),
+                BorderSide(borderWidth.left, borderStyle[3], borderColor[3]),
         );
         _background.radii = BorderRadii(
-            Size(borderRadii[0].applyPercent(box.w), borderRadii[0].applyPercent(box.h)),
-            Size(borderRadii[1].applyPercent(box.w), borderRadii[1].applyPercent(box.h)),
-            Size(borderRadii[2].applyPercent(box.w), borderRadii[2].applyPercent(box.h)),
-            Size(borderRadii[3].applyPercent(box.w), borderRadii[3].applyPercent(box.h)),
+                Size(borderRadii[0].applyPercent(box.w), borderRadii[0].applyPercent(box.h)),
+                Size(borderRadii[1].applyPercent(box.w), borderRadii[1].applyPercent(box.h)),
+                Size(borderRadii[2].applyPercent(box.w), borderRadii[2].applyPercent(box.h)),
+                Size(borderRadii[3].applyPercent(box.w), borderRadii[3].applyPercent(box.h)),
         );
         _background.shadow = _style.boxShadow;
         _background.stylePadding = _style.padding;
@@ -2324,7 +2328,7 @@ public:
 
     //===============================================================
     // Popup (contextual) menu support
-/+
+    /+
     private Menu _popupMenu;
     /// Popup (contextual menu), associated with this widget
     @property Menu popupMenu() { return _popupMenu; }
@@ -2360,7 +2364,7 @@ public:
         popup.point = Point(x, y);
         popup.ownContent = false;
     }
-+/
+    +/
     //===============================================================
     // Widget hierarhy methods
 
@@ -2379,44 +2383,44 @@ public:
     }
 
     void diffChildren(Element[] oldItems)
-        out(; _buildInProgress, _treeRebuildMessage)
+    out (; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "diffChildren: this element cannot have children");
     }
 
     /// Add a child and return it
     Element addChild(Element item)
-        out(; _buildInProgress, _treeRebuildMessage)
+    out (; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "addChild: this element cannot have children");
     }
     /// Insert child before given index, returns inserted item
     Element insertChild(int index, Element item)
-        out(; _buildInProgress, _treeRebuildMessage)
+    out (; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "insertChild: this element cannot have children");
     }
     /// Remove child by index, returns removed item
     Element removeChild(int index)
-        out(; _buildInProgress, _treeRebuildMessage)
+    out (; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "removeChild: this element cannot have children");
     }
     /// Remove child by ID, returns removed item
     Element removeChild(string id)
-        out(; _buildInProgress, _treeRebuildMessage)
+    out (; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "removeChild: this element cannot have children");
     }
     /// Remove child, returns removed item
     Element removeChild(Element child)
-        out(; _buildInProgress, _treeRebuildMessage)
+    out (; _buildInProgress, _treeRebuildMessage)
     {
         assert(false, "removeChild: this element cannot have children");
     }
     /// Remove all children and optionally destroy them
     void removeAllChildren(bool destroyThem = true)
-        out(; _buildInProgress, _treeRebuildMessage)
+    out (; _buildInProgress, _treeRebuildMessage)
     {
         // override
     }
@@ -2519,7 +2523,10 @@ public:
     }
 
     /// Parent element, `null` for top level element
-    @property inout(Element) parent() inout { return _parent; }
+    @property inout(Element) parent() inout
+    {
+        return _parent;
+    }
     /// ditto
     @property void parent(Element element)
     {
@@ -2580,7 +2587,7 @@ abstract class ElemGroup : Element
         size_t unchanged = limit;
         foreach (i; 0 .. limit)
         {
-            if (_children[i] !is oldItems[i])
+            if (_children[i]!is oldItems[i])
             {
                 unchanged = i;
                 break;
@@ -2884,8 +2891,8 @@ package(beamui) struct StateStore
     }
 
     WidgetState fetch(WidgetID id, Widget caller)
-        in(id != WidgetID.init)
-        in(caller)
+    in (id != WidgetID.init)
+    in (caller)
     {
         WidgetState st;
         if (auto p = id in map)
@@ -2934,8 +2941,8 @@ package(beamui) struct ElementStore
     }
 
     Element fetch(WidgetID id, Widget caller)
-        in(id != WidgetID.init)
-        in(caller)
+    in (id != WidgetID.init)
+    in (caller)
     {
         Element el;
         if (auto p = id in map)
@@ -2965,6 +2972,7 @@ package(beamui) void setBuildContext(BuildContext ctx)
 {
     Widget._ctx = ctx;
 }
+
 package(beamui) void mountRoot(Widget wt, WidgetState st, Element el)
 {
     wt._state = st;
@@ -2976,8 +2984,7 @@ package(beamui) void mountRoot(Widget wt, WidgetState st, Element el)
 /// NOT USED
 struct AnimationHelper
 {
-    nothrow:
-
+nothrow:
     private long _timeElapsed;
     private long _maxInterval;
     private int _maxProgress;
