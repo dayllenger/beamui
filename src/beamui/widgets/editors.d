@@ -1126,7 +1126,7 @@ class ElemTextField : Element, IEditor, ActionOperator
 
     void cut()
     {
-        if (readOnly)
+        if (readOnly || _passwordChar)
             return;
         LineRange range = _selectionRange;
         if (range.empty && copyWholeLineWhenNoSelection)
