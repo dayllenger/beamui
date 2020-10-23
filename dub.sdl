@@ -15,7 +15,7 @@ stringImportPaths "res" "res/shaders"
 excludedSourceFiles "3rdparty/fontconfig.d" platform="windows"
 
 libs "z" platform="linux"
-lflags "/SUBSYSTEM:WINDOWS" platform="windows"
+// lflags "/SUBSYSTEM:WINDOWS" platform="windows"
 lflags "/ENTRY:mainCRTStartup" platform="windows-dmd" // LDC in startup.d
 lflags "/SAFESEH:NO" platform="windows-x86"
 
