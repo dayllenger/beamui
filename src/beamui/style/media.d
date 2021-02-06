@@ -15,5 +15,4 @@ struct MediaQueryInput
     int height;
     float dpi = 96;
     float dpr = 1;
-    enum bool grid = BACKEND_CONSOLE;
 }

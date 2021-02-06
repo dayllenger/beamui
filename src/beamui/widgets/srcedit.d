@@ -126,9 +126,9 @@ class ElemSourceEdit : ElemTextArea
         float _iconsWidth = 0;
         float _foldingWidth = 0;
 
-        uint _iconsPaneWidth = BACKEND_CONSOLE ? 1 : 16;
-        uint _foldingPaneWidth = BACKEND_CONSOLE ? 1 : 12;
-        uint _modificationMarksPaneWidth = BACKEND_CONSOLE ? 1 : 4;
+        uint _iconsPaneWidth = 16;
+        uint _foldingPaneWidth = 12;
+        uint _modificationMarksPaneWidth = 4;
 
         Color _leftPaneBgColor1;
         Color _leftPaneBgColor2;
@@ -275,7 +275,7 @@ class ElemSourceEdit : ElemTextArea
         _foldingWidth = _showFolding ? _foldingPaneWidth : 0;
         _lineNumbersWidth = 0;
         _modificationMarksWidth = 0;
-        if (_showModificationMarks && (BACKEND_GUI || !_showLineNumbers))
+        if (_showModificationMarks)
             _modificationMarksWidth = _modificationMarksPaneWidth;
 
         if (_showLineNumbers)
@@ -289,13 +289,13 @@ class ElemSourceEdit : ElemTextArea
         }
         _leftPaneWidth = _lineNumbersWidth + _modificationMarksWidth + _foldingWidth + _iconsWidth;
         if (_leftPaneWidth)
-            _leftPaneWidth += BACKEND_CONSOLE ? 1 : 3;
+            _leftPaneWidth += 3;
     }
 
     override protected void drawLeftPane(Painter pr, Rect rc, int line)
     {
         pr.fillRect(rc.left, rc.top, rc.width, rc.height, _leftPaneBgColor1);
-        rc.right -= BACKEND_CONSOLE ? 1 : 3;
+        rc.right -= 3;
         if (_foldingWidth)
         {
             Rect rc2 = rc;

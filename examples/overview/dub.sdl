@@ -16,10 +16,6 @@ dependency "beamui:platforms" path="../../platforms"
 configuration "application" {
     subConfiguration "beamui" "library"
 }
-configuration "console" {
-    subConfiguration "beamui" "console"
-    subConfiguration "beamui:platforms" "ansi_console"
-}
 configuration "minimal" {
     subConfiguration "beamui" "minimal"
 }

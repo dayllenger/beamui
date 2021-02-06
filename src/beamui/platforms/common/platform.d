@@ -163,7 +163,7 @@ private final class MainRootElement : Element
 
     override void handleCustomPropertiesChange()
     {
-        const def = BACKEND_GUI ? Color.white : Color.transparent;
+        const def = Color.white;
         window.backgroundColor = style.getPropertyValue!Color("--window-bg", def);
     }
 
@@ -361,7 +361,7 @@ class Window : CustomEventTarget
         float _screenDPI = 96;
         float _devicePixelRatio = 1;
 
-        Color _backgroundColor = BACKEND_GUI ? Color.white : Color.transparent;
+        Color _backgroundColor = Color.white;
         EventList _eventList;
         WindowOptions _options;
 
@@ -2387,7 +2387,6 @@ class Platform
     /// Handle theme change, e.g. reload some themed resources
     private void handleThemeChange()
     {
-        static if (BACKEND_GUI)
         {
             imageCache.clear();
         }
@@ -2524,9 +2523,7 @@ void disableOpenGL() nothrow
         Log.w("OpenGL was disabled");
     }
 }
-
-static if (BACKEND_GUI)
-{
+// dfmt off
     version (Windows)
     {
         package(beamui) void setAppDPIAwareOnWindows()
@@ -2542,8 +2539,7 @@ static if (BACKEND_GUI)
                 setDpiFunc();
         }
     }
-}
-
+// dfmt on
 /// Holds initial application settings. All of them require app restart to change
 struct AppConf
 {

@@ -544,9 +544,6 @@ class FileDialog : Dialog, CustomGridCellAdapter
             auto st = TextLayoutStyle(_fileList.font.get);
             return computeTextSize(txt, st);
         }
-        static if (BACKEND_CONSOLE)
-            return Size(0, 0);
-        else
         {
             const icon = rowIcon(row);
             return !icon.isNull ? Size(icon.width + 2, icon.height + 2) : Size(0, 0);
@@ -557,12 +554,10 @@ class FileDialog : Dialog, CustomGridCellAdapter
     {
         if (col == 1)
         {
-            if (BACKEND_GUI)
-                b.shrink(Insets(1, 2));
-            else
-                b.w--;
+            b.shrink(Insets(1, 2));
+
             dstring txt = _fileList.cellText(col, row);
-            const offset = BACKEND_CONSOLE ? 0 : 1;
+            const offset = 1;
             Color cl = _fileList.style.textColor;
             if (_entries[row].isDir)
                 cl = currentTheme.getColor("file_dialog_dir_name", cl);
@@ -753,7 +748,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
 
         _roots = getRootPaths() ~ getBookmarkPaths();
 
-        style.minWidth = BACKEND_CONSOLE ? 50 : 600;
+        style.minWidth = 600;
 
         auto content = new Panel;
             Widget leftPanel = createRootsList();
@@ -767,7 +762,7 @@ class FileDialog : Dialog, CustomGridCellAdapter
             add(leftPanel, new Resizer, rightPanel);
             with (leftPanel) {
                 setAttribute("left-panel");
-                style.minWidth = BACKEND_CONSOLE ? 7 : 40;
+                style.minWidth = 40;
             }
             with (rightPanel) {
                 setAttribute("right-panel");
@@ -1238,7 +1233,7 @@ class FileNameField : Panel
     {
         _caption = tr("Open File");
         _edFileName = new TextField;
-        _edFileName.style.minWidth = BACKEND_CONSOLE ? 16 : 200;
+        _edFileName.style.minWidth = 200;
         _btn = new Button("..."d);
         _btn.isolateThisStyle();
         _btn.setAttribute("button");

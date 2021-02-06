@@ -1450,14 +1450,8 @@ public:
             this.box = element.box;
         }
 
-        static if (BACKEND_GUI)
-        {
-            static enum NEAR_THRESHOLD = 10;
-        }
-        else
-        {
-            static enum NEAR_THRESHOLD = 1;
-        }
+        static enum NEAR_THRESHOLD = 10;
+
         bool nearX(TabOrderInfo v)
         {
             return box.x - NEAR_THRESHOLD <= v.box.x && v.box.x <= box.x + NEAR_THRESHOLD;

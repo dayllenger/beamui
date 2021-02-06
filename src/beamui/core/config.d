@@ -7,11 +7,6 @@ static if (USE_OPENGL)
 {
     // application built with OpenGL support, we may use gl functions
 }
-
-static if (BACKEND_CONSOLE)
-{
-    // application built against console
-}
 ---
 
 Copyright: dayllenger 2018
@@ -22,24 +17,13 @@ module beamui.core.config;
 
 immutable string BEAMUI_VERSION = import("BEAMUI_VERSION");
 
-version (CONSOLE)
-{
-    enum BACKEND_GUI = false;
-    enum BACKEND_CONSOLE = true;
-}
-else
-{
-    enum BACKEND_GUI = true;
-    enum BACKEND_CONSOLE = false;
-}
-
 // OpenGL is enabled by default
 version (NO_OPENGL)
     enum USE_OPENGL = false;
 else
-    enum USE_OPENGL = BACKEND_GUI;
+    enum USE_OPENGL = true;
 
 version (FREETYPE)
-    enum USE_FREETYPE = BACKEND_GUI;
+    enum USE_FREETYPE = true;
 else
     enum USE_FREETYPE = false;

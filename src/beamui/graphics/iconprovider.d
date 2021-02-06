@@ -140,8 +140,7 @@ class DummyIconProvider : IconProviderBase
     }
 }
 
-static if (BACKEND_GUI)
-{
+// dfmt on
     version (Windows)
     {
         import core.sys.windows.windows;
@@ -644,8 +643,4 @@ static if (BACKEND_GUI)
     {
         alias NativeIconProvider = DummyIconProvider;
     }
-}
-else
-{
-    alias NativeIconProvider = DummyIconProvider;
-}
+// dfmt off

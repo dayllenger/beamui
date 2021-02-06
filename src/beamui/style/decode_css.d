@@ -824,7 +824,6 @@ Result!Drawable decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)
 {
     assert(tokens.length > 0);
 
-    import beamui.core.config : BACKEND_GUI;
     import beamui.graphics.bitmap : Bitmap;
 
     const t0 = tokens[0];
@@ -843,7 +842,6 @@ Result!Drawable decode(SpecialCSSType t : SpecialCSSType.image)(ref const(Token)
     if (t0.type == TokenType.url)
     {
         tokens = tokens[1 .. $];
-        static if (BACKEND_GUI)
         {
             string id = t0.text;
             bool tiled;

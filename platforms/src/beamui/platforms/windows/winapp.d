@@ -14,7 +14,6 @@ module beamui.platforms.windows.winapp;
 version (Windows):
 import beamui.core.config;
 
-static if (BACKEND_GUI):
 import core.runtime;
 import core.sys.windows.shellapi;
 import core.sys.windows.winbase;

@@ -5,7 +5,6 @@ imageCache is RAM cache of decoded images (as Bitmap).
 
 Supports nine-patch PNG images in .9.png files (like in Android).
 
-
 Copyright: Vadim Lopatin 2014-2017, dayllenger 2017-2018
 License:   Boost License 1.0
 Authors:   Vadim Lopatin, dayllenger
@@ -27,11 +26,7 @@ import beamui.graphics.brush;
 import beamui.graphics.colors;
 import beamui.graphics.painter : Painter, PaintSaver;
 import beamui.graphics.path;
-
-static if (BACKEND_GUI)
-{
-    import beamui.graphics.images;
-}
+import beamui.graphics.images;
 
 /// Base abstract class for all drawables
 class Drawable : RefCountedObject
@@ -337,271 +332,6 @@ static if (false)
         if (drawable.width == 0 || drawable.height == 0)
             return null;
         return drawable;
-    }
-}
-
-static if (false)
-{
-    abstract class ConsoleDrawBuf : Bitmap
-    {
-        abstract void drawChar(int x, int y, dchar ch, Color color, Color bgcolor);
-    }
-
-    /**
-        Text image drawable.
-        Resource file extension: .tim
-        Image format is JSON based. Sample:
-                {
-                    text: [
-                        "╔═╗",
-                        "║ ║",
-                        "╚═╝"],
-                    backgroundColor: [0x000080],
-                    textColor: [0xFF0000],
-                    ninepatch: [1,1,1,1]
-                }
-
-        Short form:
-            {'╔═╗' '║ ║' '╚═╝' bc 0x000080 tc 0xFF0000 ninepatch 1 1 1 1}
-    */
-    class TextDrawable : Drawable
-    {
-        private
-        {
-            int _width;
-            int _height;
-            dchar[] _text;
-            Color[] _bgColors;
-            Color[] _textColors;
-            Insets _padding;
-            Rect _ninePatch;
-            bool _tiled;
-            bool _stretched;
-            bool _hasNinePatch;
-        }
-
-        this(int dx, int dy, dstring text, Color textColor, Color bgColor)
-        {
-            _width = dx;
-            _height = dy;
-            _text.assumeSafeAppend;
-            for (int i = 0; i < text.length && i < dx * dy; i++)
-                _text ~= text[i];
-            for (int i = cast(int)_text.length; i < dx * dy; i++)
-                _text ~= ' ';
-            _textColors.assumeSafeAppend;
-            _bgColors.assumeSafeAppend;
-            for (int i = 0; i < dx * dy; i++)
-            {
-                _textColors ~= textColor;
-                _bgColors ~= bgColor;
-            }
-        }
-
-        this(string src)
-        {
-            import std.utf;
-
-            this(toUTF32(src));
-        }
-        /**
-            Create from text drawable source file format:
-            {
-            text:
-            "text line 1"
-            "text line 2"
-            "text line 3"
-            backgroundColor: 0xFFFFFF [,0xFFFFFF]*
-            textColor: 0x000000, [,0x000000]*
-            ninepatch: left,top,right,bottom
-            padding: left,top,right,bottom
-            }
-
-            Text lines may be in "" or '' or `` quotes.
-            bc can be used instead of backgroundColor, tc instead of textColor
-
-            Sample short form:
-            { 'line1' 'line2' 'line3' bc 0xFFFFFFFF tc 0x808080 stretch }
-        */
-        this(dstring src)
-        {
-            import std.utf;
-            import beamui.dml.tokenizer;
-
-            Token[] tokens = tokenize(toUTF8(src), ["//"], true, true, true);
-            dstring[] lines;
-            enum Mode
-            {
-                None,
-                Text,
-                BackgroundColor,
-                TextColor,
-                Padding,
-                NinePatch,
-            }
-
-            Mode mode = Mode.Text;
-            uint[] bg;
-            uint[] col;
-            uint[] pad;
-            uint[] nine;
-            for (int i; i < tokens.length; i++)
-            {
-                if (tokens[i].type == TokenType.ident)
-                {
-                    if (tokens[i].text == "backgroundColor" || tokens[i].text == "bc")
-                        mode = Mode.BackgroundColor;
-                    else if (tokens[i].text == "textColor" || tokens[i].text == "tc")
-                        mode = Mode.TextColor;
-                    else if (tokens[i].text == "text")
-                        mode = Mode.Text;
-                    else if (tokens[i].text == "stretch")
-                        _stretched = true;
-                    else if (tokens[i].text == "tile")
-                        _tiled = true;
-                    else if (tokens[i].text == "padding")
-                    {
-                        mode = Mode.Padding;
-                    }
-                    else if (tokens[i].text == "ninepatch")
-                    {
-                        _hasNinePatch = true;
-                        mode = Mode.NinePatch;
-                    }
-                    else
-                        mode = Mode.None;
-                }
-                else if (tokens[i].type == TokenType.integer)
-                {
-                    switch (mode)
-                    {
-                    case Mode.BackgroundColor:
-                        _bgColors ~= Color(tokens[i].intvalue);
-                        break;
-                    case Mode.TextColor:
-                    case Mode.Text:
-                        _textColors ~= Color(tokens[i].intvalue);
-                        break;
-                    case Mode.Padding:
-                        pad ~= tokens[i].intvalue;
-                        break;
-                    case Mode.NinePatch:
-                        nine ~= tokens[i].intvalue;
-                        break;
-                    default:
-                        break;
-                    }
-                }
-                else if (tokens[i].type == TokenType.str && mode == Mode.Text)
-                {
-                    dstring line = toUTF32(tokens[i].text);
-                    lines ~= line;
-                    if (_width < line.length)
-                        _width = cast(int)line.length;
-                }
-            }
-            // pad and convert text
-            _height = cast(int)lines.length;
-            if (!_height)
-            {
-                _width = 0;
-                return;
-            }
-            for (int y = 0; y < _height; y++)
-            {
-                for (int x = 0; x < _width; x++)
-                {
-                    if (x < lines[y].length)
-                        _text ~= lines[y][x];
-                    else
-                        _text ~= ' ';
-                }
-            }
-            // pad padding and ninepatch
-            for (int k = 1; k <= 4; k++)
-            {
-                if (nine.length < k)
-                    nine ~= 0;
-                if (pad.length < k)
-                    pad ~= 0;
-                //if (pad[k-1] < nine[k-1])
-                //    pad[k-1] = nine[k-1];
-            }
-            _padding = Insets(pad[0], pad[1], pad[2], pad[3]);
-            _ninePatch = Rect(nine[0], nine[1], nine[2], nine[3]);
-            // pad colors
-            for (int k = 1; k <= _width * _height; k++)
-            {
-                if (_textColors.length < k)
-                    _textColors ~= _textColors.length ? _textColors[$ - 1] : Color.black;
-                if (_bgColors.length < k)
-                    _bgColors ~= _bgColors.length ? _bgColors[$ - 1] : Color.transparent;
-            }
-        }
-
-        override @property Size size() const
-        {
-            return Size(_width, _height);
-        }
-
-        override @property Insets padding() const
-        {
-            return _padding;
-        }
-
-        protected void drawChar(ConsoleDrawBuf buf, int srcx, int srcy, int dstx, int dsty)
-        {
-            if (srcx < 0 || srcx >= _width || srcy < 0 || srcy >= _height)
-                return;
-            int index = srcy * _width + srcx;
-            if (_textColors[index].isFullyTransparent && _bgColors[index].isFullyTransparent)
-                return; // do not draw
-            buf.drawChar(dstx, dsty, _text[index], _textColors[index], _bgColors[index]);
-        }
-
-        static private int wrapNinePatch(int v, int width, int ninewidth, int left, int right)
-        {
-            if (v < left)
-                return v;
-            if (v >= width - right)
-                return v - (width - right) + (ninewidth - right);
-            return left + (ninewidth - left - right) * (v - left) / (width - left - right);
-        }
-
-        private void drawTo(Bitmap drawbuf, Box b, float tilex0 = 0, float tiley0 = 0)
-        {
-            if (!_width || !_height)
-                return; // empty image
-            auto buf = cast(ConsoleDrawBuf)drawbuf;
-            if (!buf) // wrong draw buffer
-                return;
-            if (_hasNinePatch || _tiled || _stretched)
-            {
-                for (int y = 0; y < b.height; y++)
-                {
-                    for (int x = 0; x < b.width; x++)
-                    {
-                        int srcx = wrapNinePatch(x, b.width, _width, _ninePatch.left, _ninePatch.right);
-                        int srcy = wrapNinePatch(y, b.height, _height, _ninePatch.top, _ninePatch.bottom);
-                        drawChar(buf, srcx, srcy, b.x + x, b.y + y);
-                    }
-                }
-            }
-            else
-            {
-                for (int y = 0; y < b.height && y < _height; y++)
-                {
-                    for (int x = 0; x < b.width && x < _width; x++)
-                    {
-                        drawChar(buf, x, y, b.x + x, b.y + y);
-                    }
-                }
-            }
-        }
-
-        override void drawTo(Painter pr, Box b, float tilex0 = 0, float tiley0 = 0)
-        {
-        }
     }
 }
 
@@ -1199,8 +929,6 @@ final class ImageCache
     /// Find an image by resource ID, load and cache it
     Bitmap get(string imageID)
     {
-        // console images are not supported for now in any way
-        static if (BACKEND_GUI)
         {
             if (auto p = imageID in _map)
                 return *p;
@@ -1218,8 +946,6 @@ final class ImageCache
             _map[imageID] = bitmap;
             return bitmap;
         }
-        else
-            return Bitmap.init;
     }
 
     /// Remove an image with resource ID `imageID` from the cache

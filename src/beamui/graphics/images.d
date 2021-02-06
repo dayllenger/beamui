@@ -3,8 +3,6 @@ Image loading functions.
 
 Support of PNG and JPEG loading is provided by a part of dlib (located in 3rdparty/dimage).
 
-Not available on console backends. Guard image code with `static if (BACKEND_GUI)` condition.
-
 Copyright: Vadim Lopatin 2014-2016
 License:   Boost License 1.0
 Authors:   Vadim Lopatin
@@ -13,9 +11,6 @@ module beamui.graphics.images;
 
 import beamui.core.config;
 
-// dfmt off
-static if (BACKEND_GUI):
-// dfmt on
 import std.conv : to;
 import std.uni : toLower;
 static import std.file;

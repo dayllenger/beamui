@@ -28,9 +28,6 @@ configuration "library-windows" {
     sourcePaths "src/beamui/platforms/windows"
 }
 
-configuration "ansi_console" {
-    sourcePaths "src/beamui/platforms/ansi_console"
-}
 configuration "sdl" {
     copyFiles "../libs/windows-x86_64/SDL2.dll" platform="windows-x86_64"
     copyFiles "../libs/windows-x86/SDL2.dll" platform="windows-x86"

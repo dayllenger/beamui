@@ -14,7 +14,6 @@ module beamui.platforms.windows.win32bitmap;
 version (Windows):
 import beamui.core.config;
 
-static if (BACKEND_GUI):
 import core.sys.windows.windows;
 import beamui.graphics.bitmap : BitmapData, PixelFormat;
 

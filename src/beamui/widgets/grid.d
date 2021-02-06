@@ -538,8 +538,8 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         _headerCols = 1;
         _headerRows = 1;
         _selection = new RedBlackTree!PointI;
-        _defRowHeight = BACKEND_CONSOLE ? 1 : 20;
-        _defColumnWidth = BACKEND_CONSOLE ? 7 : 100;
+        _defRowHeight = 20;
+        _defColumnWidth = 100;
 
         _showColHeaders = true;
         _showRowHeaders = true;
@@ -1195,7 +1195,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         if (y >= _rowCumulativeHeights[_headerRows - 1])
             return -1; // not in header row
         // point is somewhere in header row
-        const resizeRange = BACKEND_GUI ? 5 : 1;
+        const resizeRange = 5;
         if (x >= nonScrollAreaPixels.w)
             x += scrollPos.x;
         const int col = colByAbsoluteX(x);
@@ -1817,7 +1817,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
     protected Size measureCell(int x, int y) const
     {
         // override it!
-        return Size(BACKEND_CONSOLE ? 5 : 80, BACKEND_CONSOLE ? 1 : 20);
+        return Size(80, 20);
     }
 
     protected float measureColWidth(int x) const
@@ -1830,10 +1830,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             Size sz = measureCell(x - _headerCols, i - _headerRows);
             w = max(w, sz.w);
         }
-        static if (BACKEND_GUI)
-            w = max(w, 10); // TODO: use min size
-        else
-            w = max(w, 1); // TODO: use min size
+        w = max(w, 10); // TODO: use min size
         return w;
     }
 
@@ -1845,8 +1842,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
             Size sz = measureCell(i - _headerCols, y - _headerRows);
             h = max(h, sz.h);
         }
-        static if (BACKEND_GUI)
-            h = max(h, 12); // TODO: use min size
+        h = max(h, 12); // TODO: use min size
         return h;
     }
 
@@ -1877,7 +1873,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
         else
         {
-            _colUntouchedWidths[i] = measureColWidth(i) + (BACKEND_CONSOLE ? 1 : 3);
+            _colUntouchedWidths[i] = measureColWidth(i) + 3;
             _colWidths[i] = _colUntouchedWidths[i];
         }
         _changedSize = true;
@@ -1900,7 +1896,7 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
         }
         else
         {
-            _rowUntouchedHeights[j] = measureRowHeight(j) + (BACKEND_CONSOLE ? 0 : 2);
+            _rowUntouchedHeights[j] = measureRowHeight(j) + 2;
             _rowHeights[j] = _rowUntouchedHeights[j];
         }
         _changedSize = true;
@@ -1940,10 +1936,6 @@ class GridWidgetBase : ScrollAreaBase, GridModelAdapter, ActionOperator
                     if (!colVisible(x))
                         continue;
                     Box cellBox = cellBox(x, y);
-                    if (BACKEND_CONSOLE && phase == 1)
-                    {
-                        cellBox.w--;
-                    }
                     Box clipped = cellBox;
                     if (x >= nscols && cellBox.x < nspixels.w)
                         clipped.x = nspixels.w; // clip scrolled left
@@ -2113,22 +2105,17 @@ class StringGridWidget : StringGridWidgetBase
         if (_customCellAdapter && _customCellAdapter.isCustomCell(col, row))
             return _customCellAdapter.drawCell(pr, b, col, row);
 
-        static if (BACKEND_GUI)
-            b.shrink(Insets(1, 2));
-        else
-            b.width--;
+        b.shrink(Insets(1, 2));
 
         dstring txt = cellText(col, row);
-        const offset = BACKEND_CONSOLE ? 0 : 1;
+        const offset = 1;
         drawSimpleText(pr, txt, b.x + offset, b.y + offset, font.get, style.textColor);
     }
 
     override protected void drawHeaderCell(Painter pr, Box b, int col, int row)
     {
-        static if (BACKEND_GUI)
-            b.shrink(Insets(1, 2));
-        else
-            b.width--;
+        b.shrink(Insets(1, 2));
+
         dstring txt;
         if (row < 0 && col >= 0)
             txt = colTitle(col);
@@ -2145,7 +2132,7 @@ class StringGridWidget : StringGridWidgetBase
         //if (row < 0)
         //    ha = Align.hcenter;
         const cb = alignBox(b, sz, ha | Align.vcenter);
-        const offset = BACKEND_CONSOLE ? 0 : 1;
+        const offset = 1;
         const cl = currentTheme.getColor("grid_cell_text_header", style.textColor);
         drawSimpleText(pr, txt, cb.x + offset, cb.y + offset, fnt, cl);
     }
@@ -2181,7 +2168,6 @@ class StringGridWidget : StringGridWidgetBase
             dw.drawTo(pr, b);
         else
             pr.fillRect(b.x, b.y, b.w, b.h, cl);
-        static if (BACKEND_GUI)
         {
             const Rect rc = b;
             const borderColor = _cellHeaderBorderColor;
@@ -2211,7 +2197,6 @@ class StringGridWidget : StringGridWidgetBase
             pr.fillRect(b.x, b.y, b.w, b.h, _fixedCellBackgroundColor);
             borderColor = _fixedCellBorderColor;
         }
-        static if (BACKEND_GUI)
         {
             const Rect rc = b;
             // vertical
@@ -2243,16 +2228,6 @@ class StringGridWidget : StringGridWidgetBase
                         .close();
                     pr.stroke(path, border, Pen(2));
                 }
-            }
-        }
-        else
-        {
-            if (selectedCell)
-            {
-                if (_rowSelect)
-                    pr.fillRect(b.x, b.y, b.w, b.h, _selectionColorRowSelect);
-                else
-                    pr.fillRect(b.x, b.y, b.w, b.h, _selectionColor);
             }
         }
     }

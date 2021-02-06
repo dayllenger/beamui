@@ -9,7 +9,6 @@ module beamui.platforms.x11.x11app;
 
 import beamui.core.config;
 
-static if (BACKEND_GUI):
 import core.stdc.config : c_long, c_ulong;
 import std.string : fromStringz, toStringz;
 import std.utf : toUTF32, toUTF8;

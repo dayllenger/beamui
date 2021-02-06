@@ -13,7 +13,6 @@ module beamui.text.win32fonts;
 version (Windows):
 import beamui.core.config;
 
-static if (BACKEND_GUI):
 // dfmt on
 import core.sys.windows.windows;
 import std.math;

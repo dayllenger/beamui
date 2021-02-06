@@ -708,12 +708,6 @@ class ElemTextField : Element, IEditor, ActionOperator
 
         if (auto win = window)
         {
-            static if (BACKEND_CONSOLE)
-            {
-                win.caretRect = caretRect;
-                win.caretReplace = _replaceMode;
-            }
-            else
             {
                 const long ts = currentTimeMillis;
                 if (_caretTimerID)
@@ -745,11 +739,6 @@ class ElemTextField : Element, IEditor, ActionOperator
 
         if (auto win = window)
         {
-            static if (BACKEND_CONSOLE)
-            {
-                win.caretRect = Rect.init;
-            }
-            else
             {
                 if (_caretTimerID)
                 {
@@ -786,7 +775,7 @@ class ElemTextField : Element, IEditor, ActionOperator
             const Rect r = caretRect();
             if (r.intersects(Rect(innerBox)))
             {
-                if (_replaceMode && BACKEND_GUI)
+                if (_replaceMode)
                     pr.fillRect(r.left, r.top, r.width, r.height, _caretColorReplace);
                 else
                     pr.fillRect(r.left, r.top, 1, r.height, _caretColor);
@@ -2596,12 +2585,6 @@ class ElemTextArea : ElemScrollAreaBase, IEditor, ActionOperator
 
         if (auto win = window)
         {
-            static if (BACKEND_CONSOLE)
-            {
-                win.caretRect = caretRect;
-                win.caretReplace = _replaceMode;
-            }
-            else
             {
                 const long ts = currentTimeMillis;
                 if (_caretTimerID)
@@ -2634,11 +2617,6 @@ class ElemTextArea : ElemScrollAreaBase, IEditor, ActionOperator
 
         if (auto win = window)
         {
-            static if (BACKEND_CONSOLE)
-            {
-                win.caretRect = Rect.init;
-            }
-            else
             {
                 if (_caretTimerID)
                 {
@@ -2683,7 +2661,7 @@ class ElemTextArea : ElemScrollAreaBase, IEditor, ActionOperator
             const Rect r = caretRect();
             if (r.intersects(Rect(clientBox)))
             {
-                if (_replaceMode && BACKEND_GUI)
+                if (_replaceMode)
                     pr.fillRect(r.left, r.top, r.width, r.height, _caretColorReplace);
                 else
                     pr.fillRect(r.left, r.top, 1, r.height, _caretColor);

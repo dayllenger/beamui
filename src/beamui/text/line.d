@@ -642,7 +642,6 @@ private struct SimpleLine
         {
             pr.fillRect(x, y, width, height, style.background);
         }
-        static if (BACKEND_GUI)
         {
             // decorations
             const int decorThickness = 1 + height / 24;
@@ -666,13 +665,6 @@ private struct SimpleLine
                 const lineThroughY = y + baseline - xheight / 2 - decorThickness;
                 pr.fillRect(x, lineThroughY, width, decorThickness, decorColor);
             }
-        }
-        else
-        {
-            // in console mode, pass text flags in the alpha channel
-            const underline = style.decoration.line & TextDecorLine.under;
-            const color = style.color.withAlpha(underline ? 0x1 : 0xFF);
-            pr.drawText(glyphs, color);
         }
     }
 }

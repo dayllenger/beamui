@@ -74,10 +74,6 @@ configuration "minimal" {
     lflags "$PACKAGE_DIR/libs/windows-x86/pixman-1.lib" platform="windows-x86"
     libs "pixman-1" platform="posix"
 }
-configuration "console" {
-    versions "CONSOLE"
-    excludedSourceFiles "3rdparty/dimage/*" "3rdparty/fontconfig.d"
-}
 
 configuration "ddox" {
     versions "FREETYPE"

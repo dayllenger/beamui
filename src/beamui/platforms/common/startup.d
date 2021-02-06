@@ -19,11 +19,9 @@ import beamui.text.ftfonts;
 
     On win32 - first it tries to init freetype (if compiled with), and falls back to win32 fonts.
     On linux/mac - tries to init freetype with fontconfig, and falls back to hardcoded font paths.
-    On console - simply uses console font manager.
 */
 bool initFontManager()
 {
-    static if (BACKEND_GUI)
     {
         version (Windows)
         {
@@ -78,13 +76,6 @@ bool initFontManager()
             FontManager.instance = ft;
             return true;
         }
-    }
-    else
-    {
-        import beamui.text.consolefont;
-
-        FontManager.instance = new ConsoleFontManager;
-        return true;
     }
 }
 // dfmt off
@@ -366,7 +357,7 @@ private void tryHardcodedFontPaths(FreeTypeFontManager ft)
 }
 
 /**
-    Initialize logging (for win32 and console - to file ui.log, for other platforms - stderr;
+    Initialize logging (for win32 - to file ui.log, for other platforms - stderr;
     log level is TRACE for debug builds, and WARN for release builds)
 */
 void initLogs()
@@ -386,23 +377,6 @@ void initLogs()
         }
     }
 
-    static if (BACKEND_CONSOLE)
-    {
-        debug
-        {
-            Log.setFileLogger(openLogFile());
-            Log.setLogLevel(LogLevel.trace);
-        }
-    else
-        {
-            // no logging unless version ForceLogs is set
-            version (ForceLogs)
-            {
-                Log.setFileLogger(openLogFile());
-            }
-        }
-    }
-    else
     {
         version (Windows)
         {
@@ -483,13 +457,9 @@ void initResourceManagers()
     }
     else
     {
-        static if (BACKEND_GUI)
-            resourceList.embed!"standard_resources.list";
-        else
-            resourceList.embed!"standard_resources.console.list";
+        resourceList.embed!"standard_resources.list";
     }
 
-    static if (BACKEND_GUI)
     {
         imageCache = new ImageCache;
     }
@@ -512,7 +482,6 @@ void releaseResourcesOnAppExit()
     resourceList = ResourceList.init;
     FontManager.instance = null;
 
-    static if (BACKEND_GUI)
     {
         imageCache = null;
     }

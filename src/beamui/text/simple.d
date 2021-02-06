@@ -271,7 +271,6 @@ private struct Line
         }
 
         // preform actual drawing
-        static if (BACKEND_GUI)
         {
             const int decorThickness = 1 + height / 24;
             const decorColor = style.decoration.color;
@@ -297,12 +296,6 @@ private struct Line
                 const lineThroughY = y + baseline - xheight / 2 - decorThickness;
                 pr.fillRect(x, lineThroughY, lineWidth, decorThickness, decorColor);
             }
-        }
-        else
-        {
-            // in console mode, pass text flags in the alpha channel
-            const color = style.color.withAlpha(underline ? 0x1 : 0xFF);
-            pr.drawText(buffer[], color);
         }
     }
 }

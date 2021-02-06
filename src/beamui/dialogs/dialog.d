@@ -38,7 +38,6 @@ class Dialog : Panel
     @property void windowIcon(string iconResourceID)
     {
         _icon = iconResourceID;
-        static if (BACKEND_GUI)
         {
             if (_window)
             {

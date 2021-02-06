@@ -32,7 +32,6 @@ Things that are under development:
 * HiDPI support
 * Render to texture for embedding into apps like game level editors
 * Android platform, OpenGL ES
-* Console text interfaces
 
 This library aims to stay fairly simple and not to compete with Flutter, Avalonia, or Qt. There is no webview, no support for gestures, camera or microphone devices, no utilities for networking. I can only recommend to search for separate packages for your concrete case. Also, the library is not thread safe - all UI operations should perform in a single thread.
 

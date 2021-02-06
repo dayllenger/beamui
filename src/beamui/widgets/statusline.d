@@ -66,8 +66,8 @@ class StatusLineTextAndIconPanel : StatusLineTextPanel
     this()
     {
         _icon = new ImageWidget;
-        _icon.style.minWidth = BACKEND_CONSOLE ? 1 : 20;
-        _icon.style.minHeight = BACKEND_CONSOLE ? 1 : 20;
+        _icon.style.minWidth = 20;
+        _icon.style.minHeight = 20;
         _icon.style.alignment = Align.center;
         add(_icon);
     }

@@ -9,9 +9,6 @@ module beamui.graphics.swpainter;
 
 import beamui.core.config;
 
-// dfmt off
-static if (BACKEND_GUI):
-// dfmt on
 import std.algorithm.mutation : swap;
 import std.math : ceil, floor, round;
 import std.typecons : scoped;
