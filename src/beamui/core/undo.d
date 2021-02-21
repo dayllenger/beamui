@@ -101,7 +101,7 @@ class UndoBuffer
     /// True if the content has been changed since last `saved()` or `clear()` call
     @property bool modified() const
     {
-        return _savedState !is _undoStack.back;
+        return !_undoStack.empty && _savedState !is _undoStack.back;
     }
 
     /// True if saved state is in redo stack
@@ -109,4 +109,13 @@ class UndoBuffer
     {
         return _savedState && _savedState in _redoStack;
     }
+}
+
+unittest
+{
+    auto buffer = new UndoBuffer;
+    assert(!buffer.modified);
+    assert(!buffer.savedInRedo);
+    assert(buffer.undo() is null);
+    assert(buffer.redo() is null);
 }
