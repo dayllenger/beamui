@@ -271,7 +271,7 @@ nothrow:
             {
                 auto comb = consumeCombinator();
                 if (!comb.isNull)
-                    sel.entries ~= comb;
+                    sel.entries ~= comb.get;
             }
         }
         if (sel.entries.length)
