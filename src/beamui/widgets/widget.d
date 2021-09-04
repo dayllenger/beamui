@@ -419,7 +419,7 @@ class Widget
         }
     }
 
-    protected inout(S) use(S : WidgetState)() inout
+    inout(S) use(S : WidgetState)() inout
     in (_state, "The state hasn't mounted yet")
     out (s; s, "The widget state has another type: " ~ _state.classinfo.name)
     {

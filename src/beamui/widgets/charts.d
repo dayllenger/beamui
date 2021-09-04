@@ -27,6 +27,7 @@ Authors:   Andrzej Kilijański
 module beamui.widgets.charts;
 
 import std.math;
+import beamui.core.math;
 import beamui.text.simple;
 import beamui.text.sizetest;
 import beamui.text.style;
@@ -222,7 +223,7 @@ class ElemSimpleBarChart : Element
     protected Size measureAxisYDesc()
     {
         double currentMaxValue = _maxY;
-        if (approxEqual(_maxY, 0, 0.0000001, 0.0000001))
+        if (fzero6(_maxY))
             currentMaxValue = 100;
 
         if (cachedMaxYValue != currentMaxValue)
@@ -377,7 +378,7 @@ class ElemSimpleBarChart : Element
     protected float barYValueToPixels(float axisInPixels, double barYValue)
     {
         double currentMaxValue = _maxY;
-        if (approxEqual(_maxY, 0, 0.0000001, 0.0000001))
+        if (fzero6(_maxY))
             currentMaxValue = 100;
 
         const pixValue = axisInPixels / currentMaxValue;

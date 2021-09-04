@@ -886,10 +886,10 @@ class ElemRangeSlider : ElemAbstractSlider
 //===============================================================
 // Tests
 
+import beamui.core.math;
+
 unittest
 {
-    static import std.math;
-
     alias R = Tup!(double, double, double);
 
     static double from(double v, R r)
@@ -905,7 +905,7 @@ unittest
 
     static bool eq(double a, double b)
     {
-        return std.math.approxEqual(a, b);
+        return fequal2(a, b);
     }
 
     const r = R(-10, 10, 0.1);
@@ -938,7 +938,7 @@ unittest
 
     static bool eq(double a0, double a1, double[2] b)
     {
-        return std.math.approxEqual(a0, b[0]) && std.math.approxEqual(a1, b[1]);
+        return fequal2(a0, b[0]) && fequal2(a1, b[1]);
     }
 
     const r = R(-10, 10, 0.1);

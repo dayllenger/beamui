@@ -368,7 +368,7 @@ private float dipsPerInch = 96;
 //===============================================================
 // Tests
 
-import std.math : approxEqual;
+import beamui.core.math;
 
 unittest
 {
@@ -390,7 +390,7 @@ unittest
     {
         LayoutLength len = f;
         assert(!len.isPercent);
-        assert(len.applyPercent(1234).approxEqual(f, 1e-2));
+        assert(fequal2(len.applyPercent(1234), f));
     }
 }
 
@@ -400,14 +400,14 @@ unittest
     {
         auto len = LayoutLength.percent(f);
         assert(len.isPercent);
-        assert(len.applyPercent(50).approxEqual(f / 2, 1e-2));
+        assert(fequal2(len.applyPercent(50), f / 2));
     }
 }
 
 unittest
 {
-    assert(parseAngle("120.5", "deg").approxEqual(2.10312, 1e-5));
-    assert(parseAngle("15", "grad").approxEqual(0.23562, 1e-5));
-    assert(parseAngle("-27.7", "rad").approxEqual(-27.7, 1e-5));
-    assert(parseAngle("2", "turn").approxEqual(12.56637, 1e-5));
+    assert(fequal2(parseAngle("120.5", "deg"), 2.10312));
+    assert(fequal2(parseAngle("15", "grad"), 0.23562));
+    assert(fequal2(parseAngle("-27.7", "rad"), -27.7));
+    assert(fequal2(parseAngle("2", "turn"), 12.56637));
 }
