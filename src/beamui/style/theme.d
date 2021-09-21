@@ -158,13 +158,10 @@ void setStyleSheetFromResource(Theme theme, StyleResource resource)
 
 private:
 
-alias Decoder = void function(ref StylePropertyList, const(CSS.Token)[]);
-
 struct Context
 {
     Theme theme;
     string namespace;
-    Decoder[string] decoders;
     Theme.Store* store;
 
     @disable this();
@@ -176,7 +173,6 @@ struct Context
     {
         this.theme = theme;
         this.namespace = namespace;
-        decoders = createDecoders();
 
         store = namespace in theme._styles;
         if (!store)
@@ -190,7 +186,6 @@ struct Context
     {
         theme = ctx.theme;
         namespace = ctx.namespace;
-        decoders = ctx.decoders;
 
         store = namespace in theme._styles;
         if (!store)
@@ -231,7 +226,7 @@ void loadThemeFromCSS(ref Context ctx, const CSS.StyleSheet stylesheet)
         foreach (sel; r.selectors)
         {
             auto style = ctx.get(makeSelector(sel));
-            appendStyleDeclaration(style._props, ctx.decoders, r.properties);
+            appendStyleDeclaration(style._props, r.properties);
         }
     }
 }
@@ -281,7 +276,7 @@ void applyAtRule(ref Context ctx, const CSS.AtRule rule)
             foreach (sel; r.selectors)
             {
                 auto style = ctxWithMQ.get(makeSelector(sel));
-                appendStyleDeclaration(style._props, ctxWithMQ.decoders, r.properties);
+                appendStyleDeclaration(style._props, r.properties);
             }
         }
     }
@@ -452,7 +447,7 @@ Nullable!(Selector.Combinator) makeSelectorPart(Selector* sel, ref const(CSS.Sel
     return result;
 }
 
-void appendStyleDeclaration(ref StylePropertyList list, Decoder[string] decoders, const CSS.Property[] props)
+void appendStyleDeclaration(ref StylePropertyList list, const CSS.Property[] props)
 {
     foreach (p; props)
     {
@@ -461,54 +456,64 @@ void appendStyleDeclaration(ref StylePropertyList list, Decoder[string] decoders
         {
             list.customProperties[p.name] = p.value;
         }
-        else if (auto pdg = p.name in decoders)
+        else if (!decodeProperty(list, p.name, p.value))
         {
-            (*pdg)(list, p.value);
-        }
-        else
             Log.fe("CSS(%d): unknown property '%s'", p.value[0].line, p.name);
+        }
     }
 }
 
-Decoder[string] createDecoders()
+bool decodeProperty(ref StylePropertyList props, string name, const(CSS.Token)[] tokens)
 {
-    Decoder[string] map;
-
-    static foreach (p; PropTypes.tupleof)
+    switch (name)
     {
+        static foreach (p; PropTypes.tupleof)
         {
-            enum ptype = __traits(getMember, StyleProperty, __traits(identifier, p));
-            enum cssname = getCSSName(ptype);
-            map[cssname] = &decodeLonghand!(ptype, typeof(p));
+            {
+                enum ptype = __traits(getMember, StyleProperty, __traits(identifier, p));
+                enum cssname = getCSSName(ptype);
+    case cssname:
+                decodeLonghand!(ptype, typeof(p))(props, tokens);
+                return true;
+            }
         }
+    default:
+        break;
     }
 
     // explode shorthands
-    map["margin"] = &decodeShorthandMargin;
-    map["padding"] = &decodeShorthandPadding;
-    map["place-content"] = &decodeShorthandPlaceContent;
-    map["place-items"] = &decodeShorthandPlaceItems;
-    map["place-self"] = &decodeShorthandPlaceSelf;
-    map["gap"] = &decodeShorthandGap;
-    map["flex-flow"] = &decodeShorthandFlexFlow;
-    map["flex"] = &decodeShorthandFlex;
-    map["grid-area"] = &decodeShorthandGridArea;
-    map["grid-row"] = &decodeShorthandGridRow;
-    map["grid-column"] = &decodeShorthandGridColumn;
-    map["background"] = &decodeShorthandDrawable;
-    map["border"] = &decodeShorthandBorder;
-    map["border-color"] = &decodeShorthandBorderColors;
-    map["border-style"] = &decodeShorthandBorderStyle;
-    map["border-width"] = &decodeShorthandBorderWidth;
-    map["border-top"] = &decodeShorthandBorderTop;
-    map["border-right"] = &decodeShorthandBorderRight;
-    map["border-bottom"] = &decodeShorthandBorderBottom;
-    map["border-left"] = &decodeShorthandBorderLeft;
-    map["border-radius"] = &decodeShorthandBorderRadii;
-    map["text-decoration"] = &decodeShorthandTextDecor;
-    map["transition"] = &decodeShorthandTransition;
+    // dfmt off
+    switch (name)
+    {
+    case "margin":          decodeShorthandMargin(props, tokens);       return true;
+    case "padding":         decodeShorthandPadding(props, tokens);      return true;
+    case "place-content":   decodeShorthandPlaceContent(props, tokens); return true;
+    case "place-items":     decodeShorthandPlaceItems(props, tokens);   return true;
+    case "place-self":      decodeShorthandPlaceSelf(props, tokens);    return true;
+    case "gap":             decodeShorthandGap(props, tokens);          return true;
+    case "flex-flow":       decodeShorthandFlexFlow(props, tokens);     return true;
+    case "flex":            decodeShorthandFlex(props, tokens);         return true;
+    case "grid-area":       decodeShorthandGridArea(props, tokens);     return true;
+    case "grid-row":        decodeShorthandGridRow(props, tokens);      return true;
+    case "grid-column":     decodeShorthandGridColumn(props, tokens);   return true;
+    case "background":      decodeShorthandDrawable(props, tokens);     return true;
+    case "border":          decodeShorthandBorder(props, tokens);       return true;
+    case "border-color":    decodeShorthandBorderColors(props, tokens); return true;
+    case "border-style":    decodeShorthandBorderStyle(props, tokens);  return true;
+    case "border-width":    decodeShorthandBorderWidth(props, tokens);  return true;
+    case "border-top":      decodeShorthandBorderTop(props, tokens);    return true;
+    case "border-right":    decodeShorthandBorderRight(props, tokens);  return true;
+    case "border-bottom":   decodeShorthandBorderBottom(props, tokens); return true;
+    case "border-left":     decodeShorthandBorderLeft(props, tokens);   return true;
+    case "border-radius":   decodeShorthandBorderRadii(props, tokens);  return true;
+    case "text-decoration": decodeShorthandTextDecor(props, tokens);    return true;
+    case "transition":      decodeShorthandTransition(props, tokens);   return true;
+    default:
+        break;
+    }
+    // dfmt on
 
-    return map;
+    return false;
 }
 
 alias P = StyleProperty;
