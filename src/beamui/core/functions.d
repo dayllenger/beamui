@@ -94,35 +94,6 @@ unittest
     assert("hello\nworld\n" == normalizeEOLs("hello\nworld\r"));
 }
 
-/// Simple bloat-free eager map
-auto emap(alias func, S)(S[] s)
-{
-    alias Ret = typeof(func(s[0]));
-    auto arr = new Ret[s.length];
-    foreach (i, elem; s)
-        arr[i] = func(elem);
-    return arr;
-}
-///
-unittest
-{
-    import std.algorithm : equal;
-
-    bool[] res = "stuff".emap!(c => c == 'f');
-
-    assert(res.equal([false, false, false, true, true]));
-
-    struct C
-    {
-        int i;
-    }
-
-    C*[] cs = [new C(5), new C(10)];
-    int[] ires = cs.emap!(a => a.i);
-
-    assert(ires.equal([5, 10]));
-}
-
 static if (__VERSION__ < 2088)
 {
     private void destr(T)(auto ref T val)
