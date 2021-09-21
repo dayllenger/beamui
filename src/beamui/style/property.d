@@ -6,6 +6,8 @@ Authors:   dayllenger
 */
 module beamui.style.property;
 
+import core.stdc.string;
+
 import beamui.core.animations : TimingFunction;
 import beamui.core.editable : TabSize;
 import beamui.core.units : Length;
@@ -136,7 +138,7 @@ enum StyleProperty
     cursor,
 }
 
-package struct PropTypes
+package union PropTypes
 {
     Align alignment;
     AlignItem alignItems;
@@ -238,62 +240,8 @@ package struct PropTypes
     WhiteSpace whiteSpace;
 }
 
-private union BuiltinPropertyValue
-{
-    import std.meta : AliasSeq;
-
-    // dfmt off
-    static foreach (T; AliasSeq!(
-        Align,
-        AlignItem,
-        BgPositionRaw,
-        BgSizeRaw,
-        BlendMode,
-        BorderStyle,
-        BoxShadowDrawable,
-        BoxType,
-        Color,
-        CursorType,
-        Distribution,
-        Drawable,
-        FlexDirection,
-        FlexWrap,
-        float,
-        GenericFontFamily,
-        FontStyle,
-        GridFlow,
-        GridLineName,
-        GridNamedAreas,
-        int,
-        Length,
-        RepeatStyle,
-        SingleTransformRaw,
-        Stretch,
-        string,
-        TabSize,
-        TextAlign,
-        TextDecorLine,
-        TextDecorStyle,
-        TextHotkey,
-        TextOverflow,
-        TextTransform,
-        TimingFunction,
-        TrackSize,
-        TrackSize[],
-        uint,
-        ushort,
-        WhiteSpace,
-    ))
-    {
-        mixin(`T ` ~ T.mangleof ~ `;`);
-    }
-    // dfmt on
-}
-
 package struct StylePropertyList
 {
-    import std.traits : Unqual;
-
     private enum Pointer : ubyte
     {
         none,
@@ -302,20 +250,17 @@ package struct StylePropertyList
         some
     }
 
-    private BuiltinPropertyValue[] values;
+    private PropTypes[] values;
     private Pointer[StyleProperty.max + 1] pointers;
     private StaticBitArray!(StyleProperty.max + 1) pointsToVarName;
     const(Token)[][string] customProperties;
 
-    /// Try to get value of a property by exact name. Returns a pointer to it or `null`
-    auto peek(string name)()
+    /// Try to get value of a property. Returns a pointer to it or `null`
+    void* peek(StyleProperty ptype)
     {
-        alias T = typeof(mixin(`PropTypes.` ~ name));
-        enum ptype = mixin(`StyleProperty.` ~ name);
-
         const ptr = pointers[ptype];
         if (ptr >= Pointer.some && !pointsToVarName[ptype])
-            return mixin(`&values[ptr - Pointer.some].` ~ Unqual!T.mangleof);
+            return &values[ptr - Pointer.some];
         return null;
     }
 
@@ -324,7 +269,7 @@ package struct StylePropertyList
         if (pointsToVarName[property])
         {
             const v = &values[pointers[property] - Pointer.some];
-            return mixin(`v.` ~ string.mangleof);
+            return v.display; // some string prop
         }
         return null;
     }
@@ -347,8 +292,13 @@ package struct StylePropertyList
 
     void set(T)(StyleProperty ptype, T v)
     {
-        BuiltinPropertyValue value;
-        mixin("value." ~ (Unqual!T).mangleof) = v;
+        setImpl(ptype, &v, T.sizeof);
+    }
+
+    private void setImpl(StyleProperty ptype, const void* v, size_t sz)
+    {
+        PropTypes value = void;
+        memcpy(&value, v, sz);
 
         if (pointers[ptype] < Pointer.some)
         {

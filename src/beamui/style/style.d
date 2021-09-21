@@ -52,8 +52,13 @@ final class Style
         {
             static if (is(typeof(prop) : Object))
             {
-                if (auto p = _props.peek!(__traits(identifier, prop)))
-                    destroy(*p);
+                {
+                    enum name = __traits(identifier, prop);
+                    enum ptype = mixin(`StyleProperty.` ~ name);
+                    void* p = _props.peek(ptype);
+                    if (p)
+                        destroy(*cast(Object*)p);
+                }
             }
         }
 

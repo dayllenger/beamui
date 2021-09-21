@@ -458,9 +458,9 @@ struct ComputedStyle
                 continue;
 
             // actually specified value
-            if (auto p = plist.peek!name)
+            if (void* p = plist.peek(ptype))
             {
-                auto val = postprocessValue!ptype(*p, parentStyle);
+                auto val = postprocessValue!ptype(*cast(T*)p, parentStyle);
                 if (setProperty!name(val))
                     modified.set(ptype);
                 set = true;
