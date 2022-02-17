@@ -507,7 +507,7 @@ version (ENABLE_SAVE_PNG) {
     in {
         assert(img.data.length);
     }
-    body {
+    do {
         Compound!(bool, string) error(string errorMsg) {
             return compound(false, errorMsg);
         }
