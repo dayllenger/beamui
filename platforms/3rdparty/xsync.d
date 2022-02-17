@@ -43,8 +43,7 @@ import core.stdc.config : c_ulong;
 import x11.X : Drawable, Time, XID;
 import x11.Xlib : Bool, Display, Status;
 
-version (Posix):
-extern (C) nothrow @nogc:
+version (Posix)  : extern (C) nothrow @nogc:
 
 enum SYNC_NAME = "SYNC";
 enum SYNC_MAJOR_VERSION = 3;
@@ -69,15 +68,13 @@ enum XSyncCADelta = 1L << 4;
 enum XSyncCAEvents = 1L << 5;
 
 /// Constants for the `value_type` argument of various requests
-enum XSyncValueType
-{
+enum XSyncValueType {
     absolute,
     relative
 }
 
 /// Alarm Test types
-enum XSyncTestType
-{
+enum XSyncTestType {
     positiveTransition,
     negativeTransition,
     positiveComparison,
@@ -85,8 +82,7 @@ enum XSyncTestType
 }
 
 /// Alarm state constants
-enum XSyncAlarmState
-{
+enum XSyncAlarmState {
     active,
     inactive,
     destroyed
@@ -96,36 +92,30 @@ alias XSyncCounter = XID;
 alias XSyncAlarm = XID;
 alias XSyncFence = XID;
 
-struct XSyncValue
-{
+struct XSyncValue {
     int hi;
     uint lo;
 
 nothrow @nogc:
 
-    void intToValue(int i)
-    {
+    void intToValue(int i) {
         hi = i < 0 ? ~0 : 0;
         lo = i;
     }
 
-    bool isNegative() const
-    {
+    bool isNegative() const {
         return (hi & 0x80000000) != 0;
     }
 
-    bool isZero() const
-    {
+    bool isZero() const {
         return lo == 0 && hi == 0;
     }
 
-    bool isPositive() const
-    {
+    bool isPositive() const {
         return (hi & 0x80000000) == 0;
     }
 
-    void add(XSyncValue a, XSyncValue b, ref bool overflow)
-    {
+    void add(XSyncValue a, XSyncValue b, ref bool overflow) {
         const int t = a.lo;
         const signa = a.isNegative;
         const signb = b.isNegative;
@@ -136,8 +126,7 @@ nothrow @nogc:
         overflow = signa == signb && signa != isNegative;
     }
 
-    void subtract(XSyncValue a, XSyncValue b, ref bool overflow)
-    {
+    void subtract(XSyncValue a, XSyncValue b, ref bool overflow) {
         const int t = a.lo;
         const signa = a.isNegative;
         const signb = b.isNegative;
@@ -148,20 +137,17 @@ nothrow @nogc:
         overflow = signa == signb && signa != isNegative;
     }
 
-    void toMaxValue()
-    {
+    void toMaxValue() {
         hi = 0x7fffffff;
         lo = 0xffffffff;
     }
 
-    void toMinValue()
-    {
+    void toMinValue() {
         hi = 0x80000000;
         lo = 0;
     }
 
-    int opCmp(XSyncValue v) const
-    {
+    int opCmp(XSyncValue v) const {
         if (hi < v.hi)
             return -1;
         if (hi > v.hi)
@@ -174,29 +160,25 @@ nothrow @nogc:
     }
 }
 
-struct XSyncSystemCounter
-{
+struct XSyncSystemCounter {
     char* name; /// null-terminated name of system counter
     XSyncCounter counter; /// counter id of this system counter
     XSyncValue resolution; /// resolution of this system counter
 }
 
-struct XSyncTrigger
-{
+struct XSyncTrigger {
     XSyncCounter counter; /// counter to trigger on
     XSyncValueType value_type; /// absolute/relative
     XSyncValue wait_value; /// value to compare counter to
     XSyncTestType test_type; /// pos/neg comparison/transtion
 }
 
-struct XSyncWaitCondition
-{
+struct XSyncWaitCondition {
     XSyncTrigger trigger; /// trigger for await
     XSyncValue event_threshold; /// send event if past threshold
 }
 
-struct XSyncAlarmAttributes
-{
+struct XSyncAlarmAttributes {
     XSyncTrigger trigger;
     XSyncValue delta;
     Bool events;
@@ -205,8 +187,7 @@ struct XSyncAlarmAttributes
 
 /* Events */
 
-struct XSyncCounterNotifyEvent
-{
+struct XSyncCounterNotifyEvent {
     int type; /// event base + `XSyncCounterNotify`
     c_ulong serial; /// # of last request processed by server
     Bool send_event; /// true if this came from a SendEvent request
@@ -219,8 +200,7 @@ struct XSyncCounterNotifyEvent
     Bool destroyed; /// `True` if counter was destroyed
 }
 
-struct XSyncAlarmNotifyEvent
-{
+struct XSyncAlarmNotifyEvent {
     int type; /// event base + `XSyncAlarmNotify`
     c_ulong serial; /// # of last request processed by server
     Bool send_event; /// true if this came from a `SendEvent` request
@@ -234,8 +214,7 @@ struct XSyncAlarmNotifyEvent
 
 /* Errors */
 
-struct XSyncAlarmError
-{
+struct XSyncAlarmError {
     int type;
     Display* display; /// `Display` the event was read from
     XSyncAlarm alarm; /// resource id
@@ -245,8 +224,7 @@ struct XSyncAlarmError
     ubyte minor_code; /// Minor op-code of failed request
 }
 
-struct XSyncCounterError
-{
+struct XSyncCounterError {
     int type;
     Display* display; /// `Display` the event was read from
     XSyncCounter counter; /// resource id
@@ -272,7 +250,7 @@ XSyncAlarm XSyncCreateAlarm(Display* dpy, c_ulong values_mask, XSyncAlarmAttribu
 Status XSyncDestroyAlarm(Display* dpy, XSyncAlarm alarm);
 Status XSyncQueryAlarm(Display* dpy, XSyncAlarm alarm, XSyncAlarmAttributes* values_return);
 Status XSyncChangeAlarm(Display* dpy, XSyncAlarm alarm, c_ulong values_mask,
-        XSyncAlarmAttributes* values);
+    XSyncAlarmAttributes* values);
 Status XSyncSetPriority(Display* dpy, XID client_resource_id, int priority);
 Status XSyncGetPriority(Display* dpy, XID client_resource_id, int* return_priority);
 XSyncFence XSyncCreateFence(Display* dpy, Drawable d, Bool initially_triggered);

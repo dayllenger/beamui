@@ -6,22 +6,18 @@ License:   Boost License 1.0
 */
 module wgl;
 
-version (Windows):
-
-import bindbc.loader.sharedlib;
+version (Windows)  : import bindbc.loader.sharedlib;
 
 private SharedLib lib;
 
-bool hasLoadedWGL()
-{
+bool hasLoadedWGL() {
     return lib != invalidHandle;
 }
 
 // no need to unload, because OpenGL bindings handle it
 
 /// Load basic WGL functions, without extensions
-bool loadWGL()
-{
+bool loadWGL() {
     const(char)[] libName = "opengl32.dll";
 
     lib = load(libName.ptr);
@@ -51,8 +47,7 @@ bool loadWGL()
 }
 
 /// A context must be activated in order to load extensions
-void loadWGLExtensions()
-{
+void loadWGLExtensions() {
     if (!wglGetCurrentContext || wglGetCurrentContext() is null)
         return;
 
@@ -65,16 +60,14 @@ void loadWGLExtensions()
     if (!extensions)
         return;
 
-    if (hasExtension(extensions, "WGL_ARB_buffer_region"))
-    {
+    if (hasExtension(extensions, "WGL_ARB_buffer_region")) {
         _WGL_ARB_buffer_region =
             bindWGLFunc(cast(void**)&wglCreateBufferRegionARB, "wglCreateBufferRegionARB") &&
             bindWGLFunc(cast(void**)&wglDeleteBufferRegionARB, "wglDeleteBufferRegionARB") &&
             bindWGLFunc(cast(void**)&wglSaveBufferRegionARB, "wglSaveBufferRegionARB") &&
             bindWGLFunc(cast(void**)&wglRestoreBufferRegionARB, "wglRestoreBufferRegionARB");
     }
-    if (hasExtension(extensions, "WGL_ARB_create_context"))
-    {
+    if (hasExtension(extensions, "WGL_ARB_create_context")) {
         _WGL_ARB_create_context =
             bindWGLFunc(cast(void**)&wglCreateContextAttribsARB, "wglCreateContextAttribsARB");
     }
@@ -83,8 +76,7 @@ void loadWGLExtensions()
     _WGL_ARB_create_context_robustness = hasExtension(extensions, "WGL_ARB_create_context_robustness");
     _WGL_ARB_framebuffer_sRGB = hasExtension(extensions, "WGL_ARB_framebuffer_sRGB");
 
-    if (hasExtension(extensions, "WGL_ARB_make_current_read"))
-    {
+    if (hasExtension(extensions, "WGL_ARB_make_current_read")) {
         _WGL_ARB_make_current_read =
             bindWGLFunc(cast(void**)&wglMakeContextCurrentARB, "wglMakeContextCurrentARB") &&
             bindWGLFunc(cast(void**)&wglGetCurrentReadDCARB, "wglGetCurrentReadDCARB");
@@ -92,8 +84,7 @@ void loadWGLExtensions()
 
     _WGL_ARB_multisample = hasExtension(extensions, "WGL_ARB_multisample");
 
-    if (hasExtension(extensions, "WGL_ARB_pbuffer"))
-    {
+    if (hasExtension(extensions, "WGL_ARB_pbuffer")) {
         _WGL_ARB_pbuffer =
             bindWGLFunc(cast(void**)&wglCreatePbufferARB, "wglCreatePbufferARB") &&
             bindWGLFunc(cast(void**)&wglGetPbufferDCARB, "wglGetPbufferDCARB") &&
@@ -101,8 +92,7 @@ void loadWGLExtensions()
             bindWGLFunc(cast(void**)&wglDestroyPbufferARB, "wglDestroyPbufferARB") &&
             bindWGLFunc(cast(void**)&wglQueryPbufferARB, "wglQueryPbufferARB");
     }
-    if (hasExtension(extensions, "WGL_ARB_pixel_format"))
-    {
+    if (hasExtension(extensions, "WGL_ARB_pixel_format")) {
         _WGL_ARB_pixel_format =
             bindWGLFunc(cast(void**)&wglGetPixelFormatAttribivARB, "wglGetPixelFormatAttribivARB") &&
             bindWGLFunc(cast(void**)&wglGetPixelFormatAttribfvARB, "wglGetPixelFormatAttribfvARB") &&
@@ -111,8 +101,7 @@ void loadWGLExtensions()
 
     _WGL_ARB_pixel_format_float = hasExtension(extensions, "WGL_ARB_pixel_format_float");
 
-    if (hasExtension(extensions, "WGL_ARB_render_texture"))
-    {
+    if (hasExtension(extensions, "WGL_ARB_render_texture")) {
         _WGL_ARB_render_texture =
             bindWGLFunc(cast(void**)&wglBindTexImageARB, "wglBindTexImageARB") &&
             bindWGLFunc(cast(void**)&wglReleaseTexImageARB, "wglReleaseTexImageARB") &&
@@ -120,41 +109,36 @@ void loadWGLExtensions()
     }
 
     _WGL_ARB_robustness_application_isolation = hasExtension(extensions,
-            "WGL_ARB_robustness_application_isolation");
+        "WGL_ARB_robustness_application_isolation");
     _WGL_ARB_robustness_share_group_isolation = hasExtension(extensions,
-            "WGL_ARB_robustness_share_group_isolation");
+        "WGL_ARB_robustness_share_group_isolation");
 
-    if (hasExtension(extensions, "WGL_EXT_swap_control"))
-    {
+    if (hasExtension(extensions, "WGL_EXT_swap_control")) {
         _WGL_EXT_swap_control =
             bindWGLFunc(cast(void**)&wglSwapIntervalEXT, "wglSwapIntervalEXT") &&
             bindWGLFunc(cast(void**)&wglGetSwapIntervalEXT, "wglGetSwapIntervalEXT");
     }
 }
 
-private bool bindWGLFunc(void** ptr, const(char)* name)
-{
-    if (auto sym = wglGetProcAddress(name))
-    {
+private bool bindWGLFunc(void** ptr, const(char)* name) {
+    if (auto sym = wglGetProcAddress(name)) {
         *ptr = cast(void*)sym;
         return true;
     }
     return false;
 }
 
-private bool hasExtension(const(char)* extensions, const(char)* name)
-{
+private bool hasExtension(const(char)* extensions, const(char)* name) {
     import core.stdc.string : strlen, strstr;
 
     const len = strlen(name);
     const(char)* ext = strstr(extensions, name);
-    while(ext)
-    {
+    while (ext) {
         // It's possible that the extension name is actually a
         // substring of another extension. If not, then the
         // character following the name in the extension string
         // should be a space (or possibly the null character).
-        if(ext[len] == ' ' || ext[len] == '\0')
+        if (ext[len] == ' ' || ext[len] == '\0')
             return true;
         ext = strstr(ext + len, name);
     }
@@ -168,8 +152,7 @@ import core.sys.windows.wingdi : GLYPHMETRICSFLOAT, LAYERPLANEDESCRIPTOR;
 
 alias HPBUFFERARB = HANDLE;
 
-extern (Windows) @nogc nothrow
-{
+extern (Windows) @nogc nothrow {
     alias p_CopyContext = BOOL function(void*, void*);
     alias p_CreateContext = void* function(void*);
     alias p_CreateLayerContext = void* function(void*, int);
@@ -225,8 +208,7 @@ extern (Windows) @nogc nothrow
     alias p_GetSwapIntervalEXT = int function();
 }
 
-__gshared
-{
+__gshared {
     p_CopyContext wglCopyContext;
     p_CreateContext wglCreateContext;
     p_CreateLayerContext wglCreateLayerContext;
@@ -271,27 +253,69 @@ __gshared
 alias wglUseFontBitmaps = wglUseFontBitmapsW;
 alias wglUseFontOutlines = wglUseFontOutlinesW;
 
-@nogc nothrow @property
-{
-    bool WGL_ARB_extensions_string() { return _WGL_ARB_extensions_string; }
-    bool WGL_ARB_buffer_region() { return _WGL_ARB_buffer_region; }
-    bool WGL_ARB_create_context() { return _WGL_ARB_create_context; }
-    bool WGL_ARB_create_context_profile() { return _WGL_ARB_create_context_profile; }
-    bool WGL_ARB_create_context_robustness() { return _WGL_ARB_create_context_robustness; }
-    bool WGL_ARB_framebuffer_sRGB() { return _WGL_ARB_framebuffer_sRGB; }
-    bool WGL_ARB_make_current_read() { return _WGL_ARB_make_current_read; }
-    bool WGL_ARB_multisample() { return _WGL_ARB_multisample; }
-    bool WGL_ARB_pbuffer() { return _WGL_ARB_pbuffer; }
-    bool WGL_ARB_pixel_format() { return _WGL_ARB_pixel_format; }
-    bool WGL_ARB_pixel_format_float() { return _WGL_ARB_pixel_format_float; }
-    bool WGL_ARB_render_texture() { return _WGL_ARB_render_texture; }
-    bool WGL_ARB_robustness_application_isolation() { return _WGL_ARB_robustness_application_isolation; }
-    bool WGL_ARB_robustness_share_group_isolation() { return _WGL_ARB_robustness_share_group_isolation; }
-    bool WGL_EXT_swap_control() { return _WGL_EXT_swap_control; }
+@nogc nothrow @property {
+    bool WGL_ARB_extensions_string() {
+        return _WGL_ARB_extensions_string;
+    }
+
+    bool WGL_ARB_buffer_region() {
+        return _WGL_ARB_buffer_region;
+    }
+
+    bool WGL_ARB_create_context() {
+        return _WGL_ARB_create_context;
+    }
+
+    bool WGL_ARB_create_context_profile() {
+        return _WGL_ARB_create_context_profile;
+    }
+
+    bool WGL_ARB_create_context_robustness() {
+        return _WGL_ARB_create_context_robustness;
+    }
+
+    bool WGL_ARB_framebuffer_sRGB() {
+        return _WGL_ARB_framebuffer_sRGB;
+    }
+
+    bool WGL_ARB_make_current_read() {
+        return _WGL_ARB_make_current_read;
+    }
+
+    bool WGL_ARB_multisample() {
+        return _WGL_ARB_multisample;
+    }
+
+    bool WGL_ARB_pbuffer() {
+        return _WGL_ARB_pbuffer;
+    }
+
+    bool WGL_ARB_pixel_format() {
+        return _WGL_ARB_pixel_format;
+    }
+
+    bool WGL_ARB_pixel_format_float() {
+        return _WGL_ARB_pixel_format_float;
+    }
+
+    bool WGL_ARB_render_texture() {
+        return _WGL_ARB_render_texture;
+    }
+
+    bool WGL_ARB_robustness_application_isolation() {
+        return _WGL_ARB_robustness_application_isolation;
+    }
+
+    bool WGL_ARB_robustness_share_group_isolation() {
+        return _WGL_ARB_robustness_share_group_isolation;
+    }
+
+    bool WGL_EXT_swap_control() {
+        return _WGL_EXT_swap_control;
+    }
 }
 
-private __gshared
-{
+private __gshared {
     bool _WGL_ARB_extensions_string;
     bool _WGL_ARB_buffer_region;
     bool _WGL_ARB_create_context;
@@ -310,8 +334,7 @@ private __gshared
     bool _WGL_EXT_swap_control;
 }
 
-enum
-{
+enum {
     // WGL_ARB_buffer_region
     WGL_FRONT_COLOR_BUFFER_BIT_ARB = 0x00000001,
     WGL_BACK_COLOR_BUFFER_BIT_ARB = 0x00000002,
