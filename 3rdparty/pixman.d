@@ -33,36 +33,59 @@ enum pixman_fixed_1 = pixman_int_to_fixed(1);
 enum pixman_fixed_1_minus_e = pixman_fixed_1 - pixman_fixed_e;
 enum pixman_fixed_minus_1 = pixman_int_to_fixed(-1);
 
-int            pixman_fixed_to_int    (pixman_fixed_t f) { return cast(int)(f >> 16); }
-pixman_fixed_t pixman_int_to_fixed    (int i)            { return cast(pixman_fixed_t)(i << 16); }
-double         pixman_fixed_to_double (pixman_fixed_t f) { return cast(double)(f / cast(double)pixman_fixed_1); }
-pixman_fixed_t pixman_double_to_fixed (double d)         { return cast(pixman_fixed_t)(d * 65_536.0); }
-pixman_fixed_t pixman_fixed_frac      (pixman_fixed_t f) { return f & pixman_fixed_1_minus_e; }
-pixman_fixed_t pixman_fixed_floor     (pixman_fixed_t f) { return f & ~pixman_fixed_1_minus_e; }
-pixman_fixed_t pixman_fixed_ceil      (pixman_fixed_t f) { return pixman_fixed_floor(f + pixman_fixed_1_minus_e); }
-pixman_fixed_t pixman_fixed_fraction  (pixman_fixed_t f) { return f & pixman_fixed_1_minus_e; }
-pixman_fixed_t pixman_fixed_mod_2     (pixman_fixed_t f) { return f & (pixman_fixed_1 | pixman_fixed_1_minus_e); }
+int pixman_fixed_to_int(pixman_fixed_t f) {
+    return cast(int)(f >> 16);
+}
+
+pixman_fixed_t pixman_int_to_fixed(int i) {
+    return cast(pixman_fixed_t)(i << 16);
+}
+
+double pixman_fixed_to_double(pixman_fixed_t f) {
+    return cast(double)(f / cast(double)pixman_fixed_1);
+}
+
+pixman_fixed_t pixman_double_to_fixed(double d) {
+    return cast(pixman_fixed_t)(d * 65_536.0);
+}
+
+pixman_fixed_t pixman_fixed_frac(pixman_fixed_t f) {
+    return f & pixman_fixed_1_minus_e;
+}
+
+pixman_fixed_t pixman_fixed_floor(pixman_fixed_t f) {
+    return f & ~pixman_fixed_1_minus_e;
+}
+
+pixman_fixed_t pixman_fixed_ceil(pixman_fixed_t f) {
+    return pixman_fixed_floor(f + pixman_fixed_1_minus_e);
+}
+
+pixman_fixed_t pixman_fixed_fraction(pixman_fixed_t f) {
+    return f & pixman_fixed_1_minus_e;
+}
+
+pixman_fixed_t pixman_fixed_mod_2(pixman_fixed_t f) {
+    return f & (pixman_fixed_1 | pixman_fixed_1_minus_e);
+}
 
 /*
  * Misc structs
  */
 
-struct pixman_color_t
-{
+struct pixman_color_t {
     ushort red;
     ushort green;
     ushort blue;
     ushort alpha;
 }
 
-struct pixman_point_fixed_t
-{
+struct pixman_point_fixed_t {
     pixman_fixed_t x;
     pixman_fixed_t y;
 }
 
-struct pixman_line_fixed_t
-{
+struct pixman_line_fixed_t {
     pixman_point_fixed_t p1, p2;
 }
 
@@ -70,13 +93,11 @@ struct pixman_line_fixed_t
  * Fixed point matrices
  */
 
-struct pixman_vector_t
-{
+struct pixman_vector_t {
     pixman_fixed_t[3] vector;
 }
 
-struct pixman_transform_t
-{
+struct pixman_transform_t {
     pixman_fixed_t[3][3] matrix;
 }
 
@@ -131,16 +152,14 @@ pixman_bool_t pixman_transform_is_inverse(
     const pixman_transform_t* a,
     const pixman_transform_t* b);
 
-enum pixman_repeat_t
-{
+enum pixman_repeat_t {
     none,
     normal,
     pad,
     reflect
 }
 
-enum pixman_filter_t
-{
+enum pixman_filter_t {
     fast,
     good,
     best,
@@ -170,8 +189,7 @@ enum pixman_filter_t
     separable_convolution
 }
 
-enum pixman_op_t
-{
+enum pixman_op_t {
     clear = 0x00,
     src = 0x01,
     dst = 0x02,
@@ -234,26 +252,22 @@ enum pixman_op_t
  * Regions
  */
 
-struct pixman_region16_data_t
-{
+struct pixman_region16_data_t {
     long size;
     long numRects;
     /* pixman_box16_t[size] rects;   in memory but not explicitly declared */
 }
 
-struct pixman_box16_t
-{
+struct pixman_box16_t {
     short x1, y1, x2, y2;
 }
 
-struct pixman_region16_t
-{
+struct pixman_region16_t {
     pixman_box16_t extents;
     pixman_region16_data_t* data;
 }
 
-enum pixman_region_overlap_t
-{
+enum pixman_region_overlap_t {
     OUT,
     IN,
     PART
@@ -323,20 +337,17 @@ void pixman_region_clear(pixman_region16_t* region);
  * 32 bit regions
  */
 
-struct pixman_region32_data_t
-{
+struct pixman_region32_data_t {
     long size;
     long numRects;
     /* pixman_box32_t[size] rects;   in memory but not explicitly declared */
 }
 
-struct pixman_box32_t
-{
+struct pixman_box32_t {
     int x1, y1, x2, y2;
 }
 
-struct pixman_region32_t
-{
+struct pixman_region32_t {
     pixman_box32_t extents;
     pixman_region32_data_t* data;
 }
@@ -442,8 +453,7 @@ alias pixman_read_memory_func_t = uint function(const void* src, int size);
 alias pixman_write_memory_func_t = void function(void* dst, uint value, int size);
 alias pixman_image_destroy_func_t = void function(pixman_image_t* image, void* data);
 
-struct pixman_gradient_stop_t
-{
+struct pixman_gradient_stop_t {
     pixman_fixed_t x;
     pixman_color_t color;
 }
@@ -451,8 +461,7 @@ struct pixman_gradient_stop_t
 enum PIXMAN_MAX_INDEXED = 256;
 alias pixman_index_type = ubyte;
 
-struct pixman_indexed_t
-{
+struct pixman_indexed_t {
     pixman_bool_t color;
     uint[PIXMAN_MAX_INDEXED] rgba;
     pixman_index_type[32_768] ent;
@@ -463,27 +472,47 @@ struct pixman_indexed_t
  * sample implementation allows only packed RGB and GBR
  * representations for data to simplify software rendering
  */
-int pixman_format(int bpp, int type, int a, int r, int g, int b)
-{
+int pixman_format(int bpp, int type, int a, int r, int g, int b) {
     return (bpp << 24) | (type << 16) | (a << 12) | (r << 8) | (g << 4) | b;
 }
 
-int pixman_format_bpp  (int f) { return (f >> 24); }
-int pixman_format_type (int f) { return (f >> 16) & 0xff; }
-int pixman_format_a    (int f) { return (f >> 12) & 0x0f; }
-int pixman_format_r    (int f) { return (f >> 8) & 0x0f; }
-int pixman_format_g    (int f) { return (f >> 4) & 0x0f; }
-int pixman_format_b    (int f) { return f & 0x0f; }
-int pixman_format_rgb  (int f) { return f & 0xfff; }
-int pixman_format_vis  (int f) { return f & 0xffff; }
+int pixman_format_bpp(int f) {
+    return (f >> 24);
+}
 
-int pixman_format_depth(int f)
-{
+int pixman_format_type(int f) {
+    return (f >> 16) & 0xff;
+}
+
+int pixman_format_a(int f) {
+    return (f >> 12) & 0x0f;
+}
+
+int pixman_format_r(int f) {
+    return (f >> 8) & 0x0f;
+}
+
+int pixman_format_g(int f) {
+    return (f >> 4) & 0x0f;
+}
+
+int pixman_format_b(int f) {
+    return f & 0x0f;
+}
+
+int pixman_format_rgb(int f) {
+    return f & 0xfff;
+}
+
+int pixman_format_vis(int f) {
+    return f & 0xffff;
+}
+
+int pixman_format_depth(int f) {
     return pixman_format_a(f) + pixman_format_r(f) + pixman_format_g(f) + pixman_format_b(f);
 }
 
-enum
-{
+enum {
     PIXMAN_TYPE_OTHER = 0,
     PIXMAN_TYPE_A,
     PIXMAN_TYPE_ARGB,
@@ -497,15 +526,13 @@ enum
     PIXMAN_TYPE_ARGB_SRGB,
 }
 
-bool pixman_format_color(int f)
-{
+bool pixman_format_color(int f) {
     return pixman_format_type(f) == PIXMAN_TYPE_ARGB || pixman_format_type(f) == PIXMAN_TYPE_ABGR ||
-           pixman_format_type(f) == PIXMAN_TYPE_BGRA || pixman_format_type(f) == PIXMAN_TYPE_RGBA;
+        pixman_format_type(f) == PIXMAN_TYPE_BGRA || pixman_format_type(f) == PIXMAN_TYPE_RGBA;
 }
 
 /* 32bpp formats */
-enum pixman_format_code_t
-{
+enum pixman_format_code_t {
     a8r8g8b8 = pixman_format(32, PIXMAN_TYPE_ARGB, 8, 8, 8, 8),
     x8r8g8b8 = pixman_format(32, PIXMAN_TYPE_ARGB, 0, 8, 8, 8),
     a8b8g8r8 = pixman_format(32, PIXMAN_TYPE_ABGR, 8, 8, 8, 8),
@@ -664,8 +691,7 @@ int pixman_image_get_stride(pixman_image_t* image); /* in bytes */
 int pixman_image_get_depth(pixman_image_t* image);
 pixman_format_code_t pixman_image_get_format(pixman_image_t* image);
 
-enum pixman_kernel_t
-{
+enum pixman_kernel_t {
     impulse,
     box,
     linear,
@@ -729,8 +755,7 @@ void pixman_image_composite32(
  * Glyphs
  */
 struct pixman_glyph_cache_t;
-struct pixman_glyph_t
-{
+struct pixman_glyph_t {
     int x, y;
     const void* glyph;
 }
@@ -801,8 +826,7 @@ void pixman_composite_glyphs_no_mask(
  * and can be quickly stepped across small or large gaps in the
  * sample grid
  */
-struct pixman_edge_t
-{
+struct pixman_edge_t {
     pixman_fixed_t x;
     pixman_fixed_t e;
     pixman_fixed_t stepx;
@@ -816,30 +840,25 @@ struct pixman_edge_t
     pixman_fixed_t dx_big;
 }
 
-struct pixman_trapezoid_t
-{
+struct pixman_trapezoid_t {
     pixman_fixed_t top, bottom;
     pixman_line_fixed_t left, right;
 }
 
-struct pixman_triangle_t
-{
+struct pixman_triangle_t {
     pixman_point_fixed_t p1, p2, p3;
 }
 
 /* whether 't' is a well defined not obviously empty trapezoid */
-bool pixman_trapezoid_valid(ref const pixman_trapezoid_t t)
-{
+bool pixman_trapezoid_valid(ref const pixman_trapezoid_t t) {
     return t.left.p1.y != t.left.p2.y && t.right.p1.y != t.right.p2.y && t.bottom > t.top;
 }
 
-struct pixman_span_fix_t
-{
+struct pixman_span_fix_t {
     pixman_fixed_t l, r, y;
 }
 
-struct pixman_trap_t
-{
+struct pixman_trap_t {
     pixman_span_fix_t top, bot;
 }
 
