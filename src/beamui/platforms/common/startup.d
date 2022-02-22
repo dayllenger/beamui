@@ -21,53 +21,40 @@ import beamui.text.ftfonts;
     On linux/mac - tries to init freetype with fontconfig, and falls back to hardcoded font paths.
     On console - simply uses console font manager.
 */
-bool initFontManager()
-{
-    static if (BACKEND_GUI)
-    {
-        version (Windows)
-        {
+bool initFontManager() {
+    static if (BACKEND_GUI) {
+        version (Windows) {
             import beamui.text.win32fonts;
 
             // dfmt off
             static if (USE_FREETYPE)/**/
             // dfmt on
-            try
-            {
+            try {
                 Log.v("Trying to init FreeType font manager");
 
                 auto ft = new FreeTypeFontManager;
 
                 tryHardcodedFontPaths(ft);
 
-                if (ft.registeredFontCount > 0)
-                {
+                if (ft.registeredFontCount > 0) {
                     FontManager.instance = ft;
-                }
-                else
-                {
+                } else {
                     Log.w("No fonts registered in FreeType font manager. Disabling FreeType.");
                     destroy(ft);
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 Log.e("Cannot create FreeTypeFontManager - falling back to win32");
             }
 
             // use Win32 font manager
-            if (FontManager.instance is null)
-            {
+            if (FontManager.instance is null) {
                 FontManager.instance = new Win32FontManager;
             }
             return true;
-        }
-        else
-        {
+        } else {
             auto ft = new FreeTypeFontManager;
 
-            if (!registerFontConfigFonts(ft))
-            {
+            if (!registerFontConfigFonts(ft)) {
                 Log.w("No fonts found using FontConfig. Trying hardcoded paths.");
                 tryHardcodedFontPaths(ft);
             }
@@ -78,9 +65,7 @@ bool initFontManager()
             FontManager.instance = ft;
             return true;
         }
-    }
-    else
-    {
+    } else {
         import beamui.text.consolefont;
 
         FontManager.instance = new ConsoleFontManager;
@@ -91,8 +76,7 @@ bool initFontManager()
 version (Windows)
 static if (USE_FREETYPE)/**/
 // dfmt on
-private void tryHardcodedFontPaths(FreeTypeFontManager ft)
-{
+private void tryHardcodedFontPaths(FreeTypeFontManager ft) {
     import core.sys.windows.shlobj;
     import core.sys.windows.windows;
     import std.utf;
@@ -101,11 +85,9 @@ private void tryHardcodedFontPaths(FreeTypeFontManager ft)
     alias FW = FontWeight;
 
     string path = "c:\\Windows\\Fonts\\";
-    static if (false)
-    { // SHGetFolderPathW not found in shell32.lib
+    static if (false) { // SHGetFolderPathW not found in shell32.lib
         WCHAR[MAX_PATH] szPath;
-        static if (false)
-        {
+        static if (false) {
             const CSIDL_FLAG_NO_ALIAS = 0x1000;
             const CSIDL_FLAG_DONT_UNEXPAND = 0x2000;
             // dfmt off
@@ -120,11 +102,8 @@ private void tryHardcodedFontPaths(FreeTypeFontManager ft)
                 path = toUTF8(fromWStringz(szPath)); // FIXME: compile error
             }
             // dfmt on
-        }
-        else
-        {
-            if (GetWindowsDirectory(szPath.ptr, MAX_PATH - 1))
-            {
+        } else {
+            if (GetWindowsDirectory(szPath.ptr, MAX_PATH - 1)) {
                 path = toUTF8(fromWStringz(szPath));
                 Log.i("Windows directory: ", path);
                 path ~= "\\Fonts\\";
@@ -248,16 +227,14 @@ private void tryHardcodedFontPaths(FreeTypeFontManager ft)
 version (Posix)
 static if (USE_FREETYPE)/**/
 // dfmt on
-private void tryHardcodedFontPaths(FreeTypeFontManager ft)
-{
+private void tryHardcodedFontPaths(FreeTypeFontManager ft) {
     import std.file : DirEntry, exists, isDir;
     import beamui.core.files : AttrFilter, listDirectory;
 
     alias FF = GenericFontFamily;
     alias FW = FontWeight;
 
-    static bool registerFonts(FreeTypeFontManager ft, string path)
-    {
+    static bool registerFonts(FreeTypeFontManager ft, string path) {
         if (!exists(path) || !isDir(path))
             return false;
         ft.registerFont(path ~ "DejaVuSans.ttf", FF.sans_serif, "DejaVuSans", false, FW.normal);
@@ -271,47 +248,37 @@ private void tryHardcodedFontPaths(FreeTypeFontManager ft)
         return true;
     }
 
-    static string[] findFontsInDirectory(string dir)
-    {
+    static string[] findFontsInDirectory(string dir) {
         DirEntry[] entries;
-        try
-        {
+        try {
             entries = listDirectory(dir, AttrFilter.files, ["*.ttf"]);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             return null;
         }
 
         string[] res;
-        foreach (entry; entries)
-        {
+        foreach (entry; entries) {
             res ~= entry.name;
         }
         return res;
     }
 
-    static void registerFontsFromDirectory(FreeTypeFontManager ft, string dir)
-    {
+    static void registerFontsFromDirectory(FreeTypeFontManager ft, string dir) {
         string[] fontFiles = findFontsInDirectory(dir);
         Log.d("Fonts in ", dir, " : ", fontFiles);
         foreach (file; fontFiles)
             ft.registerFont(file);
     }
 
-    version (Android)
-    {
+    version (Android) {
         registerFontsFromDirectory(ft, "/system/fonts/");
-    }
-    else
-    {
+    } else {
         registerFonts(ft, "/usr/share/fonts/truetype/dejavu/");
         registerFonts(ft, "/usr/share/fonts/TTF/");
         registerFonts(ft, "/usr/share/fonts/dejavu/");
         registerFonts(ft, "/usr/share/fonts/truetype/ttf-dejavu/"); // let it compile on Debian Wheezy
     }
-    version (OSX)
-    {
+    version (OSX) {
         enum lib = "/Library/Fonts/";
 
         ft.registerFont(lib ~ "Arial.ttf", FF.sans_serif, "Arial", false, FW.normal, true);
@@ -369,77 +336,50 @@ private void tryHardcodedFontPaths(FreeTypeFontManager ft)
     Initialize logging (for win32 and console - to file ui.log, for other platforms - stderr;
     log level is TRACE for debug builds, and WARN for release builds)
 */
-void initLogs()
-{
+void initLogs() {
     static import std.stdio;
 
-    static std.stdio.File* openLogFile()
-    {
-        try
-        {
+    static std.stdio.File* openLogFile() {
+        try {
             return new std.stdio.File("ui.log", "w");
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             std.stdio.printf("%.*s\n", cast(int)e.msg.length, e.msg.ptr);
             return null;
         }
     }
 
-    static if (BACKEND_CONSOLE)
-    {
-        debug
-        {
+    static if (BACKEND_CONSOLE) {
+        debug {
             Log.setFileLogger(openLogFile());
             Log.setLogLevel(LogLevel.trace);
-        }
-    else
-        {
+        } else {
             // no logging unless version ForceLogs is set
-            version (ForceLogs)
-            {
+            version (ForceLogs) {
                 Log.setFileLogger(openLogFile());
             }
         }
-    }
-    else
-    {
-        version (Windows)
-        {
-            debug
-            {
+    } else {
+        version (Windows) {
+            debug {
                 Log.setFileLogger(openLogFile());
-            }
-        else
-            {
+            } else {
                 // no logging unless version ForceLogs is set
-                version (ForceLogs)
-                {
+                version (ForceLogs) {
                     Log.setFileLogger(openLogFile());
                 }
             }
-        }
-        else version (Android)
-        {
+        } else version (Android) {
             Log.setLogTag("beamui");
             Log.setLogLevel(LogLevel.trace);
-        }
-        else
-        {
+        } else {
             Log.setStderrLogger();
         }
-        debug
-        {
+        debug {
             Log.setLogLevel(LogLevel.trace);
-        }
-    else
-        {
-            version (ForceLogs)
-            {
+        } else {
+            version (ForceLogs) {
                 Log.setLogLevel(LogLevel.trace);
-            }
-            else
-            {
+            } else {
                 Log.setLogLevel(LogLevel.warn);
             }
         }
@@ -448,12 +388,10 @@ void initLogs()
 }
 
 /// Call this on application initialization
-void initResourceManagers()
-{
+void initResourceManagers() {
     Log.d("Initializing resource managers");
 
-    static if (USE_FREETYPE)
-    {
+    static if (USE_FREETYPE) {
         STD_FONT_FACES = [
             "Arial": 12,
             "Consolas": 12,
@@ -478,19 +416,15 @@ void initResourceManagers()
 
     resourceList.embedOne!"themes/default.css";
 
-    version (NoStandardResources)
-    {
-    }
-    else
-    {
+    version (NoStandardResources) {
+    } else {
         static if (BACKEND_GUI)
             resourceList.embed!"standard_resources.list";
         else
             resourceList.embed!"standard_resources.console.list";
     }
 
-    static if (BACKEND_GUI)
-    {
+    static if (BACKEND_GUI) {
         imageCache = new ImageCache;
     }
 
@@ -498,8 +432,7 @@ void initResourceManagers()
 }
 
 /// Call this when all resources are supposed to be freed to report counts of non-freed resources by type
-void releaseResourcesOnAppExit()
-{
+void releaseResourcesOnAppExit() {
     import core.memory : GC;
     import beamui.style.style;
     import beamui.style.theme;
@@ -512,17 +445,13 @@ void releaseResourcesOnAppExit()
     resourceList = ResourceList.init;
     FontManager.instance = null;
 
-    static if (BACKEND_GUI)
-    {
+    static if (BACKEND_GUI) {
         imageCache = null;
     }
 
-    debug
-    {
-        static void checkInstanceCount(T)()
-        {
-            if (T.debugInstanceCount > 0)
-            {
+    debug {
+        static void checkInstanceCount(T)() {
+            if (T.debugInstanceCount > 0) {
                 enum msg = "Undestroyed instances of " ~ T.stringof ~ ": ";
                 Log.e(msg, T.debugInstanceCount);
             }
@@ -533,8 +462,7 @@ void releaseResourcesOnAppExit()
         checkInstanceCount!Style();
         checkInstanceCount!ImageDrawable();
         checkInstanceCount!Drawable();
-        static if (USE_FREETYPE)
-        {
+        static if (USE_FREETYPE) {
             checkInstanceCount!FreeTypeFontFile();
             checkInstanceCount!FreeTypeFont();
         }
@@ -546,17 +474,14 @@ void releaseResourcesOnAppExit()
 
 // a workaround for segfaults in travis-ci builds.
 // see investigation: https://github.com/dlang/dub/issues/1812
-version (unittest)
-{
+version (unittest) {
     static if (__VERSION__ >= 2087)
         extern (C) __gshared string[] rt_options = ["gcopt=parallel:0"];
 }
 
 // for main function
-version (Windows)
-{
-    version (LDC)
-    {
+version (Windows) {
+    version (LDC) {
         static if (__VERSION__ >= 2091)
             pragma(linkerDirective, "/ENTRY:wmainCRTStartup");
         else
