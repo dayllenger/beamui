@@ -20,11 +20,9 @@ import beamui.core.logger;
 import beamui.core.resources;
 
 /// Translate a message into current application language
-dstring tr(string original)
-{
+dstring tr(string original) {
     string translated = original;
-    foreach (tr; translators)
-    {
+    foreach (tr; translators) {
         translated = tr.gettext(original);
         if (translated !is original)
             break;
@@ -33,12 +31,10 @@ dstring tr(string original)
 }
 
 /// Translate a singular or a plural form of the message by the number
-dstring tr(string singular, string plural, int n)
-{
+dstring tr(string singular, string plural, int n) {
     string def = n > 1 ? plural : singular;
     string translated = def;
-    foreach (tr; translators)
-    {
+    foreach (tr; translators) {
         translated = tr.ngettext(singular, plural, n);
         if (translated !is def)
             break;
@@ -47,11 +43,9 @@ dstring tr(string singular, string plural, int n)
 }
 
 /// Load translations for language from .mo file
-void loadTranslator(string lang)
-{
+void loadTranslator(string lang) {
     auto filename = resourceList.getPathByID(lang ~ ".mo");
-    if (filename)
-    {
+    if (filename) {
         auto content = loadResourceBytes(filename);
         translators ~= new MoFile(cast(immutable void[])content);
     }

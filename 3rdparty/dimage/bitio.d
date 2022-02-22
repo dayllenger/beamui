@@ -33,38 +33,30 @@ module dimage.bitio; //dlib.core.bitio
  * Bit-level manipulations
  */
 
-enum Endian
-{
+enum Endian {
     Little,
     Big
 }
 
-T hiNibble(T)(T b)
-{
+T hiNibble(T)(T b) {
     return ((b >> 4) & 0x0F);
 }
 
-T loNibble(T)(T b)
-{
+T loNibble(T)(T b) {
     return (b & 0x0F);
 }
 
-T swapEndian16(T)(T n)
-{
+T swapEndian16(T)(T n) {
     return cast(T)((n >> 8) | (n << 8));
 }
 
-T setBit(T)(T b, uint pos, bool state)
-{
+T setBit(T)(T b, uint pos, bool state) {
     if (state)
         return cast(T)(b | (1 << pos));
     else
         return cast(T)(b & ~(1 << pos));
 }
 
-bool getBit(T)(T b, uint pos)
-{
+bool getBit(T)(T b, uint pos) {
     return ((b & (1 << pos)) != 0);
 }
-
-

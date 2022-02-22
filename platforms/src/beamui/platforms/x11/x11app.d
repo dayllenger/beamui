@@ -9,8 +9,8 @@ module beamui.platforms.x11.x11app;
 
 import beamui.core.config;
 
-static if (BACKEND_GUI):
-import core.stdc.config : c_long, c_ulong;
+static if (BACKEND_GUI)
+     : import core.stdc.config : c_long, c_ulong;
 import std.string : fromStringz, toStringz;
 import std.utf : toUTF32, toUTF8;
 
@@ -38,8 +38,7 @@ import beamui.platforms.common.platform;
 import beamui.platforms.common.startup;
 import beamui.widgets.widget : CursorType;
 
-static if (USE_OPENGL)
-{
+static if (USE_OPENGL) {
     import glx;
     import beamui.graphics.gl.api : GLint, GL_TRUE;
 
@@ -51,8 +50,7 @@ static if (USE_OPENGL)
 alias XWindow = x11.Xlib.Window;
 alias DWindow = beamui.platforms.common.platform.Window;
 
-private struct MwmHints
-{
+private struct MwmHints {
     int flags;
     int functions;
     int decorations;
@@ -60,8 +58,7 @@ private struct MwmHints
     int status;
 }
 
-private enum
-{
+private enum {
     MWM_HINTS_FUNCTIONS = (1L << 0),
     MWM_HINTS_DECORATIONS = (1L << 1),
 
@@ -73,8 +70,7 @@ private enum
     MWM_FUNC_CLOSE = (1L << 5)
 }
 
-private __gshared
-{
+private __gshared {
     Display* x11display;
     Display* x11display2;
     int defaultScreenNum;
@@ -85,21 +81,18 @@ private __gshared
     Cursor[CursorType.max + 1] x11cursors;
 }
 
-private struct AtomRequest
-{
+private struct AtomRequest {
     const char* name;
     bool createOnMissing;
 
-    Atom get()
-    {
+    Atom get() {
         const onlyIfExists = createOnMissing ? False : True;
         return XInternAtom(x11display, name, onlyIfExists);
     }
 }
 
 /// Atoms are property handles
-private struct Atoms
-{
+private struct Atoms {
     Atom UTF8_STRING;
     Atom CLIPBOARD;
     Atom TARGETS;
@@ -131,8 +124,7 @@ private struct Atoms
 
     enum ATOM_COUNT = Atoms.tupleof.length;
 
-    void setup()
-    {
+    void setup() {
         assert(x11display, "X Connection must be established before getting atoms");
         // FIXME: not sure which atoms should be taken with or without createOnMissing flag
         AtomRequest[ATOM_COUNT] requests = [
@@ -163,15 +155,13 @@ private struct Atoms
             this.tupleof[i] = requests[i].get();
     }
 
-    Atom[] protocols() return
-    {
+    Atom[] protocols() return {
         return (&WM_DELETE_WINDOW)[0 .. 2];
     }
 }
 
 // Cursor font constants
-enum
-{
+enum {
     XC_X_cursor = 0,
     XC_arrow = 2,
     XC_based_arrow_down = 4,
@@ -251,8 +241,7 @@ enum
     XC_xterm = 152,
 }
 
-private void createCursors()
-{
+private void createCursors() {
     x11cursors[CursorType.none] = createEmptyCursor();
 
     createCursor(CursorType.automatic, XC_arrow);
@@ -292,13 +281,11 @@ private void createCursors()
     createCursor(CursorType.zoomOut, XC_left_ptr);
 }
 
-private void createCursor(CursorType cursor, ushort icon)
-{
+private void createCursor(CursorType cursor, ushort icon) {
     x11cursors[cursor] = XCreateFontCursor(x11display, icon);
 }
 
-private Cursor createEmptyCursor()
-{
+private Cursor createEmptyCursor() {
     char[1] data = 0;
     auto pixmap = XCreateBitmapFromData(x11display, DefaultRootWindow(x11display), data.ptr, 1, 1);
     if (!pixmap)
@@ -310,17 +297,14 @@ private Cursor createEmptyCursor()
     return cursor;
 }
 
-private void freeCursors()
-{
-    foreach (ref c; x11cursors)
-    {
+private void freeCursors() {
+    foreach (ref c; x11cursors) {
         XFreeCursor(x11display, c);
         c = Cursor.init;
     }
 }
 
-private GC createGC(Display* display, XWindow win)
-{
+private GC createGC(Display* display, XWindow win) {
     GC gc; // handle for newly created graphics context
     const valuemask = GCFunction | GCBackground | GCForeground | GCPlaneMask;
     XGCValues values;
@@ -335,10 +319,8 @@ private GC createGC(Display* display, XWindow win)
     return gc;
 }
 
-final class X11Window : DWindow
-{
-    private
-    {
+final class X11Window : DWindow {
+    private {
         X11Platform _platform;
 
         XWindow _win;
@@ -359,8 +341,7 @@ final class X11Window : DWindow
         SizeI _cachedSize;
     }
 
-    this(X11Platform platform, dstring caption, DWindow parent, WindowOptions options, uint w = 0, uint h = 0)
-    {
+    this(X11Platform platform, dstring caption, DWindow parent, WindowOptions options, uint w = 0, uint h = 0) {
         super(parent, options);
         _platform = platform;
         _windowState = WindowState.hidden;
@@ -381,32 +362,27 @@ final class X11Window : DWindow
             icon = imageCache.get(platform.defaultWindowIcon);
     }
 
-    ~this()
-    {
+    ~this() {
         XSyncDestroyCounter(x11display, syncCounter);
 
-        if (_gc)
-        {
+        if (_gc) {
             XFreeGC(x11display, _gc);
             _gc = null;
         }
-        if (_win)
-        {
+        if (_win) {
             XDestroyWindow(x11display, _win);
             _win = 0;
         }
     }
 
-    override protected void cleanup()
-    {
+    override protected void cleanup() {
         static if (USE_OPENGL)
             bindContext(); // required to correctly destroy GL objects
         eliminate(_paintEngine);
         _backbuffer = Bitmap.init;
     }
 
-    private void create()
-    {
+    private void create() {
         Log.d("Creating X11 window of size ", width, "x", height);
 
         XSetWindowAttributes attrs;
@@ -421,10 +397,8 @@ final class X11Window : DWindow
 
         Visual* visual = DefaultVisual(x11display, defaultScreenNum);
         int depth = DefaultDepth(x11display, defaultScreenNum);
-        static if (USE_OPENGL)
-        {
-            if (openglEnabled)
-            {
+        static if (USE_OPENGL) {
+            if (openglEnabled) {
                 mask |= CWColormap;
                 attrs.colormap = x11cmap;
                 visual = cast(Visual*)x11visual.visual;
@@ -433,9 +407,8 @@ final class X11Window : DWindow
         }
 
         _win = XCreateWindow(x11display, DefaultRootWindow(x11display), 0, 0, width, height, 0,
-                depth, InputOutput, visual, mask, &attrs);
-        if (!_win)
-        {
+            depth, InputOutput, visual, mask, &attrs);
+        if (!_win) {
             Log.e("X11: Failed to create window"); // TODO: print error
             return;
         }
@@ -448,16 +421,14 @@ final class X11Window : DWindow
             PropModeReplace, cast(ubyte*)&syncCounter, 1);
 
         auto classHint = XAllocClassHint();
-        if (classHint)
-        {
+        if (classHint) {
             classHint.res_name = _platform._classname;
             classHint.res_class = _platform._classname;
             XSetClassHint(x11display, _win, classHint);
             XFree(classHint);
         }
 
-        if (!(options & WindowOptions.resizable))
-        {
+        if (!(options & WindowOptions.resizable)) {
             XSizeHints sizeHints;
             sizeHints.min_width = width;
             sizeHints.min_height = height;
@@ -466,41 +437,29 @@ final class X11Window : DWindow
             sizeHints.flags = PMaxSize | PMinSize;
             XSetWMNormalHints(x11display, _win, &sizeHints);
         }
-        if (options & WindowOptions.fullscreen)
-        {
-            if (atoms._NET_WM_STATE_FULLSCREEN != None)
-            {
+        if (options & WindowOptions.fullscreen) {
+            if (atoms._NET_WM_STATE_FULLSCREEN != None) {
                 changeWindowState(_NET_WM_STATE_ADD, atoms._NET_WM_STATE_FULLSCREEN);
-            }
-            else
+            } else
                 Log.w("Missing _NET_WM_STATE_FULLSCREEN atom");
         }
-        if (options & WindowOptions.borderless)
-        {
-            if (atoms._MOTIF_WM_HINTS != None)
-            {
+        if (options & WindowOptions.borderless) {
+            if (atoms._MOTIF_WM_HINTS != None) {
                 MwmHints hints;
                 hints.flags = MWM_HINTS_DECORATIONS;
                 XChangeProperty(x11display, _win, atoms._MOTIF_WM_HINTS, atoms._MOTIF_WM_HINTS, 32,
-                        PropModeReplace, cast(ubyte*)&hints, hints.sizeof / 4);
+                    PropModeReplace, cast(ubyte*)&hints, hints.sizeof / 4);
             }
         }
-        if (options & WindowOptions.modal)
-        {
-            if (auto p = cast(X11Window)parentWindow)
-            {
+        if (options & WindowOptions.modal) {
+            if (auto p = cast(X11Window)parentWindow) {
                 XSetTransientForHint(x11display, _win, p._win);
-            }
-            else
-            {
+            } else {
                 Log.w("Top-level modal window");
             }
-            if (atoms._NET_WM_STATE_MODAL != None)
-            {
+            if (atoms._NET_WM_STATE_MODAL != None) {
                 changeWindowState(_NET_WM_STATE_ADD, atoms._NET_WM_STATE_MODAL);
-            }
-            else
-            {
+            } else {
                 Log.w("Missing _NET_WM_STATE_MODAL atom");
             }
         }
@@ -508,21 +467,18 @@ final class X11Window : DWindow
         // create a Graphics Context
         _gc = createGC(x11display, _win);
 
-        static if (USE_OPENGL)
-        {
+        static if (USE_OPENGL) {
             _platform.createGLContext(this);
         }
 
         handleWindowStateChange(WindowState.unspecified, BoxI(0, 0, width, height));
     }
 
-    override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
-    {
+    override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none) {
         super.handleWindowStateChange(newState, newWindowRect);
     }
 
-    private void changeWindowState(int action, Atom firstProperty, Atom secondProperty = None)
-    {
+    private void changeWindowState(int action, Atom firstProperty, Atom secondProperty = None) {
         XEvent ev;
         ev.xclient = XClientMessageEvent.init;
         ev.xclient.type = ClientMessage;
@@ -535,30 +491,26 @@ final class X11Window : DWindow
             ev.xclient.data.l[2] = secondProperty;
         ev.xclient.data.l[3] = 0;
         XSendEvent(x11display, RootWindow(x11display, defaultScreenNum), false,
-                SubstructureNotifyMask | SubstructureRedirectMask, &ev);
+            SubstructureNotifyMask | SubstructureRedirectMask, &ev);
     }
 
-    private enum
-    {
+    private enum {
         _NET_WM_STATE_REMOVE = 0,
         _NET_WM_STATE_ADD,
         _NET_WM_STATE_TOGGLE
     }
 
-    override bool setWindowState(WindowState newState, bool activate = false, BoxI newWindowRect = BoxI.none)
-    {
+    override bool setWindowState(WindowState newState, bool activate = false, BoxI newWindowRect = BoxI.none) {
         if (_win == None)
             return false;
 
         bool result;
-        switch (newState)
-        {
+        switch (newState) {
         case WindowState.maximized:
             if (atoms._NET_WM_STATE != None &&
-                    atoms._NET_WM_STATE_MAXIMIZED_HORZ != None && atoms._NET_WM_STATE_MAXIMIZED_VERT != None)
-            {
+                atoms._NET_WM_STATE_MAXIMIZED_HORZ != None && atoms._NET_WM_STATE_MAXIMIZED_VERT != None) {
                 changeWindowState(_NET_WM_STATE_ADD, atoms._NET_WM_STATE_MAXIMIZED_HORZ,
-                        atoms._NET_WM_STATE_MAXIMIZED_VERT);
+                    atoms._NET_WM_STATE_MAXIMIZED_VERT);
                 result = true;
             }
             break;
@@ -572,18 +524,16 @@ final class X11Window : DWindow
             break;
         case WindowState.normal:
             if (atoms._NET_WM_STATE != None && atoms._NET_WM_STATE_MAXIMIZED_HORZ != None &&
-                    atoms._NET_WM_STATE_MAXIMIZED_VERT != None && atoms._NET_WM_STATE_HIDDEN != None)
-            {
+                atoms._NET_WM_STATE_MAXIMIZED_VERT != None && atoms._NET_WM_STATE_HIDDEN != None) {
                 changeWindowState(_NET_WM_STATE_REMOVE, atoms._NET_WM_STATE_MAXIMIZED_HORZ,
-                        atoms._NET_WM_STATE_MAXIMIZED_VERT);
+                    atoms._NET_WM_STATE_MAXIMIZED_VERT);
                 changeWindowState(_NET_WM_STATE_REMOVE, atoms._NET_WM_STATE_HIDDEN);
                 changeWindowState(_NET_WM_STATE_REMOVE, atoms._NET_WM_STATE_FULLSCREEN);
                 result = true;
             }
             break;
         case WindowState.fullscreen:
-            if (atoms._NET_WM_STATE != None && atoms._NET_WM_STATE_FULLSCREEN != None)
-            {
+            if (atoms._NET_WM_STATE != None && atoms._NET_WM_STATE_FULLSCREEN != None) {
                 changeWindowState(_NET_WM_STATE_ADD, atoms._NET_WM_STATE_FULLSCREEN);
                 result = true;
             }
@@ -595,21 +545,17 @@ final class X11Window : DWindow
         // change size and/or position
         bool rectChanged;
         if (newWindowRect != BoxI.none && (newState == WindowState.normal ||
-                newState == WindowState.unspecified))
-        {
+                newState == WindowState.unspecified)) {
             // change position
-            if (newWindowRect.x != int.min && newWindowRect.y != int.min)
-            {
+            if (newWindowRect.x != int.min && newWindowRect.y != int.min) {
                 XMoveWindow(x11display, _win, newWindowRect.x, newWindowRect.y);
                 rectChanged = true;
                 result = true;
             }
 
             // change size
-            if (newWindowRect.w != int.min && newWindowRect.h != int.min)
-            {
-                if (!(options & WindowOptions.resizable))
-                {
+            if (newWindowRect.w != int.min && newWindowRect.h != int.min) {
+                if (!(options & WindowOptions.resizable)) {
                     XSizeHints sizeHints;
                     sizeHints.min_width = newWindowRect.w;
                     sizeHints.min_height = newWindowRect.h;
@@ -624,8 +570,7 @@ final class X11Window : DWindow
             }
         }
 
-        if (activate)
-        {
+        if (activate) {
             XMapRaised(x11display, _win);
             result = true;
         }
@@ -633,26 +578,22 @@ final class X11Window : DWindow
 
         //needed here to make _windowRect and _windowState valid
         //example: change size by resizeWindow() and make some calculations using windowRect
-        if (rectChanged)
-        {
+        if (rectChanged) {
             handleWindowStateChange(newState, BoxI(
-                newWindowRect.x == int.min ? _windowRect.x : newWindowRect.x,
-                newWindowRect.y == int.min ? _windowRect.y : newWindowRect.y,
-                newWindowRect.w == int.min ? _windowRect.w : newWindowRect.w,
-                newWindowRect.h == int.min ? _windowRect.h : newWindowRect.h));
-        }
-        else
+                    newWindowRect.x == int.min ? _windowRect.x : newWindowRect.x,
+                    newWindowRect.y == int.min ? _windowRect.y : newWindowRect.y,
+                    newWindowRect.w == int.min ? _windowRect.w : newWindowRect.w,
+                    newWindowRect.h == int.min ? _windowRect.h : newWindowRect.h));
+        } else
             handleWindowStateChange(newState, BoxI.none);
 
         return result;
     }
 
-    override protected void handleSizeHintsChange()
-    {
+    override protected void handleSizeHintsChange() {
         SizeI mn = minSize;
         SizeI mx = maxSize;
-        if (!(options & WindowOptions.resizable))
-        {
+        if (!(options & WindowOptions.resizable)) {
             mx.w = mn.w = clamp(width, mn.w, mx.w);
             mx.h = mn.h = clamp(height, mn.h, mx.h);
         }
@@ -666,20 +607,22 @@ final class X11Window : DWindow
     }
 
     private bool _isActive;
-    override @property bool isActive() const { return _isActive; }
+    override @property bool isActive() const {
+        return _isActive;
+    }
 
-    override protected void handleWindowActivityChange(bool isWindowActive)
-    {
+    override protected void handleWindowActivityChange(bool isWindowActive) {
         _isActive = isWindowActive;
         super.handleWindowActivityChange(isWindowActive);
     }
 
     //===============================================================
 
-    override @property dstring title() const { return _title; }
+    override @property dstring title() const {
+        return _title;
+    }
 
-    override @property void title(dstring caption)
-    {
+    override @property void title(dstring caption) {
         _title = caption;
         string captionc = toUTF8(caption);
         auto captionz = cast(ubyte*)toStringz(captionc);
@@ -691,14 +634,12 @@ final class X11Window : DWindow
         XStoreName(x11display, _win, cast(char*)captionz); // this may not support unicode
         XSetWMName(x11display, _win, &nameProperty);
         XChangeProperty(x11display, _win, atoms._NET_WM_NAME, atoms.UTF8_STRING, 8, PropModeReplace,
-                captionz, cast(int)captionc.length);
+            captionz, cast(int)captionc.length);
         //XFlush(x11display); //TODO: not sure if XFlush is required
     }
 
-    override @property void icon(Bitmap ic)
-    {
-        if (!ic)
-        {
+    override @property void icon(Bitmap ic) {
+        if (!ic) {
             Log.e("Trying to set null icon for window");
             return;
         }
@@ -711,16 +652,14 @@ final class X11Window : DWindow
         propData[0] = iconw;
         propData[1] = iconh;
         const uint* iconData = iconDraw.pixels!uint;
-        foreach (i; 0 .. iconw * iconh)
-        {
+        foreach (i; 0 .. iconw * iconh) {
             propData[i + 2] = iconData[i];
         }
         XChangeProperty(x11display, _win, atoms._NET_WM_ICON, XA_CARDINAL, 32, PropModeReplace,
-                cast(ubyte*)propData.ptr, cast(int)propData.length);
+            cast(ubyte*)propData.ptr, cast(int)propData.length);
     }
 
-    override protected void show()
-    {
+    override protected void show() {
         Log.d("X11Window.show - ", _title);
 
         adjustSize();
@@ -734,8 +673,7 @@ final class X11Window : DWindow
 
     private uint _lastRedrawEventCode;
 
-    override void invalidate()
-    {
+    override void invalidate() {
         XEvent ev;
         ev.xclient = XClientMessageEvent.init;
         ev.xclient.type = ClientMessage;
@@ -748,8 +686,7 @@ final class X11Window : DWindow
         XFlush(x11display);
     }
 
-    override void close()
-    {
+    override void close() {
         _platform.closeWindow(this);
     }
 
@@ -757,8 +694,7 @@ final class X11Window : DWindow
 
     private CursorType _lastCursorType = CursorType.none;
 
-    override protected void setCursorType(CursorType type)
-    {
+    override protected void setCursorType(CursorType type) {
         if (_lastCursorType == type)
             return;
         debug (x11)
@@ -768,8 +704,7 @@ final class X11Window : DWindow
         _lastCursorType = type;
     }
 
-    private void redraw()
-    {
+    private void redraw() {
         _lastRedrawEventCode = 0;
         // use values cached by ConfigureNotify to avoid X11 calls
         const sz = _cachedSize;
@@ -777,20 +712,16 @@ final class X11Window : DWindow
             handleResize(sz.w, sz.h);
         debug (x11)
             Log.fd("X11: redraw - size: %dx%d", sz.w, sz.h);
-        if (openglEnabled)
-        {
+        if (openglEnabled) {
             static if (USE_OPENGL)
                 drawUsingOpenGL(_paintEngine);
-        }
-        else
+        } else
             drawUsingBitmap();
     }
 
     private void drawUsingBitmap()
-        in(width > 0 && height > 0)
-    {
-        if (!_paintEngine)
-        {
+    in (width > 0 && height > 0) {
+        if (!_paintEngine) {
             // create stuff on the first run
             _backbuffer = Bitmap(1, 1, PixelFormat.argb8);
             _paintEngine = new SWPaintEngine(_backbuffer);
@@ -817,13 +748,10 @@ final class X11Window : DWindow
         // no need to flush since it will be called in event loop
     }
 
-    static if (USE_OPENGL)
-    {
-        override protected bool createContext(int major, int minor)
-        {
+    static if (USE_OPENGL) {
+        override protected bool createContext(int major, int minor) {
             static bool errorOccurred;
-            extern (C) static int errorHandler(Display*, XErrorEvent*)
-            {
+            extern (C) static int errorHandler(Display*, XErrorEvent*) {
                 errorOccurred = true;
                 return 0;
             }
@@ -835,15 +763,13 @@ final class X11Window : DWindow
 
             // find top level GL context to share objects
             X11Window w = this;
-            while (w.parentWindow !is null)
-            {
+            while (w.parentWindow !is null) {
                 w = cast(X11Window)w.parentWindow;
             }
             GLXContext topLevelContext = w._glc;
 
             // create context
-            if (GLX_ARB_create_context)
-            {
+            if (GLX_ARB_create_context) {
                 int[] attribs = [
                     GLX_CONTEXT_MAJOR_VERSION_ARB, major,
                     GLX_CONTEXT_MINOR_VERSION_ARB, minor,
@@ -851,9 +777,7 @@ final class X11Window : DWindow
                     None // end
                 ];
                 _glc = glXCreateContextAttribsARB(x11display, fbConfig, topLevelContext, True, attribs.ptr);
-            }
-            else
-            {
+            } else {
                 // old style
                 _glc = glXCreateContext(x11display, x11visual, topLevelContext, True);
             }
@@ -867,44 +791,33 @@ final class X11Window : DWindow
             return _glc !is null;
         }
 
-        override protected void destroyContext()
-        {
-            if (_glc)
-            {
+        override protected void destroyContext() {
+            if (_glc) {
                 glXMakeCurrent(x11display, 0, null);
                 glXDestroyContext(x11display, _glc);
                 _glc = null;
             }
         }
 
-        override protected void handleGLReadiness()
-        {
+        override protected void handleGLReadiness() {
             disableVSync();
         }
 
-        private void disableVSync()
-        {
-            if (GLX_EXT_swap_control)
-            {
+        private void disableVSync() {
+            if (GLX_EXT_swap_control) {
                 glXSwapIntervalEXT(x11display, cast(uint)_win, 0);
-            }
-            else if (GLX_MESA_swap_control)
-            {
+            } else if (GLX_MESA_swap_control) {
                 glXSwapIntervalMESA(0);
-            }
-            else if (GLX_SGI_swap_control)
-            {
+            } else if (GLX_SGI_swap_control) {
                 glXSwapIntervalSGI(0);
             }
         }
 
-        override protected void bindContext()
-        {
+        override protected void bindContext() {
             glXMakeCurrent(x11display, cast(uint)_win, _glc);
         }
 
-        override protected void swapBuffers()
-        {
+        override protected void swapBuffers() {
             glXSwapBuffers(x11display, cast(uint)_win);
         }
     }
@@ -915,22 +828,20 @@ final class X11Window : DWindow
     private ButtonDetails _mbutton;
     private ButtonDetails _rbutton;
 
-    private MouseMods convertMouseMods(uint x11Flags, MouseButton btn, bool pressed)
-    {
+    private MouseMods convertMouseMods(uint x11Flags, MouseButton btn, bool pressed) {
         MouseMods mods = pressed ? toMouseMods(btn) : MouseMods.none;
         // X11 gives flags from the time prior to event, so f.e. if the left button
         // is pressed, there will be zero on `Button1Mask`
-        if (btn != MouseButton.left   && (x11Flags & Button1Mask) != 0)
+        if (btn != MouseButton.left && (x11Flags & Button1Mask) != 0)
             mods |= MouseMods.left;
         if (btn != MouseButton.middle && (x11Flags & Button2Mask) != 0)
             mods |= MouseMods.middle;
-        if (btn != MouseButton.right  && (x11Flags & Button3Mask) != 0)
+        if (btn != MouseButton.right && (x11Flags & Button3Mask) != 0)
             mods |= MouseMods.right;
         return mods;
     }
 
-    private MouseButton convertMouseButton(uint x11Button)
-    {
+    private MouseButton convertMouseButton(uint x11Button) {
         if (x11Button == Button1)
             return MouseButton.left;
         if (x11Button == Button2)
@@ -944,8 +855,7 @@ final class X11Window : DWindow
     private short lastx, lasty;
     private KeyMods _keyMods;
 
-    private void processMouseEvent(MouseAction action, uint x11Button, uint x11Flags, int x, int y)
-    {
+    private void processMouseEvent(MouseAction action, uint x11Button, uint x11Flags, int x, int y) {
         MouseButton btn = convertMouseButton(x11Button);
         lastPressed = convertMouseMods(x11Flags, btn, action == MouseAction.buttonDown);
         lastx = cast(short)x;
@@ -959,14 +869,10 @@ final class X11Window : DWindow
             pbuttonDetails = &_rbutton;
         else if (btn == MouseButton.middle)
             pbuttonDetails = &_mbutton;
-        if (pbuttonDetails)
-        {
-            if (action == MouseAction.buttonDown)
-            {
+        if (pbuttonDetails) {
+            if (action == MouseAction.buttonDown) {
                 pbuttonDetails.down(cast(short)x, cast(short)y, lastPressed, _keyMods);
-            }
-            else if (action == MouseAction.buttonUp)
-            {
+            } else if (action == MouseAction.buttonUp) {
                 pbuttonDetails.up(cast(short)x, cast(short)y, lastPressed, _keyMods);
             }
         }
@@ -978,10 +884,8 @@ final class X11Window : DWindow
         update();
     }
 
-    private void processWheelEvent(int deltaX, int deltaY)
-    {
-        if (deltaX != 0 || deltaY != 0)
-        {
+    private void processWheelEvent(int deltaX, int deltaY) {
+        if (deltaX != 0 || deltaY != 0) {
             const dx = cast(short)deltaX;
             const dy = cast(short)deltaY;
             auto event = new WheelEvent(lastx, lasty, lastPressed, _keyMods, dx, dy);
@@ -990,132 +894,244 @@ final class X11Window : DWindow
         }
     }
 
-    private Key convertKeyCode(KeySym x11Key, bool numlock)
-    {
+    private Key convertKeyCode(KeySym x11Key, bool numlock) {
         import x11.keysymdef;
 
-        switch (x11Key)
-        {
-            case XK_BackSpace: return Key.backspace;
-            case XK_Tab:    return Key.tab;
-            case XK_Return: return Key.enter;
-            case XK_Pause:  return Key.pause;
-            case XK_Caps_Lock: return Key.caps;
-            case XK_Escape: return Key.escape;
-            case XK_space:  return Key.space;
-            case XK_Page_Up:   return Key.pageUp;
-            case XK_Page_Down: return Key.pageDown;
-            case XK_Home:   return Key.home;
-            case XK_End:    return Key.end;
-            case XK_Left:   return Key.left;
-            case XK_Up:     return Key.up;
-            case XK_Right:  return Key.right;
-            case XK_Down:   return Key.down;
-            case XK_Insert: return Key.ins;
-            case XK_Delete: return Key.del;
-            case XK_KP_Enter:     return Key.enter;
-            case XK_KP_Page_Up:   return numlock ? Key.num9 : Key.pageUp;
-            case XK_KP_Page_Down: return numlock ? Key.num3 : Key.pageDown;
-            case XK_KP_Home:      return numlock ? Key.num7 : Key.home;
-            case XK_KP_End:       return numlock ? Key.num1 : Key.end;
-            case XK_KP_Left:      return numlock ? Key.num4 : Key.left;
-            case XK_KP_Up:        return numlock ? Key.num8 : Key.up;
-            case XK_KP_Right:     return numlock ? Key.num6 : Key.right;
-            case XK_KP_Down:      return numlock ? Key.num2 : Key.down;
-            case XK_KP_Insert:    return numlock ? Key.num0 : Key.ins;
-            case XK_KP_Delete:    return numlock ? Key.numPeriod : Key.del;
-            case XK_KP_Begin:     return numlock ? Key.num5 : Key.none;
-            case XK_KP_Add:       return Key.numAdd;
-            case XK_KP_Subtract:  return Key.numSub;
-            case XK_KP_Multiply:  return Key.numMul;
-            case XK_KP_Divide:    return Key.numDiv;
-            case XK_0: return Key.alpha0;
-            case XK_1: return Key.alpha1;
-            case XK_2: return Key.alpha2;
-            case XK_3: return Key.alpha3;
-            case XK_4: return Key.alpha4;
-            case XK_5: return Key.alpha5;
-            case XK_6: return Key.alpha6;
-            case XK_7: return Key.alpha7;
-            case XK_8: return Key.alpha8;
-            case XK_9: return Key.alpha9;
-            case XK_a: return Key.A;
-            case XK_b: return Key.B;
-            case XK_c: return Key.C;
-            case XK_d: return Key.D;
-            case XK_e: return Key.E;
-            case XK_f: return Key.F;
-            case XK_g: return Key.G;
-            case XK_h: return Key.H;
-            case XK_i: return Key.I;
-            case XK_j: return Key.J;
-            case XK_k: return Key.K;
-            case XK_l: return Key.L;
-            case XK_m: return Key.M;
-            case XK_n: return Key.N;
-            case XK_o: return Key.O;
-            case XK_p: return Key.P;
-            case XK_q: return Key.Q;
-            case XK_r: return Key.R;
-            case XK_s: return Key.S;
-            case XK_t: return Key.T;
-            case XK_u: return Key.U;
-            case XK_v: return Key.V;
-            case XK_w: return Key.W;
-            case XK_x: return Key.X;
-            case XK_y: return Key.Y;
-            case XK_z: return Key.Z;
-            case XK_bracketleft: return Key.bracketOpen;
-            case XK_bracketright: return Key.bracketClose;
-            case XK_minus: return Key.subtract;
-            case XK_comma: return Key.comma;
-            case XK_period: return Key.period;
-            case XK_Super_L: return Key.lwin;
-            case XK_Super_R: return Key.rwin;
-            case XK_F1: return Key.F1;
-            case XK_F2: return Key.F2;
-            case XK_F3: return Key.F3;
-            case XK_F4: return Key.F4;
-            case XK_F5: return Key.F5;
-            case XK_F6: return Key.F6;
-            case XK_F7: return Key.F7;
-            case XK_F8: return Key.F8;
-            case XK_F9: return Key.F9;
-            case XK_F10: return Key.F10;
-            case XK_F11: return Key.F11;
-            case XK_F12: return Key.F12;
-            case XK_F13: return Key.F13;
-            case XK_F14: return Key.F14;
-            case XK_F15: return Key.F15;
-            case XK_F16: return Key.F16;
-            case XK_F17: return Key.F17;
-            case XK_F18: return Key.F18;
-            case XK_F19: return Key.F19;
-            case XK_F20: return Key.F20;
-            case XK_F21: return Key.F21;
-            case XK_F22: return Key.F22;
-            case XK_F23: return Key.F23;
-            case XK_F24: return Key.F24;
-            case XK_Num_Lock: return Key.numlock;
-            case XK_Scroll_Lock: return Key.scroll;
-            case XK_Shift_L: return Key.lshift;
-            case XK_Shift_R: return Key.rshift;
-            case XK_Control_L: return Key.lcontrol;
-            case XK_Control_R: return Key.rcontrol;
-            case XK_Alt_L: return Key.lalt;
-            case XK_Alt_R: return Key.ralt;
-            case XK_semicolon: return Key.semicolon;
-            case XK_grave: return Key.tilde;
-            case XK_apostrophe: return Key.quote;
-            case XK_slash: return Key.slash;
-            case XK_backslash: return Key.backslash;
-            case XK_equal: return Key.equal;
-            default: return Key.none;
+        switch (x11Key) {
+        case XK_BackSpace:
+            return Key.backspace;
+        case XK_Tab:
+            return Key.tab;
+        case XK_Return:
+            return Key.enter;
+        case XK_Pause:
+            return Key.pause;
+        case XK_Caps_Lock:
+            return Key.caps;
+        case XK_Escape:
+            return Key.escape;
+        case XK_space:
+            return Key.space;
+        case XK_Page_Up:
+            return Key.pageUp;
+        case XK_Page_Down:
+            return Key.pageDown;
+        case XK_Home:
+            return Key.home;
+        case XK_End:
+            return Key.end;
+        case XK_Left:
+            return Key.left;
+        case XK_Up:
+            return Key.up;
+        case XK_Right:
+            return Key.right;
+        case XK_Down:
+            return Key.down;
+        case XK_Insert:
+            return Key.ins;
+        case XK_Delete:
+            return Key.del;
+        case XK_KP_Enter:
+            return Key.enter;
+        case XK_KP_Page_Up:
+            return numlock ? Key.num9 : Key.pageUp;
+        case XK_KP_Page_Down:
+            return numlock ? Key.num3 : Key.pageDown;
+        case XK_KP_Home:
+            return numlock ? Key.num7 : Key.home;
+        case XK_KP_End:
+            return numlock ? Key.num1 : Key.end;
+        case XK_KP_Left:
+            return numlock ? Key.num4 : Key.left;
+        case XK_KP_Up:
+            return numlock ? Key.num8 : Key.up;
+        case XK_KP_Right:
+            return numlock ? Key.num6 : Key.right;
+        case XK_KP_Down:
+            return numlock ? Key.num2 : Key.down;
+        case XK_KP_Insert:
+            return numlock ? Key.num0 : Key.ins;
+        case XK_KP_Delete:
+            return numlock ? Key.numPeriod : Key.del;
+        case XK_KP_Begin:
+            return numlock ? Key.num5 : Key.none;
+        case XK_KP_Add:
+            return Key.numAdd;
+        case XK_KP_Subtract:
+            return Key.numSub;
+        case XK_KP_Multiply:
+            return Key.numMul;
+        case XK_KP_Divide:
+            return Key.numDiv;
+        case XK_0:
+            return Key.alpha0;
+        case XK_1:
+            return Key.alpha1;
+        case XK_2:
+            return Key.alpha2;
+        case XK_3:
+            return Key.alpha3;
+        case XK_4:
+            return Key.alpha4;
+        case XK_5:
+            return Key.alpha5;
+        case XK_6:
+            return Key.alpha6;
+        case XK_7:
+            return Key.alpha7;
+        case XK_8:
+            return Key.alpha8;
+        case XK_9:
+            return Key.alpha9;
+        case XK_a:
+            return Key.A;
+        case XK_b:
+            return Key.B;
+        case XK_c:
+            return Key.C;
+        case XK_d:
+            return Key.D;
+        case XK_e:
+            return Key.E;
+        case XK_f:
+            return Key.F;
+        case XK_g:
+            return Key.G;
+        case XK_h:
+            return Key.H;
+        case XK_i:
+            return Key.I;
+        case XK_j:
+            return Key.J;
+        case XK_k:
+            return Key.K;
+        case XK_l:
+            return Key.L;
+        case XK_m:
+            return Key.M;
+        case XK_n:
+            return Key.N;
+        case XK_o:
+            return Key.O;
+        case XK_p:
+            return Key.P;
+        case XK_q:
+            return Key.Q;
+        case XK_r:
+            return Key.R;
+        case XK_s:
+            return Key.S;
+        case XK_t:
+            return Key.T;
+        case XK_u:
+            return Key.U;
+        case XK_v:
+            return Key.V;
+        case XK_w:
+            return Key.W;
+        case XK_x:
+            return Key.X;
+        case XK_y:
+            return Key.Y;
+        case XK_z:
+            return Key.Z;
+        case XK_bracketleft:
+            return Key.bracketOpen;
+        case XK_bracketright:
+            return Key.bracketClose;
+        case XK_minus:
+            return Key.subtract;
+        case XK_comma:
+            return Key.comma;
+        case XK_period:
+            return Key.period;
+        case XK_Super_L:
+            return Key.lwin;
+        case XK_Super_R:
+            return Key.rwin;
+        case XK_F1:
+            return Key.F1;
+        case XK_F2:
+            return Key.F2;
+        case XK_F3:
+            return Key.F3;
+        case XK_F4:
+            return Key.F4;
+        case XK_F5:
+            return Key.F5;
+        case XK_F6:
+            return Key.F6;
+        case XK_F7:
+            return Key.F7;
+        case XK_F8:
+            return Key.F8;
+        case XK_F9:
+            return Key.F9;
+        case XK_F10:
+            return Key.F10;
+        case XK_F11:
+            return Key.F11;
+        case XK_F12:
+            return Key.F12;
+        case XK_F13:
+            return Key.F13;
+        case XK_F14:
+            return Key.F14;
+        case XK_F15:
+            return Key.F15;
+        case XK_F16:
+            return Key.F16;
+        case XK_F17:
+            return Key.F17;
+        case XK_F18:
+            return Key.F18;
+        case XK_F19:
+            return Key.F19;
+        case XK_F20:
+            return Key.F20;
+        case XK_F21:
+            return Key.F21;
+        case XK_F22:
+            return Key.F22;
+        case XK_F23:
+            return Key.F23;
+        case XK_F24:
+            return Key.F24;
+        case XK_Num_Lock:
+            return Key.numlock;
+        case XK_Scroll_Lock:
+            return Key.scroll;
+        case XK_Shift_L:
+            return Key.lshift;
+        case XK_Shift_R:
+            return Key.rshift;
+        case XK_Control_L:
+            return Key.lcontrol;
+        case XK_Control_R:
+            return Key.rcontrol;
+        case XK_Alt_L:
+            return Key.lalt;
+        case XK_Alt_R:
+            return Key.ralt;
+        case XK_semicolon:
+            return Key.semicolon;
+        case XK_grave:
+            return Key.tilde;
+        case XK_apostrophe:
+            return Key.quote;
+        case XK_slash:
+            return Key.slash;
+        case XK_backslash:
+            return Key.backslash;
+        case XK_equal:
+            return Key.equal;
+        default:
+            return Key.none;
         }
     }
 
-    private KeyMods convertKeyMods(uint x11Keymod)
-    {
+    private KeyMods convertKeyMods(uint x11Keymod) {
         KeyMods mods;
         if (x11Keymod & ControlMask)
             mods |= KeyMods.control;
@@ -1128,45 +1144,86 @@ final class X11Window : DWindow
         return mods;
     }
 
-    private void processKeyEvent(KeyAction action, KeySym x11Key, uint x11Keymod)
-    {
+    private void processKeyEvent(KeyAction action, KeySym x11Key, uint x11Keymod) {
         debug (keys)
             Log.fd("processKeyEvent %s, X11 key: 0x%08x, X11 flags: 0x%08x", action, x11Key, x11Keymod);
 
         const key = convertKeyCode(x11Key, (x11Keymod & Mod2Mask) != 0);
         KeyMods mods = convertKeyMods(x11Keymod);
-        if (action == KeyAction.keyDown)
-            switch (key)
-            {
-                case Key.shift:    mods |= KeyMods.shift; break;
-                case Key.control:  mods |= KeyMods.control; break;
-                case Key.alt:      mods |= KeyMods.alt; break;
-                case Key.lshift:   mods |= KeyMods.lshift; break;
-                case Key.lcontrol: mods |= KeyMods.lcontrol; break;
-                case Key.lalt:     mods |= KeyMods.lalt; break;
-                case Key.rshift:   mods |= KeyMods.rshift; break;
-                case Key.rcontrol: mods |= KeyMods.rcontrol; break;
-                case Key.ralt:     mods |= KeyMods.ralt; break;
-                case Key.lwin:     mods |= KeyMods.lmeta; break;
-                case Key.rwin:     mods |= KeyMods.rmeta; break;
-                default: break;
-            }
-        else
-            switch (key)
-            {
-                case Key.shift:    mods &= ~KeyMods.shift; break;
-                case Key.control:  mods &= ~KeyMods.control; break;
-                case Key.alt:      mods &= ~KeyMods.alt; break;
-                case Key.lshift:   mods &= ~KeyMods.lshift; break;
-                case Key.lcontrol: mods &= ~KeyMods.lcontrol; break;
-                case Key.lalt:     mods &= ~KeyMods.lalt; break;
-                case Key.rshift:   mods &= ~KeyMods.rshift; break;
-                case Key.rcontrol: mods &= ~KeyMods.rcontrol; break;
-                case Key.ralt:     mods &= ~KeyMods.ralt; break;
-                case Key.lwin:     mods &= ~KeyMods.lmeta; break;
-                case Key.rwin:     mods &= ~KeyMods.rmeta; break;
-                default: break;
-            }
+        if (action == KeyAction.keyDown) switch (key) {
+        case Key.shift:
+            mods |= KeyMods.shift;
+            break;
+        case Key.control:
+            mods |= KeyMods.control;
+            break;
+        case Key.alt:
+            mods |= KeyMods.alt;
+            break;
+        case Key.lshift:
+            mods |= KeyMods.lshift;
+            break;
+        case Key.lcontrol:
+            mods |= KeyMods.lcontrol;
+            break;
+        case Key.lalt:
+            mods |= KeyMods.lalt;
+            break;
+        case Key.rshift:
+            mods |= KeyMods.rshift;
+            break;
+        case Key.rcontrol:
+            mods |= KeyMods.rcontrol;
+            break;
+        case Key.ralt:
+            mods |= KeyMods.ralt;
+            break;
+        case Key.lwin:
+            mods |= KeyMods.lmeta;
+            break;
+        case Key.rwin:
+            mods |= KeyMods.rmeta;
+            break;
+        default:
+            break;
+        } else
+            switch (key) {
+        case Key.shift:
+            mods &= ~KeyMods.shift;
+            break;
+        case Key.control:
+            mods &= ~KeyMods.control;
+            break;
+        case Key.alt:
+            mods &= ~KeyMods.alt;
+            break;
+        case Key.lshift:
+            mods &= ~KeyMods.lshift;
+            break;
+        case Key.lcontrol:
+            mods &= ~KeyMods.lcontrol;
+            break;
+        case Key.lalt:
+            mods &= ~KeyMods.lalt;
+            break;
+        case Key.rshift:
+            mods &= ~KeyMods.rshift;
+            break;
+        case Key.rcontrol:
+            mods &= ~KeyMods.rcontrol;
+            break;
+        case Key.ralt:
+            mods &= ~KeyMods.ralt;
+            break;
+        case Key.lwin:
+            mods &= ~KeyMods.lmeta;
+            break;
+        case Key.rwin:
+            mods &= ~KeyMods.rmeta;
+            break;
+        default:
+            break;
+        }
         _keyMods = mods;
 
         debug (keys)
@@ -1176,8 +1233,7 @@ final class X11Window : DWindow
         update();
     }
 
-    private void processTextInput(dstring ds, uint x11Keymod)
-    {
+    private void processTextInput(dstring ds, uint x11Keymod) {
         KeyMods mods = convertKeyMods(x11Keymod);
         dispatchKeyEvent(new KeyEvent(KeyAction.text, Key.none, mods, ds));
         update();
@@ -1185,26 +1241,22 @@ final class X11Window : DWindow
 
     //===============================================================
 
-    override protected void captureMouse(bool enabled)
-    {
+    override protected void captureMouse(bool enabled) {
         debug (mouse)
             Log.d(enabled ? "Setting capture" : "Releasing capture");
-        if (enabled)
-        {
+        if (enabled) {
             const mask = ButtonPressMask | ButtonReleaseMask | PointerMotionMask | FocusChangeMask;
             const ret = XGrabPointer(x11display, _win, False, mask,
                 GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
             if (ret != GrabSuccess)
                 return;
-        }
-        else
+        } else
             XUngrabPointer(x11display, CurrentTime);
 
         XSync(x11display, False);
     }
 
-    override void postEvent(CustomEvent event)
-    {
+    override void postEvent(CustomEvent event) {
         super.postEvent(event);
         XEvent ev;
         ev.xclient = XClientMessageEvent.init;
@@ -1220,8 +1272,7 @@ final class X11Window : DWindow
         XUnlockDisplay(x11display2);
     }
 
-    override protected void postTimerEvent()
-    {
+    override protected void postTimerEvent() {
         XEvent ev;
         ev.xclient = XClientMessageEvent.init;
         ev.xclient.type = ClientMessage;
@@ -1235,19 +1286,16 @@ final class X11Window : DWindow
         XUnlockDisplay(x11display2);
     }
 
-    override protected void handleTimer()
-    {
+    override protected void handleTimer() {
         super.handleTimer();
     }
 }
 
-final class X11Platform : Platform
-{
+final class X11Platform : Platform {
     private WindowMap!(X11Window, XWindow) windows;
     private char* _classname;
 
-    this(ref AppConf conf)
-    {
+    this(ref AppConf conf) {
         super(conf);
 
         static import std.file;
@@ -1256,23 +1304,20 @@ final class X11Platform : Platform
         _classname = (std.path.baseName(std.file.thisExePath()) ~ "\0").dup.ptr;
     }
 
-    ~this()
-    {
+    ~this() {
         destroy(windows);
         deinitializeX11();
     }
 
     override DWindow createWindow(dstring windowCaption, DWindow parent,
-            WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
-            uint width = 0, uint height = 0)
-    {
+        WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
+        uint width = 0, uint height = 0) {
         auto window = new X11Window(this, windowCaption, parent, options, width, height);
         windows.add(window, window._win);
         return window;
     }
 
-    override void closeWindow(DWindow w)
-    {
+    override void closeWindow(DWindow w) {
         auto window = cast(X11Window)w;
         XEvent ev;
         ev.xclient = XClientMessageEvent.init;
@@ -1287,16 +1332,14 @@ final class X11Platform : Platform
         XUnlockDisplay(x11display2);
     }
 
-    override protected int opApply(scope int delegate(size_t i, DWindow w) callback)
-    {
+    override protected int opApply(scope int delegate(size_t i, DWindow w) callback) {
         foreach (i, w; windows)
             if (const result = callback(i, w))
                 break;
         return 0;
     }
 
-    private int numberOfPendingEvents(int msecs = 10)
-    {
+    private int numberOfPendingEvents(int msecs = 10) {
         import core.sys.posix.sys.select;
 
         int x11displayFd = ConnectionNumber(x11display);
@@ -1307,38 +1350,31 @@ final class X11Platform : Platform
             FD_ZERO(&fdSet);
 
         int eventsInQueue = XEventsQueued(x11display, QueuedAlready);
-        if (!eventsInQueue)
-        {
+        if (!eventsInQueue) {
             import core.stdc.errno;
 
             int selectResult;
-            do
-            {
+            do {
                 timeval timeout;
                 timeout.tv_usec = msecs;
                 selectResult = select(x11displayFd + 1, &fdSet, null, null, &timeout);
             }
             while (selectResult == -1 && errno == EINTR);
-            if (selectResult < 0)
-            {
+            if (selectResult < 0) {
                 Log.e("X11: display fd select error");
-            }
-            else if (selectResult == 1)
-            {
+            } else if (selectResult == 1) {
                 eventsInQueue = XPending(x11display);
             }
         }
         return eventsInQueue;
     }
 
-    override int runEventLoop()
-    {
+    override int runEventLoop() {
         Log.d("entering message loop");
 
         // Note: only events we set the mask for are detected!
         XEvent event;
-        while (windows.count > 0)
-        {
+        while (windows.count > 0) {
             XNextEvent(x11display, &event);
             processXEvent(event);
             XFlush(x11display);
@@ -1347,11 +1383,9 @@ final class X11Platform : Platform
         return 0;
     }
 
-    private void pumpEvents()
-    {
+    private void pumpEvents() {
         XFlush(x11display);
-        while (numberOfPendingEvents())
-        {
+        while (numberOfPendingEvents()) {
             if (windows.count == 0)
                 break;
             XEvent event;
@@ -1360,14 +1394,11 @@ final class X11Platform : Platform
         }
     }
 
-    private void processXEvent(ref XEvent event)
-    {
-        switch (event.type)
-        {
+    private void processXEvent(ref XEvent event) {
+        switch (event.type) {
         case ConfigureNotify:
             X11Window w = windows[event.xconfigure.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: ConfigureNotify - unknown window");
                 break;
             }
@@ -1377,8 +1408,7 @@ final class X11Platform : Platform
                 Log.fd("X11: ConfigureNotify - pos: %dx%d, size: %dx%d", pos.x, pos.y, sz.w, sz.h);
             w._cachedSize = sz;
             w.handleWindowStateChange(WindowState.unspecified, BoxI(pos, sz));
-            if (!w.syncValue.isZero)
-            {
+            if (!w.syncValue.isZero) {
                 debug (x11)
                     Log.d("X11: synchronized");
                 XSyncSetCounter(x11display, w.syncCounter, w.syncValue);
@@ -1387,11 +1417,9 @@ final class X11Platform : Platform
             }
             break;
         case PropertyNotify:
-            if (event.xproperty.atom == atoms._NET_WM_STATE && event.xproperty.state == PropertyNewValue)
-            {
+            if (event.xproperty.atom == atoms._NET_WM_STATE && event.xproperty.state == PropertyNewValue) {
                 X11Window w = windows[event.xproperty.window];
-                if (!w)
-                {
+                if (!w) {
                     Log.e("X11: PropertyNotify - unknown window");
                     break;
                 }
@@ -1403,26 +1431,21 @@ final class X11Platform : Platform
                 c_ulong dataLength, overflow;
                 if (XGetWindowProperty(x11display, event.xproperty.window, atoms._NET_WM_STATE,
                         0, int.max / 4, False, AnyPropertyType, &type,
-                        &format, &dataLength, &overflow, &properties) == 0)
-                {
+                        &format, &dataLength, &overflow, &properties) == 0) {
                     scope (exit)
                         XFree(properties);
                     // check for minimized
                     bool minimized;
-                    foreach (i; 0 .. dataLength)
-                    {
-                        if ((cast(c_ulong*)properties)[i] == atoms._NET_WM_STATE_HIDDEN)
-                        {
+                    foreach (i; 0 .. dataLength) {
+                        if ((cast(c_ulong*)properties)[i] == atoms._NET_WM_STATE_HIDDEN) {
                             w.handleWindowStateChange(WindowState.minimized);
                             minimized = true;
                         }
                     }
-                    if (!minimized)
-                    {
+                    if (!minimized) {
                         bool maximizedH;
                         bool maximizedV;
-                        foreach (i; 0 .. dataLength)
-                        {
+                        foreach (i; 0 .. dataLength) {
                             if ((cast(c_ulong*)properties)[i] == atoms._NET_WM_STATE_MAXIMIZED_VERT)
                                 maximizedV = true;
                             if ((cast(c_ulong*)properties)[i] == atoms._NET_WM_STATE_MAXIMIZED_HORZ)
@@ -1439,8 +1462,7 @@ final class X11Platform : Platform
             break;
         case MapNotify:
             X11Window w = windows[event.xmap.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: MapNotify - unknown window");
                 break;
             }
@@ -1450,8 +1472,7 @@ final class X11Platform : Platform
             return;
         case UnmapNotify:
             X11Window w = windows[event.xunmap.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: UnmapNotify - unknown window");
                 break;
             }
@@ -1463,8 +1484,7 @@ final class X11Platform : Platform
             if (event.xexpose.count == 0) // the last expose event
             {
                 X11Window w = windows[event.xexpose.window];
-                if (!w)
-                {
+                if (!w) {
                     Log.e("X11: Expose - unknown window");
                     break;
                 }
@@ -1475,16 +1495,14 @@ final class X11Platform : Platform
             break;
         case KeyPress:
             X11Window w = windows[event.xkey.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: KeyPress - unknown window");
                 break;
             }
 
-            if (!w.xic)
-            {
+            if (!w.xic) {
                 w.xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-                        XNClientWindow, w._win, 0);
+                    XNClientWindow, w._win, 0);
                 if (!w.xic)
                     Log.e("Cannot create input context");
             }
@@ -1493,21 +1511,18 @@ final class X11Platform : Platform
             char[len] buf;
             KeySym ks;
             XComposeStatus compose;
-            if (w.xic)
-            {
+            if (w.xic) {
                 Status s;
                 Xutf8LookupString(w.xic, &event.xkey, buf.ptr, len - 1, &ks, &s);
                 if (s != XLookupChars && s != XLookupBoth)
                     XLookupString(&event.xkey, buf.ptr, len - 1, &ks, &compose);
-            }
-            else
+            } else
                 XLookupString(&event.xkey, buf.ptr, len - 1, &ks, &compose);
 
             // convert KeyCode in ubyte range to understandable KeySym
             ks = XKeycodeToKeysym(x11display, cast(ubyte)event.xkey.keycode, 0);
 
-            foreach (ref ch; buf)
-            {
+            foreach (ref ch; buf) {
                 if (ch == 255 || ch < 32 || ch == 127)
                     ch = 0;
             }
@@ -1516,24 +1531,18 @@ final class X11Platform : Platform
 
             string txt = fromStringz(buf.ptr).idup;
             dstring dtext;
-            try
-            {
+            try {
                 if (txt.length)
                     dtext = toUTF32(txt);
-            }
-            catch (UTFException e)
-            {
+            } catch (UTFException e) {
                 // ignore, invalid text
             }
-            if (dtext.length)
-            {
+            if (dtext.length) {
                 debug (x11)
                     Log.d("X11: KeyPress - bytes: ", txt.length, ", text: ", txt, ", dtext: ", dtext);
                 w.processKeyEvent(KeyAction.keyDown, ks, event.xkey.state);
                 w.processTextInput(dtext, event.xkey.state);
-            }
-            else
-            {
+            } else {
                 debug (x11)
                     Log.d("X11: KeyPress");
                 w.processKeyEvent(KeyAction.keyDown, ks, event.xkey.state);
@@ -1541,8 +1550,7 @@ final class X11Platform : Platform
             break;
         case KeyRelease:
             X11Window w = windows[event.xkey.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: KeyRelease - unknown window");
                 break;
             }
@@ -1560,39 +1568,33 @@ final class X11Platform : Platform
             break;
         case ButtonPress:
             X11Window w = windows[event.xbutton.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: ButtonPress - unknown window");
                 break;
             }
             debug (x11)
                 Log.d("X11: ButtonPress");
-            if (event.xbutton.button == 4 || event.xbutton.button == 5)
-            {
+            if (event.xbutton.button == 4 || event.xbutton.button == 5) {
                 w.processWheelEvent(0, event.xbutton.button == 4 ? -1 : 1);
-            }
-            else
-            {
+            } else {
                 w.processMouseEvent(MouseAction.buttonDown, event.xbutton.button,
-                        event.xbutton.state, event.xbutton.x, event.xbutton.y);
+                    event.xbutton.state, event.xbutton.x, event.xbutton.y);
             }
             break;
         case ButtonRelease:
             X11Window w = windows[event.xbutton.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: ButtonRelease - unknown window");
                 break;
             }
             debug (x11)
                 Log.d("X11: ButtonRelease");
             w.processMouseEvent(MouseAction.buttonUp, event.xbutton.button,
-                    event.xbutton.state, event.xbutton.x, event.xbutton.y);
+                event.xbutton.state, event.xbutton.x, event.xbutton.y);
             break;
         case MotionNotify:
             X11Window w = windows[event.xmotion.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: MotionNotify - unknown window");
                 break;
             }
@@ -1600,8 +1602,7 @@ final class X11Platform : Platform
             break;
         case EnterNotify:
             X11Window w = windows[event.xcrossing.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: EnterNotify - unknown window");
                 break;
             }
@@ -1609,8 +1610,7 @@ final class X11Platform : Platform
             break;
         case LeaveNotify:
             X11Window w = windows[event.xcrossing.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: LeaveNotify - unknown window");
                 break;
             }
@@ -1618,8 +1618,7 @@ final class X11Platform : Platform
             break;
         case CreateNotify:
             X11Window w = windows[event.xcreatewindow.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: CreateNotify - unknown window");
                 break;
             }
@@ -1632,8 +1631,7 @@ final class X11Platform : Platform
             break;
         case ResizeRequest:
             X11Window w = windows[event.xresizerequest.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: ResizeRequest - unknown window");
                 break;
             }
@@ -1642,8 +1640,7 @@ final class X11Platform : Platform
             break;
         case FocusIn:
             X11Window w = windows[event.xfocus.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: FocusIn - unknown window");
                 break;
             }
@@ -1653,8 +1650,7 @@ final class X11Platform : Platform
             break;
         case FocusOut:
             X11Window w = windows[event.xfocus.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: FocusOut - unknown window");
                 break;
             }
@@ -1688,8 +1684,7 @@ final class X11Platform : Platform
             e.xselection.requestor = request.requestor;
             e.xselection.time = request.time;
 
-            if (request.target == XA_STRING || request.target == atoms.UTF8_STRING)
-            {
+            if (request.target == XA_STRING || request.target == atoms.UTF8_STRING) {
                 int currentSelectionFormat;
                 Atom currentSelectionType;
                 c_ulong selectionDataLength, overflow;
@@ -1697,17 +1692,14 @@ final class X11Platform : Platform
                 if (XGetWindowProperty(x11display, DefaultRootWindow(x11display),
                         atoms.beamui_CLIPBOARD_BUFFER, 0, int.max / 4, False,
                         request.target, &currentSelectionType, &currentSelectionFormat,
-                        &selectionDataLength, &overflow, &selectionDataPtr) == 0)
-                {
+                        &selectionDataLength, &overflow, &selectionDataPtr) == 0) {
                     scope (exit)
                         XFree(selectionDataPtr);
                     XChangeProperty(x11display, request.requestor, request.property, request.target, 8,
-                            PropModeReplace, selectionDataPtr, cast(int)selectionDataLength);
+                        PropModeReplace, selectionDataPtr, cast(int)selectionDataLength);
                 }
                 e.xselection.property = request.property;
-            }
-            else if (request.target == atoms.TARGETS)
-            {
+            } else if (request.target == atoms.TARGETS) {
                 Atom[3] supportedFormats = [atoms.UTF8_STRING, XA_STRING, atoms.TARGETS];
                 XChangeProperty(x11display, request.requestor, request.property, XA_ATOM, 32,
                     PropModeReplace, cast(ubyte*)supportedFormats.ptr, cast(int)supportedFormats.length);
@@ -1718,57 +1710,43 @@ final class X11Platform : Platform
         case SelectionNotify:
             debug (x11)
                 Log.d("X11: SelectionNotify");
-            if (event.xselection.requestor in windows)
-            {
+            if (event.xselection.requestor in windows) {
                 waitingForSelection = false;
             }
             break;
         case ClientMessage:
             X11Window w = windows[event.xclient.window];
-            if (!w)
-            {
+            if (!w) {
                 Log.e("X11: ClientMessage - unknown window");
                 break;
             }
-            if (event.xclient.message_type == atoms.beamui_TASK_EVENT)
-            {
+            if (event.xclient.message_type == atoms.beamui_TASK_EVENT) {
                 debug (x11)
                     Log.d("X11: ClientMessage - task");
                 w.handlePostedEvent(cast(uint)event.xclient.data.l[0]);
-            }
-            else if (event.xclient.message_type == atoms.beamui_TIMER_EVENT)
-            {
+            } else if (event.xclient.message_type == atoms.beamui_TIMER_EVENT) {
                 debug (x11)
                     Log.d("X11: ClientMessage - timer");
                 w.handleTimer();
-            }
-            else if (event.xclient.message_type == atoms.beamui_REDRAW_EVENT)
-            {
+            } else if (event.xclient.message_type == atoms.beamui_REDRAW_EVENT) {
                 debug (x11)
                     Log.d("X11: ClientMessage - redraw");
                 if (event.xclient.data.l[0] == w._lastRedrawEventCode)
                     w.redraw();
-            }
-            else if (event.xclient.message_type == atoms.WM_PROTOCOLS)
-            {
+            } else if (event.xclient.message_type == atoms.WM_PROTOCOLS) {
                 debug (x11)
                     Log.d("X11: ClientMessage - WM_PROTOCOLS");
-                if (event.xclient.format == 32)
-                {
-                    if (event.xclient.data.l[0] == atoms.WM_DELETE_WINDOW)
-                    {
+                if (event.xclient.format == 32) {
+                    if (event.xclient.data.l[0] == atoms.WM_DELETE_WINDOW) {
                         if (w.canClose)
                             windows.remove(w);
                     }
-                    if (event.xclient.data.l[0] == atoms._NET_WM_SYNC_REQUEST)
-                    {
+                    if (event.xclient.data.l[0] == atoms._NET_WM_SYNC_REQUEST) {
                         w.syncValue.lo = cast(uint)event.xclient.data.l[2];
                         w.syncValue.hi = cast(int)event.xclient.data.l[3];
                     }
                 }
-            }
-            else if (event.xclient.message_type == atoms.beamui_CLOSE_WINDOW_EVENT)
-            {
+            } else if (event.xclient.message_type == atoms.beamui_CLOSE_WINDOW_EVENT) {
                 debug (x11)
                     Log.d("X11: ClientMessage - close");
                 if (w.canClose)
@@ -1780,35 +1758,29 @@ final class X11Platform : Platform
         }
     }
 
-    override bool hasClipboardText(bool mouseBuffer = false)
-    {
+    override bool hasClipboardText(bool mouseBuffer = false) {
         const selectionType = mouseBuffer ? XA_PRIMARY : atoms.CLIPBOARD;
         return XGetSelectionOwner(x11display, selectionType) != None;
     }
 
     private bool waitingForSelection;
-    override dstring getClipboardText(bool mouseBuffer = false)
-    {
+    override dstring getClipboardText(bool mouseBuffer = false) {
         const selectionType = mouseBuffer ? XA_PRIMARY : atoms.CLIPBOARD;
         XWindow owner = XGetSelectionOwner(x11display, selectionType);
-        if (owner == None)
-        {
+        if (owner == None) {
             Log.d("Selection owner is none");
             return null;
         }
 
         // find any top-level window
         XWindow xwindow;
-        foreach (w; windows)
-        {
-            if (w.parentWindow is null && w._win != None)
-            {
+        foreach (w; windows) {
+            if (w.parentWindow is null && w._win != None) {
                 xwindow = w._win;
                 break;
             }
         }
-        if (xwindow == None)
-        {
+        if (xwindow == None) {
             Log.d("Could not find any window to get selection");
             return null;
         }
@@ -1817,12 +1789,10 @@ final class X11Platform : Platform
 
         waitingForSelection = true;
         XConvertSelection(x11display, selectionType, atoms.UTF8_STRING,
-                atoms.beamui_CLIPBOARD_BUFFER, xwindow, CurrentTime);
+            atoms.beamui_CLIPBOARD_BUFFER, xwindow, CurrentTime);
         auto stopWaiting = Clock.currTime() + dur!"msecs"(500);
-        while (waitingForSelection)
-        {
-            if (stopWaiting <= Clock.currTime())
-            {
+        while (waitingForSelection) {
+            if (stopWaiting <= Clock.currTime()) {
                 waitingForSelection = false;
                 setClipboardText(null);
                 Log.e("Waiting for clipboard contents timeout");
@@ -1836,81 +1806,67 @@ final class X11Platform : Platform
         ubyte* selectionDataPtr;
         if (XGetWindowProperty(x11display, xwindow, atoms.beamui_CLIPBOARD_BUFFER, 0, int.max / 4,
                 False, 0, &selectionTarget, &selectionFormat, &selectionDataLength,
-                &overflow, &selectionDataPtr) == 0)
-        {
+                &overflow, &selectionDataPtr) == 0) {
             scope (exit)
                 XFree(selectionDataPtr);
-            if (selectionTarget == XA_STRING || selectionTarget == atoms.UTF8_STRING)
-            {
+            if (selectionTarget == XA_STRING || selectionTarget == atoms.UTF8_STRING) {
                 char[] selectionText = cast(char[])selectionDataPtr[0 .. selectionDataLength];
                 return toUTF32(selectionText);
-            }
-            else
-            {
+            } else {
                 Log.d("Selection type is not a string!");
             }
         }
         return null;
     }
 
-    override void setClipboardText(dstring text, bool mouseBuffer = false)
-    {
-        if (!mouseBuffer && atoms.CLIPBOARD == None)
-        {
+    override void setClipboardText(dstring text, bool mouseBuffer = false) {
+        if (!mouseBuffer && atoms.CLIPBOARD == None) {
             Log.e("No CLIPBOARD atom available");
             return;
         }
         auto selection = mouseBuffer ? XA_PRIMARY : atoms.CLIPBOARD;
         XWindow xwindow = None;
         // find any top-level window
-        foreach (w; windows)
-        {
-            if (w.parentWindow is null && w._win != None)
-            {
+        foreach (w; windows) {
+            if (w.parentWindow is null && w._win != None) {
                 xwindow = w._win;
             }
         }
-        if (xwindow == None)
-        {
+        if (xwindow == None) {
             Log.e("Could not find window to save clipboard text");
             return;
         }
 
         string textc = toUTF8(text);
         XChangeProperty(x11display, DefaultRootWindow(x11display), atoms.beamui_CLIPBOARD_BUFFER,
-                atoms.UTF8_STRING, 8, PropModeReplace, cast(ubyte*)textc.ptr, cast(int)textc.length);
+            atoms.UTF8_STRING, 8, PropModeReplace, cast(ubyte*)textc.ptr, cast(int)textc.length);
 
-        if (XGetSelectionOwner(x11display, selection) != xwindow)
-        {
+        if (XGetSelectionOwner(x11display, selection) != xwindow) {
             XSetSelectionOwner(x11display, selection, xwindow, CurrentTime);
         }
     }
 }
 
-extern (C) Platform initPlatform(AppConf conf)
-{
+extern (C) Platform initPlatform(AppConf conf) {
     XInitThreads();
 
     /* use the information from the environment variable DISPLAY
        to create the X connection:
     */
     x11display = XOpenDisplay(null);
-    if (!x11display)
-    {
+    if (!x11display) {
         Log.e("Cannot open X11 display");
         return null;
     }
     x11display2 = XOpenDisplay(null);
-    if (!x11display2)
-    {
+    if (!x11display2) {
         Log.e("Cannot open secondary connection for X11 display");
         return null;
     }
 
     defaultScreenNum = DefaultScreen(x11display);
 
-    static if (USE_OPENGL)
-    {
+    static if (USE_OPENGL) {
         if (!initializeGLX())
             disableOpenGL();
     }
@@ -1919,8 +1875,7 @@ extern (C) Platform initPlatform(AppConf conf)
     createCursors();
 
     xim = XOpenIM(x11display, null, null, null);
-    if (!xim)
-    {
+    if (!xim) {
         Log.e("Cannot open input method");
     }
 
@@ -1930,72 +1885,64 @@ extern (C) Platform initPlatform(AppConf conf)
 }
 
 static if (USE_OPENGL)
-private bool initializeGLX()
-{
-    if (!loadGLX())
-    {
-        Log.e("GLX: failed to load library");
-        return false;
-    }
-    if (!glXQueryExtension(x11display, null, null))
-    {
-        Log.e("GLX: no extensions");
-        return false;
+    private bool initializeGLX() {
+        if (!loadGLX()) {
+            Log.e("GLX: failed to load library");
+            return false;
+        }
+        if (!glXQueryExtension(x11display, null, null)) {
+            Log.e("GLX: no extensions");
+            return false;
+        }
+
+        int glx_major, glx_minor;
+        if (!glXQueryVersion(x11display, &glx_major, &glx_minor) ||
+            glx_major == 1 && glx_minor < 4 || glx_major < 1) {
+            Log.e("GLX: version 1.4 is required");
+            return false;
+        }
+
+        int[] attribs = [
+            GLX_X_RENDERABLE, True,
+            GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+            GLX_RENDER_TYPE, GLX_RGBA_BIT,
+            GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
+            GLX_RED_SIZE, 8,
+            GLX_GREEN_SIZE, 8,
+            GLX_BLUE_SIZE, 8,
+            GLX_ALPHA_SIZE, 8,
+            GLX_DEPTH_SIZE, 24,
+            GLX_STENCIL_SIZE, 8,
+            GLX_DOUBLEBUFFER, True,
+            GLX_SAMPLE_BUFFERS, 0,
+            GLX_SAMPLES, 0,
+            None // end
+        ];
+        int fbcount;
+        GLXFBConfig* fbcList = glXChooseFBConfig(x11display, defaultScreenNum, attribs.ptr, &fbcount);
+        if (!fbcList) {
+            Log.e("GLX: failed to retrieve a framebuffer config");
+            return false;
+        }
+        // just take the first
+        fbConfig = fbcList[0];
+        XFree(fbcList);
+
+        XWindow root = DefaultRootWindow(x11display);
+        x11visual = glXGetVisualFromFBConfig(x11display, fbConfig);
+        if (!x11visual) {
+            Log.e("GLX: cannot find suitable visual");
+            return false;
+        }
+        x11cmap = XCreateColormap(x11display, root, cast(Visual*)x11visual.visual, AllocNone);
+
+        // we can and we must load extensions before context creation
+        loadGLXExtensions(x11display);
+        return true;
     }
 
-    int glx_major, glx_minor;
-    if (!glXQueryVersion(x11display, &glx_major, &glx_minor) ||
-        glx_major == 1 && glx_minor < 4 || glx_major < 1)
-    {
-        Log.e("GLX: version 1.4 is required");
-        return false;
-    }
-
-    int[] attribs = [
-        GLX_X_RENDERABLE   , True,
-        GLX_DRAWABLE_TYPE  , GLX_WINDOW_BIT,
-        GLX_RENDER_TYPE    , GLX_RGBA_BIT,
-        GLX_X_VISUAL_TYPE  , GLX_TRUE_COLOR,
-        GLX_RED_SIZE       , 8,
-        GLX_GREEN_SIZE     , 8,
-        GLX_BLUE_SIZE      , 8,
-        GLX_ALPHA_SIZE     , 8,
-        GLX_DEPTH_SIZE     , 24,
-        GLX_STENCIL_SIZE   , 8,
-        GLX_DOUBLEBUFFER   , True,
-        GLX_SAMPLE_BUFFERS , 0,
-        GLX_SAMPLES        , 0,
-        None // end
-    ];
-    int fbcount;
-    GLXFBConfig* fbcList = glXChooseFBConfig(x11display, defaultScreenNum, attribs.ptr, &fbcount);
-    if (!fbcList)
-    {
-        Log.e("GLX: failed to retrieve a framebuffer config");
-        return false;
-    }
-    // just take the first
-    fbConfig = fbcList[0];
-    XFree(fbcList);
-
-    XWindow root = DefaultRootWindow(x11display);
-    x11visual = glXGetVisualFromFBConfig(x11display, fbConfig);
-    if (!x11visual)
-    {
-        Log.e("GLX: cannot find suitable visual");
-        return false;
-    }
-    x11cmap = XCreateColormap(x11display, root, cast(Visual*)x11visual.visual, AllocNone);
-
-    // we can and we must load extensions before context creation
-    loadGLXExtensions(x11display);
-    return true;
-}
-
-private void deinitializeX11()
-{
-    static if (USE_OPENGL)
-    {
+private void deinitializeX11() {
+    static if (USE_OPENGL) {
         if (x11visual)
             XFree(x11visual);
         if (x11cmap)

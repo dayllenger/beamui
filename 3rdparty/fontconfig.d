@@ -4,36 +4,26 @@ import bindbc.loader;
 
 private SharedLib lib;
 
-bool isFontConfigLoaded()
-{
+bool isFontConfigLoaded() {
     return lib != invalidHandle;
 }
 
-void unloadFontConfig()
-{
+void unloadFontConfig() {
     if (lib != invalidHandle)
         lib.unload();
 }
 
-bool loadFontConfig()
-{
-    version (Windows)
-    {
+bool loadFontConfig() {
+    version (Windows) {
         const(char)[][1] libNames = ["libfontconfig-1.dll"];
-    }
-    else version (OSX)
-    {
+    } else version (OSX) {
         const(char)[][1] libNames = ["/usr/local/lib/libfontconfig.dylib"];
-    }
-    else version (Posix)
-    {
+    } else version (Posix) {
         const(char)[][2] libNames = ["libfontconfig.so.1", "libfontconfig.so"];
-    }
-    else
+    } else
         static assert(0, "Need to implement FontConfig libNames for this operating system");
 
-    foreach (name; libNames)
-    {
+    foreach (name; libNames) {
         lib = load(name.ptr);
         if (lib != invalidHandle)
             break;
@@ -64,14 +54,12 @@ alias FcChar16 = wchar;
 alias FcChar32 = dchar;
 alias FcBool = int;
 
-enum : int
-{
+enum : int {
     FcFalse = 0,
     FcTrue = 1
 }
 
-struct FcMatrix
-{
+struct FcMatrix {
     double xx, xy, yx, yy;
 }
 
@@ -79,8 +67,7 @@ struct FcCharSet;
 struct FcLangSet;
 struct FcConfig;
 
-enum : int
-{
+enum : int {
     FcTypeUnknown = -1,
     FcTypeVoid,
     FcTypeInteger,
@@ -96,8 +83,7 @@ enum : int
 
 alias FcType = int;
 
-enum : int
-{
+enum : int {
     FcResultMatch,
     FcResultNoMatch,
     FcResultTypeMismatch,
@@ -107,11 +93,9 @@ enum : int
 
 alias FcResult = int;
 
-struct FcValue
-{
+struct FcValue {
     FcType type;
-    union
-    {
+    union {
         const FcChar8* s;
         int i;
         FcBool b;
@@ -124,42 +108,36 @@ struct FcValue
     }
 }
 
-enum FcMatchKind
-{
+enum FcMatchKind {
     FcMatchPattern,
     FcMatchFont,
     FcMatchScan
 }
 
-enum FcLangResult
-{
+enum FcLangResult {
     FcLangEqual = 0,
     FcLangDifferentCountry = 1,
     FcLangDifferentTerritory = 1,
     FcLangDifferentLang = 2
 }
 
-enum FcSetName
-{
+enum FcSetName {
     FcSetSystem = 0,
     FcSetApplication = 1
 }
 
-enum FcEndian
-{
+enum FcEndian {
     FcEndianBig,
     FcEndianLittle
 }
 
-struct FcFontSet
-{
+struct FcFontSet {
     int nfont;
     int sfont;
     FcPattern** fonts;
 }
 
-struct FcObjectSet
-{
+struct FcObjectSet {
     int nobject;
     int sobject;
     const char** objects;
@@ -168,8 +146,7 @@ struct FcObjectSet
 struct FcPattern;
 struct FcRange;
 
-enum
-{
+enum {
     FC_WEIGHT_THIN = 0,
     FC_WEIGHT_EXTRALIGHT = 40,
     FC_WEIGHT_ULTRALIGHT = FC_WEIGHT_EXTRALIGHT,
@@ -191,15 +168,13 @@ enum
     FC_WEIGHT_ULTRABLACK = FC_WEIGHT_EXTRABLACK
 }
 
-enum
-{
+enum {
     FC_SLANT_ROMAN = 0,
     FC_SLANT_ITALIC = 100,
     FC_SLANT_OBLIQUE = 110
 }
 
-enum
-{
+enum {
     FC_WIDTH_ULTRACONDENSED = 50,
     FC_WIDTH_EXTRACONDENSED = 63,
     FC_WIDTH_CONDENSED = 75,
@@ -211,16 +186,14 @@ enum
     FC_WIDTH_ULTRAEXPANDED = 200
 }
 
-enum
-{
+enum {
     FC_PROPORTIONAL = 0,
     FC_DUAL = 90,
     FC_MONO = 100,
     FC_CHARCELL = 110
 }
 
-immutable
-{
+immutable {
     char* FC_FAMILY = "family"; /// String
     char* FC_STYLE = "style"; /// String
     char* FC_SLANT = "slant"; /// Int
@@ -269,8 +242,7 @@ immutable
     char* FC_POSTSCRIPT_NAME = "postscriptname"; /// String
 }
 
-extern (C) @nogc nothrow
-{
+extern (C) @nogc nothrow {
     alias p_FC_FcObjectSetBuild = FcObjectSet* function(const char* first, ...);
     alias p_FC_FcPatternCreate = FcPattern* function();
     alias p_FC_FcPatternAddBool = FcBool function(FcPattern* p, const char* object, FcBool b);
@@ -278,16 +250,15 @@ extern (C) @nogc nothrow
     alias p_FC_FcPatternDestroy = void function(FcPattern* p);
     alias p_FC_FcObjectSetDestroy = void function(FcObjectSet* os);
     alias p_FC_FcPatternGetString = FcResult function(const FcPattern* p,
-            const char* object, int n, FcChar8** s);
+        const char* object, int n, FcChar8** s);
     alias p_FC_FcPatternGetInteger = FcResult function(const FcPattern* p,
-            const char* object, int n, int* i);
+        const char* object, int n, int* i);
     alias p_FC_FcPatternGetBool = FcResult function(const FcPattern* p,
-            const char* object, int n, FcBool* b);
+        const char* object, int n, FcBool* b);
     alias p_FC_FcFontSetDestroy = void function(FcFontSet* s);
 }
 
-__gshared
-{
+__gshared {
     p_FC_FcObjectSetBuild FcObjectSetBuild;
     p_FC_FcPatternCreate FcPatternCreate;
     p_FC_FcPatternAddBool FcPatternAddBool;

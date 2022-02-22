@@ -12,25 +12,25 @@
 
 module isfreedesktop;
 
-version(OSX) {
+version (OSX) {
     enum isFreedesktop = false;
-} else version(Android) {
+} else version (Android) {
     enum isFreedesktop = false;
-} else version(linux) {
+} else version (linux) {
     enum isFreedesktop = true;
-} else version(FreeBSD) {
+} else version (FreeBSD) {
     enum isFreedesktop = true;
-} else version(OpenBSD) {
+} else version (OpenBSD) {
     enum isFreedesktop = true;
-} else version(NetBSD) {
+} else version (NetBSD) {
     enum isFreedesktop = true;
-} else version(DragonFlyBSD) {
+} else version (DragonFlyBSD) {
     enum isFreedesktop = true;
-} else version(BSD) {
+} else version (BSD) {
     enum isFreedesktop = true;
-} else version(Hurd) {
+} else version (Hurd) {
     enum isFreedesktop = true;
-} else version(Solaris) {
+} else version (Solaris) {
     enum isFreedesktop = true;
 } else {
     enum isFreedesktop = false;

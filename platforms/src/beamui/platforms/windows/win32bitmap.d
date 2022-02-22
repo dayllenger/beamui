@@ -11,52 +11,48 @@ Authors:   Vadim Lopatin
 */
 module beamui.platforms.windows.win32bitmap;
 
-version (Windows):
-import beamui.core.config;
+version (Windows)  : import beamui.core.config;
 
-static if (BACKEND_GUI):
-import core.sys.windows.windows;
+static if (BACKEND_GUI)
+     : import core.sys.windows.windows;
 import beamui.graphics.bitmap : BitmapData, PixelFormat;
 
 /// Win32 context ARGB8 bitmap container
-final class Win32BitmapData : BitmapData
-{
+final class Win32BitmapData : BitmapData {
     private void* _pixels;
     private HDC _drawdc;
     private HBITMAP _drawbmp;
 
     /// Returns handle of win32 device context
-    @property HDC dc() { return _drawdc; }
+    @property HDC dc() {
+        return _drawdc;
+    }
     /// Returns handle of win32 bitmap
-    @property HBITMAP bmp() { return _drawdc; }
+    @property HBITMAP bmp() {
+        return _drawdc;
+    }
 
-    this(uint width, uint height)
-    {
+    this(uint width, uint height) {
         super(width, height, 4, PixelFormat.argb8);
     }
 
-    this(Win32BitmapData src)
-    {
+    this(Win32BitmapData src) {
         super(src);
         handleResize();
         pixels[] = src.pixels[];
     }
 
-    ~this()
-    {
+    ~this() {
         clear();
     }
 
     /// Clear bitmap contents
-    private void clear()
-    {
-        if (_drawbmp)
-        {
+    private void clear() {
+        if (_drawbmp) {
             DeleteObject(_drawbmp);
             _drawbmp = null;
         }
-        if (_drawdc)
-        {
+        if (_drawdc) {
             DeleteObject(_drawdc);
             _drawdc = null;
         }
@@ -64,8 +60,7 @@ final class Win32BitmapData : BitmapData
     }
 
     /// Returns HBITMAP for alpha
-    HBITMAP createTransparencyBitmap()
-    {
+    HBITMAP createTransparencyBitmap() {
         int hbytes = (((width + 7) / 8) + 1) & 0xFFFFFFFE;
         static __gshared ubyte[] buf;
         buf.length = hbytes * height * 2;
@@ -99,26 +94,22 @@ final class Win32BitmapData : BitmapData
     }
 
     /// Take HBITMAP out of this object
-    HBITMAP extractBitmap()
-    {
+    HBITMAP extractBitmap() {
         HBITMAP res = _drawbmp;
         _drawbmp = null;
         return res;
     }
 
     /// Draw to win32 device context
-    void drawTo(HDC dc)
-    {
+    void drawTo(HDC dc) {
         BitBlt(dc, 0, 0, width, height, _drawdc, 0, 0, SRCCOPY);
     }
 
-    override inout(void[]) pixels() inout
-    {
+    override inout(void[]) pixels() inout {
         return _pixels[0 .. height * rowBytes];
     }
 
-    override void handleResize()
-    {
+    override void handleResize() {
         clear();
 
         BITMAPINFO bmi;
@@ -140,8 +131,7 @@ final class Win32BitmapData : BitmapData
         rowBytes = width * stride;
     }
 
-    override BitmapData clone()
-    {
+    override BitmapData clone() {
         return new Win32BitmapData(this);
     }
 }

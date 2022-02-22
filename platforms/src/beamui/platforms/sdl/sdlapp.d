@@ -9,8 +9,8 @@ module beamui.platforms.sdl.sdlapp;
 
 import beamui.core.config;
 
-static if (BACKEND_GUI):
-import std.string : fromStringz, toStringz;
+static if (BACKEND_GUI)
+     : import std.string : fromStringz, toStringz;
 import std.utf : toUTF32;
 
 import bindbc.sdl;
@@ -31,8 +31,7 @@ import beamui.platforms.common.startup;
 import beamui.text.fonts;
 import beamui.text.ftfonts;
 
-version (Windows)
-{
+version (Windows) {
     import core.sys.windows.windows;
 
     pragma(lib, "gdi32.lib");
@@ -43,15 +42,12 @@ private __gshared SDL_EventType USER_EVENT_ID;
 private __gshared SDL_EventType TIMER_EVENT_ID;
 private __gshared SDL_EventType WINDOW_CLOSE_EVENT_ID;
 
-final class SDLWindow : Window
-{
-    @property uint windowID()
-    {
+final class SDLWindow : Window {
+    @property uint windowID() {
         return _win ? SDL_GetWindowID(_win) : 0;
     }
 
-    private
-    {
+    private {
         SDLPlatform _platform;
 
         SDL_Window* _win;
@@ -63,8 +59,7 @@ final class SDLWindow : Window
         Bitmap _backbuffer;
     }
 
-    this(SDLPlatform platform, dstring caption, Window parent, WindowOptions options, uint w = 0, uint h = 0)
-    {
+    this(SDLPlatform platform, dstring caption, Window parent, WindowOptions options, uint w = 0, uint h = 0) {
         super(parent, options);
         _platform = platform;
         _title = caption;
@@ -82,24 +77,21 @@ final class SDLWindow : Window
             this.icon = imageCache.get(platform.defaultWindowIcon);
     }
 
-    ~this()
-    {
+    ~this() {
         if (_renderer)
             SDL_DestroyRenderer(_renderer);
         if (_win)
             SDL_DestroyWindow(_win);
     }
 
-    override protected void cleanup()
-    {
+    override protected void cleanup() {
         static if (USE_OPENGL)
             bindContext(); // required to correctly destroy GL objects
         eliminate(_paintEngine);
         _backbuffer = Bitmap.init;
     }
 
-    private bool create()
-    {
+    private bool create() {
         debug Log.d("Creating SDL window of size ", width, "x", height);
 
         SDL_WindowFlags sdlWindowFlags = SDL_WINDOW_HIDDEN;
@@ -110,43 +102,35 @@ final class SDLWindow : Window
         if (options & WindowOptions.borderless)
             sdlWindowFlags = SDL_WINDOW_BORDERLESS;
         sdlWindowFlags |= SDL_WINDOW_ALLOW_HIGHDPI;
-        static if (USE_OPENGL)
-        {
+        static if (USE_OPENGL) {
             if (openglEnabled)
                 sdlWindowFlags |= SDL_WINDOW_OPENGL;
         }
         _win = SDL_CreateWindow(toUTF8(_title).toStringz, SDL_WINDOWPOS_UNDEFINED,
-                SDL_WINDOWPOS_UNDEFINED, width, height, sdlWindowFlags);
-        static if (USE_OPENGL)
-        {
-            if (!_win && openglEnabled)
-            {
+            SDL_WINDOWPOS_UNDEFINED, width, height, sdlWindowFlags);
+        static if (USE_OPENGL) {
+            if (!_win && openglEnabled) {
                 Log.e("SDL_CreateWindow failed - cannot create OpenGL window: ", fromStringz(SDL_GetError()));
                 disableOpenGL();
                 // recreate w/o OpenGL
                 sdlWindowFlags &= ~SDL_WINDOW_OPENGL;
                 _win = SDL_CreateWindow(toUTF8(_title).toStringz, SDL_WINDOWPOS_UNDEFINED,
-                        SDL_WINDOWPOS_UNDEFINED, width, height, sdlWindowFlags);
+                    SDL_WINDOWPOS_UNDEFINED, width, height, sdlWindowFlags);
             }
         }
-        if (!_win)
-        {
+        if (!_win) {
             Log.e("SDL2: Failed to create window: ", fromStringz(SDL_GetError()));
             return false;
         }
 
-        static if (USE_OPENGL)
-        {
+        static if (USE_OPENGL) {
             _platform.createGLContext(this);
         }
-        if (!openglEnabled)
-        {
+        if (!openglEnabled) {
             _renderer = SDL_CreateRenderer(_win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-            if (!_renderer)
-            {
+            if (!_renderer) {
                 _renderer = SDL_CreateRenderer(_win, -1, SDL_RENDERER_SOFTWARE);
-                if (!_renderer)
-                {
+                if (!_renderer) {
                     Log.e("SDL2: Failed to create renderer");
                     return false;
                 }
@@ -163,29 +147,25 @@ final class SDLWindow : Window
         return true;
     }
 
-    private void fixSize()
-    {
+    private void fixSize() {
         int w = 0;
         int h = 0;
         SDL_GetWindowSize(_win, &w, &h);
         handleResize(w, h);
     }
 
-    override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
-    {
+    override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none) {
         super.handleWindowStateChange(newState, newWindowRect);
     }
 
-    override bool setWindowState(WindowState newState, bool activate = false, BoxI newWindowRect = BoxI.none)
-    {
+    override bool setWindowState(WindowState newState, bool activate = false, BoxI newWindowRect = BoxI.none) {
         if (_win is null)
             return false;
 
         bool res = false;
 
         // change state
-        switch (newState)
-        {
+        switch (newState) {
         case WindowState.maximized:
             if (_windowState != WindowState.maximized)
                 SDL_MaximizeWindow(_win);
@@ -202,11 +182,9 @@ final class SDLWindow : Window
             res = true;
             break;
         case WindowState.normal:
-            if (_windowState != WindowState.normal)
-            {
+            if (_windowState != WindowState.normal) {
                 SDL_RestoreWindow(_win);
-                version (linux)
-                {
+                version (linux) {
                     // On linux with Cinnamon desktop, changing window state from for example minimized reset windows size
                     // and/or position to values from create window (last tested on Cinamon 3.4.6 with SDL 2.0.4)
                     //
@@ -236,49 +214,42 @@ final class SDLWindow : Window
         // change size and/or position
         bool rectChanged = false;
         if (newWindowRect != BoxI.none && (newState == WindowState.normal ||
-                newState == WindowState.unspecified))
-        {
+                newState == WindowState.unspecified)) {
             // change position
-            if (newWindowRect.x != int.min && newWindowRect.y != int.min)
-            {
+            if (newWindowRect.x != int.min && newWindowRect.y != int.min) {
                 SDL_SetWindowPosition(_win, newWindowRect.x, newWindowRect.y);
                 rectChanged = true;
                 res = true;
             }
 
             // change size
-            if (newWindowRect.w != int.min && newWindowRect.h != int.min)
-            {
+            if (newWindowRect.w != int.min && newWindowRect.h != int.min) {
                 SDL_SetWindowSize(_win, newWindowRect.w, newWindowRect.h);
                 rectChanged = true;
                 res = true;
             }
         }
 
-        if (activate)
-        {
+        if (activate) {
             SDL_RaiseWindow(_win);
             res = true;
         }
 
         //needed here to make _windowRect and _windowState valid before SDL_WINDOWEVENT_RESIZED/SDL_WINDOWEVENT_MOVED/SDL_WINDOWEVENT_MINIMIZED/SDL_WINDOWEVENT_MAXIMIZED etc handled
         //example: change size by resizeWindow() and make some calculations using windowRect
-        if (rectChanged)
-        {
+        if (rectChanged) {
             handleWindowStateChange(newState, BoxI(
-                newWindowRect.x == int.min ? _windowRect.x : newWindowRect.x,
-                newWindowRect.y == int.min ? _windowRect.y : newWindowRect.y,
-                newWindowRect.w == int.min ? _windowRect.w : newWindowRect.w,
-                newWindowRect.h == int.min ? _windowRect.h : newWindowRect.h));
-        }
-        else
+                    newWindowRect.x == int.min ? _windowRect.x : newWindowRect.x,
+                    newWindowRect.y == int.min ? _windowRect.y : newWindowRect.y,
+                    newWindowRect.w == int.min ? _windowRect.w : newWindowRect.w,
+                    newWindowRect.h == int.min ? _windowRect.h : newWindowRect.h));
+        } else
             handleWindowStateChange(newState, BoxI.none);
 
         return res;
     }
 
-    override protected void handleSizeHintsChange()
-    {
+    override protected void handleSizeHintsChange() {
         const mn = minSize;
         SizeI mx = maxSize;
         // FIXME: SDL does not allow equal sizes for some reason
@@ -290,32 +261,29 @@ final class SDLWindow : Window
         SDL_SetWindowMaximumSize(_win, mx.w, mx.h);
     }
 
-    override @property bool isActive() const
-    {
+    override @property bool isActive() const {
         uint flags = SDL_GetWindowFlags(cast(SDL_Window*)_win);
         return (flags & SDL_WINDOW_INPUT_FOCUS) == SDL_WINDOW_INPUT_FOCUS;
     }
 
-    override protected void handleWindowActivityChange(bool isWindowActive)
-    {
+    override protected void handleWindowActivityChange(bool isWindowActive) {
         super.handleWindowActivityChange(isWindowActive);
     }
 
     //===============================================================
 
-    override @property dstring title() const { return _title; }
+    override @property dstring title() const {
+        return _title;
+    }
 
-    override @property void title(dstring caption)
-    {
+    override @property void title(dstring caption) {
         _title = caption;
         if (_win)
             SDL_SetWindowTitle(_win, toUTF8(caption).toStringz);
     }
 
-    override @property void icon(Bitmap ic)
-    {
-        if (!ic)
-        {
+    override @property void icon(Bitmap ic) {
+        if (!ic) {
             Log.e("Trying to set null icon for window");
             return;
         }
@@ -330,21 +298,17 @@ final class SDLWindow : Window
             32, cast(int)iconDraw.rowBytes,
             0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000,
         );
-        if (surface)
-        {
+        if (surface) {
             // The icon is attached to the window pointer
             SDL_SetWindowIcon(_win, surface);
             // ...and the surface containing the icon pixel data is no longer required.
             SDL_FreeSurface(surface);
-        }
-        else
-        {
+        } else {
             Log.e("failed to set window icon");
         }
     }
 
-    override protected void show()
-    {
+    override protected void show() {
         Log.d("SDLWindow.show - ", title);
 
         adjustSize();
@@ -359,20 +323,17 @@ final class SDLWindow : Window
 
     private uint _lastRedrawEventCode;
 
-    override void invalidate()
-    {
+    override void invalidate() {
         _platform.sendRedrawEvent(windowID, ++_lastRedrawEventCode);
     }
 
-    override void close()
-    {
+    override void close() {
         _platform.closeWindow(this);
     }
 
     //===============================================================
 
-    private void processRedrawEvent(uint code)
-    {
+    private void processRedrawEvent(uint code) {
         if (code == _lastRedrawEventCode)
             redraw();
     }
@@ -380,16 +341,14 @@ final class SDLWindow : Window
     private CursorType _lastCursorType = CursorType.automatic;
     private SDL_Cursor*[CursorType] _cursorCache;
 
-    override protected void setCursorType(CursorType type)
-    {
+    override protected void setCursorType(CursorType type) {
         if (_lastCursorType == type)
             return;
 
         debug (sdl)
             Log.d("SDL: changing cursor to ", type);
 
-        if (type == CursorType.none)
-        {
+        if (type == CursorType.none) {
             SDL_ShowCursor(SDL_DISABLE);
             _lastCursorType = CursorType.none;
             return;
@@ -399,12 +358,9 @@ final class SDLWindow : Window
 
         SDL_Cursor* cursor;
         // check for existing cursor in map
-        if (auto p = type in _cursorCache)
-        {
+        if (auto p = type in _cursorCache) {
             cursor = *p;
-        }
-        else
-        {
+        } else {
             // create new one
             cursor = SDL_CreateSystemCursor(convertCursorType(type));
             _cursorCache[type] = cursor;
@@ -415,10 +371,8 @@ final class SDLWindow : Window
         _lastCursorType = type;
     }
 
-    static private SDL_SystemCursor convertCursorType(CursorType type)
-    {
-        switch (type) with (CursorType)
-        {
+    static private SDL_SystemCursor convertCursorType(CursorType type) {
+        switch (type) with (CursorType) {
         case pointer:
         case grab:
             return SDL_SYSTEM_CURSOR_HAND;
@@ -456,8 +410,7 @@ final class SDLWindow : Window
         }
     }
 
-    private void updateDPI()
-    {
+    private void updateDPI() {
         const displayIndex = SDL_GetWindowDisplayIndex(_win);
         if (displayIndex < 0)
             return;
@@ -481,15 +434,12 @@ final class SDLWindow : Window
     private SDL_Texture* _texture;
     private int _txw, _txh;
 
-    private void updateTextureSize(int pw, int ph)
-    {
-        if (_texture && (_txw != pw || _txh != ph))
-        {
+    private void updateTextureSize(int pw, int ph) {
+        if (_texture && (_txw != pw || _txh != ph)) {
             SDL_DestroyTexture(_texture);
             _texture = null;
         }
-        if (!_texture)
-        {
+        if (!_texture) {
             _texture = SDL_CreateTexture(_renderer,
                 SDL_PIXELFORMAT_ARGB8888,
                 SDL_TEXTUREACCESS_STATIC,
@@ -499,20 +449,15 @@ final class SDLWindow : Window
         }
     }
 
-    private void redraw()
-    {
+    private void redraw() {
         // check if size has been changed
         fixSize();
 
-        if (openglEnabled)
-        {
+        if (openglEnabled) {
             static if (USE_OPENGL)
                 drawUsingOpenGL(_paintEngine);
-        }
-        else
-        {
-            if (!_paintEngine)
-            {
+        } else {
+            if (!_paintEngine) {
                 // create stuff on the first run
                 _backbuffer = Bitmap(1, 1, PixelFormat.argb8);
                 _paintEngine = new SWPaintEngine(_backbuffer);
@@ -529,12 +474,10 @@ final class SDLWindow : Window
         }
     }
 
-    static if (USE_OPENGL)
-    {
+    static if (USE_OPENGL) {
         private SDL_GLContext _context;
 
-        override protected bool createContext(int major, int minor)
-        {
+        override protected bool createContext(int major, int minor) {
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major);
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor);
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -546,22 +489,18 @@ final class SDLWindow : Window
             return success;
         }
 
-        override protected void destroyContext()
-        {
-            if (_context)
-            {
+        override protected void destroyContext() {
+            if (_context) {
                 SDL_GL_DeleteContext(_context);
                 _context = null;
             }
         }
 
-        override protected void handleGLReadiness()
-        {
+        override protected void handleGLReadiness() {
             disableVSync();
         }
 
-        private void disableVSync()
-        {
+        private void disableVSync() {
             // try to activate adaptive vsync
             const int res = SDL_GL_SetSwapInterval(-1);
             // if it's not supported, work without vsync
@@ -569,13 +508,11 @@ final class SDLWindow : Window
                 SDL_GL_SetSwapInterval(0);
         }
 
-        override protected void bindContext()
-        {
+        override protected void bindContext() {
             SDL_GL_MakeCurrent(_win, _context);
         }
 
-        override protected void swapBuffers()
-        {
+        override protected void swapBuffers() {
             SDL_GL_SwapWindow(_win);
         }
     }
@@ -586,8 +523,7 @@ final class SDLWindow : Window
     private ButtonDetails _mbutton;
     private ButtonDetails _rbutton;
 
-    private MouseMods convertMouseMods(uint sdlFlags)
-    {
+    private MouseMods convertMouseMods(uint sdlFlags) {
         MouseMods mods;
         if (sdlFlags & SDL_BUTTON_LMASK)
             mods |= MouseMods.left;
@@ -598,8 +534,7 @@ final class SDLWindow : Window
         return mods;
     }
 
-    private MouseButton convertMouseButton(uint sdlButton)
-    {
+    private MouseButton convertMouseButton(uint sdlButton) {
         if (sdlButton == SDL_BUTTON_LEFT)
             return MouseButton.left;
         if (sdlButton == SDL_BUTTON_RIGHT)
@@ -613,8 +548,7 @@ final class SDLWindow : Window
     private short lastx, lasty;
     private KeyMods _keyMods;
 
-    private void processMouseEvent(MouseAction action, uint sdlButton, uint sdlFlags, int x, int y)
-    {
+    private void processMouseEvent(MouseAction action, uint sdlButton, uint sdlFlags, int x, int y) {
         lastPressed = convertMouseMods(sdlFlags);
         lastx = cast(short)x;
         lasty = cast(short)y;
@@ -628,14 +562,10 @@ final class SDLWindow : Window
             pbuttonDetails = &_rbutton;
         else if (btn == MouseButton.middle)
             pbuttonDetails = &_mbutton;
-        if (pbuttonDetails)
-        {
-            if (action == MouseAction.buttonDown)
-            {
+        if (pbuttonDetails) {
+            if (action == MouseAction.buttonDown) {
                 pbuttonDetails.down(cast(short)x, cast(short)y, lastPressed, _keyMods);
-            }
-            else if (action == MouseAction.buttonUp)
-            {
+            } else if (action == MouseAction.buttonUp) {
                 pbuttonDetails.up(cast(short)x, cast(short)y, lastPressed, _keyMods);
             }
         }
@@ -647,10 +577,8 @@ final class SDLWindow : Window
         update();
     }
 
-    private void processWheelEvent(int deltaX, int deltaY)
-    {
-        if (deltaX != 0 || deltaY != 0)
-        {
+    private void processWheelEvent(int deltaX, int deltaY) {
+        if (deltaX != 0 || deltaY != 0) {
             const dx = cast(short)deltaX;
             const dy = cast(short)deltaY;
             auto event = new WheelEvent(lastx, lasty, lastPressed, _keyMods, dx, dy);
@@ -659,70 +587,128 @@ final class SDLWindow : Window
         }
     }
 
-    private Key convertKeyCode(uint sdlKeyCode)
-    {
-        switch (sdlKeyCode)
-        {
-        case SDLK_0: return Key.alpha0;
-        case SDLK_1: return Key.alpha1;
-        case SDLK_2: return Key.alpha2;
-        case SDLK_3: return Key.alpha3;
-        case SDLK_4: return Key.alpha4;
-        case SDLK_5: return Key.alpha5;
-        case SDLK_6: return Key.alpha6;
-        case SDLK_7: return Key.alpha7;
-        case SDLK_8: return Key.alpha8;
-        case SDLK_9: return Key.alpha9;
-        case SDLK_a: return Key.A;
-        case SDLK_b: return Key.B;
-        case SDLK_c: return Key.C;
-        case SDLK_d: return Key.D;
-        case SDLK_e: return Key.E;
-        case SDLK_f: return Key.F;
-        case SDLK_g: return Key.G;
-        case SDLK_h: return Key.H;
-        case SDLK_i: return Key.I;
-        case SDLK_j: return Key.J;
-        case SDLK_k: return Key.K;
-        case SDLK_l: return Key.L;
-        case SDLK_m: return Key.M;
-        case SDLK_n: return Key.N;
-        case SDLK_o: return Key.O;
-        case SDLK_p: return Key.P;
-        case SDLK_q: return Key.Q;
-        case SDLK_r: return Key.R;
-        case SDLK_s: return Key.S;
-        case SDLK_t: return Key.T;
-        case SDLK_u: return Key.U;
-        case SDLK_v: return Key.V;
-        case SDLK_w: return Key.W;
-        case SDLK_x: return Key.X;
-        case SDLK_y: return Key.Y;
-        case SDLK_z: return Key.Z;
-        case SDLK_F1: return Key.F1;
-        case SDLK_F2: return Key.F2;
-        case SDLK_F3: return Key.F3;
-        case SDLK_F4: return Key.F4;
-        case SDLK_F5: return Key.F5;
-        case SDLK_F6: return Key.F6;
-        case SDLK_F7: return Key.F7;
-        case SDLK_F8: return Key.F8;
-        case SDLK_F9: return Key.F9;
-        case SDLK_F10: return Key.F10;
-        case SDLK_F11: return Key.F11;
-        case SDLK_F12: return Key.F12;
-        case SDLK_F13: return Key.F13;
-        case SDLK_F14: return Key.F14;
-        case SDLK_F15: return Key.F15;
-        case SDLK_F16: return Key.F16;
-        case SDLK_F17: return Key.F17;
-        case SDLK_F18: return Key.F18;
-        case SDLK_F19: return Key.F19;
-        case SDLK_F20: return Key.F20;
-        case SDLK_F21: return Key.F21;
-        case SDLK_F22: return Key.F22;
-        case SDLK_F23: return Key.F23;
-        case SDLK_F24: return Key.F24;
+    private Key convertKeyCode(uint sdlKeyCode) {
+        switch (sdlKeyCode) {
+        case SDLK_0:
+            return Key.alpha0;
+        case SDLK_1:
+            return Key.alpha1;
+        case SDLK_2:
+            return Key.alpha2;
+        case SDLK_3:
+            return Key.alpha3;
+        case SDLK_4:
+            return Key.alpha4;
+        case SDLK_5:
+            return Key.alpha5;
+        case SDLK_6:
+            return Key.alpha6;
+        case SDLK_7:
+            return Key.alpha7;
+        case SDLK_8:
+            return Key.alpha8;
+        case SDLK_9:
+            return Key.alpha9;
+        case SDLK_a:
+            return Key.A;
+        case SDLK_b:
+            return Key.B;
+        case SDLK_c:
+            return Key.C;
+        case SDLK_d:
+            return Key.D;
+        case SDLK_e:
+            return Key.E;
+        case SDLK_f:
+            return Key.F;
+        case SDLK_g:
+            return Key.G;
+        case SDLK_h:
+            return Key.H;
+        case SDLK_i:
+            return Key.I;
+        case SDLK_j:
+            return Key.J;
+        case SDLK_k:
+            return Key.K;
+        case SDLK_l:
+            return Key.L;
+        case SDLK_m:
+            return Key.M;
+        case SDLK_n:
+            return Key.N;
+        case SDLK_o:
+            return Key.O;
+        case SDLK_p:
+            return Key.P;
+        case SDLK_q:
+            return Key.Q;
+        case SDLK_r:
+            return Key.R;
+        case SDLK_s:
+            return Key.S;
+        case SDLK_t:
+            return Key.T;
+        case SDLK_u:
+            return Key.U;
+        case SDLK_v:
+            return Key.V;
+        case SDLK_w:
+            return Key.W;
+        case SDLK_x:
+            return Key.X;
+        case SDLK_y:
+            return Key.Y;
+        case SDLK_z:
+            return Key.Z;
+        case SDLK_F1:
+            return Key.F1;
+        case SDLK_F2:
+            return Key.F2;
+        case SDLK_F3:
+            return Key.F3;
+        case SDLK_F4:
+            return Key.F4;
+        case SDLK_F5:
+            return Key.F5;
+        case SDLK_F6:
+            return Key.F6;
+        case SDLK_F7:
+            return Key.F7;
+        case SDLK_F8:
+            return Key.F8;
+        case SDLK_F9:
+            return Key.F9;
+        case SDLK_F10:
+            return Key.F10;
+        case SDLK_F11:
+            return Key.F11;
+        case SDLK_F12:
+            return Key.F12;
+        case SDLK_F13:
+            return Key.F13;
+        case SDLK_F14:
+            return Key.F14;
+        case SDLK_F15:
+            return Key.F15;
+        case SDLK_F16:
+            return Key.F16;
+        case SDLK_F17:
+            return Key.F17;
+        case SDLK_F18:
+            return Key.F18;
+        case SDLK_F19:
+            return Key.F19;
+        case SDLK_F20:
+            return Key.F20;
+        case SDLK_F21:
+            return Key.F21;
+        case SDLK_F22:
+            return Key.F22;
+        case SDLK_F23:
+            return Key.F23;
+        case SDLK_F24:
+            return Key.F24;
         case SDLK_BACKSPACE:
             return Key.backspace;
         case SDLK_SPACE:
@@ -788,8 +774,7 @@ final class SDLWindow : Window
         }
     }
 
-    private KeyMods convertKeyMods(uint sdlKeymod)
-    {
+    private KeyMods convertKeyMods(uint sdlKeymod) {
         KeyMods mods;
         if (sdlKeymod & KMOD_SHIFT)
             mods |= KeyMods.shift;
@@ -814,8 +799,7 @@ final class SDLWindow : Window
         return mods;
     }
 
-    private void processTextInput(const char* s)
-    {
+    private void processTextInput(const char* s) {
         string str = fromStringz(s).dup;
         dstring ds = toUTF32(str);
         KeyMods mods = convertKeyMods(SDL_GetModState());
@@ -823,12 +807,11 @@ final class SDLWindow : Window
         //but do hanlde RAlt https://github.com/buggins/dlangide/issues/129
         debug (keys)
             Log.fd("processTextInput char: %s (%s), mods: %s", ds, cast(int)ds[0], mods);
-        if ((mods & KeyMods.alt) && (mods & KeyMods.control))
-        {
+        if ((mods & KeyMods.alt) && (mods & KeyMods.control)) {
             mods &= (~(KeyMods.lralt)) & (~(KeyMods.lrcontrol));
             debug (keys)
                 Log.fd("processTextInput removed Ctrl+Alt mods char: %s (%s), mods: %s",
-                        ds, cast(int)ds[0], mods);
+                    ds, cast(int)ds[0], mods);
         }
 
         if (mods & KeyMods.control || (mods & KeyMods.lalt) == KeyMods.lalt || mods & KeyMods.meta)
@@ -838,29 +821,22 @@ final class SDLWindow : Window
         update();
     }
 
-    static bool isNumLockEnabled()
-    {
-        version (Windows)
-        {
+    static bool isNumLockEnabled() {
+        version (Windows) {
             return !!(GetKeyState(VK_NUMLOCK) & 1);
-        }
-        else
-        {
+        } else {
             return !!(SDL_GetModState() & KMOD_NUM);
         }
     }
 
-    private void processKeyEvent(KeyAction action, uint sdlKeyCode, uint sdlKeymod)
-    {
+    private void processKeyEvent(KeyAction action, uint sdlKeyCode, uint sdlKeymod) {
         debug (keys)
             Log.fd("processKeyEvent %s, SDL key: 0x%08x, SDL mods: 0x%08x", action, sdlKeyCode, sdlKeymod);
 
         const key = convertKeyCode(sdlKeyCode);
         KeyMods mods = convertKeyMods(sdlKeymod);
-        if (action == KeyAction.keyDown)
-        {
-            switch (key)
-            {
+        if (action == KeyAction.keyDown) {
+            switch (key) {
             case Key.shift:
                 mods |= KeyMods.shift;
                 break;
@@ -901,11 +877,10 @@ final class SDLWindow : Window
         debug (keys)
             Log.fd("converted, action: %s, key: %s, mods: %s", action, key, mods);
 
-        if (action == KeyAction.keyDown || action == KeyAction.keyUp)
-        {
+        if (action == KeyAction.keyDown || action == KeyAction.keyUp) {
             if ((SDLK_KP_1 <= sdlKeyCode && sdlKeyCode <= SDLK_KP_0 ||
-                 sdlKeyCode == SDLK_KP_PERIOD) && isNumLockEnabled)
-                    return;
+                    sdlKeyCode == SDLK_KP_PERIOD) && isNumLockEnabled)
+                return;
         }
         dispatchKeyEvent(new KeyEvent(action, key, mods));
         update();
@@ -913,15 +888,13 @@ final class SDLWindow : Window
 
     //===============================================================
 
-    override protected void captureMouse(bool enabled)
-    {
+    override protected void captureMouse(bool enabled) {
         debug (mouse)
             Log.d(enabled ? "Setting capture" : "Releasing capture");
         SDL_CaptureMouse(enabled ? SDL_TRUE : SDL_FALSE);
     }
 
-    override void postEvent(CustomEvent event)
-    {
+    override void postEvent(CustomEvent event) {
         super.postEvent(event);
         SDL_Event sdlevent;
         sdlevent.user.type = USER_EVENT_ID;
@@ -930,8 +903,7 @@ final class SDLWindow : Window
         SDL_PushEvent(&sdlevent);
     }
 
-    override protected void postTimerEvent()
-    {
+    override protected void postTimerEvent() {
         SDL_Event sdlevent;
         sdlevent.user.type = TIMER_EVENT_ID;
         sdlevent.user.code = 0;
@@ -939,29 +911,24 @@ final class SDLWindow : Window
         SDL_PushEvent(&sdlevent);
     }
 
-    override protected void handleTimer()
-    {
+    override protected void handleTimer() {
         super.handleTimer();
     }
 }
 
-final class SDLPlatform : Platform
-{
+final class SDLPlatform : Platform {
     private WindowMap!(SDLWindow, uint) windows;
 
-    this(ref AppConf conf)
-    {
+    this(ref AppConf conf) {
         super(conf);
     }
 
-    ~this()
-    {
+    ~this() {
         destroy(windows);
         SDL_Quit();
     }
 
-    override void closeWindow(Window w)
-    {
+    override void closeWindow(Window w) {
         // send a close event for SDLWindow
         SDLWindow window = cast(SDLWindow)w;
         SDL_Event sdlevent;
@@ -971,8 +938,7 @@ final class SDLPlatform : Platform
         SDL_PushEvent(&sdlevent);
     }
 
-    override protected int opApply(scope int delegate(size_t i, Window w) callback)
-    {
+    override protected int opApply(scope int delegate(size_t i, Window w) callback) {
         foreach (i, w; windows)
             if (const result = callback(i, w))
                 break;
@@ -981,8 +947,7 @@ final class SDLPlatform : Platform
 
     private SDL_EventType _redrawEventID;
 
-    void sendRedrawEvent(uint windowID, uint code)
-    {
+    void sendRedrawEvent(uint windowID, uint code) {
         if (!_redrawEventID)
             _redrawEventID = cast(SDL_EventType)SDL_RegisterEvents(1);
         SDL_Event event;
@@ -993,9 +958,8 @@ final class SDLPlatform : Platform
     }
 
     override Window createWindow(dstring title, Window parent,
-            WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
-            uint width = 0, uint height = 0)
-    {
+        WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
+        uint width = 0, uint height = 0) {
         auto w = new SDLWindow(this, title, parent, options, width, height);
         windows.add(w, w.windowID);
         return w;
@@ -1003,13 +967,11 @@ final class SDLPlatform : Platform
 
     private bool _windowsMinimized;
 
-    override int runEventLoop()
-    {
+    override int runEventLoop() {
         Log.i("entering message loop");
         SDL_Event event;
         bool skipNextQuit;
-        while (SDL_WaitEvent(&event))
-        {
+        while (SDL_WaitEvent(&event)) {
             bool quit = processSDLEvent(event, skipNextQuit);
             windows.purge();
             if (quit)
@@ -1021,50 +983,43 @@ final class SDLPlatform : Platform
 
     private uint timestampResizing;
 
-    protected bool processSDLEvent(ref SDL_Event event, ref bool skipNextQuit)
-    {
-        if (event.type == SDL_QUIT)
-        {
+    protected bool processSDLEvent(ref SDL_Event event, ref bool skipNextQuit) {
+        if (event.type == SDL_QUIT) {
             if (!skipNextQuit)
                 return true;
             else
                 skipNextQuit = false;
         }
-        if (_redrawEventID && event.type == _redrawEventID)
-        {
+        if (_redrawEventID && event.type == _redrawEventID) {
             if (event.window.timestamp - timestampResizing <= 1) // TODO: refactor everything
                 return false;
             // user defined redraw event
-            if (auto w = windows[event.user.windowID])
-            {
+            if (auto w = windows[event.user.windowID]) {
                 w.processRedrawEvent(event.user.code);
             }
             return false;
         }
-        switch (event.type)
-        {
+        switch (event.type) {
         case SDL_WINDOWEVENT:
             // window events
             SDLWindow w = windows[event.window.windowID];
-            if (!w)
-            {
+            if (!w) {
                 Log.w("SDL_WINDOWEVENT ", event.window.event, " received with unknown id ", event.window.windowID);
                 break;
             }
             // found window
-            switch (event.window.event)
-            {
+            switch (event.window.event) {
             case SDL_WINDOWEVENT_RESIZED:
                 debug (sdl)
                     Log.d("SDL_WINDOWEVENT_RESIZED - ", w.title,
-                            ", pos: ", event.window.data1, ",", event.window.data2);
+                        ", pos: ", event.window.data1, ",", event.window.data2);
                 // redraw is not needed here: SDL_WINDOWEVENT_RESIZED is following SDL_WINDOWEVENT_SIZE_CHANGED
                 // if the size was changed by an external event (window manager, user)
                 break;
             case SDL_WINDOWEVENT_SIZE_CHANGED:
                 debug (sdl)
                     Log.d("SDL_WINDOWEVENT_SIZE_CHANGED - ", w.title,
-                            ", size: ", event.window.data1, ",", event.window.data2);
+                        ", size: ", event.window.data1, ",", event.window.data2);
                 w.updateDPI();
                 w.handleWindowStateChange(WindowState.unspecified, BoxI(w.windowRect.x,
                         w.windowRect.y, event.window.data1, event.window.data2));
@@ -1072,14 +1027,11 @@ final class SDLPlatform : Platform
                 timestampResizing = event.window.timestamp;
                 break;
             case SDL_WINDOWEVENT_CLOSE:
-                if (w.canClose)
-                {
+                if (w.canClose) {
                     debug (sdl)
                         Log.d("SDL_WINDOWEVENT_CLOSE win: ", event.window.windowID);
                     windows.remove(w);
-                }
-                else
-                {
+                } else {
                     skipNextQuit = true;
                 }
                 break;
@@ -1134,8 +1086,7 @@ final class SDLPlatform : Platform
                 debug (sdl)
                     Log.d("SDL_WINDOWEVENT_RESTORED - ", w.title);
                 _windowsMinimized = false;
-                if (w.options & WindowOptions.modal)
-                {
+                if (w.options & WindowOptions.modal) {
                     w.restoreParentWindows();
                     w.restore(true);
                 }
@@ -1145,8 +1096,7 @@ final class SDLPlatform : Platform
 
                 if (w.hasVisibleModalChild)
                     w.restoreModalChilds();
-                version (linux)
-                { //not sure if needed on Windows or OSX. Also need to check on FreeBSD
+                version (linux) { //not sure if needed on Windows or OSX. Also need to check on FreeBSD
                     w.invalidate();
                 }
                 break;
@@ -1176,16 +1126,14 @@ final class SDLPlatform : Platform
             break;
         case SDL_KEYDOWN:
             SDLWindow w = windows[event.key.windowID];
-            if (w && !w.hasVisibleModalChild)
-            {
+            if (w && !w.hasVisibleModalChild) {
                 w.processKeyEvent(KeyAction.keyDown, event.key.keysym.sym, event.key.keysym.mod);
                 SDL_StartTextInput();
             }
             break;
         case SDL_KEYUP:
             SDLWindow w = windows[event.key.windowID];
-            if (w)
-            {
+            if (w) {
                 if (w.hasVisibleModalChild)
                     w.restoreModalChilds();
                 else
@@ -1200,41 +1148,36 @@ final class SDLPlatform : Platform
             debug (sdl)
                 Log.d("SDL_TEXTINPUT");
             SDLWindow w = windows[event.text.windowID];
-            if (w && !w.hasVisibleModalChild)
-            {
+            if (w && !w.hasVisibleModalChild) {
                 w.processTextInput(event.text.text.ptr);
             }
             break;
         case SDL_MOUSEMOTION:
             SDLWindow w = windows[event.motion.windowID];
-            if (w && !w.hasVisibleModalChild)
-            {
+            if (w && !w.hasVisibleModalChild) {
                 w.processMouseEvent(MouseAction.move, 0, event.motion.state, event.motion.x, event.motion.y);
             }
             break;
         case SDL_MOUSEBUTTONDOWN:
             SDLWindow w = windows[event.button.windowID];
-            if (w && !w.hasVisibleModalChild)
-            {
+            if (w && !w.hasVisibleModalChild) {
                 w.processMouseEvent(MouseAction.buttonDown, event.button.button,
-                        event.button.state, event.button.x, event.button.y);
+                    event.button.state, event.button.x, event.button.y);
             }
             break;
         case SDL_MOUSEBUTTONUP:
             SDLWindow w = windows[event.button.windowID];
-            if (w)
-            {
+            if (w) {
                 if (w.hasVisibleModalChild)
                     w.restoreModalChilds();
                 else
                     w.processMouseEvent(MouseAction.buttonUp, event.button.button,
-                            event.button.state, event.button.x, event.button.y);
+                        event.button.state, event.button.x, event.button.y);
             }
             break;
         case SDL_MOUSEWHEEL:
             SDLWindow w = windows[event.wheel.windowID];
-            if (w && !w.hasVisibleModalChild)
-            {
+            if (w && !w.hasVisibleModalChild) {
                 debug (sdl)
                     Log.d("SDL_MOUSEWHEEL x=", event.wheel.x, " y=", event.wheel.y);
                 w.processWheelEvent(-event.wheel.x, -event.wheel.y);
@@ -1242,39 +1185,30 @@ final class SDLPlatform : Platform
             break;
         default:
             // custom or not supported event
-            if (auto w = windows[event.user.windowID])
-            {
-                if (event.type == USER_EVENT_ID)
-                {
+            if (auto w = windows[event.user.windowID]) {
+                if (event.type == USER_EVENT_ID) {
                     w.handlePostedEvent(cast(uint)event.user.code);
-                }
-                else if (event.type == TIMER_EVENT_ID)
-                {
+                } else if (event.type == TIMER_EVENT_ID) {
                     w.handleTimer();
-                }
-                else if (event.type == WINDOW_CLOSE_EVENT_ID)
-                {
+                } else if (event.type == WINDOW_CLOSE_EVENT_ID) {
                     if (w.canClose)
                         windows.remove(w);
                 }
             }
             break;
         }
-        if (windows.count == 0)
-        {
+        if (windows.count == 0) {
             SDL_Quit();
             return true;
         }
         return false;
     }
 
-    override bool hasClipboardText(bool mouseBuffer = false)
-    {
+    override bool hasClipboardText(bool mouseBuffer = false) {
         return (SDL_HasClipboardText() == SDL_TRUE);
     }
 
-    override dstring getClipboardText(bool mouseBuffer = false)
-    {
+    override dstring getClipboardText(bool mouseBuffer = false) {
         char* txt = SDL_GetClipboardText();
         if (!txt)
             return ""d;
@@ -1283,34 +1217,29 @@ final class SDLPlatform : Platform
         return normalizeEOLs(toUTF32(s));
     }
 
-    override void setClipboardText(dstring text, bool mouseBuffer = false)
-    {
+    override void setClipboardText(dstring text, bool mouseBuffer = false) {
         string s = toUTF8(text);
         SDL_SetClipboardText(s.toStringz);
     }
 }
 
-extern (C) Platform initPlatform(AppConf conf)
-{
-    version (Windows)
-    {
+extern (C) Platform initPlatform(AppConf conf) {
+    version (Windows) {
         DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
 
         setAppDPIAwareOnWindows();
     }
 
     SDLSupport ret = loadSDL();
-    if (ret != sdlSupport)
-    {
-        if(ret == SDLSupport.noLibrary)
+    if (ret != sdlSupport) {
+        if (ret == SDLSupport.noLibrary)
             Log.e("This application requires the SDL library");
         else
             Log.e("The version of the SDL library is too low, must be at least 2.0.4");
         return null;
     }
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
-    {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
         Log.e("Cannot init SDL2: ", fromStringz(SDL_GetError()));
         return null;
     }
@@ -1319,8 +1248,7 @@ extern (C) Platform initPlatform(AppConf conf)
     TIMER_EVENT_ID = cast(SDL_EventType)SDL_RegisterEvents(1);
     WINDOW_CLOSE_EVENT_ID = cast(SDL_EventType)SDL_RegisterEvents(1);
 
-    static if (USE_OPENGL)
-    {
+    static if (USE_OPENGL) {
         // Set OpenGL attributes
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);

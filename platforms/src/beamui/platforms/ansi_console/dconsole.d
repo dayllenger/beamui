@@ -12,8 +12,7 @@ import beamui.core.config;
 // dfmt off
 static if (BACKEND_CONSOLE):
 // dfmt on
-version (Windows)
-{
+version (Windows) {
     import core.sys.windows.winbase;
     import core.sys.windows.wincon;
     import core.sys.windows.winuser;
@@ -28,35 +27,28 @@ import beamui.events.pointer;
 import beamui.events.wheel;
 
 /// Console cursor type
-enum ConsoleCursorType
-{
+enum ConsoleCursorType {
     hidden, /// Hidden
     insert, /// Insert (usually underscore)
     replace, /// Replace (usually square)
 }
 
-version (Windows)
-{
-}
-else
-{
+version (Windows) {
+} else {
     import core.sys.posix.signal;
 
     private __gshared bool SIGHUP_flag;
-    private extern (C) void signalHandler_SIGHUP(int) nothrow @nogc @system
-    {
+    private extern (C) void signalHandler_SIGHUP(int) nothrow @nogc @system {
         SIGHUP_flag = true;
     }
 
-    void setSignalHandlers()
-    {
+    void setSignalHandlers() {
         signal(SIGHUP, &signalHandler_SIGHUP);
     }
 }
 
 /// Console I/O support
-class Console
-{
+class Console {
     // dfmt off
     @property
     {
@@ -65,45 +57,35 @@ class Console
     }
     // dfmt on
 
-    private
-    {
+    private {
         int _cursorX;
         int _cursorY;
         int _width;
         int _height;
 
-        version (Windows)
-        {
+        version (Windows) {
             WORD _attr = WORD.max;
             immutable ushort COMMON_LVB_UNDERSCORE = 0x8000;
-        }
-        else
-        {
+        } else {
             uint _attr = uint.max;
         }
         bool _stopped;
     }
 
-    version (Windows)
-    {
+    version (Windows) {
         HANDLE _hstdin;
         HANDLE _hstdout;
-    }
-    else
-    {
+    } else {
         immutable int READ_BUF_SIZE = 1024;
         char[READ_BUF_SIZE] readBuf;
         int readBufPos = 0;
-        bool isSequenceCompleted()
-        {
+        bool isSequenceCompleted() {
             if (!readBufPos)
                 return false;
-            if (readBuf[0] == 0x1B)
-            {
+            if (readBuf[0] == 0x1B) {
                 if (readBufPos > 1 && readBuf[1] == '[' && readBuf[2] == 'M')
                     return readBufPos >= 6;
-                for (int i = 1; i < readBufPos; i++)
-                {
+                for (int i = 1; i < readBufPos; i++) {
                     char ch = readBuf[i];
                     if (ch == 'O' && i == readBufPos - 1)
                         continue;
@@ -112,8 +94,7 @@ class Console
                 }
                 return false;
             }
-            if (readBuf[0] & 0x80)
-            {
+            if (readBuf[0] & 0x80) {
                 if ((readBuf[0] & 0xE0) == 0xC0)
                     return readBufPos >= 2;
                 if ((readBuf[0] & 0xF0) == 0xE0)
@@ -127,8 +108,7 @@ class Console
             return true;
         }
 
-        string rawRead(int pollTimeout = 3000)
-        {
+        string rawRead(int pollTimeout = 3000) {
             if (_stopped)
                 return null;
             import core.thread;
@@ -136,17 +116,14 @@ class Console
 
             int waitTime = 0;
             int startPos = readBufPos;
-            while (readBufPos < READ_BUF_SIZE)
-            {
+            while (readBufPos < READ_BUF_SIZE) {
                 import core.sys.posix.unistd;
 
                 char ch = 0;
                 int res = cast(int)read(STDIN_FILENO, &ch, 1);
-                if (res < 0)
-                {
+                if (res < 0) {
                     auto err = errno;
-                    switch (err)
-                    {
+                    switch (err) {
                     case EBADF:
                         Log.e("rawRead stdin EINVAL - stopping terminal");
                         _stopped = true;
@@ -167,10 +144,8 @@ class Console
                         break;
                     }
                 }
-                if (res <= 0)
-                {
-                    if (readBufPos == startPos && waitTime < pollTimeout)
-                    {
+                if (res <= 0) {
+                    if (readBufPos == startPos && waitTime < pollTimeout) {
                         Thread.sleep(dur!("msecs")(10));
                         waitTime += 10;
                         continue;
@@ -181,8 +156,7 @@ class Console
                 if (isSequenceCompleted())
                     break;
             }
-            if (readBufPos > 0 && isSequenceCompleted())
-            {
+            if (readBufPos > 0 && isSequenceCompleted()) {
                 string s = readBuf[0 .. readBufPos].dup;
                 readBufPos = 0;
                 return s;
@@ -190,17 +164,14 @@ class Console
             return null;
         }
 
-        bool rawWrite(string s)
-        {
+        bool rawWrite(string s) {
             import core.sys.posix.unistd;
             import core.stdc.errno;
 
             int res = cast(int)write(STDOUT_FILENO, s.ptr, s.length);
-            if (res < 0)
-            {
+            if (res < 0) {
                 auto err = errno;
-                while (err == EAGAIN)
-                {
+                while (err == EAGAIN) {
                     //debug Log.d("rawWrite error EAGAIN - will retry");
                     res = cast(int)write(STDOUT_FILENO, s.ptr, s.length);
                     if (res >= 0)
@@ -214,13 +185,10 @@ class Console
         }
     }
 
-    version (Windows)
-    {
+    version (Windows) {
         DWORD savedStdinMode;
         DWORD savedStdoutMode;
-    }
-    else
-    {
+    } else {
         import core.sys.posix.termios;
         import core.sys.posix.fcntl;
         import core.sys.posix.sys.ioctl;
@@ -228,15 +196,11 @@ class Console
         termios savedStdinState;
     }
 
-    void uninit()
-    {
-        version (Windows)
-        {
+    void uninit() {
+        version (Windows) {
             SetConsoleMode(_hstdin, savedStdinMode);
             SetConsoleMode(_hstdout, savedStdoutMode);
-        }
-        else
-        {
+        } else {
             import core.sys.posix.unistd;
 
             tcsetattr(STDIN_FILENO, TCSANOW, &savedStdinState);
@@ -253,10 +217,8 @@ class Console
         }
     }
 
-    bool initialize()
-    {
-        version (Windows)
-        {
+    bool initialize() {
+        version (Windows) {
             _hstdin = GetStdHandle(STD_INPUT_HANDLE);
             if (_hstdin == INVALID_HANDLE_VALUE)
                 return false;
@@ -264,16 +226,13 @@ class Console
             if (_hstdout == INVALID_HANDLE_VALUE)
                 return false;
             CONSOLE_SCREEN_BUFFER_INFO csbi;
-            if (!GetConsoleScreenBufferInfo(_hstdout, &csbi))
-            {
-                if (!AllocConsole())
-                {
+            if (!GetConsoleScreenBufferInfo(_hstdout, &csbi)) {
+                if (!AllocConsole()) {
                     return false;
                 }
                 _hstdin = GetStdHandle(STD_INPUT_HANDLE);
                 _hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-                if (!GetConsoleScreenBufferInfo(_hstdout, &csbi))
-                {
+                if (!GetConsoleScreenBufferInfo(_hstdout, &csbi)) {
                     return false;
                 }
                 //printf( "GetConsoleScreenBufferInfo failed: %lu\n", GetLastError());
@@ -309,9 +268,7 @@ class Console
             _backgroundColor = (_attr & 0xF0) >> 4;
             _underline = (_attr & COMMON_LVB_UNDERSCORE) != 0;
             //writeln("csbi=", csbi);
-        }
-        else
-        {
+        } else {
             import core.sys.posix.unistd;
 
             if (!isatty(1))
@@ -351,17 +308,13 @@ class Console
     }
 
     /// Clear screen and set cursor position to 0,0
-    void clearScreen()
-    {
-        version (Windows)
-        {
+    void clearScreen() {
+        version (Windows) {
             _attr = 0;
             DWORD charsWritten;
             FillConsoleOutputCharacter(_hstdout, ' ', _width * _height, COORD(0, 0), &charsWritten);
             FillConsoleOutputAttribute(_hstdout, 0, _width * _height, COORD(0, 0), &charsWritten);
-        }
-        else
-        {
+        } else {
             _attr = 0;
             rawWrite("\033[2J");
         }
@@ -369,38 +322,31 @@ class Console
     }
 
     /// Set cursor position
-    void setCursor(int x, int y)
-    {
+    void setCursor(int x, int y) {
         rawSetCursor(x, y);
         _cursorX = x;
         _cursorY = y;
     }
 
     /// Write text string directly onto screen, moving cursor
-    void writeText(const dchar[] str, ubyte textColor, ubyte backgroundColor, bool underline)
-    {
+    void writeText(const dchar[] str, ubyte textColor, ubyte backgroundColor, bool underline) {
         if (!str.length)
             return;
 
         rawSetAttributes(textColor, backgroundColor, underline);
         rawWriteText(str);
 
-        foreach (i; 0 .. str.length)
-        {
-            if (_cursorX >= _width)
-            {
+        foreach (i; 0 .. str.length) {
+            if (_cursorX >= _width) {
                 _cursorX = 0;
                 _cursorY++;
-                if (_cursorY >= _height)
-                {
+                if (_cursorY >= _height) {
                     _cursorY = _height - 1;
                 }
             }
             _cursorX++;
-            if (_cursorX >= _width)
-            {
-                if (_cursorY < _height - 1)
-                {
+            if (_cursorX >= _width) {
+                if (_cursorY < _height - 1) {
                     _cursorX = 0;
                     _cursorY++;
                 }
@@ -408,14 +354,10 @@ class Console
         }
     }
 
-    protected void rawSetCursor(int x, int y)
-    {
-        version (Windows)
-        {
+    protected void rawSetCursor(int x, int y) {
+        version (Windows) {
             SetConsoleCursorPosition(_hstdout, COORD(cast(short)x, cast(short)y));
-        }
-        else
-        {
+        } else {
             import core.stdc.stdio;
             import core.stdc.string;
 
@@ -426,31 +368,24 @@ class Console
     }
 
     private dstring _windowCaption;
-    void setWindowCaption(dstring str)
-    {
+    void setWindowCaption(dstring str) {
         if (_windowCaption == str)
             return;
         _windowCaption = str;
-        version (Windows)
-        {
+        version (Windows) {
             SetConsoleTitle(toUTF16z(str));
-        }
-        else
-        {
+        } else {
             // TODO: ANSI terminal caption
         }
     }
 
     private ConsoleCursorType _rawCursorType = ConsoleCursorType.insert;
-    protected void rawSetCursorType(ConsoleCursorType type)
-    {
+    protected void rawSetCursorType(ConsoleCursorType type) {
         if (_rawCursorType == type)
             return;
-        version (Windows)
-        {
+        version (Windows) {
             CONSOLE_CURSOR_INFO ci;
-            final switch (type) with (ConsoleCursorType)
-            {
+            final switch (type) with (ConsoleCursorType) {
             case insert:
                 ci.dwSize = 10;
                 ci.bVisible = TRUE;
@@ -465,11 +400,8 @@ class Console
                 break;
             }
             SetConsoleCursorInfo(_hstdout, &ci);
-        }
-        else
-        {
-            final switch (type) with (ConsoleCursorType)
-            {
+        } else {
+            final switch (type) with (ConsoleCursorType) {
             case insert:
                 rawWrite("\x1b[?25h");
                 break;
@@ -485,26 +417,21 @@ class Console
     }
 
     private ConsoleCursorType _cursorType = ConsoleCursorType.insert;
-    void setCursorType(ConsoleCursorType type)
-    {
+    void setCursorType(ConsoleCursorType type) {
         _cursorType = type;
         rawSetCursorType(_cursorType);
     }
 
-    protected void rawWriteText(const dchar[] str)
-    {
+    protected void rawWriteText(const dchar[] str) {
         // use cursor position to break lines
         debug foreach (ch; str)
             assert(ch != '\n' && ch != '\r');
 
-        version (Windows)
-        {
+        version (Windows) {
             wstring s16 = toUTF16(str);
             DWORD charsWritten;
             WriteConsole(_hstdout, cast(const(void)*)s16.ptr, cast(uint)s16.length, &charsWritten, cast(void*)null);
-        }
-        else
-        {
+        } else {
             string s8 = toUTF8(str);
             rawWrite(s8);
         }
@@ -514,19 +441,15 @@ class Console
     private ubyte _backgroundColor;
     private bool _underline;
 
-    protected void rawSetAttributes(ubyte textColor, ubyte backgroundColor, bool underline)
-    {
-        version (Windows)
-        {
+    protected void rawSetAttributes(ubyte textColor, ubyte backgroundColor, bool underline) {
+        version (Windows) {
             const attr = cast(WORD)textColor | cast(WORD)backgroundColor << 4 | (underline ? COMMON_LVB_UNDERSCORE : 0);
             if (_attr == attr)
                 return;
             _attr = attr;
 
             SetConsoleTextAttribute(_hstdout, attr);
-        }
-        else
-        {
+        } else {
             import core.stdc.stdio;
             import core.stdc.string;
 
@@ -554,10 +477,8 @@ class Console
         _underline = underline;
     }
 
-    protected void checkResize()
-    {
-        version (Windows)
-        {
+    protected void checkResize() {
+        version (Windows) {
             CONSOLE_SCREEN_BUFFER_INFO csbi;
             if (!GetConsoleScreenBufferInfo(_hstdout, &csbi))
                 return;
@@ -568,9 +489,7 @@ class Console
             int h = csbi.srWindow.Bottom - csbi.srWindow.Top + 1; // csbi.dwSize.Y;
             if (_width != w || _height != h)
                 handleConsoleResize(w, h);
-        }
-        else
-        {
+        } else {
             import core.sys.posix.unistd;
 
             //import core.sys.posix.fcntl;
@@ -579,8 +498,7 @@ class Console
 
             winsize w;
             ioctl(STDIN_FILENO, TIOCGWINSZ, &w);
-            if (_width != w.ws_col || _height != w.ws_row)
-            {
+            if (_width != w.ws_col || _height != w.ws_row) {
                 handleConsoleResize(w.ws_col, w.ws_row);
             }
         }
@@ -597,13 +515,11 @@ class Console
     /// Console input is idle
     Listener!(bool delegate()) onInputIdle;
 
-    protected bool handleKeyEvent(KeyEvent event)
-    {
+    protected bool handleKeyEvent(KeyEvent event) {
         return onKeyEvent(event);
     }
 
-    protected bool handleMouseEvent(MouseEvent event)
-    {
+    protected bool handleMouseEvent(MouseEvent event) {
         ButtonDetails* pbuttonDetails;
         if (event.button == MouseButton.left)
             pbuttonDetails = &_lbutton;
@@ -611,14 +527,10 @@ class Console
             pbuttonDetails = &_rbutton;
         else if (event.button == MouseButton.middle)
             pbuttonDetails = &_mbutton;
-        if (pbuttonDetails)
-        {
-            if (event.action == MouseAction.buttonDown)
-            {
+        if (pbuttonDetails) {
+            if (event.action == MouseAction.buttonDown) {
                 pbuttonDetails.down(event.x, event.y, event.mouseMods, event.keyMods);
-            }
-            else if (event.action == MouseAction.buttonUp)
-            {
+            } else if (event.action == MouseAction.buttonUp) {
                 pbuttonDetails.up(event.x, event.y, event.mouseMods, event.keyMods);
             }
         }
@@ -628,20 +540,17 @@ class Console
         return onMouseEvent(event);
     }
 
-    protected bool handleWheelEvent(WheelEvent event)
-    {
+    protected bool handleWheelEvent(WheelEvent event) {
         return onWheelEvent(event);
     }
 
-    protected bool handleConsoleResize(int width, int height)
-    {
+    protected bool handleConsoleResize(int width, int height) {
         _width = width;
         _height = height;
         return onResize(width, height);
     }
 
-    protected bool handleInputIdle()
-    {
+    protected bool handleInputIdle() {
         checkResize();
         return onInputIdle();
     }
@@ -653,44 +562,36 @@ class Console
     protected ButtonDetails _mbutton;
     protected ButtonDetails _rbutton;
 
-    void stop()
-    {
+    void stop() {
         // set stopped flag
         _stopped = true;
     }
 
     /// Wait for input, handle input
-    bool pollInput()
-    {
-        if (_stopped)
-        {
+    bool pollInput() {
+        if (_stopped) {
             debug Log.i("Console _stopped flag is set - returning false from pollInput");
             return false;
         }
-        version (Windows)
-        {
+        version (Windows) {
             INPUT_RECORD record;
             DWORD eventsRead;
             BOOL success = PeekConsoleInput(_hstdin, &record, 1, &eventsRead);
-            if (!success)
-            {
+            if (!success) {
                 DWORD err = GetLastError();
                 _stopped = true;
                 return false;
             }
-            if (eventsRead == 0)
-            {
+            if (eventsRead == 0) {
                 handleInputIdle();
                 Sleep(1);
                 return true;
             }
             success = ReadConsoleInput(_hstdin, &record, 1, &eventsRead);
-            if (!success)
-            {
+            if (!success) {
                 return false;
             }
-            switch (record.EventType)
-            {
+            switch (record.EventType) {
             case KEY_EVENT:
                 const action = record.KeyEvent.bKeyDown ? KeyAction.keyDown : KeyAction.keyUp;
                 const key = cast(Key)record.KeyEvent.wVirtualKeyCode;
@@ -733,24 +634,20 @@ class Console
                 if (buttonState & RIGHTMOST_BUTTON_PRESSED)
                     mmods |= MouseMods.right;
                 bool actionSent;
-                if (mmods != lastMouseMods)
-                {
+                if (mmods != lastMouseMods) {
                     MouseButton btn = MouseButton.none;
                     MouseAction action = MouseAction.cancel;
-                    if ((mmods & MouseMods.left) != (lastMouseMods & MouseMods.left))
-                    {
+                    if ((mmods & MouseMods.left) != (lastMouseMods & MouseMods.left)) {
                         btn = MouseButton.left;
                         action = (mmods & MouseMods.left) ? MouseAction.buttonDown : MouseAction.buttonUp;
                         handleMouseEvent(new MouseEvent(action, btn, mmods, kmods, x, y));
                     }
-                    if ((mmods & MouseMods.right) != (lastMouseMods & MouseMods.right))
-                    {
+                    if ((mmods & MouseMods.right) != (lastMouseMods & MouseMods.right)) {
                         btn = MouseButton.right;
                         action = (mmods & MouseMods.right) ? MouseAction.buttonDown : MouseAction.buttonUp;
                         handleMouseEvent(new MouseEvent(action, btn, mmods, kmods, x, y));
                     }
-                    if ((mmods & MouseMods.middle) != (lastMouseMods & MouseMods.middle))
-                    {
+                    if ((mmods & MouseMods.middle) != (lastMouseMods & MouseMods.middle)) {
                         btn = MouseButton.middle;
                         action = (mmods & MouseMods.middle) ? MouseAction.buttonDown : MouseAction.buttonUp;
                         handleMouseEvent(new MouseEvent(action, btn, mmods, kmods, x, y));
@@ -758,14 +655,12 @@ class Console
                     if (action != MouseAction.cancel)
                         actionSent = true;
                 }
-                if ((eventFlags & MOUSE_MOVED) && !actionSent)
-                {
+                if ((eventFlags & MOUSE_MOVED) && !actionSent) {
                     auto e = new MouseEvent(MouseAction.move, MouseButton.none, mmods, kmods, x, y);
                     handleMouseEvent(e);
                     actionSent = true;
                 }
-                if (eventFlags & MOUSE_WHEELED)
-                {
+                if (eventFlags & MOUSE_WHEELED) {
                     const int delta = (buttonState >> 16) & 0xFFFF;
                     auto e = new WheelEvent(x, y, mmods, kmods, 0, cast(short)-delta);
                     handleWheelEvent(e);
@@ -780,25 +675,20 @@ class Console
             default:
                 break;
             }
-        }
-        else
-        {
+        } else {
             import std.algorithm : startsWith;
 
-            if (SIGHUP_flag)
-            {
+            if (SIGHUP_flag) {
                 Log.i("SIGHUP signal fired");
                 _stopped = true;
             }
 
             string s = rawRead(20);
-            if (s.length == 0)
-            {
+            if (s.length == 0) {
                 handleInputIdle();
                 return !_stopped;
             }
-            if (s.length == 6 && s[0] == 27 && s[1] == '[' && s[2] == 'M')
-            {
+            if (s.length == 6 && s[0] == 27 && s[1] == '[' && s[2] == 'M') {
                 // mouse event
                 MouseAction a = MouseAction.cancel;
                 const int mb = s[3] - 32;
@@ -816,22 +706,16 @@ class Console
                 MouseButton button;
                 MouseMods mmods;
                 KeyMods kmods;
-                if (btn == 0)
-                {
+                if (btn == 0) {
                     button = MouseButton.left;
                     mmods |= MouseMods.left;
-                }
-                else if (btn == 1)
-                {
+                } else if (btn == 1) {
                     button = MouseButton.middle;
                     mmods |= MouseMods.middle;
-                }
-                else if (btn == 2)
-                {
+                } else if (btn == 2) {
                     button = MouseButton.right;
                     mmods |= MouseMods.right;
-                }
-                else if (btn == 3 && a != MouseAction.move)
+                } else if (btn == 3 && a != MouseAction.move)
                     a = MouseAction.buttonUp;
                 if (button != MouseButton.none)
                     lastButtonDown = button;
@@ -852,26 +736,21 @@ class Console
             Key key;
             KeyMods mods;
             dstring text;
-            if (s[0] == 27)
-            {
+            if (s[0] == 27) {
                 string escSequence = s[1 .. $];
                 //Log.d("ESC ", escSequence);
                 const char letter = escSequence[$ - 1];
-                if (escSequence.startsWith("[") && escSequence.length > 1)
-                {
+                if (escSequence.startsWith("[") && escSequence.length > 1) {
                     import std.string : indexOf;
 
                     string options = escSequence[1 .. $ - 1];
-                    if (letter == '~')
-                    {
+                    if (letter == '~') {
                         string code = options;
                         const semicolonPos = options.indexOf(";");
-                        if (semicolonPos >= 0)
-                        {
+                        if (semicolonPos >= 0) {
                             code = options[0 .. semicolonPos];
                             options = options[semicolonPos + 1 .. $];
-                        }
-                        else
+                        } else
                             options = null;
 
                         // dfmt off
@@ -903,9 +782,7 @@ class Console
                             default: break;
                         }
                         // dfmt on
-                    }
-                    else
-                    {
+                    } else {
                         // dfmt off
                         switch (options)
                         {
@@ -938,9 +815,7 @@ class Console
                         }
                         // dfmt on
                     }
-                }
-                else if (escSequence.startsWith("O"))
-                {
+                } else if (escSequence.startsWith("O")) {
                     // dfmt off
                     switch (letter)
                     {
@@ -952,63 +827,47 @@ class Console
                     }
                     // dfmt on
                 }
-            }
-            else
-            {
+            } else {
                 import std.uni : toLower;
 
-                try
-                {
+                try {
                     dstring s32 = toUTF32(s);
-                    if (s32.length == 1)
-                    {
+                    if (s32.length == 1) {
                         const ch = toLower(s32[0]);
-                        if (ch == ' ')
-                        {
+                        if (ch == ' ') {
                             key = Key.space;
                             text = " ";
-                        }
-                        else if (ch == '\t')
+                        } else if (ch == '\t')
                             key = Key.tab;
                         else if (ch == '\n')
                             key = Key.enter;
-                        else if ('a' <= ch && ch <= 'z')
-                        {
+                        else if ('a' <= ch && ch <= 'z') {
                             key = cast(Key)(Key.A + ch - 'a');
                             text = s32;
-                        }
-                        else if ('0' <= ch && ch <= '9')
-                        {
+                        } else if ('0' <= ch && ch <= '9') {
                             key = cast(Key)(Key.alpha0 + ch - '0');
                             text = s32;
                         }
 
-                        if (1 <= s32[0] && s32[0] <= 26)
-                        {
+                        if (1 <= s32[0] && s32[0] <= 26) {
                             // ctrl + A..Z
                             key = cast(Key)(Key.A + s32[0] - 1);
                             mods = KeyMods.control;
                         }
-                        if ('A' <= s32[0] && s32[0] <= 'Z')
-                        {
+                        if ('A' <= s32[0] && s32[0] <= 'Z') {
                             // uppercase letter - with shift
                             mods = KeyMods.shift;
                         }
-                    }
-                    else if (s32[0] >= 32)
+                    } else if (s32[0] >= 32)
                         text = s32;
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     // skip invalid utf8 encoding
                 }
             }
-            if (key != Key.none)
-            {
+            if (key != Key.none) {
                 auto keyDown = new KeyEvent(KeyAction.keyDown, key, mods);
                 handleKeyEvent(keyDown);
-                if (text.length)
-                {
+                if (text.length) {
                     auto keyText = new KeyEvent(KeyAction.text, key, mods, text);
                     handleKeyEvent(keyText);
                 }

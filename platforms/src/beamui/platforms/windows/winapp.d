@@ -11,11 +11,10 @@ Authors:   Vadim Lopatin
 */
 module beamui.platforms.windows.winapp;
 
-version (Windows):
-import beamui.core.config;
+version (Windows)  : import beamui.core.config;
 
-static if (BACKEND_GUI):
-import core.runtime;
+static if (BACKEND_GUI)
+     : import core.runtime;
 import core.sys.windows.shellapi;
 import core.sys.windows.winbase;
 import core.sys.windows.windef;
@@ -46,44 +45,40 @@ pragma(lib, "user32.lib");
 
 immutable WIN_CLASS_NAME = "BEAMUI_APP";
 
-static if (USE_OPENGL)
-{
-    bool setupPixelFormat(HDC device)
-    {
+static if (USE_OPENGL) {
+    bool setupPixelFormat(HDC device) {
         PIXELFORMATDESCRIPTOR pfd = {
             PIXELFORMATDESCRIPTOR.sizeof, // size
-            1,  // version
-            PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER, // support double-buffering
-            PFD_TYPE_RGBA, // color type
-            16, // prefered color depth
-            0, 0, 0, 0, 0, 0, // color bits (ignored)
-            0,  // no alpha buffer
-            0,  // alpha bits (ignored)
-            0,  // no accumulation buffer
-            0, 0, 0, 0, // accum bits (ignored)
-            24, // depth buffer
-            8,  // stencil buffer
-            0,  // no auxiliary buffers
-            0,  // main layer PFD_MAIN_PLANE
-            0,  // reserved
-            0, 0, 0, // no layer, visible, damage masks
+                1, // version
+                PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER, // support double-buffering
+                PFD_TYPE_RGBA, // color type
+                16, // prefered color depth
+                0, 0, 0, 0, 0, 0, // color bits (ignored)
+                0, // no alpha buffer
+                0, // alpha bits (ignored)
+                0, // no accumulation buffer
+                0, 0, 0, 0, // accum bits (ignored)
+                24, // depth buffer
+                8, // stencil buffer
+                0, // no auxiliary buffers
+                0, // main layer PFD_MAIN_PLANE
+                0, // reserved
+                0, 0, 0, // no layer, visible, damage masks
+        
         };
         return SetPixelFormat(device, ChoosePixelFormat(device, &pfd), &pfd) == TRUE;
     }
 
-    HPALETTE setupPalette(HDC device)
-    {
+    HPALETTE setupPalette(HDC device) {
         import core.stdc.stdlib : malloc, free;
 
         PIXELFORMATDESCRIPTOR pfd;
         DescribePixelFormat(device, GetPixelFormat(device), pfd.sizeof, &pfd);
 
         int paletteSize;
-        if (pfd.dwFlags & PFD_NEED_PALETTE)
-        {
+        if (pfd.dwFlags & PFD_NEED_PALETTE) {
             paletteSize = 1 << pfd.cColorBits;
-        }
-        else
+        } else
             return null;
 
         LOGPALETTE* pPal = cast(LOGPALETTE*)malloc(LOGPALETTE.sizeof + paletteSize * PALETTEENTRY.sizeof);
@@ -95,8 +90,7 @@ static if (USE_OPENGL)
             const redMask = (1 << pfd.cRedBits) - 1;
             const greenMask = (1 << pfd.cGreenBits) - 1;
             const blueMask = (1 << pfd.cBlueBits) - 1;
-            foreach (i; 0 .. paletteSize)
-            {
+            foreach (i; 0 .. paletteSize) {
                 pPal.palPalEntry[i].peRed = cast(ubyte)((((i >> pfd.cRedShift) & redMask) * 255) / redMask);
                 pPal.palPalEntry[i].peGreen = cast(ubyte)((((i >> pfd.cGreenShift) & greenMask) * 255) / greenMask);
                 pPal.palPalEntry[i].peBlue = cast(ubyte)((((i >> pfd.cBlueShift) & blueMask) * 255) / blueMask);
@@ -107,8 +101,7 @@ static if (USE_OPENGL)
         HPALETTE palette = CreatePalette(pPal);
         free(pPal);
 
-        if (palette)
-        {
+        if (palette) {
             SelectPalette(device, palette, FALSE);
             RealizePalette(device);
         }
@@ -117,18 +110,15 @@ static if (USE_OPENGL)
     }
 
     /// Shared opengl context helper
-    struct SharedGLContext
-    {
+    struct SharedGLContext {
         import wgl;
 
         private HGLRC _context;
         private HPALETTE _palette;
 
         /// Init OpenGL context, if not yet initialized
-        bool initialize(HDC device, int major, int minor)
-        {
-            if (!setupPixelFormat(device))
-            {
+        bool initialize(HDC device, int major, int minor) {
+            if (!setupPixelFormat(device)) {
                 Log.e("WGL: failed to setup pixel format");
                 return false;
             }
@@ -138,13 +128,10 @@ static if (USE_OPENGL)
             // first initialization
             _palette = setupPalette(device);
             HGLRC dummy = wglCreateContext(device);
-            if (dummy)
-            {
-                if (wglMakeCurrent(device, dummy))
-                {
+            if (dummy) {
+                if (wglMakeCurrent(device, dummy)) {
                     loadWGLExtensions();
-                    if (WGL_ARB_create_context)
-                    {
+                    if (WGL_ARB_create_context) {
                         const int[] attribs = [
                             WGL_CONTEXT_MAJOR_VERSION_ARB, major,
                             WGL_CONTEXT_MINOR_VERSION_ARB, minor,
@@ -160,26 +147,21 @@ static if (USE_OPENGL)
             return _context !is null;
         }
 
-        void uninit()
-        {
-            if (_context)
-            {
+        void uninit() {
+            if (_context) {
                 wglDeleteContext(_context);
                 _context = null;
             }
         }
 
         /// Make this context current for DC
-        void bind(HDC device)
-        {
-            if (!wglMakeCurrent(device, _context))
-            {
+        void bind(HDC device) {
+            if (!wglMakeCurrent(device, _context)) {
                 Log.fe("WGL: failed to make context current, err: %x", GetLastError());
             }
         }
         /// Make null context current for DC
-        void unbind(HDC device)
-        {
+        void unbind(HDC device) {
             wglMakeCurrent(device, null);
         }
     }
@@ -195,13 +177,13 @@ const uint TIMER_MESSAGE = WM_USER + 2;
 alias UnknownWindowMessageHandler =
     bool delegate(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, ref LRESULT result);
 
-final class Win32Window : Window
-{
+final class Win32Window : Window {
     /// Win32 only - return window handle
-    @property HWND windowHandle() { return _hwnd; }
+    @property HWND windowHandle() {
+        return _hwnd;
+    }
 
-    private
-    {
+    private {
         Win32Platform _platform;
 
         HWND _hwnd;
@@ -215,8 +197,7 @@ final class Win32Window : Window
         bool _destroying;
     }
 
-    this(Win32Platform platform, dstring title, Window parent, WindowOptions options, uint w = 0, uint h = 0)
-    {
+    this(Win32Platform platform, dstring title, Window parent, WindowOptions options, uint w = 0, uint h = 0) {
         super(parent, options);
         _platform = platform;
         _title = title;
@@ -243,8 +224,7 @@ final class Win32Window : Window
         int x = CW_USEDEFAULT;
         int y = CW_USEDEFAULT;
 
-        if (options & WindowOptions.fullscreen)
-        {
+        if (options & WindowOptions.fullscreen) {
             // fullscreen
             x = screenRc.x;
             y = screenRc.y;
@@ -252,25 +232,23 @@ final class Win32Window : Window
             height = screenRc.h;
             ws = WS_POPUP;
         }
-        if (options & WindowOptions.borderless)
-        {
+        if (options & WindowOptions.borderless) {
             ws = WS_POPUP | WS_SYSMENU;
         }
 
         _hwnd = CreateWindowW(toUTF16z(WIN_CLASS_NAME), // window class name
-                toUTF16z(title), // window caption
-                ws, // window style
-                x, // initial x position
-                y, // initial y position
-                width, // initial x size
-                height, // initial y size
-                parenthwnd, // parent window handle
-                null, // window menu handle
-                GetModuleHandle(null), // program instance handle
-                cast(void*)this); // creation parameters
+            toUTF16z(title), // window caption
+            ws, // window style
+            x, // initial x position
+            y, // initial y position
+            width, // initial x size
+            height, // initial y size
+            parenthwnd, // parent window handle
+            null, // window menu handle
+            GetModuleHandle(null), // program instance handle
+            cast(void*)this); // creation parameters
 
-        static if (USE_OPENGL)
-        {
+        static if (USE_OPENGL) {
             _platform.createGLContext(this);
         }
 
@@ -284,17 +262,14 @@ final class Win32Window : Window
             this.icon = imageCache.get(platform.defaultWindowIcon);
     }
 
-    ~this()
-    {
-        if (_hwnd)
-        {
+    ~this() {
+        if (_hwnd) {
             DestroyWindow(_hwnd);
             _hwnd = null;
         }
     }
 
-    override protected void cleanup()
-    {
+    override protected void cleanup() {
         _destroying = true;
 
         static if (USE_OPENGL)
@@ -304,17 +279,13 @@ final class Win32Window : Window
         _backbuffer = Bitmap.init;
     }
 
-    private BoxI getScreenDimensions()
-    {
+    private BoxI getScreenDimensions() {
         MONITORINFO monitor_info;
         monitor_info.cbSize = monitor_info.sizeof;
         HMONITOR hMonitor;
-        if (_hwnd)
-        {
+        if (_hwnd) {
             hMonitor = MonitorFromWindow(_hwnd, MONITOR_DEFAULTTONEAREST);
-        }
-        else
-        {
+        } else {
             hMonitor = MonitorFromPoint(POINT(0, 0), MONITOR_DEFAULTTOPRIMARY);
         }
         GetMonitorInfo(hMonitor, &monitor_info);
@@ -322,8 +293,7 @@ final class Win32Window : Window
         return BoxI(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top);
     }
 
-    override @property void onFileDrop(void delegate(string[]) handler)
-    {
+    override @property void onFileDrop(void delegate(string[]) handler) {
         DragAcceptFiles(_hwnd, handler ? TRUE : FALSE);
         super.onFileDrop(handler);
     }
@@ -331,10 +301,8 @@ final class Win32Window : Window
     /// Custom window message handler
     Signal!UnknownWindowMessageHandler onUnknownWindowMessage;
 
-    private LRESULT handleUnknownWindowMessage(UINT message, WPARAM wParam, LPARAM lParam)
-    {
-        if (onUnknownWindowMessage.assigned)
-        {
+    private LRESULT handleUnknownWindowMessage(UINT message, WPARAM wParam, LPARAM lParam) {
+        if (onUnknownWindowMessage.assigned) {
             LRESULT res;
             if (onUnknownWindowMessage(_hwnd, message, wParam, lParam, res))
                 return res;
@@ -342,26 +310,21 @@ final class Win32Window : Window
         return DefWindowProc(_hwnd, message, wParam, lParam);
     }
 
-    override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none)
-    {
+    override protected void handleWindowStateChange(WindowState newState, BoxI newWindowRect = BoxI.none) {
         if (_destroying)
             return;
         super.handleWindowStateChange(newState, newWindowRect);
     }
 
-    override bool setWindowState(WindowState newState, bool activate = false, BoxI newWindowRect = BoxI.none)
-    {
+    override bool setWindowState(WindowState newState, bool activate = false, BoxI newWindowRect = BoxI.none) {
         if (!_hwnd)
             return false;
         bool res = false;
         // change state and activate support
-        switch (newState)
-        {
+        switch (newState) {
         case WindowState.unspecified:
-            if (activate)
-            {
-                switch (_windowState)
-                {
+            if (activate) {
+                switch (_windowState) {
                 case WindowState.hidden: // show hidden window
                     ShowWindow(_hwnd, SW_SHOW);
                     res = true;
@@ -389,29 +352,25 @@ final class Win32Window : Window
             }
             break;
         case WindowState.maximized:
-            if (_windowState != WindowState.maximized || activate)
-            {
+            if (_windowState != WindowState.maximized || activate) {
                 ShowWindow(_hwnd, activate ? SW_SHOWMAXIMIZED : SW_MAXIMIZE);
                 res = true;
             }
             break;
         case WindowState.minimized:
-            if (_windowState != WindowState.minimized || activate)
-            {
+            if (_windowState != WindowState.minimized || activate) {
                 ShowWindow(_hwnd, activate ? SW_SHOWMINIMIZED : SW_MINIMIZE);
                 res = true;
             }
             break;
         case WindowState.hidden:
-            if (_windowState != WindowState.hidden)
-            {
+            if (_windowState != WindowState.hidden) {
                 ShowWindow(_hwnd, SW_HIDE);
                 res = true;
             }
             break;
         case WindowState.normal:
-            if (_windowState != WindowState.normal || activate)
-            {
+            if (_windowState != WindowState.normal || activate) {
                 ShowWindow(_hwnd, activate ? SW_SHOWNORMAL : SW_SHOWNA); // SW_RESTORE
                 res = true;
             }
@@ -423,16 +382,13 @@ final class Win32Window : Window
         // change size and/or position
         bool rectChanged = false;
         if (newWindowRect != BoxI.none && (newState == WindowState.normal ||
-                newState == WindowState.unspecified))
-        {
+                newState == WindowState.unspecified)) {
             UINT flags = SWP_NOOWNERZORDER | SWP_NOZORDER;
             if (!activate)
                 flags |= SWP_NOACTIVATE;
-            if (newWindowRect.x == int.min || newWindowRect.y == int.min)
-            {
+            if (newWindowRect.x == int.min || newWindowRect.y == int.min) {
                 // no position specified
-                if (newWindowRect.w != int.min && newWindowRect.h != int.min)
-                {
+                if (newWindowRect.w != int.min && newWindowRect.h != int.min) {
                     // change size only
                     const bsz = getBorderSize();
                     const w = newWindowRect.w + bsz.w;
@@ -441,11 +397,8 @@ final class Win32Window : Window
                     rectChanged = true;
                     res = true;
                 }
-            }
-            else
-            {
-                if (newWindowRect.w != int.min && newWindowRect.h != int.min)
-                {
+            } else {
+                if (newWindowRect.w != int.min && newWindowRect.h != int.min) {
                     // change size and position
                     const bsz = getBorderSize();
                     const w = newWindowRect.w + bsz.w;
@@ -453,9 +406,7 @@ final class Win32Window : Window
                     SetWindowPos(_hwnd, NULL, newWindowRect.x, newWindowRect.y, w, h, flags);
                     rectChanged = true;
                     res = true;
-                }
-                else
-                {
+                } else {
                     // change position only
                     SetWindowPos(_hwnd, NULL, newWindowRect.x, newWindowRect.y, 0, 0, flags | SWP_NOSIZE);
                     rectChanged = true;
@@ -464,22 +415,19 @@ final class Win32Window : Window
             }
         }
 
-        if (rectChanged)
-        {
+        if (rectChanged) {
             handleWindowStateChange(newState, BoxI(
-                newWindowRect.x == int.min ? _windowRect.x : newWindowRect.x,
-                newWindowRect.y == int.min ? _windowRect.y : newWindowRect.y,
-                newWindowRect.w == int.min ? _windowRect.w : newWindowRect.w,
-                newWindowRect.h == int.min ? _windowRect.h : newWindowRect.h));
-        }
-        else
+                    newWindowRect.x == int.min ? _windowRect.x : newWindowRect.x,
+                    newWindowRect.y == int.min ? _windowRect.y : newWindowRect.y,
+                    newWindowRect.w == int.min ? _windowRect.w : newWindowRect.w,
+                    newWindowRect.h == int.min ? _windowRect.h : newWindowRect.h));
+        } else
             handleWindowStateChange(newState, BoxI.none);
 
         return res;
     }
 
-    private SizeI getBorderSize()
-    {
+    private SizeI getBorderSize() {
         RECT wr, cr;
         GetWindowRect(_hwnd, &wr);
         GetClientRect(_hwnd, &cr);
@@ -488,37 +436,32 @@ final class Win32Window : Window
         return SizeI(w, h);
     }
 
-    override protected void handleSizeHintsChange()
-    {
+    override protected void handleSizeHintsChange() {
         const r = windowRect;
         const flags = SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER;
         SetWindowPos(_hwnd, NULL, 0, 0, r.w, r.h, flags);
     }
 
-    override @property bool isActive() const
-    {
+    override @property bool isActive() const {
         return _hwnd == GetForegroundWindow();
     }
 
     // make them visible for WndProc
-    override protected void handleResize(int width, int height)
-    {
+    override protected void handleResize(int width, int height) {
         super.handleResize(width, height);
     }
-    override protected void handleWindowActivityChange(bool isWindowActive)
-    {
+
+    override protected void handleWindowActivityChange(bool isWindowActive) {
         super.handleWindowActivityChange(isWindowActive);
     }
 
     //===============================================================
 
-    override @property dstring title() const
-    {
+    override @property dstring title() const {
         return _title;
     }
 
-    override @property void title(dstring caption)
-    {
+    override @property void title(dstring caption) {
         _title = caption;
         if (_hwnd)
             SetWindowTextW(_hwnd, toUTF16z(_title));
@@ -526,13 +469,11 @@ final class Win32Window : Window
 
     private HICON _icon;
 
-    override @property void icon(Bitmap ic)
-    {
+    override @property void icon(Bitmap ic) {
         if (_icon)
             DestroyIcon(_icon);
         _icon = null;
-        if (!ic)
-        {
+        if (!ic) {
             Log.e("Trying to set null icon for window");
             return;
         }
@@ -548,13 +489,10 @@ final class Win32Window : Window
         ii.hbmMask = mask;
         ii.hbmColor = color;
         _icon = CreateIconIndirect(&ii);
-        if (_icon)
-        {
+        if (_icon) {
             SendMessageW(_hwnd, WM_SETICON, ICON_SMALL, cast(LPARAM)_icon);
             SendMessageW(_hwnd, WM_SETICON, ICON_BIG, cast(LPARAM)_icon);
-        }
-        else
-        {
+        } else {
             Log.e("failed to create icon");
         }
         if (mask)
@@ -562,21 +500,17 @@ final class Win32Window : Window
         DeleteObject(color);
     }
 
-    override protected void show()
-    {
+    override protected void show() {
         ReleaseCapture();
 
         adjustSize();
         adjustPosition();
 
-        if (options & WindowOptions.fullscreen)
-        {
+        if (options & WindowOptions.fullscreen) {
             const BoxI rc = getScreenDimensions();
             SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, rc.w, rc.h, SWP_SHOWWINDOW);
             _windowState = WindowState.fullscreen;
-        }
-        else
-        {
+        } else {
             ShowWindow(_hwnd, SW_SHOWNORMAL);
             _windowState = WindowState.normal;
         }
@@ -587,16 +521,14 @@ final class Win32Window : Window
         update();
     }
 
-    override void invalidate()
-    {
+    override void invalidate() {
         InvalidateRect(_hwnd, null, FALSE);
         //UpdateWindow(_hwnd);
     }
 
     private bool _closeCalled;
 
-    override void close()
-    {
+    override void close() {
         if (_closeCalled)
             return;
         _closeCalled = true;
@@ -608,17 +540,13 @@ final class Win32Window : Window
     private CursorType _cursorType;
     private HANDLE[CursorType] _cursorCache;
 
-    override protected void setCursorType(CursorType type)
-    {
+    override protected void setCursorType(CursorType type) {
         _cursorType = type;
 
         HANDLE h;
-        if (auto p = type in _cursorCache)
-        {
+        if (auto p = type in _cursorCache) {
             h = *p;
-        }
-        else
-        {
+        } else {
             const id = convertCursorType(type);
             if (id)
                 h = LoadCursor(null, MAKEINTRESOURCE(id));
@@ -627,10 +555,8 @@ final class Win32Window : Window
         SetCursor(h);
     }
 
-    static private ushort convertCursorType(CursorType type)
-    {
-        switch (type) with (CursorType)
-        {
+    static private ushort convertCursorType(CursorType type) {
+        switch (type) with (CursorType) {
         case none:
             return 0;
         case pointer:
@@ -676,42 +602,34 @@ final class Win32Window : Window
         }
     }
 
-    private void updateDPI()
-    {
+    private void updateDPI() {
         HDC device = GetDC(_hwnd);
         const dpi = GetDeviceCaps(device, LOGPIXELSY);
         setDPI(dpi, 1); // TODO
     }
 
-    private void paint()
-    {
-        debug (redraw)
-            const paintStart = currentTimeMillis;
+    private void paint() {
+        debug (redraw) const paintStart = currentTimeMillis;
 
-        if (openglEnabled)
-        {
+        if (openglEnabled) {
             static if (USE_OPENGL)
                 paintUsingOpenGL();
-        }
-        else
+        } else
             paintUsingGDI();
 
-        debug (redraw)
-        {
+        debug (redraw) {
             const paintEnd = currentTimeMillis;
             Log.d("WM_PAINT handling took ", paintEnd - paintStart, " ms");
         }
     }
 
-    private void paintUsingGDI()
-    {
+    private void paintUsingGDI() {
         PAINTSTRUCT ps;
         HDC device = BeginPaint(_hwnd, &ps);
         scope (exit)
             EndPaint(_hwnd, &ps);
 
-        if (!_paintEngine)
-        {
+        if (!_paintEngine) {
             // create stuff on the first run
             _backbufferData = new Win32BitmapData(1, 1);
             _backbuffer = Bitmap(_backbufferData);
@@ -722,46 +640,38 @@ final class Win32Window : Window
         _backbufferData.drawTo(device);
     }
 
-    static if (USE_OPENGL)
-    {
+    static if (USE_OPENGL) {
         import wgl;
 
-        override protected bool createContext(int major, int minor)
-        {
+        override protected bool createContext(int major, int minor) {
             HDC device = GetDC(_hwnd);
             return sharedGLContext.initialize(device, major, minor);
         }
 
-        override protected void destroyContext()
-        {
+        override protected void destroyContext() {
             // no action needed
         }
 
-        override protected void handleGLReadiness()
-        {
+        override protected void handleGLReadiness() {
             disableVSync();
         }
 
-        private void disableVSync()
-        {
+        private void disableVSync() {
             if (WGL_EXT_swap_control)
                 wglSwapIntervalEXT(0);
         }
 
-        override protected void bindContext()
-        {
+        override protected void bindContext() {
             HDC device = GetDC(_hwnd);
             sharedGLContext.bind(device);
         }
 
-        override protected void swapBuffers()
-        {
+        override protected void swapBuffers() {
             HDC device = GetDC(_hwnd);
             SwapBuffers(device);
         }
 
-        private void paintUsingOpenGL()
-        {
+        private void paintUsingOpenGL() {
             // hack to stop infinite WM_PAINT loop
             PAINTSTRUCT ps;
             HDC hdc2 = BeginPaint(_hwnd, &ps);
@@ -777,8 +687,7 @@ final class Win32Window : Window
     private ButtonDetails _mbutton;
     private ButtonDetails _rbutton;
 
-    private void updateButtonsState(uint winFlags)
-    {
+    private void updateButtonsState(uint winFlags) {
         if (!(winFlags & MK_LBUTTON) && _lbutton.isDown)
             _lbutton.reset();
         if (!(winFlags & MK_MBUTTON) && _mbutton.isDown)
@@ -787,8 +696,7 @@ final class Win32Window : Window
             _rbutton.reset();
     }
 
-    private MouseMods convertMouseMods(uint winFlags)
-    {
+    private MouseMods convertMouseMods(uint winFlags) {
         MouseMods mods;
         if (winFlags & MK_LBUTTON)
             mods |= MouseMods.left;
@@ -805,16 +713,14 @@ final class Win32Window : Window
 
     private KeyMods _keyMods;
 
-    private void processMouseEvent(uint winMessage, uint winFlags, short x, short y)
-    {
+    private void processMouseEvent(uint winMessage, uint winFlags, short x, short y) {
         debug (mouse)
             Log.d("Win32 Mouse Message ", winMessage, ", flags: ", winFlags, ", x: ", x, ", y: ", y);
 
         MouseAction action = MouseAction.buttonDown;
         MouseButton button;
         ButtonDetails* pbuttonDetails;
-        switch (winMessage)
-        {
+        switch (winMessage) {
         case WM_MOUSEMOVE:
             action = MouseAction.move;
             updateButtonsState(winFlags);
@@ -863,12 +769,9 @@ final class Win32Window : Window
 
         const mmods = convertMouseMods(winFlags);
 
-        if (action == MouseAction.buttonDown)
-        {
+        if (action == MouseAction.buttonDown) {
             pbuttonDetails.down(x, y, mmods, _keyMods);
-        }
-        else if (action == MouseAction.buttonUp)
-        {
+        } else if (action == MouseAction.buttonUp) {
             pbuttonDetails.up(x, y, mmods, _keyMods);
         }
 
@@ -881,10 +784,8 @@ final class Win32Window : Window
         update();
     }
 
-    private void processWheelEvent(uint winFlags, POINT pt, int deltaX, int deltaY)
-    {
-        if (deltaX != 0 || deltaY != 0)
-        {
+    private void processWheelEvent(uint winFlags, POINT pt, int deltaX, int deltaY) {
+        if (deltaX != 0 || deltaY != 0) {
             ScreenToClient(_hwnd, &pt);
             const x = cast(short)pt.x;
             const y = cast(short)pt.y;
@@ -897,22 +798,18 @@ final class Win32Window : Window
         }
     }
 
-    private void updateKeyMods(KeyAction action, KeyMods mod, KeyMods preserve)
-    {
+    private void updateKeyMods(KeyAction action, KeyMods mod, KeyMods preserve) {
         if (action == KeyAction.keyDown)
             _keyMods |= mod;
-        else
-        {
-            if (preserve && (_keyMods & preserve) == preserve)
-                // e.g. when both lctrl and rctrl are pressed, and lctrl is up, preserve rctrl mod
+        else {
+            if (preserve && (_keyMods & preserve) == preserve) // e.g. when both lctrl and rctrl are pressed, and lctrl is up, preserve rctrl mod
                 _keyMods = (_keyMods & ~mod) | preserve;
             else
                 _keyMods &= ~mod;
         }
     }
 
-    private void processKeyEvent(KeyAction action, uint winKeyCode, int repeatCount, bool syskey = false)
-    {
+    private void processKeyEvent(KeyAction action, uint winKeyCode, int repeatCount, bool syskey = false) {
         debug (keys)
             Log.fd("processKeyEvent %s, keyCode: %s, syskey: %s, mods: %s",
                 action, winKeyCode, syskey, _keyMods);
@@ -924,8 +821,7 @@ final class Win32Window : Window
         if (syskey)
             _keyMods |= KeyMods.alt;
 
-        switch (key)
-        {
+        switch (key) {
         case Key.lshift:
             updateKeyMods(action, KeyMods.lshift, KeyMods.rshift);
             break;
@@ -955,22 +851,22 @@ final class Win32Window : Window
         case Key.alt:
             break;
         default:
-            updateKeyMods((GetKeyState(VK_LCONTROL) & 0x8000) != 0 ? KeyAction.keyDown
-                    : KeyAction.keyUp, KeyMods.lcontrol, KeyMods.rcontrol);
-            updateKeyMods((GetKeyState(VK_RCONTROL) & 0x8000) != 0 ? KeyAction.keyDown
-                    : KeyAction.keyUp, KeyMods.rcontrol, KeyMods.lcontrol);
-            updateKeyMods((GetKeyState(VK_LSHIFT) & 0x8000) != 0 ? KeyAction.keyDown
-                    : KeyAction.keyUp, KeyMods.lshift, KeyMods.rshift);
-            updateKeyMods((GetKeyState(VK_RSHIFT) & 0x8000) != 0 ? KeyAction.keyDown
-                    : KeyAction.keyUp, KeyMods.rshift, KeyMods.lshift);
-            updateKeyMods((GetKeyState(VK_LWIN) & 0x8000) != 0 ? KeyAction.keyDown
-                    : KeyAction.keyUp, KeyMods.lmeta, KeyMods.rmeta);
-            updateKeyMods((GetKeyState(VK_RWIN) & 0x8000) != 0 ? KeyAction.keyDown
-                    : KeyAction.keyUp, KeyMods.rmeta, KeyMods.lmeta);
-            updateKeyMods((GetKeyState(VK_LMENU) & 0x8000) != 0 ? KeyAction.keyDown
-                    : KeyAction.keyUp, KeyMods.lalt, KeyMods.ralt);
-            updateKeyMods((GetKeyState(VK_RMENU) & 0x8000) != 0 ? KeyAction.keyDown
-                    : KeyAction.keyUp, KeyMods.ralt, KeyMods.lalt);
+            updateKeyMods((GetKeyState(VK_LCONTROL) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods
+                    .lcontrol, KeyMods.rcontrol);
+            updateKeyMods((GetKeyState(VK_RCONTROL) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods
+                    .rcontrol, KeyMods.lcontrol);
+            updateKeyMods((GetKeyState(VK_LSHIFT) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.lshift, KeyMods
+                    .rshift);
+            updateKeyMods((GetKeyState(VK_RSHIFT) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.rshift, KeyMods
+                    .lshift);
+            updateKeyMods((GetKeyState(VK_LWIN) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.lmeta, KeyMods
+                    .rmeta);
+            updateKeyMods((GetKeyState(VK_RWIN) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.rmeta, KeyMods
+                    .lmeta);
+            updateKeyMods((GetKeyState(VK_LMENU) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.lalt, KeyMods
+                    .ralt);
+            updateKeyMods((GetKeyState(VK_RMENU) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.ralt, KeyMods
+                    .lalt);
             //updateKeyMods((GetKeyState(VK_LALT) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.lalt, KeyMods.ralt);
             //updateKeyMods((GetKeyState(VK_RALT) & 0x8000) != 0 ? KeyAction.keyDown : KeyAction.keyUp, KeyMods.ralt, KeyMods.lalt);
             break;
@@ -987,8 +883,7 @@ final class Win32Window : Window
         update();
     }
 
-    private void processTextInput(dchar ch, int repeatCount)
-    {
+    private void processTextInput(dchar ch, int repeatCount) {
         assert(ch != 0);
 
         debug (keys)
@@ -996,17 +891,13 @@ final class Win32Window : Window
 
         KeyEvent event;
         const bool ctrlAZKeyCode = 1 <= ch && ch <= 26;
-        if (ctrlAZKeyCode && (_keyMods & (KeyMods.control | KeyMods.alt)) != 0)
-        {
+        if (ctrlAZKeyCode && (_keyMods & (KeyMods.control | KeyMods.alt)) != 0) {
             event = new KeyEvent(KeyAction.text, cast(Key)(Key.A + ch - 1), _keyMods);
-        }
-        else
-        {
+        } else {
             dchar[] text;
             text ~= ch;
             KeyMods mods = _keyMods;
-            if ((mods & KeyMods.alt) && (mods & KeyMods.control))
-            {
+            if ((mods & KeyMods.alt) && (mods & KeyMods.control)) {
                 mods &= (~(KeyMods.lralt)) & (~(KeyMods.lrcontrol));
                 debug (keys)
                     Log.fd("processKeyEvent, removed Ctrl+Alt mods, char: %s (%s), mods: %s",
@@ -1024,8 +915,7 @@ final class Win32Window : Window
 
     //===============================================================
 
-    override protected void captureMouse(bool enabled)
-    {
+    override protected void captureMouse(bool enabled) {
         debug (mouse)
             Log.d(enabled ? "Setting capture" : "Releasing capture");
         if (enabled)
@@ -1034,43 +924,35 @@ final class Win32Window : Window
             ReleaseCapture();
     }
 
-    override void postEvent(CustomEvent event)
-    {
+    override void postEvent(CustomEvent event) {
         super.postEvent(event);
         PostMessageW(_hwnd, CUSTOM_MESSAGE, 0, event.uniqueID);
     }
 
-    override protected void postTimerEvent()
-    {
+    override protected void postTimerEvent() {
         PostMessageW(_hwnd, TIMER_MESSAGE, 0, 0);
     }
 
-    override protected void handleTimer()
-    {
+    override protected void handleTimer() {
         super.handleTimer();
     }
 }
 
-final class Win32Platform : Platform
-{
+final class Win32Platform : Platform {
     private WindowMap!(Win32Window, HWND) windows;
 
-    this(ref AppConf conf)
-    {
+    this(ref AppConf conf) {
         super(conf);
     }
 
-    ~this()
-    {
+    ~this() {
         destroy(windows);
         deinitializeWin32Backend();
     }
 
-    override int runEventLoop()
-    {
+    override int runEventLoop() {
         MSG msg;
-        while (GetMessage(&msg, null, 0, 0))
-        {
+        while (GetMessage(&msg, null, 0, 0)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
             windows.purge();
@@ -1079,35 +961,30 @@ final class Win32Platform : Platform
     }
 
     override Window createWindow(dstring windowCaption, Window parent,
-            WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
-            uint width = 0, uint height = 0)
-    {
+        WindowOptions options = WindowOptions.resizable | WindowOptions.expanded,
+        uint width = 0, uint height = 0) {
         return new Win32Window(this, windowCaption, parent, options, width, height);
     }
 
-    override void closeWindow(Window w)
-    {
+    override void closeWindow(Window w) {
         Win32Window window = cast(Win32Window)w;
         SendMessage(window._hwnd, WM_CLOSE, 0, 0);
     }
 
-    override protected int opApply(scope int delegate(size_t i, Window w) callback)
-    {
+    override protected int opApply(scope int delegate(size_t i, Window w) callback) {
         foreach (i, w; windows)
             if (const result = callback(i, w))
                 break;
         return 0;
     }
 
-    override bool hasClipboardText(bool mouseBuffer = false)
-    {
+    override bool hasClipboardText(bool mouseBuffer = false) {
         if (mouseBuffer)
             return false;
         return (IsClipboardFormatAvailable(CF_UNICODETEXT) != 0);
     }
 
-    override dstring getClipboardText(bool mouseBuffer = false)
-    {
+    override dstring getClipboardText(bool mouseBuffer = false) {
         if (mouseBuffer)
             return null; // not supported under win32
         if (!IsClipboardFormatAvailable(CF_UNICODETEXT))
@@ -1117,11 +994,9 @@ final class Win32Platform : Platform
 
         dstring result;
         HGLOBAL hglb = GetClipboardData(CF_UNICODETEXT);
-        if (hglb != NULL)
-        {
+        if (hglb != NULL) {
             LPWSTR lptstr = cast(LPWSTR)GlobalLock(hglb);
-            if (lptstr != NULL)
-            {
+            if (lptstr != NULL) {
                 wstring w = fromWStringz(lptstr);
                 result = normalizeEOLs(toUTF32(w));
 
@@ -1133,8 +1008,7 @@ final class Win32Platform : Platform
         return result;
     }
 
-    override void setClipboardText(dstring text, bool mouseBuffer = false)
-    {
+    override void setClipboardText(dstring text, bool mouseBuffer = false) {
         if (text.length < 1 || mouseBuffer)
             return;
         if (!OpenClipboard(NULL))
@@ -1143,14 +1017,12 @@ final class Win32Platform : Platform
         EmptyClipboard();
         wstring w = toUTF16(text);
         HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, cast(uint)((w.length + 1) * TCHAR.sizeof));
-        if (hglbCopy == NULL)
-        {
+        if (hglbCopy == NULL) {
             CloseClipboard();
             return;
         }
         LPWSTR lptstrCopy = cast(LPWSTR)GlobalLock(hglbCopy);
-        for (int i = 0; i < w.length; i++)
-        {
+        for (int i = 0; i < w.length; i++) {
             lptstrCopy[i] = w[i];
         }
         lptstrCopy[w.length] = 0;
@@ -1161,8 +1033,7 @@ final class Win32Platform : Platform
     }
 }
 
-private bool registerWndClass()
-{
+private bool registerWndClass() {
     WNDCLASSW wndclass;
     wndclass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wndclass.lpfnWndProc = cast(WNDPROC)&WndProc;
@@ -1184,21 +1055,18 @@ private bool registerWndClass()
 
 private __gshared bool windowClassRegistered;
 
-extern (C) Platform initPlatform(AppConf conf)
-{
+extern (C) Platform initPlatform(AppConf conf) {
     DOUBLE_CLICK_THRESHOLD_MS = GetDoubleClickTime();
 
     setAppDPIAwareOnWindows();
 
     Log.v("Registering window class");
-    if (!registerWndClass())
-    {
+    if (!registerWndClass()) {
         MessageBoxA(null, "This program requires Windows NT!", "beamui app".toStringz, MB_ICONERROR);
         return null;
     }
 
-    static if (USE_OPENGL)
-    {
+    static if (USE_OPENGL) {
         static import wgl;
 
         if (!wgl.loadWGL())
@@ -1208,22 +1076,18 @@ extern (C) Platform initPlatform(AppConf conf)
     return new Win32Platform(conf);
 }
 
-private void deinitializeWin32Backend()
-{
-    static if (USE_OPENGL)
-    {
+private void deinitializeWin32Backend() {
+    static if (USE_OPENGL) {
         sharedGLContext.uninit();
     }
 
-    if (windowClassRegistered)
-    {
+    if (windowClassRegistered) {
         UnregisterClassW(toUTF16z(WIN_CLASS_NAME), GetModuleHandle(null));
         windowClassRegistered = false;
     }
 }
 
-extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
+extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     auto w32platform = cast(Win32Platform)Platform.instance;
 
     void* p = cast(void*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -1231,8 +1095,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     Win32Window window = w32platform.windows[hwnd];
     if (windowParam && window)
         assert(window is windowParam);
-    if (!window && windowParam)
-    {
+    if (!window && windowParam) {
         Log.e("Cannot find window in map by HWND");
     }
 
@@ -1240,10 +1103,8 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     // https://msdn.microsoft.com/en-us/library/windows/desktop/ms633573(v=vs.85).aspx
     // https://docs.microsoft.com/en-us/windows/desktop/winmsg/about-messages-and-message-queues
 
-    switch (message)
-    {
-    case WM_CREATE:
-        {
+    switch (message) {
+    case WM_CREATE: {
             CREATESTRUCT* pcreateStruct = cast(CREATESTRUCT*)lParam;
             window = cast(Win32Window)pcreateStruct.lpCreateParams;
             void* ptr = cast(void*)window;
@@ -1254,8 +1115,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         return 0;
     case WM_DESTROY:
-        if (window)
-        {
+        if (window) {
             Log.v("destroyed window, removing from map");
             w32platform.windows.remove(window);
         }
@@ -1263,14 +1123,10 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             PostQuitMessage(0);
         return 0;
     case WM_WINDOWPOSCHANGED:
-        if (window)
-        {
-            if (IsIconic(hwnd))
-            {
+        if (window) {
+            if (IsIconic(hwnd)) {
                 window.handleWindowStateChange(WindowState.minimized);
-            }
-            else
-            {
+            } else {
                 WINDOWPOS* pos = cast(WINDOWPOS*)lParam;
                 //Log.d("WM_WINDOWPOSCHANGED: ", *pos);
 
@@ -1288,8 +1144,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 else
                     state = WindowState.hidden;
                 window.handleWindowStateChange(state, BoxI(pos.x, pos.y, w, h));
-                if (window.width != w || window.height != h)
-                {
+                if (window.width != w || window.height != h) {
                     window.updateDPI(); // TODO: WM_DPICHANGED
                     window.handleResize(w, h);
                     InvalidateRect(hwnd, null, FALSE);
@@ -1298,8 +1153,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         return 0;
     case WM_GETMINMAXINFO:
-        if (window)
-        {
+        if (window) {
             const bsz = window.getBorderSize();
             MINMAXINFO* info = cast(MINMAXINFO*)lParam;
             info.ptMinTrackSize.x = window.minSize.w + bsz.w;
@@ -1309,8 +1163,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         return 0;
     case WM_ACTIVATE:
-        if (window)
-        {
+        if (window) {
             if (wParam == WA_INACTIVE)
                 window.handleWindowActivityChange(false);
             else if (wParam == WA_ACTIVE || wParam == WA_CLICKACTIVE)
@@ -1324,10 +1177,8 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             window.paint();
         return 0; // processed
     case WM_SETCURSOR:
-        if (window)
-        {
-            if (LOWORD(lParam) == HTCLIENT)
-            {
+        if (window) {
+            if (LOWORD(lParam) == HTCLIENT) {
                 window.setCursorType(window._cursorType);
                 return 1;
             }
@@ -1341,16 +1192,14 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-        if (window)
-        {
+        if (window) {
             window.processMouseEvent(message, cast(uint)wParam, cast(short)(lParam & 0xFFFF),
                 cast(short)((lParam >> 16) & 0xFFFF));
             return 0; // processed
         }
         break;
     case WM_MOUSEWHEEL:
-        if (window)
-        {
+        if (window) {
             const pt = POINT(lParam & 0xFFFF, (lParam >> 16) & 0xFFFF);
             const delta = (cast(short)(wParam >> 16)) / 120;
             window.processWheelEvent(cast(uint)wParam, pt, 0, -delta);
@@ -1358,8 +1207,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         break;
     case 0x020E: // WM_MOUSEHWHEEL
-        if (window)
-        {
+        if (window) {
             const pt = POINT(lParam & 0xFFFF, (lParam >> 16) & 0xFFFF);
             const delta = (cast(short)(wParam >> 16)) / 120;
             window.processWheelEvent(cast(uint)wParam, pt, delta, 0);
@@ -1370,15 +1218,13 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP:
-        if (window)
-        {
+        if (window) {
             const int repeatCount = lParam & 0xFFFF;
             const WPARAM vk = wParam;
             WPARAM new_vk = vk;
             const UINT scancode = (lParam & 0x00ff0000) >> 16;
             const int extended = (lParam & 0x01000000) != 0;
-            switch (vk)
-            {
+            switch (vk) {
             case VK_SHIFT:
                 new_vk = MapVirtualKey(scancode, 3); //MAPVK_VSC_TO_VK_EX
                 break;
@@ -1406,28 +1252,24 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         break;
     case WM_UNICHAR:
-        if (window)
-        {
+        if (window) {
             int repeatCount = lParam & 0xFFFF;
             dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(dchar)wParam;
             debug (keys)
                 Log.d("WM_UNICHAR ", ch, " (", cast(int)ch, ")");
-            if (ch)
-            {
+            if (ch) {
                 window.processTextInput(ch, repeatCount);
                 return 0; // processed
             }
         }
         break;
     case WM_CHAR:
-        if (window)
-        {
+        if (window) {
             int repeatCount = lParam & 0xFFFF;
             dchar ch = wParam == UNICODE_NOCHAR ? 0 : cast(dchar)wParam;
             debug (keys)
                 Log.d("WM_CHAR ", ch, " (", cast(int)ch, ")");
-            if (ch)
-            {
+            if (ch) {
                 window.processTextInput(ch, repeatCount);
                 return 0; // processed
             }
@@ -1442,14 +1284,12 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             window.handleTimer();
         return 1;
     case WM_DROPFILES:
-        if (window)
-        {
+        if (window) {
             HDROP hdrop = cast(HDROP)wParam;
             string[] files;
             wchar[] buf;
             auto count = DragQueryFileW(hdrop, 0xFFFFFFFF, cast(wchar*)NULL, 0);
-            for (int i = 0; i < count; i++)
-            {
+            for (int i = 0; i < count; i++) {
                 auto sz = DragQueryFileW(hdrop, i, cast(wchar*)NULL, 0);
                 buf.length = sz + 2;
                 sz = DragQueryFileW(hdrop, i, buf.ptr, sz + 1);
@@ -1462,8 +1302,7 @@ extern (Windows) LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         break;
     case WM_CLOSE:
-        if (window)
-        {
+        if (window) {
             if (!window.canClose)
                 return 0; // prevent closing
         }
