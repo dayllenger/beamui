@@ -53,18 +53,16 @@ static const ubyte[4] tEXt = ['t', 'E', 'X', 't'];
 static const ubyte[4] iTXt = ['i', 'T', 'X', 't'];
 static const ubyte[4] zTXt = ['z', 'T', 'X', 't'];
 
-enum ColorType: ubyte
-{
-    Greyscale = 0,      // allowed bit depths: 1, 2, 4, 8 and 16
-    RGB = 2,            // allowed bit depths: 8 and 16
-    Palette = 3,        // allowed bit depths: 1, 2, 4 and 8
+enum ColorType : ubyte {
+    Greyscale = 0, // allowed bit depths: 1, 2, 4, 8 and 16
+    RGB = 2, // allowed bit depths: 8 and 16
+    Palette = 3, // allowed bit depths: 1, 2, 4 and 8
     GreyscaleAlpha = 4, // allowed bit depths: 8 and 16
-    RGBA = 6,           // allowed bit depths: 8 and 16
-    Any = 7             // one of the above
+    RGBA = 6, // allowed bit depths: 8 and 16
+    Any = 7 // one of the above
 }
 
-enum FilterMethod: ubyte
-{
+enum FilterMethod : ubyte {
     None = 0,
     Sub = 1,
     Up = 2,
@@ -72,26 +70,21 @@ enum FilterMethod: ubyte
     Paeth = 4
 }
 
-struct PNGChunk
-{
+struct PNGChunk {
     uint length;
     ubyte[4] type;
     ubyte[] data;
     uint crc;
 
-    void free()
-    {
+    void free() {
         if (data.ptr)
             Delete(data);
     }
 }
 
-struct PNGHeader
-{
-    union
-    {
-        struct
-        {
+struct PNGHeader {
+    union {
+        struct {
             uint width;
             uint height;
             ubyte bitDepth;
@@ -103,10 +96,9 @@ struct PNGHeader
         ubyte[13] bytes;
     }
 }
-class PNGLoadException: ImageLoadException
-{
-    this(string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null)
-    {
+
+class PNGLoadException : ImageLoadException {
+    this(string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null) {
         super(msg, file, line, next);
     }
 }
@@ -142,8 +134,7 @@ class PNGLoadException: ImageLoadException
  * Load PNG from stream using default image factory.
  * Causes GC allocation
  */
-SuperImage loadPNG(InputStream istrm)
-{
+SuperImage loadPNG(InputStream istrm) {
     Compound!(SuperImage, string) res =
         loadPNG(istrm, defaultImageFactory);
     if (res[0] is null)
@@ -158,74 +149,65 @@ SuperImage loadPNG(InputStream istrm)
  */
 Compound!(SuperImage, string) loadPNG(
     InputStream istrm,
-    SuperImageFactory imgFac)
-{
+    SuperImageFactory imgFac) {
     SuperImage img = null;
 
-    Compound!(SuperImage, string) error(string errorMsg)
-    {
-        if (img)
-        {
+    Compound!(SuperImage, string) error(string errorMsg) {
+        if (img) {
             img.free();
             img = null;
         }
         return compound(img, errorMsg);
     }
 
-    bool readChunk(PNGChunk* chunk)
-    {
+    bool readChunk(PNGChunk* chunk) {
         if (!istrm.readBE!uint(&chunk.length)
-            || !istrm.fillArray(chunk.type))
-        {
+            || !istrm.fillArray(chunk.type)) {
             return false;
         }
 
-        version(PNGDebug) writefln("Chunk length = %s", chunk.length);
-        version(PNGDebug) writefln("Chunk type = %s", cast(char[])chunk.type);
+        version (PNGDebug)
+            writefln("Chunk length = %s", chunk.length);
+        version (PNGDebug)
+            writefln("Chunk type = %s", cast(char[])chunk.type);
 
-        if (chunk.length > 0)
-        {
+        if (chunk.length > 0) {
             chunk.data = New!(ubyte[])(chunk.length);
 
-            if (!istrm.fillArray(chunk.data))
-            {
+            if (!istrm.fillArray(chunk.data)) {
                 return false;
             }
         }
 
-        version(PNGDebug) writefln("Chunk data.length = %s", chunk.data.length);
+        version (PNGDebug)
+            writefln("Chunk data.length = %s", chunk.data.length);
 
-        if (!istrm.readBE!uint(&chunk.crc))
-        {
+        if (!istrm.readBE!uint(&chunk.crc)) {
             return false;
         }
 
         // TODO: reimplement CRC check with ranges instead of concatenation
-        uint calculatedCRC = crc32(chain(chunk.type[0..$], chunk.data));
+        uint calculatedCRC = crc32(chain(chunk.type[0 .. $], chunk.data));
 
-        version(PNGDebug)
-        {
+        version (PNGDebug) {
             writefln("Chunk CRC = %X", chunk.crc);
             writefln("Calculated CRC = %X", calculatedCRC);
             writeln("-------------------");
         }
 
-        if (chunk.crc != calculatedCRC)
-        {
+        if (chunk.crc != calculatedCRC) {
             return false;
         }
 
         return true;
     }
 
-    bool readHeader(PNGHeader* hdr, PNGChunk* chunk)
-    {
+    bool readHeader(PNGHeader* hdr, PNGChunk* chunk) {
         hdr.bytes[] = chunk.data[];
         hdr.width = bigEndian(hdr.width);
         hdr.height = bigEndian(hdr.height);
 
-        version(PNGDebug)
-        {
+        version (PNGDebug) {
             writefln("width = %s", hdr.width);
             writefln("height = %s", hdr.height);
             writefln("bitDepth = %s", hdr.bitDepth);
@@ -241,13 +223,11 @@ Compound!(SuperImage, string) loadPNG(
 
     ubyte[8] signatureBuffer;
 
-    if (!istrm.fillArray(signatureBuffer))
-    {
+    if (!istrm.fillArray(signatureBuffer)) {
         return error("loadPNG error: signature check failed");
     }
 
-    version(PNGDebug)
-    {
+    version (PNGDebug) {
         writeln("----------------");
         writeln("PNG Signature: ", signatureBuffer);
         writeln("----------------");
@@ -262,24 +242,17 @@ Compound!(SuperImage, string) loadPNG(
     uint paletteSize = 0;
 
     bool endChunk = false;
-    while (!endChunk && istrm.readable)
-    {
+    while (!endChunk && istrm.readable) {
         PNGChunk chunk;
         bool res = readChunk(&chunk);
-        if (!res)
-        {
+        if (!res) {
             chunk.free();
             return error("loadPNG error: failed to read chunk");
-        }
-        else
-        {
-            if (chunk.type == IEND)
-            {
+        } else {
+            if (chunk.type == IEND) {
                 endChunk = true;
                 chunk.free();
-            }
-            else if (chunk.type == IHDR)
-            {
+            } else if (chunk.type == IHDR) {
                 if (chunk.data.length < hdr.bytes.length)
                     return error("loadPNG error: illegal header chunk");
 
@@ -289,9 +262,9 @@ Compound!(SuperImage, string) loadPNG(
                 bool supportedIndexed =
                     (hdr.colorType == ColorType.Palette) &&
                     (hdr.bitDepth == 1 ||
-                     hdr.bitDepth == 2 ||
-                     hdr.bitDepth == 4 ||
-                     hdr.bitDepth == 8);
+                            hdr.bitDepth == 2 ||
+                            hdr.bitDepth == 4 ||
+                            hdr.bitDepth == 8);
 
                 if (hdr.bitDepth != 8 && hdr.bitDepth != 16 && !supportedIndexed)
                     return error("loadPNG error: unsupported bit depth");
@@ -310,90 +283,71 @@ Compound!(SuperImage, string) loadPNG(
 
                 zlibDecoder = ZlibDecoder(buffer);
 
-                version(PNGDebug)
-                {
+                version (PNGDebug) {
                     writefln("buffer.length = %s", bufferLength);
                     writeln("----------------");
                 }
-            }
-            else if (chunk.type == IDAT)
-            {
+            } else if (chunk.type == IDAT) {
                 zlibDecoder.decode(chunk.data);
                 chunk.free();
-            }
-            else if (chunk.type == PLTE)
-            {
+            } else if (chunk.type == PLTE) {
                 palette = chunk.data;
-            }
-            else if (chunk.type == tRNS)
-            {
+            } else if (chunk.type == tRNS) {
                 transparency = chunk.data;
-                version(PNGDebug)
-                {
+                version (PNGDebug) {
                     writeln("----------------");
                     writefln("transparency.length = %s", transparency.length);
                     writeln("----------------");
                 }
-            }
-            else
-            {
+            } else {
                 chunk.free();
             }
         }
     }
 
     // finalize decoder
-    version(PNGDebug) writefln("zlibDecoder.hasEnded = %s", zlibDecoder.hasEnded);
+    version (PNGDebug)
+        writefln("zlibDecoder.hasEnded = %s", zlibDecoder.hasEnded);
     if (!zlibDecoder.hasEnded)
         return error("loadPNG error: unexpected end of zlib stream");
 
     ubyte[] buffer = zlibDecoder.buffer;
-    version(PNGDebug) writefln("buffer.length = %s", buffer.length);
+    version (PNGDebug)
+        writefln("buffer.length = %s", buffer.length);
 
     bool transparencyPalette;
 
     // create image
-    if (hdr.colorType == ColorType.Greyscale)
-    {
+    if (hdr.colorType == ColorType.Greyscale) {
         if (hdr.bitDepth == 8)
             img = imgFac.createImage(hdr.width, hdr.height, 1, 8);
         else if (hdr.bitDepth == 16)
             img = imgFac.createImage(hdr.width, hdr.height, 1, 16);
-    }
-    else if (hdr.colorType == ColorType.GreyscaleAlpha)
-    {
+    } else if (hdr.colorType == ColorType.GreyscaleAlpha) {
         if (hdr.bitDepth == 8)
             img = imgFac.createImage(hdr.width, hdr.height, 2, 8);
         else if (hdr.bitDepth == 16)
             img = imgFac.createImage(hdr.width, hdr.height, 2, 16);
-    }
-    else if (hdr.colorType == ColorType.RGB)
-    {
+    } else if (hdr.colorType == ColorType.RGB) {
         if (hdr.bitDepth == 8)
             img = imgFac.createImage(hdr.width, hdr.height, 3, 8);
         else if (hdr.bitDepth == 16)
             img = imgFac.createImage(hdr.width, hdr.height, 3, 16);
-    }
-    else if (hdr.colorType == ColorType.RGBA)
-    {
+    } else if (hdr.colorType == ColorType.RGBA) {
         if (hdr.bitDepth == 8)
             img = imgFac.createImage(hdr.width, hdr.height, 4, 8);
         else if (hdr.bitDepth == 16)
             img = imgFac.createImage(hdr.width, hdr.height, 4, 16);
-    }
-    else if (hdr.colorType == ColorType.Palette)
-    {
+    } else if (hdr.colorType == ColorType.Palette) {
         if (transparency.length > 0) {
             img = imgFac.createImage(hdr.width, hdr.height, 4, 8);
             transparencyPalette = true;
         } else
             img = imgFac.createImage(hdr.width, hdr.height, 3, 8);
-    }
-    else
+    } else
         return error("loadPNG error: unsupported color type");
 
-    version(PNGDebug)
-    {
+    version (PNGDebug) {
         writefln("img.width = %s", img.width);
         writefln("img.height = %s", img.height);
         writefln("img.bitDepth = %s", img.bitDepth);
@@ -409,24 +363,20 @@ Compound!(SuperImage, string) loadPNG(
     // apply filtering to the image data
     ubyte[] buffer2;
     string errorMsg;
-    if (!filter(&hdr, img.channels, indexed, buffer, buffer2, errorMsg))
-    {
+    if (!filter(&hdr, img.channels, indexed, buffer, buffer2, errorMsg)) {
         return error(errorMsg);
     }
     Delete(buffer);
     buffer = buffer2;
 
     // if a palette is used, substitute target colors
-    if (indexed)
-    {
+    if (indexed) {
         if (palette.length == 0)
             return error("loadPNG error: palette chunk not found");
 
         ubyte[] pdata = New!(ubyte[])(img.width * img.height * img.channels);
-        if (hdr.bitDepth == 8)
-        {
-            for (int i = 0; i < buffer.length; ++i)
-            {
+        if (hdr.bitDepth == 8) {
+            for (int i = 0; i < buffer.length; ++i) {
                 ubyte b = buffer[i];
                 pdata[i * img.channels + 0] = palette[b * 3 + 0];
                 pdata[i * img.channels + 1] = palette[b * 3 + 1];
@@ -435,15 +385,13 @@ Compound!(SuperImage, string) loadPNG(
                     pdata[i * img.channels + 3] =
                         b < transparency.length ? transparency[b] : 0;
             }
-        }
-        else // bit depths 1, 2, 4
+        } else // bit depths 1, 2, 4
         {
             int srcindex = 0;
             int srcshift = 8 - hdr.bitDepth;
             ubyte mask = cast(ubyte)((1 << hdr.bitDepth) - 1);
             int sz = img.width * img.height;
-            for (int dstindex = 0; dstindex < sz; dstindex++)
-            {
+            for (int dstindex = 0; dstindex < sz; dstindex++) {
                 auto b = ((buffer[srcindex] >> srcshift) & mask);
                 //assert(b * 3 + 2 < palette.length);
                 pdata[dstindex * img.channels + 0] = palette[b * 3 + 0];
@@ -454,13 +402,10 @@ Compound!(SuperImage, string) loadPNG(
                     pdata[dstindex * img.channels + 3] =
                         b < transparency.length ? transparency[b] : 0;
 
-                if (srcshift <= 0)
-                {
+                if (srcshift <= 0) {
                     srcshift = 8 - hdr.bitDepth;
                     srcindex++;
-                }
-                else
-                {
+                } else {
                     srcshift -= hdr.bitDepth;
                 }
             }
@@ -482,70 +427,67 @@ Compound!(SuperImage, string) loadPNG(
     //    img.data[i] = v;
 
     int bufindex = 0;
-    if (hdr.colorType == ColorType.Greyscale)
-    {
+    if (hdr.colorType == ColorType.Greyscale) {
         if (hdr.bitDepth == 8) {
             //img = imgFac.createImage(hdr.width, hdr.height, 1, 8);
             for (int i = 0; i < img.length; i++) {
-                img.data[i] = ((cast(uint)buffer[bufindex])<<16) | ((cast(uint)buffer[bufindex])<<8) | ((cast(uint)buffer[bufindex])<<0) | 0xFF000000;
+                img.data[i] = ((cast(uint)buffer[bufindex]) << 16) | ((cast(uint)buffer[bufindex]) << 8) | (
+                    (cast(uint)buffer[bufindex]) << 0) | 0xFF000000;
                 bufindex += 1;
             }
         } else if (hdr.bitDepth == 16) {
             //img = imgFac.createImage(hdr.width, hdr.height, 1, 16);
             assert(false);
         }
-    }
-    else if (hdr.colorType == ColorType.GreyscaleAlpha)
-    {
+    } else if (hdr.colorType == ColorType.GreyscaleAlpha) {
         if (hdr.bitDepth == 8) {
             //img = imgFac.createImage(hdr.width, hdr.height, 2, 8);
             for (int i = 0; i < img.length; i++) {
-                img.data[i] = ((cast(uint)buffer[bufindex])<<16) | ((cast(uint)buffer[bufindex])<<8) | ((cast(uint)buffer[bufindex])<<0) | ((cast(uint)buffer[bufindex + 1])<<24);
+                img.data[i] = ((cast(uint)buffer[bufindex]) << 16) | ((cast(uint)buffer[bufindex]) << 8) | (
+                    (cast(uint)buffer[bufindex]) << 0) | ((cast(uint)buffer[bufindex + 1]) << 24);
                 bufindex += 2;
             }
         } else if (hdr.bitDepth == 16) {
             //img = imgFac.createImage(hdr.width, hdr.height, 2, 16);
             assert(false);
         }
-    }
-    else if (hdr.colorType == ColorType.RGB)
-    {
+    } else if (hdr.colorType == ColorType.RGB) {
         if (hdr.bitDepth == 8) {
             //img = imgFac.createImage(hdr.width, hdr.height, 3, 8);
             for (int i = 0; i < img.length; i++) {
-                img.data[i] = ((cast(uint)buffer[bufindex])<<16) | ((cast(uint)buffer[bufindex + 1])<<8) | ((cast(uint)buffer[bufindex + 2])<<0) | 0xFF000000;
+                img.data[i] = ((cast(uint)buffer[bufindex]) << 16) | ((cast(uint)buffer[bufindex + 1]) << 8) | (
+                    (cast(uint)buffer[bufindex + 2]) << 0) | 0xFF000000;
                 bufindex += 3;
             }
         } else if (hdr.bitDepth == 16) {
             //img = imgFac.createImage(hdr.width, hdr.height, 3, 16);
             assert(false);
         }
-    }
-    else if (hdr.colorType == ColorType.RGBA)
-    {
+    } else if (hdr.colorType == ColorType.RGBA) {
         if (hdr.bitDepth == 8) {
             //img = imgFac.createImage(hdr.width, hdr.height, 4, 8);
             for (int i = 0; i < img.length; i++) {
-                img.data[i] = ((cast(uint)buffer[bufindex])<<16) | ((cast(uint)buffer[bufindex + 1])<<8) | ((cast(uint)buffer[bufindex + 2])<<0) | ((cast(uint)buffer[bufindex + 3])<<24);
+                img.data[i] = ((cast(uint)buffer[bufindex]) << 16) | ((cast(uint)buffer[bufindex + 1]) << 8) | (
+                    (cast(uint)buffer[bufindex + 2]) << 0) | ((cast(uint)buffer[bufindex + 3]) << 24);
                 bufindex += 4;
             }
         } else if (hdr.bitDepth == 16) {
             //img = imgFac.createImage(hdr.width, hdr.height, 4, 16);
             assert(false);
         }
-    }
-    else if (hdr.colorType == ColorType.Palette)
-    {
+    } else if (hdr.colorType == ColorType.Palette) {
         if (transparencyPalette) {
             for (int i = 0; i < img.length; i++) {
-                img.data[i] = ((cast(uint)buffer[bufindex])<<16) | ((cast(uint)buffer[bufindex + 1])<<8) | ((cast(uint)buffer[bufindex + 2])<<0) | ((cast(uint)buffer[bufindex + 3])<<24);
+                img.data[i] = ((cast(uint)buffer[bufindex]) << 16) | ((cast(uint)buffer[bufindex + 1]) << 8) | (
+                    (cast(uint)buffer[bufindex + 2]) << 0) | ((cast(uint)buffer[bufindex + 3]) << 24);
                 bufindex += 4;
             }
             //img = imgFac.createImage(hdr.width, hdr.height, 4, 8);
         } else {
             //img = imgFac.createImage(hdr.width, hdr.height, 3, 8);
             for (int i = 0; i < img.length; i++) {
-                img.data[i] = ((cast(uint)buffer[bufindex])<<16) | ((cast(uint)buffer[bufindex + 1])<<8) | ((cast(uint)buffer[bufindex + 2])<<0) | 0xFF000000;
+                img.data[i] = ((cast(uint)buffer[bufindex]) << 16) | ((cast(uint)buffer[bufindex + 1]) << 8) | (
+                    (cast(uint)buffer[bufindex + 2]) << 0) | 0xFF000000;
                 bufindex += 3;
             }
         }
@@ -557,105 +499,97 @@ Compound!(SuperImage, string) loadPNG(
 }
 
 version (ENABLE_SAVE_PNG) {
-/*
+    /*
  * Save PNG to stream.
  * GC-free
  */
-Compound!(bool, string) savePNG(SuperImage img, OutputStream output)
-in
-{
-    assert (img.data.length);
-}
-body
-{
-    Compound!(bool, string) error(string errorMsg)
-    {
-        return compound(false, errorMsg);
+    Compound!(bool, string) savePNG(SuperImage img, OutputStream output)
+    in {
+        assert(img.data.length);
     }
+    do {
+        Compound!(bool, string) error(string errorMsg) {
+            return compound(false, errorMsg);
+        }
 
-    if (img.bitDepth != 8)
-        return error("savePNG error: only 8-bit images are supported by encoder");
+        if (img.bitDepth != 8)
+            return error("savePNG error: only 8-bit images are supported by encoder");
 
-    bool writeChunk(ubyte[4] chunkType, ubyte[] chunkData)
-    {
-        PNGChunk hdrChunk;
-        hdrChunk.length = cast(uint)chunkData.length;
-        hdrChunk.type = chunkType;
-        hdrChunk.data = chunkData;
-        hdrChunk.crc = crc32(chain(chunkType[0..$], hdrChunk.data));
+        bool writeChunk(ubyte[4] chunkType, ubyte[] chunkData) {
+            PNGChunk hdrChunk;
+            hdrChunk.length = cast(uint)chunkData.length;
+            hdrChunk.type = chunkType;
+            hdrChunk.data = chunkData;
+            hdrChunk.crc = crc32(chain(chunkType[0 .. $], hdrChunk.data));
 
-        if (!output.writeBE!uint(hdrChunk.length)
-            || !output.writeArray(hdrChunk.type))
-            return false;
-
-        if (chunkData.length)
-            if (!output.writeArray(hdrChunk.data))
+            if (!output.writeBE!uint(hdrChunk.length)
+                || !output.writeArray(hdrChunk.type))
                 return false;
 
-        if (!output.writeBE!uint(hdrChunk.crc))
-            return false;
+            if (chunkData.length)
+                if (!output.writeArray(hdrChunk.data))
+                    return false;
 
-        return true;
-    }
+            if (!output.writeBE!uint(hdrChunk.crc))
+                return false;
 
-    bool writeHeader()
-    {
-        PNGHeader hdr;
-        hdr.width = networkByteOrder(img.width);
-        hdr.height = networkByteOrder(img.height);
-        hdr.bitDepth = 8;
-        if (img.channels == 4)
-            hdr.colorType = ColorType.RGBA;
-        else if (img.channels == 3)
-            hdr.colorType = ColorType.RGB;
-        else if (img.channels == 2)
-            hdr.colorType = ColorType.GreyscaleAlpha;
-        else if (img.channels == 1)
-            hdr.colorType = ColorType.Greyscale;
-        hdr.compressionMethod = 0;
-        hdr.filterMethod = 0;
-        hdr.interlaceMethod = 0;
-
-        return writeChunk(IHDR, hdr.bytes);
-    }
-
-    output.writeArray(PNGSignature);
-    if (!writeHeader())
-        return error("savePNG error: write failed (disk full?)");
-
-    //TODO: filtering
-    ubyte[] raw = New!(ubyte[])(img.width * img.height * img.channels + img.height);
-    foreach(y; 0..img.height)
-    {
-        auto rowStart = y * (img.width * img.channels + 1);
-        raw[rowStart] = 0; // No filter
-
-        foreach(x; 0..img.width)
-        {
-            auto dataIndex = (y * img.width + x) * img.channels;
-            auto rawIndex = rowStart + 1 + x * img.channels;
-
-            foreach(ch; 0..img.channels)
-                raw[rawIndex + ch] = img.data[dataIndex + ch];
+            return true;
         }
+
+        bool writeHeader() {
+            PNGHeader hdr;
+            hdr.width = networkByteOrder(img.width);
+            hdr.height = networkByteOrder(img.height);
+            hdr.bitDepth = 8;
+            if (img.channels == 4)
+                hdr.colorType = ColorType.RGBA;
+            else if (img.channels == 3)
+                hdr.colorType = ColorType.RGB;
+            else if (img.channels == 2)
+                hdr.colorType = ColorType.GreyscaleAlpha;
+            else if (img.channels == 1)
+                hdr.colorType = ColorType.Greyscale;
+            hdr.compressionMethod = 0;
+            hdr.filterMethod = 0;
+            hdr.interlaceMethod = 0;
+
+            return writeChunk(IHDR, hdr.bytes);
+        }
+
+        output.writeArray(PNGSignature);
+        if (!writeHeader())
+            return error("savePNG error: write failed (disk full?)");
+
+        //TODO: filtering
+        ubyte[] raw = New!(ubyte[])(img.width * img.height * img.channels + img.height);
+        foreach (y; 0 .. img.height) {
+            auto rowStart = y * (img.width * img.channels + 1);
+            raw[rowStart] = 0; // No filter
+
+            foreach (x; 0 .. img.width) {
+                auto dataIndex = (y * img.width + x) * img.channels;
+                auto rawIndex = rowStart + 1 + x * img.channels;
+
+                foreach (ch; 0 .. img.channels)
+                    raw[rawIndex + ch] = img.data[dataIndex + ch];
+            }
+        }
+
+        ubyte[] buffer = New!(ubyte[])(64 * 1024);
+        ZlibBufferedEncoder zlibEncoder = ZlibBufferedEncoder(buffer, raw);
+        while (!zlibEncoder.ended) {
+            auto len = zlibEncoder.encode();
+            if (len > 0)
+                writeChunk(IDAT, zlibEncoder.buffer[0 .. len]);
+        }
+
+        writeChunk(IEND, []);
+
+        Delete(buffer);
+        Delete(raw);
+
+        return compound(true, "");
     }
-
-    ubyte[] buffer = New!(ubyte[])(64 * 1024);
-    ZlibBufferedEncoder zlibEncoder = ZlibBufferedEncoder(buffer, raw);
-    while (!zlibEncoder.ended)
-    {
-        auto len = zlibEncoder.encode();
-        if (len > 0)
-            writeChunk(IDAT, zlibEncoder.buffer[0..len]);
-    }
-
-    writeChunk(IEND, []);
-
-    Delete(buffer);
-    Delete(raw);
-
-    return compound(true, "");
-}
 }
 
 /*
@@ -664,47 +598,43 @@ body
  *   b = up
  *   c = up and back
  */
-pure ubyte paeth(ubyte a, ubyte b, ubyte c)
-{
+pure ubyte paeth(ubyte a, ubyte b, ubyte c) {
     int p = a + b - c;
     int pa = abs(p - a);
     int pb = abs(p - b);
     int pc = abs(p - c);
-    if (pa <= pb && pa <= pc) return a;
-    else if (pb <= pc) return b;
-    else return c;
+    if (pa <= pb && pa <= pc)
+        return a;
+    else if (pb <= pc)
+        return b;
+    else
+        return c;
 }
 
 bool filter(PNGHeader* hdr,
-            uint channels,
-            bool indexed,
-            ubyte[] ibuffer,
-        out ubyte[] obuffer,
-        out string errorMsg)
-{
+    uint channels,
+    bool indexed,
+    ubyte[] ibuffer,
+    out ubyte[] obuffer,
+    out string errorMsg) {
     uint dataSize = cast(uint)ibuffer.length;
     uint scanlineSize;
 
     uint calculatedSize;
-    if (indexed)
-    {
+    if (indexed) {
         calculatedSize = hdr.width * hdr.height * hdr.bitDepth / 8 + hdr.height;
         scanlineSize = hdr.width * hdr.bitDepth / 8 + 1;
-    }
-    else
-    {
+    } else {
         calculatedSize = hdr.width * hdr.height * channels + hdr.height;
         scanlineSize = hdr.width * channels + 1;
     }
 
-    version(PNGDebug)
-    {
+    version (PNGDebug) {
         writefln("[filter] dataSize = %s", dataSize);
         writefln("[filter] calculatedSize = %s", calculatedSize);
     }
 
-    if (dataSize != calculatedSize)
-    {
+    if (dataSize != calculatedSize) {
         errorMsg = "loadPNG error: image size and data mismatch";
         return false;
     }
@@ -713,65 +643,64 @@ bool filter(PNGHeader* hdr,
 
     ubyte pback, pup, pupback, cbyte;
 
-    for (int i = 0; i < hdr.height; ++i)
-    {
+    for (int i = 0; i < hdr.height; ++i) {
         pback = 0;
 
         // get the first byte of a scanline
         ubyte scanFilter = ibuffer[i * scanlineSize];
 
-        if (indexed)
-        {
+        if (indexed) {
             // TODO: support filtering for indexed images
-            if (scanFilter != FilterMethod.None)
-            {
+            if (scanFilter != FilterMethod.None) {
                 errorMsg = "loadPNG error: filtering is not supported for indexed images";
                 return false;
             }
 
-            for (int j = 1; j < scanlineSize; ++j)
-            {
+            for (int j = 1; j < scanlineSize; ++j) {
                 ubyte b = ibuffer[(i * scanlineSize) + j];
-                obuffer[(i * (scanlineSize-1) + j - 1)] = b;
+                obuffer[(i * (scanlineSize - 1) + j - 1)] = b;
             }
             continue;
         }
 
-        for (int j = 0; j < hdr.width; ++j)
-        {
-            for (int k = 0; k < channels; ++k)
-            {
-                if (i == 0)    pup = 0;
-                else pup = obuffer[((i-1) * hdr.width + j) * channels + k]; // (hdr.height-(i-1)-1)
-                if (j == 0)    pback = 0;
-                else pback = obuffer[(i * hdr.width + j-1) * channels + k];
-                if (i == 0 || j == 0) pupback = 0;
-                else pupback = obuffer[((i-1) * hdr.width + j - 1) * channels + k];
+        for (int j = 0; j < hdr.width; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                if (i == 0)
+                    pup = 0;
+                else
+                    pup = obuffer[((i - 1) * hdr.width + j) * channels + k]; // (hdr.height-(i-1)-1)
+                if (j == 0)
+                    pback = 0;
+                else
+                    pback = obuffer[(i * hdr.width + j - 1) * channels + k];
+                if (i == 0 || j == 0)
+                    pupback = 0;
+                else
+                    pupback = obuffer[((i - 1) * hdr.width + j - 1) * channels + k];
 
                 // get the current byte from ibuffer
                 cbyte = ibuffer[i * (hdr.width * channels + 1) + j * channels + k + 1];
 
                 // filter, then set the current byte in data
-                switch (scanFilter)
-                {
-                    case FilterMethod.None:
-                        obuffer[(i * hdr.width + j) * channels + k] = cbyte;
-                        break;
-                    case FilterMethod.Sub:
-                        obuffer[(i * hdr.width + j) * channels + k] = cast(ubyte)(cbyte + pback);
-                        break;
-                    case FilterMethod.Up:
-                        obuffer[(i * hdr.width + j) * channels + k] = cast(ubyte)(cbyte + pup);
-                        break;
-                    case FilterMethod.Average:
-                        obuffer[(i * hdr.width + j) * channels + k] = cast(ubyte)(cbyte + (pback + pup) / 2);
-                        break;
-                    case FilterMethod.Paeth:
-                        obuffer[(i * hdr.width + j) * channels + k] = cast(ubyte)(cbyte + paeth(pback, pup, pupback));
-                        break;
-                    default:
-                        errorMsg = format("loadPNG error: unknown scanline filter (%s)", scanFilter);
-                        return false;
+                switch (scanFilter) {
+                case FilterMethod.None:
+                    obuffer[(i * hdr.width + j) * channels + k] = cbyte;
+                    break;
+                case FilterMethod.Sub:
+                    obuffer[(i * hdr.width + j) * channels + k] = cast(ubyte)(cbyte + pback);
+                    break;
+                case FilterMethod.Up:
+                    obuffer[(i * hdr.width + j) * channels + k] = cast(ubyte)(cbyte + pup);
+                    break;
+                case FilterMethod.Average:
+                    obuffer[(i * hdr.width + j) * channels + k] = cast(ubyte)(cbyte + (pback + pup) / 2);
+                    break;
+                case FilterMethod.Paeth:
+                    obuffer[(i * hdr.width + j) * channels + k] = cast(ubyte)(cbyte + paeth(pback, pup, pupback));
+                    break;
+                default:
+                    errorMsg = format("loadPNG error: unknown scanline filter (%s)", scanFilter);
+                    return false;
                 }
             }
         }
@@ -780,14 +709,11 @@ bool filter(PNGHeader* hdr,
     return true;
 }
 
-uint crc32(R)(R range, uint inCrc = 0) if (isInputRange!R)
-{
-    uint[256] generateTable()
-    {
+uint crc32(R)(R range, uint inCrc = 0) if (isInputRange!R) {
+    uint[256] generateTable() {
         uint[256] table;
         uint crc;
-        for (int i = 0; i < 256; i++)
-        {
+        for (int i = 0; i < 256; i++) {
             crc = i;
             for (int j = 0; j < 8; j++)
                 crc = crc & 1 ? (crc >> 1) ^ 0xEDB88320UL : crc >> 1;
@@ -801,7 +727,7 @@ uint crc32(R)(R range, uint inCrc = 0) if (isInputRange!R)
     uint crc;
 
     crc = inCrc ^ 0xFFFFFFFF;
-    foreach(v; range)
+    foreach (v; range)
         crc = (crc >> 8) ^ table[(crc ^ v) & 0xFF];
 
     return (crc ^ 0xFFFFFFFF);

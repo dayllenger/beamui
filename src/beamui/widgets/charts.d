@@ -32,26 +32,22 @@ import beamui.text.sizetest;
 import beamui.text.style;
 import beamui.widgets.widget;
 
-struct SimpleBar
-{
+struct SimpleBar {
     Color color = Color.black;
     dstring title;
 }
 
-class SimpleBarChart : Widget
-{
+class SimpleBarChart : Widget {
     const(double)[] data;
     const(SimpleBar)[] bars;
     dstring title;
     double axisRatio = 0.6;
 
-    override protected Element createElement()
-    {
+    override protected Element createElement() {
         return new ElemSimpleBarChart;
     }
 
-    override protected void updateElement(Element element)
-    {
+    override protected void updateElement(Element element) {
         super.updateElement(element);
 
         ElemSimpleBarChart el = fastCast!ElemSimpleBarChart(element);
@@ -59,29 +55,24 @@ class SimpleBarChart : Widget
         el.axisRatio = axisRatio;
 
         el.setValues(data);
-        foreach (i, ref bar; bars[0 .. min(data.length, bars.length)])
-        {
+        foreach (i, ref bar; bars[0 .. min(data.length, bars.length)]) {
             el.updateBar(i, bar.color, bar.title);
         }
     }
 }
 
-class ElemSimpleBarChart : Element
-{
-    this()
-    {
+class ElemSimpleBarChart : Element {
+    this() {
         _axisX.arrowSize = 1;
         _minDescSizeTester.str = "aaaaaaaaaa";
     }
 
-    protected struct Bar
-    {
+    protected struct Bar {
         Color color = Color.black;
         SimpleText title;
     }
 
-    protected struct AxisData
-    {
+    protected struct AxisData {
         Size maxDescriptionSize = Size(30, 20);
         float thickness = 1;
         float segmentTagLength = 4;
@@ -90,15 +81,13 @@ class ElemSimpleBarChart : Element
         float arrowSize = 20;
     }
 
-    final void setValues(const double[] list)
-    {
+    final void setValues(const double[] list) {
         if (_values == list)
             return;
         _values = list.dup;
         _bars.length = list.length;
         _maxY = 0;
-        foreach (ref v; _values)
-        {
+        foreach (ref v; _values) {
             v = max(v, 0); // current limitation is positive values only
             _maxY = max(_maxY, v);
         }
@@ -106,8 +95,7 @@ class ElemSimpleBarChart : Element
     }
 
     final void updateBar(size_t index, Color color, dstring barTitle)
-    in (index < _values.length)
-    {
+    in (index < _values.length) {
         Bar* bar = &_bars[index];
         if (bar.color == color && bar.title.str == barTitle)
             return;
@@ -116,8 +104,7 @@ class ElemSimpleBarChart : Element
         requestLayout();
     }
 
-    private
-    {
+    private {
         double[] _values;
         Bar[] _bars;
         double _maxY = 0;
@@ -150,20 +137,16 @@ class ElemSimpleBarChart : Element
         TextSizeTester _minDescSizeTester;
     }
 
-    @property
-    {
-        size_t barCount() const
-        {
+    @property {
+        size_t barCount() const {
             return _values.length;
         }
 
-        dstring title() const
-        {
+        dstring title() const {
             return _title.str;
         }
         /// ditto
-        void title(dstring s)
-        {
+        void title(dstring s) {
             if (_title.str is s)
                 return;
             _title.str = s;
@@ -171,45 +154,38 @@ class ElemSimpleBarChart : Element
             requestLayout();
         }
 
-        double axisRatio() const
-        {
+        double axisRatio() const {
             return _axisRatio;
         }
         /// ditto
-        void axisRatio(double value)
-        {
+        void axisRatio(double value) {
             if (_axisRatio == value)
                 return;
             _axisRatio = value;
             requestLayout();
         }
 
-        dstring minDescSizeTester() const
-        {
+        dstring minDescSizeTester() const {
             return _minDescSizeTester.str;
         }
         /// ditto
-        void minDescSizeTester(dstring txt)
-        {
+        void minDescSizeTester(dstring txt) {
             _minDescSizeTester.str = txt;
             requestLayout();
         }
     }
 
-    override void handleCustomPropertiesChange()
-    {
+    override void handleCustomPropertiesChange() {
         auto pick = &style.getPropertyValue!Color;
         _backgroundColor = pick("--background", Color(0xffffff));
         _axisColor = pick("--axis", Color(0xc0c0c0));
         _segmentTagColor = pick("--segment-tag", Color(0xc0c0c0));
     }
 
-    protected Size measureAxisXDesc()
-    {
+    protected Size measureAxisXDesc() {
         Font fnt = font.get;
         Size sz;
-        foreach (ref bar; _bars)
-        {
+        foreach (ref bar; _bars) {
             bar.title.style.font = fnt;
             bar.title.wrap(_barWidth);
             Size ts = bar.title.size;
@@ -219,20 +195,17 @@ class ElemSimpleBarChart : Element
         return sz;
     }
 
-    protected Size measureAxisYDesc()
-    {
+    protected Size measureAxisYDesc() {
         double currentMaxValue = _maxY;
-        if (approxEqual(_maxY, 0, 0.0000001, 0.0000001))
+        if (isClose(_maxY, 0, 0.0000001, 0.0000001))
             currentMaxValue = 100;
 
-        if (cachedMaxYValue != currentMaxValue)
-        {
+        if (cachedMaxYValue != currentMaxValue) {
             cachedMaxYValue = currentMaxValue;
             _axisYMaxValueDesc.str = to!dstring(currentMaxValue);
         }
         double avgValue = currentMaxValue / 2;
-        if (cachedAvgYValue != avgValue)
-        {
+        if (cachedAvgYValue != avgValue) {
             cachedAvgYValue = avgValue;
             _axisYAvgValueDesc.str = to!dstring(avgValue);
         }
@@ -243,8 +216,7 @@ class ElemSimpleBarChart : Element
         return Size(max(maxSize.w, avgSize.w, _axisYMinDescWidth), max(maxSize.h, avgSize.h));
     }
 
-    override protected Boundaries computeBoundaries()
-    {
+    override protected Boundaries computeBoundaries() {
         Font fnt = font.get;
         _title.style.font = fnt;
         _axisYMaxValueDesc.style.font = fnt;
@@ -264,8 +236,7 @@ class ElemSimpleBarChart : Element
         Boundaries bs;
         bs.min.w = _axisY.maxDescriptionSize.w + minAxisXLength + extraSizeX;
         bs.min.h = minAxixYLength + extraSizeY;
-        if (_showTitle)
-        {
+        if (_showTitle) {
             _title.measure();
             Size ts = _title.size;
             bs.nat.w = max(bs.min.w, ts.w);
@@ -274,8 +245,7 @@ class ElemSimpleBarChart : Element
         return bs;
     }
 
-    override protected void arrangeContent()
-    {
+    override protected void arrangeContent() {
         const inner = innerBox;
 
         const extraSizeX = _axisY.thickness + _axisY.segmentTagLength + _axisX.zeroValueDist + _axisX.arrowSize;
@@ -296,8 +266,7 @@ class ElemSimpleBarChart : Element
             (_showTitle ? _title.size.h + _marginAfterTitle : 0);
     }
 
-    override protected void drawContent(Painter pr)
-    {
+    override protected void drawContent(Painter pr) {
         const b = innerBox;
 
         const x1 = b.x + _axisY.maxDescriptionSize.w + _axisY.segmentTagLength;
@@ -308,8 +277,7 @@ class ElemSimpleBarChart : Element
         const y2 = b.y + b.h - _axisX.maxDescriptionSize.h - _axisX.segmentTagLength;
 
         // draw title first
-        if (_showTitle)
-        {
+        if (_showTitle) {
             // align to the center of chart view
             _title.style.color = style.textColor;
             _title.style.alignment = TextAlign.center;
@@ -332,17 +300,16 @@ class ElemSimpleBarChart : Element
         float firstBarX = x1 + _axisY.thickness + _axisX.zeroValueDist;
         const firstBarY = y2 - _axisX.thickness - _axisY.zeroValueDist;
 
-        foreach (i, ref bar; _bars)
-        {
+        foreach (i, ref bar; _bars) {
             // draw bar
             const h = barYValueToPixels(_axisY.lengthFromZeroToArrow, _values[i]);
             pr.fillRect(firstBarX, firstBarY - h, _barWidth, h, bar.color);
 
             // draw x axis segment under bar
             pr.drawLine(
-                    firstBarX + _barWidth / 2, y2,
-                    firstBarX + _barWidth / 2, y2 + _axisX.segmentTagLength,
-                    _segmentTagColor,
+                firstBarX + _barWidth / 2, y2,
+                firstBarX + _barWidth / 2, y2 + _axisX.segmentTagLength,
+                _segmentTagColor,
             );
 
             // draw x axis description
@@ -374,10 +341,9 @@ class ElemSimpleBarChart : Element
         _axisYAvgValueDesc.draw(pr, b.x, yAvg - _axisY.maxDescriptionSize.h / 2, axisYWidth);
     }
 
-    protected float barYValueToPixels(float axisInPixels, double barYValue)
-    {
+    protected float barYValueToPixels(float axisInPixels, double barYValue) {
         double currentMaxValue = _maxY;
-        if (approxEqual(_maxY, 0, 0.0000001, 0.0000001))
+        if (isClose(_maxY, 0, 0.0000001, 0.0000001))
             currentMaxValue = 100;
 
         const pixValue = axisInPixels / currentMaxValue;
