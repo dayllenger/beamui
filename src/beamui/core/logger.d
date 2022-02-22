@@ -42,14 +42,13 @@ nothrow @safe:
 
 import core.sync.mutex;
 import std.stdio : File, printf, stdout, stderr, writef;
-version (Android)
-{
+
+version (Android) {
     import android.log;
 }
 
 /// Log levels
-enum LogLevel : ubyte
-{
+enum LogLevel : ubyte {
     /// Fatal error, cannot resume
     fatal,
     /// Error
@@ -65,8 +64,7 @@ enum LogLevel : ubyte
 }
 
 /// Returns timestamp in milliseconds since 1970 UTC similar to Java System.currentTimeMillis()
-@property long currentTimeMillis()
-{
+@property long currentTimeMillis() {
     import std.datetime : Clock;
 
     try
@@ -75,60 +73,45 @@ enum LogLevel : ubyte
         assert(0);
 }
 
-shared static this()
-{
+shared static this() {
     Log.mutex = new shared(Mutex);
     Log.setStdoutLogger();
 }
 
-class Log
-{
-    static nothrow:
+class Log {
+static nothrow:
 
-    private
-    {
+    private {
         shared LogLevel logLevel = LogLevel.info;
         shared Mutex mutex;
         __gshared File* logFile;
     }
 
     /// Redirects output to stdout
-    void setStdoutLogger() @trusted
-    {
-        try
-        {
-            synchronized (mutex)
-            {
+    void setStdoutLogger() @trusted {
+        try {
+            synchronized (mutex) {
                 logFile = &stdout();
             }
-        }
-        catch (Exception e)
+        } catch (Exception e)
             printException(e);
     }
 
     /// Redirects output to stderr
-    void setStderrLogger() @trusted
-    {
-        try
-        {
-            synchronized (mutex)
-            {
+    void setStderrLogger() @trusted {
+        try {
+            synchronized (mutex) {
                 logFile = &stderr();
             }
-        }
-        catch (Exception e)
+        } catch (Exception e)
             printException(e);
     }
 
     /// Redirects output to file
-    void setFileLogger(File* file) @trusted
-    {
-        try
-        {
-            synchronized (mutex)
-            {
-                if (logFile !is null && *logFile != stdout && *logFile != stderr)
-                {
+    void setFileLogger(File* file) @trusted {
+        try {
+            synchronized (mutex) {
+                if (logFile !is null && *logFile != stdout && *logFile != stderr) {
                     logFile.close();
                     destroy(logFile);
                     logFile = null;
@@ -137,47 +120,39 @@ class Log
                 if (logFile !is null)
                     logFile.writeln("beamui log file");
             }
-        }
-        catch (Exception e)
+        } catch (Exception e)
             printException(e);
     }
 
     /// Set a log level
-    void setLogLevel(LogLevel level)
-    {
+    void setLogLevel(LogLevel level) {
         logLevel = level;
         i("Log level changed to ", level);
     }
 
     /// Returns true if messages for level are enabled
-    bool isLogLevelEnabled(LogLevel level)
-    {
+    bool isLogLevelEnabled(LogLevel level) {
         return logLevel >= level;
     }
 
     /// Returns true if debug log level is enabled
-    @property bool debugEnabled()
-    {
+    @property bool debugEnabled() {
         return logLevel >= LogLevel.debug_;
     }
 
     /// Returns true if trace log level is enabled
-    @property bool traceEnabled()
-    {
+    @property bool traceEnabled() {
         return logLevel >= LogLevel.trace;
     }
 
     /// Returns true if warn log level is enabled
-    @property bool warnEnabled()
-    {
+    @property bool warnEnabled() {
         return logLevel >= LogLevel.warn;
     }
 
     /// Log level to name helper function
-    string logLevelName(LogLevel level)
-    {
-        final switch (level) with (LogLevel)
-        {
+    string logLevelName(LogLevel level) {
+        final switch (level) with (LogLevel) {
         case fatal:
             return "F";
         case error:
@@ -193,17 +168,13 @@ class Log
         }
     }
 
-    version (Android)
-    {
-        void setLogTag(const char* tag)
-        {
+    version (Android) {
+        void setLogTag(const char* tag) {
             ANDROID_LOG_TAG = tag;
         }
 
-        private android_LogPriority toAndroidLogPriority(LogLevel level)
-        {
-            final switch (level) with (LogLevel)
-            {
+        private android_LogPriority toAndroidLogPriority(LogLevel level) {
+            final switch (level) with (LogLevel) {
             case fatal:
                 return android_LogPriority.ANDROID_LOG_FATAL;
             case error:
@@ -221,154 +192,123 @@ class Log
     }
 
     /// Log message with arbitrary log level
-    void log(S...)(LogLevel level, S args)
-    {
+    void log(S...)(LogLevel level, S args) {
         logImpl(level, args);
     }
     /// Log message with arbitrary log level with format string
-    void logf(S...)(LogLevel level, string fmt, S args)
-    {
+    void logf(S...)(LogLevel level, string fmt, S args) {
         logfImpl(level, fmt, args);
     }
     /// Log verbose / trace message
-    void v(S...)(S args)
-    {
+    void v(S...)(S args) {
         logImpl(LogLevel.trace, args);
     }
     /// Log verbose / trace message with format string
-    void fv(S...)(string fmt, S args)
-    {
+    void fv(S...)(string fmt, S args) {
         logfImpl(LogLevel.trace, fmt, args);
     }
     /// Log debug message
-    void d(S...)(S args)
-    {
+    void d(S...)(S args) {
         logImpl(LogLevel.debug_, args);
     }
     /// Log debug message with format string
-    void fd(S...)(string fmt, S args)
-    {
+    void fd(S...)(string fmt, S args) {
         logfImpl(LogLevel.debug_, fmt, args);
     }
     /// Log info message
-    void i(S...)(S args)
-    {
+    void i(S...)(S args) {
         logImpl(LogLevel.info, args);
     }
     /// Log info message
-    void fi(S...)(string fmt, S args)
-    {
+    void fi(S...)(string fmt, S args) {
         logfImpl(LogLevel.info, fmt, args);
     }
     /// Log warn message
-    void w(S...)(S args)
-    {
+    void w(S...)(S args) {
         logImpl(LogLevel.warn, args);
     }
     /// Log warn message
-    void fw(S...)(string fmt, S args)
-    {
+    void fw(S...)(string fmt, S args) {
         logfImpl(LogLevel.warn, fmt, args);
     }
     /// Log error message
-    void e(S...)(S args)
-    {
+    void e(S...)(S args) {
         logImpl(LogLevel.error, args);
     }
     /// Log error message
-    void fe(S...)(string fmt, S args)
-    {
+    void fe(S...)(string fmt, S args) {
         logfImpl(LogLevel.error, fmt, args);
     }
     /// Log fatal error message
-    void f(S...)(S args)
-    {
+    void f(S...)(S args) {
         logImpl(LogLevel.fatal, args);
     }
     /// Log fatal error message
-    void ff(S...)(string fmt, S args)
-    {
+    void ff(S...)(string fmt, S args) {
         logfImpl(LogLevel.fatal, fmt, args);
     }
 
-    private void logImpl(S...)(LogLevel level, ref const S args) @trusted
-    {
-        try
-        {
-            synchronized (mutex)
-            {
+    private void logImpl(S...)(LogLevel level, ref const S args) @trusted {
+        try {
+            synchronized (mutex) {
                 if (logLevel < level)
                     return;
 
-                version (Android)
-                {
+                version (Android) {
                     import std.conv : to;
 
                     char[] msg;
-                    foreach (arg; args)
-                    {
+                    foreach (arg; args) {
                         msg ~= to!string(arg);
                     }
                     msg ~= '\0';
                     __android_log_write(toAndroidLogPriority(level), ANDROID_LOG_TAG, msg.ptr);
-                }
-                else
-                {
+                } else {
                     import std.datetime : SysTime, Clock;
 
-                    if (logFile !is null && logFile.isOpen)
-                    {
+                    if (logFile !is null && logFile.isOpen) {
                         SysTime ts = Clock.currTime();
                         logFile.writef("%04d-%02d-%02d %02d:%02d:%02d.%03d %s  ", ts.year, ts.month,
-                                ts.day, ts.hour, ts.minute, ts.second, ts.fracSecs.split!("msecs")
+                            ts.day, ts.hour, ts.minute, ts.second, ts.fracSecs.split!("msecs")
                                 .msecs, logLevelName(level));
                         logFile.writeln(args);
                         logFile.flush();
                     }
                 }
             }
-        }
-        catch (Exception e)
+        } catch (Exception e)
             printException(e);
     }
-    private void logfImpl(S...)(LogLevel level, string fmt, ref const S args) @trusted
-    {
-        try
-        {
-            synchronized (mutex)
-            {
+
+    private void logfImpl(S...)(LogLevel level, string fmt, ref const S args) @trusted {
+        try {
+            synchronized (mutex) {
                 if (logLevel < level)
                     return;
 
-                version (Android)
-                {
+                version (Android) {
                     import std.format : format;
 
                     string msg = format(fmt, args);
                     __android_log_write(toAndroidLogPriority(level), ANDROID_LOG_TAG, toStringz(msg));
-                }
-                else
-                {
+                } else {
                     import std.datetime : SysTime, Clock;
 
-                    if (logFile !is null && logFile.isOpen)
-                    {
+                    if (logFile !is null && logFile.isOpen) {
                         SysTime ts = Clock.currTime();
                         logFile.writef("%04d-%02d-%02d %02d:%02d:%02d.%03d %s  ", ts.year, ts.month,
-                                ts.day, ts.hour, ts.minute, ts.second, ts.fracSecs.split!("msecs")
+                            ts.day, ts.hour, ts.minute, ts.second, ts.fracSecs.split!("msecs")
                                 .msecs, logLevelName(level));
                         logFile.writefln(fmt, args);
                         logFile.flush();
                     }
                 }
             }
-        }
-        catch (Exception e)
+        } catch (Exception e)
             printException(e);
     }
 
-    private void printException(Exception e) @trusted
-    {
+    private void printException(Exception e) @trusted {
         printf("\nAn exception inside the logger: %.*s\n", cast(int)e.msg.length, e.msg.ptr);
     }
 }

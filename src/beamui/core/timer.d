@@ -12,13 +12,11 @@ import beamui.core.functions;
 import beamui.core.logger : currentTimeMillis;
 
 /// Timers queue
-class TimerQueue
-{
+class TimerQueue {
     protected TimerInfo[] queue;
 
     /// Add new timer, returns timer id
-    ulong add(long intervalMillis, bool delegate() handler)
-    {
+    ulong add(long intervalMillis, bool delegate() handler) {
         TimerInfo item = TimerInfo(intervalMillis, handler);
         queue ~= item;
         sort(queue);
@@ -26,12 +24,9 @@ class TimerQueue
     }
 
     /// Cancel specified timer
-    void cancelTimer(ulong timerID)
-    {
-        foreach_reverse (ref timer; queue)
-        {
-            if (timer.id == timerID)
-            {
+    void cancelTimer(ulong timerID) {
+        foreach_reverse (ref timer; queue) {
+            if (timer.id == timerID) {
                 timer.cancel();
                 break;
             }
@@ -39,27 +34,23 @@ class TimerQueue
     }
 
     /// Returns timestamp in milliseconds of the next scheduled event or 0 if no events queued
-    long nextTimestamp() const
-    {
+    long nextTimestamp() const {
         if (!queue.length || !queue[0].isValid)
             return 0;
         return queue[0].nextTimestamp;
     }
 
     /// Returns true if at least one widget was notified
-    bool notify()
-    {
+    bool notify() {
         cleanup();
         if (!queue.length)
             return false;
 
         bool result;
         long ts = currentTimeMillis;
-        foreach (ref timer; queue)
-        {
+        foreach (ref timer; queue) {
             // if expired
-            if (timer.nextTimestamp <= ts)
-            {
+            if (timer.nextTimestamp <= ts) {
                 timer.notify();
                 result = true;
             }
@@ -69,8 +60,7 @@ class TimerQueue
     }
 
     /// Delete invalid timers
-    private void cleanup()
-    {
+    private void cleanup() {
         if (!queue.length)
             return;
         queue = queue.remove!(t => !t.isValid);
@@ -78,10 +68,8 @@ class TimerQueue
     }
 }
 
-struct TimerInfo
-{
-    private
-    {
+struct TimerInfo {
+    private {
         ulong _id;
         long _interval;
         long _initialTimestamp;
@@ -93,8 +81,7 @@ struct TimerInfo
 
     @disable this();
 
-    this(long intervalMillis, bool delegate() handler)
-    {
+    this(long intervalMillis, bool delegate() handler) {
         assert(intervalMillis >= 0 && intervalMillis < 7 * 24 * 60 * 60 * 1000L);
         _id = ++nextID;
         _interval = intervalMillis;
@@ -103,41 +90,31 @@ struct TimerInfo
         _handler = handler;
     }
 
-    @property
-    {
+    @property {
         /// Unique ID of timer
-        ulong id() const
-        {
+        ulong id() const {
             return _id;
         }
         /// Timer interval, milliseconds
-        long interval() const
-        {
+        long interval() const {
             return _interval;
         }
         /// Next timestamp to invoke timer at, milliseconds
-        long nextTimestamp() const
-        {
+        long nextTimestamp() const {
             return _nextTimestamp;
         }
         /// Returns true if timer is not yet cancelled
-        bool isValid() const
-        {
+        bool isValid() const {
             return _handler !is null;
         }
     }
 
     /// Notify the target widget
-    void notify()
-    {
-        if (_handler)
-        {
-            if (!_handler())
-            {
+    void notify() {
+        if (_handler) {
+            if (!_handler()) {
                 _handler = null;
-            }
-            else
-            {
+            } else {
                 // find next timestamp to tick
                 long ticksElapsed = (currentTimeMillis - _initialTimestamp) / _interval;
                 _nextTimestamp = _initialTimestamp + (ticksElapsed + 1) * _interval;
@@ -146,18 +123,15 @@ struct TimerInfo
     }
 
     /// Cancel timer
-    void cancel()
-    {
+    void cancel() {
         _handler = null;
     }
 
-    bool opEquals(const ref TimerInfo b) const
-    {
+    bool opEquals(const ref TimerInfo b) const {
         return b._nextTimestamp == _nextTimestamp;
     }
 
-    int opCmp(const ref TimerInfo b) const
-    {
+    int opCmp(const ref TimerInfo b) const {
         if (isValid && !b.isValid)
             return -1;
         if (!isValid && b.isValid)
@@ -172,14 +146,12 @@ struct TimerInfo
     }
 }
 
-final class TimerThread : Thread
-{
+final class TimerThread : Thread {
     import core.atomic;
     import core.sync.condition;
     import core.sync.mutex;
 
-    private
-    {
+    private {
         Mutex mutex;
         Condition condition;
         long timestamp = long.max;
@@ -188,8 +160,7 @@ final class TimerThread : Thread
         shared bool stopped;
     }
 
-    this(void delegate() timerCallback)
-    {
+    this(void delegate() timerCallback) {
         super(&run);
         callback = timerCallback;
         mutex = new Mutex;
@@ -197,33 +168,27 @@ final class TimerThread : Thread
         start();
     }
 
-    ~this()
-    {
+    ~this() {
         stop();
         destroy(condition);
         destroy(mutex);
     }
 
-    void notifyOn(long timestamp)
-    {
+    void notifyOn(long timestamp) {
         mutex.lock();
-        if (this.timestamp > timestamp)
-        {
+        if (this.timestamp > timestamp) {
             this.timestamp = timestamp;
             condition.notify();
         }
         mutex.unlock();
     }
 
-    private void run()
-    {
-        while (!atomicLoad(stopped))
-        {
+    private void run() {
+        while (!atomicLoad(stopped)) {
             mutex.lock();
 
             bool expired;
-            if (timestamp != long.max)
-            {
+            if (timestamp != long.max) {
                 long timeToWait = timestamp - currentTimeMillis;
                 if (timeToWait > 0)
                     expired = !condition.wait(dur!"msecs"(timeToWait));
@@ -231,8 +196,7 @@ final class TimerThread : Thread
                     expired = true;
                 if (expired)
                     timestamp = long.max;
-            }
-            else
+            } else
                 condition.wait();
 
             mutex.unlock();
@@ -242,8 +206,7 @@ final class TimerThread : Thread
         }
     }
 
-    void stop()
-    {
+    void stop() {
         if (atomicLoad(stopped))
             return;
 

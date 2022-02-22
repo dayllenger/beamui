@@ -12,8 +12,7 @@ nothrow @safe:
 import beamui.core.geometry : isDefinedSize, isValidSize, SIZE_UNSPECIFIED;
 
 /// Supported types of distance measurement unit
-enum LengthUnit
-{
+enum LengthUnit {
     // absolute
     device,
     cm,
@@ -29,8 +28,7 @@ enum LengthUnit
 }
 
 /// Represents length with specified measurement unit
-struct Length
-{
+struct Length {
 nothrow:
     private float value = SIZE_UNSPECIFIED!float;
     private LengthUnit type = LengthUnit.device;
@@ -41,16 +39,14 @@ nothrow:
     enum Length none = Length.init;
 
     /// Construct with some value and type
-    this(float value, LengthUnit type)
-    {
+    this(float value, LengthUnit type) {
         assert(isValidSize(value));
         this.value = value;
         this.type = type;
     }
 
     /// Construct with raw device pixels
-    static Length device(int value)
-    {
+    static Length device(int value) {
         float f = isDefinedSize(value) ? value : SIZE_UNSPECIFIED!float;
         return Length(f, LengthUnit.device);
     }
@@ -65,29 +61,24 @@ nothrow:
     static Length percent(float value) { return Length(value, LengthUnit.percent); }
     // dfmt on
 
-    bool is_em() const
-    {
+    bool is_em() const {
         return type == LengthUnit.em;
     }
 
-    bool is_rem() const
-    {
+    bool is_rem() const {
         return type == LengthUnit.rem;
     }
 
-    bool is_percent() const
-    {
+    bool is_percent() const {
         return type == LengthUnit.percent;
     }
 
     /// For absolute units - converts them to device pixels, for relative - multiplies by 100
-    int toDevice() const
-    {
+    int toDevice() const {
         if (value == SIZE_UNSPECIFIED!float)
             return SIZE_UNSPECIFIED!int;
 
-        final switch (type) with (LengthUnit)
-        {
+        final switch (type) with (LengthUnit) {
             // dfmt off
             case device:  return cast(int) value;
             case px:      return cast(int)(value * devicePixelRatio);
@@ -103,13 +94,11 @@ nothrow:
     }
 
     /// Convert to layout length, which represents device-independent pixels or percentage
-    LayoutLength toLayout() const
-    {
+    LayoutLength toLayout() const {
         if (value == SIZE_UNSPECIFIED!float)
             return LayoutLength(SIZE_UNSPECIFIED!float);
 
-        final switch (type) with (LengthUnit)
-        {
+        final switch (type) with (LengthUnit) {
             // dfmt off
             case device:  return LayoutLength(value / devicePixelRatio);
             case px:      return LayoutLength(value);
@@ -125,35 +114,30 @@ nothrow:
     }
 
     /// Convert device-independent pixels to physical device pixels (of current window)
-    static int dipToDevice(float dips)
-    {
+    static int dipToDevice(float dips) {
         assert(isDefinedSize(dips));
         return cast(int)(dips * devicePixelRatio);
     }
 
-    bool opEquals(Length u) const
-    {
+    bool opEquals(Length u) const {
         // workaround for NaN != NaN
         return this is u;
     }
 
-    Length opBinary(string op : "+")(Length u) const
-    {
+    Length opBinary(string op : "+")(Length u) const {
         if (type != u.type) // FIXME: different types
             return this;
         else
             return Length(value + u.value, type);
     }
 
-    Length opBinary(string op : "*")(double factor) const
-    {
+    Length opBinary(string op : "*")(double factor) const {
         return Length(value * factor, type);
     }
 
     /// Parse pair (value, unit), where value is a real number, unit is: cm, mm, in, pt, px, em, %.
     /// Returns `Length.none` if cannot parse.
-    static Length parse(string value, string unit)
-    {
+    static Length parse(string value, string unit) {
         import std.conv : to;
 
         if (!value.length || !unit.length)
@@ -179,21 +163,17 @@ nothrow:
         else
             return Length.none;
 
-        try
-        {
+        try {
             float v = to!float(value);
             return Length(v, type);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             return Length.none;
         }
     }
 }
 
 /// Layout length can be either in device-independent pixels or in percents
-struct LayoutLength
-{
+struct LayoutLength {
 nothrow:
     // pixels stored as Q12, fractions as Q16.
     // they are distinguished by the least-significant bit
@@ -205,10 +185,8 @@ nothrow:
     enum LayoutLength none = LayoutLength(SIZE_UNSPECIFIED!float);
 
     /// Construct from pixels
-    this(float px)
-    {
-        if (isDefinedSize(px))
-        {
+    this(float px) {
+        if (isDefinedSize(px)) {
             assert(px < SIZE_UNSPECIFIED!int);
             value = cast(int)(px * (1 << 12)) << 1;
         }
@@ -216,8 +194,7 @@ nothrow:
     /// Construct from percent
     static LayoutLength percent(float p)
     in (isDefinedSize(p))
-    in (p < SIZE_UNSPECIFIED!int)
-    {
+    in (p < SIZE_UNSPECIFIED!int) {
         LayoutLength ret;
         ret.value = cast(int)(p / 100 * (1 << 16)) << 1;
         ret.value |= 1;
@@ -225,21 +202,18 @@ nothrow:
     }
 
     /// True if size is finite, i.e. not `SIZE_UNSPECIFIED`
-    bool isDefined() const
-    {
+    bool isDefined() const {
         return value != SIZE_UNSPECIFIED!int;
     }
 
     /// True if contains percent value
-    bool isPercent() const
-    {
+    bool isPercent() const {
         return (value & 1) != 0;
     }
 
     /// If this is percent, return % of `base`, otherwise return stored pixel value
     float applyPercent(float base) const
-    in (isDefinedSize(base))
-    {
+    in (isDefinedSize(base)) {
         if (value == SIZE_UNSPECIFIED!int)
             return SIZE_UNSPECIFIED!float;
         if (value & 1)
@@ -248,8 +222,7 @@ nothrow:
             return cast(float)(value >> 1) / (1 << 12);
     }
 
-    LayoutLength opBinary(string op : "+")(LayoutLength u) const
-    {
+    LayoutLength opBinary(string op : "+")(LayoutLength u) const {
         if ((value & 1) != (u.value & 1) || value == SIZE_UNSPECIFIED!int || u.value == SIZE_UNSPECIFIED!int)
             return this;
 
@@ -259,8 +232,7 @@ nothrow:
         return ret;
     }
 
-    LayoutLength opBinary(string op : "*")(double factor) const
-    {
+    LayoutLength opBinary(string op : "*")(double factor) const {
         if (value == SIZE_UNSPECIFIED!int)
             return this;
 
@@ -272,8 +244,7 @@ nothrow:
 }
 
 /// Parse angle with deg, grad, rad or turn unit. Returns an angle in radians, or NaN if cannot parse.
-float parseAngle(string value, string unit)
-{
+float parseAngle(string value, string unit) {
     import std.conv : to;
     import std.math : PI;
 
@@ -281,12 +252,9 @@ float parseAngle(string value, string unit)
         return float.nan;
 
     float angle;
-    try
-    {
+    try {
         angle = to!float(value);
-    }
-    catch (Exception e)
-    {
+    } catch (Exception e) {
         return float.nan;
     }
 
@@ -314,8 +282,7 @@ import beamui.core.math : clamp;
 
 /// Called by window
 package(beamui) void setupDPI(float dpi, float dpr)
-in (dpi > 0 && dpr > 0)
-{
+in (dpi > 0 && dpr > 0) {
     if (overriden)
         return;
 
@@ -324,8 +291,7 @@ in (dpi > 0 && dpr > 0)
     dipsPerInch = dpi / dpr;
 }
 /// ditto
-package(beamui) void overrideDPI(float dpi, float dpr)
-{
+package(beamui) void overrideDPI(float dpi, float dpr) {
     overriden = false;
     if (dpi <= 0 || dpr <= 0)
         return;
@@ -334,20 +300,17 @@ package(beamui) void overrideDPI(float dpi, float dpr)
     overriden = true;
 }
 
-float snapToDevicePixels(float f)
-{
+float snapToDevicePixels(float f) {
     return round(f * devicePixelRatio) / devicePixelRatio;
 }
 
-Point snapToDevicePixels(Point pt)
-{
+Point snapToDevicePixels(Point pt) {
     pt.x = round(pt.x * devicePixelRatio) / devicePixelRatio;
     pt.y = round(pt.y * devicePixelRatio) / devicePixelRatio;
     return pt;
 }
 
-Rect snapToDevicePixels(Rect r)
-{
+Rect snapToDevicePixels(Rect r) {
     r.left = round(r.left * devicePixelRatio) / devicePixelRatio;
     r.top = round(r.top * devicePixelRatio) / devicePixelRatio;
     r.right = round(r.right * devicePixelRatio) / devicePixelRatio;
@@ -355,8 +318,7 @@ Rect snapToDevicePixels(Rect r)
     return r;
 }
 
-Box snapToDevicePixels(Box box)
-{
+Box snapToDevicePixels(Box box) {
     return Box(snapToDevicePixels(Rect(box)));
 }
 
@@ -370,42 +332,35 @@ private float dipsPerInch = 96;
 
 import std.math : approxEqual;
 
-unittest
-{
+unittest {
     LayoutLength len;
     assert(!len.isPercent);
     assert(len.applyPercent(50) == SIZE_UNSPECIFIED!float);
 }
 
-unittest
-{
+unittest {
     LayoutLength len = SIZE_UNSPECIFIED!float;
     assert(!len.isPercent);
     assert(len.applyPercent(50) == SIZE_UNSPECIFIED!float);
 }
 
-unittest
-{
-    for (float f = -10; f < 10; f += 0.3)
-    {
+unittest {
+    for (float f = -10; f < 10; f += 0.3) {
         LayoutLength len = f;
         assert(!len.isPercent);
         assert(len.applyPercent(1234).approxEqual(f, 1e-2));
     }
 }
 
-unittest
-{
-    for (float f = -200; f < 200; f += 35)
-    {
+unittest {
+    for (float f = -200; f < 200; f += 35) {
         auto len = LayoutLength.percent(f);
         assert(len.isPercent);
         assert(len.applyPercent(50).approxEqual(f / 2, 1e-2));
     }
 }
 
-unittest
-{
+unittest {
     assert(parseAngle("120.5", "deg").approxEqual(2.10312, 1e-5));
     assert(parseAngle("15", "grad").approxEqual(0.23562, 1e-5));
     assert(parseAngle("-27.7", "rad").approxEqual(-27.7, 1e-5));

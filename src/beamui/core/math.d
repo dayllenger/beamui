@@ -12,24 +12,20 @@ nothrow @safe:
 import std.math : fabs;
 
 /// Check that a `float` number is equal to zero in first 6 signs after point
-pragma(inline, true) bool fzero6(float a)
-{
+pragma(inline, true) bool fzero6(float a) {
     return -1e-6f < a && a < 1e-6f;
 }
 /// Check that a `float` number is closer to zero than `0.01`
-pragma(inline, true) bool fzero2(float a)
-{
+pragma(inline, true) bool fzero2(float a) {
     return -0.00999999f < a && a < 0.00999999f;
 }
 
 /// Check that two `float` numbers are equal in first 6 signs after point
-pragma(inline, true) bool fequal6(float a, float b)
-{
+pragma(inline, true) bool fequal6(float a, float b) {
     return fabs(a - b) < 1e-6f;
 }
 /// Check that two `float` numbers differ in less than `0.01`
-pragma(inline, true) bool fequal2(float a, float b)
-{
+pragma(inline, true) bool fequal2(float a, float b) {
     return fabs(a - b) < 0.0099999f;
 }
 // dfmt off

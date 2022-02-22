@@ -23,25 +23,18 @@ import isfreedesktop;
  *  If found file manager is known to this function, it uses file manager specific way to select file.
  *  Otherwise it fallbacks to opening $(D pathName) if it's directory or parent directory of $(D pathName) if it's file.
  */
-bool showInFileManager(string pathName)
-{
+bool showInFileManager(string pathName) {
     Log.i("showInFileManager(", pathName, ")");
 
     pathName = buildNormalizedPath(pathName);
-    if (exists(pathName))
-    {
-        try
-        {
+    if (exists(pathName)) {
+        try {
             return showInFileManagerImpl(pathName);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Log.e("showInFileManager: exception while trying to open file browser");
             Log.e(e);
         }
-    }
-    else
-    {
+    } else {
         Log.e("showInFileManager: file or directory does not exist");
     }
     return false;
@@ -51,15 +44,13 @@ private:
 // dfmt off
 version (Windows) {
 // dfmt on
-bool showInFileManagerImpl(string pathName)
-{
+bool showInFileManagerImpl(string pathName) {
     import core.sys.windows.windows;
     import beamui.core.files;
     import std.utf : toUTF16z;
 
     string explorerPath = findExecutablePath("explorer.exe");
-    if (!explorerPath.length)
-    {
+    if (!explorerPath.length) {
         Log.e("showInFileManager: cannot find explorer.exe");
         return false;
     }
@@ -70,9 +61,8 @@ bool showInFileManagerImpl(string pathName)
     Log.d("showInFileManager: ", explorerPath, " ", arg);
     arg = "\"" ~ explorerPath ~ "\" " ~ arg;
     const res = CreateProcessW(null, cast(wchar*)toUTF16z(arg), null, null,
-            false, DETACHED_PROCESS, null, null, &si, &pi);
-    if (!res)
-    {
+        false, DETACHED_PROCESS, null, null, &si, &pi);
+    if (!res) {
         Log.e("showInFileManager: failed to run explorer.exe");
         return false;
     }
@@ -81,8 +71,7 @@ bool showInFileManagerImpl(string pathName)
 // dfmt off
 } else version (OSX) {
 // dfmt on
-bool showInFileManagerImpl(string pathName)
-{
+bool showInFileManagerImpl(string pathName) {
     import std.process;
 
     string exe = "/usr/bin/osascript";
@@ -102,8 +91,7 @@ bool showInFileManagerImpl(string pathName)
 // dfmt off
 } else static if (isFreedesktop) {
 // dfmt on
-bool showInFileManagerImpl(string pathName)
-{
+bool showInFileManagerImpl(string pathName) {
     import std.algorithm : map, filter, splitter, canFind, findSplit;
     import std.exception : collectException;
     import std.process;
@@ -113,23 +101,17 @@ bool showInFileManagerImpl(string pathName)
 
     string toOpen = pathName;
 
-    static bool isExecutable(string program)
-    {
+    static bool isExecutable(string program) {
         import core.sys.posix.unistd;
 
         return access(toStringz(program), X_OK) == 0;
     }
 
-    static string findExecutable(string program, const string[] binPaths)
-    {
-        if (isAbsolute(program) && isExecutable(program))
-        {
+    static string findExecutable(string program, const string[] binPaths) {
+        if (isAbsolute(program) && isExecutable(program)) {
             return program;
-        }
-        else if (baseName(program) == program)
-        {
-            foreach (path; binPaths)
-            {
+        } else if (baseName(program) == program) {
+            foreach (path; binPaths) {
                 auto candidate = buildPath(path, program);
                 if (isExecutable(candidate))
                     return candidate;
@@ -139,19 +121,15 @@ bool showInFileManagerImpl(string pathName)
     }
 
     static string[] findFileManagerCommand(string app, const(string)[] appDirs,
-            const(string)[] binPaths)
-    {
-        foreach (appDir; appDirs)
-        {
+        const(string)[] binPaths) {
+        foreach (appDir; appDirs) {
             bool fileExists;
             auto appPath = buildPath(appDir, app);
             collectException(isFile(appPath), fileExists);
-            if (!fileExists)
-            {
+            if (!fileExists) {
                 //check if file in subdirectory exist. E.g. kde4-dolphin.desktop refers to kde4/dolphin.desktop
                 auto appSplitted = findSplit(app, "-");
-                if (appSplitted[1].length && appSplitted[2].length)
-                {
+                if (appSplitted[1].length && appSplitted[2].length) {
                     appPath = buildPath(appDir, appSplitted[0], appSplitted[2]);
                     collectException(isFile(appPath), fileExists);
                 }
@@ -159,60 +137,44 @@ bool showInFileManagerImpl(string pathName)
             if (!fileExists)
                 continue;
 
-            try
-            {
+            try {
                 bool canOpenDirectory; //not used for now. Some file managers does not have MimeType in their .desktop file.
                 string exec, tryExec, icon, displayName;
 
                 parseConfigFile(appPath, "Desktop Entry", (string key, string value) {
-                    if (key == "MimeType")
-                    {
+                    if (key == "MimeType") {
                         canOpenDirectory = value.splitter(';').canFind("inode/directory");
-                    }
-                    else if (key == "Exec")
-                    {
+                    } else if (key == "Exec") {
                         exec = value;
-                    }
-                    else if (key == "TryExec")
-                    {
+                    } else if (key == "TryExec") {
                         tryExec = value;
-                    }
-                    else if (key == "Icon")
-                    {
+                    } else if (key == "Icon") {
                         icon = value;
-                    }
-                    else if (key == "Name")
-                    {
+                    } else if (key == "Name") {
                         displayName = value;
                     }
                     return true;
                 });
 
-                if (exec.length)
-                {
-                    if (tryExec.length)
-                    {
+                if (exec.length) {
+                    if (tryExec.length) {
                         const program = findExecutable(tryExec, binPaths);
                         if (!program.length)
                             continue;
                     }
                     return expandExecArgs(unquoteExec(exec), null, icon, displayName, appPath);
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
             }
         }
         return null;
     }
 
-    static void execShowInFileManager(string[] fileManagerArgs, string toOpen)
-    {
+    static void execShowInFileManager(string[] fileManagerArgs, string toOpen) {
         import std.stdio : File, stderr, stdin, stdout;
 
         toOpen = absolutePath(toOpen);
-        switch (baseName(fileManagerArgs[0]))
-        {
+        switch (baseName(fileManagerArgs[0])) {
             //nautilus and nemo select item if it's a file
         case "nautilus":
         case "nemo":
@@ -223,16 +185,12 @@ bool showInFileManagerImpl(string pathName)
         case "konqueror":
             fileManagerArgs ~= ["--select", toOpen];
             break;
-        default:
-            {
+        default: {
                 bool pathIsDir;
                 collectException(isDir(toOpen), pathIsDir);
-                if (!pathIsDir)
-                {
+                if (!pathIsDir) {
                     fileManagerArgs ~= toOpen.dirName;
-                }
-                else
-                {
+                } else {
                     fileManagerArgs ~= toOpen;
                 }
             }
@@ -240,29 +198,22 @@ bool showInFileManagerImpl(string pathName)
         }
 
         File inFile, outFile, errFile;
-        try
-        {
+        try {
             inFile = File("/dev/null", "rb");
-        }
-        catch (Exception)
-        {
+        } catch (Exception) {
             inFile = stdin;
         }
-        try
-        {
+        try {
             auto nullFile = File("/dev/null", "wb");
             outFile = nullFile;
             errFile = nullFile;
-        }
-        catch (Exception)
-        {
+        } catch (Exception) {
             outFile = stdout;
             errFile = stderr;
         }
 
         auto processConfig = Config.none;
-        static if (is(typeof(Config.detached)))
-        {
+        static if (is(typeof(Config.detached))) {
             processConfig |= Config.detached;
         }
         spawnProcess(fileManagerArgs, inFile, outFile, errFile, null, processConfig);
@@ -279,43 +230,33 @@ bool showInFileManagerImpl(string pathName)
 
     string[] fileManagerArgs;
     foreach (mimeappsList; chain(only(configHome), only(appHome), configDirs, appDirs).map!(p => buildPath(p,
-            "mimeapps.list")))
-    {
-        try
-        {
+            "mimeapps.list"))) {
+        try {
             parseConfigFile(mimeappsList, "Default Applications", (string key, string value) {
-                if (key == "inode/directory" && value.length)
-                {
+                if (key == "inode/directory" && value.length) {
                     auto app = value;
                     fileManagerArgs = findFileManagerCommand(app, allAppDirs, binPaths);
                     return false;
                 }
                 return true;
             });
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
         }
 
-        if (fileManagerArgs.length)
-        {
+        if (fileManagerArgs.length) {
             execShowInFileManager(fileManagerArgs, toOpen);
             return true;
         }
     }
 
-    foreach (mimeinfoCache; allAppDirs.map!(p => buildPath(p, "mimeinfo.cache")))
-    {
-        try
-        {
+    foreach (mimeinfoCache; allAppDirs.map!(p => buildPath(p, "mimeinfo.cache"))) {
+        try {
             parseConfigFile(mimeinfoCache, "MIME Cache", (string key, string value) {
                 if (key > "inode/directory") // no need to proceed, since MIME types are sorted in alphabetical order.
                     return false;
-                if (key == "inode/directory" && value.length)
-                {
+                if (key == "inode/directory" && value.length) {
                     auto alternatives = value.splitter(';').filter!(p => p.length > 0);
-                    foreach (alternative; alternatives)
-                    {
+                    foreach (alternative; alternatives) {
                         fileManagerArgs = findFileManagerCommand(alternative, allAppDirs, binPaths);
                         if (fileManagerArgs.length)
                             break;
@@ -324,13 +265,10 @@ bool showInFileManagerImpl(string pathName)
                 }
                 return true;
             });
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
         }
 
-        if (fileManagerArgs.length)
-        {
+        if (fileManagerArgs.length) {
             execShowInFileManager(fileManagerArgs, toOpen);
             return true;
         }
@@ -341,19 +279,16 @@ bool showInFileManagerImpl(string pathName)
 }
 
 void parseConfigFile(string fileName, string wantedGroup,
-        scope bool delegate(string, string) onKeyValue)
-{
+    scope bool delegate(string, string) onKeyValue) {
     import inilike.common;
     import inilike.range;
 
     auto r = iniLikeFileReader(fileName);
-    foreach (group; r.byGroup())
-    {
+    foreach (group; r.byGroup()) {
         if (group.groupName != wantedGroup)
             continue;
 
-        foreach (entry; group.byEntry())
-        {
+        foreach (entry; group.byEntry()) {
             if (!entry.length || isComment(entry))
                 continue;
 
@@ -368,10 +303,8 @@ void parseConfigFile(string fileName, string wantedGroup,
 }
 
 string[] expandExecArgs(const string[] unquotedArgs, const string[] urls = null,
-        string iconName = null, string displayName = null, string fileName = null)
-{
-    static string urlToFilePath(string url)
-    {
+    string iconName = null, string displayName = null, string fileName = null) {
+    static string urlToFilePath(string url) {
         immutable protocol = "file://";
         if (url.length > protocol.length && url[0 .. protocol.length] == protocol)
             return url[protocol.length .. $];
@@ -380,36 +313,23 @@ string[] expandExecArgs(const string[] unquotedArgs, const string[] urls = null,
     }
 
     string[] toReturn;
-    foreach (token; unquotedArgs)
-    {
-        if (token == "%F")
-        {
+    foreach (token; unquotedArgs) {
+        if (token == "%F") {
             foreach (url; urls)
                 toReturn ~= urlToFilePath(url);
-        }
-        else if (token == "%U")
-        {
+        } else if (token == "%U") {
             toReturn ~= urls;
-        }
-        else if (token == "%i")
-        {
-            if (iconName.length)
-            {
+        } else if (token == "%i") {
+            if (iconName.length) {
                 toReturn ~= "--icon";
                 toReturn ~= iconName;
             }
-        }
-        else
-        {
+        } else {
             static void expand(string token, ref string expanded,
-                    ref size_t restPos, ref size_t i, string insert)
-            {
-                if (token.length == 2)
-                {
+                ref size_t restPos, ref size_t i, string insert) {
+                if (token.length == 2) {
                     expanded = insert;
-                }
-                else
-                {
+                } else {
                     expanded ~= token[restPos .. i] ~ insert;
                 }
                 restPos = i + 2;
@@ -419,25 +339,18 @@ string[] expandExecArgs(const string[] unquotedArgs, const string[] urls = null,
             string expanded;
             size_t restPos;
             bool ignore;
-            loop: foreach (i; 0 .. token.length)
-            {
-                if (token[i] == '%' && i + 1 < token.length)
-                {
-                    switch (token[i + 1])
-                    {
+            loop: foreach (i; 0 .. token.length) {
+                if (token[i] == '%' && i + 1 < token.length) {
+                    switch (token[i + 1]) {
                     case 'f':
                     case 'u':
-                        if (urls.length)
-                        {
+                        if (urls.length) {
                             string arg = urls[0];
-                            if (token[i + 1] == 'f')
-                            {
+                            if (token[i + 1] == 'f') {
                                 arg = urlToFilePath(arg);
                             }
                             expand(token, expanded, restPos, i, arg);
-                        }
-                        else
-                        {
+                        } else {
                             ignore = true;
                             break loop;
                         }
@@ -465,8 +378,7 @@ string[] expandExecArgs(const string[] unquotedArgs, const string[] urls = null,
                 }
             }
 
-            if (!ignore)
-            {
+            if (!ignore) {
                 toReturn ~= expanded ~ token[restPos .. $];
             }
         }
@@ -474,8 +386,7 @@ string[] expandExecArgs(const string[] unquotedArgs, const string[] urls = null,
     return toReturn;
 }
 
-string[] unquoteExec(string unescapedValue)
-{
+string[] unquoteExec(string unescapedValue) {
     import std.exception : assumeUnique;
     import std.typecons : Tuple, tuple;
     import inilike.common : doUnescape;
@@ -484,36 +395,30 @@ string[] unquoteExec(string unescapedValue)
     string[] result;
     size_t i;
 
-    static string unescapeQuotedArgument(string value)
-    {
+    static string unescapeQuotedArgument(string value) {
         static immutable Tuple!(char, char)[] pairs = [
             tuple('`', '`'), tuple('$', '$'), tuple('"', '"'), tuple('\\', '\\')
         ];
         return doUnescape(value, pairs);
     }
 
-    static string parseQuotedPart(ref size_t i, char delimeter, string value)
-    {
+    static string parseQuotedPart(ref size_t i, char delimeter, string value) {
         size_t start = ++i;
         bool inQuotes = true;
 
-        while (i < value.length && inQuotes)
-        {
-            if (value[i] == '\\' && value.length > i + 1 && value[i + 1] == '\\')
-            {
+        while (i < value.length && inQuotes) {
+            if (value[i] == '\\' && value.length > i + 1 && value[i + 1] == '\\') {
                 i += 2;
                 continue;
             }
 
             inQuotes = !(value[i] == delimeter && (value[i - 1] != '\\' || (i >= 2 &&
                     value[i - 1] == '\\' && value[i - 2] == '\\')));
-            if (inQuotes)
-            {
+            if (inQuotes) {
                 i++;
             }
         }
-        if (inQuotes)
-        {
+        if (inQuotes) {
             throw new Exception("Missing pair quote");
         }
         return unescapeQuotedArgument(value[start .. i]);
@@ -521,31 +426,21 @@ string[] unquoteExec(string unescapedValue)
 
     char[] append;
     bool wasInQuotes;
-    while (i < value.length)
-    {
-        if (value[i] == ' ' || value[i] == '\t')
-        {
-            if (!wasInQuotes && append.length >= 1 && append[$ - 1] == '\\')
-            {
+    while (i < value.length) {
+        if (value[i] == ' ' || value[i] == '\t') {
+            if (!wasInQuotes && append.length >= 1 && append[$ - 1] == '\\') {
                 append[$ - 1] = value[i];
-            }
-            else
-            {
-                if (append.length)
-                {
+            } else {
+                if (append.length) {
                     result ~= assumeUnique(append);
                     append = null;
                 }
             }
             wasInQuotes = false;
-        }
-        else if (value[i] == '"' || value[i] == '\'')
-        {
+        } else if (value[i] == '"' || value[i] == '\'') {
             append ~= parseQuotedPart(i, value[i], value);
             wasInQuotes = true;
-        }
-        else
-        {
+        } else {
             append ~= value[i];
             wasInQuotes = false;
         }
@@ -558,8 +453,7 @@ string[] unquoteExec(string unescapedValue)
 // dfmt off
 } else {
 // dfmt on
-bool showInFileManagerImpl(string pathName)
-{
+bool showInFileManagerImpl(string pathName) {
     Log.w("showInFileManager is not implemented for this platform");
     return false;
 }

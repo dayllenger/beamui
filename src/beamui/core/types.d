@@ -14,46 +14,38 @@ nothrow:
 import std.traits;
 import beamui.core.config;
 
-struct Tup(T...)
-{
+struct Tup(T...) {
     T expand;
     alias expand this;
 }
 
-Tup!T tup(T...)(T args)
-{
+Tup!T tup(T...)(T args) {
     return Tup!T(args);
 }
 
-struct Result(T) if (isMutable!T && !hasElaborateCopyConstructor!T && !hasElaborateAssign!T && !hasElaborateDestructor!T)
-{
+struct Result(T) if (isMutable!T && !hasElaborateCopyConstructor!T && !hasElaborateAssign!T && !hasElaborateDestructor!T) {
     T val;
     bool err = true;
 
-    bool opCast(To : bool)() const
-    {
+    bool opCast(To : bool)() const {
         return !err;
     }
 
-    inout(T) or(lazy inout(T) fallback) inout
-    {
+    inout(T) or(lazy inout(T) fallback) inout {
         return err ? fallback : val;
     }
 }
 
-Result!T Ok(T)(T val)
-{
+Result!T Ok(T)(T val) {
     return Result!T(val, false);
 }
 
-Result!T Err(T)(T val = T.init)
-{
+Result!T Err(T)(T val = T.init) {
     return Result!T(val, true);
 }
 
 /// Common widget state flags, e.g. `pressed`
-enum StateFlags : uint
-{
+enum StateFlags : uint {
     /// Indefinite state
     none = 0,
     /// State not specified / normal
@@ -89,8 +81,7 @@ enum StateFlags : uint
 
     If some class is not inherited from `RefCountedObject`, additional object will be required to hold counters.
 */
-class RefCountedObject
-{
+class RefCountedObject {
     /// Count of references to this object from `Ref`
     size_t refCount;
 }
@@ -103,35 +94,29 @@ class RefCountedObject
 
     Useful for automatic destroy of objects.
 */
-struct Ref(T) if (is(T : RefCountedObject))
-{
+struct Ref(T) if (is(T : RefCountedObject)) {
     private T _data;
     alias get this;
 
     /// Returns true if object is not assigned
-    @property bool isNull() const
-    {
+    @property bool isNull() const {
         return _data is null;
     }
     /// Returns counter of references
-    @property size_t refCount() const
-    {
+    @property size_t refCount() const {
         return _data !is null ? _data.refCount : 0;
     }
     /// Init from T
-    this(T data)
-    {
+    this(T data) {
         _data = data;
         addRef();
     }
     /// After blit
-    this(this)
-    {
+    this(this) {
         addRef();
     }
     /// Assign from another refcount by reference
-    ref Ref opAssign(ref Ref data)
-    {
+    ref Ref opAssign(ref Ref data) {
         if (data._data == _data)
             return this;
         releaseRef();
@@ -140,8 +125,7 @@ struct Ref(T) if (is(T : RefCountedObject))
         return this;
     }
     /// Assign from another refcount by value
-    ref Ref opAssign(Ref data)
-    {
+    ref Ref opAssign(Ref data) {
         if (data._data == _data)
             return this;
         releaseRef();
@@ -150,8 +134,7 @@ struct Ref(T) if (is(T : RefCountedObject))
         return this;
     }
     /// Assign object
-    ref Ref opAssign(T data)
-    {
+    ref Ref opAssign(T data) {
         if (data == _data)
             return this;
         releaseRef();
@@ -160,31 +143,25 @@ struct Ref(T) if (is(T : RefCountedObject))
         return this;
     }
     /// Clear reference
-    void clear()
-    {
+    void clear() {
         releaseRef();
     }
     /// Returns object reference (`null` if not assigned)
-    @property T get()
-    {
+    @property T get() {
         return _data;
     }
     /// Returns const reference from const object
-    @property const(T) get() const
-    {
+    @property const(T) get() const {
         return _data;
     }
     /// Increment reference counter
-    void addRef()
-    {
+    void addRef() {
         if (_data !is null)
             _data.refCount++;
     }
     /// Decrement reference counter, destroy object if no more references left
-    void releaseRef()
-    {
-        if (_data !is null)
-        {
+    void releaseRef() {
+        if (_data !is null) {
             if (_data.refCount <= 1) // FIXME: why <=?
                 destroy(_data);
             else
@@ -193,8 +170,7 @@ struct Ref(T) if (is(T : RefCountedObject))
         }
     }
     /// Decreases counter and destroys object if no more references left
-    ~this()
-    {
+    ~this() {
         releaseRef();
     }
 }
@@ -207,17 +183,13 @@ struct Ref(T) if (is(T : RefCountedObject))
 
     NOT USED
 */
-struct CalcSaver(Params...)
-{
+struct CalcSaver(Params...) {
     Tup!Params values;
 
-    bool check(Params args)
-    {
+    bool check(Params args) {
         bool changed;
-        foreach (i, arg; args)
-        {
-            if (values[i]!is arg)
-            {
+        foreach (i, arg; args) {
+            if (values[i]!is arg) {
                 values[i] = arg;
                 changed = true;
             }
@@ -227,10 +199,8 @@ struct CalcSaver(Params...)
 }
 
 ///
-unittest
-{
-    class A
-    {
+unittest {
+    class A {
     }
 
     CalcSaver!(uint, double[], A) saver;
@@ -258,8 +228,7 @@ unittest
 }
 
 /// String values string list adapter - each item can have optional string or integer id, and optional icon resource id
-struct StringListValue
-{
+struct StringListValue {
     /// Integer id for item
     int intID;
     /// String id for item
@@ -269,22 +238,19 @@ struct StringListValue
     /// Label to show for item
     dstring label;
 
-    this(string id, dstring name, string iconID = null)
-    {
+    this(string id, dstring name, string iconID = null) {
         this.stringID = id;
         this.label = name;
         this.iconID = iconID;
     }
 
-    this(int id, dstring name, string iconID = null)
-    {
+    this(int id, dstring name, string iconID = null) {
         this.intID = id;
         this.label = name;
         this.iconID = iconID;
     }
 
-    this(dstring name, string iconID = null)
-    {
+    this(dstring name, string iconID = null) {
         this.label = name;
         this.iconID = iconID;
     }

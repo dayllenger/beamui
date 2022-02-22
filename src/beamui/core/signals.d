@@ -29,42 +29,35 @@ module beamui.core.signals;
 import std.traits;
 
 ///
-unittest
-{
+unittest {
     import std.stdio;
 
-    struct S
-    {
+    struct S {
         Listener!(bool delegate()) onFire;
         Signal!(bool delegate(string)) onMultiFire;
 
-        void fire()
-        {
+        void fire() {
             // call the signal, which calls a listener
             // may be called with explicit onFire.emit()
             bool done = onFire();
             assert(done);
         }
 
-        void multiFire()
-        {
+        void multiFire() {
             bool done = onMultiFire("world");
             assert(done);
         }
     }
 
-    struct Z
-    {
+    struct Z {
         static int goodbyeCount = 0;
 
-        bool hello(string what)
-        {
+        bool hello(string what) {
             writeln("Hello, ", what);
             return true;
         }
 
-        bool goodbye(string what)
-        {
+        bool goodbye(string what) {
             writeln("Goodbye, ", what);
             goodbyeCount++;
             return false;
@@ -101,95 +94,75 @@ unittest
 }
 
 /// Single listener; parameter is some delegate
-struct Listener(slot_t) if (isDelegate!slot_t)
-{
+struct Listener(slot_t) if (isDelegate!slot_t) {
     alias return_t = ReturnType!slot_t;
     alias params_t = Parameters!slot_t;
     private slot_t _listener;
 
     /// Returns true if listener is assigned
-    bool assigned()
-    {
+    bool assigned() {
         return _listener !is null;
     }
 
-    void opAssign(slot_t listener)
-    {
+    void opAssign(slot_t listener) {
         _listener = listener;
     }
 
     /// Call the listener if assigned
-    return_t opCall(params_t params)
-    {
-        static if (is(return_t == void))
-        {
+    return_t opCall(params_t params) {
+        static if (is(return_t == void)) {
             if (_listener !is null)
                 _listener(params);
-        }
-        else
-        {
+        } else {
             if (_listener !is null)
                 return _listener(params);
             return return_t.init;
         }
     }
 
-    slot_t get()
-    {
+    slot_t get() {
         return _listener;
     }
 
     /// Disconnect listener
-    void clear()
-    {
+    void clear() {
         _listener = null;
     }
 }
 
 /// Determines when signal returns value
-enum ReturnPolicy
-{
+enum ReturnPolicy {
     eager, /// stop iterating if return value is nonzero, return this value
-    late   /// call all slots and return the last value
+    late /// call all slots and return the last value
 }
 
 /// Multiple listeners; parameter is some delegate
-struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!slot_t)
-{
+struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!slot_t) {
     alias return_t = ReturnType!slot_t;
     alias params_t = Parameters!slot_t;
     private slot_t[] _listeners;
 
     /// Returns true if listener is assigned
-    bool assigned()
-    {
+    bool assigned() {
         return _listeners.length > 0;
     }
 
     @disable void opAssign(Args...)(Args a);
 
     /// Call all listeners
-    return_t emit(params_t params)
-    {
-        static if (is(return_t == void))
-        {
+    return_t emit(params_t params) {
+        static if (is(return_t == void)) {
             foreach (listener; _listeners)
                 listener(params);
-        }
-        else static if (policy == ReturnPolicy.eager)
-        {
-            foreach (listener; _listeners)
-            {
+        } else static if (policy == ReturnPolicy.eager) {
+            foreach (listener; _listeners) {
                 return_t res = listener(params);
                 if (res) // TODO: use .init value as zero?
                     return res;
             }
             return return_t.init;
-        }
-        else
-        {
-            foreach (listener; _listeners[0 .. $ - 1])
-            {
+        } else {
+            foreach (listener; _listeners[0 .. $ - 1]) {
                 listener(params);
             }
             return _listeners[$ - 1](params);
@@ -199,20 +172,16 @@ struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!s
     alias opCall = emit;
 
     /// Add a listener
-    void connect(slot_t listener)
-    {
+    void connect(slot_t listener) {
         _listeners ~= listener;
     }
     /// ditto
     alias opOpAssign(string op : "~") = connect;
 
     /// Remove a listener
-    void disconnect(slot_t listener)
-    {
-        foreach (i, item; _listeners)
-        {
-            if (listener is item)
-            {
+    void disconnect(slot_t listener) {
+        foreach (i, item; _listeners) {
+            if (listener is item) {
                 foreach (j; i .. _listeners.length - 1)
                     _listeners[j] = _listeners[j + 1];
                 _listeners.length--;
@@ -224,8 +193,7 @@ struct Signal(slot_t, ReturnPolicy policy = ReturnPolicy.eager) if (isDelegate!s
     alias opOpAssign(string op : "-") = disconnect;
 
     /// Disconnect all listeners
-    void clear()
-    {
+    void clear() {
         _listeners.length = 0;
     }
 }

@@ -22,13 +22,10 @@ module beamui.core.config;
 
 immutable string BEAMUI_VERSION = import("BEAMUI_VERSION");
 
-version (CONSOLE)
-{
+version (CONSOLE) {
     enum BACKEND_GUI = false;
     enum BACKEND_CONSOLE = true;
-}
-else
-{
+} else {
     enum BACKEND_GUI = true;
     enum BACKEND_CONSOLE = false;
 }

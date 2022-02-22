@@ -33,51 +33,40 @@ __gshared ResourceList resourceList;
 immutable string EMBEDDED_RESOURCE_PREFIX = "@embedded@" ~ dirSeparator;
 
 /// Resource list contains embedded resources and paths to external resource directories
-struct ResourceList
-{
+struct ResourceList {
     private EmbeddedResource[] embedded;
     private string[] _resourceDirs;
     private string[string] idToPath;
 
     /// Embed all resources from list
-    void embed(string listFilename)()
-    {
+    void embed(string listFilename)() {
         embedded ~= embedResources!(splitLines(import(listFilename)))();
     }
     /// Embed one particular file by its filename
-    void embedOne(string filename)()
-    {
+    void embedOne(string filename)() {
         embedded ~= embedResource!(filename)();
     }
     /// Embed a byte array (such as string) from memory with a fictional filename
-    void embedFromMemory(string filename, immutable void[] content)
-    {
+    void embedFromMemory(string filename, immutable void[] content) {
         embedded ~= EmbeddedResource(filename, cast(immutable ubyte[])content);
     }
 
     /// Get resource directory paths
-    @property const(string[]) resourceDirs() const
-    {
+    @property const(string[]) resourceDirs() const {
         return _resourceDirs;
     }
     /// Set resource directory paths as variable number of parameters
-    void setResourceDirs(string[] paths...)
-    {
+    void setResourceDirs(string[] paths...) {
         resourceDirs(paths);
     }
     /// Set resource directory paths array (only existing dirs will be added)
-    @property void resourceDirs(string[] paths)
-    {
+    @property void resourceDirs(string[] paths) {
         string[] existingPaths;
-        foreach (path; paths)
-        {
-            if (exists(path) && isDir(path))
-            {
+        foreach (path; paths) {
+            if (exists(path) && isDir(path)) {
                 existingPaths ~= path;
                 Log.d("ResourceList: adding path ", path);
-            }
-            else
-            {
+            } else {
                 Log.d("ResourceList: path ", path, " does not exist.");
             }
         }
@@ -85,8 +74,7 @@ struct ResourceList
         clear();
     }
 
-    void clear()
-    {
+    void clear() {
         destroy(idToPath);
     }
 
@@ -112,8 +100,7 @@ struct ResourceList
 
         Note: If ID matches several files, path of the last file is returned.
     */
-    string getPathByID(string id)
-    {
+    string getPathByID(string id) {
         if (id.startsWith("#") || id.startsWith("{"))
             return null; // it's not a file name
         if (auto p = id in idToPath)
@@ -123,22 +110,17 @@ struct ResourceList
 
         // search in embedded
         // search backwards to allow overriding standard resources (which are added first)
-        foreach_reverse (ref r; embedded)
-        {
-            if (matchPathWithID(r.filename, normID))
-            {
+        foreach_reverse (ref r; embedded) {
+            if (matchPathWithID(r.filename, normID)) {
                 string fn = EMBEDDED_RESOURCE_PREFIX ~ r.filename;
                 idToPath[id] = fn;
                 return fn;
             }
         }
         // search in external
-        foreach (path; _resourceDirs)
-        {
-            foreach (string fn; dirEntries(path, SpanMode.breadth))
-            {
-                if (matchPathWithID(fn, normID))
-                {
+        foreach (path; _resourceDirs) {
+            foreach (string fn; dirEntries(path, SpanMode.breadth)) {
+                if (matchPathWithID(fn, normID)) {
                     idToPath[id] = fn;
                     return fn;
                 }
@@ -148,8 +130,7 @@ struct ResourceList
         return null;
     }
 
-    private bool matchPathWithID(string path, string id)
-    {
+    private bool matchPathWithID(string path, string id) {
         if (pathSplitter(stripExtension(path)).endsWith(pathSplitter(id)))
             return true;
         if (pathSplitter(path).endsWith(pathSplitter(id)))
@@ -163,10 +144,8 @@ struct ResourceList
     Null if not found.
     See `getPathByID` to get full filename.
     */
-    EmbeddedResource* getEmbedded(string filename)
-    {
-        foreach_reverse (ref r; embedded)
-        {
+    EmbeddedResource* getEmbedded(string filename) {
+        foreach_reverse (ref r; embedded) {
             if (filename == r.filename)
                 return &r;
         }
@@ -174,10 +153,8 @@ struct ResourceList
     }
 
     /// Print resource list stats
-    debug void printStats()
-    {
-        foreach (r; embedded)
-        {
+    debug void printStats() {
+        foreach (r; embedded) {
             Log.d("EmbeddedResource: ", r.filename);
         }
         Log.d("Resource dirs: ", _resourceDirs);
@@ -190,67 +167,49 @@ struct ResourceList
     Name of embedded resource should start with `@embedded@/` prefix.
     Name of external file is a usual path.
 */
-immutable(ubyte[]) loadResourceBytes(string filename)
-{
-    if (filename.startsWith(EMBEDDED_RESOURCE_PREFIX))
-    {
+immutable(ubyte[]) loadResourceBytes(string filename) {
+    if (filename.startsWith(EMBEDDED_RESOURCE_PREFIX)) {
         auto embedded = resourceList.getEmbedded(filename[EMBEDDED_RESOURCE_PREFIX.length .. $]);
         return embedded ? embedded.data : null;
-    }
-    else
-    {
-        try
-        {
+    } else {
+        try {
             return cast(immutable ubyte[])std.file.read(filename);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Log.e("Exception while loading resource file ", filename);
             return null;
         }
     }
 }
 
-struct EmbeddedResource
-{
+struct EmbeddedResource {
     immutable string filename;
     immutable ubyte[] data;
 }
 
 /// Embed all resources from list
-private EmbeddedResource[] embedResources(string[] resourceNames)()
-{
+private EmbeddedResource[] embedResources(string[] resourceNames)() {
     EmbeddedResource[] list;
     static foreach (r; resourceNames)
         list ~= embedResource!r;
     return list;
 }
 
-private EmbeddedResource[] embedResource(string resourceName)()
-{
-    static if (resourceName.startsWith("#"))
-    {
+private EmbeddedResource[] embedResource(string resourceName)() {
+    static if (resourceName.startsWith("#")) {
         // skip commented
         return null;
-    }
-    else
-    {
+    } else {
         // WARNING: some compilers may disallow import file by full path.
         // in this case `getPathByID` will not adress embedded resources by path
-        version (USE_BASE_PATH_FOR_RESOURCES)
-        {
+        version (USE_BASE_PATH_FOR_RESOURCES) {
             immutable string name = baseName(resourceName);
-        }
-        else
-        {
+        } else {
             immutable string name = resourceName;
         }
-        static if (name.length > 0)
-        {
+        static if (name.length > 0) {
             auto data = cast(immutable ubyte[])import(name);
             return [EmbeddedResource(buildNormalizedPath(name), data)];
-        }
-        else
+        } else
             return [];
     }
 }
@@ -258,8 +217,7 @@ private EmbeddedResource[] embedResource(string resourceName)()
 //===============================================================
 // Tests
 
-unittest
-{
+unittest {
     const filename = buildNormalizedPath("./themes/light/frame.9.png");
     const result = EMBEDDED_RESOURCE_PREFIX ~ filename;
 

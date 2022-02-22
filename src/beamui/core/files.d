@@ -20,8 +20,7 @@ import beamui.core.logger;
 enum char PATH_DELIMITER = dirSeparator[0];
 
 /// Filesystem root entry / bookmark types
-enum RootEntryType
-{
+enum RootEntryType {
     /// Filesystem root
     root,
     /// Current user home
@@ -41,14 +40,12 @@ enum RootEntryType
 }
 
 /// Filesystem root entry item
-struct RootEntry
-{
+struct RootEntry {
     private RootEntryType _type;
     private string _path;
     private dstring _display;
 
-    this(RootEntryType type, string path, dstring display = null)
-    {
+    this(RootEntryType type, string path, dstring display = null) {
         _type = type;
         _path = path;
         _display = display ? display : toUTF32(baseName(path));
@@ -80,23 +77,18 @@ struct RootEntry
 }
 
 /// Returns user's home directory entry
-RootEntry homeEntry()
-{
+RootEntry homeEntry() {
     return RootEntry(RootEntryType.home, homePath);
 }
 
 /// Returns user's home directory
-string homePath()
-{
+string homePath() {
     string path;
-    version (Windows)
-    {
+    version (Windows) {
         path = environment.get("USERPROFILE");
         if (path is null)
             path = environment.get("HOME");
-    }
-    else
-    {
+    } else {
         path = environment.get("HOME");
     }
     if (path is null)
@@ -104,13 +96,9 @@ string homePath()
     return path;
 }
 
-version (OSX)
-{
-}
-else version (Posix)
-{
-    private bool isSpecialFileSystem(const char[] dir, const char[] type)
-    {
+version (OSX) {
+} else version (Posix) {
+    private bool isSpecialFileSystem(const char[] dir, const char[] type) {
         if (dir.startsWith("/dev"))
             return true;
         if (dir.startsWith("/proc"))
@@ -126,23 +114,18 @@ else version (Posix)
         return false;
     }
 
-    private string getDeviceLabelFallback(const char[] type, const char[] fsName, const char[] mountDir)
-    {
-        if (type == "vboxsf")
-        {
+    private string getDeviceLabelFallback(const char[] type, const char[] fsName, const char[] mountDir) {
+        if (type == "vboxsf") {
             return "VirtualBox shared folder";
         }
-        if (type == "fuse.gvfsd-fuse")
-        {
+        if (type == "fuse.gvfsd-fuse") {
             return "GNOME Virtual file system";
         }
         return format("%s (%s)", baseName(mountDir), type);
     }
 
-    private RootEntryType getDeviceRootEntryType(const char[] type)
-    {
-        switch (type)
-        {
+    private RootEntryType getDeviceRootEntryType(const char[] type) {
+        switch (type) {
         case "iso9660":
             return RootEntryType.cdrom;
         case "vfat":
@@ -159,8 +142,7 @@ else version (Posix)
     }
 }
 
-version (FreeBSD)
-{
+version (FreeBSD) {
 private:
     import core.sys.posix.sys.types;
 
@@ -168,13 +150,11 @@ private:
     enum MNAMELEN = 88; /* size of on/from name bufs */
     enum STATFS_VERSION = 0x20030518; /* current version number */
 
-    struct fsid_t
-    {
+    struct fsid_t {
         int[2] val;
     }
 
-    struct statfs
-    {
+    struct statfs {
         uint f_version; /* structure version number */
         uint f_type; /* type of filesystem */
         ulong f_flags; /* copy of mount exported flags */
@@ -199,19 +179,16 @@ private:
         char[MNAMELEN] f_mntonname; /* directory on which mounted */
     }
 
-    extern (C) nothrow @nogc
-    {
+    extern (C) nothrow @nogc {
         int getmntinfo(statfs** mntbufp, int flags);
     }
 }
 
-version (linux)
-{
+version (linux) {
 private:
     import core.stdc.stdio : FILE;
 
-    struct mntent
-    {
+    struct mntent {
         char* mnt_fsname; /* Device or server for filesystem.  */
         char* mnt_dir; /* Directory mounted on.  */
         char* mnt_type; /* Type of filesystem: ufs, nfs, etc.  */
@@ -220,8 +197,7 @@ private:
         int mnt_passno; /* Pass number for `fsck'.  */
     }
 
-    extern (C) nothrow @nogc
-    {
+    extern (C) nothrow @nogc {
         FILE* setmntent(const char* file, const char* mode);
         mntent* getmntent(FILE* stream);
         mntent* getmntent_r(FILE* stream, mntent* result, char* buffer, int bufsize);
@@ -230,38 +206,30 @@ private:
         char* hasmntopt(const mntent* mnt, const char* opt);
     }
 
-    string unescapeLabel(string label)
-    {
+    string unescapeLabel(string label) {
         return label.replace("\\x20", " ").replace("\\x9", " ") //actually tab
         .replace("\\x5c", "\\").replace("\\xA", " "); //actually newline
     }
 }
 
 /// Returns array of system root entries
-RootEntry[] getRootPaths()
-{
+RootEntry[] getRootPaths() {
     RootEntry[] res;
     res ~= RootEntry(RootEntryType.home, homePath);
-    version (Posix)
-    {
+    version (Posix) {
         res ~= RootEntry(RootEntryType.root, "/", "File System"d);
     }
-    version (Android)
-    {
+    version (Android) {
         // do nothing
-    }
-    else version (linux)
-    {
+    } else version (linux) {
         mntent ent;
         char[1024] buf;
         FILE* f = setmntent("/etc/mtab", "r");
 
-        if (f)
-        {
+        if (f) {
             scope (exit)
                 endmntent(f);
-            while (getmntent_r(f, &ent, buf.ptr, cast(int)buf.length) !is null)
-            {
+            while (getmntent_r(f, &ent, buf.ptr, cast(int)buf.length) !is null) {
                 auto fsName = fromStringz(ent.mnt_fsname);
                 auto mountDir = fromStringz(ent.mnt_dir);
                 auto type = fromStringz(ent.mnt_type);
@@ -273,31 +241,23 @@ RootEntry[] getRootPaths()
 
                 string label;
                 enum byLabel = "/dev/disk/by-label";
-                if (isAbsolute(fsName))
-                {
-                    try
-                    {
-                        foreach (entry; dirEntries(byLabel, SpanMode.shallow))
-                        {
+                if (isAbsolute(fsName)) {
+                    try {
+                        foreach (entry; dirEntries(byLabel, SpanMode.shallow)) {
                             string name = entry.name;
                             string resolvedLink;
-                            if (isSymlink(name) && collectException(readLink(name), resolvedLink) is null)
-                            {
+                            if (isSymlink(name) && collectException(readLink(name), resolvedLink) is null) {
                                 const normalized = buildNormalizedPath(byLabel, resolvedLink);
-                                if (normalized == fsName)
-                                {
+                                if (normalized == fsName) {
                                     label = unescapeLabel(baseName(name));
                                 }
                             }
                         }
-                    }
-                    catch (Exception e)
-                    {
+                    } catch (Exception e) {
                     }
                 }
 
-                if (!label.length)
-                {
+                if (!label.length) {
                     label = getDeviceLabelFallback(type, fsName, mountDir);
                 }
                 auto entryType = getDeviceRootEntryType(type);
@@ -306,22 +266,18 @@ RootEntry[] getRootPaths()
         }
     }
 
-    version (FreeBSD)
-    {
+    version (FreeBSD) {
         statfs* mntbufsPtr;
         int mntbufsLen = getmntinfo(&mntbufsPtr, 0);
-        if (mntbufsLen)
-        {
+        if (mntbufsLen) {
             auto mntbufs = mntbufsPtr[0 .. mntbufsLen];
 
-            foreach (buf; mntbufs)
-            {
+            foreach (buf; mntbufs) {
                 auto type = fromStringz(buf.f_fstypename.ptr);
                 auto fsName = fromStringz(buf.f_mntfromname.ptr);
                 auto mountDir = fromStringz(buf.f_mntonname.ptr);
 
-                if (mountDir == "/" || isSpecialFileSystem(mountDir, type))
-                {
+                if (mountDir == "/" || isSpecialFileSystem(mountDir, type)) {
                     continue;
                 }
 
@@ -331,21 +287,17 @@ RootEntry[] getRootPaths()
         }
     }
 
-    version (Windows)
-    {
+    version (Windows) {
         uint mask = GetLogicalDrives();
-        foreach (int i; 0 .. 26)
-        {
-            if (mask & (1 << i))
-            {
+        foreach (int i; 0 .. 26) {
+            if (mask & (1 << i)) {
                 char letter = cast(char)('A' + i);
                 string path = "" ~ letter ~ ":\\";
                 dstring display = ""d ~ letter ~ ":"d;
                 // detect drive type
                 RootEntryType type;
                 const wtype = GetDriveTypeA(toStringz(path));
-                switch (wtype)
-                {
+                switch (wtype) {
                 case DRIVE_REMOVABLE:
                     type = RootEntryType.removable;
                     break;
@@ -366,8 +318,7 @@ RootEntry[] getRootPaths()
     return res;
 }
 
-version (Windows)
-{
+version (Windows) {
 private:
     import core.sys.windows.windows;
     import core.sys.windows.objidl;
@@ -381,82 +332,60 @@ private:
 }
 
 /// Returns array of user bookmarked directories
-RootEntry[] getBookmarkPaths()
-{
+RootEntry[] getBookmarkPaths() {
     RootEntry[] res;
-    version (OSX)
-    {
-    }
-    else version (Android)
-    {
-    }
-    else version (Posix)
-    {
+    version (OSX) {
+    } else version (Android) {
+    } else version (Posix) {
         // Probably we should follow https://www.freedesktop.org/wiki/Specifications/desktop-bookmark-spec/ but it requires XML library.
         // So for now just try to read GTK3 bookmarks. Should be compatible with GTK file dialogs, Nautilus and other GTK file managers.
 
         import std.stdio : File;
         import std.uri : decode;
 
-        try
-        {
+        try {
             enum fileProtocol = "file://";
             auto configPath = environment.get("XDG_CONFIG_HOME");
-            if (!configPath.length)
-            {
+            if (!configPath.length) {
                 configPath = buildPath(homePath(), ".config");
             }
             auto bookmarksFile = buildPath(configPath, "gtk-3.0/bookmarks");
-            foreach (line; File(bookmarksFile, "r").byLineCopy())
-            {
+            foreach (line; File(bookmarksFile, "r").byLineCopy()) {
                 if (!line.startsWith(fileProtocol))
                     continue;
 
                 auto splitted = findSplit(line, " ");
                 string path;
-                if (splitted[1].length)
-                {
+                if (splitted[1].length) {
                     path = splitted[0][fileProtocol.length .. $];
-                }
-                else
-                {
+                } else {
                     path = line[fileProtocol.length .. $];
                 }
                 path = decode(path);
-                if (isAbsolute(path))
-                {
+                if (isAbsolute(path)) {
                     // Note: GTK supports regular files in bookmarks too, but we allow directories only.
                     bool dirExists;
                     collectException(isDir(path), dirExists);
-                    if (dirExists)
-                    {
+                    if (dirExists) {
                         dstring label;
-                        if (splitted[1].length)
-                        {
+                        if (splitted[1].length) {
                             label = toUTF32(splitted[2]);
-                        }
-                        else
-                        {
+                        } else {
                             label = toUTF32(baseName(path));
                         }
                         res ~= RootEntry(RootEntryType.bookmark, path, label);
                     }
                 }
             }
+        } catch (Exception e) {
         }
-        catch (Exception e)
-        {
-        }
-    }
-    else version (Windows)
-    {
+    } else version (Windows) {
         // This will not include bookmarks of special items and virtual folders like Recent Files or Recycle bin.
 
         import core.stdc.wchar_ : wcslen;
         import std.utf : toUTF16z;
 
-        try
-        {
+        try {
             auto shell = enforce(LoadLibraryA("Shell32"));
             scope (exit)
                 FreeLibrary(shell);
@@ -500,12 +429,10 @@ RootEntry[] getBookmarkPaths()
             scope (exit)
                 ppf.Release();
 
-            foreach (linkFile; dirEntries(linksFolder, SpanMode.shallow))
-            {
+            foreach (linkFile; dirEntries(linksFolder, SpanMode.shallow)) {
                 if (!linkFile.name.endsWith(".lnk"))
                     continue;
-                try
-                {
+                try {
                     wchar[MAX_PATH] szGotPath;
                     WIN32_FIND_DATA wfd;
 
@@ -520,144 +447,109 @@ RootEntry[] getBookmarkPaths()
 
                     auto path = szGotPath[0 .. wcslen(szGotPath.ptr)];
 
-                    if (path.length && isDir(toUTF8(path)))
-                    {
+                    if (path.length && isDir(toUTF8(path))) {
                         const display = toUTF32(stripExtension(baseName(linkFile.name)));
                         res ~= RootEntry(RootEntryType.bookmark, toUTF8(path), display);
                     }
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                 }
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
         }
     }
     return res;
 }
 
 /// Returns true if directory is root directory (e.g. / or C:\)
-bool isRoot(string path)
-{
+bool isRoot(string path) {
     string root = rootName(path);
     return equal(path, root);
 }
 
 /// Check if path is hidden
-bool isHidden(string path)
-{
-    version (Windows)
-    {
+bool isHidden(string path) {
+    version (Windows) {
         uint attrs;
-        if (collectException(getAttributes(path), attrs) is null)
-        {
+        if (collectException(getAttributes(path), attrs) is null) {
             return (attrs & FILE_ATTRIBUTE_HIDDEN) != 0;
-        }
-        else
+        } else
             return false;
-    }
-    else version (Posix)
-    {
+    } else version (Posix) {
         //TODO: check for hidden attribute on macOS
         return baseName(path).startsWith(".");
-    }
-    else
+    } else
         return false;
 }
 
 ///
-unittest
-{
-    version (Posix)
-    {
+unittest {
+    version (Posix) {
         assert(!isHidden("path/to/normal_file"));
         assert(isHidden("path/to/.hidden_file"));
     }
 }
 
-private bool isReadable(string filePath)
-{
-    version (Posix)
-    {
+private bool isReadable(string filePath) {
+    version (Posix) {
         import core.sys.posix.unistd : access, R_OK;
 
         return access(toStringz(filePath), R_OK) == 0;
-    }
-    else
-    {
+    } else {
         // TODO: Windows version
         return true;
     }
 }
 
-private bool isWritable(string filePath)
-{
-    version (Posix)
-    {
+private bool isWritable(string filePath) {
+    version (Posix) {
         import core.sys.posix.unistd : access, W_OK;
 
         return access(toStringz(filePath), W_OK) == 0;
-    }
-    else
-    {
+    } else {
         // TODO: Windows version
         return true;
     }
 }
 
-private bool isExecutable(string filePath)
-{
-    version (Windows)
-    {
+private bool isExecutable(string filePath) {
+    version (Windows) {
         //TODO: Use GetEffectiveRightsFromAclW? For now just check extension
         string extension = filePath.extension;
-        foreach (ext; [".exe", ".com", ".bat", ".cmd"])
-        {
+        foreach (ext; [".exe", ".com", ".bat", ".cmd"]) {
             if (filenameCmp(extension, ext) == 0)
                 return true;
         }
         return false;
-    }
-    else version (Posix)
-    {
+    } else version (Posix) {
         import core.sys.posix.unistd : access, X_OK;
 
         return access(toStringz(filePath), X_OK) == 0;
-    }
-    else
-    {
+    } else {
         return false;
     }
 }
 
 /// Returns parent directory for specified path
-string parentDir(string path)
-{
+string parentDir(string path) {
     return buildNormalizedPath(path, "..");
 }
 
 /// Check filename with pattern
-bool filterFilename(string filename, string pattern)
-{
+bool filterFilename(string filename, string pattern) {
     return globMatch(filename.baseName, pattern);
 }
 /// Filters file name by pattern list
-bool filterFilename(string filename, const string[] filters)
-{
+bool filterFilename(string filename, const string[] filters) {
     if (filters.length == 0)
         return true; // no filters - show all
-    foreach (pattern; filters)
-    {
+    foreach (pattern; filters) {
         if (filterFilename(filename, pattern))
             return true;
     }
     return false;
 }
 
-enum AttrFilter
-{
+enum AttrFilter {
     none = 0,
     files = 1 << 0, /// Include regular files that match the filters.
     dirs = 1 << 1, /// Include directories.
@@ -679,14 +571,12 @@ enum AttrFilter
     Returns true if directory exists and listed successfully, false otherwise.
     Throws: Exception if $(D dir) is not directory or some error occured during directory listing.
 */
-DirEntry[] listDirectory(string dir, AttrFilter attrFilter = AttrFilter.all, const string[] filters = null)
-{
+DirEntry[] listDirectory(string dir, AttrFilter attrFilter = AttrFilter.all, const string[] filters = null) {
     DirEntry[] entries;
 
     DirEntry[] dirs;
     DirEntry[] files;
-    foreach (DirEntry e; dirEntries(dir, SpanMode.shallow))
-    {
+    foreach (DirEntry e; dirEntries(dir, SpanMode.shallow)) {
         if (!(attrFilter & AttrFilter.hidden) && isHidden(e.name))
             continue;
         if ((attrFilter & AttrFilter.readable) && !isReadable(e.name))
@@ -695,28 +585,20 @@ DirEntry[] listDirectory(string dir, AttrFilter attrFilter = AttrFilter.all, con
             continue;
         if (!e.isDir && (attrFilter & AttrFilter.executable) && !isExecutable(e.name))
             continue;
-        if (e.isDir && (attrFilter & AttrFilter.dirs))
-        {
+        if (e.isDir && (attrFilter & AttrFilter.dirs)) {
             dirs ~= e;
-        }
-        else if ((attrFilter & AttrFilter.files) && filterFilename(e.name, filters))
-        {
-            if (e.isFile)
-            {
+        } else if ((attrFilter & AttrFilter.files) && filterFilename(e.name, filters)) {
+            if (e.isFile) {
                 files ~= e;
-            }
-            else if (attrFilter & AttrFilter.special)
-            {
+            } else if (attrFilter & AttrFilter.special) {
                 files ~= e;
             }
         }
     }
-    if ((attrFilter & AttrFilter.dirs) && (attrFilter & AttrFilter.thisDir))
-    {
+    if ((attrFilter & AttrFilter.dirs) && (attrFilter & AttrFilter.thisDir)) {
         entries ~= DirEntry(appendPath(dir, ".")) ~ entries;
     }
-    if (!isRoot(dir) && (attrFilter & AttrFilter.dirs) && (attrFilter & AttrFilter.parent))
-    {
+    if (!isRoot(dir) && (attrFilter & AttrFilter.dirs) && (attrFilter & AttrFilter.parent)) {
         entries ~= DirEntry(appendPath(dir, ".."));
     }
     dirs.sort!((a, b) => filenameCmp!(std.path.CaseSensitive.no)(a.name, b.name) < 0);
@@ -727,8 +609,7 @@ DirEntry[] listDirectory(string dir, AttrFilter attrFilter = AttrFilter.all, con
 }
 
 /// Returns true if char ch is / or \ slash
-bool isPathDelimiter(char ch)
-{
+bool isPathDelimiter(char ch) {
     return ch == '/' || ch == '\\';
 }
 
@@ -736,13 +617,11 @@ bool isPathDelimiter(char ch)
 alias currentDir = std.file.getcwd;
 
 /// Returns current executable path only, including last path delimiter - removes executable name from result of std.file.thisExePath()
-string exePath()
-{
+string exePath() {
     string path = thisExePath();
     int lastSlash = 0;
     for (int i = cast(int)path.length - 1; i >= 0; i--)
-        if (path[i] == PATH_DELIMITER)
-        {
+        if (path[i] == PATH_DELIMITER) {
             lastSlash = i;
             break;
         }
@@ -750,8 +629,7 @@ string exePath()
 }
 
 /// Returns current executable path and file name
-string exeFilename()
-{
+string exeFilename() {
     return thisExePath();
 }
 
@@ -763,17 +641,14 @@ string exeFilename()
     On windows, it will return path to subdir in APPDATA directory -
     e.g. C:\Users\User\AppData\Roaming\.subdir.
 */
-string appDataPath(string subdir = null)
-{
+string appDataPath(string subdir = null) {
     string path;
-    version (Windows)
-    {
+    version (Windows) {
         path = environment.get("APPDATA");
     }
     if (path is null)
         path = homePath;
-    if (subdir !is null)
-    {
+    if (subdir !is null) {
         path ~= PATH_DELIMITER;
         path ~= subdir;
     }
@@ -781,17 +656,12 @@ string appDataPath(string subdir = null)
 }
 
 /// Converts path delimiters to standard for platform inplace in buffer(e.g. / to \ on windows, \ to / on posix), returns buf
-char[] convertPathDelimiters(char[] buf)
-{
-    foreach (ref ch; buf)
-    {
-        version (Windows)
-        {
+char[] convertPathDelimiters(char[] buf) {
+    foreach (ref ch; buf) {
+        version (Windows) {
             if (ch == '/')
                 ch = '\\';
-        }
-        else
-        {
+        } else {
             if (ch == '\\')
                 ch = '/';
         }
@@ -800,19 +670,16 @@ char[] convertPathDelimiters(char[] buf)
 }
 
 /// Converts path delimiters to standard for platform (e.g. / to \ on windows, \ to / on posix)
-string convertPathDelimiters(string src)
-{
+string convertPathDelimiters(string src) {
     char[] buf = src.dup;
     return cast(string)convertPathDelimiters(buf);
 }
 
 /// Appends file path parts with proper delimiters
 /// e.g. `appendPath("/home/user", ".myapp", "config")` => `"/home/user/.myapp/config"`
-string appendPath(string[] pathItems...)
-{
+string appendPath(string[] pathItems...) {
     char[] buf;
-    foreach (s; pathItems)
-    {
+    foreach (s; pathItems) {
         if (buf.length && !isPathDelimiter(buf[$ - 1]))
             buf ~= PATH_DELIMITER;
         buf ~= s;
@@ -822,10 +689,8 @@ string appendPath(string[] pathItems...)
 
 /// Appends file path parts with proper delimiters (as well converts delimiters inside path to system) to buffer
 /// e.g. `appendPath("/home/user", ".myapp", "config")` => `"/home/user/.myapp/config"`
-char[] appendPath(char[] buf, string[] pathItems...)
-{
-    foreach (s; pathItems)
-    {
+char[] appendPath(char[] buf, string[] pathItems...) {
+    foreach (s; pathItems) {
         if (buf.length && !isPathDelimiter(buf[$ - 1]))
             buf ~= PATH_DELIMITER;
         buf ~= s;
@@ -834,18 +699,15 @@ char[] appendPath(char[] buf, string[] pathItems...)
 }
 
 /// If pathName is not absolute path, convert it to absolute (assuming it is relative to current directory)
-string toAbsolutePath(string pathName)
-{
+string toAbsolutePath(string pathName) {
     if (isAbsolute(pathName))
         return pathName;
     return buildNormalizedPath(absolutePath(pathName));
 }
 
 /// For executable name w/o path, find absolute path to executable
-string findExecutablePath(string executableName)
-{
-    version (Windows)
-    {
+string findExecutablePath(string executableName) {
+    version (Windows) {
         if (!executableName.endsWith(".exe"))
             executableName = executableName ~ ".exe";
     }
@@ -857,8 +719,7 @@ string findExecutablePath(string executableName)
     if (!pathVariable)
         return null;
     string[] paths = split(pathVariable, pathSeparator);
-    foreach (path; paths)
-    {
+    foreach (path; paths) {
         string pathname = absolutePath(buildNormalizedPath(path, executableName));
         if (exists(pathname) && isFile(pathname))
             return pathname;
@@ -866,12 +727,10 @@ string findExecutablePath(string executableName)
     return null;
 }
 
-struct FileMonitor
-{
+struct FileMonitor {
     import std.datetime.systime : SysTime;
 
-    enum Status
-    {
+    enum Status {
         same,
         modified,
         missing,
@@ -881,19 +740,15 @@ struct FileMonitor
     private SysTime _lastModTS;
     private ulong _lastSizeInBytes;
 
-    this(string filename)
-    {
+    this(string filename) {
         _filename = filename;
     }
 
-    Status check()
-    {
-        if (_filename.length && exists(_filename))
-        {
+    Status check() {
+        if (_filename.length && exists(_filename)) {
             const ts = timeLastModified(_filename);
             const sz = getSize(_filename);
-            if (_lastModTS < ts || _lastSizeInBytes != sz)
-            {
+            if (_lastModTS < ts || _lastSizeInBytes != sz) {
                 _lastModTS = ts;
                 _lastSizeInBytes = sz;
                 return Status.modified;

@@ -11,14 +11,12 @@ module beamui.core.memory;
 import std.conv : emplace;
 import beamui.core.ownership : isReferenceType;
 
-struct Arena
-{
+struct Arena {
     private void[] buf;
     private size_t len;
 
     /// Allocate and construct a class instance
-    T make(T, Args...)(auto ref Args args) @trusted if (is(T == class))
-    {
+    T make(T, Args...)(auto ref Args args) @trusted if (is(T == class)) {
         static assert(!__traits(hasMember, T, "__xdtor"), "Arena-allocated object should be trivial to destroy");
         // align to 16 bytes
         enum alignedSize = (__traits(classInstanceSize, T) | 0b1111) + 1;
@@ -32,8 +30,7 @@ struct Arena
     }
 
     /// Allocate and initialize a struct instance
-    T* make(T)() @trusted if (is(T == struct))
-    {
+    T* make(T)() @trusted if (is(T == struct)) {
         static assert(!__traits(hasMember, T, "__xdtor"), "Arena-allocated object should be trivial to destroy");
 
         const site = len;
@@ -47,8 +44,7 @@ struct Arena
     }
 
     /// Allocate an array of size `count`, filled with nulls
-    T[] allocArray(T)(size_t count) @trusted if (isReferenceType!T)
-    {
+    T[] allocArray(T)(size_t count) @trusted if (isReferenceType!T) {
         if (count == 0)
             return null;
 
@@ -63,8 +59,7 @@ struct Arena
     }
 
     /// Clear the arena, retaining allocated memory
-    void clear()
-    {
+    void clear() {
         len = 0;
     }
 }
